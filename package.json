@@ -8,7 +8,17 @@
     "fetch": "node server/fetch-nse.js",
     "fetch:market": "node server/fetch-market.js",
     "screen": "node server/screen.js",
-    "start": "node server/http-server.js",
+    "api": "node server/http-server.js",
+    "dev": "vite",
+    "build": "vite build",
     "test": "node server/auth-smoke-test.js && node server/http-smoke-test.js"
+  },
+  "dependencies": {
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.1.1",
+    "vite": "^8.3.1"
   }
 }
