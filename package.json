@@ -5,6 +5,10 @@
   "private": true,
   "description": "NSE-sourced data spine for Indian stock screening — replaces Screener.in scraping with NSE's own public corporate-filings API (financial results + shareholding pattern), same architecture as the stockwise-us SEC EDGAR spine.",
   "scripts": {
-    "fetch": "node server/fetch-nse.js"
+    "fetch": "node server/fetch-nse.js",
+    "fetch:market": "node server/fetch-market.js",
+    "screen": "node server/screen.js",
+    "start": "node server/http-server.js",
+    "test": "node server/auth-smoke-test.js && node server/http-smoke-test.js"
   }
 }
