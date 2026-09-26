@@ -1,0 +1,10 @@
+{
+  "name": "stockwise-india",
+  "version": "0.0.1",
+  "type": "module",
+  "private": true,
+  "description": "NSE-sourced data spine for Indian stock screening — replaces Screener.in scraping with NSE's own public corporate-filings API (financial results + shareholding pattern), same architecture as the stockwise-us SEC EDGAR spine.",
+  "scripts": {
+    "fetch": "node server/fetch-nse.js"
+  }
+}
