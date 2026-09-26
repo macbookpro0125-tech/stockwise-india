@@ -29,7 +29,7 @@ const CRITERIA_FIELDS = [
   { key: "minPromoterPct", label: "Min Promoter %", suffix: "%", default: 0 },
 ];
 
-export default function DiscoverView() {
+export default function DiscoverView({ onOpenStock }) {
   const [criteria, setCriteria] = useState(Object.fromEntries(CRITERIA_FIELDS.map(f => [f.key, f.default])));
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
@@ -60,8 +60,8 @@ export default function DiscoverView() {
 
       {data && (
         <div style={{ fontSize: 12, color: "var(--t3)", marginBottom: 16 }}>
-          {data.matched} of {data.total} companies with usable data match
-          {data.total < 2585 && <> — market fetch still filling in ({data.total}/2585 companies fetched so far)</>}
+          {data.matched} of {data.total} companies with complete data match
+          {data.listed && data.fetched < data.listed && <> · market data still loading ({data.fetched} of {data.listed} NSE-listed companies fetched so far)</>}
         </div>
       )}
 
@@ -81,7 +81,7 @@ export default function DiscoverView() {
         <table>
           <thead>
             <tr>
-              {["Company", "ROE", "Debt/Equity", "Promoter %", "Revenue (qtr)"].map(h => (
+              {["Company", "ROE (FY)", "Debt/Equity", "Promoter %", "Revenue (FY)"].map(h => (
                 <th key={h} style={{ textAlign: "left", padding: "8px 10px", fontSize: 10, fontWeight: 600, color: "var(--t3)", textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: "1px solid var(--bdr2)" }}>
                   {h}
                 </th>
@@ -90,7 +90,7 @@ export default function DiscoverView() {
           </thead>
           <tbody>
             {data.results.map(r => (
-              <tr key={r.symbol} style={{ borderBottom: "1px solid var(--bdr)" }}>
+              <tr key={r.symbol} onClick={() => onOpenStock(r.symbol)} style={{ borderBottom: "1px solid var(--bdr)", cursor: "pointer" }}>
                 <td style={{ padding: "10px" }}>
                   <div style={{ fontWeight: 600 }}>{r.symbol}</div>
                   <div style={{ fontSize: 11, color: "var(--t3)" }}>{r.name}</div>
@@ -98,7 +98,7 @@ export default function DiscoverView() {
                 <td style={{ padding: "10px" }}><Metric value={r.roe} fmt={fmtPct} good={0.20} ok={0.15} /></td>
                 <td style={{ padding: "10px" }}><Metric value={r.debtToEquity} fmt={n => n.toFixed(2) + "×"} good={0.3} ok={0.5} reverse /></td>
                 <td style={{ padding: "10px" }}><Metric value={r.holding.promoterPct / 100} fmt={fmtPct} good={0.5} ok={0.3} /></td>
-                <td className="mono" style={{ padding: "10px", color: "var(--t2)" }}>{fmtCr(r.pnl.revenueQuarter / 10000000)} Cr</td>
+                <td className="mono" style={{ padding: "10px", color: "var(--t2)" }}>{r.annual?.revenue != null ? `${fmtCr(r.annual.revenue / 10000000)} Cr` : "—"}</td>
               </tr>
             ))}
           </tbody>

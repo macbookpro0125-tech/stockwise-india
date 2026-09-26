@@ -20,6 +20,7 @@ export const api = {
   login: (email, password) => request("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
   logout: () => request("/api/auth/logout", { method: "POST" }),
   screen: (criteria) => request(`/api/screen?${new URLSearchParams(criteria)}`),
+  stock: (symbol) => request(`/api/stock/${encodeURIComponent(symbol)}`),
   listAlerts: () => request("/api/alerts"),
   createAlert: (alert) => request("/api/alerts", { method: "POST", body: JSON.stringify(alert) }),
   deleteAlert: (id) => request(`/api/alerts/${id}`, { method: "DELETE" }),
