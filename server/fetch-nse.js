@@ -85,6 +85,13 @@ async function fetchPromoterHolding(symbol) {
   return { asOf: latest.date, promoterPct: Number(latest.pr_and_prgrp) };
 }
 
+// A distressed company can have negative net worth (accumulated losses
+// exceeding paid-up capital) — AHLWEST is a real example, netWorth -37.8Cr.
+// profit/negative-equity flips sign into a nonsense "415% ROE", and
+// debt/negative-equity does the same for Debt-to-Equity. Both are undefined,
+// not just unflattering, when equity isn't positive — null them out rather
+// than let a loss-making, balance-sheet-negative company read as a 400%-ROE
+// "quality compounder" to a screen that isn't watching for the sign flip.
 export async function fetchStockSummary(symbol) {
   const [pnl, balanceSheet, holding] = await Promise.all([
     fetchQuarterlyPnl(symbol),
@@ -92,9 +99,18 @@ export async function fetchStockSummary(symbol) {
     fetchPromoterHolding(symbol),
   ]);
 
-  const roe = balanceSheet.netWorth ? (pnl.profitQuarter * 4) / balanceSheet.netWorth : null;
-  const debtToEquity = balanceSheet.netWorth ? balanceSheet.totalDebt / balanceSheet.netWorth : null;
+  const hasPositiveEquity = balanceSheet.netWorth > 0;
+  const roe = hasPositiveEquity ? (pnl.profitQuarter * 4) / balanceSheet.netWorth : null;
+  const debtToEquity = hasPositiveEquity ? balanceSheet.totalDebt / balanceSheet.netWorth : null;
 
+  // Staleness is NOT computed here against Date.now() — this sandbox's clock
+  // reads 2026, but NSE's real servers (reached over the real internet) only
+  // have filings through roughly early-to-mid 2025, their genuine current
+  // data. Comparing filing dates to this environment's clock would flag
+  // nearly the entire market as "stale" even though it's current in the real
+  // world. screen.js computes staleness relative to the newest filing date
+  // actually seen across the fetched dataset instead — correct regardless of
+  // what any given environment's wall clock says.
   return { symbol, pnl, balanceSheet, holding, roe, debtToEquity };
 }
 
