@@ -40,9 +40,17 @@ async function latestFiling(symbol, period) {
   const rows = await fetchJson(
     `${NSE_BASE}/api/corporates-financial-results?index=equities&period=${period}&symbol=${symbol}`
   );
-  const usable = rows.filter(r => r.consolidated === "Consolidated" && r.xbrl && r.xbrl !== "-");
-  if (!usable.length) throw new Error(`No usable ${period} XBRL filing for ${symbol}`);
-  return usable[0]; // NSE returns newest first
+  const withXbrl = rows.filter(r => r.xbrl && r.xbrl !== "-");
+  const newestConsolidated = withXbrl.find(r => r.consolidated === "Consolidated");
+  const newestOverall = withXbrl[0];
+  if (!newestOverall) throw new Error(`No usable ${period} XBRL filing for ${symbol}`);
+  // Prefer Consolidated (the group-wide picture) ONLY when it's not stale
+  // relative to what's actually available — ALKYLAMINE stopped filing
+  // Consolidated in 2020 (no subsidiary left to consolidate) but its
+  // Non-Consolidated filings are current every quarter since. Blindly
+  // preferring "any Consolidated row" over "newest row overall" silently
+  // picked a 5-year-old filing over a perfectly current standalone one.
+  return newestConsolidated?.toDate === newestOverall.toDate ? newestConsolidated : newestOverall;
 }
 
 async function fetchQuarterlyPnl(symbol) {
