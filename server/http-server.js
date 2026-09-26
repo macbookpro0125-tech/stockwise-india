@@ -7,6 +7,7 @@
 import { createServer } from "node:http";
 import { signup, login, logout, verifySession } from "./auth.js";
 import { listAlerts, createAlert, deleteAlert } from "./user-alerts.js";
+import { loadMarket, screen } from "./screen.js";
 
 const COOKIE_NAME = "stockwise_session";
 const SESSION_MAX_AGE_S = 30 * 24 * 60 * 60; // matches auth.js's SESSION_TTL_MS
@@ -90,6 +91,21 @@ export function createApp() {
         const cookies = parseCookies(req.headers.cookie);
         const userId = verifySession(cookies[COOKIE_NAME]);
         sendJson(res, userId ? 200 : 401, userId ? { userId } : { error: "Not signed in" });
+        return;
+      }
+
+      if (url.pathname === "/api/screen" && req.method === "GET") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        const q = url.searchParams;
+        const criteria = {
+          minRoe: q.has("minRoe") ? Number(q.get("minRoe")) : 15,
+          maxDebtToEquity: q.has("maxDebtToEquity") ? Number(q.get("maxDebtToEquity")) : 0.5,
+          minPromoterPct: q.has("minPromoterPct") ? Number(q.get("minPromoterPct")) : 0,
+        };
+        const all = loadMarket();
+        const matches = screen(all, criteria).sort((a, b) => b.roe - a.roe);
+        sendJson(res, 200, { total: all.length, matched: matches.length, criteria, results: matches.slice(0, 100) });
         return;
       }
 

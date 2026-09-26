@@ -19,6 +19,7 @@ export const api = {
   signup: (email, password) => request("/api/auth/signup", { method: "POST", body: JSON.stringify({ email, password }) }),
   login: (email, password) => request("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
   logout: () => request("/api/auth/logout", { method: "POST" }),
+  screen: (criteria) => request(`/api/screen?${new URLSearchParams(criteria)}`),
   listAlerts: () => request("/api/alerts"),
   createAlert: (alert) => request("/api/alerts", { method: "POST", body: JSON.stringify(alert) }),
   deleteAlert: (id) => request(`/api/alerts/${id}`, { method: "DELETE" }),
