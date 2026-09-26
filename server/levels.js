@@ -29,14 +29,28 @@ export function calculateLevels(eps, pe, growthPct, mosPct = 10) {
   };
 }
 
-export function getAction(cmp, levels) {
-  if (!cmp || !levels) return null;
+function fmtRs(n) {
+  return `₹${Math.round(n).toLocaleString("en-IN")}`;
+}
+
+// Ported verbatim from stock-screener's getAction, reasons included — only the
+// emoji icons are dropped.
+export function getAction(actionPrice, levels, priceLabel = "Price") {
+  if (!actionPrice || !levels) return null;
+  const lp = Number(actionPrice);
+  if (isNaN(lp) || lp <= 0) return null;
   const { p1, p2, p3, target, stopLoss } = levels;
-  if (stopLoss > 0 && cmp <= stopLoss) return { action: "BELOW STOP LOSS", color: "var(--red)" };
-  if (target > 0 && cmp >= target * 1.15) return { action: "SELL ALL", color: "var(--red)" };
-  if (target > 0 && cmp >= target) return { action: "SELL 50–70%", color: "var(--yellow)" };
-  if (p3 > 0 && cmp <= p3) return { action: "BUY — PHASE 3 (40%)", color: "var(--green)" };
-  if (p2 > 0 && cmp <= p2) return { action: "BUY — PHASE 2 (30%)", color: "var(--green)" };
-  if (p1 > 0 && cmp <= p1) return { action: "BUY — PHASE 1 (30%)", color: "var(--green)" };
-  return { action: "HOLD / WAIT", color: "var(--t2)" };
+  const px = `${priceLabel} ${fmtRs(lp)}`;
+
+  if (stopLoss > 0 && lp <= stopLoss) return { action: "BELOW STOP LOSS", color: "var(--red)", reason: `${px} has breached stop loss ${fmtRs(stopLoss)}. Consider exiting to protect capital.` };
+  if (target > 0 && lp >= target * 1.15) return { action: "SELL ALL", color: "var(--red)", reason: `${px} is 15%+ above target ${fmtRs(target)}. Overvalued.` };
+  if (target > 0 && lp >= target) return { action: "SELL 50–70%", color: "var(--yellow)", reason: `${px} hit target ${fmtRs(target)}. Book profits.` };
+  if (p3 > 0 && lp <= p3) return { action: "BUY — PHASE 3 (40%)", color: "var(--green)", reason: `${px} ≤ Phase 3 ${fmtRs(p3)}. Deep value — deploy 40%.` };
+  if (p2 > 0 && lp <= p2) return { action: "BUY — PHASE 2 (30%)", color: "var(--green)", reason: `${px} ≤ Phase 2 ${fmtRs(p2)}. Good discount — deploy 30%.` };
+  if (p1 > 0 && lp <= p1) return { action: "BUY — PHASE 1 (30%)", color: "var(--green)", reason: `${px} ≤ Phase 1 ${fmtRs(p1)}. Start position — deploy 30%.` };
+  if (p1 > 0 && target > 0 && lp > p1 && lp < target) {
+    const upside = (((target - lp) / lp) * 100).toFixed(1);
+    return { action: "HOLD / WAIT", color: "var(--yellow)", reason: `${px} is above Phase 1 ${fmtRs(p1)} but below target ${fmtRs(target)}. Wait for dip. Upside: +${upside}%.` };
+  }
+  return null;
 }

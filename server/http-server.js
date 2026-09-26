@@ -12,6 +12,7 @@ import { fetchCmp } from "./quote.js";
 import { calculateLevels, getAction } from "./levels.js";
 import { fetchStockSummary } from "./fetch-nse.js";
 import { fetchEquityList } from "./equity-list.js";
+import { fetchPeHistory } from "./pe-history.js";
 
 let equityListPromise = null;
 async function equityInfo(symbol) {
@@ -105,6 +106,33 @@ export function createApp() {
         const cookies = parseCookies(req.headers.cookie);
         const userId = verifySession(cookies[COOKIE_NAME]);
         sendJson(res, userId ? 200 : 401, userId ? { userId } : { error: "Not signed in" });
+        return;
+      }
+
+      // Separate from /api/stock/:symbol so the detail page renders in ~1s
+      // and this (5 filings + 10y of prices, first view only) fills in after.
+      const peMatch = url.pathname.match(/^\/api\/stock\/([^/]+)\/pe-history$/);
+      if (peMatch && req.method === "GET") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        const symbol = decodeURIComponent(peMatch[1]).toUpperCase();
+        const stock = getStock(symbol);
+        if (!stock?.annual?.yearEnded) {
+          sendJson(res, 404, { error: `${symbol}'s current financials aren't loaded yet` });
+          return;
+        }
+        const yearEnded = String(stock.annual.yearEnded).toUpperCase();
+        if (stock.peHistory?.forYearEnded === yearEnded) {
+          sendJson(res, 200, stock.peHistory);
+          return;
+        }
+        try {
+          const peHistory = await fetchPeHistory(symbol, yearEnded);
+          saveStock(symbol, { ...stock, peHistory });
+          sendJson(res, 200, peHistory);
+        } catch (e) {
+          sendJson(res, 502, { error: `Couldn't work out ${symbol}'s P/E history: ${e.message}` });
+        }
         return;
       }
 

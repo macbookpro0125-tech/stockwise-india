@@ -1,9 +1,54 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { api } from "./api.js";
 import { calculateLevels, getAction } from "../server/levels.js";
 
 function fmtRs(n) { return n == null ? "—" : `₹${Math.round(n).toLocaleString("en-IN")}`; }
 function fmtCr(n) { return n == null ? "—" : `₹${(n / 10000000).toFixed(1)} Cr`; }
+function fmtFy(iso) {
+  const d = new Date(`${iso}T00:00:00Z`);
+  return d.toLocaleString("en-IN", { month: "short", year: "numeric", timeZone: "UTC" });
+}
+
+function PeHistoryTable({ hist }) {
+  const cell = { padding: "7px 10px", fontSize: 12, borderBottom: "1px solid var(--bdr)", textAlign: "right" };
+  const head = { ...cell, fontSize: 10, color: "var(--t3)", textTransform: "uppercase", letterSpacing: "0.05em" };
+  return (
+    <div style={{ marginTop: 14 }}>
+      <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>This stock's P/E, last {hist.years.length} fiscal years</div>
+      <div style={{ overflowX: "auto" }}>
+        <table>
+          <thead>
+            <tr>
+              <th style={{ ...head, textAlign: "left" }}>Year ended</th>
+              <th style={head}>EPS</th>
+              <th style={head}>Price at year end</th>
+              <th style={head}>P/E</th>
+              <th style={{ ...head, textAlign: "left" }}>Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            {hist.years.map(y => (
+              <tr key={y.fyEnd} style={{ color: y.pe == null ? "var(--t3)" : "var(--t1)" }}>
+                <td style={{ ...cell, textAlign: "left" }}>{fmtFy(y.fyEnd)}</td>
+                <td className="mono" style={cell}>{y.eps != null ? `₹${y.eps.toFixed(2)}` : "—"}</td>
+                <td className="mono" style={cell}>{y.price != null ? fmtRs(y.price) : "—"}</td>
+                <td className="mono" style={{ ...cell, fontWeight: 600 }}>{y.pe != null ? y.pe.toFixed(1) : "—"}</td>
+                <td style={{ ...cell, textAlign: "left", color: "var(--t3)" }}>
+                  {y.excluded ?? (y.splitFactor > 1 ? `Reported ₹${y.reportedEps}; ÷${y.splitFactor} for a later split/bonus` : "")}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 8, lineHeight: 1.5 }}>
+        {hist.medianPe != null
+          ? <>Median of {hist.validYears} years: <strong style={{ color: "var(--t1)" }}>{hist.medianPe.toFixed(1)}</strong> — used as the default P/E above. A median, so one unusual year can't drag it.</>
+          : <>Only {hist.validYears} usable year{hist.validYears === 1 ? "" : "s"} — at least 3 are needed for a median, so the default stays at today's P/E.</>}
+      </div>
+    </div>
+  );
+}
 
 function LadderRow({ label, price, cmp }) {
   const hit = cmp != null && price != null && cmp <= price;
@@ -36,15 +81,30 @@ export default function StockDetail({ symbol, onBack }) {
   const [pe, setPe] = useState("");
   const [growth, setGrowth] = useState("12");
   const [mos, setMos] = useState("10");
+  const [hist, setHist] = useState({ status: "loading" });
+  // A P/E the user typed must not be overwritten when the history lands late
+  const peTouched = useRef(false);
 
   useEffect(() => {
+    let cancelled = false;
     setData(null);
     setError("");
+    setHist({ status: "loading" });
+    peTouched.current = false;
     api.stock(symbol).then(d => {
+      if (cancelled) return;
       setData(d);
       setPe(d.pe ? d.pe.toFixed(1) : "");
-    }).catch(e => setError(e.message));
+      return api.peHistory(symbol).then(h => {
+        if (cancelled) return;
+        setHist({ status: "ready", data: h });
+        if (h.medianPe != null && !peTouched.current) setPe(h.medianPe.toFixed(1));
+      }).catch(e => { if (!cancelled) setHist({ status: "error", error: e.message }); });
+    }).catch(e => { if (!cancelled) setError(e.message); });
+    return () => { cancelled = true; };
   }, [symbol]);
+
+  const editPe = (v) => { peTouched.current = true; setPe(v); };
 
   if (error) {
     return (
@@ -66,6 +126,10 @@ export default function StockDetail({ symbol, onBack }) {
   // the ladder is then just fixed discounts off the current price and says
   // nothing about value. Flag it rather than let it pass for an analysis.
   const peIsCurrent = data.pe && Math.abs(Number(pe) - data.pe) < 0.05;
+  // Hold the valuation back until the history lands, rather than flash a
+  // today's-P/E ladder (meaningless by construction) and then swap it.
+  const valuationReady = hist.status !== "loading" || peTouched.current;
+  const median = hist.status === "ready" ? hist.data.medianPe : null;
 
   return (
     <div style={{ maxWidth: 700, margin: "0 auto", padding: "28px 20px" }}>
@@ -88,10 +152,24 @@ export default function StockDetail({ symbol, onBack }) {
         </div>
       )}
 
-      {action && (
+      {!valuationReady && quote && data.eps > 0 && (
+        <div style={{ margin: "20px 0", padding: "14px 16px", borderRadius: 10, background: "var(--s2)", border: "1px solid var(--bdr)", color: "var(--t3)", fontSize: 13 }}>
+          Working out this stock's 5-year P/E from its past filings and prices…
+        </div>
+      )}
+
+      {valuationReady && action && (
         <div style={{ margin: "20px 0", padding: "14px 16px", borderRadius: 10, background: "var(--s2)", border: "1px solid var(--bdr2)" }}>
           <span style={{ fontSize: 11, color: "var(--t3)", textTransform: "uppercase", letterSpacing: "0.05em" }}>Suggested action</span>
           <div style={{ fontSize: 18, fontWeight: 700, color: action.color, marginTop: 2 }}>{action.action}</div>
+          <div style={{ fontSize: 13, color: "var(--t2)", marginTop: 4 }}>{action.reason}</div>
+          {/* Valuing at a historical P/E makes this common for de-rated stocks,
+              and the original's stop-loss wording assumes you already hold it. */}
+          {action.action === "BELOW STOP LOSS" && data.pe && Number(pe) > data.pe && (
+            <div style={{ fontSize: 12, color: "var(--t3)", marginTop: 8, lineHeight: 1.5 }}>
+              The stop loss applies to a position bought on this ladder. If you don't hold it yet: the market prices it at a P/E of {data.pe.toFixed(1)} versus the {Number(pe).toFixed(1)} you're valuing it at. That's either deep value, or a sign the old multiple no longer applies — worth finding out why it de-rated before buying.
+            </div>
+          )}
         </div>
       )}
 
@@ -100,19 +178,29 @@ export default function StockDetail({ symbol, onBack }) {
           <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 2 }}>Verify & override</div>
           <div style={{ fontSize: 12, color: "var(--t3)", marginBottom: 12 }}>Edit any value — the buy ladder updates instantly.</div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
-            <OverrideInput label="P/E to value at" value={pe} onChange={setPe} hint={data.pe ? `Current P/E ${data.pe.toFixed(1)}` : null} />
+            <OverrideInput
+              label="P/E to value at"
+              value={pe}
+              onChange={editPe}
+              hint={[median != null && `5-yr median ${median.toFixed(1)}`, data.pe && `today ${data.pe.toFixed(1)}`].filter(Boolean).join(" · ")}
+            />
             <OverrideInput label="EPS growth p.a." value={growth} onChange={setGrowth} suffix="%" />
             <OverrideInput label="Margin of safety" value={mos} onChange={setMos} suffix="%" />
           </div>
-          {peIsCurrent && (
+          {valuationReady && peIsCurrent && (
             <div style={{ fontSize: 12, color: "var(--yellow)", background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", borderRadius: 8, padding: "8px 12px", marginTop: 12 }}>
-              At today's P/E, fair value equals the current price by definition — the ladder is just fixed discounts off it. Enter this stock's 5–10 year average P/E for a real valuation.
+              At today's P/E, fair value equals the current price by definition — the ladder is just fixed discounts off it.
+              {median != null ? " Use the 5-year median below for a real valuation." : " Enter a long-run average P/E for a real valuation."}
             </div>
+          )}
+          {hist.status === "ready" && <PeHistoryTable hist={hist.data} />}
+          {hist.status === "error" && (
+            <div style={{ fontSize: 12, color: "var(--t3)", marginTop: 12 }}>Couldn't work out the 5-year P/E ({hist.error}).</div>
           )}
         </div>
       )}
 
-      {levels && (
+      {valuationReady && levels && (
         <>
           <div style={{ fontSize: 11, color: "var(--t3)", textTransform: "uppercase", letterSpacing: "0.05em", margin: "20px 0 8px" }}>
             Buy ladder — fair value ₹{levels.fv25} today, ₹{levels.fv27} in 2yr at {growth}% growth
@@ -152,7 +240,7 @@ export default function StockDetail({ symbol, onBack }) {
       </div>
 
       <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 20 }}>
-        Latest quarter ended {pnl.periodEnded} · EPS, ROE and balance sheet from the {data.epsBasis} · Source: NSE Integrated Filings
+        Latest quarter ended {pnl.periodEnded} · EPS, ROE and balance sheet from the {data.epsBasis} · Filings: NSE · Prices: Yahoo Finance
       </div>
     </div>
   );

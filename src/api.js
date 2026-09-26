@@ -21,6 +21,7 @@ export const api = {
   logout: () => request("/api/auth/logout", { method: "POST" }),
   screen: (criteria) => request(`/api/screen?${new URLSearchParams(criteria)}`),
   stock: (symbol) => request(`/api/stock/${encodeURIComponent(symbol)}`),
+  peHistory: (symbol) => request(`/api/stock/${encodeURIComponent(symbol)}/pe-history`),
   listAlerts: () => request("/api/alerts"),
   createAlert: (alert) => request("/api/alerts", { method: "POST", body: JSON.stringify(alert) }),
   deleteAlert: (id) => request(`/api/alerts/${id}`, { method: "DELETE" }),

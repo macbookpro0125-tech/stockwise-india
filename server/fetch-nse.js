@@ -7,30 +7,31 @@
 // ~20-month-old earnings for every company, priced against today's CMP.
 // Same XBRL tag names in both; only the namespace prefix changed
 // (in-bse-fin -> in-capmkt), so tags are matched namespace-agnostically.
-const NSE_BASE = "https://www.nseindia.com";
-const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36";
+export const NSE_BASE = "https://www.nseindia.com";
+export const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36";
 const MONTHS = { JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5, JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11 };
 const MAX_FILINGS_TO_SCAN = 5; // a year's worth of quarters, plus one revision
 
-async function fetchJson(url) {
+export async function fetchJson(url) {
   const res = await fetch(url, { headers: { "User-Agent": UA, Accept: "application/json" } });
   if (!res.ok) throw new Error(`NSE API ${url} -> HTTP ${res.status}`);
   return res.json();
 }
 
-async function fetchXbrl(url) {
+export async function fetchXbrl(url) {
   const res = await fetch(url, { headers: { "User-Agent": UA } });
   if (!res.ok) throw new Error(`XBRL fetch ${url} -> HTTP ${res.status}`);
   return res.text();
 }
 
-function parseQeDate(s) {
-  // "31-MAR-2026" -> Date
-  const [d, m, y] = String(s).split("-");
-  return new Date(Date.UTC(Number(y), MONTHS[m?.toUpperCase()], Number(d)));
+// "31-MAR-2026", "31-Mar-2024", or a timestamp like "12-Apr-2024 21:04" -> Date (UTC midnight)
+export function parseQeDate(s) {
+  const m = String(s || "").match(/(\d{1,2})-([A-Za-z]{3})-(\d{4})/);
+  if (!m || MONTHS[m[2].toUpperCase()] == null) return null;
+  return new Date(Date.UTC(Number(m[3]), MONTHS[m[2].toUpperCase()], Number(m[1])));
 }
 
-function parseContexts(xml) {
+export function parseContexts(xml) {
   const out = {};
   for (const m of xml.matchAll(/<xbrli:context id="([^"]+)">([\s\S]*?)<\/xbrli:context>/g)) {
     const body = m[2];
@@ -50,20 +51,20 @@ function parseContexts(xml) {
 // appears once for the quarter, once year-to-date, once for the prior year.
 // Resolve by the context's actual dates, not its id ("OneD"/"FourD"), since
 // ids are filer-generated and "FourD" means 9 months in a Q3 filing.
-function facts(xml, contexts, tag) {
+export function facts(xml, contexts, tag) {
   const re = new RegExp(`<[a-z-]+:${tag}\\b[^>]*?contextRef="([^"]+)"[^>]*>([^<]*)<`, "g");
   const out = [];
   for (const m of xml.matchAll(re)) {
     const ctx = contexts[m[1]];
     if (!ctx || ctx.dimensional) continue;
-    out.push({ ...ctx, value: Number(m[2]) });
+    out.push({ ...ctx, id: m[1], value: Number(m[2]) });
   }
   return out;
 }
 
 // Banks file on a different template (INTEGRATED_FILING_BANKING) with its own
 // tag names for the same concepts — first candidate with any facts wins.
-const TAGS = {
+export const TAGS = {
   revenue: ["RevenueFromOperations", "Income", "TotalIncome"],
   profit: ["ProfitLossForPeriod", "ProfitLossForThePeriod"],
   eps: [
@@ -74,7 +75,7 @@ const TAGS = {
   totalAssets: ["EquityAndLiabilities", "CapitalAndLiabilities"],
 };
 
-function firstFacts(xml, contexts, tags) {
+export function firstFacts(xml, contexts, tags) {
   for (const tag of tags) {
     const found = facts(xml, contexts, tag);
     if (found.length) return found;
@@ -111,7 +112,7 @@ function instantFact(list) {
   return instants.at(-1) ?? null;
 }
 
-async function integratedFilings(symbol) {
+export async function integratedFilings(symbol) {
   const json = await fetchJson(
     `${NSE_BASE}/api/integrated-filing-results?symbol=${encodeURIComponent(symbol)}&type=Integrated%20Filing-%20Financials&page=1&size=50`
   );
