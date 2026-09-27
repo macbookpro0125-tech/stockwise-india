@@ -66,16 +66,18 @@ export async function fetchShareholding(symbol) {
       ? (share.InstitutionsForeignPortfolioInvestorCategoryOneMember ?? 0) + (share.InstitutionsForeignPortfolioInvestorCategoryTwoMember ?? 0) + (share.OtherInstitutionsForeignMember ?? 0)
       : null);
 
-  // A filing with no institutional category at all (common for small
-  // companies — 279 of them) has no FII or DII holders: 0, not unknown.
-  const anyInstitutions = Object.keys(share).some(k => k.startsWith("Institutions"));
+  // A filing only lists the categories that have holders: one that parsed
+  // but has no foreign (or domestic) institutions category has none — 0, not
+  // unknown. Seen on ~400 small companies, some with domestic institutions
+  // and no foreign ones.
+  const parsed = Object.keys(share).length > 0;
   return {
     ...base,
     source: "xbrl",
     totalShares,
     promoterPct: pct(share.ShareholdingOfPromoterAndPromoterGroupMember) ?? base.promoterPct,
-    fiiPct: pct(fii) ?? (anyInstitutions ? null : 0),
-    diiPct: pct(share.InstitutionsDomesticMember) ?? (anyInstitutions ? null : 0),
+    fiiPct: pct(fii) ?? (parsed ? 0 : null),
+    diiPct: pct(share.InstitutionsDomesticMember) ?? (parsed ? 0 : null),
     publicPct: pct(share.PublicShareholdingMember),
     // As a % of the promoters' own holding — the same measure as Screener's
     // "Pledged percentage". No pledge filed means none pledged.

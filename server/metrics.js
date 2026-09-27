@@ -129,8 +129,11 @@ export function computeMetrics(stock, snap, overrides = {}) {
     ? (last3.reduce((s, y) => s + y.ocf, 0) / last3.reduce((s, y) => s + y.profit, 0)) * 100
     : null;
 
-  // Free cash flow: last year's operating cash flow less capital spending
-  const fcf = latest.ocf != null && latest.capex != null ? latest.ocf - latest.capex : null;
+  // Free cash flow: last year's operating cash flow less capital spending.
+  // Not for lenders: their operating cash flow is deposits and loans moving
+  // (HDFC Bank's reads Rs 1.1 lakh Cr) — the original's score skips cash
+  // checks for them for the same reason.
+  const fcf = !lender && latest.ocf != null && latest.capex != null ? latest.ocf - latest.capex : null;
   const piotroski = piotroskiScore(latest, yearBack(latest, 1), { lender, template: stock.template, factorBetween: (a, b) => splits.filter(s => s.exDate > a && s.exDate <= b).reduce((f, s) => f * s.ratio, 1), filedOf });
 
   // Graham NCAV = current assets − total liabilities (= total assets − equity)

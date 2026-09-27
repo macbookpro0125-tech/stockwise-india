@@ -102,7 +102,7 @@ function ScoreCard({ m }) {
         ))}
       </div>
       <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 10, lineHeight: 1.5 }}>
-        The same ten checks as Stockwise. Fair-value checks use the default valuation below, not any P/E you type in.
+        The same ten checks as Stockwise. Fair-value checks use the default valuation above, not any P/E you type in.
       </div>
     </div>
   );
@@ -228,7 +228,7 @@ export default function StockDetail({ symbol, onBack }) {
     stat("Dividend yield", fmtPct(m.divYield, 2)),
     stat("Payout", fmtPct(m.payoutPct, 0)),
     stat("Cash flow / profit (3Y)", fmtPct(m.ocfPat3yPct, 0)),
-    stat("Free cash flow (last year)", fmtCrValue(m.fcfCr)),
+    stat("Free cash flow (last year)", fmtCrValue(m.fcfCr), m.lender ? "not meaningful for lenders" : null),
     stat("Piotroski score", m.piotroski != null ? `${m.piotroski}/9` : "—", m.piotroski == null && m.lender ? "not scored for lenders" : null),
     stat("Promoter holding", fmtPct(m.promoterPct)),
     stat("FII holding", fmtPct(m.fiiPct)),
