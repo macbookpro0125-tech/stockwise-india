@@ -7,7 +7,8 @@
   "scripts": {
     "fetch": "node server/fetch-nse.js",
     "fetch:market": "node server/fetch-market.js",
-    "screen": "node server/screen.js",
+    "fetch:holdings": "node server/fetch-market.js --holdings",
+    "snapshot": "node server/build-snapshot.js",
     "api": "node server/http-server.js",
     "dev": "vite",
     "build": "vite build",

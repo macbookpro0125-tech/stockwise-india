@@ -7,7 +7,8 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const DB_PATH = join(__dirname, "..", "data", "app.db");
+const DB_PATH = join(__dirname, "..", "data", "test.db");
+process.env.STOCKWISE_DB = DB_PATH; // never the real app.db — see db.js
 if (existsSync(DB_PATH)) unlinkSync(DB_PATH);
 
 const { createApp } = await import("./http-server.js");
@@ -39,6 +40,12 @@ async function main() {
 
   const noCookieRes = await fetch(`${BASE}/api/alerts`);
   assert(noCookieRes.status === 401, "GET /api/alerts with no cookie is rejected");
+
+  const presets = await (await fetch(`${BASE}/api/presets`)).json();
+  assert(Array.isArray(presets) && presets.length === 13 && presets.every(p => p.criteria), "GET /api/presets returns the 13 strategies with their criteria");
+
+  const screenNoCookie = await fetch(`${BASE}/api/screen`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+  assert(screenNoCookie.status === 401, "POST /api/screen with no cookie is rejected");
 
   const emptyRes = await fetch(`${BASE}/api/alerts`, { headers: { Cookie: aliceCookie } });
   const empty = await emptyRes.json();

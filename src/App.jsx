@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { api } from "./api.js";
 import AuthForm from "./AuthForm.jsx";
 import Header from "./Header.jsx";
@@ -13,7 +13,18 @@ export default function App() {
   // (e.g. retrying after an error) must re-fetch, and an unchanged string
   // wouldn't re-render at all.
   const [open, setOpen] = useState(null);
-  const openSymbol = (symbol) => setOpen({ symbol, at: Date.now() });
+  // Where the Discover list was scrolled to, so Back lands on the same row
+  const discoverScroll = useRef(0);
+
+  const openSymbol = (symbol) => {
+    if (!open) discoverScroll.current = window.scrollY;
+    setOpen({ symbol, at: Date.now() });
+    window.scrollTo(0, 0);
+  };
+  const closeStock = () => {
+    setOpen(null);
+    requestAnimationFrame(() => window.scrollTo(0, discoverScroll.current));
+  };
 
   useEffect(() => {
     api.me().then(d => setUserId(d.userId)).catch(() => setUserId(null));
@@ -24,14 +35,16 @@ export default function App() {
   if (userId === null) return <AuthForm onAuthed={setUserId} />;
 
   const logout = () => api.logout().then(() => setUserId(null));
-  const goTab = (t) => { setOpen(null); setTab(t); };
+  const goTab = (t) => { setOpen(null); setTab(t); window.scrollTo(0, 0); };
 
   return (
     <div>
       <Header tab={open ? null : tab} onTab={goTab} onLogout={logout} onSearch={openSymbol} />
-      {open
-        ? <StockDetail key={open.at} symbol={open.symbol} onBack={() => setOpen(null)} />
-        : tab === "discover" ? <DiscoverView onOpenStock={openSymbol} /> : <AlertsView />}
+      {open && <StockDetail key={open.at} symbol={open.symbol} onBack={closeStock} />}
+      {/* Kept mounted (hidden) while a stock is open, so its filters and
+          results are still there on Back. */}
+      {tab === "discover" && <div hidden={!!open}><DiscoverView onOpenStock={openSymbol} /></div>}
+      {tab === "alerts" && !open && <AlertsView />}
     </div>
   );
 }

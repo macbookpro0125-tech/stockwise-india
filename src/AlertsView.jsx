@@ -43,7 +43,7 @@ export default function AlertsView() {
           <option value="above">Rises to</option>
         </select>
         <input type="number" placeholder="Price" value={threshold} onChange={e => setThreshold(e.target.value)} required style={{ width: 110 }} />
-        <button type="submit" className="btn-primary">Add</button>
+        <button type="submit" className="btn-primary" style={{ height: 40 }}>Add</button>
       </form>
       {error && (
         <div style={{ fontSize: 12, color: "var(--red)", background: "var(--red-dim)", border: "1px solid var(--red-bdr)", borderRadius: 8, padding: "8px 12px", marginBottom: 20 }}>
@@ -69,7 +69,7 @@ export default function AlertsView() {
                   {a.condition === "below" ? "drops to" : "rises to"} ₹{a.threshold}
                 </span>
               </div>
-              <button className="btn-ghost" onClick={() => remove(a.id)}>Remove</button>
+              <button className="btn-ghost" onClick={() => remove(a.id)} style={{ height: 32, fontSize: 12 }}>Remove</button>
             </div>
           ))}
         </div>

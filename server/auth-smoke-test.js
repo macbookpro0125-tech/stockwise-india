@@ -7,7 +7,8 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const DB_PATH = join(__dirname, "..", "data", "app.db");
+const DB_PATH = join(__dirname, "..", "data", "test.db");
+process.env.STOCKWISE_DB = DB_PATH; // never the real app.db — see db.js
 if (existsSync(DB_PATH)) unlinkSync(DB_PATH); // fresh DB each run
 
 const { signup, login, verifySession } = await import("./auth.js");

@@ -9,7 +9,9 @@ import { fileURLToPath } from "node:url";
 import { mkdirSync } from "node:fs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const DB_PATH = join(__dirname, "..", "data", "app.db");
+// STOCKWISE_DB points the smoke tests at a file of their own — they start
+// from an empty database each run and must never wipe the real accounts.
+const DB_PATH = process.env.STOCKWISE_DB ?? join(__dirname, "..", "data", "app.db");
 mkdirSync(dirname(DB_PATH), { recursive: true });
 
 export const db = new DatabaseSync(DB_PATH);

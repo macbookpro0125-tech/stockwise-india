@@ -1,22 +1,37 @@
+/* The original Stockwise design system (stock-screener/src/index.css), dark
+   theme — same tokens and component classes, so the ported screens look the
+   same. Additions for this app are marked. */
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
+  /* ── Depth layers ── */
   --bg:    #080810;
   --s1:    #0E0E1A;
   --s2:    #141424;
   --s3:    #1A1A2E;
   --s4:    #222238;
+  --s5:    #2A2A44;
 
+  /* ── Accent ── */
   --accent:  #00E0BE;
+  --accent2: #00F5D0;
+  --accent3: #00BFA3;
+  --accent-glow: rgba(0,224,190,0.2);
   --brand-wise: #6FA0FF;
 
+  /* ── Text ── */
   --t1: #F4F4FF;
   --t2: #A8A8C0;
   --t3: #686885;
+  --t4: #26263A;
 
+  /* ── Borders ── */
   --bdr:   rgba(255,255,255,0.08);
   --bdr2:  rgba(255,255,255,0.14);
+  --bdr3:  rgba(255,255,255,0.22);
 
+  /* ── Status ── */
   --green:      #34D65C;
   --green-dim:  rgba(52,214,92,0.14);
   --green-bdr:  rgba(52,214,92,0.30);
@@ -27,26 +42,61 @@
   --red-dim:    rgba(255,81,71,0.14);
   --red-bdr:    rgba(255,81,71,0.30);
 
-  --r-sm: 8px;
-  --r-md: 12px;
+  /* ── Shadows ── */
+  --sh-xs: 0 1px 2px rgba(0,0,0,0.4);
+  --sh-sm: 0 2px 8px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
+  --sh-md: 0 4px 20px rgba(0,0,0,0.5), 0 1px 4px rgba(0,0,0,0.3);
+  --sh-lg: 0 12px 48px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.3);
+
+  /* ── Radius ── */
+  --r-xs:   6px;
+  --r-sm:   8px;
+  --r-md:   12px;
+  --r-lg:   16px;
+  --r-xl:   20px;
   --r-pill: 999px;
+
+  /* ── Motion ── */
+  --ease:     cubic-bezier(0.25, 0, 0, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --fast:     100ms;
+  --med:      180ms;
+  --slow:     280ms;
+
   color-scheme: dark;
 }
 
-* { box-sizing: border-box; }
+/* ── Base ── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { font-size: 16px; }
 
 body {
   margin: 0;
   background: var(--bg);
   color: var(--t1);
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "Inter", Arial, sans-serif;
   font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+  font-feature-settings: "kern" 1, "liga" 1;
 }
 
-.mono { font-family: "SF Mono", "SFMono-Regular", Menlo, monospace; font-variant-numeric: tabular-nums; }
+#root { min-height: 100vh; }
 
-input, select {
-  height: 38px;
+::selection { background: rgba(0,224,190,0.2); color: var(--t1); }
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--s4); border-radius: var(--r-pill); }
+::-webkit-scrollbar-thumb:hover { background: var(--s5); }
+
+/* This app: plain text fields and selects in its own forms (sign-in, alerts,
+   header search). Zero specificity via :where(), so .input-base and the
+   ported components' inline styles always win. */
+:where(input:not([type=range], [type=checkbox]), select) {
+  height: 40px;
   padding: 0 12px;
   border-radius: var(--r-sm);
   border: 1px solid var(--bdr2);
@@ -56,35 +106,264 @@ input, select {
   font-family: inherit;
   outline: none;
 }
-input:focus, select:focus { border-color: var(--accent); }
+:where(input:not([type=range], [type=checkbox]), select):focus { border-color: var(--accent); }
 input::placeholder { color: var(--t3); }
+button { font-family: inherit; }
+table { border-collapse: collapse; width: 100%; }
 
-button {
-  height: 38px;
-  padding: 0 16px;
-  border-radius: var(--r-sm);
-  font-size: 13px;
-  font-weight: 600;
-  font-family: inherit;
+/* ── Range sliders ── */
+input[type=range] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 3px;
+  background: var(--s4);
+  border-radius: var(--r-pill);
   cursor: pointer;
-  border: 1px solid var(--bdr2);
-  background: var(--s2);
-  color: var(--t1);
-  transition: all 150ms;
+  outline: none;
+  border: none;
+  padding: 0;
 }
-button:disabled { opacity: 0.5; cursor: not-allowed; }
-button:hover:not(:disabled) { border-color: var(--bdr2); background: var(--s3); }
+
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.1);
+  cursor: pointer;
+  transition: transform var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+}
+
+input[type=range]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.6);
+  border: none;
+  cursor: pointer;
+}
+
+input[type=range]:hover::-webkit-slider-thumb {
+  transform: scale(1.15);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.6), 0 0 0 4px rgba(0,224,190,0.15);
+}
+
+input[type=range]:active::-webkit-slider-thumb {
+  transform: scale(1.05);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.5), 0 0 0 5px rgba(0,224,190,0.2);
+}
+
+/* This app: sliders for filters the data can't support yet */
+input[type=range]:disabled { cursor: not-allowed; opacity: 0.4; }
+
+/* ── Checkbox ── */
+input[type=checkbox] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 17px;
+  height: 17px;
+  border-radius: 5px;
+  border: 1.5px solid var(--bdr3);
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: all var(--fast) var(--ease);
+}
+
+input[type=checkbox]:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+input[type=checkbox]:checked::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1.5px;
+  width: 5px;
+  height: 9px;
+  border: 2px solid #07070E;
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg);
+}
+
+input[type=checkbox]:disabled { cursor: not-allowed; opacity: 0.4; }
+
+/* ── Focus rings ── */
+button:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ── Animations ── */
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.skeleton-pulse {
+  background: linear-gradient(90deg, var(--s2) 25%, var(--s3) 50%, var(--s2) 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+.fade-up { animation: fadeUp var(--slow) var(--ease-out) both; }
+
+/* ── Utility classes ── */
+.mono {
+  font-family: "SF Mono", "SFMono-Regular", "Menlo", "Monaco", "Consolas", monospace;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+.card {
+  background: var(--s2);
+  border: 1px solid var(--bdr2);
+  border-radius: var(--r-lg);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
 
 .btn-primary {
-  background: var(--accent);
-  color: #04120f;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 24px;
+  height: 44px;
+  border-radius: var(--r-md);
   border: none;
+  background: var(--accent);
+  color: #07070E;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: -0.01em;
+  transition: background var(--fast) var(--ease), transform var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+  box-shadow: 0 2px 12px rgba(0,224,190,0.25);
 }
-.btn-primary:hover:not(:disabled) { background: var(--accent); opacity: 0.9; }
+
+.btn-primary:hover { background: var(--accent2); box-shadow: 0 4px 20px rgba(0,224,190,0.35); }
+.btn-primary:active { transform: scale(0.98); }
+.btn-primary:disabled { background: var(--s4); color: var(--t3); cursor: not-allowed; box-shadow: none; }
 
 .btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 16px;
+  height: 38px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--bdr2);
   background: transparent;
   color: var(--t2);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--fast) var(--ease);
 }
 
-table { border-collapse: collapse; width: 100%; }
+.btn-ghost:hover { background: var(--s3); border-color: var(--bdr3); color: var(--t1); }
+.btn-ghost:active { transform: scale(0.98); }
+
+.input-base {
+  width: 100%;
+  height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--bdr2);
+  border-radius: var(--r-md);
+  background: var(--s1);
+  color: var(--t1);
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+}
+
+.input-base:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0,224,190,0.12);
+}
+
+.input-base::placeholder { color: var(--t3); }
+
+/* ── Status badges ── */
+.badge-green  { background: var(--green-dim);  color: var(--green);  border: 1px solid var(--green-bdr); }
+.badge-yellow { background: var(--yellow-dim); color: var(--yellow); border: 1px solid var(--yellow-bdr); }
+.badge-red    { background: var(--red-dim);    color: var(--red);    border: 1px solid var(--red-bdr); }
+.badge-accent { background: rgba(0,224,190,0.1); color: var(--accent); border: 1px solid rgba(0,224,190,0.25); }
+
+/* ── Table base ── */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.data-table th {
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--t3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--bdr2);
+  background: var(--s1);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.data-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--bdr);
+  vertical-align: middle;
+}
+
+.data-table tr:last-child td { border-bottom: none; }
+
+/* ── Stock page grids (the original's StockScreener layout) ── */
+.ss-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.ss-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.ss-pros-cons-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+@media (max-width: 640px) {
+  .ss-grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .ss-grid-3 { grid-template-columns: repeat(2, 1fr); }
+  .ss-pros-cons-grid { grid-template-columns: 1fr !important; }
+}
+
+@media (max-width: 420px) {
+  .ss-grid-4, .ss-grid-3 { grid-template-columns: 1fr; }
+}
+
+/* iOS Safari zooms the page in whenever a field under 16px takes focus and
+   doesn't zoom back out. Raised to 16px on small screens only; !important
+   because the ported components set sizes inline. */
+@media (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}

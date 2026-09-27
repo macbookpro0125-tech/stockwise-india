@@ -7,12 +7,14 @@
 import { createServer } from "node:http";
 import { signup, login, logout, verifySession } from "./auth.js";
 import { listAlerts, createAlert, deleteAlert } from "./user-alerts.js";
-import { loadMarket, screen, getStock, saveStock, countFetched } from "./screen.js";
+import { screen, getStock, saveStock } from "./screen.js";
 import { fetchCmp } from "./quote.js";
-import { calculateLevels, getAction } from "./levels.js";
-import { fetchStockSummary } from "./fetch-nse.js";
+import { fetchStockSummary, SCHEMA } from "./fetch-nse.js";
 import { fetchEquityList } from "./equity-list.js";
-import { fetchPeHistory } from "./pe-history.js";
+import { computeMetrics } from "./metrics.js";
+import { loadMarketSnapshot, clearSnapshotCache, buildMarketSnapshot } from "./market-data.js";
+import { fiscalYearEnds } from "./build-snapshot.js";
+import { PRESETS } from "./presets.js";
 
 let equityListPromise = null;
 async function equityInfo(symbol) {
@@ -21,8 +23,18 @@ async function equityInfo(symbol) {
   return list.find(s => s.symbol === symbol) ?? null;
 }
 
-const DEFAULT_GROWTH_PCT = 12;
-const DEFAULT_MOS_PCT = 10;
+// Prices move daily; rebuild the snapshot in the background when it's older
+// than this, and keep serving the previous one meanwhile.
+const SNAPSHOT_MAX_AGE_MS = 12 * 60 * 60 * 1000;
+let snapshotRebuild = null;
+function refreshSnapshotIfStale() {
+  const snap = loadMarketSnapshot();
+  if (snapshotRebuild || (snap && Date.now() - new Date(snap.builtAt).getTime() < SNAPSHOT_MAX_AGE_MS)) return;
+  snapshotRebuild = buildMarketSnapshot(fiscalYearEnds())
+    .then(() => clearSnapshotCache())
+    .catch(e => console.error(`[snapshot] rebuild failed: ${e.message}`))
+    .finally(() => { snapshotRebuild = null; });
+}
 
 const COOKIE_NAME = "stockwise_session";
 const SESSION_MAX_AGE_S = 30 * 24 * 60 * 60; // matches auth.js's SESSION_TTL_MS
@@ -109,30 +121,8 @@ export function createApp() {
         return;
       }
 
-      // Separate from /api/stock/:symbol so the detail page renders in ~1s
-      // and this (5 filings + 10y of prices, first view only) fills in after.
-      const peMatch = url.pathname.match(/^\/api\/stock\/([^/]+)\/pe-history$/);
-      if (peMatch && req.method === "GET") {
-        const userId = requireAuth(req, res);
-        if (userId == null) return;
-        const symbol = decodeURIComponent(peMatch[1]).toUpperCase();
-        const stock = getStock(symbol);
-        if (!stock?.annual?.yearEnded) {
-          sendJson(res, 404, { error: `${symbol}'s current financials aren't loaded yet` });
-          return;
-        }
-        const yearEnded = String(stock.annual.yearEnded).toUpperCase();
-        if (stock.peHistory?.forYearEnded === yearEnded) {
-          sendJson(res, 200, stock.peHistory);
-          return;
-        }
-        try {
-          const peHistory = await fetchPeHistory(symbol, yearEnded);
-          saveStock(symbol, { ...stock, peHistory });
-          sendJson(res, 200, peHistory);
-        } catch (e) {
-          sendJson(res, 502, { error: `Couldn't work out ${symbol}'s P/E history: ${e.message}` });
-        }
+      if (url.pathname === "/api/presets" && req.method === "GET") {
+        sendJson(res, 200, PRESETS);
         return;
       }
 
@@ -141,8 +131,8 @@ export function createApp() {
         if (userId == null) return;
         const symbol = decodeURIComponent(url.pathname.split("/").pop()).toUpperCase();
         let fundamentals = getStock(symbol);
-        if (!fundamentals) {
-          // Not cached by the background market fetch yet — fetch it live so
+        if (!fundamentals || fundamentals.schema !== SCHEMA) {
+          // Not fetched yet (or fetched in an older shape) — fetch it live so
           // search works for any NSE symbol right away, then cache it.
           // undefined = NSE's list couldn't be downloaded (transient — seen
           // live), null = the list loaded and the symbol isn't on it. Only
@@ -154,7 +144,7 @@ export function createApp() {
             return;
           }
           try {
-            fundamentals = { ...(await fetchStockSummary(symbol)), name: info?.name ?? symbol, isin: info?.isin ?? null };
+            fundamentals = { ...(await fetchStockSummary(symbol)), name: info?.name ?? symbol, isin: info?.isin ?? null, fetchedAt: new Date().toISOString() };
             saveStock(symbol, fundamentals);
           } catch (e) {
             sendJson(res, 502, { error: `Couldn't read ${info?.name ?? symbol}'s financials from NSE: ${e.message}` });
@@ -162,44 +152,35 @@ export function createApp() {
           }
         }
 
+        // Live price (fresher than the daily snapshot) — the metrics are the
+        // same function the Discover table uses, just with this price.
         let quote = null, quoteError = null;
         try {
           quote = await fetchCmp(symbol);
         } catch (e) {
           quoteError = e.message;
         }
-
-        // Last audited full-year EPS, the same basis as the original app's
-        // "EPS FY25" — a reported figure, not a quarter scaled up.
-        const eps = fundamentals.annual?.eps ?? null;
-        const pe = quote && eps > 0 ? quote.cmp / eps : null;
-        const levels = pe ? calculateLevels(eps, pe, DEFAULT_GROWTH_PCT, DEFAULT_MOS_PCT) : null;
-        const action = quote && levels ? getAction(quote.cmp, levels) : null;
+        refreshSnapshotIfStale();
+        const metrics = computeMetrics(fundamentals, loadMarketSnapshot(), quote ? { cmp: quote.cmp, cmpDate: quote.asOf } : {});
 
         sendJson(res, 200, {
-          ...fundamentals,
-          eps,
-          epsBasis: `audited full year ended ${fundamentals.annual?.yearEnded}`,
-          quote, quoteError, pe, levels, action,
-          growthPctUsed: DEFAULT_GROWTH_PCT, mosPctUsed: DEFAULT_MOS_PCT,
+          symbol: fundamentals.symbol,
+          name: fundamentals.name,
+          template: fundamentals.template,
+          pnl: fundamentals.pnl,
+          annual: fundamentals.annual,
+          balanceSheet: fundamentals.balanceSheet,
+          holding: fundamentals.holding,
+          quote, quoteError, metrics,
         });
         return;
       }
 
-      if (url.pathname === "/api/screen" && req.method === "GET") {
+      if (url.pathname === "/api/screen" && req.method === "POST") {
         const userId = requireAuth(req, res);
         if (userId == null) return;
-        const q = url.searchParams;
-        const criteria = {
-          minRoe: q.has("minRoe") ? Number(q.get("minRoe")) : 15,
-          maxDebtToEquity: q.has("maxDebtToEquity") ? Number(q.get("maxDebtToEquity")) : 0.5,
-          minPromoterPct: q.has("minPromoterPct") ? Number(q.get("minPromoterPct")) : 0,
-        };
-        const all = loadMarket();
-        const matches = screen(all, criteria).sort((a, b) => b.roe - a.roe);
-        equityListPromise ??= fetchEquityList().catch(e => { equityListPromise = null; throw e; });
-        const listed = (await equityListPromise.catch(() => null))?.length ?? null;
-        sendJson(res, 200, { total: all.length, fetched: countFetched(), listed, matched: matches.length, criteria, results: matches.slice(0, 100) });
+        refreshSnapshotIfStale();
+        sendJson(res, 200, screen(await readJsonBody(req)));
         return;
       }
 
@@ -238,4 +219,5 @@ export function createApp() {
 if (import.meta.url === `file://${process.argv[1]}`) {
   const port = Number(process.env.PORT) || 8787;
   createApp().listen(port, () => console.log(`stockwise-india API on http://localhost:${port}`));
+  refreshSnapshotIfStale();
 }

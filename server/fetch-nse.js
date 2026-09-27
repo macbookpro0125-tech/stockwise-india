@@ -7,6 +7,8 @@
 // ~20-month-old earnings for every company, priced against today's CMP.
 // Same XBRL tag names in both; only the namespace prefix changed
 // (in-bse-fin -> in-capmkt), so tags are matched namespace-agnostically.
+import { fetchShareholding } from "./fetch-shareholding.js";
+
 export const NSE_BASE = "https://www.nseindia.com";
 export const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36";
 const MONTHS = { JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5, JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11 };
@@ -62,8 +64,15 @@ export function facts(xml, contexts, tag) {
   return out;
 }
 
-// Banks file on a different template (INTEGRATED_FILING_BANKING) with its own
-// tag names for the same concepts — first candidate with any facts wins.
+
+// Bump when the stored shape changes — fetch-market.js re-fetches any file on
+// an older schema instead of treating it as done.
+export const SCHEMA = 2;
+const YEARS = 6; // 5-year growth needs six year-ends
+const DOWNLOAD_CONCURRENCY = 3;
+
+// Banks and NBFCs file on different templates with their own tag names for the
+// same concepts — the first candidate with any facts wins.
 export const TAGS = {
   revenue: ["RevenueFromOperations", "Income", "TotalIncome"],
   profit: ["ProfitLossForPeriod", "ProfitLossForThePeriod"],
@@ -72,7 +81,16 @@ export const TAGS = {
     "BasicEarningsPerShareBeforeExtraordinaryItems",
     "BasicEarningsLossPerShareFromContinuingOperations",
   ],
+  expenses: ["Expenses"],
+  financeCosts: ["FinanceCosts"],
+  depreciation: ["DepreciationDepletionAndAmortisationExpense"],
+  otherIncome: ["OtherIncome"],
+  pbt: ["ProfitBeforeTax", "ProfitLossFromOrdinaryActivitiesBeforeTax"],
+  ocf: ["CashFlowsFromUsedInOperatingActivities"],
   totalAssets: ["EquityAndLiabilities", "CapitalAndLiabilities"],
+  currentAssets: ["CurrentAssets"],
+  paidUp: ["PaidUpValueOfEquityShareCapital"],
+  faceValue: ["FaceValueOfEquityShareCapital"],
 };
 
 export function firstFacts(xml, contexts, tags) {
@@ -83,20 +101,125 @@ export function firstFacts(xml, contexts, tags) {
   return [];
 }
 
-function netWorthFact(xml, ctx) {
-  const equity = instantFact(facts(xml, ctx, "Equity"));
-  if (equity) return equity.value;
-  // Bank template: no single Equity line — capital plus reserves
-  const capital = instantFact(facts(xml, ctx, "Capital"));
-  const reserves = instantFact(facts(xml, ctx, "ReservesAndSurplus"));
-  return capital && reserves ? capital.value + reserves.value : null;
+function valueById(xml, tags, contextId) {
+  for (const tag of tags) {
+    const m = xml.match(new RegExp(`<[a-z-]+:${tag}\\b[^>]*?contextRef="${contextId}"[^>]*>([^<]*)<`));
+    if (m) return Number(m[1]);
+  }
+  return null;
 }
 
-function totalDebtFact(xml, ctx) {
-  const current = instantFact(facts(xml, ctx, "BorrowingsCurrent"));
-  const noncurrent = instantFact(facts(xml, ctx, "BorrowingsNoncurrent"));
-  if (current || noncurrent) return (current?.value ?? 0) + (noncurrent?.value ?? 0);
-  return instantFact(facts(xml, ctx, "Borrowings"))?.value ?? 0;
+function isoDay(d) {
+  return d.toISOString().slice(0, 10);
+}
+
+export function templateOf(xbrlUrl) {
+  const file = String(xbrlUrl).split("/").pop().toUpperCase();
+  if (file.includes("BANKING")) return "BANKING";
+  if (file.includes("NBFC")) return "NBFC";
+  if (file.includes("INSURANCE")) return "INSURANCE";
+  return "INDAS";
+}
+
+// One interface over both filing formats. Integrated filings date their XBRL
+// contexts correctly, so periods are resolved by date. The legacy utility
+// always uses fixed ids ("FourD" = year to date, "OneI" = balance sheet) but
+// its dates can't be trusted: FY24 files write the quarter's start date on
+// "FourD", and FY22-era files reference contexts they never define. So legacy
+// files are read by id, with the end-date check kept where the context exists
+// and a sanity check that the "year" column's revenue really is a year's.
+function reader(xml, row) {
+  const ctx = parseContexts(xml);
+  const end = isoDay(row.periodEnd);
+  if (row.legacy) {
+    const revYear = valueById(xml, TAGS.revenue, "FourD");
+    const revQuarter = valueById(xml, TAGS.revenue, "OneD");
+    const yearOk = (!ctx.FourD?.end || ctx.FourD.end === end) &&
+      !(revYear != null && revQuarter != null && !(revYear > 1.5 * revQuarter));
+    const instantOk = !ctx.OneI?.instant || ctx.OneI.instant === end;
+    return {
+      year: tags => (yearOk ? valueById(xml, tags, "FourD") : null),
+      atEnd: tags => (instantOk ? valueById(xml, tags, "OneI") : null),
+      any: tags => valueById(xml, tags, "FourD") ?? valueById(xml, tags, "OneD"),
+    };
+  }
+  return {
+    year: tags => firstFacts(xml, ctx, tags)
+      .filter(f => f.end === end && f.days >= 350)
+      .sort((a, b) => b.days - a.days)[0]?.value ?? null,
+    atEnd: tags => firstFacts(xml, ctx, tags).find(f => f.instant === end)?.value ?? null,
+    any: tags => firstFacts(xml, ctx, tags).find(f => f.end === end)?.value ?? null,
+  };
+}
+
+function sumKnown(...values) {
+  const known = values.filter(v => v != null);
+  return known.length ? known.reduce((a, b) => a + b, 0) : null;
+}
+
+function equityOf(r) {
+  const equity = r.atEnd(["Equity"]);
+  if (equity != null) return equity;
+  // Bank template: no single Equity line — capital plus reserves
+  const capital = r.atEnd(["Capital"]);
+  const reserves = r.atEnd(["ReservesAndSurplus"]);
+  return capital != null && reserves != null ? capital + reserves : null;
+}
+
+// Lenders spread debt over several lines. Counting only "Borrowings" (the old
+// code) put Bajaj Finance at 1.46x debt/equity when its filing shows 3.72x —
+// debt securities, deposits and subordinated debt are all debt. Bank deposits
+// count too, which is why banks run 5–10x (the original app's own hint).
+// null = unknown, never a guessed 0: Bajaj Finance's FY23 filing tags only
+// total liabilities, and reading that as "no debt" made an NBFC debt-free.
+function debtOf(r, template) {
+  if (template === "BANKING") return sumKnown(r.atEnd(["Borrowings"]), r.atEnd(["Deposits"]));
+  if (template === "NBFC") {
+    return sumKnown(r.atEnd(["DebtSecurities"]), r.atEnd(["Borrowings"]), r.atEnd(["Deposits"]), r.atEnd(["SubordinatedLiabilities"]));
+  }
+  const current = r.atEnd(["BorrowingsCurrent"]);
+  const noncurrent = r.atEnd(["BorrowingsNoncurrent"]);
+  if (current != null || noncurrent != null) return (current ?? 0) + (noncurrent ?? 0);
+  const borrowings = r.atEnd(["Borrowings"]);
+  if (borrowings != null) return borrowings;
+  // No borrowing line at all means debt-free only when the balance sheet is
+  // itemised; an aggregates-only filing just doesn't say.
+  const itemised = r.atEnd(["CurrentLiabilities"]) != null || r.atEnd(["NoncurrentLiabilities"]) != null;
+  return itemised ? 0 : null;
+}
+
+// `template` is the company's, taken from its latest filing: older legacy
+// files don't reliably name the template (Bajaj Finance's FY23 file reads as
+// an ordinary company, which put its debt at 0), and a company's business type
+// doesn't change year to year.
+function extractYear(xml, row, template = templateOf(row.xbrl)) {
+  const r = reader(xml, row);
+  const equity = equityOf(r);
+  return {
+    fyEnd: isoDay(row.periodEnd),
+    label: row.label,
+    scope: row.scope,
+    source: row.legacy ? "legacy" : "integrated",
+    filed: row.filed ? isoDay(row.filed) : null,
+    template,
+    revenue: r.year(TAGS.revenue),
+    profit: r.year(TAGS.profit),
+    eps: r.year(TAGS.eps),
+    expenses: r.year(TAGS.expenses),
+    financeCosts: r.year(TAGS.financeCosts),
+    depreciation: r.year(TAGS.depreciation),
+    otherIncome: r.year(TAGS.otherIncome),
+    pbt: r.year(TAGS.pbt),
+    ocf: r.year(TAGS.ocf),
+    // FY22-era legacy filings carry no balance sheet: equity is null there, and
+    // debt must be null too rather than a "0" that reads as debt-free.
+    equity,
+    debt: equity == null ? null : debtOf(r, template),
+    totalAssets: r.atEnd(TAGS.totalAssets),
+    currentAssets: r.atEnd(TAGS.currentAssets),
+    paidUp: r.any(TAGS.paidUp),
+    faceValue: r.any(TAGS.faceValue),
+  };
 }
 
 function durationFact(list, pick) {
@@ -105,11 +228,6 @@ function durationFact(list, pick) {
   const latestEnd = current.map(f => f.end).sort().at(-1); // drop prior-year comparatives
   const sameEnd = current.filter(f => f.end === latestEnd).sort((a, b) => a.days - b.days);
   return pick === "shortest" ? sameEnd[0] : sameEnd.at(-1);
-}
-
-function instantFact(list) {
-  const instants = list.filter(f => f.instant).sort((a, b) => a.instant.localeCompare(b.instant));
-  return instants.at(-1) ?? null;
 }
 
 export async function integratedFilings(symbol) {
@@ -136,62 +254,104 @@ export async function integratedFilings(symbol) {
   );
 }
 
-function onePerPeriod(filings) {
-  const seen = new Set();
-  return filings.filter(f => (seen.has(f.qe_Date) ? false : seen.add(f.qe_Date)));
+function integratedRow(r) {
+  return {
+    periodEnd: parseQeDate(r.qe_Date),
+    label: String(r.qe_Date).toUpperCase(),
+    scope: r.consolidated,
+    xbrl: r.xbrl,
+    filed: parseQeDate(r.creation_Date || r.broadcast_Date),
+    legacy: false,
+  };
+}
+
+// The pre-2025 endpoint: frozen at Q3 FY25, but it holds every earlier
+// year-end, which is where 3- and 5-year history comes from.
+async function legacyAnnualRows(symbol) {
+  const rows = await fetchJson(
+    `${NSE_BASE}/api/corporates-financial-results?index=equities&period=Annual&symbol=${encodeURIComponent(symbol)}`
+  ).catch(() => []);
+  return (Array.isArray(rows) ? rows : []).filter(r => r.xbrl && /\.xml$/i.test(r.xbrl)).map(r => ({
+    periodEnd: parseQeDate(r.toDate),
+    label: String(r.toDate).toUpperCase(),
+    scope: r.consolidated === "Consolidated" ? "Consolidated" : "Standalone",
+    xbrl: r.xbrl,
+    filed: parseQeDate(r.filingDate || r.broadCastDate),
+    legacy: true,
+  })).filter(r => r.periodEnd);
+}
+
+async function mapLimit(items, limit, fn) {
+  const out = new Array(items.length);
+  let next = 0;
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (next < items.length) {
+      const i = next++;
+      out[i] = await fn(items[i], i);
+    }
+  }));
+  return out;
 }
 
 async function fetchFinancials(symbol) {
-  const filings = onePerPeriod(await integratedFilings(symbol));
-  if (!filings.length) throw new Error(`No Integrated Filing financials for ${symbol}`);
+  const integrated = await integratedFilings(symbol);
+  const seen = new Set();
+  const periods = integrated.filter(f => (seen.has(f.qe_Date) ? false : seen.add(f.qe_Date)));
+  if (!periods.length) throw new Error(`No Integrated Filing financials for ${symbol}`);
 
+  // Walk back from the newest filing to the fiscal year-end one — found by a
+  // year-to-date period of a full year, not by assuming a March year-end
+  // (P&G Hygiene and Gillette close their year in June).
   let quarter = null;
-  let annual = null;
-  for (const filing of filings.slice(0, MAX_FILINGS_TO_SCAN)) {
+  let latestYear = null;
+  let latestRow = null;
+  for (const filing of periods.slice(0, MAX_FILINGS_TO_SCAN)) {
     const xml = await fetchXbrl(filing.xbrl);
     const ctx = parseContexts(xml);
-    const revenue = firstFacts(xml, ctx, TAGS.revenue);
     const profit = firstFacts(xml, ctx, TAGS.profit);
-    const eps = firstFacts(xml, ctx, TAGS.eps);
 
     if (!quarter) {
-      const q = durationFact(profit, "shortest");
       quarter = {
         periodEnded: filing.qe_Date,
         scope: filing.consolidated,
-        revenueQuarter: durationFact(revenue, "shortest")?.value ?? null,
-        profitQuarter: q?.value ?? null,
-        epsQuarter: durationFact(eps, "shortest")?.value ?? null,
+        revenueQuarter: durationFact(firstFacts(xml, ctx, TAGS.revenue), "shortest")?.value ?? null,
+        profitQuarter: durationFact(profit, "shortest")?.value ?? null,
+        epsQuarter: durationFact(firstFacts(xml, ctx, TAGS.eps), "shortest")?.value ?? null,
       };
     }
-
-    // The fiscal year-end filing is the one whose year-to-date period is a
-    // full year — found by its dates, not by assuming a March year-end
-    // (P&G Hygiene and Gillette close their year in June).
     const ytd = durationFact(profit, "longest");
     if (ytd && ytd.days >= 350) {
-      annual = {
-        yearEnded: filing.qe_Date,
-        scope: filing.consolidated,
-        revenue: durationFact(revenue, "longest")?.value ?? null,
-        profit: ytd.value,
-        eps: durationFact(eps, "longest")?.value ?? null,
-        netWorth: netWorthFact(xml, ctx),
-        totalAssets: instantFact(firstFacts(xml, ctx, TAGS.totalAssets))?.value ?? null,
-        totalDebt: totalDebtFact(xml, ctx),
-      };
+      latestRow = integratedRow(filing);
+      latestYear = extractYear(xml, latestRow);
       break;
     }
   }
-  if (!annual) throw new Error(`No full-year filing among ${symbol}'s recent Integrated Filings`);
-  return { quarter, annual };
-}
+  if (!latestYear) throw new Error(`No full-year filing among ${symbol}'s recent Integrated Filings`);
 
-async function fetchPromoterHolding(symbol) {
-  const rows = await fetchJson(`${NSE_BASE}/api/corporate-share-holdings-master?index=equities&symbol=${encodeURIComponent(symbol)}`);
-  if (!rows.length) throw new Error(`No shareholding filing for ${symbol}`);
-  const latest = rows[0];
-  return { asOf: latest.date, promoterPct: Number(latest.pr_and_prgrp) };
+  // Earlier year-ends from both systems, filtered to this company's fiscal
+  // year-end so a past change of year-end doesn't mix bases.
+  const monthDay = latestRow.label.split("-").slice(0, 2).join("-");
+  const candidates = [
+    ...integrated.map(integratedRow),
+    ...(await legacyAnnualRows(symbol)),
+  ].filter(r => r.periodEnd && r.periodEnd < latestRow.periodEnd && r.label.startsWith(monthDay));
+  candidates.sort((a, b) =>
+    b.periodEnd - a.periodEnd ||
+    (a.scope === "Consolidated" ? -1 : 1) - (b.scope === "Consolidated" ? -1 : 1) ||
+    (b.filed ?? 0) - (a.filed ?? 0)
+  );
+  const byYear = new Set();
+  const earlier = candidates.filter(r => !byYear.has(isoDay(r.periodEnd)) && byYear.add(isoDay(r.periodEnd))).slice(0, YEARS - 1);
+
+  const earlierYears = await mapLimit(earlier, DOWNLOAD_CONCURRENCY, async row => {
+    try {
+      return extractYear(await fetchXbrl(row.xbrl), row, latestYear.template);
+    } catch (e) {
+      return { fyEnd: isoDay(row.periodEnd), label: row.label, error: e.message };
+    }
+  });
+
+  return { quarter, years: [latestYear, ...earlierYears] };
 }
 
 // A distressed company can have negative net worth (accumulated losses
@@ -200,22 +360,32 @@ async function fetchPromoterHolding(symbol) {
 // the same for Debt-to-Equity. Both are undefined when equity isn't positive,
 // so null them rather than let a loss-making company read as a compounder.
 export async function fetchStockSummary(symbol) {
-  const [{ quarter, annual }, holding] = await Promise.all([
+  const [{ quarter, years }, holding] = await Promise.all([
     fetchFinancials(symbol),
-    fetchPromoterHolding(symbol),
+    fetchShareholding(symbol),
   ]);
+  const latest = years[0];
 
-  const hasPositiveEquity = annual.netWorth > 0;
+  const hasPositiveEquity = latest.equity > 0;
   // ROE from the audited full-year profit over year-end equity — the same
   // basis Screener reports, not a single quarter scaled x4.
-  const roe = hasPositiveEquity && annual.profit != null ? annual.profit / annual.netWorth : null;
-  const debtToEquity = hasPositiveEquity ? annual.totalDebt / annual.netWorth : null;
+  const roe = hasPositiveEquity && latest.profit != null ? latest.profit / latest.equity : null;
+  const debtToEquity = hasPositiveEquity && latest.debt != null ? latest.debt / latest.equity : null;
 
   return {
     symbol,
+    schema: SCHEMA,
+    template: latest.template,
     pnl: quarter,
-    annual: { yearEnded: annual.yearEnded, scope: annual.scope, revenue: annual.revenue, profit: annual.profit, eps: annual.eps },
-    balanceSheet: { yearEnded: annual.yearEnded, netWorth: annual.netWorth, totalAssets: annual.totalAssets, totalDebt: annual.totalDebt },
+    annual: { yearEnded: latest.label, scope: latest.scope, revenue: latest.revenue, profit: latest.profit, eps: latest.eps },
+    balanceSheet: {
+      yearEnded: latest.label,
+      netWorth: latest.equity,
+      totalAssets: latest.totalAssets,
+      totalDebt: latest.debt,
+      currentAssets: latest.currentAssets,
+    },
+    years,
     holding,
     roe,
     debtToEquity,
