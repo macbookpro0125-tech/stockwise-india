@@ -78,7 +78,7 @@ function tableRow(m) {
     p2: m.levels?.p2 ?? null, p3: m.levels?.p3 ?? null,
     stopLoss: m.levels?.stopLoss ?? null, target: m.levels?.target ?? null,
     low52w: m.low52w, high52w: m.high52w,
-    valuationPeBasis: m.valuationPeBasis, score: { green: m.score.green, applicable: m.score.applicable },
+    valuationPeBasis: m.valuationPeBasis, epsJump: m.epsJump, score: { green: m.score.green, applicable: m.score.applicable },
   };
 }
 

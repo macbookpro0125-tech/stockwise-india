@@ -16,9 +16,11 @@ import NewsPanel from "./NewsPanel.jsx";
 // financials, technicals, pros & cons, recommended action, price ladder, the
 // 10-point checklist and verdict, fair value, detailed analysis, peers, news
 // & filings, and your notes. Where it differs: the P/E defaults to the stock's
-// own 5-year median (the original's current P/E made fair value = price), the
-// P/E history behind that sits under the inputs, and Piotroski and a table of
-// key numbers are added after the analysis.
+// own 5-year median (the original's current P/E made fair value = price), a
+// one-off profit jump is valued at the usual EPS and years of near-zero profit
+// can leave that median (server/metrics.js), the P/E history behind it sits
+// under the inputs, and Piotroski and a table of key numbers are added after
+// the analysis.
 
 const FLAG_STYLE = {
   G: { color: "var(--green)", label: "✓ Green flag", border: "var(--green-bdr)" },
@@ -210,7 +212,7 @@ function PeHistoryTable({ m }) {
           </thead>
           <tbody>
             {m.peHistory.map(y => (
-              <tr key={y.fyEnd} style={{ color: y.pe == null ? "var(--t3)" : "var(--t1)" }}>
+              <tr key={y.fyEnd} style={{ color: y.pe == null || y.excluded ? "var(--t3)" : "var(--t1)" }}>
                 <td style={{ ...cell, textAlign: "left" }}>{fy(y.fyEnd)}</td>
                 <td style={{ ...cell, ...MONO }}>{y.eps != null ? `Rs ${y.eps.toFixed(2)}` : "—"}</td>
                 <td style={{ ...cell, ...MONO }}>{y.price != null ? fmtRs(y.price) : "—"}</td>
@@ -227,6 +229,7 @@ function PeHistoryTable({ m }) {
         {m.medianPe != null
           ? <>Median of {m.peYears} years: <strong style={{ color: "var(--t1)" }}>{m.medianPe.toFixed(1)}</strong> — the default P/E above. A median, so one unusual year can't drag it.</>
           : <>Only {m.peYears} usable year{m.peYears === 1 ? "" : "s"} — at least 3 are needed for a median, so the default is today's P/E, which makes fair value track the price.</>}
+        {m.epsJump && <> Median EPS of the same years: <strong style={{ color: "var(--t1)" }}>Rs {m.epsJump.usualEps.toFixed(2)}</strong> — the usual level, used instead of {fyLabel(m.fyEnd)}'s Rs {m.epsJump.eps.toFixed(2)}.</>}
       </div>
     </div>
   );
@@ -507,7 +510,7 @@ export default function StockDetail({ symbol, onBack, onOpenStock }) {
       if (!m) return;
       const debtFree = m.debtToEquity != null && m.debtToEquity < 0.1 && m.interestCoverage == null;
       const b = {
-        eps: m.eps != null ? String(round(m.eps, 2)) : "",
+        eps: m.valuationEps != null ? String(round(m.valuationEps, 2)) : "",
         pe: m.valuationPe ? String(round(m.valuationPe, 1)) : "",
         growthPct: String(round(m.growthForValuation, 1)),
         mosPct: "10",
@@ -525,6 +528,8 @@ export default function StockDetail({ symbol, onBack, onOpenStock }) {
 
   const m = data?.metrics;
   const usingCustomInputs = !!baseline && (eps !== baseline.eps || pe !== baseline.pe || growthPct !== baseline.growthPct || mosPct !== baseline.mosPct);
+  // A one-off profit jump: the EPS box holds the usual level until you change it
+  const usualEpsShown = !!m?.epsJump && !!baseline && eps === baseline.eps;
   // The table's own levels until an input changes — the inputs hold rounded
   // values, which could move a buy price by a rupee against the Discover table
   const levels = useMemo(() => {
@@ -613,8 +618,15 @@ export default function StockDetail({ symbol, onBack, onOpenStock }) {
           <div style={{ marginTop: 4, color: "var(--t2)" }}>
             {m.medianPe != null
               ? <>P/E is this stock's <em>5-year median</em> ({m.medianPe.toFixed(1)}; today {m.pe?.toFixed(1) ?? "—"}) — override with your own view if needed.</>
-              : <>P/E is <em>today's</em> — fewer than 3 years of history for a median. Override with a long-run average for a real valuation.</>}
+              : <>P/E is <em>today's</em> — fewer than 3 usable years of history for a median. Override with a long-run average for a real valuation.</>}
           </div>
+        </div>
+      )}
+
+      {m?.epsJump && (
+        <div style={{ padding: "10px 14px", borderRadius: 8, background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", fontSize: 12, color: "var(--t2)", lineHeight: 1.5, marginBottom: 14 }}>
+          <strong style={{ color: "var(--yellow)" }}>Profit jumped this year — buy prices use the usual level.</strong>{" "}
+          {fyLabel(m.fyEnd)} EPS is Rs {m.epsJump.eps.toFixed(2)}, more than 3× the usual Rs {m.epsJump.usualEps.toFixed(2)}, but the share price hasn't followed (P/E {m.epsJump.pe.toFixed(1)} on the last close, against a usual {m.medianPe.toFixed(1)}). That is how a one-off gain looks. If you expect this profit to last, type {round(m.epsJump.eps, 2)} into EPS below.
         </div>
       )}
 
@@ -661,9 +673,11 @@ export default function StockDetail({ symbol, onBack, onOpenStock }) {
 
             <div className="ss-grid-4">
               <div>
-                <label style={labelStyle}>EPS {fyLabel(m.fyEnd)} (Rs)</label>
+                <label style={labelStyle}>{usualEpsShown ? "Usual EPS (Rs)" : `EPS ${fyLabel(m.fyEnd)} (Rs)`}</label>
                 <input type="number" value={eps} onChange={e => setEps(e.target.value)} style={inputStyle} />
-                {hint(parseFloat(eps) > 0, "✓ EPS loaded", "From the annual results")}
+                {usualEpsShown
+                  ? <div style={{ fontSize: 10, color: "var(--yellow)", marginTop: 3, fontWeight: 600 }}>{fyLabel(m.fyEnd)} was Rs {m.epsJump.eps.toFixed(2)} — see note above</div>
+                  : hint(parseFloat(eps) > 0, "✓ EPS loaded", "From the annual results")}
               </div>
               <div>
                 <label style={labelStyle}>Historical P/E</label>
@@ -892,7 +906,7 @@ export default function StockDetail({ symbol, onBack, onOpenStock }) {
               </h3>
               <div className="ss-grid-fv">
                 {[
-                  { label: `${fyLabel(m.fyEnd)} EPS`, val: eps ? `Rs ${Math.round(Number(eps))}` : "—", sub: `FV: ${fmtRs(levels.fv25)}` },
+                  { label: usualEpsShown ? "Usual EPS" : `${fyLabel(m.fyEnd)} EPS`, val: eps ? `Rs ${Math.round(Number(eps))}` : "—", sub: `FV: ${fmtRs(levels.fv25)}` },
                   { label: `${fyLabel(m.fyEnd, 1)} EPS (est.)`, val: levels.e26 ? `Rs ${levels.e26}` : "—", sub: `FV: ${fmtRs(levels.fv26)}` },
                   { label: `${fyLabel(m.fyEnd, 2)} EPS (est.)`, val: levels.e27 ? `Rs ${levels.e27}` : "—", sub: `FV: ${fmtRs(levels.fv27)}` },
                   { label: "Safe Buy Price", val: fmtRs(levels.safeBuy), sub: `Today's FV × ${100 - Number(mosPct || 10)}%`, hi: true },

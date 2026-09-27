@@ -91,7 +91,7 @@ export function buildDiscoverWorkbook(XLSX, stocks, { pricesDate } = {}) {
   const near = withP1.filter(x => x.prem > 0 && x.prem <= 10).length;
   const top10 = [...withP1].sort((a, b) => a.prem - b.prem).slice(0, 10);
 
-  const grid = Array.from({ length: 25 }, () => Array(8).fill(null));
+  const grid = Array.from({ length: 26 }, () => Array(8).fill(null));
   const put = (r, c, cell) => { grid[r][c] = cell; };
 
   const asOf = pricesDate
@@ -129,7 +129,8 @@ export function buildDiscoverWorkbook(XLSX, stocks, { pricesDate } = {}) {
   put(21, 0, C("Stocks with a buy price", sLabel)); put(21, 1, C(withP1.length, sValue));
 
   put(23, 0, C("P1 = EPS × median P/E, less a 10% margin of safety · P2 = P1 × 0.9 · P3 = P1 × 0.8 · Fair value (2Y) = EPS × (1 + growth)² × median P/E, growth = 5-yr profit CAGR held to 0–25%", sSub));
-  put(24, 0, C("Score = green flags out of the checks that apply, scaled to 10 · Educational use only — not financial advice", sSub));
+  put(24, 0, C("When a stock trades at under a third of its median P/E: EPS over 3× its usual level is a one-off, valued at the usual EPS; otherwise years with under a third of this year's EPS leave the median", sSub));
+  put(25, 0, C("Score = green flags out of the checks that apply, scaled to 10 · Educational use only — not financial advice", sSub));
 
   // Right: the ten closest to (or furthest into) the buy zone
   put(3, 3, C("TOP 10 — CLOSEST TO BUY ZONE", sSection));

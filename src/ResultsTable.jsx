@@ -181,8 +181,14 @@ function FvCell({ stock }) {
       {/* Under 3 years of P/E history the valuation falls back to today's P/E,
           which makes fair value ≈ the current price by construction. */}
       {stock.valuationPeBasis === "current" && (
-        <div title="Fewer than 3 years of P/E history, so this uses today's P/E — fair value then tracks the current price. Open the stock to set your own P/E." style={{ color: "var(--yellow)", fontSize: 9, marginTop: 2 }}>
+        <div title="Fewer than 3 usable years of P/E history, so this uses today's P/E — fair value then tracks the current price. Open the stock to set your own P/E." style={{ color: "var(--yellow)", fontSize: 9, marginTop: 2 }}>
           at today's P/E
+        </div>
+      )}
+      {/* This year's EPS was a one-off jump, so P1–P3 use the usual EPS */}
+      {stock.epsJump && (
+        <div title={`This year's EPS (Rs ${stock.epsJump.eps.toFixed(2)}) is more than 3× its usual Rs ${stock.epsJump.usualEps.toFixed(2)}, and the share price hasn't followed — how a one-off gain looks. Buy prices use the usual EPS. Open the stock to change it.`} style={{ color: "var(--yellow)", fontSize: 9, marginTop: 2 }}>
+          at usual EPS
         </div>
       )}
       <RangeBar low={stock.low52w} high={stock.high52w} cmp={cmp} />

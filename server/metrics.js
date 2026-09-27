@@ -6,6 +6,9 @@ import { computeScoreParts } from "./score.js";
 
 const DAY = 86400000;
 const MIN_PE_YEARS = 3;
+// How far this year's EPS and the stock's P/E history can drift apart before
+// the buy prices stop multiplying them as they are (see usualPe below)
+const OUT_OF_LINE = 3;
 
 // NSE sector (from its index lists) -> the original app's cyclical/utility
 // treatment. Oil & gas counts as cyclical in full: the original's keywords
@@ -160,8 +163,33 @@ export function computeMetrics(stock, snap, overrides = {}) {
     if (!(row.eps > 0)) return { ...row, excluded: "loss year — P/E not meaningful" };
     return { ...row, pe: row.price / row.eps };
   });
-  const validPe = peHistory.filter(r => r.pe != null);
+  // Buy prices multiply this year's EPS by the stock's usual P/E, which only
+  // works if the two belong together. When the stock trades at under a third of
+  // its usual P/E they usually don't, for one of two reasons — each had put buy
+  // prices at many times the share price:
+  // 1. A one-off gain (a land sale, a settlement, a demerger) lifted this year's
+  //    EPS over 3× its usual level (the median of the same years), and the
+  //    price didn't follow: Kiri Industries' Rs 941 EPS, usually Rs 35, made a
+  //    Rs 10,826 buy price on a Rs 558 share. Buy prices use the usual EPS.
+  // 2. Otherwise, the usual P/E came from years of near-zero profit, where any
+  //    price is a huge P/E (Sunteck's 2,847 and 244). Years with under a third
+  //    of this year's EPS are left out of the median.
+  // The price test is what spares real growth: Bharti Airtel, Dixon and BSE
+  // tripled their EPS too, but their prices rose with it; old EPS would have
+  // made them sells, and fast growers would have lost their early years. It
+  // uses the last NSE close even when a live price is passed in, so the stock
+  // page and the Discover table can't disagree about the same stock.
+  const priced = peHistory.filter(r => r.pe != null);
+  const usualPe = priced.length >= MIN_PE_YEARS ? median(priced.map(r => r.pe)) : null;
+  const usualEps = usualPe != null ? median(priced.map(r => r.eps)) : null;
+  const close = snap?.prices?.[sym] ?? cmp;
+  const closePe = close != null && eps > 0 ? close / eps : null;
+  const outOfLine = usualPe != null && closePe != null && closePe < usualPe / OUT_OF_LINE;
+  const epsJump = outOfLine && eps > OUT_OF_LINE * usualEps ? { eps, usualEps, pe: closePe } : null;
+  const leftOut = r => outOfLine && !epsJump && r.eps < eps / OUT_OF_LINE;
+  const validPe = priced.filter(r => !leftOut(r));
   const medianPe = validPe.length >= MIN_PE_YEARS ? median(validPe.map(r => r.pe)) : null;
+  const valuationEps = epsJump ? usualEps : eps;
 
   const salesGrowth3y = cagr("revenue", 3);
   const salesGrowth5y = cagr("revenue", 5);
@@ -173,7 +201,7 @@ export function computeMetrics(stock, snap, overrides = {}) {
   // growth that would compound into absurd fair values).
   const growthForValuation = Math.min(Math.max(profitGrowth5y ?? salesGrowth5y ?? 12, 0), 25);
   const valuationPe = medianPe ?? pe;
-  const levels = eps > 0 && valuationPe ? calculateLevels(eps, valuationPe, growthForValuation, 10) : null;
+  const levels = valuationEps > 0 && valuationPe ? calculateLevels(valuationEps, valuationPe, growthForValuation, 10) : null;
 
   const range = snap?.range52w?.[sym] ?? null;
 
@@ -259,10 +287,12 @@ export function computeMetrics(stock, snap, overrides = {}) {
     otherIncomePctOfPbt: latest.otherIncome != null && latest.pbt > 0 ? (latest.otherIncome / latest.pbt) * 100 : null,
     otherIncomeCr: latest.otherIncome != null ? latest.otherIncome / 1e7 : null,
     ncavCr,
-    peHistory, medianPe, peYears: validPe.length,
+    peHistory: peHistory.map(r => (r.pe != null && leftOut(r) ? { ...r, excluded: "profit under a third of this year's — P/E left out" } : r)),
+    medianPe, peYears: validPe.length,
     history,
     growthForValuation,
     valuationPe, valuationPeBasis: medianPe != null ? "median" : "current",
+    valuationEps, epsJump,
     levels,
     fairValue: levels?.fv27 ?? null,
     safeBuyPrice: levels?.p1 ?? null,
