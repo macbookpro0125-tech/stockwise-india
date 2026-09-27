@@ -3,6 +3,7 @@ import { api } from "./api.js";
 import { useWatchlist } from "./watchlist.js";
 import { portfolioStore, alertsStore } from "./stores.js";
 import StockSearchBar from "./StockSearchBar.jsx";
+import AccountMenu from "./AccountMenu.jsx";
 
 // The original's sticky header (stock-screener src/Discovery.jsx): logo, stat
 // chips and theme switch, the search bar, then the five tabs with counts. On
@@ -41,7 +42,7 @@ function compact(n) {
   return n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
 }
 
-export default function Header({ tab, onTab, onLogout, onSearch, theme, onToggleTheme }) {
+export default function Header({ tab, onTab, email, onLogout, onDeleted, onSearch, theme, onToggleTheme }) {
   const badges = useTabBadges();
   const [stats, setStats] = useState(null);
   useEffect(() => { api.stats().then(setStats).catch(() => {}); }, []);
@@ -89,7 +90,7 @@ export default function Header({ tab, onTab, onLogout, onSearch, theme, onToggle
                 style={{ width: 32, height: 32, borderRadius: 8, background: "var(--s2)", border: "1px solid var(--bdr)", color: "var(--t2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, flexShrink: 0, padding: 0 }}>
                 {theme === "dark" ? "☀" : "☾"}
               </button>
-              <button className="btn-ghost" onClick={onLogout} style={{ height: 32, fontSize: 12, padding: "0 12px", whiteSpace: "nowrap" }}>Sign out</button>
+              <AccountMenu email={email} onLogout={onLogout} onDeleted={onDeleted} />
             </div>
           </div>
           <div style={{ marginTop: 8 }}>

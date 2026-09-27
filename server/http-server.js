@@ -7,7 +7,7 @@
 import { createServer } from "node:http";
 import { existsSync, statSync, createReadStream } from "node:fs";
 import { join, normalize, extname, sep } from "node:path";
-import { signup, login, logout, verifySession } from "./auth.js";
+import { signup, login, logout, verifySession, accountEmail, deleteAccount } from "./auth.js";
 import { listAlerts, createAlert, updateAlert, deleteAlert } from "./user-alerts.js";
 import { screen, getStock, saveStock, rowsFor, isValidSymbol, countFetched, allMetrics } from "./screen.js";
 import { listWatchlist, addToWatchlist, setWatchlistNote, removeFromWatchlist } from "./user-watchlist.js";
@@ -65,6 +65,7 @@ const CONTENT_TYPES = {
   ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css",
   ".svg": "image/svg+xml", ".png": "image/png", ".ico": "image/x-icon", ".json": "application/json",
   ".woff2": "font/woff2", ".txt": "text/plain", ".webm": "video/webm",
+  ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp",
 };
 
 // Streams the file, and answers Range requests with just the bytes asked
@@ -190,7 +191,16 @@ export function createApp() {
       if (url.pathname === "/api/auth/me" && req.method === "GET") {
         const cookies = parseCookies(req.headers.cookie);
         const userId = verifySession(cookies[COOKIE_NAME]);
-        sendJson(res, userId ? 200 : 401, userId ? { userId } : { error: "Not signed in" });
+        sendJson(res, userId ? 200 : 401, userId ? { userId, email: accountEmail(userId) } : { error: "Not signed in" });
+        return;
+      }
+
+      if (url.pathname === "/api/auth/delete-account" && req.method === "POST") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        deleteAccount(userId, (await readJsonBody(req)).password);
+        clearSessionCookie(req, res);
+        sendJson(res, 200, { ok: true });
         return;
       }
 
@@ -199,11 +209,11 @@ export function createApp() {
         return;
       }
 
-      // The header's stat chips
+      // The header's stat chips and the front page's figures — counts only,
+      // so no sign-in needed
       if (url.pathname === "/api/stats" && req.method === "GET") {
-        const userId = requireAuth(req, res);
-        if (userId == null) return;
-        sendJson(res, 200, { strategies: PRESETS.length, companies: allMetrics().rows.length });
+        const snap = loadMarketSnapshot();
+        sendJson(res, 200, { strategies: PRESETS.length, companies: allMetrics().rows.length, pricesDate: snap?.pricesDate ?? null });
         return;
       }
 

@@ -68,3 +68,29 @@ export function verifySession(token) {
 export function logout(token) {
   db.prepare("DELETE FROM sessions WHERE token = ?").run(token);
 }
+
+export function accountEmail(userId) {
+  return db.prepare("SELECT email FROM users WHERE id = ?").get(userId)?.email ?? null;
+}
+
+// Removes the account and everything saved with it — what the privacy page
+// promises. Asks for the password again, so a session left signed in on a
+// shared computer can't do it. Each table is cleared by name rather than
+// relying on ON DELETE CASCADE, which does nothing if foreign keys are off.
+export function deleteAccount(userId, password) {
+  const user = db.prepare("SELECT password_hash, password_salt FROM users WHERE id = ?").get(userId);
+  if (!user || !verifyPassword(String(password ?? ""), user.password_salt, user.password_hash)) {
+    throw new Error("That password isn't right");
+  }
+  db.exec("BEGIN");
+  try {
+    for (const table of ["sessions", "alerts", "watchlist", "holdings"]) {
+      db.prepare(`DELETE FROM ${table} WHERE user_id = ?`).run(userId);
+    }
+    db.prepare("DELETE FROM users WHERE id = ?").run(userId);
+    db.exec("COMMIT");
+  } catch (e) {
+    db.exec("ROLLBACK");
+    throw e;
+  }
+}

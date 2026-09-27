@@ -1,48 +1,16 @@
 // Records the "How it works" video (public/how-it-works.webm) by driving the
 // real app in Chrome with captions, a visible pointer and highlights: pick a
 // strategy, adjust a filter, read the table, compare, export, open a stock,
-// watchlist, alert, portfolio, performance, search. It runs its own copy of
-// the server on a throwaway accounts database, so no real account is touched.
+// watchlist, alert, portfolio, performance, search. It runs on a private copy
+// of the app (demo-app.mjs), so no real account is touched.
 //
 // Run: npm run build && npm run video   (needs Google Chrome installed)
-// playwright-core is pinned to 1.52: later releases dropped the video encoder
-// for macOS 13, which this Mac runs.
 
-import { chromium } from "playwright-core";
-import { spawn } from "node:child_process";
-import { mkdtempSync, rmSync, copyFileSync, existsSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
-import { randomUUID } from "node:crypto";
+import { copyFileSync } from "node:fs";
+import { join } from "node:path";
+import { startDemoApp, ROOT, sleep } from "./demo-app.mjs";
 
-const ROOT = process.env.APP_ROOT ?? join(dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = process.env.VIDEO_OUT ?? join(ROOT, "public", "how-it-works.webm");
-const PORT = 8791;
-const BASE = `http://localhost:${PORT}`;
-const W = 1280, H = 800;
-const sleep = ms => new Promise(r => setTimeout(r, ms));
-
-if (!existsSync(join(ROOT, "dist", "index.html"))) {
-  console.error("Build the app first: npm run build");
-  process.exit(1);
-}
-
-// ── A private copy of the app: same market data, empty accounts database ──
-const tmp = mkdtempSync(join(tmpdir(), "stockwise-video-"));
-const server = spawn(process.execPath, ["--no-warnings", "server/http-server.js"], {
-  cwd: ROOT,
-  stdio: ["ignore", "ignore", "inherit"],
-  env: { ...process.env, PORT: String(PORT), STOCKWISE_DB: join(tmp, "demo.db"), DATA_JOBS: "off" },
-});
-const cleanup = () => { server.kill(); rmSync(tmp, { recursive: true, force: true }); };
-process.on("exit", cleanup);
-
-for (let i = 0; ; i++) {
-  try { if ((await fetch(`${BASE}/api/health`)).ok) break; } catch {}
-  if (i > 100) throw new Error("server didn't start");
-  await sleep(200);
-}
 
 // ── Overlays drawn into the page: title card, caption, highlight, pointer ──
 function overlay() {
@@ -78,11 +46,6 @@ function overlay() {
     p.card = div(`position:fixed;inset:0;z-index:2147483647;background:#07070E;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;font-family:${FONT};color:#fff;transition:opacity 700ms;pointer-events:none`);
     fillCard("How it works", ["In under two minutes"]);
     document.body.append(p.spot, p.caption, p.cursor, p.card);
-    // Headless Chrome doesn't blur what scrolls under the see-through top bar,
-    // so it would show through sharp — make the bar solid for the recording
-    const style = document.createElement("style");
-    style.textContent = ".discovery-header-sticky{background:#07070E!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}";
-    document.head.append(style);
   }
   whenReady(() => document.body, mount);
 
@@ -115,14 +78,7 @@ function overlay() {
   };
 }
 
-const browser = await chromium.launch({ channel: "chrome", headless: true });
-const context = await browser.newContext({
-  viewport: { width: W, height: H }, deviceScaleFactor: 1, colorScheme: "dark",
-  recordVideo: { dir: tmp, size: { width: W, height: H } },
-});
-// A throwaway account: the password is random and never stored anywhere
-const signup = await context.request.post(`${BASE}/api/auth/signup`, { data: { email: `demo-${Date.now()}@example.com`, password: randomUUID() } });
-if (!signup.ok()) throw new Error(`demo signup failed: ${signup.status()}`);
+const { base: BASE, browser, context } = await startDemoApp({ recordVideo: true });
 await context.addInitScript(overlay);
 const page = await context.newPage();
 
@@ -181,14 +137,33 @@ async function drag(slider, fromVal, toVal, min, max) {
 // wrong in a demo. Stop so the take can be re-run instead of kept.
 async function cleanTake() {
   await sleep(600);
-  if (await page.getByText("Couldn't fetch a live price").count()) {
-    throw new Error("A live price didn't load during this take — run it again for a clean video");
+  const warning = page.getByText("Couldn't fetch a live price");
+  if (await warning.count()) {
+    throw new Error(`A live price didn't load during this take — run it again for a clean video. The page said: ${await warning.first().textContent()}`);
+  }
+}
+// Yahoo sometimes drops requests when many arrive together, as they do while
+// recording. Fetching a stock page's price ahead of time, quietly retrying,
+// puts it in the server's 15-minute cache before the camera gets there.
+async function warmQuote(symbol) {
+  for (let i = 0; i < 4; i++) {
+    const res = await context.request.get(`${BASE}/api/stock/${symbol}`).catch(() => null);
+    if ((await res?.json().catch(() => null))?.quote) return;
+    await sleep(1500);
   }
 }
 const tab = name => page.locator(".discovery-tabs button", { hasText: name });
 const rows = () => page.locator("table.data-table tbody tr");
 
 // ── The walkthrough ──
+const SEARCHED = "TITAN"; // the stock found by search at the end
+const HOLDING = "ICICIBANK"; // the sample purchase in the portfolio step
+// Slow first-time lookups, done now so the camera never waits on them: the
+// two stocks' prices, and NSE's company list (search, and the name a new
+// holding gets)
+const warmSearched = warmQuote(SEARCHED);
+const warmHolding = warmQuote(HOLDING);
+const warmList = context.request.get(`${BASE}/api/search?q=${SEARCHED}`).catch(() => null);
 await page.goto(BASE, { waitUntil: "networkidle" });
 const strategy = page.getByRole("button", { name: /Buffett-style/ });
 await strategy.waitFor();
@@ -213,6 +188,19 @@ const find = page.getByRole("button", { name: "Find Stocks" });
 await scrollToEl(find, 200);
 await click(find, 1500);
 
+// Step 6 compares the top three by ROCE and step 8 opens the first of them:
+// fetch their technicals and price now, while steps 3–5 play, so the camera
+// doesn't sit on "loading…" if Yahoo is slow (the server keeps both cached)
+const byRoce = await page.$$eval("table.data-table tbody tr", trs => trs.map(tr => ({
+  symbol: tr.querySelector("td:nth-child(2) span")?.textContent.trim(),
+  roce: parseFloat(tr.querySelector("td:nth-child(6)")?.textContent),
+})));
+const topThree = byRoce.filter(r => r.symbol).sort((a, b) => (b.roce || -Infinity) - (a.roce || -Infinity)).slice(0, 3).map(r => r.symbol);
+const warmAhead = Promise.all([
+  warmQuote(topThree[0]),
+  ...topThree.map(s => context.request.get(`${BASE}/api/stock/${s}/technicals`).catch(() => null)),
+]);
+
 await scrollToEl(page.getByRole("button", { name: "Export Excel" }), 20);
 await demo("caption", 3, "Each company gets a quality score from 10 checks on its latest NSE filings");
 await show(rows().first().locator("td").nth(2));
@@ -225,6 +213,8 @@ await demo("hideSpot");
 
 await demo("caption", 5, "Sort by any column — here, highest return on capital first");
 await click(page.locator("table.data-table thead th", { hasText: "ROCE %" }), 1800);
+const firstSymbol = (await rows().first().locator("td").nth(1).locator("span").first().textContent()).trim();
+if (firstSymbol !== topThree[0]) throw new Error(`Expected ${topThree[0]} first after sorting by ROCE, got ${firstSymbol}`);
 
 await demo("caption", 6, "Tick up to 4 companies to compare them side by side");
 for (const i of [0, 1, 2]) await click(page.locator("table.data-table tbody input[type=checkbox]").nth(i), 350);
@@ -248,6 +238,7 @@ await click(excel, 1800);
 await demo("hideSpot");
 
 await demo("caption", 8, "Open any company for the full picture");
+await warmAhead;
 const firstName = rows().first().locator("td").nth(1).locator("div").first();
 await click(firstName, 1200);
 await page.getByText("Price Ladder").waitFor();
@@ -271,13 +262,14 @@ await click(page.getByRole("button", { name: "Create alert" }), 1500);
 await demo("caption", 10, "Your watchlist shows how each stock has moved since you starred it");
 await click(tab("Watchlist"), 3600);
 
+// A sample purchase 10% under today's price, worked out before the form opens
+await Promise.all([warmHolding, warmList]);
+const quote = await (await context.request.get(`${BASE}/api/stock/${HOLDING}`)).json().catch(() => null);
+const buyAt = quote?.metrics?.cmp ? String(Math.round(quote.metrics.cmp * 0.9)) : "1200";
+
 await demo("caption", 11, "Record what you own in Portfolio — see profit and where each holding sits on its ladder");
 await click(tab("Portfolio"), 900);
 await click(page.getByRole("button", { name: "+ Add Holding" }), 700);
-// A sample purchase 10% under today's price
-const HOLDING = "ICICIBANK";
-const quote = await (await context.request.get(`${BASE}/api/stock/${HOLDING}`)).json().catch(() => null);
-const buyAt = quote?.metrics?.cmp ? String(Math.round(quote.metrics.cmp * 0.9)) : "1200";
 await page.getByPlaceholder("e.g. TCS").pressSequentially(HOLDING, { delay: 110 });
 await page.getByPlaceholder("0.00").pressSequentially(buyAt, { delay: 90 });
 await page.getByPlaceholder("0", { exact: true }).pressSequentially("10", { delay: 110 });
@@ -288,6 +280,7 @@ await demo("caption", 12, "Performance: how each strategy's picks have done sinc
 await click(tab("Performance"), 3800);
 
 await demo("caption", 13, "Search any NSE company by name or symbol");
+await warmSearched;
 const search = page.getByPlaceholder("Search any stock by name or symbol…");
 await click(search, 300);
 await search.pressSequentially("Titan", { delay: 140 });

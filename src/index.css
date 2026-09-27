@@ -469,3 +469,21 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     font-size: 16px !important;
   }
 }
+
+/* ── Front page (Landing.jsx) ── */
+.landing-hero { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 48px; align-items: center; }
+.landing-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.landing-features { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.landing-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+
+@media (max-width: 960px) {
+  .landing-hero { grid-template-columns: minmax(0, 1fr); gap: 32px; }
+  .landing-features { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  .landing-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .landing-features, .landing-steps { grid-template-columns: minmax(0, 1fr); }
+  .landing-nav-extra { display: none !important; }
+  .landing-h1 { font-size: 32px !important; }
+}

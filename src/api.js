@@ -19,6 +19,7 @@ export const api = {
   signup: (email, password) => request("/api/auth/signup", { method: "POST", body: JSON.stringify({ email, password }) }),
   login: (email, password) => request("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
   logout: () => request("/api/auth/logout", { method: "POST" }),
+  deleteAccount: (password) => request("/api/auth/delete-account", { method: "POST", body: JSON.stringify({ password }) }),
   presets: () => request("/api/presets"),
   stats: () => request("/api/stats"),
   screen: (criteria) => request("/api/screen", { method: "POST", body: JSON.stringify(criteria) }),

@@ -139,6 +139,30 @@ async function main() {
   const perf = await fetch(`${BASE}/api/performance`, { headers: { Cookie: aliceCookie } });
   assert(perf.status === 200 && Array.isArray((await perf.json()).presets), "the Performance tab's data comes back");
 
+  // The front page's figures need no sign-in; who's signed in comes with /me
+  const publicStats = await fetch(`${BASE}/api/stats`);
+  assert(publicStats.status === 200 && (await publicStats.json()).strategies === 13, "the front page's figures load without signing in");
+  assert((await (await fetch(`${BASE}/api/auth/me`, { headers: { Cookie: aliceCookie } })).json()).email === "alice@example.com", "/me says which email is signed in");
+
+  // Deleting an account removes it and everything saved with it
+  const carolSignup = await json("POST", "/api/auth/signup", "", { email: "carol@example.com", password: "carolspassword1" });
+  const carolCookie = extractCookie(carolSignup);
+  const carolId = (await carolSignup.json()).userId;
+  await json("POST", "/api/alerts", carolCookie, { ticker: "INFY", condition: "below", threshold: 900 });
+  await json("POST", "/api/watchlist", carolCookie, { ticker: "INFY", price: 1000 });
+  await json("POST", "/api/portfolio", carolCookie, { ticker: "INFY", buyPrice: 1000, qty: 5 });
+  assert((await json("POST", "/api/auth/delete-account", carolCookie, { password: "not-her-password" })).status === 400, "deleting an account needs the right password");
+  assert((await json("POST", "/api/auth/delete-account", "", { password: "carolspassword1" })).status === 401, "deleting an account needs a signed-in session");
+  const deleted = await json("POST", "/api/auth/delete-account", carolCookie, { password: "carolspassword1" });
+  assert(deleted.status === 200 && /stockwise_session=;/.test(deleted.headers.get("set-cookie") || ""), "deleting an account works and clears the cookie");
+  assert((await fetch(`${BASE}/api/auth/me`, { headers: { Cookie: carolCookie } })).status === 401, "the deleted account's session no longer works");
+  assert((await json("POST", "/api/auth/login", "", { email: "carol@example.com", password: "carolspassword1" })).status === 400, "the deleted account can't sign in");
+  const { db } = await import("./db.js");
+  const leftovers = ["users", "sessions", "alerts", "watchlist", "holdings"]
+    .map(t => db.prepare(`SELECT COUNT(*) AS n FROM ${t} WHERE ${t === "users" ? "id" : "user_id"} = ?`).get(carolId).n);
+  assert(leftovers.every(n => n === 0), "nothing of the deleted account is left in any table");
+  assert((await (await fetch(`${BASE}/api/alerts`, { headers: { Cookie: aliceCookie } })).json()).length === 1, "deleting one account leaves other accounts' data alone");
+
   await fetch(`${BASE}/api/auth/logout`, { method: "POST", headers: { Cookie: aliceCookie } });
   const afterLogout = await fetch(`${BASE}/api/alerts`, { headers: { Cookie: aliceCookie } });
   assert(afterLogout.status === 401, "the old cookie stops working after logout — the session was actually deleted server-side, not just cleared client-side");

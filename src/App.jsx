@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { api } from "./api.js";
-import AuthForm from "./AuthForm.jsx";
+import Landing from "./Landing.jsx";
+import { PrivacyPage, DisclaimerPage } from "./LegalPages.jsx";
+import { usePath, navigate, SiteFooter } from "./site.jsx";
 import Header, { BottomTabBar } from "./Header.jsx";
 import DiscoverView from "./DiscoverView.jsx";
 import WatchlistView from "./WatchlistView.jsx";
@@ -25,7 +27,11 @@ function useTheme() {
 }
 
 export default function App() {
-  const [userId, setUserId] = useState(undefined); // undefined = checking, null = signed out
+  const path = usePath();
+  // undefined = checking, null = signed out, else { userId, email }
+  const [account, setAccount] = useState(undefined);
+  // A one-off message for the front page (e.g. after deleting an account)
+  const [notice, setNotice] = useState(null);
   const [tab, setTab] = useState("discover");
   const [theme, toggleTheme] = useTheme();
   // { symbol, at } rather than a bare symbol: searching the same symbol again
@@ -34,6 +40,19 @@ export default function App() {
   const [open, setOpen] = useState(null);
   // Where the Discover list was scrolled to, so Back lands on the same row
   const discoverScroll = useRef(0);
+
+  const loadAccount = () => api.me().then(d => setAccount({ userId: d.userId, email: d.email ?? null })).catch(() => setAccount(null));
+  useEffect(() => { loadAccount(); }, []);
+
+  // /privacy and /disclaimer are for everyone, signed in or not
+  if (path === "/privacy") return <PrivacyPage signedIn={!!account} />;
+  if (path === "/disclaimer") return <DisclaimerPage signedIn={!!account} />;
+
+  if (account === undefined) return null; // avoid a front-page flash while the session check is in flight
+
+  if (account === null) {
+    return <Landing notice={notice} onAuthed={() => { setNotice(null); setTab("discover"); navigate("/"); loadAccount(); }} />;
+  }
 
   const openSymbol = (symbol) => {
     if (!open) discoverScroll.current = window.scrollY;
@@ -45,26 +64,23 @@ export default function App() {
     requestAnimationFrame(() => window.scrollTo(0, discoverScroll.current));
   };
 
-  useEffect(() => {
-    api.me().then(d => setUserId(d.userId)).catch(() => setUserId(null));
-  }, []);
-
-  if (userId === undefined) return null; // avoid a login-form flash while the session check is in flight
-
-  if (userId === null) return <AuthForm onAuthed={setUserId} />;
-
   // The next person to sign in on this browser must not see this one's data
-  const logout = () => api.logout().then(() => {
+  const signedOut = (message = null) => {
     resetWatchlist();
     portfolioStore.reset();
     alertsStore.reset();
-    setUserId(null);
-  });
+    setOpen(null);
+    setNotice(message);
+    setAccount(null);
+    navigate("/");
+  };
+  const logout = () => api.logout().then(() => signedOut());
+  const accountDeleted = () => signedOut("Your account and everything saved with it have been deleted.");
   const goTab = (t) => { setOpen(null); setTab(t); window.scrollTo(0, 0); };
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
-      <Header tab={open ? null : tab} onTab={goTab} onLogout={logout} onSearch={openSymbol} theme={theme} onToggleTheme={toggleTheme} />
+      <Header tab={open ? null : tab} onTab={goTab} email={account.email} onLogout={logout} onDeleted={accountDeleted} onSearch={openSymbol} theme={theme} onToggleTheme={toggleTheme} />
       <div style={{ height: 16 }} />
       {open && <StockDetail key={open.at} symbol={open.symbol} onBack={closeStock} onOpenStock={openSymbol} />}
       {/* Kept mounted (hidden) while a stock is open, so its filters and
@@ -74,6 +90,7 @@ export default function App() {
       {!open && tab === "portfolio" && <PortfolioView onOpenStock={openSymbol} />}
       {!open && tab === "performance" && <PerformanceView onOpenStock={openSymbol} />}
       {!open && tab === "alerts" && <AlertsView onOpenStock={openSymbol} />}
+      <SiteFooter />
       {/* Not on a stock page: that has its own bottom Back button on phones,
           as the original's stock page did */}
       {!open && <BottomTabBar tab={tab} onTab={goTab} theme={theme} />}
