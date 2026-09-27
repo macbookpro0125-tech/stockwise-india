@@ -3,13 +3,10 @@
 // metrics takes a moment, so the result is cached until the snapshot or the
 // files change.
 import { readdirSync, readFileSync, existsSync, writeFileSync, mkdirSync, statSync, renameSync } from "node:fs";
-import { join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import { computeMetrics, matchesCriteria, unsupportedCriteria, describeCriteria } from "./metrics.js";
 import { loadMarketSnapshot } from "./market-data.js";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const MARKET_DIR = join(__dirname, "..", "data", "market");
+import { MARKET_DIR } from "./paths.js";
 const STALE_AFTER_DAYS = 550; // ~18 months — a healthy company files annually
 
 // NSE symbols are letters, digits, "&" and "-" (M&M, BAJAJ-AUTO). Anything

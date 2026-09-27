@@ -13,7 +13,11 @@
     "api": "node server/http-server.js",
     "dev": "vite",
     "build": "vite build",
+    "start": "node --no-warnings server/http-server.js",
     "test": "node server/auth-smoke-test.js && node server/http-smoke-test.js"
+  },
+  "engines": {
+    "node": ">=22.5"
   },
   "dependencies": {
     "react": "^19.3.0",

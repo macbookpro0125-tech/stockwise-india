@@ -2,14 +2,9 @@
 // request per company: closing prices (NSE's daily bhavcopy), corporate
 // actions (dividends, bonuses, splits) and sectors (NSE index constituents).
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
-import { join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import { UA, NSE_BASE, fetchJson, parseQeDate } from "./fetch-nse.js";
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const DATA_DIR = join(__dirname, "..", "data");
-const PRICE_DIR = join(DATA_DIR, "prices");
-const SNAPSHOT_PATH = join(DATA_DIR, "market-snapshot.json");
+import { PRICE_DIR, SNAPSHOT_PATH } from "./paths.js";
 const SERIES_PREFERENCE = ["EQ", "BE", "BZ", "SM", "ST"];
 const SECTOR_LISTS = ["ind_niftytotalmarket_list", "ind_niftymicrocap250_list"];
 

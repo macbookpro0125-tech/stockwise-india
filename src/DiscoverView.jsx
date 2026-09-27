@@ -269,6 +269,16 @@ export default function DiscoverView({ onOpenStock }) {
           )}
         </div>
 
+        {results?.jobs?.loadingMarket && (
+          <div style={{ padding: "12px 18px", borderRadius: 12, marginBottom: 16, background: "rgba(0,224,190,0.07)", border: "1px solid rgba(0,224,190,0.25)", color: "var(--accent)", fontSize: 13, lineHeight: 1.6 }}>
+            Market data is still loading
+            {results.jobs.running === "first load" && results.jobs.progress
+              ? <> — {results.jobs.progress.done.toLocaleString("en-IN")} of {results.jobs.progress.total.toLocaleString("en-IN")} companies read from NSE so far</>
+              : <> — prices first, then every company's filings (about 2 hours)</>}.
+            {" "}Results only cover what's loaded; run the screen again later for the whole market.
+          </div>
+        )}
+
         {error && (
           <div style={{ padding: "14px 18px", borderRadius: 12, background: "var(--red-dim)", border: "1px solid var(--red-bdr)", color: "var(--red)", fontSize: 13, marginBottom: 20, lineHeight: 1.6 }}>
             <strong>Error — </strong>{error}

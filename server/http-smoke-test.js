@@ -41,6 +41,11 @@ async function main() {
   const noCookieRes = await fetch(`${BASE}/api/alerts`);
   assert(noCookieRes.status === 401, "GET /api/alerts with no cookie is rejected");
 
+  const health = await fetch(`${BASE}/api/health`);
+  const healthBody = await health.json();
+  assert(health.status === 200 && healthBody.ok === true && "jobs" in healthBody, "GET /api/health answers (the host's health check)");
+  assert((await fetch(`${BASE}/api/no-such-route`)).status === 404, "an unknown /api/ route is a 404, not the app page");
+
   const presets = await (await fetch(`${BASE}/api/presets`)).json();
   assert(Array.isArray(presets) && presets.length === 13 && presets.every(p => p.criteria), "GET /api/presets returns the 13 strategies with their criteria");
 

@@ -1,0 +1,26 @@
+# Render Blueprint — the whole app as one web service with a persistent disk.
+# In Render: New -> Blueprint -> pick this repository, then approve.
+#
+# The disk holds the accounts database and everything fetched from NSE, so a
+# redeploy keeps them. Disks need a paid instance (Starter). On first start
+# the server fetches the whole market by itself (~2 hours, the Discover screen
+# says so while it runs), then keeps it fresh: prices twice a day, new results
+# and shareholding daily. Singapore is Render's region nearest India.
+services:
+  - type: web
+    name: stockwise-india
+    runtime: node
+    plan: starter
+    region: singapore
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 22.16.0
+      - key: DATA_DIR
+        value: /var/data
+    disk:
+      name: stockwise-data
+      mountPath: /var/data
+      sizeGB: 1

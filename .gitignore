@@ -14,5 +14,8 @@ data/test.db
 data/prices/
 data/market-snapshot.json
 
+# Background jobs' bookkeeping (last check for new results)
+data/jobs-state.json
+
 # Production build output
 dist/

@@ -4,14 +4,13 @@
 // before this actually ships; better-sqlite3 is the mature fallback if
 // node:sqlite's API shifts under us.
 import { DatabaseSync } from "node:sqlite";
-import { join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { dirname } from "node:path";
 import { mkdirSync } from "node:fs";
+// STOCKWISE_DB (read in paths.js) points the smoke tests at a file of their
+// own — they start from an empty database each run and must never wipe the
+// real accounts.
+import { DB_PATH } from "./paths.js";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-// STOCKWISE_DB points the smoke tests at a file of their own — they start
-// from an empty database each run and must never wipe the real accounts.
-const DB_PATH = process.env.STOCKWISE_DB ?? join(__dirname, "..", "data", "app.db");
 mkdirSync(dirname(DB_PATH), { recursive: true });
 
 export const db = new DatabaseSync(DB_PATH);

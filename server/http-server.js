@@ -5,17 +5,20 @@
 // on the page, which is exactly what a single XSS bug turns into full
 // account takeover. httpOnly means client-side JS can't read it at all.
 import { createServer } from "node:http";
+import { readFileSync, existsSync, statSync } from "node:fs";
+import { join, normalize, extname, sep } from "node:path";
 import { signup, login, logout, verifySession } from "./auth.js";
 import { listAlerts, createAlert, deleteAlert } from "./user-alerts.js";
-import { screen, getStock, saveStock, rowsFor, isValidSymbol } from "./screen.js";
+import { screen, getStock, saveStock, rowsFor, isValidSymbol, countFetched } from "./screen.js";
 import { listWatchlist, addToWatchlist, removeFromWatchlist } from "./user-watchlist.js";
 import { fetchCmp } from "./quote.js";
 import { fetchStockSummary, SCHEMA } from "./fetch-nse.js";
 import { fetchEquityList } from "./equity-list.js";
 import { computeMetrics } from "./metrics.js";
-import { loadMarketSnapshot, clearSnapshotCache, buildMarketSnapshot } from "./market-data.js";
-import { fiscalYearEnds } from "./build-snapshot.js";
+import { loadMarketSnapshot } from "./market-data.js";
+import { startDataJobs, jobStatus } from "./data-jobs.js";
 import { PRESETS } from "./presets.js";
+import { DIST_DIR } from "./paths.js";
 
 let equityListPromise = null;
 async function equityInfo(symbol) {
@@ -24,17 +27,28 @@ async function equityInfo(symbol) {
   return list.find(s => s.symbol === symbol) ?? null;
 }
 
-// Prices move daily; rebuild the snapshot in the background when it's older
-// than this, and keep serving the previous one meanwhile.
-const SNAPSHOT_MAX_AGE_MS = 12 * 60 * 60 * 1000;
-let snapshotRebuild = null;
-function refreshSnapshotIfStale() {
-  const snap = loadMarketSnapshot();
-  if (snapshotRebuild || (snap && Date.now() - new Date(snap.builtAt).getTime() < SNAPSHOT_MAX_AGE_MS)) return;
-  snapshotRebuild = buildMarketSnapshot(fiscalYearEnds())
-    .then(() => clearSnapshotCache())
-    .catch(e => console.error(`[snapshot] rebuild failed: ${e.message}`))
-    .finally(() => { snapshotRebuild = null; });
+// The built frontend, for a host where this one process serves everything.
+// In development Vite serves the frontend and proxies /api here instead.
+const CONTENT_TYPES = {
+  ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css",
+  ".svg": "image/svg+xml", ".png": "image/png", ".ico": "image/x-icon", ".json": "application/json",
+  ".woff2": "font/woff2", ".txt": "text/plain",
+};
+
+function serveStatic(pathname, res) {
+  if (!existsSync(DIST_DIR)) return false;
+  let file = normalize(join(DIST_DIR, decodeURIComponent(pathname)));
+  if (!file.startsWith(DIST_DIR + sep) && file !== DIST_DIR) return false; // no ../ out of dist
+  // Anything that isn't a file is the app itself (it has no other pages)
+  if (!existsSync(file) || statSync(file).isDirectory()) file = join(DIST_DIR, "index.html");
+  res.writeHead(200, {
+    "Content-Type": CONTENT_TYPES[extname(file)] ?? "application/octet-stream",
+    // Vite puts a content hash in asset file names, so those never change;
+    // index.html must be re-checked so a deploy is picked up.
+    "Cache-Control": file.includes(`${sep}assets${sep}`) ? "public, max-age=31536000, immutable" : "no-cache",
+  });
+  res.end(readFileSync(file));
+  return true;
 }
 
 const COOKIE_NAME = "stockwise_session";
@@ -51,18 +65,21 @@ function parseCookies(header) {
   return out;
 }
 
-function setSessionCookie(res, token) {
+// Secure (sent over HTTPS only) whenever the request came in over HTTPS —
+// hosts like Render terminate TLS in front of the app and say so in
+// X-Forwarded-Proto. Plain HTTP on localhost in development goes without.
+const secureFlag = req => (req.headers["x-forwarded-proto"] === "https" ? "; Secure" : "");
+
+function setSessionCookie(req, res, token) {
   // SameSite=Strict blocks the cookie from being sent on any cross-site
   // request at all — the simplest real CSRF defense, at the cost of
   // needing a same-site redirect (not a bare link) after e.g. an OAuth
   // callback, which this doesn't have yet. Revisit if that's ever added.
-  // secure is skipped here (plain HTTP in dev) — must be set once this is
-  // served over HTTPS, or the cookie travels in cleartext.
-  res.setHeader("Set-Cookie", `${COOKIE_NAME}=${token}; HttpOnly; SameSite=Strict; Max-Age=${SESSION_MAX_AGE_S}; Path=/`);
+  res.setHeader("Set-Cookie", `${COOKIE_NAME}=${token}; HttpOnly; SameSite=Strict; Max-Age=${SESSION_MAX_AGE_S}; Path=/${secureFlag(req)}`);
 }
 
-function clearSessionCookie(res) {
-  res.setHeader("Set-Cookie", `${COOKIE_NAME}=; HttpOnly; SameSite=Strict; Max-Age=0; Path=/`);
+function clearSessionCookie(req, res) {
+  res.setHeader("Set-Cookie", `${COOKIE_NAME}=; HttpOnly; SameSite=Strict; Max-Age=0; Path=/${secureFlag(req)}`);
 }
 
 function sendJson(res, status, body) {
@@ -94,7 +111,7 @@ export function createApp() {
       if (url.pathname === "/api/auth/signup" && req.method === "POST") {
         const { email, password } = await readJsonBody(req);
         const { token, userId } = signup(email, password);
-        setSessionCookie(res, token);
+        setSessionCookie(req, res, token);
         sendJson(res, 200, { userId });
         return;
       }
@@ -102,7 +119,7 @@ export function createApp() {
       if (url.pathname === "/api/auth/login" && req.method === "POST") {
         const { email, password } = await readJsonBody(req);
         const { token, userId } = login(email, password);
-        setSessionCookie(res, token);
+        setSessionCookie(req, res, token);
         sendJson(res, 200, { userId });
         return;
       }
@@ -110,7 +127,7 @@ export function createApp() {
       if (url.pathname === "/api/auth/logout" && req.method === "POST") {
         const cookies = parseCookies(req.headers.cookie);
         if (cookies[COOKIE_NAME]) logout(cookies[COOKIE_NAME]);
-        clearSessionCookie(res);
+        clearSessionCookie(req, res);
         sendJson(res, 200, { ok: true });
         return;
       }
@@ -165,7 +182,6 @@ export function createApp() {
         } catch (e) {
           quoteError = e.message;
         }
-        refreshSnapshotIfStale();
         const metrics = computeMetrics(fundamentals, loadMarketSnapshot(), quote ? { cmp: quote.cmp, cmpDate: quote.asOf } : {});
 
         sendJson(res, 200, {
@@ -184,8 +200,9 @@ export function createApp() {
       if (url.pathname === "/api/screen" && req.method === "POST") {
         const userId = requireAuth(req, res);
         if (userId == null) return;
-        refreshSnapshotIfStale();
-        sendJson(res, 200, screen(await readJsonBody(req)));
+        // jobs: on a fresh host the first load runs for ~2 h — the screen
+        // says so instead of passing off a partial market as the whole one
+        sendJson(res, 200, { ...screen(await readJsonBody(req)), jobs: jobStatus() });
         return;
       }
 
@@ -246,6 +263,18 @@ export function createApp() {
         return;
       }
 
+      if (url.pathname === "/api/health" && req.method === "GET") {
+        const snap = loadMarketSnapshot();
+        sendJson(res, 200, { ok: true, companies: countFetched(), pricesDate: snap?.pricesDate ?? null, jobs: jobStatus() });
+        return;
+      }
+
+      if (url.pathname.startsWith("/api/")) {
+        sendJson(res, 404, { error: "Not found" });
+        return;
+      }
+
+      if (req.method === "GET" && serveStatic(url.pathname, res)) return;
       sendJson(res, 404, { error: "Not found" });
     } catch (e) {
       sendJson(res, e.duplicate ? 409 : 400, { error: e.message });
@@ -255,6 +284,7 @@ export function createApp() {
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const port = Number(process.env.PORT) || 8787;
-  createApp().listen(port, () => console.log(`stockwise-india API on http://localhost:${port}`));
-  refreshSnapshotIfStale();
+  createApp().listen(port, () => console.log(`stockwise-india on http://localhost:${port}`));
+  // DATA_JOBS=off for a server that should only serve what's on disk
+  if (process.env.DATA_JOBS !== "off") startDataJobs();
 }
