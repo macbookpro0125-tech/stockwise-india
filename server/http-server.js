@@ -7,7 +7,8 @@
 import { createServer } from "node:http";
 import { signup, login, logout, verifySession } from "./auth.js";
 import { listAlerts, createAlert, deleteAlert } from "./user-alerts.js";
-import { screen, getStock, saveStock } from "./screen.js";
+import { screen, getStock, saveStock, rowsFor, isValidSymbol } from "./screen.js";
+import { listWatchlist, addToWatchlist, removeFromWatchlist } from "./user-watchlist.js";
 import { fetchCmp } from "./quote.js";
 import { fetchStockSummary, SCHEMA } from "./fetch-nse.js";
 import { fetchEquityList } from "./equity-list.js";
@@ -130,6 +131,10 @@ export function createApp() {
         const userId = requireAuth(req, res);
         if (userId == null) return;
         const symbol = decodeURIComponent(url.pathname.split("/").pop()).toUpperCase();
+        if (!isValidSymbol(symbol)) {
+          sendJson(res, 400, { error: `"${symbol}" isn't an NSE symbol — they're letters, digits, & and - (e.g. TCS, M&M, BAJAJ-AUTO).` });
+          return;
+        }
         let fundamentals = getStock(symbol);
         if (!fundamentals || fundamentals.schema !== SCHEMA) {
           // Not fetched yet (or fetched in an older shape) — fetch it live so
@@ -184,10 +189,42 @@ export function createApp() {
         return;
       }
 
+      if (url.pathname === "/api/watchlist" && req.method === "GET") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        const items = listWatchlist(userId);
+        const snap = loadMarketSnapshot();
+        sendJson(res, 200, { items, results: rowsFor(items.map(i => i.ticker)), snapshot: snap ? { pricesDate: snap.pricesDate, builtAt: snap.builtAt } : null });
+        return;
+      }
+
+      if (url.pathname === "/api/watchlist" && req.method === "POST") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        addToWatchlist(userId, (await readJsonBody(req)).ticker);
+        sendJson(res, 200, { ok: true });
+        return;
+      }
+
+      if (url.pathname.startsWith("/api/watchlist/") && req.method === "DELETE") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        removeFromWatchlist(userId, decodeURIComponent(url.pathname.split("/").pop()));
+        sendJson(res, 200, { ok: true });
+        return;
+      }
+
       if (url.pathname === "/api/alerts" && req.method === "GET") {
         const userId = requireAuth(req, res);
         if (userId == null) return;
-        sendJson(res, 200, listAlerts(userId));
+        // Each alert against the latest daily close. Nothing checks alerts in
+        // the background or sends notifications yet — the Alerts tab says so.
+        const snap = loadMarketSnapshot();
+        sendJson(res, 200, listAlerts(userId).map(a => {
+          const cmp = snap?.prices?.[a.ticker] ?? null;
+          const triggered = cmp == null ? null : a.condition === "below" ? cmp <= a.threshold : cmp >= a.threshold;
+          return { ...a, cmp, priceDate: snap?.pricesDate ?? null, triggered };
+        }));
         return;
       }
 

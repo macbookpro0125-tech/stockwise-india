@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { useWatchlist } from "./watchlist.js";
 
 export default function Header({ tab, onTab, onLogout, onSearch }) {
   const [q, setQ] = useState("");
+  const watchCount = useWatchlist().size;
 
   const submit = (e) => {
     e.preventDefault();
@@ -10,7 +12,7 @@ export default function Header({ tab, onTab, onLogout, onSearch }) {
   };
 
   return (
-    <div style={{ borderBottom: "1px solid var(--bdr)", background: "var(--s1)", position: "sticky", top: 0, zIndex: 100 }}>
+    <div className="app-header" style={{ borderBottom: "1px solid var(--bdr)", background: "var(--s1)", position: "sticky", top: 0, zIndex: 100 }}>
       <div style={{ maxWidth: 1240, margin: "0 auto", padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }} onClick={() => onTab("discover")}>
           <img src="/stockwise-india-icon.svg" alt="" style={{ width: 28, height: 28, borderRadius: 7, flexShrink: 0 }} />
@@ -26,13 +28,14 @@ export default function Header({ tab, onTab, onLogout, onSearch }) {
         </form>
 
         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          {[["discover", "Discover"], ["alerts", "Alerts"]].map(([key, label]) => (
+          {[["discover", "Discover"], ["watchlist", "Watchlist", watchCount], ["alerts", "Alerts"]].map(([key, label, count]) => (
             <button
               key={key}
               onClick={() => onTab(key)}
               style={{
                 height: 34, padding: "0 14px", borderRadius: 9,
                 border: "none", cursor: "pointer",
+                display: "flex", alignItems: "center", gap: 6,
                 fontSize: 13, fontWeight: 600, letterSpacing: "-0.01em",
                 background: tab === key ? "rgba(0,224,190,0.1)" : "transparent",
                 color: tab === key ? "var(--accent)" : "var(--t2)",
@@ -40,9 +43,14 @@ export default function Header({ tab, onTab, onLogout, onSearch }) {
               }}
             >
               {label}
+              {count > 0 && (
+                <span className="mono" style={{ fontSize: 10, fontWeight: 700, padding: "0 6px", borderRadius: 999, lineHeight: "16px", background: "var(--accent)", color: "#07070E" }}>
+                  {count}
+                </span>
+              )}
             </button>
           ))}
-          <button className="btn-ghost" onClick={onLogout} style={{ marginLeft: 8, height: 34, fontSize: 12 }}>Sign out</button>
+          <button className="btn-ghost" onClick={onLogout} style={{ marginLeft: 8, height: 34, fontSize: 12, whiteSpace: "nowrap" }}>Sign out</button>
         </div>
       </div>
     </div>

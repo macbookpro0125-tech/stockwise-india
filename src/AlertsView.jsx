@@ -34,7 +34,10 @@ export default function AlertsView() {
 
   return (
     <div style={{ maxWidth: 640, margin: "0 auto", padding: "28px 20px" }}>
-      <h1 style={{ fontSize: 20, margin: "0 0 20px" }}>Your alerts</h1>
+      <h1 style={{ fontSize: 20, margin: "0 0 4px", letterSpacing: "-0.02em" }}>Your alerts</h1>
+      <p style={{ fontSize: 12, color: "var(--t3)", margin: "0 0 20px", lineHeight: 1.6 }}>
+        Checked against the latest daily close{alerts?.[0]?.priceDate ? ` (${new Date(`${alerts[0].priceDate}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })})` : ""} whenever you open this page. No email or phone notifications yet.
+      </p>
 
       <form onSubmit={submit} style={{ display: "flex", gap: 8, marginBottom: 10 }}>
         <input placeholder="Ticker (e.g. TCS)" value={ticker} onChange={e => setTicker(e.target.value.toUpperCase())} required style={{ flex: 1 }} />
@@ -61,17 +64,29 @@ export default function AlertsView() {
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {alerts.map(a => (
-            <div key={a.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 14px", borderRadius: 10, background: "var(--s2)", border: "1px solid var(--bdr)" }}>
-              <div>
-                <strong>{a.ticker}</strong>
-                <span style={{ color: "var(--t2)", marginLeft: 8 }}>
-                  {a.condition === "below" ? "drops to" : "rises to"} ₹{a.threshold}
-                </span>
+          {alerts.map(a => {
+            const away = a.cmp != null ? Math.abs((a.threshold - a.cmp) / a.cmp) * 100 : null;
+            return (
+              <div key={a.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 10, background: a.triggered ? "var(--green-dim)" : "var(--s2)", border: `1px solid ${a.triggered ? "var(--green-bdr)" : "var(--bdr)"}` }}>
+                <div style={{ minWidth: 0 }}>
+                  <div>
+                    <strong>{a.ticker}</strong>
+                    <span style={{ color: "var(--t2)", marginLeft: 8 }}>
+                      {a.condition === "below" ? "drops to" : "rises to"} ₹{a.threshold.toLocaleString("en-IN")}
+                    </span>
+                  </div>
+                  <div className="mono" style={{ fontSize: 11, color: "var(--t3)", marginTop: 2 }}>
+                    {a.cmp == null ? "no recent close" : `last close ₹${a.cmp.toLocaleString("en-IN")}`}
+                  </div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+                  {a.triggered === true && <span className="pill badge-green">Triggered</span>}
+                  {a.triggered === false && away != null && <span style={{ fontSize: 11, color: "var(--t3)" }}>{away.toFixed(1)}% away</span>}
+                  <button className="btn-ghost" onClick={() => remove(a.id)} style={{ height: 32, fontSize: 12 }}>Remove</button>
+                </div>
               </div>
-              <button className="btn-ghost" onClick={() => remove(a.id)} style={{ height: 32, fontSize: 12 }}>Remove</button>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

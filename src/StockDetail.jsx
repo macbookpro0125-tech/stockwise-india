@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import { api } from "./api.js";
 import { calculateLevels, getAction } from "../server/levels.js";
-import { ScoreBadge } from "./ResultsTable.jsx";
+import { ScoreBadge, RangeBar } from "./ResultsTable.jsx";
+import { StarIcon, BellIcon } from "./icons.jsx";
+import { useWatchlist, toggleWatch } from "./watchlist.js";
+import CreateAlertModal from "./CreateAlertModal.jsx";
 
 function fmtRs(n) { return n == null ? "—" : `₹${Math.round(n).toLocaleString("en-IN")}`; }
 function fmtCr(n) { return n == null ? "—" : `₹${(n / 10000000).toLocaleString("en-IN", { maximumFractionDigits: 1 })} Cr`; }
@@ -105,6 +108,28 @@ function ScoreCard({ m }) {
   );
 }
 
+function PiotroskiCard({ m }) {
+  if (!m.piotroskiChecks) return null;
+  const color = m.piotroski >= 7 ? "var(--green)" : m.piotroski >= 4 ? "var(--yellow)" : "var(--red)";
+  return (
+    <div style={card}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
+        <div style={{ fontSize: 13, fontWeight: 600 }}>Piotroski score</div>
+        <span className="mono" style={{ fontSize: 12, fontWeight: 700, color }}>{m.piotroski}/9</span>
+        <span style={{ fontSize: 11, color: "var(--t3)" }}>this year against last · 7+ = strong and improving</span>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: "6px 20px" }}>
+        {m.piotroskiChecks.map(c => (
+          <div key={c.id} style={{ display: "flex", gap: 8, fontSize: 12, lineHeight: 1.5, color: c.ok ? "var(--t1)" : "var(--t3)" }}>
+            <span style={{ color: c.ok ? "var(--green)" : "var(--red)", fontWeight: 700, width: 12, flexShrink: 0 }}>{c.ok ? "✓" : "✗"}</span>
+            {c.label}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ProsCons({ m }) {
   if (!m.pros.length && !m.cons.length) return null;
   const list = (items, color, title) => (
@@ -129,11 +154,19 @@ function ProsCons({ m }) {
 }
 
 export default function StockDetail({ symbol, onBack }) {
+  const watched = useWatchlist().has(symbol);
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertSaved, setAlertSaved] = useState(false);
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const [pe, setPe] = useState("");
   const [growth, setGrowth] = useState("");
   const [mos, setMos] = useState("10");
+  // Until something is edited, show the server's own levels: the inputs hold
+  // the P/E and growth rounded to one decimal, which can move a buy price by
+  // a rupee against the Discover table.
+  const [edited, setEdited] = useState(false);
+  const edit = setter => v => { setEdited(true); setter(v); };
 
   useEffect(() => {
     let cancelled = false;
@@ -170,7 +203,7 @@ export default function StockDetail({ symbol, onBack }) {
   const cmp = quote?.cmp ?? m?.cmp ?? null;
   // Recomputed on every edit, as in the original — override any field and
   // the buy ladder updates instantly.
-  const levels = m?.eps > 0 ? calculateLevels(m.eps, pe, growth, mos) : null;
+  const levels = m?.eps > 0 ? (edited ? calculateLevels(m.eps, pe, growth, mos) : m.levels) : null;
   const action = cmp && levels ? getAction(cmp, levels) : null;
   // At today's P/E, fair value = EPS x (CMP / EPS) = CMP by construction —
   // the ladder is then just fixed discounts off the current price.
@@ -182,6 +215,7 @@ export default function StockDetail({ symbol, onBack }) {
     stat("P/E", m.pe ? m.pe.toFixed(1) : "—"),
     stat("EPS (full year)", m.eps != null ? `₹${m.eps.toFixed(2)}` : "—"),
     stat("Price / book", m.priceToBook != null ? m.priceToBook.toFixed(2) : "—"),
+    stat("52-week low / high", m.low52w != null ? `${fmtRs(m.low52w)} / ${fmtRs(m.high52w)}` : "—"),
     stat("ROCE", fmtPct(m.roce)),
     stat("ROE", fmtPct(m.roe)),
     stat(`ROE (${m.roeAvgYears}Y avg)`, fmtPct(m.roeAvg)),
@@ -194,6 +228,8 @@ export default function StockDetail({ symbol, onBack }) {
     stat("Dividend yield", fmtPct(m.divYield, 2)),
     stat("Payout", fmtPct(m.payoutPct, 0)),
     stat("Cash flow / profit (3Y)", fmtPct(m.ocfPat3yPct, 0)),
+    stat("Free cash flow (last year)", fmtCrValue(m.fcfCr)),
+    stat("Piotroski score", m.piotroski != null ? `${m.piotroski}/9` : "—", m.piotroski == null && m.lender ? "not scored for lenders" : null),
     stat("Promoter holding", fmtPct(m.promoterPct)),
     stat("FII holding", fmtPct(m.fiiPct)),
     stat("DII holding", fmtPct(m.diiPct)),
@@ -209,6 +245,12 @@ export default function StockDetail({ symbol, onBack }) {
 
   return (
     <div style={{ maxWidth: 900, margin: "0 auto", padding: "24px 20px 80px", animation: "fadeUp 280ms cubic-bezier(0,0,0.2,1) both" }}>
+      {alertOpen && (
+        <CreateAlertModal
+          stock={{ symbol: data.symbol, name: data.name, cmp, p1: levels?.p1, p2: levels?.p2, p3: levels?.p3 }}
+          onClose={saved => { setAlertOpen(false); if (saved) setAlertSaved(true); }}
+        />
+      )}
       <button className="btn-ghost" onClick={onBack} style={{ marginBottom: 16, height: 34, fontSize: 12 }}>← Back</button>
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: 16, flexWrap: "wrap", marginBottom: 8 }}>
@@ -219,13 +261,40 @@ export default function StockDetail({ symbol, onBack }) {
             {m?.sector && <span style={{ fontSize: 11, padding: "2px 10px", borderRadius: 6, background: "var(--accent-glow)", color: "var(--accent)", fontWeight: 600 }}>{m.sector}</span>}
             {m?.cyclical && <span style={{ fontSize: 11, padding: "2px 10px", borderRadius: 6, background: "var(--yellow-dim)", color: "var(--yellow)", fontWeight: 600 }}>Cyclical</span>}
             {m && <ScoreBadge score={m.score.green} max={m.score.applicable} />}
+            <button
+              onClick={() => toggleWatch(data.symbol)}
+              style={{
+                height: 28, padding: "0 10px", borderRadius: 8, cursor: "pointer",
+                display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600,
+                border: `1px solid ${watched ? "#FFD60A" : "var(--bdr3)"}`,
+                background: watched ? "color-mix(in srgb, #FFD60A 14%, transparent)" : "var(--s3)",
+                color: watched ? "#FFD60A" : "var(--t2)",
+              }}
+            >
+              <StarIcon filled={watched} size={13} />
+              {watched ? "Watching" : "Watch"}
+            </button>
+            <button
+              onClick={() => { setAlertSaved(false); setAlertOpen(true); }}
+              style={{
+                height: 28, padding: "0 10px", borderRadius: 8, cursor: "pointer",
+                display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600,
+                border: `1px solid ${alertSaved ? "var(--accent)" : "var(--bdr3)"}`,
+                background: alertSaved ? "rgba(0,224,190,0.1)" : "var(--s3)",
+                color: alertSaved ? "var(--accent)" : "var(--t2)",
+              }}
+            >
+              <BellIcon size={13} />
+              {alertSaved ? "Alert set" : "Alert"}
+            </button>
           </div>
         </div>
-        <div style={{ textAlign: "right" }}>
+        <div style={{ textAlign: "right", minWidth: 170 }}>
           <div className="mono" style={{ fontSize: 26, fontWeight: 700 }}>{fmtRs(cmp)}</div>
           <div style={{ fontSize: 11, color: "var(--t3)" }}>
             {quote ? `as of ${quote.asOf}` : m?.cmpDate ? `close on ${m.cmpDate}` : ""}
           </div>
+          {m && <div style={{ textAlign: "left" }}><RangeBar low={m.low52w} high={m.high52w} cmp={cmp} /></div>}
         </div>
       </div>
 
@@ -264,17 +333,17 @@ export default function StockDetail({ symbol, onBack }) {
             <OverrideInput
               label="P/E to value at"
               value={pe}
-              onChange={setPe}
+              onChange={edit(setPe)}
               hint={[m.medianPe != null && `5-yr median ${m.medianPe.toFixed(1)}`, m.pe && `today ${m.pe.toFixed(1)}`].filter(Boolean).join(" · ")}
             />
             <OverrideInput
               label="EPS growth p.a."
               value={growth}
-              onChange={setGrowth}
+              onChange={edit(setGrowth)}
               suffix="%"
               hint={m.profitGrowth5y != null ? "5-yr profit growth, capped 0–25%" : m.salesGrowth5y != null ? "5-yr sales growth, capped 0–25%" : "no 5-yr history — default 12%"}
             />
-            <OverrideInput label="Margin of safety" value={mos} onChange={setMos} suffix="%" />
+            <OverrideInput label="Margin of safety" value={mos} onChange={edit(setMos)} suffix="%" />
           </div>
           {peIsCurrent && (
             <div style={{ fontSize: 12, color: "var(--yellow)", background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", borderRadius: 8, padding: "8px 12px", marginTop: 12 }}>
@@ -307,6 +376,7 @@ export default function StockDetail({ symbol, onBack }) {
         <>
           <div style={sectionTitle}>Quality</div>
           <ScoreCard m={m} />
+          <PiotroskiCard m={m} />
           <ProsCons m={m} />
 
           <div style={sectionTitle}>Fundamentals</div>

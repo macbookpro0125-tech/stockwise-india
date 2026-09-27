@@ -4,7 +4,9 @@ import AuthForm from "./AuthForm.jsx";
 import Header from "./Header.jsx";
 import DiscoverView from "./DiscoverView.jsx";
 import AlertsView from "./AlertsView.jsx";
+import WatchlistView from "./WatchlistView.jsx";
 import StockDetail from "./StockDetail.jsx";
+import { resetWatchlist } from "./watchlist.js";
 
 export default function App() {
   const [userId, setUserId] = useState(undefined); // undefined = checking, null = signed out
@@ -34,7 +36,7 @@ export default function App() {
 
   if (userId === null) return <AuthForm onAuthed={setUserId} />;
 
-  const logout = () => api.logout().then(() => setUserId(null));
+  const logout = () => api.logout().then(() => { resetWatchlist(); setUserId(null); });
   const goTab = (t) => { setOpen(null); setTab(t); window.scrollTo(0, 0); };
 
   return (
@@ -44,6 +46,7 @@ export default function App() {
       {/* Kept mounted (hidden) while a stock is open, so its filters and
           results are still there on Back. */}
       {tab === "discover" && <div hidden={!!open}><DiscoverView onOpenStock={openSymbol} /></div>}
+      {tab === "watchlist" && !open && <WatchlistView onOpenStock={openSymbol} />}
       {tab === "alerts" && !open && <AlertsView />}
     </div>
   );

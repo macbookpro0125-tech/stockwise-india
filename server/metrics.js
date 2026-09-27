@@ -129,6 +129,10 @@ export function computeMetrics(stock, snap, overrides = {}) {
     ? (last3.reduce((s, y) => s + y.ocf, 0) / last3.reduce((s, y) => s + y.profit, 0)) * 100
     : null;
 
+  // Free cash flow: last year's operating cash flow less capital spending
+  const fcf = latest.ocf != null && latest.capex != null ? latest.ocf - latest.capex : null;
+  const piotroski = piotroskiScore(latest, yearBack(latest, 1), { lender, template: stock.template, factorBetween: (a, b) => splits.filter(s => s.exDate > a && s.exDate <= b).reduce((f, s) => f * s.ratio, 1), filedOf });
+
   // Graham NCAV = current assets − total liabilities (= total assets − equity)
   const ncavCr = stock.template === "INDAS" && latest.currentAssets != null && latest.totalAssets != null && latest.equity != null
     ? (latest.currentAssets - (latest.totalAssets - latest.equity)) / 1e7
@@ -168,6 +172,8 @@ export function computeMetrics(stock, snap, overrides = {}) {
   const valuationPe = medianPe ?? pe;
   const levels = eps > 0 && valuationPe ? calculateLevels(eps, valuationPe, growthForValuation, 10) : null;
 
+  const range = snap?.range52w?.[sym] ?? null;
+
   const sector = snap?.sectors?.[sym] ?? null;
   const utility = sector ? UTILITY_SECTORS.has(sector) : false;
   const nameLower = String(stock.name || "").toLowerCase();
@@ -179,6 +185,8 @@ export function computeMetrics(stock, snap, overrides = {}) {
     template: stock.template,
     sector, lender, utility, cyclical,
     cmp, cmpDate, eps, pe, marketCapCr, shares, sharesSource,
+    low52w: range?.low ?? null,
+    high52w: range?.high ?? null,
     fyEnd: latest.fyEnd,
     revenueCr: latest.revenue != null ? latest.revenue / 1e7 : null,
     profitCr: latest.profit != null ? latest.profit / 1e7 : null,
@@ -194,6 +202,9 @@ export function computeMetrics(stock, snap, overrides = {}) {
     holdingAsOf: holding.asOf ?? null,
     dividendsTtm, divYield, payoutPct,
     ocfPat3yPct,
+    fcfCr: fcf != null ? fcf / 1e7 : null,
+    piotroski: piotroski?.score ?? null,
+    piotroskiChecks: piotroski?.checks ?? null,
     otherIncomePctOfPbt: latest.otherIncome != null && latest.pbt > 0 ? (latest.otherIncome / latest.pbt) * 100 : null,
     otherIncomeCr: latest.otherIncome != null ? latest.otherIncome / 1e7 : null,
     ncavCr,
@@ -209,6 +220,47 @@ export function computeMetrics(stock, snap, overrides = {}) {
   m.cons = cons;
   m.score = computeScoreParts(m);
   return m;
+}
+
+// Piotroski F-score: nine yes/no checks on profitability, balance sheet and
+// efficiency, this year against last. Ind AS companies only — lenders' balance
+// sheets have no current/non-current split, and the checks weren't designed
+// for them. Any missing input gives null, not a quietly lower score.
+// Choices where the textbook leaves room, stated:
+// - ROA and asset turnover use year-end total assets.
+// - Gross margin needs cost of goods; companies without any (IT, services)
+//   are compared on operating margin instead, the same basis both years.
+// - Debt-free both years counts as "leverage didn't rise".
+// - "No new shares" allows 1% (employee stock options) and any bonus issue or
+//   split between the two filings.
+function piotroskiScore(y, prev, { lender, template, factorBetween, filedOf }) {
+  if (lender || template !== "INDAS" || !prev) return null;
+  const inputs = [y.profit, y.ocf, y.totalAssets, y.currentAssets, y.currentLiabilities, y.longTermDebt, y.revenue, y.paidUp,
+    prev.profit, prev.totalAssets, prev.currentAssets, prev.currentLiabilities, prev.longTermDebt, prev.revenue, prev.paidUp];
+  if (inputs.some(v => v == null)) return null;
+  if (!(y.totalAssets > 0 && prev.totalAssets > 0 && y.currentLiabilities > 0 && prev.currentLiabilities > 0 && y.revenue > 0 && prev.revenue > 0)) return null;
+
+  const opMargin = r => (r.expenses != null ? (r.revenue - (r.expenses - (r.financeCosts ?? 0) - (r.depreciation ?? 0))) / r.revenue : null);
+  const gross = y.cogs > 0 && prev.cogs > 0;
+  const margin = r => (gross ? (r.revenue - r.cogs) / r.revenue : opMargin(r));
+  if (margin(y) == null || margin(prev) == null) return null;
+
+  const roa = r => r.profit / r.totalAssets;
+  const lev = r => r.longTermDebt / r.totalAssets;
+  const cr = r => r.currentAssets / r.currentLiabilities;
+  const turnover = r => r.revenue / r.totalAssets;
+  const checks = [
+    { id: "profit", label: "Profitable", ok: y.profit > 0 },
+    { id: "cfo", label: "Positive operating cash flow", ok: y.ocf > 0 },
+    { id: "roa", label: "Return on assets improved", ok: roa(y) > roa(prev) },
+    { id: "accruals", label: "Cash flow above profit", ok: y.ocf > y.profit },
+    { id: "leverage", label: "Long-term debt/assets fell", ok: lev(y) < lev(prev) || (y.longTermDebt === 0 && prev.longTermDebt === 0) },
+    { id: "liquidity", label: "Current ratio improved", ok: cr(y) > cr(prev) },
+    { id: "dilution", label: "No new shares issued", ok: y.paidUp <= prev.paidUp * factorBetween(filedOf(prev), filedOf(y)) * 1.01 },
+    { id: "margin", label: gross ? "Gross margin improved" : "Operating margin improved", ok: margin(y) > margin(prev) },
+    { id: "turnover", label: "Asset turnover improved", ok: turnover(y) > turnover(prev) },
+  ];
+  return { score: checks.filter(c => c.ok).length, checks };
 }
 
 // Screener's company pages list auto-generated pros and cons, and the
@@ -240,12 +292,7 @@ function prosAndCons(m, latest) {
 // revenue growth = 3-year sales CAGR, ROE = multi-year average, strict > / <,
 // D/E only applied below 3x and P/E only below 100x, 0/empty = off. A company
 // missing a value fails that filter, as a Screener query would drop it.
-const UNSUPPORTED = {
-  piotroski_min: "Min Piotroski score",
-  fcf_positive: "Positive free cash flow",
-  near_52w_low_pct: "Near 52-week low",
-  pct_below_52w_high_min: "Off 52-week high",
-};
+const UNSUPPORTED = {};
 
 export function unsupportedCriteria(c) {
   return Object.entries(UNSUPPORTED).filter(([k]) => c[k]).map(([, label]) => label);
@@ -271,6 +318,10 @@ export function describeCriteria(c) {
   if (c.dividend_yield_min) parts.push(`Dividend yield > ${c.dividend_yield_min}%`);
   if (c.price_to_book_max) parts.push(`Price/book < ${c.price_to_book_max}`);
   if (c.profit_growth_5y_min) parts.push(`Profit growth (5Y) > ${c.profit_growth_5y_min}%`);
+  if (c.piotroski_min > 0) parts.push(`Piotroski score ≥ ${c.piotroski_min}`);
+  if (c.fcf_positive) parts.push("Free cash flow last year > 0");
+  if (c.near_52w_low_pct > 0) parts.push(`Up from 52-week low < ${c.near_52w_low_pct}%`);
+  if (c.pct_below_52w_high_min > 0) parts.push(`Down from 52-week high > ${c.pct_below_52w_high_min}%`);
   if (c.net_net_graham) parts.push("Market cap < ⅔ of net current assets");
   else if (c.net_net) parts.push("Market cap < net current assets");
   if (Array.isArray(c.sectors) && c.sectors.length) parts.push(`Sector: ${c.sectors.join(", ")}`);
@@ -293,6 +344,11 @@ export function matchesCriteria(m, c) {
   if (c.dividend_yield_min && !gt(m.divYield, c.dividend_yield_min)) return false;
   if (c.price_to_book_max && !lt(m.priceToBook, c.price_to_book_max)) return false;
   if (c.profit_growth_5y_min && !gt(m.profitGrowth5y, c.profit_growth_5y_min)) return false;
+  if (c.piotroski_min > 0 && !(m.piotroski != null && m.piotroski >= c.piotroski_min)) return false;
+  if (c.fcf_positive && !gt(m.fcfCr, 0)) return false;
+  // The original's Screener clauses: "Up from 52w low < X", "Down from 52w high > X"
+  if (c.near_52w_low_pct > 0 && !(m.cmp != null && m.low52w > 0 && lt((m.cmp / m.low52w - 1) * 100, c.near_52w_low_pct))) return false;
+  if (c.pct_below_52w_high_min > 0 && !(m.cmp != null && m.high52w > 0 && gt((1 - m.cmp / m.high52w) * 100, c.pct_below_52w_high_min))) return false;
   if (c.net_net_graham && !(gt(m.ncavCr, 0) && m.marketCapCr != null && m.ncavCr > 1.5 * m.marketCapCr)) return false;
   if (c.net_net && !(gt(m.ncavCr, 0) && m.marketCapCr != null && m.ncavCr > m.marketCapCr)) return false;
   if (Array.isArray(c.sectors) && c.sectors.length && !c.sectors.includes(m.sector)) return false;

@@ -67,7 +67,7 @@ export function facts(xml, contexts, tag) {
 
 // Bump when the stored shape changes — fetch-market.js re-fetches any file on
 // an older schema instead of treating it as done.
-export const SCHEMA = 2;
+export const SCHEMA = 3; // 3: capex, current liabilities, cost of goods, long-term debt (FCF, Piotroski)
 const YEARS = 6; // 5-year growth needs six year-ends
 const DOWNLOAD_CONCURRENCY = 3;
 
@@ -91,6 +91,16 @@ export const TAGS = {
   currentAssets: ["CurrentAssets"],
   paidUp: ["PaidUpValueOfEquityShareCapital"],
   faceValue: ["FaceValueOfEquityShareCapital"],
+  // Free cash flow and the Piotroski score. Capex is filed as a positive
+  // outflow. Cost of goods = materials + goods bought for resale + change in
+  // inventories (negative when stock built up) — Ind AS companies only.
+  capexPpe: ["PurchaseOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities"],
+  capexIntangibles: ["PurchaseOfIntangibleAssetsClassifiedAsInvestingActivities"],
+  currentLiabilities: ["CurrentLiabilities"],
+  longTermDebt: ["BorrowingsNoncurrent"],
+  materials: ["CostOfMaterialsConsumed"],
+  purchases: ["PurchasesOfStockInTrade"],
+  inventoryChange: ["ChangesInInventoriesOfFinishedGoodsWorkInProgressAndStockInTrade"],
 };
 
 export function firstFacts(xml, contexts, tags) {
@@ -219,6 +229,12 @@ function extractYear(xml, row, template = templateOf(row.xbrl)) {
     currentAssets: r.atEnd(TAGS.currentAssets),
     paidUp: r.any(TAGS.paidUp),
     faceValue: r.any(TAGS.faceValue),
+    // null when neither purchase line is filed — unknown, not "spent nothing",
+    // or free cash flow would come out as the whole operating cash flow.
+    capex: sumKnown(r.year(TAGS.capexPpe), r.year(TAGS.capexIntangibles)),
+    currentLiabilities: r.atEnd(TAGS.currentLiabilities),
+    longTermDebt: equity == null ? null : r.atEnd(TAGS.longTermDebt) ?? (r.atEnd(TAGS.currentLiabilities) != null ? 0 : null),
+    cogs: sumKnown(r.year(TAGS.materials), r.year(TAGS.purchases), r.year(TAGS.inventoryChange)),
   };
 }
 

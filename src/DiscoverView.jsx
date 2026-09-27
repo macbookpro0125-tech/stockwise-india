@@ -283,6 +283,7 @@ export default function DiscoverView({ onOpenStock }) {
             totalMatches={results?.matched}
             queryUsed={results?.queryUsed}
             unsupported={results?.unsupported}
+            notes={results?.notes}
             executionTime={executionTime}
             snapshot={results?.snapshot}
             netNet={!!(criteria.net_net || criteria.net_net_graham)}

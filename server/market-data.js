@@ -47,7 +47,8 @@ function parseBhavcopy(csv) {
   const [header, ...lines] = csv.trim().split("\n");
   const cols = header.split(",").map(c => c.trim());
   const iSym = cols.indexOf("SYMBOL"), iSeries = cols.indexOf("SERIES"), iClose = cols.indexOf("CLOSE_PRICE"), iDate = cols.indexOf("DATE1");
-  const best = new Map(); // symbol -> { close, rank }
+  const iHigh = cols.indexOf("HIGH_PRICE"), iLow = cols.indexOf("LOW_PRICE");
+  const best = new Map(); // symbol -> { close, high, low, rank }
   let tradingDate = null;
   for (const line of lines) {
     const f = line.split(",").map(c => c.trim());
@@ -56,9 +57,13 @@ function parseBhavcopy(csv) {
     const close = Number(f[iClose]);
     if (rank === -1 || !(close > 0)) continue;
     const prev = best.get(f[iSym]);
-    if (!prev || rank < prev.rank) best.set(f[iSym], { close, rank });
+    if (!prev || rank < prev.rank) best.set(f[iSym], { close, high: Number(f[iHigh]), low: Number(f[iLow]), rank });
   }
-  return { date: tradingDate ? isoDay(tradingDate) : null, prices: Object.fromEntries([...best].map(([s, v]) => [s, v.close])) };
+  return {
+    date: tradingDate ? isoDay(tradingDate) : null,
+    prices: Object.fromEntries([...best].map(([s, v]) => [s, v.close])),
+    ranges: Object.fromEntries([...best].map(([s, v]) => [s, [v.low > 0 ? v.low : v.close, v.high > 0 ? v.high : v.close]])),
+  };
 }
 
 // Closing prices on `date`, or the last trading day before it
@@ -102,6 +107,51 @@ export function splitRatio(subject) {
   return null;
 }
 
+// 52-week low and high from every trading day's bhavcopy in the year to
+// `toIso`, on today's share basis: a day before a split or bonus is divided by
+// every ratio since, or a 1:1 bonus would leave a pre-bonus high twice today's
+// price. Weekends are skipped — NSE's rare weekend sessions (Muhurat, budget
+// day) don't move a year's range. The first build downloads ~250 files
+// (a few minutes); after that only new days are fetched.
+async function yearRanges(toIso, splits) {
+  const factorAfter = (sym, iso) => (splits[sym] ?? []).filter(s => s.exDate > iso).reduce((f, s) => f * s.ratio, 1);
+  const to = new Date(`${toIso}T00:00:00Z`);
+  const fromIso = isoDay(new Date(to.getTime() - 365 * 86400000));
+  const ranges = {};
+  const seen = new Set();
+  let failed = 0;
+  for (let d = new Date(to); isoDay(d) > fromIso; d.setUTCDate(d.getUTCDate() - 1)) {
+    if (d.getUTCDay() === 0 || d.getUTCDay() === 6) continue;
+    const cached = existsSync(join(PRICE_DIR, `bhav-${isoDay(d)}.csv`));
+    let csv;
+    try {
+      csv = await bhavcopyCsv(d);
+    } catch (e) {
+      // A day or two missing barely moves a year's range; many missing means
+      // NSE is refusing us, and a range from part of the year would mislead.
+      if (++failed > 10) throw new Error(`52-week range: too many bhavcopy downloads failed (last: ${e.message})`);
+      continue;
+    }
+    if (!cached) await new Promise(r => setTimeout(r, 300)); // gentle on NSE's archive
+    if (!csv) continue;
+    const day = parseBhavcopy(csv);
+    // A holiday can be answered with the previous day's file — count each day once
+    if (!day.date || seen.has(day.date) || day.date <= fromIso) continue;
+    seen.add(day.date);
+    for (const [sym, [low, high]] of Object.entries(day.ranges)) {
+      const f = factorAfter(sym, day.date);
+      const r = (ranges[sym] ||= { low: Infinity, high: 0 });
+      r.low = Math.min(r.low, low / f);
+      r.high = Math.max(r.high, high / f);
+    }
+  }
+  for (const r of Object.values(ranges)) {
+    r.low = Math.round(r.low * 100) / 100;
+    r.high = Math.round(r.high * 100) / 100;
+  }
+  return { from: fromIso, tradingDays: seen.size, ranges };
+}
+
 async function sectorsBySymbol() {
   const out = {};
   for (const list of SECTOR_LISTS) {
@@ -133,12 +183,22 @@ export async function buildMarketSnapshot(fyEndDates, { yearsOfActions = 6 } = {
     actions.push(...await corporateActions(from, to));
   }
 
+  // The yearly windows can overlap at the edges, so count each NSE record
+  // once — by the record itself, not by its effect: Bharat Rasayan's 1:1 bonus
+  // and Rs 10 -> 5 split share an ex-date and a 2x ratio, and de-duplicating
+  // on (date, ratio) merged them into one 2x event when the shares went 4x.
+  const seen = new Set();
+  const unique = actions.filter(a => {
+    const key = `${a.symbol}|${a.exDate}|${a.subject}`;
+    return !seen.has(key) && seen.add(key);
+  });
+
   // Dividends keep their ex-dates: one paid before a later bonus or split is
   // per old share, and must be scaled down or the yield reads 2x too high.
   const yearAgo = isoDay(new Date(now.getTime() - 365 * 86400000));
   const dividends = {};
   const splits = {};
-  for (const a of actions) {
+  for (const a of unique) {
     const ex = parseQeDate(a.exDate);
     if (!ex || !a.symbol) continue;
     const exIso = isoDay(ex);
@@ -146,16 +206,6 @@ export async function buildMarketSnapshot(fyEndDates, { yearsOfActions = 6 } = {
     if (dividend > 0 && exIso > yearAgo) (dividends[a.symbol] ||= []).push({ exDate: exIso, amount: dividend });
     const ratio = splitRatio(a.subject || "");
     if (ratio && ratio !== 1) (splits[a.symbol] ||= []).push({ exDate: exIso, ratio });
-  }
-  // The yearly windows can overlap at the edges — count each event once
-  for (const map of [dividends, splits]) {
-    for (const s of Object.keys(map)) {
-      const seen = new Set();
-      map[s] = map[s].filter(e => {
-        const key = JSON.stringify(e);
-        return !seen.has(key) && seen.add(key);
-      });
-    }
   }
 
   const fyEndPrices = {};
@@ -167,6 +217,8 @@ export async function buildMarketSnapshot(fyEndDates, { yearsOfActions = 6 } = {
     }
   }
 
+  const year = await yearRanges(latest.date, splits);
+
   const snapshot = {
     builtAt: now.toISOString(),
     pricesDate: latest.date,
@@ -175,6 +227,9 @@ export async function buildMarketSnapshot(fyEndDates, { yearsOfActions = 6 } = {
     splits,
     sectors: await sectorsBySymbol(),
     fyEndPrices,
+    range52w: year.ranges,
+    range52wFrom: year.from,
+    range52wTradingDays: year.tradingDays,
   };
   writeFileSync(SNAPSHOT_PATH, JSON.stringify(snapshot));
   return snapshot;

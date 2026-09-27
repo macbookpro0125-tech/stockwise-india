@@ -71,6 +71,25 @@ async function main() {
   const bobAlerts = await (await fetch(`${BASE}/api/alerts`, { headers: { Cookie: bobCookie } })).json();
   assert(bobAlerts.length === 0, "bob's session sees none of alice's alerts — cookies are per-user, not global");
 
+  const star = () => fetch(`${BASE}/api/watchlist`, {
+    method: "POST", headers: { "Content-Type": "application/json", Cookie: aliceCookie },
+    body: JSON.stringify({ ticker: "tcs" }),
+  });
+  assert((await star()).status === 200 && (await star()).status === 200, "starring a stock twice is fine, not an error");
+  const aliceWatch = await (await fetch(`${BASE}/api/watchlist`, { headers: { Cookie: aliceCookie } })).json();
+  assert(aliceWatch.items.length === 1 && aliceWatch.items[0].ticker === "TCS" && aliceWatch.results.length === 1, "alice's watchlist holds TCS once, upper-cased, with a table row");
+  const badStar = await fetch(`${BASE}/api/watchlist`, {
+    method: "POST", headers: { "Content-Type": "application/json", Cookie: aliceCookie },
+    body: JSON.stringify({ ticker: "../../server/x" }),
+  });
+  const badStock = await fetch(`${BASE}/api/stock/..%2F..%2Fpackage`, { headers: { Cookie: aliceCookie } });
+  assert(badStar.status === 400 && badStock.status === 400, "a symbol like ../x is refused before it can reach a file path");
+  const bobWatch = await (await fetch(`${BASE}/api/watchlist`, { headers: { Cookie: bobCookie } })).json();
+  assert(bobWatch.items.length === 0, "bob doesn't see alice's watchlist");
+  await fetch(`${BASE}/api/watchlist/TCS`, { method: "DELETE", headers: { Cookie: aliceCookie } });
+  const afterUnstar = await (await fetch(`${BASE}/api/watchlist`, { headers: { Cookie: aliceCookie } })).json();
+  assert(afterUnstar.items.length === 0, "unstarring removes it");
+
   await fetch(`${BASE}/api/auth/logout`, { method: "POST", headers: { Cookie: aliceCookie } });
   const afterLogout = await fetch(`${BASE}/api/alerts`, { headers: { Cookie: aliceCookie } });
   assert(afterLogout.status === 401, "the old cookie stops working after logout — the session was actually deleted server-side, not just cleared client-side");

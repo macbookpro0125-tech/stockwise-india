@@ -1,8 +1,8 @@
 import { useState } from "react";
 
 // Ported from stock-screener's src/components/CriteriaPanel.jsx — same eight
-// sections, same sliders, ranges and hints. Filters this app's data can't
-// answer yet are shown disabled with the reason, rather than silently ignored.
+// sections, same sliders, ranges and hints, plus a visible net-net switch
+// (the original only set it from its preset).
 
 export const BLANK_CRITERIA = {
   revenue_growth_min: 0, roe_min: 0, opm_min: 0, roce_min: 0,
@@ -135,14 +135,6 @@ function CheckRow({ checked, onToggle, children, disabled = false }) {
   );
 }
 
-function NotYet({ children }) {
-  return (
-    <div style={{ fontSize: 11, color: "var(--yellow)", background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", borderRadius: 8, padding: "8px 12px", marginBottom: 16, lineHeight: 1.6 }}>
-      {children}
-    </div>
-  );
-}
-
 export default function CriteriaPanel({ criteria, onChange, activeFilters }) {
   const set = (key, val) => onChange({ ...criteria, [key]: val });
   const toggle = key => onChange({ ...criteria, [key]: !criteria[key] });
@@ -209,16 +201,14 @@ export default function CriteriaPanel({ criteria, onChange, activeFilters }) {
       </Section>
 
       <Section title="52-Week Range" number="7" defaultOpen={false}>
-        <NotYet>Not available yet — needs a year of daily prices, which this app doesn't store yet.</NotYet>
-        <Slider label="Near 52W Low — max % above low" value={criteria.near_52w_low_pct || 0} min={0} max={50} step={5} unit="%" disabled onChange={v => set("near_52w_low_pct", v > 0 ? v : null)} hint="0 = off  ·  20 = within 20% of 52W low" />
-        <Slider label="Off Peak — min % below 52W High" value={criteria.pct_below_52w_high_min || 0} min={0} max={60} step={5} unit="%" disabled onChange={v => set("pct_below_52w_high_min", v > 0 ? v : null)} hint="0 = off  ·  30 = at least 30% off 52W peak" />
+        <Slider label="Near 52W Low — max % above low" value={criteria.near_52w_low_pct || 0} min={0} max={50} step={5} unit="%" onChange={v => set("near_52w_low_pct", v > 0 ? v : null)} hint="0 = off  ·  20 = within 20% of 52W low" />
+        <Slider label="Off Peak — min % below 52W High" value={criteria.pct_below_52w_high_min || 0} min={0} max={60} step={5} unit="%" onChange={v => set("pct_below_52w_high_min", v > 0 ? v : null)} hint="0 = off  ·  30 = at least 30% off 52W peak" />
       </Section>
 
       <Section title="Cash Flow & Consistency" number="8" defaultOpen={false}>
+        <Slider label="Min Piotroski Score" value={criteria.piotroski_min || 0} min={0} max={9} unit="" onChange={v => set("piotroski_min", v)} hint="0 = off · 9-point financial strength checklist. 7+ = strong, improving fundamentals. Not scored for banks and lenders." />
         <Slider label="Min Profit Growth (5Y CAGR)" value={criteria.profit_growth_5y_min || 0} min={0} max={30} onChange={v => set("profit_growth_5y_min", v)} hint="0 = off · Sustained profit growth filters out one-quarter wonders." />
-        <NotYet>Piotroski score and free cash flow aren't available yet — they need line items (capital spending, current liabilities) this app doesn't read from filings yet.</NotYet>
-        <Slider label="Min Piotroski Score" value={criteria.piotroski_min || 0} min={0} max={9} unit="" disabled onChange={v => set("piotroski_min", v)} hint="0 = off · 9-point financial strength checklist. 7+ = strong, improving fundamentals." />
-        <CheckRow checked={!!criteria.fcf_positive} onToggle={() => toggle("fcf_positive")} disabled>
+        <CheckRow checked={!!criteria.fcf_positive} onToggle={() => toggle("fcf_positive")}>
           Positive free cash flow (last year)
         </CheckRow>
       </Section>

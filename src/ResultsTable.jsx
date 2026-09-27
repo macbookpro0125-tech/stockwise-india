@@ -1,9 +1,13 @@
 import { useState, useEffect } from "react";
+import { StarIcon, BellIcon, actionButtonStyle } from "./icons.jsx";
+import { useWatchlist, toggleWatch } from "./watchlist.js";
+import CreateAlertModal from "./CreateAlertModal.jsx";
 
 // Ported from stock-screener's src/components/ResultsTable.jsx — same columns,
-// score badge, buy phases, NCAV badge, sorting, filter box, score filter and
-// paging. Differences: every row arrives already scored (no lazy enrichment),
-// and the watchlist, compare and Excel export aren't in this app yet.
+// score badge, buy phases with 52-week range, NCAV badge, watchlist star,
+// sorting, filter box, score filter and paging. Differences: every row arrives
+// already scored (no lazy enrichment), and compare and Excel export aren't in
+// this app yet.
 
 const PAGE_SIZE = 50;
 
@@ -107,9 +111,48 @@ function NcavBadge({ stock }) {
   );
 }
 
+export function RangeBar({ low, high, cmp }) {
+  if (!low || !high || !cmp || high <= low) return null;
+  const pct = Math.min(98, Math.max(2, ((cmp - low) / (high - low)) * 100));
+  const fromLow = Math.round(((cmp - low) / low) * 100);
+  const belowHigh = Math.round(((high - cmp) / high) * 100);
+  const aboveHigh = cmp > high;
+  return (
+    <div style={{ marginTop: 5 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9, color: "var(--t3)", marginBottom: 3, ...MONO }}>
+        <span>L {low.toLocaleString("en-IN")}</span>
+        <span>{high.toLocaleString("en-IN")} H</span>
+      </div>
+      <div style={{ position: "relative", height: 3, borderRadius: 99, background: "linear-gradient(to right, #FF453A 0%, #FFD60A 50%, #30D158 100%)", marginBottom: 4 }}>
+        <div style={{
+          position: "absolute", top: "50%",
+          left: `calc(${pct}% - 4px)`,
+          transform: "translateY(-50%)",
+          width: 8, height: 8, borderRadius: "50%",
+          background: "#fff",
+          boxShadow: "0 1px 4px rgba(0,0,0,0.6)",
+        }} />
+      </div>
+      <div style={{ fontSize: 9, color: "var(--t3)", ...MONO }}>
+        {cmp < low
+          ? <span style={{ color: "var(--red)" }}>↓ below 52W L</span>
+          : <>+{fromLow}% from L</>}
+        {aboveHigh
+          ? <span style={{ color: "var(--red)", marginLeft: 6 }}>↑ above 52W H</span>
+          : <span style={{ marginLeft: 6 }}>{belowHigh}% below H</span>}
+      </div>
+    </div>
+  );
+}
+
 function FvCell({ stock }) {
   const { cmp, safeBuyPrice: p1, p2, p3, fairValue } = stock;
-  if (!p1) return <div style={{ fontSize: 11, color: "var(--t3)", minHeight: 60 }}>—</div>;
+  if (!p1) return (
+    <div style={{ fontSize: 11, minWidth: 120, minHeight: 60 }}>
+      <span style={{ color: "var(--t3)" }}>—</span>
+      <RangeBar low={stock.low52w} high={stock.high52w} cmp={cmp} />
+    </div>
+  );
   return (
     <div style={{ lineHeight: 1.6, fontSize: 11, minWidth: 120, minHeight: 60 }}>
       {[["P1 30%", p1], ["P2 30%", p2], ["P3 40%", p3]].map(([label, price]) => {
@@ -137,11 +180,35 @@ function FvCell({ stock }) {
           at today's P/E
         </div>
       )}
+      <RangeBar low={stock.low52w} high={stock.high52w} cmp={cmp} />
     </div>
   );
 }
 
-export default function ResultsTable({ matches, loading, onAnalyze, totalMatches, queryUsed, unsupported = [], executionTime, snapshot, netNet = false }) {
+function StarButton({ symbol, watched, size = 30 }) {
+  return (
+    <button
+      onClick={() => toggleWatch(symbol)}
+      title={watched ? "Remove from watchlist" : "Add to watchlist"}
+      style={actionButtonStyle({ active: watched, activeColor: "#FFD60A", size })}
+    >
+      <StarIcon filled={watched} />
+    </button>
+  );
+}
+
+export default function ResultsTable({ matches, loading, onAnalyze, totalMatches, queryUsed, unsupported = [], notes = [], executionTime, snapshot, netNet = false, noun = "stocks", emptyTitle = "No stocks matched your criteria", emptyHint = "Try relaxing some filters" }) {
+  const watchlist = useWatchlist();
+  const [alertFor, setAlertFor] = useState(null);
+  const bell = (stock, size = 30) => (
+    <button
+      onClick={() => setAlertFor({ symbol: stock.symbol, name: stock.name, cmp: stock.cmp, p1: stock.safeBuyPrice, p2: stock.p2, p3: stock.p3 })}
+      title="Set price alert"
+      style={actionButtonStyle({ active: false, activeColor: "var(--accent)", size })}
+    >
+      <BellIcon />
+    </button>
+  );
   const [sortBy, setSortBy] = useState("score");
   const [sortDir, setSortDir] = useState("desc");
 
@@ -193,12 +260,13 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
   const visible = sorted.slice(0, visibleCount);
 
   const exportCsv = () => {
-    const cols = ["Rank", "Name", "Symbol", "Score", "CMP", "PE", "ROCE", "ROE", "OPM", "Promoter%", "FII%", "DII%", "MarketCap(Cr)", "DivYield", "P1", "P2", "P3", "FairValue2027"];
+    const cols = ["Rank", "Name", "Symbol", "Score", "CMP", "PE", "ROCE", "ROE", "OPM", "Promoter%", "FII%", "DII%", "MarketCap(Cr)", "DivYield", "P1", "P2", "P3", "FairValue2027", "52WLow", "52WHigh"];
     const r1 = v => (v == null ? "" : Math.round(v * 10) / 10);
     const rows = sorted.map((s, i) => [
       i + 1, `"${String(s.name).replace(/"/g, '""')}"`, s.symbol, `${s.score.green}/${s.score.applicable}`,
       r1(s.cmp), r1(s.pe), r1(s.roce), r1(s.roe), r1(s.opm), r1(s.promoterPct), r1(s.fiiPct), r1(s.diiPct),
       r1(s.marketCapCr), r1(s.divYield), s.safeBuyPrice ?? "", s.p2 ?? "", s.p3 ?? "", s.fairValue ?? "",
+      s.low52w ?? "", s.high52w ?? "",
     ]);
     const csv = [cols.join(","), ...rows.map(r => r.join(","))].join("\n");
     const a = document.createElement("a");
@@ -214,6 +282,8 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
 
   return (
     <div style={{ animation: "fadeUp 280ms cubic-bezier(0,0,0.2,1) both" }}>
+      {alertFor && <CreateAlertModal stock={alertFor} onClose={() => setAlertFor(null)} />}
+
       {/* ── Top bar ── */}
       {(totalMatches != null || loading) && (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, padding: "14px 0", marginBottom: 12, borderBottom: "1px solid var(--bdr)" }}>
@@ -224,7 +294,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
               <span>
                 <span style={{ color: "var(--t2)" }}>Found </span>
                 <strong style={{ color: "var(--t1)" }}>{q ? filtered.length.toLocaleString() : totalMatches?.toLocaleString()}</strong>
-                <span style={{ color: "var(--t2)" }}> stocks</span>
+                <span style={{ color: "var(--t2)" }}> {noun}</span>
                 {(q || minScore > 0) && filtered.length !== (matches?.length ?? 0) && <span style={{ color: "var(--t3)" }}> (filtered from {matches?.length})</span>}
                 {!q && visible.length < sorted.length && <span style={{ color: "var(--t2)" }}> · showing <strong style={{ color: "var(--t1)" }}>{visible.length}</strong></span>}
                 {executionTime != null && <span style={{ color: "var(--t3)", marginLeft: 8, fontSize: 11, ...MONO }}>{(executionTime / 1000).toFixed(1)}s</span>}
@@ -284,6 +354,11 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
           {queryUsed}
         </div>
       )}
+      {notes.length > 0 && !loading && (
+        <div style={{ fontSize: 11, color: "var(--t2)", marginBottom: 14, padding: "9px 14px", background: "var(--s1)", borderRadius: 9, border: "1px dashed var(--bdr2)", lineHeight: 1.7 }}>
+          {notes.map(n => <div key={n}>{n}</div>)}
+        </div>
+      )}
       {unsupported.length > 0 && !loading && (
         <div style={{ fontSize: 11, color: "var(--yellow)", marginBottom: 14, padding: "9px 14px", background: "var(--yellow-dim)", borderRadius: 9, border: "1px solid var(--yellow-bdr)", lineHeight: 1.7 }}>
           Not applied (no data yet): {unsupported.join(", ")}
@@ -315,6 +390,8 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <button onClick={() => onAnalyze(stock.symbol)} className="btn-primary" style={{ flex: 1, height: 36, fontSize: 12 }}>Analyze →</button>
+                <StarButton symbol={stock.symbol} watched={watchlist.has(stock.symbol)} size={36} />
+                {bell(stock, 36)}
                 <a href={nseUrl(stock.symbol)} target="_blank" rel="noreferrer" style={{ width: 36, height: 36, borderRadius: 10, border: "1px solid var(--bdr2)", background: "var(--s1)", color: "var(--t2)", fontSize: 13, textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "center" }}>↗</a>
               </div>
             </div>
@@ -408,6 +485,8 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                         <button onClick={() => onAnalyze(stock.symbol)} className="btn-primary" style={{ height: 30, padding: "0 12px", fontSize: 12, borderRadius: 8, boxShadow: "none" }}>
                           Analyze
                         </button>
+                        <StarButton symbol={stock.symbol} watched={watchlist.has(stock.symbol)} />
+                        {bell(stock)}
                         <a
                           href={nseUrl(stock.symbol)} target="_blank" rel="noreferrer" title="Open on NSE"
                           style={{ width: 30, height: 30, borderRadius: 8, border: "1px solid var(--bdr2)", background: "transparent", color: "var(--t3)", fontSize: 12, textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 120ms" }}
@@ -435,8 +514,8 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
       {noData && (
         <div style={{ textAlign: "center", padding: "64px 0", color: "var(--t3)" }}>
           <div style={{ fontSize: 40, marginBottom: 16, opacity: 0.3 }}>◎</div>
-          <p style={{ fontSize: 15, color: "var(--t2)", marginBottom: 6, fontWeight: 500 }}>No stocks matched your criteria</p>
-          <p style={{ fontSize: 13, color: "var(--t3)" }}>Try relaxing some filters</p>
+          <p style={{ fontSize: 15, color: "var(--t2)", marginBottom: 6, fontWeight: 500 }}>{emptyTitle}</p>
+          <p style={{ fontSize: 13, color: "var(--t3)" }}>{emptyHint}</p>
         </div>
       )}
     </div>
