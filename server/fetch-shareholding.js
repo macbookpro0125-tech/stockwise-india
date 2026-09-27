@@ -27,12 +27,20 @@ function byCategory(xml, members, tag) {
   return out;
 }
 
-const pct = v => (v == null ? null : Math.round(v * 10000) / 100);
+// Every quarterly shareholding filing NSE lists for the company, newest first
+export async function shareholdingFilings(symbol) {
+  const rows = await fetchJson(`${NSE_BASE}/api/corporate-share-holdings-master?index=equities&symbol=${encodeURIComponent(symbol)}`);
+  return [...rows].sort((a, b) => parseQeDate(b.date) - parseQeDate(a.date));
+}
 
 export async function fetchShareholding(symbol) {
-  const rows = await fetchJson(`${NSE_BASE}/api/corporate-share-holdings-master?index=equities&symbol=${encodeURIComponent(symbol)}`);
-  if (!rows.length) throw new Error(`No shareholding filing for ${symbol}`);
-  const latest = [...rows].sort((a, b) => parseQeDate(b.date) - parseQeDate(a.date))[0];
+  const [latest] = await shareholdingFilings(symbol);
+  if (!latest) throw new Error(`No shareholding filing for ${symbol}`);
+  return readShareholdingFiling(latest);
+}
+
+// One quarter's filing (a row from shareholdingFilings) read in full
+export async function readShareholdingFiling(latest) {
   const quarterEnd = parseQeDate(latest.date);
   const base = {
     asOf: latest.date,
@@ -65,6 +73,14 @@ export async function fetchShareholding(symbol) {
       .some(k => k in share)
       ? (share.InstitutionsForeignPortfolioInvestorCategoryOneMember ?? 0) + (share.InstitutionsForeignPortfolioInvestorCategoryTwoMember ?? 0) + (share.OtherInstitutionsForeignMember ?? 0)
       : null);
+
+  // Filings give each category's share as a fraction (0.4289), older ones
+  // already as a percent (42.89) — the filing's own total says which. Reading
+  // one as the other put a promoter at 4,289% in the history panel.
+  const total = share.ShareholdingPatternMember ??
+    ((share.ShareholdingOfPromoterAndPromoterGroupMember ?? 0) + (share.PublicShareholdingMember ?? 0));
+  const scale = total > 1.5 ? 1 : 100;
+  const pct = v => (v == null ? null : Math.round(v * scale * 100) / 100);
 
   // A filing only lists the categories that have holders: one that parsed
   // but has no foreign (or domestic) institutions category has none — 0, not

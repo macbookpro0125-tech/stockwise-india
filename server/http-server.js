@@ -17,6 +17,8 @@ import { fetchEquityList } from "./equity-list.js";
 import { computeMetrics } from "./metrics.js";
 import { loadMarketSnapshot } from "./market-data.js";
 import { startDataJobs, jobStatus } from "./data-jobs.js";
+import { fetchTechnicals } from "./technicals.js";
+import { shareholdingHistory, companyFilings, companyNews, sectorPeers } from "./company-extras.js";
 import { PRESETS } from "./presets.js";
 import { DIST_DIR } from "./paths.js";
 
@@ -144,18 +146,31 @@ export function createApp() {
         return;
       }
 
-      const pricesRoute = url.pathname.match(/^\/api\/stock\/([^/]+)\/prices$/);
-      if (pricesRoute && req.method === "GET") {
+      // The stock page's panels, each loaded on its own so a slow one (news,
+      // an old quarter's shareholding) never holds up the rest of the page
+      const panelRoute = url.pathname.match(/^\/api\/stock\/([^/]+)\/(prices|technicals|shareholding|filings|news|peers)$/);
+      if (panelRoute && req.method === "GET") {
         const userId = requireAuth(req, res);
         if (userId == null) return;
-        const symbol = decodeURIComponent(pricesRoute[1]).toUpperCase();
-        const range = url.searchParams.get("range") ?? "1y";
-        if (!isValidSymbol(symbol) || !PRICE_RANGES.includes(range)) {
-          sendJson(res, 400, { error: "Unknown symbol or range" });
+        const symbol = decodeURIComponent(panelRoute[1]).toUpperCase();
+        if (!isValidSymbol(symbol)) {
+          sendJson(res, 400, { error: "Unknown symbol" });
           return;
         }
         try {
-          sendJson(res, 200, await fetchDailyBars(symbol, range));
+          switch (panelRoute[2]) {
+            case "prices": {
+              const range = url.searchParams.get("range") ?? "1y";
+              if (!PRICE_RANGES.includes(range)) { sendJson(res, 400, { error: "Unknown range" }); return; }
+              sendJson(res, 200, await fetchDailyBars(symbol, range));
+              return;
+            }
+            case "technicals": sendJson(res, 200, await fetchTechnicals(symbol)); return;
+            case "shareholding": sendJson(res, 200, { quarters: await shareholdingHistory(symbol) }); return;
+            case "filings": sendJson(res, 200, await companyFilings(symbol)); return;
+            case "news": sendJson(res, 200, await companyNews(getStock(symbol)?.name ?? symbol)); return;
+            case "peers": sendJson(res, 200, sectorPeers(symbol)); return;
+          }
         } catch (e) {
           sendJson(res, 502, { error: e.message });
         }
@@ -200,7 +215,8 @@ export function createApp() {
         } catch (e) {
           quoteError = e.message;
         }
-        const metrics = computeMetrics(fundamentals, loadMarketSnapshot(), quote ? { cmp: quote.cmp, cmpDate: quote.asOf } : {});
+        const snap = loadMarketSnapshot();
+        const metrics = computeMetrics(fundamentals, snap, quote ? { cmp: quote.cmp, cmpDate: quote.asOf } : {});
 
         sendJson(res, 200, {
           symbol: fundamentals.symbol,
@@ -211,6 +227,8 @@ export function createApp() {
           balanceSheet: fundamentals.balanceSheet,
           holding: fundamentals.holding,
           quote, quoteError, metrics,
+          // NSE's own last close, for the price box's "Use NSE close"
+          close: snap?.prices?.[symbol] != null ? { price: snap.prices[symbol], date: snap.pricesDate } : null,
         });
         return;
       }

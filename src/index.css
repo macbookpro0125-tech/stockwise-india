@@ -13,6 +13,11 @@
   --s4:    #222238;
   --s5:    #2A2A44;
 
+  /* The original's legacy names — its ported panels still use them */
+  --surf:  #0C0C17;
+  --card:  #111120;
+  --card2: #171728;
+
   /* ── Accent ── */
   --accent:  #00E0BE;
   --accent2: #00F5D0;
@@ -342,10 +347,14 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
 .data-table tr:last-child td { border-bottom: none; }
 
-/* ── Stock page grids (the original's StockScreener layout) ── */
+/* ── Stock page (the original's StockScreener layout) ── */
 .ss-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
 .ss-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.ss-grid-fv { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.ss-grid-pts { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
 .ss-pros-cons-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.ss-back-bottom { display: flex; justify-content: center; padding: 8px 0 4px; }
+.ss-back-sticky { display: none; }
 
 /* On a phone the header wraps to three rows (~160px) — pinned, it would hold
    a fifth of the screen, so it scrolls away with the page there. */
@@ -354,13 +363,25 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 }
 
 @media (max-width: 640px) {
-  .ss-grid-4 { grid-template-columns: repeat(2, 1fr); }
+  .ss-grid-4, .ss-grid-fv { grid-template-columns: repeat(2, 1fr); }
   .ss-grid-3 { grid-template-columns: repeat(2, 1fr); }
+  .ss-grid-pts { grid-template-columns: repeat(2, 1fr); }
   .ss-pros-cons-grid { grid-template-columns: 1fr !important; }
+  .ss-back-bottom { display: none; }
+  .ss-back-sticky {
+    display: block;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 50;
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+    background: var(--s1);
+    border-top: 1px solid var(--bdr2);
+  }
 }
 
 @media (max-width: 420px) {
-  .ss-grid-4, .ss-grid-3 { grid-template-columns: 1fr; }
+  .ss-grid-4, .ss-grid-fv, .ss-grid-3 { grid-template-columns: 1fr; }
+  .ss-grid-pts { grid-template-columns: repeat(2, 1fr); }
 }
 
 /* iOS Safari zooms the page in whenever a field under 16px takes focus and

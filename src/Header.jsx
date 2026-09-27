@@ -1,9 +1,26 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useWatchlist } from "./watchlist.js";
 
 export default function Header({ tab, onTab, onLogout, onSearch }) {
   const [q, setQ] = useState("");
   const watchCount = useWatchlist().size;
+
+  // --header-h: how much of the top the pinned header covers, so bars pinned
+  // below it (the stock page's action bar) sit under it at any width — 0 on
+  // phones, where the header scrolls away.
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    const measure = () => {
+      const pinned = getComputedStyle(el).position === "sticky";
+      document.documentElement.style.setProperty("--header-h", `${pinned ? el.getBoundingClientRect().height : 0}px`);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    window.addEventListener("resize", measure);
+    return () => { ro.disconnect(); window.removeEventListener("resize", measure); };
+  }, []);
 
   const submit = (e) => {
     e.preventDefault();
@@ -12,7 +29,7 @@ export default function Header({ tab, onTab, onLogout, onSearch }) {
   };
 
   return (
-    <div className="app-header" style={{ borderBottom: "1px solid var(--bdr)", background: "var(--s1)", position: "sticky", top: 0, zIndex: 100 }}>
+    <div ref={ref} className="app-header" style={{ borderBottom: "1px solid var(--bdr)", background: "var(--s1)", position: "sticky", top: 0, zIndex: 100 }}>
       <div style={{ maxWidth: 1240, margin: "0 auto", padding: "12px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }} onClick={() => onTab("discover")}>
           <img src="/stockwise-india-icon.svg" alt="" style={{ width: 28, height: 28, borderRadius: 7, flexShrink: 0 }} />

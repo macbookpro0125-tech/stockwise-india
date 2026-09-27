@@ -42,7 +42,7 @@ export default function App() {
   return (
     <div>
       <Header tab={open ? null : tab} onTab={goTab} onLogout={logout} onSearch={openSymbol} />
-      {open && <StockDetail key={open.at} symbol={open.symbol} onBack={closeStock} />}
+      {open && <StockDetail key={open.at} symbol={open.symbol} onBack={closeStock} onOpenStock={openSymbol} />}
       {/* Kept mounted (hidden) while a stock is open, so its filters and
           results are still there on Back. */}
       {tab === "discover" && <div hidden={!!open}><DiscoverView onOpenStock={openSymbol} /></div>}

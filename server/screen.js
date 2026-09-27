@@ -69,7 +69,7 @@ export function allMetrics() {
 // The table only needs these; the stock page gets the full metrics.
 function tableRow(m) {
   return {
-    symbol: m.symbol, name: m.name, sector: m.sector, lender: m.lender,
+    symbol: m.symbol, name: m.name, sector: m.sector, lender: m.lender, fyEnd: m.fyEnd,
     cmp: m.cmp, pe: m.pe, roce: m.roce, roe: m.roe, roeAvg: m.roeAvg, roeAvgYears: m.roeAvgYears,
     opm: m.opm, promoterPct: m.promoterPct, fiiPct: m.fiiPct, diiPct: m.diiPct, pledgedPct: m.pledgedPct,
     marketCapCr: m.marketCapCr, divYield: m.divYield,

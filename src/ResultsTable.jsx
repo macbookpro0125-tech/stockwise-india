@@ -170,7 +170,7 @@ function FvCell({ stock }) {
       {fairValue && (
         <div style={{ color: "var(--t3)", fontSize: 10, marginTop: 1, ...MONO }}>
           {/* The projection, not the anchor: P1–P3 are a discount to today's fair value */}
-          FV27 {fairValue.toLocaleString("en-IN")}
+          {stock.fyEnd ? `FV${String(Number(stock.fyEnd.slice(0, 4)) + 2).slice(2)}` : "FV"} {fairValue.toLocaleString("en-IN")}
         </div>
       )}
       {/* Under 3 years of P/E history the valuation falls back to today's P/E,
@@ -260,7 +260,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
   const visible = sorted.slice(0, visibleCount);
 
   const exportCsv = () => {
-    const cols = ["Rank", "Name", "Symbol", "Score", "CMP", "PE", "ROCE", "ROE", "OPM", "Promoter%", "FII%", "DII%", "MarketCap(Cr)", "DivYield", "P1", "P2", "P3", "FairValue2027", "52WLow", "52WHigh"];
+    const cols = ["Rank", "Name", "Symbol", "Score", "CMP", "PE", "ROCE", "ROE", "OPM", "Promoter%", "FII%", "DII%", "MarketCap(Cr)", "DivYield", "P1", "P2", "P3", "FairValue2Y", "52WLow", "52WHigh"];
     const r1 = v => (v == null ? "" : Math.round(v * 10) / 10);
     const rows = sorted.map((s, i) => [
       i + 1, `"${String(s.name).replace(/"/g, '""')}"`, s.symbol, `${s.score.green}/${s.score.applicable}`,

@@ -17,5 +17,8 @@ data/market-snapshot.json
 # Background jobs' bookkeeping (last check for new results)
 data/jobs-state.json
 
+# Past quarters' shareholding, cached as stock pages are opened
+data/shareholding/
+
 # Production build output
 dist/

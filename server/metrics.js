@@ -216,6 +216,20 @@ export function computeMetrics(stock, snap, overrides = {}) {
   const nameLower = String(stock.name || "").toLowerCase();
   const cyclical = sector ? CYCLICAL_SECTORS.has(sector) : CYCLICAL_NAME_WORDS.some(w => nameLower.includes(w));
 
+  // For the stock page's 10-point checklist, on the original's definitions:
+  // interest cover = EBIT / interest; EPS stability = coefficient of variation
+  // of the last five years' EPS; margin swing = the five-year OPM range.
+  const interestCoverage = !lender && latest.financeCosts > 0 && latest.pbt != null
+    ? (latest.pbt + latest.financeCosts) / latest.financeCosts
+    : null;
+  const epsLast5 = history.slice(0, 5).map(h => h.eps).filter(v => v != null);
+  const epsMean = epsLast5.length ? epsLast5.reduce((a, b) => a + b, 0) / epsLast5.length : null;
+  const epsCV = epsLast5.length >= 3 && epsMean > 0
+    ? Math.sqrt(epsLast5.reduce((a, v) => a + (v - epsMean) ** 2, 0) / epsLast5.length) / epsMean
+    : null;
+  const opmLast5 = history.slice(0, 5).map(h => h.opm).filter(v => v != null);
+  const opmRange = opmLast5.length >= 3 ? Math.max(...opmLast5) - Math.min(...opmLast5) : null;
+
   const m = {
     symbol: sym,
     name: stock.name,
@@ -230,7 +244,7 @@ export function computeMetrics(stock, snap, overrides = {}) {
     salesGrowth3y, salesGrowth5y, profitGrowth3y, profitGrowth5y,
     roe, roeAvg, roeAvgYears: roeHistory.length,
     roce: roceOf(latest), opm,
-    debtToEquity, priceToBook,
+    debtToEquity, priceToBook, interestCoverage, epsCV, opmRange,
     promoterPct: holding.promoterPct ?? null,
     fiiPct: holding.fiiPct ?? null,
     diiPct: holding.diiPct ?? null,

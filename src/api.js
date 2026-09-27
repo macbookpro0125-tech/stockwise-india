@@ -23,6 +23,8 @@ export const api = {
   screen: (criteria) => request("/api/screen", { method: "POST", body: JSON.stringify(criteria) }),
   stock: (symbol) => request(`/api/stock/${encodeURIComponent(symbol)}`),
   prices: (symbol, range) => request(`/api/stock/${encodeURIComponent(symbol)}/prices?range=${range}`),
+  // The stock page's other panels: technicals, shareholding, filings, news, peers
+  panel: (symbol, name) => request(`/api/stock/${encodeURIComponent(symbol)}/${name}`),
   watchlist: () => request("/api/watchlist"),
   addWatch: (ticker) => request("/api/watchlist", { method: "POST", body: JSON.stringify({ ticker }) }),
   removeWatch: (ticker) => request(`/api/watchlist/${encodeURIComponent(ticker)}`, { method: "DELETE" }),
