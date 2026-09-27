@@ -5,7 +5,7 @@
 // on the page, which is exactly what a single XSS bug turns into full
 // account takeover. httpOnly means client-side JS can't read it at all.
 import { createServer } from "node:http";
-import { readFileSync, existsSync, statSync } from "node:fs";
+import { existsSync, statSync, createReadStream } from "node:fs";
 import { join, normalize, extname, sep } from "node:path";
 import { signup, login, logout, verifySession } from "./auth.js";
 import { listAlerts, createAlert, updateAlert, deleteAlert } from "./user-alerts.js";
@@ -64,22 +64,45 @@ async function searchEquities(q) {
 const CONTENT_TYPES = {
   ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css",
   ".svg": "image/svg+xml", ".png": "image/png", ".ico": "image/x-icon", ".json": "application/json",
-  ".woff2": "font/woff2", ".txt": "text/plain",
+  ".woff2": "font/woff2", ".txt": "text/plain", ".webm": "video/webm",
 };
 
-function serveStatic(pathname, res) {
+// Streams the file, and answers Range requests with just the bytes asked
+// for: the "How it works" video needs them — Safari won't play a video
+// without, and skipping ahead relies on them in every browser.
+function serveStatic(req, pathname, res) {
   if (!existsSync(DIST_DIR)) return false;
   let file = normalize(join(DIST_DIR, decodeURIComponent(pathname)));
   if (!file.startsWith(DIST_DIR + sep) && file !== DIST_DIR) return false; // no ../ out of dist
   // Anything that isn't a file is the app itself (it has no other pages)
   if (!existsSync(file) || statSync(file).isDirectory()) file = join(DIST_DIR, "index.html");
-  res.writeHead(200, {
+  const size = statSync(file).size;
+  const headers = {
     "Content-Type": CONTENT_TYPES[extname(file)] ?? "application/octet-stream",
     // Vite puts a content hash in asset file names, so those never change;
     // index.html must be re-checked so a deploy is picked up.
     "Cache-Control": file.includes(`${sep}assets${sep}`) ? "public, max-age=31536000, immutable" : "no-cache",
-  });
-  res.end(readFileSync(file));
+    "Accept-Ranges": "bytes",
+  };
+  const send = (status, extra, range) => {
+    res.writeHead(status, { ...headers, ...extra });
+    createReadStream(file, range).on("error", () => res.destroy()).pipe(res);
+  };
+  // bytes=500-999, bytes=500- (to the end), bytes=-500 (the last 500). A
+  // multi-part range gets the whole file, which the spec allows.
+  const m = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range ?? "");
+  if (m && (m[1] || m[2])) {
+    const start = m[1] ? Number(m[1]) : Math.max(0, size - Number(m[2]));
+    const end = m[1] && m[2] ? Math.min(Number(m[2]), size - 1) : size - 1;
+    if (start > end || start >= size) {
+      res.writeHead(416, { "Content-Range": `bytes */${size}` });
+      res.end();
+      return true;
+    }
+    send(206, { "Content-Range": `bytes ${start}-${end}/${size}`, "Content-Length": end - start + 1 }, { start, end });
+    return true;
+  }
+  send(200, { "Content-Length": size });
   return true;
 }
 
@@ -454,7 +477,7 @@ export function createApp() {
         return;
       }
 
-      if (req.method === "GET" && serveStatic(url.pathname, res)) return;
+      if (req.method === "GET" && serveStatic(req, url.pathname, res)) return;
       sendJson(res, 404, { error: "Not found" });
     } catch (e) {
       sendJson(res, e.duplicate ? 409 : 400, { error: e.message });

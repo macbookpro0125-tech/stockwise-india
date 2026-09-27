@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { api } from "./api.js";
+import HowItWorks from "./HowItWorks.jsx";
 
 export default function AuthForm({ onAuthed }) {
   const [mode, setMode] = useState("login"); // "login" | "signup"
@@ -47,6 +48,8 @@ export default function AuthForm({ onAuthed }) {
       >
         {mode === "login" ? "New here? Create an account" : "Already have an account? Sign in"}
       </button>
+      {/* For visitors deciding whether to sign up */}
+      <HowItWorks label="▶ See how it works (2 min)" style={{ marginTop: 10, width: "100%", height: 40, fontSize: 13 }} />
     </div>
   );
 }

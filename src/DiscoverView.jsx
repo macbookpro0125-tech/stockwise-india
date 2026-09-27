@@ -3,6 +3,7 @@ import { api } from "./api.js";
 import PresetCards from "./PresetCards.jsx";
 import CriteriaPanel, { BLANK_CRITERIA, countActiveFilters } from "./CriteriaPanel.jsx";
 import ResultsTable from "./ResultsTable.jsx";
+import HowItWorks from "./HowItWorks.jsx";
 
 // The original's Discover screen (stock-screener/src/Discovery.jsx): strategy
 // cards, the filter panel, Find Stocks, results. One change in behaviour: the
@@ -181,8 +182,11 @@ export default function DiscoverView({ onOpenStock }) {
       )}
 
       <div style={{ animation: "fadeUp 280ms cubic-bezier(0,0,0.2,1) backwards" }}>
-        <div style={{ fontSize: 10, fontWeight: 600, color: "var(--t3)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 8 }}>
-          Strategies
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
+          <div style={{ fontSize: 10, fontWeight: 600, color: "var(--t3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+            Strategies
+          </div>
+          <HowItWorks />
         </div>
 
         <PresetCards
