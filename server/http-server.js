@@ -11,7 +11,7 @@ import { signup, login, logout, verifySession } from "./auth.js";
 import { listAlerts, createAlert, deleteAlert } from "./user-alerts.js";
 import { screen, getStock, saveStock, rowsFor, isValidSymbol, countFetched } from "./screen.js";
 import { listWatchlist, addToWatchlist, removeFromWatchlist } from "./user-watchlist.js";
-import { fetchCmp } from "./quote.js";
+import { fetchCmp, fetchDailyBars, PRICE_RANGES } from "./quote.js";
 import { fetchStockSummary, SCHEMA } from "./fetch-nse.js";
 import { fetchEquityList } from "./equity-list.js";
 import { computeMetrics } from "./metrics.js";
@@ -141,6 +141,24 @@ export function createApp() {
 
       if (url.pathname === "/api/presets" && req.method === "GET") {
         sendJson(res, 200, PRESETS);
+        return;
+      }
+
+      const pricesRoute = url.pathname.match(/^\/api\/stock\/([^/]+)\/prices$/);
+      if (pricesRoute && req.method === "GET") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        const symbol = decodeURIComponent(pricesRoute[1]).toUpperCase();
+        const range = url.searchParams.get("range") ?? "1y";
+        if (!isValidSymbol(symbol) || !PRICE_RANGES.includes(range)) {
+          sendJson(res, 400, { error: "Unknown symbol or range" });
+          return;
+        }
+        try {
+          sendJson(res, 200, await fetchDailyBars(symbol, range));
+        } catch (e) {
+          sendJson(res, 502, { error: e.message });
+        }
         return;
       }
 

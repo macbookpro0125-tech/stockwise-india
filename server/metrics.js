@@ -177,6 +177,40 @@ export function computeMetrics(stock, snap, overrides = {}) {
 
   const range = snap?.range52w?.[sym] ?? null;
 
+  // Year by year for the stock page's financial statements and chart, on the
+  // same definitions as the headline figures (EPS on today's share basis).
+  const cr = v => (v == null ? null : v / 1e7);
+  const history = years.map(y => {
+    const operatingProfit = !lender && y.revenue != null && y.expenses != null
+      ? y.revenue - (y.expenses - (y.financeCosts ?? 0) - (y.depreciation ?? 0))
+      : null;
+    return {
+      fyEnd: y.fyEnd,
+      scope: y.scope,
+      revenueCr: cr(y.revenue),
+      expensesCr: cr(y.expenses),
+      operatingProfitCr: cr(operatingProfit),
+      opm: operatingProfit != null && y.revenue > 0 ? (operatingProfit / y.revenue) * 100 : null,
+      otherIncomeCr: cr(y.otherIncome),
+      depreciationCr: cr(y.depreciation),
+      financeCostsCr: cr(y.financeCosts),
+      pbtCr: cr(y.pbt),
+      profitCr: cr(y.profit),
+      eps: y.eps != null ? y.eps / factorAfter(filedOf(y)) : null,
+      equityCr: cr(y.equity),
+      debtCr: cr(y.debt),
+      totalAssetsCr: cr(y.totalAssets),
+      currentAssetsCr: cr(y.currentAssets),
+      currentLiabilitiesCr: cr(y.currentLiabilities),
+      ocfCr: cr(y.ocf),
+      capexCr: cr(y.capex),
+      fcfCr: !lender && y.ocf != null && y.capex != null ? cr(y.ocf - y.capex) : null,
+      roe: roeOf(y),
+      roce: roceOf(y),
+      debtToEquity: y.equity > 0 && y.debt != null ? y.debt / y.equity : null,
+    };
+  });
+
   const sector = snap?.sectors?.[sym] ?? null;
   const utility = sector ? UTILITY_SECTORS.has(sector) : false;
   const nameLower = String(stock.name || "").toLowerCase();
@@ -212,6 +246,7 @@ export function computeMetrics(stock, snap, overrides = {}) {
     otherIncomeCr: latest.otherIncome != null ? latest.otherIncome / 1e7 : null,
     ncavCr,
     peHistory, medianPe, peYears: validPe.length,
+    history,
     growthForValuation,
     valuationPe, valuationPeBasis: medianPe != null ? "median" : "current",
     levels,

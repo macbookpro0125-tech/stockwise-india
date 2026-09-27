@@ -5,6 +5,8 @@ import { ScoreBadge, RangeBar } from "./ResultsTable.jsx";
 import { StarIcon, BellIcon } from "./icons.jsx";
 import { useWatchlist, toggleWatch } from "./watchlist.js";
 import CreateAlertModal from "./CreateAlertModal.jsx";
+import PriceChartPanel from "./PriceChartPanel.jsx";
+import FinancialsPanel from "./FinancialsPanel.jsx";
 
 function fmtRs(n) { return n == null ? "—" : `₹${Math.round(n).toLocaleString("en-IN")}`; }
 function fmtCr(n) { return n == null ? "—" : `₹${(n / 10000000).toLocaleString("en-IN", { maximumFractionDigits: 1 })} Cr`; }
@@ -325,6 +327,8 @@ export default function StockDetail({ symbol, onBack }) {
         </div>
       )}
 
+      <PriceChartPanel symbol={data.symbol} name={data.name} />
+
       {m && cmp && m.eps > 0 && (
         <div style={{ ...card, padding: 20 }}>
           <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 2 }}>Verify & Override</div>
@@ -378,6 +382,8 @@ export default function StockDetail({ symbol, onBack }) {
           <ScoreCard m={m} />
           <PiotroskiCard m={m} />
           <ProsCons m={m} />
+
+          <div style={{ marginTop: 16 }}><FinancialsPanel history={m.history} /></div>
 
           <div style={sectionTitle}>Fundamentals</div>
           <div className="ss-grid-4">

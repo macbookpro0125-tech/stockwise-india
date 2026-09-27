@@ -22,6 +22,7 @@ export const api = {
   presets: () => request("/api/presets"),
   screen: (criteria) => request("/api/screen", { method: "POST", body: JSON.stringify(criteria) }),
   stock: (symbol) => request(`/api/stock/${encodeURIComponent(symbol)}`),
+  prices: (symbol, range) => request(`/api/stock/${encodeURIComponent(symbol)}/prices?range=${range}`),
   watchlist: () => request("/api/watchlist"),
   addWatch: (ticker) => request("/api/watchlist", { method: "POST", body: JSON.stringify({ ticker }) }),
   removeWatch: (ticker) => request(`/api/watchlist/${encodeURIComponent(ticker)}`, { method: "DELETE" }),

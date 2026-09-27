@@ -38,3 +38,31 @@ export async function fetchCmp(symbol) {
   CACHE.set(symbol, { at: Date.now(), data });
   return data;
 }
+
+// Daily closes for the stock page's price chart — the same Yahoo series the
+// original's chart used. Yahoo's closes are already adjusted for splits and
+// bonuses, so a 1:1 bonus doesn't show as a 50% crash.
+export const PRICE_RANGES = ["1mo", "6mo", "1y", "5y", "max"];
+const BARS_CACHE = new Map();
+
+export async function fetchDailyBars(symbol, range = "1y") {
+  const key = `${symbol}|${range}`;
+  const cached = BARS_CACHE.get(key);
+  if (cached && Date.now() - cached.at < CACHE_MS) return cached.data;
+
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}.NS?interval=1d&range=${range}`;
+  const res = await fetch(url, { headers: { "User-Agent": UA, Accept: "application/json" } });
+  if (!res.ok) throw new Error(`Yahoo price history HTTP ${res.status}`);
+  const result = (await res.json())?.chart?.result?.[0];
+  if (!result) throw new Error(`No price history for ${symbol}`);
+
+  const timestamps = result.timestamp || [];
+  const closes = result.indicators?.quote?.[0]?.close || [];
+  const byDay = new Map();
+  for (let i = 0; i < timestamps.length; i++) {
+    if (closes[i] != null) byDay.set(istDayKey(timestamps[i]), Math.round(closes[i] * 100) / 100);
+  }
+  const data = { symbol: `${symbol}.NS`, range, bars: [...byDay].sort((a, b) => a[0].localeCompare(b[0])).map(([date, close]) => ({ date, close })) };
+  BARS_CACHE.set(key, { at: Date.now(), data });
+  return data;
+}
