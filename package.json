@@ -9,6 +9,7 @@
     "fetch:market": "node server/fetch-market.js",
     "fetch:holdings": "node server/fetch-market.js --holdings",
     "snapshot": "node server/build-snapshot.js",
+    "check:sources": "node --no-warnings server/check-sources.js",
     "api": "node server/http-server.js",
     "dev": "vite",
     "build": "vite build",
