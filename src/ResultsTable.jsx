@@ -2,14 +2,19 @@ import { useState, useEffect } from "react";
 import { StarIcon, BellIcon, actionButtonStyle } from "./icons.jsx";
 import { useWatchlist, toggleWatch } from "./watchlist.js";
 import CreateAlertModal from "./CreateAlertModal.jsx";
+import CompareView from "./CompareView.jsx";
+import { exportDiscoverExcel } from "./exportExcel.js";
 
 // Ported from stock-screener's src/components/ResultsTable.jsx — same columns,
 // score badge, buy phases with 52-week range, NCAV badge, watchlist star,
-// sorting, filter box, score filter and paging. Differences: every row arrives
-// already scored (no lazy enrichment), and compare and Excel export aren't in
-// this app yet.
+// compare (up to 4), Excel and CSV export, sorting, filter box, score filter
+// and paging. Every row arrives already scored, so there's no lazy enrichment.
 
 const PAGE_SIZE = 50;
+const MAX_COMPARE = 4;
+// Wide enough for the compare box and a four-digit rank; the name column is
+// pinned right after it.
+const RANK_W = 60;
 
 function scoreStyle(score, max) {
   const pct = max > 0 ? score / max : 0;
@@ -185,10 +190,10 @@ function FvCell({ stock }) {
   );
 }
 
-function StarButton({ symbol, watched, size = 30 }) {
+function StarButton({ symbol, price, watched, size = 30 }) {
   return (
     <button
-      onClick={() => toggleWatch(symbol)}
+      onClick={() => toggleWatch(symbol, price)}
       title={watched ? "Remove from watchlist" : "Add to watchlist"}
       style={actionButtonStyle({ active: watched, activeColor: "#FFD60A", size })}
     >
@@ -231,6 +236,22 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
   const [minScore, setMinScore] = useState(0);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   useEffect(() => { setVisibleCount(PAGE_SIZE); }, [matches]);
+
+  // Kept as the rows themselves, so picks survive switching to another
+  // strategy — compare a stock from one screen with one from another.
+  const [selected, setSelected] = useState(() => new Map());
+  const [showCompare, setShowCompare] = useState(false);
+  const toggleSelect = stock => {
+    setSelected(prev => {
+      const next = new Map(prev);
+      if (next.has(stock.symbol)) next.delete(stock.symbol);
+      else if (next.size < MAX_COMPARE) next.set(stock.symbol, stock);
+      return next;
+    });
+  };
+
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState(null);
 
   const handleSort = col => {
     if (sortBy === col) setSortDir(d => (d === "asc" ? "desc" : "asc"));
@@ -276,13 +297,28 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
     URL.revokeObjectURL(a.href);
   };
 
+  const exportExcel = async () => {
+    setExporting(true);
+    setExportError(null);
+    try {
+      await exportDiscoverExcel(sorted, { pricesDate: snapshot?.pricesDate });
+    } catch {
+      setExportError("Excel export failed — try again");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const noData = !loading && (!matches || matches.length === 0);
   const cell = { padding: "8px 10px", borderBottom: "1px solid var(--bdr)" };
   const numCell = (val, threshold) => ({ color: val ? (Number(val) >= threshold ? "var(--green)" : "var(--t2)") : "var(--t3)" });
 
   return (
-    <div style={{ animation: "fadeUp 280ms cubic-bezier(0,0,0.2,1) both" }}>
+    <div style={{ animation: "fadeUp 280ms cubic-bezier(0,0,0.2,1) backwards" }}>
       {alertFor && <CreateAlertModal stock={alertFor} onClose={() => setAlertFor(null)} />}
+      {showCompare && selected.size >= 2 && (
+        <CompareView stocks={[...selected.values()]} onClose={() => setShowCompare(false)} />
+      )}
 
       {/* ── Top bar ── */}
       {(totalMatches != null || loading) && (
@@ -306,11 +342,29 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
               </span>
             )}
           </div>
-          {!loading && (matches?.length ?? 0) > 0 && (
-            <button onClick={exportCsv} className="btn-ghost" style={{ height: 32, fontSize: 12 }}>
-              CSV
-            </button>
-          )}
+          <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+            {exportError && <span style={{ fontSize: 11, color: "var(--red)" }}>{exportError}</span>}
+            {selected.size >= 2 && (
+              <button onClick={() => setShowCompare(true)} className="btn-primary" style={{ height: 32, padding: "0 14px", fontSize: 12 }}>
+                Compare {selected.size}
+              </button>
+            )}
+            {selected.size > 0 && (
+              <button onClick={() => setSelected(new Map())} className="btn-ghost" style={{ height: 32, fontSize: 12 }}>
+                Clear
+              </button>
+            )}
+            {!loading && (matches?.length ?? 0) > 0 && (
+              <>
+                <button onClick={exportExcel} disabled={exporting || sorted.length === 0} className="btn-primary" style={{ height: 32, padding: "0 14px", fontSize: 12, boxShadow: "none", opacity: exporting || sorted.length === 0 ? 0.6 : 1 }}>
+                  {exporting ? "Exporting…" : "Export Excel"}
+                </button>
+                <button onClick={exportCsv} className="btn-ghost" style={{ height: 32, fontSize: 12 }}>
+                  CSV
+                </button>
+              </>
+            )}
+          </div>
         </div>
       )}
 
@@ -390,7 +444,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <button onClick={() => onAnalyze(stock.symbol)} className="btn-primary" style={{ flex: 1, height: 36, fontSize: 12 }}>Analyze →</button>
-                <StarButton symbol={stock.symbol} watched={watchlist.has(stock.symbol)} size={36} />
+                <StarButton symbol={stock.symbol} price={stock.cmp} watched={watchlist.has(stock.symbol)} size={36} />
                 {bell(stock, 36)}
                 <a href={nseUrl(stock.symbol)} target="_blank" rel="noreferrer" style={{ width: 36, height: 36, borderRadius: 10, border: "1px solid var(--bdr2)", background: "var(--s1)", color: "var(--t2)", fontSize: 13, textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "center" }}>↗</a>
               </div>
@@ -406,8 +460,8 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
             <table className="data-table" style={{ minWidth: 860 }}>
               <thead>
                 <tr>
-                  <th style={{ padding: "8px 8px", fontSize: 10, fontWeight: 600, color: "var(--t3)", textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: "1px solid var(--bdr2)", background: "var(--s1)", width: 44, position: "sticky", left: 0, top: 0, zIndex: 4 }}>#</th>
-                  <th onClick={() => handleSort("name")} style={{ padding: "8px 10px", fontSize: 10, fontWeight: 600, color: sortBy === "name" ? "var(--accent)" : "var(--t3)", textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: "1px solid var(--bdr2)", background: "var(--s1)", position: "sticky", left: 44, top: 0, zIndex: 4, cursor: "pointer", whiteSpace: "nowrap", minWidth: 200, boxShadow: "2px 0 8px rgba(0,0,0,0.3)" }}>
+                  <th title={`Tick up to ${MAX_COMPARE} to compare`} style={{ padding: "8px 8px", fontSize: 10, fontWeight: 600, color: "var(--t3)", textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: "1px solid var(--bdr2)", background: "var(--s1)", width: RANK_W, minWidth: RANK_W, boxSizing: "border-box", position: "sticky", left: 0, top: 0, zIndex: 4 }}>#</th>
+                  <th onClick={() => handleSort("name")} style={{ padding: "8px 10px", fontSize: 10, fontWeight: 600, color: sortBy === "name" ? "var(--accent)" : "var(--t3)", textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: "1px solid var(--bdr2)", background: "var(--s1)", position: "sticky", left: RANK_W, top: 0, zIndex: 4, cursor: "pointer", whiteSpace: "nowrap", minWidth: 200, boxShadow: "2px 0 8px rgba(0,0,0,0.3)" }}>
                     Stock {sortBy === "name" ? (sortDir === "asc" ? "▲" : "▼") : ""}
                   </th>
                   <SortTh label="Score"   col="score"       sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
@@ -435,18 +489,31 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                   </tr>
                 ))}
 
-                {!loading && visible.map((stock, i) => (
+                {!loading && visible.map((stock, i) => {
+                  const isSelected = selected.has(stock.symbol);
+                  // Opaque, so the pinned cells still hide what scrolls under them
+                  const rowBg = isSelected ? "linear-gradient(rgba(0,224,190,0.06), rgba(0,224,190,0.06)), var(--s2)" : "var(--s2)";
+                  return (
                   <tr
                     key={stock.symbol}
-                    style={{ background: "var(--s2)", transition: "background 100ms" }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "var(--s3)"; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "var(--s2)"; }}
+                    style={{ background: rowBg, transition: "background 100ms" }}
+                    onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = "var(--s3)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = rowBg; }}
                   >
-                    <td style={{ ...cell, padding: "8px 8px", position: "sticky", left: 0, background: "var(--s2)", zIndex: 1, width: 44 }}>
-                      <span style={{ fontSize: 11, color: "var(--t3)", ...MONO }}>{i + 1}</span>
+                    <td style={{ ...cell, padding: "8px 8px", position: "sticky", left: 0, background: rowBg, zIndex: 1, width: RANK_W, minWidth: RANK_W, boxSizing: "border-box" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <input
+                          type="checkbox" checked={isSelected} onChange={() => toggleSelect(stock)}
+                          disabled={!isSelected && selected.size >= MAX_COMPARE}
+                          title={!isSelected && selected.size >= MAX_COMPARE ? `Up to ${MAX_COMPARE} at a time` : "Compare"}
+                          aria-label={`Compare ${stock.name}`}
+                          style={{ cursor: "pointer", margin: 0 }}
+                        />
+                        <span style={{ fontSize: 11, color: "var(--t3)", ...MONO }}>{i + 1}</span>
+                      </div>
                     </td>
 
-                    <td style={{ ...cell, minWidth: 200, position: "sticky", left: 44, background: "var(--s2)", zIndex: 1, boxShadow: "2px 0 8px rgba(0,0,0,0.25)" }}>
+                    <td style={{ ...cell, minWidth: 200, position: "sticky", left: RANK_W, background: rowBg, zIndex: 1, boxShadow: "2px 0 8px rgba(0,0,0,0.25)" }}>
                       <div title={stock.name} onClick={() => onAnalyze(stock.symbol)} style={{ fontWeight: 700, fontSize: 13, color: "var(--accent)", letterSpacing: "-0.01em", marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 240, cursor: "pointer", textDecoration: "underline", textDecorationColor: "rgba(0,224,190,0.35)", textUnderlineOffset: 3 }}>{stock.name}</div>
                       <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
                         <span style={{ fontSize: 10, background: "var(--s3)", color: "var(--t2)", padding: "1px 7px", borderRadius: 5, ...MONO }}>{stock.symbol}</span>
@@ -485,7 +552,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                         <button onClick={() => onAnalyze(stock.symbol)} className="btn-primary" style={{ height: 30, padding: "0 12px", fontSize: 12, borderRadius: 8, boxShadow: "none" }}>
                           Analyze
                         </button>
-                        <StarButton symbol={stock.symbol} watched={watchlist.has(stock.symbol)} />
+                        <StarButton symbol={stock.symbol} price={stock.cmp} watched={watchlist.has(stock.symbol)} />
                         {bell(stock)}
                         <a
                           href={nseUrl(stock.symbol)} target="_blank" rel="noreferrer" title="Open on NSE"
@@ -494,7 +561,8 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

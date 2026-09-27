@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { api } from "./api.js";
+import { alertsStore } from "./stores.js";
 
 // The original's Set Alert modal (stock-screener CreateAlertModal), price
 // alerts only: same default of 10% under the current price, plus one-tap
@@ -22,6 +23,7 @@ export default function CreateAlertModal({ stock, onClose }) {
     setError("");
     try {
       await api.createAlert({ ticker: symbol, name, condition, threshold: Number(threshold) });
+      alertsStore.refresh();
       onClose(true);
     } catch (e) {
       setError(e.message);
@@ -43,7 +45,7 @@ export default function CreateAlertModal({ stock, onClose }) {
       onClick={e => { if (e.target === e.currentTarget) onClose(false); }}
       style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
     >
-      <div style={{ background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 18, padding: 28, width: 380, maxWidth: "90vw", boxShadow: "var(--sh-lg)", animation: "fadeUp 200ms cubic-bezier(0,0,0.2,1) both" }}>
+      <div style={{ background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 18, padding: 28, width: 380, maxWidth: "90vw", boxShadow: "var(--sh-lg)", animation: "fadeUp 200ms cubic-bezier(0,0,0.2,1) backwards" }}>
         <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 4, letterSpacing: "-0.02em" }}>Set Alert</div>
         <div style={{ fontSize: 13, color: "var(--t3)", marginBottom: 20 }}>
           {name || symbol}{cmp ? ` · now ₹${cmp.toLocaleString("en-IN")}` : ""}

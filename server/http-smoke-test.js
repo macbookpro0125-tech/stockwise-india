@@ -95,6 +95,50 @@ async function main() {
   const afterUnstar = await (await fetch(`${BASE}/api/watchlist`, { headers: { Cookie: aliceCookie } })).json();
   assert(afterUnstar.items.length === 0, "unstarring removes it");
 
+  const json = (method, path, cookie, body) => fetch(`${BASE}${path}`, {
+    method, headers: { "Content-Type": "application/json", Cookie: cookie }, body: body ? JSON.stringify(body) : undefined,
+  });
+
+  // Watchlist: the price when starred, and a note
+  await json("POST", "/api/watchlist", aliceCookie, { ticker: "TCS", price: 3000 });
+  await json("PUT", "/api/watchlist/TCS", aliceCookie, { note: "wait for results" });
+  const noted = (await (await fetch(`${BASE}/api/watchlist`, { headers: { Cookie: aliceCookie } })).json()).items[0];
+  assert(noted.addedPrice === 3000 && noted.note === "wait for results", "the watchlist keeps the price when starred and a note");
+  await json("DELETE", "/api/watchlist/TCS", aliceCookie);
+
+  // Portfolio
+  assert((await json("POST", "/api/portfolio", aliceCookie, { ticker: "TCS", buyPrice: 3000, qty: 0 })).status === 400, "a holding with 0 shares is refused");
+  assert((await json("POST", "/api/portfolio", aliceCookie, { ticker: "../x", buyPrice: 3000, qty: 1 })).status === 400, "a holding with a bad symbol is refused");
+  const added = await (await json("POST", "/api/portfolio", aliceCookie, { ticker: "tcs", buyPrice: 3000, qty: 10, buyDate: "2026-01-15" })).json();
+  assert(added.ticker === "TCS" && added.qty === 10, "adding a holding returns it, symbol upper-cased");
+  const port = await (await fetch(`${BASE}/api/portfolio`, { headers: { Cookie: aliceCookie } })).json();
+  assert(port.holdings.length === 1 && port.prices.TCS?.price > 0 && "TCS" in port.status, "the portfolio comes back with a price and buy-ladder status for each holding");
+  assert((await json("PUT", `/api/portfolio/${added.id}`, bobCookie, { buyPrice: 1, qty: 1 })).status === 400, "bob can't edit alice's holding");
+  const edited = await (await json("PUT", `/api/portfolio/${added.id}`, aliceCookie, { buyPrice: 3100, qty: 12 })).json();
+  assert(edited.buyPrice === 3100 && edited.qty === 12, "editing a holding saves the new price and quantity");
+  assert(edited.buyDate === "2026-01-15" && edited.name === added.name, "an edit keeps the fields it didn't change");
+  const bobPort = await (await fetch(`${BASE}/api/portfolio`, { headers: { Cookie: bobCookie } })).json();
+  assert(bobPort.holdings.length === 0, "bob doesn't see alice's portfolio");
+  await json("DELETE", `/api/portfolio/${added.id}`, bobCookie);
+  assert((await (await fetch(`${BASE}/api/portfolio`, { headers: { Cookie: aliceCookie } })).json()).holdings.length === 1, "bob can't delete alice's holding");
+  await json("DELETE", `/api/portfolio/${added.id}`, aliceCookie);
+  assert((await (await fetch(`${BASE}/api/portfolio`, { headers: { Cookie: aliceCookie } })).json()).holdings.length === 0, "deleting a holding removes it");
+
+  // Alerts: edit, pause, and ownership
+  const [tcsAlert] = await (await fetch(`${BASE}/api/alerts`, { headers: { Cookie: aliceCookie } })).json();
+  assert((await json("PUT", `/api/alerts/${tcsAlert.id}`, bobCookie, { threshold: 1 })).status === 400, "bob can't edit alice's alert");
+  const paused = await (await json("PUT", `/api/alerts/${tcsAlert.id}`, aliceCookie, { threshold: 3200, enabled: false })).json();
+  assert(paused.threshold === 3200 && paused.enabled === 0, "editing an alert changes its price and can pause it");
+  assert((await json("PUT", `/api/alerts/${tcsAlert.id}`, aliceCookie, { threshold: -5 })).status === 400, "an alert price below 0 is refused");
+
+  // Search, header counts, performance
+  const found = await (await fetch(`${BASE}/api/search?q=tcs`, { headers: { Cookie: aliceCookie } })).json();
+  assert(found[0]?.ticker === "TCS", "searching 'tcs' puts TCS first");
+  const stats = await (await fetch(`${BASE}/api/stats`, { headers: { Cookie: aliceCookie } })).json();
+  assert(stats.strategies === 13 && stats.companies > 0, "the header's counts come back");
+  const perf = await fetch(`${BASE}/api/performance`, { headers: { Cookie: aliceCookie } });
+  assert(perf.status === 200 && Array.isArray((await perf.json()).presets), "the Performance tab's data comes back");
+
   await fetch(`${BASE}/api/auth/logout`, { method: "POST", headers: { Cookie: aliceCookie } });
   const afterLogout = await fetch(`${BASE}/api/alerts`, { headers: { Cookie: aliceCookie } });
   assert(afterLogout.status === 401, "the old cookie stops working after logout — the session was actually deleted server-side, not just cleared client-side");

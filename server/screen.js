@@ -70,12 +70,13 @@ export function allMetrics() {
 function tableRow(m) {
   return {
     symbol: m.symbol, name: m.name, sector: m.sector, lender: m.lender, fyEnd: m.fyEnd,
-    cmp: m.cmp, pe: m.pe, roce: m.roce, roe: m.roe, roeAvg: m.roeAvg, roeAvgYears: m.roeAvgYears,
+    cmp: m.cmp, eps: m.eps, pe: m.pe, roce: m.roce, roe: m.roe, roeAvg: m.roeAvg, roeAvgYears: m.roeAvgYears,
     opm: m.opm, promoterPct: m.promoterPct, fiiPct: m.fiiPct, diiPct: m.diiPct, pledgedPct: m.pledgedPct,
     marketCapCr: m.marketCapCr, divYield: m.divYield,
     debtToEquity: m.debtToEquity, salesGrowth3y: m.salesGrowth3y, profitGrowth5y: m.profitGrowth5y,
     ncavCr: m.ncavCr, fairValue: m.fairValue, safeBuyPrice: m.safeBuyPrice,
     p2: m.levels?.p2 ?? null, p3: m.levels?.p3 ?? null,
+    stopLoss: m.levels?.stopLoss ?? null, target: m.levels?.target ?? null,
     low52w: m.low52w, high52w: m.high52w,
     valuationPeBasis: m.valuationPeBasis, score: { green: m.score.green, applicable: m.score.applicable },
   };

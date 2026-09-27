@@ -29,13 +29,15 @@ export function useWatchlist() {
   return set;
 }
 
-export async function toggleWatch(symbol) {
+// price: what the page showed when starred (the card shows the move since);
+// the server uses the day's close when none is given
+export async function toggleWatch(symbol, price) {
   const had = symbols?.has(symbol);
   symbols = new Set(symbols ?? []);
   if (had) symbols.delete(symbol); else symbols.add(symbol);
   notify();
   try {
-    if (had) await api.removeWatch(symbol); else await api.addWatch(symbol);
+    if (had) await api.removeWatch(symbol); else await api.addWatch(symbol, price);
   } catch {
     symbols = new Set(symbols);
     if (had) symbols.add(symbol); else symbols.delete(symbol);

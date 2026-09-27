@@ -579,7 +579,7 @@ export default function StockDetail({ symbol, onBack, onOpenStock }) {
   const isFin = !!m?.lender;
   const actions = (
     <>
-      <button onClick={() => toggleWatch(data.symbol)} title={watched ? "Remove from watchlist" : "Add to watchlist"} style={labelledActionStyle({ active: watched, activeColor: "#FFD60A" })}>
+      <button onClick={() => toggleWatch(data.symbol, price)} title={watched ? "Remove from watchlist" : "Add to watchlist"} style={labelledActionStyle({ active: watched, activeColor: "#FFD60A" })}>
         <StarIcon filled={watched} />{watched ? "Watchlist" : "Watch"}
       </button>
       <button onClick={() => setShowAlertModal(true)} title="Set price alert" style={labelledActionStyle({ active: false, activeColor: "var(--accent)" })}>

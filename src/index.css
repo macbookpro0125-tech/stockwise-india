@@ -71,6 +71,56 @@
   color-scheme: dark;
 }
 
+/* ── Light theme (the original's, switched from the header) ── */
+[data-theme="light"] {
+  --bg:    #F6F7FB;
+  --s1:    #EDEEF4;
+  --s2:    #FFFFFF;
+  --s3:    #F2F3F7;
+  --s4:    #D4D6DE;
+  --s5:    #B8BBC6;
+
+  --surf:  #F6F7FB;
+  --card:  #FFFFFF;
+  --card2: #F2F3F7;
+
+  --accent:  #2563EB;
+  --accent2: #3B82F6;
+  --accent3: #1D4ED8;
+  --accent-glow: rgba(37,99,235,0.1);
+  --brand-wise: #2C6BED;
+
+  --t1: #000000;
+  --t2: #374151;
+  --t3: #6B7280;
+  --t4: #D1D5DB;
+
+  --bdr:   rgba(0,0,0,0.06);
+  --bdr2:  rgba(0,0,0,0.12);
+  --bdr3:  rgba(0,0,0,0.2);
+
+  --green:      #15803D;
+  --green-dim:  rgba(21,128,61,0.08);
+  --green-bdr:  rgba(21,128,61,0.2);
+  --yellow:     #B45309;
+  --yellow-dim: rgba(180,83,9,0.08);
+  --yellow-bdr: rgba(180,83,9,0.2);
+  --red:        #B91C1C;
+  --red-dim:    rgba(185,28,28,0.06);
+  --red-bdr:    rgba(185,28,28,0.18);
+
+  --sh-xs: 0 1px 2px rgba(0,0,0,0.05);
+  --sh-sm: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --sh-md: 0 4px 12px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.04);
+  --sh-lg: 0 8px 28px rgba(0,0,0,0.09), 0 4px 10px rgba(0,0,0,0.04);
+
+  color-scheme: light;
+}
+
+[data-theme="light"] input[type=checkbox]:checked::after { border-color: #fff; }
+[data-theme="light"] input[type=range]::-webkit-slider-thumb { box-shadow: 0 1px 4px rgba(0,0,0,0.2), 0 0 0 1px rgba(0,0,0,0.05); }
+[data-theme="light"] ::selection { background: rgba(0,168,142,0.2); }
+
 /* ── Base ── */
 *, *::before, *::after { box-sizing: border-box; }
 
@@ -208,6 +258,10 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 /* ── Animations ── */
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+/* Run fadeUp with fill-mode backwards, never both/forwards: a transform left
+   on an element after the animation (even translateY(0)) makes it the frame
+   for any position: fixed popup inside it, so the popup covered that page
+   section instead of the screen — and opened off-screen on a long list. */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -223,7 +277,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   animation: shimmer 1.6s ease-in-out infinite;
 }
 
-.fade-up { animation: fadeUp var(--slow) var(--ease-out) both; }
+.fade-up { animation: fadeUp var(--slow) var(--ease-out) backwards; }
 
 /* ── Utility classes ── */
 .mono {
@@ -356,10 +410,31 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 .ss-back-bottom { display: flex; justify-content: center; padding: 8px 0 4px; }
 .ss-back-sticky { display: none; }
 
-/* On a phone the header wraps to three rows (~160px) — pinned, it would hold
-   a fifth of the screen, so it scrolls away with the page there. */
+/* ── Header and phone tab bar (the original's) ── */
+.discovery-header-sticky {
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+}
+.bottom-tab-bar { display: none; }
+
+/* On a phone the header would hold a large share of the screen if pinned, so
+   it scrolls away; its tabs move to a bar fixed at the bottom. */
 @media (max-width: 640px) {
   .app-header { position: static !important; }
+  .stat-chip { display: none !important; }
+  .discovery-tabs { display: none !important; }
+  .bottom-tab-bar {
+    display: flex !important;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 200;
+    padding: 6px 0 calc(6px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--bdr2);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+  }
+  /* Room at the end of every page for the bar */
+  body { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
 }
 
 @media (max-width: 640px) {

@@ -14,6 +14,7 @@ import { fetchEquityList } from "./equity-list.js";
 import { fetchCompanies, needsSummary, readStored, withRetry } from "./fetch-market.js";
 import { buildMarketSnapshot, loadMarketSnapshot, clearSnapshotCache } from "./market-data.js";
 import { fiscalYearEnds } from "./build-snapshot.js";
+import { takeSnapshots, daysSinceNewestSnapshot, SNAPSHOT_INTERVAL_DAYS } from "./performance.js";
 
 const STATE_PATH = join(DATA_DIR, "jobs-state.json");
 const HOUR = 3600 * 1000, DAY = 24 * HOUR;
@@ -144,6 +145,11 @@ async function refreshStaleHoldings() {
 function tick() {
   const snap = loadMarketSnapshot();
   if (!snap || Date.now() - Date.parse(snap.builtAt) > SNAPSHOT_EVERY) enqueue("prices", refreshSnapshot);
+  // The Performance tab's record of each strategy's picks, as in the original:
+  // a new one whenever the newest is SNAPSHOT_INTERVAL_DAYS old (needs data)
+  if (companyFiles().length >= 100 && daysSinceNewestSnapshot() >= SNAPSHOT_INTERVAL_DAYS) {
+    enqueue("strategy picks", async () => { takeSnapshots(); });
+  }
   const state = readState();
   if (!state.lastFilingsCheck || Date.now() - Date.parse(state.lastFilingsCheck) > FILINGS_EVERY) {
     enqueue("new results", refreshNewFilings);

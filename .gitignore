@@ -20,5 +20,9 @@ data/jobs-state.json
 # Past quarters' shareholding, cached as stock pages are opened
 data/shareholding/
 
+# The Performance tab's record of each strategy's picks — written as the app
+# runs, so it's data, not source
+data/performance-snapshots.json
+
 # Production build output
 dist/

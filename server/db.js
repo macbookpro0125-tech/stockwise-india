@@ -52,4 +52,29 @@ db.exec(`
     added_at TEXT NOT NULL,
     PRIMARY KEY (user_id, ticker)
   );
+
+  -- The original's portfolio (localStorage there), per account here. Several
+  -- lots of the same stock are separate rows, as in the original.
+  CREATE TABLE IF NOT EXISTS holdings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    ticker TEXT NOT NULL,
+    name TEXT,
+    buy_price REAL NOT NULL CHECK (buy_price > 0),
+    qty REAL NOT NULL CHECK (qty > 0),
+    buy_date TEXT,
+    notes TEXT,
+    added_at TEXT NOT NULL
+  );
 `);
+
+// Columns added after tables already existed on someone's disk: ALTER only
+// where missing, so an existing database upgrades in place.
+function addColumn(table, column, type) {
+  const columns = db.prepare(`PRAGMA table_info(${table})`).all().map(c => c.name);
+  if (!columns.includes(column)) db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
+}
+// The original's watchlist cards show the price when a stock was starred and
+// a note per stock
+addColumn("watchlist", "added_price", "REAL");
+addColumn("watchlist", "note", "TEXT");

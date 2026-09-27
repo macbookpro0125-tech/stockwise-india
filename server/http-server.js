@@ -8,9 +8,13 @@ import { createServer } from "node:http";
 import { readFileSync, existsSync, statSync } from "node:fs";
 import { join, normalize, extname, sep } from "node:path";
 import { signup, login, logout, verifySession } from "./auth.js";
-import { listAlerts, createAlert, deleteAlert } from "./user-alerts.js";
-import { screen, getStock, saveStock, rowsFor, isValidSymbol, countFetched } from "./screen.js";
-import { listWatchlist, addToWatchlist, removeFromWatchlist } from "./user-watchlist.js";
+import { listAlerts, createAlert, updateAlert, deleteAlert } from "./user-alerts.js";
+import { screen, getStock, saveStock, rowsFor, isValidSymbol, countFetched, allMetrics } from "./screen.js";
+import { listWatchlist, addToWatchlist, setWatchlistNote, removeFromWatchlist } from "./user-watchlist.js";
+import { listHoldings, addHolding, updateHolding, removeHolding } from "./user-portfolio.js";
+import { currentPrices } from "./prices.js";
+import { getPerformance, takeSnapshots } from "./performance.js";
+import { getAction } from "./levels.js";
 import { fetchCmp, fetchDailyBars, PRICE_RANGES } from "./quote.js";
 import { fetchStockSummary, SCHEMA } from "./fetch-nse.js";
 import { fetchEquityList } from "./equity-list.js";
@@ -23,10 +27,36 @@ import { PRESETS } from "./presets.js";
 import { DIST_DIR } from "./paths.js";
 
 let equityListPromise = null;
-async function equityInfo(symbol) {
+function equityList() {
   equityListPromise ??= fetchEquityList().catch(e => { equityListPromise = null; throw e; });
-  const list = await equityListPromise;
-  return list.find(s => s.symbol === symbol) ?? null;
+  return equityListPromise;
+}
+async function equityInfo(symbol) {
+  return (await equityList()).find(s => s.symbol === symbol) ?? null;
+}
+
+// The search box's suggestions (the original's StockSearchBar): NSE's own
+// list by symbol or company name — exact symbol first, then symbols starting
+// with the text, then names with a word starting with it, then anything
+// containing it.
+async function searchEquities(q) {
+  const text = String(q || "").trim().toUpperCase();
+  if (!text) return [];
+  const rank = s => {
+    const name = s.name.toUpperCase();
+    if (s.symbol === text) return 0;
+    if (s.symbol.startsWith(text)) return 1;
+    if (name.startsWith(text)) return 2;
+    if (name.split(/[\s.&-]+/).some(w => w.startsWith(text))) return 3;
+    if (s.symbol.includes(text) || name.includes(text)) return 4;
+    return null;
+  };
+  return (await equityList())
+    .map(s => ({ s, r: rank(s) }))
+    .filter(x => x.r != null)
+    .sort((a, b) => a.r - b.r || a.s.symbol.length - b.s.symbol.length)
+    .slice(0, 8)
+    .map(({ s }) => ({ ticker: s.symbol, name: s.name }));
 }
 
 // The built frontend, for a host where this one process serves everything.
@@ -146,6 +176,14 @@ export function createApp() {
         return;
       }
 
+      // The header's stat chips
+      if (url.pathname === "/api/stats" && req.method === "GET") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        sendJson(res, 200, { strategies: PRESETS.length, companies: allMetrics().rows.length });
+        return;
+      }
+
       // The stock page's panels, each loaded on its own so a slow one (news,
       // an old quarter's shareholding) never holds up the rest of the page
       const panelRoute = url.pathname.match(/^\/api\/stock\/([^/]+)\/(prices|technicals|shareholding|filings|news|peers)$/);
@@ -254,30 +292,136 @@ export function createApp() {
       if (url.pathname === "/api/watchlist" && req.method === "POST") {
         const userId = requireAuth(req, res);
         if (userId == null) return;
-        addToWatchlist(userId, (await readJsonBody(req)).ticker);
+        const { ticker, price } = await readJsonBody(req);
+        const symbol = String(ticker || "").trim().toUpperCase();
+        // The price when starred, for the card's "since added": the one the
+        // page showed if it sent it, else the day's close
+        addToWatchlist(userId, symbol, Number(price) > 0 ? price : loadMarketSnapshot()?.prices?.[symbol]);
         sendJson(res, 200, { ok: true });
         return;
       }
 
-      if (url.pathname.startsWith("/api/watchlist/") && req.method === "DELETE") {
+      const watchItem = url.pathname.match(/^\/api\/watchlist\/([^/]+)$/);
+      if (watchItem && req.method === "PUT") {
         const userId = requireAuth(req, res);
         if (userId == null) return;
-        removeFromWatchlist(userId, decodeURIComponent(url.pathname.split("/").pop()));
+        setWatchlistNote(userId, decodeURIComponent(watchItem[1]), (await readJsonBody(req)).note);
         sendJson(res, 200, { ok: true });
+        return;
+      }
+
+      if (watchItem && req.method === "DELETE") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        removeFromWatchlist(userId, decodeURIComponent(watchItem[1]));
+        sendJson(res, 200, { ok: true });
+        return;
+      }
+
+      // Current prices for up to 50 symbols — live where Yahoo answers, else
+      // the day's close, each labelled with which it is
+      if (url.pathname === "/api/prices" && req.method === "GET") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        const symbols = (url.searchParams.get("symbols") || "").split(",").map(s => s.trim().toUpperCase()).filter(isValidSymbol).slice(0, 50);
+        sendJson(res, 200, await currentPrices(symbols));
+        return;
+      }
+
+      if (url.pathname === "/api/search" && req.method === "GET") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        sendJson(res, 200, await searchEquities(url.searchParams.get("q")));
+        return;
+      }
+
+      if (url.pathname === "/api/portfolio" && req.method === "GET") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        const holdings = listHoldings(userId);
+        const tickers = [...new Set(holdings.map(h => h.ticker))];
+        const prices = await currentPrices(tickers);
+        // Where each holding sits on its buy ladder, at the current price
+        const status = {};
+        for (const r of rowsFor(tickers)) {
+          const price = prices[r.symbol]?.price;
+          const levels = r.safeBuyPrice ? { p1: r.safeBuyPrice, p2: r.p2, p3: r.p3, stopLoss: r.stopLoss, target: r.target } : null;
+          const action = price && levels ? getAction(price, levels) : null;
+          status[r.symbol] = { action: action?.action ?? null, color: action?.color ?? null, levels, score: r.score ?? null };
+        }
+        sendJson(res, 200, { holdings, prices, status });
+        return;
+      }
+
+      if (url.pathname === "/api/portfolio" && req.method === "POST") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        const body = await readJsonBody(req);
+        // Fill the company name from NSE's list when it's left blank
+        const info = body.name ? null : await equityInfo(String(body.ticker || "").trim().toUpperCase()).catch(() => null);
+        sendJson(res, 200, addHolding(userId, { ...body, name: body.name || info?.name }));
+        return;
+      }
+
+      const holdingItem = url.pathname.match(/^\/api\/portfolio\/(\d+)$/);
+      if (holdingItem && req.method === "PUT") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        sendJson(res, 200, updateHolding(userId, Number(holdingItem[1]), await readJsonBody(req)));
+        return;
+      }
+
+      if (holdingItem && req.method === "DELETE") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        removeHolding(userId, Number(holdingItem[1]));
+        sendJson(res, 200, { ok: true });
+        return;
+      }
+
+      if (url.pathname === "/api/performance" && req.method === "GET") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        sendJson(res, 200, getPerformance());
+        return;
+      }
+
+      if (url.pathname === "/api/performance/snapshot" && req.method === "POST") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        sendJson(res, 200, takeSnapshots());
         return;
       }
 
       if (url.pathname === "/api/alerts" && req.method === "GET") {
         const userId = requireAuth(req, res);
         if (userId == null) return;
-        // Each alert against the latest daily close. Nothing checks alerts in
-        // the background or sends notifications yet — the Alerts tab says so.
-        const snap = loadMarketSnapshot();
-        sendJson(res, 200, listAlerts(userId).map(a => {
-          const cmp = snap?.prices?.[a.ticker] ?? null;
+        // Each alert against the latest price: the day's close, or with
+        // ?live=1 (the Alerts tab's Check Now) a live quote where available.
+        // Nothing checks alerts in the background or sends notifications yet
+        // — the Alerts tab says so.
+        const alerts = listAlerts(userId);
+        const prices = url.searchParams.get("live") === "1"
+          ? await currentPrices(alerts.map(a => a.ticker))
+          : Object.fromEntries(alerts.map(a => {
+            const snap = loadMarketSnapshot();
+            const close = snap?.prices?.[a.ticker];
+            return [a.ticker, close != null ? { price: close, asOf: snap.pricesDate, source: "close" } : null];
+          }));
+        sendJson(res, 200, alerts.map(a => {
+          const p = prices[a.ticker];
+          const cmp = p?.price ?? null;
           const triggered = cmp == null ? null : a.condition === "below" ? cmp <= a.threshold : cmp >= a.threshold;
-          return { ...a, cmp, priceDate: snap?.pricesDate ?? null, triggered };
+          return { ...a, enabled: !!a.enabled, cmp, priceDate: p?.asOf ?? null, priceSource: p?.source ?? null, triggered };
         }));
+        return;
+      }
+
+      const alertItem = url.pathname.match(/^\/api\/alerts\/(\d+)$/);
+      if (alertItem && req.method === "PUT") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        sendJson(res, 200, updateAlert(userId, Number(alertItem[1]), await readJsonBody(req)));
         return;
       }
 
