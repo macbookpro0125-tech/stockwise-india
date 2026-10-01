@@ -34,9 +34,6 @@ export function useTabBadges() {
   };
 }
 
-// The Discover filter panel's controls (CriteriaPanel.jsx)
-const FILTER_COUNT = 19;
-
 function compact(n) {
   if (n == null) return "—";
   return n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
@@ -66,7 +63,7 @@ export default function Header({ tab, onTab, email, onLogout, onDeleted, onSearc
 
   return (
     <div ref={ref} className="app-header discovery-header-sticky" style={{ position: "sticky", top: 0, zIndex: 100, background: theme === "light" ? "rgba(244,245,247,0.88)" : "rgba(7,7,14,0.85)", borderBottom: "1px solid var(--bdr2)" }}>
-      <div style={{ maxWidth: 1240, margin: "0 auto", padding: "0 20px" }}>
+      <div style={{ maxWidth: 1440, margin: "0 auto", padding: "0 20px" }}>
         <div style={{ padding: "12px 0" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, flexShrink: 1, cursor: "pointer" }} onClick={() => onTab("discover")}>
@@ -80,7 +77,7 @@ export default function Header({ tab, onTab, email, onLogout, onDeleted, onSearc
             </div>
 
             <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
-              {[[stats?.strategies ?? "—", "Presets"], [FILTER_COUNT, "Filters"], [compact(stats?.companies), "Stocks"]].map(([v, l]) => (
+              {[[stats?.strategies ?? "—", "Presets"], [stats?.filters ?? "—", "Filters"], [compact(stats?.companies), "Stocks"]].map(([v, l]) => (
                 <div key={l} className="stat-chip" style={{ padding: "4px 10px", borderRadius: 8, background: "var(--s2)", border: "1px solid var(--bdr)", display: "flex", alignItems: "baseline", gap: 4 }}>
                   <span style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)" }}>{v}</span>
                   <span style={{ fontSize: 10, color: "var(--t3)" }}>{l}</span>

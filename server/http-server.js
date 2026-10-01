@@ -5,11 +5,13 @@
 // on the page, which is exactly what a single XSS bug turns into full
 // account takeover. httpOnly means client-side JS can't read it at all.
 import { createServer } from "node:http";
+import { gzipSync } from "node:zlib";
 import { existsSync, statSync, createReadStream } from "node:fs";
 import { join, normalize, extname, sep } from "node:path";
 import { signup, login, logout, verifySession, accountEmail, deleteAccount } from "./auth.js";
 import { listAlerts, createAlert, updateAlert, deleteAlert } from "./user-alerts.js";
-import { screen, getStock, saveStock, rowsFor, isValidSymbol, countFetched, allMetrics } from "./screen.js";
+import { screen, screenerMeta, getStock, saveStock, rowsFor, isValidSymbol, countFetched, allMetrics } from "./screen.js";
+import { criteriaToFilters, METRICS, CATEGORY_METRICS } from "./metric-catalog.js";
 import { listWatchlist, addToWatchlist, setWatchlistNote, removeFromWatchlist } from "./user-watchlist.js";
 import { listHoldings, addHolding, updateHolding, removeHolding } from "./user-portfolio.js";
 import { currentPrices } from "./prices.js";
@@ -138,9 +140,18 @@ function clearSessionCookie(req, res) {
   res.setHeader("Set-Cookie", `${COOKIE_NAME}=; HttpOnly; SameSite=Strict; Max-Age=0; Path=/${secureFlag(req)}`);
 }
 
+// Compressed when the browser accepts it and the body is big enough to
+// matter: a screen of the whole market is ~1.3 MB of JSON and about a tenth
+// of that gzipped — the difference between a filter feeling live or not.
 function sendJson(res, status, body) {
+  const json = JSON.stringify(body);
+  if (json.length > 2048 && /\bgzip\b/.test(res.req?.headers["accept-encoding"] ?? "")) {
+    res.writeHead(status, { "Content-Type": "application/json", "Content-Encoding": "gzip", Vary: "Accept-Encoding" });
+    res.end(gzipSync(json, { level: 5 }));
+    return;
+  }
   res.writeHead(status, { "Content-Type": "application/json" });
-  res.end(JSON.stringify(body));
+  res.end(json);
 }
 
 async function readJsonBody(req) {
@@ -204,8 +215,17 @@ export function createApp() {
         return;
       }
 
+      // Each strategy also as the screener's filters, so the filter panel can
+      // show and edit it
       if (url.pathname === "/api/presets" && req.method === "GET") {
-        sendJson(res, 200, PRESETS);
+        sendJson(res, 200, PRESETS.map(p => ({ ...p, filters: criteriaToFilters(p.criteria) })));
+        return;
+      }
+
+      // What the filter picker and column picker offer: every metric, its
+      // category, unit and spread across the market
+      if (url.pathname === "/api/metrics" && req.method === "GET") {
+        sendJson(res, 200, screenerMeta());
         return;
       }
 
@@ -213,7 +233,7 @@ export function createApp() {
       // so no sign-in needed
       if (url.pathname === "/api/stats" && req.method === "GET") {
         const snap = loadMarketSnapshot();
-        sendJson(res, 200, { strategies: PRESETS.length, companies: allMetrics().rows.length, pricesDate: snap?.pricesDate ?? null });
+        sendJson(res, 200, { strategies: PRESETS.length, filters: METRICS.length + CATEGORY_METRICS.length, companies: allMetrics().rows.length, pricesDate: snap?.pricesDate ?? null });
         return;
       }
 

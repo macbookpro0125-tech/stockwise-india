@@ -46,22 +46,31 @@ const COLUMNS = [
   { h: "NSE", w: 46, get: s => nseUrl(s.symbol), link: true },
 ];
 
-export function buildDiscoverWorkbook(XLSX, stocks, { pricesDate } = {}) {
+// Excel number formats for the screener's extra columns, from each metric's unit
+const zFor = def => (def.unit === "₹ Cr" ? "#,##0" : def.unit === "₹" ? "#,##0.00" : def.decimals === 0 ? "0" : def.decimals >= 2 ? "0.00" : "0.0");
+
+export function buildDiscoverWorkbook(XLSX, stocks, { pricesDate, extraColumns = [] } = {}) {
   const n = stocks.length;
   const last = n + 1; // data rows on the Stocks sheet: 2..last
-  const colIndex = h => COLUMNS.findIndex(c => c.h === h);
+  // Any columns added on the screen go in before the NSE link
+  const COLS = [
+    ...COLUMNS.slice(0, -1),
+    ...extraColumns.map(def => ({ h: def.label, w: Math.min(Math.max(def.label.length + 2, 10), 26), get: s => s.values?.[def.id] ?? s[def.id] ?? null, z: zFor(def) })),
+    COLUMNS.at(-1),
+  ];
+  const colIndex = h => COLS.findIndex(c => c.h === h);
   const range = h => { const L = XLSX.utils.encode_col(colIndex(h)); return `Stocks!${L}2:${L}${last}`; };
   const C = (v, s, z) => ({ v, t: typeof v === "number" ? "n" : "s", ...(s && { s }), ...(z && { z }) });
   const F = (f, s, z) => ({ t: "n", f, ...(s && { s }), ...(z && { z }) });
 
   // ── Stocks (built first so the dashboard can reference it) ──
-  const rows = stocks.map((s, i) => COLUMNS.map(c => {
+  const rows = stocks.map((s, i) => COLS.map(c => {
     const v = c.get(s, i);
     return typeof v === "number" ? round2(v) : (v ?? null);
   }));
-  const wsS = XLSX.utils.aoa_to_sheet([COLUMNS.map(c => c.h), ...rows]);
+  const wsS = XLSX.utils.aoa_to_sheet([COLS.map(c => c.h), ...rows]);
   const cellAt = (r, c) => wsS[XLSX.utils.encode_cell({ r, c })];
-  COLUMNS.forEach((col, c) => {
+  COLS.forEach((col, c) => {
     cellAt(0, c).s = sHeader;
     for (let r = 1; r <= n; r++) {
       const cell = cellAt(r, c);
@@ -80,8 +89,8 @@ export function buildDiscoverWorkbook(XLSX, stocks, { pricesDate } = {}) {
       if (cmp) cmp.s = { fill: fill(GREEN), font: { bold: true } };
     }
   });
-  wsS["!cols"] = COLUMNS.map(c => ({ wch: c.w }));
-  wsS["!autofilter"] = { ref: `A1:${XLSX.utils.encode_col(COLUMNS.length - 1)}${last}` };
+  wsS["!cols"] = COLS.map(c => ({ wch: c.w }));
+  wsS["!autofilter"] = { ref: `A1:${XLSX.utils.encode_col(COLS.length - 1)}${last}` };
 
   // ── Dashboard ──
   const withP1 = stocks
