@@ -9,6 +9,7 @@
     "fetch:market": "node server/fetch-market.js",
     "fetch:holdings": "node server/fetch-market.js --holdings",
     "snapshot": "node server/build-snapshot.js",
+    "pack:seed": "COPYFILE_DISABLE=1 tar --no-mac-metadata --no-xattrs --exclude .DS_Store -czf seed/market-data.tar.gz -C data market market-snapshot.json performance-snapshots.json shareholding",
     "check:sources": "node --no-warnings server/check-sources.js",
     "api": "node server/http-server.js",
     "dev": "vite",
