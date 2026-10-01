@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { api } from "./api.js";
 import AuthForm, { defaultAuthMode } from "./AuthForm.jsx";
 import HowItWorks from "./HowItWorks.jsx";
+import PriceStrip from "./PriceStrip.jsx";
 import { SiteLink, SiteFooter, Logo } from "./site.jsx";
 
 // The front page for visitors who aren't signed in: what the app does, the
@@ -78,6 +79,7 @@ export default function Landing({ onAuthed, notice }) {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
+      <PriceStrip />
       <header style={{ maxWidth: 1240, margin: "0 auto", padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
         <Logo />
         <nav style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -88,6 +90,11 @@ export default function Landing({ onAuthed, notice }) {
       </header>
 
       <main style={{ maxWidth: 1240, margin: "0 auto", padding: "0 20px" }}>
+        {new URLSearchParams(window.location.search).has("screen") && (
+          <div role="status" style={{ margin: "8px 0 0", padding: "10px 14px", borderRadius: 10, background: "rgba(0,224,190,0.08)", border: "1px solid rgba(0,224,190,0.3)", color: "var(--t1)", fontSize: 13 }}>
+            Someone shared a screen with you. Sign in or create a free account and it opens straight away.
+          </div>
+        )}
         {notice && (
           <div role="status" style={{ margin: "8px 0 0", padding: "10px 14px", borderRadius: 10, background: "var(--green-dim)", border: "1px solid var(--green-bdr)", color: "var(--t1)", fontSize: 13 }}>
             {notice}

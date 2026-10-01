@@ -52,6 +52,8 @@ async function main() {
 
   const metrics = await (await fetch(`${BASE}/api/metrics`)).json();
   assert(metrics.metrics.length >= 40 && metrics.metrics.every(x => x.id && x.label && x.category), "GET /api/metrics lists 40+ metrics with labels and categories");
+  const strip = await (await fetch(`${BASE}/api/market-strip`)).json();
+  assert(strip.asOf && strip.stocks.length > 0 && strip.stocks.every(s => s.symbol && s.cmp > 0), "the price strip has the latest close date and the largest companies' prices");
   const roceDef = metrics.metrics.find(x => x.id === "roce");
   assert(roceDef.range?.q?.length === 101 && roceDef.range.q[0] <= roceDef.range.q[100], "each metric comes with its spread across the market, percentile by percentile");
 
