@@ -87,8 +87,17 @@ export function computeScoreParts(enrichData, fallback = {}) {
   check("fair-value", "Price at or below 2-year fair value", !!(e.fairValue && e.cmp && e.cmp <= e.fairValue));
   check("safe-buy", "Price at or below Phase 1 buy price", !!(e.safeBuyPrice && e.cmp && e.cmp <= e.safeBuyPrice));
 
-  // PT7 — tech disruption (an analyst's judgement; the original defaults it to safe).
-  check("tech", "Not at risk from AI or tech change (default)", true);
+  // PT7 — a profit every year. The original's point 7 was an analyst's call on
+  // AI and tech disruption that defaulted to "safe", so every company got it
+  // free. Now: a profit in every year on record — 3 to 5 consecutive years. A
+  // shorter record doesn't count as a track record.
+  const record = e.profitRecord ?? { years: 0, lossYears: [] };
+  const losses = record.lossYears.length;
+  check("record",
+    record.years < 3 ? "Profit every year — under 3 years of results on file"
+      : losses ? `Profit every year — a loss in ${losses} of the last ${record.years}`
+        : `Profit every year — each of the last ${record.years}`,
+    record.years >= 3 && losses === 0);
 
   // PT8 — leverage. Meaningless for lenders; a higher bar for utilities.
   if (!lender) check("leverage", `Debt/equity < ${utility ? 1.5 : 0.5}`, e.debtToEquity != null && e.debtToEquity < (utility ? 1.5 : 0.5));
