@@ -97,8 +97,14 @@ export async function fetchCompanies(stocks, kind, { onProgress = () => {}, log 
           blockedInARow = 0;
         }
       } else {
-        // A failed shareholding refresh must never replace the financials on disk
+        // A failed shareholding refresh must never replace the financials on
+        // disk — nor may a failed re-read for a new schema, which would drop a
+        // company from every screen over one bad response. Good figures stay
+        // (on their old schema, so the next run tries again); a failure is
+        // recorded only where there was nothing to lose.
+        const stored = kind === "summary" ? readStored(stock.symbol) : null;
         if (kind === "holdings") log(`${stock.symbol}: ${e.message}`);
+        else if (stored && !stored.error && stored.years?.length) log(`${stock.symbol}: kept the stored figures — ${e.message}`);
         else saveStock(stock.symbol, { symbol: stock.symbol, name: stock.name, schema: SCHEMA, error: e.message, fetchedAt: new Date().toISOString() });
         fail++;
         blockedInARow = 0;
