@@ -7,15 +7,21 @@
 // category metric, { id, values: [...] }. A company whose value is unknown is
 // left out once a filter on that metric applies, and the screen says how many.
 
-export const CATEGORIES = ["Valuation", "Profitability", "Growth", "Price & returns", "Ownership", "Financial health", "Cash flow", "Size", "Stockwise"];
+export const CATEGORIES = ["Valuation", "Profitability", "Growth", "Price & returns", "Volume & technicals", "Ownership", "Financial health", "Cash flow", "Income statement", "Balance sheet", "Size", "Stockwise"];
 
 const score10 = m => (m.score?.applicable ? Math.round((m.score.green / m.score.applicable) * 10) : null);
+const NO_LENDERS = " Not shown for banks and other lenders.";
 
 export const METRICS = [
   // ── Valuation ──
   { id: "pe", label: "P/E ratio", short: "P/E", category: "Valuation", unit: "x", decimals: 1, about: "Price ÷ last year's earnings per share. Loss-making companies have none." },
   { id: "medianPe", label: "5-year median P/E", short: "Median P/E", category: "Valuation", unit: "x", decimals: 1, about: "The company's usual P/E over its last five years — what its fair value is based on." },
+  { id: "peVsMedian", label: "P/E vs its 5-year median", short: "P/E vs med", category: "Valuation", unit: "%", decimals: 0, signed: true, about: "How far today's P/E is above (+) or below (−) the company's own usual P/E." },
   { id: "priceToBook", label: "Price to book", short: "P/B", category: "Valuation", unit: "x", decimals: 2 },
+  { id: "priceToSales", label: "Price to sales", short: "P/S", category: "Valuation", unit: "x", decimals: 2, about: "Market cap ÷ last year's sales." },
+  { id: "priceToFcf", label: "Price to free cash flow", short: "P/FCF", category: "Valuation", unit: "x", decimals: 1, about: "Market cap ÷ last year's free cash flow; only where that was positive." + NO_LENDERS },
+  { id: "priceToCfo", label: "Price to operating cash flow", short: "P/CFO", category: "Valuation", unit: "x", decimals: 1, about: "Market cap ÷ last year's cash from operations; only where that was positive." + NO_LENDERS },
+  { id: "earningsYield", label: "Earnings yield", short: "Earn. yield", category: "Valuation", unit: "%", decimals: 1, signed: true, about: "Earnings per share ÷ price — the P/E turned upside down." },
   { id: "divYield", label: "Dividend yield", short: "Div yield", category: "Valuation", unit: "%", decimals: 1, about: "Dividends paid over the last 12 months ÷ today's price." },
   { id: "vsFairValue", label: "Price vs fair value", short: "vs FV", category: "Valuation", unit: "%", decimals: 1, signed: true, about: "How far today's price is above (+) or below (−) the company's 2-year fair value." },
   { id: "vsPhase1", label: "Price vs Phase 1 buy price", short: "vs P1", category: "Valuation", unit: "%", decimals: 1, signed: true, about: "0 or less means today's price is at or under the Phase 1 buy price." },
@@ -23,16 +29,30 @@ export const METRICS = [
 
   // ── Profitability ──
   { id: "roce", label: "Return on capital employed (ROCE)", short: "ROCE", category: "Profitability", unit: "%", decimals: 1 },
+  { id: "roce5y", label: "ROCE, 5-year average", short: "ROCE 5Y", category: "Profitability", unit: "%", decimals: 1 },
   { id: "roe", label: "Return on equity (ROE)", short: "ROE", category: "Profitability", unit: "%", decimals: 1 },
   { id: "roeAvg", label: "ROE, 5-year average", short: "ROE 5Y", category: "Profitability", unit: "%", decimals: 1 },
-  { id: "opm", label: "Operating profit margin (OPM)", short: "OPM", category: "Profitability", unit: "%", decimals: 1, about: "Banks and other lenders don't report one." },
+  { id: "roa", label: "Return on assets (ROA)", short: "ROA", category: "Profitability", unit: "%", decimals: 1, about: "Last year's profit ÷ total assets." },
+  { id: "roa5y", label: "ROA, 5-year average", short: "ROA 5Y", category: "Profitability", unit: "%", decimals: 1 },
+  { id: "opm", label: "Operating profit margin (OPM)", short: "OPM", category: "Profitability", unit: "%", decimals: 1, about: "Operating profit (EBITDA, before other income) ÷ sales." + NO_LENDERS },
+  { id: "opm5y", label: "OPM, 5-year average", short: "OPM 5Y", category: "Profitability", unit: "%", decimals: 1, about: NO_LENDERS.trim() },
   { id: "netMargin", label: "Net profit margin", short: "Net margin", category: "Profitability", unit: "%", decimals: 1 },
+  { id: "netMargin5y", label: "Net profit margin, 5-year average", short: "Net mgn 5Y", category: "Profitability", unit: "%", decimals: 1 },
+  { id: "cashFlowMargin", label: "Cash flow margin", short: "CF margin", category: "Profitability", unit: "%", decimals: 1, signed: true, about: "Cash from operations ÷ sales." + NO_LENDERS },
 
   // ── Growth ──
+  { id: "salesGrowth1y", label: "Sales growth, last year", short: "Sales 1Y", category: "Growth", unit: "%", decimals: 1, about: "Growth figures are left out when either year is a loss or a filing is missing." },
   { id: "salesGrowth3y", label: "3-year sales growth (per year)", short: "Sales 3Y", category: "Growth", unit: "%", decimals: 1 },
   { id: "salesGrowth5y", label: "5-year sales growth (per year)", short: "Sales 5Y", category: "Growth", unit: "%", decimals: 1 },
+  { id: "profitGrowth1y", label: "Profit growth, last year", short: "Profit 1Y", category: "Growth", unit: "%", decimals: 1 },
   { id: "profitGrowth3y", label: "3-year profit growth (per year)", short: "Profit 3Y", category: "Growth", unit: "%", decimals: 1 },
   { id: "profitGrowth5y", label: "5-year profit growth (per year)", short: "Profit 5Y", category: "Growth", unit: "%", decimals: 1 },
+  { id: "epsGrowth1y", label: "EPS growth, last year", short: "EPS 1Y", category: "Growth", unit: "%", decimals: 1, about: "Earnings per share on today's share count, so splits and bonuses don't distort it." },
+  { id: "epsGrowth3y", label: "3-year EPS growth (per year)", short: "EPS 3Y", category: "Growth", unit: "%", decimals: 1 },
+  { id: "epsGrowth5y", label: "5-year EPS growth (per year)", short: "EPS 5Y", category: "Growth", unit: "%", decimals: 1 },
+  { id: "ebitdaGrowth1y", label: "Operating profit (EBITDA) growth, last year", short: "EBITDA 1Y", category: "Growth", unit: "%", decimals: 1, about: NO_LENDERS.trim() },
+  { id: "ebitdaGrowth5y", label: "5-year operating profit (EBITDA) growth (per year)", short: "EBITDA 5Y", category: "Growth", unit: "%", decimals: 1, about: NO_LENDERS.trim() },
+  { id: "ocfGrowth1y", label: "Operating cash flow growth, last year", short: "CFO 1Y", category: "Growth", unit: "%", decimals: 1, about: NO_LENDERS.trim() },
 
   // ── Price & returns ──
   { id: "cmp", label: "Price", short: "Price", category: "Price & returns", unit: "₹", decimals: 2 },
@@ -41,8 +61,28 @@ export const METRICS = [
   { id: "ret1m", label: "1-month return", short: "1M", category: "Price & returns", unit: "%", decimals: 1, signed: true },
   { id: "ret6m", label: "6-month return", short: "6M", category: "Price & returns", unit: "%", decimals: 1, signed: true },
   { id: "ret1y", label: "1-year return", short: "1Y", category: "Price & returns", unit: "%", decimals: 1, signed: true },
+  { id: "ret1wVsNifty", label: "1-week return vs NIFTY 50", short: "1W vs NIFTY", category: "Price & returns", unit: "%", decimals: 1, signed: true, about: "The stock's return minus NIFTY 50's over the same days, in percentage points." },
+  { id: "ret1mVsNifty", label: "1-month return vs NIFTY 50", short: "1M vs NIFTY", category: "Price & returns", unit: "%", decimals: 1, signed: true },
+  { id: "ret6mVsNifty", label: "6-month return vs NIFTY 50", short: "6M vs NIFTY", category: "Price & returns", unit: "%", decimals: 1, signed: true },
+  { id: "ret1yVsNifty", label: "1-year return vs NIFTY 50", short: "1Y vs NIFTY", category: "Price & returns", unit: "%", decimals: 1, signed: true },
+  { id: "priceCagr5y", label: "5-year price growth (per year)", short: "Price 5Y", category: "Price & returns", unit: "%", decimals: 1, signed: true, about: "Share price growth a year over five years, on today's share basis." },
   { id: "downFrom52wHigh", label: "Below 52-week high", short: "↓52W high", category: "Price & returns", unit: "%", decimals: 1 },
   { id: "upFrom52wLow", label: "Above 52-week low", short: "↑52W low", category: "Price & returns", unit: "%", decimals: 1 },
+
+  // ── Volume & technicals (from a year of NSE's daily prices) ──
+  { id: "volume1d", label: "Volume, last day", short: "Volume", category: "Volume & technicals", unit: "shares", decimals: 0 },
+  { id: "avgVolume1m", label: "Average daily volume, 1 month", short: "Avg vol 1M", category: "Volume & technicals", unit: "shares", decimals: 0 },
+  { id: "avgVolume3m", label: "Average daily volume, 3 months", short: "Avg vol 3M", category: "Volume & technicals", unit: "shares", decimals: 0 },
+  { id: "volumeChange1d", label: "Volume change, 1 day", short: "Vol chg 1D", category: "Volume & technicals", unit: "%", decimals: 0, signed: true },
+  { id: "volumeChange1w", label: "Volume change, 1 week", short: "Vol chg 1W", category: "Volume & technicals", unit: "%", decimals: 0, signed: true, about: "This week's average daily volume vs last week's." },
+  { id: "delivery1m", label: "Delivery %, 1-month average", short: "Delivery", category: "Volume & technicals", unit: "%", decimals: 1, about: "Share of traded shares actually taken into demat accounts rather than traded within the day. Higher means more long-term buying." },
+  { id: "rsi14", label: "RSI, 14 days", short: "RSI", category: "Volume & technicals", unit: "", decimals: 1, about: "Relative strength index: above 70 is usually read as overbought, below 30 as oversold." },
+  { id: "vsEma20", label: "Price vs 20-day EMA", short: "vs 20 EMA", category: "Volume & technicals", unit: "%", decimals: 1, signed: true },
+  { id: "vsSma50", label: "Price vs 50-day SMA", short: "vs 50 SMA", category: "Volume & technicals", unit: "%", decimals: 1, signed: true },
+  { id: "vsSma200", label: "Price vs 200-day SMA", short: "vs 200 SMA", category: "Volume & technicals", unit: "%", decimals: 1, signed: true },
+  { id: "volatility1y", label: "Volatility, 1 year", short: "Volatility", category: "Volume & technicals", unit: "%", decimals: 1, about: "How much the price swings: the yearly standard deviation of daily moves." },
+  { id: "maxLoss1y", label: "Biggest fall in a year", short: "Max fall 1Y", category: "Volume & technicals", unit: "%", decimals: 1, about: "The largest drop from a high to a later low over the past year." },
+  { id: "beta1y", label: "Beta vs NIFTY 50, 1 year", short: "Beta", category: "Volume & technicals", unit: "", decimals: 2, about: "How much the stock tends to move when NIFTY 50 moves: 1 is in step, above 1 swings more, below 1 less." },
 
   // ── Ownership ──
   { id: "promoterPct", label: "Promoter holding", short: "Promoter", category: "Ownership", unit: "%", decimals: 1 },
@@ -52,20 +92,46 @@ export const METRICS = [
 
   // ── Financial health ──
   { id: "debtToEquity", label: "Debt to equity", short: "D/E", category: "Financial health", unit: "x", decimals: 2 },
-  { id: "interestCoverage", label: "Interest coverage", short: "Int. cover", category: "Financial health", unit: "x", decimals: 1, about: "Operating profit ÷ interest. Not shown for lenders." },
-  { id: "currentRatio", label: "Current ratio", short: "Curr. ratio", category: "Financial health", unit: "x", decimals: 2, about: "Current assets ÷ current liabilities. Not shown for lenders." },
+  { id: "ltDebtToEquity", label: "Long-term debt to equity", short: "LT D/E", category: "Financial health", unit: "x", decimals: 2 },
+  { id: "interestCoverage", label: "Interest coverage", short: "Int. cover", category: "Financial health", unit: "x", decimals: 1, about: "Operating profit ÷ interest." + NO_LENDERS },
+  { id: "currentRatio", label: "Current ratio", short: "Curr. ratio", category: "Financial health", unit: "x", decimals: 2, about: "Current assets ÷ current liabilities." + NO_LENDERS },
+  { id: "assetTurnover", label: "Asset turnover", short: "Asset turn", category: "Financial health", unit: "x", decimals: 2, about: "Sales ÷ total assets — how hard the assets work." },
   { id: "piotroski", label: "Piotroski score", short: "Piotroski", category: "Financial health", unit: "/9", decimals: 0, about: "Nine checks of financial strength; 7 or more is strong. Not scored for lenders." },
 
   // ── Cash flow ──
-  { id: "fcfCr", label: "Free cash flow, last year", short: "FCF", category: "Cash flow", unit: "₹ Cr", decimals: 0, signed: true, about: "Operating cash flow minus capital spending. Not shown for lenders." },
+  { id: "ocfCr", label: "Cash from operations, last year", short: "CFO", category: "Cash flow", unit: "₹ Cr", decimals: 0, signed: true },
+  { id: "capexCr", label: "Capital spending, last year", short: "Capex", category: "Cash flow", unit: "₹ Cr", decimals: 0 },
+  { id: "fcfCr", label: "Free cash flow, last year", short: "FCF", category: "Cash flow", unit: "₹ Cr", decimals: 0, signed: true, about: "Operating cash flow minus capital spending." + NO_LENDERS },
   { id: "ocfPat3yPct", label: "Cash from operations ÷ profit, 3 years", short: "OCF/PAT", category: "Cash flow", unit: "%", decimals: 0, about: "How much of the profit arrives as cash; 80% or more is healthy." },
   { id: "payoutPct", label: "Dividend payout", short: "Payout", category: "Cash flow", unit: "%", decimals: 0 },
+  { id: "dividendPerShare", label: "Dividend per share, last 12 months", short: "DPS", category: "Cash flow", unit: "₹", decimals: 2 },
+
+  // ── Income statement (last financial year) ──
+  { id: "revenueCr", label: "Sales", short: "Sales", category: "Income statement", unit: "₹ Cr", decimals: 0 },
+  { id: "ebitdaCr", label: "Operating profit (EBITDA)", short: "EBITDA", category: "Income statement", unit: "₹ Cr", decimals: 0, signed: true, about: "Before other income, depreciation, interest and tax." + NO_LENDERS },
+  { id: "otherIncomeCr", label: "Other income", short: "Other inc.", category: "Income statement", unit: "₹ Cr", decimals: 0 },
+  { id: "depreciationCr", label: "Depreciation", short: "Deprec.", category: "Income statement", unit: "₹ Cr", decimals: 0 },
+  { id: "interestCr", label: "Interest (finance costs)", short: "Interest", category: "Income statement", unit: "₹ Cr", decimals: 0 },
+  { id: "pbitCr", label: "Profit before interest and tax", short: "PBIT", category: "Income statement", unit: "₹ Cr", decimals: 0, signed: true },
+  { id: "pbtCr", label: "Profit before tax", short: "PBT", category: "Income statement", unit: "₹ Cr", decimals: 0, signed: true },
+  { id: "profitCr", label: "Net profit", short: "Profit", category: "Income statement", unit: "₹ Cr", decimals: 0, signed: true },
+  { id: "eps", label: "Earnings per share", short: "EPS", category: "Income statement", unit: "₹", decimals: 2, signed: true },
+  { id: "rawMaterialsCr", label: "Raw materials and goods bought", short: "Materials", category: "Income statement", unit: "₹ Cr", decimals: 0 },
+
+  // ── Balance sheet (latest year-end) ──
+  { id: "totalAssetsCr", label: "Total assets", short: "Assets", category: "Balance sheet", unit: "₹ Cr", decimals: 0 },
+  { id: "equityCr", label: "Shareholders' equity", short: "Equity", category: "Balance sheet", unit: "₹ Cr", decimals: 0, signed: true },
+  { id: "totalDebtCr", label: "Total debt", short: "Debt", category: "Balance sheet", unit: "₹ Cr", decimals: 0 },
+  { id: "ltDebtCr", label: "Long-term debt", short: "LT debt", category: "Balance sheet", unit: "₹ Cr", decimals: 0 },
+  { id: "currentAssetsCr", label: "Current assets", short: "Curr. assets", category: "Balance sheet", unit: "₹ Cr", decimals: 0 },
+  { id: "currentLiabilitiesCr", label: "Current liabilities", short: "Curr. liab.", category: "Balance sheet", unit: "₹ Cr", decimals: 0 },
+  { id: "shareCapitalCr", label: "Share capital", short: "Share cap.", category: "Balance sheet", unit: "₹ Cr", decimals: 0 },
+  { id: "bookValuePerShare", label: "Book value per share", short: "BVPS", category: "Balance sheet", unit: "₹", decimals: 2, signed: true },
 
   // ── Size ──
   { id: "marketCapCr", label: "Market cap", short: "Mkt cap", category: "Size", unit: "₹ Cr", decimals: 0 },
-  { id: "revenueCr", label: "Sales, last year", short: "Sales", category: "Size", unit: "₹ Cr", decimals: 0 },
-  { id: "profitCr", label: "Net profit, last year", short: "Profit", category: "Size", unit: "₹ Cr", decimals: 0, signed: true },
-  { id: "eps", label: "Earnings per share", short: "EPS", category: "Size", unit: "₹", decimals: 2, signed: true },
+  { id: "sharesCr", label: "Shares outstanding", short: "Shares", category: "Size", unit: "Cr shares", decimals: 2 },
+  { id: "faceValue", label: "Face value", short: "Face value", category: "Size", unit: "₹", decimals: 2, about: "As in the latest filing — a split since then isn't reflected." },
 
   // ── Stockwise ──
   { id: "score", label: "Quality score", short: "Score", category: "Stockwise", unit: "/10", decimals: 0, get: score10, about: "Green flags out of the 10 checks that apply, scaled to 10." },
