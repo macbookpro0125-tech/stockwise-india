@@ -259,9 +259,13 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
     return colValue(s, sortBy);
   };
 
+  // Blanks go last whichever way a column sorts: as -Infinity they led every
+  // ascending sort — ~300 loss-makers with no P/E above the cheapest stock
   const sorted = [...filtered].sort((a, b) => {
-    const av = sortVal(a) ?? -Infinity;
-    const bv = sortVal(b) ?? -Infinity;
+    const av = sortVal(a), bv = sortVal(b);
+    const aBlank = av == null || (typeof av === "number" && !Number.isFinite(av) && sortBy !== "ncavPct");
+    const bBlank = bv == null || (typeof bv === "number" && !Number.isFinite(bv) && sortBy !== "ncavPct");
+    if (aBlank || bBlank) return aBlank === bBlank ? 0 : aBlank ? 1 : -1;
     if (av === bv) return sortBy === "score" ? (b.roce ?? -Infinity) - (a.roce ?? -Infinity) : 0;
     return sortDir === "asc" ? (av > bv ? 1 : -1) : (av < bv ? 1 : -1);
   });
@@ -417,6 +421,14 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
         </div>
       )}
 
+      {/* The name box or score filter can empty the list on their own */}
+      {!loading && (matches?.length ?? 0) > 0 && sorted.length === 0 && (
+        <div style={{ textAlign: "center", padding: "40px 16px", color: "var(--t2)", fontSize: 13, border: "1px dashed var(--bdr2)", borderRadius: 14 }}>
+          None of these {matches.length.toLocaleString("en-IN")} companies {q ? <>match "{search.trim()}"{minScore > 0 ? ` with a score of ${minScore === 10 ? "10/10" : `${minScore}+`}` : ""}</> : `have a score of ${minScore === 10 ? "10/10" : `${minScore}+`}`}.
+          <button className="btn-ghost" onClick={() => { setSearch(""); setMinScore(0); }} style={{ marginLeft: 10, height: 28, fontSize: 12 }}>Show all</button>
+        </div>
+      )}
+
       {/* ── Mobile cards ── */}
       {!loading && sorted.length > 0 && isMobile && (
         <div>
@@ -452,7 +464,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
       )}
 
       {/* ── Desktop table ── */}
-      {!isMobile && !noData && (
+      {!isMobile && !noData && (loading || sorted.length > 0) && (
         <div style={{ borderRadius: 14, border: "1px solid var(--bdr2)", overflow: "hidden", boxShadow: "var(--sh-sm)" }}>
           <div style={{ overflowX: "auto", overflowY: "auto", maxHeight: "min(70vh, 780px)" }}>
             <table className="data-table" style={{ minWidth: 560 + columns.length * 80 }}>
