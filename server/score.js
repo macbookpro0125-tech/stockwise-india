@@ -96,8 +96,13 @@ export function computeScoreParts(enrichData, fallback = {}) {
   // PT9 — cash conversion. For a lender this tracks loan-book growth, not quality.
   if (!lender) check("cash", "Operating cash flow ≥ 80% of profit (3Y)", e.ocfPat3yPct != null && e.ocfPat3yPct >= 80);
 
-  // PT10 — client concentration (an analyst's input; unknown counts as not met).
-  check("clients", "Top-5 clients < 40% of revenue (not known)", e.clientConcentration != null && e.clientConcentration < 40);
+  // PT10 — promoter pledging. The original checked client concentration (the
+  // top 5 clients' share of revenue), which only annual reports give: always
+  // unknown here, so no company could reach 10/10. Pledging is known for
+  // every company from its shareholding filing, and pledged shares can be
+  // sold by lenders in a fall. A widely held company has none to pledge.
+  const pledged = e.pledgedPct ?? fallback.pledgedPct;
+  check("pledge", "Promoter shares pledged under 5%", promot === 0 || (pledged != null && pledged < 5));
 
   return { green, applicable, checks };
 }

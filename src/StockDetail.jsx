@@ -33,7 +33,7 @@ const FLAG_STYLE = {
 
 const POINT_TITLES = {
   1: "YoY Revenue Growth", 2: "Profitability", 3: "Business Model", 4: "Promoter Signals", 5: "Fair Value",
-  6: "3-Phase Buy Plan", 7: "Tech Risk", 8: "Debt Health", 9: "Cash Flow Quality", 10: "Concentration Risk",
+  6: "3-Phase Buy Plan", 7: "Tech Risk", 8: "Debt Health", 9: "Cash Flow Quality", 10: "Promoter Pledge",
 };
 
 const VERDICT_META = {
@@ -134,7 +134,8 @@ function pointsOneToSix(m, levels, price) {
   ];
 }
 
-function pointsSevenToTen({ lender, utility }, { disruption, debtToEquity, interestCoverage, ocfPatPct, clientConc }) {
+function pointsSevenToTen({ lender, utility, promoterPct }, { disruption, debtToEquity, interestCoverage, ocfPatPct, pledgedPct }) {
+  const noPromoter = promoterPct === 0;
   let p7;
   if (disruption === "pivoting") p7 = { id: 7, f: "Y", s: "Industry changing — company adapting", d: "Tech shift underway but company is working on it." };
   else if (disruption === "disrupted") p7 = { id: 7, f: "R", s: "Business losing to new tech", d: "Industry has shifted and company hasn't kept up." };
@@ -178,14 +179,22 @@ function pointsSevenToTen({ lender, utility }, { disruption, debtToEquity, inter
     p9 = { id: 9, f: "Y", s: "Enter OCF/PAT % above", d: "Fill in Operating Cash Flow ÷ Net Profit % to assess cash quality." };
   }
 
-  const cc = clientConc !== "" ? parseFloat(clientConc) : NaN;
+  // Point 10 was the original's client concentration (top 5 clients' share of
+  // revenue). That's only in annual reports, never in the filings, so it was
+  // always unknown — no company could reach 10/10. Promoter pledging replaces
+  // it: known for every company from its shareholding filing, and a real risk
+  // — if the price falls, lenders can sell pledged shares and push it lower.
+  const pl = pledgedPct !== "" ? parseFloat(pledgedPct) : NaN;
   let p10;
-  if (!isNaN(cc)) {
-    if (cc < 40) p10 = { id: 10, f: "G", s: `Top 5 clients ${Math.round(cc)}% — diversified`, d: "Good revenue spread across clients and geographies." };
-    else if (cc > 60) p10 = { id: 10, f: "R", s: `Top 5 clients ${Math.round(cc)}% — concentrated`, d: "High concentration risk — loss of a top client would be material." };
-    else p10 = { id: 10, f: "Y", s: `Top 5 clients ${Math.round(cc)}% — moderate`, d: "Moderate concentration. Watch client retention carefully." };
+  if (noPromoter) {
+    p10 = { id: 10, f: "G", s: "No promoter group — nothing pledged", d: "The company has no promoters (widely held), so there are no promoter shares to pledge." };
+  } else if (!isNaN(pl)) {
+    if (pl === 0) p10 = { id: 10, f: "G", s: "No promoter shares pledged", d: "Promoters haven't borrowed against their shares — no forced-selling risk." };
+    else if (pl < 5) p10 = { id: 10, f: "G", s: `${pl.toFixed(1)}% of promoter shares pledged — low`, d: "A small pledge. Watch that it doesn't grow." };
+    else if (pl > 25) p10 = { id: 10, f: "R", s: `${pl.toFixed(1)}% of promoter shares pledged — high risk`, d: "Promoters have borrowed heavily against their shares. If the price falls, lenders can sell them, pushing it lower still." };
+    else p10 = { id: 10, f: "Y", s: `${pl.toFixed(1)}% of promoter shares pledged — watch it`, d: "A meaningful pledge. A sharp fall in the price could force sales." };
   } else {
-    p10 = { id: 10, f: "Y", s: "Enter client concentration % above", d: "Fill in Top 5 client revenue % to assess concentration risk. It's in the annual report, not the filings." };
+    p10 = { id: 10, f: "Y", s: "Pledge data not available", d: "Enter the share of promoter shares pledged above — it's in the company's shareholding filing." };
   }
   return [p7, p8, p9, p10];
 }
@@ -489,7 +498,7 @@ export default function StockDetail({ symbol, onBack, onOpenStock }) {
   const [debtToEquity, setDebtToEquity] = useState("");
   const [interestCoverage, setInterestCoverage] = useState("");
   const [ocfPatPct, setOcfPatPct] = useState("");
-  const [clientConc, setClientConc] = useState("");
+  const [pledgedPct, setPledgedPct] = useState("");
   const [disruption, setDisruption] = useState("stable");
   const [actionPrice, setActionPrice] = useState("");
   const [priceLabel, setPriceLabel] = useState("");
@@ -498,7 +507,7 @@ export default function StockDetail({ symbol, onBack, onOpenStock }) {
   const applyBaseline = b => {
     setEps(b.eps); setPe(b.pe); setGrowthPct(b.growthPct); setMosPct(b.mosPct);
     setDebtToEquity(b.debtToEquity); setInterestCoverage(b.interestCoverage); setOcfPatPct(b.ocfPatPct);
-    setClientConc(""); setDisruption("stable");
+    setPledgedPct(b.pledgedPct); setDisruption("stable");
   };
 
   useEffect(() => {
@@ -517,6 +526,7 @@ export default function StockDetail({ symbol, onBack, onOpenStock }) {
         debtToEquity: m.debtToEquity != null ? String(round(m.debtToEquity, 2)) : "",
         interestCoverage: m.interestCoverage != null ? String(round(m.interestCoverage, 1)) : debtFree ? "0" : "",
         ocfPatPct: m.ocfPat3yPct != null ? String(Math.round(m.ocfPat3yPct)) : "",
+        pledgedPct: m.pledgedPct != null ? String(round(m.pledgedPct, 1)) : "",
       };
       setBaseline(b);
       applyBaseline(b);
@@ -540,8 +550,8 @@ export default function StockDetail({ symbol, onBack, onOpenStock }) {
 
   const allPts = useMemo(() => {
     if (!m) return [];
-    return [...pointsOneToSix(m, levels, price), ...pointsSevenToTen(m, { disruption, debtToEquity, interestCoverage, ocfPatPct, clientConc })];
-  }, [m, levels, price, disruption, debtToEquity, interestCoverage, ocfPatPct, clientConc]);
+    return [...pointsOneToSix(m, levels, price), ...pointsSevenToTen(m, { disruption, debtToEquity, interestCoverage, ocfPatPct, pledgedPct })];
+  }, [m, levels, price, disruption, debtToEquity, interestCoverage, ocfPatPct, pledgedPct]);
 
   if (error) {
     return (
@@ -666,7 +676,7 @@ export default function StockDetail({ symbol, onBack, onOpenStock }) {
                   {usingCustomInputs ? <span style={{ marginLeft: 6, color: "var(--accent)", fontWeight: 600 }}>· custom</span> : <span style={{ marginLeft: 6 }}>· filings baseline</span>}
                 </div>
               </div>
-              {baseline && (usingCustomInputs || debtToEquity !== baseline.debtToEquity || interestCoverage !== baseline.interestCoverage || ocfPatPct !== baseline.ocfPatPct || clientConc || disruption !== "stable") && (
+              {baseline && (usingCustomInputs || debtToEquity !== baseline.debtToEquity || interestCoverage !== baseline.interestCoverage || ocfPatPct !== baseline.ocfPatPct || pledgedPct !== baseline.pledgedPct || disruption !== "stable") && (
                 <button type="button" onClick={() => applyBaseline(baseline)} className="btn-ghost" style={{ height: 30, fontSize: 12 }}>Reset</button>
               )}
             </div>
@@ -721,10 +731,10 @@ export default function StockDetail({ symbol, onBack, onOpenStock }) {
                   </div>
                 </div>
                 <div>
-                  <label style={labelStyle}>Top 5 Client % rev.</label>
-                  <input type="number" value={clientConc} onChange={e => setClientConc(e.target.value)} placeholder="From annual report" style={inputStyle} />
-                  <div style={{ fontSize: 10, color: clientConc !== "" && parseFloat(clientConc) < 40 ? "var(--green)" : "var(--t2)", marginTop: 3, fontWeight: clientConc !== "" && parseFloat(clientConc) < 40 ? 600 : 400 }}>
-                    {clientConc !== "" && parseFloat(clientConc) < 40 ? "✓ Diversified revenue" : "< 40% = green"}
+                  <label style={labelStyle}>Promoter shares pledged %</label>
+                  <input type="number" value={pledgedPct} onChange={e => setPledgedPct(e.target.value)} placeholder="From shareholding filing" style={inputStyle} />
+                  <div style={{ fontSize: 10, color: m.promoterPct === 0 || (pledgedPct !== "" && parseFloat(pledgedPct) < 5) ? "var(--green)" : "var(--t2)", marginTop: 3, fontWeight: m.promoterPct === 0 || (pledgedPct !== "" && parseFloat(pledgedPct) < 5) ? 600 : 400 }}>
+                    {m.promoterPct === 0 ? "✓ No promoter group" : pledgedPct !== "" && parseFloat(pledgedPct) < 5 ? "✓ Little or no pledge" : "< 5% = green"}
                   </div>
                 </div>
               </div>
