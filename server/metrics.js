@@ -335,6 +335,19 @@ export function computeMetrics(stock, snap, overrides = {}) {
     return vals.length >= 3 ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
   };
   const tech = snap?.tech?.[sym] ?? {};
+
+  // Checklist point 7, a profit every year: the run of consecutive fiscal
+  // years from the latest (up to 5) and which of them were losses. A gap in
+  // the filings ends the run — a missing year can't count as a profit.
+  const run = [];
+  for (const y of history) {
+    if (y.profitCr == null) break;
+    if (run.length && Number(run.at(-1).fyEnd.slice(0, 4)) - Number(y.fyEnd.slice(0, 4)) !== 1) break;
+    run.push(y);
+    if (run.length === 5) break;
+  }
+  m.profitRecord = { years: run.length, latestFy: run[0]?.fyEnd ?? null, lossYears: run.filter(y => y.profitCr <= 0).map(y => y.fyEnd) };
+
   Object.assign(m, {
     roa: pctOf(latest.profit, latest.totalAssets),
     roa5y: avg5(y => pctOf(y.profit, y.totalAssets)),

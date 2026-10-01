@@ -33,7 +33,7 @@ const FLAG_STYLE = {
 
 const POINT_TITLES = {
   1: "YoY Revenue Growth", 2: "Profitability", 3: "Business Model", 4: "Promoter Signals", 5: "Fair Value",
-  6: "3-Phase Buy Plan", 7: "Tech Risk", 8: "Debt Health", 9: "Cash Flow Quality", 10: "Promoter Pledge",
+  6: "3-Phase Buy Plan", 7: "Profit Track Record", 8: "Debt Health", 9: "Cash Flow Quality", 10: "Promoter Pledge",
 };
 
 const VERDICT_META = {
@@ -134,12 +134,20 @@ function pointsOneToSix(m, levels, price) {
   ];
 }
 
-function pointsSevenToTen({ lender, utility, promoterPct }, { disruption, debtToEquity, interestCoverage, ocfPatPct, pledgedPct }) {
+function pointsSevenToTen({ lender, utility, promoterPct, profitRecord }, { debtToEquity, interestCoverage, ocfPatPct, pledgedPct }) {
   const noPromoter = promoterPct === 0;
+  // Point 7 was the original's "safe from AI or tech change?" — a judgement
+  // that defaulted to safe, so every company got it free. Now a profit in
+  // every year on record (3 to 5 consecutive years; metrics.js profitRecord).
+  const rec = profitRecord ?? { years: 0, lossYears: [] };
+  const fy = iso => `FY${iso.slice(2, 4)}`;
+  const losses = rec.lossYears.length;
+  const latestLoss = rec.latestFy != null && rec.lossYears.includes(rec.latestFy);
   let p7;
-  if (disruption === "pivoting") p7 = { id: 7, f: "Y", s: "Industry changing — company adapting", d: "Tech shift underway but company is working on it." };
-  else if (disruption === "disrupted") p7 = { id: 7, f: "R", s: "Business losing to new tech", d: "Industry has shifted and company hasn't kept up." };
-  else p7 = { id: 7, f: "G", s: "Business safe from tech disruption", d: "No major tech threat, or company benefits from the change." };
+  if (rec.years < 3) p7 = { id: 7, f: "Y", s: `Only ${rec.years || "no"} year${rec.years === 1 ? "" : "s"} of results on file`, d: "Too short a record to judge whether profits hold up — 3 consecutive years are needed." };
+  else if (losses === 0) p7 = { id: 7, f: "G", s: `A profit in each of the last ${rec.years} years`, d: "Profitable every year on record — the business has held up through good years and bad." };
+  else if (losses === 1 && !latestLoss) p7 = { id: 7, f: "Y", s: `A loss in ${fy(rec.lossYears[0])} — profitable otherwise`, d: `One loss in ${rec.years} years. Worth finding out what caused it.` };
+  else p7 = { id: 7, f: "R", s: latestLoss ? `A loss in the latest year${losses > 1 ? ` and ${losses - 1} more` : ""}` : `Losses in ${losses} of the last ${rec.years} years`, d: "Profits aren't consistent — earnings this uneven can't be relied on." };
 
   const de = debtToEquity !== "" ? parseFloat(debtToEquity) : NaN;
   const ic = interestCoverage !== "" ? parseFloat(interestCoverage) : NaN;
@@ -499,7 +507,6 @@ export default function StockDetail({ symbol, onBack, onOpenStock }) {
   const [interestCoverage, setInterestCoverage] = useState("");
   const [ocfPatPct, setOcfPatPct] = useState("");
   const [pledgedPct, setPledgedPct] = useState("");
-  const [disruption, setDisruption] = useState("stable");
   const [actionPrice, setActionPrice] = useState("");
   const [priceLabel, setPriceLabel] = useState("");
   const [baseline, setBaseline] = useState(null);
@@ -507,7 +514,7 @@ export default function StockDetail({ symbol, onBack, onOpenStock }) {
   const applyBaseline = b => {
     setEps(b.eps); setPe(b.pe); setGrowthPct(b.growthPct); setMosPct(b.mosPct);
     setDebtToEquity(b.debtToEquity); setInterestCoverage(b.interestCoverage); setOcfPatPct(b.ocfPatPct);
-    setPledgedPct(b.pledgedPct); setDisruption("stable");
+    setPledgedPct(b.pledgedPct);
   };
 
   useEffect(() => {
@@ -550,8 +557,8 @@ export default function StockDetail({ symbol, onBack, onOpenStock }) {
 
   const allPts = useMemo(() => {
     if (!m) return [];
-    return [...pointsOneToSix(m, levels, price), ...pointsSevenToTen(m, { disruption, debtToEquity, interestCoverage, ocfPatPct, pledgedPct })];
-  }, [m, levels, price, disruption, debtToEquity, interestCoverage, ocfPatPct, pledgedPct]);
+    return [...pointsOneToSix(m, levels, price), ...pointsSevenToTen(m, { debtToEquity, interestCoverage, ocfPatPct, pledgedPct })];
+  }, [m, levels, price, debtToEquity, interestCoverage, ocfPatPct, pledgedPct]);
 
   if (error) {
     return (
@@ -676,7 +683,7 @@ export default function StockDetail({ symbol, onBack, onOpenStock }) {
                   {usingCustomInputs ? <span style={{ marginLeft: 6, color: "var(--accent)", fontWeight: 600 }}>· custom</span> : <span style={{ marginLeft: 6 }}>· filings baseline</span>}
                 </div>
               </div>
-              {baseline && (usingCustomInputs || debtToEquity !== baseline.debtToEquity || interestCoverage !== baseline.interestCoverage || ocfPatPct !== baseline.ocfPatPct || pledgedPct !== baseline.pledgedPct || disruption !== "stable") && (
+              {baseline && (usingCustomInputs || debtToEquity !== baseline.debtToEquity || interestCoverage !== baseline.interestCoverage || ocfPatPct !== baseline.ocfPatPct || pledgedPct !== baseline.pledgedPct) && (
                 <button type="button" onClick={() => applyBaseline(baseline)} className="btn-ghost" style={{ height: 30, fontSize: 12 }}>Reset</button>
               )}
             </div>
@@ -737,15 +744,6 @@ export default function StockDetail({ symbol, onBack, onOpenStock }) {
                     {m.promoterPct === 0 ? "✓ No promoter group" : pledgedPct !== "" && parseFloat(pledgedPct) < 5 ? "✓ Little or no pledge" : "< 5% = green"}
                   </div>
                 </div>
-              </div>
-              <div>
-                <label style={labelStyle}>Is this business at risk from AI or tech change?</label>
-                <select value={disruption} onChange={e => setDisruption(e.target.value)} style={{ ...inputStyle, height: 36, cursor: "pointer" }}>
-                  <option value="stable">No — business is safe or benefits from AI</option>
-                  <option value="pivoting">Maybe — industry is changing, company is adapting</option>
-                  <option value="disrupted">Yes — business is losing to new technology</option>
-                </select>
-                <div style={{ fontSize: 10, color: "var(--t3)", marginTop: 3 }}>Drives Point 7 flag</div>
               </div>
             </div>
 
