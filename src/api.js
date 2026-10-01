@@ -19,9 +19,12 @@ export const api = {
   signup: (email, password) => request("/api/auth/signup", { method: "POST", body: JSON.stringify({ email, password }) }),
   login: (email, password) => request("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
   logout: () => request("/api/auth/logout", { method: "POST" }),
-  deleteAccount: (password) => request("/api/auth/delete-account", { method: "POST", body: JSON.stringify({ password }) }),
+  // password, or for an account without one (Google, Apple, phone) confirm: "DELETE"
+  deleteAccount: (password, confirm) => request("/api/auth/delete-account", { method: "POST", body: JSON.stringify({ password, confirm }) }),
   // Password reset: offered only when the server can send email
   authOptions: () => request("/api/auth/options"),
+  // A Google / Apple / phone sign-in Firebase confirmed (src/socialSignIn.js)
+  firebaseSignIn: (idToken) => request("/api/auth/firebase", { method: "POST", body: JSON.stringify({ idToken }) }),
   forgotPassword: (email) => request("/api/auth/forgot", { method: "POST", body: JSON.stringify({ email }) }),
   resetPassword: (token, password) => request("/api/auth/reset", { method: "POST", body: JSON.stringify({ token, password }) }),
   presets: () => request("/api/presets"),

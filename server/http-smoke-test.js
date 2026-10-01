@@ -255,6 +255,48 @@ async function main() {
   assert((await json("POST", "/api/auth/forgot", "", { email: "erin@example.com" })).status === 429, "a 4th reset request for one account within the hour is refused");
   for (const k of ["RESEND_API_KEY", "EMAIL_FROM", "APP_URL"]) delete process.env[k];
 
+  // Google / Apple / phone sign-in through Firebase, with Google's signing
+  // keys replaced by a test key: genuine, expired, other-project and forged
+  // tokens, linking to an existing email, phone accounts, password-less delete
+  const { generateKeyPairSync, createSign } = await import("node:crypto");
+  const fb = await import("./firebase-auth.js");
+  const { privateKey, publicKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
+  const forger = generateKeyPairSync("rsa", { modulusLength: 2048 }).privateKey;
+  fb.setFirebaseKeysForTests({ "test-kid": publicKey.export({ type: "spki", format: "pem" }) });
+  Object.assign(process.env, { FIREBASE_PROJECT_ID: "stockwise-test", FIREBASE_API_KEY: "test-web-key" });
+  const nowS = Math.floor(Date.now() / 1000);
+  const idToken = (claims, key = privateKey) => {
+    const enc = o => Buffer.from(JSON.stringify(o)).toString("base64url");
+    const body = `${enc({ alg: "RS256", kid: "test-kid", typ: "JWT" })}.${enc({ iss: "https://securetoken.google.com/stockwise-test", aud: "stockwise-test", iat: nowS - 10, auth_time: nowS - 10, exp: nowS + 3600, ...claims })}`;
+    return `${body}.${createSign("RSA-SHA256").update(body).sign(key).toString("base64url")}`;
+  };
+  const google = (sub, email, extra = {}) => idToken({ sub, email, email_verified: true, name: "Frank Test", firebase: { sign_in_provider: "google.com" }, ...extra });
+  const fbSignIn = token => json("POST", "/api/auth/firebase", "", { idToken: token });
+  const opts = await (await fetch(`${BASE}/api/auth/options`)).json();
+  assert(opts.firebase?.projectId === "stockwise-test" && opts.firebase.providers.join() === "google,phone", "with Firebase set up, the sign-in card is told Google and phone are on (Apple off until enabled)");
+  const frank = await fbSignIn(google("uid-frank", "Frank@Gmail.com"));
+  const frankCookie = extractCookie(frank);
+  const frankMe = await (await fetch(`${BASE}/api/auth/me`, { headers: { Cookie: frankCookie } })).json();
+  assert(frank.status === 200 && frankMe.email === "frank@gmail.com" && frankMe.name === "Frank Test" && frankMe.hasPassword === false, "a first Google sign-in makes an account with the Google email and name, no password");
+  assert((await (await fbSignIn(google("uid-frank", "frank@gmail.com"))).json()).userId === frankMe.userId, "signing in with Google again opens the same account");
+  const aliceId = (await (await fetch(`${BASE}/api/auth/me`, { headers: { Cookie: aliceCookie } })).json()).userId;
+  assert((await (await fbSignIn(google("uid-alice-google", "alice@example.com"))).json()).userId === aliceId, "a verified Google email joins the email account already using it");
+  const unverified = await fbSignIn(google("uid-mallory", "alice@example.com", { email_verified: false }));
+  assert(unverified.status === 400, "an unverified email never opens someone else's account");
+  const phoneRes = await fbSignIn(idToken({ sub: "uid-phone", phone_number: "+919876543210", firebase: { sign_in_provider: "phone" } }));
+  const phoneCookie = extractCookie(phoneRes);
+  const phoneMe = await (await fetch(`${BASE}/api/auth/me`, { headers: { Cookie: phoneCookie } })).json();
+  assert(phoneRes.status === 200 && phoneMe.phone === "+919876543210" && phoneMe.email === null, "a phone sign-in makes an account with just the number");
+  assert((await fbSignIn(idToken({ sub: "uid-old", email: "old@gmail.com", email_verified: true, firebase: { sign_in_provider: "google.com" }, iat: nowS - 7200, auth_time: nowS - 7200, exp: nowS - 3600 }))).status === 401, "an expired sign-in token is refused");
+  assert((await fbSignIn(idToken({ sub: "uid-x", email: "x@gmail.com", email_verified: true, firebase: { sign_in_provider: "google.com" }, aud: "someone-elses-project", iss: "https://securetoken.google.com/someone-elses-project" }))).status === 401, "a token for another Firebase project is refused");
+  assert((await fbSignIn(idToken({ sub: "uid-forged", email: "alice@example.com", email_verified: true, firebase: { sign_in_provider: "google.com" } }, forger))).status === 401, "a token not signed by Google's key is refused");
+  assert((await fbSignIn(idToken({ sub: "uid-anon", firebase: { sign_in_provider: "anonymous" } }))).status === 400, "only Google, Apple and phone sign-ins are accepted");
+  assert((await json("POST", "/api/auth/login", "", { email: "frank@gmail.com", password: "anything-at-all" })).status === 400, "a Google account has no password to sign in with");
+  assert((await json("POST", "/api/auth/delete-account", phoneCookie, { confirm: "delete it" })).status === 400 &&
+    (await json("POST", "/api/auth/delete-account", phoneCookie, { confirm: "DELETE" })).status === 200, "a password-less account is deleted by typing DELETE");
+  fb.setFirebaseKeysForTests(null);
+  for (const k of ["FIREBASE_PROJECT_ID", "FIREBASE_API_KEY"]) delete process.env[k];
+
   // Daily backups: a readable copy with every account, the last 14 kept
   const { backupDatabase } = await import("./backup.js");
   const { DatabaseSync } = await import("node:sqlite");

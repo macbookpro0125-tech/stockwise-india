@@ -45,7 +45,7 @@ export function PrivacyPage({ signedIn }) {
 
       <H>What we keep on our server</H>
       <UL>
-        <LI><B>Your account:</B> your email address and your password. The password is stored only as a salted, one-way hash (scrypt), so nobody — including us — can read it.</LI>
+        <LI><B>Your account:</B> your email address and your password. The password is stored only as a salted, one-way hash (scrypt), so nobody — including us — can read it. If you sign in with Google, Apple or your phone instead, there's no password: we keep the email or phone number they confirm, your name if they share it, and the account ID their sign-in gives us.</LI>
         <LI><B>A sign-in cookie:</B> one cookie that keeps you signed in for up to 30 days. It's used for nothing else, scripts on the page can't read it, and it's removed when you sign out.</LI>
         <LI><B>What you save:</B> your watchlist (with the price when you added each stock and your notes on it), your price alerts, and your portfolio holdings (buy price, quantity, date and notes).</LI>
         <LI><B>Telegram, only if you connect it:</B> your Telegram chat ID and the name on your Telegram account, so your alerts reach you, and when each alert was last sent. Not your phone number — Telegram doesn't give it to us. Disconnecting (on the Alerts tab, or sending /stop to the bot) removes them.</LI>
@@ -60,9 +60,17 @@ export function PrivacyPage({ signedIn }) {
 
       <H>What we don't do</H>
       <UL>
-        <LI>No advertising or tracking cookies, no analytics, and no third-party scripts on our pages.</LI>
+        <LI>No advertising or tracking cookies, no analytics, and no third-party scripts on our pages — apart from the sign-in services below, and only when you choose them.</LI>
         <LI>We don't sell, rent or share your personal data, and we use what you save only to show it back to you — and, if you connect Telegram, to send you your own alerts there.</LI>
       </UL>
+
+      <H>Signing in with Google, Apple or your phone</H>
+      <P>
+        These go through Google's Firebase Authentication. Google (or Apple) confirms who you are and tells us your email
+        address or phone number, and your name if you allow it. For a phone number, Google sends the SMS code and runs its
+        reCAPTCHA check to stop automated abuse. Their privacy policies cover that step; we never see your Google or Apple
+        password. Signing in with email and a password uses none of this.
+      </P>
 
       <H>Emails</H>
       <P>

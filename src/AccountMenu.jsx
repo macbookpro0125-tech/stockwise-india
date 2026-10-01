@@ -5,8 +5,11 @@ import { api } from "./api.js";
 import { SiteLink } from "./site.jsx";
 
 // The header's Account button: who's signed in, Sign out, and Delete account
-// — the way to erase everything that the privacy page points to.
-export default function AccountMenu({ email, onLogout, onDeleted }) {
+// — the way to erase everything that the privacy page points to. An account
+// made with Google, Apple or a phone has no password; it confirms the delete
+// by typing DELETE.
+export default function AccountMenu({ account, onLogout, onDeleted }) {
+  const who = account?.email || account?.phone || null;
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const ref = useRef(null);
@@ -29,10 +32,11 @@ export default function AccountMenu({ email, onLogout, onDeleted }) {
       </button>
       {open && (
         <div role="menu" style={{ position: "absolute", right: 0, top: "calc(100% + 6px)", width: 240, zIndex: 200, background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 12, padding: 6, boxShadow: "var(--sh-lg)" }}>
-          {email && (
+          {who && (
             <div style={{ padding: "8px 12px 10px", borderBottom: "1px solid var(--bdr)", marginBottom: 4 }}>
               <div style={{ fontSize: 11, color: "var(--t3)" }}>Signed in as</div>
-              <div style={{ fontSize: 13, color: "var(--t1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={email}>{email}</div>
+              {account.name && <div style={{ fontSize: 13, fontWeight: 600, color: "var(--t1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{account.name}</div>}
+              <div style={{ fontSize: 13, color: account.name ? "var(--t2)" : "var(--t1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={who}>{who}</div>
             </div>
           )}
           <button role="menuitem" style={item} onClick={() => { setOpen(false); onLogout(); }}
@@ -47,12 +51,12 @@ export default function AccountMenu({ email, onLogout, onDeleted }) {
       )}
       {/* Into <body>: the header's backdrop blur would otherwise make it the
           frame for this position: fixed popup and shut it inside the header */}
-      {confirming && createPortal(<DeleteAccountModal email={email} onClose={() => setConfirming(false)} onDeleted={onDeleted} />, document.body)}
+      {confirming && createPortal(<DeleteAccountModal who={who} hasPassword={account?.hasPassword !== false} onClose={() => setConfirming(false)} onDeleted={onDeleted} />, document.body)}
     </div>
   );
 }
 
-function DeleteAccountModal({ email, onClose, onDeleted }) {
+function DeleteAccountModal({ who, hasPassword, onClose, onDeleted }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -68,7 +72,7 @@ function DeleteAccountModal({ email, onClose, onDeleted }) {
     setBusy(true);
     setError("");
     try {
-      await api.deleteAccount(password);
+      await (hasPassword ? api.deleteAccount(password) : api.deleteAccount(undefined, password));
       onDeleted();
     } catch (err) {
       setError(err.message);
@@ -82,15 +86,21 @@ function DeleteAccountModal({ email, onClose, onDeleted }) {
       <form onSubmit={submit} style={{ background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 18, padding: 26, width: 420, maxWidth: "100%", boxShadow: "var(--sh-lg)" }}>
         <h3 style={{ fontSize: 18, fontWeight: 700, color: "var(--t1)", margin: "0 0 10px", letterSpacing: "-0.02em" }}>Delete your account?</h3>
         <p style={{ fontSize: 13.5, lineHeight: 1.6, color: "var(--t2)", margin: "0 0 10px" }}>
-          This permanently deletes <strong style={{ color: "var(--t1)" }}>{email || "your account"}</strong> and everything saved with it:
+          This permanently deletes <strong style={{ color: "var(--t1)" }}>{who || "your account"}</strong> and everything saved with it:
           your watchlist and its notes, your price alerts and your portfolio. It can't be undone.
         </p>
         <p style={{ fontSize: 12, lineHeight: 1.6, color: "var(--t3)", margin: "0 0 16px" }}>
           Filters, saved strategies, company-page notes and search history live in this browser, not on our server — clear
           them in your browser's settings for this site. <SiteLink to="/privacy" newTab>Privacy policy</SiteLink>
         </p>
-        <input className="input-base" type="password" placeholder="Your password, to confirm" autoComplete="current-password" autoFocus
-          value={password} onChange={e => setPassword(e.target.value)} required />
+        {hasPassword ? (
+          <input className="input-base" type="password" placeholder="Your password, to confirm" autoComplete="current-password" autoFocus
+            value={password} onChange={e => setPassword(e.target.value)} required />
+        ) : (
+          // No password to re-enter: typing the word is the deliberate step
+          <input className="input-base" type="text" placeholder="Type DELETE to confirm" autoComplete="off" autoCapitalize="characters" autoFocus
+            value={password} onChange={e => setPassword(e.target.value)} required />
+        )}
         {error && (
           <div style={{ fontSize: 12, color: "var(--red)", background: "var(--red-dim)", border: "1px solid var(--red-bdr)", borderRadius: 8, padding: "8px 12px", marginTop: 10 }}>
             {error}

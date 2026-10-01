@@ -38,12 +38,39 @@ export function signup(email, password) {
 }
 
 export function login(email, password) {
-  email = email.trim().toLowerCase();
+  email = String(email ?? "").trim().toLowerCase();
   const user = db.prepare("SELECT id, password_hash, password_salt FROM users WHERE email = ?").get(email);
-  // Same error for "no such user" and "wrong password" — distinguishing them
-  // tells an attacker which emails are registered.
-  if (!user || !verifyPassword(password, user.password_salt, user.password_hash)) {
+  // Same error for "no such user", "wrong password" and "signs in with
+  // Google, no password" — distinguishing them tells an attacker which
+  // emails are registered.
+  if (!user?.password_hash || !verifyPassword(String(password ?? ""), user.password_salt, user.password_hash)) {
     throw new Error("Invalid email or password");
+  }
+  return createSession(Number(user.id));
+}
+
+// After firebase-auth.js has confirmed a Google, Apple or phone sign-in: the
+// account Firebase's id belongs to; else, for a verified Google/Apple email,
+// the account already using that email (it gains the sign-in); else a new
+// account. Then our own session.
+export function signInWithFirebase(claims) {
+  const uid = claims.sub;
+  const provider = claims.firebase?.sign_in_provider;
+  // Only the three ways the app offers — not, say, an anonymous Firebase user
+  if (!["google.com", "apple.com", "phone"].includes(provider)) throw new Error("That way of signing in isn't offered here.");
+  const email = claims.email && claims.email_verified ? String(claims.email).trim().toLowerCase() : null;
+  const phone = provider === "phone" && claims.phone_number ? String(claims.phone_number) : null;
+  const name = typeof claims.name === "string" && claims.name.trim() ? claims.name.trim().slice(0, 80) : null;
+  let user = db.prepare("SELECT id FROM users WHERE firebase_uid = ?").get(uid)
+    ?? (email ? db.prepare("SELECT id FROM users WHERE email = ?").get(email) : null)
+    ?? (phone ? db.prepare("SELECT id FROM users WHERE phone = ?").get(phone) : null);
+  if (user) {
+    db.prepare("UPDATE users SET firebase_uid = COALESCE(firebase_uid, ?), display_name = COALESCE(display_name, ?) WHERE id = ?").run(uid, name, user.id);
+  } else {
+    if (!email && !phone) throw new Error("That sign-in didn't come with a verified email or phone number.");
+    const result = db.prepare("INSERT INTO users (email, phone, firebase_uid, display_name, created_at) VALUES (?, ?, ?, ?, ?)")
+      .run(email, phone, uid, name, new Date().toISOString());
+    user = { id: result.lastInsertRowid };
   }
   return createSession(Number(user.id));
 }
@@ -72,6 +99,13 @@ export function logout(token) {
 
 export function accountEmail(userId) {
   return db.prepare("SELECT email FROM users WHERE id = ?").get(userId)?.email ?? null;
+}
+
+// Who's signed in, for the Account menu: email or phone, name, and whether
+// the account has a password at all (Google, Apple and phone ones don't)
+export function accountInfo(userId) {
+  const u = db.prepare("SELECT email, phone, display_name, password_hash FROM users WHERE id = ?").get(userId);
+  return u ? { email: u.email ?? null, phone: u.phone ?? null, name: u.display_name ?? null, hasPassword: !!u.password_hash } : null;
 }
 
 // Password reset. The emailed link carries a random token; only its hash is
@@ -116,10 +150,13 @@ export function resetPassword(token, password) {
 // promises. Asks for the password again, so a session left signed in on a
 // shared computer can't do it. Each table is cleared by name rather than
 // relying on ON DELETE CASCADE, which does nothing if foreign keys are off.
-export function deleteAccount(userId, password) {
+// An account without a password (Google, Apple, phone) confirms by typing
+// DELETE instead.
+export function deleteAccount(userId, password, confirm) {
   const user = db.prepare("SELECT password_hash, password_salt FROM users WHERE id = ?").get(userId);
-  if (!user || !verifyPassword(String(password ?? ""), user.password_salt, user.password_hash)) {
-    throw new Error("That password isn't right");
+  if (!user) throw new Error("No such account");
+  if (user.password_hash ? !verifyPassword(String(password ?? ""), user.password_salt, user.password_hash) : String(confirm ?? "").trim() !== "DELETE") {
+    throw new Error(user.password_hash ? "That password isn't right" : "Type DELETE to confirm");
   }
   db.exec("BEGIN");
   try {

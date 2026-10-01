@@ -44,6 +44,18 @@ services:
         sync: false
       - key: EMAIL_FROM
         sync: false
+      # Sign-in with Google / Apple / phone (server/firebase-auth.js): the
+      # Firebase web app's config — public values, but this site's own.
+      # FIREBASE_PROVIDERS lists the buttons: google,phone (add apple once
+      # Sign in with Apple is set up in Firebase and Apple's developer site).
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_API_KEY
+        sync: false
+      - key: FIREBASE_APP_ID
+        sync: false
+      - key: FIREBASE_PROVIDERS
+        value: google,phone
     disk:
       name: stockwise-data
       mountPath: /var/data
