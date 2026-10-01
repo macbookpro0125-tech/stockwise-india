@@ -41,6 +41,13 @@ export function compactCr(n) {
   return `${s}${Math.round(a)}`;
 }
 
+// Share counts the Indian way: 36.6 L (lakh), 1.2 Cr (crore)
+function compactShares(n) {
+  if (n >= 1e7) return `${(n / 1e7).toFixed(2)} Cr`;
+  if (n >= 1e5) return `${(n / 1e5).toFixed(1)} L`;
+  return Math.round(n).toLocaleString("en-IN");
+}
+
 // A metric's value for display. In a table cell a multiple is bare ("20.7",
 // not "20.7x"), as the table always showed P/E — the header names it.
 export function formatValue(def, v, { cell = false } = {}) {
@@ -54,6 +61,8 @@ export function formatValue(def, v, { cell = false } = {}) {
     case "x": return `${neg}${inr(a, d)}${cell ? "" : "x"}`;
     case "₹": return `${sign}${neg}₹${inr(a, d)}`;
     case "₹ Cr": return `${sign}${compactCr(v)}`;
+    case "shares": return compactShares(v);
+    case "Cr shares": return `${inr(a, d)} Cr`;
     case "/10": return `${inr(v, 0)}/10`;
     case "/9": return `${inr(v, 0)}/9`;
     default: return `${neg}${inr(a, d)}`;
@@ -68,7 +77,7 @@ export function formatInput(def, v) {
 }
 
 export function unitLabel(def) {
-  return { "%": "%", x: "x", "₹": "₹", "₹ Cr": "₹ Cr", "/10": "of 10", "/9": "of 9" }[def.unit] ?? "";
+  return { "%": "%", x: "x", "₹": "₹", "₹ Cr": "₹ Cr", "/10": "of 10", "/9": "of 9", shares: "shares", "Cr shares": "crore shares" }[def.unit] ?? "";
 }
 
 // Colour for a cell: gains green and losses red for signed metrics, and the

@@ -8,7 +8,7 @@ import FilterPanel, { isActiveFilter } from "./screener/FilterPanel.jsx";
 import MetricPicker from "./screener/MetricPicker.jsx";
 import { useScreenerMeta, DEFAULT_COLUMNS } from "./screener/meta.js";
 
-// The screener: filters in a sidebar beside the results, any of 40 metrics as
+// The screener: filters in a sidebar beside the results, any of 99 metrics as
 // a min–max filter, columns that follow the filters (plus any you add), and
 // results that update as a filter changes — the whole market until a filter
 // narrows it. The strategies are starting points: pick one and its filters
@@ -144,14 +144,18 @@ export default function DiscoverView({ onOpenStock }) {
 
   // ── The picker adds or removes a filter, or a column ──
   const pickerChosen = useMemo(() => new Set(picker === "filter" ? (filters ?? []).map(f => f.id) : shownColumnIds), [picker, filters, shownColumnIds]);
+  // From the latest list each time, not the one this render saw: several
+  // quick clicks would otherwise each add to the same old list, and only the
+  // last would stick
   const togglePicked = id => {
     if (picker === "filter") {
-      const has = (filters ?? []).some(f => f.id === id);
-      changeFilters(has ? filters.filter(f => f.id !== id) : [...(filters ?? []), id === "sector" ? { id, values: [] } : { id, min: null, max: null }]);
-    } else if (columns.includes(id)) {
-      setColumns(columns.filter(c => c !== id));
-    } else if (!(filters ?? []).some(f => f.id === id)) {
-      setColumns([...columns, id]);
+      setFilters(prev => {
+        const list = prev ?? [];
+        return list.some(f => f.id === id) ? list.filter(f => f.id !== id) : [...list, id === "sector" ? { id, values: [] } : { id, min: null, max: null }];
+      });
+      setActivePresetId(null);
+    } else {
+      setColumns(prev => (prev.includes(id) ? prev.filter(c => c !== id) : (filters ?? []).some(f => f.id === id) ? prev : [...prev, id]));
     }
   };
 

@@ -51,7 +51,7 @@ async function main() {
   assert(presets.every(p => Array.isArray(p.filters) && p.filters.length > 0 && p.filters.every(f => f.id)), "each strategy also comes as the screener's filters");
 
   const metrics = await (await fetch(`${BASE}/api/metrics`)).json();
-  assert(metrics.metrics.length >= 40 && metrics.metrics.every(x => x.id && x.label && x.category), "GET /api/metrics lists 40+ metrics with labels and categories");
+  assert(metrics.metrics.length >= 90 && metrics.metrics.every(x => x.id && x.label && x.category), "GET /api/metrics lists 90+ metrics with labels and categories");
   const strip = await (await fetch(`${BASE}/api/market-strip`)).json();
   assert(strip.asOf && strip.stocks.length > 0 && strip.stocks.every(s => s.symbol && s.cmp > 0), "the price strip has the latest close date and the largest companies' prices");
   const roceDef = metrics.metrics.find(x => x.id === "roce");
@@ -151,6 +151,8 @@ async function main() {
   assert(screenRes.status === 200 && screened.matched > 0 && screened.results.every(r => r.values.roce >= 25 && r.capSize === "Large cap"), "a screen keeps only companies inside every filter");
   assert(screened.results.every(r => "ret1m" in r.values), "a screen returns the columns asked for");
   assert(/ROCE.*≥ 25%/.test(screened.queryUsed), "a screen describes its filters in words");
+  const technical = await (await json("POST", "/api/screen", aliceCookie, { filters: [{ id: "rsi14", min: null, max: 30 }, { id: "delivery1m", min: 50, max: null }], columns: ["rsi14", "delivery1m", "beta1y"] })).json();
+  assert(technical.matched > 0 && technical.results.every(r => r.values.rsi14 <= 30 && r.values.delivery1m >= 50), "technical filters from the daily prices (RSI, delivery %) work like any other");
   const junk = await (await json("POST", "/api/screen", aliceCookie, { filters: [{ id: "nope", min: 1 }, { id: "roce" }], columns: ["../x"] })).json();
   assert(junk.filters.length === 0 && junk.matched === junk.total, "unknown metrics and empty filters are ignored, not errors");
   const hqc = presets.find(p => p.id === "high_quality_compounders");

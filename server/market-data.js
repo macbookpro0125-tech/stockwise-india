@@ -43,7 +43,8 @@ function parseBhavcopy(csv) {
   const cols = header.split(",").map(c => c.trim());
   const iSym = cols.indexOf("SYMBOL"), iSeries = cols.indexOf("SERIES"), iClose = cols.indexOf("CLOSE_PRICE"), iDate = cols.indexOf("DATE1");
   const iHigh = cols.indexOf("HIGH_PRICE"), iLow = cols.indexOf("LOW_PRICE");
-  const best = new Map(); // symbol -> { close, high, low, rank }
+  const iQty = cols.indexOf("TTL_TRD_QNTY"), iDeliv = cols.indexOf("DELIV_PER");
+  const best = new Map(); // symbol -> { close, high, low, volume, delivery, rank }
   let tradingDate = null;
   for (const line of lines) {
     const f = line.split(",").map(c => c.trim());
@@ -52,12 +53,16 @@ function parseBhavcopy(csv) {
     const close = Number(f[iClose]);
     if (rank === -1 || !(close > 0)) continue;
     const prev = best.get(f[iSym]);
-    if (!prev || rank < prev.rank) best.set(f[iSym], { close, high: Number(f[iHigh]), low: Number(f[iLow]), rank });
+    if (!prev || rank < prev.rank) {
+      const delivery = iDeliv === -1 ? NaN : Number(f[iDeliv]); // "-" when there's no delivery data
+      best.set(f[iSym], { close, high: Number(f[iHigh]), low: Number(f[iLow]), volume: iQty === -1 ? null : Number(f[iQty]), delivery: Number.isFinite(delivery) ? delivery : null, rank });
+    }
   }
   return {
     date: tradingDate ? isoDay(tradingDate) : null,
     prices: Object.fromEntries([...best].map(([s, v]) => [s, v.close])),
     ranges: Object.fromEntries([...best].map(([s, v]) => [s, [v.low > 0 ? v.low : v.close, v.high > 0 ? v.high : v.close]])),
+    days: best,
   };
 }
 
@@ -102,17 +107,22 @@ export function splitRatio(subject) {
   return null;
 }
 
-// 52-week low and high from every trading day's bhavcopy in the year to
-// `toIso`, on today's share basis: a day before a split or bonus is divided by
-// every ratio since, or a 1:1 bonus would leave a pre-bonus high twice today's
-// price. Weekends are skipped — NSE's rare weekend sessions (Muhurat, budget
-// day) don't move a year's range. The first build downloads ~250 files
-// (a few minutes); after that only new days are fetched.
-async function yearRanges(toIso, splits) {
+// One pass over every trading day's bhavcopy in the year to `toIso`, on
+// today's share basis (a day before a split or bonus is divided by every
+// ratio since — or a 1:1 bonus would leave a pre-bonus high twice today's
+// price — and its volume multiplied by it). It gives the 52-week low and
+// high, and each stock's daily closes, volumes and delivery % for the
+// technical figures (technicals()), with NIFTY 50's closes for beta.
+// Weekends are skipped — NSE's rare weekend sessions (Muhurat, budget day)
+// don't move a year's figures. The first build downloads ~250 bhavcopies and
+// ~250 index files (a few minutes); after that only new days are fetched.
+async function yearOfDays(toIso, splits) {
   const factorAfter = (sym, iso) => (splits[sym] ?? []).filter(s => s.exDate > iso).reduce((f, s) => f * s.ratio, 1);
   const to = new Date(`${toIso}T00:00:00Z`);
   const fromIso = isoDay(new Date(to.getTime() - 365 * 86400000));
   const ranges = {};
+  const series = new Map(); // symbol -> [{ date, close, volume, delivery }], newest first
+  const nifty = new Map(); // date -> NIFTY 50 close
   const seen = new Set();
   let failed = 0;
   for (let d = new Date(to); isoDay(d) > fromIso; d.setUTCDate(d.getUTCDate() - 1)) {
@@ -133,18 +143,103 @@ async function yearRanges(toIso, splits) {
     // A holiday can be answered with the previous day's file — count each day once
     if (!day.date || seen.has(day.date) || day.date <= fromIso) continue;
     seen.add(day.date);
-    for (const [sym, [low, high]] of Object.entries(day.ranges)) {
+    const niftyClose = (await indexFile(day.date))?.get("Nifty 50")?.close;
+    if (niftyClose > 0) nifty.set(day.date, niftyClose);
+    for (const [sym, v] of day.days) {
       const f = factorAfter(sym, day.date);
+      const [low, high] = day.ranges[sym];
       const r = (ranges[sym] ||= { low: Infinity, high: 0 });
       r.low = Math.min(r.low, low / f);
       r.high = Math.max(r.high, high / f);
+      let list = series.get(sym);
+      if (!list) series.set(sym, (list = []));
+      list.push({ date: day.date, close: v.close / f, volume: v.volume != null ? v.volume * f : null, delivery: v.delivery });
     }
   }
   for (const r of Object.values(ranges)) {
     r.low = Math.round(r.low * 100) / 100;
     r.high = Math.round(r.high * 100) / 100;
   }
-  return { from: fromIso, tradingDays: seen.size, ranges };
+  const tech = {};
+  for (const [sym, list] of series) {
+    const t = technicals(list.reverse(), nifty);
+    if (t) tech[sym] = t;
+  }
+  return { from: fromIso, tradingDays: seen.size, ranges, tech };
+}
+
+// A stock's technical and volume figures from a year of daily closes
+// (oldest first): average volumes and their change, average delivery %,
+// RSI (Wilder, 14 days), price vs its 20-day EMA and 50- and 200-day SMAs,
+// yearly volatility, the year's worst fall from a high, and beta against
+// NIFTY 50. Each is left out when there aren't enough days for it.
+function technicals(days, nifty) {
+  const n = days.length;
+  if (n < 2) return null;
+  const r2 = v => (v == null || !Number.isFinite(v) ? null : Math.round(v * 100) / 100);
+  const mean = a => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : null);
+  const closes = days.map(d => d.close);
+  const last = closes[n - 1];
+  const vols = days.map(d => d.volume).filter(v => v != null);
+  const lastN = (a, k) => (a.length >= k ? a.slice(-k) : null);
+  const out = {};
+
+  out.volume1d = vols.length ? vols.at(-1) : null;
+  out.avgVolume1m = lastN(vols, 21) && Math.round(mean(lastN(vols, 21)));
+  out.avgVolume3m = lastN(vols, 63) && Math.round(mean(lastN(vols, 63)));
+  if (vols.length >= 2 && vols.at(-2) > 0) out.volumeChange1d = r2((vols.at(-1) / vols.at(-2) - 1) * 100);
+  if (vols.length >= 10) {
+    const thisWeek = mean(vols.slice(-5)), lastWeek = mean(vols.slice(-10, -5));
+    if (lastWeek > 0) out.volumeChange1w = r2((thisWeek / lastWeek - 1) * 100);
+  }
+  const deliv = days.slice(-21).map(d => d.delivery).filter(v => v != null);
+  if (deliv.length >= 10) out.delivery1m = r2(mean(deliv));
+
+  if (n >= 15) {
+    let gain = 0, loss = 0;
+    for (let i = 1; i <= 14; i++) { const ch = closes[i] - closes[i - 1]; if (ch > 0) gain += ch; else loss -= ch; }
+    gain /= 14; loss /= 14;
+    for (let i = 15; i < n; i++) {
+      const ch = closes[i] - closes[i - 1];
+      gain = (gain * 13 + Math.max(ch, 0)) / 14;
+      loss = (loss * 13 + Math.max(-ch, 0)) / 14;
+    }
+    out.rsi14 = r2(loss === 0 ? 100 : 100 - 100 / (1 + gain / loss));
+  }
+  if (n >= 20) {
+    const k = 2 / 21;
+    let ema = mean(closes.slice(0, 20));
+    for (let i = 20; i < n; i++) ema = closes[i] * k + ema * (1 - k);
+    out.vsEma20 = r2((last / ema - 1) * 100);
+  }
+  if (n >= 50) out.vsSma50 = r2((last / mean(closes.slice(-50)) - 1) * 100);
+  if (n >= 200) out.vsSma200 = r2((last / mean(closes.slice(-200)) - 1) * 100);
+
+  const rets = [];
+  for (let i = 1; i < n; i++) if (closes[i - 1] > 0 && closes[i] > 0) rets.push(Math.log(closes[i] / closes[i - 1]));
+  if (rets.length >= 60) {
+    const m = mean(rets);
+    out.volatility1y = r2(Math.sqrt(rets.reduce((s, r) => s + (r - m) ** 2, 0) / (rets.length - 1)) * Math.sqrt(252) * 100);
+  }
+  if (n >= 60) {
+    let peak = closes[0], worst = 0;
+    for (const c of closes) { peak = Math.max(peak, c); worst = Math.max(worst, (peak - c) / peak); }
+    out.maxLoss1y = r2(worst * 100);
+  }
+  // Beta: daily moves against NIFTY 50's on the same pairs of days
+  const pairs = [];
+  for (let i = 1; i < n; i++) {
+    const n0 = nifty.get(days[i - 1].date), n1 = nifty.get(days[i].date);
+    if (n0 > 0 && n1 > 0 && closes[i - 1] > 0) pairs.push([closes[i] / closes[i - 1] - 1, n1 / n0 - 1]);
+  }
+  if (pairs.length >= 60) {
+    const ms = mean(pairs.map(p => p[0])), mn = mean(pairs.map(p => p[1]));
+    const cov = pairs.reduce((s, [a, b]) => s + (a - ms) * (b - mn), 0);
+    const varN = pairs.reduce((s, [, b]) => s + (b - mn) ** 2, 0);
+    if (varN > 0) out.beta1y = r2(cov / varN);
+  }
+  for (const k of Object.keys(out)) if (out[k] == null) delete out[k];
+  return out;
 }
 
 // Price change over the screener's return periods, on today's share basis
@@ -169,10 +264,28 @@ async function periodReturns(latest, splits) {
     if (base.getUTCDate() !== dayOfMonth) base.setUTCDate(0); // 31 Mar − 1 month = 28/29 Feb, not 3 Mar
     const past = await pricesOnOrBefore(base).catch(() => null);
     if (!past || past.date >= latest.date) continue;
+    // NIFTY 50 over the same days, for "return vs NIFTY" (percentage points)
+    const n0 = (await indexFile(past.date))?.get("Nifty 50")?.close, n1 = (await indexFile(latest.date))?.get("Nifty 50")?.close;
+    const niftyRet = n0 > 0 && n1 > 0 ? (n1 / n0 - 1) * 100 : null;
     for (const [sym, close] of Object.entries(latest.prices)) {
       const then = past.prices[sym];
       if (!(then > 0)) continue;
-      (out[sym] ||= {})[key] = Math.round((close / (then / factorBetween(sym, past.date)) - 1) * 10000) / 100;
+      const ret = (close / (then / factorBetween(sym, past.date)) - 1) * 100;
+      const row = (out[sym] ||= {});
+      row[key] = Math.round(ret * 100) / 100;
+      if (key !== "d1" && niftyRet != null) row[`${key}VsNifty`] = Math.round((ret - niftyRet) * 100) / 100;
+    }
+  }
+  // Price growth a year over five years (needs the corporate actions to go
+  // back that far — the snapshot keeps six years of them)
+  const base5 = new Date(`${latest.date}T00:00:00Z`);
+  base5.setUTCFullYear(base5.getUTCFullYear() - 5);
+  const past5 = await pricesOnOrBefore(base5).catch(() => null);
+  if (past5) {
+    const years = (new Date(`${latest.date}T00:00:00Z`) - new Date(`${past5.date}T00:00:00Z`)) / (365.25 * 86400000);
+    for (const [sym, close] of Object.entries(latest.prices)) {
+      const then = past5.prices[sym];
+      if (then > 0 && years > 4.5) (out[sym] ||= {}).cagr5y = Math.round((Math.pow(close / (then / factorBetween(sym, past5.date)), 1 / years) - 1) * 10000) / 100;
     }
   }
   return out;
@@ -182,23 +295,39 @@ async function periodReturns(latest, splits) {
 // index file (same archive as the bhavcopy; cached the same way)
 const STRIP_INDICES = ["Nifty 50", "Nifty Bank", "Nifty Next 50", "NIFTY Midcap 100", "NIFTY Smallcap 100", "Nifty IT"];
 
-async function indexCloses(isoDate) {
+// NSE's index closes for one day (all indices), cached like the bhavcopy;
+// null for a day without a file (holidays)
+const indexDays = new Map();
+async function indexFile(isoDate) {
+  if (indexDays.has(isoDate)) return indexDays.get(isoDate);
   const path = join(PRICE_DIR, `indices-${isoDate}.csv`);
   let csv = existsSync(path) ? readFileSync(path, "utf-8") : null;
   if (!csv) {
     csv = await fetchText(`https://nsearchives.nseindia.com/content/indices/ind_close_all_${ddmmyyyy(new Date(`${isoDate}T00:00:00Z`))}.csv`).catch(() => null);
-    if (!csv) return [];
-    writeFileSync(path, csv);
+    if (csv && isoDate < isoDay(new Date())) writeFileSync(path, csv);
+    await new Promise(r => setTimeout(r, 300)); // gentle on NSE's archive
   }
-  const [header, ...lines] = csv.trim().split("\n");
-  const cols = header.split(",").map(c => c.trim());
-  const at = name => cols.indexOf(name);
-  const byName = new Map(lines.map(l => l.split(",").map(c => c.trim())).map(f => [f[at("Index Name")], f]));
+  let byName = null;
+  if (csv) {
+    const [header, ...lines] = csv.trim().split("\n");
+    const cols = header.split(",").map(c => c.trim());
+    const at = name => cols.indexOf(name);
+    byName = new Map();
+    for (const f of lines.map(l => l.split(",").map(c => c.trim()))) {
+      const close = Number(f[at("Closing Index Value")]);
+      if (close > 0) byName.set(f[at("Index Name")], { close, change: Number(f[at("Points Change")]), changePct: Number(f[at("Change(%)")]) });
+    }
+  }
+  indexDays.set(isoDate, byName);
+  return byName;
+}
+
+async function indexCloses(isoDate) {
+  const byName = await indexFile(isoDate);
+  if (!byName) return [];
   return STRIP_INDICES.flatMap(name => {
-    const f = byName.get(name);
-    const close = Number(f?.[at("Closing Index Value")]);
-    if (!(close > 0)) return [];
-    return [{ name: name.replace(/^nifty/i, "NIFTY"), close, change: Number(f[at("Points Change")]), changePct: Number(f[at("Change(%)")]) }];
+    const x = byName.get(name);
+    return x ? [{ name: name.replace(/^nifty/i, "NIFTY"), ...x }] : [];
   });
 }
 
@@ -267,7 +396,7 @@ export async function buildMarketSnapshot(fyEndDates, { yearsOfActions = 6 } = {
     }
   }
 
-  const year = await yearRanges(latest.date, splits);
+  const year = await yearOfDays(latest.date, splits);
 
   const snapshot = {
     builtAt: now.toISOString(),
@@ -281,6 +410,7 @@ export async function buildMarketSnapshot(fyEndDates, { yearsOfActions = 6 } = {
     range52wFrom: year.from,
     range52wTradingDays: year.tradingDays,
     returns: await periodReturns(latest, splits),
+    tech: year.tech,
     indices: await indexCloses(latest.date),
   };
   writeFileSync(SNAPSHOT_PATH, JSON.stringify(snapshot));

@@ -313,6 +313,95 @@ export function computeMetrics(stock, snap, overrides = {}) {
     vsFairValue: pct(cmp, m.fairValue),
     vsPhase1: pct(cmp, m.safeBuyPrice),
   });
+
+  // More of the figures Tickertape screens on, from the same filings: growth
+  // year on year and over 3 and 5 years (a gap in the filings counts as
+  // unknown, as cagr() does), 5-year averages (3 years at least), ratios and
+  // the statements' own lines. Cash-flow figures are left out for lenders,
+  // whose operating cash flow is deposits and loans moving, as with FCF. No
+  // 5-year cash-flow growth: the older filings carry no cash-flow statement,
+  // so it was known for 6 companies.
+  const pctOf = (a, b) => (a != null && b > 0 ? (a / b) * 100 : null);
+  const ratio = (a, b) => (a != null && b > 0 ? a / b : null);
+  const opProfitOf = y => (!lender && y?.revenue != null && y?.expenses != null ? y.revenue - (y.expenses - (y.financeCosts ?? 0) - (y.depreciation ?? 0)) : null);
+  const epsOf = y => (y?.eps != null ? y.eps / factorAfter(filedOf(y)) : null);
+  const growth = (get, n) => {
+    const base = yearBack(latest, n);
+    const now = get(latest), then = base ? get(base) : null;
+    return now > 0 && then > 0 ? (Math.pow(now / then, 1 / n) - 1) * 100 : null;
+  };
+  const avg5 = get => {
+    const vals = [0, 1, 2, 3, 4].map(n => yearBack(latest, n)).filter(Boolean).map(get).filter(v => v != null && Number.isFinite(v));
+    return vals.length >= 3 ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
+  };
+  const tech = snap?.tech?.[sym] ?? {};
+  Object.assign(m, {
+    roa: pctOf(latest.profit, latest.totalAssets),
+    roa5y: avg5(y => pctOf(y.profit, y.totalAssets)),
+    roce5y: avg5(roceOf),
+    netMargin5y: avg5(y => pctOf(y.profit, y.revenue)),
+    opm5y: lender ? null : avg5(y => pctOf(opProfitOf(y), y.revenue)),
+    cashFlowMargin: lender ? null : pctOf(latest.ocf, latest.revenue),
+
+    salesGrowth1y: growth(y => y.revenue, 1),
+    profitGrowth1y: growth(y => y.profit, 1),
+    epsGrowth1y: growth(epsOf, 1),
+    epsGrowth3y: growth(epsOf, 3),
+    epsGrowth5y: growth(epsOf, 5),
+    ebitdaGrowth1y: lender ? null : growth(opProfitOf, 1),
+    ebitdaGrowth5y: lender ? null : growth(opProfitOf, 5),
+    ocfGrowth1y: lender ? null : growth(y => y.ocf, 1),
+
+    priceToSales: ratio(marketCapCr, cr(latest.revenue)),
+    priceToFcf: m.fcfCr > 0 ? ratio(marketCapCr, m.fcfCr) : null,
+    priceToCfo: lender ? null : ratio(marketCapCr, cr(latest.ocf)),
+    earningsYield: eps != null && cmp > 0 ? (eps / cmp) * 100 : null,
+    peVsMedian: pe != null && medianPe > 0 ? (pe / medianPe - 1) * 100 : null,
+
+    ltDebtToEquity: ratio(latest.longTermDebt, latest.equity),
+    assetTurnover: ratio(latest.revenue, latest.totalAssets),
+
+    ebitdaCr: cr(opProfitOf(latest)),
+    pbitCr: latest.pbt != null && latest.financeCosts != null ? cr(latest.pbt + latest.financeCosts) : null,
+    pbtCr: cr(latest.pbt),
+    depreciationCr: cr(latest.depreciation),
+    interestCr: cr(latest.financeCosts),
+    rawMaterialsCr: cr(latest.cogs),
+    dividendPerShare: dividendsTtm,
+
+    totalAssetsCr: cr(latest.totalAssets),
+    equityCr: cr(latest.equity),
+    totalDebtCr: cr(latest.debt),
+    ltDebtCr: cr(latest.longTermDebt),
+    currentAssetsCr: cr(latest.currentAssets),
+    currentLiabilitiesCr: cr(latest.currentLiabilities),
+    ocfCr: cr(latest.ocf),
+    capexCr: cr(latest.capex),
+    shareCapitalCr: cr(latest.paidUp),
+    bookValuePerShare: latest.equity > 0 && shares ? latest.equity / shares : null,
+    sharesCr: shares ? shares / 1e7 : null,
+    faceValue: latest.faceValue ?? null,
+
+    // From the year of daily prices (market-data.js technicals())
+    volume1d: tech.volume1d ?? null,
+    avgVolume1m: tech.avgVolume1m ?? null,
+    avgVolume3m: tech.avgVolume3m ?? null,
+    volumeChange1d: tech.volumeChange1d ?? null,
+    volumeChange1w: tech.volumeChange1w ?? null,
+    delivery1m: tech.delivery1m ?? null,
+    rsi14: tech.rsi14 ?? null,
+    vsEma20: tech.vsEma20 ?? null,
+    vsSma50: tech.vsSma50 ?? null,
+    vsSma200: tech.vsSma200 ?? null,
+    volatility1y: tech.volatility1y ?? null,
+    maxLoss1y: tech.maxLoss1y ?? null,
+    beta1y: tech.beta1y ?? null,
+    ret1wVsNifty: ret.w1VsNifty ?? null,
+    ret1mVsNifty: ret.m1VsNifty ?? null,
+    ret6mVsNifty: ret.m6VsNifty ?? null,
+    ret1yVsNifty: ret.y1VsNifty ?? null,
+    priceCagr5y: ret.cagr5y ?? null,
+  });
   const { pros, cons } = prosAndCons(m, latest);
   m.pros = pros;
   m.cons = cons;

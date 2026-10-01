@@ -20,7 +20,7 @@ const FEATURES = [
   {
     icon: <Icon><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1" /><circle cx="15" cy="6" r="2" /><circle cx="9" cy="12" r="2" /><circle cx="17" cy="18" r="2" /></Icon>,
     title: "13 ready-made strategies",
-    text: "Quality compounders, dividend payers, undervalued growth, Graham net-nets and more — or build your own from 40 metrics, each as a range.",
+    text: "Quality compounders, dividend payers, undervalued growth, Graham net-nets and more — or build your own from 99 metrics, each as a range.",
   },
   {
     icon: <Icon><path d="M12 3l7 3v6c0 4.4-3 7.5-7 9-4-1.5-7-4.6-7-9V6l7-3z" /><path d="M9 12l2 2 4-4" /></Icon>,
