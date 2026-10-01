@@ -117,6 +117,8 @@ async function main() {
   // Portfolio
   assert((await json("POST", "/api/portfolio", aliceCookie, { ticker: "TCS", buyPrice: 3000, qty: 0 })).status === 400, "a holding with 0 shares is refused");
   assert((await json("POST", "/api/portfolio", aliceCookie, { ticker: "../x", buyPrice: 3000, qty: 1 })).status === 400, "a holding with a bad symbol is refused");
+  assert((await json("POST", "/api/portfolio", aliceCookie, { ticker: "NOTAREALCO", buyPrice: 10, qty: 1 })).status === 400, "a holding for a company that isn't listed on NSE is refused");
+  assert((await json("POST", "/api/watchlist", aliceCookie, { ticker: "NOTAREALCO" })).status === 400, "starring a company that isn't listed on NSE is refused");
   const added = await (await json("POST", "/api/portfolio", aliceCookie, { ticker: "tcs", buyPrice: 3000, qty: 10, buyDate: "2026-01-15" })).json();
   assert(added.ticker === "TCS" && added.qty === 10, "adding a holding returns it, symbol upper-cased");
   const port = await (await fetch(`${BASE}/api/portfolio`, { headers: { Cookie: aliceCookie } })).json();
