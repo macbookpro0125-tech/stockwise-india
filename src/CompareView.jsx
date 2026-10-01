@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { X } from "lucide-react";
 import { api } from "./api.js";
 
 // Ported from stock-screener's src/components/CompareView.jsx: up to four
@@ -20,11 +21,11 @@ function Sparkline({ prices }) {
 }
 
 const SETUP_COLOR = { momentum: "var(--green)", pullback: "var(--accent)", base: "var(--yellow)", extended: "var(--yellow)", correction: "var(--red)", developing: "var(--t2)" };
-const rs = v => (v ? `Rs ${Math.round(v).toLocaleString("en-IN")}` : "—");
+const rs = v => (v ? `₹${Math.round(v).toLocaleString("en-IN")}` : "—");
 
 const ROW_METRICS = [
   { key: "score", label: "Quality Score", fmt: s => (s.score ? `${s.score.green}/${s.score.applicable}` : "—") },
-  { key: "cmp", label: "CMP (Rs)", fmt: s => rs(s.cmp) },
+  { key: "cmp", label: "CMP (₹)", fmt: s => rs(s.cmp) },
   { key: "pe", label: "P/E", fmt: s => (s.pe ? s.pe.toFixed(1) : "—") },
   { key: "roce", label: "ROCE %", fmt: s => (s.roce != null ? `${s.roce.toFixed(1)}%` : "—") },
   { key: "mcap", label: "Mkt Cap (Cr)", fmt: s => (s.marketCapCr ? (s.marketCapCr >= 1000 ? `${(s.marketCapCr / 1000).toFixed(1)}K` : Math.round(s.marketCapCr)) : "—") },
@@ -37,9 +38,9 @@ const ROW_METRICS = [
 
 const TECH_METRICS = [
   { key: "setup", label: "Setup State", fmt: t => (t?.setupState ? t.setupState.charAt(0).toUpperCase() + t.setupState.slice(1) : "—") },
-  { key: "ema", label: "EMA Signal", fmt: t => (t?.emaSignal ? (t.emaSignal === "bullish" ? "🟢 Bullish" : "🔴 Bearish") : "—") },
-  { key: "ema9", label: "9 EMA", fmt: t => (t?.ema9 ? `Rs ${t.ema9.toLocaleString("en-IN")}` : "—") },
-  { key: "ema20", label: "20 EMA", fmt: t => (t?.ema20 ? `Rs ${t.ema20.toLocaleString("en-IN")}` : "—") },
+  { key: "ema", label: "EMA Signal", fmt: t => (t?.emaSignal ? (t.emaSignal === "bullish" ? "▲ Bullish" : "▼ Bearish") : "—") },
+  { key: "ema9", label: "9 EMA", fmt: t => (t?.ema9 ? `₹${t.ema9.toLocaleString("en-IN")}` : "—") },
+  { key: "ema20", label: "20 EMA", fmt: t => (t?.ema20 ? `₹${t.ema20.toLocaleString("en-IN")}` : "—") },
   { key: "rsi", label: "RSI-14", fmt: t => t?.rsi14 ?? "—" },
   { key: "vs20", label: "% vs 20 EMA", fmt: t => (t?.pctAboveEma20 != null ? `${t.pctAboveEma20 > 0 ? "+" : ""}${t.pctAboveEma20}%` : "—") },
   { key: "ret20", label: "Return 20D", fmt: t => (t?.return20d != null ? `${t.return20d > 0 ? "+" : ""}${t.return20d}%` : "—") },
@@ -64,20 +65,20 @@ export default function CompareView({ stocks, onClose }) {
   }, [stocks]);
 
   const cols = `180px repeat(${stocks.length}, minmax(140px, 1fr))`;
-  const section = { padding: "8px 16px 4px", fontSize: 10, fontWeight: 700, color: "var(--accent)", textTransform: "uppercase", letterSpacing: "1px", background: "rgba(0,200,168,0.05)", borderBottom: "1px solid var(--bdr)" };
+  const section = { padding: "8px 16px 4px", fontSize: 11.5, fontWeight: 600, color: "var(--accent)", background: "color-mix(in srgb, var(--accent) 5%, transparent)", borderBottom: "1px solid var(--bdr)" };
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(9,16,31,0.92)", overflowY: "auto", padding: "20px 16px" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "color-mix(in srgb, var(--bg) 96%, transparent)", WebkitBackdropFilter: "blur(6px)", backdropFilter: "blur(6px)", overflowY: "auto", padding: "20px 16px" }}>
       <div style={{ maxWidth: 900, margin: "0 auto" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: "var(--t1)", margin: 0 }}>📊 Compare Stocks ({stocks.length})</h2>
-          <button onClick={onClose} style={{ fontSize: 13, padding: "8px 18px", borderRadius: 10, border: "1px solid var(--bdr2)", background: "var(--card)", color: "var(--t2)", cursor: "pointer" }}>✕ Close</button>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: "var(--t1)", margin: 0 }}>Compare stocks ({stocks.length})</h2>
+          <button onClick={onClose} className="btn-ghost" style={{ height: 34 }}><X size={15} /> Close</button>
         </div>
 
-        <div style={{ background: "var(--card)", borderRadius: 14, border: "1px solid var(--bdr2)", overflowX: "auto" }}>
+        <div style={{ background: "var(--card)", borderRadius: 12, border: "1px solid var(--bdr2)", overflowX: "auto", boxShadow: "var(--sh-md)" }}>
           <div style={{ minWidth: 180 + stocks.length * 140 }}>
             <div style={{ display: "grid", gridTemplateColumns: cols, borderBottom: "1px solid var(--bdr)" }}>
-              <div style={{ padding: "12px 16px", fontSize: 11, color: "var(--t3)", fontWeight: 600, textTransform: "uppercase" }}>Metric</div>
+              <div style={{ padding: "12px 16px", fontSize: 12, color: "var(--t3)", fontWeight: 600 }}>Metric</div>
               {stocks.map(s => (
                 <div key={s.symbol} style={{ padding: "12px 14px", borderLeft: "1px solid var(--bdr)", background: "var(--surf)" }}>
                   <div style={{ fontSize: 14, fontWeight: 700, color: "var(--t1)" }}>{s.name}</div>

@@ -6,7 +6,7 @@ import { ScoreBadge } from "./ResultsTable.jsx";
 // own data: companies in the same NSE sector, largest first. The original used
 // Screener's narrower industry pages; NSE only publishes sectors.
 
-const MONO = { fontFamily: '"SF Mono","SFMono-Regular",Menlo,monospace', fontVariantNumeric: "tabular-nums" };
+const MONO = { fontVariantNumeric: "tabular-nums" };
 
 function fmtCr(v) {
   if (v == null) return "—";
@@ -65,18 +65,18 @@ export default function PeersPanel({ symbol, onAnalyze }) {
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, minWidth: 720 }}>
               <thead>
                 <tr>
-                  <th style={{ textAlign: "left", padding: "8px 10px", fontSize: 10, color: "var(--t3)", textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: "1px solid var(--bdr2)", position: "sticky", left: 0, background: "var(--s2)" }}>Company</th>
+                  <th style={{ textAlign: "left", padding: "8px 10px", fontSize: 11.5, color: "var(--t3)", borderBottom: "1px solid var(--bdr2)", position: "sticky", left: 0, background: "var(--s2)" }}>Company</th>
                   {COLUMNS.map(([c]) => (
-                    <th key={c} style={{ textAlign: "right", padding: "8px 10px", fontSize: 10, color: "var(--t3)", textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap", borderBottom: "1px solid var(--bdr2)" }}>{c}</th>
+                    <th key={c} style={{ textAlign: "right", padding: "8px 10px", fontSize: 11.5, color: "var(--t3)", whiteSpace: "nowrap", borderBottom: "1px solid var(--bdr2)" }}>{c}</th>
                   ))}
-                  <th style={{ textAlign: "right", padding: "8px 10px", fontSize: 10, color: "var(--t3)", textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: "1px solid var(--bdr2)" }}>Score</th>
+                  <th style={{ textAlign: "right", padding: "8px 10px", fontSize: 11.5, color: "var(--t3)", borderBottom: "1px solid var(--bdr2)" }}>Score</th>
                 </tr>
               </thead>
               <tbody>
                 {shown.map(r => {
                   const isThis = r.symbol === symbol;
                   return (
-                    <tr key={r.symbol} style={{ background: isThis ? "rgba(0,224,190,0.06)" : undefined }}>
+                    <tr key={r.symbol} style={{ background: isThis ? "color-mix(in srgb, var(--accent) 6%, transparent)" : undefined }}>
                       <td style={{ padding: "7px 10px", whiteSpace: "nowrap", position: "sticky", left: 0, background: isThis ? "var(--s3)" : "var(--s2)", borderBottom: "1px solid var(--bdr)" }}>
                         <span onClick={() => !isThis && onAnalyze?.(r.symbol)} style={{ color: isThis ? "var(--accent)" : "var(--t2)", fontWeight: isThis ? 700 : 500, cursor: isThis ? "default" : "pointer" }}>
                           {r.name}

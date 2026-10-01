@@ -32,11 +32,11 @@ export default function CreateAlertModal({ stock, onClose }) {
     }
   };
 
-  const label = { fontSize: 11, fontWeight: 600, color: "var(--t3)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 };
+  const label = { fontSize: 12, fontWeight: 600, color: "var(--t3)", marginBottom: 8 };
   const chip = active => ({
     height: 32, padding: "0 12px", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 600,
     border: `1px solid ${active ? "var(--accent)" : "var(--bdr2)"}`,
-    background: active ? "rgba(0,224,190,0.1)" : "var(--s1)",
+    background: active ? "color-mix(in srgb, var(--accent) 10%, transparent)" : "var(--s1)",
     color: active ? "var(--accent)" : "var(--t2)",
   });
 

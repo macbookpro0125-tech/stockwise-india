@@ -1,3 +1,8 @@
+import {
+  TrendingUp, Coins, Gem, Shield, Rocket, Star, Zap, RefreshCw, Landmark, Sprout, Globe, Building2,
+  Calculator, Bookmark, ChartLine, TriangleAlert, BadgeIndianRupee, Target, CircleCheck, CirclePause,
+} from "lucide-react";
+
 // Ported from stock-screener's src/components/icons.jsx — line icons rather
 // than ★/🔔 glyphs, which render in whatever font the platform supplies and
 // read as decoration rather than as buttons.
@@ -32,4 +37,38 @@ export function actionButtonStyle({ active, activeColor, size = 30 }) {
     display: "flex", alignItems: "center", justifyContent: "center",
     flexShrink: 0,
   };
+}
+
+// This app: the same for the strategies and the buy-ladder actions, whose
+// emoji come from the server
+
+const PRESET_ICONS = {
+  high_quality_compounders: TrendingUp,
+  dividend_aristocrats: Coins,
+  undervalued_growth: Gem,
+  defensive_bluechips: Shield,
+  small_cap_multibaggers: Rocket,
+  ofss_style_filter: Star,
+  momentum_growth: Zap,
+  turnaround_plays: RefreshCw,
+  psu_value: Landmark,
+  dividend_growth: Sprout,
+  fii_favorites: Globe,
+  dii_backed: Building2,
+  net_net_value: Calculator,
+};
+
+export function PresetIcon({ preset, ...props }) {
+  const Icon = preset.custom ? Bookmark : PRESET_ICONS[preset.id] ?? ChartLine;
+  return <Icon {...props} />;
+}
+
+// getAction's results (server/levels.js), by their action text
+export function ActionIcon({ action, ...props }) {
+  const Icon = action === "BELOW STOP LOSS" ? TriangleAlert
+    : action === "SELL ALL" ? BadgeIndianRupee
+      : action.startsWith("SELL") ? Target
+        : action.startsWith("BUY") ? CircleCheck
+          : CirclePause;
+  return <Icon {...props} />;
 }

@@ -84,9 +84,9 @@ export function unitLabel(def) {
 // table's old good/bad marks for the metrics it always coloured
 export function valueColor(def, v) {
   if (v == null || !Number.isFinite(v)) return "var(--t3)";
-  if (def.signed) return v > 0 ? "var(--green)" : v < 0 ? "var(--red)" : "var(--t2)";
-  if (def.id === "roce") return v >= 18 ? "var(--green)" : "var(--t2)";
-  if (def.id === "roe" || def.id === "roeAvg") return v >= 15 ? "var(--green)" : "var(--t2)";
-  if (def.id === "promoterPct") return v >= 50 ? "var(--green)" : v < 30 ? "var(--red)" : "var(--t2)";
-  return "var(--t2)";
+  if (def.signed) return v > 0 ? "var(--green)" : v < 0 ? "var(--red)" : "var(--t1)";
+  if (def.id === "roce") return v >= 18 ? "var(--green)" : "var(--t1)";
+  if (def.id === "roe" || def.id === "roeAvg") return v >= 15 ? "var(--green)" : "var(--t1)";
+  if (def.id === "promoterPct") return v >= 50 ? "var(--green)" : v < 30 ? "var(--red)" : "var(--t1)";
+  return "var(--t1)";
 }

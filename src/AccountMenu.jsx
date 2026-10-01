@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import { ChevronDown } from "lucide-react";
 import { api } from "./api.js";
 import { SiteLink } from "./site.jsx";
 
@@ -23,8 +24,8 @@ export default function AccountMenu({ email, onLogout, onDeleted }) {
 
   return (
     <div ref={ref} style={{ position: "relative" }}>
-      <button className="btn-ghost" onClick={() => setOpen(o => !o)} aria-expanded={open} style={{ height: 32, fontSize: 12, padding: "0 12px", whiteSpace: "nowrap" }}>
-        Account ▾
+      <button className="btn-ghost" onClick={() => setOpen(o => !o)} aria-expanded={open} style={{ height: 32, fontSize: 12.5, padding: "0 10px 0 12px", whiteSpace: "nowrap", gap: 4 }}>
+        Account <ChevronDown size={14} style={{ transition: "transform 150ms", transform: open ? "rotate(180deg)" : "none" }} />
       </button>
       {open && (
         <div role="menu" style={{ position: "absolute", right: 0, top: "calc(100% + 6px)", width: 240, zIndex: 200, background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 12, padding: 6, boxShadow: "var(--sh-lg)" }}>

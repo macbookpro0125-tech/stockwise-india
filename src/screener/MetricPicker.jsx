@@ -57,7 +57,7 @@ export default function MetricPicker({ meta, mode, chosen, onToggle, onClose }) 
                     {x.about && <div style={{ fontSize: 12, color: "var(--t3)", lineHeight: 1.45, marginTop: 2 }}>{x.about}</div>}
                   </div>
                   <button type="button" onClick={() => onToggle(x.id)} aria-pressed={on}
-                    style={{ flexShrink: 0, height: 30, minWidth: 84, borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", border: `1px solid ${on ? "var(--accent)" : "var(--bdr2)"}`, background: on ? "rgba(0,224,190,0.1)" : "transparent", color: on ? "var(--accent)" : "var(--t2)" }}>
+                    style={{ flexShrink: 0, height: 30, minWidth: 84, borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", border: `1px solid ${on ? "var(--accent)" : "var(--bdr2)"}`, background: on ? "color-mix(in srgb, var(--accent) 10%, transparent)" : "transparent", color: on ? "var(--accent)" : "var(--t2)" }}>
                     {on ? "✓ Added" : "+ Add"}
                   </button>
                 </div>

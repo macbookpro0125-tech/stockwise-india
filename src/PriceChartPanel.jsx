@@ -4,7 +4,7 @@ import { api } from "./api.js";
 // Ported from stock-screener's src/components/PriceChartPanel.jsx — same
 // ranges, drawing, crosshair and phone sizing. Only the data call differs.
 
-const MONO = { fontFamily: '"SF Mono","SFMono-Regular",Menlo,monospace', fontVariantNumeric: "tabular-nums" };
+const MONO = { fontVariantNumeric: "tabular-nums" };
 
 const RANGES = [
   { id: "1mo", label: "1M" },
@@ -205,7 +205,7 @@ export default function PriceChartPanel({ symbol, name }) {
             height: narrow ? 36 : 28, padding: narrow ? "0 16px" : "0 12px",
             borderRadius: 8, fontSize: narrow ? 13 : 11, fontWeight: 600, cursor: "pointer",
             border: `1px solid ${range === r.id ? "var(--accent)" : "var(--bdr2)"}`,
-            background: range === r.id ? "rgba(0,224,190,0.08)" : "var(--s3)",
+            background: range === r.id ? "color-mix(in srgb, var(--accent) 8%, transparent)" : "var(--s3)",
             color: range === r.id ? "var(--accent)" : "var(--t2)",
             transition: "all 120ms",
           }}>{r.label}</button>

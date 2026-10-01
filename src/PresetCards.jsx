@@ -1,15 +1,14 @@
 import { useState, useEffect } from "react";
+import { Plus, Ellipsis } from "lucide-react";
 import { api } from "./api.js";
+import { PresetIcon } from "./icons.jsx";
 
 // Ported from stock-screener's src/components/PresetCards.jsx. The strategy
 // list comes from the server (the same 13 presets); custom presets are saved in
-// this browser, as in the original.
+// this browser, as in the original. This app: one accent and a line icon per
+// card, rather than the original's ten rotating colours and emoji.
 
-const ACCENT_COLORS = [
-  "#00E0BE", "#F59E0B", "#818CF8", "#3B82F6",
-  "#F43F5E", "#10B981", "#F97316", "#06B6D4",
-  "#84CC16", "#EC4899",
-];
+const tint = pct => `color-mix(in srgb, var(--accent) ${pct}%, transparent)`;
 
 function loadCustomPresets() {
   try { return JSON.parse(localStorage.getItem("customPresets") || "[]"); } catch { return []; }
@@ -67,10 +66,9 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
       <div className="preset-scroll" style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 6, scrollbarWidth: "none", maskImage: "linear-gradient(to right, transparent 0, black 0, black calc(100% - 48px), transparent 100%)", WebkitMaskImage: "linear-gradient(to right, transparent 0, black 0, black calc(100% - 48px), transparent 100%)" }}>
         <style>{`.preset-scroll::-webkit-scrollbar{display:none}`}</style>
 
-        {allPresets.map((p, i) => {
+        {allPresets.map(p => {
           const active = p.id === activePresetId;
           const isCustom = !!p.custom;
-          const accentColor = isCustom ? "#818CF8" : ACCENT_COLORS[i % ACCENT_COLORS.length];
 
           return (
             <button
@@ -79,65 +77,57 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
               title={p.description}
               style={{
                 flexShrink: 0,
-                width: 148,
-                padding: "14px 14px 12px",
-                borderRadius: 14,
-                border: active ? `1.5px solid ${accentColor}40` : "1px solid var(--bdr2)",
-                background: active ? `${accentColor}0D` : "var(--s2)",
+                width: 156,
+                padding: "14px 14px 13px",
+                borderRadius: 12,
+                border: active ? "1px solid var(--accent)" : "1px solid var(--bdr2)",
+                background: active ? tint(5) : "var(--s2)",
                 cursor: "pointer",
                 textAlign: "left",
                 position: "relative",
-                transition: "all 150ms",
-                boxShadow: active ? `0 0 0 1px ${accentColor}30, 0 4px 20px ${accentColor}15` : "none",
+                transition: "background 150ms, border-color 150ms, box-shadow 150ms",
+                boxShadow: active ? `0 0 0 3px ${tint(12)}` : "var(--sh-xs)",
               }}
-              onMouseEnter={e => { if (!active) { e.currentTarget.style.background = "var(--s3)"; e.currentTarget.style.borderColor = "var(--bdr3)"; } }}
-              onMouseLeave={e => { if (!active) { e.currentTarget.style.background = "var(--s2)"; e.currentTarget.style.borderColor = "var(--bdr2)"; } }}
+              onMouseEnter={e => { if (!active) { e.currentTarget.style.borderColor = "var(--bdr3)"; e.currentTarget.style.boxShadow = "var(--sh-sm)"; } }}
+              onMouseLeave={e => { if (!active) { e.currentTarget.style.borderColor = "var(--bdr2)"; e.currentTarget.style.boxShadow = "var(--sh-xs)"; } }}
             >
               <div style={{
-                width: 32, height: 32, borderRadius: 9,
-                background: `${accentColor}18`,
-                border: `1px solid ${accentColor}25`,
+                width: 30, height: 30, borderRadius: 8,
+                background: active ? tint(14) : "var(--s3)",
+                color: active ? "var(--accent)" : "var(--t2)",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 16, marginBottom: 10,
+                marginBottom: 11,
+                transition: "background 150ms, color 150ms",
               }}>
-                {p.icon}
+                <PresetIcon preset={p} size={16} strokeWidth={2} />
               </div>
 
               <div style={{
-                fontSize: 12, fontWeight: 600,
-                color: active ? accentColor : "var(--t1)",
-                marginBottom: 3, letterSpacing: "-0.01em",
+                fontSize: 13, fontWeight: 600,
+                color: "var(--t1)",
+                marginBottom: 4, letterSpacing: "-0.01em",
                 lineHeight: 1.3,
-                transition: "color 150ms",
               }}>
                 {p.name}
               </div>
 
-              <div style={{ fontSize: 10.5, color: "var(--t3)", lineHeight: 1.4, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+              <div style={{ fontSize: 11.5, color: "var(--t3)", lineHeight: 1.45, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
                 {p.description}
               </div>
-
-              {active && (
-                <div style={{
-                  position: "absolute", top: 10, right: 10,
-                  width: 6, height: 6, borderRadius: "50%",
-                  background: accentColor,
-                  boxShadow: `0 0 6px ${accentColor}`,
-                }} />
-              )}
 
               {isCustom && (
                 <span
                   onClick={e => { e.stopPropagation(); setMenuOpen(menuOpen === p.id ? null : p.id); }}
                   role="button"
                   tabIndex={0}
+                  aria-label="Strategy options"
                   style={{
-                    position: "absolute", top: 6, right: 6,
+                    position: "absolute", top: 8, right: 8,
                     color: "var(--t3)", cursor: "pointer",
-                    fontSize: 14, padding: "2px 6px", borderRadius: 4,
-                    lineHeight: 1,
+                    padding: 2, borderRadius: 4,
+                    lineHeight: 0,
                   }}
-                >⋯</span>
+                ><Ellipsis size={16} /></span>
               )}
               {isCustom && menuOpen === p.id && (
                 <div onClick={e => e.stopPropagation()} style={{
@@ -189,7 +179,7 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
             onClick={onSavePreset}
             style={{
               flexShrink: 0, width: 120,
-              padding: "14px 14px 12px", borderRadius: 14,
+              padding: "14px 14px 12px", borderRadius: 12,
               border: "1px dashed var(--bdr3)",
               background: "transparent",
               cursor: "pointer",
@@ -204,8 +194,8 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
               width: 28, height: 28, borderRadius: 8,
               background: "var(--s3)", border: "1px solid var(--bdr2)",
               display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 16, color: "var(--t3)",
-            }}>+</span>
+              color: "var(--t3)",
+            }}><Plus size={16} /></span>
             <span style={{ fontSize: 11, color: "var(--t3)", textAlign: "center", lineHeight: 1.3 }}>Save as<br />preset</span>
           </button>
         )}

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { Compass, Star, BriefcaseBusiness, ChartLine, Bell, Sun, Moon } from "lucide-react";
 import { api } from "./api.js";
 import { useWatchlist } from "./watchlist.js";
 import { portfolioStore, alertsStore } from "./stores.js";
@@ -11,12 +12,14 @@ import AccountMenu from "./AccountMenu.jsx";
 // away.
 
 export const TABS = [
-  { id: "discover", label: "Discover", short: "Discover", icon: "◎" },
-  { id: "watchlist", label: "Watchlist", short: "Watchlist", icon: "☆" },
-  { id: "portfolio", label: "Portfolio", short: "Portfolio", icon: "◈" },
-  { id: "performance", label: "Performance", short: "Perf", icon: "▲" },
-  { id: "alerts", label: "Alerts", short: "Alerts", icon: "◉" },
+  { id: "discover", label: "Discover", short: "Discover", Icon: Compass },
+  { id: "watchlist", label: "Watchlist", short: "Watchlist", Icon: Star },
+  { id: "portfolio", label: "Portfolio", short: "Portfolio", Icon: BriefcaseBusiness },
+  { id: "performance", label: "Performance", short: "Perf", Icon: ChartLine },
+  { id: "alerts", label: "Alerts", short: "Alerts", Icon: Bell },
 ];
+
+const HEADER_BG = { light: "rgba(255,255,255,0.82)", dark: "rgba(7,7,14,0.85)" };
 
 // Counts and badges for the tabs, shared by the header and the bottom bar
 export function useTabBadges() {
@@ -62,7 +65,7 @@ export default function Header({ tab, onTab, email, onLogout, onDeleted, onSearc
   }, []);
 
   return (
-    <div ref={ref} className="app-header discovery-header-sticky" style={{ position: "sticky", top: 0, zIndex: 100, background: theme === "light" ? "rgba(244,245,247,0.88)" : "rgba(7,7,14,0.85)", borderBottom: "1px solid var(--bdr2)" }}>
+    <div ref={ref} className="app-header discovery-header-sticky" style={{ position: "sticky", top: 0, zIndex: 100, background: HEADER_BG[theme] ?? HEADER_BG.dark, borderBottom: "1px solid var(--bdr2)" }}>
       <div style={{ maxWidth: 1440, margin: "0 auto", padding: "0 20px" }}>
         <div style={{ padding: "12px 0" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
@@ -79,13 +82,13 @@ export default function Header({ tab, onTab, email, onLogout, onDeleted, onSearc
             <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
               {[[stats?.strategies ?? "—", "Presets"], [stats?.filters ?? "—", "Filters"], [compact(stats?.companies), "Stocks"]].map(([v, l]) => (
                 <div key={l} className="stat-chip" style={{ padding: "4px 10px", borderRadius: 8, background: "var(--s2)", border: "1px solid var(--bdr)", display: "flex", alignItems: "baseline", gap: 4 }}>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: "var(--accent)" }}>{v}</span>
-                  <span style={{ fontSize: 10, color: "var(--t3)" }}>{l}</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "var(--t1)", fontVariantNumeric: "tabular-nums" }}>{v}</span>
+                  <span style={{ fontSize: 11, color: "var(--t3)" }}>{l}</span>
                 </div>
               ))}
-              <button onClick={onToggleTheme} title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-                style={{ width: 32, height: 32, borderRadius: 8, background: "var(--s2)", border: "1px solid var(--bdr)", color: "var(--t2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, flexShrink: 0, padding: 0 }}>
-                {theme === "dark" ? "☀" : "☾"}
+              <button onClick={onToggleTheme} title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"} aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+                style={{ width: 32, height: 32, borderRadius: 8, background: "var(--s2)", border: "1px solid var(--bdr)", color: "var(--t2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: 0 }}>
+                {theme === "dark" ? <Sun size={16} strokeWidth={2} /> : <Moon size={16} strokeWidth={2} />}
               </button>
               <AccountMenu email={email} onLogout={onLogout} onDeleted={onDeleted} />
             </div>
@@ -101,18 +104,18 @@ export default function Header({ tab, onTab, email, onLogout, onDeleted, onSearc
             const active = tab === t.id;
             return (
               <button key={t.id} onClick={() => onTab(t.id)} style={{
-                padding: "8px 18px", fontSize: 13, fontWeight: 500, background: "none", border: "none",
+                padding: "8px 16px", fontSize: 13.5, fontWeight: active ? 600 : 500, background: "none", border: "none",
                 borderBottom: active ? "2px solid var(--accent)" : "2px solid transparent",
                 color: active ? "var(--t1)" : "var(--t2)", cursor: "pointer", marginBottom: -1,
-                transition: "all 150ms", letterSpacing: "-0.01em", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap",
+                transition: "color 150ms, border-color 150ms", letterSpacing: "-0.01em", display: "flex", alignItems: "center", gap: 7, whiteSpace: "nowrap",
               }}>
-                <span style={{ fontSize: 11, opacity: active ? 1 : 0.75 }}>{t.icon}</span>
+                <t.Icon size={15} strokeWidth={2} style={{ color: active ? "var(--accent)" : "var(--t3)" }} />
                 {t.label}
                 {b.count > 0 && (
                   <span style={{ fontSize: 10, fontWeight: 700, lineHeight: "15px", padding: "0 6px", borderRadius: 999, background: "var(--s3)", border: "1px solid var(--bdr2)", color: active ? "var(--t1)" : "var(--t2)", fontVariantNumeric: "tabular-nums" }}>{b.count}</span>
                 )}
                 {b.badge != null && (
-                  <span style={{ fontSize: 9, fontWeight: 700, padding: "1px 5px", borderRadius: 999, lineHeight: "14px", background: b.badgeColor, color: "#07070E" }}>{b.badge}</span>
+                  <span style={{ fontSize: 9, fontWeight: 700, padding: "1px 5px", borderRadius: 999, lineHeight: "14px", background: b.badgeColor, color: "var(--on-accent)" }}>{b.badge}</span>
                 )}
               </button>
             );
@@ -127,15 +130,15 @@ export default function Header({ tab, onTab, email, onLogout, onDeleted, onSearc
 export function BottomTabBar({ tab, onTab, theme }) {
   const badges = useTabBadges();
   return (
-    <div className="bottom-tab-bar" style={{ background: theme === "light" ? "rgba(244,245,247,0.88)" : "rgba(7,7,14,0.85)" }}>
+    <div className="bottom-tab-bar" style={{ background: HEADER_BG[theme] ?? HEADER_BG.dark }}>
       {TABS.map(t => {
         const b = badges[t.id] ?? {};
         return (
-          <button key={t.id} onClick={() => onTab(t.id)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 2, padding: "6px 0", background: "none", border: "none", cursor: "pointer", color: tab === t.id ? "var(--accent)" : "var(--t3)", transition: "color 150ms", position: "relative" }}>
-            <span style={{ fontSize: 18, lineHeight: 1 }}>{t.icon}</span>
+          <button key={t.id} onClick={() => onTab(t.id)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "6px 0", background: "none", border: "none", cursor: "pointer", color: tab === t.id ? "var(--accent)" : "var(--t3)", transition: "color 150ms", position: "relative" }}>
+            <t.Icon size={20} strokeWidth={tab === t.id ? 2.2 : 1.8} />
             <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "-0.01em" }}>{t.short}</span>
             {(b.count > 0 || b.badge != null) && (
-              <span style={{ position: "absolute", top: 2, right: "calc(50% - 18px)", fontSize: 8, fontWeight: 700, padding: "0 4px", borderRadius: 999, lineHeight: "14px", background: b.badgeColor || "var(--accent)", color: "#07070E", minWidth: 14, textAlign: "center" }}>
+              <span style={{ position: "absolute", top: 2, right: "calc(50% - 18px)", fontSize: 8, fontWeight: 700, padding: "0 4px", borderRadius: 999, lineHeight: "14px", background: b.badgeColor || "var(--accent)", color: "var(--on-accent)", minWidth: 14, textAlign: "center" }}>
                 {b.count > 0 ? b.count : b.badge}
               </span>
             )}
