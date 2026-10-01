@@ -1,62 +1,33 @@
-# Render Blueprint — the whole app as one web service with a persistent disk.
-# In Render: New -> Blueprint -> pick this repository, then approve.
+# Render Blueprint for a FREE test copy — no card needed. The real launch uses
+# render-paid.yaml (Starter instance + disk). This one is render.yaml because
+# Render's Blueprint form reads render.yaml first, and a paid one there makes
+# it demand a card before the path can be changed.
 #
-# The disk holds the accounts database (with 14 days of daily copies in
-# backups/) and everything fetched from NSE, so a redeploy keeps them — about
-# 120 MB today, growing ~150 MB a year with daily prices. Disks need a paid
-# instance (Starter: 512 MB of memory; the app peaks near 250 MB with the whole
-# market loaded). On first start the server fetches the whole market by
-# itself (~2 hours, the Discover screen says so while it runs), then keeps it
-# fresh: prices twice a day, new results and shareholding daily. Singapore is
-# Render's region nearest India.
+# A free instance has no disk and sleeps after 15 minutes without visitors,
+# losing everything it wrote. So this copy doesn't fetch from NSE
+# (DATA_JOBS=off: no data jobs, Telegram, alert checks or backups) — the build
+# unpacks seed/market-data.tar.gz instead: the market snapshot, every
+# company's figures and the strategy picks, packed on a machine that ran the
+# fetch (`npm run pack:seed`). Prices stay at the date they were packed.
+# Accounts, watchlists and alerts last only until the instance next sleeps.
 #
-# The settings marked sync: false are secrets or yours to choose — Render asks
-# for them when the Blueprint is created, and they never go in this repository.
+# In Render: New -> Blueprint -> Public Git Repository -> this repository's
+# URL (the Blueprint Path can stay empty).
 services:
   - type: web
     name: stockwise-india
     runtime: node
-    plan: starter
+    plan: free
     region: singapore
-    buildCommand: npm ci --include=dev && npm run build
+    buildCommand: npm ci --include=dev && npm run build && mkdir -p data && tar -xzf seed/market-data.tar.gz -C data
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
       - key: NODE_VERSION
         value: 22.16.0
-      - key: DATA_DIR
-        value: /var/data
       # Render's proxy sits in front: the login limits read the visitor's
       # address from it (server/rate-limit.js)
       - key: TRUST_PROXY
         value: "1"
-      # The site's own address, e.g. https://stockwise.in — reset emails link to it
-      - key: APP_URL
-        sync: false
-      # Telegram alerts: the key from @BotFather (server/telegram.js). One bot
-      # can be polled by one server only — stop the laptop copy, or give it
-      # its own bot.
-      - key: TELEGRAM_BOT_TOKEN
-        sync: false
-      # Password-reset email through Resend, from an address on the verified
-      # domain, e.g. "Stockwise India <no-reply@stockwise.in>" (server/email.js)
-      - key: RESEND_API_KEY
-        sync: false
-      - key: EMAIL_FROM
-        sync: false
-      # Sign-in with Google / Apple / phone (server/firebase-auth.js): the
-      # Firebase web app's config — public values, but this site's own.
-      # FIREBASE_PROVIDERS lists the buttons: google,phone (add apple once
-      # Sign in with Apple is set up in Firebase and Apple's developer site).
-      - key: FIREBASE_PROJECT_ID
-        sync: false
-      - key: FIREBASE_API_KEY
-        sync: false
-      - key: FIREBASE_APP_ID
-        sync: false
-      - key: FIREBASE_PROVIDERS
-        value: google,phone
-    disk:
-      name: stockwise-data
-      mountPath: /var/data
-      sizeGB: 1
+      - key: DATA_JOBS
+        value: "off"
