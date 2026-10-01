@@ -94,11 +94,19 @@ export function computeMetrics(stock, snap, overrides = {}) {
     const prev = yearBack(y, 1);
     return (y.profit / (prev?.equity > 0 ? (y.equity + prev.equity) / 2 : y.equity)) * 100;
   };
+  // Debt counts lease liabilities where the filing itemises them, as Screener
+  // counts them in borrowings — their interest is in finance costs already, so
+  // leaving them out of capital made a renter's ROCE look twice as good
+  // (Cantabil 40% against Screener's 19%) and called it debt-free. Only
+  // filings from FY26 itemise them, so a year with leases isn't averaged with
+  // one without: ROCE falls back to that year-end's capital.
+  const totalDebt = y => (y?.debt == null ? null : y.debt + (y.leases ?? 0));
   const roceOf = y => {
     if (y?.pbt == null || y.financeCosts == null || !(y.equity > 0) || y.debt == null) return null;
     const prev = yearBack(y, 1);
-    const ce = y.equity + y.debt;
-    const cePrev = prev?.equity > 0 && prev.debt != null ? prev.equity + prev.debt : null;
+    const ce = y.equity + totalDebt(y);
+    const sameBasis = (y.leases == null) === (prev?.leases == null);
+    const cePrev = sameBasis && prev?.equity > 0 && prev.debt != null ? prev.equity + totalDebt(prev) : null;
     const denom = cePrev ? (ce + cePrev) / 2 : ce;
     return denom > 0 ? ((y.pbt + y.financeCosts) / denom) * 100 : null;
   };
@@ -107,7 +115,8 @@ export function computeMetrics(stock, snap, overrides = {}) {
   const roeHistory = [0, 1, 2, 3, 4].map(n => roeOf(yearBack(latest, n))).filter(v => v != null);
   const roeAvg = roeHistory.length ? roeHistory.reduce((a, b) => a + b, 0) / roeHistory.length : null;
 
-  const debtToEquity = latest.equity > 0 && latest.debt != null ? latest.debt / latest.equity : null;
+  const debtToEquity = latest.equity > 0 && latest.debt != null ? totalDebt(latest) / latest.equity : null;
+  const leasesCr = latest.leases > 0 ? latest.leases / 1e7 : null;
 
   // A lender borrows to lend. The filing format alone over-counts: fund
   // houses, brokers and holding companies file in the NBFC format too (69 of
@@ -255,6 +264,7 @@ export function computeMetrics(stock, snap, overrides = {}) {
       eps: y.eps != null ? y.eps / factorAfter(filedOf(y)) : null,
       equityCr: cr(y.equity),
       debtCr: cr(y.debt),
+      leasesCr: cr(y.leases),
       totalAssetsCr: cr(y.totalAssets),
       currentAssetsCr: cr(y.currentAssets),
       currentLiabilitiesCr: cr(y.currentLiabilities),
@@ -263,7 +273,7 @@ export function computeMetrics(stock, snap, overrides = {}) {
       fcfCr: !lender && y.ocf != null && y.capex != null ? cr(y.ocf - y.capex) : null,
       roe: roeOf(y),
       roce: roceOf(y),
-      debtToEquity: y.equity > 0 && y.debt != null ? y.debt / y.equity : null,
+      debtToEquity: y.equity > 0 && y.debt != null ? totalDebt(y) / y.equity : null,
     };
   });
 
@@ -300,7 +310,7 @@ export function computeMetrics(stock, snap, overrides = {}) {
     salesGrowth3y, salesGrowth5y, profitGrowth3y, profitGrowth5y,
     roe, roeAvg, roeAvgYears: roeHistory.length,
     roce: roceOf(latest), opm,
-    debtToEquity, priceToBook, interestCoverage, epsCV, opmRange,
+    debtToEquity, leasesCr, priceToBook, interestCoverage, epsCV, opmRange,
     promoterPct: holding.promoterPct ?? null,
     fiiPct: holding.fiiPct ?? null,
     diiPct: holding.diiPct ?? null,
@@ -412,7 +422,7 @@ export function computeMetrics(stock, snap, overrides = {}) {
 
     totalAssetsCr: cr(latest.totalAssets),
     equityCr: cr(latest.equity),
-    totalDebtCr: cr(latest.debt),
+    totalDebtCr: cr(totalDebt(latest)),
     ltDebtCr: cr(latest.longTermDebt),
     currentAssetsCr: cr(latest.currentAssets),
     currentLiabilitiesCr: cr(latest.currentLiabilities),
@@ -507,7 +517,7 @@ function prosAndCons(m, latest) {
   if (gt(m.priceToBook, 6)) cons.push(`Stock is trading at ${round(m.priceToBook, 1)} times its book value.`);
   if (lt(m.salesGrowth5y, 7)) cons.push(`Poor sales growth of ${pct(m.salesGrowth5y)} over 5 years.`);
   if (m.roeAvgYears >= 2 && lt(m.roeAvg, 10)) cons.push(`Low return on equity: ${m.roeAvgYears}-year average ${pct(m.roeAvg)}.`);
-  if (!m.lender && gt(m.debtToEquity, 1)) cons.push(`High debt: ${round(m.debtToEquity, 2)} times equity.`);
+  if (!m.lender && gt(m.debtToEquity, 1)) cons.push(`High debt: ${round(m.debtToEquity, 2)} times equity${m.leasesCr > 0 ? `, ₹${round(m.leasesCr, 0)} Cr of it lease liabilities` : ""}.`);
   if (gt(m.otherIncomePctOfPbt, 30)) cons.push(`Earnings include other income of ₹${round(m.otherIncomeCr, 0)} Cr (${pct(m.otherIncomePctOfPbt)} of pre-tax profit).`);
   if (!m.lender && lt(m.ocfPat3yPct, 60)) cons.push(`Weak cash conversion: operating cash flow is only ${pct(m.ocfPat3yPct)} of profit over 3 years.`);
   if (lt(latest.profit, 0)) cons.push("Company made a loss in the latest year.");
