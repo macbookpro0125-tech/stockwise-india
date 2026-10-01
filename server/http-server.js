@@ -26,6 +26,8 @@ import { loadMarketSnapshot } from "./market-data.js";
 import { startDataJobs, jobStatus } from "./data-jobs.js";
 import { botInfo, linkCode, telegramChat, unlinkTelegram, sendTelegram, startTelegramPolling } from "./telegram.js";
 import { startAlertChecks } from "./alert-notifier.js";
+import { limits, clientIp, waitText } from "./rate-limit.js";
+import { startBackups } from "./backup.js";
 import { fetchTechnicals } from "./technicals.js";
 import { shareholdingHistory, companyFilings, companyNews, sectorPeers } from "./company-extras.js";
 import { PRESETS } from "./presets.js";
@@ -165,11 +167,24 @@ function sendJson(res, status, body) {
   res.end(json);
 }
 
+// The largest body any form here sends is a screen's filters, a few KB — a
+// cap keeps one huge request from filling the server's memory
+const MAX_BODY_BYTES = 256 * 1024;
 async function readJsonBody(req) {
   const chunks = [];
-  for await (const chunk of req) chunks.push(chunk);
+  let size = 0;
+  for await (const chunk of req) {
+    size += chunk.length;
+    if (size > MAX_BODY_BYTES) throw new Error("Request too large");
+    chunks.push(chunk);
+  }
   const raw = Buffer.concat(chunks).toString("utf-8");
   return raw ? JSON.parse(raw) : {};
+}
+
+function tooMany(res, ms, message) {
+  res.setHeader("Retry-After", String(Math.ceil(ms / 1000)));
+  sendJson(res, 429, { error: `${message} Try again in ${waitText(ms)}.` });
 }
 
 function requireAuth(req, res) {
@@ -188,6 +203,12 @@ export function createApp() {
     try {
       if (url.pathname === "/api/auth/signup" && req.method === "POST") {
         const { email, password } = await readJsonBody(req);
+        const ip = `ip:${clientIp(req)}`;
+        const wait = limits.signupIp.blockedFor(ip);
+        if (wait) return tooMany(res, wait, "Too many sign-up attempts from this connection.");
+        // Every attempt counts, failed ones too: "already exists" would
+        // otherwise let anyone test thousands of emails for an account
+        limits.signupIp.hit(ip);
         const { token, userId } = signup(email, password);
         setSessionCookie(req, res, token);
         sendJson(res, 200, { userId });
@@ -196,9 +217,21 @@ export function createApp() {
 
       if (url.pathname === "/api/auth/login" && req.method === "POST") {
         const { email, password } = await readJsonBody(req);
-        const { token, userId } = login(email, password);
-        setSessionCookie(req, res, token);
-        sendJson(res, 200, { userId });
+        // Checked before the password is hashed: a blocked guess costs nothing
+        const account = `email:${String(email ?? "").trim().toLowerCase()}`, ip = `ip:${clientIp(req)}`;
+        const wait = Math.max(limits.wrongPassword.blockedFor(account), limits.wrongPasswordIp.blockedFor(ip));
+        if (wait) return tooMany(res, wait, "Too many wrong passwords.");
+        let session;
+        try {
+          session = login(email, password);
+        } catch (e) {
+          limits.wrongPassword.hit(account);
+          limits.wrongPasswordIp.hit(ip);
+          throw e;
+        }
+        limits.wrongPassword.reset(account);
+        setSessionCookie(req, res, session.token);
+        sendJson(res, 200, { userId: session.userId });
         return;
       }
 
@@ -220,7 +253,16 @@ export function createApp() {
       if (url.pathname === "/api/auth/delete-account" && req.method === "POST") {
         const userId = requireAuth(req, res);
         if (userId == null) return;
-        deleteAccount(userId, (await readJsonBody(req)).password);
+        // The password check here is guessable too
+        const account = `user:${userId}`;
+        const wait = limits.wrongPassword.blockedFor(account);
+        if (wait) return tooMany(res, wait, "Too many wrong passwords.");
+        try {
+          deleteAccount(userId, (await readJsonBody(req)).password);
+        } catch (e) {
+          if (/password/i.test(e.message)) limits.wrongPassword.hit(account);
+          throw e;
+        }
         clearSessionCookie(req, res);
         sendJson(res, 200, { ok: true });
         return;
@@ -600,5 +642,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     startDataJobs();
     startTelegramPolling();
     startAlertChecks();
+    startBackups();
   }
 }

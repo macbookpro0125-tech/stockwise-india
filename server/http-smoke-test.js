@@ -208,6 +208,39 @@ async function main() {
   await notifyAlerts({ prices: at(800), send });
   assert(sent.length === 3, "nothing is sent once disconnected");
 
+  // Password guessing and mass sign-ups are limited
+  const { limits } = await import("./rate-limit.js");
+  for (let i = 0; i < 5; i++) await json("POST", "/api/auth/login", "", { email: "alice@example.com", password: `wrong-guess-${i}` });
+  const sixth = await json("POST", "/api/auth/login", "", { email: "alice@example.com", password: "correcthorsebattery" });
+  assert(sixth.status === 429 && /Too many wrong passwords/.test((await sixth.json()).error) && Number(sixth.headers.get("retry-after")) > 0, "after 5 wrong passwords an account is locked for a while, even with the right one");
+  const otherAccount = await json("POST", "/api/auth/login", "", { email: "dave@example.com", password: "davespassword1" });
+  assert(otherAccount.status === 200, "one account's lock doesn't lock others");
+  limits.wrongPassword.clear();
+  assert((await json("POST", "/api/auth/login", "", { email: "alice@example.com", password: "correcthorsebattery" })).status === 200, "the right password works once the lock has passed");
+  limits.signupIp.clear();
+  for (let i = 0; i < 10; i++) await json("POST", "/api/auth/signup", "", { email: `bulk${i}@example.com`, password: "bulkpassword1" });
+  assert((await json("POST", "/api/auth/signup", "", { email: "bulk10@example.com", password: "bulkpassword1" })).status === 429, "an 11th sign-up from one connection within the hour is refused");
+  limits.signupIp.clear();
+  const huge = await json("POST", "/api/screen", aliceCookie, { filters: [], padding: "x".repeat(300 * 1024) });
+  assert(huge.status === 400 && /too large/i.test((await huge.json()).error), "a request bigger than 256 KB is refused");
+
+  // Daily backups: a readable copy with every account, the last 14 kept
+  const { backupDatabase } = await import("./backup.js");
+  const { DatabaseSync } = await import("node:sqlite");
+  const { mkdtempSync, readdirSync, rmSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const backupDir = mkdtempSync(join(tmpdir(), "stockwise-backup-test-"));
+  const { db: liveDb } = await import("./db.js");
+  const copy = backupDatabase({ dir: backupDir, now: new Date("2026-10-01T10:00:00Z") });
+  const copyDb = new DatabaseSync(copy, { readOnly: true });
+  const usersInCopy = copyDb.prepare("SELECT COUNT(*) AS n FROM users").get().n;
+  copyDb.close();
+  assert(usersInCopy > 0 && usersInCopy === liveDb.prepare("SELECT COUNT(*) AS n FROM users").get().n, "a backup is a readable copy holding every account");
+  for (let d = 2; d <= 17; d++) backupDatabase({ dir: backupDir, now: new Date(Date.UTC(2026, 9, d, 10)) });
+  const kept = readdirSync(backupDir).filter(f => f.endsWith(".db")).sort();
+  assert(kept.length === 14 && kept[0] === "app-2026-10-04.db" && kept.at(-1) === "app-2026-10-17.db", "only the last 14 days of backups are kept");
+  rmSync(backupDir, { recursive: true, force: true });
+
   // Deleting an account removes it and everything saved with it
   const carolSignup = await json("POST", "/api/auth/signup", "", { email: "carol@example.com", password: "carolspassword1" });
   const carolCookie = extractCookie(carolSignup);
