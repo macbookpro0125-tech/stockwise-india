@@ -1,11 +1,17 @@
 # Render Blueprint — the whole app as one web service with a persistent disk.
 # In Render: New -> Blueprint -> pick this repository, then approve.
 #
-# The disk holds the accounts database and everything fetched from NSE, so a
-# redeploy keeps them. Disks need a paid instance (Starter). On first start
-# the server fetches the whole market by itself (~2 hours, the Discover screen
-# says so while it runs), then keeps it fresh: prices twice a day, new results
-# and shareholding daily. Singapore is Render's region nearest India.
+# The disk holds the accounts database (with 14 days of daily copies in
+# backups/) and everything fetched from NSE, so a redeploy keeps them — about
+# 120 MB today, growing ~150 MB a year with daily prices. Disks need a paid
+# instance (Starter: 512 MB of memory; the app peaks near 250 MB with the whole
+# market loaded). On first start the server fetches the whole market by
+# itself (~2 hours, the Discover screen says so while it runs), then keeps it
+# fresh: prices twice a day, new results and shareholding daily. Singapore is
+# Render's region nearest India.
+#
+# The settings marked sync: false are secrets or yours to choose — Render asks
+# for them when the Blueprint is created, and they never go in this repository.
 services:
   - type: web
     name: stockwise-india
@@ -20,6 +26,24 @@ services:
         value: 22.16.0
       - key: DATA_DIR
         value: /var/data
+      # Render's proxy sits in front: the login limits read the visitor's
+      # address from it (server/rate-limit.js)
+      - key: TRUST_PROXY
+        value: "1"
+      # The site's own address, e.g. https://stockwise.in — reset emails link to it
+      - key: APP_URL
+        sync: false
+      # Telegram alerts: the key from @BotFather (server/telegram.js). One bot
+      # can be polled by one server only — stop the laptop copy, or give it
+      # its own bot.
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      # Password-reset email through Resend, from an address on the verified
+      # domain, e.g. "Stockwise India <no-reply@stockwise.in>" (server/email.js)
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
     disk:
       name: stockwise-data
       mountPath: /var/data
