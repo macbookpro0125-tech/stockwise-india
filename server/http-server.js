@@ -9,7 +9,8 @@ import { createServer } from "node:http";
 import { gzipSync } from "node:zlib";
 import { existsSync, statSync, createReadStream } from "node:fs";
 import { join, normalize, extname, sep } from "node:path";
-import { signup, login, logout, verifySession, accountEmail, deleteAccount } from "./auth.js";
+import { signup, login, logout, verifySession, accountEmail, deleteAccount, createPasswordReset, resetPassword } from "./auth.js";
+import { emailConfigured, appUrl, sendEmail, resetEmail } from "./email.js";
 import { listAlerts, createAlert, updateAlert, deleteAlert } from "./user-alerts.js";
 import { screen, screenerMeta, getStock, saveStock, rowsFor, isValidSymbol, countFetched, allMetrics } from "./screen.js";
 import { criteriaToFilters, METRICS, CATEGORY_METRICS } from "./metric-catalog.js";
@@ -230,6 +231,50 @@ export function createApp() {
           throw e;
         }
         limits.wrongPassword.reset(account);
+        setSessionCookie(req, res, session.token);
+        sendJson(res, 200, { userId: session.userId });
+        return;
+      }
+
+      // What the sign-in card can offer: password reset needs email set up
+      if (url.pathname === "/api/auth/options" && req.method === "GET") {
+        sendJson(res, 200, { passwordReset: emailConfigured() });
+        return;
+      }
+
+      // "Forgot password": the same answer whether or not the email has an
+      // account, and the email goes out without being waited for, so neither
+      // the reply nor its timing says which
+      if (url.pathname === "/api/auth/forgot" && req.method === "POST") {
+        const email = String((await readJsonBody(req)).email ?? "").trim().toLowerCase();
+        if (!email.includes("@")) { sendJson(res, 400, { error: "Enter the email you signed up with." }); return; }
+        if (!emailConfigured()) { sendJson(res, 503, { error: "Password reset by email isn't available yet." }); return; }
+        const account = `email:${email}`, ip = `ip:${clientIp(req)}`;
+        const wait = Math.max(limits.resetEmail.blockedFor(account), limits.resetIp.blockedFor(ip));
+        if (wait) return tooMany(res, wait, "Too many reset requests.");
+        limits.resetEmail.hit(account);
+        limits.resetIp.hit(ip);
+        const token = createPasswordReset(email);
+        if (token) {
+          sendEmail({ to: email, ...resetEmail(`${appUrl()}/reset-password?token=${token}`) })
+            .catch(e => console.error(`[email] reset: ${e.message}`));
+        }
+        sendJson(res, 200, { ok: true });
+        return;
+      }
+
+      if (url.pathname === "/api/auth/reset" && req.method === "POST") {
+        const ip = `ip:${clientIp(req)}`;
+        const wait = limits.wrongPasswordIp.blockedFor(ip);
+        if (wait) return tooMany(res, wait, "Too many attempts.");
+        const { token, password } = await readJsonBody(req);
+        let session;
+        try {
+          session = resetPassword(token, password);
+        } catch (e) {
+          if (/expired|used/.test(e.message)) limits.wrongPasswordIp.hit(ip);
+          throw e;
+        }
         setSessionCookie(req, res, session.token);
         sendJson(res, 200, { userId: session.userId });
         return;

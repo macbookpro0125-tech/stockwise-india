@@ -20,6 +20,10 @@ export const api = {
   login: (email, password) => request("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
   logout: () => request("/api/auth/logout", { method: "POST" }),
   deleteAccount: (password) => request("/api/auth/delete-account", { method: "POST", body: JSON.stringify({ password }) }),
+  // Password reset: offered only when the server can send email
+  authOptions: () => request("/api/auth/options"),
+  forgotPassword: (email) => request("/api/auth/forgot", { method: "POST", body: JSON.stringify({ email }) }),
+  resetPassword: (token, password) => request("/api/auth/reset", { method: "POST", body: JSON.stringify({ token, password }) }),
   presets: () => request("/api/presets"),
   metrics: () => request("/api/metrics"),
   marketStrip: () => request("/api/market-strip"),
