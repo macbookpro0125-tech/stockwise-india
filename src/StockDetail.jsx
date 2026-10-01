@@ -719,7 +719,11 @@ export default function StockDetail({ symbol, onBack, backTo = "Discover", onOpe
               <div>
                 <label style={labelStyle}>EPS Growth % p.a.</label>
                 <input type="number" value={growthPct} onChange={e => setGrowthPct(e.target.value)} style={inputStyle} />
-                {hint(parseFloat(growthPct) >= 15, "✓ Strong growth", "Expected annual growth")}
+                {(() => {
+                  // Where the default came from, until it's overridden
+                  const basis = baseline && growthPct === baseline.growthPct ? m.growthBasis : null;
+                  return hint(parseFloat(growthPct) >= 15, basis ? `✓ Strong growth · ${basis}` : "✓ Strong growth", basis ?? "Expected annual growth");
+                })()}
               </div>
               <div>
                 <label style={labelStyle}>Margin of Safety %</label>

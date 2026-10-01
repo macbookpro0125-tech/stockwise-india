@@ -199,7 +199,35 @@ export function computeMetrics(stock, snap, overrides = {}) {
   // Same inputs as the original's computeFairValue: 5-year profit growth,
   // else sales growth, else 12%, clamped to 0–25% (turnarounds report 100%+
   // growth that would compound into absurd fair values).
-  const growthForValuation = Math.min(Math.max(profitGrowth5y ?? salesGrowth5y ?? 12, 0), 25);
+  // Except that a 5-year rate starting from a dip — a year with under half of
+  // the next year's figure, as COVID made FY21 for many companies — measures
+  // the recovery, not the business, and gives way to the 3-year rate. Cantabil
+  // went from Rs 10 Cr profit (FY21) to Rs 38 Cr (FY22) and Rs 96 Cr (FY26):
+  // "58% a year", capped at 25%, put its two-year fair value at twice the
+  // price, against 12.5% a year over the last three. Only ever lower: the same
+  // test also catches a boom in the second year (Tata Steel's FY22), where the
+  // 5-year rate wasn't flattered, and that mustn't raise anything.
+  const clampGrowth = g => Math.min(Math.max(g, 0), 25);
+  const dipAt = (field, n) => {
+    const start = yearBack(latest, n)?.[field], next = yearBack(latest, n - 1)?.[field];
+    return start > 0 && next > 0 && start < next / 2;
+  };
+  // { g, basis }: the rate and, for the stock page, where it came from
+  const steadyGrowth = field => {
+    const what = field === "profit" ? "profit" : "sales";
+    const g5 = cagr(field, 5);
+    if (g5 == null) return null;
+    if (!dipAt(field, 5)) return { g: g5, basis: `5-year ${what} growth` };
+    const g3 = cagr(field, 3);
+    const fy = `FY${yearBack(latest, 5).fyEnd.slice(2, 4)}`;
+    return g3 != null && !dipAt(field, 3) ? { g: g3, basis: `3-year ${what} growth — ${fy} was a dip` } : null;
+  };
+  const original = profitGrowth5y != null ? { g: profitGrowth5y, basis: "5-year profit growth" }
+    : salesGrowth5y != null ? { g: salesGrowth5y, basis: "5-year sales growth" } : { g: 12, basis: "a default 12%" };
+  const steady = steadyGrowth("profit") ?? steadyGrowth("revenue") ?? { g: 12, basis: "a default 12%" };
+  const growthPick = clampGrowth(steady.g) < clampGrowth(original.g) ? steady : original;
+  const growthForValuation = clampGrowth(growthPick.g);
+  const growthBasis = growthPick.basis + (growthPick.g > 25 ? `, ${Math.round(growthPick.g)}% capped at 25%` : growthPick.g < 0 ? ", below 0% so taken as 0%" : "");
   const valuationPe = medianPe ?? pe;
   const levels = valuationEps > 0 && valuationPe ? calculateLevels(valuationEps, valuationPe, growthForValuation, 10) : null;
 
@@ -290,7 +318,7 @@ export function computeMetrics(stock, snap, overrides = {}) {
     peHistory: peHistory.map(r => (r.pe != null && leftOut(r) ? { ...r, excluded: "profit under a third of this year's — P/E left out" } : r)),
     medianPe, peYears: validPe.length,
     history,
-    growthForValuation,
+    growthForValuation, growthBasis,
     valuationPe, valuationPeBasis: medianPe != null ? "median" : "current",
     valuationEps, epsJump,
     levels,
