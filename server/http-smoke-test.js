@@ -12,6 +12,8 @@ process.env.STOCKWISE_DB = DB_PATH; // never the real app.db — see db.js
 if (existsSync(DB_PATH)) unlinkSync(DB_PATH);
 
 const { createApp } = await import("./http-server.js");
+// .env may hold a real bot key: the tests must never reach Telegram
+delete process.env.TELEGRAM_BOT_TOKEN;
 const PORT = 8799;
 const BASE = `http://localhost:${PORT}`;
 const server = createApp().listen(PORT);
@@ -171,6 +173,41 @@ async function main() {
   assert(publicStats.status === 200 && (await publicStats.json()).strategies === 13, "the front page's figures load without signing in");
   assert((await (await fetch(`${BASE}/api/auth/me`, { headers: { Cookie: aliceCookie } })).json()).email === "alice@example.com", "/me says which email is signed in");
 
+  // Telegram alerts, with Telegram itself stubbed out: linking by the one-time
+  // code, a message once per crossing, /stop, an expired code
+  const { linkCode, handleTelegramUpdate } = await import("./telegram.js");
+  const { notifyAlerts } = await import("./alert-notifier.js");
+  const daveSignup = await json("POST", "/api/auth/signup", "", { email: "dave@example.com", password: "davespassword1" });
+  const daveCookie = extractCookie(daveSignup);
+  const daveId = (await daveSignup.json()).userId;
+  const tgStatus = await (await fetch(`${BASE}/api/telegram`, { headers: { Cookie: daveCookie } })).json();
+  assert(tgStatus.configured === false && tgStatus.connected === false, "without a bot key, Telegram reports not set up and not connected");
+  assert((await json("POST", "/api/telegram/link", daveCookie)).status === 503, "no connect link is made without a bot key");
+  const update = text => ({ message: { chat: { id: 4242, type: "private" }, from: { first_name: "Dave" }, text } });
+  assert(/expired/.test(handleTelegramUpdate(update("/start not-a-real-code"))[1]), "an unknown or expired code doesn't link anything");
+  const linked = handleTelegramUpdate(update(`/start ${linkCode(daveId)}`));
+  const afterLink = await (await fetch(`${BASE}/api/telegram`, { headers: { Cookie: daveCookie } })).json();
+  assert(linked[0] === 4242 && /Connected/.test(linked[1]) && afterLink.connected && afterLink.name === "Dave", "/start with the code links that chat to the account");
+  const daveAlert = await (await json("POST", "/api/alerts", daveCookie, { ticker: "INFY", name: "Infosys", condition: "below", threshold: 900 })).json();
+  const sent = [];
+  const send = async (chatId, html) => { sent.push({ chatId, html }); };
+  const at = price => ({ INFY: { price, asOf: "2026-09-30", source: "close" } });
+  await notifyAlerts({ prices: at(950), send });
+  assert(sent.length === 0, "no message while the price hasn't crossed");
+  await notifyAlerts({ prices: at(880), send });
+  assert(sent.length === 1 && sent[0].chatId === 4242 && /Infosys/.test(sent[0].html) && /₹880/.test(sent[0].html), "a message when the price crosses the alert");
+  await notifyAlerts({ prices: at(870), send });
+  assert(sent.length === 1, "no repeat while the price stays across");
+  await notifyAlerts({ prices: at(950), send });
+  await notifyAlerts({ prices: at(890), send });
+  assert(sent.length === 2, "a new message after it crosses back and then crosses again");
+  await json("PUT", `/api/alerts/${daveAlert.id}`, daveCookie, { threshold: 895 });
+  await notifyAlerts({ prices: at(890), send });
+  assert(sent.length === 3, "editing an alert lets it send again");
+  assert(/Disconnected/.test(handleTelegramUpdate(update("/stop"))[1]) && !(await (await fetch(`${BASE}/api/telegram`, { headers: { Cookie: daveCookie } })).json()).connected, "/stop disconnects the chat");
+  await notifyAlerts({ prices: at(800), send });
+  assert(sent.length === 3, "nothing is sent once disconnected");
+
   // Deleting an account removes it and everything saved with it
   const carolSignup = await json("POST", "/api/auth/signup", "", { email: "carol@example.com", password: "carolspassword1" });
   const carolCookie = extractCookie(carolSignup);
@@ -178,6 +215,7 @@ async function main() {
   await json("POST", "/api/alerts", carolCookie, { ticker: "INFY", condition: "below", threshold: 900 });
   await json("POST", "/api/watchlist", carolCookie, { ticker: "INFY", price: 1000 });
   await json("POST", "/api/portfolio", carolCookie, { ticker: "INFY", buyPrice: 1000, qty: 5 });
+  linkCode(carolId); // a Telegram connect code waiting
   assert((await json("POST", "/api/auth/delete-account", carolCookie, { password: "not-her-password" })).status === 400, "deleting an account needs the right password");
   assert((await json("POST", "/api/auth/delete-account", "", { password: "carolspassword1" })).status === 401, "deleting an account needs a signed-in session");
   const deleted = await json("POST", "/api/auth/delete-account", carolCookie, { password: "carolspassword1" });
@@ -185,7 +223,7 @@ async function main() {
   assert((await fetch(`${BASE}/api/auth/me`, { headers: { Cookie: carolCookie } })).status === 401, "the deleted account's session no longer works");
   assert((await json("POST", "/api/auth/login", "", { email: "carol@example.com", password: "carolspassword1" })).status === 400, "the deleted account can't sign in");
   const { db } = await import("./db.js");
-  const leftovers = ["users", "sessions", "alerts", "watchlist", "holdings"]
+  const leftovers = ["users", "sessions", "alerts", "watchlist", "holdings", "telegram_links"]
     .map(t => db.prepare(`SELECT COUNT(*) AS n FROM ${t} WHERE ${t === "users" ? "id" : "user_id"} = ?`).get(carolId).n);
   assert(leftovers.every(n => n === 0), "nothing of the deleted account is left in any table");
   assert((await (await fetch(`${BASE}/api/alerts`, { headers: { Cookie: aliceCookie } })).json()).length === 1, "deleting one account leaves other accounts' data alone");

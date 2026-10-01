@@ -78,3 +78,18 @@ function addColumn(table, column, type) {
 // a note per stock
 addColumn("watchlist", "added_price", "REAL");
 addColumn("watchlist", "note", "TEXT");
+
+// Telegram alerts (telegram.js, alert-notifier.js): the chat an account's
+// alerts go to, and when an alert was last sent — once per crossing, not on
+// every check while the price stays across
+addColumn("users", "telegram_chat_id", "INTEGER");
+addColumn("users", "telegram_name", "TEXT");
+addColumn("alerts", "notified_at", "TEXT");
+db.exec(`
+  -- One-time codes behind the "Connect Telegram" link (t.me/<bot>?start=<code>)
+  CREATE TABLE IF NOT EXISTS telegram_links (
+    code TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    expires_at TEXT NOT NULL
+  );
+`);

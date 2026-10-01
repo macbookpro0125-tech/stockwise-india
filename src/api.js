@@ -42,6 +42,11 @@ export const api = {
   performance: () => request("/api/performance"),
   takePerformanceSnapshot: () => request("/api/performance/snapshot", { method: "POST" }),
   listAlerts: (live = false) => request(`/api/alerts${live ? "?live=1" : ""}`),
+  // Telegram alerts: connection status, the one-time connect link, a test, disconnect
+  telegram: () => request("/api/telegram"),
+  telegramLink: () => request("/api/telegram/link", { method: "POST" }),
+  telegramTest: () => request("/api/telegram/test", { method: "POST" }),
+  telegramDisconnect: () => request("/api/telegram", { method: "DELETE" }),
   createAlert: (alert) => request("/api/alerts", { method: "POST", body: JSON.stringify(alert) }),
   updateAlert: (id, patch) => request(`/api/alerts/${id}`, { method: "PUT", body: JSON.stringify(patch) }),
   deleteAlert: (id) => request(`/api/alerts/${id}`, { method: "DELETE" }),

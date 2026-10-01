@@ -4,7 +4,7 @@ import { SiteLink, SiteFooter, Logo, navigate } from "./site.jsx";
 // the code does — check them when changing what's stored, adding analytics
 // or ads, or moving hosts.
 
-const UPDATED = "27 September 2026";
+const UPDATED = "1 October 2026";
 // Shown once set: a privacy policy needs a way to reach you
 const CONTACT_EMAIL = null;
 
@@ -48,6 +48,7 @@ export function PrivacyPage({ signedIn }) {
         <LI><B>Your account:</B> your email address and your password. The password is stored only as a salted, one-way hash (scrypt), so nobody — including us — can read it.</LI>
         <LI><B>A sign-in cookie:</B> one cookie that keeps you signed in for up to 30 days. It's used for nothing else, scripts on the page can't read it, and it's removed when you sign out.</LI>
         <LI><B>What you save:</B> your watchlist (with the price when you added each stock and your notes on it), your price alerts, and your portfolio holdings (buy price, quantity, date and notes).</LI>
+        <LI><B>Telegram, only if you connect it:</B> your Telegram chat ID and the name on your Telegram account, so your alerts reach you, and when each alert was last sent. Not your phone number — Telegram doesn't give it to us. Disconnecting (on the Alerts tab, or sending /stop to the bot) removes them.</LI>
       </UL>
 
       <H>What stays in your browser</H>
@@ -60,8 +61,15 @@ export function PrivacyPage({ signedIn }) {
       <H>What we don't do</H>
       <UL>
         <LI>No advertising or tracking cookies, no analytics, and no third-party scripts on our pages.</LI>
-        <LI>We don't sell, rent or share your personal data, and we use what you save only to show it back to you.</LI>
+        <LI>We don't sell, rent or share your personal data, and we use what you save only to show it back to you — and, if you connect Telegram, to send you your own alerts there.</LI>
       </UL>
+
+      <H>Alerts on Telegram</H>
+      <P>
+        If you connect Telegram, each alert message — the company, its price and your alert price — is sent to you through
+        Telegram, and Telegram's own privacy policy applies to messages in your Telegram account. Nothing else about your
+        account is sent.
+      </P>
 
       <H>Market data from other services</H>
       <P>

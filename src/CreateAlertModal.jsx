@@ -80,7 +80,7 @@ export default function CreateAlertModal({ stock, onClose }) {
           </div>
         )}
         <div style={{ fontSize: 11, color: "var(--t3)", marginBottom: 16, lineHeight: 1.6 }}>
-          Checked against each day's closing price and shown on the Alerts tab. No email or phone notifications yet.
+          Shown on the Alerts tab, and sent to your Telegram when the price crosses — connect it on the Alerts tab.
         </div>
 
         <div style={{ display: "flex", gap: 10 }}>

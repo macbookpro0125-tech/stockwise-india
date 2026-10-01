@@ -42,9 +42,12 @@ export function updateAlert(userId, alertId, { condition, threshold, enabled }) 
   };
   if (next.condition !== "above" && next.condition !== "below") throw new Error("condition must be 'above' or 'below'");
   if (!(next.threshold > 0)) throw new Error("threshold must be a price above 0");
+  // A changed alert is a new one for Telegram: it may send again
+  // (alert-notifier.js sends once per crossing)
+  const changed = next.condition !== existing.condition || next.threshold !== existing.threshold || next.enabled !== existing.enabled;
   try {
-    db.prepare("UPDATE alerts SET condition = ?, threshold = ?, enabled = ? WHERE id = ? AND user_id = ?")
-      .run(next.condition, next.threshold, next.enabled, alertId, userId);
+    db.prepare("UPDATE alerts SET condition = ?, threshold = ?, enabled = ?, notified_at = CASE WHEN ? THEN NULL ELSE notified_at END WHERE id = ? AND user_id = ?")
+      .run(next.condition, next.threshold, next.enabled, changed ? 1 : 0, alertId, userId);
   } catch (e) {
     if (e.message.includes("UNIQUE constraint failed")) {
       throw Object.assign(new Error(`You already have a "${next.condition}" alert for ${existing.ticker}`), { duplicate: true });
