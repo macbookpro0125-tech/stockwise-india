@@ -28,7 +28,9 @@ const STATEMENTS = {
     ["EPS in Rs", "eps", "rs"],
   ],
   balanceSheet: [
-    ["Net worth (equity)", "equityCr", "cr"], ["Borrowings", "debtCr", "cr"], ["Total assets", "totalAssetsCr", "cr"],
+    ["Net worth (equity)", "equityCr", "cr"], ["Borrowings", "debtCr", "cr"],
+    // Rent owed on shops, offices, aircraft — itemised in filings from FY26
+    ["Lease liabilities", "leasesCr", "cr"], ["Total assets", "totalAssetsCr", "cr"],
     ["Current assets", "currentAssetsCr", "cr"], ["Current liabilities", "currentLiabilitiesCr", "cr"],
   ],
   cashFlow: [

@@ -67,7 +67,7 @@ export function facts(xml, contexts, tag) {
 
 // Bump when the stored shape changes — fetch-market.js re-fetches any file on
 // an older schema instead of treating it as done.
-export const SCHEMA = 3; // 3: capex, current liabilities, cost of goods, long-term debt (FCF, Piotroski)
+export const SCHEMA = 4; // 3: capex, current liabilities, cost of goods, long-term debt (FCF, Piotroski); 4: lease liabilities
 const YEARS = 6; // 5-year growth needs six year-ends
 const DOWNLOAD_CONCURRENCY = 3;
 
@@ -198,6 +198,32 @@ function debtOf(r, template) {
   return itemised ? 0 : null;
 }
 
+// Lease liabilities — what Ind AS 116 books for rented shops, offices and
+// aircraft. Screener counts them as borrowings, and their interest is already
+// in finance costs, so leaving them out made debt-free retailers of companies
+// with hundreds of crores of rent to pay: Cantabil's Rs 544 Cr put its ROCE at
+// 40% (Screener 19%). Filings itemise them inside "other financial
+// liabilities", each item with a description on its own context. null when
+// the filing has no such itemisation: unknown, not "no leases".
+const LEASE_PARENTS = ["OtherNoncurrentFinancialLiabilities", "OtherCurrentFinancialLiabilities"];
+function leasesOf(xml, row) {
+  if (row.legacy) return null;
+  const ctx = parseContexts(xml);
+  const end = isoDay(row.periodEnd);
+  let itemised = false, total = 0;
+  for (const parent of LEASE_PARENTS) {
+    const descRe = new RegExp(`<[a-z-]+:DescriptionOf${parent}\\b[^>]*?contextRef="([^"]+)"[^>]*>([^<]*)<`, "g");
+    for (const [, id, text] of xml.matchAll(descRe)) {
+      if (ctx[id]?.instant !== end) continue;
+      itemised = true;
+      if (!/lease/i.test(text)) continue;
+      const m = xml.match(new RegExp(`<[a-z-]+:${parent}\\b[^>]*?contextRef="${id}"[^>]*>([^<]*)<`));
+      if (m && Number.isFinite(Number(m[1]))) total += Number(m[1]);
+    }
+  }
+  return itemised ? total : null;
+}
+
 // `template` is the company's, taken from its latest filing: older legacy
 // files don't reliably name the template (Bajaj Finance's FY23 file reads as
 // an ordinary company, which put its debt at 0), and a company's business type
@@ -235,6 +261,8 @@ function extractYear(xml, row, template = templateOf(row.xbrl)) {
     currentLiabilities: r.atEnd(TAGS.currentLiabilities),
     longTermDebt: equity == null ? null : r.atEnd(TAGS.longTermDebt) ?? (r.atEnd(TAGS.currentLiabilities) != null ? 0 : null),
     cogs: sumKnown(r.year(TAGS.materials), r.year(TAGS.purchases), r.year(TAGS.inventoryChange)),
+    // Lenders' leases are a rounding error next to their deposits and bonds
+    leases: template === "INDAS" ? leasesOf(xml, row) : null,
   };
 }
 

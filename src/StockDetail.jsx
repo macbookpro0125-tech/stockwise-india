@@ -740,6 +740,8 @@ export default function StockDetail({ symbol, onBack, backTo = "Discover", onOpe
                   <input type="number" step="0.01" value={debtToEquity} onChange={e => setDebtToEquity(e.target.value)} style={inputStyle} />
                   <div style={{ fontSize: 10, color: isFin ? "var(--t3)" : parseFloat(debtToEquity) < 0.5 ? "var(--green)" : "var(--t2)", marginTop: 3, fontWeight: !isFin && parseFloat(debtToEquity) < 0.5 ? 600 : 400 }}>
                     {isFin ? "Not scored for lenders" : parseFloat(debtToEquity) < 0.5 ? "✓ Low debt" : "< 0.5 = green"}
+                    {/* Say when rent is part of it, so a renter's figure isn't read as bank loans */}
+                    {!isFin && m.leasesCr > 0 && <span style={{ color: "var(--t3)", fontWeight: 400 }}> · incl. ₹{Math.round(m.leasesCr).toLocaleString("en-IN")} Cr lease liabilities</span>}
                   </div>
                 </div>
                 <div>
