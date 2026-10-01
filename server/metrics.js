@@ -98,15 +98,18 @@ export function computeMetrics(stock, snap, overrides = {}) {
   // counts them in borrowings — their interest is in finance costs already, so
   // leaving them out of capital made a renter's ROCE look twice as good
   // (Cantabil 40% against Screener's 19%) and called it debt-free. Only
-  // filings from FY26 itemise them, so a year with leases isn't averaged with
-  // one without: ROCE falls back to that year-end's capital.
+  // filings from FY26 itemise them; for the year before, ROCE's average takes
+  // this year's leases as an estimate of last year's. (Dropping the average
+  // for year-end capital instead cut ROCE by points for any company whose
+  // capital grew in the year, leases or not — Torrent Pharma 15% -> 10% over
+  // Rs 227 Cr of leases on its books.)
   const totalDebt = y => (y?.debt == null ? null : y.debt + (y.leases ?? 0));
   const roceOf = y => {
     if (y?.pbt == null || y.financeCosts == null || !(y.equity > 0) || y.debt == null) return null;
     const prev = yearBack(y, 1);
     const ce = y.equity + totalDebt(y);
-    const sameBasis = (y.leases == null) === (prev?.leases == null);
-    const cePrev = sameBasis && prev?.equity > 0 && prev.debt != null ? prev.equity + totalDebt(prev) : null;
+    const prevLeases = y.leases == null ? 0 : (prev?.leases ?? y.leases);
+    const cePrev = prev?.equity > 0 && prev.debt != null ? prev.equity + prev.debt + prevLeases : null;
     const denom = cePrev ? (ce + cePrev) / 2 : ce;
     return denom > 0 ? ((y.pbt + y.financeCosts) / denom) * 100 : null;
   };
