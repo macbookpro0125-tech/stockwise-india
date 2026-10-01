@@ -26,7 +26,7 @@ function daysSince(dateStr) {
 function RetBadge({ pct }) {
   if (pct == null) return <span style={{ fontSize: 11, color: "var(--t3)", ...MONO }}>—</span>;
   const color = pct > 0 ? "var(--green)" : pct < 0 ? "var(--red)" : "var(--t2)";
-  return <span style={{ fontSize: 12, fontWeight: 700, color, ...MONO }}>{pct > 0 ? "+" : ""}{pct}%</span>;
+  return <span style={{ fontSize: 12, fontWeight: 700, color, ...MONO }}>{pct > 0 ? "+" : ""}{pct.toFixed(1)}%</span>;
 }
 
 // Name · entry · current · return, shared by the header and every pick row

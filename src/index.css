@@ -411,9 +411,11 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 .ss-back-sticky { display: none; }
 
 /* ── Header and phone tab bar (the original's) ── */
+/* The prefixed line goes first: the build's minifier keeps only the last of
+   the pair, and Chrome ignores the -webkit- one */
 .discovery-header-sticky {
-  backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(16px) saturate(180%);
 }
 .bottom-tab-bar { display: none; }
 
@@ -430,8 +432,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     z-index: 200;
     padding: 6px 0 calc(6px + env(safe-area-inset-bottom));
     border-top: 1px solid var(--bdr2);
-    backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
   }
   /* Room at the end of every page for the bar */
   body { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
