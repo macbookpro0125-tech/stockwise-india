@@ -17,19 +17,6 @@ import { randomUUID } from "node:crypto";
 export const ROOT = process.env.APP_ROOT ?? join(dirname(fileURLToPath(import.meta.url)), "..");
 export const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-// Headless Chrome doesn't blur what scrolls under the see-through top bar, so
-// it would show through sharp — make the bar solid in recordings
-function solidHeader() {
-  const add = () => {
-    const style = document.createElement("style");
-    style.textContent = ".discovery-header-sticky{background:#07070E!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}";
-    document.head.append(style);
-  };
-  if (document.head) return add();
-  const obs = new MutationObserver(() => { if (document.head) { obs.disconnect(); add(); } });
-  obs.observe(document, { childList: true, subtree: true });
-}
-
 export async function startDemoApp({ port = 8791, width = 1280, height = 800, recordVideo = false } = {}) {
   if (!existsSync(join(ROOT, "dist", "index.html"))) throw new Error("Build the app first: npm run build");
 
@@ -56,6 +43,5 @@ export async function startDemoApp({ port = 8791, width = 1280, height = 800, re
   });
   const signup = await context.request.post(`${base}/api/auth/signup`, { data: { email: `demo-${Date.now()}@example.com`, password: randomUUID() } });
   if (!signup.ok()) throw new Error(`demo signup failed: ${signup.status()}`);
-  await context.addInitScript(solidHeader);
   return { base, browser, context, stop };
 }
