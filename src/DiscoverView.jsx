@@ -124,7 +124,11 @@ export default function DiscoverView({ onOpenStock }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const requestKey = JSON.stringify([(filters ?? []).filter(isActiveFilter), shownColumnIds]);
+  // null until the filters are known. Not "(filters ?? [])": on a first visit
+  // filters go from null to [], and a key that read the same for both never
+  // changed — so the first screen never ran and a new user's Discover sat on
+  // its loading rows until a reload.
+  const requestKey = filters ? JSON.stringify([filters.filter(isActiveFilter), shownColumnIds]) : null;
   useEffect(() => {
     if (!filters) return;
     const t = setTimeout(() => run({ filters: filters.filter(isActiveFilter), columns: shownColumnIds }), 300);
