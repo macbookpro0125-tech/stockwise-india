@@ -43,7 +43,8 @@ export default function App() {
   // Where the Discover list was scrolled to, so Back lands on the same row
   const discoverScroll = useRef(0);
 
-  const loadAccount = () => api.me().then(d => setAccount({ userId: d.userId, email: d.email ?? null })).catch(() => setAccount(null));
+  // email or phone (a phone sign-in has no email), name, and whether there is a password at all
+  const loadAccount = () => api.me().then(d => setAccount({ userId: d.userId, email: d.email ?? null, phone: d.phone ?? null, name: d.name ?? null, hasPassword: d.hasPassword !== false })).catch(() => setAccount(null));
   useEffect(() => { loadAccount(); }, []);
 
   // /privacy and /disclaimer are for everyone, signed in or not
@@ -85,7 +86,7 @@ export default function App() {
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
       <PriceStrip onOpenStock={openSymbol} />
-      <Header tab={open ? null : tab} onTab={goTab} email={account.email} onLogout={logout} onDeleted={accountDeleted} onSearch={openSymbol} theme={theme} onToggleTheme={toggleTheme} />
+      <Header tab={open ? null : tab} onTab={goTab} account={account} onLogout={logout} onDeleted={accountDeleted} onSearch={openSymbol} theme={theme} onToggleTheme={toggleTheme} />
       <div style={{ height: 16 }} />
       {open && <StockDetail key={open.at} symbol={open.symbol} onBack={closeStock} backTo={TABS.find(t => t.id === tab)?.label} onOpenStock={openSymbol} />}
       {/* Kept mounted (hidden) while a stock is open, so its filters and

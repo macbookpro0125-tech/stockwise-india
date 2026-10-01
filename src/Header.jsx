@@ -42,7 +42,7 @@ function compact(n) {
   return n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
 }
 
-export default function Header({ tab, onTab, email, onLogout, onDeleted, onSearch, theme, onToggleTheme }) {
+export default function Header({ tab, onTab, account, onLogout, onDeleted, onSearch, theme, onToggleTheme }) {
   const badges = useTabBadges();
   const [stats, setStats] = useState(null);
   useEffect(() => { api.stats().then(setStats).catch(() => {}); }, []);
@@ -90,7 +90,7 @@ export default function Header({ tab, onTab, email, onLogout, onDeleted, onSearc
                 style={{ width: 32, height: 32, borderRadius: 8, background: "var(--s2)", border: "1px solid var(--bdr)", color: "var(--t2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: 0 }}>
                 {theme === "dark" ? <Sun size={16} strokeWidth={2} /> : <Moon size={16} strokeWidth={2} />}
               </button>
-              <AccountMenu email={email} onLogout={onLogout} onDeleted={onDeleted} />
+              <AccountMenu account={account} onLogout={onLogout} onDeleted={onDeleted} />
             </div>
           </div>
           <div style={{ marginTop: 8 }}>

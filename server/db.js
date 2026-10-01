@@ -102,3 +102,56 @@ db.exec(`
     used_at TEXT
   );
 `);
+
+// Sign-in with Google, Apple or a phone number (firebase-auth.js): such an
+// account may have no email (phone) or no password (all three), which SQLite
+// can only allow by rebuilding the table. Done once, the database copied
+// first. Foreign keys are off while it runs — node:sqlite turns them on, and
+// dropping the old table with them on would cascade-delete every account's
+// alerts, watchlist and portfolio — and every table's row count must come out
+// unchanged, or the whole rebuild is undone.
+const CHILD_TABLES = ["sessions", "alerts", "watchlist", "holdings", "telegram_links", "password_resets"];
+function rebuildUsersForSocialSignIn() {
+  const columns = db.prepare("PRAGMA table_info(users)").all().map(c => c.name);
+  if (columns.includes("firebase_uid")) return;
+  const counts = () => Object.fromEntries(["users", ...CHILD_TABLES].map(t => [t, db.prepare(`SELECT COUNT(*) AS n FROM ${t}`).get().n]));
+  const before = counts();
+  if (before.users > 0) db.exec(`VACUUM INTO '${`${DB_PATH}.before-social-signin-${Date.now()}`.replace(/'/g, "''")}'`);
+  db.exec("PRAGMA foreign_keys = OFF");
+  try {
+    db.exec("BEGIN");
+    try {
+      db.exec(`
+        CREATE TABLE users_new (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          email TEXT UNIQUE,
+          password_hash TEXT,
+          password_salt TEXT,
+          created_at TEXT NOT NULL,
+          telegram_chat_id INTEGER,
+          telegram_name TEXT,
+          -- Firebase's id for a Google / Apple / phone sign-in
+          firebase_uid TEXT UNIQUE,
+          phone TEXT UNIQUE,
+          display_name TEXT,
+          CHECK (email IS NOT NULL OR phone IS NOT NULL)
+        );
+      `);
+      const kept = columns.filter(c => ["id", "email", "password_hash", "password_salt", "created_at", "telegram_chat_id", "telegram_name"].includes(c)).join(", ");
+      db.exec(`INSERT INTO users_new (${kept}) SELECT ${kept} FROM users`);
+      db.exec("DROP TABLE users");
+      db.exec("ALTER TABLE users_new RENAME TO users");
+      const after = counts();
+      if (JSON.stringify(after) !== JSON.stringify(before)) throw new Error(`row counts changed: ${JSON.stringify(before)} -> ${JSON.stringify(after)}`);
+      const broken = db.prepare("PRAGMA foreign_key_check").all();
+      if (broken.length) throw new Error(`${broken.length} rows lost their account`);
+      db.exec("COMMIT");
+    } catch (e) {
+      db.exec("ROLLBACK");
+      throw new Error(`Accounts table upgrade undone: ${e.message}`);
+    }
+  } finally {
+    db.exec("PRAGMA foreign_keys = ON");
+  }
+}
+rebuildUsersForSocialSignIn();

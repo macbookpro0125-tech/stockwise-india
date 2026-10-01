@@ -9,7 +9,8 @@ import { createServer } from "node:http";
 import { gzipSync } from "node:zlib";
 import { existsSync, statSync, createReadStream } from "node:fs";
 import { join, normalize, extname, sep } from "node:path";
-import { signup, login, logout, verifySession, accountEmail, deleteAccount, createPasswordReset, resetPassword } from "./auth.js";
+import { signup, login, logout, verifySession, accountInfo, deleteAccount, createPasswordReset, resetPassword, signInWithFirebase } from "./auth.js";
+import { firebaseConfig, verifyFirebaseIdToken } from "./firebase-auth.js";
 import { emailConfigured, appUrl, sendEmail, resetEmail } from "./email.js";
 import { listAlerts, createAlert, updateAlert, deleteAlert } from "./user-alerts.js";
 import { screen, screenerMeta, getStock, saveStock, rowsFor, isValidSymbol, countFetched, allMetrics } from "./screen.js";
@@ -236,9 +237,31 @@ export function createApp() {
         return;
       }
 
-      // What the sign-in card can offer: password reset needs email set up
+      // What the sign-in card can offer: password reset needs email set up;
+      // Google / Apple / phone need Firebase (its web config is public)
       if (url.pathname === "/api/auth/options" && req.method === "GET") {
-        sendJson(res, 200, { passwordReset: emailConfigured() });
+        sendJson(res, 200, { passwordReset: emailConfigured(), firebase: firebaseConfig() });
+        return;
+      }
+
+      // A Google, Apple or phone sign-in Firebase confirmed in the browser:
+      // check its token, then find or make the account and sign in
+      if (url.pathname === "/api/auth/firebase" && req.method === "POST") {
+        const ip = `ip:${clientIp(req)}`;
+        const wait = limits.wrongPasswordIp.blockedFor(ip);
+        if (wait) return tooMany(res, wait, "Too many sign-in attempts.");
+        let claims;
+        try {
+          claims = await verifyFirebaseIdToken((await readJsonBody(req)).idToken);
+        } catch (e) {
+          limits.wrongPasswordIp.hit(ip);
+          if (e.reason) console.error(`[auth] firebase token refused: ${e.reason}`);
+          sendJson(res, 401, { error: e.reason ? e.message : "That sign-in couldn't be confirmed. Please try again." });
+          return;
+        }
+        const { token, userId } = signInWithFirebase(claims);
+        setSessionCookie(req, res, token);
+        sendJson(res, 200, { userId });
         return;
       }
 
@@ -291,7 +314,7 @@ export function createApp() {
       if (url.pathname === "/api/auth/me" && req.method === "GET") {
         const cookies = parseCookies(req.headers.cookie);
         const userId = verifySession(cookies[COOKIE_NAME]);
-        sendJson(res, userId ? 200 : 401, userId ? { userId, email: accountEmail(userId) } : { error: "Not signed in" });
+        sendJson(res, userId ? 200 : 401, userId ? { userId, ...accountInfo(userId) } : { error: "Not signed in" });
         return;
       }
 
@@ -303,7 +326,8 @@ export function createApp() {
         const wait = limits.wrongPassword.blockedFor(account);
         if (wait) return tooMany(res, wait, "Too many wrong passwords.");
         try {
-          deleteAccount(userId, (await readJsonBody(req)).password);
+          const { password, confirm } = await readJsonBody(req);
+          deleteAccount(userId, password, confirm);
         } catch (e) {
           if (/password/i.test(e.message)) limits.wrongPassword.hit(account);
           throw e;
