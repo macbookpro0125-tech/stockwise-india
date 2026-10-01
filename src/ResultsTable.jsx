@@ -4,6 +4,11 @@ import { useWatchlist, toggleWatch } from "./watchlist.js";
 import CreateAlertModal from "./CreateAlertModal.jsx";
 import CompareView from "./CompareView.jsx";
 import { exportDiscoverExcel } from "./exportExcel.js";
+import { formatValue, valueColor } from "./screener/meta.js";
+
+// A metric column's header, with its unit as the table always showed it
+// ("ROCE %", "CMP ₹")
+const columnLabel = def => (def.unit === "%" ? `${def.short} %` : def.unit === "₹" ? `${def.short} ₹` : def.short);
 
 // Ported from stock-screener's src/components/ResultsTable.jsx — same columns,
 // score badge, buy phases with 52-week range, NCAV badge, watchlist star,
@@ -43,11 +48,12 @@ const score10 = s => (s.score?.applicable ? Math.round((s.score.green / s.score.
 
 const nseUrl = symbol => `https://www.nseindia.com/get-quotes/equity?symbol=${encodeURIComponent(symbol)}`;
 
-function SortTh({ label, col, sortBy, sortDir, onSort, accent }) {
+function SortTh({ label, title, col, sortBy, sortDir, onSort, accent }) {
   const active = sortBy === col;
   return (
     <th
       onClick={() => onSort(col)}
+      title={title}
       style={{
         padding: "8px 10px",
         textAlign: "left",
@@ -116,82 +122,55 @@ function NcavBadge({ stock }) {
   );
 }
 
-export function RangeBar({ low, high, cmp }) {
+// 52-week range as a slim bar; the numbers are in the tooltip
+function MiniRange({ low, high, cmp }) {
   if (!low || !high || !cmp || high <= low) return null;
-  const pct = Math.min(98, Math.max(2, ((cmp - low) / (high - low)) * 100));
+  const pct = Math.min(96, Math.max(4, ((cmp - low) / (high - low)) * 100));
   const fromLow = Math.round(((cmp - low) / low) * 100);
   const belowHigh = Math.round(((high - cmp) / high) * 100);
-  const aboveHigh = cmp > high;
+  const title = `52-week low ₹${low.toLocaleString("en-IN")} · high ₹${high.toLocaleString("en-IN")} — ` +
+    (cmp < low ? "below the 52-week low" : `${fromLow}% above the low`) + " · " +
+    (cmp > high ? "above the 52-week high" : `${belowHigh}% below the high`);
   return (
-    <div style={{ marginTop: 5 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9, color: "var(--t3)", marginBottom: 3, ...MONO }}>
-        <span>L {low.toLocaleString("en-IN")}</span>
-        <span>{high.toLocaleString("en-IN")} H</span>
-      </div>
-      <div style={{ position: "relative", height: 3, borderRadius: 99, background: "linear-gradient(to right, #FF453A 0%, #FFD60A 50%, #30D158 100%)", marginBottom: 4 }}>
-        <div style={{
-          position: "absolute", top: "50%",
-          left: `calc(${pct}% - 4px)`,
-          transform: "translateY(-50%)",
-          width: 8, height: 8, borderRadius: "50%",
-          background: "#fff",
-          boxShadow: "0 1px 4px rgba(0,0,0,0.6)",
-        }} />
-      </div>
-      <div style={{ fontSize: 9, color: "var(--t3)", ...MONO }}>
-        {cmp < low
-          ? <span style={{ color: "var(--red)" }}>↓ below 52W L</span>
-          : <>+{fromLow}% from L</>}
-        {aboveHigh
-          ? <span style={{ color: "var(--red)", marginLeft: 6 }}>↑ above 52W H</span>
-          : <span style={{ marginLeft: 6 }}>{belowHigh}% below H</span>}
-      </div>
-    </div>
+    <span title={title} style={{ position: "relative", display: "inline-block", width: 56, height: 3, borderRadius: 99, background: "linear-gradient(to right, #FF453A 0%, #FFD60A 50%, #30D158 100%)", verticalAlign: "middle", flexShrink: 0 }}>
+      <span style={{ position: "absolute", top: "50%", left: `calc(${pct}% - 3.5px)`, transform: "translateY(-50%)", width: 7, height: 7, borderRadius: "50%", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.6)" }} />
+    </span>
   );
 }
 
+// Buy phases in two lines: the three prices (✓ once today's price reaches
+// one), then the 52-week bar and the fair value. Notes about how the fair
+// value was made sit behind a flag's tooltip.
 function FvCell({ stock }) {
   const { cmp, safeBuyPrice: p1, p2, p3, fairValue } = stock;
-  if (!p1) return (
-    <div style={{ fontSize: 11, minWidth: 120, minHeight: 60 }}>
-      <span style={{ color: "var(--t3)" }}>—</span>
-      <RangeBar low={stock.low52w} high={stock.high52w} cmp={cmp} />
-    </div>
-  );
+  const notes = [
+    stock.valuationPeBasis === "current" && "Fewer than 3 usable years of P/E history, so this uses today's P/E — fair value then tracks the current price.",
+    stock.epsJump && `This year's EPS (Rs ${stock.epsJump.eps.toFixed(2)}) is more than 3× its usual Rs ${stock.epsJump.usualEps.toFixed(2)} and the share price hasn't followed — how a one-off gain looks. Buy prices use the usual EPS.`,
+  ].filter(Boolean);
+  const fvLabel = stock.fyEnd ? `FV${String(Number(stock.fyEnd.slice(0, 4)) + 2).slice(2)}` : "FV";
   return (
-    <div style={{ lineHeight: 1.6, fontSize: 11, minWidth: 120, minHeight: 60 }}>
-      {[["P1 30%", p1], ["P2 30%", p2], ["P3 40%", p3]].map(([label, price]) => {
-        const hit = cmp != null && price != null && cmp <= price;
-        return (
-          <div key={label} style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-            <span style={{ color: hit ? "var(--accent)" : "var(--t3)", fontWeight: hit ? 600 : 400 }}>{label}</span>
-            <span style={{ color: hit ? "var(--accent)" : "var(--t3)", fontWeight: hit ? 700 : 500, ...MONO }}>
-              {price ? price.toLocaleString("en-IN") : "—"}
-              {hit && <span style={{ marginLeft: 3, color: "var(--green)" }}>✓</span>}
-            </span>
-          </div>
-        );
-      })}
-      {fairValue && (
-        <div style={{ color: "var(--t3)", fontSize: 10, marginTop: 1, ...MONO }}>
-          {/* The projection, not the anchor: P1–P3 are a discount to today's fair value */}
-          {stock.fyEnd ? `FV${String(Number(stock.fyEnd.slice(0, 4)) + 2).slice(2)}` : "FV"} {fairValue.toLocaleString("en-IN")}
+    <div style={{ fontSize: 11, lineHeight: 1.5, minWidth: 190, ...MONO }}>
+      {p1 ? (
+        <div style={{ display: "flex", gap: 8, whiteSpace: "nowrap" }}>
+          {[["P1", p1], ["P2", p2], ["P3", p3]].map(([label, price]) => {
+            const hit = cmp != null && price != null && cmp <= price;
+            return (
+              <span key={label} style={{ color: hit ? "var(--accent)" : "var(--t3)", fontWeight: hit ? 700 : 500 }}>
+                <span style={{ fontWeight: 500, opacity: 0.8 }}>{label}</span> {price ? price.toLocaleString("en-IN") : "—"}{hit && <span style={{ color: "var(--green)" }}>✓</span>}
+              </span>
+            );
+          })}
         </div>
+      ) : (
+        <div style={{ color: "var(--t3)" }}>No buy prices</div>
       )}
-      {/* Under 3 years of P/E history the valuation falls back to today's P/E,
-          which makes fair value ≈ the current price by construction. */}
-      {stock.valuationPeBasis === "current" && (
-        <div title="Fewer than 3 usable years of P/E history, so this uses today's P/E — fair value then tracks the current price. Open the stock to set your own P/E." style={{ color: "var(--yellow)", fontSize: 9, marginTop: 2 }}>
-          at today's P/E
-        </div>
-      )}
-      {/* This year's EPS was a one-off jump, so P1–P3 use the usual EPS */}
-      {stock.epsJump && (
-        <div title={`This year's EPS (Rs ${stock.epsJump.eps.toFixed(2)}) is more than 3× its usual Rs ${stock.epsJump.usualEps.toFixed(2)}, and the share price hasn't followed — how a one-off gain looks. Buy prices use the usual EPS. Open the stock to change it.`} style={{ color: "var(--yellow)", fontSize: 9, marginTop: 2 }}>
-          at usual EPS
-        </div>
-      )}
-      <RangeBar low={stock.low52w} high={stock.high52w} cmp={cmp} />
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 3, color: "var(--t3)", fontSize: 10, whiteSpace: "nowrap" }}>
+        <MiniRange low={stock.low52w} high={stock.high52w} cmp={cmp} />
+        {fairValue ? <span>{fvLabel} {fairValue.toLocaleString("en-IN")}</span> : null}
+        {notes.length > 0 && (
+          <span title={`${notes.join(" ")} Open the stock to set your own figures.`} style={{ color: "var(--yellow)", cursor: "help" }}>⚑</span>
+        )}
+      </div>
     </div>
   );
 }
@@ -208,7 +187,7 @@ function StarButton({ symbol, price, watched, size = 30 }) {
   );
 }
 
-export default function ResultsTable({ matches, loading, onAnalyze, totalMatches, queryUsed, unsupported = [], notes = [], executionTime, snapshot, netNet = false, noun = "stocks", emptyTitle = "No stocks matched your criteria", emptyHint = "Try relaxing some filters" }) {
+export default function ResultsTable({ matches, loading, onAnalyze, totalMatches, queryUsed, unsupported = [], notes = [], executionTime, snapshot, netNet = false, noun = "stocks", emptyTitle = "No stocks matched your criteria", emptyHint = "Try relaxing some filters", columns = [], onEditColumns = null }) {
   const watchlist = useWatchlist();
   const [alertFor, setAlertFor] = useState(null);
   const bell = (stock, size = 30) => (
@@ -270,11 +249,14 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
     : (matches || []);
   const filtered = minScore > 0 ? textFiltered.filter(s => (score10(s) ?? 0) >= minScore) : textFiltered;
 
+  // A column's value: from the metrics the screen was asked for, else the
+  // row's own field (cmp and the table's fixed fields)
+  const colValue = (s, id) => s.values?.[id] ?? s[id] ?? null;
   const sortVal = s => {
     if (sortBy === "score") return score10(s);
     if (sortBy === "ncavPct") return s.ncavCr > 0 && s.marketCapCr != null ? s.marketCapCr / s.ncavCr : Infinity;
     if (sortBy === "name") return s.name?.toLowerCase();
-    return s[sortBy];
+    return colValue(s, sortBy);
   };
 
   const sorted = [...filtered].sort((a, b) => {
@@ -286,14 +268,20 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
 
   const visible = sorted.slice(0, visibleCount);
 
+  // Columns chosen or filtered on that the file doesn't already have
+  const CSV_FIXED = new Set(["pe", "roce", "roe", "opm", "promoterPct", "fiiPct", "diiPct", "marketCapCr", "divYield"]);
+  const extraColumns = columns.filter(def => !CSV_FIXED.has(def.id));
+
   const exportCsv = () => {
-    const cols = ["Rank", "Name", "Symbol", "Score", "CMP", "PE", "ROCE", "ROE", "OPM", "Promoter%", "FII%", "DII%", "MarketCap(Cr)", "DivYield", "P1", "P2", "P3", "FairValue2Y", "52WLow", "52WHigh"];
+    const quote = v => `"${String(v).replace(/"/g, '""')}"`;
+    const cols = ["Rank", "Name", "Symbol", "Sector", "Score", "CMP", "PE", "ROCE", "ROE", "OPM", "Promoter%", "FII%", "DII%", "MarketCap(Cr)", "DivYield", "P1", "P2", "P3", "FairValue2Y", "52WLow", "52WHigh", ...extraColumns.map(def => quote(def.label))];
     const r1 = v => (v == null ? "" : Math.round(v * 10) / 10);
     const rows = sorted.map((s, i) => [
-      i + 1, `"${String(s.name).replace(/"/g, '""')}"`, s.symbol, `${s.score.green}/${s.score.applicable}`,
+      i + 1, quote(s.name), s.symbol, s.sector ? quote(s.sector) : "", `${s.score.green}/${s.score.applicable}`,
       r1(s.cmp), r1(s.pe), r1(s.roce), r1(s.roe), r1(s.opm), r1(s.promoterPct), r1(s.fiiPct), r1(s.diiPct),
       r1(s.marketCapCr), r1(s.divYield), s.safeBuyPrice ?? "", s.p2 ?? "", s.p3 ?? "", s.fairValue ?? "",
       s.low52w ?? "", s.high52w ?? "",
+      ...extraColumns.map(def => { const v = colValue(s, def.id); return v == null ? "" : Math.round(v * 100) / 100; }),
     ]);
     const csv = [cols.join(","), ...rows.map(r => r.join(","))].join("\n");
     const a = document.createElement("a");
@@ -307,7 +295,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
     setExporting(true);
     setExportError(null);
     try {
-      await exportDiscoverExcel(sorted, { pricesDate: snapshot?.pricesDate });
+      await exportDiscoverExcel(sorted, { pricesDate: snapshot?.pricesDate, extraColumns });
     } catch {
       setExportError("Excel export failed — try again");
     } finally {
@@ -317,7 +305,6 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
 
   const noData = !loading && (!matches || matches.length === 0);
   const cell = { padding: "8px 10px", borderBottom: "1px solid var(--bdr)" };
-  const numCell = (val, threshold) => ({ color: val ? (Number(val) >= threshold ? "var(--green)" : "var(--t2)") : "var(--t3)" });
 
   return (
     <div style={{ animation: "fadeUp 280ms cubic-bezier(0,0,0.2,1) backwards" }}>
@@ -358,6 +345,11 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
             {selected.size > 0 && (
               <button onClick={() => setSelected(new Map())} className="btn-ghost" style={{ height: 32, fontSize: 12 }}>
                 Clear
+              </button>
+            )}
+            {onEditColumns && (
+              <button onClick={onEditColumns} className="btn-ghost" style={{ height: 32, fontSize: 12 }} title="Choose which columns the table shows">
+                ⊕ Columns
               </button>
             )}
             {!loading && (matches?.length ?? 0) > 0 && (
@@ -441,10 +433,10 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                 <ScoreBadge score={stock.score.green} max={stock.score.applicable} />
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 12 }}>
-                {[["CMP", stock.cmp ? `₹${fmt(stock.cmp)}` : "—"], ["P/E", stock.pe ? fmt(stock.pe, 1) : "—"], ["ROCE", stock.roce != null ? `${fmt(stock.roce)}%` : "—"], ["Mkt Cap", fmtCr(stock.marketCapCr)], ["ROE", stock.roe != null ? `${fmt(stock.roe)}%` : "—"], ["Promo", stock.promoterPct != null ? `${fmt(stock.promoterPct)}%` : "—"]].map(([label, val]) => (
-                  <div key={label} style={{ background: "var(--s1)", borderRadius: 8, padding: "8px 10px" }}>
-                    <div style={{ fontSize: 9, color: "var(--t3)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 3 }}>{label}</div>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: "var(--t1)", ...MONO }}>{val}</div>
+                {[["CMP", stock.cmp ? `₹${fmt(stock.cmp)}` : "—", "var(--t1)"], ...columns.slice(0, 5).map(def => { const v = colValue(stock, def.id); return [def.short, formatValue(def, v), v == null ? "var(--t3)" : def.signed ? valueColor(def, v) : "var(--t1)"]; })].map(([label, val, color]) => (
+                  <div key={label} style={{ background: "var(--s1)", borderRadius: 8, padding: "8px 10px", minWidth: 0 }}>
+                    <div style={{ fontSize: 9, color: "var(--t3)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color, ...MONO }}>{val}</div>
                   </div>
                 ))}
               </div>
@@ -463,7 +455,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
       {!isMobile && !noData && (
         <div style={{ borderRadius: 14, border: "1px solid var(--bdr2)", overflow: "hidden", boxShadow: "var(--sh-sm)" }}>
           <div style={{ overflowX: "auto", overflowY: "auto", maxHeight: "min(70vh, 780px)" }}>
-            <table className="data-table" style={{ minWidth: 860 }}>
+            <table className="data-table" style={{ minWidth: 560 + columns.length * 80 }}>
               <thead>
                 <tr>
                   <th title={`Tick up to ${MAX_COMPARE} to compare`} style={{ padding: "8px 8px", fontSize: 10, fontWeight: 600, color: "var(--t3)", textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: "1px solid var(--bdr2)", background: "var(--s1)", width: RANK_W, minWidth: RANK_W, boxSizing: "border-box", position: "sticky", left: 0, top: 0, zIndex: 4 }}>#</th>
@@ -472,12 +464,9 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                   </th>
                   <SortTh label="Score"   col="score"       sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
                   <SortTh label="CMP ₹"   col="cmp"         sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
-                  <SortTh label="P/E"     col="pe"          sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
-                  <SortTh label="ROCE %"  col="roce"        sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
-                  <SortTh label="ROE %"   col="roe"         sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
-                  <SortTh label="Promo %" col="promoterPct" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
-                  <SortTh label="Mkt Cap" col="marketCapCr" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
-                  <SortTh label="Div %"   col="divYield"    sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
+                  {columns.map(def => (
+                    <SortTh key={def.id} label={columnLabel(def)} title={def.label} col={def.id} sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
+                  ))}
                   <th style={{ padding: "8px 10px", fontSize: 10, fontWeight: 600, color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: "1px solid var(--bdr2)", background: "rgba(0,224,190,0.03)", whiteSpace: "nowrap", position: "sticky", top: 0, zIndex: 3 }}>
                     Buy Phases
                   </th>
@@ -487,9 +476,9 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
               <tbody>
                 {loading && Array.from({ length: 8 }).map((_, i) => (
                   <tr key={i}>
-                    {Array.from({ length: 12 }).map((_, j) => (
+                    {Array.from({ length: 6 + columns.length }).map((_, j) => (
                       <td key={j} style={cell}>
-                        <div className="skeleton-pulse" style={{ height: 13, borderRadius: 4, width: j === 1 ? 140 : j === 10 ? 100 : 55 }} />
+                        <div className="skeleton-pulse" style={{ height: 13, borderRadius: 4, width: j === 1 ? 140 : j === 4 + columns.length ? 100 : 55 }} />
                       </td>
                     ))}
                   </tr>
@@ -521,9 +510,10 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
 
                     <td style={{ ...cell, minWidth: 200, position: "sticky", left: RANK_W, background: rowBg, zIndex: 1, boxShadow: "2px 0 8px rgba(0,0,0,0.25)" }}>
                       <div title={stock.name} onClick={() => onAnalyze(stock.symbol)} style={{ fontWeight: 700, fontSize: 13, color: "var(--accent)", letterSpacing: "-0.01em", marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 240, cursor: "pointer", textDecoration: "underline", textDecorationColor: "rgba(0,224,190,0.35)", textUnderlineOffset: 3 }}>{stock.name}</div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
-                        <span style={{ fontSize: 10, background: "var(--s3)", color: "var(--t2)", padding: "1px 7px", borderRadius: 5, ...MONO }}>{stock.symbol}</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, maxWidth: 260, minWidth: 0 }}>
+                        <span style={{ fontSize: 10, background: "var(--s3)", color: "var(--t2)", padding: "1px 7px", borderRadius: 5, flexShrink: 0, ...MONO }}>{stock.symbol}</span>
                         <NcavBadge stock={stock} />
+                        {stock.sector && <span title={stock.sector} style={{ fontSize: 10.5, color: "var(--t3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{stock.sector}</span>}
                       </div>
                     </td>
 
@@ -533,23 +523,14 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                       {stock.cmp ? `₹${fmt(stock.cmp)}` : "—"}
                     </td>
 
-                    <td style={{ ...cell, color: "var(--t2)", ...MONO }}>{stock.pe ? fmt(stock.pe, 1) : "—"}</td>
-
-                    <td style={{ ...cell, ...MONO, ...numCell(stock.roce, 18) }}>{stock.roce != null ? `${fmt(stock.roce, 1)}%` : "—"}</td>
-
-                    <td style={{ ...cell, ...MONO, ...numCell(stock.roe, 15) }}>{stock.roe != null ? `${fmt(stock.roe, 1)}%` : "—"}</td>
-
-                    <td style={{ ...cell, ...MONO }}>
-                      {stock.promoterPct != null ? (
-                        <span style={{ color: stock.promoterPct >= 50 ? "var(--green)" : stock.promoterPct < 30 ? "var(--red)" : "var(--t2)" }}>
-                          {fmt(stock.promoterPct, 1)}%
-                        </span>
-                      ) : "—"}
-                    </td>
-
-                    <td style={{ ...cell, color: "var(--t2)", ...MONO }}>{fmtCr(stock.marketCapCr)}</td>
-
-                    <td style={{ ...cell, color: "var(--t2)", ...MONO }}>{stock.divYield ? `${fmt(stock.divYield, 1)}%` : "—"}</td>
+                    {columns.map(def => {
+                      const v = colValue(stock, def.id);
+                      return (
+                        <td key={def.id} style={{ ...cell, ...MONO, color: valueColor(def, v), whiteSpace: "nowrap" }}>
+                          {formatValue(def, v, { cell: true })}
+                        </td>
+                      );
+                    })}
 
                     <td style={{ ...cell, background: "rgba(0,224,190,0.02)" }}><FvCell stock={stock} /></td>
 

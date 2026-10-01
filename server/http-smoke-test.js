@@ -48,6 +48,12 @@ async function main() {
 
   const presets = await (await fetch(`${BASE}/api/presets`)).json();
   assert(Array.isArray(presets) && presets.length === 13 && presets.every(p => p.criteria), "GET /api/presets returns the 13 strategies with their criteria");
+  assert(presets.every(p => Array.isArray(p.filters) && p.filters.length > 0 && p.filters.every(f => f.id)), "each strategy also comes as the screener's filters");
+
+  const metrics = await (await fetch(`${BASE}/api/metrics`)).json();
+  assert(metrics.metrics.length >= 40 && metrics.metrics.every(x => x.id && x.label && x.category), "GET /api/metrics lists 40+ metrics with labels and categories");
+  const roceDef = metrics.metrics.find(x => x.id === "roce");
+  assert(roceDef.range?.q?.length === 101 && roceDef.range.q[0] <= roceDef.range.q[100], "each metric comes with its spread across the market, percentile by percentile");
 
   const screenNoCookie = await fetch(`${BASE}/api/screen`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
   assert(screenNoCookie.status === 401, "POST /api/screen with no cookie is rejected");
@@ -135,7 +141,22 @@ async function main() {
   const found = await (await fetch(`${BASE}/api/search?q=tcs`, { headers: { Cookie: aliceCookie } })).json();
   assert(found[0]?.ticker === "TCS", "searching 'tcs' puts TCS first");
   const stats = await (await fetch(`${BASE}/api/stats`, { headers: { Cookie: aliceCookie } })).json();
-  assert(stats.strategies === 13 && stats.companies > 0, "the header's counts come back");
+  assert(stats.strategies === 13 && stats.companies > 0 && stats.filters >= 40, "the header's counts come back");
+
+  // The screener: filters on any metric, the columns asked for, and the strategies' criteria still working
+  const screenRes = await json("POST", "/api/screen", aliceCookie, { filters: [{ id: "roce", min: 25, max: null }, { id: "capSize", values: ["Large cap"] }], columns: ["roce", "ret1m"] });
+  const screened = await screenRes.json();
+  assert(screenRes.status === 200 && screened.matched > 0 && screened.results.every(r => r.values.roce >= 25 && r.capSize === "Large cap"), "a screen keeps only companies inside every filter");
+  assert(screened.results.every(r => "ret1m" in r.values), "a screen returns the columns asked for");
+  assert(/ROCE.*≥ 25%/.test(screened.queryUsed), "a screen describes its filters in words");
+  const junk = await (await json("POST", "/api/screen", aliceCookie, { filters: [{ id: "nope", min: 1 }, { id: "roce" }], columns: ["../x"] })).json();
+  assert(junk.filters.length === 0 && junk.matched === junk.total, "unknown metrics and empty filters are ignored, not errors");
+  const hqc = presets.find(p => p.id === "high_quality_compounders");
+  const byCriteria = await (await json("POST", "/api/screen", aliceCookie, hqc.criteria)).json();
+  const byFilters = await (await json("POST", "/api/screen", aliceCookie, { filters: hqc.filters })).json();
+  assert(byCriteria.matched === byFilters.matched, "a strategy gives the same companies by its criteria or by its filters");
+  const zipped = await fetch(`${BASE}/api/metrics`, { headers: { "Accept-Encoding": "gzip" } });
+  assert(zipped.headers.get("content-encoding") === "gzip", "big answers are sent compressed when the browser accepts it");
   const perf = await fetch(`${BASE}/api/performance`, { headers: { Cookie: aliceCookie } });
   assert(perf.status === 200 && Array.isArray((await perf.json()).presets), "the Performance tab's data comes back");
 

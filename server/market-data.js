@@ -147,6 +147,37 @@ async function yearRanges(toIso, splits) {
   return { from: fromIso, tradingDays: seen.size, ranges };
 }
 
+// Price change over the screener's return periods, on today's share basis
+// like the 52-week range: a close from before a split or bonus is divided by
+// the ratios since. 1D is against the previous trading day; the others
+// against the last close on or before the same date a week, a month, six
+// months and a year back (calendar months — Tickertape doesn't say which
+// base it uses; theirs differ from these by under a point). All the days
+// come from cached bhavcopies.
+const RETURN_PERIODS = [["d1", { days: 1 }], ["w1", { days: 7 }], ["m1", { months: 1 }], ["m6", { months: 6 }], ["y1", { months: 12 }]];
+
+async function periodReturns(latest, splits) {
+  const factorBetween = (sym, fromIso) => (splits[sym] ?? [])
+    .filter(s => s.exDate > fromIso && s.exDate <= latest.date)
+    .reduce((f, s) => f * s.ratio, 1);
+  const out = {};
+  for (const [key, { days = 0, months = 0 }] of RETURN_PERIODS) {
+    const base = new Date(`${latest.date}T00:00:00Z`);
+    base.setUTCDate(base.getUTCDate() - days);
+    const dayOfMonth = base.getUTCDate();
+    base.setUTCMonth(base.getUTCMonth() - months);
+    if (base.getUTCDate() !== dayOfMonth) base.setUTCDate(0); // 31 Mar − 1 month = 28/29 Feb, not 3 Mar
+    const past = await pricesOnOrBefore(base).catch(() => null);
+    if (!past || past.date >= latest.date) continue;
+    for (const [sym, close] of Object.entries(latest.prices)) {
+      const then = past.prices[sym];
+      if (!(then > 0)) continue;
+      (out[sym] ||= {})[key] = Math.round((close / (then / factorBetween(sym, past.date)) - 1) * 10000) / 100;
+    }
+  }
+  return out;
+}
+
 async function sectorsBySymbol() {
   const out = {};
   for (const list of SECTOR_LISTS) {
@@ -225,6 +256,7 @@ export async function buildMarketSnapshot(fyEndDates, { yearsOfActions = 6 } = {
     range52w: year.ranges,
     range52wFrom: year.from,
     range52wTradingDays: year.tradingDays,
+    returns: await periodReturns(latest, splits),
   };
   writeFileSync(SNAPSHOT_PATH, JSON.stringify(snapshot));
   return snapshot;

@@ -21,6 +21,7 @@ export const api = {
   logout: () => request("/api/auth/logout", { method: "POST" }),
   deleteAccount: (password) => request("/api/auth/delete-account", { method: "POST", body: JSON.stringify({ password }) }),
   presets: () => request("/api/presets"),
+  metrics: () => request("/api/metrics"),
   stats: () => request("/api/stats"),
   screen: (criteria) => request("/api/screen", { method: "POST", body: JSON.stringify(criteria) }),
   stock: (symbol) => request(`/api/stock/${encodeURIComponent(symbol)}`),

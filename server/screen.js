@@ -4,9 +4,13 @@
 // files change.
 import { readdirSync, readFileSync, existsSync, writeFileSync, mkdirSync, statSync, renameSync } from "node:fs";
 import { join } from "node:path";
-import { computeMetrics, matchesCriteria, unsupportedCriteria, describeCriteria } from "./metrics.js";
+import { computeMetrics } from "./metrics.js";
 import { loadMarketSnapshot } from "./market-data.js";
 import { MARKET_DIR } from "./paths.js";
+import {
+  CATEGORIES, METRICS, CATEGORY_METRICS, metricById, valueOf, capSizes, metricRanges,
+  criteriaToFilters, cleanFilters, matchesFilters, describeFilters, coverageNotes,
+} from "./metric-catalog.js";
 const STALE_AFTER_DAYS = 550; // ~18 months — a healthy company files annually
 
 // NSE symbols are letters, digits, "&" and "-" (M&M, BAJAJ-AUTO). Anything
@@ -62,13 +66,39 @@ export function allMetrics() {
   }
   const newest = Math.max(...rows.map(r => new Date(r.fyEnd).getTime()));
   const fresh = rows.filter(r => newest - new Date(r.fyEnd).getTime() <= STALE_AFTER_DAYS * 86400000);
-  cache = { version, rows: fresh, fetched: countFetched(), snapshot: snap ? { pricesDate: snap.pricesDate, builtAt: snap.builtAt } : null };
+  cache = {
+    version, rows: fresh, fetched: countFetched(),
+    snapshot: snap ? { pricesDate: snap.pricesDate, builtAt: snap.builtAt } : null,
+    sizes: capSizes(fresh),
+    ranges: metricRanges(fresh),
+  };
   return cache;
 }
 
-// The table only needs these; the stock page gets the full metrics.
-function tableRow(m) {
+// What the screener's filter picker and column picker offer, with each
+// metric's spread across the market for its slider
+export function screenerMeta() {
+  const { rows, ranges } = allMetrics();
+  const sectors = [...new Set(rows.map(m => m.sector).filter(Boolean))].sort();
   return {
+    categories: CATEGORIES,
+    metrics: METRICS.map(({ get, ...x }) => ({ ...x, range: ranges[x.id] ?? null })),
+    categoryMetrics: CATEGORY_METRICS.map(x => ({
+      ...x,
+      options: x.id === "sector" ? sectors : x.options,
+      known: x.id === "sector" ? rows.filter(m => m.sector).length : rows.length,
+    })),
+    companies: rows.length,
+  };
+}
+
+// The table only needs these; the stock page gets the full metrics.
+// The table's fixed fields, plus `values` for the metric columns the screener
+// asked for (its filters and whatever columns the user added)
+function tableRow(m, columns = [], sizes = null) {
+  return {
+    ...(columns.length && { values: Object.fromEntries(columns.map(id => [id, valueOf(metricById(id), m)])) }),
+    capSize: sizes?.get(m.symbol) ?? null,
     symbol: m.symbol, name: m.name, sector: m.sector, lender: m.lender, fyEnd: m.fyEnd,
     cmp: m.cmp, eps: m.eps, pe: m.pe, roce: m.roce, roe: m.roe, roeAvg: m.roeAvg, roeAvgYears: m.roeAvgYears,
     opm: m.opm, promoterPct: m.promoterPct, fiiPct: m.fiiPct, diiPct: m.diiPct, pledgedPct: m.pledgedPct,
@@ -86,38 +116,23 @@ function tableRow(m) {
 // including ones the screen leaves out for stale filings. A symbol with no
 // usable filings at all still gets a row, so it can be removed.
 export function rowsFor(symbols) {
-  const { rows } = allMetrics();
+  const { rows, sizes } = allMetrics();
   const bySymbol = new Map(rows.map(m => [m.symbol, m]));
   return symbols.map(s => {
     const m = bySymbol.get(s) ?? computeMetrics(getStock(s), loadMarketSnapshot());
-    return m ? tableRow(m) : { symbol: s, name: s, missing: true };
+    return m ? tableRow(m, [], sizes) : { symbol: s, name: s, missing: true };
   });
 }
 
-// Filters on data that only some companies have: say how many, since the rest
-// are left out rather than guessed.
-const PARTIAL = [
-  ["piotroski_min", "piotroski", "Piotroski score"],
-  ["fcf_positive", "fcfCr", "Free cash flow"],
-  ["fii_holding_min", "fiiPct", "FII holding"],
-  ["dii_holding_min", "diiPct", "DII holding"],
-  ["near_52w_low_pct", "low52w", "52-week range"],
-  ["pct_below_52w_high_min", "high52w", "52-week range"],
-];
-
-function coverageNotes(rows, criteria) {
-  const notes = new Set();
-  for (const [key, field, label] of PARTIAL) {
-    if (!criteria[key]) continue;
-    const known = rows.filter(m => m[field] != null).length;
-    if (known < rows.length) notes.add(`${label} is known for ${known.toLocaleString("en-IN")} of ${rows.length.toLocaleString("en-IN")} companies — the rest are left out.`);
-  }
-  return [...notes];
-}
-
-export function screen(criteria) {
-  const { rows, fetched, snapshot } = allMetrics();
-  const matches = rows.filter(m => matchesCriteria(m, criteria));
+// A screen: { filters: [{ id, min, max } | { id, values }], columns: [ids] }.
+// The strategies and older callers send the original's criteria instead,
+// which become the same filters.
+export function screen(request = {}) {
+  const { rows, fetched, snapshot, sizes } = allMetrics();
+  const filters = Array.isArray(request.filters) ? cleanFilters(request.filters) : criteriaToFilters(request);
+  const columns = (Array.isArray(request.columns) ? request.columns : [])
+    .filter(id => metricById(id) && !metricById(id).options && id !== "sector").slice(0, 40);
+  const matches = rows.filter(m => matchesFilters(m, filters, sizes));
   // Green-flag count first, then ROCE — the original's default ranking. By
   // count, not fraction, as the original does: a fraction would lift banks
   // (scored out of 8) above equally strong companies scored out of 10.
@@ -126,10 +141,11 @@ export function screen(criteria) {
     total: rows.length,
     fetched,
     matched: matches.length,
-    queryUsed: describeCriteria(criteria),
-    unsupported: unsupportedCriteria(criteria),
-    notes: coverageNotes(rows, criteria),
+    filters,
+    queryUsed: describeFilters(filters),
+    unsupported: [],
+    notes: coverageNotes(rows, filters),
     snapshot,
-    results: matches.map(tableRow),
+    results: matches.map(m => tableRow(m, columns, sizes)),
   };
 }

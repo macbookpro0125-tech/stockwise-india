@@ -297,6 +297,22 @@ export function computeMetrics(stock, snap, overrides = {}) {
     fairValue: levels?.fv27 ?? null,
     safeBuyPrice: levels?.p1 ?? null,
   };
+
+  // For the screener's filters and columns (metric-catalog.js). Returns are
+  // from the snapshot's last close, so they stay consistent with each other
+  // even when the stock page passes a live price.
+  const ret = snap?.returns?.[sym] ?? {};
+  const pct = (a, b) => (a != null && b > 0 ? (a / b - 1) * 100 : null);
+  Object.assign(m, {
+    ret1d: ret.d1 ?? null, ret1w: ret.w1 ?? null, ret1m: ret.m1 ?? null, ret6m: ret.m6 ?? null, ret1y: ret.y1 ?? null,
+    upFrom52wLow: pct(cmp, m.low52w),
+    downFrom52wHigh: cmp != null && m.high52w > 0 ? (1 - cmp / m.high52w) * 100 : null,
+    netMargin: latest.profit != null && latest.revenue > 0 ? (latest.profit / latest.revenue) * 100 : null,
+    currentRatio: !lender && latest.currentAssets != null && latest.currentLiabilities > 0 ? latest.currentAssets / latest.currentLiabilities : null,
+    mcapToNcav: ncavCr > 0 && marketCapCr != null ? marketCapCr / ncavCr : null,
+    vsFairValue: pct(cmp, m.fairValue),
+    vsPhase1: pct(cmp, m.safeBuyPrice),
+  });
   const { pros, cons } = prosAndCons(m, latest);
   m.pros = pros;
   m.cons = cons;
@@ -366,73 +382,4 @@ function prosAndCons(m, latest) {
   if (!m.lender && lt(m.ocfPat3yPct, 60)) cons.push(`Weak cash conversion: operating cash flow is only ${pct(m.ocfPat3yPct)} of profit over 3 years.`);
   if (lt(latest.profit, 0)) cons.push("Company made a loss in the latest year.");
   return { pros, cons };
-}
-
-// ---- Screening --------------------------------------------------------------
-
-// Criteria keys and meanings are the original's (server/discovery.js buildQuery):
-// revenue growth = 3-year sales CAGR, ROE = multi-year average, strict > / <,
-// D/E only applied below 3x and P/E only below 100x, 0/empty = off. A company
-// missing a value fails that filter, as a Screener query would drop it.
-const UNSUPPORTED = {};
-
-export function unsupportedCriteria(c) {
-  return Object.entries(UNSUPPORTED).filter(([k]) => c[k]).map(([, label]) => label);
-}
-
-// The applied filters in words, for the line above the results — the
-// original showed the Screener query it ran; this is the same list.
-export function describeCriteria(c) {
-  const cr = v => `₹${Number(v).toLocaleString("en-IN")} Cr`;
-  const parts = [];
-  if (c.revenue_growth_min) parts.push(`Sales growth (3Y) > ${c.revenue_growth_min}%`);
-  if (c.roe_min) parts.push(`ROE (5Y avg) > ${c.roe_min}%`);
-  if (c.opm_min) parts.push(`OPM > ${c.opm_min}%`);
-  if (c.roce_min) parts.push(`ROCE > ${c.roce_min}%`);
-  if (c.debt_to_equity_max != null && c.debt_to_equity_max < 3) parts.push(`Debt/equity < ${c.debt_to_equity_max}`);
-  if (c.promoter_holding_min) parts.push(`Promoter holding > ${c.promoter_holding_min}%`);
-  if (c.fii_holding_min) parts.push(`FII holding > ${c.fii_holding_min}%`);
-  if (c.dii_holding_min) parts.push(`DII holding > ${c.dii_holding_min}%`);
-  if (c.exclude_pledged) parts.push("Pledged < 5% of promoter shares");
-  if (c.market_cap_min) parts.push(`Market cap > ${cr(c.market_cap_min)}`);
-  if (c.market_cap_max) parts.push(`Market cap < ${cr(c.market_cap_max)}`);
-  if (c.pe_max && c.pe_max < 100) parts.push(`P/E < ${c.pe_max}`);
-  if (c.dividend_yield_min) parts.push(`Dividend yield > ${c.dividend_yield_min}%`);
-  if (c.price_to_book_max) parts.push(`Price/book < ${c.price_to_book_max}`);
-  if (c.profit_growth_5y_min) parts.push(`Profit growth (5Y) > ${c.profit_growth_5y_min}%`);
-  if (c.piotroski_min > 0) parts.push(`Piotroski score ≥ ${c.piotroski_min}`);
-  if (c.fcf_positive) parts.push("Free cash flow last year > 0");
-  if (c.near_52w_low_pct > 0) parts.push(`Up from 52-week low < ${c.near_52w_low_pct}%`);
-  if (c.pct_below_52w_high_min > 0) parts.push(`Down from 52-week high > ${c.pct_below_52w_high_min}%`);
-  if (c.net_net_graham) parts.push("Market cap < ⅔ of net current assets");
-  else if (c.net_net) parts.push("Market cap < net current assets");
-  if (Array.isArray(c.sectors) && c.sectors.length) parts.push(`Sector: ${c.sectors.join(", ")}`);
-  return parts.join(" · ");
-}
-
-export function matchesCriteria(m, c) {
-  if (c.revenue_growth_min && !gt(m.salesGrowth3y, c.revenue_growth_min)) return false;
-  if (c.roe_min && !gt(m.roeAvg, c.roe_min)) return false;
-  if (c.opm_min && !gt(m.opm, c.opm_min)) return false;
-  if (c.roce_min && !gt(m.roce, c.roce_min)) return false;
-  if (c.debt_to_equity_max != null && c.debt_to_equity_max < 3 && !lt(m.debtToEquity, c.debt_to_equity_max)) return false;
-  if (c.promoter_holding_min && !gt(m.promoterPct, c.promoter_holding_min)) return false;
-  if (c.fii_holding_min && !gt(m.fiiPct, c.fii_holding_min)) return false;
-  if (c.dii_holding_min && !gt(m.diiPct, c.dii_holding_min)) return false;
-  if (c.exclude_pledged && !lt(m.pledgedPct, 5)) return false;
-  if (c.market_cap_min && !gt(m.marketCapCr, c.market_cap_min)) return false;
-  if (c.market_cap_max && !lt(m.marketCapCr, c.market_cap_max)) return false;
-  if (c.pe_max && c.pe_max < 100 && !lt(m.pe, c.pe_max)) return false;
-  if (c.dividend_yield_min && !gt(m.divYield, c.dividend_yield_min)) return false;
-  if (c.price_to_book_max && !lt(m.priceToBook, c.price_to_book_max)) return false;
-  if (c.profit_growth_5y_min && !gt(m.profitGrowth5y, c.profit_growth_5y_min)) return false;
-  if (c.piotroski_min > 0 && !(m.piotroski != null && m.piotroski >= c.piotroski_min)) return false;
-  if (c.fcf_positive && !gt(m.fcfCr, 0)) return false;
-  // The original's Screener clauses: "Up from 52w low < X", "Down from 52w high > X"
-  if (c.near_52w_low_pct > 0 && !(m.cmp != null && m.low52w > 0 && lt((m.cmp / m.low52w - 1) * 100, c.near_52w_low_pct))) return false;
-  if (c.pct_below_52w_high_min > 0 && !(m.cmp != null && m.high52w > 0 && gt((1 - m.cmp / m.high52w) * 100, c.pct_below_52w_high_min))) return false;
-  if (c.net_net_graham && !(gt(m.ncavCr, 0) && m.marketCapCr != null && m.ncavCr > 1.5 * m.marketCapCr)) return false;
-  if (c.net_net && !(gt(m.ncavCr, 0) && m.marketCapCr != null && m.ncavCr > m.marketCapCr)) return false;
-  if (Array.isArray(c.sectors) && c.sectors.length && !c.sectors.includes(m.sector)) return false;
-  return true;
 }
