@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { Star, X, NotebookPen } from "lucide-react";
+import { BellIcon } from "./icons.jsx";
 import { api } from "./api.js";
 import { useWatchlist, toggleWatch } from "./watchlist.js";
 import CreateAlertModal from "./CreateAlertModal.jsx";
@@ -8,7 +10,7 @@ import CreateAlertModal from "./CreateAlertModal.jsx";
 // price sits against Phase 1, fair value, a note, and alert / analyze /
 // remove. Saved to the account instead of the browser.
 
-const MONO = { fontFamily: '"SF Mono","SFMono-Regular",Menlo,monospace', fontVariantNumeric: "tabular-nums" };
+const MONO = { fontVariantNumeric: "tabular-nums" };
 
 function fmtRs(n) {
   if (n == null || isNaN(n)) return "—";
@@ -38,7 +40,7 @@ function buyStatus(cmp, safeBuyPrice, stopLoss) {
   return { label: `${prem.toFixed(0)}% above P1`, color: prem <= 10 ? "var(--yellow)" : "var(--t3)" };
 }
 
-const label = { fontSize: 10, color: "var(--t3)", textTransform: "uppercase", fontWeight: 600, letterSpacing: "0.06em" };
+const label = { fontSize: 11.5, color: "var(--t3)", fontWeight: 600 };
 const iconBtn = { width: 30, height: 30, borderRadius: 8, border: "1px solid var(--bdr2)", background: "transparent", color: "var(--t3)", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 120ms" };
 
 export default function WatchlistView({ onOpenStock }) {
@@ -81,7 +83,7 @@ export default function WatchlistView({ onOpenStock }) {
     const active = sortBy === id;
     return (
       <button onClick={() => { if (active) setSortDir(d => (d === "desc" ? "asc" : "desc")); else { setSortBy(id); setSortDir("desc"); } }}
-        style={{ padding: "4px 12px", borderRadius: 20, fontSize: 11, fontWeight: 600, cursor: "pointer", border: `1px solid ${active ? "var(--accent)" : "var(--bdr2)"}`, background: active ? "rgba(0,224,190,0.08)" : "transparent", color: active ? "var(--accent)" : "var(--t3)", transition: "all 120ms" }}>
+        style={{ padding: "4px 12px", borderRadius: 20, fontSize: 11, fontWeight: 600, cursor: "pointer", border: `1px solid ${active ? "var(--accent)" : "var(--bdr2)"}`, background: active ? "color-mix(in srgb, var(--accent) 8%, transparent)" : "transparent", color: active ? "var(--accent)" : "var(--t3)", transition: "all 120ms" }}>
         {text} {active && (sortDir === "desc" ? "↓" : "↑")}
       </button>
     );
@@ -94,7 +96,7 @@ export default function WatchlistView({ onOpenStock }) {
   if (items.length === 0) {
     return wrap(
       <div style={{ textAlign: "center", padding: "56px 0", color: "var(--t3)", border: "1px dashed var(--bdr2)", borderRadius: 14, background: "var(--s1)" }}>
-        <div style={{ fontSize: 36, marginBottom: 12, opacity: 0.2 }}>☆</div>
+        <Star size={36} strokeWidth={1.5} style={{ marginBottom: 12, opacity: 0.3 }} />
         <p style={{ fontSize: 14, color: "var(--t2)", fontWeight: 500, marginBottom: 4 }}>Watchlist is empty</p>
         <p style={{ fontSize: 12 }}>Star any stock in results or on its page to save it here</p>
       </div>
@@ -104,7 +106,7 @@ export default function WatchlistView({ onOpenStock }) {
   return wrap(
     <>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
-        <div style={{ fontSize: 12, color: "var(--t3)", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600 }}>{items.length} saved</div>
+        <div style={{ fontSize: 12, color: "var(--t3)", fontWeight: 600 }}>{items.length} saved</div>
         <div style={{ display: "flex", gap: 6 }}>
           <SortPill id="addedAt" label="Date" />
           <SortPill id="name" label="Name" />
@@ -138,13 +140,13 @@ export default function WatchlistView({ onOpenStock }) {
                     <input autoFocus value={noteText} onChange={e => setNoteText(e.target.value)}
                       onKeyDown={e => { if (e.key === "Enter") saveNote(item.ticker); if (e.key === "Escape") setEditingNote(null); }}
                       placeholder="e.g. Wait for Q3 results…" className="input-base" style={{ flex: 1, height: 32, fontSize: 12, borderRadius: 8 }} />
-                    <button onClick={() => saveNote(item.ticker)} style={{ height: 32, padding: "0 12px", borderRadius: 8, border: "none", background: "var(--accent)", color: "#07070E", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Save</button>
-                    <button onClick={() => setEditingNote(null)} style={{ height: 32, padding: "0 10px", borderRadius: 8, border: "1px solid var(--bdr2)", background: "transparent", color: "var(--t3)", fontSize: 11, cursor: "pointer" }}>✕</button>
+                    <button onClick={() => saveNote(item.ticker)} style={{ height: 32, padding: "0 12px", borderRadius: 8, border: "none", background: "var(--accent)", color: "var(--on-accent)", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Save</button>
+                    <button onClick={() => setEditingNote(null)} style={{ height: 32, padding: "0 10px", borderRadius: 8, border: "1px solid var(--bdr2)", background: "transparent", color: "var(--t3)", fontSize: 11, cursor: "pointer", display: "flex", alignItems: "center" }} aria-label="Cancel"><X size={14} /></button>
                   </div>
                 ) : item.note ? (
                   <div onClick={() => { setEditingNote(item.ticker); setNoteText(item.note); }}
                     style={{ marginTop: 8, padding: "6px 10px", borderRadius: 8, background: "var(--s1)", border: "1px solid var(--bdr)", fontSize: 12, color: "var(--t2)", cursor: "pointer", lineHeight: 1.5 }}>
-                    <span style={{ fontSize: 10, marginRight: 4 }}>📝</span> {item.note}
+                    <NotebookPen size={12} style={{ marginRight: 5, verticalAlign: "-1px", color: "var(--t3)" }} />{item.note}
                   </div>
                 ) : (
                   <button onClick={() => { setEditingNote(item.ticker); setNoteText(""); }} style={{ marginTop: 6, background: "none", border: "none", color: "var(--t3)", fontSize: 11, cursor: "pointer", padding: 0, opacity: 0.7 }}>
@@ -180,9 +182,9 @@ export default function WatchlistView({ onOpenStock }) {
               </div>
 
               <div style={{ display: "flex", gap: 8, marginLeft: "auto" }}>
-                <button onClick={() => setAlertTarget({ symbol: item.ticker, name, cmp, p1: r?.safeBuyPrice, p2: r?.p2, p3: r?.p3 })} title="Set alert" style={{ ...iconBtn, fontSize: 14 }}>🔔</button>
+                <button onClick={() => setAlertTarget({ symbol: item.ticker, name, cmp, p1: r?.safeBuyPrice, p2: r?.p2, p3: r?.p3 })} title="Set alert" aria-label="Set alert" style={iconBtn}><BellIcon /></button>
                 <button onClick={() => onOpenStock(item.ticker)} className="btn-primary" style={{ height: 30, padding: "0 14px", fontSize: 11, borderRadius: 8, boxShadow: "none" }}>Analyze →</button>
-                <button onClick={() => toggleWatch(item.ticker)} title="Remove from watchlist" style={iconBtn}>✕</button>
+                <button onClick={() => toggleWatch(item.ticker)} title="Remove from watchlist" aria-label="Remove from watchlist" style={iconBtn}><X size={15} /></button>
               </div>
             </div>
           );

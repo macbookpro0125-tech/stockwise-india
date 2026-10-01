@@ -37,7 +37,7 @@ export function fmtRs(n) {
   if (n == null || n === "" || isNaN(Number(n))) return "—";
   const num = Number(n);
   if (num === 0) return "—";
-  return "Rs " + Math.round(num).toLocaleString("en-IN");
+  return "₹" + Math.round(num).toLocaleString("en-IN");
 }
 
 export function getAction(actionPrice, levels, priceLabel = "Price") {

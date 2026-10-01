@@ -3,7 +3,7 @@ import { useState } from "react";
 // Ported from stock-screener's src/components/AddHoldingModal.jsx. The
 // company name can be left blank — the server fills it from NSE's list.
 
-const MONO = { fontFamily: '"SF Mono","SFMono-Regular",Menlo,monospace' };
+const MONO = { fontVariantNumeric: "tabular-nums" };
 
 export default function AddHoldingModal({ onSave, onClose, initial = null }) {
   const [ticker, setTicker] = useState(initial?.ticker || "");
@@ -42,7 +42,7 @@ export default function AddHoldingModal({ onSave, onClose, initial = null }) {
     border: "1px solid var(--bdr2)", background: "var(--s3)",
     color: "var(--t1)", fontSize: 14, outline: "none", boxSizing: "border-box",
   };
-  const labelStyle = { fontSize: 10, color: "var(--t3)", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600, marginBottom: 6, display: "block" };
+  const labelStyle = { fontSize: 11.5, color: "var(--t3)", fontWeight: 600, marginBottom: 6, display: "block" };
 
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", animation: "fadeUp 180ms ease backwards" }}>

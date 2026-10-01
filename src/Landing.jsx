@@ -83,7 +83,7 @@ export default function Landing({ onAuthed, notice }) {
       <header style={{ maxWidth: 1240, margin: "0 auto", padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
         <Logo />
         <nav style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span className="landing-nav-extra"><HowItWorks label="▶ How it works" style={{ height: 34 }} /></span>
+          <span className="landing-nav-extra"><HowItWorks label="How it works" style={{ height: 34 }} /></span>
           <button className="btn-ghost" onClick={() => goAuth("login")} style={{ height: 34, fontSize: 12 }}>Sign in</button>
           <button className="btn-primary landing-nav-extra" onClick={() => goAuth("signup")} style={{ height: 34, fontSize: 12, padding: "0 14px", boxShadow: "none" }}>Get started free</button>
         </nav>
@@ -91,7 +91,7 @@ export default function Landing({ onAuthed, notice }) {
 
       <main style={{ maxWidth: 1240, margin: "0 auto", padding: "0 20px" }}>
         {new URLSearchParams(window.location.search).has("screen") && (
-          <div role="status" style={{ margin: "8px 0 0", padding: "10px 14px", borderRadius: 10, background: "rgba(0,224,190,0.08)", border: "1px solid rgba(0,224,190,0.3)", color: "var(--t1)", fontSize: 13 }}>
+          <div role="status" style={{ margin: "8px 0 0", padding: "10px 14px", borderRadius: 10, background: "color-mix(in srgb, var(--accent) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 30%, transparent)", color: "var(--t1)", fontSize: 13 }}>
             Someone shared a screen with you. Sign in or create a free account and it opens straight away.
           </div>
         )}
@@ -104,7 +104,7 @@ export default function Landing({ onAuthed, notice }) {
         {/* ── Hero ── */}
         <section className="landing-hero" style={{ padding: "48px 0 40px" }}>
           <div>
-            <span style={{ display: "inline-block", fontSize: 12, fontWeight: 600, color: "var(--accent)", background: "rgba(0,224,190,0.08)", border: "1px solid rgba(0,224,190,0.25)", borderRadius: 999, padding: "4px 12px", marginBottom: 18 }}>
+            <span style={{ display: "inline-block", fontSize: 12, fontWeight: 600, color: "var(--accent)", background: "color-mix(in srgb, var(--accent) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 25%, transparent)", borderRadius: 999, padding: "4px 12px", marginBottom: 18 }}>
               For investors in NSE-listed companies
             </span>
             <h1 className="landing-h1" style={{ fontSize: 46, lineHeight: 1.08, fontWeight: 800, letterSpacing: "-0.04em", color: "var(--t1)", margin: "0 0 18px" }}>
@@ -116,7 +116,7 @@ export default function Landing({ onAuthed, notice }) {
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
               <button className="btn-primary" onClick={() => goAuth("signup")} style={{ height: 46 }}>Create free account</button>
-              <HowItWorks label="▶ Watch how it works · 2 min" style={{ height: 46, fontSize: 14, padding: "0 18px" }} />
+              <HowItWorks label="Watch how it works · 2 min" style={{ height: 46, fontSize: 14, padding: "0 18px" }} />
             </div>
             <p style={{ fontSize: 12.5, color: "var(--t3)", margin: "14px 0 0" }}>Free during early access · No card needed</p>
           </div>
@@ -162,7 +162,7 @@ export default function Landing({ onAuthed, notice }) {
           <div className="landing-features">
             {FEATURES.map(f => (
               <div key={f.title} style={{ ...card, padding: 22 }}>
-                <div style={{ width: 40, height: 40, borderRadius: 11, background: "rgba(0,224,190,0.08)", border: "1px solid rgba(0,224,190,0.2)", color: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 14 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 11, background: "color-mix(in srgb, var(--accent) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 20%, transparent)", color: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 14 }}>
                   {f.icon}
                 </div>
                 <h3 style={{ fontSize: 15.5, fontWeight: 650, color: "var(--t1)", margin: "0 0 6px", letterSpacing: "-0.01em" }}>{f.title}</h3>
@@ -180,14 +180,14 @@ export default function Landing({ onAuthed, notice }) {
           <div className="landing-steps">
             {STEPS.map(([title, text], i) => (
               <div key={title} style={{ ...card, padding: 22 }}>
-                <div style={{ width: 30, height: 30, borderRadius: 15, background: "var(--accent)", color: "#07070E", fontWeight: 800, fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>{i + 1}</div>
+                <div style={{ width: 30, height: 30, borderRadius: 15, background: "var(--accent)", color: "var(--on-accent)", fontWeight: 800, fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>{i + 1}</div>
                 <h3 style={{ fontSize: 15.5, fontWeight: 650, color: "var(--t1)", margin: "0 0 6px" }}>{title}</h3>
                 <p style={{ fontSize: 13.5, lineHeight: 1.6, color: "var(--t2)", margin: 0 }}>{text}</p>
               </div>
             ))}
           </div>
           <div style={{ marginTop: 16 }}>
-            <HowItWorks label="▶ Watch the walkthrough · 2 min" style={{ height: 40, fontSize: 13 }} />
+            <HowItWorks label="Watch the walkthrough · 2 min" style={{ height: 40, fontSize: 13 }} />
           </div>
         </section>
 

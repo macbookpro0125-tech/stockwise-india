@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { ArrowDown, ArrowUp, Check, Info, Columns3, Search, ArrowUpRight, SearchX } from "lucide-react";
 import { StarIcon, BellIcon, actionButtonStyle } from "./icons.jsx";
 import { useWatchlist, toggleWatch } from "./watchlist.js";
 import CreateAlertModal from "./CreateAlertModal.jsx";
@@ -23,10 +24,22 @@ const RANK_W = 60;
 
 function scoreStyle(score, max) {
   const pct = max > 0 ? score / max : 0;
-  if (pct >= 0.7) return { border: "var(--green-bdr)", bg: "var(--green-dim)", color: "var(--green)", dot: "#30D158" };
-  if (pct >= 0.4) return { border: "var(--yellow-bdr)", bg: "var(--yellow-dim)", color: "var(--yellow)", dot: "#FFD60A" };
-  return { border: "var(--red-bdr)", bg: "var(--red-dim)", color: "var(--red)", dot: "#FF453A" };
+  if (pct >= 0.7) return { border: "var(--green-bdr)", bg: "var(--green-dim)", color: "var(--green)", dot: "var(--green)" };
+  if (pct >= 0.4) return { border: "var(--yellow-bdr)", bg: "var(--yellow-dim)", color: "var(--yellow)", dot: "var(--yellow)" };
+  return { border: "var(--red-bdr)", bg: "var(--red-dim)", color: "var(--red)", dot: "var(--red)" };
 }
+
+// Column headers: sentence case at reading size; the sorted one darker, with
+// its arrow (the others keep the arrow's room so headers don't shift)
+const thStyle = {
+  padding: "10px 12px", textAlign: "left", fontSize: 12, fontWeight: 500, color: "var(--t2)",
+  whiteSpace: "nowrap", userSelect: "none", borderBottom: "1px solid var(--bdr2)", background: "var(--s1)",
+  position: "sticky", top: 0, zIndex: 3,
+};
+const SortArrow = ({ active, dir }) => {
+  const Arrow = active && dir === "asc" ? ArrowUp : ArrowDown;
+  return <Arrow size={12} strokeWidth={2.4} style={{ opacity: active ? 1 : 0, color: "var(--accent)", flexShrink: 0, transition: "opacity 120ms" }} />;
+};
 
 function fmt(n, decimals = 0) {
   if (n == null || isNaN(n)) return "—";
@@ -40,7 +53,7 @@ function fmtCr(n) {
   return String(Math.round(n));
 }
 
-const MONO = { fontFamily: '"SF Mono","SFMono-Regular",Menlo,monospace', fontVariantNumeric: "tabular-nums" };
+const MONO = { fontVariantNumeric: "tabular-nums" };
 
 // Green count scaled to /10 — a bank is scored out of 8, so raw counts aren't
 // comparable across rows (same normalisation as the original's scoreOf).
@@ -55,29 +68,17 @@ function SortTh({ label, title, col, sortBy, sortDir, onSort, accent }) {
       onClick={() => onSort(col)}
       title={title}
       style={{
-        padding: "8px 10px",
-        textAlign: "left",
-        fontSize: 10,
-        fontWeight: 600,
-        color: active ? "var(--accent)" : "var(--t3)",
-        textTransform: "uppercase",
-        letterSpacing: "0.06em",
-        whiteSpace: "nowrap",
+        ...thStyle,
+        color: active ? "var(--t1)" : "var(--t2)",
+        fontWeight: active ? 600 : 500,
         cursor: "pointer",
-        userSelect: "none",
-        borderBottom: "1px solid var(--bdr2)",
-        background: accent ? "rgba(0,224,190,0.03)" : "var(--s1)",
+        background: accent ? "color-mix(in srgb, var(--accent) 3%, var(--s1))" : "var(--s1)",
         transition: "color 120ms",
-        position: "sticky",
-        top: 0,
-        zIndex: 3,
       }}
     >
-      <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
         {label}
-        <span style={{ opacity: active ? 1 : 0, fontSize: 8, transition: "opacity 120ms" }}>
-          {active ? (sortDir === "asc" ? "▲" : "▼") : "▼"}
-        </span>
+        <SortArrow active={active} dir={sortDir} />
       </span>
     </th>
   );
@@ -88,10 +89,10 @@ export function ScoreBadge({ score, max = 10 }) {
   return (
     <span style={{
       display: "inline-flex", alignItems: "center", gap: 5,
-      padding: "3px 9px", borderRadius: 999,
+      padding: "2px 8px", borderRadius: 999,
       border: `1px solid ${ss.border}`,
       background: ss.bg, color: ss.color,
-      fontSize: 11, fontWeight: 700,
+      fontSize: 11.5, fontWeight: 650,
       ...MONO,
     }}>
       <span style={{ width: 5, height: 5, borderRadius: "50%", background: ss.dot, flexShrink: 0 }} />
@@ -145,7 +146,7 @@ function FvCell({ stock }) {
   const { cmp, safeBuyPrice: p1, p2, p3, fairValue } = stock;
   const notes = [
     stock.valuationPeBasis === "current" && "Fewer than 3 usable years of P/E history, so this uses today's P/E — fair value then tracks the current price.",
-    stock.epsJump && `This year's EPS (Rs ${stock.epsJump.eps.toFixed(2)}) is more than 3× its usual Rs ${stock.epsJump.usualEps.toFixed(2)} and the share price hasn't followed — how a one-off gain looks. Buy prices use the usual EPS.`,
+    stock.epsJump && `This year's EPS (₹${stock.epsJump.eps.toFixed(2)}) is more than 3× its usual ₹${stock.epsJump.usualEps.toFixed(2)} and the share price hasn't followed — how a one-off gain looks. Buy prices use the usual EPS.`,
   ].filter(Boolean);
   const fvLabel = stock.fyEnd ? `FV${String(Number(stock.fyEnd.slice(0, 4)) + 2).slice(2)}` : "FV";
   return (
@@ -155,8 +156,8 @@ function FvCell({ stock }) {
           {[["P1", p1], ["P2", p2], ["P3", p3]].map(([label, price]) => {
             const hit = cmp != null && price != null && cmp <= price;
             return (
-              <span key={label} style={{ color: hit ? "var(--accent)" : "var(--t3)", fontWeight: hit ? 700 : 500 }}>
-                <span style={{ fontWeight: 500, opacity: 0.8 }}>{label}</span> {price ? price.toLocaleString("en-IN") : "—"}{hit && <span style={{ color: "var(--green)" }}>✓</span>}
+              <span key={label} style={{ display: "inline-flex", alignItems: "center", gap: 2, color: hit ? "var(--accent)" : "var(--t3)", fontWeight: hit ? 650 : 500 }}>
+                <span style={{ fontWeight: 500, opacity: 0.8 }}>{label}</span>&nbsp;{price ? price.toLocaleString("en-IN") : "—"}{hit && <Check size={11} strokeWidth={3} style={{ color: "var(--green)" }} />}
               </span>
             );
           })}
@@ -168,7 +169,7 @@ function FvCell({ stock }) {
         <MiniRange low={stock.low52w} high={stock.high52w} cmp={cmp} />
         {fairValue ? <span>{fvLabel} {fairValue.toLocaleString("en-IN")}</span> : null}
         {notes.length > 0 && (
-          <span title={`${notes.join(" ")} Open the stock to set your own figures.`} style={{ color: "var(--yellow)", cursor: "help" }}>⚑</span>
+          <span title={`${notes.join(" ")} Open the stock to set your own figures.`} style={{ color: "var(--yellow)", cursor: "help", display: "inline-flex" }}><Info size={12} strokeWidth={2.2} /></span>
         )}
       </div>
     </div>
@@ -180,7 +181,7 @@ function StarButton({ symbol, price, watched, size = 30 }) {
     <button
       onClick={() => toggleWatch(symbol, price)}
       title={watched ? "Remove from watchlist" : "Add to watchlist"}
-      style={actionButtonStyle({ active: watched, activeColor: "#FFD60A", size })}
+      style={actionButtonStyle({ active: watched, activeColor: "var(--yellow)", size })}
     >
       <StarIcon filled={watched} />
     </button>
@@ -308,7 +309,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
   };
 
   const noData = !loading && (!matches || matches.length === 0);
-  const cell = { padding: "8px 10px", borderBottom: "1px solid var(--bdr)" };
+  const cell = { padding: "9px 12px", borderBottom: "1px solid var(--bdr)" };
 
   return (
     <div style={{ animation: "fadeUp 280ms cubic-bezier(0,0,0.2,1) backwards" }}>
@@ -352,16 +353,16 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
               </button>
             )}
             {onEditColumns && (
-              <button onClick={onEditColumns} className="btn-ghost" style={{ height: 32, fontSize: 12 }} title="Choose which columns the table shows">
-                ⊕ Columns
+              <button onClick={onEditColumns} className="btn-ghost" style={{ height: 32, fontSize: 12.5 }} title="Choose which columns the table shows">
+                <Columns3 size={14} /> Columns
               </button>
             )}
             {!loading && (matches?.length ?? 0) > 0 && (
               <>
-                <button onClick={exportExcel} disabled={exporting || sorted.length === 0} className="btn-primary" style={{ height: 32, padding: "0 14px", fontSize: 12, boxShadow: "none", opacity: exporting || sorted.length === 0 ? 0.6 : 1 }}>
+                <button onClick={exportExcel} disabled={exporting || sorted.length === 0} className="btn-primary" style={{ height: 32, padding: "0 14px", fontSize: 12.5, opacity: exporting || sorted.length === 0 ? 0.6 : 1 }}>
                   {exporting ? "Exporting…" : "Export Excel"}
                 </button>
-                <button onClick={exportCsv} className="btn-ghost" style={{ height: 32, fontSize: 12 }}>
+                <button onClick={exportCsv} className="btn-ghost" style={{ height: 32, fontSize: 12.5 }}>
                   CSV
                 </button>
               </>
@@ -374,26 +375,26 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
       {!loading && (matches?.length ?? 0) > 0 && (
         <div style={{ display: "flex", gap: 8, marginBottom: 12, alignItems: "center" }}>
           <div style={{ flex: 1, position: "relative" }}>
-            <span style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", fontSize: 13, color: "var(--t3)", pointerEvents: "none" }}>⌕</span>
+            <Search size={15} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--t3)", pointerEvents: "none" }} />
             <input
               type="text"
               placeholder="Filter by name or ticker…"
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="input-base"
-              style={{ paddingLeft: 34 }}
+              style={{ paddingLeft: 36, background: "var(--s2)" }}
             />
           </div>
           <select
             value={minScore}
             onChange={e => setMinScore(Number(e.target.value))}
             style={{
-              height: 42, padding: "0 12px", borderRadius: 10,
-              border: "1px solid var(--bdr2)", fontSize: 12,
+              height: 40, padding: "0 12px", borderRadius: 8,
+              border: "1px solid var(--bdr2)", fontSize: 12.5,
               background: minScore > 0 ? "var(--green-dim)" : "var(--s2)",
-              color: minScore > 0 ? "var(--green)" : "var(--t2)",
+              color: minScore > 0 ? "var(--green)" : "var(--t1)",
               cursor: "pointer", outline: "none", fontFamily: "inherit",
-              fontWeight: minScore > 0 ? 700 : 400,
+              fontWeight: minScore > 0 ? 650 : 500,
             }}
           >
             <option value="0">All Scores</option>
@@ -403,16 +404,18 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
         </div>
       )}
 
-      {/* ── Query chip ── */}
+      {/* ── The screen's filters, one chip each (describeFilters joins them with " · ") ── */}
       {queryUsed && !loading && (
-        <div style={{ fontSize: 11, color: "var(--t3)", marginBottom: 14, padding: "9px 14px", background: "var(--s1)", borderRadius: 9, border: "1px solid var(--bdr)", wordBreak: "break-word", lineHeight: 1.7 }}>
-          <span style={{ fontWeight: 600, color: "var(--t2)", marginRight: 4 }}>Query</span>
-          {queryUsed}
+        <div className="filter-chips" style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: notes.length ? 8 : 14 }}>
+          {queryUsed.split(" · ").map(part => (
+            <span key={part} style={{ fontSize: 12, color: "var(--t2)", background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 6, padding: "3px 9px", lineHeight: 1.5, ...MONO }}>{part}</span>
+          ))}
         </div>
       )}
       {notes.length > 0 && !loading && (
-        <div style={{ fontSize: 11, color: "var(--t2)", marginBottom: 14, padding: "9px 14px", background: "var(--s1)", borderRadius: 9, border: "1px dashed var(--bdr2)", lineHeight: 1.7 }}>
-          {notes.map(n => <div key={n}>{n}</div>)}
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 6, fontSize: 12, color: "var(--t3)", marginBottom: 14, lineHeight: 1.5 }}>
+          <Info size={13} style={{ flexShrink: 0, marginTop: 2 }} />
+          <div>{notes.map(n => <div key={n}>{n}</div>)}</div>
         </div>
       )}
       {unsupported.length > 0 && !loading && (
@@ -447,7 +450,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 12 }}>
                 {[["CMP", stock.cmp ? `₹${fmt(stock.cmp)}` : "—", "var(--t1)"], ...columns.slice(0, 5).map(def => { const v = colValue(stock, def.id); return [def.short, formatValue(def, v), v == null ? "var(--t3)" : def.signed ? valueColor(def, v) : "var(--t1)"]; })].map(([label, val, color]) => (
                   <div key={label} style={{ background: "var(--s1)", borderRadius: 8, padding: "8px 10px", minWidth: 0 }}>
-                    <div style={{ fontSize: 9, color: "var(--t3)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</div>
+                    <div style={{ fontSize: 11, color: "var(--t3)", marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</div>
                     <div style={{ fontSize: 12, fontWeight: 600, color, ...MONO }}>{val}</div>
                   </div>
                 ))}
@@ -456,7 +459,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                 <button onClick={() => onAnalyze(stock.symbol)} className="btn-primary" style={{ flex: 1, height: 36, fontSize: 12 }}>Analyze →</button>
                 <StarButton symbol={stock.symbol} price={stock.cmp} watched={watchlist.has(stock.symbol)} size={36} />
                 {bell(stock, 36)}
-                <a href={nseUrl(stock.symbol)} target="_blank" rel="noreferrer" style={{ width: 36, height: 36, borderRadius: 10, border: "1px solid var(--bdr2)", background: "var(--s1)", color: "var(--t2)", fontSize: 13, textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "center" }}>↗</a>
+                <a href={nseUrl(stock.symbol)} target="_blank" rel="noreferrer" aria-label="Open on NSE" style={{ width: 36, height: 36, borderRadius: 8, border: "1px solid var(--bdr2)", background: "var(--s1)", color: "var(--t2)", textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><ArrowUpRight size={16} /></a>
               </div>
             </div>
           ))}
@@ -465,24 +468,24 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
 
       {/* ── Desktop table ── */}
       {!isMobile && !noData && (loading || sorted.length > 0) && (
-        <div style={{ borderRadius: 14, border: "1px solid var(--bdr2)", overflow: "hidden", boxShadow: "var(--sh-sm)" }}>
+        <div style={{ borderRadius: 12, border: "1px solid var(--bdr2)", overflow: "hidden", boxShadow: "var(--sh-xs)", background: "var(--s2)" }}>
           <div style={{ overflowX: "auto", overflowY: "auto", maxHeight: "min(70vh, 780px)" }}>
             <table className="data-table" style={{ minWidth: 560 + columns.length * 80 }}>
               <thead>
                 <tr>
-                  <th title={`Tick up to ${MAX_COMPARE} to compare`} style={{ padding: "8px 8px", fontSize: 10, fontWeight: 600, color: "var(--t3)", textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: "1px solid var(--bdr2)", background: "var(--s1)", width: RANK_W, minWidth: RANK_W, boxSizing: "border-box", position: "sticky", left: 0, top: 0, zIndex: 4 }}>#</th>
-                  <th onClick={() => handleSort("name")} style={{ padding: "8px 10px", fontSize: 10, fontWeight: 600, color: sortBy === "name" ? "var(--accent)" : "var(--t3)", textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: "1px solid var(--bdr2)", background: "var(--s1)", position: "sticky", left: RANK_W, top: 0, zIndex: 4, cursor: "pointer", whiteSpace: "nowrap", minWidth: 200, boxShadow: "2px 0 8px rgba(0,0,0,0.3)" }}>
-                    Stock {sortBy === "name" ? (sortDir === "asc" ? "▲" : "▼") : ""}
+                  <th title={`Tick up to ${MAX_COMPARE} to compare`} style={{ ...thStyle, padding: "10px 8px", width: RANK_W, minWidth: RANK_W, boxSizing: "border-box", left: 0, zIndex: 4 }}>#</th>
+                  <th onClick={() => handleSort("name")} style={{ ...thStyle, color: sortBy === "name" ? "var(--t1)" : "var(--t2)", fontWeight: sortBy === "name" ? 600 : 500, left: RANK_W, zIndex: 4, cursor: "pointer", minWidth: 200, boxShadow: "inset -1px 0 0 var(--bdr)" }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>Stock <SortArrow active={sortBy === "name"} dir={sortDir} /></span>
                   </th>
                   <SortTh label="Score"   col="score"       sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
                   <SortTh label="CMP ₹"   col="cmp"         sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
                   {columns.map(def => (
                     <SortTh key={def.id} label={columnLabel(def)} title={def.label} col={def.id} sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
                   ))}
-                  <th style={{ padding: "8px 10px", fontSize: 10, fontWeight: 600, color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: "1px solid var(--bdr2)", background: "rgba(0,224,190,0.03)", whiteSpace: "nowrap", position: "sticky", top: 0, zIndex: 3 }}>
-                    Buy Phases
+                  <th style={{ ...thStyle, color: "var(--accent)", fontWeight: 600, background: "color-mix(in srgb, var(--accent) 4%, var(--s1))" }}>
+                    Buy phases
                   </th>
-                  <th style={{ padding: "8px 10px", fontSize: 10, fontWeight: 600, color: "var(--t3)", textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: "1px solid var(--bdr2)", background: "var(--s1)", position: "sticky", top: 0, zIndex: 3 }}>Actions</th>
+                  <th style={thStyle}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -499,7 +502,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                 {!loading && visible.map((stock, i) => {
                   const isSelected = selected.has(stock.symbol);
                   // Opaque, so the pinned cells still hide what scrolls under them
-                  const rowBg = isSelected ? "linear-gradient(rgba(0,224,190,0.06), rgba(0,224,190,0.06)), var(--s2)" : "var(--s2)";
+                  const rowBg = isSelected ? "linear-gradient(color-mix(in srgb, var(--accent) 6%, transparent), color-mix(in srgb, var(--accent) 6%, transparent)), var(--s2)" : "var(--s2)";
                   return (
                   <tr
                     key={stock.symbol}
@@ -520,10 +523,10 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                       </div>
                     </td>
 
-                    <td style={{ ...cell, minWidth: 200, position: "sticky", left: RANK_W, background: rowBg, zIndex: 1, boxShadow: "2px 0 8px rgba(0,0,0,0.25)" }}>
-                      <div title={stock.name} onClick={() => onAnalyze(stock.symbol)} style={{ fontWeight: 700, fontSize: 13, color: "var(--accent)", letterSpacing: "-0.01em", marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 240, cursor: "pointer", textDecoration: "underline", textDecorationColor: "rgba(0,224,190,0.35)", textUnderlineOffset: 3 }}>{stock.name}</div>
+                    <td style={{ ...cell, minWidth: 200, position: "sticky", left: RANK_W, background: rowBg, zIndex: 1, boxShadow: "inset -1px 0 0 var(--bdr)" }}>
+                      <div title={stock.name} onClick={() => onAnalyze(stock.symbol)} className="stock-link" style={{ fontWeight: 600, fontSize: 13.5, letterSpacing: "-0.01em", marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 240 }}>{stock.name}</div>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, maxWidth: 260, minWidth: 0 }}>
-                        <span style={{ fontSize: 10, background: "var(--s3)", color: "var(--t2)", padding: "1px 7px", borderRadius: 5, flexShrink: 0, ...MONO }}>{stock.symbol}</span>
+                        <span className="ticker-chip">{stock.symbol}</span>
                         <NcavBadge stock={stock} />
                         {stock.sector && <span title={stock.sector} style={{ fontSize: 10.5, color: "var(--t3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{stock.sector}</span>}
                       </div>
@@ -544,19 +547,20 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                       );
                     })}
 
-                    <td style={{ ...cell, background: "rgba(0,224,190,0.02)" }}><FvCell stock={stock} /></td>
+                    <td style={{ ...cell, background: "color-mix(in srgb, var(--accent) 2%, transparent)" }}><FvCell stock={stock} /></td>
 
                     <td style={cell}>
                       <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
-                        <button onClick={() => onAnalyze(stock.symbol)} className="btn-primary" style={{ height: 30, padding: "0 12px", fontSize: 12, borderRadius: 8, boxShadow: "none" }}>
+                        {/* One solid button per page reads as the action; fifty in a column read as noise */}
+                        <button onClick={() => onAnalyze(stock.symbol)} className="btn-ghost" style={{ height: 30, padding: "0 12px", fontSize: 12.5, boxShadow: "none" }}>
                           Analyze
                         </button>
                         <StarButton symbol={stock.symbol} price={stock.cmp} watched={watchlist.has(stock.symbol)} />
                         {bell(stock)}
                         <a
-                          href={nseUrl(stock.symbol)} target="_blank" rel="noreferrer" title="Open on NSE"
-                          style={{ width: 30, height: 30, borderRadius: 8, border: "1px solid var(--bdr2)", background: "transparent", color: "var(--t3)", fontSize: 12, textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 120ms" }}
-                        >↗</a>
+                          href={nseUrl(stock.symbol)} target="_blank" rel="noreferrer" title="Open on NSE" aria-label="Open on NSE"
+                          style={{ width: 30, height: 30, borderRadius: 8, border: "1px solid var(--bdr2)", background: "transparent", color: "var(--t3)", textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 120ms", flexShrink: 0 }}
+                        ><ArrowUpRight size={15} /></a>
                       </div>
                     </td>
                   </tr>
@@ -580,7 +584,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
       {/* ── Empty ── */}
       {noData && (
         <div style={{ textAlign: "center", padding: "64px 0", color: "var(--t3)" }}>
-          <div style={{ fontSize: 40, marginBottom: 16, opacity: 0.3 }}>◎</div>
+          <SearchX size={40} strokeWidth={1.5} style={{ marginBottom: 14, opacity: 0.4 }} />
           <p style={{ fontSize: 15, color: "var(--t2)", marginBottom: 6, fontWeight: 500 }}>{emptyTitle}</p>
           <p style={{ fontSize: 13, color: "var(--t3)" }}>{emptyHint}</p>
         </div>

@@ -28,7 +28,7 @@ function Sparkline({ prices }) {
 function Stat({ label, value, color }) {
   return (
     <div style={{ textAlign: "center" }}>
-      <div style={{ fontSize: 10, color: "var(--t3)", marginBottom: 2, textTransform: "uppercase", letterSpacing: "0.4px" }}>{label}</div>
+      <div style={{ fontSize: 11.5, color: "var(--t3)", marginBottom: 2 }}>{label}</div>
       <div style={{ fontSize: 13, fontWeight: 700, color: color || "var(--t1)" }}>{value ?? "—"}</div>
     </div>
   );
@@ -141,7 +141,7 @@ function BreakoutLevel({ label, price, cmp, type }) {
         <span style={{ fontSize: 12, color: "var(--t2)" }}>{label}</span>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <span style={{ fontSize: 13, fontWeight: 700, color: "var(--t1)" }}>Rs {price.toLocaleString("en-IN")}</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: "var(--t1)" }}>₹{price.toLocaleString("en-IN")}</span>
         <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 12, background: above ? "var(--green-dim)" : atLevel ? "var(--yellow-dim)" : "var(--surf)", color: statusColor }}>
           {icon} {statusText}
         </span>
@@ -183,18 +183,18 @@ function BreakoutLevels({ data }) {
       <div style={{ fontSize: 11, color: verdictColor, marginBottom: 10, fontWeight: 600 }}>{verdict}</div>
 
       {/* Key levels */}
-      <div style={{ fontSize: 10, fontWeight: 700, color: "var(--t3)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 4 }}>Short-Term Watch</div>
+      <div style={{ fontSize: 11.5, fontWeight: 600, color: "var(--t3)", marginBottom: 4 }}>Short-Term Watch</div>
       <BreakoutLevel label="SMA 20 (trend)" price={sma20} cmp={price} type="short" />
       {pivots && <BreakoutLevel label="R1 (first resistance)" price={pivots.r1} cmp={price} type="short" />}
       {pivots && <BreakoutLevel label="R2 (strong resistance)" price={pivots.r2} cmp={price} type="short" />}
 
-      <div style={{ fontSize: 10, fontWeight: 700, color: "var(--t3)", textTransform: "uppercase", letterSpacing: "0.5px", marginTop: 10, marginBottom: 4 }}>Long-Term Watch</div>
+      <div style={{ fontSize: 11.5, fontWeight: 600, color: "var(--t3)", marginTop: 10, marginBottom: 4 }}>Long-Term Watch</div>
       <BreakoutLevel label="SMA 50 (medium trend)" price={sma50} cmp={price} type="long" />
       <BreakoutLevel label="SMA 200 (major trend)" price={sma200} cmp={price} type="long" />
 
       {/* Checklist */}
       <div style={{ marginTop: 12, padding: "8px 10px", borderRadius: 6, background: "var(--card)" }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: "var(--t3)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 6 }}>Entry Checklist</div>
+        <div style={{ fontSize: 11.5, fontWeight: 600, color: "var(--t3)", marginBottom: 6 }}>Entry Checklist</div>
         {checks.map((c, i) => (
           <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: c.met ? "var(--green)" : "var(--t3)", marginBottom: 3 }}>
             <span style={{ fontSize: 13 }}>{c.met ? "✓" : "✗"}</span>

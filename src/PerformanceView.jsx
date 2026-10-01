@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Camera, ChevronDown } from "lucide-react";
 import { api } from "./api.js";
 
 // Ported from stock-screener's src/components/PerformancePanel.jsx: each
@@ -6,7 +7,7 @@ import { api } from "./api.js";
 // automatically every few days (and on demand here) and shared by everyone,
 // since the strategies are the same for everyone.
 
-const MONO = { fontFamily: '"SF Mono","SFMono-Regular",Menlo,monospace', fontVariantNumeric: "tabular-nums" };
+const MONO = { fontVariantNumeric: "tabular-nums" };
 
 function fmtDate(d) {
   const [y, m, day] = (d || "").split("-").map(Number);
@@ -71,15 +72,15 @@ export default function PerformanceView({ onOpenStock }) {
     <div style={{ maxWidth: 900, margin: "0 auto", padding: "8px 20px 80px", animation: "fadeUp 280ms cubic-bezier(0,0,0.2,1) backwards" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, gap: 10, flexWrap: "wrap" }}>
         <div>
-          <div style={{ fontSize: 10, fontWeight: 600, color: "var(--t3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>Strategy Performance</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: "var(--t1)", letterSpacing: "-0.02em" }}>Strategy performance</div>
           {data?.snapshotCount > 0 && (
-            <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 3 }}>
+            <div style={{ fontSize: 12, color: "var(--t3)", marginTop: 3 }}>
               {data.snapshotCount} snapshot{data.snapshotCount === 1 ? "" : "s"} · prices for {data.pricedTickers}/{data.totalTickers} stocks
             </div>
           )}
         </div>
-        <button onClick={takeSnapshot} disabled={snapping} className="btn-ghost" style={{ height: 32, padding: "0 14px", fontSize: 11, borderRadius: 8, fontWeight: 600, opacity: snapping ? 0.6 : 1, cursor: snapping ? "wait" : "pointer" }}>
-          {snapping ? "Snapshotting…" : "📸 Take snapshot now"}
+        <button onClick={takeSnapshot} disabled={snapping} className="btn-ghost" style={{ height: 32, padding: "0 14px", fontSize: 12.5, fontWeight: 500, opacity: snapping ? 0.6 : 1, cursor: snapping ? "wait" : "pointer" }}>
+          {snapping ? "Snapshotting…" : <><Camera size={14} /> Take snapshot now</>}
         </button>
       </div>
 
@@ -113,7 +114,7 @@ export default function PerformanceView({ onOpenStock }) {
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <RetBadge pct={p.overallAvgReturnPct} />
-                <span style={{ fontSize: 8, color: "var(--t3)", transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 200ms" }}>▼</span>
+                <ChevronDown size={16} style={{ color: "var(--t3)", transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 200ms", flexShrink: 0 }} />
               </div>
             </button>
             {isOpen && p.snapshots.map(snap => {
@@ -123,14 +124,14 @@ export default function PerformanceView({ onOpenStock }) {
               const isBaseline = held != null && held < 1;
               return (
                 <div key={snap.date} style={{ borderTop: "1px solid var(--bdr)", padding: "10px 16px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, fontSize: 10, color: "var(--t3)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, fontSize: 11.5, color: "var(--t3)", marginBottom: 8 }}>
                     <span>
                       Picked {fmtDate(snap.date)}
                       {isBaseline ? " · baseline, no return yet" : <> · held {held} day{held === 1 ? "" : "s"} · avg <RetBadge pct={snap.avgReturnPct} /></>}
                     </span>
                     <span style={{ flexShrink: 0 }}>{snap.priced}/{snap.picks.length} priced</span>
                   </div>
-                  <div style={{ ...ROW_GRID, fontSize: 9, color: "var(--t3)", textTransform: "uppercase", letterSpacing: "0.06em", margin: "0 -16px 2px", padding: "0 16px 6px", borderBottom: "1px solid var(--bdr2)" }}>
+                  <div style={{ ...ROW_GRID, fontSize: 11, color: "var(--t3)", margin: "0 -16px 2px", padding: "0 16px 6px", borderBottom: "1px solid var(--bdr2)" }}>
                     <span>Stock</span>
                     <span style={{ textAlign: "right" }}>Picked at</span>
                     <span style={{ textAlign: "right" }}>{isBaseline ? "Today" : "Now"}</span>

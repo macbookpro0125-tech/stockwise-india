@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ChartPie, NotebookPen, Pencil, X } from "lucide-react";
 import { api } from "./api.js";
 import { portfolioStore } from "./stores.js";
 import AddHoldingModal from "./AddHoldingModal.jsx";
@@ -9,7 +10,7 @@ import AddHoldingModal from "./AddHoldingModal.jsx";
 // NSE's last close. One addition: each row says where the price sits on the
 // stock's buy ladder (buy phase, hold, sell zone, below stop loss).
 
-const MONO = { fontFamily: '"SF Mono","SFMono-Regular",Menlo,monospace', fontVariantNumeric: "tabular-nums" };
+const MONO = { fontVariantNumeric: "tabular-nums" };
 const COLORS = ["var(--accent)", "var(--green)", "var(--yellow)", "#A78BFA", "#F472B6", "#FB923C", "#38BDF8"];
 
 function fmtRs(n) {
@@ -25,7 +26,7 @@ function fmtPct(n) {
 const plColor = n => (n == null ? "var(--t3)" : n >= 0 ? "var(--green)" : "var(--red)");
 const fmtDate = iso => (iso ? new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : null);
 
-const label = { fontSize: 10, color: "var(--t3)", textTransform: "uppercase", fontWeight: 600, letterSpacing: "0.06em" };
+const label = { fontSize: 11.5, color: "var(--t3)", fontWeight: 600 };
 
 export default function PortfolioView({ onOpenStock }) {
   const data = portfolioStore.use();
@@ -91,7 +92,7 @@ export default function PortfolioView({ onOpenStock }) {
     return (
       <button
         onClick={() => { if (active) setSortDir(d => (d === "desc" ? "asc" : "desc")); else { setSortBy(id); setSortDir("desc"); } }}
-        style={{ padding: "4px 12px", borderRadius: 20, fontSize: 11, fontWeight: 600, cursor: "pointer", border: `1px solid ${active ? "var(--accent)" : "var(--bdr2)"}`, background: active ? "rgba(0,224,190,0.08)" : "transparent", color: active ? "var(--accent)" : "var(--t3)", transition: "all 120ms" }}
+        style={{ padding: "4px 12px", borderRadius: 20, fontSize: 11, fontWeight: 600, cursor: "pointer", border: `1px solid ${active ? "var(--accent)" : "var(--bdr2)"}`, background: active ? "color-mix(in srgb, var(--accent) 8%, transparent)" : "transparent", color: active ? "var(--accent)" : "var(--t3)", transition: "all 120ms" }}
       >
         {text} {active && (sortDir === "desc" ? "↓" : "↑")}
       </button>
@@ -147,7 +148,7 @@ export default function PortfolioView({ onOpenStock }) {
 
       {data && holdings.length === 0 && (
         <div style={{ textAlign: "center", padding: "56px 0", color: "var(--t3)", border: "1px dashed var(--bdr2)", borderRadius: 14, background: "var(--s1)" }}>
-          <div style={{ fontSize: 36, marginBottom: 12, opacity: 0.2 }}>📊</div>
+          <ChartPie size={36} strokeWidth={1.5} style={{ marginBottom: 12, opacity: 0.3 }} />
           <p style={{ fontSize: 14, color: "var(--t2)", fontWeight: 500, marginBottom: 4 }}>Portfolio is empty</p>
           <p style={{ fontSize: 12 }}>Add your holdings to track P&L and allocation</p>
         </div>
@@ -167,7 +168,7 @@ export default function PortfolioView({ onOpenStock }) {
                     {h.ticker} · {h.qty} @ {fmtRs(h.buyPrice)}
                     {h.buyDate && <span style={{ marginLeft: 6 }}>· {fmtDate(h.buyDate)}</span>}
                   </div>
-                  {h.notes && <div style={{ fontSize: 11, color: "var(--t2)", marginTop: 4 }}>📝 {h.notes}</div>}
+                  {h.notes && <div style={{ fontSize: 11.5, color: "var(--t2)", marginTop: 4 }}><NotebookPen size={12} style={{ marginRight: 5, verticalAlign: "-1px", color: "var(--t3)" }} />{h.notes}</div>}
                 </div>
 
                 <div style={{ textAlign: "center", minWidth: 65 }}>
@@ -203,8 +204,8 @@ export default function PortfolioView({ onOpenStock }) {
 
                 <div style={{ display: "flex", gap: 6, marginLeft: "auto" }}>
                   <button onClick={() => onOpenStock(h.ticker)} className="btn-primary" style={{ height: 30, padding: "0 12px", fontSize: 11, borderRadius: 8, boxShadow: "none" }}>Analyze</button>
-                  <button onClick={() => { setEditItem(h); setShowModal(true); }} title="Edit holding" style={{ width: 30, height: 30, borderRadius: 8, border: "1px solid var(--bdr2)", background: "transparent", color: "var(--t3)", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✎</button>
-                  <button onClick={() => remove(h.id)} title="Remove holding" style={{ width: 30, height: 30, borderRadius: 8, border: "1px solid var(--bdr2)", background: "transparent", color: "var(--t3)", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+                  <button onClick={() => { setEditItem(h); setShowModal(true); }} title="Edit holding" style={{ width: 30, height: 30, borderRadius: 8, border: "1px solid var(--bdr2)", background: "transparent", color: "var(--t3)", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }} aria-label="Edit holding"><Pencil size={14} /></button>
+                  <button onClick={() => remove(h.id)} title="Remove holding" style={{ width: 30, height: 30, borderRadius: 8, border: "1px solid var(--bdr2)", background: "transparent", color: "var(--t3)", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }} aria-label="Remove holding"><X size={15} /></button>
                 </div>
               </div>
             );

@@ -6,7 +6,7 @@ import { api } from "./api.js";
 // news is press coverage from Google News. Kept on separate tabs, filings
 // first — what the company said shouldn't blur into a publisher's framing.
 
-const MONO = { fontFamily: '"SF Mono","SFMono-Regular",Menlo,monospace', fontVariantNumeric: "tabular-nums" };
+const MONO = { fontVariantNumeric: "tabular-nums" };
 const INITIAL = 5;
 
 function fmtDate(iso) {
@@ -24,7 +24,7 @@ function TabButton({ active, onClick, children }) {
     <button onClick={onClick} style={{
       height: 34, padding: "0 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer",
       border: `1px solid ${active ? "var(--accent)" : "var(--bdr2)"}`,
-      background: active ? "rgba(0,224,190,0.08)" : "var(--s3)",
+      background: active ? "color-mix(in srgb, var(--accent) 8%, transparent)" : "var(--s3)",
       color: active ? "var(--accent)" : "var(--t2)",
       transition: "all 120ms",
     }}>{children}</button>
@@ -85,7 +85,7 @@ export default function NewsPanel({ symbol }) {
 
       {tab === "reports" && (
         <div style={{ paddingTop: 8 }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: "var(--t3)", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Annual reports</div>
+          <div style={{ fontSize: 11.5, fontWeight: 600, color: "var(--t3)", marginBottom: 6 }}>Annual reports</div>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {reports.slice(0, expanded ? reports.length : 8).map(r => (
               <a key={r.url} href={r.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, fontWeight: 600, textDecoration: "none", padding: "3px 9px", borderRadius: 999, border: "1px solid var(--bdr2)", background: "var(--s3)", color: "var(--t2)", whiteSpace: "nowrap", ...MONO }}>

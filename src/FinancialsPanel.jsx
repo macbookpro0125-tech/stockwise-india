@@ -6,7 +6,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 // own filings (up to six fiscal years) instead of Screener's pages, and drawn
 // as plain SVG instead of with the charting library the original used.
 
-const MONO = { fontFamily: '"SF Mono","SFMono-Regular",Menlo,monospace', fontVariantNumeric: "tabular-nums" };
+const MONO = { fontVariantNumeric: "tabular-nums" };
 
 function fmtCr(n) {
   if (n == null) return "—";
@@ -56,7 +56,7 @@ function StatementTable({ history, rows }) {
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, minWidth: 520 }}>
         <thead>
           <tr>
-            <th style={{ textAlign: "left", padding: "8px 10px", fontSize: 10, color: "var(--t3)", textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: "1px solid var(--bdr2)", position: "sticky", left: 0, background: "var(--s2)" }}>Item</th>
+            <th style={{ textAlign: "left", padding: "8px 10px", fontSize: 11.5, color: "var(--t3)", borderBottom: "1px solid var(--bdr2)", position: "sticky", left: 0, background: "var(--s2)" }}>Item</th>
             {years.map(y => (
               <th key={y.fyEnd} style={{ textAlign: "right", padding: "8px 10px", fontSize: 10, color: "var(--t3)", whiteSpace: "nowrap", borderBottom: "1px solid var(--bdr2)" }}>{periodLabel(y.fyEnd)}</th>
             ))}
@@ -262,7 +262,7 @@ export default function FinancialsPanel({ history }) {
           <button key={t.id} onClick={() => setTab(t.id)} style={{
             height: 30, padding: "0 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer",
             border: `1px solid ${tab === t.id ? "var(--accent)" : "var(--bdr2)"}`,
-            background: tab === t.id ? "rgba(0,224,190,0.08)" : "var(--s3)",
+            background: tab === t.id ? "color-mix(in srgb, var(--accent) 8%, transparent)" : "var(--s3)",
             color: tab === t.id ? "var(--accent)" : "var(--t2)",
             transition: "all 120ms",
           }}>{t.label}</button>

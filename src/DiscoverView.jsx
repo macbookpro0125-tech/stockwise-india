@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
+import { PanelLeftClose, SlidersHorizontal } from "lucide-react";
 import { api } from "./api.js";
 import PresetCards from "./PresetCards.jsx";
 import ResultsTable from "./ResultsTable.jsx";
@@ -288,9 +289,10 @@ export default function DiscoverView({ onOpenStock }) {
       )}
 
       <div style={{ animation: "fadeUp 280ms cubic-bezier(0,0,0.2,1) backwards" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
-          <div style={{ fontSize: 10, fontWeight: 600, color: "var(--t3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-            Strategies — pick one to start, then change any filter
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+            <h2 style={{ fontSize: 17, fontWeight: 650, color: "var(--t1)", letterSpacing: "-0.02em", margin: 0 }}>Strategies</h2>
+            <span style={{ fontSize: 13, color: "var(--t3)" }}>Pick one to start, then change any filter</span>
           </div>
           <HowItWorks />
         </div>
@@ -309,7 +311,7 @@ export default function DiscoverView({ onOpenStock }) {
             <aside className="screener-side" aria-label="Filters">
               {panel}
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", paddingTop: 12, marginTop: 12, borderTop: "1px solid var(--bdr)" }}>
-                <button onClick={() => setSideOpen(false)} className="btn-ghost" style={{ height: 28, padding: "0 10px", fontSize: 11 }}>◂ Hide filters</button>
+                <button onClick={() => setSideOpen(false)} className="btn-ghost" style={{ height: 28, padding: "0 10px", fontSize: 11.5 }}><PanelLeftClose size={13} /> Hide filters</button>
                 <button onClick={handleShare} disabled={!activeCount} title="Copy a link that opens this screen" className="btn-ghost" style={{ height: 28, padding: "0 10px", fontSize: 11 }}>{copyFeedback || "Share link"}</button>
                 <button onClick={() => setShowImportModal(true)} className="btn-ghost" style={{ height: 28, padding: "0 10px", fontSize: 11 }}>Import</button>
               </div>
@@ -319,7 +321,7 @@ export default function DiscoverView({ onOpenStock }) {
           <main style={{ minWidth: 0 }}>
             <div className="screener-toolbar">
               <button className={`btn-ghost ${sideOpen ? "screener-filters-toggle" : ""}`} onClick={() => (window.innerWidth <= 900 ? setSheetOpen(true) : setSideOpen(true))} style={{ height: 34, fontSize: 12.5 }}>
-                ☰ Filters{activeCount > 0 && <span style={{ marginLeft: 6, fontSize: 10.5, padding: "0 7px", borderRadius: 999, fontWeight: 700, background: "var(--accent)", color: "#07070E" }}>{activeCount}</span>}
+                <SlidersHorizontal size={14} /> Filters{activeCount > 0 && <span style={{ marginLeft: 2, fontSize: 10.5, padding: "0 7px", borderRadius: 999, fontWeight: 700, background: "var(--accent)", color: "var(--on-accent)" }}>{activeCount}</span>}
               </button>
               {results && (
                 <span style={{ fontSize: 12, color: "var(--t3)" }}>
@@ -329,7 +331,7 @@ export default function DiscoverView({ onOpenStock }) {
             </div>
 
             {results?.jobs?.loadingMarket && (
-              <div style={{ padding: "12px 18px", borderRadius: 12, marginBottom: 16, background: "rgba(0,224,190,0.07)", border: "1px solid rgba(0,224,190,0.25)", color: "var(--accent)", fontSize: 13, lineHeight: 1.6 }}>
+              <div style={{ padding: "12px 18px", borderRadius: 12, marginBottom: 16, background: "color-mix(in srgb, var(--accent) 7%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 25%, transparent)", color: "var(--accent)", fontSize: 13, lineHeight: 1.6 }}>
                 Market data is still loading
                 {results.jobs.running === "first load" && results.jobs.progress
                   ? <> — {results.jobs.progress.done.toLocaleString("en-IN")} of {results.jobs.progress.total.toLocaleString("en-IN")} companies read from NSE so far</>

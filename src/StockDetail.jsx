@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
+import { NotebookPen, Check, X, TriangleAlert, LoaderCircle, ArrowLeft, ArrowUpRight, CalendarDays, CircleCheck, CircleX, Layers, ArrowRight, Minus } from "lucide-react";
 import { api } from "./api.js";
 import { calculateLevels, getAction, fmtRs } from "../server/levels.js";
-import { StarIcon, BellIcon } from "./icons.jsx";
+import { StarIcon, BellIcon, ActionIcon } from "./icons.jsx";
 import { useWatchlist, toggleWatch } from "./watchlist.js";
 import CreateAlertModal from "./CreateAlertModal.jsx";
 import PriceChartPanel from "./PriceChartPanel.jsx";
@@ -37,15 +38,23 @@ const POINT_TITLES = {
 };
 
 const VERDICT_META = {
-  ACCUMULATE: { label: "🟢 Accumulate", color: "var(--green)", bg: "var(--green-dim)", border: "var(--green-bdr)" },
-  WATCHLIST: { label: "🟡 Watchlist", color: "var(--yellow)", bg: "var(--yellow-dim)", border: "var(--yellow-bdr)" },
-  SKIP: { label: "🔴 Skip", color: "var(--red)", bg: "var(--red-dim)", border: "var(--red-bdr)" },
+  ACCUMULATE: { label: "Accumulate", color: "var(--green)", bg: "var(--green-dim)", border: "var(--green-bdr)" },
+  WATCHLIST: { label: "Watchlist", color: "var(--yellow)", bg: "var(--yellow-dim)", border: "var(--yellow-bdr)" },
+  SKIP: { label: "Skip", color: "var(--red)", bg: "var(--red-dim)", border: "var(--red-bdr)" },
 };
+// A verdict's colour as a dot before its name (the original used coloured emoji)
+const Dot = ({ color }) => <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: color, marginRight: 6, verticalAlign: "1px" }} />;
 
-const MONO = { fontFamily: '"SF Mono","SFMono-Regular",Menlo,monospace', fontVariantNumeric: "tabular-nums" };
-const card = { border: "1px solid var(--bdr2)", borderRadius: 10, padding: 18, marginBottom: 12, background: "var(--s2)" };
-const inputStyle = { width: "100%", height: 40, padding: "0 14px", border: "1px solid var(--bdr2)", borderRadius: 10, fontSize: 13, outline: "none", background: "var(--s1)", color: "var(--t1)", boxSizing: "border-box", fontFamily: "inherit" };
-const labelStyle = { fontSize: 11, color: "var(--t2)", marginBottom: 6, display: "block", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em" };
+const MONO = { fontVariantNumeric: "tabular-nums" };
+const card = { border: "1px solid var(--bdr2)", borderRadius: 12, padding: 18, marginBottom: 12, background: "var(--s2)", boxShadow: "var(--sh-xs)" };
+const inputStyle = { width: "100%", height: 40, padding: "0 14px", border: "1px solid var(--bdr2)", borderRadius: 8, fontSize: 13.5, outline: "none", background: "var(--s1)", color: "var(--t1)", boxSizing: "border-box", fontFamily: "inherit", fontVariantNumeric: "tabular-nums" };
+const labelStyle = { fontSize: 12, color: "var(--t2)", marginBottom: 6, display: "block", fontWeight: 500 };
+// A section's heading inside a card, with its icon
+const SectionTitle = ({ icon: Icon, children, color = "var(--t1)", style }) => (
+  <h3 style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15, fontWeight: 600, margin: "0 0 14px", color, letterSpacing: "-0.01em", ...style }}>
+    {Icon && <Icon size={17} strokeWidth={2} style={{ color: "var(--t3)", flexShrink: 0 }} />}{children}
+  </h3>
+);
 
 const round = (v, dp = 1) => (v == null || !isFinite(v) ? null : Math.round(v * 10 ** dp) / 10 ** dp);
 const pctText = v => (v == null ? "—" : `${round(v, 1)}%`);
@@ -216,7 +225,7 @@ function pointsSevenToTen({ lender, utility, promoterPct, profitRecord }, { debt
 
 function PeHistoryTable({ m }) {
   const cell = { padding: "7px 10px", fontSize: 12, borderBottom: "1px solid var(--bdr)", textAlign: "right" };
-  const head = { ...cell, fontSize: 10, color: "var(--t3)", textTransform: "uppercase", letterSpacing: "0.05em" };
+  const head = { ...cell, fontSize: 11.5, fontWeight: 500, color: "var(--t3)" };
   const fy = iso => new Date(`${iso}T00:00:00Z`).toLocaleString("en-IN", { month: "short", year: "numeric", timeZone: "UTC" });
   return (
     <div style={{ marginTop: 16, borderTop: "1px solid var(--bdr)", paddingTop: 14 }}>
@@ -236,11 +245,11 @@ function PeHistoryTable({ m }) {
             {m.peHistory.map(y => (
               <tr key={y.fyEnd} style={{ color: y.pe == null || y.excluded ? "var(--t3)" : "var(--t1)" }}>
                 <td style={{ ...cell, textAlign: "left" }}>{fy(y.fyEnd)}</td>
-                <td style={{ ...cell, ...MONO }}>{y.eps != null ? `Rs ${y.eps.toFixed(2)}` : "—"}</td>
+                <td style={{ ...cell, ...MONO }}>{y.eps != null ? `₹${y.eps.toFixed(2)}` : "—"}</td>
                 <td style={{ ...cell, ...MONO }}>{y.price != null ? fmtRs(y.price) : "—"}</td>
                 <td style={{ ...cell, ...MONO, fontWeight: 600 }}>{y.pe != null ? y.pe.toFixed(1) : "—"}</td>
                 <td style={{ ...cell, textAlign: "left", color: "var(--t3)" }}>
-                  {y.excluded ?? (y.splitFactor > 1 ? `Reported Rs ${y.reportedEps}; ÷${y.splitFactor} for a later split/bonus` : "")}
+                  {y.excluded ?? (y.splitFactor > 1 ? `Reported ₹${y.reportedEps}; ÷${y.splitFactor} for a later split/bonus` : "")}
                 </td>
               </tr>
             ))}
@@ -251,7 +260,7 @@ function PeHistoryTable({ m }) {
         {m.medianPe != null
           ? <>Median of {m.peYears} years: <strong style={{ color: "var(--t1)" }}>{m.medianPe.toFixed(1)}</strong> — the default P/E above. A median, so one unusual year can't drag it.</>
           : <>Only {m.peYears} usable year{m.peYears === 1 ? "" : "s"} — at least 3 are needed for a median, so the default is today's P/E, which makes fair value track the price.</>}
-        {m.epsJump && <> Median EPS of the same years: <strong style={{ color: "var(--t1)" }}>Rs {m.epsJump.usualEps.toFixed(2)}</strong> — the usual level, used instead of {fyLabel(m.fyEnd)}'s Rs {m.epsJump.eps.toFixed(2)}.</>}
+        {m.epsJump && <> Median EPS of the same years: <strong style={{ color: "var(--t1)" }}>₹{m.epsJump.usualEps.toFixed(2)}</strong> — the usual level, used instead of {fyLabel(m.fyEnd)}'s ₹{m.epsJump.eps.toFixed(2)}.</>}
       </div>
     </div>
   );
@@ -407,18 +416,18 @@ function MyNotes({ symbol }) {
   return (
     <div style={{ border: "1px solid var(--bdr2)", borderRadius: 10, padding: 16, marginBottom: 16, background: "var(--s2)" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-        <span style={{ fontSize: 14, fontWeight: 600, color: "var(--t1)" }}>📝 My Notes</span>
+        <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15, fontWeight: 600, color: "var(--t1)" }}><NotebookPen size={17} style={{ color: "var(--t3)" }} /> My Notes</span>
         {saved && !editing && (
           <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={() => setEditing(true)} style={{ fontSize: 12, padding: "3px 10px", borderRadius: 6, border: "1px solid var(--accent)", background: "rgba(0,200,168,0.08)", color: "var(--accent)", cursor: "pointer" }}>Edit</button>
+            <button onClick={() => setEditing(true)} style={{ fontSize: 12, padding: "3px 10px", borderRadius: 6, border: "1px solid var(--accent)", background: "color-mix(in srgb, var(--accent) 8%, transparent)", color: "var(--accent)", cursor: "pointer" }}>Edit</button>
             <button onClick={remove} style={{ fontSize: 12, padding: "3px 10px", borderRadius: 6, border: "1px solid var(--bdr2)", background: "var(--s1)", color: "var(--t3)", cursor: "pointer" }}>Delete</button>
           </div>
         )}
       </div>
       {saved && !editing ? (
         <div>
-          <div style={{ display: "inline-block", fontSize: 12, fontWeight: 700, padding: "4px 12px", borderRadius: 20, background: VERDICT_META[saved.verdict]?.bg, color: VERDICT_META[saved.verdict]?.color, border: `1px solid ${VERDICT_META[saved.verdict]?.border}` }}>
-            {VERDICT_META[saved.verdict]?.label}
+          <div style={{ display: "inline-block", fontSize: 12, fontWeight: 650, padding: "4px 12px", borderRadius: 20, background: VERDICT_META[saved.verdict]?.bg, color: VERDICT_META[saved.verdict]?.color, border: `1px solid ${VERDICT_META[saved.verdict]?.border}` }}>
+            <Dot color={VERDICT_META[saved.verdict]?.color} />{VERDICT_META[saved.verdict]?.label}
           </div>
           {saved.text && <p style={{ fontSize: 13, color: "var(--t2)", margin: "8px 0 4px", lineHeight: 1.5 }}>{saved.text}</p>}
           <p style={{ fontSize: 11, color: "var(--t3)", margin: 0 }}>Saved {saved.savedAt} · kept in this browser</p>
@@ -429,14 +438,14 @@ function MyNotes({ symbol }) {
           <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
             {Object.entries(VERDICT_META).map(([key, meta]) => (
               <button key={key} onClick={() => setVerdict(key)} style={{ fontSize: 12, fontWeight: 600, padding: "5px 14px", borderRadius: 20, border: `1.5px solid ${verdict === key ? meta.border : "var(--bdr2)"}`, background: verdict === key ? meta.bg : "var(--surf)", color: verdict === key ? meta.color : "var(--t2)", cursor: "pointer", transition: "all 0.15s" }}>
-                {meta.label}
+                <Dot color={meta.color} />{meta.label}
               </button>
             ))}
           </div>
           <textarea value={text} onChange={e => setText(e.target.value)} rows={2} placeholder="Add a note... e.g. Wait for P2 entry. Watch working-capital days."
             style={{ width: "100%", fontSize: 13, padding: "8px 12px", borderRadius: 8, border: "1px solid var(--bdr2)", resize: "vertical", fontFamily: "inherit", outline: "none", boxSizing: "border-box", background: "var(--s1)", color: "var(--t1)" }} />
           <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-            <button onClick={save} disabled={!verdict} style={{ fontSize: 13, fontWeight: 600, padding: "7px 18px", borderRadius: 8, border: "none", background: verdict ? "var(--accent)" : "var(--card2)", color: verdict ? "#09101f" : "var(--t3)", cursor: verdict ? "pointer" : "not-allowed" }}>Save Note</button>
+            <button onClick={save} disabled={!verdict} style={{ fontSize: 13, fontWeight: 600, padding: "7px 18px", borderRadius: 8, border: "none", background: verdict ? "var(--accent)" : "var(--card2)", color: verdict ? "var(--on-accent)" : "var(--t3)", cursor: verdict ? "pointer" : "not-allowed" }}>Save Note</button>
             {saved && <button onClick={() => { setVerdict(saved.verdict); setText(saved.text); setEditing(false); }} style={{ fontSize: 13, padding: "7px 14px", borderRadius: 8, border: "1px solid var(--bdr2)", background: "var(--s1)", color: "var(--t2)", cursor: "pointer" }}>Cancel</button>}
           </div>
         </div>
@@ -458,7 +467,7 @@ function PiotroskiCard({ m }) {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: "6px 20px" }}>
         {m.piotroskiChecks.map(c => (
           <div key={c.id} style={{ display: "flex", gap: 8, fontSize: 12, lineHeight: 1.5, color: c.ok ? "var(--t1)" : "var(--t3)" }}>
-            <span style={{ color: c.ok ? "var(--green)" : "var(--red)", fontWeight: 700, width: 12, flexShrink: 0 }}>{c.ok ? "✓" : "✗"}</span>{c.label}
+            <span style={{ color: c.ok ? "var(--green)" : "var(--red)", width: 14, flexShrink: 0, paddingTop: 2 }}>{c.ok ? <Check size={14} strokeWidth={2.6} /> : <X size={14} strokeWidth={2.6} />}</span>{c.label}
           </div>
         ))}
       </div>
@@ -467,7 +476,7 @@ function PiotroskiCard({ m }) {
 }
 
 function KeyNumbers({ data, m }) {
-  const cr = n => (n == null ? "—" : `Rs ${Math.round(n).toLocaleString("en-IN")} Cr`);
+  const cr = n => (n == null ? "—" : `₹${Math.round(n).toLocaleString("en-IN")} Cr`);
   const crRaw = n => (n == null ? "—" : cr(n / 1e7));
   const stats = [
     ["Market cap", cr(m.marketCapCr)], ["P/E (today)", m.pe ? m.pe.toFixed(1) : "—"], ["Price / book", m.priceToBook?.toFixed(2) ?? "—"], ["Dividend yield", pctText(m.divYield)],
@@ -569,15 +578,15 @@ export default function StockDetail({ symbol, onBack, backTo = "Discover", onOpe
   if (error) {
     return (
       <div style={{ maxWidth: 1000, margin: "0 auto", padding: "28px 20px" }}>
-        <button className="btn-ghost" onClick={onBack} style={{ marginBottom: 16 }}>← Back</button>
-        <div style={{ padding: 12, borderRadius: 8, background: "var(--red-dim)", border: "1px solid var(--red-bdr)", color: "var(--red)", fontSize: 13 }}>⚠ {error}</div>
+        <button className="btn-ghost" onClick={onBack} style={{ marginBottom: 16 }}><ArrowLeft size={15} /> Back</button>
+        <div style={{ display: "flex", gap: 8, alignItems: "flex-start", padding: 12, borderRadius: 8, background: "var(--red-dim)", border: "1px solid var(--red-bdr)", color: "var(--red)", fontSize: 13 }}><TriangleAlert size={16} style={{ flexShrink: 0, marginTop: 1 }} /> {error}</div>
       </div>
     );
   }
   if (!data) {
     return (
       <div style={{ textAlign: "center", padding: "60px 0" }}>
-        <div style={{ fontSize: 28, marginBottom: 10 }}>⏳</div>
+        <LoaderCircle size={28} strokeWidth={2} style={{ color: "var(--t3)", marginBottom: 10, animation: "spin 0.9s linear infinite" }} />
         <p style={{ color: "var(--t2)", fontSize: 14 }}>Loading {symbol} from NSE filings…</p>
       </div>
     );
@@ -607,7 +616,7 @@ export default function StockDetail({ symbol, onBack, backTo = "Discover", onOpe
   const isFin = !!m?.lender;
   const actions = (
     <>
-      <button onClick={() => toggleWatch(data.symbol, price)} title={watched ? "Remove from watchlist" : "Add to watchlist"} style={labelledActionStyle({ active: watched, activeColor: "#FFD60A" })}>
+      <button onClick={() => toggleWatch(data.symbol, price)} title={watched ? "Remove from watchlist" : "Add to watchlist"} style={labelledActionStyle({ active: watched, activeColor: "var(--yellow)" })}>
         <StarIcon filled={watched} />{watched ? "Watchlist" : "Watch"}
       </button>
       <button onClick={() => setShowAlertModal(true)} title="Set price alert" style={labelledActionStyle({ active: false, activeColor: "var(--accent)" })}>
@@ -625,9 +634,9 @@ export default function StockDetail({ symbol, onBack, backTo = "Discover", onOpe
       {/* Sticky action bar */}
       <div style={{ position: "sticky", top: "var(--header-h, 0px)", zIndex: 40, display: "flex", alignItems: "center", gap: 8, padding: "10px 0", marginBottom: 14, background: "var(--bg)", borderBottom: "1px solid var(--bdr)" }}>
         <button onClick={onBack} title={`Back to ${backTo}`} style={{ display: "flex", alignItems: "center", gap: 5, height: 34, borderRadius: 8, background: "var(--s2)", border: "1px solid var(--bdr)", cursor: "pointer", color: "var(--t2)", flexShrink: 0, padding: "0 10px", fontSize: 12, fontWeight: 500, fontFamily: "inherit" }}>
-          ← Back
+          <ArrowLeft size={15} /> Back
         </button>
-        <span style={{ fontSize: 13, fontWeight: 700, color: "var(--t1)", letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>
+        <span style={{ fontSize: 14, fontWeight: 650, color: "var(--t1)", letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>
           {data.name}
           {price > 0 && <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 600, color: "var(--t3)" }}>{fmtRs(price)}</span>}
         </span>
@@ -635,9 +644,9 @@ export default function StockDetail({ symbol, onBack, backTo = "Discover", onOpe
       </div>
 
       {m && (
-        <div style={{ padding: "10px 14px", borderRadius: 8, background: "var(--green-dim)", border: "1px solid var(--green-bdr)", fontSize: 12, color: "var(--green)", marginBottom: 14 }}>
-          ✓ <strong>From NSE filings</strong> — EPS, P/E and price loaded ({data.annual?.scope?.toLowerCase() ?? "reported"} results, year to {new Date(`${m.fyEnd}T00:00:00Z`).toLocaleString("en-IN", { month: "short", year: "numeric", timeZone: "UTC" })}).{" "}
-          <a href={`https://www.nseindia.com/get-quotes/equity?symbol=${encodeURIComponent(data.symbol)}`} target="_blank" rel="noreferrer" style={{ color: "var(--green)", fontWeight: 600 }}>Open on NSE ↗</a>
+        <div style={{ padding: "10px 14px", borderRadius: 10, background: "var(--green-dim)", border: "1px solid var(--green-bdr)", fontSize: 12.5, color: "var(--green)", marginBottom: 14, lineHeight: 1.55 }}>
+          <CircleCheck size={14} strokeWidth={2.2} style={{ verticalAlign: "-2px", marginRight: 6 }} /><strong>From NSE filings</strong> — EPS, P/E and price loaded ({data.annual?.scope?.toLowerCase() ?? "reported"} results, year to {new Date(`${m.fyEnd}T00:00:00Z`).toLocaleString("en-IN", { month: "short", year: "numeric", timeZone: "UTC" })}).{" "}
+          <a href={`https://www.nseindia.com/get-quotes/equity?symbol=${encodeURIComponent(data.symbol)}`} target="_blank" rel="noreferrer" style={{ color: "var(--green)", fontWeight: 600, whiteSpace: "nowrap" }}>Open on NSE <ArrowUpRight size={13} style={{ verticalAlign: "-2px" }} /></a>
           <div style={{ marginTop: 4, color: "var(--t2)" }}>
             {m.medianPe != null
               ? <>P/E is this stock's <em>5-year median</em> ({m.medianPe.toFixed(1)}; today {m.pe?.toFixed(1) ?? "—"}) — override with your own view if needed.</>
@@ -649,7 +658,7 @@ export default function StockDetail({ symbol, onBack, backTo = "Discover", onOpe
       {m?.epsJump && (
         <div style={{ padding: "10px 14px", borderRadius: 8, background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", fontSize: 12, color: "var(--t2)", lineHeight: 1.5, marginBottom: 14 }}>
           <strong style={{ color: "var(--yellow)" }}>Profit jumped this year — buy prices use the usual level.</strong>{" "}
-          {fyLabel(m.fyEnd)} EPS is Rs {m.epsJump.eps.toFixed(2)}, more than 3× the usual Rs {m.epsJump.usualEps.toFixed(2)}, but the share price hasn't followed (P/E {m.epsJump.pe.toFixed(1)} on the last close, against a usual {m.medianPe.toFixed(1)}). That is how a one-off gain looks. If you expect this profit to last, type {round(m.epsJump.eps, 2)} into EPS below.
+          {fyLabel(m.fyEnd)} EPS is ₹{m.epsJump.eps.toFixed(2)}, more than 3× the usual ₹{m.epsJump.usualEps.toFixed(2)}, but the share price hasn't followed (P/E {m.epsJump.pe.toFixed(1)} on the last close, against a usual {m.medianPe.toFixed(1)}). That is how a one-off gain looks. If you expect this profit to last, type {round(m.epsJump.eps, 2)} into EPS below.
         </div>
       )}
 
@@ -696,10 +705,10 @@ export default function StockDetail({ symbol, onBack, backTo = "Discover", onOpe
 
             <div className="ss-grid-4">
               <div>
-                <label style={labelStyle}>{usualEpsShown ? "Usual EPS (Rs)" : `EPS ${fyLabel(m.fyEnd)} (Rs)`}</label>
+                <label style={labelStyle}>{usualEpsShown ? "Usual EPS (₹)" : `EPS ${fyLabel(m.fyEnd)} (₹)`}</label>
                 <input type="number" value={eps} onChange={e => setEps(e.target.value)} style={inputStyle} />
                 {usualEpsShown
-                  ? <div style={{ fontSize: 10, color: "var(--yellow)", marginTop: 3, fontWeight: 600 }}>{fyLabel(m.fyEnd)} was Rs {m.epsJump.eps.toFixed(2)} — see note above</div>
+                  ? <div style={{ fontSize: 10, color: "var(--yellow)", marginTop: 3, fontWeight: 600 }}>{fyLabel(m.fyEnd)} was ₹{m.epsJump.eps.toFixed(2)} — see note above</div>
                   : hint(parseFloat(eps) > 0, "✓ EPS loaded", "From the annual results")}
               </div>
               <div>
@@ -758,7 +767,7 @@ export default function StockDetail({ symbol, onBack, backTo = "Discover", onOpe
 
           {/* Current price */}
           <div style={card}>
-            <h3 style={{ fontSize: 15, fontWeight: 600, margin: "0 0 4px", color: "var(--accent)" }}>📅 Current Price</h3>
+            <SectionTitle icon={CalendarDays} style={{ marginBottom: 4 }}>Current Price</SectionTitle>
             <p style={{ fontSize: 12, color: "var(--t2)", margin: "0 0 12px" }}>
               Price for <strong>{data.name}</strong>. Override if you want to test a different price.
             </p>
@@ -802,7 +811,7 @@ export default function StockDetail({ symbol, onBack, backTo = "Discover", onOpe
               <div className="ss-pros-cons-grid" style={m.pros.length && m.cons.length ? undefined : { gridTemplateColumns: "1fr" }}>
                 {m.pros.length > 0 && (
                   <div>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "var(--green)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 8 }}>✓ Pros ({m.pros.length})</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, color: "var(--green)", marginBottom: 8 }}><CircleCheck size={15} /> Pros ({m.pros.length})</div>
                     <ul style={{ margin: 0, padding: "0 0 0 16px", display: "flex", flexDirection: "column", gap: 6 }}>
                       {m.pros.map((p, i) => <li key={i} style={{ fontSize: 12, color: "var(--t2)", lineHeight: 1.5 }}>{p}</li>)}
                     </ul>
@@ -810,7 +819,7 @@ export default function StockDetail({ symbol, onBack, backTo = "Discover", onOpe
                 )}
                 {m.cons.length > 0 && (
                   <div>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "var(--red)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 8 }}>✗ Cons ({m.cons.length})</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, color: "var(--red)", marginBottom: 8 }}><CircleX size={15} /> Cons ({m.cons.length})</div>
                     <ul style={{ margin: 0, padding: "0 0 0 16px", display: "flex", flexDirection: "column", gap: 6 }}>
                       {m.cons.map((c, i) => <li key={i} style={{ fontSize: 12, color: "var(--t2)", lineHeight: 1.5 }}>{c}</li>)}
                     </ul>
@@ -824,9 +833,11 @@ export default function StockDetail({ symbol, onBack, backTo = "Discover", onOpe
           {action && (
             <div style={{ borderRadius: 12, padding: 20, marginBottom: 16, background: action.bg, border: `2px solid ${action.color}` }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8, flexWrap: "wrap" }}>
-                <span style={{ fontSize: 32 }}>{action.icon}</span>
+                <span style={{ width: 44, height: 44, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: action.color, background: `color-mix(in srgb, ${action.color} 14%, transparent)` }}>
+                  <ActionIcon action={action.action} size={24} strokeWidth={2} />
+                </span>
                 <div>
-                  <div style={{ fontSize: 11, color: action.color, textTransform: "uppercase", letterSpacing: "0.5px", fontWeight: 600 }}>Recommended action</div>
+                  <div style={{ fontSize: 12, color: action.color, fontWeight: 600 }}>Recommended action</div>
                   <div style={{ fontSize: 22, fontWeight: 700, color: action.color }}>{action.action}</div>
                 </div>
               </div>
@@ -844,7 +855,7 @@ export default function StockDetail({ symbol, onBack, backTo = "Discover", onOpe
           {/* Price ladder */}
           {price > 0 && levels && (
             <div style={card}>
-              <h3 style={{ fontSize: 15, fontWeight: 600, margin: "0 0 14px", color: "var(--t1)" }}>📍 Price Ladder</h3>
+              <SectionTitle icon={Layers}>Price Ladder</SectionTitle>
               {[
                 { label: `Sell zone (${fyLabel(m.fyEnd, 2)} FV +10%)`, price: levels.target, color: "var(--red)" },
                 { label: "Phase 1 — Buy 30%", price: levels.p1, color: "var(--accent)" },
@@ -861,7 +872,7 @@ export default function StockDetail({ symbol, onBack, backTo = "Discover", onOpe
                 );
               })}
               <div style={{ borderTop: "2px solid var(--accent)", margin: "10px 0", paddingTop: 10, display: "flex", justifyContent: "space-between", fontSize: 14, fontWeight: 600 }}>
-                <span style={{ color: "var(--accent)" }}>👉 {priceLabel || "Your price"}</span>
+                <span style={{ color: "var(--accent)", display: "flex", alignItems: "center", gap: 6 }}><ArrowRight size={16} strokeWidth={2.2} /> {priceLabel || "Your price"}</span>
                 <span style={{ color: "var(--accent)" }}>{fmtRs(price)}</span>
               </div>
             </div>
@@ -880,13 +891,15 @@ export default function StockDetail({ symbol, onBack, backTo = "Discover", onOpe
             {allPts.map(p => {
               const fs = FLAG_STYLE[p.f] || FLAG_STYLE.Y;
               return (
-                <div key={p.id} style={{ border: `1px solid ${fs.border}`, borderRadius: 12, padding: "12px 14px", background: "var(--s2)" }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-                    <div style={{ fontSize: 9, color: "var(--t3)", textTransform: "uppercase", letterSpacing: "0.07em", fontWeight: 600 }}>Pt {p.id}</div>
-                    <span style={{ fontSize: 12, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: `color-mix(in srgb, ${fs.color} 14%, transparent)`, color: fs.color, lineHeight: 1 }}>{p.f === "G" ? "✓" : p.f === "R" ? "✗" : p.f === "N" ? "–" : "~"}</span>
+                <div key={p.id} style={{ border: `1px solid ${fs.border}`, borderRadius: 12, padding: "12px 14px", background: "var(--s2)", boxShadow: "var(--sh-xs)" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                    <div style={{ fontSize: 11, color: "var(--t3)", fontWeight: 600, letterSpacing: "0.02em" }}>PT {p.id}</div>
+                    <span title={fs.label} style={{ width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: `color-mix(in srgb, ${fs.color} 14%, transparent)`, color: fs.color }}>
+                      {p.f === "G" ? <Check size={13} strokeWidth={3} /> : p.f === "R" ? <X size={13} strokeWidth={3} /> : p.f === "N" ? <Minus size={13} strokeWidth={3} /> : <TriangleAlert size={12} strokeWidth={2.4} />}
+                    </span>
                   </div>
-                  <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 3, lineHeight: 1.3, color: "var(--t1)", letterSpacing: "-0.01em" }}>{POINT_TITLES[p.id]}</div>
-                  <div style={{ fontSize: 10, color: "var(--t2)", lineHeight: 1.4 }}>{p.s}</div>
+                  <div style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 3, lineHeight: 1.3, color: "var(--t1)", letterSpacing: "-0.01em" }}>{POINT_TITLES[p.id]}</div>
+                  <div style={{ fontSize: 11.5, color: "var(--t2)", lineHeight: 1.45 }}>{p.s}</div>
                 </div>
               );
             })}
@@ -895,7 +908,7 @@ export default function StockDetail({ symbol, onBack, backTo = "Discover", onOpe
           {/* Verdict */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px", borderRadius: 12, border: "1px solid var(--bdr2)", background: "var(--s2)", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
             <div>
-              <div style={{ fontSize: 10, color: "var(--t3)", textTransform: "uppercase", letterSpacing: "0.07em", fontWeight: 600, marginBottom: 6 }}>{totalGreen}/{applicable} green flags</div>
+              <div style={{ fontSize: 12, color: "var(--t2)", fontWeight: 500, marginBottom: 6 }}>{totalGreen}/{applicable} green flags</div>
               <span style={{ fontSize: 14, fontWeight: 700, padding: "4px 14px", borderRadius: 999, background: verdictStyle.bg, color: verdictStyle.color, letterSpacing: "-0.01em" }}>{verdict}</span>
               {verdictNote && <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 6 }}>overridden — {verdictNote}</div>}
             </div>
@@ -920,9 +933,9 @@ export default function StockDetail({ symbol, onBack, backTo = "Discover", onOpe
               </h3>
               <div className="ss-grid-fv">
                 {[
-                  { label: usualEpsShown ? "Usual EPS" : `${fyLabel(m.fyEnd)} EPS`, val: eps ? `Rs ${Math.round(Number(eps))}` : "—", sub: `FV: ${fmtRs(levels.fv25)}` },
-                  { label: `${fyLabel(m.fyEnd, 1)} EPS (est.)`, val: levels.e26 ? `Rs ${levels.e26}` : "—", sub: `FV: ${fmtRs(levels.fv26)}` },
-                  { label: `${fyLabel(m.fyEnd, 2)} EPS (est.)`, val: levels.e27 ? `Rs ${levels.e27}` : "—", sub: `FV: ${fmtRs(levels.fv27)}` },
+                  { label: usualEpsShown ? "Usual EPS" : `${fyLabel(m.fyEnd)} EPS`, val: eps ? `₹${Math.round(Number(eps))}` : "—", sub: `FV: ${fmtRs(levels.fv25)}` },
+                  { label: `${fyLabel(m.fyEnd, 1)} EPS (est.)`, val: levels.e26 ? `₹${levels.e26}` : "—", sub: `FV: ${fmtRs(levels.fv26)}` },
+                  { label: `${fyLabel(m.fyEnd, 2)} EPS (est.)`, val: levels.e27 ? `₹${levels.e27}` : "—", sub: `FV: ${fmtRs(levels.fv27)}` },
                   { label: "Safe Buy Price", val: fmtRs(levels.safeBuy), sub: `Today's FV × ${100 - Number(mosPct || 10)}%`, hi: true },
                 ].map(fc => (
                   <div key={fc.label} style={{ background: "var(--s1)", borderRadius: 8, padding: 12, border: fc.hi ? "1px solid var(--green)" : "1px solid var(--bdr)" }}>
@@ -956,17 +969,17 @@ export default function StockDetail({ symbol, onBack, backTo = "Discover", onOpe
       <MyNotes key={data.symbol} symbol={data.symbol} />
 
       <p style={{ fontSize: 11, color: "var(--t3)", textAlign: "center", lineHeight: 1.6 }}>
-        ⚠️ Educational purposes only. Not financial advice. Always cross-verify data on NSE / BSE before investing. Consult a SEBI registered advisor.
+        <TriangleAlert size={12} style={{ verticalAlign: "-1px", marginRight: 4 }} />Educational purposes only. Not financial advice. Always cross-verify data on NSE / BSE before investing. Consult a SEBI registered advisor.
       </p>
 
       <div className="ss-back-bottom">
         <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "var(--accent)", background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 12, cursor: "pointer", padding: "12px 24px", fontWeight: 600, margin: "8px auto 0" }}>
-          ← Back to {backTo}
+          <ArrowLeft size={16} /> Back to {backTo}
         </button>
       </div>
       <div className="ss-back-sticky">
-        <button onClick={onBack} style={{ width: "100%", height: 48, borderRadius: 12, border: "1px solid var(--bdr2)", background: "var(--s2)", color: "var(--accent)", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
-          ← Back to {backTo}
+        <button onClick={onBack} style={{ width: "100%", height: 48, borderRadius: 12, border: "1px solid var(--bdr2)", background: "var(--s2)", color: "var(--accent)", fontSize: 14, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+          <ArrowLeft size={16} /> Back to {backTo}
         </button>
       </div>
     </div>

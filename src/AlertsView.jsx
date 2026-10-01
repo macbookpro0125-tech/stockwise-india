@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Pencil, X, RefreshCw, Bell } from "lucide-react";
 import { api } from "./api.js";
 import { alertsStore } from "./stores.js";
 
@@ -9,7 +10,7 @@ import { alertsStore } from "./stores.js";
 // nothing checks alerts in the background — they're checked against the
 // latest price when this tab opens or Check Now is pressed. The page says so.
 
-const MONO = { fontFamily: '"SF Mono","SFMono-Regular",Menlo,monospace', fontVariantNumeric: "tabular-nums" };
+const MONO = { fontVariantNumeric: "tabular-nums" };
 
 function fmtRs(n) {
   if (n == null || isNaN(n)) return "—";
@@ -55,17 +56,17 @@ function EditAlertModal({ alert, onSave, onClose }) {
         <div style={{ fontSize: 17, fontWeight: 700, color: "var(--t1)", marginBottom: 4, letterSpacing: "-0.02em" }}>Edit Alert</div>
         <div style={{ fontSize: 13, color: "var(--t3)", marginBottom: 20 }}>{alert.name || alert.ticker}</div>
         <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: "var(--t3)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Condition</div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "var(--t3)", marginBottom: 8 }}>Condition</div>
           <div style={{ display: "flex", gap: 8 }}>
             {["below", "above"].map(v => (
-              <button key={v} onClick={() => setCondition(v)} style={{ flex: 1, padding: "10px 12px", borderRadius: 10, cursor: "pointer", border: condition === v ? "1.5px solid var(--accent)" : "1px solid var(--bdr2)", background: condition === v ? "rgba(0,224,190,0.08)" : "var(--s3)", color: condition === v ? "var(--accent)" : "var(--t2)", fontSize: 13, fontWeight: 500, transition: "all 150ms" }}>
+              <button key={v} onClick={() => setCondition(v)} style={{ flex: 1, padding: "10px 12px", borderRadius: 10, cursor: "pointer", border: condition === v ? "1.5px solid var(--accent)" : "1px solid var(--bdr2)", background: condition === v ? "color-mix(in srgb, var(--accent) 8%, transparent)" : "var(--s3)", color: condition === v ? "var(--accent)" : "var(--t2)", fontSize: 13, fontWeight: 500, transition: "all 150ms" }}>
                 {v === "below" ? "▼ Drops to" : "▲ Rises to"}
               </button>
             ))}
           </div>
         </div>
         <div style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: "var(--t3)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Target Price (₹)</div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "var(--t3)", marginBottom: 8 }}>Target Price (₹)</div>
           <input autoFocus type="number" value={threshold} onChange={e => setThreshold(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter") save(); if (e.key === "Escape") onClose(); }}
             className="input-base" style={{ fontSize: 18, fontWeight: 600, textAlign: "center" }} />
@@ -90,7 +91,7 @@ function AlertCard({ a, onView, onEdit, onDelete, onToggle }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
             <span style={{ fontWeight: 600, fontSize: 14, color: "var(--t1)", letterSpacing: "-0.01em" }}>{a.name || a.ticker}</span>
-            <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 7px", borderRadius: 999, background: "var(--accent-glow)", color: "var(--accent)", textTransform: "uppercase", letterSpacing: "0.04em" }}>price</span>
+            <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 7px", borderRadius: 999, background: "var(--accent-glow)", color: "var(--accent)" }}>Price</span>
           </div>
           <div style={{ fontSize: 13, color: "var(--t2)", ...MONO, marginBottom: 6 }}>
             <span style={{ color: a.condition === "below" ? "var(--red)" : "var(--green)", fontWeight: 600 }}>{a.condition === "above" ? "▲" : "▼"}</span>
@@ -104,9 +105,9 @@ function AlertCard({ a, onView, onEdit, onDelete, onToggle }) {
         </div>
         <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0, marginTop: 2 }}>
           <button onClick={onView} title="View stock" style={{ ...actionBtn, fontSize: 12 }}>→</button>
-          <button onClick={onEdit} title="Edit alert" style={actionBtn}>✎</button>
+          <button onClick={onEdit} title="Edit alert" aria-label="Edit alert" style={actionBtn}><Pencil size={14} /></button>
           <Toggle on={a.enabled} onChange={onToggle} />
-          <button onClick={onDelete} title="Delete alert" style={actionBtn}>✕</button>
+          <button onClick={onDelete} title="Delete alert" aria-label="Delete alert" style={actionBtn}><X size={15} /></button>
         </div>
       </div>
     </div>
@@ -157,14 +158,14 @@ export default function AlertsView({ onOpenStock }) {
         </div>
         <button onClick={check} disabled={checking || alerts.length === 0} className="btn-primary" style={{ height: 34, padding: "0 18px", fontSize: 12, borderRadius: 8, boxShadow: "none", display: "flex", alignItems: "center", gap: 6 }}>
           {checking
-            ? <><span style={{ width: 12, height: 12, border: "2px solid rgba(7,7,14,0.2)", borderTopColor: "#07070E", borderRadius: "50%", animation: "spin 0.7s linear infinite", flexShrink: 0 }} />Checking…</>
-            : <><span style={{ fontSize: 13 }}>↻</span>Check Now</>}
+            ? <><span style={{ width: 12, height: 12, border: "2px solid color-mix(in srgb, var(--on-accent) 25%, transparent)", borderTopColor: "var(--on-accent)", borderRadius: "50%", animation: "spin 0.7s linear infinite", flexShrink: 0 }} />Checking…</>
+            : <><RefreshCw size={14} />Check Now</>}
         </button>
       </div>
 
       {triggered.length > 0 && (
         <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--yellow)", textTransform: "uppercase", letterSpacing: "0.06em", display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "var(--yellow)", display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
             <span style={{ width: 6, height: 6, borderRadius: 3, background: "var(--yellow)", display: "inline-block" }} />
             Triggered ({triggered.length})
           </div>
@@ -188,17 +189,17 @@ export default function AlertsView({ onOpenStock }) {
         <div style={{ textAlign: "center", padding: "32px 0", fontSize: 12, color: "var(--t3)" }}>Loading alerts…</div>
       ) : alerts.length === 0 ? (
         <div style={{ textAlign: "center", padding: "48px 20px", color: "var(--t3)", border: "1px dashed var(--bdr2)", borderRadius: 14, background: "var(--s1)" }}>
-          <div style={{ fontSize: 40, marginBottom: 12, opacity: 0.15 }}>🔔</div>
+          <Bell size={38} strokeWidth={1.5} style={{ marginBottom: 12, opacity: 0.3 }} />
           <p style={{ fontSize: 15, color: "var(--t2)", fontWeight: 600, marginBottom: 6 }}>No alerts yet</p>
           <p style={{ fontSize: 12, maxWidth: 300, margin: "0 auto", lineHeight: 1.6 }}>
-            Use the <strong>🔔</strong> button on any stock in results, your watchlist, or its page to set a price alert.
+            Use the <Bell size={13} style={{ verticalAlign: "-2px" }} /> button on any stock in results, your watchlist, or its page to set a price alert.
           </p>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {groups.map(group => (
             <div key={group.key} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6, fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: group.color }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6, fontSize: 11.5, fontWeight: 600, color: group.color }}>
                 <span>{group.label}</span>
                 <span style={{ color: "var(--t3)", fontWeight: 600 }}>{group.items.length}</span>
                 <span style={{ flex: 1, height: 1, background: "var(--bdr)" }} />
