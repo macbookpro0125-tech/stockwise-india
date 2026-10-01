@@ -17,6 +17,29 @@ import { useScreenerMeta, DEFAULT_COLUMNS } from "./screener/meta.js";
 const read = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } };
 const write = (key, v) => { try { localStorage.setItem(key, JSON.stringify(v)); } catch {} };
 
+// A screen as a link: its filters in the address, ?screen=… (base64url
+// JSON), so it can be sent to someone and opens with the same filters
+const toB64url = str => btoa(String.fromCharCode(...new TextEncoder().encode(str))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const fromB64url = b => new TextDecoder().decode(Uint8Array.from(atob(b.replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0)));
+const compact = f => (f.values ? { id: f.id, values: f.values } : { id: f.id, ...(f.min != null && { min: f.min }), ...(f.max != null && { max: f.max }) });
+
+function screenLink(filters) {
+  return `${window.location.origin}/?screen=${toB64url(JSON.stringify(filters.map(compact)))}`;
+}
+
+function filtersFromLink() {
+  try {
+    const p = new URLSearchParams(window.location.search).get("screen");
+    if (!p) return null;
+    const list = JSON.parse(fromB64url(p));
+    if (!Array.isArray(list)) return null;
+    return list.filter(f => f && typeof f.id === "string")
+      .map(f => (Array.isArray(f.values) ? { id: f.id, values: f.values.filter(v => typeof v === "string") } : { id: f.id, min: Number.isFinite(f.min) ? f.min : null, max: Number.isFinite(f.max) ? f.max : null }));
+  } catch {
+    return null;
+  }
+}
+
 function readCustomPresets() { return read("customPresets", []); }
 function writeCustomPresets(list) {
   write("customPresets", list);
@@ -36,8 +59,13 @@ function Modal({ onClose, width = 340, children }) {
 
 export default function DiscoverView({ onOpenStock }) {
   const { meta, error: metaError, retry: retryMeta } = useScreenerMeta();
-  // null until the first screen says what the old saved criteria became
-  const [filters, setFilters] = useState(() => read("screenerFilters", null));
+  // A shared link wins; else the last screen. null until the first screen
+  // says what the old saved criteria became.
+  const [filters, setFilters] = useState(() => filtersFromLink() ?? read("screenerFilters", null));
+  // The link has done its job once applied — a reload shouldn't undo later changes
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).has("screen")) window.history.replaceState(null, "", window.location.pathname);
+  }, []);
   const [columns, setColumns] = useState(() => read("screenerColumns", DEFAULT_COLUMNS));
   const [activePresetId, setActivePresetId] = useState(null);
   const [results, setResults] = useState(null);
@@ -143,14 +171,23 @@ export default function DiscoverView({ onOpenStock }) {
   const handleRenamePreset = (id, name) => writeCustomPresets(readCustomPresets().map(p => (p.id === id ? { ...p, name } : p)));
   const handleDuplicatePreset = p => writeCustomPresets([...readCustomPresets(), { ...p, id: `custom_${Date.now()}`, name: `${p.name} (copy)`, custom: true }]);
 
-  const handleExport = () => {
-    navigator.clipboard.writeText(JSON.stringify({ filters: filters.filter(isActiveFilter) }, null, 2))
-      .then(() => setCopyFeedback("Copied!"))
+  const handleShare = () => {
+    navigator.clipboard.writeText(screenLink(filters.filter(isActiveFilter)))
+      .then(() => setCopyFeedback("Link copied!"))
       .catch(() => setCopyFeedback("Copy failed"))
       .finally(() => setTimeout(() => setCopyFeedback(""), 2000));
   };
   const handleImport = async () => {
     try {
+      // A share link pasted in
+      const link = importText.trim().match(/[?&]screen=([A-Za-z0-9_-]+)/);
+      if (link) {
+        const list = JSON.parse(fromB64url(link[1]));
+        if (!Array.isArray(list)) throw new Error("Invalid");
+        changeFilters(list.filter(f => f && typeof f.id === "string").map(f => (f.values ? f : { id: f.id, min: f.min ?? null, max: f.max ?? null })));
+        setShowImportModal(false); setImportText(""); setImportError("");
+        return;
+      }
       const parsed = JSON.parse(importText.trim());
       if (typeof parsed !== "object" || parsed === null) throw new Error("Invalid");
       if (Array.isArray(parsed.filters) || Array.isArray(parsed)) {
@@ -209,11 +246,11 @@ export default function DiscoverView({ onOpenStock }) {
       {showImportModal && (
         <Modal onClose={() => { setShowImportModal(false); setImportError(""); }} width={440}>
           <div style={{ fontSize: 17, fontWeight: 700, color: "var(--t1)", marginBottom: 6, letterSpacing: "-0.02em" }}>Import filters</div>
-          <div style={{ fontSize: 13, color: "var(--t3)", marginBottom: 16 }}>Paste filters copied with "Copy filters" in this app</div>
+          <div style={{ fontSize: 13, color: "var(--t3)", marginBottom: 16 }}>Paste a share link, or filters exported from this app</div>
           <textarea
             autoFocus value={importText}
             onChange={e => { setImportText(e.target.value); setImportError(""); }}
-            placeholder='{"filters": [{"id": "roce", "min": 20, "max": null}]}'
+            placeholder="https://…/?screen=…"
             className="mono"
             style={{ width: "100%", height: 140, padding: 12, borderRadius: 10, border: `1px solid ${importError ? "var(--red)" : "var(--bdr2)"}`, background: "var(--s1)", color: "var(--t1)", fontSize: 13, resize: "vertical", outline: "none", boxSizing: "border-box" }}
           />
@@ -265,7 +302,7 @@ export default function DiscoverView({ onOpenStock }) {
               {panel}
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", paddingTop: 12, marginTop: 12, borderTop: "1px solid var(--bdr)" }}>
                 <button onClick={() => setSideOpen(false)} className="btn-ghost" style={{ height: 28, padding: "0 10px", fontSize: 11 }}>◂ Hide filters</button>
-                <button onClick={handleExport} disabled={!activeCount} className="btn-ghost" style={{ height: 28, padding: "0 10px", fontSize: 11 }}>{copyFeedback || "Copy filters"}</button>
+                <button onClick={handleShare} disabled={!activeCount} title="Copy a link that opens this screen" className="btn-ghost" style={{ height: 28, padding: "0 10px", fontSize: 11 }}>{copyFeedback || "Share link"}</button>
                 <button onClick={() => setShowImportModal(true)} className="btn-ghost" style={{ height: 28, padding: "0 10px", fontSize: 11 }}>Import</button>
               </div>
             </aside>

@@ -178,6 +178,30 @@ async function periodReturns(latest, splits) {
   return out;
 }
 
+// The day's closes of the indices shown in the price strip, from NSE's daily
+// index file (same archive as the bhavcopy; cached the same way)
+const STRIP_INDICES = ["Nifty 50", "Nifty Bank", "Nifty Next 50", "NIFTY Midcap 100", "NIFTY Smallcap 100", "Nifty IT"];
+
+async function indexCloses(isoDate) {
+  const path = join(PRICE_DIR, `indices-${isoDate}.csv`);
+  let csv = existsSync(path) ? readFileSync(path, "utf-8") : null;
+  if (!csv) {
+    csv = await fetchText(`https://nsearchives.nseindia.com/content/indices/ind_close_all_${ddmmyyyy(new Date(`${isoDate}T00:00:00Z`))}.csv`).catch(() => null);
+    if (!csv) return [];
+    writeFileSync(path, csv);
+  }
+  const [header, ...lines] = csv.trim().split("\n");
+  const cols = header.split(",").map(c => c.trim());
+  const at = name => cols.indexOf(name);
+  const byName = new Map(lines.map(l => l.split(",").map(c => c.trim())).map(f => [f[at("Index Name")], f]));
+  return STRIP_INDICES.flatMap(name => {
+    const f = byName.get(name);
+    const close = Number(f?.[at("Closing Index Value")]);
+    if (!(close > 0)) return [];
+    return [{ name: name.replace(/^nifty/i, "NIFTY"), close, change: Number(f[at("Points Change")]), changePct: Number(f[at("Change(%)")]) }];
+  });
+}
+
 async function sectorsBySymbol() {
   const out = {};
   for (const list of SECTOR_LISTS) {
@@ -257,6 +281,7 @@ export async function buildMarketSnapshot(fyEndDates, { yearsOfActions = 6 } = {
     range52wFrom: year.from,
     range52wTradingDays: year.tradingDays,
     returns: await periodReturns(latest, splits),
+    indices: await indexCloses(latest.date),
   };
   writeFileSync(SNAPSHOT_PATH, JSON.stringify(snapshot));
   return snapshot;

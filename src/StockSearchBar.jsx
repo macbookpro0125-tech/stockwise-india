@@ -33,6 +33,21 @@ export default function StockSearchBar({ onAnalyze, placeholder = "Search any st
   const [highlightIdx, setHighlightIdx] = useState(-1);
   const [history, setHistory] = useState(loadHistory);
   const containerRef = useRef(null);
+  const inputRef = useRef(null);
+
+  // "/" jumps to the search box from anywhere, as on Tickertape — unless
+  // you're already typing somewhere
+  useEffect(() => {
+    const onKey = e => {
+      if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return;
+      const t = e.target;
+      if (t instanceof HTMLElement && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+      e.preventDefault();
+      inputRef.current?.focus();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   const latest = useRef("");
 
   useEffect(() => {
@@ -97,6 +112,7 @@ export default function StockSearchBar({ onAnalyze, placeholder = "Search any st
       <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
         <span style={{ position: "absolute", left: 12, color: "var(--t3)", fontSize: 14, pointerEvents: "none" }}>⌕</span>
         <input
+          ref={inputRef}
           value={query}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
@@ -106,6 +122,9 @@ export default function StockSearchBar({ onAnalyze, placeholder = "Search any st
           className="input-base"
           style={{ width: "100%", paddingLeft: 34, height: 38, fontSize: 13, borderRadius: 10 }}
         />
+        {!query && (
+          <kbd aria-hidden="true" title='Press "/" to search' style={{ position: "absolute", right: 10, fontSize: 11, color: "var(--t3)", border: "1px solid var(--bdr2)", borderRadius: 5, padding: "0 6px", lineHeight: "18px", fontFamily: "inherit", pointerEvents: "none" }}>/</kbd>
+        )}
         {query && (
           <button onClick={() => { setQuery(""); setSuggestions([]); }} style={{ position: "absolute", right: 10, background: "none", border: "none", color: "var(--t3)", cursor: "pointer", fontSize: 14, padding: 0, lineHeight: 1 }}>✕</button>
         )}

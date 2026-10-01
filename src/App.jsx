@@ -4,6 +4,7 @@ import Landing from "./Landing.jsx";
 import { PrivacyPage, DisclaimerPage } from "./LegalPages.jsx";
 import { usePath, navigate, SiteFooter } from "./site.jsx";
 import Header, { BottomTabBar } from "./Header.jsx";
+import PriceStrip from "./PriceStrip.jsx";
 import DiscoverView from "./DiscoverView.jsx";
 import WatchlistView from "./WatchlistView.jsx";
 import PortfolioView from "./PortfolioView.jsx";
@@ -80,6 +81,7 @@ export default function App() {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
+      <PriceStrip onOpenStock={openSymbol} />
       <Header tab={open ? null : tab} onTab={goTab} email={account.email} onLogout={logout} onDeleted={accountDeleted} onSearch={openSymbol} theme={theme} onToggleTheme={toggleTheme} />
       <div style={{ height: 16 }} />
       {open && <StockDetail key={open.at} symbol={open.symbol} onBack={closeStock} onOpenStock={openSymbol} />}

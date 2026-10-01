@@ -222,6 +222,19 @@ export function createApp() {
         return;
       }
 
+      // The price strip: the main indices and the largest companies, at the
+      // last close (end of day — the strip says so)
+      if (url.pathname === "/api/market-strip" && req.method === "GET") {
+        const snap = loadMarketSnapshot();
+        const stocks = allMetrics().rows
+          .filter(m => m.marketCapCr != null && m.cmp != null)
+          .sort((a, b) => b.marketCapCr - a.marketCapCr)
+          .slice(0, 15)
+          .map(m => ({ symbol: m.symbol, cmp: m.cmp, changePct: m.ret1d }));
+        sendJson(res, 200, { asOf: snap?.pricesDate ?? null, indices: snap?.indices ?? [], stocks });
+        return;
+      }
+
       // What the filter picker and column picker offer: every metric, its
       // category, unit and spread across the market
       if (url.pathname === "/api/metrics" && req.method === "GET") {
