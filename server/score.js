@@ -83,9 +83,12 @@ export function computeScoreParts(enrichData, fallback = {}) {
   const promot = e.promoterPct ?? e.promoterHolding ?? fallback.promoterHolding;
   check("promoter", "Promoter holding ≥ 50%", promot != null && promot >= 50);
 
-  // PT5 / PT6 — valuation and entry.
+  // PT5 / PT6 — valuation and entry. Under the stop loss the plan says exit,
+  // so a buy price reached there doesn't count.
+  const stopLoss = e.levels?.stopLoss;
   check("fair-value", "Price at or below 2-year fair value", !!(e.fairValue && e.cmp && e.cmp <= e.fairValue));
-  check("safe-buy", "Price at or below Phase 1 buy price", !!(e.safeBuyPrice && e.cmp && e.cmp <= e.safeBuyPrice));
+  check("safe-buy", "Price at or below Phase 1 buy price, above the stop loss",
+    !!(e.safeBuyPrice && e.cmp && e.cmp <= e.safeBuyPrice && !(stopLoss > 0 && e.cmp <= stopLoss)));
 
   // PT7 — a profit every year. The original's point 7 was an analyst's call on
   // AI and tech disruption that defaulted to "safe", so every company got it
