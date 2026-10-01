@@ -1,14 +1,14 @@
-import { useState } from "react";
-import { Pencil, X, RefreshCw, Bell } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Pencil, X, RefreshCw, Bell, Send, CircleCheck } from "lucide-react";
 import { api } from "./api.js";
 import { alertsStore } from "./stores.js";
 
 // The original's Alerts panel (stock-screener src/components/AlertsPanel.jsx):
 // summary and Check Now, what has triggered, then every alert grouped, each
-// with view / edit / on-off / delete. What this app doesn't have yet is left
-// out rather than imitated: there are no Telegram or email channels, and
-// nothing checks alerts in the background — they're checked against the
-// latest price when this tab opens or Check Now is pressed. The page says so.
+// with view / edit / on-off / delete. Plus Telegram: an account that connects
+// it gets each alert as a message when the price crosses (checked every 15
+// minutes while NSE trades — server/alert-notifier.js). There's no email
+// channel yet; the page says what's checked when.
 
 const MONO = { fontVariantNumeric: "tabular-nums" };
 
@@ -101,6 +101,7 @@ function AlertCard({ a, onView, onEdit, onDelete, onToggle }) {
             <span style={MONO}>{a.cmp != null ? `${a.priceSource === "live" ? "Live" : "Close"} ${fmtRs(a.cmp)}` : "No recent price"}</span>
             {a.triggered === false && away != null && <span>· {Math.abs(away).toFixed(1)}% away</span>}
             {a.created_at && <span>· added {timeAgo(a.created_at)}</span>}
+            {a.notified_at && <span style={{ color: "var(--accent)" }}>· sent to Telegram {timeAgo(a.notified_at)}</span>}
           </div>
         </div>
         <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0, marginTop: 2 }}>
@@ -114,12 +115,105 @@ function AlertCard({ a, onView, onEdit, onDelete, onToggle }) {
   );
 }
 
+// Telegram: connect once (a one-time t.me link the server makes; tapping Start
+// in Telegram links the chat), then test or disconnect. The link is fetched
+// ahead, so the button is a plain link a pop-up blocker won't stop; codes
+// last 15 minutes, so it's renewed every 10.
+function TelegramCard({ onStatus }) {
+  const [tg, setTg] = useState(null);
+  const [link, setLink] = useState(null);
+  const [waiting, setWaiting] = useState(false);
+  const [note, setNote] = useState(null); // { text, ok }
+
+  const load = () => api.telegram().then(s => { setTg(s); onStatus(s); return s; }).catch(() => null);
+  useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    if (!tg?.configured || tg.connected) return;
+    const get = () => api.telegramLink().then(r => setLink(r.url)).catch(() => setLink(null));
+    get();
+    const t = setInterval(get, 10 * 60_000);
+    return () => clearInterval(t);
+  }, [tg?.configured, tg?.connected]);
+
+  // After the link opens: look for the connection every 3 s, for 3 minutes
+  useEffect(() => {
+    if (!waiting) return;
+    let n = 0;
+    const t = setInterval(async () => {
+      const s = await load();
+      if (s?.connected || ++n >= 60) { setWaiting(false); clearInterval(t); }
+    }, 3000);
+    return () => clearInterval(t);
+  }, [waiting]);
+
+  const test = async () => {
+    setNote(null);
+    try { await api.telegramTest(); setNote({ text: "Sent — check Telegram.", ok: true }); }
+    catch (e) { setNote({ text: e.message, ok: false }); }
+  };
+  const disconnect = async () => { await api.telegramDisconnect(); setNote(null); await load(); };
+
+  if (!tg) return null;
+  const box = { display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", padding: "14px 16px", borderRadius: 12, border: "1px solid var(--bdr2)", background: "var(--s2)", boxShadow: "var(--sh-xs)", marginBottom: 20 };
+  const icon = (
+    <span style={{ width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: "color-mix(in srgb, var(--accent) 12%, transparent)", color: "var(--accent)" }}>
+      <Send size={17} />
+    </span>
+  );
+  if (!tg.configured) {
+    return (
+      <div style={{ ...box, boxShadow: "none", background: "var(--s1)" }}>
+        {icon}
+        <div style={{ fontSize: 12.5, color: "var(--t2)", lineHeight: 1.5 }}>Telegram alerts aren't set up on this server yet, so alerts only show on this page.</div>
+      </div>
+    );
+  }
+  if (tg.connected) {
+    return (
+      <div style={box}>
+        {icon}
+        <div style={{ flex: "1 1 220px", minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 600, color: "var(--t1)" }}>
+            <CircleCheck size={15} style={{ color: "var(--green)" }} /> Telegram connected
+          </div>
+          <div style={{ fontSize: 12, color: "var(--t3)", marginTop: 2 }}>
+            Alerts go to {tg.name ? <strong style={{ color: "var(--t2)" }}>{tg.name}</strong> : "your chat"}{tg.bot ? <> from @{tg.bot}</> : null}
+            {note && <span style={{ color: note.ok ? "var(--green)" : "var(--red)", marginLeft: 8 }}>{note.text}</span>}
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 6 }}>
+          <button onClick={test} className="btn-ghost" style={{ height: 32, fontSize: 12.5 }}>Send test</button>
+          <button onClick={disconnect} className="btn-ghost" style={{ height: 32, fontSize: 12.5, color: "var(--t2)" }}>Disconnect</button>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div style={box}>
+      {icon}
+      <div style={{ flex: "1 1 220px", minWidth: 0 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: "var(--t1)" }}>Get your alerts on Telegram</div>
+        <div style={{ fontSize: 12, color: "var(--t3)", marginTop: 2, lineHeight: 1.5 }}>
+          {waiting ? "Tap Start in Telegram — this page updates once you're connected." : "A message on your phone when a price crosses one of your alerts. Free, no phone number shared with us."}
+          {note && <span style={{ color: "var(--red)", marginLeft: 8 }}>{note.text}</span>}
+        </div>
+      </div>
+      <a href={link ?? undefined} target="_blank" rel="noreferrer" onClick={e => { if (!link) e.preventDefault(); else setWaiting(true); }}
+        className="btn-primary" style={{ height: 34, padding: "0 16px", fontSize: 13, textDecoration: "none", opacity: link ? 1 : 0.6, pointerEvents: link ? "auto" : "none" }}>
+        <Send size={14} /> {waiting ? "Waiting…" : "Connect Telegram"}
+      </a>
+    </div>
+  );
+}
+
 export default function AlertsView({ onOpenStock }) {
   const stored = alertsStore.use();
   const [live, setLive] = useState(null); // alerts re-read with live prices (Check Now)
   const [checkedAt, setCheckedAt] = useState(null);
   const [checking, setChecking] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
+  const [tg, setTg] = useState(null); // the Telegram card's status, for the note below the list
 
   const alerts = live ?? stored ?? [];
   const reload = async () => { setLive(null); await alertsStore.refresh(); };
@@ -162,6 +256,8 @@ export default function AlertsView({ onOpenStock }) {
             : <><RefreshCw size={14} />Check Now</>}
         </button>
       </div>
+
+      <TelegramCard onStatus={setTg} />
 
       {triggered.length > 0 && (
         <div style={{ marginBottom: 20 }}>
@@ -220,7 +316,9 @@ export default function AlertsView({ onOpenStock }) {
       {alerts.length > 0 && (
         <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 16, textAlign: "center", lineHeight: 1.6 }}>
           Checked against the latest price when you open this tab (NSE's daily close) or press <strong>Check Now</strong> (live where available).
-          Email and phone notifications aren't set up yet, so nothing is sent to you.
+          {tg?.connected
+            ? " While NSE is open they're also checked every 15 minutes and sent to your Telegram — once when the price crosses, again only if it crosses back and returns."
+            : tg?.configured ? " Connect Telegram above to get them on your phone." : " Nothing is sent to your phone yet."}
         </div>
       )}
 

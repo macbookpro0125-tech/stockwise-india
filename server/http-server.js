@@ -4,6 +4,7 @@
 // the client to store — a token in localStorage is readable by any script
 // on the page, which is exactly what a single XSS bug turns into full
 // account takeover. httpOnly means client-side JS can't read it at all.
+import "./env.js"; // first, so the rest see .env's settings
 import { createServer } from "node:http";
 import { gzipSync } from "node:zlib";
 import { existsSync, statSync, createReadStream } from "node:fs";
@@ -23,6 +24,8 @@ import { fetchEquityList } from "./equity-list.js";
 import { computeMetrics } from "./metrics.js";
 import { loadMarketSnapshot } from "./market-data.js";
 import { startDataJobs, jobStatus } from "./data-jobs.js";
+import { botInfo, linkCode, telegramChat, unlinkTelegram, sendTelegram, startTelegramPolling } from "./telegram.js";
+import { startAlertChecks } from "./alert-notifier.js";
 import { fetchTechnicals } from "./technicals.js";
 import { shareholdingHistory, companyFilings, companyNews, sectorPeers } from "./company-extras.js";
 import { PRESETS } from "./presets.js";
@@ -481,8 +484,8 @@ export function createApp() {
         if (userId == null) return;
         // Each alert against the latest price: the day's close, or with
         // ?live=1 (the Alerts tab's Check Now) a live quote where available.
-        // Nothing checks alerts in the background or sends notifications yet
-        // — the Alerts tab says so.
+        // Sending them is alert-notifier.js's, to accounts that connected
+        // Telegram; notified_at says when one was last sent.
         const alerts = listAlerts(userId);
         const prices = url.searchParams.get("live") === "1"
           ? await currentPrices(alerts.map(a => a.ticker))
@@ -497,6 +500,44 @@ export function createApp() {
           const triggered = cmp == null ? null : a.condition === "below" ? cmp <= a.threshold : cmp >= a.threshold;
           return { ...a, enabled: !!a.enabled, cmp, priceDate: p?.asOf ?? null, priceSource: p?.source ?? null, triggered };
         }));
+        return;
+      }
+
+      // Telegram: whether this server has a bot, and whether this account is
+      // connected to it (telegram.js)
+      if (url.pathname === "/api/telegram" && req.method === "GET") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        const bot = await botInfo().catch(() => null);
+        const chat = telegramChat(userId);
+        sendJson(res, 200, { configured: !!bot, bot: bot?.username ?? null, connected: !!chat, name: chat?.name ?? null });
+        return;
+      }
+
+      if (url.pathname === "/api/telegram/link" && req.method === "POST") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        const bot = await botInfo().catch(() => null);
+        if (!bot) { sendJson(res, 503, { error: "Telegram alerts aren't set up on this server yet." }); return; }
+        sendJson(res, 200, { url: `https://t.me/${bot.username}?start=${linkCode(userId)}` });
+        return;
+      }
+
+      if (url.pathname === "/api/telegram/test" && req.method === "POST") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        const chat = telegramChat(userId);
+        if (!chat) { sendJson(res, 400, { error: "Connect Telegram first." }); return; }
+        await sendTelegram(chat.chatId, "Test message from <b>Stockwise India</b>. Your price alerts will arrive in this chat.");
+        sendJson(res, 200, { ok: true });
+        return;
+      }
+
+      if (url.pathname === "/api/telegram" && req.method === "DELETE") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        unlinkTelegram(userId);
+        sendJson(res, 200, { ok: true });
         return;
       }
 
@@ -553,6 +594,11 @@ export function createApp() {
 if (import.meta.url === `file://${process.argv[1]}`) {
   const port = Number(process.env.PORT) || 8787;
   createApp().listen(port, () => console.log(`stockwise-india on http://localhost:${port}`));
-  // DATA_JOBS=off for a server that should only serve what's on disk
-  if (process.env.DATA_JOBS !== "off") startDataJobs();
+  // DATA_JOBS=off for a server that should only serve what's on disk — and
+  // that mustn't answer the Telegram bot either (one poller per bot)
+  if (process.env.DATA_JOBS !== "off") {
+    startDataJobs();
+    startTelegramPolling();
+    startAlertChecks();
+  }
 }
