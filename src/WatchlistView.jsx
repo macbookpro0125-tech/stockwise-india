@@ -30,8 +30,9 @@ function scoreStyle(score, max = 10) {
   return { color: "var(--red)", bg: "var(--red-dim)", border: "var(--red-bdr)" };
 }
 
-function buyStatus(cmp, safeBuyPrice) {
+function buyStatus(cmp, safeBuyPrice, stopLoss) {
   if (!cmp || !safeBuyPrice) return null;
+  if (stopLoss > 0 && cmp <= stopLoss) return { label: "Below stop loss", color: "var(--red)" };
   if (cmp <= safeBuyPrice) return { label: "In buy zone", color: "var(--green)" };
   const prem = ((cmp - safeBuyPrice) / safeBuyPrice) * 100;
   return { label: `${prem.toFixed(0)}% above P1`, color: prem <= 10 ? "var(--yellow)" : "var(--t3)" };
@@ -119,7 +120,7 @@ export default function WatchlistView({ onOpenStock }) {
           const score = r?.score?.green ?? null;
           const scoreMax = r?.score?.applicable ?? 10;
           const ss = scoreStyle(score, scoreMax);
-          const buy = buyStatus(cmp, r?.safeBuyPrice);
+          const buy = buyStatus(cmp, r?.safeBuyPrice, r?.stopLoss);
           return (
             <div key={item.ticker} style={{ padding: "14px 16px", borderRadius: 12, border: "1px solid var(--bdr2)", background: "var(--s2)", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
               <div style={{ flex: "1 1 140px", minWidth: 120 }}>

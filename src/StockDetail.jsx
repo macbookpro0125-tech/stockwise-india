@@ -110,6 +110,11 @@ function pointsOneToSix(m, levels, price) {
   }
 
   const premium = levels?.fv27 && price ? price / levels.fv27 : null;
+  // The ladder rung the price is on. Under the stop loss the plan says exit,
+  // so a buy price reached there is no pass.
+  const rung = !levels || !price ? null
+    : levels.stopLoss > 0 && price <= levels.stopLoss ? "stop"
+      : price <= levels.p3 ? 3 : price <= levels.p2 ? 2 : price <= levels.p1 ? 1 : null;
   return [
     { id: 1, f: p1Flag, s: `5Y sales growth ${pctText(m.salesGrowth5y)}${unstable ? " (unstable EPS)" : ""}`, d: p1Detail },
     {
@@ -127,9 +132,9 @@ function pointsOneToSix(m, levels, price) {
     },
     {
       id: 6,
-      f: levels && price && price <= levels.p1 ? "G" : "Y",
-      s: levels && price && price <= levels.p1 ? "Price in Phase 1 zone" : "Wait for buy ladder",
-      d: levels ? `Phase 1 ${fmtRs(levels.p1)} · Phase 3 ${fmtRs(levels.p3)}.` : "Set EPS/P/E to build phases.",
+      f: rung === "stop" ? "R" : rung ? "G" : "Y",
+      s: rung === "stop" ? "Below the stop loss — the plan says exit" : rung ? `Price in Phase ${rung} zone` : "Wait for buy ladder",
+      d: levels ? `Phase 1 ${fmtRs(levels.p1)} · Phase 3 ${fmtRs(levels.p3)} · Stop loss ${fmtRs(levels.stopLoss)}.` : "Set EPS/P/E to build phases.",
     },
   ];
 }
