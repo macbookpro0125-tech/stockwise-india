@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { api } from "./api.js";
 import Landing from "./Landing.jsx";
 import { PrivacyPage, DisclaimerPage } from "./LegalPages.jsx";
+import ResetPassword from "./ResetPassword.jsx";
 import { usePath, navigate, SiteFooter } from "./site.jsx";
 import Header, { BottomTabBar, TABS } from "./Header.jsx";
 import PriceStrip from "./PriceStrip.jsx";
@@ -48,6 +49,8 @@ export default function App() {
   // /privacy and /disclaimer are for everyone, signed in or not
   if (path === "/privacy") return <PrivacyPage signedIn={!!account} />;
   if (path === "/disclaimer") return <DisclaimerPage signedIn={!!account} />;
+  // The page a reset email links to: saving signs in, then into the app
+  if (path === "/reset-password") return <ResetPassword onDone={() => { setTab("discover"); navigate("/"); loadAccount(); }} />;
 
   if (account === undefined) return null; // avoid a front-page flash while the session check is in flight
 

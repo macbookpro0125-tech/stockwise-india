@@ -224,6 +224,37 @@ async function main() {
   const huge = await json("POST", "/api/screen", aliceCookie, { filters: [], padding: "x".repeat(300 * 1024) });
   assert(huge.status === 400 && /too large/i.test((await huge.json()).error), "a request bigger than 256 KB is refused");
 
+  // Password reset by email, with the email itself stubbed out
+  const emailMod = await import("./email.js");
+  assert(!(await (await fetch(`${BASE}/api/auth/options`)).json()).passwordReset, "without email set up, password reset isn't offered");
+  assert((await json("POST", "/api/auth/forgot", "", { email: "alice@example.com" })).status === 503, "and asking for one says it isn't available yet");
+  Object.assign(process.env, { RESEND_API_KEY: "test-key", EMAIL_FROM: "Stockwise <no-reply@stockwise.test>", APP_URL: "https://stockwise.test" });
+  const outbox = [];
+  emailMod.setEmailSender(async m => { outbox.push(m); });
+  assert((await (await fetch(`${BASE}/api/auth/options`)).json()).passwordReset === true, "with email set up, password reset is offered");
+  const erinSignup = await json("POST", "/api/auth/signup", "", { email: "erin@example.com", password: "erinsoldpassword" });
+  const erinOldCookie = extractCookie(erinSignup);
+  const known = await json("POST", "/api/auth/forgot", "", { email: "Erin@Example.com" });
+  const unknown = await json("POST", "/api/auth/forgot", "", { email: "nobody@example.com" });
+  await new Promise(r => setTimeout(r, 50));
+  assert(known.status === 200 && unknown.status === 200 && JSON.stringify(await known.json()) === JSON.stringify(await unknown.json()), "the reply is the same whether or not the email has an account");
+  const link = outbox.length === 1 && outbox[0].to === "erin@example.com" ? outbox[0].text.match(/https:\/\/stockwise\.test\/reset-password\?token=([\w-]+)/) : null;
+  assert(link, "only the real account gets an email, with a link on the app's own address");
+  const resetRes = await json("POST", "/api/auth/reset", "", { token: link[1], password: "erinsnewpassword" });
+  assert(resetRes.status === 200 && extractCookie(resetRes).startsWith("stockwise_session="), "the link sets a new password and signs in");
+  assert((await fetch(`${BASE}/api/auth/me`, { headers: { Cookie: erinOldCookie } })).status === 401, "a reset signs the account out everywhere else");
+  assert((await json("POST", "/api/auth/login", "", { email: "erin@example.com", password: "erinsoldpassword" })).status === 400 &&
+    (await json("POST", "/api/auth/login", "", { email: "erin@example.com", password: "erinsnewpassword" })).status === 200, "the old password stops working and the new one works");
+  assert((await json("POST", "/api/auth/reset", "", { token: link[1], password: "anotherpassword1" })).status === 400, "a reset link works only once");
+  await json("POST", "/api/auth/forgot", "", { email: "erin@example.com" });
+  await new Promise(r => setTimeout(r, 50));
+  const second = outbox.at(-1).text.match(/token=([\w-]+)/)[1];
+  (await import("./db.js")).db.prepare("UPDATE password_resets SET expires_at = ? WHERE used_at IS NULL").run("2000-01-01T00:00:00.000Z");
+  assert((await json("POST", "/api/auth/reset", "", { token: second, password: "anotherpassword1" })).status === 400, "an expired reset link doesn't work");
+  await json("POST", "/api/auth/forgot", "", { email: "erin@example.com" });
+  assert((await json("POST", "/api/auth/forgot", "", { email: "erin@example.com" })).status === 429, "a 4th reset request for one account within the hour is refused");
+  for (const k of ["RESEND_API_KEY", "EMAIL_FROM", "APP_URL"]) delete process.env[k];
+
   // Daily backups: a readable copy with every account, the last 14 kept
   const { backupDatabase } = await import("./backup.js");
   const { DatabaseSync } = await import("node:sqlite");

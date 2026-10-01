@@ -1,9 +1,10 @@
 // scrypt (built into node:crypto) instead of adding bcrypt/argon2 as a
 // dependency — it's a standard, memory-hard KDF, not a homegrown scheme.
-import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import { randomBytes, scryptSync, timingSafeEqual, createHash } from "node:crypto";
 import { db } from "./db.js";
 
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+const RESET_TTL_MS = 60 * 60 * 1000; // a reset link works for an hour
 
 function hashPassword(password, salt = randomBytes(16).toString("hex")) {
   const hash = scryptSync(password, salt, 64).toString("hex");
@@ -73,6 +74,44 @@ export function accountEmail(userId) {
   return db.prepare("SELECT email FROM users WHERE id = ?").get(userId)?.email ?? null;
 }
 
+// Password reset. The emailed link carries a random token; only its hash is
+// stored, it works once, for an hour, and asking again replaces the last one.
+const tokenHash = token => createHash("sha256").update(String(token)).digest("hex");
+
+// A token for this email's account, or null when there's no such account —
+// the caller must answer the same either way
+export function createPasswordReset(email) {
+  const user = db.prepare("SELECT id FROM users WHERE email = ?").get(String(email ?? "").trim().toLowerCase());
+  if (!user) return null;
+  const token = randomBytes(32).toString("base64url");
+  db.prepare("DELETE FROM password_resets WHERE user_id = ? OR expires_at < ?").run(user.id, new Date().toISOString());
+  db.prepare("INSERT INTO password_resets (token_hash, user_id, expires_at) VALUES (?, ?, ?)")
+    .run(tokenHash(token), user.id, new Date(Date.now() + RESET_TTL_MS).toISOString());
+  return token;
+}
+
+// Sets the new password and signs the account out everywhere (whoever knew
+// the old one), then opens a fresh session for the person who reset it
+export function resetPassword(token, password) {
+  if (!password || password.length < 8) throw new Error("Password must be at least 8 characters");
+  const row = db.prepare("SELECT user_id, expires_at, used_at FROM password_resets WHERE token_hash = ?").get(tokenHash(token));
+  if (!row || row.used_at || row.expires_at < new Date().toISOString()) {
+    throw new Error("This reset link has expired or was already used. Ask for a new one from the sign-in page.");
+  }
+  const { hash, salt } = hashPassword(password);
+  db.exec("BEGIN");
+  try {
+    db.prepare("UPDATE users SET password_hash = ?, password_salt = ? WHERE id = ?").run(hash, salt, row.user_id);
+    db.prepare("UPDATE password_resets SET used_at = ? WHERE token_hash = ?").run(new Date().toISOString(), tokenHash(token));
+    db.prepare("DELETE FROM sessions WHERE user_id = ?").run(row.user_id);
+    db.exec("COMMIT");
+  } catch (e) {
+    db.exec("ROLLBACK");
+    throw e;
+  }
+  return createSession(Number(row.user_id));
+}
+
 // Removes the account and everything saved with it — what the privacy page
 // promises. Asks for the password again, so a session left signed in on a
 // shared computer can't do it. Each table is cleared by name rather than
@@ -84,7 +123,7 @@ export function deleteAccount(userId, password) {
   }
   db.exec("BEGIN");
   try {
-    for (const table of ["sessions", "alerts", "watchlist", "holdings", "telegram_links"]) {
+    for (const table of ["sessions", "alerts", "watchlist", "holdings", "telegram_links", "password_resets"]) {
       db.prepare(`DELETE FROM ${table} WHERE user_id = ?`).run(userId);
     }
     db.prepare("DELETE FROM users WHERE id = ?").run(userId);

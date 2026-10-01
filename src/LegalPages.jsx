@@ -64,6 +64,12 @@ export function PrivacyPage({ signedIn }) {
         <LI>We don't sell, rent or share your personal data, and we use what you save only to show it back to you — and, if you connect Telegram, to send you your own alerts there.</LI>
       </UL>
 
+      <H>Emails</H>
+      <P>
+        We email you only when you ask to reset your password. The email, with a link that works once for an hour, is
+        delivered by our email service provider on our behalf.
+      </P>
+
       <H>Alerts on Telegram</H>
       <P>
         If you connect Telegram, each alert message — the company, its price and your alert price — is sent to you through
