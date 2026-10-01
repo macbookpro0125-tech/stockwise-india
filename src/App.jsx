@@ -3,7 +3,7 @@ import { api } from "./api.js";
 import Landing from "./Landing.jsx";
 import { PrivacyPage, DisclaimerPage } from "./LegalPages.jsx";
 import { usePath, navigate, SiteFooter } from "./site.jsx";
-import Header, { BottomTabBar } from "./Header.jsx";
+import Header, { BottomTabBar, TABS } from "./Header.jsx";
 import PriceStrip from "./PriceStrip.jsx";
 import DiscoverView from "./DiscoverView.jsx";
 import WatchlistView from "./WatchlistView.jsx";
@@ -84,7 +84,7 @@ export default function App() {
       <PriceStrip onOpenStock={openSymbol} />
       <Header tab={open ? null : tab} onTab={goTab} email={account.email} onLogout={logout} onDeleted={accountDeleted} onSearch={openSymbol} theme={theme} onToggleTheme={toggleTheme} />
       <div style={{ height: 16 }} />
-      {open && <StockDetail key={open.at} symbol={open.symbol} onBack={closeStock} onOpenStock={openSymbol} />}
+      {open && <StockDetail key={open.at} symbol={open.symbol} onBack={closeStock} backTo={TABS.find(t => t.id === tab)?.label} onOpenStock={openSymbol} />}
       {/* Kept mounted (hidden) while a stock is open, so its filters and
           results are still there on Back. */}
       {tab === "discover" && <div hidden={!!open}><DiscoverView onOpenStock={openSymbol} /></div>}

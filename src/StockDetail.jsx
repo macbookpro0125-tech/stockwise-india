@@ -497,7 +497,8 @@ function KeyNumbers({ data, m }) {
 
 // ---- Page ---------------------------------------------------------------------
 
-export default function StockDetail({ symbol, onBack, onOpenStock }) {
+// backTo: the tab Back returns to
+export default function StockDetail({ symbol, onBack, backTo = "Discover", onOpenStock }) {
   const watched = useWatchlist().has(symbol);
   const [showAlertModal, setShowAlertModal] = useState(false);
   const [data, setData] = useState(null);
@@ -623,7 +624,7 @@ export default function StockDetail({ symbol, onBack, onOpenStock }) {
 
       {/* Sticky action bar */}
       <div style={{ position: "sticky", top: "var(--header-h, 0px)", zIndex: 40, display: "flex", alignItems: "center", gap: 8, padding: "10px 0", marginBottom: 14, background: "var(--bg)", borderBottom: "1px solid var(--bdr)" }}>
-        <button onClick={onBack} title="Back to Discover" style={{ display: "flex", alignItems: "center", gap: 5, height: 34, borderRadius: 8, background: "var(--s2)", border: "1px solid var(--bdr)", cursor: "pointer", color: "var(--t2)", flexShrink: 0, padding: "0 10px", fontSize: 12, fontWeight: 500, fontFamily: "inherit" }}>
+        <button onClick={onBack} title={`Back to ${backTo}`} style={{ display: "flex", alignItems: "center", gap: 5, height: 34, borderRadius: 8, background: "var(--s2)", border: "1px solid var(--bdr)", cursor: "pointer", color: "var(--t2)", flexShrink: 0, padding: "0 10px", fontSize: 12, fontWeight: 500, fontFamily: "inherit" }}>
           ← Back
         </button>
         <span style={{ fontSize: 13, fontWeight: 700, color: "var(--t1)", letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>
@@ -960,12 +961,12 @@ export default function StockDetail({ symbol, onBack, onOpenStock }) {
 
       <div className="ss-back-bottom">
         <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "var(--accent)", background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 12, cursor: "pointer", padding: "12px 24px", fontWeight: 600, margin: "8px auto 0" }}>
-          ← Back to Discover
+          ← Back to {backTo}
         </button>
       </div>
       <div className="ss-back-sticky">
         <button onClick={onBack} style={{ width: "100%", height: 48, borderRadius: 12, border: "1px solid var(--bdr2)", background: "var(--s2)", color: "var(--accent)", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>
-          ← Back to Discover
+          ← Back to {backTo}
         </button>
       </div>
     </div>
