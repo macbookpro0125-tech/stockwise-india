@@ -37,6 +37,14 @@ async function equityInfo(symbol) {
   return (await equityList()).find(s => s.symbol === symbol) ?? null;
 }
 
+// A symbol typed by hand must be a listed company — a portfolio once took
+// "NOT-A-REAL-SYMBOL" and showed it priceless forever. If NSE's list can't
+// be fetched just now (undefined), let it through rather than refuse all.
+async function unlistedError(symbol) {
+  const info = await equityInfo(symbol).catch(() => undefined);
+  return info === null ? `${symbol} isn't on NSE's list of listed companies. Check the symbol — e.g. TCS, INFY, HDFCBANK.` : null;
+}
+
 // The search box's suggestions (the original's StockSearchBar): NSE's own
 // list by symbol or company name — exact symbol first, then symbols starting
 // with the text, then names with a word starting with it, then anything
@@ -360,6 +368,10 @@ export function createApp() {
         if (userId == null) return;
         const { ticker, price } = await readJsonBody(req);
         const symbol = String(ticker || "").trim().toUpperCase();
+        if (isValidSymbol(symbol)) {
+          const unlisted = await unlistedError(symbol);
+          if (unlisted) { sendJson(res, 400, { error: unlisted }); return; }
+        }
         // The price when starred, for the card's "since added": the one the
         // page showed if it sent it, else the day's close
         addToWatchlist(userId, symbol, Number(price) > 0 ? price : loadMarketSnapshot()?.prices?.[symbol]);
@@ -423,8 +435,13 @@ export function createApp() {
         const userId = requireAuth(req, res);
         if (userId == null) return;
         const body = await readJsonBody(req);
+        const symbol = String(body.ticker || "").trim().toUpperCase();
+        if (isValidSymbol(symbol)) {
+          const unlisted = await unlistedError(symbol);
+          if (unlisted) { sendJson(res, 400, { error: unlisted }); return; }
+        }
         // Fill the company name from NSE's list when it's left blank
-        const info = body.name ? null : await equityInfo(String(body.ticker || "").trim().toUpperCase()).catch(() => null);
+        const info = body.name ? null : await equityInfo(symbol).catch(() => null);
         sendJson(res, 200, addHolding(userId, { ...body, name: body.name || info?.name }));
         return;
       }
@@ -495,6 +512,11 @@ export function createApp() {
         const userId = requireAuth(req, res);
         if (userId == null) return;
         const body = await readJsonBody(req);
+        const symbol = String(body.ticker || "").trim().toUpperCase();
+        if (isValidSymbol(symbol)) {
+          const unlisted = await unlistedError(symbol);
+          if (unlisted) { sendJson(res, 400, { error: unlisted }); return; }
+        }
         const alert = createAlert(userId, body);
         sendJson(res, 200, alert);
         return;

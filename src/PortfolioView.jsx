@@ -64,7 +64,10 @@ export default function PortfolioView({ onOpenStock }) {
   const totalCurrent = enriched.reduce((s, h) => s + (h.currentVal ?? h.invested), 0);
   const totalPL = totalCurrent - totalInvested;
   const totalPLPct = totalInvested > 0 ? (totalPL / totalInvested) * 100 : 0;
-  const allPricesLoaded = enriched.every(h => h.cmp != null);
+  // The prices have all been looked up by now; a holding without one has
+  // none to find, so the totals say so rather than showing a loading mark
+  const unpriced = [...new Set(enriched.filter(h => h.cmp == null).map(h => h.ticker))];
+  const allPricesLoaded = unpriced.length === 0;
   const anyClose = holdings.some(h => prices[h.ticker]?.source === "close");
 
   const sorted = [...enriched].sort((a, b) => {
@@ -105,7 +108,7 @@ export default function PortfolioView({ onOpenStock }) {
           </div>
           <div>
             <div style={label}>Current Value</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "var(--t1)", ...MONO }}>{allPricesLoaded ? fmtRs(totalCurrent) : <span style={{ opacity: 0.3 }}>…</span>}</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: "var(--t1)", ...MONO }}>{allPricesLoaded ? fmtRs(totalCurrent) : <span style={{ color: "var(--t3)" }}>—</span>}</div>
           </div>
           <div>
             <div style={label}>P&L</div>
@@ -113,8 +116,13 @@ export default function PortfolioView({ onOpenStock }) {
               <div style={{ fontSize: 18, fontWeight: 700, color: plColor(totalPL), ...MONO }}>
                 {fmtRs(totalPL)} <span style={{ fontSize: 12 }}>({fmtPct(totalPLPct)})</span>
               </div>
-            ) : <div style={{ fontSize: 18, fontWeight: 700, opacity: 0.3, ...MONO }}>…</div>}
+            ) : <div style={{ fontSize: 18, fontWeight: 700, color: "var(--t3)", ...MONO }}>—</div>}
           </div>
+          {unpriced.length > 0 && (
+            <div style={{ fontSize: 11.5, color: "var(--yellow)", flexBasis: "100%", order: 9 }}>
+              No price found for {unpriced.join(", ")}, so the totals can't be worked out.
+            </div>
+          )}
           <div style={{ marginLeft: "auto" }}>
             <div style={label}>Holdings</div>
             <div style={{ fontSize: 18, fontWeight: 700, color: "var(--t1)", ...MONO }}>{holdings.length}</div>
@@ -164,12 +172,12 @@ export default function PortfolioView({ onOpenStock }) {
 
                 <div style={{ textAlign: "center", minWidth: 65 }}>
                   <div style={label}>CMP</div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: "var(--t1)", ...MONO }}>{h.cmp ? fmtRs(h.cmp) : <span style={{ opacity: 0.3 }}>…</span>}</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "var(--t1)", ...MONO }}>{h.cmp ? fmtRs(h.cmp) : <span style={{ color: "var(--t3)" }} title="No price found for this symbol">—</span>}</div>
                 </div>
 
                 <div style={{ textAlign: "center", minWidth: 70 }}>
                   <div style={label}>Value</div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: "var(--t1)", ...MONO }}>{h.currentVal != null ? fmtRs(h.currentVal) : <span style={{ opacity: 0.3 }}>…</span>}</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "var(--t1)", ...MONO }}>{h.currentVal != null ? fmtRs(h.currentVal) : <span style={{ color: "var(--t3)" }}>—</span>}</div>
                 </div>
 
                 <div style={{ textAlign: "center", minWidth: 80 }}>
@@ -178,12 +186,12 @@ export default function PortfolioView({ onOpenStock }) {
                     <div style={{ fontSize: 13, fontWeight: 700, color: plColor(h.pl), ...MONO }}>
                       {fmtRs(h.pl)} <span style={{ fontSize: 10 }}>({fmtPct(h.plPct)})</span>
                     </div>
-                  ) : <span style={{ fontSize: 13, opacity: 0.3 }}>…</span>}
+                  ) : <span style={{ fontSize: 13, color: "var(--t3)" }}>—</span>}
                 </div>
 
                 <div style={{ textAlign: "center", minWidth: 50 }}>
                   <div style={label}>Alloc</div>
-                  {alloc != null ? <div style={{ fontSize: 12, fontWeight: 600, color: "var(--t2)", ...MONO }}>{alloc.toFixed(1)}%</div> : <span style={{ fontSize: 12, opacity: 0.3 }}>…</span>}
+                  {alloc != null ? <div style={{ fontSize: 12, fontWeight: 600, color: "var(--t2)", ...MONO }}>{alloc.toFixed(1)}%</div> : <span style={{ fontSize: 12, color: "var(--t3)" }}>—</span>}
                 </div>
 
                 <div style={{ textAlign: "center", minWidth: 110 }}>
