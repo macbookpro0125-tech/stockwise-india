@@ -243,7 +243,10 @@ function textFact(xml, tag) {
 function auditOpinionOf(xml) {
   const t = textFact(xml, "DeclarationOfUnmodifiedOpinionOrStatementOnImpactOfAuditQualification");
   if (!t) return null;
-  if (/unmodified/i.test(t)) return "unmodified";
+  // "Unqualified" means clean and contains "qualif" — checked first. (Only
+  // the two standard phrases and "Not applicable" were seen across 149
+  // qualified filings sampled.)
+  if (/unmodified|unqualified/i.test(t)) return "unmodified";
   if (/qualif|impact/i.test(t)) return "qualified";
   return null;
 }
