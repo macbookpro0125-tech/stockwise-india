@@ -322,6 +322,9 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     template: stock.template,
     sector, lender, utility, cyclical,
     industry: snap?.industries?.[sym] ?? null,
+    // Auditor resignations in the last three years (market-data.js); null =
+    // the snapshot doesn't know, [] = none filed
+    auditorResignations: snap?.auditorResignations ? (snap.auditorResignations[sym] ?? []) : null,
     cmp, cmpDate, eps, pe, marketCapCr, shares, sharesSource,
     // NSE's last close: the research score values the company at it whatever
     // price the page shows, so Discover and the stock page give the same score

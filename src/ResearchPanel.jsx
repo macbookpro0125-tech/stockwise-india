@@ -139,12 +139,16 @@ export default function ResearchPanel({ research: r }) {
         </span>
       </div>
 
-      {r.flags?.map(f => (
-        <div key={f.id} role="alert" style={{ display: "flex", gap: 8, alignItems: "flex-start", fontSize: 12.5, color: "var(--t1)", background: "var(--red-dim)", border: "1px solid var(--red-bdr)", borderRadius: 8, padding: "9px 12px", marginBottom: 12, lineHeight: 1.5 }}>
-          <TriangleAlert size={15} style={{ color: "var(--red)", flexShrink: 0, marginTop: 1 }} />
-          <span><strong style={{ color: "var(--red)" }}>Red flag.</strong> {f.text}</span>
-        </div>
-      ))}
+      {r.flags?.map(f => {
+        // Critical (a qualified audit) in red; a caution (an auditor's resignation) in amber
+        const c = f.severity === "critical" ? "red" : "yellow";
+        return (
+          <div key={f.id} role={f.severity === "critical" ? "alert" : "note"} style={{ display: "flex", gap: 8, alignItems: "flex-start", fontSize: 12.5, color: "var(--t1)", background: `var(--${c}-dim)`, border: `1px solid var(--${c}-bdr)`, borderRadius: 8, padding: "9px 12px", marginBottom: 12, lineHeight: 1.5 }}>
+            <TriangleAlert size={15} style={{ color: `var(--${c})`, flexShrink: 0, marginTop: 1 }} />
+            <span><strong style={{ color: `var(--${c})` }}>{f.severity === "critical" ? "Red flag." : "Caution."}</strong> {f.text}</span>
+          </div>
+        );
+      })}
 
       <div className="research-head" style={{ marginBottom: 12 }}>
         <Headline label="Quality score" value={quality} tone={qTone}
@@ -211,9 +215,9 @@ export default function ResearchPanel({ research: r }) {
         <Expand title="How the scores work">
           <ul style={{ margin: "4px 0 0", padding: "0 0 0 16px", display: "flex", flexDirection: "column", gap: 7, fontSize: 12, color: "var(--t2)", lineHeight: 1.55 }}>
             <li><strong>Quality (0–100)</strong> weighs six groups: business quality 25, earnings quality 20, balance sheet 15, management &amp; governance 15, growth 10 and valuation 15. Each check scores 0–100 against stated bands — ROCE of 13% scores 50, 20% scores 75, 33% or more scores 100.</li>
-            <li><strong>Nothing is guessed.</strong> A check the filings can't show — related-party deals, auditor resignations, competitive position, forecasts, market size, a cash-flow model — is listed as not checked and left out of the score. Missing data never counts as zero or as a pass. A group needs over a third of its weight checked to be scored.</li>
+            <li><strong>Nothing is guessed.</strong> A check the filings can't show — related-party deals, competitive position, forecasts, market size, a cash-flow model — is listed as not checked and left out of the score. Missing data never counts as zero or as a pass. A group needs over a third of its weight checked to be scored.</li>
             <li><strong>Overall research score</strong> blends quality without valuation (70%) with valuation (30%) so one strong side can't fully hide a weak one, then trims up to 35% for price swings and data gaps. Debt and pledging count once, in quality, not again as risk.</li>
-            <li><strong>Red flags override.</strong> If the auditor qualified the latest accounts, the overall score stops at 39 and reads "Review required" until a clean audit. Lenders, and companies whose balance sheet or shareholding can't be checked, have quality capped at 69.</li>
+            <li><strong>Red flags override.</strong> If the auditor qualified the latest accounts, the overall score stops at 39 and reads "Review required" until a clean audit. An auditor's resignation in the last three years halves the audit check and shows as a caution — the reasons are in the company's disclosure. Lenders, and companies whose balance sheet or shareholding can't be checked, have quality capped at 69.</li>
             <li><strong>Technical setup and risk</strong> are separate lenses. The price trend never moves the quality or overall score.</li>
             <li>Valued at NSE's close so Discover and this page agree; your own EPS or P/E above changes the price levels, not the score. The weights and bands are a stated starting point, not a model tested against past returns.</li>
             <li>A research summary, not a recommendation to buy or sell. Check the filings and your own situation before investing.</li>

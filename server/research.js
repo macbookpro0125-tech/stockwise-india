@@ -36,6 +36,7 @@ const times = v => `${v.toFixed(v < 10 ? 1 : 0)}x`;
 const crore = v => `₹${Math.round(v).toLocaleString("en-IN")} Cr`;
 const rupees = v => `₹${Math.round(v).toLocaleString("en-IN")}`;
 const fy = iso => `FY${iso.slice(2, 4)}`;
+const dayText = iso => new Date(`${iso}T00:00:00Z`).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 // "consolidated " / "standalone " — which accounts the figures (and the audit
 // opinion) are from; a company can be clean on one and qualified on the other
 const scopeWord = m => (/consolidated/i.test(m.scope ?? "") ? "consolidated " : /standalone/i.test(m.scope ?? "") ? "standalone " : "");
@@ -353,20 +354,28 @@ const GOVERNANCE = {
     },
     { id: "relatedParty", weight: 0.20, label: "Related-party transactions", compute: () => notInFilings("Deals with promoter-group companies are in the annual report and separate NSE filings — not checked yet.") },
     {
-      id: "auditor", weight: 0.20, label: "Audit opinion, last 3 years",
+      id: "auditor", weight: 0.20, label: "Audit opinion and auditor resignations, 3 years",
       compute(m) {
         // Each annual filing states the auditor's opinion (fetch-nse.js);
-        // resignations are announced separately and aren't checked
+        // resignations come from NSE's announcements (market-data.js)
         const rows = lastYears(m, 3).filter(h => h.auditOpinion);
         if (!rows.length) return missing("The filings on file don't state the audit opinion.");
         const qualified = rows.filter(h => h.auditOpinion === "qualified").map(h => fy(h.fyEnd));
         const latest = m.history[0];
         const firm = m.history.find(h => h.auditor)?.auditor;
+        const resigned = m.auditorResignations?.[0] ?? null;
+        const resignedText = resigned ? ` The statutory auditor resigned on ${dayText(resigned)}.` : "";
         if (latest.auditOpinion === "qualified") {
-          return checked(0, "qualified", "Qualified", `The auditor qualified ${fy(latest.fyEnd)}'s ${scopeWord(m)}accounts — the company filed a statement on the impact of audit qualifications with its results.`);
+          return checked(0, "qualified", "Qualified", `The auditor qualified ${fy(latest.fyEnd)}'s ${scopeWord(m)}accounts — the company filed a statement on the impact of audit qualifications with its results.${resignedText}`);
         }
-        if (qualified.length) return checked(50, "earlier", `${qualified.join(", ")} qualified`, `Clean opinion on the latest accounts, but the auditor qualified ${qualified.join(" and ")}.`);
-        return checked(100, "unmodified", "Clean", `Unmodified (clean) audit opinion in each of the last ${rows.length} year${rows.length > 1 ? "s" : ""}${firm ? ` — auditor ${firm}` : ""}.`);
+        // A resignation mid-term can mean a disagreement — or a routine change
+        // of firm; the reasons are in the company's disclosure. Half marks.
+        if (qualified.length || resigned) {
+          return checked(qualified.length && resigned ? 25 : 50, qualified.length ? "earlier" : "resigned", qualified.length ? `${qualified.join(", ")} qualified` : "Auditor resigned",
+            `${qualified.length ? `Clean opinion on the latest accounts, but the auditor qualified ${qualified.join(" and ")}.` : "Clean audit opinions, but the auditor didn't serve out the term."}${resignedText}`);
+        }
+        const resignationsKnown = m.auditorResignations != null;
+        return checked(100, "unmodified", "Clean", `Unmodified (clean) audit opinion in each of the last ${rows.length} year${rows.length > 1 ? "s" : ""}${resignationsKnown ? " and no auditor resignation" : ""}${firm ? ` — auditor ${firm}` : ""}.`);
       },
     },
     { id: "governanceFlags", weight: 0.15, label: "Governance disclosures", compute: () => notInFilings("Board independence and governance reports — not checked yet.") },
@@ -614,9 +623,9 @@ function riskProfile(m, groups, tech, confidence) {
   add("business", "Business and cyclicality", 20, (inv(ms.score) ?? 50) + (m.cyclical ? 25 : 0) + 15 * lossYears,
     why.length ? `${why.join(", ").replace(/^./, c => c.toUpperCase())}.` : "Margin history too short to judge.");
   // Governance: pledging, dilution, promoter selling — and what's unchecked
-  const gov = ["pledge", "dilution", "promoterStability"].map(id => item("governance", id)).filter(i => i.score != null);
+  const gov = ["pledge", "dilution", "promoterStability", "auditor"].map(id => item("governance", id)).filter(i => i.score != null);
   add("governance", "Governance and accounting", 20, gov.length ? avg(gov.map(i => 100 - i.score)) : 50,
-    gov.length ? `${gov.map(i => `${i.label.toLowerCase()}: ${i.display}`).join("; ")}. Related parties and auditors not checked.` : "Shareholding data missing; related parties and auditors not checked.");
+    gov.length ? `${gov.map(i => `${i.label.toLowerCase()}: ${i.display}`).join("; ")}. Related-party deals not checked.` : "Shareholding and audit data missing; related-party deals not checked.");
   // Market: price swings, falls and how easily it trades
   const tp = id => tech.parts.find(p => p.id === id);
   const mk = [tp("volatility"), tp("liquidity")].filter(Boolean);
@@ -684,6 +693,12 @@ export function computeResearch(m, ctx = { peers: PEERS }) {
       text: `The auditor qualified ${fy(latestYear.fyEnd)}'s ${scopeWord(m)}accounts. Read the company's statement on the impact of audit qualifications, filed with its results, before relying on any figure here.`,
     });
   }
+  if (m.auditorResignations?.length) {
+    flags.push({
+      id: "auditorResigned", severity: "caution",
+      text: `The statutory auditor resigned on ${dayText(m.auditorResignations[0])}${m.auditorResignations.length > 1 ? ` (and ${m.auditorResignations.length - 1} more time${m.auditorResignations.length > 2 ? "s" : ""} in three years)` : ""}. Companies must publish the auditor's reasons — worth reading before relying on the accounts.`,
+    });
+  }
   const critical = flags.some(f => f.severity === "critical");
 
   // Overall research score: quality without valuation (70%) and valuation
@@ -743,6 +758,6 @@ function summarise(r, m) {
   if (r.valuation.score != null) s.push(`At the ${m.closeDate ? new Date(`${m.closeDate}T00:00:00Z`).toLocaleString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" }) : "last"} close, valuation looks ${r.valuation.label.toLowerCase()} (${Math.round(r.valuation.score)}/100).`);
   s.push(`${r.technical.score != null ? `The price trend is ${r.technical.label.toLowerCase()}; r` : "R"}isk is ${r.risk.label.toLowerCase()} (${Math.round(r.risk.score)}/100).`);
   const conf = r.confidence >= 80 ? "high" : r.confidence >= 60 ? "moderate" : "low";
-  s.push(`Confidence is ${conf}: ${r.coverage.checked} of ${r.coverage.total} checks have data, and related parties, auditor resignations, forecasts and a cash-flow model aren't covered.`);
+  s.push(`Confidence is ${conf}: ${r.coverage.checked} of ${r.coverage.total} checks have data, and related-party deals, forecasts and a cash-flow model aren't covered.`);
   return s.join(" ");
 }

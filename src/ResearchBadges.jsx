@@ -33,6 +33,7 @@ export function researchTitle(r) {
     `Risk ${n(r.risk)} — ${r.riskLabel} (higher = riskier)`,
     `${r.coverage?.checked} of ${r.coverage?.total} checks have data · confidence ${n(r.confidence)}/100`,
     ...(r.flags?.includes("auditQualified") ? ["Red flag: the auditor qualified the latest accounts"] : []),
+    ...(r.flags?.includes("auditorResigned") ? ["Caution: the statutory auditor resigned in the last three years"] : []),
   ].join("\n");
 }
 

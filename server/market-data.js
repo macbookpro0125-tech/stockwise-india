@@ -371,6 +371,23 @@ async function sectorsBySymbol() {
   return { sectors: fromIndex, industrySectors, industries };
 }
 
+// Statutory auditors who resigned in the last three years, by company — NSE
+// files these under their own subject, apart from routine "Change in
+// Auditors" rotations, and filters on it, so it's one small request (~220
+// over three years). { SYMBOL: ["2026-05-12", …] }, newest first.
+async function auditorResignations() {
+  const to = new Date(), from = new Date(to.getTime() - 3 * 365 * 86400000);
+  const rows = await fetchJson(`${NSE_BASE}/api/corporate-announcements?index=equities&from_date=${ddmmyyyy(from, "-")}&to_date=${ddmmyyyy(to, "-")}&subject=${encodeURIComponent("Resignation of Statutory Auditor")}`);
+  const out = {};
+  for (const r of Array.isArray(rows) ? rows : []) {
+    const when = parseQeDate(String(r.an_dt ?? r.sort_date ?? "").slice(0, 11));
+    if (!r.symbol || !when || r.desc !== "Resignation of Statutory Auditor") continue;
+    (out[r.symbol] ??= []).push(when.toISOString().slice(0, 10));
+  }
+  for (const dates of Object.values(out)) dates.sort().reverse();
+  return out;
+}
+
 // Each company's industry from the last 90 days of NSE announcements — one
 // request for the whole market
 async function industriesBySymbol() {
@@ -442,6 +459,8 @@ export async function buildMarketSnapshot(fyEndDates, { yearsOfActions = 6 } = {
     sectors,
     industrySectors,
     industries,
+    // null when NSE didn't answer — unknown, not "no resignations"
+    auditorResignations: await auditorResignations().catch(() => null),
     fyEndPrices,
     range52w: year.ranges,
     range52wFrom: year.from,
