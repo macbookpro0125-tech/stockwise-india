@@ -157,7 +157,7 @@ export function DisclaimerPage({ signedIn }) {
       </P>
 
       <H>Past results</H>
-      <P>The Performance tab shows how strategies' past picks have moved. Past performance does not predict future returns.</P>
+      <P>The Performance tab shows how strategy picks have moved and tracks monthly research-score cohorts prospectively against the NIFTY 500. Score tracking uses split-adjusted price returns, excludes dividends, and reports names without a current quote as unpriced. It is an early study of eligible listed companies, not a historical backtest; past or prospective performance does not predict future returns.</P>
 
       <H>Your decisions are yours</H>
       <P>

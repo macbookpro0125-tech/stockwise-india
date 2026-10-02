@@ -188,7 +188,9 @@ async function main() {
   const zipped = await fetch(`${BASE}/api/metrics`, { headers: { "Accept-Encoding": "gzip" } });
   assert(zipped.headers.get("content-encoding") === "gzip", "big answers are sent compressed when the browser accepts it");
   const perf = await fetch(`${BASE}/api/performance`, { headers: { Cookie: aliceCookie } });
-  assert(perf.status === 200 && Array.isArray((await perf.json()).presets), "the Performance tab's data comes back");
+  const perfBody = await perf.json();
+  assert(perf.status === 200 && Array.isArray(perfBody.presets), "the Performance tab's strategy data comes back");
+  assert(perfBody.researchStudy?.benchmark === "Nifty 500" && Array.isArray(perfBody.researchStudy.cohorts), "the Performance tab also returns prospective score-study data");
 
   // The front page's figures need no sign-in; who's signed in comes with /me
   const publicStats = await fetch(`${BASE}/api/stats`);

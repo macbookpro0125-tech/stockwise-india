@@ -329,6 +329,14 @@ async function indexCloses(isoDate) {
   });
 }
 
+// Shared benchmark lookup for the prospective research-score study. The
+// archive cache is also used, so an already saved close never needs a network
+// request.
+export async function indexCloseOn(isoDate, name) {
+  if (!isoDate || !name) return null;
+  return (await indexFile(isoDate))?.get(name)?.close ?? null;
+}
+
 // The index lists name a sector for ~750 companies — most of the top 500, a
 // third overall. NSE's announcements carry an older "industry" (smIndustry)
 // for ~935 companies, many of them small ones the lists skip. Where a company

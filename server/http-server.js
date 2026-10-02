@@ -641,14 +641,14 @@ export function createApp() {
       if (url.pathname === "/api/performance" && req.method === "GET") {
         const userId = requireAuth(req, res);
         if (userId == null) return;
-        sendJson(res, 200, getPerformance());
+        sendJson(res, 200, await getPerformance());
         return;
       }
 
       if (url.pathname === "/api/performance/snapshot" && req.method === "POST") {
         const userId = requireAuth(req, res);
         if (userId == null) return;
-        sendJson(res, 200, takeSnapshots());
+        sendJson(res, 200, await takeSnapshots());
         return;
       }
 

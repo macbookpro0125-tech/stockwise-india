@@ -30,6 +30,11 @@ function RetBadge({ pct }) {
   return <span style={{ fontSize: 12, fontWeight: 700, color, ...MONO }}>{pct > 0 ? "+" : ""}{pct.toFixed(1)}%</span>;
 }
 
+function fmtPct(pct) {
+  if (pct == null || !Number.isFinite(pct)) return "—";
+  return `${pct > 0 ? "+" : ""}${pct.toFixed(1)}%`;
+}
+
 // Name · entry · current · return, shared by the header and every pick row
 const ROW_GRID = { display: "grid", gridTemplateColumns: "minmax(0,1fr) 78px 78px 62px", gap: 8, alignItems: "center" };
 
@@ -39,6 +44,7 @@ export default function PerformanceView({ onOpenStock }) {
   const [snapping, setSnapping] = useState(false);
   const [error, setError] = useState(null);
   const [open, setOpen] = useState(null);
+  const [studyOpen, setStudyOpen] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -66,7 +72,8 @@ export default function PerformanceView({ onOpenStock }) {
     }
   };
 
-  const empty = !loading && (!data || !data.presets.length);
+  const study = data?.researchStudy;
+  const empty = !loading && (!data || (!data.presets.length && !study?.cohortCount));
 
   return (
     <div style={{ maxWidth: 900, margin: "0 auto", padding: "8px 20px 80px", animation: "fadeUp 280ms cubic-bezier(0,0,0.2,1) backwards" }}>
@@ -83,7 +90,7 @@ export default function PerformanceView({ onOpenStock }) {
           )}
         </div>
         <button onClick={takeSnapshot} disabled={snapping} className="btn-ghost" style={{ height: 32, padding: "0 14px", fontSize: 12.5, fontWeight: 500, opacity: snapping ? 0.6 : 1, cursor: snapping ? "wait" : "pointer" }}>
-          {snapping ? "Snapshotting…" : <><Camera size={14} /> Take snapshot now</>}
+          {snapping ? "Recording…" : <><Camera size={14} /> {study?.cohortCount ? "Take snapshot now" : "Record baseline"}</>}
         </button>
       </div>
 
@@ -101,6 +108,64 @@ export default function PerformanceView({ onOpenStock }) {
           No snapshots yet. Take one now to record each strategy's current top picks —<br />
           come back in a few weeks to see which strategies actually made money.
         </div>
+      )}
+
+      {!loading && study?.cohortCount > 0 && (
+        <section style={{ border: "1px solid var(--bdr2)", borderRadius: 14, background: "var(--s2)", padding: 15, marginBottom: 18 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 8 }}>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--t1)" }}>Prospective research-score study</div>
+              <div style={{ fontSize: 11.5, color: "var(--t2)", marginTop: 4, lineHeight: 1.5 }}>
+                Frozen monthly score cohorts compared with the NIFTY 500. {study.cohortCount} cohort{study.cohortCount === 1 ? "" : "s"} recorded · latest prices {fmtDate(study.asOf)}.
+              </div>
+            </div>
+            <span style={{ fontSize: 10.5, color: "var(--t3)", border: "1px solid var(--bdr2)", borderRadius: 99, padding: "4px 8px" }}>Forward tracking · not a backtest</span>
+          </div>
+          {study.cohorts.slice().reverse().map(cohort => {
+            const expanded = studyOpen === cohort.date;
+            const daysHeld = daysSince(cohort.date);
+            return (
+              <div key={cohort.date} style={{ borderTop: "1px solid var(--bdr)", paddingTop: 8, marginTop: 8 }}>
+                <button onClick={() => setStudyOpen(expanded ? null : cohort.date)} style={{ display: "flex", width: "100%", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "7px 0", color: "var(--t1)", background: "none", border: 0, cursor: "pointer", textAlign: "left" }}>
+                  <span style={{ fontSize: 12, fontWeight: 600 }}>{fmtDate(cohort.date)} · {cohort.companies.toLocaleString("en-IN")} scored · v{cohort.scoreVersion}</span>
+                  <span style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--t2)", fontSize: 11, ...MONO }}>
+                    {cohort.benchmarkReturnPct == null ? "Benchmark unavailable" : `NIFTY 500 ${fmtPct(cohort.benchmarkReturnPct)}`}
+                    <ChevronDown size={14} style={{ color: "var(--t3)", transform: expanded ? "rotate(180deg)" : "none" }} />
+                  </span>
+                </button>
+                {expanded && (
+                  <div style={{ overflowX: "auto", paddingBottom: 4 }}>
+                    <table style={{ width: "100%", minWidth: 560, borderCollapse: "collapse", fontSize: 11.5 }}>
+                      <thead><tr style={{ color: "var(--t3)", textAlign: "right" }}>
+                        {["Score band", "Score range", "Priced / cohort", "Mean return", "Excess vs NIFTY 500"].map((label, i) => <th key={label} style={{ textAlign: i === 0 ? "left" : "right", fontWeight: 500, padding: "7px 5px", borderBottom: "1px solid var(--bdr2)" }}>{label}</th>)}
+                      </tr></thead>
+                      <tbody>{cohort.buckets.map(bucket => {
+                        const color = bucket.excessVsBenchmarkPct == null ? "var(--t2)" : bucket.excessVsBenchmarkPct > 0 ? "var(--green)" : bucket.excessVsBenchmarkPct < 0 ? "var(--red)" : "var(--t2)";
+                        return <tr key={bucket.label}>
+                          <td style={{ padding: "8px 5px", color: "var(--t1)", borderBottom: "1px solid var(--bdr)" }}>{bucket.label}</td>
+                          <td style={{ padding: "8px 5px", color: "var(--t2)", textAlign: "right", ...MONO }}>{bucket.scoreMin == null ? "—" : `${bucket.scoreMin}–${bucket.scoreMax}`}</td>
+                          <td style={{ padding: "8px 5px", color: "var(--t2)", textAlign: "right", ...MONO }}>{bucket.priced}/{bucket.companies}</td>
+                          <td style={{ padding: "8px 5px", color, textAlign: "right", fontWeight: 700, ...MONO }}>{fmtPct(bucket.meanPriceReturnPct)}</td>
+                          <td style={{ padding: "8px 5px", color, textAlign: "right", fontWeight: 700, ...MONO }}>{fmtPct(bucket.excessVsBenchmarkPct)}</td>
+                        </tr>;
+                      })}</tbody>
+                    </table>
+                    <div style={{ fontSize: 10.5, color: "var(--t3)", lineHeight: 1.5, marginTop: 8 }}>
+                      Recorded {fmtDate(cohort.date)}; currently held {daysHeld ?? 0} days. Company figures are equal-weighted, split-adjusted price returns; dividends are excluded. Unpriced names remain visible in the cohort denominator and are not counted as zero-return. Benchmark is the NIFTY 500 price index. This is a prospective study of current eligible listings; it needs longer follow-up and does not establish predictive ability.
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          <div style={{ fontSize: 10.5, color: "var(--t3)", lineHeight: 1.5, marginTop: 8 }}>
+            A new frozen score cohort is recorded monthly. Existing cohorts keep their original score version and membership; missing prices are reported as coverage gaps.
+          </div>
+        </section>
+      )}
+
+      {!loading && data && !data.presets.length && study?.cohortCount > 0 && (
+        <p style={{ fontSize: 11, color: "var(--t3)", margin: "0 0 14px" }}>No strategy snapshots yet. The score study above is tracked separately.</p>
       )}
 
       {!loading && data?.presets.map(p => {

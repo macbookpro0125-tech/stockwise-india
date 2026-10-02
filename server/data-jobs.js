@@ -14,7 +14,7 @@ import { fetchEquityList } from "./equity-list.js";
 import { fetchCompanies, needsSummary, readStored, withRetry } from "./fetch-market.js";
 import { buildMarketSnapshot, loadMarketSnapshot, clearSnapshotCache } from "./market-data.js";
 import { fiscalYearEnds } from "./build-snapshot.js";
-import { takeSnapshots, daysSinceNewestSnapshot, SNAPSHOT_INTERVAL_DAYS } from "./performance.js";
+import { takeSnapshots, takeResearchCohort, loadResearchCohorts, daysSinceNewestSnapshot, SNAPSHOT_INTERVAL_DAYS } from "./performance.js";
 
 const STATE_PATH = join(DATA_DIR, "jobs-state.json");
 const HOUR = 3600 * 1000, DAY = 24 * HOUR;
@@ -176,7 +176,16 @@ function tick() {
   // The Performance tab's record of each strategy's picks, as in the original:
   // a new one whenever the newest is SNAPSHOT_INTERVAL_DAYS old (needs data)
   if (companyFiles().length >= 100 && daysSinceNewestSnapshot() >= SNAPSHOT_INTERVAL_DAYS) {
-    enqueue("strategy picks", async () => { takeSnapshots(); });
+    enqueue("strategy picks", async () => { await takeSnapshots(); });
+  }
+  if (companyFiles().length >= 100 && snap?.pricesDate) {
+    const month = snap.pricesDate.slice(0, 7);
+    if (!loadResearchCohorts().some(cohort => cohort.month === month)) {
+      enqueue("research score cohort", async () => {
+        const result = await takeResearchCohort();
+        if (result.created) console.error(`[study] recorded ${result.companies} companies for ${result.month} at score version ${result.scoreVersion}`);
+      });
+    }
   }
   const state = readState();
   const filingCheckDue = !state.lastFilingsCheck || Date.now() - Date.parse(state.lastFilingsCheck) > FILINGS_EVERY;

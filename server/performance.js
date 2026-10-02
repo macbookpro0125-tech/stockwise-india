@@ -8,11 +8,14 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { DATA_DIR } from "./paths.js";
 import { PRESETS } from "./presets.js";
-import { screen } from "./screen.js";
-import { loadMarketSnapshot } from "./market-data.js";
+import { allMetrics, screen } from "./screen.js";
+import { indexCloseOn, loadMarketSnapshot } from "./market-data.js";
+import { RESEARCH_VERSION } from "./research.js";
 
 const SNAP_PATH = join(DATA_DIR, "performance-snapshots.json");
+const RESEARCH_COHORT_PATH = join(DATA_DIR, "research-score-cohorts.json");
 const PICKS_PER_PRESET = 10;
+const SCORE_BUCKETS = ["Lowest", "Lower", "Middle", "Higher", "Highest"];
 export const SNAPSHOT_INTERVAL_DAYS = 3;
 
 function istToday() {
@@ -31,11 +34,112 @@ function saveSnapshots(snaps) {
   writeFileSync(SNAP_PATH, JSON.stringify(snaps, null, 2));
 }
 
+export function loadResearchCohorts() {
+  try {
+    if (existsSync(RESEARCH_COHORT_PATH)) return JSON.parse(readFileSync(RESEARCH_COHORT_PATH, "utf8"));
+  } catch { /* corrupt file — start a new prospective study */ }
+  return [];
+}
+
+function saveResearchCohorts(cohorts) {
+  mkdirSync(dirname(RESEARCH_COHORT_PATH), { recursive: true });
+  writeFileSync(RESEARCH_COHORT_PATH, JSON.stringify(cohorts, null, 2));
+}
+
+// Score bands are fixed when a monthly cohort is recorded. Later returns are
+// measured against the same frozen ranking and score version.
+export async function takeResearchCohort() {
+  const market = loadMarketSnapshot();
+  if (!market?.pricesDate || !market?.prices) return { skipped: "no market snapshot" };
+  const month = market.pricesDate.slice(0, 7);
+  const cohorts = loadResearchCohorts();
+  const existing = cohorts.find(c => c.month === month);
+  if (existing) return { month, created: false, companies: existing.records.length };
+
+  const metrics = allMetrics();
+  const records = metrics.rows
+    .filter(m => m.cmp > 0 && m.research?.overall != null)
+    .map(m => ({
+      ticker: m.symbol,
+      name: m.name,
+      sector: m.sector ?? null,
+      close: m.cmp,
+      quality: m.research.quality,
+      qualityOnly: m.research.qualityOnly,
+      valuation: m.research.valuation?.score ?? null,
+      overall: m.research.overall?.score ?? null,
+      technical: m.research.technical?.score ?? null,
+      risk: m.research.risk?.score ?? null,
+      groups: Object.fromEntries(m.research.groups.map(group => [group.id, group.score])),
+      confidence: m.research.confidence,
+      financialsAsOf: m.history?.[0]?.filed ?? null,
+    }));
+  if (!records.length) return { month, skipped: "no scored companies" };
+  const benchmarkClose = await indexCloseOn(market.pricesDate, "Nifty 500");
+  const cohort = {
+    month,
+    date: market.pricesDate,
+    recordedAt: new Date().toISOString(),
+    priceDate: market.pricesDate,
+    scoreVersion: RESEARCH_VERSION,
+    benchmark: "Nifty 500",
+    benchmarkClose,
+    records,
+  };
+  cohorts.push(cohort);
+  saveResearchCohorts(cohorts);
+  return { month, created: true, companies: records.length, scoreVersion: RESEARCH_VERSION };
+}
+
+// Pure calculation kept exported so split adjustment, score ranking,
+// missing-price coverage and benchmark comparisons can be tested without
+// touching the saved production cohort file.
+export function summarizeResearchCohort(cohort, market, benchmarkNow = null) {
+  const splits = market?.splits ?? {};
+  const factorSince = (symbol, date) => (splits[symbol] ?? [])
+    .filter(s => s.exDate > date).reduce((f, s) => f * s.ratio, 1);
+  const ranked = [...(cohort.records ?? [])]
+    .filter(r => Number.isFinite(r.overall) && r.overall != null)
+    .sort((a, b) => a.overall - b.overall || a.ticker.localeCompare(b.ticker));
+  const grouped = SCORE_BUCKETS.map((label, i) => ({ label, records: [] }));
+  ranked.forEach((record, i) => grouped[Math.min(SCORE_BUCKETS.length - 1, Math.floor(i * SCORE_BUCKETS.length / ranked.length))].records.push(record));
+  const benchmarkReturnPct = cohort.benchmarkClose > 0 && benchmarkNow > 0
+    ? Math.round((benchmarkNow / cohort.benchmarkClose - 1) * 1000) / 10 : null;
+  const buckets = grouped.map(group => {
+    const observations = group.records.flatMap(record => {
+      const current = market?.prices?.[record.ticker];
+      if (!(current > 0) || !(record.close > 0)) return [];
+      const adjustedCurrent = current * factorSince(record.ticker, cohort.priceDate);
+      return [{ score: record.overall, returnPct: (adjustedCurrent / record.close - 1) * 100 }];
+    });
+    const mean = observations.length ? observations.reduce((sum, row) => sum + row.returnPct, 0) / observations.length : null;
+    const scores = group.records.map(r => r.overall);
+    return {
+      label: group.label,
+      companies: group.records.length,
+      priced: observations.length,
+      scoreMin: scores.length ? Math.round(Math.min(...scores) * 10) / 10 : null,
+      scoreMax: scores.length ? Math.round(Math.max(...scores) * 10) / 10 : null,
+      meanPriceReturnPct: mean == null ? null : Math.round(mean * 10) / 10,
+      excessVsBenchmarkPct: mean == null || benchmarkReturnPct == null ? null : Math.round((mean - benchmarkReturnPct) * 10) / 10,
+    };
+  });
+  return {
+    date: cohort.date,
+    scoreVersion: cohort.scoreVersion,
+    benchmark: cohort.benchmark,
+    benchmarkReturnPct,
+    companies: ranked.length,
+    priceDate: market?.pricesDate ?? null,
+    buckets,
+  };
+}
+
 // One snapshot per strategy per IST day — re-running the same day replaces
 // that day's. Picks are the strategy's top 10 in its own ranking (quality
 // score, then ROCE), priced at the day's close. Snapshots before 3 Oct 2026
 // record the old 10-point score (score/scoreMax) instead.
-export function takeSnapshots() {
+export async function takeSnapshots() {
   const date = istToday();
   const snaps = loadSnapshots();
   const results = [];
@@ -55,7 +159,8 @@ export function takeSnapshots() {
     results.push({ presetId: preset.id, picks: picks.length });
   }
   saveSnapshots(snaps);
-  return { date, results, totalSnapshots: snaps.length };
+  const researchCohort = await takeResearchCohort();
+  return { date, results, totalSnapshots: snaps.length, researchCohort };
 }
 
 export function daysSinceNewestSnapshot() {
@@ -65,10 +170,10 @@ export function daysSinceNewestSnapshot() {
   return (Date.now() - new Date(`${newest}T00:00:00+05:30`).getTime()) / 86400000;
 }
 
-export function getPerformance() {
+export async function getPerformance() {
   const snaps = loadSnapshots();
-  if (!snaps.length) return { presets: [], snapshotCount: 0 };
   const market = loadMarketSnapshot();
+  const benchmarkNow = await indexCloseOn(market?.pricesDate, "Nifty 500");
   const splits = market?.splits ?? {};
   // A 1:1 bonus after the pick halves the quoted price without anyone losing
   // money — scale today's price back to the pick's share basis
@@ -101,5 +206,19 @@ export function getPerformance() {
   // Best-performing strategy first
   presets.sort((a, b) => (b.overallAvgReturnPct ?? -Infinity) - (a.overallAvgReturnPct ?? -Infinity));
   const priced = [...tickers].filter(t => market?.prices?.[t] != null).length;
-  return { presets, snapshotCount: snaps.length, pricedTickers: priced, totalTickers: tickers.size, pricesDate: market?.pricesDate ?? null };
+  const cohorts = loadResearchCohorts().map(cohort => summarizeResearchCohort(cohort, market, benchmarkNow));
+  return {
+    presets,
+    snapshotCount: snaps.length,
+    pricedTickers: priced,
+    totalTickers: tickers.size,
+    pricesDate: market?.pricesDate ?? null,
+    researchStudy: {
+      benchmark: "Nifty 500",
+      returnType: "split-adjusted price return; dividends excluded",
+      asOf: market?.pricesDate ?? null,
+      cohortCount: cohorts.length,
+      cohorts,
+    },
+  };
 }
