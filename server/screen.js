@@ -70,7 +70,7 @@ export function allMetrics() {
   // The research score compares each P/E with its sector's median, so it
   // waits for the whole market: medians first, then every company's score.
   // The stock page reuses the same medians (research.js keeps them).
-  setResearchPeers(sectorPeMedians(fresh));
+  setResearchPeers({ sectors: sectorPeMedians(fresh), industries: industryPeMedians(fresh) });
   for (const m of fresh) m.research = computeResearch(m);
   cache = {
     version, rows: fresh, fetched: countFetched(),
@@ -95,6 +95,24 @@ function sectorPeMedians(rows) {
     pes.sort((a, b) => a - b);
     const k = pes.length >> 1;
     out.set(sector, { median: pes.length % 2 ? pes[k] : (pes[k - 1] + pes[k]) / 2, n: pes.length });
+  }
+  return out;
+}
+
+// NSE's corporate-announcement industry is a finer peer cohort than the
+// broad sector and is available for some companies with no sector mapping.
+function industryPeMedians(rows) {
+  const byIndustry = new Map();
+  for (const m of rows) {
+    if (!m.industry || !(m.close > 0) || !(m.valuationEps > 0)) continue;
+    if (!byIndustry.has(m.industry)) byIndustry.set(m.industry, []);
+    byIndustry.get(m.industry).push(m.close / m.valuationEps);
+  }
+  const out = new Map();
+  for (const [industry, pes] of byIndustry) {
+    pes.sort((a, b) => a - b);
+    const k = pes.length >> 1;
+    out.set(industry, { median: pes.length % 2 ? pes[k] : (pes[k - 1] + pes[k]) / 2, n: pes.length });
   }
   return out;
 }
