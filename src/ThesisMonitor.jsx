@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { api } from "./api.js";
 
 const card = { border: "1px solid var(--bdr2)", borderRadius: 12, padding: 18, marginBottom: 12, background: "var(--s2)" };
 const pct = v => v == null ? "not available" : `${v.toFixed(1)}%`;
@@ -7,17 +8,71 @@ const loadThesis = symbol => {
   try { return { case: "", marketGap: "", breakers: "", ...(JSON.parse(localStorage.getItem(THESIS_KEY) || "{}")[symbol] ?? {}) }; }
   catch { return { case: "", marketGap: "", breakers: "" }; }
 };
+const loadOldNote = symbol => {
+  try {
+    const old = JSON.parse(localStorage.getItem("stockwise-india-notes") || "{}")[symbol];
+    return old?.text ? `${old.verdict ? `${old.verdict}: ` : ""}${old.text}` : "";
+  } catch { return ""; }
+};
+const hasText = t => Boolean(t?.case?.trim() || t?.marketGap?.trim() || t?.breakers?.trim());
 
 export default function ThesisMonitor({ metrics: m }) {
   const [thesis, setThesis] = useState(() => loadThesis(m?.symbol));
+  const [ready, setReady] = useState(false);
+  const [saveState, setSaveState] = useState("loading");
+  const saveSeq = useRef(0);
+  const savedSnapshot = useRef(null);
   useEffect(() => {
     if (!m?.symbol) return;
+    let cancelled = false;
+    setReady(false);
+    setSaveState("loading");
+    api.thesis(m.symbol).then(remote => {
+      if (cancelled) return;
+      if (remote.updatedAt || hasText(remote)) {
+        const normalized = { case: remote.case ?? "", marketGap: remote.marketGap ?? "", breakers: remote.breakers ?? "" };
+        savedSnapshot.current = JSON.stringify(normalized);
+        setThesis(normalized);
+      }
+      else {
+        savedSnapshot.current = JSON.stringify({ case: "", marketGap: "", breakers: "" });
+        const local = loadThesis(m.symbol);
+        const oldNote = loadOldNote(m.symbol);
+        const migrated = { ...local, case: local.case || oldNote };
+        setThesis(migrated);
+      }
+      setSaveState("saved");
+      setReady(true);
+    }).catch(() => {
+      if (cancelled) return;
+      setSaveState("offline");
+      const local = loadThesis(m.symbol);
+      setThesis({ ...local, case: local.case || loadOldNote(m.symbol) });
+      savedSnapshot.current = JSON.stringify({ case: "", marketGap: "", breakers: "" });
+      setReady(true);
+    });
+    return () => { cancelled = true; };
+  }, [m?.symbol]);
+  useEffect(() => {
+    if (!ready || !m?.symbol) return;
     try {
       const all = JSON.parse(localStorage.getItem(THESIS_KEY) || "{}");
       all[m.symbol] = thesis;
       localStorage.setItem(THESIS_KEY, JSON.stringify(all));
     } catch {}
-  }, [m?.symbol, thesis]);
+    const snapshot = JSON.stringify(thesis);
+    if (snapshot === savedSnapshot.current) return;
+    setSaveState("saving");
+    const sequence = ++saveSeq.current;
+    const timer = setTimeout(() => {
+      api.saveThesis(m.symbol, thesis).then(() => {
+        if (sequence === saveSeq.current) { savedSnapshot.current = snapshot; setSaveState("saved"); }
+      }).catch(() => {
+        if (sequence === saveSeq.current) setSaveState("offline");
+      });
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [ready, m?.symbol, thesis]);
   if (!m) return null;
   const monitors = [];
   if (m.salesGrowth3y != null) monitors.push({ label: "Revenue trend", detail: `Three-year sales CAGR is ${pct(m.salesGrowth3y)}. Check future filings for acceleration or a sustained slowdown.` });
@@ -58,7 +113,7 @@ export default function ThesisMonitor({ metrics: m }) {
             <label key={key} style={{ fontSize: 11.5, color: "var(--t2)" }}>{label}<textarea value={thesis[key]} onChange={e => setThesis(s => ({ ...s, [key]: e.target.value }))} placeholder={placeholder} style={{ ...editStyle, display: "block", marginTop: 5 }} /></label>
           ))}
         </div>
-        <div style={{ fontSize: 10, color: "var(--t3)", marginTop: 7 }}>Saved in this browser on this device; not sent to Stockwise's server.</div>
+        <div role="status" style={{ fontSize: 10, color: saveState === "offline" ? "var(--yellow)" : "var(--t3)", marginTop: 7 }}>{saveState === "loading" ? "Loading your saved thesis…" : saveState === "saving" ? "Saving to your account…" : saveState === "offline" ? "Could not sync to your account. Your latest edits remain in this browser; sign in and reload to retry." : "Saved to your account. A local browser copy is kept as a fallback."}</div>
       </div>
     </section>
   );

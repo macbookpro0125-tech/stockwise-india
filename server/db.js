@@ -66,6 +66,16 @@ db.exec(`
     notes TEXT,
     added_at TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS thesis_notes (
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    ticker TEXT NOT NULL,
+    case_text TEXT NOT NULL DEFAULT '',
+    market_gap TEXT NOT NULL DEFAULT '',
+    breakers TEXT NOT NULL DEFAULT '',
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY (user_id, ticker)
+  );
 `);
 
 // Columns added after tables already existed on someone's disk: ALTER only
@@ -110,7 +120,7 @@ db.exec(`
 // dropping the old table with them on would cascade-delete every account's
 // alerts, watchlist and portfolio — and every table's row count must come out
 // unchanged, or the whole rebuild is undone.
-const CHILD_TABLES = ["sessions", "alerts", "watchlist", "holdings", "telegram_links", "password_resets"];
+const CHILD_TABLES = ["sessions", "alerts", "watchlist", "holdings", "thesis_notes", "telegram_links", "password_resets"];
 function rebuildUsersForSocialSignIn() {
   const columns = db.prepare("PRAGMA table_info(users)").all().map(c => c.name);
   if (columns.includes("firebase_uid")) return;

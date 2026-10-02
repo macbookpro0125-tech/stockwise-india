@@ -39,6 +39,8 @@ export const api = {
   search: (q) => request(`/api/search?q=${encodeURIComponent(q)}`),
   currentPrices: (symbols) => request(`/api/prices?symbols=${symbols.map(encodeURIComponent).join(",")}`),
   watchlist: () => request("/api/watchlist"),
+  thesis: symbol => request(`/api/thesis/${encodeURIComponent(symbol)}`),
+  saveThesis: (symbol, thesis) => request(`/api/thesis/${encodeURIComponent(symbol)}`, { method: "PUT", body: JSON.stringify(thesis) }),
   addWatch: (ticker, price) => request("/api/watchlist", { method: "POST", body: JSON.stringify({ ticker, price }) }),
   setWatchNote: (ticker, note) => request(`/api/watchlist/${encodeURIComponent(ticker)}`, { method: "PUT", body: JSON.stringify({ note }) }),
   removeWatch: (ticker) => request(`/api/watchlist/${encodeURIComponent(ticker)}`, { method: "DELETE" }),

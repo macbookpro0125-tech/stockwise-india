@@ -86,6 +86,21 @@ async function main() {
   const bobAlerts = await (await fetch(`${BASE}/api/alerts`, { headers: { Cookie: bobCookie } })).json();
   assert(bobAlerts.length === 0, "bob's session sees none of alice's alerts — cookies are per-user, not global");
 
+  const json = (method, path, cookie, body) => fetch(`${BASE}${path}`, {
+    method, headers: { "Content-Type": "application/json", Cookie: cookie }, body: body ? JSON.stringify(body) : undefined,
+  });
+
+  const thesisUnauth = await fetch(`${BASE}/api/thesis/TCS`);
+  assert(thesisUnauth.status === 401, "investment theses require a signed-in account");
+  const emptyThesis = await (await fetch(`${BASE}/api/thesis/TCS`, { headers: { Cookie: aliceCookie } })).json();
+  assert(emptyThesis.ticker === "TCS" && emptyThesis.case === "" && emptyThesis.updatedAt == null, "a new account gets an empty, symbol-specific thesis");
+  const savedThesis = await (await json("PUT", "/api/thesis/TCS", aliceCookie, { case: "Recurring demand", marketGap: "Margin durability", breakers: "Two years of falling cash conversion" })).json();
+  assert(savedThesis.case === "Recurring demand" && savedThesis.breakers.includes("cash conversion") && savedThesis.updatedAt, "saving a thesis persists its three fields to the account");
+  const bobThesis = await (await fetch(`${BASE}/api/thesis/TCS`, { headers: { Cookie: bobCookie } })).json();
+  assert(bobThesis.case === "" && bobThesis.breakers === "", "another account cannot read the saved thesis for the same ticker");
+  const longThesis = await (await json("PUT", "/api/thesis/TCS", aliceCookie, { case: "x".repeat(4500) })).json();
+  assert(longThesis.case.length === 4000, "thesis fields have a bounded storage length");
+
   const star = () => fetch(`${BASE}/api/watchlist`, {
     method: "POST", headers: { "Content-Type": "application/json", Cookie: aliceCookie },
     body: JSON.stringify({ ticker: "tcs" }),
@@ -104,10 +119,6 @@ async function main() {
   await fetch(`${BASE}/api/watchlist/TCS`, { method: "DELETE", headers: { Cookie: aliceCookie } });
   const afterUnstar = await (await fetch(`${BASE}/api/watchlist`, { headers: { Cookie: aliceCookie } })).json();
   assert(afterUnstar.items.length === 0, "unstarring removes it");
-
-  const json = (method, path, cookie, body) => fetch(`${BASE}${path}`, {
-    method, headers: { "Content-Type": "application/json", Cookie: cookie }, body: body ? JSON.stringify(body) : undefined,
-  });
 
   // Watchlist: the price when starred, and a note
   await json("POST", "/api/watchlist", aliceCookie, { ticker: "TCS", price: 3000 });
@@ -329,7 +340,7 @@ async function main() {
   assert((await fetch(`${BASE}/api/auth/me`, { headers: { Cookie: carolCookie } })).status === 401, "the deleted account's session no longer works");
   assert((await json("POST", "/api/auth/login", "", { email: "carol@example.com", password: "carolspassword1" })).status === 400, "the deleted account can't sign in");
   const { db } = await import("./db.js");
-  const leftovers = ["users", "sessions", "alerts", "watchlist", "holdings", "telegram_links"]
+  const leftovers = ["users", "sessions", "alerts", "watchlist", "holdings", "thesis_notes", "telegram_links"]
     .map(t => db.prepare(`SELECT COUNT(*) AS n FROM ${t} WHERE ${t === "users" ? "id" : "user_id"} = ?`).get(carolId).n);
   assert(leftovers.every(n => n === 0), "nothing of the deleted account is left in any table");
   assert((await (await fetch(`${BASE}/api/alerts`, { headers: { Cookie: aliceCookie } })).json()).length === 1, "deleting one account leaves other accounts' data alone");

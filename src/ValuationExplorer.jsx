@@ -65,7 +65,10 @@ export default function ValuationExplorer({ metrics: m, price, levels, mosPct, e
   const multiples = [bearPe, basePe, bullPe];
   const mos = clamp(finite(mosPct) ?? 10, 0, 80);
   const safePrice = levels?.fv25 > 0 ? levels.fv25 * (1 - mos / 100) : null;
+  const impliedGrowth = eps > 0 && price > 0 && basePe > 0 ? (Math.pow(price / (eps * basePe), 1 / 5) - 1) * 100 : null;
   const growthSource = m.epsGrowth5y != null ? "reported 5-year EPS CAGR" : m.epsGrowth3y != null ? "reported 3-year EPS CAGR" : m.growthBasis ?? "editable analyst assumption";
+  const reportSource = m.provenance?.financials;
+  const priceSource = m.provenance?.marketPrice;
 
   if (!m) return null;
   return (
@@ -99,6 +102,14 @@ export default function ValuationExplorer({ metrics: m, price, levels, mosPct, e
           <div style={{ marginTop: 4, fontSize: 18, color: "var(--t1)", fontWeight: 700, ...mono }}>{money(dcf)}</div>
           <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 4 }}>{dcf == null ? "Needs positive reported FCF and discount rate above terminal growth" : `FCF/share ₹${fcfPerShare.toFixed(2)} · ${dcfFcfGrowth}% FCF growth · ${discountRate}% discount · ${terminalGrowth}% terminal`}</div>
         </div>
+        <div style={{ padding: 12, background: "var(--s1)", border: "1px solid var(--bdr)", borderRadius: 9 }}>
+          <div style={{ fontSize: 11, color: "var(--t3)" }}>EPS growth implied by current price</div>
+          <div style={{ marginTop: 4, fontSize: 18, color: "var(--t1)", fontWeight: 700, ...mono }}>{impliedGrowth == null ? "—" : pct(impliedGrowth)}</div>
+          <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 4 }}>5-year EPS CAGR needed for price ₹{Number(price || 0).toLocaleString("en-IN")} to equal FY+5 EPS × {basePe}× exit P/E; dividends excluded</div>
+        </div>
+      </div>
+      <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 9, lineHeight: 1.5 }}>
+        Source: {reportSource?.source ?? "NSE financial filings"}, {reportSource?.scope ?? "scope not stated"} results for FY ending {reportSource?.period ?? m.fyEnd ?? "—"}{reportSource?.filedAt ? ` (filed ${reportSource.filedAt})` : ""}. Price: {priceSource?.source ?? "available market price"}{priceSource?.date ? ` dated ${priceSource.date}` : ""}. Historical P/E uses {m.provenance?.historicalPe?.usableYears ?? m.peYears ?? 0} usable years.
       </div>
 
       {expanded && (

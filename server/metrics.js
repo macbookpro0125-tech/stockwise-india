@@ -333,6 +333,22 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     low52w: range?.low ?? null,
     high52w: range?.high ?? null,
     fyEnd: latest.fyEnd,
+    provenance: {
+      financials: {
+        source: latest.source === "legacy" ? "NSE legacy results filing" : "NSE integrated financial filing",
+        period: latest.fyEnd,
+        scope: latest.scope ?? "not stated",
+        filedAt: latest.filed ?? null,
+      },
+      marketPrice: {
+        source: overrides.cmp != null ? "Live quote" : close != null ? "NSE daily close" : "unavailable",
+        date: overrides.cmp != null ? overrides.cmpDate ?? null : snap?.pricesDate ?? cmpDate ?? null,
+      },
+      historicalPe: {
+        source: "NSE reported EPS and historical daily prices",
+        usableYears: validPe.length,
+      },
+    },
     revenueCr: latest.revenue != null ? latest.revenue / 1e7 : null,
     profitCr: latest.profit != null ? latest.profit / 1e7 : null,
     salesGrowth3y, salesGrowth5y, profitGrowth3y, profitGrowth5y,
