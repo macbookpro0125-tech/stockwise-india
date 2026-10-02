@@ -12,6 +12,7 @@ import PortfolioView from "./PortfolioView.jsx";
 import PerformanceView from "./PerformanceView.jsx";
 import AlertsView from "./AlertsView.jsx";
 import StockDetail from "./StockDetail.jsx";
+import Tour, { APP_TOUR, STOCK_TOUR } from "./Tour.jsx";
 import { resetWatchlist } from "./watchlist.js";
 import { portfolioStore, alertsStore } from "./stores.js";
 
@@ -27,6 +28,17 @@ function useTheme() {
   const toggle = useCallback(() => setTheme(t => (t === "dark" ? "light" : "dark")), []);
   return [theme, toggle];
 }
+
+// Which tours each account has seen in this browser: { "<id>:<email>": { app, stock } }
+const TOURS_KEY = "stockwise-tours";
+const toursSeen = owner => { try { return JSON.parse(localStorage.getItem(TOURS_KEY) || "{}")[owner] ?? {}; } catch { return {}; } };
+const markToursSeen = (owner, names) => {
+  try {
+    const all = JSON.parse(localStorage.getItem(TOURS_KEY) || "{}");
+    all[owner] = { ...all[owner], ...Object.fromEntries(names.map(n => [n, true])) };
+    localStorage.setItem(TOURS_KEY, JSON.stringify(all));
+  } catch {}
+};
 
 // index.html's title, shown again when no stock page is open
 const TITLE = document.title;
@@ -66,6 +78,40 @@ export default function App() {
   useEffect(() => {
     document.title = open ? `${open.symbol} · Stockwise India` : TITLE;
   }, [open?.symbol]);
+
+  // The guided tour: Discover's the first time an account signs in here, the
+  // company page's the first time it opens one; again from the Account menu.
+  // It starts once the page it explains has drawn (its rows, its scores).
+  const [tour, setTour] = useState(null); // "app" | "stock" | null
+  const [tourAsked, setTourAsked] = useState(null);
+  const owner = account ? `${account.userId}:${account.email ?? account.phone ?? ""}` : null;
+  useEffect(() => {
+    if (!owner || tour) return;
+    const seen = toursSeen(owner);
+    const want = tourAsked ?? (open ? (!seen.stock && "stock") : (tab === "discover" && !seen.app && "app"));
+    if (!want || (want === "stock") !== !!open) return;
+    const ready = want === "stock" ? '[data-tour="research"]' : '[data-tour="row"]';
+    const started = Date.now();
+    let timer;
+    const check = () => {
+      // A company with no scores never gets its tour; Discover's waits ~10 s
+      if (document.querySelector(ready) || (want === "app" && Date.now() - started > 10000)) { setTourAsked(null); setTour(want); }
+      else timer = setTimeout(check, 300);
+    };
+    timer = setTimeout(check, 500);
+    return () => clearTimeout(timer);
+  }, [owner, tour, tourAsked, open?.symbol, tab]);
+  const finishTour = reason => {
+    // Skipping means "no tours": the company page's isn't offered later either
+    markToursSeen(owner, reason === "skip" ? ["app", "stock"] : [tour]);
+    setTour(null);
+  };
+  const askForTour = () => {
+    if (stockFromPath(window.location.pathname)) { setTourAsked("stock"); return; }
+    setTab("discover");
+    window.scrollTo(0, 0);
+    setTourAsked("app");
+  };
 
   // /privacy and /disclaimer are for everyone, signed in or not
   if (path === "/privacy") return <PrivacyPage signedIn={!!account} />;
@@ -107,6 +153,7 @@ export default function App() {
     portfolioStore.reset();
     alertsStore.reset();
     setOpen(null);
+    setTour(null);
     setNotice(message);
     setAccount(null);
     navigate("/");
@@ -118,7 +165,7 @@ export default function App() {
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
       <PriceStrip onOpenStock={openSymbol} />
-      <Header tab={open ? null : tab} onTab={goTab} account={account} onLogout={logout} onDeleted={accountDeleted} onSearch={openSymbol} theme={theme} onToggleTheme={toggleTheme} />
+      <Header tab={open ? null : tab} onTab={goTab} account={account} onLogout={logout} onDeleted={accountDeleted} onSearch={openSymbol} theme={theme} onToggleTheme={toggleTheme} onTour={askForTour} />
       <div style={{ height: 16 }} />
       {open && <StockDetail key={open.at} symbol={open.symbol} account={account} onBack={closeStock} backTo={TABS.find(t => t.id === tab)?.label} onOpenStock={openSymbol} />}
       {/* Kept mounted (hidden) while a stock is open, so its filters and
@@ -132,6 +179,7 @@ export default function App() {
       {/* Not on a stock page: that has its own bottom Back button on phones,
           as the original's stock page did */}
       {!open && <BottomTabBar tab={tab} onTab={goTab} theme={theme} />}
+      {tour && <Tour key={tour} steps={tour === "app" ? APP_TOUR : STOCK_TOUR} onFinish={finishTour} />}
     </div>
   );
 }

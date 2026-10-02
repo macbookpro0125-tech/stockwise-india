@@ -42,7 +42,7 @@ function compact(n) {
   return n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
 }
 
-export default function Header({ tab, onTab, account, onLogout, onDeleted, onSearch, theme, onToggleTheme }) {
+export default function Header({ tab, onTab, account, onLogout, onDeleted, onSearch, theme, onToggleTheme, onTour }) {
   const badges = useTabBadges();
   const [stats, setStats] = useState(null);
   useEffect(() => { api.stats().then(setStats).catch(() => {}); }, []);
@@ -90,15 +90,15 @@ export default function Header({ tab, onTab, account, onLogout, onDeleted, onSea
                 style={{ width: 32, height: 32, borderRadius: 8, background: "var(--s2)", border: "1px solid var(--bdr)", color: "var(--t2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: 0 }}>
                 {theme === "dark" ? <Sun size={16} strokeWidth={2} /> : <Moon size={16} strokeWidth={2} />}
               </button>
-              <AccountMenu account={account} onLogout={onLogout} onDeleted={onDeleted} />
+              <AccountMenu account={account} onLogout={onLogout} onDeleted={onDeleted} onTour={onTour} />
             </div>
           </div>
-          <div style={{ marginTop: 8 }}>
+          <div data-tour="search" style={{ marginTop: 8 }}>
             <StockSearchBar onAnalyze={onSearch} placeholder="Search any stock by name or symbol…" />
           </div>
         </div>
 
-        <div className="discovery-tabs" style={{ display: "flex", gap: 0 }}>
+        <div className="discovery-tabs" data-tour="tabs" style={{ display: "flex", gap: 0 }}>
           {TABS.map(t => {
             const b = badges[t.id] ?? {};
             const active = tab === t.id;
@@ -130,7 +130,7 @@ export default function Header({ tab, onTab, account, onLogout, onDeleted, onSea
 export function BottomTabBar({ tab, onTab, theme }) {
   const badges = useTabBadges();
   return (
-    <div className="bottom-tab-bar" style={{ background: HEADER_BG[theme] ?? HEADER_BG.dark }}>
+    <div className="bottom-tab-bar" data-tour="tabs" style={{ background: HEADER_BG[theme] ?? HEADER_BG.dark }}>
       {TABS.map(t => {
         const b = badges[t.id] ?? {};
         return (

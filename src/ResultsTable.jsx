@@ -414,8 +414,8 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
       {/* ── Mobile cards ── */}
       {!loading && sorted.length > 0 && isMobile && (
         <div>
-          {visible.map(stock => (
-            <div key={stock.symbol} style={{ borderRadius: 14, border: "1px solid var(--bdr2)", padding: 16, marginBottom: 10, background: "var(--s2)" }}>
+          {visible.map((stock, i) => (
+            <div key={stock.symbol} data-tour={i === 0 ? "row" : undefined} style={{ borderRadius: 14, border: "1px solid var(--bdr2)", padding: 16, marginBottom: 10, background: "var(--s2)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12, gap: 8 }}>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 700, color: "var(--t1)", marginBottom: 3 }}>{stock.name}</div>
@@ -434,7 +434,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                   </div>
                 ))}
               </div>
-              <div style={{ display: "flex", gap: 8 }}>
+              <div data-tour={i === 0 ? "row-actions" : undefined} style={{ display: "flex", gap: 8 }}>
                 <button onClick={() => onAnalyze(stock.symbol)} className="btn-primary" style={{ flex: 1, height: 36, fontSize: 12 }}>Analyze →</button>
                 <StarButton symbol={stock.symbol} price={stock.cmp} watched={watchlist.has(stock.symbol)} size={36} />
                 {bell(stock, 36)}
@@ -486,6 +486,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                   return (
                   <tr
                     key={stock.symbol}
+                    data-tour={i === 0 ? "row" : undefined}
                     style={{ background: rowBg, transition: "background 100ms" }}
                     onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = "var(--s3)"; }}
                     onMouseLeave={e => { e.currentTarget.style.background = rowBg; }}
@@ -531,7 +532,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                     <td style={{ ...cell, background: "color-mix(in srgb, var(--accent) 2%, transparent)" }}><FvCell stock={stock} /></td>
 
                     <td style={cell}>
-                      <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
+                      <div data-tour={i === 0 ? "row-actions" : undefined} style={{ display: "flex", gap: 5, alignItems: "center" }}>
                         {/* One solid button per page reads as the action; fifty in a column read as noise */}
                         <button onClick={() => onAnalyze(stock.symbol)} className="btn-ghost" style={{ height: 30, padding: "0 12px", fontSize: 12.5, boxShadow: "none" }}>
                           Analyze

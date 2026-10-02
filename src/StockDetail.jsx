@@ -445,7 +445,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       )}
 
       {/* Sticky action bar */}
-      <div style={{ position: "sticky", top: "var(--header-h, 0px)", zIndex: 40, display: "flex", alignItems: "center", gap: 8, padding: "10px 0", marginBottom: 14, background: "var(--bg)", borderBottom: "1px solid var(--bdr)" }}>
+      <div data-sticky-top style={{ position: "sticky", top: "var(--header-h, 0px)", zIndex: 40, display: "flex", alignItems: "center", gap: 8, padding: "10px 0", marginBottom: 14, background: "var(--bg)", borderBottom: "1px solid var(--bdr)" }}>
         <button onClick={onBack} title={`Back to ${backTo}`} style={{ display: "flex", alignItems: "center", gap: 5, height: 34, borderRadius: 8, background: "var(--s2)", border: "1px solid var(--bdr)", cursor: "pointer", color: "var(--t2)", flexShrink: 0, padding: "0 10px", fontSize: 12, fontWeight: 500, fontFamily: "inherit" }}>
           <ArrowLeft size={15} /> Back
         </button>
@@ -453,7 +453,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
           {data.name}
           {price > 0 && <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 600, color: "var(--t3)" }}>{fmtRs(price)}</span>}
         </span>
-        {actions}
+        <span data-tour="stock-actions" style={{ display: "flex", gap: 8, flexShrink: 0 }}>{actions}</span>
       </div>
 
       {m && (
@@ -504,12 +504,12 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         <div style={{ ...card, color: "var(--t3)", fontSize: 13 }}>No usable annual results in NSE's filings for this company, so there's nothing to value or score.</div>
       )}
 
-      {m && <ResearchPanel research={m.research} />}
+      {m && <div data-tour="research"><ResearchPanel research={m.research} /></div>}
 
       {m && (
         <>
           {/* Verify & Override */}
-          <div style={{ border: "1px solid var(--bdr2)", borderRadius: 14, padding: 20, marginBottom: 16, background: "var(--s2)" }}>
+          <div data-tour="override" style={{ border: "1px solid var(--bdr2)", borderRadius: 14, padding: 20, marginBottom: 16, background: "var(--s2)" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: "var(--t1)", marginBottom: 2, letterSpacing: "-0.01em" }}>Verify & Override</div>
@@ -555,7 +555,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
             <PeHistoryTable m={m} />
           </div>
 
-          <ValuationExplorer key={`valuation-${symbol}`} metrics={m} price={price} levels={levels} mosPct={mosPct} epsInput={eps} peInput={pe} />
+          <div data-tour="valuation"><ValuationExplorer key={`valuation-${symbol}`} metrics={m} price={price} levels={levels} mosPct={mosPct} epsInput={eps} peInput={pe} /></div>
 
           {/* Current price */}
           <div style={card}>
@@ -594,11 +594,11 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
 
       {m && (
         <>
-          <ThesisMonitor metrics={m} account={account} />
+          <div data-tour="thesis"><ThesisMonitor metrics={m} account={account} /></div>
 
           {/* Where the price sits — described against the levels, never an instruction */}
           {position && (
-            <div style={{ borderRadius: 12, padding: 18, marginBottom: 16, background: "var(--s2)", border: `1px solid color-mix(in srgb, ${positionTone} 45%, var(--bdr2))` }}>
+            <div data-tour="position" style={{ borderRadius: 12, padding: 18, marginBottom: 16, background: "var(--s2)", border: `1px solid color-mix(in srgb, ${positionTone} 45%, var(--bdr2))` }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8, flexWrap: "wrap" }}>
                 <span style={{ width: 40, height: 40, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: positionTone, background: `color-mix(in srgb, ${positionTone} 12%, transparent)` }}>
                   <PositionIcon zone={position.zone} size={20} strokeWidth={2} />
@@ -675,7 +675,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       )}
 
       <PeersPanel symbol={data.symbol} onAnalyze={onOpenStock} />
-      <NewsPanel symbol={data.symbol} />
+      <div data-tour="filings"><NewsPanel symbol={data.symbol} /></div>
       <MyNotes key={data.symbol} symbol={data.symbol} />
 
       <p style={{ fontSize: 11, color: "var(--t3)", textAlign: "center", lineHeight: 1.6 }}>
