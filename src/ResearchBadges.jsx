@@ -32,6 +32,7 @@ export function researchTitle(r) {
     `Technical setup ${n(r.technical)} — ${r.technicalLabel}`,
     `Risk ${n(r.risk)} — ${r.riskLabel} (higher = riskier)`,
     `${r.coverage?.checked} of ${r.coverage?.total} checks have data · confidence ${n(r.confidence)}/100`,
+    ...(r.flags?.includes("auditQualified") ? ["Red flag: the auditor qualified the latest accounts"] : []),
   ].join("\n");
 }
 
@@ -57,7 +58,7 @@ export function OverallScore({ research }) {
   return (
     <span title={researchTitle(research)} style={{ display: "inline-flex", flexDirection: "column", lineHeight: 1.25, whiteSpace: "nowrap" }}>
       <span style={{ fontSize: 13, fontWeight: 650, color: v == null ? "var(--t3)" : "var(--t1)", ...MONO }}>{v == null ? "—" : Math.round(v)}</span>
-      <span style={{ fontSize: 10.5, color: v == null ? "var(--t3)" : t.color, fontWeight: 500 }}>{research?.stance ?? "Not rated"}</span>
+      <span style={{ fontSize: 10.5, color: research?.stance === "Review required" ? "var(--red)" : v == null ? "var(--t3)" : t.color, fontWeight: 500 }}>{research?.stance ?? "Not rated"}</span>
     </span>
   );
 }

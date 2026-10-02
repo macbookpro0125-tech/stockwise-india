@@ -349,7 +349,23 @@ const GOVERNANCE = {
       },
     },
     { id: "relatedParty", weight: 0.20, label: "Related-party transactions", compute: () => notInFilings("Deals with promoter-group companies are in the annual report and separate NSE filings — not checked yet.") },
-    { id: "auditor", weight: 0.20, label: "Auditor issues", compute: () => notInFilings("Auditor qualifications and resignations — not checked yet.") },
+    {
+      id: "auditor", weight: 0.20, label: "Audit opinion, last 3 years",
+      compute(m) {
+        // Each annual filing states the auditor's opinion (fetch-nse.js);
+        // resignations are announced separately and aren't checked
+        const rows = lastYears(m, 3).filter(h => h.auditOpinion);
+        if (!rows.length) return missing("The filings on file don't state the audit opinion.");
+        const qualified = rows.filter(h => h.auditOpinion === "qualified").map(h => fy(h.fyEnd));
+        const latest = m.history[0];
+        const firm = m.history.find(h => h.auditor)?.auditor;
+        if (latest.auditOpinion === "qualified") {
+          return checked(0, "qualified", "Qualified", `The auditor qualified ${fy(latest.fyEnd)}'s accounts — the company filed a statement on the impact of audit qualifications with its results.`);
+        }
+        if (qualified.length) return checked(50, "earlier", `${qualified.join(", ")} qualified`, `Clean opinion on the latest accounts, but the auditor qualified ${qualified.join(" and ")}.`);
+        return checked(100, "unmodified", "Clean", `Unmodified (clean) audit opinion in each of the last ${rows.length} year${rows.length > 1 ? "s" : ""}${firm ? ` — auditor ${firm}` : ""}.`);
+      },
+    },
     { id: "governanceFlags", weight: 0.15, label: "Governance disclosures", compute: () => notInFilings("Board independence and governance reports — not checked yet.") },
   ],
 };
@@ -526,6 +542,8 @@ export const setResearchPeers = peers => { PEERS = peers; };
 const MIN_GROUP_COVERAGE = 0.35;
 const MIN_SCORE_COVERAGE = 0.6;
 const CAPPED_AT = 69;
+// The overall score's ceiling while a critical red flag is unresolved
+const FLAG_CEILING = 39;
 
 function scoreGroup(group, m, ctx) {
   const items = group.items.map(it => {
@@ -652,6 +670,19 @@ export function computeResearch(m, ctx = { peers: PEERS }) {
   const risk = riskProfile(m, groups, tech, confidence);
   const valuation = groups.find(g => g.id === "valuation");
 
+  // Red flags: shown on the page and an override on the overall score, as
+  // the proposal sets for critical accounting events (its default ceiling of
+  // 39, "Review required") — on top of the audit check's own 0 in governance
+  const flags = [];
+  const latestYear = m.history[0];
+  if (latestYear.auditOpinion === "qualified") {
+    flags.push({
+      id: "auditQualified", severity: "critical",
+      text: `The auditor qualified ${fy(latestYear.fyEnd)}'s accounts. Read the company's statement on the impact of audit qualifications, filed with its results, before relying on any figure here.`,
+    });
+  }
+  const critical = flags.some(f => f.severity === "critical");
+
   // Overall research score: quality without valuation (70%) and valuation
   // (30%) blended geometrically, so a weak side can't be fully made up by the
   // other; then trimmed by price-swing and data-gap risk
@@ -664,7 +695,11 @@ export function computeResearch(m, ctx = { peers: PEERS }) {
     status = "rated";
     if (confidence < 50) { ors = Math.min(ors, 59); status = "provisional"; }
   }
-  const bandRow = ors == null ? null : BANDS_ORS.find(([min]) => ors >= min);
+  if (critical && status !== "not-rated") {
+    if (ors != null) ors = Math.min(ors, FLAG_CEILING);
+    status = "review-required";
+  }
+  const bandRow = ors == null || status === "review-required" ? null : BANDS_ORS.find(([min]) => ors >= min);
 
   const out = {
     version: RESEARCH_VERSION,
@@ -681,9 +716,11 @@ export function computeResearch(m, ctx = { peers: PEERS }) {
     risk,
     overall: {
       score: ors == null ? null : r1(ors), status,
-      stance: bandRow?.[1] ?? (status === "quality-only" ? "Quality view only" : "Not rated"),
-      text: bandRow?.[2] ?? (status === "quality-only" ? "Quality view only — valuation needs more data." : "Not rated — too little filed data to score."),
+      stance: bandRow?.[1] ?? (status === "review-required" ? "Review required" : status === "quality-only" ? "Quality view only" : "Not rated"),
+      text: bandRow?.[2] ?? (status === "review-required" ? `Review required — ${flags[0].text.split(".")[0].replace(/^The/, "the")}.`
+        : status === "quality-only" ? "Quality view only — valuation needs more data." : "Not rated — too little filed data to score."),
     },
+    flags,
   };
   out.summary = summarise(out, m);
   return out;
@@ -703,6 +740,6 @@ function summarise(r, m) {
   if (r.valuation.score != null) s.push(`At the ${m.closeDate ? new Date(`${m.closeDate}T00:00:00Z`).toLocaleString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" }) : "last"} close, valuation looks ${r.valuation.label.toLowerCase()} (${Math.round(r.valuation.score)}/100).`);
   s.push(`${r.technical.score != null ? `The price trend is ${r.technical.label.toLowerCase()}; r` : "R"}isk is ${r.risk.label.toLowerCase()} (${Math.round(r.risk.score)}/100).`);
   const conf = r.confidence >= 80 ? "high" : r.confidence >= 60 ? "moderate" : "low";
-  s.push(`Confidence is ${conf}: ${r.coverage.checked} of ${r.coverage.total} checks have data, and related parties, auditors, forecasts and a cash-flow model aren't covered.`);
+  s.push(`Confidence is ${conf}: ${r.coverage.checked} of ${r.coverage.total} checks have data, and related parties, auditor resignations, forecasts and a cash-flow model aren't covered.`);
   return s.join(" ");
 }

@@ -128,6 +128,7 @@ export function researchBrief(r) {
     risk: r.risk.score, riskLabel: r.risk.label,
     confidence: r.confidence, coverage: r.coverage,
     groups: Object.fromEntries(r.groups.map(g => [g.id, g.score])),
+    flags: r.flags.map(f => f.id),
   };
 }
 
