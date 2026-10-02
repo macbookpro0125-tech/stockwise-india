@@ -8,7 +8,7 @@ import { SiteLink } from "./site.jsx";
 // — the way to erase everything that the privacy page points to. An account
 // made with Google, Apple or a phone has no password; it confirms the delete
 // by typing DELETE.
-export default function AccountMenu({ account, onLogout, onDeleted }) {
+export default function AccountMenu({ account, onLogout, onDeleted, onTour }) {
   const who = account?.email || account?.phone || null;
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -26,7 +26,7 @@ export default function AccountMenu({ account, onLogout, onDeleted }) {
   const item = { display: "block", width: "100%", textAlign: "left", background: "none", border: "none", padding: "9px 12px", borderRadius: 8, fontSize: 13, color: "var(--t1)", cursor: "pointer" };
 
   return (
-    <div ref={ref} style={{ position: "relative" }}>
+    <div ref={ref} data-tour="account" style={{ position: "relative" }}>
       <button className="btn-ghost" onClick={() => setOpen(o => !o)} aria-expanded={open} style={{ height: 32, fontSize: 12.5, padding: "0 10px 0 12px", whiteSpace: "nowrap", gap: 4 }}>
         Account <ChevronDown size={14} style={{ transition: "transform 150ms", transform: open ? "rotate(180deg)" : "none" }} />
       </button>
@@ -38,6 +38,12 @@ export default function AccountMenu({ account, onLogout, onDeleted }) {
               {account.name && <div style={{ fontSize: 13, fontWeight: 600, color: "var(--t1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{account.name}</div>}
               <div style={{ fontSize: 13, color: account.name ? "var(--t2)" : "var(--t1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={who}>{who}</div>
             </div>
+          )}
+          {onTour && (
+            <button role="menuitem" style={item} onClick={() => { setOpen(false); onTour(); }}
+              onMouseEnter={e => { e.currentTarget.style.background = "var(--s3)"; }} onMouseLeave={e => { e.currentTarget.style.background = "none"; }}>
+              Take the tour
+            </button>
           )}
           <button role="menuitem" style={item} onClick={() => { setOpen(false); onLogout(); }}
             onMouseEnter={e => { e.currentTarget.style.background = "var(--s3)"; }} onMouseLeave={e => { e.currentTarget.style.background = "none"; }}>

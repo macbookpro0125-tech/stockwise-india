@@ -4,7 +4,7 @@ import { SiteLink, SiteFooter, Logo, navigate } from "./site.jsx";
 // the code does — check them when changing what's stored, adding analytics
 // or ads, or moving hosts.
 
-const UPDATED = "2 October 2026";
+const UPDATED = "3 October 2026";
 // Shown once set: a privacy policy needs a way to reach you
 const CONTACT_EMAIL = null;
 
@@ -47,15 +47,16 @@ export function PrivacyPage({ signedIn }) {
       <UL>
         <LI><B>Your account:</B> your email address and your password. The password is stored only as a salted, one-way hash (scrypt), so nobody — including us — can read it. If you sign in with Google, Apple or your phone instead, there's no password: we keep the email or phone number they confirm, your name if they share it, and the account ID their sign-in gives us.</LI>
         <LI><B>A sign-in cookie:</B> one cookie that keeps you signed in for up to 30 days. It's used for nothing else, scripts on the page can't read it, and it's removed when you sign out.</LI>
-        <LI><B>What you save:</B> your watchlist (with the price when you added each stock and your notes on it), your price alerts, and your portfolio holdings (buy price, quantity, date and notes).</LI>
+        <LI><B>What you save:</B> your watchlist (with the price when you added each stock and your notes on it), your price alerts, your portfolio holdings (buy price, quantity, date and notes), and the investment thesis you write on a company's page.</LI>
         <LI><B>Telegram, only if you connect it:</B> your Telegram chat ID and the name on your Telegram account, so your alerts reach you, and when each alert was last sent. Not your phone number — Telegram doesn't give it to us. Disconnecting (on the Alerts tab, or sending /stop to the bot) removes them.</LI>
       </UL>
 
       <H>What stays in your browser</H>
       <P>
-        Your light/dark setting, your last filters, strategies you save, your recent searches and the notes you write on
-        company pages are kept in your own browser. They never reach our server. You can clear them in your browser's
-        settings for this site.
+        Your light/dark setting, your last filters, strategies you save, your recent searches, the notes you write on
+        company pages and which guided tours you've seen are kept in your own browser. They never reach our server. A
+        thesis you're editing is also kept here until it's saved to your account. You can clear all of this in your
+        browser's settings for this site.
       </P>
 
       <H>What we don't do</H>

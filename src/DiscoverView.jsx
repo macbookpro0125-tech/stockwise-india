@@ -297,6 +297,7 @@ export default function DiscoverView({ onOpenStock }) {
           <HowItWorks />
         </div>
 
+        <div data-tour="strategies">
         <PresetCards
           onSelect={applyPreset}
           activePresetId={activePresetId}
@@ -305,10 +306,11 @@ export default function DiscoverView({ onOpenStock }) {
           onRenamePreset={handleRenamePreset}
           onDuplicatePreset={handleDuplicatePreset}
         />
+        </div>
 
         <div className={`screener ${sideOpen ? "" : "screener-side-closed"}`}>
           {sideOpen && (
-            <aside className="screener-side" aria-label="Filters">
+            <aside className="screener-side" aria-label="Filters" data-tour="filters">
               {panel}
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", paddingTop: 12, marginTop: 12, borderTop: "1px solid var(--bdr)" }}>
                 <button onClick={() => setSideOpen(false)} className="btn-ghost" style={{ height: 28, padding: "0 10px", fontSize: 11.5 }}><PanelLeftClose size={13} /> Hide filters</button>
@@ -320,7 +322,7 @@ export default function DiscoverView({ onOpenStock }) {
 
           <main style={{ minWidth: 0 }}>
             <div className="screener-toolbar">
-              <button className={`btn-ghost ${sideOpen ? "screener-filters-toggle" : ""}`} onClick={() => (window.innerWidth <= 900 ? setSheetOpen(true) : setSideOpen(true))} style={{ height: 34, fontSize: 12.5 }}>
+              <button data-tour="filters" className={`btn-ghost ${sideOpen ? "screener-filters-toggle" : ""}`} onClick={() => (window.innerWidth <= 900 ? setSheetOpen(true) : setSideOpen(true))} style={{ height: 34, fontSize: 12.5 }}>
                 <SlidersHorizontal size={14} /> Filters{activeCount > 0 && <span style={{ marginLeft: 2, fontSize: 10.5, padding: "0 7px", borderRadius: 999, fontWeight: 700, background: "var(--accent)", color: "var(--on-accent)" }}>{activeCount}</span>}
               </button>
               {results && (
