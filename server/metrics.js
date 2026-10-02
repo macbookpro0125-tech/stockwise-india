@@ -349,6 +349,7 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     dividendsTtm, divYield, payoutPct,
     ocfPat3yPct,
     fcfCr: fcf != null ? fcf / 1e7 : null,
+    fcfYieldPct: !lender && fcf != null && marketCapCr > 0 ? ((fcf / 1e7) / marketCapCr) * 100 : null,
     piotroski: piotroski?.score ?? null,
     piotroskiChecks: piotroski?.checks ?? null,
     otherIncomePctOfPbt: latest.otherIncome != null && latest.pbt > 0 ? (latest.otherIncome / latest.pbt) * 100 : null,

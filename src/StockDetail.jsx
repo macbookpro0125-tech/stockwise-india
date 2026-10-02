@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { NotebookPen, Check, X, TriangleAlert, LoaderCircle, ArrowLeft, ArrowUpRight, CalendarDays, CircleCheck, CircleX, Layers, ArrowRight } from "lucide-react";
+import { NotebookPen, Check, X, TriangleAlert, LoaderCircle, ArrowLeft, ArrowUpRight, CalendarDays, CircleCheck, Layers, ArrowRight } from "lucide-react";
 import { api } from "./api.js";
 import { calculateLevels, pricePosition, fmtRs } from "../server/levels.js";
 import { StarIcon, BellIcon, PositionIcon } from "./icons.jsx";
@@ -11,6 +11,8 @@ import FinancialsPanel from "./FinancialsPanel.jsx";
 import TechnicalPanel from "./TechnicalPanel.jsx";
 import PeersPanel from "./PeersPanel.jsx";
 import NewsPanel from "./NewsPanel.jsx";
+import ValuationExplorer from "./ValuationExplorer.jsx";
+import ThesisMonitor from "./ThesisMonitor.jsx";
 
 // The original Stockwise stock page (stock-screener src/StockScreener.jsx),
 // on this app's NSE data: the research dashboard (in place of the original's
@@ -548,6 +550,8 @@ export default function StockDetail({ symbol, onBack, backTo = "Discover", onOpe
             <PeHistoryTable m={m} />
           </div>
 
+          <ValuationExplorer key={`valuation-${symbol}`} metrics={m} price={price} levels={levels} mosPct={mosPct} epsInput={eps} peInput={pe} />
+
           {/* Current price */}
           <div style={card}>
             <SectionTitle icon={CalendarDays} style={{ marginBottom: 4 }}>Current Price</SectionTitle>
@@ -585,32 +589,7 @@ export default function StockDetail({ symbol, onBack, backTo = "Discover", onOpe
 
       {m && (
         <>
-          {/* Pros / Cons */}
-          <div style={{ border: "1px solid var(--bdr2)", borderRadius: 10, padding: "16px 20px", marginBottom: 12, background: "var(--s2)" }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--t1)", marginBottom: 12 }}>
-              Pros &amp; Cons <span style={{ fontSize: 11, color: "var(--t3)", fontWeight: 400 }}>— worked out from the filings</span>
-            </div>
-            {m.pros.length || m.cons.length ? (
-              <div className="ss-pros-cons-grid" style={m.pros.length && m.cons.length ? undefined : { gridTemplateColumns: "1fr" }}>
-                {m.pros.length > 0 && (
-                  <div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, color: "var(--green)", marginBottom: 8 }}><CircleCheck size={15} /> Pros ({m.pros.length})</div>
-                    <ul style={{ margin: 0, padding: "0 0 0 16px", display: "flex", flexDirection: "column", gap: 6 }}>
-                      {m.pros.map((p, i) => <li key={i} style={{ fontSize: 12, color: "var(--t2)", lineHeight: 1.5 }}>{p}</li>)}
-                    </ul>
-                  </div>
-                )}
-                {m.cons.length > 0 && (
-                  <div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, color: "var(--red)", marginBottom: 8 }}><CircleX size={15} /> Cons ({m.cons.length})</div>
-                    <ul style={{ margin: 0, padding: "0 0 0 16px", display: "flex", flexDirection: "column", gap: 6 }}>
-                      {m.cons.map((c, i) => <li key={i} style={{ fontSize: 12, color: "var(--t2)", lineHeight: 1.5 }}>{c}</li>)}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            ) : <p style={{ fontSize: 12, color: "var(--t3)", margin: 0 }}>Nothing stands out either way in the filings.</p>}
-          </div>
+          <ThesisMonitor metrics={m} />
 
           {/* Where the price sits — described against the levels, never an instruction */}
           {position && (

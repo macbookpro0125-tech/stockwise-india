@@ -421,7 +421,7 @@ const closeMcapCr = m => (m.close > 0 && m.shares > 0 ? (m.close * m.shares) / 1
 const VALUATION = {
   id: "valuation", label: "Valuation", weight: 15,
   items: [
-    { id: "dcf", weight: 0.30, label: "Cash-flow (DCF) value", compute: () => notInFilings("Not built — it needs ten years of forecasts, which would be guesses for 2,000+ companies.") },
+    { id: "dcf", weight: 0.30, label: "Cash-flow (DCF) value", compute: () => notInFilings("An editable five-year cash-flow scenario is available on the stock page, but its assumptions are user inputs and it is not included in the research score.") },
     {
       id: "peers", weight: 0.25, label: "P/E against comparable peers",
       compute(m, ctx) {
