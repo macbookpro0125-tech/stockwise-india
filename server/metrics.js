@@ -300,10 +300,16 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     };
   });
 
-  const sector = snap?.sectors?.[sym] ?? null;
+  // The index lists' sector, else the one NSE's industry maps to
+  // (market-data.js sectorsBySymbol). Cyclical keeps the index sector's word
+  // where there is one; otherwise the name test still applies — NSE files sugar
+  // under FMCG, and a mapped sector mustn't make a sugar mill non-cyclical.
+  const indexSector = snap?.sectors?.[sym] ?? null;
+  const sector = indexSector ?? snap?.industrySectors?.[sym] ?? null;
   const utility = sector ? UTILITY_SECTORS.has(sector) : false;
   const nameLower = String(stock.name || "").toLowerCase();
-  const cyclical = sector ? CYCLICAL_SECTORS.has(sector) : CYCLICAL_NAME_WORDS.some(w => nameLower.includes(w));
+  const cyclical = indexSector ? CYCLICAL_SECTORS.has(indexSector)
+    : (sector != null && CYCLICAL_SECTORS.has(sector)) || CYCLICAL_NAME_WORDS.some(w => nameLower.includes(w));
 
   // Interest cover = EBIT / interest, the original's definition
   const interestCoverage = !lender && latest.financeCosts > 0 && latest.pbt != null
@@ -315,6 +321,7 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     name: stock.name,
     template: stock.template,
     sector, lender, utility, cyclical,
+    industry: snap?.industries?.[sym] ?? null,
     cmp, cmpDate, eps, pe, marketCapCr, shares, sharesSource,
     // NSE's last close: the research score values the company at it whatever
     // price the page shows, so Discover and the stock page give the same score
