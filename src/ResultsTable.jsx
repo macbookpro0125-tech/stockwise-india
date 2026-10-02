@@ -6,28 +6,24 @@ import CreateAlertModal from "./CreateAlertModal.jsx";
 import CompareView from "./CompareView.jsx";
 import { exportDiscoverExcel } from "./exportExcel.js";
 import { formatValue, valueColor } from "./screener/meta.js";
+import { QualityBadge, OverallScore } from "./ResearchBadges.jsx";
 
 // A metric column's header, with its unit as the table always showed it
 // ("ROCE %", "CMP ₹")
 const columnLabel = def => (def.unit === "%" ? `${def.short} %` : def.unit === "₹" ? `${def.short} ₹` : def.short);
 
 // Ported from stock-screener's src/components/ResultsTable.jsx — same columns,
-// score badge, buy phases with 52-week range, NCAV badge, watchlist star,
-// compare (up to 4), Excel and CSV export, sorting, filter box, score filter
-// and paging. Every row arrives already scored, so there's no lazy enrichment.
+// price levels with 52-week range, NCAV badge, watchlist star, compare (up to
+// 4), Excel and CSV export, sorting, filter box and paging. The original's
+// score out of 10 is now the research score (server/research.js): quality out
+// of 100 and the overall research score, with a minimum-quality filter.
+// Every row arrives already scored, so there's no lazy enrichment.
 
 const PAGE_SIZE = 50;
 const MAX_COMPARE = 4;
 // Wide enough for the compare box and a four-digit rank; the name column is
 // pinned right after it.
 const RANK_W = 60;
-
-function scoreStyle(score, max) {
-  const pct = max > 0 ? score / max : 0;
-  if (pct >= 0.7) return { border: "var(--green-bdr)", bg: "var(--green-dim)", color: "var(--green)", dot: "var(--green)" };
-  if (pct >= 0.4) return { border: "var(--yellow-bdr)", bg: "var(--yellow-dim)", color: "var(--yellow)", dot: "var(--yellow)" };
-  return { border: "var(--red-bdr)", bg: "var(--red-dim)", color: "var(--red)", dot: "var(--red)" };
-}
 
 // Column headers: sentence case at reading size; the sorted one darker, with
 // its arrow (the others keep the arrow's room so headers don't shift)
@@ -55,9 +51,8 @@ function fmtCr(n) {
 
 const MONO = { fontVariantNumeric: "tabular-nums" };
 
-// Green count scaled to /10 — a bank is scored out of 8, so raw counts aren't
-// comparable across rows (same normalisation as the original's scoreOf).
-const score10 = s => (s.score?.applicable ? Math.round((s.score.green / s.score.applicable) * 10) : null);
+const quality = s => s.research?.quality ?? null;
+const MIN_QUALITY = [40, 50, 60, 70, 80];
 
 const nseUrl = symbol => `https://www.nseindia.com/get-quotes/equity?symbol=${encodeURIComponent(symbol)}`;
 
@@ -81,23 +76,6 @@ function SortTh({ label, title, col, sortBy, sortDir, onSort, accent }) {
         <SortArrow active={active} dir={sortDir} />
       </span>
     </th>
-  );
-}
-
-export function ScoreBadge({ score, max = 10 }) {
-  const ss = scoreStyle(score, max);
-  return (
-    <span style={{
-      display: "inline-flex", alignItems: "center", gap: 5,
-      padding: "2px 8px", borderRadius: 999,
-      border: `1px solid ${ss.border}`,
-      background: ss.bg, color: ss.color,
-      fontSize: 11.5, fontWeight: 650,
-      ...MONO,
-    }}>
-      <span style={{ width: 5, height: 5, borderRadius: "50%", background: ss.dot, flexShrink: 0 }} />
-      {score}/{max}
-    </span>
   );
 }
 
@@ -139,14 +117,14 @@ function MiniRange({ low, high, cmp }) {
   );
 }
 
-// Buy phases in two lines: the three prices (✓ once today's price reaches
-// one), then the 52-week bar and the fair value. Notes about how the fair
+// Price levels in two lines: the three phase levels (✓ once today's price
+// reaches one), then the 52-week bar and the fair value. Notes about how the fair
 // value was made sit behind a flag's tooltip.
 function FvCell({ stock }) {
   const { cmp, safeBuyPrice: p1, p2, p3, fairValue } = stock;
   const notes = [
     stock.valuationPeBasis === "current" && "Fewer than 3 usable years of P/E history, so this uses today's P/E — fair value then tracks the current price.",
-    stock.epsJump && `This year's EPS (₹${stock.epsJump.eps.toFixed(2)}) is more than 3× its usual ₹${stock.epsJump.usualEps.toFixed(2)} and the share price hasn't followed — how a one-off gain looks. Buy prices use the usual EPS.`,
+    stock.epsJump && `This year's EPS (₹${stock.epsJump.eps.toFixed(2)}) is more than 3× its usual ₹${stock.epsJump.usualEps.toFixed(2)} and the share price hasn't followed — how a one-off gain looks. Price levels use the usual EPS.`,
   ].filter(Boolean);
   const fvLabel = stock.fyEnd ? `FV${String(Number(stock.fyEnd.slice(0, 4)) + 2).slice(2)}` : "FV";
   return (
@@ -163,7 +141,7 @@ function FvCell({ stock }) {
           })}
         </div>
       ) : (
-        <div style={{ color: "var(--t3)" }}>No buy prices</div>
+        <div style={{ color: "var(--t3)" }}>No price levels</div>
       )}
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 3, color: "var(--t3)", fontSize: 10, whiteSpace: "nowrap" }}>
         <MiniRange low={stock.low52w} high={stock.high52w} cmp={cmp} />
@@ -200,14 +178,14 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
       <BellIcon />
     </button>
   );
-  const [sortBy, setSortBy] = useState("score");
+  const [sortBy, setSortBy] = useState("quality");
   const [sortDir, setSortDir] = useState("desc");
 
   // Net-net results are most useful ordered by discount to NCAV (cheapest first),
   // so the deepest Graham bargains surface above shallower net-nets.
   useEffect(() => {
     if (netNet) { setSortBy("ncavPct"); setSortDir("asc"); }
-    else if (sortBy === "ncavPct") { setSortBy("score"); setSortDir("desc"); }
+    else if (sortBy === "ncavPct") { setSortBy("quality"); setSortDir("desc"); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [netNet, matches]);
 
@@ -219,7 +197,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
   }, []);
 
   const [search, setSearch] = useState("");
-  const [minScore, setMinScore] = useState(0);
+  const [minQuality, setMinQuality] = useState(0);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   useEffect(() => { setVisibleCount(PAGE_SIZE); }, [matches]);
 
@@ -248,13 +226,14 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
   const textFiltered = q
     ? (matches || []).filter(s => s.name?.toLowerCase().includes(q) || s.symbol?.toLowerCase().includes(q))
     : (matches || []);
-  const filtered = minScore > 0 ? textFiltered.filter(s => (score10(s) ?? 0) >= minScore) : textFiltered;
+  const filtered = minQuality > 0 ? textFiltered.filter(s => (quality(s) ?? -1) >= minQuality) : textFiltered;
 
   // A column's value: from the metrics the screen was asked for, else the
   // row's own field (cmp and the table's fixed fields)
   const colValue = (s, id) => s.values?.[id] ?? s[id] ?? null;
   const sortVal = s => {
-    if (sortBy === "score") return score10(s);
+    if (sortBy === "quality") return quality(s);
+    if (sortBy === "overall") return s.research?.overall ?? null;
     if (sortBy === "ncavPct") return s.ncavCr > 0 && s.marketCapCr != null ? s.marketCapCr / s.ncavCr : Infinity;
     if (sortBy === "name") return s.name?.toLowerCase();
     return colValue(s, sortBy);
@@ -267,7 +246,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
     const aBlank = av == null || (typeof av === "number" && !Number.isFinite(av) && sortBy !== "ncavPct");
     const bBlank = bv == null || (typeof bv === "number" && !Number.isFinite(bv) && sortBy !== "ncavPct");
     if (aBlank || bBlank) return aBlank === bBlank ? 0 : aBlank ? 1 : -1;
-    if (av === bv) return sortBy === "score" ? (b.roce ?? -Infinity) - (a.roce ?? -Infinity) : 0;
+    if (av === bv) return sortBy === "quality" || sortBy === "overall" ? (b.roce ?? -Infinity) - (a.roce ?? -Infinity) : 0;
     return sortDir === "asc" ? (av > bv ? 1 : -1) : (av < bv ? 1 : -1);
   });
 
@@ -279,10 +258,10 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
 
   const exportCsv = () => {
     const quote = v => `"${String(v).replace(/"/g, '""')}"`;
-    const cols = ["Rank", "Name", "Symbol", "Sector", "Score", "CMP", "PE", "ROCE", "ROE", "OPM", "Promoter%", "FII%", "DII%", "MarketCap(Cr)", "DivYield", "P1", "P2", "P3", "FairValue2Y", "52WLow", "52WHigh", ...extraColumns.map(def => quote(def.label))];
+    const cols = ["Rank", "Name", "Symbol", "Sector", "Quality/100", "Research/100", "Research stance", "Valuation/100", "Risk/100", "CMP", "PE", "ROCE", "ROE", "OPM", "Promoter%", "FII%", "DII%", "MarketCap(Cr)", "DivYield", "P1", "P2", "P3", "FairValue2Y", "52WLow", "52WHigh", ...extraColumns.map(def => quote(def.label))];
     const r1 = v => (v == null ? "" : Math.round(v * 10) / 10);
     const rows = sorted.map((s, i) => [
-      i + 1, quote(s.name), s.symbol, s.sector ? quote(s.sector) : "", `${s.score.green}/${s.score.applicable}`,
+      i + 1, quote(s.name), s.symbol, s.sector ? quote(s.sector) : "", r1(s.research?.quality), r1(s.research?.overall), quote(s.research?.stance ?? ""), r1(s.research?.valuation), r1(s.research?.risk),
       r1(s.cmp), r1(s.pe), r1(s.roce), r1(s.roe), r1(s.opm), r1(s.promoterPct), r1(s.fiiPct), r1(s.diiPct),
       r1(s.marketCapCr), r1(s.divYield), s.safeBuyPrice ?? "", s.p2 ?? "", s.p3 ?? "", s.fairValue ?? "",
       s.low52w ?? "", s.high52w ?? "",
@@ -329,7 +308,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                 <span style={{ color: "var(--t2)" }}>Found </span>
                 <strong style={{ color: "var(--t1)" }}>{q ? filtered.length.toLocaleString() : totalMatches?.toLocaleString()}</strong>
                 <span style={{ color: "var(--t2)" }}> {noun}</span>
-                {(q || minScore > 0) && filtered.length !== (matches?.length ?? 0) && <span style={{ color: "var(--t3)" }}> (filtered from {matches?.length})</span>}
+                {(q || minQuality > 0) && filtered.length !== (matches?.length ?? 0) && <span style={{ color: "var(--t3)" }}> (filtered from {matches?.length})</span>}
                 {!q && visible.length < sorted.length && <span style={{ color: "var(--t2)" }}> · showing <strong style={{ color: "var(--t1)" }}>{visible.length}</strong></span>}
                 {executionTime != null && <span style={{ color: "var(--t3)", marginLeft: 8, fontSize: 11, ...MONO }}>{(executionTime / 1000).toFixed(1)}s</span>}
                 {snapshot?.pricesDate && (
@@ -371,7 +350,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
         </div>
       )}
 
-      {/* ── Search bar + score filter ── */}
+      {/* ── Search bar + quality filter ── */}
       {!loading && (matches?.length ?? 0) > 0 && (
         <div style={{ display: "flex", gap: 8, marginBottom: 12, alignItems: "center" }}>
           <div style={{ flex: 1, position: "relative" }}>
@@ -386,20 +365,20 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
             />
           </div>
           <select
-            value={minScore}
-            onChange={e => setMinScore(Number(e.target.value))}
+            value={minQuality}
+            onChange={e => setMinQuality(Number(e.target.value))}
+            aria-label="Minimum quality score"
             style={{
               height: 40, padding: "0 12px", borderRadius: 8,
               border: "1px solid var(--bdr2)", fontSize: 12.5,
-              background: minScore > 0 ? "var(--green-dim)" : "var(--s2)",
-              color: minScore > 0 ? "var(--green)" : "var(--t1)",
+              background: minQuality > 0 ? "var(--green-dim)" : "var(--s2)",
+              color: minQuality > 0 ? "var(--green)" : "var(--t1)",
               cursor: "pointer", outline: "none", fontFamily: "inherit",
-              fontWeight: minScore > 0 ? 650 : 500,
+              fontWeight: minQuality > 0 ? 650 : 500,
             }}
           >
-            <option value="0">All Scores</option>
-            {[4, 5, 6, 7, 8, 9].map(n => <option key={n} value={n}>{n}+ / 10</option>)}
-            <option value="10">10 / 10</option>
+            <option value="0">Any quality</option>
+            {MIN_QUALITY.map(n => <option key={n} value={n}>Quality {n}+</option>)}
           </select>
         </div>
       )}
@@ -424,11 +403,11 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
         </div>
       )}
 
-      {/* The name box or score filter can empty the list on their own */}
+      {/* The name box or quality filter can empty the list on their own */}
       {!loading && (matches?.length ?? 0) > 0 && sorted.length === 0 && (
         <div style={{ textAlign: "center", padding: "40px 16px", color: "var(--t2)", fontSize: 13, border: "1px dashed var(--bdr2)", borderRadius: 14 }}>
-          None of these {matches.length.toLocaleString("en-IN")} companies {q ? <>match "{search.trim()}"{minScore > 0 ? ` with a score of ${minScore === 10 ? "10/10" : `${minScore}+`}` : ""}</> : `have a score of ${minScore === 10 ? "10/10" : `${minScore}+`}`}.
-          <button className="btn-ghost" onClick={() => { setSearch(""); setMinScore(0); }} style={{ marginLeft: 10, height: 28, fontSize: 12 }}>Show all</button>
+          None of these {matches.length.toLocaleString("en-IN")} companies {q ? <>match "{search.trim()}"{minQuality > 0 ? ` with a quality score of ${minQuality}+` : ""}</> : `have a quality score of ${minQuality}+`}.
+          <button className="btn-ghost" onClick={() => { setSearch(""); setMinQuality(0); }} style={{ marginLeft: 10, height: 28, fontSize: 12 }}>Show all</button>
         </div>
       )}
 
@@ -445,7 +424,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                     <NcavBadge stock={stock} />
                   </div>
                 </div>
-                <ScoreBadge score={stock.score.green} max={stock.score.applicable} />
+                <QualityBadge research={stock.research} />
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 12 }}>
                 {[["CMP", stock.cmp ? `₹${fmt(stock.cmp)}` : "—", "var(--t1)"], ...columns.slice(0, 5).map(def => { const v = colValue(stock, def.id); return [def.short, formatValue(def, v), v == null ? "var(--t3)" : def.signed ? valueColor(def, v) : "var(--t1)"]; })].map(([label, val, color]) => (
@@ -470,20 +449,21 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
       {!isMobile && !noData && (loading || sorted.length > 0) && (
         <div style={{ borderRadius: 12, border: "1px solid var(--bdr2)", overflow: "hidden", boxShadow: "var(--sh-xs)", background: "var(--s2)" }}>
           <div style={{ overflowX: "auto", overflowY: "auto", maxHeight: "min(70vh, 780px)" }}>
-            <table className="data-table" style={{ minWidth: 560 + columns.length * 80 }}>
+            <table className="data-table" style={{ minWidth: 640 + columns.length * 80 }}>
               <thead>
                 <tr>
                   <th title={`Tick up to ${MAX_COMPARE} to compare`} style={{ ...thStyle, padding: "10px 8px", width: RANK_W, minWidth: RANK_W, boxSizing: "border-box", left: 0, zIndex: 4 }}>#</th>
                   <th onClick={() => handleSort("name")} style={{ ...thStyle, color: sortBy === "name" ? "var(--t1)" : "var(--t2)", fontWeight: sortBy === "name" ? 600 : 500, left: RANK_W, zIndex: 4, cursor: "pointer", minWidth: 200, boxShadow: "inset -1px 0 0 var(--bdr)" }}>
                     <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>Stock <SortArrow active={sortBy === "name"} dir={sortDir} /></span>
                   </th>
-                  <SortTh label="Score"   col="score"       sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
+                  <SortTh label="Quality" title="Quality score out of 100 — business, earnings, balance sheet, governance, growth and valuation" col="quality" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
+                  <SortTh label="Research" title="Overall research score: quality and valuation blended, trimmed for price swings and data gaps. Not a buy or sell signal." col="overall" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
                   <SortTh label="CMP ₹"   col="cmp"         sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
                   {columns.map(def => (
                     <SortTh key={def.id} label={columnLabel(def)} title={def.label} col={def.id} sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
                   ))}
                   <th style={{ ...thStyle, color: "var(--accent)", fontWeight: 600, background: "color-mix(in srgb, var(--accent) 4%, var(--s1))" }}>
-                    Buy phases
+                    Price levels
                   </th>
                   <th style={thStyle}>Actions</th>
                 </tr>
@@ -491,9 +471,9 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
               <tbody>
                 {loading && Array.from({ length: 8 }).map((_, i) => (
                   <tr key={i}>
-                    {Array.from({ length: 6 + columns.length }).map((_, j) => (
+                    {Array.from({ length: 7 + columns.length }).map((_, j) => (
                       <td key={j} style={cell}>
-                        <div className="skeleton-pulse" style={{ height: 13, borderRadius: 4, width: j === 1 ? 140 : j === 4 + columns.length ? 100 : 55 }} />
+                        <div className="skeleton-pulse" style={{ height: 13, borderRadius: 4, width: j === 1 ? 140 : j === 5 + columns.length ? 100 : 55 }} />
                       </td>
                     ))}
                   </tr>
@@ -532,7 +512,8 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                       </div>
                     </td>
 
-                    <td style={cell}><ScoreBadge score={stock.score.green} max={stock.score.applicable} /></td>
+                    <td style={cell}><QualityBadge research={stock.research} /></td>
+                    <td style={{ ...cell, paddingTop: 6, paddingBottom: 6 }}><OverallScore research={stock.research} /></td>
 
                     <td style={{ ...cell, fontWeight: 500, color: "var(--t1)", ...MONO, whiteSpace: "nowrap" }}>
                       {stock.cmp ? `₹${fmt(stock.cmp)}` : "—"}

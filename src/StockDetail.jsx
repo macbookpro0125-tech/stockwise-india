@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
-import { NotebookPen, Check, X, TriangleAlert, LoaderCircle, ArrowLeft, ArrowUpRight, CalendarDays, CircleCheck, CircleX, Layers, ArrowRight, Minus } from "lucide-react";
+import { NotebookPen, Check, X, TriangleAlert, LoaderCircle, ArrowLeft, ArrowUpRight, CalendarDays, CircleCheck, CircleX, Layers, ArrowRight } from "lucide-react";
 import { api } from "./api.js";
-import { calculateLevels, getAction, fmtRs } from "../server/levels.js";
-import { StarIcon, BellIcon, ActionIcon } from "./icons.jsx";
+import { calculateLevels, pricePosition, fmtRs } from "../server/levels.js";
+import { StarIcon, BellIcon, PositionIcon } from "./icons.jsx";
+import ResearchPanel from "./ResearchPanel.jsx";
 import { useWatchlist, toggleWatch } from "./watchlist.js";
 import CreateAlertModal from "./CreateAlertModal.jsx";
 import PriceChartPanel from "./PriceChartPanel.jsx";
@@ -12,30 +13,17 @@ import PeersPanel from "./PeersPanel.jsx";
 import NewsPanel from "./NewsPanel.jsx";
 
 // The original Stockwise stock page (stock-screener src/StockScreener.jsx),
-// section for section and in the same order, on this app's NSE data:
-// verify & override, current price, 52-week range, shareholding, price chart,
-// financials, technicals, pros & cons, recommended action, price ladder, the
-// 10-point checklist and verdict, fair value, detailed analysis, peers, news
-// & filings, and your notes. Where it differs: the P/E defaults to the stock's
-// own 5-year median (the original's current P/E made fair value = price), a
+// on this app's NSE data: the research dashboard (in place of the original's
+// 10-point checklist and BUY/HOLD/AVOID verdict — ResearchPanel.jsx), verify &
+// override, current price, 52-week range, shareholding, price chart,
+// financials, technicals, pros & cons, where the price sits, the price levels,
+// fair value, Piotroski, key numbers, peers, news & filings, and your notes.
+// Where it differs from the original: the P/E defaults to the stock's own
+// 5-year median (the original's current P/E made fair value = price), a
 // one-off profit jump is valued at the usual EPS and years of near-zero profit
 // can leave that median (server/metrics.js), the P/E history behind it sits
-// under the inputs, and Piotroski and a table of key numbers are added after
-// the analysis.
-
-const FLAG_STYLE = {
-  G: { color: "var(--green)", label: "✓ Green flag", border: "var(--green-bdr)" },
-  R: { color: "var(--red)", label: "✗ Red flag", border: "var(--red-bdr)" },
-  Y: { color: "var(--yellow)", label: "⚠ Watch carefully", border: "var(--yellow-bdr)" },
-  // "N" = doesn't apply to this business type: neither green nor red, and out
-  // of the denominator so it can't quietly drag a score down
-  N: { color: "var(--t3)", label: "— Not applicable", border: "var(--bdr2)" },
-};
-
-const POINT_TITLES = {
-  1: "YoY Revenue Growth", 2: "Profitability", 3: "Business Model", 4: "Promoter Signals", 5: "Fair Value",
-  6: "3-Phase Buy Plan", 7: "Profit Track Record", 8: "Debt Health", 9: "Cash Flow Quality", 10: "Promoter Pledge",
-};
+// under the inputs, and the price levels are described, never turned into
+// buy or sell instructions.
 
 const VERDICT_META = {
   ACCUMULATE: { label: "Accumulate", color: "var(--green)", bg: "var(--green-dim)", border: "var(--green-bdr)" },
@@ -59,13 +47,6 @@ const SectionTitle = ({ icon: Icon, children, color = "var(--t1)", style }) => (
 const round = (v, dp = 1) => (v == null || !isFinite(v) ? null : Math.round(v * 10 ** dp) / 10 ** dp);
 const pctText = v => (v == null ? "—" : `${round(v, 1)}%`);
 
-function flagFromThreshold(value, greenMin, yellowMin) {
-  if (value == null || isNaN(value)) return "Y";
-  if (value >= greenMin) return "G";
-  if (value >= yellowMin) return "Y";
-  return "R";
-}
-
 // Fiscal-year labels from the latest filed year: FY26 = the year to Mar 2026
 const fyLabel = (fyEnd, plus = 0) => `FY${String(Number(fyEnd.slice(0, 4)) + plus).slice(2)}`;
 
@@ -79,146 +60,6 @@ function labelledActionStyle({ active, activeColor }) {
     display: "flex", alignItems: "center", gap: 6,
     transition: "all 120ms", flexShrink: 0,
   };
-}
-
-// ---- 10-point checklist: the original's rules (mapScreenerToAppData, pts7to10)
-
-function pointsOneToSix(m, levels, price) {
-  const { utility, lender, cyclical } = m;
-  const pros = m.pros ?? [], cons = m.cons ?? [];
-
-  let p1Flag = flagFromThreshold(m.salesGrowth5y, utility ? 6 : 10, utility ? 3 : 5);
-  let p1Detail = utility ? "Sales track the approved asset base — utilities grow slowly by design." : "Compounded sales growth over five years, from the annual results.";
-  const unstable = m.epsCV != null && m.epsCV > 0.5;
-  if (unstable) {
-    p1Flag = p1Flag === "G" ? "Y" : p1Flag;
-    p1Detail = `Earnings unstable (CV ${Math.round(m.epsCV * 100)}%) — growth may not sustain.`;
-  }
-
-  // Lenders and regulated utilities are judged on ROE: ROCE counts a lender's
-  // borrowed funds as capital, and understates a utility's debt-financed base.
-  const profitMetric = lender || utility ? "ROE" : "ROCE";
-  const profitValue = round(lender || utility ? m.roe : m.roce);
-  let p2Flag = flagFromThreshold(profitValue, 15, 10);
-  let p2Detail = lender
-    ? "Return on equity — ROCE is distorted for lenders by borrowed funds."
-    : utility ? "Return on equity — a regulated utility earns a set return on equity." : "Return on capital employed, from the latest annual results.";
-  const swings = cyclical && m.opmRange != null && m.opmRange > 5;
-  if (swings) {
-    p2Flag = p2Flag === "G" ? "Y" : p2Flag;
-    p2Detail = `OPM swings ${Math.round(m.opmRange)}pp over 5Y — profitability is cyclical.`;
-  }
-
-  let p3Flag = pros.length > 0 ? (pros.length >= cons.length ? "G" : "Y") : "Y";
-  let p3Summary = (pros[0] || "No standout strengths in the filings").slice(0, 50);
-  let p3Detail = (pros[0] || "See the pros and cons above.").slice(0, 90);
-  if (cyclical) {
-    p3Flag = p3Flag === "G" ? "Y" : p3Flag;
-    p3Summary = `Cyclical: ${m.sector || "commodity business"}`.slice(0, 50);
-    p3Detail = "Commodity/cyclical business — earnings depend on cycle, not competitive moat.";
-  }
-
-  const premium = levels?.fv27 && price ? price / levels.fv27 : null;
-  // The ladder rung the price is on. Under the stop loss the plan says exit,
-  // so a buy price reached there is no pass.
-  const rung = !levels || !price ? null
-    : levels.stopLoss > 0 && price <= levels.stopLoss ? "stop"
-      : price <= levels.p3 ? 3 : price <= levels.p2 ? 2 : price <= levels.p1 ? 1 : null;
-  return [
-    { id: 1, f: p1Flag, s: `5Y sales growth ${pctText(m.salesGrowth5y)}${unstable ? " (unstable EPS)" : ""}`, d: p1Detail },
-    {
-      id: 2, f: p2Flag,
-      s: swings ? `${profitMetric} ${profitValue ?? "—"}% (OPM swings ${Math.round(m.opmRange)}pp)` : profitValue != null ? `${profitMetric} ${profitValue}%` : `${profitMetric} — not in the filings`,
-      d: p2Detail,
-    },
-    { id: 3, f: p3Flag, s: p3Summary, d: p3Detail },
-    { id: 4, f: flagFromThreshold(m.promoterPct, 50, 40), s: m.promoterPct != null ? `Promoters ${round(m.promoterPct, 2)}%` : "Promoter holding not filed", d: "Latest promoter % from the shareholding filing." },
-    {
-      id: 5,
-      f: premium == null ? "Y" : premium <= 1 ? "G" : premium <= 1.15 ? "Y" : "R",
-      s: premium == null ? "Fair value needs EPS & P/E" : premium <= 1 ? `At/below ${fyLabel(m.fyEnd, 2)} model FV` : `Above ${fyLabel(m.fyEnd, 2)} model FV`,
-      d: levels ? `Price ${fmtRs(price)} vs model ${fyLabel(m.fyEnd, 2)} FV ${fmtRs(levels.fv27)}.` : "Enter EPS and P/E to compute fair value.",
-    },
-    {
-      id: 6,
-      f: rung === "stop" ? "R" : rung ? "G" : "Y",
-      s: rung === "stop" ? "Below the stop loss — the plan says exit" : rung ? `Price in Phase ${rung} zone` : "Wait for buy ladder",
-      d: levels ? `Phase 1 ${fmtRs(levels.p1)} · Phase 3 ${fmtRs(levels.p3)} · Stop loss ${fmtRs(levels.stopLoss)}.` : "Set EPS/P/E to build phases.",
-    },
-  ];
-}
-
-function pointsSevenToTen({ lender, utility, promoterPct, profitRecord }, { debtToEquity, interestCoverage, ocfPatPct, pledgedPct }) {
-  const noPromoter = promoterPct === 0;
-  // Point 7 was the original's "safe from AI or tech change?" — a judgement
-  // that defaulted to safe, so every company got it free. Now a profit in
-  // every year on record (3 to 5 consecutive years; metrics.js profitRecord).
-  const rec = profitRecord ?? { years: 0, lossYears: [] };
-  const fy = iso => `FY${iso.slice(2, 4)}`;
-  const losses = rec.lossYears.length;
-  const latestLoss = rec.latestFy != null && rec.lossYears.includes(rec.latestFy);
-  let p7;
-  if (rec.years < 3) p7 = { id: 7, f: "Y", s: `Only ${rec.years || "no"} year${rec.years === 1 ? "" : "s"} of results on file`, d: "Too short a record to judge whether profits hold up — 3 consecutive years are needed." };
-  else if (losses === 0) p7 = { id: 7, f: "G", s: `A profit in each of the last ${rec.years} years`, d: "Profitable every year on record — the business has held up through good years and bad." };
-  else if (losses === 1 && !latestLoss) p7 = { id: 7, f: "Y", s: `A loss in ${fy(rec.lossYears[0])} — profitable otherwise`, d: `One loss in ${rec.years} years. Worth finding out what caused it.` };
-  else p7 = { id: 7, f: "R", s: latestLoss ? `A loss in the latest year${losses > 1 ? ` and ${losses - 1} more` : ""}` : `Losses in ${losses} of the last ${rec.years} years`, d: "Profits aren't consistent — earnings this uneven can't be relied on." };
-
-  const de = debtToEquity !== "" ? parseFloat(debtToEquity) : NaN;
-  const ic = interestCoverage !== "" ? parseFloat(interestCoverage) : NaN;
-  // A regulated utility carries project debt against regulator-set cash flows
-  const deGreen = utility ? 1.5 : 0.5, deRed = utility ? 2.5 : 1;
-  const icGreen = utility ? 2.5 : 5, icRed = utility ? 1.5 : 2;
-  let p8;
-  if (lender) {
-    // Borrowing to lend is the business model; capital adequacy and NPAs are
-    // the real tests, which aren't in these filings — unscored, not guessed
-    p8 = { id: 8, f: "N", s: isNaN(de) ? "Leverage — N/A for lenders" : `D/E ${de.toFixed(2)} — N/A for lenders`, d: "Leverage is how lenders operate. Check capital adequacy and NPAs instead." };
-  } else if (!isNaN(de) && de < 0.1 && (isNaN(ic) || ic === 0)) {
-    p8 = { id: 8, f: "G", s: `D/E ${de.toFixed(2)} — virtually debt-free`, d: "Near-zero debt — no interest burden. Strong balance sheet." };
-  } else if (!isNaN(de) && !isNaN(ic) && ic > 0) {
-    if (de < deGreen && ic > icGreen) p8 = { id: 8, f: "G", s: `D/E ${de.toFixed(2)}, IC ${ic.toFixed(1)}x — healthy`, d: "Net cash position or very low debt with strong interest coverage." };
-    else if (de > deRed || ic < icRed) p8 = { id: 8, f: "R", s: `D/E ${de.toFixed(2)}, IC ${ic.toFixed(1)}x — high risk`, d: "High leverage or weak interest coverage — significant balance sheet risk." };
-    else p8 = { id: 8, f: "Y", s: `D/E ${de.toFixed(2)} — moderate, watch trend`, d: "Moderate debt levels. Monitor direction of leverage." };
-  } else if (!isNaN(de)) {
-    if (de < deGreen) p8 = { id: 8, f: "G", s: `D/E ${de.toFixed(2)} — healthy`, d: "Low debt ratio. Add interest coverage for full picture." };
-    else if (de > deRed) p8 = { id: 8, f: "R", s: `D/E ${de.toFixed(2)} — high`, d: "High D/E ratio. Add interest coverage for full picture." };
-    else p8 = { id: 8, f: "Y", s: `D/E ${de.toFixed(2)} — moderate`, d: "Moderate debt. Add interest coverage for full picture." };
-  } else {
-    p8 = { id: 8, f: "Y", s: "Enter D/E & interest coverage above", d: "Fill in Debt/Equity and Interest Coverage to assess debt health." };
-  }
-
-  const ocf = ocfPatPct !== "" ? parseFloat(ocfPatPct) : NaN;
-  let p9;
-  if (lender) {
-    // A growing lender's operating cash flow runs negative as loans go out —
-    // that's loan-book growth, not weak earnings quality
-    p9 = { id: 9, f: "N", s: isNaN(ocf) ? "Cash conversion — N/A for lenders" : `OCF/PAT ${Math.round(ocf)}% — N/A for lenders`, d: "Operating cash flow tracks loan-book growth, not earnings quality." };
-  } else if (!isNaN(ocf)) {
-    if (ocf >= 80) p9 = { id: 9, f: "G", s: `OCF/PAT ${Math.round(ocf)}% — strong`, d: "Excellent cash conversion, earnings quality high for 3+ years." };
-    else if (ocf < 50) p9 = { id: 9, f: "R", s: `OCF/PAT ${Math.round(ocf)}% — weak`, d: "Poor cash conversion flags potential earnings quality risk." };
-    else p9 = { id: 9, f: "Y", s: `OCF/PAT ${Math.round(ocf)}% — moderate`, d: "Volatile cash conversion, needs deeper review before investing." };
-  } else {
-    p9 = { id: 9, f: "Y", s: "Enter OCF/PAT % above", d: "Fill in Operating Cash Flow ÷ Net Profit % to assess cash quality." };
-  }
-
-  // Point 10 was the original's client concentration (top 5 clients' share of
-  // revenue). That's only in annual reports, never in the filings, so it was
-  // always unknown — no company could reach 10/10. Promoter pledging replaces
-  // it: known for every company from its shareholding filing, and a real risk
-  // — if the price falls, lenders can sell pledged shares and push it lower.
-  const pl = pledgedPct !== "" ? parseFloat(pledgedPct) : NaN;
-  let p10;
-  if (noPromoter) {
-    p10 = { id: 10, f: "G", s: "No promoter group — nothing pledged", d: "The company has no promoters (widely held), so there are no promoter shares to pledge." };
-  } else if (!isNaN(pl)) {
-    if (pl === 0) p10 = { id: 10, f: "G", s: "No promoter shares pledged", d: "Promoters haven't borrowed against their shares — no forced-selling risk." };
-    else if (pl < 5) p10 = { id: 10, f: "G", s: `${pl.toFixed(1)}% of promoter shares pledged — low`, d: "A small pledge. Watch that it doesn't grow." };
-    else if (pl > 25) p10 = { id: 10, f: "R", s: `${pl.toFixed(1)}% of promoter shares pledged — high risk`, d: "Promoters have borrowed heavily against their shares. If the price falls, lenders can sell them, pushing it lower still." };
-    else p10 = { id: 10, f: "Y", s: `${pl.toFixed(1)}% of promoter shares pledged — watch it`, d: "A meaningful pledge. A sharp fall in the price could force sales." };
-  } else {
-    p10 = { id: 10, f: "Y", s: "Pledge data not available", d: "Enter the share of promoter shares pledged above — it's in the company's shareholding filing." };
-  }
-  return [p7, p8, p9, p10];
 }
 
 // ---- Panels -------------------------------------------------------------------
@@ -518,18 +359,12 @@ export default function StockDetail({ symbol, onBack, backTo = "Discover", onOpe
   const [pe, setPe] = useState("");
   const [growthPct, setGrowthPct] = useState("");
   const [mosPct, setMosPct] = useState("10");
-  const [debtToEquity, setDebtToEquity] = useState("");
-  const [interestCoverage, setInterestCoverage] = useState("");
-  const [ocfPatPct, setOcfPatPct] = useState("");
-  const [pledgedPct, setPledgedPct] = useState("");
   const [actionPrice, setActionPrice] = useState("");
   const [priceLabel, setPriceLabel] = useState("");
   const [baseline, setBaseline] = useState(null);
 
   const applyBaseline = b => {
     setEps(b.eps); setPe(b.pe); setGrowthPct(b.growthPct); setMosPct(b.mosPct);
-    setDebtToEquity(b.debtToEquity); setInterestCoverage(b.interestCoverage); setOcfPatPct(b.ocfPatPct);
-    setPledgedPct(b.pledgedPct);
   };
 
   useEffect(() => {
@@ -539,16 +374,11 @@ export default function StockDetail({ symbol, onBack, backTo = "Discover", onOpe
       setData(d);
       const m = d.metrics;
       if (!m) return;
-      const debtFree = m.debtToEquity != null && m.debtToEquity < 0.1 && m.interestCoverage == null;
       const b = {
         eps: m.valuationEps != null ? String(round(m.valuationEps, 2)) : "",
         pe: m.valuationPe ? String(round(m.valuationPe, 1)) : "",
         growthPct: String(round(m.growthForValuation, 1)),
         mosPct: "10",
-        debtToEquity: m.debtToEquity != null ? String(round(m.debtToEquity, 2)) : "",
-        interestCoverage: m.interestCoverage != null ? String(round(m.interestCoverage, 1)) : debtFree ? "0" : "",
-        ocfPatPct: m.ocfPat3yPct != null ? String(Math.round(m.ocfPat3yPct)) : "",
-        pledgedPct: m.pledgedPct != null ? String(round(m.pledgedPct, 1)) : "",
       };
       setBaseline(b);
       applyBaseline(b);
@@ -563,17 +393,12 @@ export default function StockDetail({ symbol, onBack, backTo = "Discover", onOpe
   // A one-off profit jump: the EPS box holds the usual level until you change it
   const usualEpsShown = !!m?.epsJump && !!baseline && eps === baseline.eps;
   // The table's own levels until an input changes — the inputs hold rounded
-  // values, which could move a buy price by a rupee against the Discover table
+  // values, which could move a price level by a rupee against the Discover table
   const levels = useMemo(() => {
     if (!m) return null;
     return usingCustomInputs ? calculateLevels(eps, pe, growthPct, mosPct) : m.levels;
   }, [m, usingCustomInputs, eps, pe, growthPct, mosPct]);
   const price = Number(actionPrice) || null;
-
-  const allPts = useMemo(() => {
-    if (!m) return [];
-    return [...pointsOneToSix(m, levels, price), ...pointsSevenToTen(m, { debtToEquity, interestCoverage, ocfPatPct, pledgedPct })];
-  }, [m, levels, price, debtToEquity, interestCoverage, ocfPatPct, pledgedPct]);
 
   if (error) {
     return (
@@ -592,28 +417,14 @@ export default function StockDetail({ symbol, onBack, backTo = "Discover", onOpe
     );
   }
 
-  const totalGreen = allPts.filter(p => p.f === "G").length;
-  // A check that doesn't apply leaves the denominator instead of sitting in it
-  const applicable = allPts.filter(p => p.f !== "N").length;
-  const scoreRatio = applicable > 0 ? totalGreen / applicable : 0;
-  const action = getAction(price, levels, "Price");
-  const verdict = action?.action === "BELOW STOP LOSS" ? "AVOID"
-    : action?.action?.startsWith("SELL") ? "SELL"
-      : scoreRatio >= 0.8 ? "BUY" : scoreRatio >= 0.5 ? "HOLD" : "AVOID";
-  const verdictNote = action?.action === "BELOW STOP LOSS" ? "price is below your stop loss" : action?.action?.startsWith("SELL") ? "price is at or above your sell zone" : null;
-  const verdictStyle = {
-    BUY: { bg: "var(--green-dim)", color: "var(--green)" }, HOLD: { bg: "var(--yellow-dim)", color: "var(--yellow)" },
-    AVOID: { bg: "var(--red-dim)", color: "var(--red)" }, SELL: { bg: "var(--red-dim)", color: "var(--red)" },
-  }[verdict];
-  const scoreLabel = scoreRatio >= 0.8 ? "Strong candidate" : scoreRatio >= 0.5 ? "Mixed — watchlist" : "Avoid";
-  const scoreBadgeStyle = scoreRatio >= 0.8
-    ? { bg: "var(--green-dim)", color: "var(--green)", border: "var(--green-bdr)" }
-    : scoreRatio >= 0.5 ? { bg: "var(--yellow-dim)", color: "var(--yellow)", border: "var(--yellow-bdr)" } : { bg: "var(--red-dim)", color: "var(--red)", border: "var(--red-bdr)" };
+  const position = pricePosition(price, levels);
+  const positionTone = { red: "var(--red)", yellow: "var(--yellow)", green: "var(--green)" }[position?.tone] ?? "var(--accent)";
+  // How far a level sits under today's fair value, for the ladder's labels
+  const belowFv = v => (levels?.fv25 > 0 && v > 0 ? `${Math.round((1 - v / levels.fv25) * 100)}% below today's FV` : "");
 
   const hint = (ok, good, neutral, color = "var(--green)") => (
     <div style={{ fontSize: 10, color: ok ? color : "var(--t2)", marginTop: 3, fontWeight: ok ? 600 : 400 }}>{ok ? good : neutral}</div>
   );
-  const isFin = !!m?.lender;
   const actions = (
     <>
       <button onClick={() => toggleWatch(data.symbol, price)} title={watched ? "Remove from watchlist" : "Add to watchlist"} style={labelledActionStyle({ active: watched, activeColor: "var(--yellow)" })}>
@@ -657,7 +468,7 @@ export default function StockDetail({ symbol, onBack, backTo = "Discover", onOpe
 
       {m?.epsJump && (
         <div style={{ padding: "10px 14px", borderRadius: 8, background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", fontSize: 12, color: "var(--t2)", lineHeight: 1.5, marginBottom: 14 }}>
-          <strong style={{ color: "var(--yellow)" }}>Profit jumped this year — buy prices use the usual level.</strong>{" "}
+          <strong style={{ color: "var(--yellow)" }}>Profit jumped this year — the price levels use the usual level.</strong>{" "}
           {fyLabel(m.fyEnd)} EPS is ₹{m.epsJump.eps.toFixed(2)}, more than 3× the usual ₹{m.epsJump.usualEps.toFixed(2)}, but the share price hasn't followed (P/E {m.epsJump.pe.toFixed(1)} on the last close, against a usual {m.medianPe.toFixed(1)}). That is how a one-off gain looks. If you expect this profit to last, type {round(m.epsJump.eps, 2)} into EPS below.
         </div>
       )}
@@ -686,6 +497,8 @@ export default function StockDetail({ symbol, onBack, backTo = "Discover", onOpe
         <div style={{ ...card, color: "var(--t3)", fontSize: 13 }}>No usable annual results in NSE's filings for this company, so there's nothing to value or score.</div>
       )}
 
+      {m && <ResearchPanel research={m.research} />}
+
       {m && (
         <>
           {/* Verify & Override */}
@@ -694,11 +507,11 @@ export default function StockDetail({ symbol, onBack, backTo = "Discover", onOpe
               <div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: "var(--t1)", marginBottom: 2, letterSpacing: "-0.01em" }}>Verify & Override</div>
                 <div style={{ fontSize: 11, color: "var(--t3)" }}>
-                  Auto-filled from NSE filings — edit any value to override, ladder updates live
+                  Auto-filled from NSE filings — edit any value to move the price levels; the research score always uses the filings
                   {usingCustomInputs ? <span style={{ marginLeft: 6, color: "var(--accent)", fontWeight: 600 }}>· custom</span> : <span style={{ marginLeft: 6 }}>· filings baseline</span>}
                 </div>
               </div>
-              {baseline && (usingCustomInputs || debtToEquity !== baseline.debtToEquity || interestCoverage !== baseline.interestCoverage || ocfPatPct !== baseline.ocfPatPct || pledgedPct !== baseline.pledgedPct) && (
+              {baseline && usingCustomInputs && (
                 <button type="button" onClick={() => applyBaseline(baseline)} className="btn-ghost" style={{ height: 30, fontSize: 12 }}>Reset</button>
               )}
             </div>
@@ -729,42 +542,6 @@ export default function StockDetail({ symbol, onBack, backTo = "Discover", onOpe
                 <label style={labelStyle}>Margin of Safety %</label>
                 <input type="number" value={mosPct} onChange={e => setMosPct(e.target.value)} style={inputStyle} />
                 {hint(parseFloat(mosPct) >= 10, "✓ Good margin", "Discount to fair value")}
-              </div>
-            </div>
-
-            <div style={{ marginTop: 16, borderTop: "1px solid var(--bdr)", paddingTop: 14 }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: "var(--accent)", marginBottom: 10 }}>Points 7–10 — Quality Deep-Dive</div>
-              <div className="ss-grid-4" style={{ marginBottom: 10 }}>
-                <div>
-                  <label style={labelStyle}>Debt-to-Equity</label>
-                  <input type="number" step="0.01" value={debtToEquity} onChange={e => setDebtToEquity(e.target.value)} style={inputStyle} />
-                  <div style={{ fontSize: 10, color: isFin ? "var(--t3)" : parseFloat(debtToEquity) < 0.5 ? "var(--green)" : "var(--t2)", marginTop: 3, fontWeight: !isFin && parseFloat(debtToEquity) < 0.5 ? 600 : 400 }}>
-                    {isFin ? "Not scored for lenders" : parseFloat(debtToEquity) < 0.5 ? "✓ Low debt" : "< 0.5 = green"}
-                    {/* Say when rent is part of it, so a renter's figure isn't read as bank loans */}
-                    {!isFin && m.leasesCr > 0 && <span style={{ color: "var(--t3)", fontWeight: 400 }}> · incl. ₹{Math.round(m.leasesCr).toLocaleString("en-IN")} Cr lease liabilities</span>}
-                  </div>
-                </div>
-                <div>
-                  <label style={labelStyle}>Interest Coverage (x)</label>
-                  <input type="number" step="0.1" value={interestCoverage} onChange={e => setInterestCoverage(e.target.value)} style={inputStyle} />
-                  <div style={{ fontSize: 10, color: isFin ? "var(--t3)" : (interestCoverage === "0" && parseFloat(debtToEquity) < 0.1) || parseFloat(interestCoverage) >= 5 ? "var(--green)" : "var(--t2)", marginTop: 3, fontWeight: 600 }}>
-                    {isFin ? "Not scored for lenders" : interestCoverage === "0" && parseFloat(debtToEquity) < 0.1 ? "✓ Debt-free — no interest burden" : parseFloat(interestCoverage) >= 5 ? "✓ Well covered" : "EBIT ÷ Interest, > 5 = green"}
-                  </div>
-                </div>
-                <div>
-                  <label style={labelStyle}>OCF / PAT %</label>
-                  <input type="number" value={ocfPatPct} onChange={e => setOcfPatPct(e.target.value)} style={inputStyle} />
-                  <div style={{ fontSize: 10, color: isFin ? "var(--t3)" : parseFloat(ocfPatPct) >= 80 ? "var(--green)" : "var(--t2)", marginTop: 3, fontWeight: !isFin && parseFloat(ocfPatPct) >= 80 ? 600 : 400 }}>
-                    {isFin ? "Not scored for lenders" : parseFloat(ocfPatPct) >= 80 ? "✓ Strong cash flow" : "≥ 80% = green"}
-                  </div>
-                </div>
-                <div>
-                  <label style={labelStyle}>Promoter shares pledged %</label>
-                  <input type="number" value={pledgedPct} onChange={e => setPledgedPct(e.target.value)} placeholder="From shareholding filing" style={inputStyle} />
-                  <div style={{ fontSize: 10, color: m.promoterPct === 0 || (pledgedPct !== "" && parseFloat(pledgedPct) < 5) ? "var(--green)" : "var(--t2)", marginTop: 3, fontWeight: m.promoterPct === 0 || (pledgedPct !== "" && parseFloat(pledgedPct) < 5) ? 600 : 400 }}>
-                    {m.promoterPct === 0 ? "✓ No promoter group" : pledgedPct !== "" && parseFloat(pledgedPct) < 5 ? "✓ Little or no pledge" : "< 5% = green"}
-                  </div>
-                </div>
               </div>
             </div>
 
@@ -835,39 +612,39 @@ export default function StockDetail({ symbol, onBack, backTo = "Discover", onOpe
             ) : <p style={{ fontSize: 12, color: "var(--t3)", margin: 0 }}>Nothing stands out either way in the filings.</p>}
           </div>
 
-          {/* Recommended action */}
-          {action && (
-            <div style={{ borderRadius: 12, padding: 20, marginBottom: 16, background: action.bg, border: `2px solid ${action.color}` }}>
+          {/* Where the price sits — described against the levels, never an instruction */}
+          {position && (
+            <div style={{ borderRadius: 12, padding: 18, marginBottom: 16, background: "var(--s2)", border: `1px solid color-mix(in srgb, ${positionTone} 45%, var(--bdr2))` }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8, flexWrap: "wrap" }}>
-                <span style={{ width: 44, height: 44, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: action.color, background: `color-mix(in srgb, ${action.color} 14%, transparent)` }}>
-                  <ActionIcon action={action.action} size={24} strokeWidth={2} />
+                <span style={{ width: 40, height: 40, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: positionTone, background: `color-mix(in srgb, ${positionTone} 12%, transparent)` }}>
+                  <PositionIcon zone={position.zone} size={20} strokeWidth={2} />
                 </span>
                 <div>
-                  <div style={{ fontSize: 12, color: action.color, fontWeight: 600 }}>Recommended action</div>
-                  <div style={{ fontSize: 22, fontWeight: 700, color: action.color }}>{action.action}</div>
+                  <div style={{ fontSize: 12, color: "var(--t3)", fontWeight: 500 }}>Where the price sits</div>
+                  <div style={{ fontSize: 19, fontWeight: 700, color: positionTone, letterSpacing: "-0.02em" }}>{position.label}</div>
                 </div>
               </div>
-              <p style={{ fontSize: 13, color: "var(--t1)", margin: 0, lineHeight: 1.6 }}>{action.reason}</p>
-              {/* Valuing at a historical P/E makes this common for de-rated
-                  stocks, and the stop-loss wording assumes you already hold it */}
-              {action.action === "BELOW STOP LOSS" && m.pe && Number(pe) > m.pe && (
+              <p style={{ fontSize: 13, color: "var(--t1)", margin: 0, lineHeight: 1.6 }}>{position.detail}</p>
+              {/* Valuing at a historical P/E makes this common for de-rated stocks */}
+              {(position.zone === "below-stop" || position.zone === "phase3") && m.pe && Number(pe) > m.pe * 1.3 && (
                 <p style={{ fontSize: 12, color: "var(--t2)", margin: "8px 0 0", lineHeight: 1.6 }}>
-                  If you don't hold it yet: the market prices it at a P/E of {m.pe.toFixed(1)} versus the {Number(pe).toFixed(1)} you're valuing it at. That's either deep value, or a sign the old multiple no longer applies — worth finding out why it de-rated before buying.
+                  The market prices it at a P/E of {m.pe.toFixed(1)} against the {Number(pe).toFixed(1)} the levels use. That's either deep value or a sign the old multiple no longer applies — worth finding out why it de-rated.
                 </p>
               )}
+              <p style={{ fontSize: 11, color: "var(--t3)", margin: "8px 0 0" }}>A description of the price against the levels below, not advice to buy or sell.</p>
             </div>
           )}
 
           {/* Price ladder */}
           {price > 0 && levels && (
             <div style={card}>
-              <SectionTitle icon={Layers}>Price Ladder</SectionTitle>
+              <SectionTitle icon={Layers}>Price levels</SectionTitle>
               {[
-                { label: `Sell zone (${fyLabel(m.fyEnd, 2)} FV +10%)`, price: levels.target, color: "var(--red)" },
-                { label: "Phase 1 — Buy 30%", price: levels.p1, color: "var(--accent)" },
-                { label: "Phase 2 — Buy 30%", price: levels.p2, color: "var(--green)" },
-                { label: "Phase 3 — Buy 40%", price: levels.p3, color: "var(--green)" },
-                { label: "Stop Loss (Exit)", price: levels.stopLoss, color: "var(--red)" },
+                { label: `Upper level · ${fyLabel(m.fyEnd, 2)} FV +10%`, price: levels.target, color: "var(--red)" },
+                { label: `Phase 1 · ${belowFv(levels.p1)}`, price: levels.p1, color: "var(--accent)" },
+                { label: `Phase 2 · ${belowFv(levels.p2)}`, price: levels.p2, color: "var(--green)" },
+                { label: `Phase 3 · ${belowFv(levels.p3)}`, price: levels.p3, color: "var(--green)" },
+                { label: `Stop-loss level · ${belowFv(levels.stopLoss)}`, price: levels.stopLoss, color: "var(--red)" },
               ].filter(r => r.price > 0).sort((a, b) => b.price - a.price).map(rung => {
                 const isHere = Math.abs(price - rung.price) / rung.price < 0.03;
                 return (
@@ -884,52 +661,6 @@ export default function StockDetail({ symbol, onBack, backTo = "Discover", onOpe
             </div>
           )}
 
-          {/* Score tally + 10-point grid */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: "var(--t1)" }}>
-              Stock Score: <span style={{ color: scoreBadgeStyle.color }}>{totalGreen}/{applicable} green flags</span>
-            </div>
-            <span style={{ fontSize: 12, fontWeight: 700, padding: "4px 14px", borderRadius: 20, background: scoreBadgeStyle.bg, color: scoreBadgeStyle.color, border: `1px solid ${scoreBadgeStyle.border}` }}>{scoreLabel}</span>
-            {actions}
-          </div>
-
-          <div className="ss-grid-pts" style={{ marginBottom: 16 }}>
-            {allPts.map(p => {
-              const fs = FLAG_STYLE[p.f] || FLAG_STYLE.Y;
-              return (
-                <div key={p.id} style={{ border: `1px solid ${fs.border}`, borderRadius: 12, padding: "12px 14px", background: "var(--s2)", boxShadow: "var(--sh-xs)" }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                    <div style={{ fontSize: 11, color: "var(--t3)", fontWeight: 600, letterSpacing: "0.02em" }}>PT {p.id}</div>
-                    <span title={fs.label} style={{ width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: `color-mix(in srgb, ${fs.color} 14%, transparent)`, color: fs.color }}>
-                      {p.f === "G" ? <Check size={13} strokeWidth={3} /> : p.f === "R" ? <X size={13} strokeWidth={3} /> : p.f === "N" ? <Minus size={13} strokeWidth={3} /> : <TriangleAlert size={12} strokeWidth={2.4} />}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 3, lineHeight: 1.3, color: "var(--t1)", letterSpacing: "-0.01em" }}>{POINT_TITLES[p.id]}</div>
-                  <div style={{ fontSize: 11.5, color: "var(--t2)", lineHeight: 1.45 }}>{p.s}</div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Verdict */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px", borderRadius: 12, border: "1px solid var(--bdr2)", background: "var(--s2)", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
-            <div>
-              <div style={{ fontSize: 12, color: "var(--t2)", fontWeight: 500, marginBottom: 6 }}>{totalGreen}/{applicable} green flags</div>
-              <span style={{ fontSize: 14, fontWeight: 700, padding: "4px 14px", borderRadius: 999, background: verdictStyle.bg, color: verdictStyle.color, letterSpacing: "-0.01em" }}>{verdict}</span>
-              {verdictNote && <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 6 }}>overridden — {verdictNote}</div>}
-            </div>
-            <div style={{ fontSize: 13, color: "var(--t2)", textAlign: "right" }}>
-              {levels?.target > 0 && (
-                <div title={`${fyLabel(m.fyEnd, 2)} fair value × 1.1 — trim/book profits zone, not a broker target`}>
-                  Sell zone: <strong style={{ color: "var(--t1)" }}>{fmtRs(levels.target)}</strong><span style={{ fontSize: 11, color: "var(--t3)" }}> (FV+10%)</span>
-                </div>
-              )}
-              {levels?.safeBuy > 0 && (
-                <div>Safe buy: <strong style={{ color: "var(--t1)" }}>{fmtRs(levels.safeBuy)}</strong> · SL: <strong style={{ color: "var(--red)" }}>{fmtRs(levels.stopLoss)}</strong></div>
-              )}
-            </div>
-          </div>
-
           {/* Fair value */}
           {levels && (
             <div style={card}>
@@ -942,7 +673,7 @@ export default function StockDetail({ symbol, onBack, backTo = "Discover", onOpe
                   { label: usualEpsShown ? "Usual EPS" : `${fyLabel(m.fyEnd)} EPS`, val: eps ? `₹${Math.round(Number(eps))}` : "—", sub: `FV: ${fmtRs(levels.fv25)}` },
                   { label: `${fyLabel(m.fyEnd, 1)} EPS (est.)`, val: levels.e26 ? `₹${levels.e26}` : "—", sub: `FV: ${fmtRs(levels.fv26)}` },
                   { label: `${fyLabel(m.fyEnd, 2)} EPS (est.)`, val: levels.e27 ? `₹${levels.e27}` : "—", sub: `FV: ${fmtRs(levels.fv27)}` },
-                  { label: "Safe Buy Price", val: fmtRs(levels.safeBuy), sub: `Today's FV × ${100 - Number(mosPct || 10)}%`, hi: true },
+                  { label: "Phase 1 level", val: fmtRs(levels.safeBuy), sub: `Today's FV × ${100 - Number(mosPct || 10)}%`, hi: true },
                 ].map(fc => (
                   <div key={fc.label} style={{ background: "var(--s1)", borderRadius: 8, padding: 12, border: fc.hi ? "1px solid var(--green)" : "1px solid var(--bdr)" }}>
                     <div style={{ fontSize: 11, color: "var(--t3)", marginBottom: 4 }}>{fc.label}</div>
@@ -953,17 +684,6 @@ export default function StockDetail({ symbol, onBack, backTo = "Discover", onOpe
               </div>
             </div>
           )}
-
-          {/* Detailed analysis */}
-          <div style={card}>
-            <h3 style={{ fontSize: 15, fontWeight: 600, margin: "0 0 10px", color: "var(--t1)" }}>Detailed Analysis (from NSE filings + rules)</h3>
-            {allPts.map(p => (
-              <div key={p.id} style={{ padding: "8px 0", borderBottom: "1px solid var(--bdr)", fontSize: 13 }}>
-                <span style={{ fontWeight: 600, color: (FLAG_STYLE[p.f] || FLAG_STYLE.Y).color }}>P{p.id} {POINT_TITLES[p.id]}:</span>
-                <span style={{ color: "var(--t2)", marginLeft: 6 }}>{p.d}</span>
-              </div>
-            ))}
-          </div>
 
           <PiotroskiCard m={m} />
           <KeyNumbers data={data} m={m} />

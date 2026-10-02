@@ -194,7 +194,7 @@ function BreakoutLevels({ data }) {
 
       {/* Checklist */}
       <div style={{ marginTop: 12, padding: "8px 10px", borderRadius: 6, background: "var(--card)" }}>
-        <div style={{ fontSize: 11.5, fontWeight: 600, color: "var(--t3)", marginBottom: 6 }}>Entry Checklist</div>
+        <div style={{ fontSize: 11.5, fontWeight: 600, color: "var(--t3)", marginBottom: 6 }}>Trend checklist</div>
         {checks.map((c, i) => (
           <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: c.met ? "var(--green)" : "var(--t3)", marginBottom: 3 }}>
             <span style={{ fontSize: 13 }}>{c.met ? "✓" : "✗"}</span>

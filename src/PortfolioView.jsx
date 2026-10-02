@@ -7,8 +7,8 @@ import AddHoldingModal from "./AddHoldingModal.jsx";
 // Ported from stock-screener's src/components/PortfolioPanel.jsx — summary
 // bar, sort pills, one row per lot, allocation bar. Holdings are saved to the
 // account instead of the browser; prices are live where Yahoo answers, else
-// NSE's last close. One addition: each row says where the price sits on the
-// stock's buy ladder (buy phase, hold, sell zone, below stop loss).
+// NSE's last close. One addition: each row says where the price sits against
+// the stock's levels (server/levels.js pricePosition) — described, never advised.
 
 const MONO = { fontVariantNumeric: "tabular-nums" };
 const COLORS = ["var(--accent)", "var(--green)", "var(--yellow)", "#A78BFA", "#F472B6", "#FB923C", "#38BDF8"];
@@ -23,6 +23,8 @@ function fmtPct(n) {
   return (n >= 0 ? "+" : "") + n.toFixed(1) + "%";
 }
 
+// Where each holding's price sits against its levels (server/levels.js pricePosition)
+const POSITION_TONE = { red: "var(--red)", yellow: "var(--yellow)", green: "var(--green)" };
 const plColor = n => (n == null ? "var(--t3)" : n >= 0 ? "var(--green)" : "var(--red)");
 const fmtDate = iso => (iso ? new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : null);
 
@@ -196,9 +198,9 @@ export default function PortfolioView({ onOpenStock }) {
                 </div>
 
                 <div style={{ textAlign: "center", minWidth: 110 }}>
-                  <div style={label}>Ladder</div>
-                  {st?.action
-                    ? <div style={{ fontSize: 11, fontWeight: 700, color: st.color }} title={st.levels ? `P1 ₹${st.levels.p1} · Stop loss ₹${st.levels.stopLoss} · Target ₹${st.levels.target}` : undefined}>{st.action}</div>
+                  <div style={label}>Price level</div>
+                  {st?.position
+                    ? <div style={{ fontSize: 11, fontWeight: 700, color: POSITION_TONE[st.position.tone] ?? "var(--t2)" }} title={st.position.detail}>{st.position.label}</div>
                     : <div style={{ fontSize: 11, color: "var(--t3)" }}>—</div>}
                 </div>
 
@@ -235,7 +237,7 @@ export default function PortfolioView({ onOpenStock }) {
 
       {holdings.length > 0 && (
         <p style={{ fontSize: 10, color: "var(--t3)", marginTop: 14, lineHeight: 1.6 }}>
-          Prices are live from Yahoo Finance{anyClose ? " where available, otherwise NSE's last close" : ""}. "Ladder" is where the price sits on each stock's buy ladder (the stock page has the levels). Saved to your account.
+          Prices are live from Yahoo Finance{anyClose ? " where available, otherwise NSE's last close" : ""}. "Price level" is where the price sits against each stock's levels — a description, not advice (the stock page has the levels). Saved to your account.
         </p>
       )}
 

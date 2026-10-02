@@ -4,7 +4,7 @@ import { SiteLink, SiteFooter, Logo, navigate } from "./site.jsx";
 // the code does — check them when changing what's stored, adding analytics
 // or ads, or moving hosts.
 
-const UPDATED = "1 October 2026";
+const UPDATED = "2 October 2026";
 // Shown once set: a privacy policy needs a way to reach you
 const CONTACT_EMAIL = null;
 
@@ -140,10 +140,13 @@ export function DisclaimerPage({ signedIn }) {
 
       <H>How the numbers are made</H>
       <P>
-        Quality scores, fair values, "buy phases", stop losses, targets and the other figures are calculated automatically,
-        by fixed formulas, from public data: companies' filings on NSE and market prices. They know nothing the formulas
-        don't — news, management quality, or what a company will do next. Labels such as "BUY — Phase 1" describe where
-        today's price sits against those formulas. They are not advice about what you should do.
+        Quality scores, research scores, fair values, price levels (the three phase levels, the stop-loss level and the
+        upper level) and the other figures are calculated automatically, by fixed formulas, from public data: companies'
+        filings on NSE and market prices. They know nothing the formulas don't — news, management quality, or what a
+        company will do next — and checks the filings can't show, such as related-party deals or auditor issues, are left
+        out rather than guessed. The weights behind the scores are a stated starting point, not a model proven to predict
+        returns. Labels such as "In the Phase 1 zone" or "Constructive, with material questions" describe the numbers.
+        They are not advice about what you should do.
       </P>
 
       <H>The data can be wrong or late</H>

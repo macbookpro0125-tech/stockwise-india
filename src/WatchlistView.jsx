@@ -4,11 +4,13 @@ import { BellIcon } from "./icons.jsx";
 import { api } from "./api.js";
 import { useWatchlist, toggleWatch } from "./watchlist.js";
 import CreateAlertModal from "./CreateAlertModal.jsx";
+import { QualityBadge } from "./ResearchBadges.jsx";
+import { pricePosition } from "../server/levels.js";
 
 // Ported from stock-screener's src/components/WatchlistPanel.jsx — one card
-// per starred stock: price when starred and the move since, score, where the
-// price sits against Phase 1, fair value, a note, and alert / analyze /
-// remove. Saved to the account instead of the browser.
+// per starred stock: price when starred and the move since, quality score,
+// where the price sits against its levels, fair value, a note, and alert /
+// analyze / remove. Saved to the account instead of the browser.
 
 const MONO = { fontVariantNumeric: "tabular-nums" };
 
@@ -24,20 +26,19 @@ function fmtDate(ts) {
   return `${d.getDate()} ${months[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`;
 }
 
-function scoreStyle(score, max = 10) {
-  if (score == null || !max) return { color: "var(--t3)", bg: "var(--s2)", border: "var(--bdr2)" };
-  const pct = score / max;
-  if (pct >= 0.7) return { color: "var(--green)", bg: "var(--green-dim)", border: "var(--green-bdr)" };
-  if (pct >= 0.4) return { color: "var(--yellow)", bg: "var(--yellow-dim)", border: "var(--yellow-bdr)" };
-  return { color: "var(--red)", bg: "var(--red-dim)", border: "var(--red-bdr)" };
-}
-
-function buyStatus(cmp, safeBuyPrice, stopLoss) {
-  if (!cmp || !safeBuyPrice) return null;
-  if (stopLoss > 0 && cmp <= stopLoss) return { label: "Below stop loss", color: "var(--red)" };
-  if (cmp <= safeBuyPrice) return { label: "In buy zone", color: "var(--green)" };
-  const prem = ((cmp - safeBuyPrice) / safeBuyPrice) * 100;
-  return { label: `${prem.toFixed(0)}% above P1`, color: prem <= 10 ? "var(--yellow)" : "var(--t3)" };
+// Where the price sits against the stock's levels, in a few words — the
+// zone from pricePosition (server/levels.js), which never says buy or sell
+const TONE = { red: "var(--red)", yellow: "var(--yellow)", green: "var(--green)" };
+function levelStatus(cmp, r) {
+  if (!cmp || !r?.safeBuyPrice) return null;
+  const pos = pricePosition(cmp, { fv25: r.fv25, p1: r.safeBuyPrice, p2: r.p2, p3: r.p3, stopLoss: r.stopLoss, target: r.target });
+  if (!pos) return null;
+  if (pos.zone === "above-phase1") {
+    const prem = ((cmp - r.safeBuyPrice) / r.safeBuyPrice) * 100;
+    return { label: `${prem.toFixed(0)}% above P1`, color: prem <= 10 ? "var(--yellow)" : "var(--t3)" };
+  }
+  const short = { "below-stop": "Below stop-loss level", phase3: "In Phase 3 zone", phase2: "In Phase 2 zone", phase1: "In Phase 1 zone", "above-upper": "Above upper level", "far-above": "Far above upper level" };
+  return { label: short[pos.zone] ?? pos.label, color: TONE[pos.tone] ?? "var(--t3)" };
 }
 
 const label = { fontSize: 11.5, color: "var(--t3)", fontWeight: 600 };
@@ -70,12 +71,12 @@ export default function WatchlistView({ onOpenStock }) {
   // Unstarring anywhere removes the card straight away
   const rows = new Map((data?.results ?? []).map(r => [r.symbol, r]));
   const items = (data?.items ?? []).filter(i => watched.has(i.ticker));
-  const score10 = t => { const s = rows.get(t)?.score; return s?.applicable ? (s.green / s.applicable) * 10 : -1; };
+  const quality = t => rows.get(t)?.research?.quality ?? -1;
   const sorted = [...items].sort((a, b) => {
     let c = 0;
     if (sortBy === "addedAt") c = String(a.addedAt).localeCompare(String(b.addedAt));
     else if (sortBy === "name") c = (rows.get(a.ticker)?.name || a.ticker).localeCompare(rows.get(b.ticker)?.name || b.ticker);
-    else if (sortBy === "score") c = score10(a.ticker) - score10(b.ticker);
+    else if (sortBy === "quality") c = quality(a.ticker) - quality(b.ticker);
     return sortDir === "desc" ? -c : c;
   });
 
@@ -110,7 +111,7 @@ export default function WatchlistView({ onOpenStock }) {
         <div style={{ display: "flex", gap: 6 }}>
           <SortPill id="addedAt" label="Date" />
           <SortPill id="name" label="Name" />
-          <SortPill id="score" label="Score" />
+          <SortPill id="quality" label="Quality" />
         </div>
       </div>
 
@@ -119,10 +120,7 @@ export default function WatchlistView({ onOpenStock }) {
           const r = rows.get(item.ticker);
           const name = r?.name ?? item.ticker;
           const cmp = live[item.ticker]?.price ?? r?.cmp ?? null;
-          const score = r?.score?.green ?? null;
-          const scoreMax = r?.score?.applicable ?? 10;
-          const ss = scoreStyle(score, scoreMax);
-          const buy = buyStatus(cmp, r?.safeBuyPrice, r?.stopLoss);
+          const level = levelStatus(cmp, r);
           return (
             <div key={item.ticker} style={{ padding: "14px 16px", borderRadius: 12, border: "1px solid var(--bdr2)", background: "var(--s2)", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
               <div style={{ flex: "1 1 140px", minWidth: 120 }}>
@@ -164,16 +162,14 @@ export default function WatchlistView({ onOpenStock }) {
                 })()}
               </div>
 
-              <div style={{ textAlign: "center", minWidth: 55 }}>
-                <div style={label}>Score</div>
-                {score != null
-                  ? <span style={{ display: "inline-block", fontSize: 12, fontWeight: 700, padding: "2px 10px", borderRadius: 12, background: ss.bg, color: ss.color, border: `1px solid ${ss.border}`, ...MONO }}>{score}/{scoreMax}</span>
-                  : <span style={{ fontSize: 12, color: "var(--t3)" }}>—</span>}
+              <div style={{ textAlign: "center", minWidth: 70 }}>
+                <div style={label}>Quality</div>
+                <QualityBadge research={r?.research} size={12} />
               </div>
 
               <div style={{ textAlign: "center", minWidth: 80 }}>
-                <div style={label}>Buy Phase</div>
-                {buy ? <span style={{ fontSize: 11, fontWeight: 600, color: buy.color }}>{buy.label}</span> : <span style={{ fontSize: 11, color: "var(--t3)" }}>—</span>}
+                <div style={label}>Price level</div>
+                {level ? <span style={{ fontSize: 11, fontWeight: 600, color: level.color }}>{level.label}</span> : <span style={{ fontSize: 11, color: "var(--t3)" }}>—</span>}
               </div>
 
               <div style={{ textAlign: "center", minWidth: 60 }}>
