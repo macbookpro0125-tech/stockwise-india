@@ -67,7 +67,7 @@ export function facts(xml, contexts, tag) {
 
 // Bump when the stored shape changes — fetch-market.js re-fetches any file on
 // an older schema instead of treating it as done.
-export const SCHEMA = 5; // 3: capex, current liabilities, cost of goods, long-term debt (FCF, Piotroski); 4: lease liabilities; 5: cash and liquid investments, promoter history
+export const SCHEMA = 6; // 3: capex, current liabilities, cost of goods, long-term debt (FCF, Piotroski); 4: lease liabilities; 5: cash and liquid investments, promoter history; 6: audit opinion and auditor
 const YEARS = 6; // 5-year growth needs six year-ends
 const DOWNLOAD_CONCURRENCY = 3;
 
@@ -230,6 +230,24 @@ function leasesOf(xml, row) {
   return itemised ? total : null;
 }
 
+// The auditor's opinion on the year's results. Every annual filing, old format
+// and new, says either "Declaration of unmodified opinion" or — when the
+// auditor qualified the accounts — "Statement on impact of audit
+// qualification". Text, not numbers, so read straight off the tag; null when
+// a filing doesn't say.
+const XML_ENTITIES = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'" };
+function textFact(xml, tag) {
+  const m = xml.match(new RegExp(`<[a-z-]+:${tag}\\b[^>]*>([^<]+)<`));
+  return m ? m[1].trim().replace(/&(amp|lt|gt|quot|apos);/g, (_, e) => XML_ENTITIES[e]) : null;
+}
+function auditOpinionOf(xml) {
+  const t = textFact(xml, "DeclarationOfUnmodifiedOpinionOrStatementOnImpactOfAuditQualification");
+  if (!t) return null;
+  if (/unmodified/i.test(t)) return "unmodified";
+  if (/qualif|impact/i.test(t)) return "qualified";
+  return null;
+}
+
 // `template` is the company's, taken from its latest filing: older legacy
 // files don't reliably name the template (Bajaj Finance's FY23 file reads as
 // an ordinary company, which put its debt at 0), and a company's business type
@@ -275,6 +293,9 @@ function extractYear(xml, row, template = templateOf(row.xbrl)) {
     ...(template === "INDAS" && equity != null
       ? { cash: r.atEnd(TAGS.cash), bankBalances: r.atEnd(TAGS.bankBalances), currentInvestments: r.atEnd(TAGS.currentInvestments) }
       : { cash: null, bankBalances: null, currentInvestments: null }),
+    auditOpinion: auditOpinionOf(xml),
+    // The audit firm's name — integrated filings (FY25 on) only
+    auditor: textFact(xml, "AuditorsFirmName"),
   };
 }
 
