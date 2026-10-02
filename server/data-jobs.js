@@ -20,10 +20,11 @@ const STATE_PATH = join(DATA_DIR, "jobs-state.json");
 const HOUR = 3600 * 1000, DAY = 24 * HOUR;
 const SNAPSHOT_EVERY = 12 * HOUR;
 const FILINGS_EVERY = DAY;
+const FILINGS_RETRY_AFTER = 6 * HOUR;
 const HOLDING_RETRY_AFTER = 7 * DAY;
 const SHP_DEADLINE_DAYS = 21; // shareholding is due 21 days after each quarter
 
-const status = { running: null, progress: null, lastError: null };
+const status = { running: null, progress: null, lastError: null, lastErrorAt: null, lastErrorJob: null, lastSuccessAt: null, lastSuccessJob: null };
 // loadingMarket: a fresh host's first load is queued or running
 export const jobStatus = () => ({ ...status, loadingMarket: pending.has("first load") });
 
@@ -38,8 +39,18 @@ function enqueue(name, fn) {
     status.progress = null;
     try {
       await fn();
+      status.lastSuccessAt = new Date().toISOString();
+      status.lastSuccessJob = name;
+      const recoveredCatchup = ["first load", "catch-up"].includes(status.lastErrorJob) && ["first load", "catch-up"].includes(name);
+      if (status.lastErrorJob === name || recoveredCatchup) {
+        status.lastError = null;
+        status.lastErrorAt = null;
+        status.lastErrorJob = null;
+      }
     } catch (e) {
-      status.lastError = `${name}: ${e.message}`;
+      status.lastError = "A data refresh failed; the last successful snapshot is kept where available.";
+      status.lastErrorAt = new Date().toISOString();
+      status.lastErrorJob = name;
       console.error(`[jobs] ${name} failed: ${e.message}`);
     } finally {
       status.running = null;
@@ -84,6 +95,7 @@ const filedDay = s => parseQeDate(s)?.getTime() ?? null;
 async function refreshNewFilings() {
   const state = readState();
   const checkStarted = Date.now();
+  writeState({ lastFilingsAttempt: new Date(checkStarted).toISOString() });
   // Never checked on this disk: start from the oldest fetch on it, so nothing
   // filed since then is missed. A day's overlap covers the feed's loose order.
   const since = (state.lastFilingsCheck ? Date.parse(state.lastFilingsCheck) : oldestFetch()) - DAY;
@@ -91,19 +103,35 @@ async function refreshNewFilings() {
   for (let page = 1; page <= 20; page++) {
     const json = await withRetry(() => fetchJson(`${NSE_BASE}/api/integrated-filing-results?index=equities&type=Integrated%20Filing-%20Financials&page=${page}&size=500`));
     const rows = json.data ?? [];
-    const fresh = rows.filter(r => r.symbol && (filedDay(r.creation_Date) ?? 0) >= since);
+    const fresh = rows.filter(r => {
+      if (!r.symbol || (filedDay(r.creation_Date) ?? 0) < since) return false;
+      const saved = readStored(r.symbol);
+      const filedAt = filedDay(r.creation_Date);
+      return !saved?.fetchedAt || !filedAt || Date.parse(saved.fetchedAt) < filedAt + DAY;
+    });
     fresh.forEach(r => symbols.add(r.symbol));
     if (!fresh.length || rows.length < 500) break;
     await new Promise(r => setTimeout(r, 500));
+  }
+  // An earlier transient fetch failure can leave a company with an error-only
+  // record. Retry those on the same daily schedule even if it hasn't filed
+  // again; the last good financials remain untouched until replacement works.
+  for (const file of companyFiles()) {
+    const saved = readStored(file.slice(0, -5));
+    if (saved?.error && saved.retryable && Date.parse(saved.retryAfter || "") <= checkStarted && saved.symbol) symbols.add(saved.symbol);
   }
   if (symbols.size) {
     const list = await withRetry(fetchEquityList);
     const bySymbol = new Map(list.map(s => [s.symbol, s]));
     const stocks = [...symbols].map(s => bySymbol.get(s)).filter(Boolean);
     console.error(`[jobs] ${stocks.length} companies filed results since ${new Date(since).toISOString().slice(0, 10)}`);
-    await fetchCompanies(stocks, "summary", { onProgress });
+    const result = await fetchCompanies(stocks, "summary", { onProgress });
+    if (result.fail || result.refused) {
+      writeState({ lastFilingsCheck: new Date(checkStarted).toISOString(), lastFilingsAttempt: new Date(checkStarted).toISOString() });
+      throw new Error(`Results refresh incomplete: ${result.fail} failed, ${result.refused} refused; retryable records remain queued`);
+    }
   }
-  writeState({ lastFilingsCheck: new Date(checkStarted).toISOString() });
+  writeState({ lastFilingsCheck: new Date(checkStarted).toISOString(), lastFilingsAttempt: new Date(checkStarted).toISOString() });
 }
 
 function oldestFetch() {
@@ -151,9 +179,19 @@ function tick() {
     enqueue("strategy picks", async () => { takeSnapshots(); });
   }
   const state = readState();
-  if (!state.lastFilingsCheck || Date.now() - Date.parse(state.lastFilingsCheck) > FILINGS_EVERY) {
+  const filingCheckDue = !state.lastFilingsCheck || Date.now() - Date.parse(state.lastFilingsCheck) > FILINGS_EVERY;
+  const retryableCompanyDue = companyFiles().some(file => {
+    const saved = readStored(file.slice(0, -5));
+    return saved?.error && saved.retryable && Date.parse(saved.retryAfter || "") <= Date.now();
+  });
+  const retryDue = !state.lastFilingsAttempt || Date.now() - Date.parse(state.lastFilingsAttempt) > FILINGS_RETRY_AFTER;
+  if ((filingCheckDue || retryableCompanyDue) && retryDue) {
     enqueue("new results", refreshNewFilings);
     enqueue("shareholding", refreshStaleHoldings);
+  }
+  const catchupFailed = ["first load", "catch-up"].includes(status.lastErrorJob);
+  if (catchupFailed && Date.now() - Date.parse(status.lastErrorAt || "") > FILINGS_RETRY_AFTER) {
+    enqueue("catch-up", fetchWhatNeedsIt);
   }
 }
 

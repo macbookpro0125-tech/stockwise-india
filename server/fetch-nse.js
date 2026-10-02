@@ -8,6 +8,7 @@
 // Same XBRL tag names in both; only the namespace prefix changed
 // (in-bse-fin -> in-capmkt), so tags are matched namespace-agnostically.
 import { fetchShareholding } from "./fetch-shareholding.js";
+import { fetchJson as requestJson, fetchText as requestText } from "./upstream.js";
 
 export const NSE_BASE = "https://www.nseindia.com";
 export const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36";
@@ -15,15 +16,11 @@ const MONTHS = { JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5, JUL: 6, AUG: 7,
 const MAX_FILINGS_TO_SCAN = 5; // a year's worth of quarters, plus one revision
 
 export async function fetchJson(url) {
-  const res = await fetch(url, { headers: { "User-Agent": UA, Accept: "application/json" } });
-  if (!res.ok) throw new Error(`NSE API ${url} -> HTTP ${res.status}`);
-  return res.json();
+  return requestJson(url, { headers: { "User-Agent": UA, Accept: "application/json" }, service: "NSE", maxBytes: 25 * 1024 * 1024 });
 }
 
 export async function fetchXbrl(url) {
-  const res = await fetch(url, { headers: { "User-Agent": UA } });
-  if (!res.ok) throw new Error(`XBRL fetch ${url} -> HTTP ${res.status}`);
-  return res.text();
+  return requestText(url, { headers: { "User-Agent": UA }, service: "NSE XBRL", maxBytes: 25 * 1024 * 1024 });
 }
 
 // "31-MAR-2026", "31-Mar-2024", or a timestamp like "12-Apr-2024 21:04" -> Date (UTC midnight)

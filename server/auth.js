@@ -2,6 +2,7 @@
 // dependency — it's a standard, memory-hard KDF, not a homegrown scheme.
 import { randomBytes, scryptSync, timingSafeEqual, createHash } from "node:crypto";
 import { db } from "./db.js";
+import { badRequest, conflict, unauthorized, notFound } from "./http-errors.js";
 
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 const RESET_TTL_MS = 60 * 60 * 1000; // a reset link works for an hour
@@ -23,11 +24,11 @@ function verifyPassword(password, salt, expectedHash) {
 
 export function signup(email, password) {
   email = email.trim().toLowerCase();
-  if (!email || !email.includes("@")) throw new Error("Valid email required");
-  if (!password || password.length < 8) throw new Error("Password must be at least 8 characters");
+  if (!email || !email.includes("@")) throw badRequest("Valid email required");
+  if (!password || password.length < 8) throw badRequest("Password must be at least 8 characters");
 
   const existing = db.prepare("SELECT id FROM users WHERE email = ?").get(email);
-  if (existing) throw new Error("An account with this email already exists");
+  if (existing) throw conflict("An account with this email already exists");
 
   const { hash, salt } = hashPassword(password);
   const result = db.prepare(
@@ -44,7 +45,7 @@ export function login(email, password) {
   // Google, no password" — distinguishing them tells an attacker which
   // emails are registered.
   if (!user?.password_hash || !verifyPassword(String(password ?? ""), user.password_salt, user.password_hash)) {
-    throw new Error("Invalid email or password");
+    throw unauthorized("Invalid email or password");
   }
   return createSession(Number(user.id));
 }
@@ -57,7 +58,7 @@ export function signInWithFirebase(claims) {
   const uid = claims.sub;
   const provider = claims.firebase?.sign_in_provider;
   // Only the three ways the app offers — not, say, an anonymous Firebase user
-  if (!["google.com", "apple.com", "phone"].includes(provider)) throw new Error("That way of signing in isn't offered here.");
+  if (!["google.com", "apple.com", "phone"].includes(provider)) throw badRequest("That way of signing in isn't offered here.");
   const email = claims.email && claims.email_verified ? String(claims.email).trim().toLowerCase() : null;
   const phone = provider === "phone" && claims.phone_number ? String(claims.phone_number) : null;
   const name = typeof claims.name === "string" && claims.name.trim() ? claims.name.trim().slice(0, 80) : null;
@@ -67,7 +68,7 @@ export function signInWithFirebase(claims) {
   if (user) {
     db.prepare("UPDATE users SET firebase_uid = COALESCE(firebase_uid, ?), display_name = COALESCE(display_name, ?) WHERE id = ?").run(uid, name, user.id);
   } else {
-    if (!email && !phone) throw new Error("That sign-in didn't come with a verified email or phone number.");
+    if (!email && !phone) throw unauthorized("That sign-in didn't come with a verified email or phone number.");
     const result = db.prepare("INSERT INTO users (email, phone, firebase_uid, display_name, created_at) VALUES (?, ?, ?, ?, ?)")
       .run(email, phone, uid, name, new Date().toISOString());
     user = { id: result.lastInsertRowid };
@@ -127,10 +128,10 @@ export function createPasswordReset(email) {
 // Sets the new password and signs the account out everywhere (whoever knew
 // the old one), then opens a fresh session for the person who reset it
 export function resetPassword(token, password) {
-  if (!password || password.length < 8) throw new Error("Password must be at least 8 characters");
+  if (!password || password.length < 8) throw badRequest("Password must be at least 8 characters");
   const row = db.prepare("SELECT user_id, expires_at, used_at FROM password_resets WHERE token_hash = ?").get(tokenHash(token));
   if (!row || row.used_at || row.expires_at < new Date().toISOString()) {
-    throw new Error("This reset link has expired or was already used. Ask for a new one from the sign-in page.");
+    throw badRequest("This reset link has expired or was already used. Ask for a new one from the sign-in page.");
   }
   const { hash, salt } = hashPassword(password);
   db.exec("BEGIN");
@@ -154,9 +155,9 @@ export function resetPassword(token, password) {
 // DELETE instead.
 export function deleteAccount(userId, password, confirm) {
   const user = db.prepare("SELECT password_hash, password_salt FROM users WHERE id = ?").get(userId);
-  if (!user) throw new Error("No such account");
+  if (!user) throw notFound("No such account");
   if (user.password_hash ? !verifyPassword(String(password ?? ""), user.password_salt, user.password_hash) : String(confirm ?? "").trim() !== "DELETE") {
-    throw new Error(user.password_hash ? "That password isn't right" : "Type DELETE to confirm");
+    throw badRequest(user.password_hash ? "That password isn't right" : "Type DELETE to confirm");
   }
   db.exec("BEGIN");
   try {

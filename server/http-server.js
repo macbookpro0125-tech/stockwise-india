@@ -6,6 +6,7 @@
 // account takeover. httpOnly means client-side JS can't read it at all.
 import "./env.js"; // first, so the rest see .env's settings
 import { createServer } from "node:http";
+import { randomUUID } from "node:crypto";
 import { gzipSync } from "node:zlib";
 import { existsSync, statSync, createReadStream } from "node:fs";
 import { join, normalize, extname, sep } from "node:path";
@@ -36,6 +37,8 @@ import { shareholdingHistory, companyFilings, companyNews, sectorPeers } from ".
 import { summarizeFiling } from "./filing-summary.js";
 import { PRESETS } from "./presets.js";
 import { DIST_DIR } from "./paths.js";
+import { HttpError, badRequest, payloadTooLarge } from "./http-errors.js";
+import { UpstreamError } from "./upstream.js";
 
 let equityListPromise = null;
 function equityList() {
@@ -92,7 +95,9 @@ const CONTENT_TYPES = {
 // without, and skipping ahead relies on them in every browser.
 function serveStatic(req, pathname, res) {
   if (!existsSync(DIST_DIR)) return false;
-  let file = normalize(join(DIST_DIR, decodeURIComponent(pathname)));
+  let decoded;
+  try { decoded = decodeURIComponent(pathname); } catch { return false; }
+  let file = normalize(join(DIST_DIR, decoded));
   if (!file.startsWith(DIST_DIR + sep) && file !== DIST_DIR) return false; // no ../ out of dist
   // Anything that isn't a file is the app itself (it has no other pages)
   if (!existsSync(file) || statSync(file).isDirectory()) file = join(DIST_DIR, "index.html");
@@ -135,9 +140,15 @@ function parseCookies(header) {
   for (const part of header.split(";")) {
     const eq = part.indexOf("=");
     if (eq === -1) continue;
-    out[part.slice(0, eq).trim()] = decodeURIComponent(part.slice(eq + 1).trim());
+    try { out[part.slice(0, eq).trim()] = decodeURIComponent(part.slice(eq + 1).trim()); }
+    catch { out[part.slice(0, eq).trim()] = ""; }
   }
   return out;
+}
+
+function decodePathSegment(value) {
+  try { return decodeURIComponent(value); }
+  catch { throw badRequest("URL contains invalid encoding"); }
 }
 
 // Secure (sent over HTTPS only) whenever the request came in over HTTPS —
@@ -179,11 +190,23 @@ async function readJsonBody(req) {
   let size = 0;
   for await (const chunk of req) {
     size += chunk.length;
-    if (size > MAX_BODY_BYTES) throw new Error("Request too large");
+    if (size > MAX_BODY_BYTES) throw payloadTooLarge("Request body is too large");
     chunks.push(chunk);
   }
   const raw = Buffer.concat(chunks).toString("utf-8");
-  return raw ? JSON.parse(raw) : {};
+  if (!raw) return {};
+  let value;
+  try { value = JSON.parse(raw); }
+  catch { throw badRequest("Request body must be valid JSON"); }
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw badRequest("Request body must be a JSON object");
+  return value;
+}
+
+function reportUpstreamFailure(res, requestId, error, fallback) {
+  const status = error instanceof UpstreamError ? error.status : 502;
+  if (error instanceof UpstreamError) console.error(JSON.stringify({ event: "upstream_request_failed", requestId, service: error.service, code: error.code, status: error.status }));
+  else console.error(JSON.stringify({ event: "api_dependency_failed", requestId, errorName: error?.name, message: error?.message }));
+  sendJson(res, status === 504 ? 504 : status === 503 ? 503 : 502, { error: fallback, requestId });
 }
 
 function tooMany(res, ms, message) {
@@ -204,6 +227,8 @@ function requireAuth(req, res) {
 export function createApp() {
   return createServer(async (req, res) => {
     const url = new URL(req.url, "http://localhost");
+    const requestId = randomUUID();
+    if (url.pathname.startsWith("/api/")) res.setHeader("X-Request-Id", requestId);
     try {
       if (url.pathname === "/api/auth/signup" && req.method === "POST") {
         const { email, password } = await readJsonBody(req);
@@ -252,10 +277,15 @@ export function createApp() {
         const ip = `ip:${clientIp(req)}`;
         const wait = limits.wrongPasswordIp.blockedFor(ip);
         if (wait) return tooMany(res, wait, "Too many sign-in attempts.");
+        const body = await readJsonBody(req);
         let claims;
         try {
-          claims = await verifyFirebaseIdToken((await readJsonBody(req)).idToken);
+          claims = await verifyFirebaseIdToken(body.idToken);
         } catch (e) {
+          if (e instanceof UpstreamError) {
+            reportUpstreamFailure(res, requestId, e, "Google sign-in is temporarily unavailable. Please try again shortly.");
+            return;
+          }
           limits.wrongPasswordIp.hit(ip);
           if (e.reason) console.error(`[auth] firebase token refused: ${e.reason}`);
           sendJson(res, 401, { error: e.reason ? e.message : "That sign-in couldn't be confirmed. Please try again." });
@@ -380,7 +410,7 @@ export function createApp() {
       if (filingSummaryRoute && req.method === "GET") {
         const userId = requireAuth(req, res);
         if (userId == null) return;
-        const symbol = decodeURIComponent(filingSummaryRoute[1]).toUpperCase();
+        const symbol = decodePathSegment(filingSummaryRoute[1]).toUpperCase();
         const index = Number(filingSummaryRoute[2]);
         if (!isValidSymbol(symbol) || index > 39) { sendJson(res, 400, { error: "Unknown filing." }); return; }
         try {
@@ -389,7 +419,7 @@ export function createApp() {
           if (!filing?.url) { sendJson(res, 404, { error: "This notice has no linked attachment to read." }); return; }
           sendJson(res, 200, await summarizeFiling(filing));
         } catch (e) {
-          sendJson(res, 502, { error: e.message || "Couldn't read this NSE attachment." });
+          reportUpstreamFailure(res, requestId, e, "Couldn't read this NSE attachment. Try again later.");
         }
         return;
       }
@@ -397,7 +427,7 @@ export function createApp() {
       if (panelRoute && req.method === "GET") {
         const userId = requireAuth(req, res);
         if (userId == null) return;
-        const symbol = decodeURIComponent(panelRoute[1]).toUpperCase();
+        const symbol = decodePathSegment(panelRoute[1]).toUpperCase();
         if (!isValidSymbol(symbol)) {
           sendJson(res, 400, { error: "Unknown symbol" });
           return;
@@ -417,7 +447,7 @@ export function createApp() {
             case "peers": sendJson(res, 200, sectorPeers(symbol)); return;
           }
         } catch (e) {
-          sendJson(res, 502, { error: e.message });
+          reportUpstreamFailure(res, requestId, e, "This company data is temporarily unavailable. Try again shortly.");
         }
         return;
       }
@@ -425,7 +455,7 @@ export function createApp() {
       if (url.pathname.startsWith("/api/stock/") && req.method === "GET") {
         const userId = requireAuth(req, res);
         if (userId == null) return;
-        const symbol = decodeURIComponent(url.pathname.split("/").pop()).toUpperCase();
+        const symbol = decodePathSegment(url.pathname.split("/").pop()).toUpperCase();
         if (!isValidSymbol(symbol)) {
           sendJson(res, 400, { error: `"${symbol}" isn't an NSE symbol — they're letters, digits, & and - (e.g. TCS, M&M, BAJAJ-AUTO).` });
           return;
@@ -447,7 +477,7 @@ export function createApp() {
             fundamentals = { ...(await fetchStockSummary(symbol)), name: info?.name ?? symbol, isin: info?.isin ?? null, fetchedAt: new Date().toISOString() };
             saveStock(symbol, fundamentals);
           } catch (e) {
-            sendJson(res, 502, { error: `Couldn't read ${info?.name ?? symbol}'s financials from NSE: ${e.message}` });
+            reportUpstreamFailure(res, requestId, e, `Couldn't read ${info?.name ?? symbol}'s financials from NSE right now. Try again shortly.`);
             return;
           }
         }
@@ -503,13 +533,9 @@ export function createApp() {
       if (thesisRoute && ["GET", "PUT"].includes(req.method)) {
         const userId = requireAuth(req, res);
         if (userId == null) return;
-        const symbol = decodeURIComponent(thesisRoute[1]).toUpperCase();
-        try {
-          if (req.method === "GET") sendJson(res, 200, getThesis(userId, symbol));
-          else sendJson(res, 200, saveThesis(userId, symbol, await readJsonBody(req)));
-        } catch (e) {
-          sendJson(res, 400, { error: e.message });
-        }
+        const symbol = decodePathSegment(thesisRoute[1]).toUpperCase();
+        if (req.method === "GET") sendJson(res, 200, getThesis(userId, symbol));
+        else sendJson(res, 200, saveThesis(userId, symbol, await readJsonBody(req)));
         return;
       }
 
@@ -533,7 +559,7 @@ export function createApp() {
       if (watchItem && req.method === "PUT") {
         const userId = requireAuth(req, res);
         if (userId == null) return;
-        setWatchlistNote(userId, decodeURIComponent(watchItem[1]), (await readJsonBody(req)).note);
+        setWatchlistNote(userId, decodePathSegment(watchItem[1]), (await readJsonBody(req)).note);
         sendJson(res, 200, { ok: true });
         return;
       }
@@ -541,7 +567,7 @@ export function createApp() {
       if (watchItem && req.method === "DELETE") {
         const userId = requireAuth(req, res);
         if (userId == null) return;
-        removeFromWatchlist(userId, decodeURIComponent(watchItem[1]));
+        removeFromWatchlist(userId, decodePathSegment(watchItem[1]));
         sendJson(res, 200, { ok: true });
         return;
       }
@@ -721,7 +747,23 @@ export function createApp() {
 
       if (url.pathname === "/api/health" && req.method === "GET") {
         const snap = loadMarketSnapshot();
-        sendJson(res, 200, { ok: true, companies: countFetched(), pricesDate: snap?.pricesDate ?? null, jobs: jobStatus() });
+        const jobs = jobStatus();
+        const snapshotAgeHours = snap?.builtAt ? Math.max(0, (Date.now() - Date.parse(snap.builtAt)) / 3_600_000) : null;
+        const warnings = [];
+        if (!snap) warnings.push("No market snapshot is available.");
+        else if (snapshotAgeHours > 72) warnings.push("The market snapshot is older than 72 hours.");
+        if (jobs.lastError) warnings.push("A background data refresh has failed.");
+        if (jobs.loadingMarket) warnings.push("The initial market data load is still running.");
+        sendJson(res, 200, {
+          ok: true,
+          degraded: warnings.length > 0,
+          warnings,
+          companies: countFetched(),
+          pricesDate: snap?.pricesDate ?? null,
+          snapshotBuiltAt: snap?.builtAt ?? null,
+          snapshotAgeHours: snapshotAgeHours == null ? null : Math.round(snapshotAgeHours * 10) / 10,
+          jobs,
+        });
         return;
       }
 
@@ -733,7 +775,13 @@ export function createApp() {
       if (req.method === "GET" && serveStatic(req, url.pathname, res)) return;
       sendJson(res, 404, { error: "Not found" });
     } catch (e) {
-      sendJson(res, e.duplicate ? 409 : 400, { error: e.message });
+      const status = e instanceof HttpError || Number.isInteger(e?.status) ? e.status : e?.duplicate ? 409 : e instanceof SyntaxError ? 400 : 500;
+      if (status >= 500) {
+        console.error(JSON.stringify({ event: "api_request_failed", requestId, method: req.method, path: url.pathname, errorName: e?.name, message: e?.message }));
+        sendJson(res, status, { error: "The server couldn't complete this request. Please try again shortly.", requestId });
+      } else {
+        sendJson(res, status, { error: e.message || "Invalid request" });
+      }
     }
   });
 }

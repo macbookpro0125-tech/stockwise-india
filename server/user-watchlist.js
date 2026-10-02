@@ -1,5 +1,6 @@
 import { db } from "./db.js";
 import { isValidSymbol } from "./screen.js";
+import { badRequest } from "./http-errors.js";
 
 // Per-user watchlist — the original kept it in the browser's localStorage;
 // here it follows the account, like alerts. Each entry remembers the price
@@ -13,7 +14,7 @@ export function listWatchlist(userId) {
 
 export function addToWatchlist(userId, ticker, price = null) {
   ticker = String(ticker || "").trim().toUpperCase();
-  if (!isValidSymbol(ticker)) throw new Error("Not an NSE symbol");
+  if (!isValidSymbol(ticker)) throw badRequest("Not an NSE symbol");
   // Already there is fine — starring twice shouldn't error
   db.prepare("INSERT OR IGNORE INTO watchlist (user_id, ticker, added_at, added_price) VALUES (?, ?, ?, ?)")
     .run(userId, ticker, new Date().toISOString(), Number(price) > 0 ? Number(price) : null);

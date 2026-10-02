@@ -4,6 +4,7 @@
 // files change.
 import { readdirSync, readFileSync, existsSync, writeFileSync, mkdirSync, statSync, renameSync } from "node:fs";
 import { join } from "node:path";
+import { badRequest } from "./http-errors.js";
 import { computeMetrics } from "./metrics.js";
 import { computeResearch, setResearchPeers } from "./research.js";
 import { loadMarketSnapshot } from "./market-data.js";
@@ -32,7 +33,7 @@ export function getStock(symbol) {
 // server notices that a background fetch changed an existing company (an
 // in-place overwrite would leave the directory mtime, and the cache, as is).
 export function saveStock(symbol, data) {
-  if (!isValidSymbol(symbol)) throw new Error(`Not an NSE symbol: ${symbol}`);
+  if (!isValidSymbol(symbol)) throw badRequest(`Not an NSE symbol: ${symbol}`);
   mkdirSync(MARKET_DIR, { recursive: true });
   const path = join(MARKET_DIR, `${symbol}.json`);
   writeFileSync(`${path}.tmp`, JSON.stringify(data, null, 2));
