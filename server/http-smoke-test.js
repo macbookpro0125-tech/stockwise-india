@@ -54,6 +54,8 @@ async function main() {
   const healthBody = await health.json();
   assert(health.status === 200 && healthBody.ok === true && "jobs" in healthBody && "degraded" in healthBody && "snapshotAgeHours" in healthBody, "GET /api/health answers the host's check and reports data freshness");
   assert((await fetch(`${BASE}/api/no-such-route`)).status === 404, "an unknown /api/ route is a 404, not the app page");
+  const headHealth = await fetch(`${BASE}/api/health`, { method: "HEAD" });
+  assert(headHealth.status === 200 && (await headHealth.text()) === "", "HEAD /api/health is 200 with no body (uptime monitors check with HEAD)");
 
   const presets = await (await fetch(`${BASE}/api/presets`)).json();
   assert(Array.isArray(presets) && presets.length === 13 && presets.every(p => p.criteria), "GET /api/presets returns the 13 strategies with their criteria");
