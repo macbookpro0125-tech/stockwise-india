@@ -374,7 +374,7 @@ async function fetchFinancials(symbol) {
   const integrated = await integratedFilings(symbol);
   const seen = new Set();
   const periods = integrated.filter(f => (seen.has(f.qe_Date) ? false : seen.add(f.qe_Date)));
-  if (!periods.length) throw new Error(`No Integrated Filing financials for ${symbol}`);
+  if (!periods.length) throw Object.assign(new Error(`No Integrated Filing financials for ${symbol}`), { noFilings: true });
 
   // Walk back from the newest filing to the fiscal year-end one — found by a
   // year-to-date period of a full year, not by assuming a March year-end
@@ -403,7 +403,7 @@ async function fetchFinancials(symbol) {
       break;
     }
   }
-  if (!latestYear) throw new Error(`No full-year filing among ${symbol}'s recent Integrated Filings`);
+  if (!latestYear) throw Object.assign(new Error(`No full-year filing among ${symbol}'s recent Integrated Filings`), { noFilings: true });
 
   // Earlier year-ends from both systems, filtered to this company's fiscal
   // year-end so a past change of year-end doesn't mix bases.

@@ -152,7 +152,6 @@ export default function NewsPanel({ symbol }) {
                   ? <div style={{ fontSize: 12, color: "var(--red)" }}>{doc.error}</div>
                   : doc.evidence ? <>
                     <div style={{ fontSize: 11, fontWeight: 700, color: "var(--t1)" }}>Full attachment read · {doc.kind}{doc.pageCount ? ` · ${doc.pagesRead}/${doc.pageCount} pages` : ""} · {doc.charactersRead.toLocaleString()} characters</div>
-                    {doc.category && <div style={{ fontSize: 11, color: "var(--t2)", marginTop: 4 }}>{doc.category}{doc.matchedText ? ` · Matched in document: “${doc.matchedText}”` : ""}{doc.amounts?.length ? ` · Amounts found: ${doc.amounts.join(", ")}` : ""}</div>}
                     <div style={{ display: "grid", gap: 7, marginTop: 9 }}>{doc.evidence.map((passage, j) => <div key={j} style={{ fontSize: 11, color: "var(--t2)", lineHeight: 1.55, paddingLeft: 9, borderLeft: "2px solid var(--accent)" }}><span style={{ color: "var(--t3)", fontSize: 10 }}>{passage.page ? `Page ${passage.page} · ` : "Extract · "}</span>“{passage.text}”</div>)}</div>
                     <div style={{ fontSize: 10, color: "var(--t3)", lineHeight: 1.5, marginTop: 8 }}>{doc.method} {doc.limitation}</div>
                     {doc.sourceUrl && <a href={doc.sourceUrl} target="_blank" rel="noopener noreferrer" style={{ display: "inline-block", fontSize: 10, color: "var(--accent)", marginTop: 6 }}>Open original on NSE ↗</a>}

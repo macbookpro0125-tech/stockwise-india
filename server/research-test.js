@@ -17,7 +17,7 @@ const near = (a, b, tol = 0.11) => a != null && b != null && Math.abs(a - b) <= 
 const NOW = Date.parse("2026-10-02T00:00:00Z");
 const CR = 1e7;
 const filingReview = classifyAnnouncement("Resignation of Statutory Auditor", "The auditor resigned effective 30 September; ₹12 crore penalty disclosed.");
-assert(filingReview?.category === "Audit / results" && filingReview.matchedText.toLowerCase().includes("auditor resign"), "filing triage explains its matched source phrase");
+assert(filingReview?.category === "Audit / accounts" && /statutory auditor|auditor resign/i.test(filingReview.matchedText), "filing triage explains its matched source phrase");
 assert(filingReview.extractedAmounts.includes("₹12 crore") && filingReview.sentiment == null, "filing triage extracts stated amounts and avoids positive/negative conclusions");
 assert(classifyAnnouncement("General update", "") == null, "unmatched filing descriptions stay unclassified");
 
@@ -86,11 +86,15 @@ assert(base.provenance?.financials?.period === base.fyEnd && base.provenance.fin
 assert(base.fcfYieldPct != null && near(base.fcfYieldPct, (base.fcfCr / base.marketCapCr) * 100, 0.001), "free-cash-flow yield uses same-period FCF and market value");
 assert(r.quality != null && r.quality > 70, `the steady company scores well (quality ${r.quality})`);
 assert(r.groups.every(g => g.score == null || (g.score >= 0 && g.score <= 100)), "every group score is between 0 and 100");
-assert(group(r, "governance").supportedCoverage >= 0.70 && group(r, "growth").supportedCoverage >= 0.70, "governance and growth meet the 70% supported-weight gate");
-assert(group(r, "valuation").score != null && group(r, "valuation").coverage < 0.71 && group(r, "valuation").supportedCoverage === 1, "the unsupported DCF check lowers total coverage without blocking a valuation score");
-const industryMetrics = computeMetrics(company(), { ...snapshot(), industries: { TESTCO: "Pharmaceuticals" } }, {}, { research: false });
-const industryResearch = computeResearch(industryMetrics, { peers: new Map([["industry:Pharmaceuticals", { median: 20, n: 12 }]]), now: NOW });
-assert(itemOf(industryResearch, "valuation", "peers").score != null && /NSE industry Pharmaceuticals/.test(itemOf(industryResearch, "valuation", "peers").reason), "industry peers provide a sourced fallback when sector is unknown");
+assert(group(r, "valuation").score != null && group(r, "valuation").coverage < 0.71, "the unbuilt DCF check lowers valuation coverage without blocking a valuation score");
+const peerCheck = (sector, industry, peers) => {
+  const pm = computeMetrics(company(), { ...snapshot({ sector }), industries: { TESTCO: industry } }, {}, { research: false });
+  return itemOf(computeResearch(pm, { peers: new Map(peers), now: NOW }), "valuation", "peers");
+};
+const bothCohorts = [["Information Technology", { median: 22, n: 30 }], ["industry:Computers - Software", { median: 40, n: 12 }]];
+assert(/22\.0 for 30 Information Technology/.test(peerCheck("Information Technology", "Computers - Software", bothCohorts).reason), "a known sector is the peer group, as in the Peers panel — not NSE's older industry label");
+assert(/NSE industry Pharmaceuticals/.test(peerCheck(null, "Pharmaceuticals", [["industry:Pharmaceuticals", { median: 20, n: 12 }]]).reason ?? ""), "NSE's industry is the fallback when the sector is unknown");
+assert(peerCheck(null, "Miscellaneous", [["industry:Miscellaneous", { median: 25, n: 19 }]]).score == null, "a catch-all industry like Miscellaneous is never a peer group");
 assert(near(r.groups.reduce((a, g) => a + (g.points ?? 0), 0), r.quality, 0.6), "quality = the sum of the groups' points when every group is scored");
 assert(itemOf(r, "business", "competitive").structural && itemOf(r, "business", "competitive").score == null, "items the filings can't show stay listed as not checked");
 assert(group(r, "governance").checked === 4 && group(r, "governance").total === 6, "governance shows 4 of 6 checked (related parties and governance flags unchecked)");
@@ -129,7 +133,7 @@ const eq = group(noCapex.research, "earnings");
 const reweighted = eq.items.filter(i => i.score != null).reduce((a, i) => a + i.score * i.weight, 0) / eq.items.filter(i => i.score != null).reduce((a, i) => a + i.weight, 0);
 assert(eq.checked === 4 && near(eq.score, reweighted, 0.06), "the earnings group renormalises over the 4 items checked");
 const noCash = metricsOf(company({ tweak: y => ({ ...y, ocf: null, capex: null }) }), snapshot());
-assert(group(noCash.research, "earnings").score == null, "no cash-flow statements at all: 30% of supported earnings weight is under the 70% minimum, so it isn't scored");
+assert(group(noCash.research, "earnings").score == null, "no cash-flow statements at all: 30% of earnings checked is under the 35% minimum, so it isn't scored");
 assert(noCash.research.quality != null && noCash.research.qualityOnly != null, "other sufficiently covered groups still support quality scores when earnings is unscored");
 const noPledge = metricsOf(company({ holding: { pledgedPct: null } }), snapshot());
 assert(itemOf(noPledge.research, "governance", "pledge").score == null, "unknown pledge is missing, not a pass");

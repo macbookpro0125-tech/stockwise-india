@@ -2,6 +2,7 @@
 // RSI, pivot levels, crossovers and the summary gauge behind the Technical
 // Analysis panel, from a year of Yahoo daily candles.
 import { fetchJson as requestJson } from "./upstream.js";
+import { HttpError } from "./http-errors.js";
 const CACHE = new Map();
 const CACHE_MS = 20 * 60 * 1000; // 20 min
 
@@ -81,7 +82,7 @@ async function fetchYahooHistory(ticker) {
     } catch { continue; }
   }
   if (foundButInsufficient) {
-    throw new Error(`${ticker} was recently listed — only ${foundButInsufficient.days} day(s) of price data available. Technical analysis requires at least 20 trading days.`);
+    throw new HttpError(`${ticker} was recently listed — only ${foundButInsufficient.days} day(s) of price data available. Technical analysis requires at least 20 trading days.`, 422);
   }
   throw new Error(`No price history found for ${ticker} on Yahoo Finance`);
 }

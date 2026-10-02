@@ -350,7 +350,7 @@ function KeyNumbers({ data, m }) {
 // ---- Page ---------------------------------------------------------------------
 
 // backTo: the tab Back returns to
-export default function StockDetail({ symbol, onBack, backTo = "Discover", onOpenStock }) {
+export default function StockDetail({ symbol, account, onBack, backTo = "Discover", onOpenStock }) {
   const watched = useWatchlist().has(symbol);
   const [showAlertModal, setShowAlertModal] = useState(false);
   const [data, setData] = useState(null);
@@ -594,7 +594,7 @@ export default function StockDetail({ symbol, onBack, backTo = "Discover", onOpe
 
       {m && (
         <>
-          <ThesisMonitor metrics={m} />
+          <ThesisMonitor metrics={m} account={account} />
 
           {/* Where the price sits — described against the levels, never an instruction */}
           {position && (

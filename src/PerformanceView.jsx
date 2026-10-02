@@ -90,7 +90,7 @@ export default function PerformanceView({ onOpenStock }) {
           )}
         </div>
         <button onClick={takeSnapshot} disabled={snapping} className="btn-ghost" style={{ height: 32, padding: "0 14px", fontSize: 12.5, fontWeight: 500, opacity: snapping ? 0.6 : 1, cursor: snapping ? "wait" : "pointer" }}>
-          {snapping ? "Recording…" : <><Camera size={14} /> {study?.cohortCount ? "Take snapshot now" : "Record baseline"}</>}
+          {snapping ? "Recording…" : <><Camera size={14} /> {study?.cohortCount || study?.recording === false ? "Take snapshot now" : "Record baseline"}</>}
         </button>
       </div>
 
@@ -108,6 +108,10 @@ export default function PerformanceView({ onOpenStock }) {
           No snapshots yet. Take one now to record each strategy's current top picks —<br />
           come back in a few weeks to see which strategies actually made money.
         </div>
+      )}
+
+      {!loading && study?.recording === false && (
+        <p style={{ fontSize: 11, color: "var(--t3)", margin: "0 0 14px", lineHeight: 1.5 }}>Background updates are off on this copy, so the monthly research-score check isn't recorded here. It builds up where the app updates itself daily.</p>
       )}
 
       {!loading && study?.cohortCount > 0 && (

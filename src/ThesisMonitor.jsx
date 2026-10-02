@@ -3,76 +3,71 @@ import { api } from "./api.js";
 
 const card = { border: "1px solid var(--bdr2)", borderRadius: 12, padding: 18, marginBottom: 12, background: "var(--s2)" };
 const pct = v => v == null ? "not available" : `${v.toFixed(1)}%`;
-const THESIS_KEY = "stockwise-investment-thesis";
-const loadThesis = symbol => {
-  try { return { case: "", marketGap: "", breakers: "", ...(JSON.parse(localStorage.getItem(THESIS_KEY) || "{}")[symbol] ?? {}) }; }
-  catch { return { case: "", marketGap: "", breakers: "" }; }
-};
-const loadOldNote = symbol => {
+// The account is where a thesis lives. This browser keeps only edits that
+// haven't reached the account yet, filed under the account that wrote them —
+// on a shared computer the next person never sees, or saves, someone else's.
+const DRAFTS_KEY = "stockwise-thesis-drafts";
+const EMPTY = { case: "", marketGap: "", breakers: "" };
+const normal = t => ({ case: t?.case ?? "", marketGap: t?.marketGap ?? "", breakers: t?.breakers ?? "" });
+const readDrafts = () => { try { return JSON.parse(localStorage.getItem(DRAFTS_KEY) || "{}"); } catch { return {}; } };
+const writeDraft = (owner, symbol, thesis) => {
   try {
-    const old = JSON.parse(localStorage.getItem("stockwise-india-notes") || "{}")[symbol];
-    return old?.text ? `${old.verdict ? `${old.verdict}: ` : ""}${old.text}` : "";
-  } catch { return ""; }
+    const all = readDrafts();
+    if (thesis) all[owner] = { ...all[owner], [symbol]: thesis };
+    else if (all[owner]) { delete all[owner][symbol]; if (!Object.keys(all[owner]).length) delete all[owner]; }
+    localStorage.setItem(DRAFTS_KEY, JSON.stringify(all));
+  } catch {}
 };
-const hasText = t => Boolean(t?.case?.trim() || t?.marketGap?.trim() || t?.breakers?.trim());
 
-export default function ThesisMonitor({ metrics: m }) {
-  const [thesis, setThesis] = useState(() => loadThesis(m?.symbol));
+export default function ThesisMonitor({ metrics: m, account }) {
+  const owner = account ? `${account.userId}:${account.email ?? account.phone ?? ""}` : null;
+  const [thesis, setThesis] = useState(EMPTY);
   const [ready, setReady] = useState(false);
   const [saveState, setSaveState] = useState("loading");
   const saveSeq = useRef(0);
   const savedSnapshot = useRef(null);
   useEffect(() => {
-    if (!m?.symbol) return;
+    if (!m?.symbol || !owner) return;
     let cancelled = false;
     setReady(false);
     setSaveState("loading");
+    // The first version kept every thesis in one browser-wide list,
+    // whoever was signed in — never read it
+    try { localStorage.removeItem("stockwise-investment-thesis"); } catch {}
     api.thesis(m.symbol).then(remote => {
       if (cancelled) return;
-      if (remote.updatedAt || hasText(remote)) {
-        const normalized = { case: remote.case ?? "", marketGap: remote.marketGap ?? "", breakers: remote.breakers ?? "" };
-        savedSnapshot.current = JSON.stringify(normalized);
-        setThesis(normalized);
-      }
-      else {
-        savedSnapshot.current = JSON.stringify({ case: "", marketGap: "", breakers: "" });
-        const local = loadThesis(m.symbol);
-        const oldNote = loadOldNote(m.symbol);
-        const migrated = { ...local, case: local.case || oldNote };
-        setThesis(migrated);
-      }
+      const saved = normal(remote);
+      savedSnapshot.current = JSON.stringify(saved);
+      const draft = readDrafts()[owner]?.[m.symbol];
+      setThesis(draft ? normal(draft) : saved);
       setSaveState("saved");
       setReady(true);
     }).catch(() => {
-      if (cancelled) return;
-      setSaveState("offline");
-      const local = loadThesis(m.symbol);
-      setThesis({ ...local, case: local.case || loadOldNote(m.symbol) });
-      savedSnapshot.current = JSON.stringify({ case: "", marketGap: "", breakers: "" });
-      setReady(true);
+      // Without the saved copy an edit could overwrite it, so the boxes stay
+      // read-only until it loads
+      if (!cancelled) setSaveState("unavailable");
     });
     return () => { cancelled = true; };
-  }, [m?.symbol]);
+  }, [m?.symbol, owner]);
   useEffect(() => {
     if (!ready || !m?.symbol) return;
-    try {
-      const all = JSON.parse(localStorage.getItem(THESIS_KEY) || "{}");
-      all[m.symbol] = thesis;
-      localStorage.setItem(THESIS_KEY, JSON.stringify(all));
-    } catch {}
     const snapshot = JSON.stringify(thesis);
-    if (snapshot === savedSnapshot.current) return;
+    if (snapshot === savedSnapshot.current) { writeDraft(owner, m.symbol, null); return; }
+    writeDraft(owner, m.symbol, thesis);
     setSaveState("saving");
     const sequence = ++saveSeq.current;
     const timer = setTimeout(() => {
       api.saveThesis(m.symbol, thesis).then(() => {
-        if (sequence === saveSeq.current) { savedSnapshot.current = snapshot; setSaveState("saved"); }
+        if (sequence !== saveSeq.current) return;
+        savedSnapshot.current = snapshot;
+        writeDraft(owner, m.symbol, null);
+        setSaveState("saved");
       }).catch(() => {
         if (sequence === saveSeq.current) setSaveState("offline");
       });
     }, 500);
     return () => clearTimeout(timer);
-  }, [ready, m?.symbol, thesis]);
+  }, [ready, m?.symbol, owner, thesis]);
   if (!m) return null;
   const monitors = [];
   if (m.salesGrowth3y != null) monitors.push({ label: "Revenue trend", detail: `Three-year sales CAGR is ${pct(m.salesGrowth3y)}. Check future filings for acceleration or a sustained slowdown.` });
@@ -110,10 +105,10 @@ export default function ThesisMonitor({ metrics: m }) {
             ["marketGap", "What might the market be missing?", "Write the evidence that supports your differentiated view."],
             ["breakers", "What would change your view?", "Set measurable conditions to review, based on this company."],
           ].map(([key, label, placeholder]) => (
-            <label key={key} style={{ fontSize: 11.5, color: "var(--t2)" }}>{label}<textarea value={thesis[key]} onChange={e => setThesis(s => ({ ...s, [key]: e.target.value }))} placeholder={placeholder} style={{ ...editStyle, display: "block", marginTop: 5 }} /></label>
+            <label key={key} style={{ fontSize: 11.5, color: "var(--t2)" }}>{label}<textarea value={thesis[key]} disabled={!ready} onChange={e => setThesis(s => ({ ...s, [key]: e.target.value }))} placeholder={placeholder} style={{ ...editStyle, display: "block", marginTop: 5, opacity: ready ? 1 : 0.6 }} /></label>
           ))}
         </div>
-        <div role="status" style={{ fontSize: 10, color: saveState === "offline" ? "var(--yellow)" : "var(--t3)", marginTop: 7 }}>{saveState === "loading" ? "Loading your saved thesis…" : saveState === "saving" ? "Saving to your account…" : saveState === "offline" ? "Could not sync to your account. Your latest edits remain in this browser; sign in and reload to retry." : "Saved to your account. A local browser copy is kept as a fallback."}</div>
+        <div role="status" style={{ fontSize: 10, color: saveState === "offline" || saveState === "unavailable" ? "var(--yellow)" : "var(--t3)", marginTop: 7 }}>{saveState === "loading" ? "Loading your saved thesis…" : saveState === "saving" ? "Saving to your account…" : saveState === "offline" ? "Couldn't save to your account. Your edits are kept in this browser and saved the next time you open this stock." : saveState === "unavailable" ? "Couldn't load your saved thesis. Reload the page to try again." : "Saved to your account."}</div>
       </div>
     </section>
   );

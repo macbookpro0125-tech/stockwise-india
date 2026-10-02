@@ -28,6 +28,8 @@ data/shareholding/
 # The Performance tab's record of each strategy's picks — written as the app
 # runs, so it's data, not source
 data/performance-snapshots.json
+# …and the monthly research-score cohorts (performance.js)
+data/research-score-cohorts.json
 
 # Production build output
 dist/

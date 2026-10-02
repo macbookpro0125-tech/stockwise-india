@@ -55,7 +55,14 @@ export default function ValuationExplorer({ metrics: m, price, levels, mosPct, e
   const [expanded, setExpanded] = useState(false);
 
   const eps = Number(epsInput) || Number(m?.valuationEps) || 0;
-  const fcfPerShare = m?.fcfCr > 0 && m?.sharesCr > 0 ? m.fcfCr / m.sharesCr : null;
+  // A 3-year average, not one year: a company building plants can show
+  // almost no free cash flow in a single year (Varun Beverages: ₹31 a share
+  // against a ₹425 price on its latest year alone)
+  const fcfYears = (m?.history ?? []).slice(0, 3).map(h => h.fcfCr).filter(Number.isFinite);
+  const fcfBase = fcfYears.length >= 2 ? fcfYears.reduce((a, v) => a + v, 0) / fcfYears.length : m?.fcfCr;
+  const fcfBasis = fcfYears.length >= 2 ? `${fcfYears.length}-year average` : "Latest-year";
+  const fcfPerShare = fcfBase > 0 && m?.sharesCr > 0 ? fcfBase / m.sharesCr : null;
+  const heavyInvestment = fcfPerShare != null && eps > 0 && fcfPerShare < eps * 0.5;
   const dcf = useMemo(() => fcfDcfPerShare(fcfPerShare, dcfFcfGrowth, discountRate, terminalGrowth), [fcfPerShare, dcfFcfGrowth, discountRate, terminalGrowth]);
   const sensitivity = [
     { label: `Bear · ${bearGrowth}%`, growth: bearGrowth },
@@ -100,7 +107,10 @@ export default function ValuationExplorer({ metrics: m, price, levels, mosPct, e
         <div style={{ padding: 12, background: "var(--s1)", border: "1px solid var(--bdr)", borderRadius: 9 }}>
           <div style={{ fontSize: 11, color: "var(--t3)" }}>Simplified 5Y cash-flow DCF</div>
           <div style={{ marginTop: 4, fontSize: 18, color: "var(--t1)", fontWeight: 700, ...mono }}>{money(dcf)}</div>
-          <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 4 }}>{dcf == null ? "Needs positive reported FCF and discount rate above terminal growth" : `FCF/share ₹${fcfPerShare.toFixed(2)} · ${dcfFcfGrowth}% FCF growth · ${discountRate}% discount · ${terminalGrowth}% terminal`}</div>
+          <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 4 }}>{dcf != null ? `${fcfBasis} FCF/share ₹${fcfPerShare.toFixed(2)} · ${dcfFcfGrowth}% FCF growth · ${discountRate}% discount · ${terminalGrowth}% terminal`
+            : fcfBase != null && fcfBase <= 0 ? `Free cash flow was below zero on a ${fcfBasis.toLowerCase()} basis (heavy investment), so a cash-flow model can't value it`
+              : "Needs positive reported FCF and a discount rate above terminal growth"}</div>
+          {heavyInvestment && dcf != null && <div style={{ fontSize: 10.5, color: "var(--yellow)", marginTop: 4 }}>Cash flow is well under profit (heavy investment), so this model undervalues a company still building capacity.</div>}
         </div>
         <div style={{ padding: 12, background: "var(--s1)", border: "1px solid var(--bdr)", borderRadius: 9 }}>
           <div style={{ fontSize: 11, color: "var(--t3)" }}>EPS growth implied by current price</div>
@@ -144,7 +154,7 @@ export default function ValuationExplorer({ metrics: m, price, levels, mosPct, e
               <tbody>{sensitivity.map(row => <tr key={row.label}><th style={{ textAlign: "left", padding: 7, borderTop: "1px solid var(--bdr)", color: "var(--t2)", fontWeight: 550 }}>{row.label}</th>{multiples.map((multiple, i) => <td key={`${row.label}-${i}`} style={{ textAlign: "right", padding: 7, borderTop: "1px solid var(--bdr)", color: "var(--t1)", ...mono }}>{money(eps > 0 ? eps * (1 + row.growth / 100) ** years * multiple : null)}</td>)}</tr>)}</tbody>
             </table>
           </div>
-          <div style={{ fontSize: 10.5, color: "var(--t3)", lineHeight: 1.55, marginTop: 10 }}>The DCF discounts five years of reported FCF/share plus a terminal value. It is highly sensitive to assumptions and is omitted when FCF is zero/negative or unavailable. It is not included in the research score. FCF is CFO less capex; capital structure and future reinvestment needs are not forecast.</div>
+          <div style={{ fontSize: 10.5, color: "var(--t3)", lineHeight: 1.55, marginTop: 10 }}>The DCF grows the last three years' average FCF/share for five years and adds a terminal value. It is highly sensitive to assumptions and is omitted when FCF is zero/negative or unavailable. It is not included in the research score. FCF is CFO less capex; capital structure and future reinvestment needs are not forecast.</div>
         </div>
       )}
     </section>
