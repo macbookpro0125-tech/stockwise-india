@@ -67,7 +67,7 @@ export function facts(xml, contexts, tag) {
 
 // Bump when the stored shape changes — fetch-market.js re-fetches any file on
 // an older schema instead of treating it as done.
-export const SCHEMA = 4; // 3: capex, current liabilities, cost of goods, long-term debt (FCF, Piotroski); 4: lease liabilities
+export const SCHEMA = 5; // 3: capex, current liabilities, cost of goods, long-term debt (FCF, Piotroski); 4: lease liabilities; 5: cash and liquid investments, promoter history
 const YEARS = 6; // 5-year growth needs six year-ends
 const DOWNLOAD_CONCURRENCY = 3;
 
@@ -101,6 +101,12 @@ export const TAGS = {
   materials: ["CostOfMaterialsConsumed"],
   purchases: ["PurchasesOfStockInTrade"],
   inventoryChange: ["ChangesInInventoriesOfFinishedGoodsWorkInProgressAndStockInTrade"],
+  // Net debt and enterprise value: cash, fixed deposits ("other bank
+  // balances") and current investments — mostly liquid funds, which is where
+  // companies like TCS keep most of their cash. Ind AS companies only.
+  cash: ["CashAndCashEquivalents"],
+  bankBalances: ["BankBalanceOtherThanCashAndCashEquivalents"],
+  currentInvestments: ["CurrentInvestments"],
 };
 
 export function firstFacts(xml, contexts, tags) {
@@ -263,6 +269,12 @@ function extractYear(xml, row, template = templateOf(row.xbrl)) {
     cogs: sumKnown(r.year(TAGS.materials), r.year(TAGS.purchases), r.year(TAGS.inventoryChange)),
     // Lenders' leases are a rounding error next to their deposits and bonds
     leases: template === "INDAS" ? leasesOf(xml, row) : null,
+    // A lender's cash is the stock it lends from, not a cushion against debt.
+    // Only where the balance sheet is there (equity known): a filing without
+    // one says nothing about cash, and null must not read as "no cash".
+    ...(template === "INDAS" && equity != null
+      ? { cash: r.atEnd(TAGS.cash), bankBalances: r.atEnd(TAGS.bankBalances), currentInvestments: r.atEnd(TAGS.currentInvestments) }
+      : { cash: null, bankBalances: null, currentInvestments: null }),
   };
 }
 

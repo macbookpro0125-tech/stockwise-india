@@ -34,9 +34,20 @@ export async function shareholdingFilings(symbol) {
 }
 
 export async function fetchShareholding(symbol) {
-  const [latest] = await shareholdingFilings(symbol);
-  if (!latest) throw new Error(`No shareholding filing for ${symbol}`);
-  return readShareholdingFiling(latest);
+  const filings = await shareholdingFilings(symbol);
+  if (!filings.length) throw new Error(`No shareholding filing for ${symbol}`);
+  return { ...(await readShareholdingFiling(filings[0])), promoterHistory: promoterHistory(filings) };
+}
+
+// The promoter group's share at each of the last five years' quarter ends,
+// newest first — NSE's list of filings carries it, so this costs no extra
+// request. For the score's "is promoter ownership stable?" check.
+function promoterHistory(filings) {
+  return filings.slice(0, 21).flatMap(f => {
+    const end = parseQeDate(f.date);
+    const pct = Number(f.pr_and_prgrp);
+    return end && f.pr_and_prgrp !== "" && Number.isFinite(pct) ? [{ asOfIso: end.toISOString().slice(0, 10), pct }] : [];
+  });
 }
 
 // One quarter's filing (a row from shareholdingFilings) read in full
