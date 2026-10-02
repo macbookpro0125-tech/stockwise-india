@@ -1,16 +1,25 @@
 import { useState, useEffect } from "react";
 
-// The few pages with their own web address: the front page, /privacy and
-// /disclaimer — so they can be linked to and shared. The app itself switches
-// views without changing the address.
+// The pages with their own web address: the front page, /privacy,
+// /disclaimer and each stock page (/stock/TCS) — so they can be linked to,
+// refreshed, and left with the browser's Back button. The tabs switch views
+// without changing the address.
 
 const NAVIGATE = "stockwise:navigate";
 
-export function navigate(path) {
-  if (path !== window.location.pathname) window.history.pushState(null, "", path);
+export function navigate(path, { replace = false, state = null } = {}) {
+  if (path !== window.location.pathname) window.history[replace ? "replaceState" : "pushState"](state, "", path);
   window.dispatchEvent(new Event(NAVIGATE));
   window.scrollTo(0, 0);
 }
+
+// /stock/M%26M -> "M&M"; null for any other address
+export function stockFromPath(path) {
+  const m = /^\/stock\/([^/]+)\/?$/.exec(path);
+  if (!m) return null;
+  try { return decodeURIComponent(m[1]).toUpperCase(); } catch { return null; }
+}
+export const stockPath = symbol => `/stock/${encodeURIComponent(symbol)}`;
 
 export function usePath() {
   const [path, setPath] = useState(window.location.pathname);
