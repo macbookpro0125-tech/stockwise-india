@@ -73,6 +73,9 @@ export default function PerformanceView({ onOpenStock }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, gap: 10, flexWrap: "wrap" }}>
         <div>
           <div style={{ fontSize: 18, fontWeight: 700, color: "var(--t1)", letterSpacing: "-0.02em" }}>Strategy performance</div>
+          <div style={{ fontSize: 12, color: "var(--t2)", marginTop: 3, maxWidth: 560, lineHeight: 1.5 }}>
+            How each strategy's top 10 has moved since it was recorded — a record of past screen results, not a forecast or advice.
+          </div>
           {data?.snapshotCount > 0 && (
             <div style={{ fontSize: 12, color: "var(--t3)", marginTop: 3 }}>
               {data.snapshotCount} snapshot{data.snapshotCount === 1 ? "" : "s"} · prices for {data.pricedTickers}/{data.totalTickers} stocks
