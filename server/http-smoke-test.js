@@ -92,6 +92,8 @@ async function main() {
 
   const thesisUnauth = await fetch(`${BASE}/api/thesis/TCS`);
   assert(thesisUnauth.status === 401, "investment theses require a signed-in account");
+  const filingSummaryUnauth = await fetch(`${BASE}/api/stock/VBL/filings/0/summary`);
+  assert(filingSummaryUnauth.status === 401, "full filing attachments are available only in a signed-in session");
   const emptyThesis = await (await fetch(`${BASE}/api/thesis/TCS`, { headers: { Cookie: aliceCookie } })).json();
   assert(emptyThesis.ticker === "TCS" && emptyThesis.case === "" && emptyThesis.updatedAt == null, "a new account gets an empty, symbol-specific thesis");
   const savedThesis = await (await json("PUT", "/api/thesis/TCS", aliceCookie, { case: "Recurring demand", marketGap: "Margin durability", breakers: "Two years of falling cash conversion" })).json();

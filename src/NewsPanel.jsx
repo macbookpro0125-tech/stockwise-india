@@ -39,6 +39,10 @@ export default function NewsPanel({ symbol }) {
   const [filings, setFilings] = useState(null);
   const [news, setNews] = useState(null);
   const [newsError, setNewsError] = useState(null);
+  const [summaries, setSummaries] = useState({});
+  const [openSummary, setOpenSummary] = useState(null);
+  const activeSymbol = useRef(symbol);
+  activeSymbol.current = symbol;
 
   useEffect(() => {
     let cancelled = false;
@@ -61,12 +65,23 @@ export default function NewsPanel({ symbol }) {
   const announcements = filings?.announcements ?? [];
   const reports = filings?.annualReports ?? [];
   const items = tab === "filings"
-    ? announcements.map(a => ({ key: `${a.date}-${a.title}`, title: a.title, sub: a.summary, meta: nseDate(a.date), url: a.url, review: a.review }))
+    ? announcements.map((a, index) => ({ key: `${a.date}-${a.title}`, index, title: a.title, sub: a.summary, meta: nseDate(a.date), url: a.url, review: a.review }))
     : tab === "news"
       ? (news ?? []).map(n => ({ key: n.url, title: n.title, sub: null, meta: [n.publisher, fmtDate(n.date)].filter(Boolean).join(" · "), url: n.url }))
       : [];
   const shown = expanded ? items : items.slice(0, INITIAL);
   const switchTab = t => { setTab(t); setExpanded(false); };
+  const readAttachment = async index => {
+    const key = `${symbol}:${index}`;
+    if (summaries[key]) { setOpenSummary(openSummary === key ? null : key); return; }
+    setOpenSummary(key);
+    setSummaries(prev => ({ ...prev, [key]: { loading: true } }));
+    try {
+      const result = await api.filingSummary(symbol, index);
+      if (activeSymbol.current === symbol) setSummaries(prev => ({ ...prev, [key]: result }));
+    }
+    catch (error) { if (activeSymbol.current === symbol) setSummaries(prev => ({ ...prev, [key]: { error: error.message } })); }
+  };
 
   return (
     <div style={{ border: "1px solid var(--bdr2)", borderRadius: 14, background: "var(--s2)", padding: 16, marginBottom: 16 }}>
@@ -109,23 +124,44 @@ export default function NewsPanel({ symbol }) {
 
       {shown.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          {shown.map((a, i) => (
-            <a key={`${a.key}-${i}`} href={a.url || undefined} target={a.url ? "_blank" : undefined} rel={a.url ? "noopener noreferrer" : undefined}
-              style={{ display: "block", textDecoration: "none", color: "inherit", padding: "10px 0", borderTop: i === 0 ? "none" : "1px solid var(--bdr)" }}>
+          {shown.map((a, i) => {
+            const summaryKey = `${symbol}:${a.index}`;
+            const doc = summaries[summaryKey];
+            const titleBlock = (
               <div style={{ display: "flex", gap: 10, alignItems: "baseline", flexWrap: "wrap" }}>
                 <span style={{ fontSize: 10, color: "var(--t3)", whiteSpace: "nowrap", ...MONO }}>{a.meta || "—"}</span>
                 <span style={{ fontSize: 13, fontWeight: 600, color: "var(--t1)", lineHeight: 1.45, flex: "1 1 200px", minWidth: 0 }}>{a.title}</span>
               </div>
-              {a.sub && <div style={{ fontSize: 12, color: "var(--t2)", lineHeight: 1.55, marginTop: 4 }}>{a.sub}</div>}
-              {tab === "filings" && a.review && (
+            );
+            const reviewBlock = tab === "filings" && a.review && <>
                 <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap", marginTop: 6 }}>
                   <span style={{ fontSize: 10, fontWeight: 650, padding: "2px 7px", borderRadius: 999, color: a.review.priority === "Review promptly" ? "var(--red)" : a.review.priority === "Read for context" ? "var(--yellow)" : "var(--t3)", background: a.review.priority === "Review promptly" ? "var(--red-dim)" : a.review.priority === "Read for context" ? "var(--yellow-dim)" : "var(--s3)" }}>{a.review.priority}</span>
                   <span style={{ fontSize: 10.5, color: "var(--t3)" }}>{a.review.category} · Matched: “{a.review.matchedText}”</span>
                 </div>
-              )}
-              {tab === "filings" && a.review && <div style={{ fontSize: 11, color: "var(--t2)", lineHeight: 1.5, marginTop: 4 }}>{a.review.reviewPrompt}{a.review.extractedAmounts?.length ? ` Amounts stated in notice: ${a.review.extractedAmounts.join(", ")}.` : ""}</div>}
-            </a>
-          ))}
+                <div style={{ fontSize: 11, color: "var(--t2)", lineHeight: 1.5, marginTop: 4 }}>{a.review.reviewPrompt}{a.review.extractedAmounts?.length ? ` Amounts stated in notice: ${a.review.extractedAmounts.join(", ")}.` : ""}</div>
+              </>;
+            const docBlock = tab === "filings" && a.url && <>
+              <button type="button" onClick={() => readAttachment(a.index)} style={{ marginTop: 8, padding: "5px 10px", borderRadius: 7, border: "1px solid var(--bdr2)", background: "var(--s3)", color: "var(--accent)", fontSize: 11, fontWeight: 650, cursor: "pointer" }}>
+                {doc?.loading ? "Reading filing…" : openSummary === summaryKey && doc ? "Hide document summary" : doc ? "Show document summary" : "Read full filing"}
+              </button>
+              {openSummary === summaryKey && doc && <div style={{ marginTop: 8, padding: 11, borderRadius: 9, border: "1px solid var(--bdr2)", background: "var(--s3)" }}>
+                {doc.loading ? <div style={{ fontSize: 12, color: "var(--t2)" }}>Opening the original attachment and extracting its text…</div> : doc.error
+                  ? <div style={{ fontSize: 12, color: "var(--red)" }}>{doc.error}</div>
+                  : doc.evidence ? <>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "var(--t1)" }}>Full attachment read · {doc.kind}{doc.pageCount ? ` · ${doc.pagesRead}/${doc.pageCount} pages` : ""} · {doc.charactersRead.toLocaleString()} characters</div>
+                    {doc.category && <div style={{ fontSize: 11, color: "var(--t2)", marginTop: 4 }}>{doc.category}{doc.matchedText ? ` · Matched in document: “${doc.matchedText}”` : ""}{doc.amounts?.length ? ` · Amounts found: ${doc.amounts.join(", ")}` : ""}</div>}
+                    <div style={{ display: "grid", gap: 7, marginTop: 9 }}>{doc.evidence.map((passage, j) => <div key={j} style={{ fontSize: 11, color: "var(--t2)", lineHeight: 1.55, paddingLeft: 9, borderLeft: "2px solid var(--accent)" }}><span style={{ color: "var(--t3)", fontSize: 10 }}>{passage.page ? `Page ${passage.page} · ` : "Extract · "}</span>“{passage.text}”</div>)}</div>
+                    <div style={{ fontSize: 10, color: "var(--t3)", lineHeight: 1.5, marginTop: 8 }}>{doc.method} {doc.limitation}</div>
+                    {doc.sourceUrl && <a href={doc.sourceUrl} target="_blank" rel="noopener noreferrer" style={{ display: "inline-block", fontSize: 10, color: "var(--accent)", marginTop: 6 }}>Open original on NSE ↗</a>}
+                  </> : doc.error && <div style={{ fontSize: 12, color: "var(--red)" }}>{doc.error}</div>}
+              </div>}
+            </>;
+            const rowStyle = { display: "block", color: "inherit", padding: "10px 0", borderTop: i === 0 ? "none" : "1px solid var(--bdr)" };
+            return tab === "filings" ? <div key={`${a.key}-${i}`} style={rowStyle}>
+              {a.url ? <a href={a.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", color: "inherit" }}>{titleBlock}{a.sub && <div style={{ fontSize: 12, color: "var(--t2)", lineHeight: 1.55, marginTop: 4 }}>{a.sub}</div>}</a> : <>{titleBlock}{a.sub && <div style={{ fontSize: 12, color: "var(--t2)", lineHeight: 1.55, marginTop: 4 }}>{a.sub}</div>}</>}
+              {reviewBlock}{docBlock}
+            </div> : <a key={`${a.key}-${i}`} href={a.url || undefined} target={a.url ? "_blank" : undefined} rel={a.url ? "noopener noreferrer" : undefined} style={{ ...rowStyle, textDecoration: "none" }}>{titleBlock}</a>;
+          })}
         </div>
       )}
 
@@ -137,7 +173,7 @@ export default function NewsPanel({ symbol }) {
 
       <div style={{ fontSize: 10, color: "var(--t3)", marginTop: 10, lineHeight: 1.5 }}>
         {tab === "filings"
-          ? "The company's own NSE announcements, newest first. Review prompts use keyword rules on NSE's description and attachment text; open the source to verify context. No positive/negative impact is inferred."
+          ? "The company's own NSE announcements, newest first. Read full attachments to see extracted, quoted passages with source pages. Automated text reading can miss context; verify the original. No positive/negative impact is inferred."
           : tab === "reports"
             ? "Annual reports as filed with NSE."
             : "Press coverage via Google News. The framing is each publisher's own, not a recommendation — price-prediction pieces are filtered out."}
