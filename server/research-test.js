@@ -99,6 +99,13 @@ assert(qn.flags.some(f => f.id === "auditQualified" && f.severity === "critical"
 assert(qn.overall.status === "review-required" && qn.overall.score <= 39 && qn.overall.stance === "Review required", "…which holds the overall score at 39 or under, marked Review required");
 const qualifiedBefore = metricsOf(company({ tweak: (y, i) => (i === 2 ? { ...y, auditOpinion: "qualified" } : y) }), snapshot());
 assert(itemOf(qualifiedBefore.research, "governance", "auditor").score === 50 && qualifiedBefore.research.flags.length === 0, "an older qualification scores 50 and isn't a red flag");
+const resignedSnap = { ...snapshot(), auditorResignations: { TESTCO: ["2026-05-12"] } };
+const resigned = metricsOf(company(), resignedSnap).research;
+assert(itemOf(resigned, "governance", "auditor").score === 50 && /resigned on 12 May 2026/.test(itemOf(resigned, "governance", "auditor").reason), "an auditor's resignation halves the audit check and says when");
+assert(resigned.flags.some(f => f.id === "auditorResigned" && f.severity === "caution") && resigned.overall.status === "rated", "…shows as a caution, without the review-required override");
+const knownNone = metricsOf(company(), { ...snapshot(), auditorResignations: {} }).research;
+assert(/no auditor resignation/.test(itemOf(knownNone, "governance", "auditor").reason) && knownNone.flags.length === 0, "resignations checked and none found: the reason says so");
+assert(!/resignation/.test(itemOf(r, "governance", "auditor").reason), "resignations not checked: the reason doesn't claim there were none");
 const noOpinion = metricsOf(company({ tweak: y => ({ ...y, auditOpinion: null }) }), snapshot());
 assert(itemOf(noOpinion.research, "governance", "auditor").score == null, "no audit opinion on file: missing, not a pass");
 

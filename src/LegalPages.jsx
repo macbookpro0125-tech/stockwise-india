@@ -143,7 +143,7 @@ export function DisclaimerPage({ signedIn }) {
         Quality scores, research scores, fair values, price levels (the three phase levels, the stop-loss level and the
         upper level) and the other figures are calculated automatically, by fixed formulas, from public data: companies'
         filings on NSE and market prices. They know nothing the formulas don't — news, management quality, or what a
-        company will do next — and checks the filings can't show, such as related-party deals or auditor resignations, are left
+        company will do next — and checks the filings can't show, such as related-party deals or competitive position, are left
         out rather than guessed. The weights behind the scores are a stated starting point, not a model proven to predict
         returns. Labels such as "In the Phase 1 zone" or "Constructive, with material questions" describe the numbers.
         They are not advice about what you should do.
