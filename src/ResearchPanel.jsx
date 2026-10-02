@@ -53,7 +53,7 @@ function GroupCard({ g, word }) {
           <Bar value={g.score} color={tone.color} />
           <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "2px 8px", fontSize: 11, color: "var(--t3)", marginTop: 7, ...MONO }}>
             <span style={{ whiteSpace: "nowrap" }}>{g.points != null ? `${g.points}/${g.weight} pts` : "Not enough data"}</span>
-            <span style={{ whiteSpace: "nowrap" }}>{Math.round(g.coverage * 100)}% total · {Math.round(g.supportedCoverage * 100)}% supported</span>
+            <span style={{ whiteSpace: "nowrap" }}>{g.checked} of {g.total} checked</span>
           </div>
         </>
       )}
@@ -188,7 +188,7 @@ export default function ResearchPanel({ research: r }) {
         <div style={{ fontSize: 13, fontWeight: 600, color: "var(--t1)", margin: "6px 0 2px" }}>Why this score?</div>
         {r.groups.map(g => (
           <Expand key={g.id} title={g.label}
-            right={!g.applicable ? "doesn't apply" : g.score == null ? `not enough data · ${Math.round(g.coverage * 100)}% total · ${Math.round(g.supportedCoverage * 100)}% supported` : `${n(g.score)}/100 · ${Math.round(g.coverage * 100)}% total · ${Math.round(g.supportedCoverage * 100)}% supported`}>
+            right={!g.applicable ? "doesn't apply" : g.score == null ? `not enough data · ${g.checked} of ${g.total} checked` : `${n(g.score)}/100 · ${g.checked} of ${g.total} checked`}>
             {!g.applicable && <div style={{ fontSize: 12, color: "var(--t3)", padding: "6px 0" }}>{g.items[0]?.na}</div>}
             {g.applicable && g.items.map(item => <ItemRow key={item.id} item={item} weight={item.weight} />)}
           </Expand>
@@ -215,7 +215,7 @@ export default function ResearchPanel({ research: r }) {
         <Expand title="How the scores work">
           <ul style={{ margin: "4px 0 0", padding: "0 0 0 16px", display: "flex", flexDirection: "column", gap: 7, fontSize: 12, color: "var(--t2)", lineHeight: 1.55 }}>
             <li><strong>Quality (0–100)</strong> weighs six groups: business quality 25, earnings quality 20, balance sheet 15, management &amp; governance 15, growth 10 and valuation 15. Each check scores 0–100 against stated bands — ROCE of 13% scores 50, 20% scores 75, 33% or more scores 100.</li>
-            <li><strong>Nothing is guessed.</strong> A check the filings can't show — related-party deals, competitive position, forecasts, market size, or a DCF assumption set — is left out of the score. The stock page has an editable cash-flow scenario model, but it is not part of the score. Missing data never counts as zero or as a pass. A group needs at least 70% of its currently supported metric weight checked to be scored. Unsupported checks remain visible and lower total coverage and confidence.</li>
+            <li><strong>Nothing is guessed.</strong> A check the filings can't show — related-party deals, competitive position, forecasts, market size, a cash-flow model — is listed as not checked and left out of the score (the cash-flow scenario on the stock page uses your own assumptions, so it isn't scored either). Missing data never counts as zero or as a pass. A group needs over a third of its weight checked to be scored.</li>
             <li><strong>Overall research score</strong> blends quality without valuation (70%) with valuation (30%) so one strong side can't fully hide a weak one, then trims up to 35% for price swings and data gaps. Debt and pledging count once, in quality, not again as risk.</li>
             <li><strong>Red flags override.</strong> If the auditor qualified the latest accounts, the overall score stops at 39 and reads "Review required" until a clean audit. An auditor's resignation in the last three years halves the audit check and shows as a caution — the reasons are in the company's disclosure. Lenders, and companies whose balance sheet or shareholding can't be checked, have quality capped at 69.</li>
             <li><strong>Technical setup and risk</strong> are separate lenses. The price trend never moves the quality or overall score.</li>

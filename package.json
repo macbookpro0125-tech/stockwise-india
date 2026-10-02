@@ -15,7 +15,7 @@
     "dev": "vite",
     "build": "vite build",
     "start": "node --no-warnings server/http-server.js",
-    "test": "node server/auth-smoke-test.js && node server/http-smoke-test.js && node --no-warnings server/research-test.js && node --no-warnings server/performance-test.js && node server/upstream-test.js",
+    "test": "node server/auth-smoke-test.js && node server/http-smoke-test.js && node --no-warnings server/research-test.js && node --no-warnings server/performance-test.js && node server/upstream-test.js && node --no-warnings server/notice-tags-test.js",
     "video": "node scripts/record-demo.mjs",
     "screens": "node scripts/capture-screens.mjs"
   },

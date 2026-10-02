@@ -214,6 +214,9 @@ export async function getPerformance() {
     totalTickers: tickers.size,
     pricesDate: market?.pricesDate ?? null,
     researchStudy: {
+      // Cohorts are recorded by the background jobs; a copy without them
+      // (the free test copy, demo recordings) never builds a record
+      recording: process.env.DATA_JOBS !== "off",
       benchmark: "Nifty 500",
       returnType: "split-adjusted price return; dividends excluded",
       asOf: market?.pricesDate ?? null,

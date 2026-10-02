@@ -9,6 +9,7 @@ import { DATA_DIR } from "./paths.js";
 import { NSE_BASE, fetchJson } from "./fetch-nse.js";
 import { shareholdingFilings, readShareholdingFiling } from "./fetch-shareholding.js";
 import { allMetrics, researchBrief } from "./screen.js";
+import { isPeerIndustry } from "./research.js";
 import { fetchText as requestText } from "./upstream.js";
 
 const HOUR = 3600 * 1000;
@@ -108,8 +109,12 @@ export function companyFilings(symbol) {
 export function classifyAnnouncement(title = "", body = "") {
   const text = `${String(title)} ${String(body)}`.replace(/\s+/g, " ").trim();
   const rules = [
-    { priority: "Review promptly", category: "Audit / results", re: /qualified opinion|modified opinion|auditor resign(?:ation|ed)?|auditor change|delay.{0,40}(?:financial )?results|(?:financial )?results.{0,40}delay|fraud|forensic audit|insolvency|default|wilful defaulter|going concern/i, review: "Read the full notice and the linked filing; confirm the affected period, auditor or result detail." },
-    { priority: "Review promptly", category: "Regulatory / legal", re: /show cause|penalty|fine imposed|SEBI.{0,60}order|search and seizure|investigation|enforcement|court order|NCLT|litigation|material weakness/i, review: "Check the regulator/court, parties, amount, current status, and whether the company disclosed an appeal." },
+    // Precise phrases only: a clean audit says "unmodified opinion", most
+    // accounts mention a "going concern basis", and "insolvency" also turns up
+    // in a foreign registrar's name (Reliance's Cyprus subsidiary)
+    { priority: "Review promptly", category: "Audit / accounts", re: /(?<!un)qualified opinion|(?<!un)modified opinion|adverse opinion|disclaimer of opinion|statement on impact of audit qualification|auditor(?:s)?(?:'s)? resign(?:ation|ed)?|resignation of (?:the )?statutory auditor|delay.{0,40}(?:financial )?results|(?:financial )?results.{0,40}delay|\bfraud\b|forensic audit|material uncertainty.{0,80}going concern|going concern.{0,80}(?:doubt|uncertain)/i, review: "Read the full notice and the linked filing; confirm the affected period, auditor or result detail." },
+    { priority: "Review promptly", category: "Debt / insolvency", re: /corporate insolvency resolution|\bCIRP\b|insolvency (?:and bankruptcy )?(?:petition|application|proceeding)|admitted.{0,60}insolvency|\bdefault(?:ed)? (?:in|on) (?:the )?(?:re)?payment|\bdefault(?:ed)? (?:in|on) (?:the )?(?:interest|principal)|wilful defaulter/i, review: "Check the lender or creditor, the amount, the dates, and what the company says it is doing about it." },
+    { priority: "Review promptly", category: "Regulatory / legal", re: /show cause|penalty|fine imposed|SEBI.{0,60}order|search and seizure|investigation|enforcement directorate|court order|litigation|material weakness/i, review: "Check the regulator/court, parties, amount, current status, and whether the company disclosed an appeal." },
     { priority: "Review promptly", category: "Management change", re: /resignation.{0,60}(?:director|CFO|CEO|company secretary|auditor)|(?:director|CFO|CEO|company secretary).{0,60}resign/i, review: "Confirm the person's role, effective date, and the reason stated in the filing." },
     { priority: "Read for context", category: "Capital allocation / transaction", re: /acquisition|acquire|merger|amalgamation|divest|sale of|fund rais|preferential issue|qualified institutions placement|\bQIP\b|rights issue|buyback/i, review: "Check transaction size, funding, counterparties, approvals, and expected completion conditions." },
     { priority: "Read for context", category: "Operations / outlook", re: /capacity|plant|expansion|large order|order win|production|guidance|outlook|joint venture|subsidiary/i, review: "Check the disclosed amount, timing, execution milestones, and whether the notice states a financial impact." },
@@ -195,8 +200,10 @@ export function sectorPeers(symbol, limit = 30) {
   const { rows } = allMetrics();
   const me = rows.find(r => r.symbol === symbol);
   if (!me) return { sector: null, industry: null, peerBasis: null, peerCount: 0, benchmark: null, rows: [] };
-  const peerBasis = me.sector ? "sector" : me.industry ? "industry" : null;
-  const peerLabel = me.sector ?? me.industry ?? null;
+  // Sector first, then NSE's industry label — the same order as the research
+  // score's peer P/E, so the two never quote different cohorts
+  const peerBasis = me.sector ? "sector" : isPeerIndustry(me.industry) ? "industry" : null;
+  const peerLabel = peerBasis === "sector" ? me.sector : peerBasis === "industry" ? me.industry : null;
   if (!peerBasis) return { sector: null, industry: me.industry, peerBasis: null, peerLabel: null, peerCount: 0, benchmark: null, rows: [] };
   const cohort = rows.filter(r => r.symbol !== symbol && (peerBasis === "sector" ? r.sector === me.sector : r.industry === me.industry));
   const median = values => {

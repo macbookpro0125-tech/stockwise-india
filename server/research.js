@@ -21,7 +21,7 @@
 // Weights and bands are a stated starting point, not a fitted model — the
 // proposal says so too. Change them here and RESEARCH_VERSION together.
 
-export const RESEARCH_VERSION = "1.2";
+export const RESEARCH_VERSION = "1.3";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -425,18 +425,20 @@ const VALUATION = {
     {
       id: "peers", weight: 0.25, label: "P/E against comparable peers",
       compute(m, ctx) {
+        // The company's sector first (the same cohort the Peers panel shows);
+        // NSE's older industry label only when the sector is unknown or has
+        // too few P/Es — and never a catch-all like "Miscellaneous"
         const peers = ctx.peers ?? PEERS;
-        const industryPeers = peers instanceof Map ? peers.get(`industry:${m.industry}`) : peers.industries?.get(m.industry);
-        const useIndustry = industryPeers?.n >= 5;
-        if (useIndustry) m = { ...m, sector: `NSE industry ${m.industry}` };
-        if (!m.sector) return missing("Sector isn't known for this company — it's needed to compare with peers.");
-        const s = useIndustry ? industryPeers : peers instanceof Map ? (peers.get(m.sector) ?? peers.get(`sector:${m.sector}`)) : peers.sectors?.get(m.sector);
-        if (!s || s.n < 5) return missing(`Fewer than 5 ${m.sector} companies with a P/E to compare.`);
+        const bySector = m.sector ? (peers instanceof Map ? peers.get(m.sector) ?? peers.get(`sector:${m.sector}`) : peers.sectors?.get(m.sector)) : null;
+        const byIndustry = isPeerIndustry(m.industry) ? (peers instanceof Map ? peers.get(`industry:${m.industry}`) : peers.industries?.get(m.industry)) : null;
+        const [cohort, s] = bySector?.n >= 5 ? [m.sector, bySector] : byIndustry?.n >= 5 ? [`NSE industry ${m.industry}`, byIndustry] : [m.sector, bySector];
+        if (!cohort) return missing("Sector isn't known for this company — it's needed to compare with peers.");
+        if (!s || s.n < 5) return missing(`Fewer than 5 ${cohort} companies with a P/E to compare.`);
         const pe = closePe(m);
         if (pe == null) return missing("Loss-making — no P/E to compare.");
         const ratio = pe / s.median;
         const score = band(ratio, [[0.6, 100], [0.8, 75], [1, 50], [1.25, 25], [1.6, 0]]);
-        return checked(score, ratio, `${pe.toFixed(1)} vs ${s.median.toFixed(1)}`, `P/E of ${pe.toFixed(1)} against a median of ${s.median.toFixed(1)} for ${s.n} ${m.sector} companies — ${ratio < 0.95 ? "cheaper than" : ratio > 1.05 ? "dearer than" : "in line with"} peers.`);
+        return checked(score, ratio, `${pe.toFixed(1)} vs ${s.median.toFixed(1)}`, `P/E of ${pe.toFixed(1)} against a median of ${s.median.toFixed(1)} for ${s.n} ${cohort} companies — ${ratio < 0.95 ? "cheaper than" : ratio > 1.05 ? "dearer than" : "in line with"} peers.`);
       },
     },
     {
@@ -549,12 +551,18 @@ function technical(m) {
 // Sector P/E medians for the peer comparison, set by screen.js from the
 // whole market each time it recomputes — one company alone can't know them
 let PEERS = { sectors: new Map(), industries: new Map() };
+// NSE industry labels that name no real peer group
+const CATCH_ALL_INDUSTRIES = /^(miscellaneous|diversified|others?)$/i;
+export const isPeerIndustry = industry => !!industry && !CATCH_ALL_INDUSTRIES.test(industry);
 export const setResearchPeers = peers => { PEERS = peers; };
 
-// Require substantial evidence before scoring a category or a composite.
-// Checks absent from NSE filings remain missing; they do not count as passes.
-const MIN_GROUP_COVERAGE = 0.70;
-const MIN_SCORE_COVERAGE = 0.70;
+// A group counts once at least this share of its applicable weight is
+// checked; the quality score once its scored groups carry this share of the
+// applicable group weight. Looser than the proposal's 70%: NSE's filings reach
+// back only ~5 years, so one missing 5-year figure would leave HDFC Bank,
+// ICICI Bank or Nestle unrated, and hide a qualified audit behind "Not rated".
+const MIN_GROUP_COVERAGE = 0.35;
+const MIN_SCORE_COVERAGE = 0.6;
 const CAPPED_AT = 69;
 // The overall score's ceiling while a critical red flag is unresolved
 const FLAG_CEILING = 39;
@@ -568,22 +576,15 @@ function scoreGroup(group, m, ctx) {
   const applicable = items.filter(i => !i.na);
   const done = applicable.filter(i => i.score != null);
   const applicableWeight = applicable.reduce((a, i) => a + i.weight, 0);
-  // A known unsupported check (e.g. DCF, which is not implemented) remains
-  // visible and lowers total coverage, but cannot make the current scoring
-  // gate impossible to reach. Ordinary missing observations still count
-  // against supported coverage.
-  const supportedWeight = applicable.filter(i => !i.structural).reduce((a, i) => a + i.weight, 0);
   const doneWeight = done.reduce((a, i) => a + i.weight, 0);
   const coverage = applicableWeight > 0 ? doneWeight / applicableWeight : 0;
-  const supportedCoverage = supportedWeight > 0 ? doneWeight / supportedWeight : 0;
-  const score = applicable.length && supportedWeight > 0 && supportedCoverage >= MIN_GROUP_COVERAGE
-    ? done.reduce((a, i) => a + i.score * i.weight, 0) / doneWeight : null;
+  const score = applicable.length && coverage >= MIN_GROUP_COVERAGE ? done.reduce((a, i) => a + i.score * i.weight, 0) / doneWeight : null;
   return {
     id: group.id, label: group.label, weight: group.weight,
     applicable: applicable.length > 0,
     score: score == null ? null : r1(score),
     points: score == null ? null : r1((score * group.weight) / 100),
-    checked: done.length, total: applicable.length, coverage, supportedCoverage,
+    checked: done.length, total: applicable.length, coverage,
     items,
   };
 }

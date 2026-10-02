@@ -203,6 +203,9 @@ async function readJsonBody(req) {
 }
 
 function reportUpstreamFailure(res, requestId, error, fallback) {
+  // A known, lasting answer (a new listing's short price history, an
+  // attachment too large to read) is shown as is — retrying won't change it
+  if (error instanceof HttpError) { sendJson(res, error.status, { error: error.message, requestId }); return; }
   const status = error instanceof UpstreamError ? error.status : 502;
   if (error instanceof UpstreamError) console.error(JSON.stringify({ event: "upstream_request_failed", requestId, service: error.service, code: error.code, status: error.status }));
   else console.error(JSON.stringify({ event: "api_dependency_failed", requestId, errorName: error?.name, message: error?.message }));
@@ -477,6 +480,10 @@ export function createApp() {
             fundamentals = { ...(await fetchStockSummary(symbol)), name: info?.name ?? symbol, isin: info?.isin ?? null, fetchedAt: new Date().toISOString() };
             saveStock(symbol, fundamentals);
           } catch (e) {
+            if (e.noFilings) {
+              sendJson(res, 404, { error: `${info?.name ?? symbol} hasn't filed annual results in NSE's current format, so there's nothing to value or score.` });
+              return;
+            }
             reportUpstreamFailure(res, requestId, e, `Couldn't read ${info?.name ?? symbol}'s financials from NSE right now. Try again shortly.`);
             return;
           }
@@ -701,7 +708,14 @@ export function createApp() {
         if (userId == null) return;
         const chat = telegramChat(userId);
         if (!chat) { sendJson(res, 400, { error: "Connect Telegram first." }); return; }
-        await sendTelegram(chat.chatId, "Test message from <b>Stockwise India</b>. Your price alerts will arrive in this chat.");
+        try {
+          await sendTelegram(chat.chatId, "Test message from <b>Stockwise India</b>. Your price alerts will arrive in this chat.");
+        } catch (e) {
+          // Telegram's own reason ("bot was blocked by the user") tells the
+          // user what to do; a generic server error wouldn't
+          sendJson(res, 502, { error: `Telegram didn't take the test message — ${e.message.replace(/^Telegram \w+: /, "")}` });
+          return;
+        }
         sendJson(res, 200, { ok: true });
         return;
       }
