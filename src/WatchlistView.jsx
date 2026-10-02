@@ -90,7 +90,7 @@ export default function WatchlistView({ onOpenStock }) {
     );
   };
 
-  const wrap = children => <div style={{ maxWidth: 1240, margin: "0 auto", padding: "8px 20px 80px", animation: "fadeUp 280ms cubic-bezier(0,0,0.2,1) backwards" }}>{children}</div>;
+  const wrap = children => <div style={{ padding: "8px var(--page-x) 80px", animation: "fadeUp 280ms cubic-bezier(0,0,0.2,1) backwards" }}>{children}</div>;
 
   if (error) return wrap(<div style={{ padding: "14px 18px", borderRadius: 12, background: "var(--red-dim)", border: "1px solid var(--red-bdr)", color: "var(--red)", fontSize: 13 }}>Couldn't load your watchlist: {error}</div>);
   if (!data) return wrap(<div style={{ textAlign: "center", padding: "32px 0", fontSize: 12, color: "var(--t3)" }}>Loading watchlist…</div>);

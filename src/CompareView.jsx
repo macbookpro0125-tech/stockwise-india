@@ -85,8 +85,8 @@ export default function CompareView({ stocks, onClose }) {
   const section = { padding: "8px 16px 4px", fontSize: 11.5, fontWeight: 600, color: "var(--accent)", background: "color-mix(in srgb, var(--accent) 5%, transparent)", borderBottom: "1px solid var(--bdr)" };
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "color-mix(in srgb, var(--bg) 96%, transparent)", WebkitBackdropFilter: "blur(6px)", backdropFilter: "blur(6px)", overflowY: "auto", padding: "20px 16px" }}>
-      <div style={{ maxWidth: 900, margin: "0 auto" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "color-mix(in srgb, var(--bg) 96%, transparent)", WebkitBackdropFilter: "blur(6px)", backdropFilter: "blur(6px)", overflowY: "auto", padding: "20px var(--page-x)" }}>
+      <div>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
           <h2 style={{ fontSize: 20, fontWeight: 700, color: "var(--t1)", margin: 0 }}>Compare stocks ({stocks.length})</h2>
           <button onClick={onClose} className="btn-ghost" style={{ height: 34 }}><X size={15} /> Close</button>

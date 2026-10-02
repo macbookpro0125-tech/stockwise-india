@@ -44,8 +44,8 @@ export function SiteLink({ to, newTab = false, style, children }) {
 
 export function SiteFooter() {
   return (
-    <footer style={{ borderTop: "1px solid var(--bdr)", marginTop: 56, padding: "22px 20px 30px" }}>
-      <div style={{ maxWidth: 1240, margin: "0 auto", display: "flex", flexWrap: "wrap", gap: "10px 24px", alignItems: "center", justifyContent: "space-between", fontSize: 12, color: "var(--t3)" }}>
+    <footer style={{ borderTop: "1px solid var(--bdr)", marginTop: 56, padding: "22px var(--page-x) 30px" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "10px 24px", alignItems: "center", justifyContent: "space-between", fontSize: 12, color: "var(--t3)" }}>
         <span>Stockwise India · An educational tool, not investment advice</span>
         <nav style={{ display: "flex", gap: 18 }}>
           <SiteLink to="/disclaimer">Disclaimer</SiteLink>

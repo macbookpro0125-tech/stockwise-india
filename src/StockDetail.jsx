@@ -404,7 +404,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
 
   if (error) {
     return (
-      <div style={{ maxWidth: 1000, margin: "0 auto", padding: "28px 20px" }}>
+      <div style={{ padding: "28px var(--page-x)" }}>
         <button className="btn-ghost" onClick={onBack} style={{ marginBottom: 16 }}><ArrowLeft size={15} /> Back</button>
         <div style={{ display: "flex", gap: 8, alignItems: "flex-start", padding: 12, borderRadius: 8, background: "var(--red-dim)", border: "1px solid var(--red-bdr)", color: "var(--red)", fontSize: 13 }}><TriangleAlert size={16} style={{ flexShrink: 0, marginTop: 1 }} /> {error}</div>
       </div>
@@ -439,7 +439,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
   );
 
   return (
-    <div style={{ maxWidth: 1000, margin: "0 auto", padding: "8px 20px 80px", color: "var(--t1)" }}>
+    <div style={{ padding: "8px var(--page-x) 80px", color: "var(--t1)" }}>
       {showAlertModal && (
         <CreateAlertModal stock={{ symbol: data.symbol, name: data.name, cmp: price, p1: levels?.p1, p2: levels?.p2, p3: levels?.p3 }} onClose={() => setShowAlertModal(false)} />
       )}
@@ -567,7 +567,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
             <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
               <span style={{ fontSize: 14, color: "var(--t2)", fontWeight: 500 }}>Rs</span>
               <input type="number" value={actionPrice} onChange={e => { setActionPrice(e.target.value); setPriceLabel("Your price"); }} placeholder="Current price"
-                style={{ flex: "1 1 140px", minWidth: 120, height: 42, padding: "0 14px", border: "1px solid var(--accent)", borderRadius: 8, fontSize: 15, fontWeight: 500, outline: "none", background: "var(--s1)", color: "var(--t1)" }} />
+                style={{ flex: "1 1 140px", minWidth: 120, maxWidth: 320, height: 42, padding: "0 14px", border: "1px solid var(--accent)", borderRadius: 8, fontSize: 15, fontWeight: 500, outline: "none", background: "var(--s1)", color: "var(--t1)" }} />
               {data.quote && String(data.quote.cmp) !== actionPrice && (
                 <button type="button" onClick={() => { setActionPrice(String(data.quote.cmp)); setPriceLabel(`Live price (${data.quote.asOf})`); }}
                   style={{ height: 42, padding: "0 12px", borderRadius: 8, border: "1px solid var(--accent)", background: "var(--s1)", fontSize: 12, cursor: "pointer", color: "var(--accent)" }}>

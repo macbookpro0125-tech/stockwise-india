@@ -66,7 +66,7 @@ export default function Header({ tab, onTab, account, onLogout, onDeleted, onSea
 
   return (
     <div ref={ref} className="app-header discovery-header-sticky" style={{ position: "sticky", top: 0, zIndex: 100, background: HEADER_BG[theme] ?? HEADER_BG.dark, borderBottom: "1px solid var(--bdr2)" }}>
-      <div style={{ maxWidth: 1440, margin: "0 auto", padding: "0 20px" }}>
+      <div style={{ padding: "0 var(--page-x)" }}>
         <div style={{ padding: "12px 0" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, flexShrink: 1, cursor: "pointer" }} onClick={() => onTab("discover")}>
