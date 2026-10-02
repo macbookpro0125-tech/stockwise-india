@@ -8,7 +8,7 @@ import { join } from "node:path";
 import { DATA_DIR } from "./paths.js";
 import { NSE_BASE, fetchJson } from "./fetch-nse.js";
 import { shareholdingFilings, readShareholdingFiling } from "./fetch-shareholding.js";
-import { allMetrics } from "./screen.js";
+import { allMetrics, researchBrief } from "./screen.js";
 
 const HOUR = 3600 * 1000;
 const memo = new Map();
@@ -167,7 +167,7 @@ export function sectorPeers(symbol, limit = 30) {
     rows: top.map(r => ({
       symbol: r.symbol, name: r.name, cmp: r.cmp, pe: r.pe, marketCapCr: r.marketCapCr, divYield: r.divYield,
       profitCr: r.profitCr, revenueCr: r.revenueCr, salesGrowth3y: r.salesGrowth3y, roce: r.roce, roe: r.roe,
-      score: { green: r.score.green, applicable: r.score.applicable },
+      research: researchBrief(r.research),
     })),
   };
 }

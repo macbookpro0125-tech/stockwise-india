@@ -1,5 +1,7 @@
-// Ported verbatim from stock-screener's calculateLevels and getAction
-// (src/StockScreener.jsx) — same formula, same fields, same wording.
+// calculateLevels is ported verbatim from stock-screener (src/StockScreener.jsx)
+// — same formula, same fields. Its getAction ("BUY — PHASE 1 (30%)", "SELL
+// ALL", "deploy 30%") is replaced by pricePosition below, which describes
+// where the price sits and never says what to do.
 // Margin of safety discounts TODAY's fair value (fv25 = EPS x P/E), not the
 // two-year growth projection: discounting fv27 instead makes the growth
 // multiplier and the discount cancel out, leaving little to no real cushion
@@ -40,22 +42,25 @@ export function fmtRs(n) {
   return "₹" + Math.round(num).toLocaleString("en-IN");
 }
 
-export function getAction(actionPrice, levels, priceLabel = "Price") {
-  if (!actionPrice || !levels) return null;
-  const lp = Number(actionPrice);
-  if (isNaN(lp) || lp <= 0) return null;
-  const { p1, p2, p3, target, stopLoss } = levels;
-  const px = `${priceLabel} ${fmtRs(lp)}`;
-
-  if (stopLoss > 0 && lp <= stopLoss) return { action: "BELOW STOP LOSS", color: "var(--red)", bg: "var(--red-dim)", reason: `${px} has breached stop loss ${fmtRs(stopLoss)}. Consider exiting to protect capital.`, icon: "🚨" };
-  if (target > 0 && lp >= target * 1.15) return { action: "SELL ALL", color: "var(--red)", bg: "var(--red-dim)", reason: `${px} is 15%+ above target ${fmtRs(target)}. Overvalued.`, icon: "💰" };
-  if (target > 0 && lp >= target) return { action: "SELL 50–70%", color: "var(--yellow)", bg: "var(--yellow-dim)", reason: `${px} hit target ${fmtRs(target)}. Book profits.`, icon: "🎯" };
-  if (p3 > 0 && lp <= p3) return { action: "BUY — PHASE 3 (40%)", color: "var(--green)", bg: "var(--green-dim)", reason: `${px} ≤ Phase 3 ${fmtRs(p3)}. Deep value — deploy 40%.`, icon: "🟢" };
-  if (p2 > 0 && lp <= p2) return { action: "BUY — PHASE 2 (30%)", color: "var(--green)", bg: "var(--green-dim)", reason: `${px} ≤ Phase 2 ${fmtRs(p2)}. Good discount — deploy 30%.`, icon: "🟢" };
-  if (p1 > 0 && lp <= p1) return { action: "BUY — PHASE 1 (30%)", color: "var(--green)", bg: "var(--green-dim)", reason: `${px} ≤ Phase 1 ${fmtRs(p1)}. Start position — deploy 30%.`, icon: "🟢" };
-  if (p1 > 0 && target > 0 && lp > p1 && lp < target) {
-    const upside = (((target - lp) / lp) * 100).toFixed(1);
-    return { action: "HOLD / WAIT", color: "var(--yellow)", bg: "var(--yellow-dim)", reason: `${px} is above Phase 1 ${fmtRs(p1)} but below target ${fmtRs(target)}. Wait for dip. Upside: +${upside}%.`, icon: "⏸️" };
+// Where a price sits against the levels: { zone, label, tone, detail }.
+// tone colours the label (green under Phase 1, red past the stop-loss level
+// or far above the upper level); the words only describe the position.
+export function pricePosition(price, levels) {
+  const p = Number(price);
+  if (!levels || !(p > 0)) return null;
+  const { p1, p2, p3, stopLoss, target, fv25 } = levels;
+  const vsFv = fv25 > 0 ? ((p - fv25) / fv25) * 100 : null;
+  const fvText = vsFv == null ? "" : ` — ${Math.abs(vsFv).toFixed(0)}% ${vsFv <= 0 ? "below" : "above"} today's fair value of ${fmtRs(fv25)}`;
+  const at = (zone, label, tone, detail) => ({ zone, label, tone, detail: `${detail}${fvText}.` });
+  if (stopLoss > 0 && p <= stopLoss) return at("below-stop", "Below the stop-loss level", "red", `${fmtRs(p)} is under the stop-loss level of ${fmtRs(stopLoss)}`);
+  if (target > 0 && p >= target * 1.15) return at("far-above", "Far above the upper level", "red", `${fmtRs(p)} is more than 15% over the upper level of ${fmtRs(target)}`);
+  if (target > 0 && p >= target) return at("above-upper", "At or above the upper level", "yellow", `${fmtRs(p)} has reached the upper level of ${fmtRs(target)}`);
+  if (p3 > 0 && p <= p3) return at("phase3", "In the Phase 3 zone", "green", `${fmtRs(p)} is at or under the Phase 3 level of ${fmtRs(p3)}`);
+  if (p2 > 0 && p <= p2) return at("phase2", "In the Phase 2 zone", "green", `${fmtRs(p)} is at or under the Phase 2 level of ${fmtRs(p2)}`);
+  if (p1 > 0 && p <= p1) return at("phase1", "In the Phase 1 zone", "green", `${fmtRs(p)} is at or under the Phase 1 level of ${fmtRs(p1)}`);
+  if (p1 > 0) {
+    const toUpper = target > p ? ` and ${(((target - p) / p) * 100).toFixed(0)}% under the upper level` : "";
+    return at("above-phase1", "Above Phase 1", "neutral", `${fmtRs(p)} is ${(((p - p1) / p1) * 100).toFixed(0)}% above the Phase 1 level of ${fmtRs(p1)}${toUpper}`);
   }
   return null;
 }

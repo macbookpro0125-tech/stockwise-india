@@ -2,7 +2,7 @@
 // company's stored filings plus the market-wide snapshot — one place, so the
 // same stock can't show two different P/Es on two screens.
 import { calculateLevels } from "./levels.js";
-import { computeScoreParts } from "./score.js";
+import { computeResearch } from "./research.js";
 
 const DAY = 86400000;
 const MIN_PE_YEARS = 3;
@@ -33,7 +33,9 @@ function median(values) {
   return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
 }
 
-export function computeMetrics(stock, snap, overrides = {}) {
+// options.research = false skips the research score (screen.js computes it in
+// a second pass, once the whole market's sector P/Es are known)
+export function computeMetrics(stock, snap, overrides = {}, options = {}) {
   if (!stock || stock.error || !Array.isArray(stock.years)) return null;
   const years = stock.years.filter(y => !y.error && y.fyEnd);
   const latest = years[0];
@@ -248,6 +250,19 @@ export function computeMetrics(stock, snap, overrides = {}) {
   // Year by year for the stock page's financial statements and chart, on the
   // same definitions as the headline figures (EPS on today's share basis).
   const cr = v => (v == null ? null : v / 1e7);
+  // Each year's share count on today's basis, for the dilution check: paid-up
+  // capital ÷ face value, unless it disagrees with profit ÷ EPS by half again
+  // (a stale face value — see `shares` above), then profit ÷ EPS
+  const sharesOf = y => {
+    const f = factorAfter(filedOf(y));
+    const fromCapital = y.paidUp > 0 && y.faceValue > 0 ? (y.paidUp / y.faceValue) * f : null;
+    const fromEps = y.profit && y.eps && Math.abs(y.eps) >= 0.01 && Math.sign(y.profit) === Math.sign(y.eps) ? (y.profit / y.eps) * f : null;
+    if (fromCapital && fromEps && Math.max(fromCapital / fromEps, fromEps / fromCapital) > 1.5) return fromEps;
+    return fromCapital ?? fromEps;
+  };
+  // Cash, fixed deposits and current investments: null without the cash line
+  // (no balance sheet, or a lender), never a guessed 0
+  const liquidOf = y => (y.cash == null ? null : y.cash + (y.bankBalances ?? 0) + (y.currentInvestments ?? 0));
   const history = years.map(y => {
     const operatingProfit = !lender && y.revenue != null && y.expenses != null
       ? y.revenue - (y.expenses - (y.financeCosts ?? 0) - (y.depreciation ?? 0))
@@ -267,7 +282,10 @@ export function computeMetrics(stock, snap, overrides = {}) {
       eps: y.eps != null ? y.eps / factorAfter(filedOf(y)) : null,
       equityCr: cr(y.equity),
       debtCr: cr(y.debt),
+      ltDebtCr: cr(y.longTermDebt),
       leasesCr: cr(y.leases),
+      liquidCr: cr(liquidOf(y)),
+      sharesCr: cr(sharesOf(y)),
       totalAssetsCr: cr(y.totalAssets),
       currentAssetsCr: cr(y.currentAssets),
       currentLiabilitiesCr: cr(y.currentLiabilities),
@@ -285,19 +303,10 @@ export function computeMetrics(stock, snap, overrides = {}) {
   const nameLower = String(stock.name || "").toLowerCase();
   const cyclical = sector ? CYCLICAL_SECTORS.has(sector) : CYCLICAL_NAME_WORDS.some(w => nameLower.includes(w));
 
-  // For the stock page's 10-point checklist, on the original's definitions:
-  // interest cover = EBIT / interest; EPS stability = coefficient of variation
-  // of the last five years' EPS; margin swing = the five-year OPM range.
+  // Interest cover = EBIT / interest, the original's definition
   const interestCoverage = !lender && latest.financeCosts > 0 && latest.pbt != null
     ? (latest.pbt + latest.financeCosts) / latest.financeCosts
     : null;
-  const epsLast5 = history.slice(0, 5).map(h => h.eps).filter(v => v != null);
-  const epsMean = epsLast5.length ? epsLast5.reduce((a, b) => a + b, 0) / epsLast5.length : null;
-  const epsCV = epsLast5.length >= 3 && epsMean > 0
-    ? Math.sqrt(epsLast5.reduce((a, v) => a + (v - epsMean) ** 2, 0) / epsLast5.length) / epsMean
-    : null;
-  const opmLast5 = history.slice(0, 5).map(h => h.opm).filter(v => v != null);
-  const opmRange = opmLast5.length >= 3 ? Math.max(...opmLast5) - Math.min(...opmLast5) : null;
 
   const m = {
     symbol: sym,
@@ -305,6 +314,10 @@ export function computeMetrics(stock, snap, overrides = {}) {
     template: stock.template,
     sector, lender, utility, cyclical,
     cmp, cmpDate, eps, pe, marketCapCr, shares, sharesSource,
+    // NSE's last close: the research score values the company at it whatever
+    // price the page shows, so Discover and the stock page give the same score
+    close, closeDate: snap?.prices?.[sym] != null ? snap.pricesDate : cmpDate,
+    scope: latest.scope ?? null,
     low52w: range?.low ?? null,
     high52w: range?.high ?? null,
     fyEnd: latest.fyEnd,
@@ -313,13 +326,14 @@ export function computeMetrics(stock, snap, overrides = {}) {
     salesGrowth3y, salesGrowth5y, profitGrowth3y, profitGrowth5y,
     roe, roeAvg, roeAvgYears: roeHistory.length,
     roce: roceOf(latest), opm,
-    debtToEquity, leasesCr, priceToBook, interestCoverage, epsCV, opmRange,
+    debtToEquity, leasesCr, priceToBook, interestCoverage,
     promoterPct: holding.promoterPct ?? null,
     fiiPct: holding.fiiPct ?? null,
     diiPct: holding.diiPct ?? null,
     // % of the promoters' own shares that are pledged (Screener's measure)
     pledgedPct: holding.pledgedPct ?? null,
     holdingAsOf: holding.asOf ?? null,
+    promoterHistory: holding.promoterHistory ?? null,
     dividendsTtm, divYield, payoutPct,
     ocfPat3yPct,
     fcfCr: fcf != null ? fcf / 1e7 : null,
@@ -377,18 +391,6 @@ export function computeMetrics(stock, snap, overrides = {}) {
   };
   const tech = snap?.tech?.[sym] ?? {};
 
-  // Checklist point 7, a profit every year: the run of consecutive fiscal
-  // years from the latest (up to 5) and which of them were losses. A gap in
-  // the filings ends the run — a missing year can't count as a profit.
-  const run = [];
-  for (const y of history) {
-    if (y.profitCr == null) break;
-    if (run.length && Number(run.at(-1).fyEnd.slice(0, 4)) - Number(y.fyEnd.slice(0, 4)) !== 1) break;
-    run.push(y);
-    if (run.length === 5) break;
-  }
-  m.profitRecord = { years: run.length, latestFy: run[0]?.fyEnd ?? null, lossYears: run.filter(y => y.profitCr <= 0).map(y => y.fyEnd) };
-
   Object.assign(m, {
     roa: pctOf(latest.profit, latest.totalAssets),
     roa5y: avg5(y => pctOf(y.profit, y.totalAssets)),
@@ -414,6 +416,20 @@ export function computeMetrics(stock, snap, overrides = {}) {
 
     ltDebtToEquity: ratio(latest.longTermDebt, latest.equity),
     assetTurnover: ratio(latest.revenue, latest.totalAssets),
+    ...(() => {
+      // Debt and leases less cash, fixed deposits and current investments;
+      // enterprise value at the last close. Not for lenders.
+      const liquid = lender ? null : liquidOf(latest);
+      const netDebt = liquid != null && latest.debt != null ? latest.debt + (latest.leases ?? 0) - liquid : null;
+      const ebitda = opProfitOf(latest);
+      const ev = netDebt != null && close > 0 && shares ? close * shares + netDebt : null;
+      return {
+        liquidCr: cr(liquid),
+        netDebtCr: cr(netDebt),
+        netDebtToEbitda: netDebt != null && ebitda > 0 ? netDebt / ebitda : null,
+        evToEbitda: ev != null && ebitda > 0 ? ev / ebitda : null,
+      };
+    })(),
 
     ebitdaCr: cr(opProfitOf(latest)),
     pbitCr: latest.pbt != null && latest.financeCosts != null ? cr(latest.pbt + latest.financeCosts) : null,
@@ -459,7 +475,7 @@ export function computeMetrics(stock, snap, overrides = {}) {
   const { pros, cons } = prosAndCons(m, latest);
   m.pros = pros;
   m.cons = cons;
-  m.score = computeScoreParts(m);
+  if (options.research !== false) m.research = computeResearch(m);
   return m;
 }
 

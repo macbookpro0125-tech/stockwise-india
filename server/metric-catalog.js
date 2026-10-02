@@ -7,12 +7,27 @@
 // category metric, { id, values: [...] }. A company whose value is unknown is
 // left out once a filter on that metric applies, and the screen says how many.
 
-export const CATEGORIES = ["Valuation", "Profitability", "Growth", "Price & returns", "Volume & technicals", "Ownership", "Financial health", "Cash flow", "Income statement", "Balance sheet", "Size", "Stockwise"];
+export const CATEGORIES = ["Research score", "Valuation", "Profitability", "Growth", "Price & returns", "Volume & technicals", "Ownership", "Financial health", "Cash flow", "Income statement", "Balance sheet", "Size"];
 
-const score10 = m => (m.score?.applicable ? Math.round((m.score.green / m.score.applicable) * 10) : null);
 const NO_LENDERS = " Not shown for banks and other lenders.";
+// The research score (research.js) and its groups
+const groupScore = id => m => m.research?.groups.find(g => g.id === id)?.score ?? null;
 
 export const METRICS = [
+  // ── Research score ──
+  { id: "quality", label: "Quality score", short: "Quality", category: "Research score", unit: "/100", decimals: 0, get: m => m.research?.quality ?? null, about: "Out of 100 across six groups: business, earnings, balance sheet, governance, growth and valuation. Checks the filings can't show are left out, never guessed." },
+  { id: "qualityOnly", label: "Quality without valuation", short: "Quality ex-val", category: "Research score", unit: "/100", decimals: 0, get: m => m.research?.qualityOnly ?? null, about: "The five business groups only — how good the company is, whatever its price." },
+  { id: "researchScore", label: "Overall research score", short: "Research", category: "Research score", unit: "/100", decimals: 0, get: m => m.research?.overall.score ?? null, about: "Quality (70%) and valuation (30%) blended, trimmed for price swings and data gaps. A research summary, not a buy or sell signal." },
+  { id: "businessScore", label: "Business quality score", short: "Business", category: "Research score", unit: "/100", decimals: 0, get: groupScore("business"), about: "Returns on capital, margin stability, steady sales and returns on new investment." },
+  { id: "earningsScore", label: "Earnings quality score", short: "Earnings", category: "Research score", unit: "/100", decimals: 0, get: groupScore("earnings"), about: "Cash behind the profits, accruals, free cash flow, steady EPS and EPS growth." },
+  { id: "balanceScore", label: "Balance sheet score", short: "Balance", category: "Research score", unit: "/100", decimals: 0, get: groupScore("balance"), about: "Net debt, interest cover, liquidity, working capital and debt to equity." + NO_LENDERS },
+  { id: "governanceScore", label: "Governance score", short: "Governance", category: "Research score", unit: "/100", decimals: 0, get: groupScore("governance"), about: "Promoter holding changes, pledging and dilution. Related parties and auditors aren't checked yet." },
+  { id: "growthScore", label: "Growth score", short: "Growth", category: "Research score", unit: "/100", decimals: 0, get: groupScore("growth"), about: "3- and 5-year sales growth and 3-year EPS growth." },
+  { id: "valuationScore", label: "Valuation score", short: "Valuation", category: "Research score", unit: "/100", decimals: 0, get: groupScore("valuation"), about: "Higher means cheaper: against its own usual P/E, sector peers, free cash flow and simple multiples, at the last close." },
+  { id: "technicalScore", label: "Technical setup", short: "Technical", category: "Research score", unit: "/100", decimals: 0, get: m => m.research?.technical.score ?? null, about: "Price trend, strength against NIFTY 50, momentum, liquidity and swings. Kept out of the quality and research scores." },
+  { id: "riskScore", label: "Risk score", short: "Risk", category: "Research score", unit: "/100", decimals: 0, get: m => m.research?.risk.score ?? null, about: "Higher means riskier: debt, cyclicality, governance, price swings, valuation and data gaps." },
+  { id: "confidence", label: "Data confidence", short: "Confidence", category: "Research score", unit: "/100", decimals: 0, get: m => m.research?.confidence ?? null, about: "How much of the score rests on data: checks covered, how recent the results are and how fresh the price is." },
+
   // ── Valuation ──
   { id: "pe", label: "P/E ratio", short: "P/E", category: "Valuation", unit: "x", decimals: 1, about: "Price ÷ last year's earnings per share. Loss-making companies have none." },
   { id: "medianPe", label: "5-year median P/E", short: "Median P/E", category: "Valuation", unit: "x", decimals: 1, about: "The company's usual P/E over its last five years — what its fair value is based on." },
@@ -24,8 +39,9 @@ export const METRICS = [
   { id: "earningsYield", label: "Earnings yield", short: "Earn. yield", category: "Valuation", unit: "%", decimals: 1, signed: true, about: "Earnings per share ÷ price — the P/E turned upside down." },
   { id: "divYield", label: "Dividend yield", short: "Div yield", category: "Valuation", unit: "%", decimals: 1, about: "Dividends paid over the last 12 months ÷ today's price." },
   { id: "vsFairValue", label: "Price vs fair value", short: "vs FV", category: "Valuation", unit: "%", decimals: 1, signed: true, about: "How far today's price is above (+) or below (−) the company's 2-year fair value." },
-  { id: "vsPhase1", label: "Price vs Phase 1 buy price", short: "vs P1", category: "Valuation", unit: "%", decimals: 1, signed: true, about: "0 or less means today's price is at or under the Phase 1 buy price." },
+  { id: "vsPhase1", label: "Price vs Phase 1 level", short: "vs P1", category: "Valuation", unit: "%", decimals: 1, signed: true, about: "0 or less means today's price is at or under the Phase 1 level (10% below today's fair value)." },
   { id: "mcapToNcav", label: "Market cap ÷ net current assets", short: "MCap/NCAV", category: "Valuation", unit: "x", decimals: 2, about: "Graham's net-net test: under 1 means the market values the company at less than its current assets minus all its liabilities." },
+  { id: "evToEbitda", label: "EV / EBITDA", short: "EV/EBITDA", category: "Valuation", unit: "x", decimals: 1, about: "Enterprise value (market cap plus net debt, at the last close) ÷ operating profit; only where that was positive." + NO_LENDERS },
 
   // ── Profitability ──
   { id: "roce", label: "Return on capital employed (ROCE)", short: "ROCE", category: "Profitability", unit: "%", decimals: 1 },
@@ -93,6 +109,7 @@ export const METRICS = [
   // ── Financial health ──
   { id: "debtToEquity", label: "Debt to equity", short: "D/E", category: "Financial health", unit: "x", decimals: 2 },
   { id: "ltDebtToEquity", label: "Long-term debt to equity", short: "LT D/E", category: "Financial health", unit: "x", decimals: 2 },
+  { id: "netDebtToEbitda", label: "Net debt ÷ EBITDA", short: "ND/EBITDA", category: "Financial health", unit: "x", decimals: 1, signed: true, about: "Debt and leases less cash and liquid investments, ÷ operating profit. Below 0 means more cash than debt." + NO_LENDERS },
   { id: "interestCoverage", label: "Interest coverage", short: "Int. cover", category: "Financial health", unit: "x", decimals: 1, about: "Operating profit ÷ interest." + NO_LENDERS },
   { id: "currentRatio", label: "Current ratio", short: "Curr. ratio", category: "Financial health", unit: "x", decimals: 2, about: "Current assets ÷ current liabilities." + NO_LENDERS },
   { id: "assetTurnover", label: "Asset turnover", short: "Asset turn", category: "Financial health", unit: "x", decimals: 2, about: "Sales ÷ total assets — how hard the assets work." },
@@ -123,6 +140,8 @@ export const METRICS = [
   { id: "equityCr", label: "Shareholders' equity", short: "Equity", category: "Balance sheet", unit: "₹ Cr", decimals: 0, signed: true },
   { id: "totalDebtCr", label: "Total debt", short: "Debt", category: "Balance sheet", unit: "₹ Cr", decimals: 0 },
   { id: "ltDebtCr", label: "Long-term debt", short: "LT debt", category: "Balance sheet", unit: "₹ Cr", decimals: 0 },
+  { id: "liquidCr", label: "Cash and liquid investments", short: "Cash", category: "Balance sheet", unit: "₹ Cr", decimals: 0, about: "Cash, fixed deposits and current investments (mostly liquid funds)." + NO_LENDERS },
+  { id: "netDebtCr", label: "Net debt", short: "Net debt", category: "Balance sheet", unit: "₹ Cr", decimals: 0, signed: true, about: "Debt and leases less cash and liquid investments. Below 0 is net cash." + NO_LENDERS },
   { id: "currentAssetsCr", label: "Current assets", short: "Curr. assets", category: "Balance sheet", unit: "₹ Cr", decimals: 0 },
   { id: "currentLiabilitiesCr", label: "Current liabilities", short: "Curr. liab.", category: "Balance sheet", unit: "₹ Cr", decimals: 0 },
   { id: "shareCapitalCr", label: "Share capital", short: "Share cap.", category: "Balance sheet", unit: "₹ Cr", decimals: 0 },
@@ -132,9 +151,6 @@ export const METRICS = [
   { id: "marketCapCr", label: "Market cap", short: "Mkt cap", category: "Size", unit: "₹ Cr", decimals: 0 },
   { id: "sharesCr", label: "Shares outstanding", short: "Shares", category: "Size", unit: "Cr shares", decimals: 2 },
   { id: "faceValue", label: "Face value", short: "Face value", category: "Size", unit: "₹", decimals: 2, about: "As in the latest filing — a split since then isn't reflected." },
-
-  // ── Stockwise ──
-  { id: "score", label: "Quality score", short: "Score", category: "Stockwise", unit: "/10", decimals: 0, get: score10, about: "Green flags out of the 10 checks that apply, scaled to 10." },
 ];
 
 // Category filters: a set of values rather than a range
@@ -207,6 +223,8 @@ export function cleanFilters(filters) {
   if (!Array.isArray(filters)) return [];
   const num = v => (v === null || v === undefined || v === "" || !Number.isFinite(Number(v)) ? null : Number(v));
   return filters.flatMap(f => {
+    // Share links from before 3 Oct 2026 filter on the old score out of 10
+    if (f?.id === "score") f = { id: "quality", min: num(f.min) == null ? null : num(f.min) * 10, max: num(f.max) == null ? null : num(f.max) * 10 };
     const x = f && BY_ID.get(f.id);
     if (!x) return [];
     if (x.options || x.id === "sector") {

@@ -19,7 +19,7 @@ import { listWatchlist, addToWatchlist, setWatchlistNote, removeFromWatchlist } 
 import { listHoldings, addHolding, updateHolding, removeHolding } from "./user-portfolio.js";
 import { currentPrices } from "./prices.js";
 import { getPerformance, takeSnapshots } from "./performance.js";
-import { getAction } from "./levels.js";
+import { pricePosition } from "./levels.js";
 import { fetchCmp, fetchDailyBars, PRICE_RANGES } from "./quote.js";
 import { fetchStockSummary, SCHEMA } from "./fetch-nse.js";
 import { fetchEquityList } from "./equity-list.js";
@@ -442,6 +442,9 @@ export function createApp() {
           quoteError = e.message;
         }
         const snap = loadMarketSnapshot();
+        // The research score's peer comparison needs the market's sector
+        // medians, which the screen sets — cached, so this is cheap
+        allMetrics();
         const metrics = computeMetrics(fundamentals, snap, quote ? { cmp: quote.cmp, cmpDate: quote.asOf } : {});
 
         sendJson(res, 200, {
@@ -533,13 +536,13 @@ export function createApp() {
         const holdings = listHoldings(userId);
         const tickers = [...new Set(holdings.map(h => h.ticker))];
         const prices = await currentPrices(tickers);
-        // Where each holding sits on its buy ladder, at the current price
+        // Where each holding's price sits against its levels, at the current price
         const status = {};
         for (const r of rowsFor(tickers)) {
           const price = prices[r.symbol]?.price;
-          const levels = r.safeBuyPrice ? { p1: r.safeBuyPrice, p2: r.p2, p3: r.p3, stopLoss: r.stopLoss, target: r.target } : null;
-          const action = price && levels ? getAction(price, levels) : null;
-          status[r.symbol] = { action: action?.action ?? null, color: action?.color ?? null, levels, score: r.score ?? null };
+          const levels = r.safeBuyPrice ? { fv25: r.fv25, p1: r.safeBuyPrice, p2: r.p2, p3: r.p3, stopLoss: r.stopLoss, target: r.target } : null;
+          const position = price && levels ? pricePosition(price, levels) : null;
+          status[r.symbol] = { position, levels, research: r.research ?? null };
         }
         sendJson(res, 200, { holdings, prices, status });
         return;
