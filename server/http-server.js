@@ -759,7 +759,9 @@ export function createApp() {
         return;
       }
 
-      if (url.pathname === "/api/health" && req.method === "GET") {
+      // HEAD too: uptime monitors (UptimeRobot) check with HEAD, and Node
+      // leaves the body off a HEAD reply by itself
+      if (url.pathname === "/api/health" && (req.method === "GET" || req.method === "HEAD")) {
         const snap = loadMarketSnapshot();
         const jobs = jobStatus();
         const snapshotAgeHours = snap?.builtAt ? Math.max(0, (Date.now() - Date.parse(snap.builtAt)) / 3_600_000) : null;
@@ -786,7 +788,7 @@ export function createApp() {
         return;
       }
 
-      if (req.method === "GET" && serveStatic(req, url.pathname, res)) return;
+      if ((req.method === "GET" || req.method === "HEAD") && serveStatic(req, url.pathname, res)) return;
       sendJson(res, 404, { error: "Not found" });
     } catch (e) {
       const status = e instanceof HttpError || Number.isInteger(e?.status) ? e.status : e?.duplicate ? 409 : e instanceof SyntaxError ? 400 : 500;
