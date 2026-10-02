@@ -1,6 +1,6 @@
 import {
   TrendingUp, Coins, Gem, Shield, Rocket, Star, Zap, RefreshCw, Landmark, Sprout, Globe, Building2,
-  Calculator, Bookmark, ChartLine, TriangleAlert, BadgeIndianRupee, Target, CircleCheck, CirclePause,
+  Calculator, Bookmark, ChartLine, TriangleAlert, ArrowDownToLine, ArrowUpToLine, ArrowUpFromLine, Minus,
 } from "lucide-react";
 
 // Ported from stock-screener's src/components/icons.jsx — line icons rather
@@ -63,12 +63,12 @@ export function PresetIcon({ preset, ...props }) {
   return <Icon {...props} />;
 }
 
-// getAction's results (server/levels.js), by their action text
-export function ActionIcon({ action, ...props }) {
-  const Icon = action === "BELOW STOP LOSS" ? TriangleAlert
-    : action === "SELL ALL" ? BadgeIndianRupee
-      : action.startsWith("SELL") ? Target
-        : action.startsWith("BUY") ? CircleCheck
-          : CirclePause;
+// Where the price sits (server/levels.js pricePosition), by its zone
+export function PositionIcon({ zone, ...props }) {
+  const Icon = zone === "below-stop" ? TriangleAlert
+    : zone === "far-above" || zone === "above-upper" ? ArrowUpToLine
+      : zone?.startsWith("phase") ? ArrowDownToLine
+        : zone === "above-phase1" ? ArrowUpFromLine
+          : Minus;
   return <Icon {...props} />;
 }

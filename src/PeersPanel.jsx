@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { api } from "./api.js";
-import { ScoreBadge } from "./ResultsTable.jsx";
+import { QualityBadge } from "./ResearchBadges.jsx";
 
 // The original's Peers panel (stock-screener PeersPanel.jsx), from this app's
 // own data: companies in the same NSE sector, largest first. The original used
@@ -69,7 +69,7 @@ export default function PeersPanel({ symbol, onAnalyze }) {
                   {COLUMNS.map(([c]) => (
                     <th key={c} style={{ textAlign: "right", padding: "8px 10px", fontSize: 11.5, color: "var(--t3)", whiteSpace: "nowrap", borderBottom: "1px solid var(--bdr2)" }}>{c}</th>
                   ))}
-                  <th style={{ textAlign: "right", padding: "8px 10px", fontSize: 11.5, color: "var(--t3)", borderBottom: "1px solid var(--bdr2)" }}>Score</th>
+                  <th style={{ textAlign: "right", padding: "8px 10px", fontSize: 11.5, color: "var(--t3)", borderBottom: "1px solid var(--bdr2)" }}>Quality</th>
                 </tr>
               </thead>
               <tbody>
@@ -86,7 +86,7 @@ export default function PeersPanel({ symbol, onAnalyze }) {
                       {COLUMNS.map(([c, fmt]) => (
                         <td key={c} style={{ padding: "7px 10px", textAlign: "right", whiteSpace: "nowrap", color: "var(--t1)", borderBottom: "1px solid var(--bdr)", ...MONO }}>{fmt(r)}</td>
                       ))}
-                      <td style={{ padding: "7px 10px", textAlign: "right", borderBottom: "1px solid var(--bdr)" }}><ScoreBadge score={r.score.green} max={r.score.applicable} /></td>
+                      <td style={{ padding: "7px 10px", textAlign: "right", borderBottom: "1px solid var(--bdr)" }}><QualityBadge research={r.research} /></td>
                     </tr>
                   );
                 })}

@@ -572,3 +572,17 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   .price-strip-track { animation: none; }
   .price-strip-window { overflow-x: auto; -webkit-mask-image: none; mask-image: none; }
 }
+
+/* Research dashboard (ResearchPanel.jsx): native <details> sections with a
+   chevron that turns, instead of the browser's own marker */
+.research-expand > summary::-webkit-details-marker { display: none; }
+.research-expand[open] > summary .research-chevron { transform: rotate(180deg); }
+.research-expand > summary:hover { color: var(--accent); }
+.research-expand > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+.research-head { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.research-groups { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+@media (max-width: 640px) {
+  .research-head { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .research-head > :last-child { grid-column: 1 / -1; }
+  .research-groups { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

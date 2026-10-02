@@ -25,22 +25,22 @@ const FEATURES = [
   {
     icon: <Icon><path d="M12 3l7 3v6c0 4.4-3 7.5-7 9-4-1.5-7-4.6-7-9V6l7-3z" /><path d="M9 12l2 2 4-4" /></Icon>,
     title: "A quality score from the filings",
-    text: "10 checks on growth, return on capital, debt, cash conversion, promoter holding and price, from each company's latest results on NSE.",
+    text: "Out of 100 across six areas — business, earnings, balance sheet, governance, growth and valuation — from each company's results on NSE. What the filings can't show is listed, never guessed.",
   },
   {
     icon: <Icon><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1.5" /></Icon>,
-    title: "Three buy prices, worked out",
-    text: "Fair value from the company's own 5-year median P/E, then Phase 1, 2 and 3 buy prices below it, with a stop loss and a target.",
+    title: "Fair value and price levels",
+    text: "Fair value from the company's own 5-year median P/E, then Phase 1, 2 and 3 price levels below it, with a stop-loss level and an upper level.",
   },
   {
     icon: <Icon><path d="M7 3h7l5 5v13H7z" /><path d="M14 3v5h5M10 13h6M10 17h6" /></Icon>,
     title: "The whole company on one page",
-    text: "A 10-point checklist, Piotroski score, price and financial charts, five quarters of shareholding, results, annual reports and news.",
+    text: "A research dashboard with every check explained, Piotroski score, price and financial charts, five quarters of shareholding, results, annual reports and news.",
   },
   {
     icon: <Icon><path d="M6 16v-5a6 6 0 1112 0v5l1.5 2h-15z" /><path d="M10 20.5a2 2 0 004 0" /></Icon>,
     title: "Watchlist, alerts and portfolio",
-    text: "Star stocks, set price alerts and record what you own — each holding shows its profit and where it sits on its buy ladder.",
+    text: "Star stocks, set price alerts and record what you own — each holding shows its profit and where its price sits against its levels.",
     note: "Alerts show in the app for now; phone and email alerts are coming.",
   },
   {
@@ -52,7 +52,7 @@ const FEATURES = [
 
 const STEPS = [
   ["Pick a strategy", "Start from one of 13 screens, or set your own filters. Results come back in seconds."],
-  ["Check the company", "Open any result for its score, checklist, fair value, charts and filings."],
+  ["Check the company", "Open any result for its research dashboard — every check explained — fair value, charts and filings."],
   ["Decide your price", "Star it, set an alert at the price you want, or add it to your portfolio."],
 ];
 
@@ -111,8 +111,8 @@ export default function Landing({ onAuthed, notice }) {
               Find quality Indian companies — and the price where they turn good value.
             </h1>
             <p style={{ fontSize: 17, lineHeight: 1.6, color: "var(--t2)", margin: "0 0 26px", maxWidth: 600 }}>
-              Stockwise India reads each NSE-listed company's own filings, scores it on 10 quality checks, and works out three
-              buy prices below its fair value. Your watchlist, alerts and portfolio are measured against the same prices.
+              Stockwise India reads each NSE-listed company's own filings, scores its quality out of 100, and works out three
+              price levels below its fair value. Your watchlist, alerts and portfolio are measured against the same levels.
             </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
               <button className="btn-primary" onClick={() => goAuth("signup")} style={{ height: 46 }}>Create free account</button>
@@ -131,12 +131,12 @@ export default function Landing({ onAuthed, notice }) {
             </div>
             <img
               src="/screens/discover.jpg" width="1280" height="800" loading="lazy"
-              alt="The Discover screen: a strategy's results, each company with its quality score, price, returns on capital and three buy prices"
+              alt="The Discover screen: a strategy's results, each company with its quality score, research score, price, returns on capital and price levels"
               style={{ display: "block", width: "100%", height: "auto" }}
             />
           </div>
           <p style={{ fontSize: 12.5, color: "var(--t3)", textAlign: "center", margin: "12px 0 0" }}>
-            A strategy's results: every company scored, with its three buy prices and where today's price sits against them.
+            A strategy's results: every company scored, with its price levels and where today's price sits against them.
           </p>
         </section>
 
@@ -196,7 +196,7 @@ export default function Landing({ onAuthed, notice }) {
           <h2 style={{ fontSize: 15, fontWeight: 650, color: "var(--t1)", margin: "0 0 6px" }}>An educational tool, not investment advice</h2>
           <p style={{ fontSize: 13.5, lineHeight: 1.65, color: "var(--t2)", margin: 0 }}>
             Stockwise India isn't registered with SEBI as an investment adviser or research analyst. Scores, fair values and
-            buy prices are worked out automatically from public data, can be wrong, and aren't recommendations to buy or
+            price levels are worked out automatically from public data, can be wrong, and aren't recommendations to buy or
             sell. <SiteLink to="/disclaimer">Read the full disclaimer</SiteLink>.
           </p>
         </section>

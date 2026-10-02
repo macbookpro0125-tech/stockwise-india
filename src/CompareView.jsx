@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { api } from "./api.js";
+import { QualityBadge, overallTone } from "./ResearchBadges.jsx";
 
 // Ported from stock-screener's src/components/CompareView.jsx: up to four
-// stocks side by side — fundamentals and buy levels from the Discover table,
-// technicals fetched per stock.
+// stocks side by side — the research score and its groups, fundamentals and
+// price levels from the Discover table, technicals fetched per stock.
 
 function Sparkline({ prices }) {
   if (!prices?.length) return <span style={{ color: "var(--t3)", fontSize: 11 }}>—</span>;
@@ -23,17 +24,33 @@ function Sparkline({ prices }) {
 const SETUP_COLOR = { momentum: "var(--green)", pullback: "var(--accent)", base: "var(--yellow)", extended: "var(--yellow)", correction: "var(--red)", developing: "var(--t2)" };
 const rs = v => (v ? `₹${Math.round(v).toLocaleString("en-IN")}` : "—");
 
+// A score with its word ("52 Fair"), or a dash when it couldn't be scored
+const scored = (v, word, color = "var(--t3)") => (v == null
+  ? <span style={{ color: "var(--t3)" }}>—</span>
+  : <span style={{ fontVariantNumeric: "tabular-nums" }}>{Math.round(v)} <span style={{ fontSize: 11, fontWeight: 500, color }}>{word}</span></span>);
+const GROUP_ROWS = [["business", "Business quality"], ["earnings", "Earnings quality"], ["balance", "Balance sheet"], ["governance", "Governance"], ["growth", "Growth"]];
+const RESEARCH_ROWS = [
+  { key: "quality", label: "Quality score", fmt: s => <QualityBadge research={s.research} /> },
+  { key: "overall", label: "Overall research score", fmt: s => scored(s.research?.overall, s.research?.stance, overallTone(s.research?.overall).color) },
+  ...GROUP_ROWS.map(([id, label]) => ({
+    key: id, label,
+    fmt: s => (id === "balance" && s.lender ? <span style={{ color: "var(--t3)", fontWeight: 500, fontSize: 12 }}>Not scored for lenders</span> : scored(s.research?.groups?.[id], "/100")),
+  })),
+  { key: "valuation", label: "Valuation", fmt: s => scored(s.research?.valuation, s.research?.valuationLabel) },
+  { key: "technical", label: "Technical setup", fmt: s => scored(s.research?.technical, s.research?.technicalLabel) },
+  { key: "risk", label: "Risk (higher = riskier)", fmt: s => scored(s.research?.risk, s.research?.riskLabel) },
+];
+
 const ROW_METRICS = [
-  { key: "score", label: "Quality Score", fmt: s => (s.score ? `${s.score.green}/${s.score.applicable}` : "—") },
   { key: "cmp", label: "CMP (₹)", fmt: s => rs(s.cmp) },
   { key: "pe", label: "P/E", fmt: s => (s.pe ? s.pe.toFixed(1) : "—") },
   { key: "roce", label: "ROCE %", fmt: s => (s.roce != null ? `${s.roce.toFixed(1)}%` : "—") },
   { key: "mcap", label: "Mkt Cap (Cr)", fmt: s => (s.marketCapCr ? (s.marketCapCr >= 1000 ? `${(s.marketCapCr / 1000).toFixed(1)}K` : Math.round(s.marketCapCr)) : "—") },
   { key: "divYield", label: "Div Yield", fmt: s => (s.divYield ? `${s.divYield.toFixed(1)}%` : "—") },
-  { key: "p1", label: "Phase 1 Buy", fmt: s => rs(s.safeBuyPrice) },
-  { key: "p3", label: "Phase 3 Buy", fmt: s => rs(s.p3) },
-  { key: "stopLoss", label: "Stop Loss", fmt: s => rs(s.stopLoss) },
-  { key: "target", label: "Target (FV+10%)", fmt: s => rs(s.target) },
+  { key: "p1", label: "Phase 1 level", fmt: s => rs(s.safeBuyPrice) },
+  { key: "p3", label: "Phase 3 level", fmt: s => rs(s.p3) },
+  { key: "stopLoss", label: "Stop-loss level", fmt: s => rs(s.stopLoss) },
+  { key: "target", label: "Upper level (FV+10%)", fmt: s => rs(s.target) },
 ];
 
 const TECH_METRICS = [
@@ -86,6 +103,16 @@ export default function CompareView({ stocks, onClose }) {
                 </div>
               ))}
             </div>
+
+            <div style={section}>Research score</div>
+            {RESEARCH_ROWS.map(row => (
+              <div key={row.key} style={{ display: "grid", gridTemplateColumns: cols, borderBottom: "1px solid var(--bdr)" }}>
+                <div style={{ padding: "10px 16px", fontSize: 12, color: "var(--t2)", display: "flex", alignItems: "center" }}>{row.label}</div>
+                {stocks.map(s => (
+                  <div key={s.symbol} style={{ padding: "10px 14px", borderLeft: "1px solid var(--bdr)", fontSize: 13, fontWeight: 600, color: "var(--t1)", display: "flex", alignItems: "center" }}>{row.fmt(s)}</div>
+                ))}
+              </div>
+            ))}
 
             <div style={section}>Fundamentals</div>
             {ROW_METRICS.map(row => (
