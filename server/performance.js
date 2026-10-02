@@ -32,8 +32,9 @@ function saveSnapshots(snaps) {
 }
 
 // One snapshot per strategy per IST day — re-running the same day replaces
-// that day's. Picks are the strategy's top 10 in its own ranking (score, then
-// ROCE), priced at the day's close.
+// that day's. Picks are the strategy's top 10 in its own ranking (quality
+// score, then ROCE), priced at the day's close. Snapshots before 3 Oct 2026
+// record the old 10-point score (score/scoreMax) instead.
 export function takeSnapshots() {
   const date = istToday();
   const snaps = loadSnapshots();
@@ -43,7 +44,7 @@ export function takeSnapshots() {
     const picks = res.results
       .filter(s => s.cmp > 0)
       .slice(0, PICKS_PER_PRESET)
-      .map(s => ({ ticker: s.symbol, name: s.name, cmp: s.cmp, score: s.score.green, scoreMax: s.score.applicable }));
+      .map(s => ({ ticker: s.symbol, name: s.name, cmp: s.cmp, quality: s.research?.quality ?? null, overall: s.research?.overall ?? null }));
     if (!picks.length) {
       results.push({ presetId: preset.id, skipped: "no picks" });
       continue;

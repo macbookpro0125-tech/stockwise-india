@@ -5,6 +5,7 @@
 import { readdirSync, readFileSync, existsSync, writeFileSync, mkdirSync, statSync, renameSync } from "node:fs";
 import { join } from "node:path";
 import { computeMetrics } from "./metrics.js";
+import { computeResearch, setResearchPeers } from "./research.js";
 import { loadMarketSnapshot } from "./market-data.js";
 import { MARKET_DIR } from "./paths.js";
 import {
@@ -61,11 +62,16 @@ export function allMetrics() {
   const files = existsSync(MARKET_DIR) ? readdirSync(MARKET_DIR).filter(f => f.endsWith(".json")) : [];
   for (const f of files) {
     const stock = JSON.parse(readFileSync(join(MARKET_DIR, f), "utf-8"));
-    const m = computeMetrics(stock, snap);
+    const m = computeMetrics(stock, snap, {}, { research: false });
     if (m) rows.push(m);
   }
   const newest = Math.max(...rows.map(r => new Date(r.fyEnd).getTime()));
   const fresh = rows.filter(r => newest - new Date(r.fyEnd).getTime() <= STALE_AFTER_DAYS * 86400000);
+  // The research score compares each P/E with its sector's median, so it
+  // waits for the whole market: medians first, then every company's score.
+  // The stock page reuses the same medians (research.js keeps them).
+  setResearchPeers(sectorPeMedians(fresh));
+  for (const m of fresh) m.research = computeResearch(m);
   cache = {
     version, rows: fresh, fetched: countFetched(),
     snapshot: snap ? { pricesDate: snap.pricesDate, builtAt: snap.builtAt } : null,
@@ -73,6 +79,24 @@ export function allMetrics() {
     ranges: metricRanges(fresh),
   };
   return cache;
+}
+
+// Each sector's median P/E at the last close, on the same earnings the fair
+// value uses (the usual EPS after a one-off jump); loss-makers left out
+function sectorPeMedians(rows) {
+  const bySector = new Map();
+  for (const m of rows) {
+    if (!m.sector || !(m.close > 0) || !(m.valuationEps > 0)) continue;
+    if (!bySector.has(m.sector)) bySector.set(m.sector, []);
+    bySector.get(m.sector).push(m.close / m.valuationEps);
+  }
+  const out = new Map();
+  for (const [sector, pes] of bySector) {
+    pes.sort((a, b) => a - b);
+    const k = pes.length >> 1;
+    out.set(sector, { median: pes.length % 2 ? pes[k] : (pes[k - 1] + pes[k]) / 2, n: pes.length });
+  }
+  return out;
 }
 
 // What the screener's filter picker and column picker offer, with each
@@ -92,6 +116,21 @@ export function screenerMeta() {
   };
 }
 
+// The research score's headline numbers — the table, watchlist, compare and
+// peers show these; only the stock page gets every item and reason
+export function researchBrief(r) {
+  if (!r) return null;
+  return {
+    quality: r.quality, qualityOnly: r.qualityOnly, provisional: r.provisional, capped: !!r.capped,
+    overall: r.overall.score, stance: r.overall.stance, status: r.overall.status,
+    valuation: r.valuation.score, valuationLabel: r.valuation.label,
+    technical: r.technical.score, technicalLabel: r.technical.label,
+    risk: r.risk.score, riskLabel: r.risk.label,
+    confidence: r.confidence, coverage: r.coverage,
+    groups: Object.fromEntries(r.groups.map(g => [g.id, g.score])),
+  };
+}
+
 // The table only needs these; the stock page gets the full metrics.
 // The table's fixed fields, plus `values` for the metric columns the screener
 // asked for (its filters and whatever columns the user added)
@@ -105,10 +144,10 @@ function tableRow(m, columns = [], sizes = null) {
     marketCapCr: m.marketCapCr, divYield: m.divYield,
     debtToEquity: m.debtToEquity, salesGrowth3y: m.salesGrowth3y, profitGrowth5y: m.profitGrowth5y,
     ncavCr: m.ncavCr, fairValue: m.fairValue, safeBuyPrice: m.safeBuyPrice,
-    p2: m.levels?.p2 ?? null, p3: m.levels?.p3 ?? null,
+    fv25: m.levels?.fv25 ?? null, p2: m.levels?.p2 ?? null, p3: m.levels?.p3 ?? null,
     stopLoss: m.levels?.stopLoss ?? null, target: m.levels?.target ?? null,
     low52w: m.low52w, high52w: m.high52w,
-    valuationPeBasis: m.valuationPeBasis, epsJump: m.epsJump, score: { green: m.score.green, applicable: m.score.applicable },
+    valuationPeBasis: m.valuationPeBasis, epsJump: m.epsJump, research: researchBrief(m.research),
   };
 }
 
@@ -133,10 +172,8 @@ export function screen(request = {}) {
   const columns = (Array.isArray(request.columns) ? request.columns : [])
     .filter(id => metricById(id) && !metricById(id).options && id !== "sector").slice(0, 40);
   const matches = rows.filter(m => matchesFilters(m, filters, sizes));
-  // Green-flag count first, then ROCE — the original's default ranking. By
-  // count, not fraction, as the original does: a fraction would lift banks
-  // (scored out of 8) above equally strong companies scored out of 10.
-  matches.sort((a, b) => b.score.green - a.score.green || (b.roce ?? -Infinity) - (a.roce ?? -Infinity));
+  // Quality score first (unscored companies last), then ROCE
+  matches.sort((a, b) => (b.research?.quality ?? -1) - (a.research?.quality ?? -1) || (b.roce ?? -Infinity) - (a.roce ?? -Infinity));
   return {
     total: rows.length,
     fetched,
