@@ -3,7 +3,7 @@ import { api } from "./api.js";
 import Landing from "./Landing.jsx";
 import { PrivacyPage, DisclaimerPage } from "./LegalPages.jsx";
 import ResetPassword from "./ResetPassword.jsx";
-import { usePath, navigate, SiteFooter } from "./site.jsx";
+import { usePath, navigate, stockFromPath, stockPath, SiteFooter } from "./site.jsx";
 import Header, { BottomTabBar, TABS } from "./Header.jsx";
 import PriceStrip from "./PriceStrip.jsx";
 import DiscoverView from "./DiscoverView.jsx";
@@ -28,6 +28,9 @@ function useTheme() {
   return [theme, toggle];
 }
 
+// index.html's title, shown again when no stock page is open
+const TITLE = document.title;
+
 export default function App() {
   const path = usePath();
   // undefined = checking, null = signed out, else { userId, email }
@@ -47,6 +50,23 @@ export default function App() {
   const loadAccount = () => api.me().then(d => setAccount({ userId: d.userId, email: d.email ?? null, phone: d.phone ?? null, name: d.name ?? null, hasPassword: d.hasPassword !== false })).catch(() => setAccount(null));
   useEffect(() => { loadAccount(); }, []);
 
+  // The address decides which stock is open: Back/Forward, a refresh and a
+  // shared link all land here
+  const pathStock = stockFromPath(path);
+  useEffect(() => {
+    if (pathStock) {
+      setOpen(o => (o?.symbol === pathStock ? o : { symbol: pathStock, at: Date.now() }));
+    } else {
+      setOpen(o => {
+        if (o) requestAnimationFrame(() => window.scrollTo(0, discoverScroll.current));
+        return null;
+      });
+    }
+  }, [pathStock]);
+  useEffect(() => {
+    document.title = open ? `${open.symbol} · Stockwise India` : TITLE;
+  }, [open?.symbol]);
+
   // /privacy and /disclaimer are for everyone, signed in or not
   if (path === "/privacy") return <PrivacyPage signedIn={!!account} />;
   if (path === "/disclaimer") return <DisclaimerPage signedIn={!!account} />;
@@ -56,17 +76,29 @@ export default function App() {
   if (account === undefined) return null; // avoid a front-page flash while the session check is in flight
 
   if (account === null) {
-    return <Landing notice={notice} onAuthed={() => { setNotice(null); setTab("discover"); navigate("/"); loadAccount(); }} />;
+    // A shared stock link stays where it points once the visitor signs in
+    return <Landing notice={notice} onAuthed={() => { setNotice(null); setTab("discover"); if (!stockFromPath(window.location.pathname)) navigate("/"); loadAccount(); }} />;
   }
 
+  // A stock page is a page of its own (/stock/TCS): the browser's Back
+  // button returns to the list it was opened from, and a refresh or a shared
+  // link opens the same stock
   const openSymbol = (symbol) => {
     if (!open) discoverScroll.current = window.scrollY;
+    // depth = stock pages since the list, so the page's Back button can
+    // return to the list even after hopping from stock to peer
+    const depth = (stockFromPath(window.location.pathname) ? window.history.state?.depth ?? 0 : 0) + 1;
+    if (stockFromPath(window.location.pathname) !== symbol) navigate(stockPath(symbol), { state: { fromApp: true, depth } });
     setOpen({ symbol, at: Date.now() });
     window.scrollTo(0, 0);
   };
+  // The page's Back button ("Back to Discover") returns to the list; the
+  // browser's Back steps one page at a time. A stock page opened straight
+  // from a link has nothing behind it, so it goes to Discover.
   const closeStock = () => {
-    setOpen(null);
-    requestAnimationFrame(() => window.scrollTo(0, discoverScroll.current));
+    const depth = window.history.state?.fromApp ? window.history.state.depth ?? 1 : 0;
+    if (depth) window.history.go(-depth);
+    else navigate("/", { replace: true });
   };
 
   // The next person to sign in on this browser must not see this one's data
@@ -81,7 +113,7 @@ export default function App() {
   };
   const logout = () => api.logout().then(() => signedOut());
   const accountDeleted = () => signedOut("Your account and everything saved with it have been deleted.");
-  const goTab = (t) => { setOpen(null); setTab(t); window.scrollTo(0, 0); };
+  const goTab = (t) => { if (open) navigate("/"); setOpen(null); setTab(t); window.scrollTo(0, 0); };
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
