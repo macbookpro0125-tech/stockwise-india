@@ -33,22 +33,6 @@ function TabButton({ active, onClick, children }) {
 
 const emptyStyle = { fontSize: 12, color: "var(--t3)", lineHeight: 1.6, padding: "10px 0" };
 
-// Transparent keyword triage only. This labels documents for review; it does
-// not infer whether an event is ultimately good or bad for shareholders.
-function filingSignal(text = "") {
-  const s = String(text).toLowerCase();
-  const rules = [
-    { label: "Review promptly", tone: "red", topic: "audit / results", re: /qualified opinion|modified opinion|auditor resign|auditor change|financial results.*delay|delay.*financial results|fraud|forensic audit|insolvency|default|wilful defaulter|going concern/ },
-    { label: "Review promptly", tone: "red", topic: "regulatory / legal", re: /show cause|penalty|fine imposed|sebi.*order| sebi |search and seizure|investigation|enforcement|court order|nclt|litigation|material weakness/ },
-    { label: "Review promptly", tone: "red", topic: "management change", re: /resignation.*(director|cfo|ceo|company secretary|auditor)|(director|cfo|ceo|company secretary).*resign/ },
-    { label: "Read for context", tone: "yellow", topic: "capital allocation / transaction", re: /acquisition|acquire|merger|amalgamation|divest|sale of|fund rais|preferential issue|qualified institutions placement|qip|rights issue|buyback/ },
-    { label: "Read for context", tone: "yellow", topic: "operations / outlook", re: /capacity|plant|expansion|large order|order win|production|guidance|outlook|joint venture|subsidiary/ },
-    { label: "Routine disclosure", tone: "neutral", topic: "results / governance", re: /board meeting|financial results|shareholding pattern|annual report|dividend|record date|postal ballot/ },
-  ];
-  const match = rules.find(r => r.re.test(s));
-  return match ? { label: match.label, tone: match.tone, topic: match.topic } : null;
-}
-
 export default function NewsPanel({ symbol }) {
   const [tab, setTab] = useState("filings");
   const [expanded, setExpanded] = useState(false);
@@ -77,7 +61,7 @@ export default function NewsPanel({ symbol }) {
   const announcements = filings?.announcements ?? [];
   const reports = filings?.annualReports ?? [];
   const items = tab === "filings"
-    ? announcements.map(a => ({ key: `${a.date}-${a.title}`, title: a.title, sub: a.summary, meta: nseDate(a.date), url: a.url, signal: filingSignal(`${a.title ?? ""} ${a.summary ?? ""}`) }))
+    ? announcements.map(a => ({ key: `${a.date}-${a.title}`, title: a.title, sub: a.summary, meta: nseDate(a.date), url: a.url, review: a.review }))
     : tab === "news"
       ? (news ?? []).map(n => ({ key: n.url, title: n.title, sub: null, meta: [n.publisher, fmtDate(n.date)].filter(Boolean).join(" · "), url: n.url }))
       : [];
@@ -133,12 +117,13 @@ export default function NewsPanel({ symbol }) {
                 <span style={{ fontSize: 13, fontWeight: 600, color: "var(--t1)", lineHeight: 1.45, flex: "1 1 200px", minWidth: 0 }}>{a.title}</span>
               </div>
               {a.sub && <div style={{ fontSize: 12, color: "var(--t2)", lineHeight: 1.55, marginTop: 4 }}>{a.sub}</div>}
-              {tab === "filings" && a.signal && (
+              {tab === "filings" && a.review && (
                 <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap", marginTop: 6 }}>
-                  <span style={{ fontSize: 10, fontWeight: 650, padding: "2px 7px", borderRadius: 999, color: a.signal.tone === "red" ? "var(--red)" : a.signal.tone === "yellow" ? "var(--yellow)" : "var(--t3)", background: a.signal.tone === "red" ? "var(--red-dim)" : a.signal.tone === "yellow" ? "var(--yellow-dim)" : "var(--s3)" }}>{a.signal.label}</span>
-                  <span style={{ fontSize: 10.5, color: "var(--t3)" }}>Keyword category: {a.signal.topic}. Open the filing to confirm details; this rule does not assess event impact.</span>
+                  <span style={{ fontSize: 10, fontWeight: 650, padding: "2px 7px", borderRadius: 999, color: a.review.priority === "Review promptly" ? "var(--red)" : a.review.priority === "Read for context" ? "var(--yellow)" : "var(--t3)", background: a.review.priority === "Review promptly" ? "var(--red-dim)" : a.review.priority === "Read for context" ? "var(--yellow-dim)" : "var(--s3)" }}>{a.review.priority}</span>
+                  <span style={{ fontSize: 10.5, color: "var(--t3)" }}>{a.review.category} · Matched: “{a.review.matchedText}”</span>
                 </div>
               )}
+              {tab === "filings" && a.review && <div style={{ fontSize: 11, color: "var(--t2)", lineHeight: 1.5, marginTop: 4 }}>{a.review.reviewPrompt}{a.review.extractedAmounts?.length ? ` Amounts stated in notice: ${a.review.extractedAmounts.join(", ")}.` : ""}</div>}
             </a>
           ))}
         </div>
@@ -152,7 +137,7 @@ export default function NewsPanel({ symbol }) {
 
       <div style={{ fontSize: 10, color: "var(--t3)", marginTop: 10, lineHeight: 1.5 }}>
         {tab === "filings"
-          ? "The company's own announcements to NSE, newest first. Not news commentary or advice."
+          ? "The company's own NSE announcements, newest first. Review prompts use keyword rules on NSE's description and attachment text; open the source to verify context. No positive/negative impact is inferred."
           : tab === "reports"
             ? "Annual reports as filed with NSE."
             : "Press coverage via Google News. The framing is each publisher's own, not a recommendation — price-prediction pieces are filtered out."}

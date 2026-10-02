@@ -7,6 +7,7 @@
 import { computeMetrics } from "./metrics.js";
 import { band, GROUPS, computeResearch } from "./research.js";
 import { pricePosition } from "./levels.js";
+import { classifyAnnouncement } from "./company-extras.js";
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`FAILED: ${msg}`);
@@ -15,6 +16,10 @@ function assert(cond, msg) {
 const near = (a, b, tol = 0.11) => a != null && b != null && Math.abs(a - b) <= tol;
 const NOW = Date.parse("2026-10-02T00:00:00Z");
 const CR = 1e7;
+const filingReview = classifyAnnouncement("Resignation of Statutory Auditor", "The auditor resigned effective 30 September; ₹12 crore penalty disclosed.");
+assert(filingReview?.category === "Audit / results" && filingReview.matchedText.toLowerCase().includes("auditor resign"), "filing triage explains its matched source phrase");
+assert(filingReview.extractedAmounts.includes("₹12 crore") && filingReview.sentiment == null, "filing triage extracts stated amounts and avoids positive/negative conclusions");
+assert(classifyAnnouncement("General update", "") == null, "unmatched filing descriptions stay unclassified");
 
 // A steady, debt-light company with six years of filings. `tweak` edits the
 // raw years (newest first) before they're stored.
@@ -77,6 +82,8 @@ assert(band(null, roce) === null && band(NaN, roce) === null, "a band gives null
 // ── A complete company ──
 const base = metricsOf(company(), snapshot());
 const r = base.research;
+assert(base.provenance?.financials?.period === base.fyEnd && base.provenance.financials.source.includes("NSE") && base.provenance.marketPrice.date === base.closeDate, "valuation inputs expose filing scope/date and price provenance");
+assert(base.fcfYieldPct != null && near(base.fcfYieldPct, (base.fcfCr / base.marketCapCr) * 100, 0.001), "free-cash-flow yield uses same-period FCF and market value");
 assert(r.quality != null && r.quality > 70, `the steady company scores well (quality ${r.quality})`);
 assert(r.groups.every(g => g.score == null || (g.score >= 0 && g.score <= 100)), "every group score is between 0 and 100");
 assert(group(r, "governance").supportedCoverage >= 0.70 && group(r, "growth").supportedCoverage >= 0.70, "governance and growth meet the 70% supported-weight gate");

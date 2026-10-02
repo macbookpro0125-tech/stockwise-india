@@ -74,6 +74,7 @@ export function companyFilings(symbol) {
         summary: a.attchmntText && a.attchmntText !== a.desc ? a.attchmntText : null,
         date: a.an_dt,
         url: a.attchmntFile || null,
+        review: classifyAnnouncement(a.desc, a.attchmntText),
       }))
       : [];
     const reportRows = reports.status === "fulfilled" ? (reports.value?.data ?? reports.value) : [];
@@ -86,6 +87,35 @@ export function companyFilings(symbol) {
       error: ann.status === "rejected" ? ann.reason.message : null,
     };
   });
+}
+
+// Structured triage from NSE's published notice description and attachment
+// text. It extracts the matched basis and any plainly stated amounts; it does
+// not infer whether the event is financially positive or negative.
+export function classifyAnnouncement(title = "", body = "") {
+  const text = `${String(title)} ${String(body)}`.replace(/\s+/g, " ").trim();
+  const rules = [
+    { priority: "Review promptly", category: "Audit / results", re: /qualified opinion|modified opinion|auditor resign(?:ation|ed)?|auditor change|delay.{0,40}(?:financial )?results|(?:financial )?results.{0,40}delay|fraud|forensic audit|insolvency|default|wilful defaulter|going concern/i, review: "Read the full notice and the linked filing; confirm the affected period, auditor or result detail." },
+    { priority: "Review promptly", category: "Regulatory / legal", re: /show cause|penalty|fine imposed|SEBI.{0,60}order|search and seizure|investigation|enforcement|court order|NCLT|litigation|material weakness/i, review: "Check the regulator/court, parties, amount, current status, and whether the company disclosed an appeal." },
+    { priority: "Review promptly", category: "Management change", re: /resignation.{0,60}(?:director|CFO|CEO|company secretary|auditor)|(?:director|CFO|CEO|company secretary).{0,60}resign/i, review: "Confirm the person's role, effective date, and the reason stated in the filing." },
+    { priority: "Read for context", category: "Capital allocation / transaction", re: /acquisition|acquire|merger|amalgamation|divest|sale of|fund rais|preferential issue|qualified institutions placement|\bQIP\b|rights issue|buyback/i, review: "Check transaction size, funding, counterparties, approvals, and expected completion conditions." },
+    { priority: "Read for context", category: "Operations / outlook", re: /capacity|plant|expansion|large order|order win|production|guidance|outlook|joint venture|subsidiary/i, review: "Check the disclosed amount, timing, execution milestones, and whether the notice states a financial impact." },
+    { priority: "Routine disclosure", category: "Results / governance", re: /board meeting|financial results|shareholding pattern|annual report|dividend|record date|postal ballot/i, review: "Open the linked notice for the underlying numbers, resolutions, or period covered." },
+  ];
+  const match = rules.find(rule => rule.re.test(text));
+  if (!match) return null;
+  const amounts = [...text.matchAll(/(?:₹|\bRs\.?\s*)(\d[\d,]*(?:\.\d+)?)\s*(crore|cr\.?|lakh|mn|million|%|rupees)?/gi)]
+    .slice(0, 3)
+    .map(m => m[0].trim());
+  return {
+    priority: match.priority,
+    category: match.category,
+    matchedText: (text.match(match.re)?.[0] ?? "").slice(0, 120),
+    extractedAmounts: [...new Set(amounts)],
+    reviewPrompt: match.review,
+    method: "NSE description keyword rule",
+    sentiment: null,
+  };
 }
 
 // ---- News (ported from stock-screener's server/news.js) -----------------------
@@ -152,21 +182,45 @@ export function companyNews(name, limit = 8) {
 
 // ---- Peers ------------------------------------------------------------------
 
-// Companies in the same NSE sector, largest first — the original used
-// Screener's narrower industry pages. The stock itself is always included.
+// Companies in the same NSE sector (or, when absent, NSE industry), largest
+// first. Peer medians use the full cohort and exclude the subject company.
 export function sectorPeers(symbol, limit = 30) {
   const { rows } = allMetrics();
   const me = rows.find(r => r.symbol === symbol);
-  if (!me?.sector) return { sector: null, rows: [] };
-  const inSector = rows.filter(r => r.sector === me.sector).sort((a, b) => (b.marketCapCr ?? 0) - (a.marketCapCr ?? 0));
-  const top = inSector.slice(0, limit);
+  if (!me) return { sector: null, industry: null, peerBasis: null, peerCount: 0, benchmark: null, rows: [] };
+  const peerBasis = me.sector ? "sector" : me.industry ? "industry" : null;
+  const peerLabel = me.sector ?? me.industry ?? null;
+  if (!peerBasis) return { sector: null, industry: me.industry, peerBasis: null, peerLabel: null, peerCount: 0, benchmark: null, rows: [] };
+  const cohort = rows.filter(r => r.symbol !== symbol && (peerBasis === "sector" ? r.sector === me.sector : r.industry === me.industry));
+  const median = values => {
+    const sorted = values.filter(v => Number.isFinite(v) && v > 0).sort((a, b) => a - b);
+    if (sorted.length < 5) return { value: null, n: sorted.length };
+    const middle = sorted.length >> 1;
+    return { value: sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2, n: sorted.length };
+  };
+  const pe = median(cohort.map(r => r.pe));
+  const evEbitda = median(cohort.filter(r => !r.lender).map(r => r.evToEbitda));
+  const fcfYield = median(cohort.filter(r => !r.lender).map(r => r.fcfYieldPct));
+  const ordered = [me, ...rows.filter(r => r.symbol !== symbol && (peerBasis === "sector" ? r.sector === me.sector : r.industry === me.industry))]
+    .sort((a, b) => (b.marketCapCr ?? 0) - (a.marketCapCr ?? 0));
+  const top = ordered.slice(0, limit);
   if (!top.includes(me)) top.push(me);
   return {
-    sector: me.sector,
-    total: inSector.length,
+    sector: me.sector ?? null,
+    industry: me.industry ?? null,
+    peerBasis,
+    peerLabel,
+    peerCount: cohort.length,
+    benchmark: {
+      pe: pe.value, peN: pe.n,
+      evToEbitda: evEbitda.value, evToEbitdaN: evEbitda.n,
+      fcfYieldPct: fcfYield.value, fcfYieldN: fcfYield.n,
+    },
+    total: ordered.length,
     rows: top.map(r => ({
       symbol: r.symbol, name: r.name, cmp: r.cmp, pe: r.pe, marketCapCr: r.marketCapCr, divYield: r.divYield,
       profitCr: r.profitCr, revenueCr: r.revenueCr, salesGrowth3y: r.salesGrowth3y, roce: r.roce, roe: r.roe,
+      evToEbitda: r.evToEbitda, fcfYieldPct: r.fcfYieldPct,
       research: researchBrief(r.research),
     })),
   };

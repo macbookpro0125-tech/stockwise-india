@@ -17,6 +17,7 @@ import { screen, screenerMeta, getStock, saveStock, rowsFor, isValidSymbol, coun
 import { criteriaToFilters, METRICS, CATEGORY_METRICS } from "./metric-catalog.js";
 import { listWatchlist, addToWatchlist, setWatchlistNote, removeFromWatchlist } from "./user-watchlist.js";
 import { listHoldings, addHolding, updateHolding, removeHolding } from "./user-portfolio.js";
+import { getThesis, saveThesis } from "./user-thesis.js";
 import { currentPrices } from "./prices.js";
 import { getPerformance, takeSnapshots } from "./performance.js";
 import { pricePosition } from "./levels.js";
@@ -477,6 +478,20 @@ export function createApp() {
         const items = listWatchlist(userId);
         const snap = loadMarketSnapshot();
         sendJson(res, 200, { items, results: rowsFor(items.map(i => i.ticker)), snapshot: snap ? { pricesDate: snap.pricesDate, builtAt: snap.builtAt } : null });
+        return;
+      }
+
+      const thesisRoute = url.pathname.match(/^\/api\/thesis\/([^/]+)$/);
+      if (thesisRoute && ["GET", "PUT"].includes(req.method)) {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        const symbol = decodeURIComponent(thesisRoute[1]).toUpperCase();
+        try {
+          if (req.method === "GET") sendJson(res, 200, getThesis(userId, symbol));
+          else sendJson(res, 200, saveThesis(userId, symbol, await readJsonBody(req)));
+        } catch (e) {
+          sendJson(res, 400, { error: e.message });
+        }
         return;
       }
 

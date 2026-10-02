@@ -27,6 +27,8 @@ const COLUMNS = [
   ["Sales", r => fmtCr(r.revenueCr)],
   ["Sales Gr 3Y", r => pct(r.salesGrowth3y)],
   ["ROCE", r => pct(r.roce)],
+  ["EV / EBITDA", r => num(r.evToEbitda)],
+  ["FCF yield", r => pct(r.fcfYieldPct)],
 ];
 
 export default function PeersPanel({ symbol, onAnalyze }) {
@@ -48,21 +50,29 @@ export default function PeersPanel({ symbol, onAnalyze }) {
     <div style={{ border: "1px solid var(--bdr2)", borderRadius: 14, background: "var(--s2)", padding: 16, marginBottom: 16 }}>
       <div style={{ fontSize: 14, fontWeight: 700, color: "var(--t1)", letterSpacing: "-0.01em" }}>
         Peers
-        {data?.sector && <span style={{ fontSize: 11, fontWeight: 500, color: "var(--t3)", marginLeft: 8 }}>{data.sector}</span>}
+        {data?.peerLabel && <span style={{ fontSize: 11, fontWeight: 500, color: "var(--t3)", marginLeft: 8 }}>{data.peerLabel}</span>}
       </div>
       <p style={{ fontSize: 11, color: "var(--t3)", margin: "4px 0 12px", lineHeight: 1.5 }}>
-        Companies in this stock's NSE sector, largest first{data?.total > rows.length ? ` (top ${rows.length} of ${data.total})` : ""}.
+        Companies in the same NSE {data?.peerBasis ?? "sector or industry"}, largest first{data?.total > rows.length ? ` (top ${rows.length} of ${data.total})` : ""}. Peer medians exclude this company.
       </p>
 
       {error && <div style={{ fontSize: 12, color: "var(--t3)", padding: "16px 0" }}>Could not load peers — {error}</div>}
-      {data && !data.sector && (
-        <div style={{ fontSize: 12, color: "var(--t3)", padding: "8px 0" }}>NSE doesn't publish a sector for this company, so there are no peers to compare with.</div>
+      {data && !data.peerBasis && (
+        <div style={{ fontSize: 12, color: "var(--t3)", padding: "8px 0" }}>NSE doesn't publish a sector or industry for this company, so there are no comparable peers here.</div>
       )}
+
+      {data?.benchmark && <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "8px 0 12px" }}>
+        {[
+          ["Peer median P/E", data.benchmark.pe != null ? `${num(data.benchmark.pe)}× · ${data.benchmark.peN} peers` : `Not enough positive P/E peers (${data.benchmark.peN}/5)`],
+          ["Peer median EV/EBITDA", data.benchmark.evToEbitda != null ? `${num(data.benchmark.evToEbitda)}× · ${data.benchmark.evToEbitdaN} peers` : `Not enough peers (${data.benchmark.evToEbitdaN}/5)`],
+          ["Peer median FCF yield", data.benchmark.fcfYieldPct != null ? `${pct(data.benchmark.fcfYieldPct)} · ${data.benchmark.fcfYieldN} peers` : `Not enough peers (${data.benchmark.fcfYieldN}/5)`],
+        ].map(([label, value]) => <div key={label} style={{ minWidth: 150, padding: "8px 10px", borderRadius: 8, border: "1px solid var(--bdr)", background: "var(--s1)" }}><div style={{ fontSize: 10.5, color: "var(--t3)" }}>{label}</div><div style={{ fontSize: 12, color: "var(--t1)", fontWeight: 650, marginTop: 3 }}>{value}</div></div>)}
+      </div>}
 
       {rows.length > 0 && (
         <>
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, minWidth: 720 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, minWidth: 920 }}>
               <thead>
                 <tr>
                   <th style={{ textAlign: "left", padding: "8px 10px", fontSize: 11.5, color: "var(--t3)", borderBottom: "1px solid var(--bdr2)", position: "sticky", left: 0, background: "var(--s2)" }}>Company</th>
