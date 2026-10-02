@@ -2,6 +2,9 @@
    theme — same tokens and component classes, so the ported screens look the
    same. Additions for this app are marked. */
 
+/* Side padding of every app page — the pages use the full window width */
+:root { --page-x: clamp(20px, 2.2vw, 36px); }
+
 :root {
   /* This app: one typeface for text and figures alike (Inter, bundled in
      main.jsx); figures line up through tabular-nums, not a monospace font */
@@ -504,7 +507,6 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 }
 
 /* ── Screener (DiscoverView): filters beside the results ── */
-.screener-page { max-width: 1440px; }
 .screener { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 20px; align-items: start; }
 .screener.screener-side-closed { grid-template-columns: minmax(0, 1fr); }
 /* Pinned under the header and scrolling on its own, so the filters stay in

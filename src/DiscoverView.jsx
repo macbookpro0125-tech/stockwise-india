@@ -234,7 +234,7 @@ export default function DiscoverView({ onOpenStock }) {
   const matched = results?.matched;
 
   return (
-    <div className="screener-page" style={{ margin: "0 auto", padding: "24px 20px 80px" }}>
+    <div className="screener-page" style={{ padding: "24px var(--page-x) 80px" }}>
       {showSaveModal && (
         <Modal onClose={() => setShowSaveModal(false)}>
           <div style={{ fontSize: 17, fontWeight: 700, color: "var(--t1)", marginBottom: 6, letterSpacing: "-0.02em" }}>Save as a strategy</div>
