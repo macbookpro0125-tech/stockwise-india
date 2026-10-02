@@ -331,8 +331,18 @@ async function indexCloses(isoDate) {
   });
 }
 
+// The index lists name a sector for ~750 companies — most of the top 500, a
+// third overall. NSE's announcements carry an older "industry" (smIndustry)
+// for ~935 companies, many of them small ones the lists skip. Where a company
+// has no index sector, its industry stands in through the sector most of that
+// industry's companies carry in the lists — learned from the companies that
+// have both, at a 75% majority or better, so the two naming schemes needn't
+// be mapped by hand ("Computers - Software" → Information Technology).
+// "Construction" splits 11–6 between Realty and Construction and stays
+// unmapped, as do "Trading" and "Steel". Kept apart from the index sectors
+// (industrySectors) so metrics.js can tell them apart.
 async function sectorsBySymbol() {
-  const out = {};
+  const fromIndex = {};
   for (const list of SECTOR_LISTS) {
     const csv = await fetchText(`https://www.niftyindices.com/IndexConstituent/${list}.csv`).catch(() => null);
     if (!csv) continue;
@@ -341,9 +351,33 @@ async function sectorsBySymbol() {
     const iSym = cols.indexOf("Symbol"), iInd = cols.indexOf("Industry");
     for (const line of lines) {
       const f = line.split(",").map(c => c.trim());
-      if (f[iSym] && f[iInd]) out[f[iSym]] = f[iInd];
+      if (f[iSym] && f[iInd]) fromIndex[f[iSym]] = f[iInd];
     }
   }
+  const industries = await industriesBySymbol().catch(() => ({}));
+  const votes = {};
+  for (const [sym, industry] of Object.entries(industries)) {
+    const sector = fromIndex[sym];
+    if (sector) (votes[industry] ??= {})[sector] = (votes[industry][sector] ?? 0) + 1;
+  }
+  const sectorOf = {};
+  for (const [industry, v] of Object.entries(votes)) {
+    const total = Object.values(v).reduce((a, b) => a + b, 0);
+    const [best, n] = Object.entries(v).sort((a, b) => b[1] - a[1])[0];
+    if (total >= 3 && n / total >= 0.75) sectorOf[industry] = best;
+  }
+  const industrySectors = {};
+  for (const [sym, industry] of Object.entries(industries)) if (!fromIndex[sym] && sectorOf[industry]) industrySectors[sym] = sectorOf[industry];
+  return { sectors: fromIndex, industrySectors, industries };
+}
+
+// Each company's industry from the last 90 days of NSE announcements — one
+// request for the whole market
+async function industriesBySymbol() {
+  const to = new Date(), from = new Date(to.getTime() - 90 * 86400000);
+  const rows = await fetchJson(`${NSE_BASE}/api/corporate-announcements?index=equities&from_date=${ddmmyyyy(from, "-")}&to_date=${ddmmyyyy(to, "-")}`);
+  const out = {};
+  for (const r of Array.isArray(rows) ? rows : []) if (r.symbol && r.smIndustry && r.smIndustry !== "-") out[r.symbol] = r.smIndustry;
   return out;
 }
 
@@ -397,6 +431,7 @@ export async function buildMarketSnapshot(fyEndDates, { yearsOfActions = 6 } = {
   }
 
   const year = await yearOfDays(latest.date, splits);
+  const { sectors, industrySectors, industries } = await sectorsBySymbol();
 
   const snapshot = {
     builtAt: now.toISOString(),
@@ -404,7 +439,9 @@ export async function buildMarketSnapshot(fyEndDates, { yearsOfActions = 6 } = {
     prices: latest.prices,
     dividends,
     splits,
-    sectors: await sectorsBySymbol(),
+    sectors,
+    industrySectors,
+    industries,
     fyEndPrices,
     range52w: year.ranges,
     range52wFrom: year.from,

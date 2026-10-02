@@ -36,6 +36,9 @@ const times = v => `${v.toFixed(v < 10 ? 1 : 0)}x`;
 const crore = v => `₹${Math.round(v).toLocaleString("en-IN")} Cr`;
 const rupees = v => `₹${Math.round(v).toLocaleString("en-IN")}`;
 const fy = iso => `FY${iso.slice(2, 4)}`;
+// "consolidated " / "standalone " — which accounts the figures (and the audit
+// opinion) are from; a company can be clean on one and qualified on the other
+const scopeWord = m => (/consolidated/i.test(m.scope ?? "") ? "consolidated " : /standalone/i.test(m.scope ?? "") ? "standalone " : "");
 
 // Piecewise-linear score between anchors [x, score] (x ascending), flat
 // beyond the ends — the proposal's "interpolate between published anchors"
@@ -360,7 +363,7 @@ const GOVERNANCE = {
         const latest = m.history[0];
         const firm = m.history.find(h => h.auditor)?.auditor;
         if (latest.auditOpinion === "qualified") {
-          return checked(0, "qualified", "Qualified", `The auditor qualified ${fy(latest.fyEnd)}'s accounts — the company filed a statement on the impact of audit qualifications with its results.`);
+          return checked(0, "qualified", "Qualified", `The auditor qualified ${fy(latest.fyEnd)}'s ${scopeWord(m)}accounts — the company filed a statement on the impact of audit qualifications with its results.`);
         }
         if (qualified.length) return checked(50, "earlier", `${qualified.join(", ")} qualified`, `Clean opinion on the latest accounts, but the auditor qualified ${qualified.join(" and ")}.`);
         return checked(100, "unmodified", "Clean", `Unmodified (clean) audit opinion in each of the last ${rows.length} year${rows.length > 1 ? "s" : ""}${firm ? ` — auditor ${firm}` : ""}.`);
@@ -678,7 +681,7 @@ export function computeResearch(m, ctx = { peers: PEERS }) {
   if (latestYear.auditOpinion === "qualified") {
     flags.push({
       id: "auditQualified", severity: "critical",
-      text: `The auditor qualified ${fy(latestYear.fyEnd)}'s accounts. Read the company's statement on the impact of audit qualifications, filed with its results, before relying on any figure here.`,
+      text: `The auditor qualified ${fy(latestYear.fyEnd)}'s ${scopeWord(m)}accounts. Read the company's statement on the impact of audit qualifications, filed with its results, before relying on any figure here.`,
     });
   }
   const critical = flags.some(f => f.severity === "critical");
