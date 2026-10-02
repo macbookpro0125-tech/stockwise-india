@@ -21,7 +21,7 @@
 // Weights and bands are a stated starting point, not a fitted model — the
 // proposal says so too. Change them here and RESEARCH_VERSION together.
 
-export const RESEARCH_VERSION = "1.0";
+export const RESEARCH_VERSION = "1.2";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -352,9 +352,9 @@ const GOVERNANCE = {
         return missing("Needs share counts at least 2 years apart.");
       },
     },
-    { id: "relatedParty", weight: 0.20, label: "Related-party transactions", compute: () => notInFilings("Deals with promoter-group companies are in the annual report and separate NSE filings — not checked yet.") },
+    { id: "relatedParty", weight: 0.15, label: "Related-party transactions", compute: () => notInFilings("Deals with promoter-group companies are in the annual report and separate NSE filings — not checked yet.") },
     {
-      id: "auditor", weight: 0.20, label: "Audit opinion and auditor resignations, 3 years",
+      id: "auditor", weight: 0.25, label: "Audit opinion and auditor resignations, 3 years",
       compute(m) {
         // Each annual filing states the auditor's opinion (fetch-nse.js);
         // resignations come from NSE's announcements (market-data.js)
@@ -386,7 +386,7 @@ const GROWTH = {
   id: "growth", label: "Growth", weight: 10,
   items: [
     {
-      id: "salesGrowth3y", weight: 0.25, label: "Sales growth, 3 years (per year)",
+      id: "salesGrowth3y", weight: 0.30, label: "Sales growth, 3 years (per year)",
       compute(m) {
         if (!finite(m.salesGrowth3y)) return missing("Needs sales 3 years apart.");
         const score = band(m.salesGrowth3y, GROWTH_BANDS);
@@ -394,7 +394,7 @@ const GROWTH = {
       },
     },
     {
-      id: "salesGrowth5y", weight: 0.25, label: "Sales growth, 5 years (per year)",
+      id: "salesGrowth5y", weight: 0.30, label: "Sales growth, 5 years (per year)",
       compute(m) {
         if (!finite(m.salesGrowth5y)) return missing("Needs sales 5 years apart.");
         const score = band(m.salesGrowth5y, GROWTH_BANDS);
@@ -402,14 +402,14 @@ const GROWTH = {
       },
     },
     {
-      id: "epsGrowth3y", weight: 0.15, label: "EPS growth, 3 years (per year)",
+      id: "epsGrowth3y", weight: 0.10, label: "EPS growth, 3 years (per year)",
       compute(m) {
         if (!finite(m.epsGrowth3y)) return missing("Needs positive EPS at both ends, 3 years apart.");
         const score = band(m.epsGrowth3y, EPS_GROWTH_BANDS);
         return checked(score, m.epsGrowth3y, pct(m.epsGrowth3y), `EPS grew ${pct(m.epsGrowth3y)} a year over 3 years — ${word(score)}.`);
       },
     },
-    { id: "forwardGrowth", weight: 0.20, label: "Forward growth", compute: () => notInFilings("No forecasts — the app uses reported results only.") },
+    { id: "forwardGrowth", weight: 0.15, label: "Forward growth", compute: () => notInFilings("No forecasts — the app uses reported results only.") },
     { id: "marketSize", weight: 0.15, label: "Market size and capacity", compute: () => notInFilings("Market size and expansion plans are in the annual report, not the filings.") },
   ],
 };
@@ -423,10 +423,14 @@ const VALUATION = {
   items: [
     { id: "dcf", weight: 0.30, label: "Cash-flow (DCF) value", compute: () => notInFilings("Not built — it needs ten years of forecasts, which would be guesses for 2,000+ companies.") },
     {
-      id: "peers", weight: 0.25, label: "P/E against sector peers",
+      id: "peers", weight: 0.25, label: "P/E against comparable peers",
       compute(m, ctx) {
+        const peers = ctx.peers ?? PEERS;
+        const industryPeers = peers instanceof Map ? peers.get(`industry:${m.industry}`) : peers.industries?.get(m.industry);
+        const useIndustry = industryPeers?.n >= 5;
+        if (useIndustry) m = { ...m, sector: `NSE industry ${m.industry}` };
         if (!m.sector) return missing("Sector isn't known for this company — it's needed to compare with peers.");
-        const s = ctx.peers?.get(m.sector);
+        const s = useIndustry ? industryPeers : peers instanceof Map ? (peers.get(m.sector) ?? peers.get(`sector:${m.sector}`)) : peers.sectors?.get(m.sector);
         if (!s || s.n < 5) return missing(`Fewer than 5 ${m.sector} companies with a P/E to compare.`);
         const pe = closePe(m);
         if (pe == null) return missing("Loss-making — no P/E to compare.");
@@ -544,15 +548,13 @@ function technical(m) {
 
 // Sector P/E medians for the peer comparison, set by screen.js from the
 // whole market each time it recomputes — one company alone can't know them
-let PEERS = null;
+let PEERS = { sectors: new Map(), industries: new Map() };
 export const setResearchPeers = peers => { PEERS = peers; };
 
-// A group counts once at least this share of its applicable weight is
-// checked; the quality score once its scored groups carry this share of the
-// applicable group weight. Looser than the proposal's 70%, which items the
-// filings can never show would fail for every company.
-const MIN_GROUP_COVERAGE = 0.35;
-const MIN_SCORE_COVERAGE = 0.6;
+// Require substantial evidence before scoring a category or a composite.
+// Checks absent from NSE filings remain missing; they do not count as passes.
+const MIN_GROUP_COVERAGE = 0.70;
+const MIN_SCORE_COVERAGE = 0.70;
 const CAPPED_AT = 69;
 // The overall score's ceiling while a critical red flag is unresolved
 const FLAG_CEILING = 39;
@@ -566,15 +568,22 @@ function scoreGroup(group, m, ctx) {
   const applicable = items.filter(i => !i.na);
   const done = applicable.filter(i => i.score != null);
   const applicableWeight = applicable.reduce((a, i) => a + i.weight, 0);
+  // A known unsupported check (e.g. DCF, which is not implemented) remains
+  // visible and lowers total coverage, but cannot make the current scoring
+  // gate impossible to reach. Ordinary missing observations still count
+  // against supported coverage.
+  const supportedWeight = applicable.filter(i => !i.structural).reduce((a, i) => a + i.weight, 0);
   const doneWeight = done.reduce((a, i) => a + i.weight, 0);
   const coverage = applicableWeight > 0 ? doneWeight / applicableWeight : 0;
-  const score = applicable.length && coverage >= MIN_GROUP_COVERAGE ? done.reduce((a, i) => a + i.score * i.weight, 0) / doneWeight : null;
+  const supportedCoverage = supportedWeight > 0 ? doneWeight / supportedWeight : 0;
+  const score = applicable.length && supportedWeight > 0 && supportedCoverage >= MIN_GROUP_COVERAGE
+    ? done.reduce((a, i) => a + i.score * i.weight, 0) / doneWeight : null;
   return {
     id: group.id, label: group.label, weight: group.weight,
     applicable: applicable.length > 0,
     score: score == null ? null : r1(score),
     points: score == null ? null : r1((score * group.weight) / 100),
-    checked: done.length, total: applicable.length, coverage,
+    checked: done.length, total: applicable.length, coverage, supportedCoverage,
     items,
   };
 }
