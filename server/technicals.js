@@ -1,6 +1,7 @@
 // Ported verbatim from stock-screener's server/technicals.js — moving averages,
 // RSI, pivot levels, crossovers and the summary gauge behind the Technical
 // Analysis panel, from a year of Yahoo daily candles.
+import { fetchJson as requestJson } from "./upstream.js";
 const CACHE = new Map();
 const CACHE_MS = 20 * 60 * 1000; // 20 min
 
@@ -62,11 +63,10 @@ async function fetchYahooHistory(ticker) {
   for (const sym of symbols) {
     try {
       const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?range=1y&interval=1d`;
-      const res = await fetch(url, {
+      const json = await requestJson(url, {
         headers: { "User-Agent": "Mozilla/5.0", Accept: "application/json" },
+        service: "Yahoo technical data", timeoutMs: 9_000, retries: 0, maxBytes: 8 * 1024 * 1024,
       });
-      if (!res.ok) continue;
-      const json = await res.json();
       const result = json.chart?.result?.[0];
       if (!result) continue;
       const closes = result.indicators?.quote?.[0]?.close || [];
@@ -157,10 +157,20 @@ function buildSummary(price, smas, emas, rsi, pivots) {
 
 export async function fetchTechnicals(ticker) {
   const cacheKey = ticker.toUpperCase();
+  const cachedEntry = CACHE.get(cacheKey);
   const cached = cacheGet(cacheKey);
   if (cached) return { ...cached, cached: true };
+  if (cachedEntry?.retryAt > Date.now()) return { ...cachedEntry.data, cached: true, stale: true, staleReason: "Yahoo refresh failed; showing the last successful technical data." };
 
-  const { sym, candles } = await fetchYahooHistory(ticker);
+  let history;
+  try {
+    history = await fetchYahooHistory(ticker);
+  } catch (error) {
+    if (!cachedEntry) throw error;
+    CACHE.set(cacheKey, { ...cachedEntry, retryAt: Date.now() + 60_000 });
+    return { ...cachedEntry.data, cached: true, stale: true, staleReason: "Yahoo refresh failed; showing the last successful technical data." };
+  }
+  const { sym, candles } = history;
   const closes = candles.map(c => c.c);
 
   const price = closes[closes.length - 1];

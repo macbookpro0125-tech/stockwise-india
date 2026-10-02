@@ -5,6 +5,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { UA, NSE_BASE, fetchJson, parseQeDate } from "./fetch-nse.js";
 import { PRICE_DIR, SNAPSHOT_PATH } from "./paths.js";
+import { fetchText as requestText } from "./upstream.js";
 const SERIES_PREFERENCE = ["EQ", "BE", "BZ", "SM", "ST"];
 const SECTOR_LISTS = ["ind_niftytotalmarket_list", "ind_niftymicrocap250_list"];
 
@@ -20,10 +21,7 @@ function ddmmyyyy(d, sep = "") {
 }
 
 async function fetchText(url) {
-  const res = await fetch(url, { headers: { "User-Agent": UA } });
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`${url} -> HTTP ${res.status}`);
-  return res.text();
+  return requestText(url, { headers: { "User-Agent": UA }, service: "NSE market archive", maxBytes: 25 * 1024 * 1024, timeoutMs: 20_000, notFoundAsNull: true });
 }
 
 // A finished trading day's bhavcopy never changes, so it's cached on disk.

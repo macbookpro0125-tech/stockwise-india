@@ -1,5 +1,6 @@
 import { db } from "./db.js";
 import { isValidSymbol } from "./screen.js";
+import { badRequest, notFound } from "./http-errors.js";
 
 // The original's portfolio: each lot you bought, with price, quantity, date
 // and a note. Stored per account.
@@ -11,12 +12,12 @@ const row = h => ({
 
 function validate({ ticker, name, buyPrice, qty, buyDate, notes }) {
   ticker = String(ticker || "").trim().toUpperCase();
-  if (!isValidSymbol(ticker)) throw new Error("Enter an NSE symbol, e.g. TCS");
+  if (!isValidSymbol(ticker)) throw badRequest("Enter an NSE symbol, e.g. TCS");
   buyPrice = Number(buyPrice);
   qty = Number(qty);
-  if (!(buyPrice > 0)) throw new Error("Buy price must be more than 0");
-  if (!(qty > 0)) throw new Error("Quantity must be more than 0");
-  if (buyDate && !/^\d{4}-\d{2}-\d{2}$/.test(buyDate)) throw new Error("Buy date must be a date");
+  if (!(buyPrice > 0)) throw badRequest("Buy price must be more than 0");
+  if (!(qty > 0)) throw badRequest("Quantity must be more than 0");
+  if (buyDate && !/^\d{4}-\d{2}-\d{2}$/.test(buyDate)) throw badRequest("Buy date must be a date");
   return {
     ticker,
     name: String(name || "").trim().slice(0, 200) || ticker,
@@ -42,7 +43,7 @@ export function addHolding(userId, input) {
 // Fields left out keep their saved values; an empty one clears it.
 export function updateHolding(userId, id, input) {
   const existing = db.prepare("SELECT * FROM holdings WHERE id = ? AND user_id = ?").get(id, userId);
-  if (!existing) throw new Error("No such holding");
+  if (!existing) throw notFound("No such holding");
   const h = validate({
     ...row(existing),
     ...Object.fromEntries(Object.entries(input).filter(([, v]) => v !== undefined)),

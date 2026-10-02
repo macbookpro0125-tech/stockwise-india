@@ -9,16 +9,29 @@ import { DATA_DIR } from "./paths.js";
 import { NSE_BASE, fetchJson } from "./fetch-nse.js";
 import { shareholdingFilings, readShareholdingFiling } from "./fetch-shareholding.js";
 import { allMetrics, researchBrief } from "./screen.js";
+import { fetchText as requestText } from "./upstream.js";
 
 const HOUR = 3600 * 1000;
 const memo = new Map();
 
 async function cached(key, ttlMs, fn) {
   const hit = memo.get(key);
+  if (hit?.retryAt > Date.now()) return staleValue(hit.data);
   if (hit && Date.now() - hit.at < ttlMs) return hit.data;
-  const data = await fn();
-  memo.set(key, { at: Date.now(), data });
-  return data;
+  try {
+    const data = await fn();
+    memo.set(key, { at: Date.now(), data });
+    return data;
+  } catch (error) {
+    if (!hit) throw error;
+    console.warn(`[cache] ${key} refresh failed; returning the last successful result (${error.name})`);
+    memo.set(key, { ...hit, retryAt: Date.now() + 60_000 });
+    return staleValue(hit.data);
+  }
+}
+
+function staleValue(data) {
+  return Array.isArray(data) ? data : { ...data, stale: true, staleReason: "Refresh failed; showing the last successful result." };
 }
 
 // ---- Shareholding history ---------------------------------------------------
@@ -151,11 +164,8 @@ const JUNK = [
 export function companyNews(name, limit = 8) {
   const query = `${String(name || "").trim()} share price`;
   return cached(`news:${query}`, HOUR, async () => {
-    try {
       const url = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en-IN&gl=IN&ceid=IN:en`;
-      const res = await fetch(url, { headers: { "User-Agent": NEWS_UA } });
-      if (!res.ok) return { news: [], error: `HTTP ${res.status}` };
-      const xml = await res.text();
+      const xml = await requestText(url, { headers: { "User-Agent": NEWS_UA }, service: "Google News", timeoutMs: 10_000, maxBytes: 4 * 1024 * 1024 });
       const seen = new Set();
       const news = [];
       for (const b of xml.split("<item>").slice(1)) {
@@ -174,9 +184,6 @@ export function companyNews(name, limit = 8) {
         if (news.length >= limit) break;
       }
       return { news };
-    } catch (e) {
-      return { news: [], error: e.message };
-    }
   });
 }
 

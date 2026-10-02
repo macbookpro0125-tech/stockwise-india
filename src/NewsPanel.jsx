@@ -39,6 +39,7 @@ export default function NewsPanel({ symbol }) {
   const [filings, setFilings] = useState(null);
   const [news, setNews] = useState(null);
   const [newsError, setNewsError] = useState(null);
+  const [newsStale, setNewsStale] = useState(false);
   const [summaries, setSummaries] = useState({});
   const [openSummary, setOpenSummary] = useState(null);
   const activeSymbol = useRef(symbol);
@@ -58,7 +59,7 @@ export default function NewsPanel({ symbol }) {
     if (tab !== "news" || askedFor.current === symbol) return;
     askedFor.current = symbol;
     api.panel(symbol, "news")
-      .then(d => { setNews(d.news ?? []); if (d.error) setNewsError(d.error); })
+      .then(d => { setNews(d.news ?? []); setNewsStale(!!d.stale); if (d.error) setNewsError(d.error); })
       .catch(e => { setNews([]); setNewsError(e.message); });
   }, [tab, symbol]);
 
@@ -113,6 +114,8 @@ export default function NewsPanel({ symbol }) {
 
       {tab === "filings" && !filings && <div style={emptyStyle}>Loading filings…</div>}
       {tab === "news" && news == null && <div style={emptyStyle}>Loading news…</div>}
+      {tab === "filings" && filings?.stale && <div style={{ ...emptyStyle, color: "var(--yellow)" }}>{filings.staleReason}</div>}
+      {tab === "news" && newsStale && <div style={{ ...emptyStyle, color: "var(--yellow)" }}>Showing cached news because the feed could not refresh.</div>}
 
       {tab !== "reports" && !shown.length && (tab === "filings" ? filings : news) && (
         <div style={emptyStyle}>

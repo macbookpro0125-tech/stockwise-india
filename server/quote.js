@@ -6,6 +6,7 @@
 const UA = "Mozilla/5.0 (compatible; StockwiseIndia/1.0; educational)";
 const CACHE = new Map();
 const CACHE_MS = 15 * 60 * 1000;
+import { fetchJson as requestJson } from "./upstream.js";
 
 function istDayKey(unixSec) {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date(unixSec * 1000));
@@ -16,26 +17,32 @@ function istDayKey(unixSec) {
 // put "Couldn't fetch a live price" on the stock page — it happened in half
 // of the video-recording runs, and customers would see it too.
 async function yahooChart(url, what) {
-  for (let attempt = 1; ; attempt++) {
-    let retryable;
-    try {
-      const res = await fetch(url, { headers: { "User-Agent": UA, Accept: "application/json" }, signal: AbortSignal.timeout(10_000) });
-      if (res.ok) return (await res.json())?.chart?.result?.[0] ?? null;
-      retryable = res.status === 429 || res.status >= 500;
-      if (!retryable || attempt >= 2) throw Object.assign(new Error(`Yahoo ${what} HTTP ${res.status}`), { final: true });
-    } catch (e) {
-      if (e.final || attempt >= 2) throw e;
-    }
-    await new Promise(r => setTimeout(r, 700));
-  }
+  const body = await requestJson(url, { headers: { "User-Agent": UA, Accept: "application/json" }, service: `Yahoo ${what}`, timeoutMs: 10_000, maxBytes: 8 * 1024 * 1024 });
+  return body?.chart?.result?.[0] ?? null;
 }
 
 export async function fetchCmp(symbol) {
   const cached = CACHE.get(symbol);
   if (cached && Date.now() - cached.at < CACHE_MS) return cached.data;
+  if (cached?.retryAt > Date.now()) return { ...cached.data, stale: true, staleReason: "Yahoo refresh failed; showing the last successful quote." };
 
-  const result = await yahooChart(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}.NS?interval=1d&range=5d`, "quote");
-  if (!result) throw new Error(`No quote data for ${symbol}`);
+  let result;
+  try {
+    result = await yahooChart(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}.NS?interval=1d&range=5d`, "quote");
+  } catch (error) {
+    if (cached) {
+      CACHE.set(symbol, { ...cached, retryAt: Date.now() + 60_000 });
+      return { ...cached.data, stale: true, staleReason: "Yahoo refresh failed; showing the last successful quote." };
+    }
+    throw error;
+  }
+  if (!result) {
+    if (cached) {
+      CACHE.set(symbol, { ...cached, retryAt: Date.now() + 60_000 });
+      return { ...cached.data, stale: true, staleReason: "Yahoo refresh failed; showing the last successful quote." };
+    }
+    throw new Error(`No quote data for ${symbol}`);
+  }
 
   const timestamps = result.timestamp || [];
   const closes = result.indicators?.quote?.[0]?.close || [];
@@ -45,7 +52,13 @@ export async function fetchCmp(symbol) {
     byDay.set(istDayKey(timestamps[i]), closes[i]);
   }
   const days = [...byDay.entries()].sort((a, b) => a[0].localeCompare(b[0]));
-  if (!days.length) throw new Error(`No daily closes for ${symbol}`);
+  if (!days.length) {
+    if (cached) {
+      CACHE.set(symbol, { ...cached, retryAt: Date.now() + 60_000 });
+      return { ...cached.data, stale: true, staleReason: "Yahoo returned no closes; showing the last successful quote." };
+    }
+    throw new Error(`No daily closes for ${symbol}`);
+  }
 
   const today = istDayKey(Date.now() / 1000);
   const [date, close] = days[days.length - 1][0] === today && days.length >= 2 ? days[days.length - 2] : days[days.length - 1];
@@ -64,8 +77,18 @@ export async function fetchDailyBars(symbol, range = "1y") {
   const key = `${symbol}|${range}`;
   const cached = BARS_CACHE.get(key);
   if (cached && Date.now() - cached.at < CACHE_MS) return cached.data;
+  if (cached?.retryAt > Date.now()) return { ...cached.data, stale: true, staleReason: "Yahoo refresh failed; showing the last successful price history." };
 
-  const result = await yahooChart(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}.NS?interval=1d&range=${range}`, "price history");
+  let result;
+  try {
+    result = await yahooChart(`https://query1.finance.yahoo.com/v8/finance/chart/${symbol}.NS?interval=1d&range=${range}`, "price history");
+  } catch (error) {
+    if (cached) {
+      BARS_CACHE.set(key, { ...cached, retryAt: Date.now() + 60_000 });
+      return { ...cached.data, stale: true, staleReason: "Yahoo refresh failed; showing the last successful price history." };
+    }
+    throw error;
+  }
   if (!result) throw new Error(`No price history for ${symbol}`);
 
   const timestamps = result.timestamp || [];

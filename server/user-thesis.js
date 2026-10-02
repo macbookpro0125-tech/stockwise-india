@@ -1,5 +1,6 @@
 import { db } from "./db.js";
 import { isValidSymbol } from "./screen.js";
+import { badRequest } from "./http-errors.js";
 
 const fields = {
   case: "case_text",
@@ -9,7 +10,7 @@ const fields = {
 
 function cleanTicker(ticker) {
   const value = String(ticker ?? "").trim().toUpperCase();
-  if (!isValidSymbol(value)) throw new Error("Enter a valid NSE symbol");
+  if (!isValidSymbol(value)) throw badRequest("Enter a valid NSE symbol");
   return value;
 }
 

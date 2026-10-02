@@ -1,4 +1,5 @@
 import { db } from "./db.js";
+import { badRequest, notFound } from "./http-errors.js";
 
 export function listAlerts(userId) {
   return db.prepare("SELECT * FROM alerts WHERE user_id = ? ORDER BY created_at DESC").all(userId);
@@ -6,9 +7,10 @@ export function listAlerts(userId) {
 
 export function createAlert(userId, { ticker, name, condition, threshold }) {
   ticker = String(ticker || "").trim().toUpperCase();
-  if (!ticker) throw new Error("ticker required");
-  if (condition !== "above" && condition !== "below") throw new Error("condition must be 'above' or 'below'");
-  if (!isFinite(threshold)) throw new Error("threshold must be a number");
+  if (!ticker) throw badRequest("ticker required");
+  if (condition !== "above" && condition !== "below") throw badRequest("condition must be 'above' or 'below'");
+  threshold = Number(threshold);
+  if (!Number.isFinite(threshold) || threshold <= 0) throw badRequest("threshold must be a price above 0");
 
   try {
     const result = db.prepare(
@@ -24,7 +26,7 @@ export function createAlert(userId, { ticker, name, condition, threshold }) {
     if (e.message.includes("UNIQUE constraint failed")) {
       const existing = db.prepare("SELECT * FROM alerts WHERE user_id = ? AND ticker = ? AND condition = ?")
         .get(userId, ticker, condition);
-      throw Object.assign(new Error(`An alert for ${ticker} already exists (${condition} ${existing.threshold})`), { duplicate: true, existing });
+      throw Object.assign(new Error(`An alert for ${ticker} already exists (${condition} ${existing.threshold})`), { duplicate: true, status: 409, existing });
     }
     throw e;
   }
@@ -34,14 +36,14 @@ export function createAlert(userId, { ticker, name, condition, threshold }) {
 // edit dialog and on/off switch). The one-per-direction rule still holds.
 export function updateAlert(userId, alertId, { condition, threshold, enabled }) {
   const existing = db.prepare("SELECT * FROM alerts WHERE id = ? AND user_id = ?").get(alertId, userId);
-  if (!existing) throw new Error("No such alert");
+  if (!existing) throw notFound("No such alert");
   const next = {
     condition: condition ?? existing.condition,
     threshold: threshold != null ? Number(threshold) : existing.threshold,
     enabled: enabled != null ? (enabled ? 1 : 0) : existing.enabled,
   };
-  if (next.condition !== "above" && next.condition !== "below") throw new Error("condition must be 'above' or 'below'");
-  if (!(next.threshold > 0)) throw new Error("threshold must be a price above 0");
+  if (next.condition !== "above" && next.condition !== "below") throw badRequest("condition must be 'above' or 'below'");
+  if (!(next.threshold > 0)) throw badRequest("threshold must be a price above 0");
   // A changed alert is a new one for Telegram: it may send again
   // (alert-notifier.js sends once per crossing)
   const changed = next.condition !== existing.condition || next.threshold !== existing.threshold || next.enabled !== existing.enabled;
@@ -50,7 +52,7 @@ export function updateAlert(userId, alertId, { condition, threshold, enabled }) 
       .run(next.condition, next.threshold, next.enabled, changed ? 1 : 0, alertId, userId);
   } catch (e) {
     if (e.message.includes("UNIQUE constraint failed")) {
-      throw Object.assign(new Error(`You already have a "${next.condition}" alert for ${existing.ticker}`), { duplicate: true });
+      throw Object.assign(new Error(`You already have a "${next.condition}" alert for ${existing.ticker}`), { duplicate: true, status: 409 });
     }
     throw e;
   }

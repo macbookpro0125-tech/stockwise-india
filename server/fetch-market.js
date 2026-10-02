@@ -31,7 +31,11 @@ export function readStored(symbol) {
 
 // Done = a file written by the current schema, success or genuine failure. A
 // file from an older schema is re-fetched rather than skipped as done.
-export const needsSummary = symbol => readStored(symbol)?.schema !== SCHEMA;
+export function needsSummary(symbol) {
+  const stored = readStored(symbol);
+  if (stored?.schema !== SCHEMA) return true;
+  return !!(stored.error && stored.retryable && Date.now() >= Date.parse(stored.retryAfter || ""));
+}
 
 // Financials fetched, shareholding never read from its filing (older files
 // only carry the promoter %)
@@ -105,7 +109,15 @@ export async function fetchCompanies(stocks, kind, { onProgress = () => {}, log 
         const stored = kind === "summary" ? readStored(stock.symbol) : null;
         if (kind === "holdings") log(`${stock.symbol}: ${e.message}`);
         else if (stored && !stored.error && stored.years?.length) log(`${stock.symbol}: kept the stored figures — ${e.message}`);
-        else saveStock(stock.symbol, { symbol: stock.symbol, name: stock.name, schema: SCHEMA, error: e.message, fetchedAt: new Date().toISOString() });
+        else {
+          const retryable = !!(e.retryable || e instanceof TypeError || e.cause?.code === "ETIMEDOUT");
+          saveStock(stock.symbol, {
+            symbol: stock.symbol, name: stock.name, schema: SCHEMA, error: e.message,
+            retryable,
+            retryAfter: retryable ? new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString() : null,
+            fetchedAt: new Date().toISOString(),
+          });
+        }
         fail++;
         blockedInARow = 0;
       }

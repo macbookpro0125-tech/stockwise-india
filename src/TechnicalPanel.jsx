@@ -261,6 +261,7 @@ export default function TechnicalPanel({ ticker }) {
           Technical Analysis <span style={{ fontSize: 11, color: "var(--t3)", fontWeight: 400 }}>· {data.yahooSymbol}</span>
         </div>
       </div>
+      {data.stale && <div style={{ fontSize: 11, color: "var(--yellow)", background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", borderRadius: 7, padding: "7px 10px", marginBottom: 10 }}>{data.staleReason} Verify the date before relying on these signals.</div>}
 
       {/* Summary Gauge */}
       <SummaryGauge summary={data.summary} />

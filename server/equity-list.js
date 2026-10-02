@@ -7,11 +7,10 @@
 // switch to a real CSV parser if NSE ever adds a company name containing one.
 const EQUITY_LIST_URL = "https://archives.nseindia.com/content/equities/EQUITY_L.csv";
 const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36";
+import { fetchText } from "./upstream.js";
 
 export async function fetchEquityList() {
-  const res = await fetch(EQUITY_LIST_URL, { headers: { "User-Agent": UA } });
-  if (!res.ok) throw new Error(`Equity list fetch -> HTTP ${res.status}`);
-  const csv = await res.text();
+  const csv = await fetchText(EQUITY_LIST_URL, { headers: { "User-Agent": UA }, service: "NSE equity list", maxBytes: 5 * 1024 * 1024 });
   const [, ...lines] = csv.trim().split("\n");
   return lines.map(line => {
     const [symbol, name, series, dateOfListing, , , isin, faceValue] = line.split(",");

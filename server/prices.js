@@ -18,7 +18,7 @@ export async function currentPrices(symbols, { live = true } = {}) {
       if (live) {
         try {
           const q = await fetchCmp(sym);
-          out[sym] = { price: q.cmp, asOf: q.asOf, source: "live" };
+          out[sym] = { price: q.cmp, asOf: q.asOf, source: q.stale ? "cached" : "live", stale: !!q.stale };
           continue;
         } catch { /* fall back to the close */ }
       }

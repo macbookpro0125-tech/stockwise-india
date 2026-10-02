@@ -34,6 +34,13 @@ async function main() {
     body: JSON.stringify({ email: "alice@example.com", password: "correcthorsebattery" }),
   });
   assert(signupRes.status === 200, "signup over HTTP returns 200");
+  const duplicateSignup = await fetch(`${BASE}/api/auth/signup`, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: "alice@example.com", password: "correcthorsebattery" }),
+  });
+  assert(duplicateSignup.status === 409, "duplicate account creation returns 409");
+  const malformedJson = await fetch(`${BASE}/api/auth/signup`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{" });
+  assert(malformedJson.status === 400 && /valid JSON/i.test((await malformedJson.json()).error) && malformedJson.headers.get("x-request-id"), "malformed JSON returns a clear 400 response with a request ID");
   const aliceCookie = extractCookie(signupRes);
   assert(aliceCookie.startsWith("stockwise_session="), "signup sets a session cookie");
 
@@ -45,7 +52,7 @@ async function main() {
 
   const health = await fetch(`${BASE}/api/health`);
   const healthBody = await health.json();
-  assert(health.status === 200 && healthBody.ok === true && "jobs" in healthBody, "GET /api/health answers (the host's health check)");
+  assert(health.status === 200 && healthBody.ok === true && "jobs" in healthBody && "degraded" in healthBody && "snapshotAgeHours" in healthBody, "GET /api/health answers the host's check and reports data freshness");
   assert((await fetch(`${BASE}/api/no-such-route`)).status === 404, "an unknown /api/ route is a 404, not the app page");
 
   const presets = await (await fetch(`${BASE}/api/presets`)).json();
@@ -116,6 +123,8 @@ async function main() {
   });
   const badStock = await fetch(`${BASE}/api/stock/..%2F..%2Fpackage`, { headers: { Cookie: aliceCookie } });
   assert(badStar.status === 400 && badStock.status === 400, "a symbol like ../x is refused before it can reach a file path");
+  const malformedPath = await fetch(`${BASE}/api/stock/%E0%A4%A`, { headers: { Cookie: aliceCookie } });
+  assert(malformedPath.status === 400, "malformed URL encoding returns a client error, not an internal server error");
   const bobWatch = await (await fetch(`${BASE}/api/watchlist`, { headers: { Cookie: bobCookie } })).json();
   assert(bobWatch.items.length === 0, "bob doesn't see alice's watchlist");
   await fetch(`${BASE}/api/watchlist/TCS`, { method: "DELETE", headers: { Cookie: aliceCookie } });
@@ -138,7 +147,7 @@ async function main() {
   assert(added.ticker === "TCS" && added.qty === 10, "adding a holding returns it, symbol upper-cased");
   const port = await (await fetch(`${BASE}/api/portfolio`, { headers: { Cookie: aliceCookie } })).json();
   assert(port.holdings.length === 1 && port.prices.TCS?.price > 0 && "TCS" in port.status, "the portfolio comes back with a price and buy-ladder status for each holding");
-  assert((await json("PUT", `/api/portfolio/${added.id}`, bobCookie, { buyPrice: 1, qty: 1 })).status === 400, "bob can't edit alice's holding");
+  assert((await json("PUT", `/api/portfolio/${added.id}`, bobCookie, { buyPrice: 1, qty: 1 })).status === 404, "bob can't edit alice's holding");
   const edited = await (await json("PUT", `/api/portfolio/${added.id}`, aliceCookie, { buyPrice: 3100, qty: 12 })).json();
   assert(edited.buyPrice === 3100 && edited.qty === 12, "editing a holding saves the new price and quantity");
   assert(edited.buyDate === "2026-01-15" && edited.name === added.name, "an edit keeps the fields it didn't change");
@@ -151,7 +160,7 @@ async function main() {
 
   // Alerts: edit, pause, and ownership
   const [tcsAlert] = await (await fetch(`${BASE}/api/alerts`, { headers: { Cookie: aliceCookie } })).json();
-  assert((await json("PUT", `/api/alerts/${tcsAlert.id}`, bobCookie, { threshold: 1 })).status === 400, "bob can't edit alice's alert");
+  assert((await json("PUT", `/api/alerts/${tcsAlert.id}`, bobCookie, { threshold: 1 })).status === 404, "bob can't edit alice's alert");
   const paused = await (await json("PUT", `/api/alerts/${tcsAlert.id}`, aliceCookie, { threshold: 3200, enabled: false })).json();
   assert(paused.threshold === 3200 && paused.enabled === 0, "editing an alert changes its price and can pause it");
   assert((await json("PUT", `/api/alerts/${tcsAlert.id}`, aliceCookie, { threshold: -5 })).status === 400, "an alert price below 0 is refused");
@@ -235,7 +244,7 @@ async function main() {
   assert((await json("POST", "/api/auth/signup", "", { email: "bulk10@example.com", password: "bulkpassword1" })).status === 429, "an 11th sign-up from one connection within the hour is refused");
   limits.signupIp.clear();
   const huge = await json("POST", "/api/screen", aliceCookie, { filters: [], padding: "x".repeat(300 * 1024) });
-  assert(huge.status === 400 && /too large/i.test((await huge.json()).error), "a request bigger than 256 KB is refused");
+  assert(huge.status === 413 && /too large/i.test((await huge.json()).error), "a request bigger than 256 KB is refused with 413");
 
   // Password reset by email, with the email itself stubbed out
   const emailMod = await import("./email.js");
@@ -256,7 +265,7 @@ async function main() {
   const resetRes = await json("POST", "/api/auth/reset", "", { token: link[1], password: "erinsnewpassword" });
   assert(resetRes.status === 200 && extractCookie(resetRes).startsWith("stockwise_session="), "the link sets a new password and signs in");
   assert((await fetch(`${BASE}/api/auth/me`, { headers: { Cookie: erinOldCookie } })).status === 401, "a reset signs the account out everywhere else");
-  assert((await json("POST", "/api/auth/login", "", { email: "erin@example.com", password: "erinsoldpassword" })).status === 400 &&
+  assert((await json("POST", "/api/auth/login", "", { email: "erin@example.com", password: "erinsoldpassword" })).status === 401 &&
     (await json("POST", "/api/auth/login", "", { email: "erin@example.com", password: "erinsnewpassword" })).status === 200, "the old password stops working and the new one works");
   assert((await json("POST", "/api/auth/reset", "", { token: link[1], password: "anotherpassword1" })).status === 400, "a reset link works only once");
   await json("POST", "/api/auth/forgot", "", { email: "erin@example.com" });
@@ -295,7 +304,7 @@ async function main() {
   const aliceId = (await (await fetch(`${BASE}/api/auth/me`, { headers: { Cookie: aliceCookie } })).json()).userId;
   assert((await (await fbSignIn(google("uid-alice-google", "alice@example.com"))).json()).userId === aliceId, "a verified Google email joins the email account already using it");
   const unverified = await fbSignIn(google("uid-mallory", "alice@example.com", { email_verified: false }));
-  assert(unverified.status === 400, "an unverified email never opens someone else's account");
+  assert(unverified.status === 401, "an unverified email never opens someone else's account");
   const phoneRes = await fbSignIn(idToken({ sub: "uid-phone", phone_number: "+919876543210", firebase: { sign_in_provider: "phone" } }));
   const phoneCookie = extractCookie(phoneRes);
   const phoneMe = await (await fetch(`${BASE}/api/auth/me`, { headers: { Cookie: phoneCookie } })).json();
@@ -304,7 +313,7 @@ async function main() {
   assert((await fbSignIn(idToken({ sub: "uid-x", email: "x@gmail.com", email_verified: true, firebase: { sign_in_provider: "google.com" }, aud: "someone-elses-project", iss: "https://securetoken.google.com/someone-elses-project" }))).status === 401, "a token for another Firebase project is refused");
   assert((await fbSignIn(idToken({ sub: "uid-forged", email: "alice@example.com", email_verified: true, firebase: { sign_in_provider: "google.com" } }, forger))).status === 401, "a token not signed by Google's key is refused");
   assert((await fbSignIn(idToken({ sub: "uid-anon", firebase: { sign_in_provider: "anonymous" } }))).status === 400, "only Google, Apple and phone sign-ins are accepted");
-  assert((await json("POST", "/api/auth/login", "", { email: "frank@gmail.com", password: "anything-at-all" })).status === 400, "a Google account has no password to sign in with");
+  assert((await json("POST", "/api/auth/login", "", { email: "frank@gmail.com", password: "anything-at-all" })).status === 401, "a Google account has no password to sign in with");
   assert((await json("POST", "/api/auth/delete-account", phoneCookie, { confirm: "delete it" })).status === 400 &&
     (await json("POST", "/api/auth/delete-account", phoneCookie, { confirm: "DELETE" })).status === 200, "a password-less account is deleted by typing DELETE");
   fb.setFirebaseKeysForTests(null);
@@ -340,7 +349,7 @@ async function main() {
   const deleted = await json("POST", "/api/auth/delete-account", carolCookie, { password: "carolspassword1" });
   assert(deleted.status === 200 && /stockwise_session=;/.test(deleted.headers.get("set-cookie") || ""), "deleting an account works and clears the cookie");
   assert((await fetch(`${BASE}/api/auth/me`, { headers: { Cookie: carolCookie } })).status === 401, "the deleted account's session no longer works");
-  assert((await json("POST", "/api/auth/login", "", { email: "carol@example.com", password: "carolspassword1" })).status === 400, "the deleted account can't sign in");
+  assert((await json("POST", "/api/auth/login", "", { email: "carol@example.com", password: "carolspassword1" })).status === 401, "the deleted account can't sign in");
   const { db } = await import("./db.js");
   const leftovers = ["users", "sessions", "alerts", "watchlist", "holdings", "thesis_notes", "telegram_links"]
     .map(t => db.prepare(`SELECT COUNT(*) AS n FROM ${t} WHERE ${t === "users" ? "id" : "user_id"} = ?`).get(carolId).n);

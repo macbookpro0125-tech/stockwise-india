@@ -384,7 +384,7 @@ export default function StockDetail({ symbol, onBack, backTo = "Discover", onOpe
       };
       setBaseline(b);
       applyBaseline(b);
-      if (d.quote) { setActionPrice(String(d.quote.cmp)); setPriceLabel(`Live price (${d.quote.asOf})`); }
+      if (d.quote) { setActionPrice(String(d.quote.cmp)); setPriceLabel(`${d.quote.stale ? "Cached price" : "Live price"} (${d.quote.asOf})`); }
       else if (d.close) { setActionPrice(String(d.close.price)); setPriceLabel(`NSE close (${d.close.date})`); }
     }).catch(e => { if (!cancelled) setError(e.message); });
     return () => { cancelled = true; };
@@ -492,6 +492,11 @@ export default function StockDetail({ symbol, onBack, backTo = "Discover", onOpe
       {data.quoteError && (
         <div style={{ fontSize: 12, color: "var(--yellow)", background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", borderRadius: 8, padding: "8px 12px", marginBottom: 12 }}>
           Couldn't fetch a live price ({data.quoteError}){data.close ? " — using NSE's last close." : "."}
+        </div>
+      )}
+      {data.quote?.stale && (
+        <div style={{ fontSize: 12, color: "var(--yellow)", background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", borderRadius: 8, padding: "8px 12px", marginBottom: 12 }}>
+          <strong>Showing a cached quote</strong> — Yahoo Finance could not refresh it. Quote date: {data.quote.asOf}.
         </div>
       )}
 

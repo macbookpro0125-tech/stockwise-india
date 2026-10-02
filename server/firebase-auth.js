@@ -13,6 +13,7 @@
 //   FIREBASE_PROVIDERS     the buttons to show, default "google,phone"; add
 //                          "apple" once Sign in with Apple is set up there
 import { createVerify } from "node:crypto";
+import { fetchJson } from "./upstream.js";
 
 const CERTS_URL = "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com";
 const SKEW_S = 300; // clocks a few minutes apart
@@ -35,11 +36,13 @@ export const setFirebaseKeysForTests = keys => { testKeys = keys; };
 async function signingKeys() {
   if (testKeys) return testKeys;
   if (certs && Date.now() < certsUntil) return certs;
-  const res = await fetch(CERTS_URL, { signal: AbortSignal.timeout(10000) });
-  if (!res.ok) throw new Error(`Google's signing keys: HTTP ${res.status}`);
-  certs = await res.json();
-  const maxAge = Number(res.headers.get("cache-control")?.match(/max-age=(\d+)/)?.[1] ?? 3600);
-  certsUntil = Date.now() + maxAge * 1000;
+  let maxAge = 3600;
+  certs = await fetchJson(CERTS_URL, {
+    service: "Google sign-in keys", timeoutMs: 10_000, retries: 1, maxBytes: 1024 * 1024,
+    headers: { Accept: "application/json" },
+    onHeaders: headers => { maxAge = Number(headers.get("cache-control")?.match(/max-age=(\d+)/)?.[1] ?? maxAge); },
+  });
+  certsUntil = Date.now() + Math.min(Math.max(maxAge, 60), 24 * 3600) * 1000;
   return certs;
 }
 
