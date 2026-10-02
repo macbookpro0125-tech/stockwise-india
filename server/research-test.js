@@ -29,6 +29,7 @@ function company({ tweak = y => y, template = "INDAS", holding = {}, sector = "I
       totalAssets: 1300 * CR * g, currentAssets: 600 * CR * g, currentLiabilities: 250 * CR * g,
       cash: 200 * CR * g, bankBalances: 50 * CR, currentInvestments: 100 * CR * g,
       paidUp: 100 * CR, faceValue: 10, cogs: 400 * CR * g,
+      auditOpinion: "unmodified", auditor: i < 2 ? "Example & Co LLP" : null,
     }, i);
   });
   return {
@@ -80,13 +81,26 @@ assert(r.quality != null && r.quality > 70, `the steady company scores well (qua
 assert(r.groups.every(g => g.score == null || (g.score >= 0 && g.score <= 100)), "every group score is between 0 and 100");
 assert(near(r.groups.reduce((a, g) => a + (g.points ?? 0), 0), r.quality, 0.6), "quality = the sum of the groups' points when every group is scored");
 assert(itemOf(r, "business", "competitive").structural && itemOf(r, "business", "competitive").score == null, "items the filings can't show stay listed as not checked");
-assert(group(r, "governance").checked === 3 && group(r, "governance").total === 6, "governance shows 3 of 6 checked (related parties, auditors, flags unchecked)");
+assert(group(r, "governance").checked === 4 && group(r, "governance").total === 6, "governance shows 4 of 6 checked (related parties and governance flags unchecked)");
+assert(itemOf(r, "governance", "auditor").score === 100 && /Example & Co LLP/.test(itemOf(r, "governance", "auditor").reason), "clean audit opinions score 100 and name the auditor");
+assert(r.flags.length === 0, "a clean company has no red flags");
 assert(r.overall.status === "rated" && r.overall.score != null, "a complete company gets an overall research score");
 
 // The overall formula, recomputed from the parts
 const g = Math.exp(0.7 * Math.log(r.qualityOnly) + 0.3 * Math.log(r.valuation.score));
 assert(near(r.overall.score, g * (1 - 0.35 * r.risk.overlay / 100), 0.11), "overall = quality-ex-valuation^0.7 × valuation^0.3 × (1 − 0.35 × risk overlay)");
 assert(!/\b(BUY|SELL|buy|sell)\b/.test(JSON.stringify(r)), "no buy or sell wording anywhere in the result");
+
+// ── A qualified audit opinion ──
+const qualifiedNow = metricsOf(company({ tweak: (y, i) => (i === 0 ? { ...y, auditOpinion: "qualified" } : y) }), snapshot());
+const qn = qualifiedNow.research;
+assert(itemOf(qn, "governance", "auditor").score === 0, "the auditor qualified the latest accounts: the audit check scores 0");
+assert(qn.flags.some(f => f.id === "auditQualified" && f.severity === "critical"), "…and it's a critical red flag");
+assert(qn.overall.status === "review-required" && qn.overall.score <= 39 && qn.overall.stance === "Review required", "…which holds the overall score at 39 or under, marked Review required");
+const qualifiedBefore = metricsOf(company({ tweak: (y, i) => (i === 2 ? { ...y, auditOpinion: "qualified" } : y) }), snapshot());
+assert(itemOf(qualifiedBefore.research, "governance", "auditor").score === 50 && qualifiedBefore.research.flags.length === 0, "an older qualification scores 50 and isn't a red flag");
+const noOpinion = metricsOf(company({ tweak: y => ({ ...y, auditOpinion: null }) }), snapshot());
+assert(itemOf(noOpinion.research, "governance", "auditor").score == null, "no audit opinion on file: missing, not a pass");
 
 // ── Missing data is left out, never scored 0 ──
 const noCapex = metricsOf(company({ tweak: y => ({ ...y, capex: null }) }), snapshot());
@@ -107,8 +121,8 @@ assert(bank.lender && !group(bank.research, "balance").applicable, "a bank's bal
 assert(bank.research.quality != null, "a bank is still scored on the groups that apply");
 assert(bank.research.quality <= 69 && bank.research.capped?.at === 69 && /bad loans/.test(bank.research.capped.reason), "a bank's quality is capped at 69, saying why (bad loans and capital adequacy aren't in the filings)");
 assert(r.capped === null, "a fully checked company isn't capped");
-const noShareholding = metricsOf(company({ holding: { pledgedPct: null, promoterHistory: [] } }), snapshot());
-assert(group(noShareholding.research, "governance").score == null, "no pledge or promoter history: governance has too little to score");
+const noShareholding = metricsOf(company({ holding: { pledgedPct: null, promoterHistory: [] }, tweak: y => ({ ...y, auditOpinion: null }) }), snapshot());
+assert(group(noShareholding.research, "governance").score == null, "no pledge, promoter history or audit opinion: governance has too little to score");
 assert(noShareholding.research.quality != null && noShareholding.research.quality <= 69 && /Shareholding/.test(noShareholding.research.capped?.reason), "governance that can't be checked caps quality at 69, saying why");
 assert(group(bank.research, "earnings").items.filter(i => i.na).length === 3, "a bank's cash-flow items are not applicable rather than missing");
 const widelyHeld = metricsOf(company({ holding: { promoterPct: 0, promoterHistory: Array.from({ length: 12 }, (_, q) => ({ asOfIso: `20${26 - Math.floor(q / 4)}-0${3 + 0 * q}-31`, pct: 0 })) } }), snapshot());

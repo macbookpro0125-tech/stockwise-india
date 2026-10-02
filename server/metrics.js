@@ -295,6 +295,8 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
       roe: roeOf(y),
       roce: roceOf(y),
       debtToEquity: y.equity > 0 && y.debt != null ? totalDebt(y) / y.equity : null,
+      auditOpinion: y.auditOpinion ?? null,
+      auditor: y.auditor ?? null,
     };
   });
 
