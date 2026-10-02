@@ -33,6 +33,7 @@ import { limits, clientIp, waitText } from "./rate-limit.js";
 import { startBackups } from "./backup.js";
 import { fetchTechnicals } from "./technicals.js";
 import { shareholdingHistory, companyFilings, companyNews, sectorPeers } from "./company-extras.js";
+import { summarizeFiling } from "./filing-summary.js";
 import { PRESETS } from "./presets.js";
 import { DIST_DIR } from "./paths.js";
 
@@ -375,6 +376,23 @@ export function createApp() {
 
       // The stock page's panels, each loaded on its own so a slow one (news,
       // an old quarter's shareholding) never holds up the rest of the page
+      const filingSummaryRoute = url.pathname.match(/^\/api\/stock\/([^/]+)\/filings\/(\d+)\/summary$/);
+      if (filingSummaryRoute && req.method === "GET") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        const symbol = decodeURIComponent(filingSummaryRoute[1]).toUpperCase();
+        const index = Number(filingSummaryRoute[2]);
+        if (!isValidSymbol(symbol) || index > 39) { sendJson(res, 400, { error: "Unknown filing." }); return; }
+        try {
+          const filings = await companyFilings(symbol);
+          const filing = filings.announcements[index];
+          if (!filing?.url) { sendJson(res, 404, { error: "This notice has no linked attachment to read." }); return; }
+          sendJson(res, 200, await summarizeFiling(filing));
+        } catch (e) {
+          sendJson(res, 502, { error: e.message || "Couldn't read this NSE attachment." });
+        }
+        return;
+      }
       const panelRoute = url.pathname.match(/^\/api\/stock\/([^/]+)\/(prices|technicals|shareholding|filings|news|peers)$/);
       if (panelRoute && req.method === "GET") {
         const userId = requireAuth(req, res);

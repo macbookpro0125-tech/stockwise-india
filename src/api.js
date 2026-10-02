@@ -36,6 +36,7 @@ export const api = {
   prices: (symbol, range) => request(`/api/stock/${encodeURIComponent(symbol)}/prices?range=${range}`),
   // The stock page's other panels: technicals, shareholding, filings, news, peers
   panel: (symbol, name) => request(`/api/stock/${encodeURIComponent(symbol)}/${name}`),
+  filingSummary: (symbol, index) => request(`/api/stock/${encodeURIComponent(symbol)}/filings/${index}/summary`),
   search: (q) => request(`/api/search?q=${encodeURIComponent(q)}`),
   currentPrices: (symbols) => request(`/api/prices?symbols=${symbols.map(encodeURIComponent).join(",")}`),
   watchlist: () => request("/api/watchlist"),
