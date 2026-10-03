@@ -70,11 +70,21 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
   // them — a holding company's group figures include its subsidiaries'
   // outside owners (half of Bajaj Finserv's). Banks' equity line is already
   // their own (minority interest is a separate line there).
-  const ownersProfit = y => y?.profitOwners ?? y?.profit ?? null;
+  const near = (a, b, tol) => a > 0 && b > 0 && Math.abs(a / b - 1) <= tol;
+  // …unless the filing contradicts itself: an own-shareholders figure out of
+  // line with its EPS while the group figure fits is a slip (Balkrishna's FY26:
+  // ₹877 Cr to its owners, ₹0 to anyone else, ₹1,243 Cr in all, EPS ₹64.3 on
+  // 19.3 Cr shares). Both sides here are on the filing's own share basis.
+  const ownersProfit = y => {
+    if (y?.profitOwners == null) return y?.profit ?? null;
+    const filed = y.paidUp > 0 && y.faceValue > 0 ? y.paidUp / y.faceValue : null;
+    if (filed && y.eps > 0 && !near(y.profitOwners / filed, y.eps, 0.15) && near(y.profit / filed, y.eps, 0.15)) return y.profit;
+    return y.profitOwners;
+  };
   const ownersEquity = y => y?.equityOwners ?? y?.equity ?? null;
   // ROE pairs like with like: own profit over own equity where both are
   // known, else the group's over the group's
-  const roePair = y => (y?.profitOwners != null && (y.equityOwners > 0 || stock.template === "BANKING")
+  const roePair = y => (y?.profitOwners != null && ownersProfit(y) === y.profitOwners && (y.equityOwners > 0 || stock.template === "BANKING")
     ? { profit: y.profitOwners, equity: ownersEquity(y) } : { profit: y?.profit ?? null, equity: y?.equity ?? null });
 
   // Share count: the shareholding filing's own total, as of its quarter end.
@@ -98,7 +108,12 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
   // P/E and fair value would be on too few shares. When today's count is a
   // quarter or more above the one the EPS implies, EPS is the year's own
   // profit over today's shares, and the page says so.
-  const epsShares = ownersProfit(latest) > 0 && reportedEps > 0 ? ownersProfit(latest) / reportedEps : null;
+  // The count the EPS is on: the filing's own year-end count when the EPS fits
+  // it (the issue came after the year), else profit ÷ EPS (the weighted count
+  // of a year with an issue in it — Adani Energy Solutions')
+  const yearEndShares = latest.paidUp > 0 && latest.faceValue > 0 ? (latest.paidUp / latest.faceValue) * latestFactor : null;
+  const epsOnYearEnd = yearEndShares && reportedEps > 0 && [ownersProfit(latest), latest.profit].some(p => near(p / reportedEps, yearEndShares, 0.15));
+  const epsShares = !(reportedEps > 0) ? null : epsOnYearEnd ? yearEndShares : ownersProfit(latest) > 0 ? ownersProfit(latest) / reportedEps : null;
   // Up to 4x: beyond that it's a broken figure in the filing (profit in the
   // wrong unit) far more often than a real issue, and EPS stays as filed.
   const issuedRatio = epsShares ? shares / epsShares : null;
