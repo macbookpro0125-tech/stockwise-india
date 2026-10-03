@@ -64,15 +64,27 @@ export function facts(xml, contexts, tag) {
 
 // Bump when the stored shape changes — fetch-market.js re-fetches any file on
 // an older schema instead of treating it as done.
-export const SCHEMA = 6; // 3: capex, current liabilities, cost of goods, long-term debt (FCF, Piotroski); 4: lease liabilities; 5: cash and liquid investments, promoter history; 6: audit opinion and auditor
-const YEARS = 6; // 5-year growth needs six year-ends
-const DOWNLOAD_CONCURRENCY = 3;
+export const SCHEMA = 8; // 3: capex, current liabilities, cost of goods, long-term debt (FCF, Piotroski); 4: lease liabilities; 5: cash and liquid investments, promoter history; 6: audit opinion and auditor; 7: profit and equity attributable to the parent's shareholders; 8: twelve quarters and eight years
+// Eight year-ends: NSE's XBRL filings reach back to FY2019 (FY19–FY24 on the
+// old endpoint, FY25 on in integrated filings); 5-year growth needs six
+const YEARS = 8;
+// Three years of quarters: this quarter against the same one a year ago, two
+// years running, and trailing-twelve-month figures
+const QUARTERS = 12;
+// XBRL files come from NSE's static archive, not its rate-limited API
+const DOWNLOAD_CONCURRENCY = 5;
 
 // Banks and NBFCs file on different templates with their own tag names for the
 // same concepts — the first candidate with any facts wins.
 export const TAGS = {
   revenue: ["RevenueFromOperations", "Income", "TotalIncome"],
   profit: ["ProfitLossForPeriod", "ProfitLossForThePeriod"],
+  // The parent's own shareholders' share, without the subsidiaries' outside
+  // owners: Bajaj Finserv's ₹19,669 Cr FY26 profit is ₹9,801 Cr to its own
+  // shareholders — what its EPS (₹61.3) is worked out on. Banks file it as
+  // profit after minority interest and associates.
+  profitOwners: ["ProfitOrLossAttributableToOwnersOfParent", "ProfitLossAttributableToOwnersOfParent", "ProfitLossAfterTaxesMinorityInterestAndShareOfProfitLossOfAssociates"],
+  equityOwners: ["EquityAttributableToOwnersOfParent"],
   // Banks file EPS before and after extraordinary items — see pickEps
   eps: [
     "BasicEarningsLossPerShareFromContinuingAndDiscontinuedOperations",
@@ -261,9 +273,9 @@ function auditOpinionOf(xml) {
 // "after" holds a quarter's ₹0.07 and Central Bank's FY23 a placeholder 0.
 // Without share capital to check against, the first non-zero one, in TAGS
 // order, is used.
-function pickEps(r, profit) {
-  const found = TAGS.eps.map(tag => r.year([tag])).filter(v => v != null && v !== 0);
-  if (found.length < 2 || found.every(v => Math.abs(v - found[0]) <= Math.abs(found[0]) * 0.05)) return found[0] ?? r.year(TAGS.eps);
+function pickEps(r, profit, read = r.year) {
+  const found = TAGS.eps.map(tag => read([tag])).filter(v => v != null && v !== 0);
+  if (found.length < 2 || found.every(v => Math.abs(v - found[0]) <= Math.abs(found[0]) * 0.05)) return found[0] ?? read(TAGS.eps);
   // read as extractYear reads them (filed against the period, not a date)
   const paidUp = r.any(TAGS.paidUp), faceValue = r.any(TAGS.faceValue);
   if (!(profit > 0) || !(paidUp > 0) || !(faceValue > 0)) return found[0];
@@ -275,6 +287,9 @@ function extractYear(xml, row, template = templateOf(row.xbrl)) {
   const r = reader(xml, row);
   const equity = equityOf(r);
   const profit = r.year(TAGS.profit);
+  // A 0 beside a real profit is an unused box in the template, not a figure
+  const nonZero = v => (v === 0 ? null : v);
+  const profitOwners = profit ? nonZero(r.year(TAGS.profitOwners)) : r.year(TAGS.profitOwners);
   return {
     fyEnd: isoDay(row.periodEnd),
     label: row.label,
@@ -284,7 +299,8 @@ function extractYear(xml, row, template = templateOf(row.xbrl)) {
     template,
     revenue: r.year(TAGS.revenue),
     profit,
-    eps: pickEps(r, profit),
+    profitOwners,
+    eps: pickEps(r, profitOwners ?? profit),
     expenses: r.year(TAGS.expenses),
     financeCosts: r.year(TAGS.financeCosts),
     depreciation: r.year(TAGS.depreciation),
@@ -294,6 +310,7 @@ function extractYear(xml, row, template = templateOf(row.xbrl)) {
     // FY22-era legacy filings carry no balance sheet: equity is null there, and
     // debt must be null too rather than a "0" that reads as debt-free.
     equity,
+    equityOwners: equity == null ? null : nonZero(r.atEnd(TAGS.equityOwners)),
     debt: equity == null ? null : debtOf(r, template),
     totalAssets: r.atEnd(TAGS.totalAssets),
     currentAssets: r.atEnd(TAGS.currentAssets),
@@ -316,6 +333,51 @@ function extractYear(xml, row, template = templateOf(row.xbrl)) {
     auditOpinion: auditOpinionOf(xml),
     // The audit firm's name — integrated filings (FY25 on) only
     auditor: textFact(xml, "AuditorsFirmName"),
+  };
+}
+
+// One quarter's figures from a quarterly filing: the context ending on the
+// quarter's last day that spans a quarter (80–100 days), never the
+// year-to-date one beside it; old-format files name it "OneD"
+function quarterReader(xml, row) {
+  const ctx = parseContexts(xml);
+  const end = isoDay(row.periodEnd);
+  if (row.legacy) {
+    const ok = !ctx.OneD?.end || ctx.OneD.end === end;
+    return {
+      quarter: tags => (ok ? valueById(xml, tags, "OneD") : null),
+      any: tags => valueById(xml, tags, "OneD") ?? valueById(xml, tags, "FourD"),
+    };
+  }
+  return {
+    quarter: tags => firstFacts(xml, ctx, tags).find(f => f.end === end && f.days >= 80 && f.days <= 100)?.value ?? null,
+    any: tags => firstFacts(xml, ctx, tags).find(f => f.end === end)?.value ?? null,
+  };
+}
+
+function extractQuarter(xml, row) {
+  const r = quarterReader(xml, row);
+  const profit = r.quarter(TAGS.profit);
+  const owners = r.quarter(TAGS.profitOwners);
+  const profitOwners = profit && owners === 0 ? null : owners;
+  return {
+    qEnd: isoDay(row.periodEnd),
+    label: row.label,
+    scope: row.scope,
+    source: row.legacy ? "legacy" : "integrated",
+    filed: row.filed ? isoDay(row.filed) : null,
+    revenue: r.quarter(TAGS.revenue),
+    expenses: r.quarter(TAGS.expenses),
+    financeCosts: r.quarter(TAGS.financeCosts),
+    depreciation: r.quarter(TAGS.depreciation),
+    otherIncome: r.quarter(TAGS.otherIncome),
+    pbt: r.quarter(TAGS.pbt),
+    profit,
+    profitOwners,
+    eps: pickEps(r, profitOwners ?? profit, r.quarter),
+    // For the unit-slip check (unit-slips.js): share capital moves with a slip
+    paidUp: r.any(TAGS.paidUp),
+    faceValue: r.any(TAGS.faceValue),
   };
 }
 
@@ -378,6 +440,20 @@ async function legacyAnnualRows(symbol) {
   })).filter(r => r.periodEnd);
 }
 
+async function legacyQuarterRows(symbol) {
+  const rows = await fetchJson(
+    `${NSE_BASE}/api/corporates-financial-results?index=equities&period=Quarterly&symbol=${encodeURIComponent(symbol)}`
+  ).catch(() => []);
+  return (Array.isArray(rows) ? rows : []).filter(r => r.xbrl && /\.xml$/i.test(r.xbrl)).map(r => ({
+    periodEnd: parseQeDate(r.toDate),
+    label: String(r.toDate).toUpperCase(),
+    scope: r.consolidated === "Consolidated" ? "Consolidated" : "Standalone",
+    xbrl: r.xbrl,
+    filed: parseQeDate(r.filingDate || r.broadCastDate),
+    legacy: true,
+  })).filter(r => r.periodEnd);
+}
+
 async function mapLimit(items, limit, fn) {
   const out = new Array(items.length);
   let next = 0;
@@ -392,6 +468,12 @@ async function mapLimit(items, limit, fn) {
 
 async function fetchFinancials(symbol) {
   const integrated = await integratedFilings(symbol);
+  // One download per file: a year-end filing is also that quarter's filing
+  const xmlCache = new Map();
+  const getXml = url => {
+    if (!xmlCache.has(url)) xmlCache.set(url, fetchXbrl(url));
+    return xmlCache.get(url);
+  };
   const seen = new Set();
   const periods = integrated.filter(f => (seen.has(f.qe_Date) ? false : seen.add(f.qe_Date)));
   if (!periods.length) throw Object.assign(new Error(`No Integrated Filing financials for ${symbol}`), { noFilings: true });
@@ -403,7 +485,7 @@ async function fetchFinancials(symbol) {
   let latestYear = null;
   let latestRow = null;
   for (const filing of periods.slice(0, MAX_FILINGS_TO_SCAN)) {
-    const xml = await fetchXbrl(filing.xbrl);
+    const xml = await getXml(filing.xbrl);
     const ctx = parseContexts(xml);
     const profit = firstFacts(xml, ctx, TAGS.profit);
 
@@ -442,13 +524,33 @@ async function fetchFinancials(symbol) {
 
   const earlierYears = await mapLimit(earlier, DOWNLOAD_CONCURRENCY, async row => {
     try {
-      return extractYear(await fetchXbrl(row.xbrl), row, latestYear.template);
+      return extractYear(await getXml(row.xbrl), row, latestYear.template);
     } catch (e) {
       return { fyEnd: isoDay(row.periodEnd), label: row.label, error: e.message };
     }
   });
 
-  return { quarter, years: [latestYear, ...earlierYears] };
+  // The last twelve quarters, from integrated filings (Mar 2025 on) and the old
+  // endpoint before that — in the latest year's scope wherever it was filed,
+  // so a quarter-on-quarter change isn't consolidated against standalone
+  const scope = latestRow.scope;
+  const quarterCandidates = [...integrated.map(integratedRow), ...(await legacyQuarterRows(symbol))]
+    .filter(r => r.periodEnd)
+    .sort((a, b) =>
+      b.periodEnd - a.periodEnd ||
+      (a.scope === scope ? -1 : 1) - (b.scope === scope ? -1 : 1) ||
+      (b.filed ?? 0) - (a.filed ?? 0));
+  const byQuarter = new Set();
+  const quarterRows = quarterCandidates.filter(r => !byQuarter.has(isoDay(r.periodEnd)) && byQuarter.add(isoDay(r.periodEnd))).slice(0, QUARTERS);
+  const quarters = await mapLimit(quarterRows, DOWNLOAD_CONCURRENCY, async row => {
+    try {
+      return extractQuarter(await getXml(row.xbrl), row);
+    } catch (e) {
+      return { qEnd: isoDay(row.periodEnd), label: row.label, error: e.message };
+    }
+  });
+
+  return { quarter, years: [latestYear, ...earlierYears], quarters };
 }
 
 // A distressed company can have negative net worth (accumulated losses
@@ -457,7 +559,7 @@ async function fetchFinancials(symbol) {
 // the same for Debt-to-Equity. Both are undefined when equity isn't positive,
 // so null them rather than let a loss-making company read as a compounder.
 export async function fetchStockSummary(symbol) {
-  const [{ quarter, years }, holding] = await Promise.all([
+  const [{ quarter, years, quarters }, holding] = await Promise.all([
     fetchFinancials(symbol),
     fetchShareholding(symbol),
   ]);
@@ -483,6 +585,7 @@ export async function fetchStockSummary(symbol) {
       currentAssets: latest.currentAssets,
     },
     years,
+    quarters,
     holding,
     roe,
     debtToEquity,

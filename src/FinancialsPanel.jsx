@@ -3,7 +3,8 @@ import { useState, useEffect, useRef, useMemo } from "react";
 // The original's Financials panel (stock-screener FinancialsPanel.jsx and
 // FinancialsChart.jsx): a revenue/profit chart with operating margin on its
 // own axis underneath, and the statements as tables. Built from this app's
-// own filings (up to six fiscal years) instead of Screener's pages, and drawn
+// own filings (up to eight fiscal years, and the last twelve quarters) instead
+// of Screener's pages, and drawn
 // as plain SVG instead of with the charting library the original used.
 
 const MONO = { fontVariantNumeric: "tabular-nums" };
@@ -36,6 +37,14 @@ const STATEMENTS = {
   cashFlow: [
     ["Cash from operations", "ocfCr", "cr"], ["Capital spending", "capexCr", "cr"], ["Free cash flow", "fcfCr", "cr"],
   ],
+  // Same lines as Profit & Loss, quarter by quarter, plus each quarter
+  // against the same one a year earlier
+  quarterly: [
+    ["Sales", "revenueCr", "cr"], ["Expenses", "expensesCr", "cr"], ["Operating Profit", "operatingProfitCr", "cr"],
+    ["OPM %", "opm", "pct"], ["Other Income", "otherIncomeCr", "cr"], ["Depreciation", "depreciationCr", "cr"],
+    ["Interest", "financeCostsCr", "cr"], ["Profit before tax", "pbtCr", "cr"], ["Net Profit", "profitCr", "cr"],
+    ["EPS in Rs", "eps", "rs"], ["Sales vs a year ago", "salesYoY", "pct"], ["Profit vs a year ago", "profitYoY", "pct"],
+  ],
   ratios: [
     ["ROE %", "roe", "pct"], ["ROCE %", "roce", "pct"], ["OPM %", "opm", "pct"], ["Debt / equity", "debtToEquity", "x"],
   ],
@@ -49,7 +58,7 @@ function fmtCell(v, kind) {
   return fmtCr(v);
 }
 
-function StatementTable({ history, rows }) {
+function StatementTable({ history, rows, note }) {
   const years = [...history].reverse(); // oldest on the left, as Screener lays it out
   const shown = rows.filter(([, key]) => years.some(y => y[key] != null));
   if (!shown.length) return <div style={{ fontSize: 12, color: "var(--t3)", padding: "20px 0" }}>Not in this company's filings.</div>;
@@ -78,7 +87,7 @@ function StatementTable({ history, rows }) {
         </tbody>
       </table>
       <p style={{ fontSize: 10, color: "var(--t3)", marginTop: 8 }}>
-        Figures in ₹ Crore unless marked. {years.at(-1)?.scope ? `${years.at(-1).scope} results` : "Results"} from NSE filings; EPS on today's share count.
+        Figures in ₹ Crore unless marked. {years.at(-1)?.scope ? `${years.at(-1).scope} results` : "Results"} from NSE filings; EPS on today's share count.{note ? ` ${note}` : ""}
       </p>
     </div>
   );
@@ -239,7 +248,7 @@ function MarginChart({ points, width, band }) {
   );
 }
 
-export default function FinancialsPanel({ history }) {
+export default function FinancialsPanel({ history, quarters = [] }) {
   const [tab, setTab] = useState("summary");
   if (!history?.length) return null;
 
@@ -250,6 +259,7 @@ export default function FinancialsPanel({ history }) {
 
   const TABS = [
     { id: "summary", label: "Summary" },
+    ...(quarters.length ? [{ id: "quarterly", label: "Quarterly" }] : []),
     { id: "profitLoss", label: "Profit & Loss" },
     { id: "balanceSheet", label: "Balance Sheet" },
     { id: "cashFlow", label: "Cashflow" },
@@ -274,7 +284,9 @@ export default function FinancialsPanel({ history }) {
         ? (points.length >= 2
           ? <FinancialsChart points={points} />
           : <div style={{ fontSize: 12, color: "var(--t3)", padding: "24px 0" }}>Not enough reported years to chart. The tables show everything available.</div>)
-        : <StatementTable history={history} rows={STATEMENTS[tab]} />}
+        : tab === "quarterly"
+          ? <StatementTable history={quarters} rows={STATEMENTS.quarterly} note="Each quarter is its own three months; the last two columns compare with the same quarter a year earlier." />
+          : <StatementTable history={history} rows={STATEMENTS[tab]} />}
     </div>
   );
 }

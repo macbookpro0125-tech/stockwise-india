@@ -7,7 +7,7 @@
 // category metric, { id, values: [...] }. A company whose value is unknown is
 // left out once a filter on that metric applies, and the screen says how many.
 
-export const CATEGORIES = ["Research score", "Valuation", "Profitability", "Growth", "Price & returns", "Volume & technicals", "Ownership", "Financial health", "Cash flow", "Income statement", "Balance sheet", "Size"];
+export const CATEGORIES = ["Research score", "Valuation", "Profitability", "Growth", "Quarterly results", "Price & returns", "Volume & technicals", "Ownership", "Financial health", "Cash flow", "Income statement", "Balance sheet", "Size"];
 
 const NO_LENDERS = " Not shown for banks and other lenders.";
 // The research score (research.js) and its groups
@@ -30,6 +30,7 @@ export const METRICS = [
 
   // ── Valuation ──
   { id: "pe", label: "P/E ratio", short: "P/E", category: "Valuation", unit: "x", decimals: 1, about: "Price ÷ last year's earnings per share. Loss-making companies have none." },
+  { id: "peTtm", label: "P/E on the last four quarters", short: "P/E TTM", category: "Valuation", unit: "x", decimals: 1, about: "Price ÷ EPS over the last four quarters (trailing twelve months) — the basis Screener's P/E uses." },
   { id: "medianPe", label: "5-year median P/E", short: "Median P/E", category: "Valuation", unit: "x", decimals: 1, about: "The company's usual P/E over its last five years — what its fair value is based on." },
   { id: "peVsMedian", label: "P/E vs its 5-year median", short: "P/E vs med", category: "Valuation", unit: "%", decimals: 0, signed: true, about: "How far today's P/E is above (+) or below (−) the company's own usual P/E." },
   { id: "priceToBook", label: "Price to book", short: "P/B", category: "Valuation", unit: "x", decimals: 2 },
@@ -59,6 +60,14 @@ export const METRICS = [
   // ── Growth ──
   { id: "salesGrowth1y", label: "Sales growth, last year", short: "Sales 1Y", category: "Growth", unit: "%", decimals: 1, about: "Growth figures are left out when either year is a loss or a filing is missing." },
   { id: "salesGrowth3y", label: "3-year sales growth (per year)", short: "Sales 3Y", category: "Growth", unit: "%", decimals: 1 },
+  // ── Quarterly results ──
+  { id: "qSalesGrowthYoY", label: "Sales growth, latest quarter vs a year ago", short: "Q sales YoY", category: "Quarterly results", unit: "%", decimals: 1, signed: true, about: "The latest quarter's sales against the same quarter a year earlier." },
+  { id: "qProfitGrowthYoY", label: "Profit growth, latest quarter vs a year ago", short: "Q profit YoY", category: "Quarterly results", unit: "%", decimals: 1, signed: true, about: "The latest quarter's profit (to the company's own shareholders) against the same quarter a year earlier. None when the earlier quarter was a loss." },
+  { id: "qSalesGrowthQoQ", label: "Sales growth, latest quarter vs the one before", short: "Q sales QoQ", category: "Quarterly results", unit: "%", decimals: 1, signed: true, about: "Against the previous quarter — seasonal businesses swing on this." },
+  { id: "qProfitGrowthQoQ", label: "Profit growth, latest quarter vs the one before", short: "Q profit QoQ", category: "Quarterly results", unit: "%", decimals: 1, signed: true, about: "Against the previous quarter. None when that quarter was a loss." },
+  { id: "qOpm", label: "Operating margin, latest quarter", short: "Q OPM", category: "Quarterly results", unit: "%", decimals: 1, about: "Operating profit as a share of sales in the latest quarter." + NO_LENDERS },
+  { id: "ttmRevenueCr", label: "Sales, last four quarters", short: "Sales TTM", category: "Quarterly results", unit: "₹ Cr", decimals: 0, about: "Trailing twelve months: the last four quarters added up." },
+  { id: "ttmProfitCr", label: "Net profit, last four quarters", short: "Profit TTM", category: "Quarterly results", unit: "₹ Cr", decimals: 0, signed: true, about: "Trailing twelve months: the last four quarters added up." },
   { id: "salesGrowth5y", label: "5-year sales growth (per year)", short: "Sales 5Y", category: "Growth", unit: "%", decimals: 1 },
   { id: "profitGrowth1y", label: "Profit growth, last year", short: "Profit 1Y", category: "Growth", unit: "%", decimals: 1 },
   { id: "profitGrowth3y", label: "3-year profit growth (per year)", short: "Profit 3Y", category: "Growth", unit: "%", decimals: 1 },

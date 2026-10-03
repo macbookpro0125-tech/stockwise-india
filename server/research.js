@@ -21,7 +21,7 @@
 // Weights and bands are a stated starting point, not a fitted model — the
 // proposal says so too. Change them here and RESEARCH_VERSION together.
 
-export const RESEARCH_VERSION = "1.3";
+export const RESEARCH_VERSION = "1.4";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -70,6 +70,18 @@ const yearOf = h => Number(h.fyEnd.slice(0, 4));
 const lastYears = (m, n) => m.history.filter(h => yearOf(m.history[0]) - yearOf(h) < n);
 const yearsBack = (m, n) => m.history.find(h => yearOf(m.history[0]) - yearOf(h) === n) ?? null;
 // [newer, older] pairs of consecutive fiscal years
+// A company listed too recently for the years a check needs is judged on its
+// last eight quarters instead (Waaree, Hyundai India, Swiggy: two years of
+// annual results on NSE). Each quarter is set against the same quarter a year
+// earlier, so a seasonal business isn't marked down for its seasons. Only ever
+// a stand-in: a company with the years uses the years.
+const sameQuarterPairs = m => {
+  const qs = (m.quarters ?? []).slice(0, 8);
+  return qs.slice(0, 4).map((q, i) => [q, qs[i + 4]])
+    .filter(([q, ago]) => ago && Math.abs(Date.parse(q.fyEnd) - Date.parse(ago.fyEnd) - 365 * 86400000) <= 20 * 86400000);
+};
+const RECENT = "listed too recently for the years this check needs";
+
 const consecutive = rows => rows.slice(0, -1).map((h, i) => [h, rows[i + 1]]).filter(([a, b]) => yearOf(a) - yearOf(b) === 1);
 
 // ── Bands ──────────────────────────────────────────────────────────────────
@@ -98,7 +110,8 @@ const BUSINESS = {
         const useRoe = m.lender || m.utility;
         const name = useRoe ? "ROE" : "ROCE";
         const vals = lastYears(m, 5).map(h => (useRoe ? h.roe : h.roce)).filter(finite);
-        if (vals.length < 3) return missing(`Only ${vals.length} year${vals.length === 1 ? "" : "s"} of ${name} on file — 3 are needed.`);
+        // Two years will do: a recent listing's returns are the first thing to know
+        if (vals.length < 2) return missing(`Only ${vals.length} year${vals.length === 1 ? "" : "s"} of ${name} on file — 2 are needed.`);
         const v = median(vals);
         const score = band(v, useRoe ? ROE_BANDS : ROCE_BANDS);
         return checked(score, v, pct(v), `${name} has a median of ${pct(v)} over ${vals.length} years — ${word(score)}.`);
@@ -110,7 +123,16 @@ const BUSINESS = {
       compute(m) {
         const marginOf = h => (m.lender ? (finite(h.profitCr) && h.revenueCr > 0 ? (h.profitCr / h.revenueCr) * 100 : null) : h.opm);
         const vals = lastYears(m, 5).map(marginOf).filter(finite);
-        if (vals.length < 3) return missing(`Margins for only ${vals.length} year${vals.length === 1 ? "" : "s"} — 3 are needed.`);
+        if (vals.length < 3) {
+          const qMargin = q => (m.lender ? (finite(q.profitCr) && q.revenueCr > 0 ? (q.profitCr / q.revenueCr) * 100 : null) : q.opm);
+          const pairs = sameQuarterPairs(m).map(([q, ago]) => [qMargin(q), qMargin(ago)]).filter(([a, b]) => finite(a) && finite(b));
+          if (pairs.length < 3) return missing(`Margins for only ${vals.length} year${vals.length === 1 ? "" : "s"} — 3 are needed.`);
+          const level = avg(pairs.map(([a]) => a));
+          const moved = avg(pairs.map(([a, b]) => Math.abs(a - b)));
+          if (level <= 0) return { ...checked(0, null, `${pct(level)} avg`, `Quarterly margin averaged ${pct(level)} — negative, so its steadiness is no comfort (${RECENT}).`), fromQuarters: true };
+          const score = band(moved, [[1, 100], [2.5, 75], [5, 45], [8, 20], [12, 0]]);
+          return { ...checked(score, moved, `±${moved.toFixed(1)} pts`, `Quarterly margins moved ${moved.toFixed(1)} points on average from the same quarter a year earlier (${RECENT}) — ${word(score)}.`), fromQuarters: true };
+        }
         const mean = avg(vals);
         const range = `${pct(Math.min(...vals))} to ${pct(Math.max(...vals))}`;
         if (mean <= 0) return checked(0, null, range, `Margin averaged ${pct(mean)} — negative, so its steadiness is no comfort.`);
@@ -125,7 +147,12 @@ const BUSINESS = {
       label: "Years of revenue growth",
       compute(m) {
         const pairs = consecutive(lastYears(m, 6).filter(h => h.revenueCr > 0));
-        if (pairs.length < 3) return missing(`Revenue for only ${pairs.length + 1} consecutive years — 4 are needed.`);
+        if (pairs.length < 3) {
+          const qs = sameQuarterPairs(m).filter(([q, ago]) => q.revenueCr > 0 && ago.revenueCr > 0);
+          if (qs.length < 3) return missing(`Revenue for only ${pairs.length + 1} consecutive years — 4 are needed.`);
+          const up = qs.filter(([q, ago]) => q.revenueCr > ago.revenueCr).length;
+          return { ...checked((100 * up) / qs.length, up, `${up} of ${qs.length} quarters`, `Sales were above the same quarter a year earlier in ${up} of the last ${qs.length} quarters (${RECENT}).`), fromQuarters: true };
+        }
         const up = pairs.filter(([a, b]) => a.revenueCr > b.revenueCr).length;
         return checked((100 * up) / pairs.length, up, `${up} of ${pairs.length}`, `Revenue grew in ${up} of the last ${pairs.length} years.`);
       },
@@ -388,7 +415,11 @@ const GROWTH = {
     {
       id: "salesGrowth3y", weight: 0.30, label: "Sales growth, 3 years (per year)",
       compute(m) {
-        if (!finite(m.salesGrowth3y)) return missing("Needs sales 3 years apart.");
+        if (!finite(m.salesGrowth3y)) {
+          if (!finite(m.ttmSalesGrowth)) return missing("Needs sales 3 years apart.");
+          const score = band(m.ttmSalesGrowth, GROWTH_BANDS);
+          return { ...checked(score, m.ttmSalesGrowth, pct(m.ttmSalesGrowth), `Sales grew ${pct(m.ttmSalesGrowth)} over the last twelve months against the twelve before (${RECENT}) — ${word(score)}.`), fromQuarters: true };
+        }
         const score = band(m.salesGrowth3y, GROWTH_BANDS);
         return checked(score, m.salesGrowth3y, pct(m.salesGrowth3y), `Sales grew ${pct(m.salesGrowth3y)} a year over 3 years — ${word(score)}.`);
       },
@@ -404,7 +435,11 @@ const GROWTH = {
     {
       id: "epsGrowth3y", weight: 0.10, label: "EPS growth, 3 years (per year)",
       compute(m) {
-        if (!finite(m.epsGrowth3y)) return missing("Needs positive EPS at both ends, 3 years apart.");
+        if (!finite(m.epsGrowth3y)) {
+          if (!finite(m.ttmEpsGrowth)) return missing("Needs positive EPS at both ends, 3 years apart.");
+          const score = band(m.ttmEpsGrowth, EPS_GROWTH_BANDS);
+          return { ...checked(score, m.ttmEpsGrowth, pct(m.ttmEpsGrowth), `EPS grew ${pct(m.ttmEpsGrowth)} over the last twelve months against the twelve before (${RECENT}) — ${word(score)}.`), fromQuarters: true };
+        }
         const score = band(m.epsGrowth3y, EPS_GROWTH_BANDS);
         return checked(score, m.epsGrowth3y, pct(m.epsGrowth3y), `EPS grew ${pct(m.epsGrowth3y)} a year over 3 years — ${word(score)}.`);
       },
@@ -756,7 +791,16 @@ export function computeResearch(m, ctx = { peers: PEERS }) {
 
 // A few plain sentences from the numbers — templates, never generated prose
 function summarise(r, m) {
-  if (r.quality == null) return "Too few years of filings to score this company yet.";
+  const years = m.yearsOnFile ?? m.history.length;
+  const fromQuarters = r.groups.some(g => g.items.some(i => i.fromQuarters));
+  if (r.quality == null) {
+    if (years < 3 && (m.quarters?.length ?? 0) < 8) return `Only ${years} year${years === 1 ? "" : "s"} of annual results on NSE — too few to score yet. Most checks need 3 years, or 8 quarters for a recent listing.`;
+    // Enough history, too few checks: say which groups and, for a loss-maker, why
+    const blank = r.groups.filter(g => g.applicable && g.score == null).map(g => g.label.toLowerCase());
+    const list = blank.length > 1 ? `${blank.slice(0, -1).join(", ")} and ${blank.at(-1)}` : blank[0];
+    const loss = !(m.history[0]?.profitCr > 0);
+    return `Too few checks have data to score it yet: ${list} couldn't be scored${loss ? " — it made a loss, so checks built on EPS and P/E have nothing to work with" : ""}.`;
+  }
   const groups = r.groups.filter(g => g.score != null && g.id !== "valuation");
   const ranked = [...groups].sort((a, b) => b.score - a.score);
   const strong = ranked.filter(g => g.score >= 65).slice(0, 2).map(g => g.label.toLowerCase());
@@ -769,5 +813,6 @@ function summarise(r, m) {
   s.push(`${r.technical.score != null ? `The price trend is ${r.technical.label.toLowerCase()}; r` : "R"}isk is ${r.risk.label.toLowerCase()} (${Math.round(r.risk.score)}/100).`);
   const conf = r.confidence >= 80 ? "high" : r.confidence >= 60 ? "moderate" : "low";
   s.push(`Confidence is ${conf}: ${r.coverage.checked} of ${r.coverage.total} checks have data, and related-party deals, forecasts and a cash-flow model aren't covered.`);
+  if (fromQuarters) s.push(`Listed recently, with ${years} year${years === 1 ? "" : "s"} of annual results on NSE: margin steadiness, sales consistency and growth are judged on its last eight quarters instead.`);
   return s.join(" ");
 }
