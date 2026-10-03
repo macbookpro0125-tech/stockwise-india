@@ -73,9 +73,11 @@ const DOWNLOAD_CONCURRENCY = 3;
 export const TAGS = {
   revenue: ["RevenueFromOperations", "Income", "TotalIncome"],
   profit: ["ProfitLossForPeriod", "ProfitLossForThePeriod"],
+  // Banks file EPS before and after extraordinary items — see pickEps
   eps: [
     "BasicEarningsLossPerShareFromContinuingAndDiscontinuedOperations",
     "BasicEarningsPerShareBeforeExtraordinaryItems",
+    "BasicEarningsPerShareAfterExtraordinaryItems",
     "BasicEarningsLossPerShareFromContinuingOperations",
   ],
   expenses: ["Expenses"],
@@ -252,9 +254,27 @@ function auditOpinionOf(xml) {
 // files don't reliably name the template (Bajaj Finance's FY23 file reads as
 // an ordinary company, which put its debt at 0), and a company's business type
 // doesn't change year to year.
+// When a filing gives more than one EPS and they disagree, the one in line
+// with the same filing's profit and share capital is right. Either can be the
+// broken one: Indian Overseas Bank's FY26 "before extraordinary items" reads
+// ₹16.94 (profit ÷ shares is ₹2.70; "after" says ₹2.81), while Yes Bank's FY23
+// "after" holds a quarter's ₹0.07 and Central Bank's FY23 a placeholder 0.
+// Without share capital to check against, the first non-zero one, in TAGS
+// order, is used.
+function pickEps(r, profit) {
+  const found = TAGS.eps.map(tag => r.year([tag])).filter(v => v != null && v !== 0);
+  if (found.length < 2 || found.every(v => Math.abs(v - found[0]) <= Math.abs(found[0]) * 0.05)) return found[0] ?? r.year(TAGS.eps);
+  // read as extractYear reads them (filed against the period, not a date)
+  const paidUp = r.any(TAGS.paidUp), faceValue = r.any(TAGS.faceValue);
+  if (!(profit > 0) || !(paidUp > 0) || !(faceValue > 0)) return found[0];
+  const perShare = profit / (paidUp / faceValue);
+  return found.filter(v => v > 0).sort((a, b) => Math.abs(Math.log(a / perShare)) - Math.abs(Math.log(b / perShare)))[0] ?? found[0];
+}
+
 function extractYear(xml, row, template = templateOf(row.xbrl)) {
   const r = reader(xml, row);
   const equity = equityOf(r);
+  const profit = r.year(TAGS.profit);
   return {
     fyEnd: isoDay(row.periodEnd),
     label: row.label,
@@ -263,8 +283,8 @@ function extractYear(xml, row, template = templateOf(row.xbrl)) {
     filed: row.filed ? isoDay(row.filed) : null,
     template,
     revenue: r.year(TAGS.revenue),
-    profit: r.year(TAGS.profit),
-    eps: r.year(TAGS.eps),
+    profit,
+    eps: pickEps(r, profit),
     expenses: r.year(TAGS.expenses),
     financeCosts: r.year(TAGS.financeCosts),
     depreciation: r.year(TAGS.depreciation),
