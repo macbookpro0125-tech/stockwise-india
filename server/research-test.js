@@ -89,6 +89,10 @@ const holdco = metricsOf(company({ tweak: y => ({ ...y, profitOwners: y.profit /
 assert(near(holdco.bookValuePerShare, base.bookValuePerShare / 2, 0.01) && near(holdco.priceToBook, base.priceToBook * 2, 0.05), "a holding company's book value is its own shareholders' equity, not the group's");
 assert(near(holdco.roe, base.roe, 0.2), "ROE pairs own profit with own equity");
 assert(holdco.epsRebased == null && near(holdco.eps, base.eps / 2, 0.001), "its EPS is left as filed — it already is the shareholders' own");
+// A filing that contradicts itself: "₹ to owners" far below the total with
+// nothing to anyone else, while EPS fits the total (Balkrishna's FY26)
+const slip = metricsOf(company({ tweak: y => ({ ...y, profitOwners: y.profit * 0.7 }) }), snapshot());
+assert(near(slip.roe, base.roe, 0.2) && slip.epsRebased == null, "an own-shareholders profit out of line with the filing's own EPS is a slip: ROE and EPS stay on the figure that fits");
 // A large share issue after the year: twice the shares the EPS was worked out on
 const issued = metricsOf(company({ holding: { totalShares: 20 * CR } }), snapshot());
 assert(issued.epsRebased && near(issued.eps, base.eps / 2, 0.01) && near(issued.pe, base.pe * 2, 0.05), "after a large share issue, EPS is the year's profit over today's shares");
