@@ -161,7 +161,7 @@ export function deleteAccount(userId, password, confirm) {
   }
   db.exec("BEGIN");
   try {
-    for (const table of ["sessions", "alerts", "watchlist", "holdings", "telegram_links", "password_resets"]) {
+    for (const table of ["sessions", "alerts", "watchlist", "holdings", "thesis_notes", "stock_notes", "saved_strategies", "telegram_links", "password_resets"]) {
       db.prepare(`DELETE FROM ${table} WHERE user_id = ?`).run(userId);
     }
     db.prepare("DELETE FROM users WHERE id = ?").run(userId);

@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { PanelLeftClose, SlidersHorizontal } from "lucide-react";
 import { api } from "./api.js";
 import PresetCards from "./PresetCards.jsx";
+import { strategiesStore, browserLeftovers, moveLeftovers, discardLeftovers } from "./accountData.js";
 import ResultsTable from "./ResultsTable.jsx";
 import HowItWorks from "./HowItWorks.jsx";
 import FilterPanel, { isActiveFilter } from "./screener/FilterPanel.jsx";
@@ -41,10 +42,24 @@ function filtersFromLink() {
   }
 }
 
-function readCustomPresets() { return read("customPresets", []); }
-function writeCustomPresets(list) {
-  write("customPresets", list);
-  window.dispatchEvent(new Event("customPresetsUpdated"));
+// The user's own strategies, kept with their account (accountData.js)
+const readCustomPresets = () => strategiesStore.get();
+const writeCustomPresets = list => strategiesStore.set(list);
+
+// Strategies and notes left in this browser from before they moved to
+// accounts: the person signed in decides whether they're theirs
+function BrowserLeftovers() {
+  const [left, setLeft] = useState(browserLeftovers);
+  const [busy, setBusy] = useState(false);
+  if (!left) return null;
+  const what = [left.strategyCount && `${left.strategyCount} saved strateg${left.strategyCount === 1 ? "y" : "ies"}`, left.noteCount && `${left.noteCount} stock note${left.noteCount === 1 ? "" : "s"}`].filter(Boolean).join(" and ");
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "10px 14px", borderRadius: 10, marginBottom: 16, background: "color-mix(in srgb, var(--accent) 7%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 25%, transparent)", fontSize: 12.5, color: "var(--t1)", lineHeight: 1.5 }}>
+      <span style={{ flex: "1 1 260px" }}>This browser has {what} from before they were kept with accounts. Move them to your account so they show on every device?</span>
+      <button className="btn-primary" disabled={busy} onClick={async () => { setBusy(true); await moveLeftovers(); setLeft(null); }} style={{ height: 30, padding: "0 12px", fontSize: 12 }}>{busy ? "Moving…" : "Move to my account"}</button>
+      <button className="btn-ghost" disabled={busy} onClick={() => { discardLeftovers(); setLeft(null); }} style={{ height: 30, padding: "0 12px", fontSize: 12 }}>They're not mine — discard</button>
+    </div>
+  );
 }
 
 function Modal({ onClose, width = 340, children }) {
@@ -164,7 +179,7 @@ export default function DiscoverView({ onOpenStock }) {
     }
   };
 
-  // ── Your own strategies (this browser) ──
+  // ── Your own strategies (saved to the account) ──
   const confirmSavePreset = () => {
     const name = savePresetName.trim();
     if (!name) return;
@@ -238,7 +253,7 @@ export default function DiscoverView({ onOpenStock }) {
       {showSaveModal && (
         <Modal onClose={() => setShowSaveModal(false)}>
           <div style={{ fontSize: 17, fontWeight: 700, color: "var(--t1)", marginBottom: 6, letterSpacing: "-0.02em" }}>Save as a strategy</div>
-          <div style={{ fontSize: 13, color: "var(--t3)", marginBottom: 20 }}>{activeCount} filter{activeCount === 1 ? "" : "s"} will be saved in this browser</div>
+          <div style={{ fontSize: 13, color: "var(--t3)", marginBottom: 20 }}>{activeCount} filter{activeCount === 1 ? "" : "s"} will be saved to your account</div>
           <input
             autoFocus type="text" placeholder="e.g. My pharma screen"
             value={savePresetName} onChange={e => setSavePresetName(e.target.value)}
@@ -289,6 +304,7 @@ export default function DiscoverView({ onOpenStock }) {
       )}
 
       <div style={{ animation: "fadeUp 280ms cubic-bezier(0,0,0.2,1) backwards" }}>
+        <BrowserLeftovers />
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
             <h2 style={{ fontSize: 17, fontWeight: 650, color: "var(--t1)", letterSpacing: "-0.02em", margin: 0 }}>Strategies</h2>

@@ -112,6 +112,17 @@ async function main() {
   const longThesis = await (await json("PUT", "/api/thesis/TCS", aliceCookie, { case: "x".repeat(4500) })).json();
   assert(longThesis.case.length === 4000, "thesis fields have a bounded storage length");
 
+  // My Notes and saved strategies follow the account
+  assert((await fetch(`${BASE}/api/notes`)).status === 401 && (await fetch(`${BASE}/api/strategies`)).status === 401, "notes and saved strategies need a signed-in account");
+  await json("PUT", "/api/notes/TCS", aliceCookie, { verdict: "WATCHLIST", text: "Wait for results" });
+  assert((await (await fetch(`${BASE}/api/notes`, { headers: { Cookie: aliceCookie } })).json()).notes.TCS?.text === "Wait for results", "a note saved on one device is there on the next");
+  assert(Object.keys((await (await fetch(`${BASE}/api/notes`, { headers: { Cookie: bobCookie } })).json()).notes).length === 0, "another account can't see it");
+  assert((await json("PUT", "/api/notes/TCS", aliceCookie, { verdict: "BUY" })).status === 400 && (await json("PUT", "/api/notes/..%2Fx", aliceCookie, { verdict: "SKIP" })).status === 400, "a note needs one of the three verdicts and a real symbol");
+  const savedStrategies = await (await json("PUT", "/api/strategies", aliceCookie, { strategies: [{ id: "custom_1", name: "My pharma screen", filters: [{ id: "roe", min: 15, max: null }, { id: "sector", values: ["Healthcare"] }], junk: "x" }, { name: "" }] })).json();
+  assert(savedStrategies.strategies.length === 1 && savedStrategies.strategies[0].filters.length === 2 && !("junk" in savedStrategies.strategies[0]), "saved strategies keep their name and filters, nothing else");
+  assert((await (await fetch(`${BASE}/api/strategies`, { headers: { Cookie: aliceCookie } })).json()).strategies[0].name === "My pharma screen", "saved strategies come back on the next device");
+  assert((await (await fetch(`${BASE}/api/strategies`, { headers: { Cookie: bobCookie } })).json()).strategies.length === 0, "another account has its own (empty) list");
+
   const star = () => fetch(`${BASE}/api/watchlist`, {
     method: "POST", headers: { "Content-Type": "application/json", Cookie: aliceCookie },
     body: JSON.stringify({ ticker: "tcs" }),
@@ -355,7 +366,7 @@ async function main() {
   assert((await fetch(`${BASE}/api/auth/me`, { headers: { Cookie: carolCookie } })).status === 401, "the deleted account's session no longer works");
   assert((await json("POST", "/api/auth/login", "", { email: "carol@example.com", password: "carolspassword1" })).status === 401, "the deleted account can't sign in");
   const { db } = await import("./db.js");
-  const leftovers = ["users", "sessions", "alerts", "watchlist", "holdings", "thesis_notes", "telegram_links"]
+  const leftovers = ["users", "sessions", "alerts", "watchlist", "holdings", "thesis_notes", "stock_notes", "saved_strategies", "telegram_links"]
     .map(t => db.prepare(`SELECT COUNT(*) AS n FROM ${t} WHERE ${t === "users" ? "id" : "user_id"} = ?`).get(carolId).n);
   assert(leftovers.every(n => n === 0), "nothing of the deleted account is left in any table");
   assert((await (await fetch(`${BASE}/api/alerts`, { headers: { Cookie: aliceCookie } })).json()).length === 1, "deleting one account leaves other accounts' data alone");

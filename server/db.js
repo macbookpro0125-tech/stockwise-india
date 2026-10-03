@@ -76,6 +76,23 @@ db.exec(`
     updated_at TEXT NOT NULL,
     PRIMARY KEY (user_id, ticker)
   );
+
+  -- "My Notes" on a stock page: a verdict and a line of text, per stock
+  CREATE TABLE IF NOT EXISTS stock_notes (
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    ticker TEXT NOT NULL,
+    verdict TEXT NOT NULL,
+    text TEXT NOT NULL DEFAULT '',
+    saved_at TEXT NOT NULL,
+    PRIMARY KEY (user_id, ticker)
+  );
+
+  -- Strategies a user saved on Discover: the whole list, as the page keeps it
+  CREATE TABLE IF NOT EXISTS saved_strategies (
+    user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    list TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
 `);
 
 // Columns added after tables already existed on someone's disk: ALTER only
@@ -120,7 +137,7 @@ db.exec(`
 // dropping the old table with them on would cascade-delete every account's
 // alerts, watchlist and portfolio — and every table's row count must come out
 // unchanged, or the whole rebuild is undone.
-const CHILD_TABLES = ["sessions", "alerts", "watchlist", "holdings", "thesis_notes", "telegram_links", "password_resets"];
+const CHILD_TABLES = ["sessions", "alerts", "watchlist", "holdings", "thesis_notes", "stock_notes", "saved_strategies", "telegram_links", "password_resets"];
 function rebuildUsersForSocialSignIn() {
   const columns = db.prepare("PRAGMA table_info(users)").all().map(c => c.name);
   if (columns.includes("firebase_uid")) return;

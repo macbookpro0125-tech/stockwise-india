@@ -5,6 +5,7 @@ import { calculateLevels, pricePosition, fmtRs } from "../server/levels.js";
 import { StarIcon, BellIcon, PositionIcon } from "./icons.jsx";
 import ResearchPanel from "./ResearchPanel.jsx";
 import { useWatchlist, toggleWatch } from "./watchlist.js";
+import { notesStore } from "./accountData.js";
 import CreateAlertModal from "./CreateAlertModal.jsx";
 import PriceChartPanel from "./PriceChartPanel.jsx";
 import FinancialsPanel from "./FinancialsPanel.jsx";
@@ -231,28 +232,32 @@ function ShareholdingPanel({ symbol }) {
   );
 }
 
-// My Notes — kept in this browser, as in the original
-const NOTES_KEY = "stockwise-india-notes";
-const loadAllNotes = () => { try { return JSON.parse(localStorage.getItem(NOTES_KEY) || "{}"); } catch { return {}; } };
-const saveAllNotes = all => { try { localStorage.setItem(NOTES_KEY, JSON.stringify(all)); } catch {} };
-
+// My Notes — saved to the account (the original kept them in the browser)
 function MyNotes({ symbol }) {
-  const [saved, setSaved] = useState(() => loadAllNotes()[symbol] ?? null);
+  const [saved, setSaved] = useState(() => notesStore.get(symbol));
   const [editing, setEditing] = useState(!saved);
   const [verdict, setVerdict] = useState(saved?.verdict ?? null);
   const [text, setText] = useState(saved?.text ?? "");
+  // The account's notes may arrive after the page draws
+  useEffect(() => {
+    const update = () => {
+      const n = notesStore.get(symbol);
+      setSaved(n);
+      if (n) { setVerdict(n.verdict); setText(n.text ?? ""); setEditing(false); }
+    };
+    window.addEventListener("notesUpdated", update);
+    return () => window.removeEventListener("notesUpdated", update);
+  }, [symbol]);
 
   const save = () => {
     if (!verdict) return;
     const note = { verdict, text: text.trim(), savedAt: new Date().toLocaleDateString("en-IN") };
-    saveAllNotes({ ...loadAllNotes(), [symbol]: note });
+    notesStore.save(symbol, note).catch(() => {});
     setSaved(note);
     setEditing(false);
   };
   const remove = () => {
-    const all = loadAllNotes();
-    delete all[symbol];
-    saveAllNotes(all);
+    notesStore.remove(symbol).catch(() => {});
     setSaved(null); setVerdict(null); setText(""); setEditing(true);
   };
 
@@ -273,7 +278,7 @@ function MyNotes({ symbol }) {
             <Dot color={VERDICT_META[saved.verdict]?.color} />{VERDICT_META[saved.verdict]?.label}
           </div>
           {saved.text && <p style={{ fontSize: 13, color: "var(--t2)", margin: "8px 0 4px", lineHeight: 1.5 }}>{saved.text}</p>}
-          <p style={{ fontSize: 11, color: "var(--t3)", margin: 0 }}>Saved {saved.savedAt} · kept in this browser</p>
+          <p style={{ fontSize: 11, color: "var(--t3)", margin: 0 }}>Saved {saved.savedAt} · kept with your account</p>
         </div>
       ) : (
         <div>
@@ -465,6 +470,11 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
               ? <>P/E is this stock's <em>5-year median</em> ({m.medianPe.toFixed(1)}; today {m.pe?.toFixed(1) ?? "—"}) — override with your own view if needed.</>
               : <>P/E is <em>today's</em> — fewer than 3 usable years of history for a median. Override with a long-run average for a real valuation.</>}
           </div>
+          {m.epsRebased && (
+            <div style={{ marginTop: 4, color: "var(--t2)" }}>
+              EPS here is FY{m.fyEnd.slice(2, 4)} profit over today's {m.epsRebased.sharesCr.toLocaleString("en-IN", { maximumFractionDigits: 1 })} Cr shares (₹{m.eps.toFixed(2)}). The filing's ₹{m.epsRebased.reportedEps.toFixed(2)} is on about {m.epsRebased.epsSharesCr.toLocaleString("en-IN", { maximumFractionDigits: 1 })} Cr, before the company issued more shares — today's count is what the share price is for.
+            </div>
+          )}
           {m.unitFixes?.length > 0 && (
             <div style={{ marginTop: 4, color: "var(--t2)" }}>
               {m.unitFixes.map(f => `FY${f.fyEnd.slice(2, 4)}`).join(" and ")} {m.unitFixes.length > 1 ? "filings were" : "filing was"} in the wrong unit on NSE (figures {m.unitFixes[0].factor > 1 ? `${m.unitFixes[0].factor.toLocaleString("en-IN")}× too small` : `${(1 / m.unitFixes[0].factor).toLocaleString("en-IN")}× too large`}, share capital included) — corrected here so growth rates aren't distorted.
@@ -594,7 +604,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
 
       <ShareholdingPanel symbol={data.symbol} />
       <PriceChartPanel symbol={data.symbol} name={data.name} />
-      {m && <FinancialsPanel history={m.history} />}
+      {m && <FinancialsPanel history={m.history} quarters={m.quarters} />}
       <TechnicalPanel ticker={data.symbol} />
 
       {m && (

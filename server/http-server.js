@@ -19,6 +19,7 @@ import { criteriaToFilters, METRICS, CATEGORY_METRICS } from "./metric-catalog.j
 import { listWatchlist, addToWatchlist, setWatchlistNote, removeFromWatchlist } from "./user-watchlist.js";
 import { listHoldings, addHolding, updateHolding, removeHolding } from "./user-portfolio.js";
 import { getThesis, saveThesis } from "./user-thesis.js";
+import { listNotes, saveNote, deleteNote, listStrategies, saveStrategies } from "./user-notes.js";
 import { currentPrices } from "./prices.js";
 import { getPerformance, takeSnapshots } from "./performance.js";
 import { pricePosition } from "./levels.js";
@@ -543,6 +544,30 @@ export function createApp() {
         const symbol = decodePathSegment(thesisRoute[1]).toUpperCase();
         if (req.method === "GET") sendJson(res, 200, getThesis(userId, symbol));
         else sendJson(res, 200, saveThesis(userId, symbol, await readJsonBody(req)));
+        return;
+      }
+
+      // My Notes and saved strategies, kept with the account
+      if (url.pathname === "/api/notes" && req.method === "GET") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        sendJson(res, 200, { notes: listNotes(userId) });
+        return;
+      }
+      const noteRoute = url.pathname.match(/^\/api\/notes\/([^/]+)$/);
+      if (noteRoute && ["PUT", "DELETE"].includes(req.method)) {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        const ticker = decodePathSegment(noteRoute[1]);
+        if (req.method === "PUT") sendJson(res, 200, saveNote(userId, ticker, await readJsonBody(req)));
+        else { deleteNote(userId, ticker); sendJson(res, 200, { ok: true }); }
+        return;
+      }
+      if (url.pathname === "/api/strategies" && ["GET", "PUT"].includes(req.method)) {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        if (req.method === "GET") sendJson(res, 200, { strategies: listStrategies(userId) });
+        else sendJson(res, 200, { strategies: saveStrategies(userId, (await readJsonBody(req)).strategies) });
         return;
       }
 
