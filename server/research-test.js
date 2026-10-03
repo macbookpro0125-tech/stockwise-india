@@ -81,6 +81,47 @@ assert(band(null, roce) === null && band(NaN, roce) === null, "a band gives null
 
 // ── A complete company ──
 const base = metricsOf(company(), snapshot());
+
+// ── Whose profit and equity ──
+// A holding company: half its group profit and equity belong to its
+// subsidiaries' outside owners; its EPS is on its own half
+const holdco = metricsOf(company({ tweak: y => ({ ...y, profitOwners: y.profit / 2, equityOwners: y.equity / 2, eps: y.eps / 2 }) }), snapshot());
+assert(near(holdco.bookValuePerShare, base.bookValuePerShare / 2, 0.01) && near(holdco.priceToBook, base.priceToBook * 2, 0.05), "a holding company's book value is its own shareholders' equity, not the group's");
+assert(near(holdco.roe, base.roe, 0.2), "ROE pairs own profit with own equity");
+assert(holdco.epsRebased == null && near(holdco.eps, base.eps / 2, 0.001), "its EPS is left as filed — it already is the shareholders' own");
+// A large share issue after the year: twice the shares the EPS was worked out on
+const issued = metricsOf(company({ holding: { totalShares: 20 * CR } }), snapshot());
+assert(issued.epsRebased && near(issued.eps, base.eps / 2, 0.01) && near(issued.pe, base.pe * 2, 0.05), "after a large share issue, EPS is the year's profit over today's shares");
+assert(near(issued.reportedEps, base.eps, 0.001) && near(issued.epsRebased.epsSharesCr, 10, 0.01), "…and the filing's EPS and its share count are kept for the page to show");
+const small = metricsOf(company({ holding: { totalShares: 11 * CR } }), snapshot());
+assert(small.epsRebased == null, "a share count only 10% higher (options, a small placement) leaves EPS as filed");
+// ── Quarters ──
+// Eight quarters, each 10% above the same quarter a year earlier
+const qEnds = ["2026-06-30", "2026-03-31", "2025-12-31", "2025-09-30", "2025-06-30", "2025-03-31", "2024-12-31", "2024-09-30"];
+const withQuarters = (ends = qEnds) => ({ ...company(), quarters: ends.map((qEnd, i) => {
+  const g = Math.pow(1.1, -Math.floor(i / 4)) * (1 - (i % 4) * 0.02);
+  return { qEnd, scope: "Consolidated", source: "integrated", filed: qEnd.replace(/-\d\d$/, "-28"), revenue: 260 * CR * g, expenses: 205 * CR * g, profit: 35 * CR * g, eps: 3.5 * g, paidUp: 100 * CR, faceValue: 10 };
+}) });
+const qm = metricsOf(withQuarters(), snapshot());
+assert(qm.quarters.length === 8 && near(qm.qSalesGrowthYoY, 10, 0.01) && near(qm.qProfitGrowthYoY, 10, 0.01), "the latest quarter is compared with the same quarter a year earlier");
+assert(near(qm.qSalesGrowthQoQ, (1 / 0.98 - 1) * 100, 0.01), "…and with the quarter before");
+assert(near(qm.ttmEps, qm.quarters.slice(0, 4).reduce((a, q) => a + q.eps, 0), 1e-9) && near(qm.peTtm, qm.cmp / qm.ttmEps, 1e-9), "P/E on the last four quarters uses their EPS added up");
+const gappy = metricsOf(withQuarters(["2026-06-30", "2026-03-31", "2025-09-30", "2025-06-30", "2025-03-31"]), snapshot());
+assert(gappy.ttmEps == null && gappy.peTtm == null, "a missing quarter (Dec 2025) means no trailing-twelve-month figure rather than three quarters passed off as four");
+assert(metricsOf(company(), snapshot()).quarters.length === 0 && metricsOf(company(), snapshot()).qSalesGrowthYoY == null, "a company with no quarterly data has no quarterly figures, not zeros");
+// ── A recent listing: two years of annual results, eight quarters ──
+const recentListing = (() => { const c = withQuarters(); return { ...c, years: c.years.slice(0, 2) }; })();
+const ym = metricsOf(recentListing, snapshot());
+const yItems = ym.research.groups.flatMap(g => g.items);
+assert(ym.research.quality != null, "a company listed two years ago is scored, its year-based checks judged on its last eight quarters");
+assert(["marginStability", "revenueConsistency", "salesGrowth3y", "epsGrowth3y"].every(id => yItems.find(i => i.id === id)?.fromQuarters), "…margin steadiness, sales consistency and growth come from the quarters, and say so");
+assert(/eight quarters/.test(ym.research.summary), "…and the summary says the company listed recently");
+const established = metricsOf(withQuarters(), snapshot());
+assert(established.research.quality === base.research.quality && !established.research.groups.some(g => g.items.some(i => i.fromQuarters)), "a company with the years keeps its year-based checks — quarters change nothing");
+const tooNew = metricsOf({ ...company(), years: company().years.slice(0, 2) }, snapshot());
+assert(tooNew.research.quality == null && /2 years of annual results/.test(tooNew.research.summary), "two years and no quarters is still too little, and the page says how many years there are");
+const broken = metricsOf(company({ holding: { totalShares: 900 * CR } }), snapshot());
+assert(broken.epsRebased == null, "90x the shares is a broken figure, not a share issue — EPS stays as filed");
 const r = base.research;
 assert(base.provenance?.financials?.period === base.fyEnd && base.provenance.financials.source.includes("NSE") && base.provenance.marketPrice.date === base.closeDate, "valuation inputs expose filing scope/date and price provenance");
 assert(base.fcfYieldPct != null && near(base.fcfYieldPct, (base.fcfCr / base.marketCapCr) * 100, 0.001), "free-cash-flow yield uses same-period FCF and market value");
