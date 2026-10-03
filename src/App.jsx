@@ -15,6 +15,7 @@ import StockDetail from "./StockDetail.jsx";
 import Tour, { APP_TOUR, STOCK_TOUR } from "./Tour.jsx";
 import { resetWatchlist } from "./watchlist.js";
 import { portfolioStore, alertsStore } from "./stores.js";
+import { strategiesStore, notesStore } from "./accountData.js";
 
 // Dark by default, as the original; the choice is remembered in this browser
 function useTheme() {
@@ -61,6 +62,12 @@ export default function App() {
   // email or phone (a phone sign-in has no email), name, and whether there is a password at all
   const loadAccount = () => api.me().then(d => setAccount({ userId: d.userId, email: d.email ?? null, phone: d.phone ?? null, name: d.name ?? null, hasPassword: d.hasPassword !== false })).catch(() => setAccount(null));
   useEffect(() => { loadAccount(); }, []);
+  // Saved strategies and My Notes come with the account
+  useEffect(() => {
+    if (!account?.userId) return;
+    strategiesStore.load();
+    notesStore.load();
+  }, [account?.userId]);
 
   // The address decides which stock is open: Back/Forward, a refresh and a
   // shared link all land here
@@ -152,6 +159,8 @@ export default function App() {
     resetWatchlist();
     portfolioStore.reset();
     alertsStore.reset();
+    strategiesStore.reset();
+    notesStore.reset();
     setOpen(null);
     setTour(null);
     setNotice(message);

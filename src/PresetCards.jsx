@@ -2,17 +2,16 @@ import { useState, useEffect } from "react";
 import { Plus, Ellipsis } from "lucide-react";
 import { api } from "./api.js";
 import { PresetIcon } from "./icons.jsx";
+import { strategiesStore } from "./accountData.js";
 
 // Ported from stock-screener's src/components/PresetCards.jsx. The strategy
-// list comes from the server (the same 13 presets); custom presets are saved in
-// this browser, as in the original. This app: one accent and a line icon per
+// list comes from the server (the same 13 presets); the user's own are saved to
+// their account (accountData.js) — the original kept them in the browser. This app: one accent and a line icon per
 // card, rather than the original's ten rotating colours and emoji.
 
 const tint = pct => `color-mix(in srgb, var(--accent) ${pct}%, transparent)`;
 
-function loadCustomPresets() {
-  try { return JSON.parse(localStorage.getItem("customPresets") || "[]"); } catch { return []; }
-}
+const loadCustomPresets = () => strategiesStore.get();
 
 export default function PresetCards({ onSelect, activePresetId, onSavePreset, onUpdatePreset, onRenamePreset, onDuplicatePreset }) {
   const [presets, setPresets] = useState([]);
@@ -41,7 +40,7 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
   const deleteCustom = (e, id) => {
     e.stopPropagation();
     const next = customPresets.filter(p => p.id !== id);
-    try { localStorage.setItem("customPresets", JSON.stringify(next)); } catch {}
+    strategiesStore.set(next);
     setCustomPresets(next);
     setMenuOpen(null);
   };
