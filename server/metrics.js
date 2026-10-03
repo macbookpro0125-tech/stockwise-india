@@ -3,6 +3,7 @@
 // same stock can't show two different P/Es on two screens.
 import { calculateLevels } from "./levels.js";
 import { computeResearch } from "./research.js";
+import { fixUnitSlips } from "./unit-slips.js";
 
 const DAY = 86400000;
 const MIN_PE_YEARS = 3;
@@ -37,7 +38,9 @@ function median(values) {
 // a second pass, once the whole market's sector P/Es are known)
 export function computeMetrics(stock, snap, overrides = {}, options = {}) {
   if (!stock || stock.error || !Array.isArray(stock.years)) return null;
-  const years = stock.years.filter(y => !y.error && y.fyEnd);
+  // A year filed in the wrong unit (lakhs as rupees…) is put back on the
+  // company's own scale first — see unit-slips.js
+  const years = fixUnitSlips(stock.years.filter(y => !y.error && y.fyEnd));
   const latest = years[0];
   if (!latest) return null;
   const sym = stock.symbol;
@@ -333,6 +336,8 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     low52w: range?.low ?? null,
     high52w: range?.high ?? null,
     fyEnd: latest.fyEnd,
+    // Years whose filing was in the wrong unit and has been rescaled
+    unitFixes: years.filter(y => y.unitFix).map(y => ({ fyEnd: y.fyEnd, factor: y.unitFix })),
     provenance: {
       financials: {
         source: latest.source === "legacy" ? "NSE legacy results filing" : "NSE integrated financial filing",

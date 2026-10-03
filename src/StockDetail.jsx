@@ -465,6 +465,11 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
               ? <>P/E is this stock's <em>5-year median</em> ({m.medianPe.toFixed(1)}; today {m.pe?.toFixed(1) ?? "—"}) — override with your own view if needed.</>
               : <>P/E is <em>today's</em> — fewer than 3 usable years of history for a median. Override with a long-run average for a real valuation.</>}
           </div>
+          {m.unitFixes?.length > 0 && (
+            <div style={{ marginTop: 4, color: "var(--t2)" }}>
+              {m.unitFixes.map(f => `FY${f.fyEnd.slice(2, 4)}`).join(" and ")} {m.unitFixes.length > 1 ? "filings were" : "filing was"} in the wrong unit on NSE (figures {m.unitFixes[0].factor > 1 ? `${m.unitFixes[0].factor.toLocaleString("en-IN")}× too small` : `${(1 / m.unitFixes[0].factor).toLocaleString("en-IN")}× too large`}, share capital included) — corrected here so growth rates aren't distorted.
+            </div>
+          )}
         </div>
       )}
 
