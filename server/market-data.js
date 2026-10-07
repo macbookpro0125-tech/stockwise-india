@@ -360,7 +360,10 @@ async function sectorsBySymbol() {
       if (f[iSym] && f[iInd]) fromIndex[f[iSym]] = f[iInd];
     }
   }
-  const industries = await industriesBySymbol().catch(() => ({}));
+  // A company's industry hardly ever changes: when NSE doesn't answer, the
+  // last snapshot's list stands rather than every mapped sector vanishing
+  let industries = await industriesBySymbol().catch(() => ({}));
+  if (!Object.keys(industries).length) industries = loadMarketSnapshot()?.industries ?? {};
   const votes = {};
   for (const [sym, industry] of Object.entries(industries)) {
     const sector = fromIndex[sym];
@@ -394,13 +397,27 @@ async function auditorResignations() {
   return out;
 }
 
-// Each company's industry from the last 90 days of NSE announcements — one
-// request for the whole market
+// Each company's industry from the last 90 days of NSE announcements, asked
+// a month at a time: the whole 90 days in one answer (~50,000 rows) is over
+// upstream.js's 25 MB cap, which on 7 Oct 2026 emptied the list. A month that
+// fails is skipped — the first one alone names ~930 of the ~950 NSE labels.
 async function industriesBySymbol() {
-  const to = new Date(), from = new Date(to.getTime() - 90 * 86400000);
-  const rows = await fetchJson(`${NSE_BASE}/api/corporate-announcements?index=equities&from_date=${ddmmyyyy(from, "-")}&to_date=${ddmmyyyy(to, "-")}`);
   const out = {};
-  for (const r of Array.isArray(rows) ? rows : []) if (r.symbol && r.smIndustry && r.smIndustry !== "-") out[r.symbol] = r.smIndustry;
+  let answered = 0;
+  for (let month = 0; month < 3; month++) {
+    const to = new Date(Date.now() - month * 30 * 86400000), from = new Date(to.getTime() - 29 * 86400000);
+    let rows;
+    try {
+      rows = await fetchJson(`${NSE_BASE}/api/corporate-announcements?index=equities&from_date=${ddmmyyyy(from, "-")}&to_date=${ddmmyyyy(to, "-")}`);
+      answered++;
+    } catch {
+      continue;
+    }
+    // Newest month first, so a company's latest label wins
+    for (const r of Array.isArray(rows) ? rows : []) if (r.symbol && r.smIndustry && r.smIndustry !== "-") out[r.symbol] ??= r.smIndustry;
+    await new Promise(r => setTimeout(r, 500));
+  }
+  if (!answered) throw new Error("NSE's announcements didn't answer");
   return out;
 }
 

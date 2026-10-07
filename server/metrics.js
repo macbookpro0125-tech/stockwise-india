@@ -4,6 +4,7 @@
 import { calculateLevels } from "./levels.js";
 import { computeResearch } from "./research.js";
 import { fixUnitSlips } from "./unit-slips.js";
+import { sectorFromName } from "./name-sectors.js";
 
 const DAY = 86400000;
 const MIN_PE_YEARS = 3;
@@ -386,11 +387,14 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
   // where there is one; otherwise the name test still applies — NSE files sugar
   // under FMCG, and a mapped sector mustn't make a sugar mill non-cyclical.
   const indexSector = snap?.sectors?.[sym] ?? null;
-  const sector = indexSector ?? snap?.industrySectors?.[sym] ?? null;
-  const utility = sector ? UTILITY_SECTORS.has(sector) : false;
+  const peerSector = indexSector ?? snap?.industrySectors?.[sym] ?? null;
+  const utility = peerSector ? UTILITY_SECTORS.has(peerSector) : false;
   const nameLower = String(stock.name || "").toLowerCase();
   const cyclical = indexSector ? CYCLICAL_SECTORS.has(indexSector)
-    : (sector != null && CYCLICAL_SECTORS.has(sector)) || CYCLICAL_NAME_WORDS.some(w => nameLower.includes(w));
+    : (peerSector != null && CYCLICAL_SECTORS.has(peerSector)) || CYCLICAL_NAME_WORDS.some(w => nameLower.includes(w));
+  // For finding companies by sector, the smaller ones NSE doesn't classify
+  // get one from their name (name-sectors.js); peers stay on NSE's sectors
+  const sector = peerSector ?? sectorFromName(stock.name);
 
   // Interest cover = EBIT / interest, the original's definition
   const interestCoverage = !lender && latest.financeCosts > 0 && latest.pbt != null
@@ -401,7 +405,7 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     symbol: sym,
     name: stock.name,
     template: stock.template,
-    sector, lender, utility, cyclical,
+    sector, peerSector, sectorByName: sector != null && peerSector == null, lender, utility, cyclical,
     industry: snap?.industries?.[sym] ?? null,
     // Auditor resignations in the last three years (market-data.js); null =
     // the snapshot doesn't know, [] = none filed

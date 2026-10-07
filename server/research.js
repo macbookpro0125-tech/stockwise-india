@@ -464,9 +464,12 @@ const VALUATION = {
         // NSE's older industry label only when the sector is unknown or has
         // too few P/Es — and never a catch-all like "Miscellaneous"
         const peers = ctx.peers ?? PEERS;
-        const bySector = m.sector ? (peers instanceof Map ? peers.get(m.sector) ?? peers.get(`sector:${m.sector}`) : peers.sectors?.get(m.sector)) : null;
+        // NSE's sector only — a sector read from the company's name is for
+        // finding companies, not for pricing them against peers
+        const sector = m.peerSector !== undefined ? m.peerSector : m.sector;
+        const bySector = sector ? (peers instanceof Map ? peers.get(sector) ?? peers.get(`sector:${sector}`) : peers.sectors?.get(sector)) : null;
         const byIndustry = isPeerIndustry(m.industry) ? (peers instanceof Map ? peers.get(`industry:${m.industry}`) : peers.industries?.get(m.industry)) : null;
-        const [cohort, s] = bySector?.n >= 5 ? [m.sector, bySector] : byIndustry?.n >= 5 ? [`NSE industry ${m.industry}`, byIndustry] : [m.sector, bySector];
+        const [cohort, s] = bySector?.n >= 5 ? [sector, bySector] : byIndustry?.n >= 5 ? [`NSE industry ${m.industry}`, byIndustry] : [sector, bySector];
         if (!cohort) return missing("Sector isn't known for this company — it's needed to compare with peers.");
         if (!s || s.n < 5) return missing(`Fewer than 5 ${cohort} companies with a P/E to compare.`);
         const pe = closePe(m);

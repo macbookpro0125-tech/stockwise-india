@@ -14,7 +14,7 @@ import { signup, login, logout, verifySession, accountInfo, deleteAccount, creat
 import { firebaseConfig, verifyFirebaseIdToken } from "./firebase-auth.js";
 import { emailConfigured, appUrl, sendEmail, resetEmail } from "./email.js";
 import { listAlerts, createAlert, updateAlert, deleteAlert } from "./user-alerts.js";
-import { screen, screenerMeta, getStock, saveStock, rowsFor, isValidSymbol, countFetched, allMetrics } from "./screen.js";
+import { screen, screenerMeta, getStock, saveStock, rowsFor, isValidSymbol, countFetched, allMetrics, screenRowCount } from "./screen.js";
 import { criteriaToFilters, METRICS, CATEGORY_METRICS } from "./metric-catalog.js";
 import { listWatchlist, addToWatchlist, setWatchlistNote, removeFromWatchlist } from "./user-watchlist.js";
 import { listHoldings, addHolding, updateHolding, removeHolding } from "./user-portfolio.js";
@@ -799,7 +799,10 @@ export function createApp() {
           ok: true,
           degraded: warnings.length > 0,
           warnings,
-          companies: countFetched(),
+          // Every NSE company has a file; only those with usable figures
+          // (~2,250 of ~2,600) are in the screener
+          companiesInScreener: screenRowCount(),
+          companiesOnFile: countFetched(),
           pricesDate: snap?.pricesDate ?? null,
           snapshotBuiltAt: snap?.builtAt ?? null,
           snapshotAgeHours: snapshotAgeHours == null ? null : Math.round(snapshotAgeHours * 10) / 10,

@@ -13,8 +13,9 @@ export default function MetricPicker({ meta, mode, chosen, onToggle, onClose }) 
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  // Sector is a filter only; the table shows it under each company's name
-  const all = mode === "filter" ? [...meta.metrics, meta.byId.get("sector")] : meta.metrics;
+  // Sector has its own box in the filter panel; the table shows it under
+  // each company's name
+  const all = meta.metrics;
   const text = q.trim().toLowerCase();
   const list = all.filter(x => x && (text
     ? `${x.label} ${x.short ?? ""} ${x.about ?? ""} ${x.category}`.toLowerCase().includes(text)
