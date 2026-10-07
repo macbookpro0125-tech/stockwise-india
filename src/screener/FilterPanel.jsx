@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useId } from "react";
 import { formatInput, unitLabel } from "./meta.js";
 
 // The screener's filter sidebar: market-cap size, one row per filter (a
@@ -139,6 +139,31 @@ function SectorFilter({ def, filter, companies, onChange, onRemove }) {
   );
 }
 
+// Always on show under market cap: pick a sector and the list keeps only its
+// companies, best Quality score first. Several sectors at once (a strategy or
+// a shared link can carry them) get the checklist instead.
+function SectorPick({ def, filter, companies, onChange }) {
+  const values = filter?.values ?? [];
+  // The panel is drawn twice (sidebar and phone sheet), so the id can't be fixed
+  const id = useId();
+  if (values.length > 1) return <SectorFilter def={def} filter={filter} companies={companies} onChange={f => onChange(f.values)} onRemove={() => onChange([])} />;
+  return (
+    <div className="filter-row">
+      <label htmlFor={id} style={{ display: "block", fontSize: 12.5, fontWeight: 600, color: "var(--t1)", marginBottom: 8 }}>Sector</label>
+      <select id={id} className="input-base" value={values[0] ?? ""} onChange={e => onChange(e.target.value ? [e.target.value] : [])}
+        style={{ width: "100%", height: 36, fontSize: 13, cursor: "pointer" }}>
+        <option value="">All sectors</option>
+        {(def.options ?? []).map(s => <option key={s} value={s}>{s}{def.counts?.[s] ? ` (${def.counts[s]})` : ""}</option>)}
+      </select>
+      {values.length > 0 && def.known < companies && (
+        <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 4 }}>
+          Known for {def.known.toLocaleString("en-IN")} of {companies.toLocaleString("en-IN")} companies so far
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CapSize({ def, filter, onChange }) {
   const chosen = new Set(filter?.values ?? []);
   const toggle = o => {
@@ -174,6 +199,12 @@ export default function FilterPanel({ meta, filters, onChange, onAddFilter, onRe
     if (cap) return replace("capSize", { id: "capSize", values });
     onChange([...filters, { id: "capSize", values }]);
   };
+  const sector = filters.find(f => f.id === "sector");
+  const setSector = values => {
+    if (!values.length) return remove("sector");
+    if (sector) return replace("sector", { id: "sector", values });
+    onChange([...filters, { id: "sector", values }]);
+  };
 
   return (
     <div>
@@ -188,12 +219,13 @@ export default function FilterPanel({ meta, filters, onChange, onAddFilter, onRe
       </div>
 
       <CapSize def={meta.byId.get("capSize")} filter={cap} onChange={setCap} />
+      {meta.byId.get("sector") && <SectorPick def={meta.byId.get("sector")} filter={sector} companies={meta.companies} onChange={setSector} />}
 
-      {filters.filter(f => f.id !== "capSize").map(f => {
+      {filters.filter(f => f.id !== "capSize" && f.id !== "sector").map(f => {
         const def = meta.byId.get(f.id);
         if (!def) return null;
         const props = { key: f.id, def, filter: f, companies: meta.companies, onChange: next => replace(f.id, next), onRemove: () => remove(f.id) };
-        return f.id === "sector" ? <SectorFilter {...props} /> : <NumericFilter {...props} />;
+        return <NumericFilter {...props} />;
       })}
 
       <button type="button" className="btn-ghost" onClick={onAddFilter} style={{ width: "100%", height: 40, marginTop: 12, borderStyle: "dashed", color: "var(--accent)", fontWeight: 600 }}>

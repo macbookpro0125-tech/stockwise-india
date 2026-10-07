@@ -46,6 +46,9 @@ export function countFetched() {
 }
 
 let cache = null;
+// Companies in the screener, once it has been worked out since the server
+// started (null before — the health check mustn't wait ~6 s to build it)
+export const screenRowCount = () => cache?.rows.length ?? null;
 
 function marketVersion() {
   const snap = loadMarketSnapshot();
@@ -87,9 +90,9 @@ export function allMetrics() {
 function sectorPeMedians(rows) {
   const bySector = new Map();
   for (const m of rows) {
-    if (!m.sector || !(m.close > 0) || !(m.valuationEps > 0)) continue;
-    if (!bySector.has(m.sector)) bySector.set(m.sector, []);
-    bySector.get(m.sector).push(m.close / m.valuationEps);
+    if (!m.peerSector || !(m.close > 0) || !(m.valuationEps > 0)) continue;
+    if (!bySector.has(m.peerSector)) bySector.set(m.peerSector, []);
+    bySector.get(m.peerSector).push(m.close / m.valuationEps);
   }
   const out = new Map();
   for (const [sector, pes] of bySector) {
@@ -122,13 +125,16 @@ function industryPeMedians(rows) {
 // metric's spread across the market for its slider
 export function screenerMeta() {
   const { rows, ranges } = allMetrics();
-  const sectors = [...new Set(rows.map(m => m.sector).filter(Boolean))].sort();
+  const counts = {};
+  for (const m of rows) if (m.sector) counts[m.sector] = (counts[m.sector] ?? 0) + 1;
+  const sectors = Object.keys(counts).sort();
   return {
     categories: CATEGORIES,
     metrics: METRICS.map(({ get, ...x }) => ({ ...x, range: ranges[x.id] ?? null })),
     categoryMetrics: CATEGORY_METRICS.map(x => ({
       ...x,
       options: x.id === "sector" ? sectors : x.options,
+      ...(x.id === "sector" ? { counts } : {}),
       known: x.id === "sector" ? rows.filter(m => m.sector).length : rows.length,
     })),
     companies: rows.length,

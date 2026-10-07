@@ -202,10 +202,11 @@ export function sectorPeers(symbol, limit = 30) {
   if (!me) return { sector: null, industry: null, peerBasis: null, peerCount: 0, benchmark: null, rows: [] };
   // Sector first, then NSE's industry label — the same order as the research
   // score's peer P/E, so the two never quote different cohorts
-  const peerBasis = me.sector ? "sector" : isPeerIndustry(me.industry) ? "industry" : null;
-  const peerLabel = peerBasis === "sector" ? me.sector : peerBasis === "industry" ? me.industry : null;
+  // (NSE's sector — not one read from the company's name)
+  const peerBasis = me.peerSector ? "sector" : isPeerIndustry(me.industry) ? "industry" : null;
+  const peerLabel = peerBasis === "sector" ? me.peerSector : peerBasis === "industry" ? me.industry : null;
   if (!peerBasis) return { sector: null, industry: me.industry, peerBasis: null, peerLabel: null, peerCount: 0, benchmark: null, rows: [] };
-  const cohort = rows.filter(r => r.symbol !== symbol && (peerBasis === "sector" ? r.sector === me.sector : r.industry === me.industry));
+  const cohort = rows.filter(r => r.symbol !== symbol && (peerBasis === "sector" ? r.peerSector === me.peerSector : r.industry === me.industry));
   const median = values => {
     const sorted = values.filter(v => Number.isFinite(v) && v > 0).sort((a, b) => a - b);
     if (sorted.length < 5) return { value: null, n: sorted.length };
@@ -215,12 +216,12 @@ export function sectorPeers(symbol, limit = 30) {
   const pe = median(cohort.map(r => r.pe));
   const evEbitda = median(cohort.filter(r => !r.lender).map(r => r.evToEbitda));
   const fcfYield = median(cohort.filter(r => !r.lender).map(r => r.fcfYieldPct));
-  const ordered = [me, ...rows.filter(r => r.symbol !== symbol && (peerBasis === "sector" ? r.sector === me.sector : r.industry === me.industry))]
+  const ordered = [me, ...rows.filter(r => r.symbol !== symbol && (peerBasis === "sector" ? r.peerSector === me.peerSector : r.industry === me.industry))]
     .sort((a, b) => (b.marketCapCr ?? 0) - (a.marketCapCr ?? 0));
   const top = ordered.slice(0, limit);
   if (!top.includes(me)) top.push(me);
   return {
-    sector: me.sector ?? null,
+    sector: me.peerSector ?? null,
     industry: me.industry ?? null,
     peerBasis,
     peerLabel,
