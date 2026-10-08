@@ -6,7 +6,7 @@ import CreateAlertModal from "./CreateAlertModal.jsx";
 import CompareView from "./CompareView.jsx";
 import { exportDiscoverExcel } from "./exportExcel.js";
 import { formatValue, valueColor } from "./screener/meta.js";
-import { QualityBadge, OverallScore } from "./ResearchBadges.jsx";
+import { QualityBadge, OverallScore, qualityTone, overallTone, researchTitle } from "./ResearchBadges.jsx";
 
 // A metric column's header, with its unit as the table always showed it
 // ("ROCE %", "CMP ₹")
@@ -299,7 +299,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
 
       {/* ── Top bar ── */}
       {(totalMatches != null || loading) && (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, padding: "14px 0", marginBottom: 12, borderBottom: "1px solid var(--bdr)" }}>
+        <div className="results-topbar" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, padding: "14px 0", marginBottom: 12, borderBottom: "1px solid var(--bdr)" }}>
           <div style={{ fontSize: 13, color: "var(--t1)" }}>
             {loading ? (
               <span style={{ color: "var(--t3)" }}>Scanning market…</span>
@@ -310,7 +310,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                 <span style={{ color: "var(--t2)" }}> {noun}</span>
                 {(q || minQuality > 0) && filtered.length !== (matches?.length ?? 0) && <span style={{ color: "var(--t3)" }}> (filtered from {matches?.length})</span>}
                 {!q && visible.length < sorted.length && <span style={{ color: "var(--t2)" }}> · showing <strong style={{ color: "var(--t1)" }}>{visible.length}</strong></span>}
-                {executionTime != null && <span style={{ color: "var(--t3)", marginLeft: 8, fontSize: 11, ...MONO }}>{(executionTime / 1000).toFixed(1)}s</span>}
+                {executionTime != null && <span className="hide-phone" style={{ color: "var(--t3)", marginLeft: 8, fontSize: 11, ...MONO }}>{(executionTime / 1000).toFixed(1)}s</span>}
                 {snapshot?.pricesDate && (
                   <span style={{ color: "var(--t3)", marginLeft: 8, fontSize: 11 }}>
                     · prices as of {new Date(`${snapshot.pricesDate}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })}
@@ -332,16 +332,16 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
               </button>
             )}
             {onEditColumns && (
-              <button onClick={onEditColumns} className="btn-ghost" style={{ height: 32, fontSize: 12.5 }} title="Choose which columns the table shows">
+              <button onClick={onEditColumns} className="btn-ghost hide-phone" style={{ height: 32, fontSize: 12.5 }} title="Choose which columns the table shows">
                 <Columns3 size={14} /> Columns
               </button>
             )}
             {!loading && (matches?.length ?? 0) > 0 && (
               <>
-                <button onClick={exportExcel} disabled={exporting || sorted.length === 0} className="btn-primary" style={{ height: 32, padding: "0 14px", fontSize: 12.5, opacity: exporting || sorted.length === 0 ? 0.6 : 1 }}>
+                <button onClick={exportExcel} disabled={exporting || sorted.length === 0} className="btn-primary hide-phone" style={{ height: 32, padding: "0 14px", fontSize: 12.5, opacity: exporting || sorted.length === 0 ? 0.6 : 1 }}>
                   {exporting ? "Exporting…" : "Export Excel"}
                 </button>
-                <button onClick={exportCsv} className="btn-ghost" style={{ height: 32, fontSize: 12.5 }}>
+                <button onClick={exportCsv} className="btn-ghost hide-phone" style={{ height: 32, fontSize: 12.5 }}>
                   CSV
                 </button>
               </>
@@ -392,7 +392,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
         </div>
       )}
       {notes.length > 0 && !loading && (
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 6, fontSize: 12, color: "var(--t3)", marginBottom: 14, lineHeight: 1.5 }}>
+        <div className="hide-phone" style={{ display: "flex", alignItems: "flex-start", gap: 6, fontSize: 12, color: "var(--t3)", marginBottom: 14, lineHeight: 1.5 }}>
           <Info size={13} style={{ flexShrink: 0, marginTop: 2 }} />
           <div>{notes.map(n => <div key={n}>{n}</div>)}</div>
         </div>
@@ -411,37 +411,54 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
         </div>
       )}
 
-      {/* ── Mobile cards ── */}
+      {/* ── Phone rows: a compact list, ~6 companies a screen; the whole row
+             opens the company, the star saves it ── */}
       {!loading && sorted.length > 0 && isMobile && (
-        <div>
-          {visible.map((stock, i) => (
-            <div key={stock.symbol} data-tour={i === 0 ? "row" : undefined} style={{ borderRadius: 14, border: "1px solid var(--bdr2)", padding: 16, marginBottom: 10, background: "var(--s2)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12, gap: 8 }}>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "var(--t1)", marginBottom: 3 }}>{stock.name}</div>
-                  <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-                    <span style={{ fontSize: 10, background: "var(--s3)", color: "var(--t2)", padding: "1px 7px", borderRadius: 5 }}>{stock.symbol}</span>
+        <div style={{ borderRadius: 12, border: "1px solid var(--bdr2)", background: "var(--s2)", overflow: "hidden" }}>
+          {visible.map((stock, i) => {
+            const day = stock.ret1d;
+            const quality = stock.research?.quality, overall = stock.research?.overall;
+            // Coloured as the pills and stance words on a computer
+            const cells = [
+              ["Quality", <span key="q" title={researchTitle(stock.research)} style={{ color: qualityTone(quality).color }}>{quality == null ? "—" : Math.round(quality)}</span>],
+              ["Research", <span key="r" title={researchTitle(stock.research)} style={{ color: overallTone(overall).color }}>{overall == null ? "—" : Math.round(overall)}</span>],
+              ...columns.slice(0, 2).map(def => {
+                const v = colValue(stock, def.id);
+                return [def.short, <span key={def.id} style={{ color: v == null ? "var(--t3)" : def.signed ? valueColor(def, v) : "var(--t1)" }}>{formatValue(def, v)}</span>];
+              }),
+            ];
+            return (
+              <div key={stock.symbol} data-tour={i === 0 ? "row" : undefined} role="link" tabIndex={0}
+                onClick={() => onAnalyze(stock.symbol)}
+                onKeyDown={e => { if (e.key === "Enter") onAnalyze(stock.symbol); }}
+                className="phone-row"
+                style={{ padding: "12px 12px 12px 14px", borderTop: i ? "1px solid var(--bdr)" : "none", cursor: "pointer" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto auto", columnGap: 10, alignItems: "center" }}>
+                  <div style={{ fontSize: 14, fontWeight: 650, color: "var(--t1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", letterSpacing: "-0.01em" }}>{stock.name}</div>
+                  <div style={{ fontSize: 14, fontWeight: 650, color: "var(--t1)", textAlign: "right", ...MONO }}>{stock.cmp ? `₹${fmt(stock.cmp, stock.cmp < 100 ? 2 : 0)}` : "—"}</div>
+                  <div data-tour={i === 0 ? "row-actions" : undefined} style={{ gridRow: "span 2" }} onClick={e => e.stopPropagation()}>
+                    <StarButton symbol={stock.symbol} price={stock.cmp} watched={watchlist.has(stock.symbol)} size={36} />
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, marginTop: 3 }}>
+                    <span style={{ fontSize: 10.5, background: "var(--s3)", color: "var(--t2)", padding: "1px 6px", borderRadius: 5, flexShrink: 0, ...MONO }}>{stock.symbol}</span>
                     <NcavBadge stock={stock} />
+                    {stock.sector && <span style={{ fontSize: 11, color: "var(--t3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{stock.sector}</span>}
+                  </div>
+                  <div style={{ fontSize: 11.5, fontWeight: 600, textAlign: "right", marginTop: 3, color: day == null ? "var(--t3)" : day >= 0 ? "var(--green)" : "var(--red)", ...MONO }}>
+                    {day == null ? "" : `${day >= 0 ? "+" : ""}${day.toFixed(2)}%`}
                   </div>
                 </div>
-                <QualityBadge research={stock.research} />
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 6, marginTop: 10, paddingRight: 46 }}>
+                  {cells.map(([label, value]) => (
+                    <div key={label} style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 10.5, color: "var(--t3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 2 }}>{label}</div>
+                      <div style={{ fontSize: 12.5, fontWeight: 650, whiteSpace: "nowrap", ...MONO }}>{value}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 12 }}>
-                {[["CMP", stock.cmp ? `₹${fmt(stock.cmp)}` : "—", "var(--t1)"], ...columns.slice(0, 5).map(def => { const v = colValue(stock, def.id); return [def.short, formatValue(def, v), v == null ? "var(--t3)" : def.signed ? valueColor(def, v) : "var(--t1)"]; })].map(([label, val, color]) => (
-                  <div key={label} style={{ background: "var(--s1)", borderRadius: 8, padding: "8px 10px", minWidth: 0 }}>
-                    <div style={{ fontSize: 11, color: "var(--t3)", marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</div>
-                    <div style={{ fontSize: 12, fontWeight: 600, color, ...MONO }}>{val}</div>
-                  </div>
-                ))}
-              </div>
-              <div data-tour={i === 0 ? "row-actions" : undefined} style={{ display: "flex", gap: 8 }}>
-                <button onClick={() => onAnalyze(stock.symbol)} className="btn-primary" style={{ flex: 1, height: 36, fontSize: 12 }}>Analyze →</button>
-                <StarButton symbol={stock.symbol} price={stock.cmp} watched={watchlist.has(stock.symbol)} size={36} />
-                {bell(stock, 36)}
-                <a href={nseUrl(stock.symbol)} target="_blank" rel="noreferrer" aria-label="Open on NSE" style={{ width: 36, height: 36, borderRadius: 8, border: "1px solid var(--bdr2)", background: "var(--s1)", color: "var(--t2)", textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><ArrowUpRight size={16} /></a>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

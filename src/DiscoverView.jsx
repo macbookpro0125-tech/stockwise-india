@@ -249,7 +249,7 @@ export default function DiscoverView({ onOpenStock }) {
   const matched = results?.matched;
 
   return (
-    <div className="screener-page" style={{ padding: "24px var(--page-x) 80px" }}>
+    <div className="screener-page" style={{ padding: "var(--page-top, 24px) var(--page-x) 80px" }}>
       {showSaveModal && (
         <Modal onClose={() => setShowSaveModal(false)}>
           <div style={{ fontSize: 17, fontWeight: 700, color: "var(--t1)", marginBottom: 6, letterSpacing: "-0.02em" }}>Save as a strategy</div>
@@ -308,7 +308,7 @@ export default function DiscoverView({ onOpenStock }) {
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
             <h2 style={{ fontSize: 17, fontWeight: 650, color: "var(--t1)", letterSpacing: "-0.02em", margin: 0 }}>Strategies</h2>
-            <span style={{ fontSize: 13, color: "var(--t3)" }}>Pick one to start, then change any filter</span>
+            <span className="hide-phone" style={{ fontSize: 13, color: "var(--t3)" }}>Pick one to start, then change any filter</span>
           </div>
           <HowItWorks />
         </div>
@@ -342,7 +342,7 @@ export default function DiscoverView({ onOpenStock }) {
                 <SlidersHorizontal size={14} /> Filters{activeCount > 0 && <span style={{ marginLeft: 2, fontSize: 10.5, padding: "0 7px", borderRadius: 999, fontWeight: 700, background: "var(--accent)", color: "var(--on-accent)" }}>{activeCount}</span>}
               </button>
               {results && (
-                <span style={{ fontSize: 12, color: "var(--t3)" }}>
+                <span className="hide-phone" style={{ fontSize: 12, color: "var(--t3)" }}>
                   {updating ? "Updating…" : activeCount === 0 ? `The whole market — ${results.total.toLocaleString("en-IN")} NSE companies with current filings. Add a filter or pick a strategy.` : `Screening ${results.total.toLocaleString("en-IN")} NSE companies with current filings`}
                 </span>
               )}

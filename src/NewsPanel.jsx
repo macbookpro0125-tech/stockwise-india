@@ -144,7 +144,7 @@ export default function NewsPanel({ symbol }) {
                 <div style={{ fontSize: 11, color: "var(--t2)", lineHeight: 1.5, marginTop: 4 }}>{a.review.reviewPrompt}{a.review.extractedAmounts?.length ? ` Amounts stated in notice: ${a.review.extractedAmounts.join(", ")}.` : ""}</div>
               </>;
             const docBlock = tab === "filings" && a.url && <>
-              <button type="button" onClick={() => readAttachment(a.index)} style={{ marginTop: 8, padding: "5px 10px", borderRadius: 7, border: "1px solid var(--bdr2)", background: "var(--s3)", color: "var(--accent)", fontSize: 11, fontWeight: 650, cursor: "pointer" }}>
+              <button type="button" className="tap" onClick={() => readAttachment(a.index)} style={{ marginTop: 8, padding: "5px 10px", borderRadius: 7, border: "1px solid var(--bdr2)", background: "var(--s3)", color: "var(--accent)", fontSize: 11, fontWeight: 650, cursor: "pointer" }}>
                 {doc?.loading ? "Reading filing…" : openSummary === summaryKey && doc ? "Hide document summary" : doc ? "Show document summary" : "Read full filing"}
               </button>
               {openSummary === summaryKey && doc && <div style={{ marginTop: 8, padding: 11, borderRadius: 9, border: "1px solid var(--bdr2)", background: "var(--s3)" }}>

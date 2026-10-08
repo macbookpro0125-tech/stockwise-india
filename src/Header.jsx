@@ -75,7 +75,7 @@ export default function Header({ tab, onTab, account, onLogout, onDeleted, onSea
                 <h1 style={{ fontSize: 17, fontWeight: 700, margin: 0, color: "var(--t1)", letterSpacing: "-0.03em", lineHeight: 1.2 }}>
                   Stock<span style={{ color: "var(--brand-wise)" }}>wise</span> <span style={{ color: "var(--t3)", fontWeight: 500 }}>India</span>
                 </h1>
-                <p style={{ fontSize: 11, color: "var(--t3)", margin: 0, letterSpacing: "-0.01em", whiteSpace: "nowrap" }}>Indian market · NSE filings</p>
+                <p className="hide-phone" style={{ fontSize: 11, color: "var(--t3)", margin: 0, letterSpacing: "-0.01em", whiteSpace: "nowrap" }}>Indian market · NSE filings</p>
               </div>
             </div>
 

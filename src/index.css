@@ -424,7 +424,6 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 .ss-grid-pts { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
 .ss-pros-cons-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .ss-back-bottom { display: flex; justify-content: center; padding: 8px 0 4px; }
-.ss-back-sticky { display: none; }
 
 /* ── Header and phone tab bar (the original's) ── */
 /* The prefixed line goes first: the build's minifier keeps only the last of
@@ -460,21 +459,10 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   .ss-grid-3 { grid-template-columns: repeat(2, 1fr); }
   .ss-grid-pts { grid-template-columns: repeat(2, 1fr); }
   .ss-pros-cons-grid { grid-template-columns: 1fr !important; }
-  .ss-back-bottom { display: none; }
-  .ss-back-sticky {
-    display: block;
-    position: fixed;
-    bottom: 0; left: 0; right: 0;
-    z-index: 50;
-    padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
-    background: var(--s1);
-    border-top: 1px solid var(--bdr2);
-  }
 }
 
-@media (max-width: 420px) {
+@media (max-width: 340px) {
   .ss-grid-4, .ss-grid-fv, .ss-grid-3 { grid-template-columns: 1fr; }
-  .ss-grid-pts { grid-template-columns: repeat(2, 1fr); }
 }
 
 /* iOS Safari zooms the page in whenever a field under 16px takes focus and
@@ -598,4 +586,33 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   .research-head { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .research-head > :last-child { grid-column: 1 / -1; }
   .research-groups { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ── Phones (2026-10-07 pass): more of the list on the first screen ── */
+@media (max-width: 640px) {
+  .hide-phone { display: none !important; }
+  :root { --page-top: 14px; }
+  /* Strategies as one row of slim cards — name and icon, the description
+     is on the card's hover title and the strategy's own filters */
+  .preset-strip { margin-bottom: 16px !important; }
+  .preset-card { width: auto !important; max-width: 210px; padding: 9px 12px 9px 9px !important; display: flex !important; flex-direction: row !important; align-items: center; gap: 9px; }
+  .preset-card > div { margin-bottom: 0 !important; white-space: nowrap; }
+  .preset-icon { width: 26px !important; height: 26px !important; flex-shrink: 0; }
+  .preset-desc { display: none !important; }
+  .preset-save br { display: none; }
+  .results-topbar { padding: 4px 0 10px !important; margin-bottom: 10px !important; }
+  .phone-row:active { background: var(--s3); }
+}
+
+/* Company page: shortcuts to each part, in the pinned bar */
+.section-nav { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 10px 0; margin-top: 2px; -webkit-mask-image: linear-gradient(to right, black calc(100% - 24px), transparent); mask-image: linear-gradient(to right, black calc(100% - 24px), transparent); }
+.section-nav::-webkit-scrollbar { display: none; }
+.section-chip { flex-shrink: 0; height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--bdr2); background: var(--s2); color: var(--t2); font-size: 12.5px; font-weight: 550; font-family: inherit; cursor: pointer; white-space: nowrap; transition: background 150ms, color 150ms, border-color 150ms; }
+.section-chip:hover { color: var(--t1); border-color: var(--bdr3); }
+.section-chip.on { background: color-mix(in srgb, var(--accent) 12%, transparent); border-color: color-mix(in srgb, var(--accent) 45%, transparent); color: var(--accent); }
+.section-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Buttons that are small on a computer get a finger-sized height on a phone */
+@media (max-width: 640px) {
+  .tap { min-height: 36px; }
 }
