@@ -187,7 +187,8 @@ export default function App() {
       <SiteFooter />
       {/* Not on a stock page: that has its own bottom Back button on phones,
           as the original's stock page did */}
-      {!open && <BottomTabBar tab={tab} onTab={goTab} theme={theme} />}
+      {/* On a company page too: the tab it was opened from stays lit */}
+      <BottomTabBar tab={tab} onTab={goTab} theme={theme} />
       {tour && <Tour key={tour} steps={tour === "app" ? APP_TOUR : STOCK_TOUR} onFinish={finishTour} />}
     </div>
   );

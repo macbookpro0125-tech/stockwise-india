@@ -94,7 +94,7 @@ function PivotLevels({ pivots, price }) {
           const pct = ((l.value - min) / range) * 100;
           return (
             <div key={l.label} style={{ position: "absolute", left: `${pct}%`, top: 0, transform: "translateX(-50%)", textAlign: "center" }}>
-              <div style={{ fontSize: 8, fontWeight: 700, color: l.type === "support" ? "var(--red)" : "var(--green)", lineHeight: 1 }}>{l.label}</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: l.type === "support" ? "var(--red)" : "var(--green)", lineHeight: 1 }}>{l.label}</div>
               <div style={{ width: 2, height: 8, background: l.type === "support" ? "var(--red)" : "var(--green)", margin: "1px auto 0", borderRadius: 1, opacity: 0.6 }} />
             </div>
           );

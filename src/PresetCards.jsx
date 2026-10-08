@@ -61,7 +61,7 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
   const allPresets = [...presets, ...customPresets];
 
   return (
-    <div style={{ marginBottom: 24, position: "relative" }}>
+    <div className="preset-strip" style={{ marginBottom: 24, position: "relative" }}>
       <div className="preset-scroll" style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 6, scrollbarWidth: "none", maskImage: "linear-gradient(to right, transparent 0, black 0, black calc(100% - 48px), transparent 100%)", WebkitMaskImage: "linear-gradient(to right, transparent 0, black 0, black calc(100% - 48px), transparent 100%)" }}>
         <style>{`.preset-scroll::-webkit-scrollbar{display:none}`}</style>
 
@@ -74,6 +74,7 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
               key={p.id}
               onClick={() => onSelect(p)}
               title={p.description}
+              className="preset-card"
               style={{
                 flexShrink: 0,
                 width: 156,
@@ -90,7 +91,7 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
               onMouseEnter={e => { if (!active) { e.currentTarget.style.borderColor = "var(--bdr3)"; e.currentTarget.style.boxShadow = "var(--sh-sm)"; } }}
               onMouseLeave={e => { if (!active) { e.currentTarget.style.borderColor = "var(--bdr2)"; e.currentTarget.style.boxShadow = "var(--sh-xs)"; } }}
             >
-              <div style={{
+              <div className="preset-icon" style={{
                 width: 30, height: 30, borderRadius: 8,
                 background: active ? tint(14) : "var(--s3)",
                 color: active ? "var(--accent)" : "var(--t2)",
@@ -110,7 +111,7 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
                 {p.name}
               </div>
 
-              <div style={{ fontSize: 11.5, color: "var(--t3)", lineHeight: 1.45, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+              <div className="preset-desc" style={{ fontSize: 11.5, color: "var(--t3)", lineHeight: 1.45, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
                 {p.description}
               </div>
 
@@ -174,7 +175,7 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
         })}
 
         {onSavePreset && (
-          <button
+          <button className="preset-card preset-save"
             onClick={onSavePreset}
             style={{
               flexShrink: 0, width: 120,

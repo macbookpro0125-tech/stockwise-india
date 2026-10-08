@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { NotebookPen, Check, X, TriangleAlert, LoaderCircle, ArrowLeft, ArrowUpRight, CalendarDays, CircleCheck, Layers, ArrowRight } from "lucide-react";
 import { api } from "./api.js";
 import { calculateLevels, pricePosition, fmtRs } from "../server/levels.js";
@@ -267,8 +267,8 @@ function MyNotes({ symbol }) {
         <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15, fontWeight: 600, color: "var(--t1)" }}><NotebookPen size={17} style={{ color: "var(--t3)" }} /> My Notes</span>
         {saved && !editing && (
           <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={() => setEditing(true)} style={{ fontSize: 12, padding: "3px 10px", borderRadius: 6, border: "1px solid var(--accent)", background: "color-mix(in srgb, var(--accent) 8%, transparent)", color: "var(--accent)", cursor: "pointer" }}>Edit</button>
-            <button onClick={remove} style={{ fontSize: 12, padding: "3px 10px", borderRadius: 6, border: "1px solid var(--bdr2)", background: "var(--s1)", color: "var(--t3)", cursor: "pointer" }}>Delete</button>
+            <button className="tap" onClick={() => setEditing(true)} style={{ fontSize: 12, padding: "3px 10px", borderRadius: 6, border: "1px solid var(--accent)", background: "color-mix(in srgb, var(--accent) 8%, transparent)", color: "var(--accent)", cursor: "pointer" }}>Edit</button>
+            <button className="tap" onClick={remove} style={{ fontSize: 12, padding: "3px 10px", borderRadius: 6, border: "1px solid var(--bdr2)", background: "var(--s1)", color: "var(--t3)", cursor: "pointer" }}>Delete</button>
           </div>
         )}
       </div>
@@ -285,7 +285,7 @@ function MyNotes({ symbol }) {
           <p style={{ fontSize: 12, color: "var(--t2)", margin: "0 0 10px" }}>Set your verdict and add a note for this stock.</p>
           <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
             {Object.entries(VERDICT_META).map(([key, meta]) => (
-              <button key={key} onClick={() => setVerdict(key)} style={{ fontSize: 12, fontWeight: 600, padding: "5px 14px", borderRadius: 20, border: `1.5px solid ${verdict === key ? meta.border : "var(--bdr2)"}`, background: verdict === key ? meta.bg : "var(--surf)", color: verdict === key ? meta.color : "var(--t2)", cursor: "pointer", transition: "all 0.15s" }}>
+              <button key={key} className="tap" onClick={() => setVerdict(key)} style={{ fontSize: 12, fontWeight: 600, padding: "5px 14px", borderRadius: 20, border: `1.5px solid ${verdict === key ? meta.border : "var(--bdr2)"}`, background: verdict === key ? meta.bg : "var(--surf)", color: verdict === key ? meta.color : "var(--t2)", cursor: "pointer", transition: "all 0.15s" }}>
                 <Dot color={meta.color} />{meta.label}
               </button>
             ))}
@@ -293,7 +293,7 @@ function MyNotes({ symbol }) {
           <textarea value={text} onChange={e => setText(e.target.value)} rows={2} placeholder="Add a note... e.g. Wait for P2 entry. Watch working-capital days."
             style={{ width: "100%", fontSize: 13, padding: "8px 12px", borderRadius: 8, border: "1px solid var(--bdr2)", resize: "vertical", fontFamily: "inherit", outline: "none", boxSizing: "border-box", background: "var(--s1)", color: "var(--t1)" }} />
           <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-            <button onClick={save} disabled={!verdict} style={{ fontSize: 13, fontWeight: 600, padding: "7px 18px", borderRadius: 8, border: "none", background: verdict ? "var(--accent)" : "var(--card2)", color: verdict ? "var(--on-accent)" : "var(--t3)", cursor: verdict ? "pointer" : "not-allowed" }}>Save Note</button>
+            <button className="tap" onClick={save} disabled={!verdict} style={{ fontSize: 13, fontWeight: 600, padding: "7px 18px", borderRadius: 8, border: "none", background: verdict ? "var(--accent)" : "var(--card2)", color: verdict ? "var(--on-accent)" : "var(--t3)", cursor: verdict ? "pointer" : "not-allowed" }}>Save Note</button>
             {saved && <button onClick={() => { setVerdict(saved.verdict); setText(saved.text); setEditing(false); }} style={{ fontSize: 13, padding: "7px 14px", borderRadius: 8, border: "1px solid var(--bdr2)", background: "var(--s1)", color: "var(--t2)", cursor: "pointer" }}>Cancel</button>}
           </div>
         </div>
@@ -355,6 +355,76 @@ function KeyNumbers({ data, m }) {
 // ---- Page ---------------------------------------------------------------------
 
 // backTo: the tab Back returns to
+// "2026-10-07" -> "7 Oct"
+const dayLabel = iso => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" });
+// Yahoo's figure is the last finished day's close (quote.js leaves out a day
+// still trading), so once NSE's close for a later day is in, NSE's is the
+// newer price — it was showing 6 Oct's ₹2,100 beside NSE's 7 Oct ₹2,080
+const quoteIsNewer = d => !!d.quote && (!d.close || d.quote.asOf >= d.close.date);
+const quoteLabel = q => `${q.stale ? "Cached close" : "Latest close"} (${dayLabel(q.asOf)})`;
+const closeLabel = c => `NSE close (${dayLabel(c.date)})`;
+
+// The page's parts in order, for the shortcut row in the pinned bar — a
+// company page runs to many screens, most of all on a phone
+const SECTIONS = [
+  ["scores", "Scores"], ["valuation", "Valuation"], ["holding", "Shareholding"], ["chart", "Chart"],
+  ["financials", "Financials"], ["technicals", "Technicals"], ["thesis", "What to watch"],
+  ["levels", "Price levels"], ["peers", "Peers"], ["filings", "Filings"],
+];
+
+function SectionNav({ ready }) {
+  const [present, setPresent] = useState(SECTIONS);
+  const [active, setActive] = useState("scores");
+  const rowRef = useRef(null);
+  // Only the parts this company has (no price levels without a price, …)
+  useEffect(() => { setPresent(SECTIONS.filter(([id]) => document.getElementById(`sec-${id}`))); }, [ready]);
+  // Where the pinned bar ends once pinned — not where it is now: on a phone
+  // the header above it scrolls away on the way down
+  const barBottom = () => {
+    const pinnedAt = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--header-h")) || 0;
+    return pinnedAt + (document.querySelector("[data-sticky-top]")?.offsetHeight ?? 0);
+  };
+  useEffect(() => {
+    let frame = 0;
+    const onScroll = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const line = barBottom() + 32;
+        let current = present[0]?.[0];
+        for (const [id] of present) {
+          const el = document.getElementById(`sec-${id}`);
+          if (el && el.getBoundingClientRect().top <= line) current = id;
+        }
+        setActive(current);
+      });
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => { cancelAnimationFrame(frame); window.removeEventListener("scroll", onScroll); };
+  }, [present]);
+  // Keep the lit shortcut in view as the page scrolls past the parts
+  useEffect(() => {
+    const row = rowRef.current, chip = row?.querySelector(`[data-sec="${active}"]`);
+    if (!row || !chip) return;
+    const left = chip.offsetLeft - row.offsetLeft, right = left + chip.offsetWidth;
+    if (left < row.scrollLeft + 8 || right > row.scrollLeft + row.clientWidth - 8) row.scrollTo({ left: left - 12, behavior: "smooth" });
+  }, [active]);
+  const go = id => {
+    const el = document.getElementById(`sec-${id}`);
+    if (!el) return;
+    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - barBottom() - 10, behavior: reduced ? "auto" : "smooth" });
+  };
+  if (present.length < 2) return null;
+  return (
+    <nav ref={rowRef} aria-label="Parts of this page" className="section-nav">
+      {present.map(([id, label]) => (
+        <button key={id} type="button" data-sec={id} aria-current={active === id ? "true" : undefined} onClick={() => go(id)} className={`section-chip${active === id ? " on" : ""}`}>{label}</button>
+      ))}
+    </nav>
+  );
+}
+
 export default function StockDetail({ symbol, account, onBack, backTo = "Discover", onOpenStock }) {
   const watched = useWatchlist().has(symbol);
   const [showAlertModal, setShowAlertModal] = useState(false);
@@ -389,8 +459,8 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       };
       setBaseline(b);
       applyBaseline(b);
-      if (d.quote) { setActionPrice(String(d.quote.cmp)); setPriceLabel(`${d.quote.stale ? "Cached price" : "Live price"} (${d.quote.asOf})`); }
-      else if (d.close) { setActionPrice(String(d.close.price)); setPriceLabel(`NSE close (${d.close.date})`); }
+      if (quoteIsNewer(d)) { setActionPrice(String(d.quote.cmp)); setPriceLabel(quoteLabel(d.quote)); }
+      else if (d.close) { setActionPrice(String(d.close.price)); setPriceLabel(closeLabel(d.close)); }
     }).catch(e => { if (!cancelled) setError(e.message); });
     return () => { cancelled = true; };
   }, [symbol]);
@@ -450,7 +520,8 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       )}
 
       {/* Sticky action bar */}
-      <div data-sticky-top style={{ position: "sticky", top: "var(--header-h, 0px)", zIndex: 40, display: "flex", alignItems: "center", gap: 8, padding: "10px 0", marginBottom: 14, background: "var(--bg)", borderBottom: "1px solid var(--bdr)" }}>
+      <div data-sticky-top style={{ position: "sticky", top: "var(--header-h, 0px)", zIndex: 40, padding: "10px 0 0", marginBottom: 14, background: "var(--bg)", borderBottom: "1px solid var(--bdr)" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <button onClick={onBack} title={`Back to ${backTo}`} style={{ display: "flex", alignItems: "center", gap: 5, height: 34, borderRadius: 8, background: "var(--s2)", border: "1px solid var(--bdr)", cursor: "pointer", color: "var(--t2)", flexShrink: 0, padding: "0 10px", fontSize: 12, fontWeight: 500, fontFamily: "inherit" }}>
           <ArrowLeft size={15} /> Back
         </button>
@@ -460,12 +531,14 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         </span>
         <span data-tour="stock-actions" style={{ display: "flex", gap: 8, flexShrink: 0 }}>{actions}</span>
       </div>
+      <SectionNav ready={!!m} />
+      </div>
 
       {m && (
         <div style={{ padding: "10px 14px", borderRadius: 10, background: "var(--green-dim)", border: "1px solid var(--green-bdr)", fontSize: 12.5, color: "var(--green)", marginBottom: 14, lineHeight: 1.55 }}>
           <CircleCheck size={14} strokeWidth={2.2} style={{ verticalAlign: "-2px", marginRight: 6 }} /><strong>From NSE filings</strong> — EPS, P/E and price loaded ({data.annual?.scope?.toLowerCase() ?? "reported"} results, year to {new Date(`${m.fyEnd}T00:00:00Z`).toLocaleString("en-IN", { month: "short", year: "numeric", timeZone: "UTC" })}).{" "}
           <a href={`https://www.nseindia.com/get-quotes/equity?symbol=${encodeURIComponent(data.symbol)}`} target="_blank" rel="noreferrer" style={{ color: "var(--green)", fontWeight: 600, whiteSpace: "nowrap" }}>Open on NSE <ArrowUpRight size={13} style={{ verticalAlign: "-2px" }} /></a>
-          <div style={{ marginTop: 4, color: "var(--t2)" }}>
+          <div className="hide-phone" style={{ marginTop: 4, color: "var(--t2)" }}>
             {m.medianPe != null
               ? <>P/E is this stock's <em>5-year median</em> ({m.medianPe.toFixed(1)}; today {m.pe?.toFixed(1) ?? "—"}) — override with your own view if needed.</>
               : <>P/E is <em>today's</em> — fewer than 3 usable years of history for a median. Override with a long-run average for a real valuation.</>}
@@ -493,8 +566,13 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, flexWrap: "wrap" }}>
         <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0, color: "var(--t1)", letterSpacing: "-0.03em" }}>{data.name}</h2>
         <span style={{ fontSize: 11, background: "var(--s3)", color: "var(--t2)", padding: "2px 9px", borderRadius: 6, ...MONO }}>{data.symbol}</span>
-        {price > 0 && <span style={{ fontSize: 12, color: "var(--t3)", marginLeft: "auto", ...MONO }}>CMP {fmtRs(price)}</span>}
       </div>
+      {price > 0 && (
+        <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
+          <span style={{ fontSize: 26, fontWeight: 700, color: "var(--t1)", letterSpacing: "-0.02em", ...MONO }}>{fmtRs(price)}</span>
+          {priceLabel && <span style={{ fontSize: 12, color: "var(--t3)" }}>{priceLabel}</span>}
+        </div>
+      )}
       {m && (m.sector || m.cyclical || m.lender || m.utility) && (
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
           {m.sector && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--accent-glow)", color: "var(--accent)", fontWeight: 600 }}>{m.sector}</span>}
@@ -519,12 +597,12 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         <div style={{ ...card, color: "var(--t3)", fontSize: 13 }}>No usable annual results in NSE's filings for this company, so there's nothing to value or score.</div>
       )}
 
-      {m && <div data-tour="research"><ResearchPanel research={m.research} /></div>}
+      {m && <div id="sec-scores" className="ss-section" data-tour="research"><ResearchPanel research={m.research} /></div>}
 
       {m && (
         <>
           {/* Verify & Override */}
-          <div data-tour="override" style={{ border: "1px solid var(--bdr2)", borderRadius: 14, padding: 20, marginBottom: 16, background: "var(--s2)" }}>
+          <div id="sec-valuation" className="ss-section" data-tour="override" style={{ border: "1px solid var(--bdr2)", borderRadius: 14, padding: 20, marginBottom: 16, background: "var(--s2)" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: "var(--t1)", marginBottom: 2, letterSpacing: "-0.01em" }}>Verify & Override</div>
@@ -584,13 +662,13 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
               <input type="number" value={actionPrice} onChange={e => { setActionPrice(e.target.value); setPriceLabel("Your price"); }} placeholder="Current price"
                 style={{ flex: "1 1 140px", minWidth: 120, maxWidth: 320, height: 42, padding: "0 14px", border: "1px solid var(--accent)", borderRadius: 8, fontSize: 15, fontWeight: 500, outline: "none", background: "var(--s1)", color: "var(--t1)" }} />
               {data.quote && String(data.quote.cmp) !== actionPrice && (
-                <button type="button" onClick={() => { setActionPrice(String(data.quote.cmp)); setPriceLabel(`Live price (${data.quote.asOf})`); }}
+                <button type="button" onClick={() => { setActionPrice(String(data.quote.cmp)); setPriceLabel(quoteLabel(data.quote)); }}
                   style={{ height: 42, padding: "0 12px", borderRadius: 8, border: "1px solid var(--accent)", background: "var(--s1)", fontSize: 12, cursor: "pointer", color: "var(--accent)" }}>
-                  Use live price
+                  Use Yahoo close
                 </button>
               )}
               {data.close && String(data.close.price) !== actionPrice && (
-                <button type="button" onClick={() => { setActionPrice(String(data.close.price)); setPriceLabel(`NSE close (${data.close.date})`); }}
+                <button type="button" onClick={() => { setActionPrice(String(data.close.price)); setPriceLabel(closeLabel(data.close)); }}
                   style={{ height: 42, padding: "0 12px", borderRadius: 8, border: "1px solid var(--bdr2)", background: "var(--s2)", fontSize: 12, cursor: "pointer", color: "var(--t2)" }}>
                   Use NSE close
                 </button>
@@ -602,14 +680,16 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         </>
       )}
 
-      <ShareholdingPanel symbol={data.symbol} />
-      <PriceChartPanel symbol={data.symbol} name={data.name} />
-      {m && <FinancialsPanel history={m.history} quarters={m.quarters} />}
-      <TechnicalPanel ticker={data.symbol} />
+      <div id="sec-holding" className="ss-section"><ShareholdingPanel symbol={data.symbol} /></div>
+      <div id="sec-chart" className="ss-section"><PriceChartPanel symbol={data.symbol} name={data.name} /></div>
+      {m && <div id="sec-financials" className="ss-section"><FinancialsPanel history={m.history} quarters={m.quarters} /></div>}
+      <div id="sec-technicals" className="ss-section"><TechnicalPanel ticker={data.symbol} /></div>
 
       {m && (
         <>
-          <div data-tour="thesis"><ThesisMonitor metrics={m} account={account} /></div>
+          <div id="sec-thesis" className="ss-section" data-tour="thesis"><ThesisMonitor metrics={m} account={account} /></div>
+
+          <div id="sec-levels" className="ss-section">
 
           {/* Where the price sits — described against the levels, never an instruction */}
           {position && (
@@ -686,11 +766,12 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
 
           <PiotroskiCard m={m} />
           <KeyNumbers data={data} m={m} />
+          </div>
         </>
       )}
 
-      <PeersPanel symbol={data.symbol} onAnalyze={onOpenStock} />
-      <div data-tour="filings"><NewsPanel symbol={data.symbol} /></div>
+      <div id="sec-peers" className="ss-section"><PeersPanel symbol={data.symbol} onAnalyze={onOpenStock} /></div>
+      <div id="sec-filings" className="ss-section" data-tour="filings"><NewsPanel symbol={data.symbol} /></div>
       <MyNotes key={data.symbol} symbol={data.symbol} />
 
       <p style={{ fontSize: 11, color: "var(--t3)", textAlign: "center", lineHeight: 1.6 }}>
@@ -699,11 +780,6 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
 
       <div className="ss-back-bottom">
         <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "var(--accent)", background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 12, cursor: "pointer", padding: "12px 24px", fontWeight: 600, margin: "8px auto 0" }}>
-          <ArrowLeft size={16} /> Back to {backTo}
-        </button>
-      </div>
-      <div className="ss-back-sticky">
-        <button onClick={onBack} style={{ width: "100%", height: 48, borderRadius: 12, border: "1px solid var(--bdr2)", background: "var(--s2)", color: "var(--accent)", fontSize: 14, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
           <ArrowLeft size={16} /> Back to {backTo}
         </button>
       </div>

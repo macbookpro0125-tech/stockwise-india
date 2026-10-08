@@ -91,7 +91,7 @@ export default function PeersPanel({ symbol, onAnalyze }) {
                         <span onClick={() => !isThis && onAnalyze?.(r.symbol)} style={{ color: isThis ? "var(--accent)" : "var(--t2)", fontWeight: isThis ? 700 : 500, cursor: isThis ? "default" : "pointer" }}>
                           {r.name}
                         </span>
-                        {isThis && <span style={{ fontSize: 9, color: "var(--accent)", marginLeft: 6 }}>THIS STOCK</span>}
+                        {isThis && <span style={{ fontSize: 10, color: "var(--accent)", marginLeft: 6 }}>THIS STOCK</span>}
                       </td>
                       {COLUMNS.map(([c, fmt]) => (
                         <td key={c} style={{ padding: "7px 10px", textAlign: "right", whiteSpace: "nowrap", color: "var(--t1)", borderBottom: "1px solid var(--bdr)", ...MONO }}>{fmt(r)}</td>
