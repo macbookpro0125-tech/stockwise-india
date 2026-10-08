@@ -16,6 +16,7 @@ import { emailConfigured, appUrl, sendEmail, resetEmail } from "./email.js";
 import { listAlerts, createAlert, updateAlert, deleteAlert } from "./user-alerts.js";
 import { screen, screenerMeta, getStock, saveStock, rowsFor, isValidSymbol, countFetched, allMetrics, screenRowCount } from "./screen.js";
 import { startDataPull, pullStatus } from "./data-pull.js";
+import { screenMomentum, momentumAllowed } from "./momentum.js";
 import { criteriaToFilters, METRICS, CATEGORY_METRICS } from "./metric-catalog.js";
 import { listWatchlist, addToWatchlist, setWatchlistNote, removeFromWatchlist } from "./user-watchlist.js";
 import { listHoldings, addHolding, updateHolding, removeHolding } from "./user-portfolio.js";
@@ -351,7 +352,8 @@ export function createApp() {
       if (url.pathname === "/api/auth/me" && req.method === "GET") {
         const cookies = parseCookies(req.headers.cookie);
         const userId = verifySession(cookies[COOKIE_NAME]);
-        sendJson(res, userId ? 200 : 401, userId ? { userId, ...accountInfo(userId) } : { error: "Not signed in" });
+        const info = userId ? accountInfo(userId) : null;
+        sendJson(res, userId ? 200 : 401, userId ? { userId, ...info, features: { momentum: momentumAllowed(info) } } : { error: "Not signed in" });
         return;
       }
 
@@ -521,6 +523,18 @@ export function createApp() {
           // NSE's own last close, for the price box's "Use NSE close"
           close: snap?.prices?.[symbol] != null ? { price: snap.prices[symbol], date: snap.pricesDate } : null,
         });
+        return;
+      }
+
+      // The Momentum screen (momentum.js): settings and, optionally, a list of
+      // symbols in the body; passers ranked by score
+      if (url.pathname === "/api/momentum" && req.method === "POST") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        if (!momentumAllowed(accountInfo(userId))) { sendJson(res, 404, { error: "Not found" }); return; }
+        const body = await readJsonBody(req);
+        const symbols = Array.isArray(body?.symbols) ? body.symbols.map(s => String(s).trim().toUpperCase()).filter(isValidSymbol).slice(0, 300) : null;
+        sendJson(res, 200, screenMomentum({ rows: allMetrics().rows, snapshot: loadMarketSnapshot(), config: body?.config ?? {}, symbols }));
         return;
       }
 

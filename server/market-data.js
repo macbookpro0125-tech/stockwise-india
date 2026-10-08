@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { UA, NSE_BASE, fetchJson, parseQeDate } from "./fetch-nse.js";
 import { PRICE_DIR, SNAPSHOT_PATH } from "./paths.js";
 import { fetchText as requestText } from "./upstream.js";
+import { momentumStats } from "./momentum.js";
 const SERIES_PREFERENCE = ["EQ", "BE", "BZ", "SM", "ST"];
 const SECTOR_LISTS = ["ind_niftytotalmarket_list", "ind_niftymicrocap250_list"];
 
@@ -151,19 +152,21 @@ async function yearOfDays(toIso, splits) {
       r.high = Math.max(r.high, high / f);
       let list = series.get(sym);
       if (!list) series.set(sym, (list = []));
-      list.push({ date: day.date, close: v.close / f, volume: v.volume != null ? v.volume * f : null, delivery: v.delivery });
+      list.push({ date: day.date, close: v.close / f, high: high / f, volume: v.volume != null ? v.volume * f : null, delivery: v.delivery });
     }
   }
   for (const r of Object.values(ranges)) {
     r.low = Math.round(r.low * 100) / 100;
     r.high = Math.round(r.high * 100) / 100;
   }
-  const tech = {};
+  const tech = {}, momentum = {};
   for (const [sym, list] of series) {
-    const t = technicals(list.reverse(), nifty);
+    const days = list.reverse();
+    const t = technicals(days, nifty);
     if (t) tech[sym] = t;
+    momentum[sym] = momentumStats(days);
   }
-  return { from: fromIso, tradingDays: seen.size, ranges, tech };
+  return { from: fromIso, tradingDays: seen.size, ranges, tech, momentum };
 }
 
 // A stock's technical and volume figures from a year of daily closes
@@ -380,6 +383,23 @@ async function sectorsBySymbol() {
   return { sectors: fromIndex, industrySectors, industries };
 }
 
+// Each company's next board meeting to approve results, from NSE's event
+// calendar (one request; companies announce a week or two ahead, so most
+// have none listed): { SYMBOL: "2026-10-23" }, the earliest on or after today
+async function resultsDates() {
+  const rows = await fetchJson(`${NSE_BASE}/api/event-calendar?index=equities`);
+  const today = isoDay(new Date());
+  const out = {};
+  for (const r of Array.isArray(rows) ? rows : []) {
+    if (!r.symbol || !/financial results/i.test(r.purpose ?? "")) continue;
+    const when = parseQeDate(r.date);
+    if (!when) continue;
+    const iso = isoDay(when);
+    if (iso >= today && (!out[r.symbol] || iso < out[r.symbol])) out[r.symbol] = iso;
+  }
+  return out;
+}
+
 // Statutory auditors who resigned in the last three years, by company — NSE
 // files these under their own subject, apart from routine "Change in
 // Auditors" rotations, and filters on it, so it's one small request (~220
@@ -484,6 +504,10 @@ export async function buildMarketSnapshot(fyEndDates, { yearsOfActions = 6 } = {
     industries,
     // null when NSE didn't answer — unknown, not "no resignations"
     auditorResignations: await auditorResignations().catch(() => null),
+    // The Momentum screen's figures (momentum.js) and next results dates;
+    // null dates = the calendar couldn't be read, not "none due"
+    momentum: year.momentum,
+    resultsDates: await resultsDates().catch(() => null),
     fyEndPrices,
     range52w: year.ranges,
     range52wFrom: year.from,

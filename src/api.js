@@ -32,6 +32,7 @@ export const api = {
   marketStrip: () => request("/api/market-strip"),
   stats: () => request("/api/stats"),
   screen: (criteria) => request("/api/screen", { method: "POST", body: JSON.stringify(criteria) }),
+  momentum: (body) => request("/api/momentum", { method: "POST", body: JSON.stringify(body) }),
   stock: (symbol) => request(`/api/stock/${encodeURIComponent(symbol)}`),
   prices: (symbol, range) => request(`/api/stock/${encodeURIComponent(symbol)}/prices?range=${range}`),
   // The stock page's other panels: technicals, shareholding, filings, news, peers

@@ -11,6 +11,7 @@ import WatchlistView from "./WatchlistView.jsx";
 import PortfolioView from "./PortfolioView.jsx";
 import PerformanceView from "./PerformanceView.jsx";
 import AlertsView from "./AlertsView.jsx";
+import MomentumView from "./MomentumView.jsx";
 import StockDetail from "./StockDetail.jsx";
 import Tour, { APP_TOUR, STOCK_TOUR } from "./Tour.jsx";
 import { resetWatchlist } from "./watchlist.js";
@@ -60,7 +61,7 @@ export default function App() {
   const discoverScroll = useRef(0);
 
   // email or phone (a phone sign-in has no email), name, and whether there is a password at all
-  const loadAccount = () => api.me().then(d => setAccount({ userId: d.userId, email: d.email ?? null, phone: d.phone ?? null, name: d.name ?? null, hasPassword: d.hasPassword !== false })).catch(() => setAccount(null));
+  const loadAccount = () => api.me().then(d => setAccount({ userId: d.userId, email: d.email ?? null, phone: d.phone ?? null, name: d.name ?? null, hasPassword: d.hasPassword !== false, features: d.features ?? {} })).catch(() => setAccount(null));
   useEffect(() => { loadAccount(); }, []);
   // Saved strategies and My Notes come with the account
   useEffect(() => {
@@ -184,11 +185,10 @@ export default function App() {
       {!open && tab === "portfolio" && <PortfolioView onOpenStock={openSymbol} />}
       {!open && tab === "performance" && <PerformanceView onOpenStock={openSymbol} />}
       {!open && tab === "alerts" && <AlertsView onOpenStock={openSymbol} />}
+      {!open && tab === "momentum" && account?.features?.momentum && <MomentumView onOpenStock={openSymbol} />}
       <SiteFooter />
-      {/* Not on a stock page: that has its own bottom Back button on phones,
-          as the original's stock page did */}
       {/* On a company page too: the tab it was opened from stays lit */}
-      <BottomTabBar tab={tab} onTab={goTab} theme={theme} />
+      <BottomTabBar tab={tab} onTab={goTab} theme={theme} account={account} />
       {tour && <Tour key={tour} steps={tour === "app" ? APP_TOUR : STOCK_TOUR} onFinish={finishTour} />}
     </div>
   );

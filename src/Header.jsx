@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Compass, Star, BriefcaseBusiness, ChartLine, Bell, Sun, Moon } from "lucide-react";
+import { Compass, Star, BriefcaseBusiness, ChartLine, Bell, Sun, Moon, Zap } from "lucide-react";
 import { api } from "./api.js";
 import { useWatchlist } from "./watchlist.js";
 import { portfolioStore, alertsStore } from "./stores.js";
@@ -13,6 +13,9 @@ import AccountMenu from "./AccountMenu.jsx";
 
 export const TABS = [
   { id: "discover", label: "Discover", short: "Discover", Icon: Compass },
+  // Short-term and speculative, so only for accounts the server allows
+  // (http-server.js momentumAllowed) — /api/auth/me says which
+  { id: "momentum", label: "Momentum", short: "Momentum", Icon: Zap, gated: "momentum" },
   { id: "watchlist", label: "Watchlist", short: "Watchlist", Icon: Star },
   { id: "portfolio", label: "Portfolio", short: "Portfolio", Icon: BriefcaseBusiness },
   { id: "performance", label: "Performance", short: "Perf", Icon: ChartLine },
@@ -20,6 +23,8 @@ export const TABS = [
 ];
 
 const HEADER_BG = { light: "rgba(255,255,255,0.82)", dark: "rgba(7,7,14,0.85)" };
+
+export const tabsFor = account => TABS.filter(t => !t.gated || account?.features?.[t.gated]);
 
 // Counts and badges for the tabs, shared by the header and the bottom bar
 export function useTabBadges() {
@@ -99,7 +104,7 @@ export default function Header({ tab, onTab, account, onLogout, onDeleted, onSea
         </div>
 
         <div className="discovery-tabs" data-tour="tabs" style={{ display: "flex", gap: 0 }}>
-          {TABS.map(t => {
+          {tabsFor(account).map(t => {
             const b = badges[t.id] ?? {};
             const active = tab === t.id;
             return (
@@ -127,11 +132,11 @@ export default function Header({ tab, onTab, account, onLogout, onDeleted, onSea
 }
 
 // The original's phone tab bar: the same five tabs, fixed to the bottom
-export function BottomTabBar({ tab, onTab, theme }) {
+export function BottomTabBar({ tab, onTab, theme, account }) {
   const badges = useTabBadges();
   return (
     <div className="bottom-tab-bar" data-tour="tabs" style={{ background: HEADER_BG[theme] ?? HEADER_BG.dark }}>
-      {TABS.map(t => {
+      {tabsFor(account).map(t => {
         const b = badges[t.id] ?? {};
         return (
           <button key={t.id} onClick={() => onTab(t.id)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "6px 0", background: "none", border: "none", cursor: "pointer", color: tab === t.id ? "var(--accent)" : "var(--t3)", transition: "color 150ms", position: "relative" }}>
