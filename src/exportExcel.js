@@ -405,3 +405,60 @@ export async function exportDiscoverExcel(stocks, meta) {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
+
+// ── Momentum (its own file — never mixed with the research sheets) ──
+
+export function buildMomentumWorkbook(XLSX, data) {
+  const asOf = data.asOf ? new Date(`${data.asOf}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : "NSE close";
+  const c = data.config;
+  const cols = [
+    { h: "Rank", w: 6, get: (r, i) => i + 1 }, { h: "Company", w: 34, get: r => r.name }, { h: "Ticker", w: 12, get: r => r.symbol },
+    { h: "Close", w: 10, get: r => r.close, z: "#,##0.00" }, { h: "Score", w: 8, get: r => r.score, z: "0.0" },
+    { h: "% from 52w high", w: 10, get: r => r.pctFromHigh, z: "0.0" }, { h: "RSI 14", w: 8, get: r => r.rsi14, z: "0.0" },
+    { h: "1M return %", w: 10, get: r => r.ret1m, z: "0.0" }, { h: "SMA 20", w: 10, get: r => r.sma20, z: "#,##0.00" },
+    { h: "SMA 50", w: 10, get: r => r.sma50, z: "#,##0.00" }, { h: "SMA 200", w: 10, get: r => r.sma200, z: "#,##0.00" },
+    { h: "Traded ₹ Cr/day", w: 11, get: r => r.avgValueCr, z: "#,##0.0" }, { h: "Avg volume 20d", w: 13, get: r => r.avgVol20, z: "#,##0" },
+    { h: "Volume × avg", w: 10, get: r => r.volRatio, z: "0.00" },
+    { h: "Next results", w: 22, get: r => (r.nextResults ? `${r.nextResults}${r.resultsSoon ? " — event risk" : ""}` : data.resultsKnown ? "Not announced" : "Unknown") },
+  ];
+  const aoa = [
+    [`STOCKWISE INDIA — MOMENTUM SCREEN (SHORT-TERM, SPECULATIVE) · ${asOf}`],
+    [`${data.counts.passed} of ${data.counts.screened} companies pass: price > 20-day > 50-day > 200-day average · ₹${c.minPrice}+ · ₹${c.minAvgValueCr} Cr+ traded a day · within ${c.nearHighPct}% of the 52-week high · volume ${c.volSurge}× its average · RSI ${c.rsiMin}–${c.rsiMax}. Price and volume only — separate from the Quality and Research scores. A screen, not a recommendation to buy or sell; not investment advice.`],
+    [],
+    cols.map(col => col.h),
+    ...data.passers.map((r, i) => cols.map(col => { const v = col.get(r, i); return typeof v === "number" ? round2(v) : v ?? null; })),
+  ];
+  if (!data.passers.length) aoa.push(["No company passes every check today — the screen's answer is no setup."]);
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const last = cols.length - 1;
+  ws.A1.s = { font: { name: "Calibri", bold: true, sz: 13, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "7A5C00" } }, alignment: { vertical: "center", indent: 1 } };
+  ws.A2.s = { font: { name: "Calibri", sz: 9, color: { rgb: "555555" } }, alignment: { vertical: "center", wrapText: true } };
+  cols.forEach((col, ci) => {
+    const head = ws[XLSX.utils.encode_cell({ r: 3, c: ci })];
+    head.s = { font: { name: "Calibri", bold: true, sz: 9, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: HEAD_BLUE } }, alignment: { horizontal: "center", vertical: "center", wrapText: true }, border: box };
+    data.passers.forEach((r, ri) => {
+      const addr = XLSX.utils.encode_cell({ r: 4 + ri, c: ci });
+      if (!ws[addr]) ws[addr] = { t: "s", v: "" };
+      const soon = col.h === "Next results" && r.resultsSoon;
+      ws[addr].s = { font: { name: "Calibri", sz: 9, bold: col.h === "Company" || soon, ...(soon && { color: { rgb: "9C2A2A" } }) }, border: box, ...(ri % 2 && { fill: { fgColor: { rgb: ZEBRA } } }), ...(col.z && { alignment: { horizontal: "center" } }) };
+      if (col.z && typeof ws[addr].v === "number") ws[addr].z = col.z;
+    });
+  });
+  ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: last } }, { s: { r: 1, c: 0 }, e: { r: 1, c: last } }];
+  ws["!cols"] = cols.map(col => ({ wch: col.w }));
+  ws["!rows"] = [{ hpt: 24 }, { hpt: 40 }, {}, { hpt: 28 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Momentum");
+  return wb;
+}
+
+export async function exportMomentumExcel(data) {
+  const XLSX = (await import("xlsx-js-style")).default;
+  const bytes = freezeRows(XLSX, XLSX.write(buildMomentumWorkbook(XLSX, data), { type: "array", bookType: "xlsx" }), { 1: 4 });
+  const url = URL.createObjectURL(new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+  const a = Object.assign(document.createElement("a"), { href: url, download: `stockwise-india-momentum-${data.asOf ?? "today"}.xlsx` });
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+}

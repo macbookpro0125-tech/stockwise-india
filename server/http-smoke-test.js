@@ -210,6 +210,14 @@ async function main() {
   assert(publicStats.status === 200 && (await publicStats.json()).strategies === 13, "the front page's figures load without signing in");
   assert((await (await fetch(`${BASE}/api/auth/me`, { headers: { Cookie: aliceCookie } })).json()).email === "alice@example.com", "/me says which email is signed in");
 
+  // The Momentum tab: on for a copy off Render, behind sign-in, an answer
+  // even with tight settings
+  assert((await (await fetch(`${BASE}/api/auth/me`, { headers: { Cookie: aliceCookie } })).json()).features?.momentum === true, "/me opens the Momentum tab off Render");
+  assert((await fetch(`${BASE}/api/momentum`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" })).status === 401, "POST /api/momentum with no cookie is rejected");
+  const mom = await json("POST", "/api/momentum", aliceCookie, { config: { nearHighPct: 0, rsiMin: 99, rsiMax: 100 } });
+  const momBody = await mom.json();
+  assert(mom.status === 200 && Array.isArray(momBody.passers) && momBody.counts && momBody.config.rsiMin === 99, "POST /api/momentum answers with the settings it used");
+
   // Telegram alerts, with Telegram itself stubbed out: linking by the one-time
   // code, a message once per crossing, /stop, an expired code
   const { linkCode, handleTelegramUpdate } = await import("./telegram.js");

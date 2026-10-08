@@ -623,3 +623,11 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 @media (max-width: 640px) {
   .score-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* Momentum tab: settings and the position calculator */
+.momentum-settings { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 14px; }
+.momentum-calc-inputs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 14px; }
+.momentum-calc-outputs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+@media (max-width: 900px) {
+  .momentum-settings, .momentum-calc-inputs, .momentum-calc-outputs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
