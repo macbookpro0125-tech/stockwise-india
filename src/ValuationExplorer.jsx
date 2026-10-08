@@ -42,10 +42,14 @@ function ScenarioRow({ name, color, growth, multiple, onGrowth, onMultiple, eps,
 export default function ValuationExplorer({ metrics: m, price, levels, mosPct, epsInput, peInput }) {
   const historicalPe = Number(peInput) || Number(m?.medianPe ?? m?.valuationPe ?? m?.pe) || 0;
   const baseGrowth = clamp(Number(m?.epsGrowth5y ?? m?.epsGrowth3y ?? m?.growthForValuation ?? 0), -10, 30);
-  const [bearGrowth, setBearGrowth] = useState(Math.round(baseGrowth - 5));
+  // A downside case should stress both earnings and the valuation multiple.
+  // Keep the default editable, but don't call a lightly reduced growth rate a
+  // bear case when the reported growth is unusually high.
+  const stressGrowth = clamp(Math.round(Math.min(0, baseGrowth - 25)), -30, 0);
+  const [bearGrowth, setBearGrowth] = useState(stressGrowth);
   const [baseGrowthInput, setBaseGrowthInput] = useState(Math.round(baseGrowth));
   const [bullGrowth, setBullGrowth] = useState(Math.round(baseGrowth + 5));
-  const [bearPe, setBearPe] = useState(Math.max(1, Math.round(historicalPe * 0.75)));
+  const [bearPe, setBearPe] = useState(Math.max(1, Math.round(historicalPe * 0.5)));
   const [basePe, setBasePe] = useState(Math.max(1, Math.round(historicalPe)));
   const [bullPe, setBullPe] = useState(Math.max(1, Math.round(historicalPe * 1.2)));
   const [dcfFcfGrowth, setDcfFcfGrowth] = useState(5);
@@ -65,7 +69,7 @@ export default function ValuationExplorer({ metrics: m, price, levels, mosPct, e
   const heavyInvestment = fcfPerShare != null && eps > 0 && fcfPerShare < eps * 0.5;
   const dcf = useMemo(() => fcfDcfPerShare(fcfPerShare, dcfFcfGrowth, discountRate, terminalGrowth), [fcfPerShare, dcfFcfGrowth, discountRate, terminalGrowth]);
   const sensitivity = [
-    { label: `Bear · ${bearGrowth}%`, growth: bearGrowth },
+    { label: `Bear / stress · ${bearGrowth}%`, growth: bearGrowth },
     { label: `Base · ${baseGrowthInput}%`, growth: baseGrowthInput },
     { label: `Bull · ${bullGrowth}%`, growth: bullGrowth },
   ];
@@ -76,6 +80,7 @@ export default function ValuationExplorer({ metrics: m, price, levels, mosPct, e
   const growthSource = m.epsGrowth5y != null ? "reported 5-year EPS CAGR" : m.epsGrowth3y != null ? "reported 3-year EPS CAGR" : m.growthBasis ?? "editable analyst assumption";
   const reportSource = m.provenance?.financials;
   const priceSource = m.provenance?.marketPrice;
+  const peerCheck = m.research?.groups?.find(group => group.id === "valuation")?.items?.find(item => item.id === "peers");
 
   if (!m) return null;
   return (
@@ -121,6 +126,9 @@ export default function ValuationExplorer({ metrics: m, price, levels, mosPct, e
       <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 9, lineHeight: 1.5 }}>
         Source: {reportSource?.source ?? "NSE financial filings"}, {reportSource?.scope ?? "scope not stated"} results for FY ending {reportSource?.period ?? m.fyEnd ?? "—"}{reportSource?.filedAt ? ` (filed ${reportSource.filedAt})` : ""}. Price: {priceSource?.source ?? "available market price"}{priceSource?.date ? ` dated ${priceSource.date}` : ""}. Historical P/E uses {m.provenance?.historicalPe?.usableYears ?? m.peYears ?? 0} usable years.
       </div>
+      {m.medianPe != null && <div style={{ fontSize: 11, color: "var(--t2)", background: "var(--s1)", border: "1px solid var(--bdr)", borderRadius: 8, padding: "9px 11px", marginTop: 9, lineHeight: 1.5 }}>
+        <strong>Two different comparisons:</strong> {m.medianPe.toFixed(1)}× is this company's own historical median; {peerCheck?.reason ? peerCheck.reason : "the peer reference compares the stock with its NSE sector"} NSE sectors can include different industries. Neither multiple is a standalone fair value or price target.
+      </div>}
 
       {expanded && (
         <div style={{ marginTop: 16 }}>
@@ -130,12 +138,12 @@ export default function ValuationExplorer({ metrics: m, price, levels, mosPct, e
               {[3, 5].map(y => <button key={y} type="button" onClick={() => setYears(y)} className="btn-ghost" aria-pressed={years === y} style={{ height: 28, padding: "0 10px", fontSize: 11, borderColor: years === y ? "var(--accent)" : undefined, color: years === y ? "var(--accent)" : undefined }}>{y} years</button>)}
             </div>
           </div>
-          <div style={{ fontSize: 11, color: "var(--t3)", marginBottom: 8, lineHeight: 1.5 }}>Future EPS = ₹{eps.toFixed(2)} × (1 + growth)^{years}. Future price = future EPS × terminal P/E. CAGR excludes dividends. Growth defaults use {growthSource}; multiple anchors use the historical median when available. These editable assumptions are not forecasts.</div>
+          <div style={{ fontSize: 11, color: "var(--t3)", marginBottom: 8, lineHeight: 1.5 }}>Future EPS = ₹{eps.toFixed(2)} × (1 + growth)^{years}. Future price = future EPS × terminal P/E. CAGR excludes dividends. The default Bear / stress case assumes no EPS growth (or 25 percentage points below reported growth, capped at −30%) and half the historical P/E. Base growth defaults use {growthSource}. Edit every assumption; these cases are scenarios, not forecasts.</div>
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", minWidth: 700, borderCollapse: "collapse", fontSize: 11.5 }}>
               <thead><tr>{["Case", "EPS growth p.a.", "Terminal P/E", `FY+${years} EPS`, "Scenario price", "Price CAGR"].map((h, i) => <th key={h} style={{ textAlign: i < 1 ? "left" : "right", padding: "7px 8px", borderBottom: "1px solid var(--bdr2)", color: "var(--t3)", fontWeight: 550 }}>{h}</th>)}</tr></thead>
               <tbody>
-                <ScenarioRow name="Bear" color="var(--red)" growth={bearGrowth} multiple={bearPe} onGrowth={setBearGrowth} onMultiple={setBearPe} eps={eps} price={price} years={years} />
+                <ScenarioRow name="Bear / stress" color="var(--red)" growth={bearGrowth} multiple={bearPe} onGrowth={setBearGrowth} onMultiple={setBearPe} eps={eps} price={price} years={years} />
                 <ScenarioRow name="Base" color="var(--accent)" growth={baseGrowthInput} multiple={basePe} onGrowth={setBaseGrowthInput} onMultiple={setBasePe} eps={eps} price={price} years={years} />
                 <ScenarioRow name="Bull" color="var(--green)" growth={bullGrowth} multiple={bullPe} onGrowth={setBullGrowth} onMultiple={setBullPe} eps={eps} price={price} years={years} />
               </tbody>
@@ -150,7 +158,7 @@ export default function ValuationExplorer({ metrics: m, price, levels, mosPct, e
           <div style={{ overflowX: "auto", marginTop: 14 }}>
             <div style={{ fontSize: 12, fontWeight: 650, color: "var(--t1)", marginBottom: 6 }}>{years}-year price sensitivity · ₹ per share</div>
             <table style={{ width: "100%", minWidth: 470, borderCollapse: "collapse", fontSize: 11.5 }}>
-              <thead><tr><th style={{ textAlign: "left", padding: 7, color: "var(--t3)" }}>EPS growth ↓ / exit P/E →</th>{multiples.map((v, i) => <th key={`${i}-${v}`} style={{ textAlign: "right", padding: 7, color: "var(--t3)" }}>{["Bear", "Base", "Bull"][i]} · {v}×</th>)}</tr></thead>
+              <thead><tr><th style={{ textAlign: "left", padding: 7, color: "var(--t3)" }}>EPS growth ↓ / exit P/E →</th>{multiples.map((v, i) => <th key={`${i}-${v}`} style={{ textAlign: "right", padding: 7, color: "var(--t3)" }}>{["Stress", "Base", "Bull"][i]} · {v}×</th>)}</tr></thead>
               <tbody>{sensitivity.map(row => <tr key={row.label}><th style={{ textAlign: "left", padding: 7, borderTop: "1px solid var(--bdr)", color: "var(--t2)", fontWeight: 550 }}>{row.label}</th>{multiples.map((multiple, i) => <td key={`${row.label}-${i}`} style={{ textAlign: "right", padding: 7, borderTop: "1px solid var(--bdr)", color: "var(--t1)", ...mono }}>{money(eps > 0 ? eps * (1 + row.growth / 100) ** years * multiple : null)}</td>)}</tr>)}</tbody>
             </table>
           </div>

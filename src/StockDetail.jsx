@@ -13,6 +13,7 @@ import TechnicalPanel from "./TechnicalPanel.jsx";
 import PeersPanel from "./PeersPanel.jsx";
 import NewsPanel from "./NewsPanel.jsx";
 import ValuationExplorer from "./ValuationExplorer.jsx";
+import PhasePositionPlanner from "./PhasePositionPlanner.jsx";
 import ThesisMonitor from "./ThesisMonitor.jsx";
 
 // The original Stockwise stock page (stock-screener src/StockScreener.jsx),
@@ -495,7 +496,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
   }
 
   const position = pricePosition(price, levels);
-  const positionTone = { red: "var(--red)", yellow: "var(--yellow)", green: "var(--green)" }[position?.tone] ?? "var(--accent)";
+  const positionTone = { red: "var(--red)", yellow: "var(--yellow)", green: "var(--green)", neutral: "var(--accent)" }[position?.tone] ?? "var(--accent)";
   // How far a level sits under today's fair value, for the ladder's labels
   const belowFv = v => (levels?.fv25 > 0 && v > 0 ? `${Math.round((1 - v / levels.fv25) * 100)}% below today's FV` : "");
 
@@ -710,19 +711,20 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
                   The market prices it at a P/E of {m.pe.toFixed(1)} against the {Number(pe).toFixed(1)} the levels use. That's either deep value or a sign the old multiple no longer applies — worth finding out why it de-rated.
                 </p>
               )}
-              <p style={{ fontSize: 11, color: "var(--t3)", margin: "8px 0 0" }}>A description of the price against the levels below, not advice to buy or sell.</p>
+              <p style={{ fontSize: 11, color: "var(--t3)", margin: "8px 0 0" }}>These model reference levels come from the EPS, P/E, growth and margin-of-safety inputs above. They describe price location; they are not trade instructions.</p>
             </div>
           )}
 
           {/* Price ladder */}
           {price > 0 && levels && (
             <div style={card}>
-              <SectionTitle icon={Layers}>Price levels</SectionTitle>
+              <SectionTitle icon={Layers}>Model price levels</SectionTitle>
+              <p style={{ fontSize: 11.5, color: "var(--t3)", margin: "-6px 0 10px", lineHeight: 1.5 }}>Calculated from your displayed valuation inputs. Level 1, 2 and 3 are reference points, not suggested buy amounts.</p>
               {[
                 { label: `Upper level · ${fyLabel(m.fyEnd, 2)} FV +10%`, price: levels.target, color: "var(--red)" },
-                { label: `Phase 1 · ${belowFv(levels.p1)}`, price: levels.p1, color: "var(--accent)" },
-                { label: `Phase 2 · ${belowFv(levels.p2)}`, price: levels.p2, color: "var(--green)" },
-                { label: `Phase 3 · ${belowFv(levels.p3)}`, price: levels.p3, color: "var(--green)" },
+                { label: `Reference level 1 · ${belowFv(levels.p1)}`, price: levels.p1, color: "var(--accent)" },
+                { label: `Reference level 2 · ${belowFv(levels.p2)}`, price: levels.p2, color: "var(--accent)" },
+                { label: `Reference level 3 · ${belowFv(levels.p3)}`, price: levels.p3, color: "var(--accent)" },
                 { label: `Stop-loss level · ${belowFv(levels.stopLoss)}`, price: levels.stopLoss, color: "var(--red)" },
               ].filter(r => r.price > 0).sort((a, b) => b.price - a.price).map(rung => {
                 const isHere = Math.abs(price - rung.price) / rung.price < 0.03;
@@ -740,28 +742,31 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
             </div>
           )}
 
-          {/* Fair value */}
+          <PhasePositionPlanner levels={levels} />
+
+          {/* The valuation explorer above is the main valuation summary;
+              leave this detailed EPS bridge collapsed to reduce repetition. */}
           {levels && (
-            <div style={card}>
-              <h3 style={{ fontSize: 15, fontWeight: 600, margin: "0 0 14px", color: "var(--t1)" }}>
-                Fair Value — EPS × {pe || "—"}x P/E
-                {usingCustomInputs && <span style={{ fontSize: 11, marginLeft: 8, color: "var(--accent)", fontWeight: 500 }}>(recalculated)</span>}
-              </h3>
-              <div className="ss-grid-fv">
+            <details style={{ ...card, padding: 0 }}>
+              <summary style={{ cursor: "pointer", padding: "16px 18px", color: "var(--t1)", fontSize: 13, fontWeight: 600, listStyle: "none" }}>
+                EPS and fair-value breakdown · {fmtRs(levels.fv25)} from EPS × {pe || "—"}× P/E
+                {usingCustomInputs && <span style={{ fontSize: 11, marginLeft: 8, color: "var(--accent)", fontWeight: 500 }}>(custom inputs)</span>}
+              </summary>
+              <div className="ss-grid-fv" style={{ padding: "0 18px 18px" }}>
                 {[
                   { label: usualEpsShown ? "Usual EPS" : `${fyLabel(m.fyEnd)} EPS`, val: eps ? `₹${Math.round(Number(eps))}` : "—", sub: `FV: ${fmtRs(levels.fv25)}` },
                   { label: `${fyLabel(m.fyEnd, 1)} EPS (est.)`, val: levels.e26 ? `₹${levels.e26}` : "—", sub: `FV: ${fmtRs(levels.fv26)}` },
                   { label: `${fyLabel(m.fyEnd, 2)} EPS (est.)`, val: levels.e27 ? `₹${levels.e27}` : "—", sub: `FV: ${fmtRs(levels.fv27)}` },
-                  { label: "Phase 1 level", val: fmtRs(levels.safeBuy), sub: `Today's FV × ${100 - Number(mosPct || 10)}%`, hi: true },
+                  { label: "Reference level 1", val: fmtRs(levels.safeBuy), sub: `Today's modeled value × ${100 - Number(mosPct || 10)}%`, hi: true },
                 ].map(fc => (
                   <div key={fc.label} style={{ background: "var(--s1)", borderRadius: 8, padding: 12, border: fc.hi ? "1px solid var(--green)" : "1px solid var(--bdr)" }}>
                     <div style={{ fontSize: 11, color: "var(--t3)", marginBottom: 4 }}>{fc.label}</div>
-                    <div style={{ fontSize: 17, fontWeight: 600, color: fc.hi ? "var(--green)" : "var(--t1)" }}>{fc.val}</div>
+                    <div style={{ fontSize: 17, fontWeight: 600, color: fc.hi ? "var(--accent)" : "var(--t1)" }}>{fc.val}</div>
                     <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 2 }}>{fc.sub}</div>
                   </div>
                 ))}
               </div>
-            </div>
+            </details>
           )}
 
           <PiotroskiCard m={m} />

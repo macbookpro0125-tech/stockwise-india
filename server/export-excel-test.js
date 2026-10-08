@@ -41,7 +41,7 @@ assert.deepEqual(buckets, ["CORE COMPOUNDER   (2 stocks)", "HIGH-GROWTH   (1 sto
 const ranks = cat.filter(r => typeof r[0] === "number").map(r => [r[0], r[2]]);
 assert.deepEqual(ranks, [[1, "CORE1"], [3, "CORE2"], [2, "GROW1"], [4, "NEW1"]]);
 const core2 = cat.find(r => r[2] === "CORE2");
-assert.equal(core2[15], "In the Phase 3 zone", "the app's own price position");
+assert.equal(core2[15], "At or below reference level 3", "the app's own price position");
 assert.equal(core2[14], -27.27, "% vs P1");
 
 // Frozen headers: the library writes no panes, so they're added to the file

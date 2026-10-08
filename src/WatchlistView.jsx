@@ -37,7 +37,7 @@ function levelStatus(cmp, r) {
     const prem = ((cmp - r.safeBuyPrice) / r.safeBuyPrice) * 100;
     return { label: `${prem.toFixed(0)}% above P1`, color: prem <= 10 ? "var(--yellow)" : "var(--t3)" };
   }
-  const short = { "below-stop": "Below stop-loss level", phase3: "In Phase 3 zone", phase2: "In Phase 2 zone", phase1: "In Phase 1 zone", "above-upper": "Above upper level", "far-above": "Far above upper level" };
+  const short = { "below-stop": "Below stop-loss level", phase3: "At/below reference level 3", phase2: "At/below reference level 2", phase1: "At/below reference level 1", "above-upper": "Above upper level", "far-above": "Far above upper level" };
   return { label: short[pos.zone] ?? pos.label, color: TONE[pos.tone] ?? "var(--t3)" };
 }
 

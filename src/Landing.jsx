@@ -30,7 +30,7 @@ const FEATURES = [
   {
     icon: <Icon><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1.5" /></Icon>,
     title: "Fair value and price levels",
-    text: "Fair value from the company's own 5-year median P/E, then Phase 1, 2 and 3 price levels below it, with a stop-loss level and an upper level.",
+    text: "A valuation reference from the company's own 5-year median P/E, plus three model price levels, a stop-loss level and an upper level. These are reference points, not trade instructions.",
   },
   {
     icon: <Icon><path d="M7 3h7l5 5v13H7z" /><path d="M14 3v5h5M10 13h6M10 17h6" /></Icon>,

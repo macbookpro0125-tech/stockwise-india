@@ -24,7 +24,7 @@ export const STOCK_TOUR = [
   { target: "override", title: "Check or change the numbers", body: "EPS, P/E and growth come from the company's NSE filings. Type your own to test a view — the price levels on this page follow. The research score always uses the filings." },
   { target: "valuation", title: "Ways to value it", body: "Valuation methods worked out from reported figures. Show assumptions lets you change each one. These are estimates, not price targets." },
   { target: "thesis", title: "What to watch", body: "Strengths and cautions from the filings, what to check in the next results, and your own notes — saved to your account." },
-  { target: "position", title: "Where the price sits", body: "Today's price against the levels worked out from fair value. It describes the price; it never tells you to buy or sell." },
+  { target: "position", title: "Where the price sits", body: "Today's price against model reference levels calculated from the valuation inputs. They describe price location; they don't tell you to buy or sell." },
   { target: "filings", title: "News and NSE filings", body: "The company's own announcements to NSE, newest first. Read full filing opens the document and quotes the key lines." },
   { title: "That's the company page", body: "Back (top left) returns to your list. Your browser's back button works too." },
 ];

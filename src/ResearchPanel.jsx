@@ -172,17 +172,17 @@ export default function ResearchPanel({ research: r }) {
       })}
 
       <div className="research-head" style={{ marginBottom: 12 }}>
-        <Headline label="Quality score" value={quality} tone={qTone}
+        <Headline label="Quality incl. valuation" value={quality} tone={qTone}
           word={r.provisional ? "provisional" : null}
-          sub={quality == null ? "Too few years of filings to score." : `Without valuation: ${n(r.qualityOnly)}/100`}
+          sub={quality == null ? "Too few years of filings to score." : `Business quality, excluding valuation: ${n(r.qualityOnly)}/100`}
           title="Out of 100 across six groups — business, earnings, balance sheet, governance, growth and valuation" details="why-this-score" />
         <Headline label="Overall research score" value={o.score} tone={oTone}
           word={o.score != null ? o.stance : null}
-          sub={o.score != null ? `${o.text}${o.status === "provisional" ? " — provisional: low confidence caps it at 59" : ""}` : o.text}
+          sub={o.score != null ? `${o.text}${o.status === "provisional" ? " — provisional: limited data coverage caps it at 59" : ""}` : o.text}
           title="Quality without valuation (70%) and valuation (30%), trimmed for price swings and data gaps. Not a buy or sell signal." details="why-how" />
-        <Headline label="Confidence" value={r.confidence} tone={confTone}
-          sub={`${r.coverage.checked} of ${r.coverage.total} checks have data`}
-          title="How much of the score rests on data: checks covered, how recent the results are and how fresh the price is" details="why-how" />
+        <Headline label="Data quality" value={r.confidence} tone={confTone}
+          sub={`${r.coverage.checked} of ${r.coverage.total} checks have data · also reflects recency, not outcome confidence`}
+          title="A data-quality measure based on checks covered, filing recency and price freshness. It does not predict whether the stock or score is correct." details="why-how" />
       </div>
 
       {r.capped && (

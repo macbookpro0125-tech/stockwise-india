@@ -146,7 +146,7 @@ export function DisclaimerPage({ signedIn }) {
         filings on NSE and market prices. They know nothing the formulas don't — news, management quality, or what a
         company will do next — and checks the filings can't show, such as related-party deals or competitive position, are left
         out rather than guessed. The weights behind the scores are a stated starting point, not a model proven to predict
-        returns. Labels such as "In the Phase 1 zone" or "Constructive, with material questions" describe the numbers.
+        returns. Labels describe the displayed figures and model reference levels; they do not tell you to buy or sell.
         They are not advice about what you should do.
       </P>
 
