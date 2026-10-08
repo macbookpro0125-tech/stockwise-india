@@ -320,7 +320,8 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
     setExporting(true);
     setExportError(null);
     try {
-      await exportDiscoverExcel(sorted, { pricesDate: snapshot?.pricesDate, extraColumns });
+      const sortLabel = `${sortOptions.find(([id]) => id === sortBy)?.[1] ?? "Quality score"}, ${dirLabel.toLowerCase()}`;
+      await exportDiscoverExcel(sorted, { pricesDate: snapshot?.pricesDate, extraColumns, screen: queryUsed || "", sortLabel });
     } catch {
       setExportError("Excel export failed — try again");
     } finally {

@@ -1,9 +1,16 @@
-// Excel export for the Discover results, ported from stock-screener's
-// ResultsTable exportExcel. Two sheets: a Dashboard (summary formulas over the
-// Stocks sheet, the ten stocks closest to their Phase 1 level, the quality
-// score's spread and price-level counts) and Stocks (every row, with filter
-// dropdowns). The
-// library is about 1 MB, so it loads on the first click, not with the page.
+// Excel export for the Discover results. Four sheets:
+//  - Categorized: the screen's companies grouped into buckets by data rules
+//    (core compounder, high-growth, value play, steady, speculative, not
+//    rated), each row with its scores, risk tier, distance from Phase 1,
+//    price levels and flags — the layout of the categorized workbook Salman
+//    brought (9 Oct 2026), in the app's own wording: "Price position", never
+//    "buy status";
+//  - How to read: the bucket rules and what each column means;
+//  - Dashboard: summary formulas over the Stocks sheet, the ten closest to
+//    their Phase 1 level, the quality spread (ported from stock-screener);
+//  - Stocks: every row, with filter dropdowns.
+// The library is about 1 MB, so it loads on the first click, not with the page.
+import { pricePosition } from "../server/levels.js";
 
 const ACCENT = "00B89C", DARK = "1A1A2E", LIGHT = "F2F7F6", GREEN = "C6EFCE", YELLOW = "FFEB9C", RED = "FFC7CE";
 const sTitle = { font: { bold: true, sz: 16, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: DARK } }, alignment: { vertical: "center" } };
@@ -53,7 +60,7 @@ const COLUMNS = [
 // Excel number formats for the screener's extra columns, from each metric's unit
 const zFor = def => (def.unit === "₹ Cr" ? "#,##0" : def.unit === "₹" ? "#,##0.00" : def.decimals === 0 ? "0" : def.decimals >= 2 ? "0.00" : "0.0");
 
-export function buildDiscoverWorkbook(XLSX, stocks, { pricesDate, extraColumns = [] } = {}) {
+export function buildDiscoverWorkbook(XLSX, stocks, { pricesDate, extraColumns = [], screen = "", sortLabel = "" } = {}) {
   const n = stocks.length;
   const last = n + 1; // data rows on the Stocks sheet: 2..last
   // Any columns added on the screen go in before the NSE link
@@ -170,12 +177,231 @@ export function buildDiscoverWorkbook(XLSX, stocks, { pricesDate, extraColumns =
   wsD["!rows"] = [{ hpt: 26 }];
 
   const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, buildCategorizedSheet(XLSX, stocks, { pricesDate, asOf, screen, sortLabel }), "Categorized");
+  XLSX.utils.book_append_sheet(wb, buildGuideSheet(XLSX, { n, asOf, screen, sortLabel }), "How to read");
   XLSX.utils.book_append_sheet(wb, wsD, "Dashboard");
   XLSX.utils.book_append_sheet(wb, wsS, "Stocks");
   return wb;
 }
 
+// ── Categorized ──
+
+const NAVY = "1F3864", HEAD_BLUE = "2E5496", ZEBRA = "F3F6FB", GRID = "D9D9D9";
+const thin = { style: "thin", color: { rgb: GRID } };
+const box = { top: thin, bottom: thin, left: thin, right: thin };
+const body = { font: { sz: 8.5 }, border: box, alignment: { vertical: "center" } };
+
+// Buckets, in the order the sheet lists them; the first rule a company meets
+// decides (speculative is checked before growth and value). Rules are on the
+// How to read sheet.
+export const BUCKETS = [
+  { id: "core", title: "CORE COMPOUNDER", rgb: "1F6E3C" },
+  { id: "growth", title: "HIGH-GROWTH", rgb: "1F4E79" },
+  { id: "value", title: "VALUE PLAY", rgb: "7A5C00" },
+  { id: "steady", title: "STEADY / MID-QUALITY", rgb: "595959" },
+  { id: "weak", title: "LOW QUALITY — UNDER 50", rgb: "8A6D3B" },
+  { id: "speculative", title: "SPECULATIVE / HIGH-RISK", rgb: "8B2E2E" },
+  { id: "unrated", title: "NOT RATED — TOO FEW FILINGS", rgb: "7F7F7F" },
+];
+const vsP1 = s => (s.cmp > 0 && s.safeBuyPrice > 0 ? ((s.cmp - s.safeBuyPrice) / s.safeBuyPrice) * 100 : null);
+export function bucketOf(s) {
+  const q = quality(s), r = s.research ?? {}, growth = s.salesGrowth3y, gap = vsP1(s);
+  if (q == null) return "unrated";
+  // Elevated or High risk on the app's own bands (research.js riskLabel).
+  // The workbook this copies drew the line at 33, fine for a hand-picked top
+  // 30; across the market the median risk score is 37, so 33 called most
+  // companies speculative
+  if ((r.risk ?? 0) >= 50 || (growth ?? 0) > 100) return "speculative";
+  // A weak business isn't a growth or value pick, however it screens
+  if (q < 50) return "weak";
+  if ((growth ?? 0) >= 20) return "growth";
+  if ((s.pe > 0 && s.pe <= 13) || ((r.valuation ?? 0) >= 80 && gap != null && gap <= -15)) return "value";
+  return q >= 70 ? "core" : "steady";
+}
+// The research score's own risk bands, as the company page shows them
+export const riskTier = risk => (risk == null ? null : risk >= 75 ? "High" : risk >= 50 ? "Elevated" : risk >= 25 ? "Moderate" : "Low");
+const TIER_FILL = { Low: "C8E6C9", Moderate: "FFF2CC", Elevated: "F8CBAD", High: "F4B6B6" };
+const TONE_FONT = { green: { bold: true, color: { rgb: "1F6E3C" } }, yellow: { bold: true, color: { rgb: "7A5C00" } }, red: { bold: true, color: { rgb: "9C2A2A" } } };
+function flagsOf(s) {
+  const f = [];
+  if (s.marketCapCr != null && s.marketCapCr < 1500) f.push("Microcap");
+  if (s.research?.flags?.includes("auditQualified")) f.push("Audit qualified");
+  if (s.research?.flags?.includes("auditorResigned")) f.push("Auditor resigned");
+  if (s.epsJump) f.push("One-off profit");
+  return f.join(" · ") || null;
+}
+
+const CAT_COLUMNS = [
+  { h: "Rank", w: 6, get: (s, i) => i + 1, center: true },
+  { h: "Company", w: 34, get: s => s.name, bold: true },
+  { h: "Ticker", w: 12, get: s => s.symbol },
+  { h: "Sector", w: 18, get: s => s.sector },
+  { h: "Research", w: 8, get: s => s.research?.overall ?? null, z: "0.0", center: true },
+  { h: "Quality", w: 8, get: quality, z: "0.0", center: true },
+  { h: "Val", w: 7, get: s => s.research?.valuation ?? null, z: "0.0", center: true },
+  { h: "Risk", w: 7, get: s => s.research?.risk ?? null, z: "0.0", center: true },
+  { h: "Risk tier", w: 9, get: s => riskTier(s.research?.risk), center: true, fill: v => TIER_FILL[v] },
+  { h: "3Y Sales Gr%", w: 10, get: s => s.salesGrowth3y, z: "0.0", center: true },
+  { h: "ROCE%", w: 8, get: s => s.roce, z: "0.0", center: true },
+  { h: "ROE%", w: 8, get: s => s.roe, z: "0.0", center: true },
+  { h: "D/E", w: 7, get: s => s.debtToEquity, z: "0.00", center: true },
+  { h: "P/E", w: 7, get: s => s.pe, z: "0.0", center: true },
+  { h: "% vs P1", w: 9, get: vsP1, z: "0.0", center: true, fill: v => (v == null ? null : v <= 0 ? "C8E6C9" : "FCE4E4") },
+  { h: "Price position", w: 24, get: s => pricePosition(s.cmp, { p1: s.safeBuyPrice, p2: s.p2, p3: s.p3, stopLoss: s.stopLoss, target: s.target, fv25: s.fv25 }), position: true },
+  { h: "CMP", w: 9, get: s => s.cmp, z: "#,##0.00", center: true },
+  { h: "P1", w: 9, get: s => s.safeBuyPrice, z: "#,##0", center: true },
+  { h: "P2", w: 9, get: s => s.p2, z: "#,##0", center: true },
+  { h: "P3", w: 9, get: s => s.p3, z: "#,##0", center: true },
+  { h: "FairVal 2Y", w: 10, get: s => s.fairValue, z: "#,##0", center: true },
+  { h: "MktCap Cr", w: 11, get: s => s.marketCapCr, z: "#,##0", center: true },
+  { h: "Piotr.", w: 7, get: s => s.values?.piotroski ?? s.piotroski ?? null, z: "0", center: true },
+  { h: "Prom%", w: 8, get: s => s.promoterPct, z: "0.0", center: true },
+  { h: "Flags", w: 18, get: flagsOf },
+  { h: "NSE link", w: 9, get: s => nseUrl(s.symbol), link: true, center: true },
+];
+
+export function buildCategorizedSheet(XLSX, stocks, { asOf, screen, sortLabel } = {}) {
+  const width = CAT_COLUMNS.length, lastCol = width - 1;
+  const ranked = stocks.map((s, i) => ({ s, rank: i + 1, bucket: bucketOf(s) }));
+  const aoa = [], styles = [], merges = [], heights = [];
+  const fullRow = (text, style, hpt) => {
+    const r = aoa.length;
+    aoa.push([text, ...Array(lastCol).fill("")]);
+    styles.push(Array(width).fill(style));
+    merges.push({ s: { r, c: 0 }, e: { r, c: lastCol } });
+    if (hpt) heights[r] = { hpt };
+  };
+
+  fullRow(`STOCKWISE INDIA — ${stocks.length.toLocaleString("en-IN")} ${stocks.length === 1 ? "COMPANY" : "COMPANIES"}, CATEGORIZED`,
+    { font: { bold: true, sz: 14, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: NAVY } }, alignment: { vertical: "center", indent: 1 } }, 26);
+  fullRow(`Your Discover screen${screen ? ` (${screen})` : " (the whole market)"} · ${asOf} · grouped by bucket, then in the order you sorted${sortLabel ? ` (${sortLabel})` : ""}. "% vs P1" under 0 = below the Phase 1 level. Educational use only — not investment advice.`,
+    { font: { sz: 9, color: { rgb: "555555" } }, alignment: { vertical: "center", wrapText: true } }, 28);
+  aoa.push([]); styles.push([]);
+  const headerRow = aoa.length;
+  aoa.push(CAT_COLUMNS.map(c => c.h));
+  styles.push(CAT_COLUMNS.map(() => ({ font: { bold: true, sz: 8.5, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: HEAD_BLUE } }, alignment: { horizontal: "center", vertical: "center", wrapText: true }, border: box })));
+  heights[headerRow] = { hpt: 28 };
+  const links = [];
+
+  for (const b of BUCKETS) {
+    const members = ranked.filter(x => x.bucket === b.id);
+    if (!members.length) continue;
+    fullRow(`  ${b.title}   (${members.length} ${members.length === 1 ? "stock" : "stocks"})`,
+      { font: { bold: true, sz: 10.5, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: b.rgb } }, alignment: { vertical: "center" } }, 20);
+    members.forEach(({ s, rank }, k) => {
+      const r = aoa.length, zebra = k % 2 === 1;
+      const row = [], rowStyles = [];
+      CAT_COLUMNS.forEach((col, c) => {
+        let v = col.get(s, rank - 1);
+        let style = { ...body, ...(zebra && { fill: { fgColor: { rgb: ZEBRA } } }), ...(col.center && { alignment: { horizontal: "center", vertical: "center" } }) };
+        if (col.bold) style.font = { ...body.font, bold: true };
+        if (col.position) {
+          style.font = { ...body.font, ...(TONE_FONT[v?.tone] ?? {}) };
+          v = v?.label ?? null;
+        }
+        if (col.fill && v != null && col.fill(v)) style.fill = { fgColor: { rgb: col.fill(v) } };
+        if (col.link) {
+          links.push({ r, c, url: v });
+          v = "NSE";
+          style.font = { ...body.font, color: { rgb: "0563C1" }, underline: true };
+        }
+        if (typeof v === "number") v = round2(v);
+        row.push(v ?? null);
+        rowStyles.push({ style, z: typeof v === "number" ? col.z : null });
+      });
+      aoa.push(row);
+      styles.push(rowStyles);
+    });
+  }
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  styles.forEach((rowStyles, r) => rowStyles.forEach((st, c) => {
+    const addr = XLSX.utils.encode_cell({ r, c });
+    if (!ws[addr]) ws[addr] = { t: "s", v: "" };
+    const style = st?.style ?? st;
+    // Calibri named outright, as Excel's own default is — unnamed, some
+    // viewers fall back to a serif
+    if (style) ws[addr].s = { ...style, font: { name: "Calibri", ...style.font } };
+    if (st?.z) ws[addr].z = st.z;
+  }));
+  for (const { r, c, url } of links) ws[XLSX.utils.encode_cell({ r, c })].l = { Target: url, Tooltip: "Open on NSE" };
+  ws["!merges"] = merges;
+  ws["!cols"] = CAT_COLUMNS.map(c => ({ wch: c.w }));
+  ws["!rows"] = Array.from({ length: aoa.length }, (_, r) => heights[r] ?? {});
+  return ws;
+}
+
+// ── How to read ──
+
+export function buildGuideSheet(XLSX, { n, asOf, screen, sortLabel } = {}) {
+  const rows = [
+    ["HOW THIS LIST WAS BUILT"],
+    ["1. Universe", `Your Discover screen${screen ? `: ${screen}` : ": the whole market"} — ${n.toLocaleString("en-IN")} companies, ${asOf}.`],
+    ["2. Order", `Grouped by bucket; within each, the order you sorted by on screen${sortLabel ? ` (${sortLabel})` : ""}. Rank = the position in that order.`],
+    ["3. Buckets", "Assigned by data rules, not by hand — the first rule a company meets, in this order:"],
+    ["   • Not rated", "Too few years of filings for a quality score."],
+    ["   • Speculative / high-risk", "Risk score 50 or more (Elevated or High), or 3-year sales growth over 100% (often a small base or a one-off). Size positions small."],
+    ["   • Low quality", "Quality under 50 — a weak business on its filings, whatever its growth or price."],
+    ["   • High-growth", "3-year sales growth of 20% a year or more."],
+    ["   • Value play", "P/E of 13 or under, or a valuation score of 80+ with the price 15% or more under the Phase 1 level."],
+    ["   • Core compounder", "Quality 70 or more and none of the above — steady, established businesses."],
+    ["   • Steady / mid-quality", "Quality 50–69 and none of the above."],
+    ["4. Flags", "Microcap = market cap under ₹1,500 Cr (thin trading, higher risk whatever the score). Audit qualified / Auditor resigned = from the company's NSE filings. One-off profit = a profit jump the price levels value at the usual level."],
+    [],
+    ["COLUMN NOTES"],
+    ["Research", "Overall research score out of 100: quality and valuation blended, trimmed for price swings and data gaps."],
+    ["Quality", "Out of 100 across business, earnings, balance sheet, governance, growth and valuation, from NSE filings."],
+    ["Val", "Valuation score out of 100 — higher means cheaper against the company's own history, sector peers and cash flow."],
+    ["Risk / Risk tier", "Risk score out of 100, higher = riskier — price swings, thin trading and gaps in the data. Tier, as on the company page: Low under 25, Moderate 25–49, Elevated 50–74, High 75+."],
+    ["% vs P1", "Price against the Phase 1 level. Under 0 (green) = already below it."],
+    ["Price position", "Where the price sits against the levels: the Phase 1, 2 or 3 zone, above Phase 1, the stop-loss or the upper level. It describes the price — it is not a buy or sell instruction."],
+    ["P1 / P2 / P3", "P1 = EPS × the stock's median P/E, less a 10% margin of safety. P2 = P1 × 0.9. P3 = P1 × 0.8."],
+    ["FairVal 2Y", "EPS grown for two years × the median P/E. An estimate from reported figures, not a price target."],
+    ["Piotr.", "Piotroski score out of 9 — 7 or more is strong. Not scored for banks and other lenders."],
+    [],
+    ["CAVEAT", "A score is a screen, not a buy order. Check the latest results and filings on NSE, keep speculative and microcap names small, and spread across buckets rather than loading one."],
+    ["", "Educational use only. Not investment advice. Consult a SEBI-registered adviser."],
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  rows.forEach((row, r) => row.forEach((v, c) => {
+    const addr = XLSX.utils.encode_cell({ r, c });
+    if (!ws[addr]) return;
+    const heading = c === 0 && row.length === 1;
+    const label = c === 0 && row.length > 1 && !!v && !String(v).startsWith("   ");
+    ws[addr].s = { font: { name: "Calibri", sz: 10, bold: heading || label, ...(heading && { color: { rgb: NAVY } }) }, alignment: { vertical: "top", wrapText: c === 1 } };
+  }));
+  ws["!cols"] = [{ wch: 24 }, { wch: 100 }];
+  return ws;
+}
+
+// Freezes the header rows: the library writes no panes, so they go into the
+// finished file's sheet XML (rows above `topRow` stay put while scrolling)
+function freezeRows(XLSX, bytes, frozen) {
+  const zip = XLSX.CFB.read(new Uint8Array(bytes), { type: "array" });
+  for (const [sheet, rows] of Object.entries(frozen)) {
+    const i = zip.FullPaths.findIndex(p => p.endsWith(`xl/worksheets/sheet${sheet}.xml`));
+    if (i < 0) continue;
+    const file = zip.FileIndex[i];
+    const xml = new TextDecoder().decode(file.content);
+    const pane = `<sheetView workbookViewId="0"><pane ySplit="${rows}" topLeftCell="A${rows + 1}" activePane="bottomLeft" state="frozen"/></sheetView>`;
+    file.content = new TextEncoder().encode(xml.replace(/<sheetView workbookViewId="0"\/>/, pane));
+  }
+  return XLSX.CFB.write(zip, { type: "array", fileType: "zip", compression: true });
+}
+
+export function writeDiscoverWorkbook(XLSX, stocks, meta) {
+  const bytes = XLSX.write(buildDiscoverWorkbook(XLSX, stocks, meta), { type: "array", bookType: "xlsx" });
+  // Categorized (sheet 1): title, note, gap and headers; Stocks (sheet 4): headers
+  return freezeRows(XLSX, bytes, { 1: 4, 4: 1 });
+}
+
 export async function exportDiscoverExcel(stocks, meta) {
   const XLSX = (await import("xlsx-js-style")).default;
-  XLSX.writeFile(buildDiscoverWorkbook(XLSX, stocks, meta), "stockwise-india-discover.xlsx");
+  const blob = new Blob([writeDiscoverWorkbook(XLSX, stocks, meta)], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const url = URL.createObjectURL(blob);
+  const a = Object.assign(document.createElement("a"), { href: url, download: `stockwise-india-discover${meta?.pricesDate ? `-${meta.pricesDate}` : ""}.xlsx` });
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
