@@ -172,7 +172,7 @@ function tableRow(m, columns = [], sizes = null) {
     ncavCr: m.ncavCr, fairValue: m.fairValue, safeBuyPrice: m.safeBuyPrice,
     fv25: m.levels?.fv25 ?? null, p2: m.levels?.p2 ?? null, p3: m.levels?.p3 ?? null,
     stopLoss: m.levels?.stopLoss ?? null, target: m.levels?.target ?? null,
-    low52w: m.low52w, high52w: m.high52w, ret1d: m.ret1d ?? null,
+    low52w: m.low52w, high52w: m.high52w, ret1d: m.ret1d ?? null, piotroski: m.piotroski ?? null,
     valuationPeBasis: m.valuationPeBasis, epsJump: m.epsJump, research: researchBrief(m.research),
   };
 }
