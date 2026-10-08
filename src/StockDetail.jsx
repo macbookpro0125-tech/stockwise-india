@@ -368,17 +368,17 @@ const closeLabel = c => `NSE close (${dayLabel(c.date)})`;
 // The page's parts in order, for the shortcut row in the pinned bar — a
 // company page runs to many screens, most of all on a phone
 const SECTIONS = [
-  ["scores", "Scores"], ["valuation", "Valuation"], ["holding", "Shareholding"], ["chart", "Chart"],
+  ["scores", "Scores"], ["valuation", "Valuation"], ["sizing", "Sizing"], ["holding", "Shareholding"], ["chart", "Chart"],
   ["financials", "Financials"], ["technicals", "Technicals"], ["thesis", "What to watch"],
   ["levels", "Price levels"], ["peers", "Peers"], ["filings", "Filings"],
 ];
 
-function SectionNav({ ready }) {
+function SectionNav({ ready, sizingReady }) {
   const [present, setPresent] = useState(SECTIONS);
   const [active, setActive] = useState("scores");
   const rowRef = useRef(null);
   // Only the parts this company has (no price levels without a price, …)
-  useEffect(() => { setPresent(SECTIONS.filter(([id]) => document.getElementById(`sec-${id}`))); }, [ready]);
+  useEffect(() => { setPresent(SECTIONS.filter(([id]) => id !== "sizing" || sizingReady).filter(([id]) => document.getElementById(`sec-${id}`))); }, [ready, sizingReady]);
   // Where the pinned bar ends once pinned — not where it is now: on a phone
   // the header above it scrolls away on the way down
   const barBottom = () => {
@@ -532,7 +532,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         </span>
         <span data-tour="stock-actions" style={{ display: "flex", gap: 8, flexShrink: 0 }}>{actions}</span>
       </div>
-      <SectionNav ready={!!m} />
+      <SectionNav ready={!!m} sizingReady={!!levels} />
       </div>
 
       {m && (
@@ -651,6 +651,8 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
 
           <div data-tour="valuation"><ValuationExplorer key={`valuation-${symbol}`} metrics={m} price={price} levels={levels} mosPct={mosPct} epsInput={eps} peInput={pe} /></div>
 
+          {levels && <div id="sec-sizing" className="ss-section"><PhasePositionPlanner levels={levels} /></div>}
+
           {/* Current price */}
           <div style={card}>
             <SectionTitle icon={CalendarDays} style={{ marginBottom: 4 }}>Current Price</SectionTitle>
@@ -741,8 +743,6 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
               </div>
             </div>
           )}
-
-          <PhasePositionPlanner levels={levels} />
 
           {/* The valuation explorer above is the main valuation summary;
               leave this detailed EPS bridge collapsed to reduce repetition. */}
