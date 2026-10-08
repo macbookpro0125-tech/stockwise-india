@@ -217,6 +217,20 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState(null);
 
+  // "Sort by" beside the count — the only way to sort on a phone, where
+  // there are no column headers; on a computer it follows header clicks
+  const sortOptions = [
+    ["quality", "Quality score"], ["overall", "Research score"],
+    ...(netNet ? [["ncavPct", "Discount to NCAV"]] : []),
+    ...columns.map(def => [def.id, def.short ?? def.label]),
+    ["cmp", "Price"], ["ret1d", "1-day change"], ["name", "Name"],
+  ].filter(([id], i, all) => all.findIndex(([other]) => other === id) === i);
+  const pickSort = col => { setSortBy(col); setSortDir(col === "name" ? "asc" : "desc"); };
+  // Sorted by a column that has since been taken off: back to Quality
+  const sortKnown = sortOptions.some(([id]) => id === sortBy);
+  useEffect(() => { if (!sortKnown) { setSortBy("quality"); setSortDir("desc"); } }, [sortKnown]);
+  const dirLabel = sortBy === "name" ? (sortDir === "asc" ? "A to Z" : "Z to A") : (sortDir === "desc" ? "Highest first" : "Lowest first");
+
   const handleSort = col => {
     if (sortBy === col) setSortDir(d => (d === "asc" ? "desc" : "asc"));
     else { setSortBy(col); setSortDir("desc"); }
@@ -321,6 +335,18 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
           </div>
           <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
             {exportError && <span style={{ fontSize: 11, color: "var(--red)" }}>{exportError}</span>}
+            {!loading && (matches?.length ?? 0) > 1 && (
+              <div className="sort-control" style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <select value={sortBy} onChange={e => pickSort(e.target.value)} aria-label="Sort by"
+                  style={{ height: 32, padding: "0 8px", borderRadius: 8, border: "1px solid var(--bdr2)", background: "var(--s2)", color: "var(--t1)", fontSize: 12.5, fontFamily: "inherit", cursor: "pointer", maxWidth: 190 }}>
+                  {sortOptions.map(([id, label]) => <option key={id} value={id}>Sort: {label}</option>)}
+                </select>
+                <button type="button" onClick={() => setSortDir(d => (d === "asc" ? "desc" : "asc"))} title={dirLabel} aria-label={`${dirLabel} — tap to reverse`} className="btn-ghost"
+                  style={{ height: 32, padding: "0 10px", fontSize: 12, gap: 4, whiteSpace: "nowrap" }}>
+                  {sortDir === "desc" ? <ArrowDown size={14} /> : <ArrowUp size={14} />}{dirLabel}
+                </button>
+              </div>
+            )}
             {selected.size >= 2 && (
               <button onClick={() => setShowCompare(true)} className="btn-primary" style={{ height: 32, padding: "0 14px", fontSize: 12 }}>
                 Compare {selected.size}
