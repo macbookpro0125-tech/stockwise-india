@@ -8,7 +8,7 @@ import ResultsTable from "./ResultsTable.jsx";
 import HowItWorks from "./HowItWorks.jsx";
 import FilterPanel, { isActiveFilter } from "./screener/FilterPanel.jsx";
 import MetricPicker from "./screener/MetricPicker.jsx";
-import { useScreenerMeta, DEFAULT_COLUMNS } from "./screener/meta.js";
+import { useScreenerMeta, DEFAULT_COLUMNS, OLD_DEFAULT_COLUMNS } from "./screener/meta.js";
 
 // The screener: filters in a sidebar beside the results, any of 99 metrics as
 // a min–max filter, columns that follow the filters (plus any you add), and
@@ -82,7 +82,10 @@ export default function DiscoverView({ onOpenStock }) {
   useEffect(() => {
     if (new URLSearchParams(window.location.search).has("screen")) window.history.replaceState(null, "", window.location.pathname);
   }, []);
-  const [columns, setColumns] = useState(() => read("screenerColumns", DEFAULT_COLUMNS));
+  const [columns, setColumns] = useState(() => {
+    const saved = read("screenerColumns", DEFAULT_COLUMNS);
+    return Array.isArray(saved) && saved.join() === OLD_DEFAULT_COLUMNS.join() ? DEFAULT_COLUMNS : saved;
+  });
   const [activePresetId, setActivePresetId] = useState(null);
   const [results, setResults] = useState(null);
   const [updating, setUpdating] = useState(false);

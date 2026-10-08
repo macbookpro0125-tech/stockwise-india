@@ -422,9 +422,10 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
             const cells = [
               ["Quality", <span key="q" title={researchTitle(stock.research)} style={{ color: qualityTone(quality).color }}>{quality == null ? "—" : Math.round(quality)}</span>],
               ["Research", <span key="r" title={researchTitle(stock.research)} style={{ color: overallTone(overall).color }}>{overall == null ? "—" : Math.round(overall)}</span>],
-              ...columns.slice(0, 2).map(def => {
+              ...columns.slice(0, 3).map(def => {
                 const v = colValue(stock, def.id);
-                return [def.short, <span key={def.id} style={{ color: v == null ? "var(--t3)" : def.signed ? valueColor(def, v) : "var(--t1)" }}>{formatValue(def, v)}</span>];
+                // Coloured as the table's cells are (strong ROCE, Piotroski 7+ green)
+                return [def.short, <span key={def.id} style={{ color: valueColor(def, v) }}>{formatValue(def, v)}</span>];
               }),
             ];
             return (
@@ -448,7 +449,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                     {day == null ? "" : `${day >= 0 ? "+" : ""}${day.toFixed(2)}%`}
                   </div>
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 6, marginTop: 10, paddingRight: 46 }}>
+                <div style={{ display: "grid", gridTemplateColumns: `repeat(${cells.length}, minmax(0, 1fr))`, gap: 6, marginTop: 10 }}>
                   {cells.map(([label, value]) => (
                     <div key={label} style={{ minWidth: 0 }}>
                       <div style={{ fontSize: 10.5, color: "var(--t3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 2 }}>{label}</div>

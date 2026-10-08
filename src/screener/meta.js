@@ -28,8 +28,12 @@ export function useScreenerMeta() {
   return { meta, error, retry: () => { setError(null); load().then(setMeta).catch(e => setError(e.message)); } };
 }
 
-// The table's columns before anyone changes them — the original's own set
-export const DEFAULT_COLUMNS = ["pe", "roce", "roe", "promoterPct", "marketCapCr", "divYield"];
+// The table's columns before anyone changes them — the original's own set,
+// with the Piotroski score beside ROCE (asked for on Discover, 9 Oct 2026)
+export const DEFAULT_COLUMNS = ["pe", "roce", "piotroski", "roe", "promoterPct", "marketCapCr", "divYield"];
+// The set before Piotroski: a browser still holding exactly this never chose
+// its columns, so it moves to the new set; a set someone picked stays theirs
+export const OLD_DEFAULT_COLUMNS = ["pe", "roce", "roe", "promoterPct", "marketCapCr", "divYield"];
 
 const inr = (v, d) => v.toLocaleString("en-IN", { minimumFractionDigits: d, maximumFractionDigits: d });
 
@@ -88,5 +92,7 @@ export function valueColor(def, v) {
   if (def.id === "roce") return v >= 18 ? "var(--green)" : "var(--t1)";
   if (def.id === "roe" || def.id === "roeAvg") return v >= 15 ? "var(--green)" : "var(--t1)";
   if (def.id === "promoterPct") return v >= 50 ? "var(--green)" : v < 30 ? "var(--red)" : "var(--t1)";
+  // Piotroski's own reading: 7–9 strong, 0–3 weak
+  if (def.id === "piotroski") return v >= 7 ? "var(--green)" : v <= 3 ? "var(--red)" : "var(--t1)";
   return "var(--t1)";
 }
