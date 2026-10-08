@@ -26,7 +26,7 @@ export const METRICS = [
   { id: "valuationScore", label: "Valuation score", short: "Valuation", category: "Research score", unit: "/100", decimals: 0, get: groupScore("valuation"), about: "Higher means cheaper: against its own usual P/E, sector peers, free cash flow and simple multiples, at the last close." },
   { id: "technicalScore", label: "Technical setup", short: "Technical", category: "Research score", unit: "/100", decimals: 0, get: m => m.research?.technical.score ?? null, about: "Price trend, strength against NIFTY 50, momentum, liquidity and swings. Kept out of the quality and research scores." },
   { id: "riskScore", label: "Risk score", short: "Risk", category: "Research score", unit: "/100", decimals: 0, get: m => m.research?.risk.score ?? null, about: "Higher means riskier: debt, cyclicality, governance, price swings, valuation and data gaps." },
-  { id: "confidence", label: "Data confidence", short: "Confidence", category: "Research score", unit: "/100", decimals: 0, get: m => m.research?.confidence ?? null, about: "How much of the score rests on data: checks covered, how recent the results are and how fresh the price is." },
+  { id: "confidence", label: "Data quality", short: "Data quality", category: "Research score", unit: "/100", decimals: 0, get: m => m.research?.confidence ?? null, about: "A data-quality measure based on checks covered, filing recency and price freshness; it does not predict the stock's outcome." },
 
   // ── Valuation ──
   { id: "pe", label: "P/E ratio", short: "P/E", category: "Valuation", unit: "x", decimals: 1, about: "Price ÷ last year's earnings per share. Loss-making companies have none." },

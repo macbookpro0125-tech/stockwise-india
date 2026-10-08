@@ -53,7 +53,7 @@ export default function PeersPanel({ symbol, onAnalyze }) {
         {data?.peerLabel && <span style={{ fontSize: 11, fontWeight: 500, color: "var(--t3)", marginLeft: 8 }}>{data.peerLabel}</span>}
       </div>
       <p style={{ fontSize: 11, color: "var(--t3)", margin: "4px 0 12px", lineHeight: 1.5 }}>
-        Companies in the same NSE {data?.peerBasis ?? "sector or industry"}, largest first{data?.total > rows.length ? ` (top ${rows.length} of ${data.total})` : ""}. Peer medians exclude this company.
+        Companies in the same NSE {data?.peerBasis ?? "sector or industry"}, largest first{data?.total > rows.length ? ` (top ${rows.length} of ${data.total})` : ""}. Peer medians exclude this company. NSE sectors can combine different industries, so this is a broad comparison group rather than a set of exact product competitors.
       </p>
 
       {error && <div style={{ fontSize: 12, color: "var(--t3)", padding: "16px 0" }}>Could not load peers — {error}</div>}
@@ -68,6 +68,10 @@ export default function PeersPanel({ symbol, onAnalyze }) {
           ["Peer median FCF yield", data.benchmark.fcfYieldPct != null ? `${pct(data.benchmark.fcfYieldPct)} · ${data.benchmark.fcfYieldN} peers` : `Not enough peers (${data.benchmark.fcfYieldN}/5)`],
         ].map(([label, value]) => <div key={label} style={{ minWidth: 150, padding: "8px 10px", borderRadius: 8, border: "1px solid var(--bdr)", background: "var(--s1)" }}><div style={{ fontSize: 10.5, color: "var(--t3)" }}>{label}</div><div style={{ fontSize: 12, color: "var(--t1)", fontWeight: 650, marginTop: 3 }}>{value}</div></div>)}
       </div>}
+
+      {data?.benchmark && <p style={{ fontSize: 11, color: "var(--t3)", margin: "-2px 0 12px", lineHeight: 1.5 }}>
+        This peer P/E is a sector snapshot; the historical P/E reference uses this company's own past. They answer different questions and neither is a standalone fair value or price target.
+      </p>}
 
       {rows.length > 0 && (
         <>

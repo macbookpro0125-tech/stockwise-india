@@ -14,7 +14,7 @@ export default function CreateAlertModal({ stock, onClose }) {
   const [busy, setBusy] = useState(false);
 
   const picks = [
-    ["Phase 1", stock.p1], ["Phase 2", stock.p2], ["Phase 3", stock.p3],
+    ["Reference level 1", stock.p1], ["Reference level 2", stock.p2], ["Reference level 3", stock.p3],
   ].filter(([, v]) => v > 0);
 
   const create = async () => {

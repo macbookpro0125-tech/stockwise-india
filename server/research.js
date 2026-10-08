@@ -681,7 +681,7 @@ function riskProfile(m, groups, tech, confidence) {
     mk.map(p => p.display).filter(Boolean).join(" · ") + (m.beta1y > 1.3 ? ` · beta ${m.beta1y.toFixed(2)}` : ""));
   const val = g("valuation");
   add("valuationDownside", "Valuation downside", 10, inv(val.score) ?? 50, val.score != null ? `Valuation scores ${Math.round(val.score)}/100 — ${valuationLabel(val.score).toLowerCase()}.` : "Valuation couldn't be scored.");
-  add("data", "Data gaps", 10, 100 - confidence, `Confidence ${Math.round(confidence)}/100 — several checks need annual reports.`);
+  add("data", "Data gaps", 10, 100 - confidence, `Data quality ${Math.round(confidence)}/100 — several checks need annual reports.`);
 
   const weight = parts.reduce((a, p) => a + p.weight, 0);
   const score = parts.reduce((a, p) => a + p.score * p.weight, 0) / weight;
@@ -815,7 +815,7 @@ function summarise(r, m) {
   if (r.valuation.score != null) s.push(`At the ${m.closeDate ? new Date(`${m.closeDate}T00:00:00Z`).toLocaleString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" }) : "last"} close, valuation looks ${r.valuation.label.toLowerCase()} (${Math.round(r.valuation.score)}/100).`);
   s.push(`${r.technical.score != null ? `The price trend is ${r.technical.label.toLowerCase()}; r` : "R"}isk is ${r.risk.label.toLowerCase()} (${Math.round(r.risk.score)}/100).`);
   const conf = r.confidence >= 80 ? "high" : r.confidence >= 60 ? "moderate" : "low";
-  s.push(`Confidence is ${conf}: ${r.coverage.checked} of ${r.coverage.total} checks have data, and related-party deals, forecasts and a cash-flow model aren't covered.`);
+  s.push(`Data quality is ${conf}: ${r.coverage.checked} of ${r.coverage.total} checks have data, and related-party deals, forecasts and a cash-flow model aren't covered. It reflects coverage and recency, not confidence in a future outcome.`);
   if (fromQuarters) s.push(`Listed recently, with ${years} year${years === 1 ? "" : "s"} of annual results on NSE: margin steadiness, sales consistency and growth are judged on its last eight quarters instead.`);
   return s.join(" ");
 }

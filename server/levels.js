@@ -43,8 +43,8 @@ export function fmtRs(n) {
 }
 
 // Where a price sits against the levels: { zone, label, tone, detail }.
-// tone colours the label (green under Phase 1, red past the stop-loss level
-// or far above the upper level); the words only describe the position.
+// Tone distinguishes risk levels (red past the stop-loss level or far above
+// the upper level); model reference levels use a neutral accent.
 export function pricePosition(price, levels) {
   const p = Number(price);
   if (!levels || !(p > 0)) return null;
@@ -55,12 +55,12 @@ export function pricePosition(price, levels) {
   if (stopLoss > 0 && p <= stopLoss) return at("below-stop", "Below the stop-loss level", "red", `${fmtRs(p)} is under the stop-loss level of ${fmtRs(stopLoss)}`);
   if (target > 0 && p >= target * 1.15) return at("far-above", "Far above the upper level", "red", `${fmtRs(p)} is more than 15% over the upper level of ${fmtRs(target)}`);
   if (target > 0 && p >= target) return at("above-upper", "At or above the upper level", "yellow", `${fmtRs(p)} has reached the upper level of ${fmtRs(target)}`);
-  if (p3 > 0 && p <= p3) return at("phase3", "In the Phase 3 zone", "green", `${fmtRs(p)} is at or under the Phase 3 level of ${fmtRs(p3)}`);
-  if (p2 > 0 && p <= p2) return at("phase2", "In the Phase 2 zone", "green", `${fmtRs(p)} is at or under the Phase 2 level of ${fmtRs(p2)}`);
-  if (p1 > 0 && p <= p1) return at("phase1", "In the Phase 1 zone", "green", `${fmtRs(p)} is at or under the Phase 1 level of ${fmtRs(p1)}`);
+  if (p3 > 0 && p <= p3) return at("phase3", "At or below reference level 3", "neutral", `${fmtRs(p)} is at or under reference level 3 of ${fmtRs(p3)}`);
+  if (p2 > 0 && p <= p2) return at("phase2", "At or below reference level 2", "neutral", `${fmtRs(p)} is at or under reference level 2 of ${fmtRs(p2)}`);
+  if (p1 > 0 && p <= p1) return at("phase1", "At or below reference level 1", "neutral", `${fmtRs(p)} is at or under reference level 1 of ${fmtRs(p1)}`);
   if (p1 > 0) {
     const toUpper = target > p ? ` and ${(((target - p) / p) * 100).toFixed(0)}% under the upper level` : "";
-    return at("above-phase1", "Above Phase 1", "neutral", `${fmtRs(p)} is ${(((p - p1) / p1) * 100).toFixed(0)}% above the Phase 1 level of ${fmtRs(p1)}${toUpper}`);
+    return at("above-phase1", "Above reference level 1", "neutral", `${fmtRs(p)} is ${(((p - p1) / p1) * 100).toFixed(0)}% above reference level 1 of ${fmtRs(p1)}${toUpper}`);
   }
   return null;
 }
