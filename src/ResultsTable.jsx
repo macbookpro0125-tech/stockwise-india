@@ -53,6 +53,8 @@ const MONO = { fontVariantNumeric: "tabular-nums" };
 
 const quality = s => s.research?.quality ?? null;
 const MIN_QUALITY = [40, 50, 60, 70, 80];
+const MIN_RESEARCH = [50, 60, 65, 70, 80];
+const MIN_PIOTROSKI = [5, 6, 7, 8, 9];
 
 const nseUrl = symbol => `https://www.nseindia.com/get-quotes/equity?symbol=${encodeURIComponent(symbol)}`;
 
@@ -198,6 +200,8 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
 
   const [search, setSearch] = useState("");
   const [minQuality, setMinQuality] = useState(0);
+  const [minResearch, setMinResearch] = useState(0);
+  const [minPiotroski, setMinPiotroski] = useState(0);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   useEffect(() => { setVisibleCount(PAGE_SIZE); }, [matches]);
 
@@ -236,21 +240,44 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
     else { setSortBy(col); setSortDir("desc"); }
   };
 
+  // A column's value: from the metrics the screen was asked for, else the
+  // row's own field (cmp and the table's fixed fields)
+  const colValue = (s, id) => s.values?.[id] ?? s[id] ?? null;
   const q = search.trim().toLowerCase();
   const textFiltered = q
     ? (matches || []).filter(s => s.name?.toLowerCase().includes(q) || s.symbol?.toLowerCase().includes(q))
     : (matches || []);
-  const filtered = minQuality > 0 ? textFiltered.filter(s => (quality(s) ?? -1) >= minQuality) : textFiltered;
+  // The score boxes beside the name box narrow the list together
+  const scoreFiltered = minQuality > 0 || minResearch > 0 || minPiotroski > 0;
+  const filtered = !scoreFiltered ? textFiltered : textFiltered.filter(s =>
+    (quality(s) ?? -1) >= minQuality && (s.research?.overall ?? -1) >= minResearch && (colValue(s, "piotroski") ?? -1) >= minPiotroski);
 
-  // A column's value: from the metrics the screen was asked for, else the
-  // row's own field (cmp and the table's fixed fields)
-  const colValue = (s, id) => s.values?.[id] ?? s[id] ?? null;
+  const valueFor = (s, key) => {
+    if (key === "quality") return quality(s);
+    if (key === "overall") return s.research?.overall ?? null;
+    if (key === "ncavPct") return s.ncavCr > 0 && s.marketCapCr != null ? s.marketCapCr / s.ncavCr : Infinity;
+    if (key === "name") return s.name?.toLowerCase();
+    return colValue(s, key);
+  };
+  // Compared as shown: two companies that both read Quality 93 are level,
+  // and the next score decides between them (below)
+  const shownDecimals = key => (key === "quality" || key === "overall" ? 0 : columns.find(d => d.id === key)?.decimals ?? null);
   const sortVal = s => {
-    if (sortBy === "quality") return quality(s);
-    if (sortBy === "overall") return s.research?.overall ?? null;
-    if (sortBy === "ncavPct") return s.ncavCr > 0 && s.marketCapCr != null ? s.marketCapCr / s.ncavCr : Infinity;
-    if (sortBy === "name") return s.name?.toLowerCase();
-    return colValue(s, sortBy);
+    const v = valueFor(s, sortBy), d = shownDecimals(sortBy);
+    return typeof v === "number" && Number.isFinite(v) && d != null ? Number(v.toFixed(d)) : v;
+  };
+  // Level on the sort: Quality first, then Research, then Piotroski — so
+  // "Quality, highest first" lists the 93s by their research score, and a
+  // Piotroski sort lists each 9/9, 8/9 … group by quality
+  const tieKeys = sortBy === "quality" ? ["overall", "piotroski"] : sortBy === "overall" ? ["quality", "piotroski"] : ["quality", "overall"];
+  const breakTie = (a, b) => {
+    for (const key of [...tieKeys, "roce"]) {
+      const av = valueFor(a, key), bv = valueFor(b, key);
+      if (av == null && bv == null) continue;
+      if (av == null || bv == null) return av == null ? 1 : -1;
+      if (av !== bv) return bv - av;
+    }
+    return 0;
   };
 
   // Blanks go last whichever way a column sorts: as -Infinity they led every
@@ -260,7 +287,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
     const aBlank = av == null || (typeof av === "number" && !Number.isFinite(av) && sortBy !== "ncavPct");
     const bBlank = bv == null || (typeof bv === "number" && !Number.isFinite(bv) && sortBy !== "ncavPct");
     if (aBlank || bBlank) return aBlank === bBlank ? 0 : aBlank ? 1 : -1;
-    if (av === bv) return sortBy === "quality" || sortBy === "overall" ? (b.roce ?? -Infinity) - (a.roce ?? -Infinity) : 0;
+    if (av === bv) return breakTie(a, b);
     return sortDir === "asc" ? (av > bv ? 1 : -1) : (av < bv ? 1 : -1);
   });
 
@@ -320,10 +347,10 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
             ) : (
               <span>
                 <span style={{ color: "var(--t2)" }}>Found </span>
-                <strong style={{ color: "var(--t1)" }}>{q ? filtered.length.toLocaleString() : totalMatches?.toLocaleString()}</strong>
-                <span style={{ color: "var(--t2)" }}> {noun}</span>
-                {(q || minQuality > 0) && filtered.length !== (matches?.length ?? 0) && <span style={{ color: "var(--t3)" }}> (filtered from {matches?.length})</span>}
-                {!q && visible.length < sorted.length && <span style={{ color: "var(--t2)" }}> · showing <strong style={{ color: "var(--t1)" }}>{visible.length}</strong></span>}
+                <strong style={{ color: "var(--t1)" }}>{q || scoreFiltered ? filtered.length.toLocaleString() : totalMatches?.toLocaleString()}</strong>
+                <span style={{ color: "var(--t2)" }}> {(q || scoreFiltered ? filtered.length : totalMatches) === 1 ? noun.replace(/s$/, "") : noun}</span>
+                {(q || scoreFiltered) && filtered.length !== (matches?.length ?? 0) && <span style={{ color: "var(--t3)" }}> (filtered from {matches?.length})</span>}
+                {visible.length < sorted.length && <span style={{ color: "var(--t2)" }}> · showing <strong style={{ color: "var(--t1)" }}>{visible.length}</strong></span>}
                 {executionTime != null && <span className="hide-phone" style={{ color: "var(--t3)", marginLeft: 8, fontSize: 11, ...MONO }}>{(executionTime / 1000).toFixed(1)}s</span>}
                 {snapshot?.pricesDate && (
                   <span style={{ color: "var(--t3)", marginLeft: 8, fontSize: 11 }}>
@@ -376,10 +403,11 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
         </div>
       )}
 
-      {/* ── Search bar + quality filter ── */}
+      {/* ── Name box + the three scores: pick Quality 70+, then Research or
+             Piotroski with it ── */}
       {!loading && (matches?.length ?? 0) > 0 && (
-        <div style={{ display: "flex", gap: 8, marginBottom: 12, alignItems: "center" }}>
-          <div style={{ flex: 1, position: "relative" }}>
+        <div className="score-row" style={{ marginBottom: 12 }}>
+          <div style={{ position: "relative", minWidth: 0 }}>
             <Search size={15} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--t3)", pointerEvents: "none" }} />
             <input
               type="text"
@@ -390,22 +418,24 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
               style={{ paddingLeft: 36, background: "var(--s2)" }}
             />
           </div>
-          <select
-            value={minQuality}
-            onChange={e => setMinQuality(Number(e.target.value))}
-            aria-label="Minimum quality score"
-            style={{
-              height: 40, padding: "0 12px", borderRadius: 8,
-              border: "1px solid var(--bdr2)", fontSize: 12.5,
-              background: minQuality > 0 ? "var(--green-dim)" : "var(--s2)",
-              color: minQuality > 0 ? "var(--green)" : "var(--t1)",
-              cursor: "pointer", outline: "none", fontFamily: "inherit",
-              fontWeight: minQuality > 0 ? 650 : 500,
-            }}
-          >
-            <option value="0">Any quality</option>
-            {MIN_QUALITY.map(n => <option key={n} value={n}>Quality {n}+</option>)}
-          </select>
+          {[
+            ["Minimum quality score", minQuality, setMinQuality, "Any quality", MIN_QUALITY.map(n => [n, `Quality ${n}+`])],
+            ["Minimum research score", minResearch, setMinResearch, "Any research", MIN_RESEARCH.map(n => [n, `Research ${n}+`])],
+            ["Minimum Piotroski score", minPiotroski, setMinPiotroski, "Any Piotroski", MIN_PIOTROSKI.map(n => [n, n === 9 ? "Piotroski 9" : `Piotroski ${n}+`])],
+          ].map(([label, value, set, any, options]) => (
+            <select key={label} value={value} onChange={e => set(Number(e.target.value))} aria-label={label}
+              style={{
+                height: 40, padding: "0 10px", borderRadius: 8, minWidth: 0,
+                border: `1px solid ${value > 0 ? "var(--green-bdr)" : "var(--bdr2)"}`, fontSize: 12.5,
+                background: value > 0 ? "var(--green-dim)" : "var(--s2)",
+                color: value > 0 ? "var(--green)" : "var(--t1)",
+                cursor: "pointer", outline: "none", fontFamily: "inherit",
+                fontWeight: value > 0 ? 650 : 500,
+              }}>
+              <option value="0">{any}</option>
+              {options.map(([n, text]) => <option key={n} value={n}>{text}</option>)}
+            </select>
+          ))}
         </div>
       )}
 
@@ -432,8 +462,13 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
       {/* The name box or quality filter can empty the list on their own */}
       {!loading && (matches?.length ?? 0) > 0 && sorted.length === 0 && (
         <div style={{ textAlign: "center", padding: "40px 16px", color: "var(--t2)", fontSize: 13, border: "1px dashed var(--bdr2)", borderRadius: 14 }}>
-          None of these {matches.length.toLocaleString("en-IN")} companies {q ? <>match "{search.trim()}"{minQuality > 0 ? ` with a quality score of ${minQuality}+` : ""}</> : `have a quality score of ${minQuality}+`}.
-          <button className="btn-ghost" onClick={() => { setSearch(""); setMinQuality(0); }} style={{ marginLeft: 10, height: 28, fontSize: 12 }}>Show all</button>
+          None of these {matches.length.toLocaleString("en-IN")} companies {[
+            q && `match "${search.trim()}"`,
+            minQuality > 0 && `have quality ${minQuality}+`,
+            minResearch > 0 && `have research ${minResearch}+`,
+            minPiotroski > 0 && `have Piotroski ${minPiotroski}${minPiotroski < 9 ? "+" : ""}`,
+          ].filter(Boolean).join(" and ")}.
+          <button className="btn-ghost" onClick={() => { setSearch(""); setMinQuality(0); setMinResearch(0); setMinPiotroski(0); }} style={{ marginLeft: 10, height: 28, fontSize: 12 }}>Show all</button>
         </div>
       )}
 

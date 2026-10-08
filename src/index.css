@@ -616,3 +616,10 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 @media (max-width: 640px) {
   .tap { min-height: 36px; }
 }
+
+/* Discover's name box and three score boxes: one row on a computer, two on
+   a phone (three boxes side by side are too narrow at 16px type) */
+.score-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; gap: 8px; align-items: center; }
+@media (max-width: 640px) {
+  .score-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
