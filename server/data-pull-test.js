@@ -4,7 +4,7 @@
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, readdirSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, readdirSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -61,7 +61,11 @@ published = false;
 assert.equal(await pullOnce(base), "none", "no pack published yet is not a failure");
 published = true;
 let warmed = 0;
+// Render's file system refuses to rename a folder that came with the build,
+// so the folder stays and its files are replaced
+const marketInode = statSync(join(dataDir, "market")).ino;
 assert.equal(await pullOnce(base, { onInstalled: () => warmed++ }), "installed", "a newer pack is installed");
+assert.equal(statSync(join(dataDir, "market")).ino, marketInode, "the market folder itself is never moved");
 assert.equal(warmed, 1, "the screen is worked out again after a pull");
 assert.equal(readdirSync(join(dataDir, "market")).length, 1200, "the pack's companies replace the old ones");
 assert.ok(!existsSync(join(dataDir, "market", "OLD.json")));

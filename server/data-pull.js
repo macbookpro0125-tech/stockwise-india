@@ -12,7 +12,7 @@
 // data/ replaced from the internet. DATA_PULL=off turns it off.
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { DATA_DIR } from "./paths.js";
 import { loadMarketSnapshot, clearSnapshotCache } from "./market-data.js";
@@ -22,8 +22,36 @@ const HOUR = 3600 * 1000;
 // A few hundred bytes a look; the pack itself only when it's newer
 const CHECK_EVERY = HOUR / 2;
 const MAX_PACK_BYTES = 60 * 1024 * 1024;
-// What a pack replaces — the same list `npm run pack:seed` packs
-const PACK_ENTRIES = ["market", "shareholding", "market-snapshot.json", "performance-snapshots.json"];
+// What a pack replaces — the same list `npm run pack:seed` packs. The
+// snapshot goes last: it's what tells the screen the data changed.
+const PACK_ENTRIES = ["market", "shareholding", "performance-snapshots.json", "market-snapshot.json"];
+
+// A file moved into place, copied if a move can't cross over
+function moveFile(from, to) {
+  try {
+    renameSync(from, to);
+  } catch (e) {
+    if (e.code !== "EXDEV") throw e;
+    copyFileSync(from, to);
+    unlinkSync(from);
+  }
+}
+
+// A folder's contents replaced file by file, the folder itself left where it
+// is: on Render the build's data/ sits in a lower layer of the container's
+// file system, which refuses to rename a folder from it ("EXDEV: cross-device
+// link not permitted", 9 Oct 2026). Each file's move is whole; files the
+// pack doesn't have are removed after.
+function replaceContents(from, to) {
+  mkdirSync(to, { recursive: true });
+  const keep = new Set(readdirSync(from));
+  for (const name of keep) {
+    const src = join(from, name), dest = join(to, name);
+    if (statSync(src).isDirectory()) replaceContents(src, dest);
+    else moveFile(src, dest);
+  }
+  for (const name of readdirSync(to)) if (!keep.has(name)) rmSync(join(to, name), { recursive: true, force: true });
+}
 
 export const pullStatus = { enabled: false, lastCheckAt: null, lastPulledAt: null, pulledBuiltAt: null, lastError: null };
 
@@ -35,9 +63,9 @@ export function pullBaseUrl(env = process.env) {
   return `https://github.com/${repo}/releases/download/data-latest`;
 }
 
-// Unpacks a pack beside the live data, checks it, then moves each part into
-// place; the old part is removed only once the new one is in. A pack that
-// doesn't look whole is thrown away and the data being served stays.
+// Unpacks a pack beside the live data, checks it, then moves it into place.
+// A pack that doesn't look whole is thrown away and the data being served
+// stays.
 export async function installPack(tgzPath, dataDir = DATA_DIR) {
   const incoming = join(dataDir, ".incoming");
   rmSync(incoming, { recursive: true, force: true });
@@ -51,11 +79,8 @@ export async function installPack(tgzPath, dataDir = DATA_DIR) {
     for (const name of PACK_ENTRIES) {
       const from = join(incoming, name);
       if (!existsSync(from)) continue;
-      const to = join(dataDir, name), old = join(dataDir, `.old-${name}`);
-      rmSync(old, { recursive: true, force: true });
-      if (existsSync(to)) renameSync(to, old);
-      renameSync(from, to);
-      rmSync(old, { recursive: true, force: true });
+      if (statSync(from).isDirectory()) replaceContents(from, join(dataDir, name));
+      else moveFile(from, join(dataDir, name));
     }
     return { builtAt: snap.builtAt, pricesDate: snap.pricesDate, companies };
   } finally {
