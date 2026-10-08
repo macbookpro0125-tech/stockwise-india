@@ -1,0 +1,87 @@
+name: Evening data refresh
+
+# Each weekday evening, after NSE publishes the day's prices: run the data
+# jobs (scripts/refresh-data.mjs) on top of the last published data, then
+# publish the result as the `data-latest` release — two files replaced in
+# place, so the repository doesn't grow by a pack a day. The free copy on
+# Render pulls it in within half an hour (server/data-pull.js).
+#
+# The release has to be downloadable without signing in, so this relies on
+# the repository being public; a private one needs the server to send a token.
+on:
+  schedule:
+    - cron: "30 14 * * 1-5" # 20:00 IST, Monday to Friday
+  workflow_dispatch:
+  # A change to how the refresh runs is tried straight away
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/data-refresh.yml
+      - scripts/refresh-data.mjs
+
+permissions:
+  contents: write # to update the data-latest release
+
+concurrency:
+  group: data-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci --omit=dev
+
+      # A year of NSE's daily price files (52-week range, returns, technicals),
+      # kept between runs rather than downloaded again (~100 MB)
+      - uses: actions/cache/restore@v4
+        with:
+          path: data/prices
+          key: prices-${{ github.run_id }}
+          restore-keys: prices-
+
+      - name: Start from the last published data
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p data /tmp/pack
+          if gh release download data-latest --pattern market-data.tar.gz --dir /tmp/pack; then
+            tar -xzf /tmp/pack/market-data.tar.gz -C data
+            echo "Started from the data-latest release"
+          else
+            tar -xzf seed/market-data.tar.gz -C data
+            echo "No release yet: started from the repository's seed"
+          fi
+          # When results were last checked, so the next check starts there
+          gh release download data-latest --pattern jobs-state.json --dir data || true
+
+      - name: Refresh from NSE
+        run: node --no-warnings scripts/refresh-data.mjs
+
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: data/prices
+          key: prices-${{ github.run_id }}
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tar -czf market-data.tar.gz -C data market market-snapshot.json performance-snapshots.json shareholding
+          node -e 'const fs = require("fs"); const s = JSON.parse(fs.readFileSync("data/market-snapshot.json", "utf8")); console.log(JSON.stringify({ builtAt: s.builtAt, pricesDate: s.pricesDate, companies: fs.readdirSync("data/market").length, packedAt: new Date().toISOString() }))' > manifest.json
+          cat manifest.json
+          cp data/jobs-state.json jobs-state.json 2>/dev/null || echo '{}' > jobs-state.json
+          gh release view data-latest > /dev/null 2>&1 || gh release create data-latest --prerelease --title "Latest market data" --notes "Replaced every weekday evening by the Evening data refresh workflow. The live free copy pulls market-data.tar.gz from here (server/data-pull.js)."
+          # The pack before the manifest, so a server never sees a manifest
+          # newer than the pack beside it
+          gh release upload data-latest market-data.tar.gz jobs-state.json --clobber
+          gh release upload data-latest manifest.json --clobber

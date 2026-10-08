@@ -15,6 +15,7 @@ import { firebaseConfig, verifyFirebaseIdToken } from "./firebase-auth.js";
 import { emailConfigured, appUrl, sendEmail, resetEmail } from "./email.js";
 import { listAlerts, createAlert, updateAlert, deleteAlert } from "./user-alerts.js";
 import { screen, screenerMeta, getStock, saveStock, rowsFor, isValidSymbol, countFetched, allMetrics, screenRowCount } from "./screen.js";
+import { startDataPull, pullStatus } from "./data-pull.js";
 import { criteriaToFilters, METRICS, CATEGORY_METRICS } from "./metric-catalog.js";
 import { listWatchlist, addToWatchlist, setWatchlistNote, removeFromWatchlist } from "./user-watchlist.js";
 import { listHoldings, addHolding, updateHolding, removeHolding } from "./user-portfolio.js";
@@ -807,6 +808,8 @@ export function createApp() {
           // (~2,250 of ~2,600) are in the screener
           companiesInScreener: screenRowCount(),
           companiesOnFile: countFetched(),
+          // The free copy's evening data from GitHub Actions (data-pull.js)
+          ...(pullStatus.enabled && { dataPull: pullStatus }),
           pricesDate: snap?.pricesDate ?? null,
           snapshotBuiltAt: snap?.builtAt ?? null,
           snapshotAgeHours: snapshotAgeHours == null ? null : Math.round(snapshotAgeHours * 10) / 10,
@@ -844,5 +847,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     startTelegramPolling();
     startAlertChecks();
     startBackups();
+  } else {
+    // The free copy: pull each evening's data instead (only on Render); the
+    // screen is worked out at once so the next visitor doesn't wait for it
+    startDataPull({ onInstalled: () => allMetrics() });
   }
 }
