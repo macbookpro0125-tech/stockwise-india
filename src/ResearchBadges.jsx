@@ -37,6 +37,15 @@ export function researchTitle(r) {
   ].join("\n");
 }
 
+// A short explanation for missing overall scores, suitable for touch layouts
+// where a browser title tooltip cannot be opened reliably.
+export function researchMissingText(r) {
+  if (r?.overallText) return r.overallText;
+  if (!r || r.quality == null || r.status === "not-rated") return "No research score: more filing history is needed.";
+  if (r.status === "quality-only") return "Quality only: valuation data is not sufficient for an overall score.";
+  return "An overall research score is unavailable for this company.";
+}
+
 export function QualityBadge({ research, size = 11.5 }) {
   const v = research?.quality ?? null;
   const t = qualityTone(v);

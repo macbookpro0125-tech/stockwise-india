@@ -4,9 +4,8 @@ import { StarIcon, BellIcon, actionButtonStyle } from "./icons.jsx";
 import { useWatchlist, toggleWatch } from "./watchlist.js";
 import CreateAlertModal from "./CreateAlertModal.jsx";
 import CompareView from "./CompareView.jsx";
-import { exportDiscoverExcel } from "./exportExcel.js";
 import { formatValue, valueColor } from "./screener/meta.js";
-import { QualityBadge, OverallScore, qualityTone, overallTone, researchTitle } from "./ResearchBadges.jsx";
+import { QualityBadge, OverallScore, qualityTone, overallTone, researchTitle, researchMissingText } from "./ResearchBadges.jsx";
 
 // A metric column's header, with its unit as the table always showed it
 // ("ROCE %", "CMP ₹")
@@ -20,6 +19,7 @@ const columnLabel = def => (def.unit === "%" ? `${def.short} %` : def.unit === "
 // Every row arrives already scored, so there's no lazy enrichment.
 
 const PAGE_SIZE = 50;
+const PHONE_PAGE_SIZE = 20;
 const MAX_COMPARE = 4;
 // Wide enough for the compare box and a four-digit rank; the name column is
 // pinned right after it.
@@ -202,8 +202,9 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
   const [minQuality, setMinQuality] = useState(0);
   const [minResearch, setMinResearch] = useState(0);
   const [minPiotroski, setMinPiotroski] = useState(0);
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [matches]);
+  const pageSize = isMobile ? PHONE_PAGE_SIZE : PAGE_SIZE;
+  const [visibleCount, setVisibleCount] = useState(() => typeof window !== "undefined" && window.innerWidth < 640 ? PHONE_PAGE_SIZE : PAGE_SIZE);
+  useEffect(() => { setVisibleCount(pageSize); }, [matches, pageSize]);
 
   // Kept as the rows themselves, so picks survive switching to another
   // strategy — compare a stock from one screen with one from another.
@@ -321,6 +322,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
     setExportError(null);
     try {
       const sortLabel = `${sortOptions.find(([id]) => id === sortBy)?.[1] ?? "Quality score"}, ${dirLabel.toLowerCase()}`;
+      const { exportDiscoverExcel } = await import("./exportExcel.js");
       await exportDiscoverExcel(sorted, { pricesDate: snapshot?.pricesDate, extraColumns, screen: queryUsed || "", sortLabel });
     } catch {
       setExportError("Excel export failed — try again");
@@ -406,6 +408,11 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
 
       {/* ── Name box + the three scores: pick Quality 70+, then Research or
              Piotroski with it ── */}
+      {!loading && sorted.length > 0 && (
+        <div role="note" style={{ fontSize: 11, color: "var(--t3)", margin: "-2px 0 12px", lineHeight: 1.5 }}>
+          Experimental model: research scores are rule-based summaries, not forecasts of future returns.
+        </div>
+      )}
       {!loading && (matches?.length ?? 0) > 0 && (
         <div className="score-row" style={{ marginBottom: 12 }}>
           <div style={{ position: "relative", minWidth: 0 }}>
@@ -480,10 +487,11 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
           {visible.map((stock, i) => {
             const day = stock.ret1d;
             const quality = stock.research?.quality, overall = stock.research?.overall;
+            const missingResearch = overall == null ? researchMissingText(stock.research) : null;
             // Coloured as the pills and stance words on a computer
             const cells = [
               ["Quality", <span key="q" title={researchTitle(stock.research)} style={{ color: qualityTone(quality).color }}>{quality == null ? "—" : Math.round(quality)}</span>],
-              ["Research", <span key="r" title={researchTitle(stock.research)} style={{ color: overallTone(overall).color }}>{overall == null ? "—" : Math.round(overall)}</span>],
+              ["Research", <span key="r" title={researchTitle(stock.research)} aria-label={missingResearch ?? `Research score ${Math.round(overall)} — ${stock.research?.stance ?? "rated"}`} style={{ color: overallTone(overall).color }}>{overall == null ? (stock.research?.status === "review-required" ? "Review required" : stock.research?.status === "quality-only" ? "Quality only" : "Not rated") : Math.round(overall)}</span>],
               ...columns.slice(0, 3).map(def => {
                 const v = colValue(stock, def.id);
                 // Coloured as the table's cells are (strong ROCE, Piotroski 7+ green)
@@ -515,10 +523,13 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                   {cells.map(([label, value]) => (
                     <div key={label} style={{ minWidth: 0 }}>
                       <div style={{ fontSize: 10.5, color: "var(--t3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 2 }}>{label}</div>
-                      <div style={{ fontSize: 12.5, fontWeight: 650, whiteSpace: "nowrap", ...MONO }}>{value}</div>
+                      <div style={{ fontSize: label === "Research" && overall == null ? 10.5 : 12.5, fontWeight: 650, whiteSpace: label === "Research" && overall == null ? "normal" : "nowrap", lineHeight: 1.25, ...MONO }}>{value}</div>
                     </div>
                   ))}
                 </div>
+                {missingResearch && (
+                  <div role="note" style={{ marginTop: 7, fontSize: 10.5, color: "var(--t3)", lineHeight: 1.4 }}>{missingResearch}</div>
+                )}
               </div>
             );
           })}
@@ -637,8 +648,8 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
       {/* ── Show more ── */}
       {!loading && sorted.length > visibleCount && (
         <div style={{ textAlign: "center", marginTop: 16 }}>
-          <button onClick={() => setVisibleCount(c => c + PAGE_SIZE)} className="btn-ghost" style={{ fontSize: 13, padding: "10px 24px" }}>
-            Show {Math.min(PAGE_SIZE, sorted.length - visibleCount)} more · {sorted.length - visibleCount} remaining
+          <button onClick={() => setVisibleCount(c => c + pageSize)} className="btn-ghost" style={{ fontSize: 13, padding: "10px 24px" }}>
+            Show {Math.min(pageSize, sorted.length - visibleCount)} more · {sorted.length - visibleCount} remaining
           </button>
         </div>
       )}

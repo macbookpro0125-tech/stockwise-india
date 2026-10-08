@@ -99,7 +99,7 @@ export default function PhasePositionPlanner({ levels }) {
         </>
       )}
 
-      <p style={{ fontSize: 10.5, color: "var(--t3)", lineHeight: 1.5, margin: "10px 0 0" }}>Hypothetical arithmetic from the values above, not a recommendation. Assumes all three levels fill and the displayed stop is executed exactly; gaps, slippage, fees and taxes can change the result.</p>
+      <p style={{ fontSize: 10.5, color: "var(--t3)", lineHeight: 1.5, margin: "10px 0 0" }}>Hypothetical arithmetic from the values above, not a recommendation. Assumes all three levels fill and the displayed stop is executed exactly; gaps, slippage, fees and taxes can change the result. It does not account for your existing holdings or portfolio exposure.</p>
     </section>
   );
 }
