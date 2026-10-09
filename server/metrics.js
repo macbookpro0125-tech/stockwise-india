@@ -37,6 +37,31 @@ function median(values) {
 
 // options.research = false skips the research score (screen.js computes it in
 // a second pass, once the whole market's sector P/Es are known)
+// A bank's health ratios from its standalone filings (fetch-nse.js
+// bankFigures): bad loans and capital at the latest quarter's end; return on
+// assets, cost-to-income, credit cost and growth over the latest year.
+// Provision cover is from the filed amounts (before technical write-offs).
+export function bankHealth(b) {
+  if (!b?.v || b.missing) return null;
+  const r2 = v => (v == null || !Number.isFinite(v) ? null : Math.round(v * 100) / 100);
+  const nii = b.interestEarned != null && b.interestExpended != null ? b.interestEarned - b.interestExpended : null;
+  const income = nii != null && b.otherIncome != null ? nii + b.otherIncome : null;
+  const avgLoans = b.advances > 0 && b.advancesPrev > 0 ? (b.advances + b.advancesPrev) / 2 : null;
+  return {
+    asOf: b.asOf ?? null, asOfFiled: b.asOfFiled ?? null, asOfUrl: b.asOfUrl ?? null,
+    fyEnd: b.fyEnd ?? null, fyFiled: b.fyFiled ?? null, fyUrl: b.fyUrl ?? null,
+    gnpaPct: b.gnpaPct ?? null, nnpaPct: b.nnpaPct ?? null,
+    pcrPct: b.gnpa > 0 && b.nnpa != null ? r2((1 - b.nnpa / b.gnpa) * 100) : null,
+    cet1Pct: b.cet1Pct ?? null, tier1Pct: b.cet1Pct != null ? r2(b.cet1Pct + (b.at1Pct ?? 0)) : null,
+    roaPct: b.roaPct ?? null,
+    costToIncomePct: income > 0 && b.opex > 0 ? r2((b.opex / income) * 100) : null,
+    creditCostPct: avgLoans && b.provisions != null ? r2((b.provisions / avgLoans) * 100) : null,
+    loanGrowthPct: b.advances > 0 && b.advancesPrev > 0 ? r2((b.advances / b.advancesPrev - 1) * 100) : null,
+    depositGrowthPct: b.deposits > 0 && b.depositsPrev > 0 ? r2((b.deposits / b.depositsPrev - 1) * 100) : null,
+    creditDepositPct: b.advances > 0 && b.deposits > 0 ? r2((b.advances / b.deposits) * 100) : null,
+  };
+}
+
 export function computeMetrics(stock, snap, overrides = {}, options = {}) {
   if (!stock || stock.error || !Array.isArray(stock.years)) return null;
   // A year filed in the wrong unit (lakhs as rupees…) is put back on the
@@ -406,6 +431,7 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     name: stock.name,
     template: stock.template,
     sector, peerSector, sectorByName: sector != null && peerSector == null, lender, utility, cyclical,
+    bank: stock.template === "BANKING" ? bankHealth(stock.bank) : null,
     industry: snap?.industries?.[sym] ?? null,
     // Auditor resignations in the last three years (market-data.js); null =
     // the snapshot doesn't know, [] = none filed
