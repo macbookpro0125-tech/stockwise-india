@@ -70,7 +70,12 @@ const itemOf = (r, gid, iid) => group(r, gid).items.find(i => i.id === iid);
 // ── Structure ──
 assert(GROUPS.reduce((a, g) => a + g.weight, 0) === 100, "group weights add up to 100 (25/20/15/15/10/15)");
 assert(GROUPS.map(g => g.weight).join("/") === "25/20/15/15/10/15", "group weights are the proposal's 25/20/15/15/10/15");
-for (const g of GROUPS) assert(near(g.items.reduce((a, i) => a + i.weight, 0), 1, 1e-9), `${g.label}: item weights add up to 100%`);
+for (const g of GROUPS) assert(near(g.items.filter(i => !i.bank).reduce((a, i) => a + i.weight, 0), 1, 1e-9), `${g.label}: item weights add up to 100%`);
+// A bank's: its business items take the 20% reinvestment holds for others;
+// its balance-sheet items add up to 100% on their own
+const bankWeight = (gid, drop = []) => GROUPS.find(g => g.id === gid).items.filter(i => i.bank || (!drop.includes(i.id) && gid !== "balance")).reduce((a, i) => a + i.weight, 0);
+assert(near(bankWeight("business", ["reinvestment"]), 1, 1e-9), "Business quality for a bank: item weights add up to 100%");
+assert(near(bankWeight("balance"), 1, 1e-9), "Balance sheet for a bank: its own items add up to 100%");
 
 // ── Bands ──
 const roce = [[0, 0], [7, 25], [13, 50], [20, 75], [33, 100]];
@@ -187,7 +192,30 @@ assert(itemOf(noPledge.research, "governance", "pledge").score == null, "unknown
 const bank = metricsOf(company({ template: "BANKING", tweak: y => ({ ...y, cash: null, bankBalances: null, currentInvestments: null, debt: 9000 * CR }) }), snapshot());
 assert(bank.lender && !group(bank.research, "balance").applicable, "a bank's balance-sheet group is not applicable");
 assert(bank.research.quality != null, "a bank is still scored on the groups that apply");
-assert(bank.research.quality <= 69 && bank.research.capped?.at === 69 && /bad loans/.test(bank.research.capped.reason), "a bank's quality is capped at 69, saying why (bad loans and capital adequacy aren't in the filings)");
+assert(bank.research.quality <= 69 && bank.research.capped?.at === 69 && /bad-loan/.test(bank.research.capped.reason), "a bank whose own figures aren't on file is capped at 69, saying why");
+
+// ── A bank with its own figures (fetch-nse.js bankFigures) is checked on them ──
+const BANK_FIGURES = {
+  v: 1, scope: "Standalone", asOf: "2026-06-30", fyEnd: "2026-03-31",
+  gnpaPct: 1.17, nnpaPct: 0.41, gnpa: 3584 * CR, nnpa: 1236 * CR, cet1Pct: 19.57, at1Pct: 0, roaPct: 1.94,
+  interestEarned: 307522 * CR, interestExpended: 178836 * CR, opex: 72660 * CR, otherIncome: 62533 * CR,
+  provisions: 23390 * CR, advances: 2937166 * CR, deposits: 3105250 * CR, advancesPrev: 2619609 * CR, depositsPrev: 2714715 * CR,
+};
+const bankStock = extra => ({ ...company({ template: "BANKING", tweak: y => ({ ...y, cash: null, bankBalances: null, currentInvestments: null, debt: 9000 * CR }) }), bank: { ...BANK_FIGURES, ...extra } });
+const goodBank = metricsOf(bankStock(), snapshot());
+assert(near(goodBank.bank.pcrPct, 65.51, 0.01) && near(goodBank.bank.costToIncomePct, 38, 0.01) && near(goodBank.bank.creditCostPct, 0.84, 0.01) && near(goodBank.bank.loanGrowthPct, 12.12, 0.01), "bank ratios: provision cover, cost-to-income, credit cost and loan growth from the filed amounts");
+const goodBalance = group(goodBank.research, "balance");
+assert(goodBalance.applicable && goodBalance.score != null && goodBalance.checked === 5, "a bank's balance sheet is scored on bad loans, cover, capital and credit cost");
+assert(!goodBalance.items.find(i => i.id === "netDebt").score && goodBalance.items.find(i => i.id === "netDebt").na, "industrial debt tests stay not applicable for a bank");
+assert(goodBank.research.capped == null && goodBank.research.quality > 69, "with its own tests read, a sound bank isn't capped at 69");
+assert(itemOf(goodBank.research, "business", "roa").score === 98.2 && itemOf(goodBank.research, "business", "costToIncome").score != null, "return on assets and cost-to-income count in business quality");
+const weakBank = metricsOf(bankStock({ gnpaPct: 7.5, nnpaPct: 3.2, nnpa: 1800 * CR, cet1Pct: 9.2, roaPct: 0.3, provisions: 70000 * CR }), snapshot());
+assert(group(weakBank.research, "balance").score < 35 && weakBank.research.quality < goodBank.research.quality - 10, "a bank with bad loans of 7.5% and thin capital scores low (the balance sheet is 15% of quality)");
+const partBank = metricsOf(bankStock({ cet1Pct: null }), snapshot());
+assert(itemOf(partBank.research, "balance", "cet1").score == null && /CET1/.test(itemOf(partBank.research, "balance", "cet1").missing), "a missing CET1 is missing, never a pass");
+const nbfc = metricsOf(company({ template: "NBFC", tweak: y => ({ ...y, debt: 9000 * CR }) }), snapshot());
+assert(!nbfc.lender || (nbfc.research.capped?.at === 69 && /NBFC/.test(nbfc.research.capped.reason) && !group(nbfc.research, "balance").applicable), "an NBFC lender stays capped — its filings carry no bad-loan or capital ratios");
+for (const g of GROUPS) for (const it of g.items.filter(i => i.bank)) assert(it.compute(metricsOf(company(), snapshot())).na, `${it.label}: not applicable to an ordinary company`);
 assert(r.capped === null, "a fully checked company isn't capped");
 const noShareholding = metricsOf(company({ holding: { pledgedPct: null, promoterHistory: [] }, tweak: y => ({ ...y, auditOpinion: null }) }), snapshot());
 assert(group(noShareholding.research, "governance").score == null, "no pledge, promoter history or audit opinion: governance has too little to score");

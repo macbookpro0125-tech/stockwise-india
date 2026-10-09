@@ -7,7 +7,7 @@
 // category metric, { id, values: [...] }. A company whose value is unknown is
 // left out once a filter on that metric applies, and the screen says how many.
 
-export const CATEGORIES = ["Research score", "Valuation", "Profitability", "Growth", "Quarterly results", "Price & returns", "Volume & technicals", "Ownership", "Financial health", "Cash flow", "Income statement", "Balance sheet", "Size"];
+export const CATEGORIES = ["Research score", "Valuation", "Profitability", "Growth", "Quarterly results", "Price & returns", "Volume & technicals", "Ownership", "Financial health", "Banks", "Cash flow", "Income statement", "Balance sheet", "Size"];
 
 const NO_LENDERS = " Not shown for banks and other lenders.";
 // The research score (research.js) and its groups
@@ -155,6 +155,19 @@ export const METRICS = [
   { id: "currentLiabilitiesCr", label: "Current liabilities", short: "Curr. liab.", category: "Balance sheet", unit: "₹ Cr", decimals: 0 },
   { id: "shareCapitalCr", label: "Share capital", short: "Share cap.", category: "Balance sheet", unit: "₹ Cr", decimals: 0 },
   { id: "bookValuePerShare", label: "Book value per share", short: "BVPS", category: "Balance sheet", unit: "₹", decimals: 2, signed: true },
+
+  // ── Banks (their own standalone filings; blank for every other company) ──
+  ...[
+    ["gnpaPct", "Gross NPA", "Gross NPA", "Gross bad loans as a share of all loans, at the latest quarter's end. Under 2% is healthy for an Indian bank."],
+    ["nnpaPct", "Net NPA", "Net NPA", "Bad loans left after provisions, as a share of loans, at the latest quarter's end."],
+    ["pcrPct", "Provision cover", "PCR", "How much of the bad loans is already provided for (before technical write-offs)."],
+    ["cet1Pct", "CET1 capital ratio", "CET1", "Core equity capital as a share of risk-weighted assets. 8% is the floor with buffer."],
+    ["roaPct", "Return on assets", "ROA", "The latest year's profit on the bank's assets. Over 1% is good for a bank."],
+    ["costToIncomePct", "Cost-to-income", "Cost/income", "Operating costs as a share of net interest and other income, the latest year. Lower is more efficient."],
+    ["creditCostPct", "Credit cost", "Credit cost", "The latest year's provisions as a share of the average loan book."],
+    ["loanGrowthPct", "Loan growth, 1 year", "Loan growth", "Advances at the latest year-end against the year before.", true],
+    ["depositGrowthPct", "Deposit growth, 1 year", "Deposit growth", "Deposits at the latest year-end against the year before.", true],
+  ].map(([id, label, short, about, signed]) => ({ id, label, short, category: "Banks", unit: "%", decimals: 2, ...(signed && { signed: true }), about: `${about} Banks only.`, get: m => m.bank?.[id] ?? null })),
 
   // ── Size ──
   { id: "marketCapCr", label: "Market cap", short: "Mkt cap", category: "Size", unit: "₹ Cr", decimals: 0 },

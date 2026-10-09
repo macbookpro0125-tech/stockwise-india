@@ -68,6 +68,9 @@ export const SCHEMA = 8; // 3: capex, current liabilities, cost of goods, long-t
 // Eight year-ends: NSE's XBRL filings reach back to FY2019 (FY19–FY24 on the
 // old endpoint, FY25 on in integrated filings); 5-year growth needs six
 const YEARS = 8;
+// Bumped when the bank figures (bankFigures) change shape: only banks are
+// re-read for it, not the whole market (fetch-market.js needsSummary)
+export const BANK_VERSION = 1;
 // Three years of quarters: this quarter against the same one a year ago, two
 // years running, and trailing-twelve-month figures
 const QUARTERS = 12;
@@ -466,6 +469,70 @@ async function mapLimit(items, limit, fn) {
   return out;
 }
 
+// A bank's own health figures. SEBI's bank format carries them, but only
+// the standalone filing fills them in (the consolidated one files zeros):
+// from the latest quarter, gross and net bad loans and the CET1 capital
+// ratio as at its end; from the latest year-end, the year's return on
+// assets, interest, operating costs and provisions, with loans (advances)
+// and deposits at the year's end — the year before gives growth and the
+// average loan book. HDFC Bank, 30 Jun 2026: gross NPA 1.17%, net 0.41%,
+// CET1 19.57%; FY26 ROA 1.94%. A figure the filing leaves out or files as 0
+// is null — unknown, never a pass.
+export const BANK_TAGS = {
+  gnpaPct: ["PercentageOfGrossNpa"], nnpaPct: ["PercentageOfNpa"],
+  gnpa: ["GrossNonPerformingAssets"], nnpa: ["NonPerformingAssets"],
+  cet1: ["CET1Ratio"], at1: ["AdditionalTier1Ratio"], roa: ["ReturnOnAssets"],
+  interestEarned: ["InterestEarned"], interestExpended: ["InterestExpended"],
+  opex: ["OperatingExpenses"], otherIncome: ["OtherIncome"],
+  provisions: ["ProvisionsOtherThanTaxAndContingencies"],
+  advances: ["Advances"], deposits: ["Deposits"],
+};
+const positive = v => (v != null && v > 0 ? v : null);
+const pct2 = v => (v == null ? null : Math.round(v * 10000) / 100); // 0.0117 -> 1.17
+export async function bankFigures(integrated, getXml, fyLabel) {
+  const standalone = integrated.filter(r => r.consolidated !== "Consolidated").map(r => ({ ...integratedRow(r), url: r.xbrl }));
+  if (!standalone.length) return { v: BANK_VERSION, missing: "No standalone filing on NSE" };
+  const monthDay = fyLabel.split("-").slice(0, 2).join("-");
+  const latest = standalone[0];
+  const years = standalone.filter(r => r.label.startsWith(monthDay));
+  const [fy, prev] = years;
+  const out = { v: BANK_VERSION, scope: "Standalone" };
+  // Ratios at the latest quarter's end, as filed for its own period
+  {
+    const xml = await getXml(latest.url), ctx = parseContexts(xml), end = isoDay(latest.periodEnd);
+    const at = tags => {
+      const f = firstFacts(xml, ctx, tags).filter(x => x.end === end).sort((a, b) => a.days - b.days)[0];
+      return f ? f.value : null;
+    };
+    Object.assign(out, {
+      asOf: end, asOfFiled: latest.filed ? isoDay(latest.filed) : null, asOfUrl: latest.url,
+      gnpaPct: pct2(positive(at(BANK_TAGS.gnpaPct))),
+      // 0 net is real once there's a gross figure beside it
+      nnpaPct: at(BANK_TAGS.gnpaPct) > 0 ? pct2(at(BANK_TAGS.nnpaPct)) : null,
+      gnpa: positive(at(BANK_TAGS.gnpa)), nnpa: at(BANK_TAGS.gnpa) > 0 ? at(BANK_TAGS.nnpa) : null,
+      cet1Pct: pct2(positive(at(BANK_TAGS.cet1))),
+      at1Pct: at(BANK_TAGS.cet1) > 0 ? pct2(at(BANK_TAGS.at1) ?? 0) : null,
+    });
+  }
+  // The year's flows and year-end book
+  if (fy) {
+    const r = reader(await getXml(fy.url), fy);
+    Object.assign(out, {
+      fyEnd: isoDay(fy.periodEnd), fyFiled: fy.filed ? isoDay(fy.filed) : null, fyUrl: fy.url,
+      roaPct: r.year(BANK_TAGS.roa) ? pct2(r.year(BANK_TAGS.roa)) : null,
+      interestEarned: positive(r.year(BANK_TAGS.interestEarned)), interestExpended: positive(r.year(BANK_TAGS.interestExpended)),
+      opex: positive(r.year(BANK_TAGS.opex)), otherIncome: r.year(BANK_TAGS.otherIncome),
+      provisions: r.year(BANK_TAGS.provisions),
+      advances: positive(r.atEnd(BANK_TAGS.advances)), deposits: positive(r.atEnd(BANK_TAGS.deposits)),
+    });
+  }
+  if (prev) {
+    const r = reader(await getXml(prev.url), prev);
+    Object.assign(out, { prevFyEnd: isoDay(prev.periodEnd), advancesPrev: positive(r.atEnd(BANK_TAGS.advances)), depositsPrev: positive(r.atEnd(BANK_TAGS.deposits)) });
+  }
+  return out;
+}
+
 async function fetchFinancials(symbol) {
   const integrated = await integratedFilings(symbol);
   // One download per file: a year-end filing is also that quarter's filing
@@ -550,7 +617,17 @@ async function fetchFinancials(symbol) {
     }
   });
 
-  return { quarter, years: [latestYear, ...earlierYears], quarters };
+  // Banks: their own health figures (bad loans, capital, ROA …)
+  let bank = null;
+  if (latestYear.template === "BANKING") {
+    try {
+      bank = await bankFigures(integrated, getXml, latestRow.label);
+    } catch (e) {
+      bank = null; // read again on the next run (no version stamp)
+    }
+  }
+
+  return { quarter, years: [latestYear, ...earlierYears], quarters, bank };
 }
 
 // A distressed company can have negative net worth (accumulated losses
@@ -559,7 +636,7 @@ async function fetchFinancials(symbol) {
 // the same for Debt-to-Equity. Both are undefined when equity isn't positive,
 // so null them rather than let a loss-making company read as a compounder.
 export async function fetchStockSummary(symbol) {
-  const [{ quarter, years, quarters }, holding] = await Promise.all([
+  const [{ quarter, years, quarters, bank }, holding] = await Promise.all([
     fetchFinancials(symbol),
     fetchShareholding(symbol),
   ]);
@@ -586,6 +663,7 @@ export async function fetchStockSummary(symbol) {
     },
     years,
     quarters,
+    ...(bank && { bank }),
     holding,
     roe,
     debtToEquity,

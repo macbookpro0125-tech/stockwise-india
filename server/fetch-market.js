@@ -10,7 +10,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fetchEquityList } from "./equity-list.js";
-import { fetchStockSummary, SCHEMA } from "./fetch-nse.js";
+import { fetchStockSummary, SCHEMA, BANK_VERSION } from "./fetch-nse.js";
 import { fetchShareholding } from "./fetch-shareholding.js";
 import { saveStock } from "./screen.js";
 import { MARKET_DIR } from "./paths.js";
@@ -34,6 +34,9 @@ export function readStored(symbol) {
 export function needsSummary(symbol) {
   const stored = readStored(symbol);
   if (stored?.schema !== SCHEMA) return true;
+  // A bank read before its health figures existed (or whose read failed) —
+  // about forty companies, not a whole-market re-read
+  if (stored.template === "BANKING" && !stored.error && stored.bank?.v !== BANK_VERSION) return true;
   return !!(stored.error && stored.retryable && Date.now() >= Date.parse(stored.retryAfter || ""));
 }
 

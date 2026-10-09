@@ -216,7 +216,8 @@ export default function ResearchPanel({ research: r }) {
           <Expand key={g.id} id={`why-${g.id}`} title={g.label}
             right={!g.applicable ? "doesn't apply" : g.score == null ? `not enough data · ${g.checked} of ${g.total} checked` : `${n(g.score)}/100 · ${g.checked} of ${g.total} checked`}>
             {!g.applicable && <div style={{ fontSize: 12, color: "var(--t3)", padding: "6px 0" }}>{g.items[0]?.na}</div>}
-            {g.applicable && g.items.map(item => <ItemRow key={item.id} item={item} weight={item.weight} />)}
+            {/* A test for another kind of company (a bank's, on a manufacturer) isn't listed */}
+            {g.applicable && g.items.filter(item => !item.hide).map(item => <ItemRow key={item.id} item={item} weight={item.weight} />)}
           </Expand>
         ))}
         <Expand id="why-technical" title="Technical setup" right={r.technical.score == null ? "not enough price history" : `${n(r.technical.score)}/100 · ${r.technical.label}`}>

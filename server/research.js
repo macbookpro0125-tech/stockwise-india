@@ -21,7 +21,7 @@
 // Weights and bands are a stated starting point, not a fitted model — the
 // proposal says so too. Change them here and RESEARCH_VERSION together.
 
-export const RESEARCH_VERSION = "1.4";
+export const RESEARCH_VERSION = "1.5"; // 1.5: banks scored on their own bad-loan, capital and efficiency figures
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -62,7 +62,9 @@ const word = s => (s >= 75 ? "strong" : s >= 50 ? "fair" : s >= 25 ? "weak" : "p
 const missing = reason => ({ missing: reason });
 // Not in NSE's filings at all — needs an annual report or a forecast
 const notInFilings = reason => ({ missing: reason, structural: true });
-const notApplicable = reason => ({ na: reason });
+// hide: a test for another kind of company (a bank's on a manufacturer, a
+// manufacturer's on a bank) — listed nowhere, rather than "doesn't apply"
+const notApplicable = (reason, hide = false) => ({ na: reason, ...(hide && { hide: true }) });
 const checked = (score, value, display, reason) => ({ score: clamp(score, 0, 100), value, display, reason });
 
 const yearOf = h => Number(h.fyEnd.slice(0, 4));
@@ -96,6 +98,42 @@ const EPS_GROWTH_BANDS = [[-10, 0], [0, 20], [5, 40], [10, 60], [15, 80], [25, 1
 const D_E_BANDS = [[0, 100], [0.25, 85], [0.5, 65], [1, 40], [2, 10], [3, 0]];
 // A regulated utility carries project debt against set returns
 const D_E_BANDS_UTILITY = [[0, 100], [0.5, 85], [1, 70], [1.5, 55], [2.5, 20], [3.5, 0]];
+
+// ── Banks ──────────────────────────────────────────────────────────────────
+// A bank's own tests, from its standalone filings (metrics.js bankHealth):
+// bad loans, provision cover, capital and credit cost in the balance-sheet
+// group; return on assets and cost-to-income in business quality. They apply
+// to banks only — every other company, NBFCs included (their filings don't
+// carry these ratios), has them as not applicable, so no one else's score
+// moves.
+const NBFC_BALANCE = "Bad-loan and capital ratios — a lender's real balance-sheet tests — aren't in NBFC filings on NSE.";
+const INDUSTRIAL_ONLY = "An industrial test — a bank is judged on its bad loans and capital instead.";
+const BANK_NOT_READ = "The bank's bad-loan and capital figures aren't on file yet — they're read from its next filing check.";
+const asAt = iso => (iso ? ` at ${dayText(iso)}` : "");
+const inFy = iso => (iso ? ` in ${fy(iso)}` : "");
+// Weights: in business quality the bank items share the 20% "reinvestment"
+// holds for everyone else (it doesn't apply to a bank); in the balance sheet
+// they add up to 100% on their own, as the industrial items do
+function bankItem(id, weight, label, fn) {
+  return {
+    id, weight, label, bank: true,
+    compute(m) {
+      if (!m.lender) return notApplicable("A bank's test.", true);
+      if (!m.bank) return notApplicable(m.template === "BANKING" ? BANK_NOT_READ : NBFC_BALANCE);
+      return fn(m.bank, m);
+    },
+  };
+}
+// Gross and net bad loans, % of loans: Indian private banks run ~1–2% gross,
+// under 0.5% net; 5%+ gross was the 2018 stress level
+const GNPA_BANDS = [[1, 100], [2, 85], [3, 65], [5, 35], [8, 10], [12, 0]];
+const NNPA_BANDS = [[0.3, 100], [0.7, 85], [1.5, 60], [3, 25], [5, 0]];
+const PCR_BANDS = [[40, 10], [55, 40], [65, 60], [75, 85], [85, 100]];
+// CET1: 8% is the floor with the conservation buffer (5.5% + 2.5%)
+const CET1_BANDS = [[8, 0], [9, 25], [11, 55], [13, 80], [15, 100]];
+const CREDIT_COST_BANDS = [[0.3, 100], [0.7, 80], [1.2, 55], [2, 25], [3.5, 0]];
+const ROA_BANDS = [[0, 0], [0.5, 30], [1, 60], [1.5, 85], [2, 100]];
+const COST_INCOME_BANDS = [[35, 100], [45, 80], [55, 55], [65, 30], [80, 0]];
 
 // ── The six groups ─────────────────────────────────────────────────────────
 // Weights inside a group sum to 1; group weights sum to 100.
@@ -184,6 +222,16 @@ const BUSINESS = {
       id: "competitive", weight: 0.10, label: "Competitive position",
       compute: () => notInFilings("Market share and pricing power aren't in the filings — the annual report covers them."),
     },
+    bankItem("roa", 0.12, "Return on assets (banks)", b => {
+      if (!finite(b.roaPct)) return missing("Return on assets isn't in the year-end filing.");
+      const score = band(b.roaPct, ROA_BANDS);
+      return checked(score, b.roaPct, pct(b.roaPct, 2), `Earned ${pct(b.roaPct, 2)} on its assets${inFy(b.fyEnd)} — ${word(score)} for a bank.`);
+    }),
+    bankItem("costToIncome", 0.08, "Cost-to-income (banks)", b => {
+      if (!finite(b.costToIncomePct)) return missing("Operating costs or income aren't in the year-end filing.");
+      const score = band(b.costToIncomePct, COST_INCOME_BANDS);
+      return checked(score, b.costToIncomePct, pct(b.costToIncomePct, 0), `Operating costs took ${pct(b.costToIncomePct, 0)} of net interest and other income${inFy(b.fyEnd)} — ${word(score)}.`);
+    }),
   ],
 };
 
@@ -266,7 +314,7 @@ const BALANCE = {
     {
       id: "netDebt", weight: 0.25, label: "Net debt ÷ operating profit (EBITDA)",
       compute(m) {
-        if (m.lender) return notApplicable(LENDER_BALANCE);
+        if (m.lender) return m.bank ? notApplicable(INDUSTRIAL_ONLY, true) : notApplicable(LENDER_BALANCE);
         const h = m.history[0];
         if (!finite(h.liquidCr) || !finite(h.debtCr)) return missing("Cash or debt isn't in the latest balance sheet.");
         const netDebt = h.debtCr + (h.leasesCr ?? 0) - h.liquidCr;
@@ -280,7 +328,7 @@ const BALANCE = {
     {
       id: "interestCover", weight: 0.20, label: "Interest cover (EBIT ÷ interest)",
       compute(m) {
-        if (m.lender) return notApplicable(LENDER_BALANCE);
+        if (m.lender) return m.bank ? notApplicable(INDUSTRIAL_ONLY, true) : notApplicable(LENDER_BALANCE);
         const h = m.history[0];
         if (h.financeCostsCr === 0) return checked(100, null, "No interest", "No interest cost in the year.");
         if (!finite(m.interestCoverage)) return missing("Interest or profit isn't in the latest filing.");
@@ -291,7 +339,7 @@ const BALANCE = {
     {
       id: "currentRatio", weight: 0.15, label: "Liquidity (current ratio)",
       compute(m) {
-        if (m.lender) return notApplicable(LENDER_BALANCE);
+        if (m.lender) return m.bank ? notApplicable(INDUSTRIAL_ONLY, true) : notApplicable(LENDER_BALANCE);
         if (!finite(m.currentRatio)) return missing("Current assets or liabilities aren't in the latest filing.");
         const score = band(m.currentRatio, [[0.8, 0], [1, 40], [1.25, 60], [1.5, 80], [2, 100]]);
         return checked(score, m.currentRatio, times(m.currentRatio), `Current assets are ${times(m.currentRatio)} current liabilities — ${word(score)}.`);
@@ -300,7 +348,7 @@ const BALANCE = {
     {
       id: "workingCapital", weight: 0.20, label: "Working capital ÷ sales",
       compute(m) {
-        if (m.lender) return notApplicable(LENDER_BALANCE);
+        if (m.lender) return m.bank ? notApplicable(INDUSTRIAL_ONLY, true) : notApplicable(LENDER_BALANCE);
         const h = m.history[0];
         if (!finite(h.currentAssetsCr) || !finite(h.currentLiabilitiesCr) || !finite(h.liquidCr) || !(h.revenueCr > 0)) return missing("Current assets, liabilities or cash aren't in the latest filing.");
         // Operating working capital: cash and short-term borrowings are
@@ -316,7 +364,7 @@ const BALANCE = {
     {
       id: "debtToEquity", weight: 0.20, label: "Debt ÷ equity (with leases)",
       compute(m) {
-        if (m.lender) return notApplicable(LENDER_BALANCE);
+        if (m.lender) return m.bank ? notApplicable(INDUSTRIAL_ONLY, true) : notApplicable(LENDER_BALANCE);
         const h = m.history[0];
         if (finite(h.equityCr) && h.equityCr <= 0) return checked(0, null, "Negative equity", "Equity is negative — losses have used up the shareholders' capital.");
         if (!finite(m.debtToEquity)) return missing("Debt or equity isn't in the latest balance sheet.");
@@ -324,6 +372,31 @@ const BALANCE = {
         return checked(score, m.debtToEquity, times(m.debtToEquity), `Debt is ${times(m.debtToEquity)} equity${m.leasesCr > 0 ? `, ${crore(m.leasesCr)} of it lease liabilities` : ""}${m.utility ? " (a utility's higher bar)" : ""} — ${word(score)}.`);
       },
     },
+    bankItem("grossNpa", 0.25, "Gross bad loans (gross NPA)", b => {
+      if (!finite(b.gnpaPct)) return missing("Gross NPA isn't in the latest standalone filing.");
+      const score = band(b.gnpaPct, GNPA_BANDS);
+      return checked(score, b.gnpaPct, pct(b.gnpaPct, 2), `Gross bad loans are ${pct(b.gnpaPct, 2)} of loans${asAt(b.asOf)} — ${word(score)}.`);
+    }),
+    bankItem("netNpa", 0.20, "Net bad loans (net NPA)", b => {
+      if (!finite(b.nnpaPct)) return missing("Net NPA isn't in the latest standalone filing.");
+      const score = band(b.nnpaPct, NNPA_BANDS);
+      return checked(score, b.nnpaPct, pct(b.nnpaPct, 2), `After provisions, ${pct(b.nnpaPct, 2)} of loans are bad${asAt(b.asOf)} — ${word(score)}.`);
+    }),
+    bankItem("provisionCover", 0.15, "Provision cover on bad loans", b => {
+      if (!finite(b.pcrPct)) return missing("Gross and net NPA amounts aren't both in the latest filing.");
+      const score = band(b.pcrPct, PCR_BANDS);
+      return checked(score, b.pcrPct, pct(b.pcrPct, 0), `Provisions cover ${pct(b.pcrPct, 0)} of its bad loans${asAt(b.asOf)} (before technical write-offs) — ${word(score)}.`);
+    }),
+    bankItem("cet1", 0.25, "Capital (CET1 ratio)", b => {
+      if (!finite(b.cet1Pct)) return missing("The CET1 ratio isn't in the latest standalone filing.");
+      const score = band(b.cet1Pct, CET1_BANDS);
+      return checked(score, b.cet1Pct, pct(b.cet1Pct, 2), `Core equity capital is ${pct(b.cet1Pct, 2)} of risk-weighted assets${asAt(b.asOf)}, against an 8% floor with buffer — ${word(score)}.`);
+    }),
+    bankItem("creditCost", 0.15, "Credit cost (provisions ÷ average loans)", b => {
+      if (!finite(b.creditCostPct)) return missing("Provisions or two year-ends of loans aren't in the filings.");
+      const score = band(b.creditCostPct, CREDIT_COST_BANDS);
+      return checked(score, b.creditCostPct, pct(b.creditCostPct, 2), `Provisions were ${pct(b.creditCostPct, 2)} of the average loan book${inFy(b.fyEnd)} — ${word(score)}.`);
+    }),
   ],
 };
 
@@ -708,7 +781,13 @@ export function computeResearch(m, ctx = { peers: PEERS }) {
   // a bank scored on the easy groups from outranking a fully checked company
   // (Power Finance at 96, above Infosys, before this).
   const balance = groups.find(g => g.id === "balance"), governance = groups.find(g => g.id === "governance");
-  const capReason = m.lender ? "Lenders' key tests — bad loans and capital adequacy — aren't in NSE's filings, so quality is capped at 69."
+  // A bank with its bad-loan and capital tests read is checked like anyone
+  // else; NBFCs' filings don't carry those ratios, so they stay capped
+  const bankChecked = m.lender && !!m.bank && balance.score != null;
+  const capReason = m.lender && !bankChecked
+    ? (m.bank ? "The bank's bad-loan and capital figures couldn't be read from its filings, so quality is capped at 69."
+      : m.template === "BANKING" ? "The bank's bad-loan and capital figures aren't on file yet, so quality is capped at 69."
+        : "NBFC filings don't carry bad-loan and capital ratios, a lender's key tests, so quality is capped at 69.")
     : balance.score == null ? "The balance sheet couldn't be checked from the filings, so quality is capped at 69."
       : governance.score == null ? "Shareholding data is missing, so governance couldn't be checked and quality is capped at 69." : null;
   const cap = v => (v == null || !capReason ? v : Math.min(v, CAPPED_AT));
@@ -811,7 +890,9 @@ function summarise(r, m) {
   const q = r.qualityOnly ?? r.quality;
   const qWord = q >= 75 ? "strong" : q >= 60 ? "good" : q >= 45 ? "mixed" : "weak";
   // The cap's reason has its own warning on the page; here it's a word
-  const s = [`Quality is ${qWord} (${Math.round(q)}/100${r.capped ? ", capped" : ""})${strong.length ? `, best in ${strong.join(" and ")}` : ""}${weak && !strong.includes(weak) ? `; ${weak} is the weak spot` : ""}.`];
+  // The card's "Without valuation" figure — named so, since the headline
+  // Quality beside it includes valuation and can differ
+  const s = [`${r.qualityOnly != null ? "Quality before valuation" : "Quality"} is ${qWord} (${Math.round(q)}/100${r.capped ? ", capped" : ""})${strong.length ? `, best in ${strong.join(" and ")}` : ""}${weak && !strong.includes(weak) ? `; ${weak} is the weak spot` : ""}.`];
   if (r.valuation.score != null) s.push(`At the ${m.closeDate ? new Date(`${m.closeDate}T00:00:00Z`).toLocaleString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" }) : "last"} close, valuation looks ${r.valuation.label.toLowerCase()} (${Math.round(r.valuation.score)}/100).`);
   s.push(`${r.technical.score != null ? `The price trend is ${r.technical.label.toLowerCase()}; r` : "R"}isk is ${r.risk.label.toLowerCase()} (${Math.round(r.risk.score)}/100).`);
   const conf = r.confidence >= 80 ? "high" : r.confidence >= 60 ? "moderate" : "low";
