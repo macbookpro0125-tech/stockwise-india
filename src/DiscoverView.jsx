@@ -379,6 +379,7 @@ export default function DiscoverView({ onOpenStock }) {
               snapshot={results?.snapshot}
               netNet={(filters ?? []).some(f => f.id === "mcapToNcav" && isActiveFilter(f))}
               columns={shownColumns}
+              filteredIds={(filters ?? []).filter(f => !f.values && isActiveFilter(f)).map(f => f.id)}
               onEditColumns={meta ? () => setPicker("column") : null}
             />
           </main>

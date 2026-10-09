@@ -153,6 +153,111 @@ function RangeWidget({ lo, hi, price }) {
   );
 }
 
+// "About the company": what it does and the basics. The description, business
+// lines, incorporation, headcount and contacts come from its Business
+// Responsibility & Sustainability Report (filed by the top ~1,000 listed
+// companies), the listing date, ISIN and face value from NSE's equity list,
+// and the rest from this page's own filings data.
+// "2003-07-09" or NSE's "09-JUL-2003" → "9 Jul 2003", read as a calendar
+// date (parsing "09-JUL-2003" as local time put it a day early)
+const MON = { JAN: 0, FEB: 1, MAR: 2, APR: 3, MAY: 4, JUN: 5, JUL: 6, AUG: 7, SEP: 8, OCT: 9, NOV: 10, DEC: 11 };
+const longDate = v => {
+  if (!v) return null;
+  const dmy = String(v).trim().match(/^(\d{1,2})-([A-Za-z]{3})-(\d{4})$/);
+  const t = dmy && MON[dmy[2].toUpperCase()] != null ? Date.UTC(Number(dmy[3]), MON[dmy[2].toUpperCase()], Number(dmy[1]))
+    : /^\d{4}-\d{2}-\d{2}/.test(v) ? Date.parse(`${String(v).slice(0, 10)}T00:00:00Z`) : NaN;
+  return Number.isFinite(t) ? new Date(t).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : v;
+};
+const count = v => Number(v).toLocaleString("en-IN");
+function CompanyProfile({ symbol, m }) {
+  const [d, setD] = useState(null);
+  const [more, setMore] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    api.panel(symbol, "profile").then(x => { if (!cancelled) setD(x); }).catch(() => { if (!cancelled) setD({}); });
+    return () => { cancelled = true; };
+  }, [symbol]);
+  const p = d?.profile, l = d?.listing, latest = m?.history?.[0];
+  const description = p?.about || p?.mainActivity || null;
+  const facts = [
+    ["Sector", m?.sector],
+    ["NSE industry", m?.industry],
+    ["Listed on NSE", longDate(l?.listedOn)],
+    ["Incorporated", longDate(p?.incorporated)],
+    ["Employees", p?.employees != null ? `${count(p.employees)}${p.workers ? ` · ${count(p.workers)} workers` : ""}` : null],
+    ["Market cap", m?.marketCapCr != null ? `₹${Math.round(m.marketCapCr).toLocaleString("en-IN")} Cr` : null],
+    ["Shares", m?.shares > 0 ? `${(m.shares / 1e7).toLocaleString("en-IN", { maximumFractionDigits: 2 })} Cr` : null],
+    ["Face value", l?.faceValue != null ? `₹${l.faceValue}` : null],
+    ["Year ends", latest?.fyEnd ? new Date(`${latest.fyEnd}T00:00:00Z`).toLocaleDateString("en-IN", { month: "long", timeZone: "UTC" }) : null],
+    ["Accounts", latest?.scope ?? null],
+    ["Auditor", latest?.auditor ?? null],
+    ["ISIN", l?.isin],
+  ].filter(([, v]) => v);
+  const extra = [
+    ["Website", p?.website && <a href={p.website} target="_blank" rel="noreferrer" style={{ color: "var(--accent)" }}>{p.website.replace(/^https?:\/\//, "")} ↗</a>],
+    ["Registered office", p?.registeredOffice],
+    ["Corporate office", p?.corporateOffice !== p?.registeredOffice ? p?.corporateOffice : null],
+    ["Investor email", p?.email],
+    ["Phone", p?.phone],
+    ["CIN", p?.cin],
+  ].filter(([, v]) => v);
+  return (
+    <div style={{ border: "1px solid var(--bdr2)", borderRadius: 12, padding: "16px 18px", marginBottom: 14, background: "var(--s2)" }}>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
+        <h3 style={{ fontSize: 15, fontWeight: 650, margin: 0, color: "var(--t1)" }}>About the company</h3>
+        {p?.report?.fy && <span style={{ fontSize: 11.5, color: "var(--t3)" }}>From its {p.report.fy} business responsibility report{p.report.filed ? `, filed ${longDate(p.report.filed)}` : ""}</span>}
+      </div>
+      {d == null ? (
+        <div style={{ fontSize: 13, color: "var(--t3)" }}>Loading company details…</div>
+      ) : (
+        <>
+          {description && <p style={{ fontSize: 13.5, color: "var(--t2)", lineHeight: 1.6, margin: "0 0 8px" }}>{description}.</p>}
+          {p?.businessLines?.length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
+              {p.businessLines.filter(b => b.length <= 70).map(b => <span key={b} style={{ fontSize: 12, padding: "3px 9px", borderRadius: 999, background: "var(--s3)", color: "var(--t2)" }}>{b}</span>)}
+            </div>
+          )}
+          {p?.businessLines?.some(b => b.length > 70) && (
+            <ul style={{ margin: "0 0 12px", padding: "0 0 0 18px", fontSize: 13, color: "var(--t2)", lineHeight: 1.55 }}>
+              {p.businessLines.filter(b => b.length > 70).map(b => <li key={b}>{b}</li>)}
+            </ul>
+          )}
+          {!p && <p style={{ fontSize: 12.5, color: "var(--t3)", lineHeight: 1.55, margin: "0 0 10px" }}>No business description on NSE: the company doesn't file a business responsibility report (only the top ~1,000 listed companies must). The basics below are from its listing and results.</p>}
+          <div className="company-facts">
+            {facts.map(([label, value]) => (
+              <div key={label} style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 11.5, color: "var(--t3)", marginBottom: 2 }}>{label}</div>
+                <div style={{ fontSize: 13, color: "var(--t1)", fontWeight: 550, overflowWrap: "anywhere" }}>{value}</div>
+              </div>
+            ))}
+          </div>
+          {extra.length > 0 && (
+            <>
+              <button type="button" className="btn-ghost tap" onClick={() => setMore(v => !v)} aria-expanded={more} style={{ height: 30, fontSize: 12, marginTop: 12 }}>{more ? "Fewer details" : "Contact and registration details"}</button>
+              {more && (
+                <div className="company-facts" style={{ marginTop: 10 }}>
+                  {extra.map(([label, value]) => (
+                    <div key={label} style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 11.5, color: "var(--t3)", marginBottom: 2 }}>{label}</div>
+                      <div style={{ fontSize: 13, color: "var(--t1)", overflowWrap: "anywhere", lineHeight: 1.5 }}>{value}</div>
+                    </div>
+                  ))}
+                  {p?.report?.pdf && (
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 11.5, color: "var(--t3)", marginBottom: 2 }}>Source</div>
+                      <a href={p.report.pdf} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: "var(--accent)" }}>Business responsibility report (PDF) ↗</a>
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 function ShareholdingPanel({ symbol }) {
   const [quarters, setQuarters] = useState(null);
   useEffect(() => {
@@ -368,14 +473,14 @@ const closeLabel = c => `NSE close (${dayLabel(c.date)})`;
 // The page's parts in order, for the shortcut row in the pinned bar — a
 // company page runs to many screens, most of all on a phone
 const SECTIONS = [
-  ["scores", "Scores"], ["valuation", "Valuation"], ["sizing", "Sizing"], ["holding", "Shareholding"], ["chart", "Chart"],
+  ["about", "About"], ["scores", "Scores"], ["valuation", "Valuation"], ["sizing", "Sizing"], ["holding", "Shareholding"], ["chart", "Chart"],
   ["financials", "Financials"], ["technicals", "Technicals"], ["thesis", "What to watch"],
   ["levels", "Price levels"], ["peers", "Peers"], ["filings", "Filings"],
 ];
 
 function SectionNav({ ready, sizingReady }) {
   const [present, setPresent] = useState(SECTIONS);
-  const [active, setActive] = useState("scores");
+  const [active, setActive] = useState("about");
   const rowRef = useRef(null);
   // Only the parts this company has (no price levels without a price, …)
   useEffect(() => { setPresent(SECTIONS.filter(([id]) => id !== "sizing" || sizingReady).filter(([id]) => document.getElementById(`sec-${id}`))); }, [ready, sizingReady]);
@@ -597,6 +702,8 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       {!m && (
         <div style={{ ...card, color: "var(--t3)", fontSize: 13 }}>No usable annual results in NSE's filings for this company, so there's nothing to value or score.</div>
       )}
+
+      <div id="sec-about" className="ss-section"><CompanyProfile symbol={data.symbol} m={m} /></div>
 
       {m && <div id="sec-scores" className="ss-section" data-tour="research"><ResearchPanel research={m.research} /></div>}
 

@@ -58,7 +58,9 @@ async function main() {
   assert(headHealth.status === 200 && (await headHealth.text()) === "", "HEAD /api/health is 200 with no body (uptime monitors check with HEAD)");
 
   const presets = await (await fetch(`${BASE}/api/presets`)).json();
-  assert(Array.isArray(presets) && presets.length === 13 && presets.every(p => p.criteria), "GET /api/presets returns the 13 strategies with their criteria");
+  assert(Array.isArray(presets) && presets.length === 14 && presets.every(p => p.criteria || p.filters) && presets.every(p => Array.isArray(p.filters)), "GET /api/presets returns the 14 strategies, each with its filters");
+  const upEvery = presets.find(p => p.id === "up_every_timeframe");
+  assert(upEvery && ["ret1m", "ret6m", "ret1y", "priceCagr5y"].every(id => upEvery.filters.some(f => f.id === id && f.min === 0)), "Up on Every Timeframe asks for a rise over 1M, 6M, 1Y and 5Y");
   assert(presets.every(p => Array.isArray(p.filters) && p.filters.length > 0 && p.filters.every(f => f.id)), "each strategy also comes as the screener's filters");
 
   const metrics = await (await fetch(`${BASE}/api/metrics`)).json();
@@ -182,7 +184,7 @@ async function main() {
   const found = await (await fetch(`${BASE}/api/search?q=tcs`, { headers: { Cookie: aliceCookie } })).json();
   assert(found[0]?.ticker === "TCS", "searching 'tcs' puts TCS first");
   const stats = await (await fetch(`${BASE}/api/stats`, { headers: { Cookie: aliceCookie } })).json();
-  assert(stats.strategies === 13 && stats.companies > 0 && stats.filters >= 40, "the header's counts come back");
+  assert(stats.strategies === 14 && stats.companies > 0 && stats.filters >= 40, "the header's counts come back");
 
   // The screener: filters on any metric, the columns asked for, and the strategies' criteria still working
   const screenRes = await json("POST", "/api/screen", aliceCookie, { filters: [{ id: "roce", min: 25, max: null }, { id: "capSize", values: ["Large cap"] }], columns: ["roce", "ret1m"] });
@@ -207,7 +209,7 @@ async function main() {
 
   // The front page's figures need no sign-in; who's signed in comes with /me
   const publicStats = await fetch(`${BASE}/api/stats`);
-  assert(publicStats.status === 200 && (await publicStats.json()).strategies === 13, "the front page's figures load without signing in");
+  assert(publicStats.status === 200 && (await publicStats.json()).strategies === 14, "the front page's figures load without signing in");
   assert((await (await fetch(`${BASE}/api/auth/me`, { headers: { Cookie: aliceCookie } })).json()).email === "alice@example.com", "/me says which email is signed in");
 
   // The Momentum tab: on for a copy off Render, behind sign-in, an answer

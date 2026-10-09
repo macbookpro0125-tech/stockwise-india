@@ -36,12 +36,12 @@ import { startAlertChecks } from "./alert-notifier.js";
 import { limits, clientIp, waitText } from "./rate-limit.js";
 import { startBackups } from "./backup.js";
 import { fetchTechnicals } from "./technicals.js";
-import { shareholdingHistory, companyFilings, companyNews, sectorPeers } from "./company-extras.js";
+import { shareholdingHistory, companyFilings, companyNews, sectorPeers, companyProfile } from "./company-extras.js";
 import { summarizeFiling } from "./filing-summary.js";
 import { PRESETS } from "./presets.js";
 import { DIST_DIR } from "./paths.js";
 import { HttpError, badRequest, payloadTooLarge } from "./http-errors.js";
-import { UpstreamError } from "./upstream.js";
+import { UpstreamError, upstreamStatus } from "./upstream.js";
 
 let equityListPromise = null;
 function equityList() {
@@ -379,7 +379,7 @@ export function createApp() {
       // Each strategy also as the screener's filters, so the filter panel can
       // show and edit it
       if (url.pathname === "/api/presets" && req.method === "GET") {
-        sendJson(res, 200, PRESETS.map(p => ({ ...p, filters: criteriaToFilters(p.criteria) })));
+        sendJson(res, 200, PRESETS.map(p => ({ ...p, filters: p.filters ?? criteriaToFilters(p.criteria) })));
         return;
       }
 
@@ -430,7 +430,7 @@ export function createApp() {
         }
         return;
       }
-      const panelRoute = url.pathname.match(/^\/api\/stock\/([^/]+)\/(prices|technicals|shareholding|filings|news|peers)$/);
+      const panelRoute = url.pathname.match(/^\/api\/stock\/([^/]+)\/(prices|technicals|shareholding|profile|filings|news|peers)$/);
       if (panelRoute && req.method === "GET") {
         const userId = requireAuth(req, res);
         if (userId == null) return;
@@ -449,6 +449,7 @@ export function createApp() {
             }
             case "technicals": sendJson(res, 200, await fetchTechnicals(symbol)); return;
             case "shareholding": sendJson(res, 200, { quarters: await shareholdingHistory(symbol) }); return;
+            case "profile": sendJson(res, 200, await companyProfile(symbol)); return;
             case "filings": sendJson(res, 200, await companyFilings(symbol)); return;
             case "news": sendJson(res, 200, await companyNews(getStock(symbol)?.name ?? symbol)); return;
             case "peers": sendJson(res, 200, sectorPeers(symbol)); return;
@@ -826,6 +827,8 @@ export function createApp() {
           ...(pullStatus.enabled && { dataPull: pullStatus }),
           // Who sees the Momentum tab (set in Render: MOMENTUM, MOMENTUM_USERS)
           momentum: momentumAudience(),
+          // Outside sources answering this host: NSE, Yahoo, Google News …
+          upstream: upstreamStatus(),
           pricesDate: snap?.pricesDate ?? null,
           snapshotBuiltAt: snap?.builtAt ?? null,
           snapshotAgeHours: snapshotAgeHours == null ? null : Math.round(snapshotAgeHours * 10) / 10,

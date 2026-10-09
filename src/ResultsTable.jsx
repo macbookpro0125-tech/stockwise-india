@@ -168,7 +168,7 @@ function StarButton({ symbol, price, watched, size = 30 }) {
   );
 }
 
-export default function ResultsTable({ matches, loading, onAnalyze, totalMatches, queryUsed, unsupported = [], notes = [], executionTime, snapshot, netNet = false, noun = "stocks", emptyTitle = "No stocks matched your criteria", emptyHint = "Try relaxing some filters", columns = [], onEditColumns = null }) {
+export default function ResultsTable({ matches, loading, onAnalyze, totalMatches, queryUsed, unsupported = [], notes = [], executionTime, snapshot, netNet = false, noun = "stocks", emptyTitle = "No stocks matched your criteria", emptyHint = "Try relaxing some filters", columns = [], onEditColumns = null, filteredIds = [] }) {
   const watchlist = useWatchlist();
   const [alertFor, setAlertFor] = useState(null);
   const bell = (stock, size = 30) => (
@@ -492,7 +492,9 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
             const cells = [
               ["Quality", <span key="q" title={researchTitle(stock.research)} style={{ color: qualityTone(quality).color }}>{quality == null ? "—" : Math.round(quality)}</span>],
               ["Research", <span key="r" title={researchTitle(stock.research)} aria-label={missingResearch ?? `Research score ${Math.round(overall)} — ${stock.research?.stance ?? "rated"}`} style={{ color: overallTone(overall).color }}>{overall == null ? (stock.research?.status === "review-required" ? "Review required" : stock.research?.status === "quality-only" ? "Quality only" : "Not rated") : Math.round(overall)}</span>],
-              ...columns.slice(0, 3).map(def => {
+              // What's being filtered on first: a phone row has room for three,
+              // four when that many are filtered on (1M, 6M, 1Y and 5Y returns)
+              ...[...columns.filter(def => filteredIds.includes(def.id)), ...columns.filter(def => !filteredIds.includes(def.id))].slice(0, filteredIds.length >= 4 ? 4 : 3).map(def => {
                 const v = colValue(stock, def.id);
                 // Coloured as the table's cells are (strong ROCE, Piotroski 7+ green)
                 return [def.short, <span key={def.id} style={{ color: valueColor(def, v) }}>{formatValue(def, v)}</span>];
