@@ -147,7 +147,7 @@ export function researchBrief(r) {
   if (!r) return null;
   return {
     quality: r.quality, qualityOnly: r.qualityOnly, provisional: r.provisional, capped: !!r.capped,
-    overall: r.overall.score, stance: r.overall.stance, status: r.overall.status,
+    overall: r.overall.score, stance: r.overall.stance, status: r.overall.status, overallText: r.overall.text,
     valuation: r.valuation.score, valuationLabel: r.valuation.label,
     technical: r.technical.score, technicalLabel: r.technical.label,
     risk: r.risk.score, riskLabel: r.risk.label,
