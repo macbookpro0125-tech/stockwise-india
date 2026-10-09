@@ -155,10 +155,15 @@ export default function ResearchPanel({ research: r }) {
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
         <ScanSearch size={17} strokeWidth={2} style={{ color: "var(--t3)" }} />
         <h3 style={{ fontSize: 15, fontWeight: 600, margin: 0, color: "var(--t1)", letterSpacing: "-0.01em" }}>Research dashboard</h3>
+        <span style={{ fontSize: 10.5, fontWeight: 600, color: "var(--yellow)", background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", borderRadius: 999, padding: "3px 8px" }}>Experimental model</span>
         <span style={{ fontSize: 11.5, color: "var(--t3)", marginLeft: "auto" }}>
           From NSE filings{r.valuation.asOf ? ` · valued at the ${day(r.valuation.asOf)} close` : ""}
         </span>
       </div>
+
+      <p role="note" style={{ fontSize: 11.5, color: "var(--t3)", lineHeight: 1.45, margin: "-4px 0 12px" }}>
+        Rule-based summaries of available filings. The score weights are a starting point, not a validated forecast of future returns.
+      </p>
 
       {r.flags?.map(f => {
         // Critical (a qualified audit) in red; a caution (an auditor's resignation) in amber

@@ -11,9 +11,14 @@ const pct = value => value == null || !Number.isFinite(value) ? "—" : `${value
 const cr = value => value == null || !Number.isFinite(value) ? "—" : `₹${value.toLocaleString("en-IN", { maximumFractionDigits: 0 })} cr`;
 const dateLabel = value => value ? new Date(`${value.slice(0, 10)}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : "date unavailable";
 
+// Yahoo's figure is the last finished day's close, so once NSE's close for a
+// later day is in, NSE's is the newer price (as on the company page)
+const quoteIsNewer = data => !!data?.quote && (!data.close?.date || data.quote.asOf >= data.close.date);
 function referencePrice(item) {
-  return finite(item?.data?.quote?.cmp) ?? finite(item?.data?.metrics?.close) ?? finite(item?.data?.close?.price) ?? finite(item?.stock?.cmp);
+  const data = item?.data;
+  return (quoteIsNewer(data) ? finite(data.quote.cmp) : null) ?? finite(data?.close?.price) ?? finite(data?.metrics?.close) ?? finite(data?.quote?.cmp) ?? finite(item?.stock?.cmp);
 }
+const referenceDate = item => (quoteIsNewer(item?.data) ? item.data.quote.asOf : item?.data?.close?.date ?? item?.data?.metrics?.provenance?.marketPrice?.date ?? null);
 
 function assumptionBasis(metrics, price) {
   const growth = metrics?.epsGrowth5y != null ? "reported 5-year EPS CAGR"
@@ -150,10 +155,7 @@ export default function InvestmentBriefView({ stocks, onClose }) {
     if (!ranked.length || allocations.some(row => !row)) return { name, value: null, changePct: null };
     const perStock = capital / ranked.length;
     const valueDirect = allocations.reduce((sum, row, index) => {
-      const item = ranked[index];
-      const metrics = item.data.metrics;
-      const price = finite(item.data?.quote?.cmp) ?? finite(metrics?.close) ?? finite(item.data?.close?.price) ?? finite(item.stock.cmp);
-      return sum + perStock * (row.target / price);
+      return sum + perStock * (row.target / referencePrice(ranked[index]));
     }, 0);
     return { name, value: Number.isFinite(valueDirect) ? valueDirect : null, changePct: capital > 0 ? ((valueDirect / capital) - 1) * 100 : 0 };
   });
@@ -218,7 +220,7 @@ export default function InvestmentBriefView({ stocks, onClose }) {
             const metrics = item.data?.metrics;
             const score = finite(metrics?.research?.overall?.score ?? item.stock.research?.overall);
             const price = referencePrice(item);
-            const priceAsOf = item.data?.quote?.asOf ?? metrics?.provenance?.marketPrice?.date ?? item.data?.close?.date ?? null;
+            const priceAsOf = referenceDate(item);
             const currentAssumptions = assumptions[item.stock.symbol] ?? defaultAssumptions(metrics, price);
             const cases = scenarioRows(metrics, price, years, currentAssumptions);
             const latest = metrics?.history?.[0];
