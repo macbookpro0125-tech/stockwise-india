@@ -161,4 +161,20 @@ export const PRESETS = [
       market_cap_min: 10,
     },
   },
+  // Asked for 9 Oct 2026: a price chart that's green on every view — up
+  // over a month, six months, a year and five years (the longest the daily
+  // files reach; the company page's chart shows the whole history). Filters
+  // straight on the returns, which the old criteria never covered.
+  {
+    id: "up_every_timeframe",
+    name: "Up on Every Timeframe",
+    icon: "📈",
+    description: "Share price higher over 1 month, 6 months, 1 year and 5 years",
+    filters: [
+      { id: "ret1m", min: 0, max: null },
+      { id: "ret6m", min: 0, max: null },
+      { id: "ret1y", min: 0, max: null },
+      { id: "priceCagr5y", min: 0, max: null },
+    ],
+  },
 ];

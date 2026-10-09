@@ -144,7 +144,8 @@ export async function takeSnapshots() {
   const snaps = loadSnapshots();
   const results = [];
   for (const preset of PRESETS) {
-    const res = screen(preset.criteria);
+    // A strategy defined by filters (Up on Every Timeframe) or old criteria
+    const res = screen(preset.filters ? { filters: preset.filters } : preset.criteria);
     const picks = res.results
       .filter(s => s.cmp > 0)
       .slice(0, PICKS_PER_PRESET)

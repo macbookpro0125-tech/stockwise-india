@@ -5,7 +5,7 @@ import { PresetIcon } from "./icons.jsx";
 import { strategiesStore } from "./accountData.js";
 
 // Ported from stock-screener's src/components/PresetCards.jsx. The strategy
-// list comes from the server (the same 13 presets); the user's own are saved to
+// list comes from the server (the original 13 presets and Up on Every Timeframe); the user's own are saved to
 // their account (accountData.js) — the original kept them in the browser. This app: one accent and a line icon per
 // card, rather than the original's ten rotating colours and emoji.
 

@@ -38,7 +38,34 @@ async function readBody(response, service, maxBytes) {
   return Buffer.concat(chunks, size).toString("utf8");
 }
 
+// How each outside source has been answering this server since it started
+// — successes, failures and the last error — for the health check, so a
+// source refusing this host's address (as Screener.in did Render's) shows
+// without anyone having to open a page and read the logs
+const stats = new Map();
+const hostOf = url => { try { return new URL(url).hostname; } catch { return "unknown"; } };
+export function upstreamStatus() {
+  return Object.fromEntries([...stats].sort(([a], [b]) => a.localeCompare(b)));
+}
+function record(url, error) {
+  const s = stats.get(hostOf(url)) ?? { ok: 0, failed: 0, lastOkAt: null, lastFailAt: null, lastError: null };
+  if (error) Object.assign(s, { failed: s.failed + 1, lastFailAt: new Date().toISOString(), lastError: String(error.message ?? error).slice(0, 160) });
+  else Object.assign(s, { ok: s.ok + 1, lastOkAt: new Date().toISOString() });
+  stats.set(hostOf(url), s);
+}
+
 export async function fetchText(url, options = {}) {
+  try {
+    const body = await requestText(url, options);
+    record(url, null);
+    return body;
+  } catch (error) {
+    record(url, error);
+    throw error;
+  }
+}
+
+async function requestText(url, options = {}) {
   const {
     timeoutMs = 12_000,
     maxBytes = 20 * 1024 * 1024,

@@ -6,7 +6,8 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { DATA_DIR } from "./paths.js";
-import { NSE_BASE, fetchJson } from "./fetch-nse.js";
+import { NSE_BASE, fetchJson, fetchXbrl } from "./fetch-nse.js";
+import { fetchEquityList } from "./equity-list.js";
 import { shareholdingFilings, readShareholdingFiling } from "./fetch-shareholding.js";
 import { allMetrics, researchBrief } from "./screen.js";
 import { isPeerIndustry } from "./research.js";
@@ -33,6 +34,88 @@ async function cached(key, ttlMs, fn) {
 
 function staleValue(data) {
   return Array.isArray(data) ? data : { ...data, stale: true, staleReason: "Refresh failed; showing the last successful result." };
+}
+
+// ---- Company details ---------------------------------------------------------
+
+// Who the company is, from its own filings. The top ~1,000 listed companies
+// file a Business Responsibility & Sustainability Report each year, whose
+// XBRL opens with a profile: what it does (its main activity, business lines
+// and products), when it was incorporated, its CIN, registered office,
+// website and investor contacts, and how many employees and workers it has.
+// NSE's equity list adds the listing date, ISIN and face value for everyone.
+const XML_ENTITY = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'" };
+const decodeXml = t => t
+  .replace(/&(amp|lt|gt|quot|apos);/g, (_, e) => XML_ENTITY[e])
+  .replace(/&#(\d+);/g, (_, c) => String.fromCharCode(Number(c)))
+  .replace(/\s+/g, " ")
+  .trim();
+const NSE_ARCHIVE = /^https:\/\/nsearchives\.nseindia\.com\//;
+
+export function brsrProfile(xml) {
+  const all = tag => [...xml.matchAll(new RegExp(`<[a-z-]+:${tag}\\b[^>]*>([^<]+)<`, "g"))].map(m => decodeXml(m[1])).filter(Boolean);
+  const one = tag => all(tag)[0] ?? null;
+  const unique = list => [...new Set(list.map(v => v.replace(/\.$/, "")))];
+  // Headcount: the all-genders total on the employees row and the workers
+  // row (Maruti FY26: 21,200 employees, 49,328 workers, contract included)
+  const dims = {};
+  for (const m of xml.matchAll(/<xbrli:context id="([^"]+)">([\s\S]*?)<\/xbrli:context>/g)) {
+    dims[m[1]] = [...m[2].matchAll(/explicitMember dimension="[^"]+">([^<]+)</g)].map(x => x[1].split(":").pop());
+  }
+  const headcount = member => {
+    for (const m of xml.matchAll(/<[a-z-]+:NumberOfEmployeesOrWorkersIncludingDifferentlyAbled\b[^>]*contextRef="([^"]+)"[^>]*>([^<]+)</g)) {
+      const d = dims[m[1]] ?? [];
+      if (d.includes("GenderMember") && d.includes(member)) return Number(m[2]) || null;
+    }
+    return null;
+  };
+  const site = one("WebsiteOfCompany");
+  const website = site && /^(https?:\/\/)?[\w.-]+\.[a-z]{2,}(\/\S*)?$/i.test(site) ? (/^https?:/i.test(site) ? site : `https://${site}`) : null;
+  return {
+    about: unique(all("NameOfProductOrService")).slice(0, 3).join(". ") || null,
+    mainActivity: unique(all("DescriptionOfMainActivity")).slice(0, 3).join("; ") || null,
+    businessLines: unique(all("DescriptionOfBusinessActivity")).slice(0, 8),
+    incorporated: one("DateOfIncorporation"),
+    cin: one("CorporateIdentityNumber"),
+    website,
+    registeredOffice: one("AddressOfRegisteredOfficeOfCompany"),
+    corporateOffice: one("AddressOfCorporateOfficeOfCompany"),
+    email: one("EMailOfTheCompany"),
+    phone: one("TelephoneOfCompany"),
+    employees: headcount("EmployeesMember"),
+    workers: headcount("WorkersMember"),
+  };
+}
+
+async function latestBrsr(symbol) {
+  const json = await fetchJson(`${NSE_BASE}/api/corporate-bussiness-sustainabilitiy?index=equities&symbol=${encodeURIComponent(symbol)}`);
+  const rows = (Array.isArray(json) ? json : json?.data ?? []).filter(r => NSE_ARCHIVE.test(r.xbrlFile ?? ""));
+  rows.sort((a, b) => (Number(b.fyTo) || 0) - (Number(a.fyTo) || 0));
+  const row = rows[0];
+  if (!row) return null;
+  return {
+    ...brsrProfile(await fetchXbrl(row.xbrlFile)),
+    report: {
+      fy: row.fyTo ? `FY${String(row.fyTo).slice(2)}` : null,
+      filed: row.submissionDate ?? null,
+      pdf: NSE_ARCHIVE.test(row.attachmentFile ?? "") ? row.attachmentFile : null,
+    },
+  };
+}
+
+export async function companyProfile(symbol) {
+  return cached(`profile:${symbol}`, 24 * HOUR, async () => {
+    const [list, profile] = await Promise.all([
+      fetchEquityList().catch(() => []),
+      // A company that files no BRSR (most outside the top 1,000) has none
+      latestBrsr(symbol).catch(() => null),
+    ]);
+    const listed = list.find(s => s.symbol === symbol);
+    return {
+      listing: listed ? { listedOn: listed.dateOfListing?.trim() || null, isin: listed.isin?.trim() || null, faceValue: Number.isFinite(listed.faceValue) ? listed.faceValue : null } : null,
+      profile,
+    };
+  });
 }
 
 // ---- Shareholding history ---------------------------------------------------
