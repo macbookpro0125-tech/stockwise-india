@@ -3,7 +3,7 @@
 // history is set aside, a thin stock near its high is kept out, and a day
 // with no passers comes back empty rather than loosened.
 import assert from "node:assert/strict";
-import { momentumStats, evaluateMomentum, screenMomentum, cleanMomentumConfig, momentumAllowed, MOMENTUM_DEFAULTS, rsi14 } from "./momentum.js";
+import { momentumStats, evaluateMomentum, screenMomentum, cleanMomentumConfig, momentumAllowed, momentumAudience, MOMENTUM_DEFAULTS, rsi14 } from "./momentum.js";
 
 // Up 1.2, down 0.6, up 1.2 …: a steady climb with real down days (a straight
 // line would put RSI at 100, past the blow-off limit)
@@ -89,4 +89,7 @@ assert.equal(momentumAllowed({ email: "c@z.com" }, { RENDER: "true", MOMENTUM_US
 assert.equal(momentumAllowed({ phone: "+911234567890" }, { MOMENTUM_USERS: "a@x.com" }), false, "a phone-only account isn't on an email list");
 assert.equal(momentumAllowed(null, { RENDER: "true", MOMENTUM: "on" }), true);
 assert.equal(momentumAllowed({ email: "a@x.com" }, { MOMENTUM: "off" }), false);
+assert.equal(momentumAllowed(null, { RENDER: "true", MOMENTUM: " On " }), true, "typed by hand, any case");
+assert.deepEqual([{}, { RENDER: "true" }, { RENDER: "true", MOMENTUM: "on" }, { RENDER: "true", MOMENTUM_USERS: "a@x.com" }, { MOMENTUM: "OFF" }].map(momentumAudience),
+  ["everyone", "off", "everyone", "named accounts", "off"]);
 console.log("All momentum checks passed.");
