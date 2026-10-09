@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import { FileText, X } from "lucide-react";
 import { api } from "./api.js";
 import { QualityBadge, overallTone } from "./ResearchBadges.jsx";
+import InvestmentBriefView from "./InvestmentBriefView.jsx";
 
-// Ported from stock-screener's src/components/CompareView.jsx: up to four
+// Ported from stock-screener's src/components/CompareView.jsx: up to five
 // stocks side by side — the research score and its groups, fundamentals and
 // price levels from the Discover table, technicals fetched per stock.
 
@@ -68,6 +69,7 @@ const TECH_METRICS = [
 export default function CompareView({ stocks, onClose }) {
   const [techData, setTechData] = useState({});
   const [techLoading, setTechLoading] = useState({});
+  const [showBrief, setShowBrief] = useState(false);
 
   useEffect(() => {
     for (const s of stocks) {
@@ -86,10 +88,14 @@ export default function CompareView({ stocks, onClose }) {
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "color-mix(in srgb, var(--bg) 96%, transparent)", WebkitBackdropFilter: "blur(6px)", backdropFilter: "blur(6px)", overflowY: "auto", padding: "20px var(--page-x)" }}>
+      {showBrief && <InvestmentBriefView stocks={stocks} onClose={() => setShowBrief(false)} />}
       <div>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
           <h2 style={{ fontSize: 20, fontWeight: 700, color: "var(--t1)", margin: 0 }}>Compare stocks ({stocks.length})</h2>
-          <button onClick={onClose} className="btn-ghost" style={{ height: 34 }}><X size={15} /> Close</button>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button onClick={() => setShowBrief(true)} className="btn-primary" style={{ height: 34, padding: "0 12px", fontSize: 12, boxShadow: "none" }}><FileText size={14} /> Build investment brief</button>
+            <button onClick={onClose} className="btn-ghost" style={{ height: 34 }}><X size={15} /> Close</button>
+          </div>
         </div>
 
         <div style={{ background: "var(--card)", borderRadius: 12, border: "1px solid var(--bdr2)", overflowX: "auto", boxShadow: "var(--sh-md)" }}>

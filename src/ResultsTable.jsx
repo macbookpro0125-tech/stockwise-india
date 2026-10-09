@@ -4,7 +4,6 @@ import { StarIcon, BellIcon, actionButtonStyle } from "./icons.jsx";
 import { useWatchlist, toggleWatch } from "./watchlist.js";
 import CreateAlertModal from "./CreateAlertModal.jsx";
 import CompareView from "./CompareView.jsx";
-import { exportDiscoverExcel } from "./exportExcel.js";
 import { formatValue, valueColor } from "./screener/meta.js";
 import { QualityBadge, OverallScore, qualityTone, overallTone, researchTitle } from "./ResearchBadges.jsx";
 
@@ -14,13 +13,13 @@ const columnLabel = def => (def.unit === "%" ? `${def.short} %` : def.unit === "
 
 // Ported from stock-screener's src/components/ResultsTable.jsx — same columns,
 // price levels with 52-week range, NCAV badge, watchlist star, compare (up to
-// 4), Excel and CSV export, sorting, filter box and paging. The original's
+// 5), Excel and CSV export, sorting, filter box and paging. The original's
 // score out of 10 is now the research score (server/research.js): quality out
 // of 100 and the overall research score, with a minimum-quality filter.
 // Every row arrives already scored, so there's no lazy enrichment.
 
 const PAGE_SIZE = 50;
-const MAX_COMPARE = 4;
+const MAX_COMPARE = 5;
 // Wide enough for the compare box and a four-digit rank; the name column is
 // pinned right after it.
 const RANK_W = 60;
@@ -321,6 +320,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
     setExportError(null);
     try {
       const sortLabel = `${sortOptions.find(([id]) => id === sortBy)?.[1] ?? "Quality score"}, ${dirLabel.toLowerCase()}`;
+      const { exportDiscoverExcel } = await import("./exportExcel.js");
       await exportDiscoverExcel(sorted, { pricesDate: snapshot?.pricesDate, extraColumns, screen: queryUsed || "", sortLabel });
     } catch {
       setExportError("Excel export failed — try again");
@@ -474,7 +474,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
       )}
 
       {/* ── Phone rows: a compact list, ~6 companies a screen; the whole row
-             opens the company, the star saves it ── */}
+             opens the company; controls save or select the stock ── */}
       {!loading && sorted.length > 0 && isMobile && (
         <div style={{ borderRadius: 12, border: "1px solid var(--bdr2)", background: "var(--s2)", overflow: "hidden" }}>
           {visible.map((stock, i) => {
@@ -499,7 +499,10 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                 <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto auto", columnGap: 10, alignItems: "center" }}>
                   <div style={{ fontSize: 14, fontWeight: 650, color: "var(--t1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", letterSpacing: "-0.01em" }}>{stock.name}</div>
                   <div style={{ fontSize: 14, fontWeight: 650, color: "var(--t1)", textAlign: "right", ...MONO }}>{stock.cmp ? `₹${fmt(stock.cmp, stock.cmp < 100 ? 2 : 0)}` : "—"}</div>
-                  <div data-tour={i === 0 ? "row-actions" : undefined} style={{ gridRow: "span 2" }} onClick={e => e.stopPropagation()}>
+                  <div data-tour={i === 0 ? "row-actions" : undefined} style={{ gridRow: "span 2", display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }} onClick={e => e.stopPropagation()}>
+                    <label title={selected.has(stock.symbol) ? "Remove from comparison" : `Add to comparison${selected.size >= MAX_COMPARE ? ` (up to ${MAX_COMPARE})` : ""}`} style={{ width: 36, height: 30, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 8, border: "1px solid var(--bdr2)", background: selected.has(stock.symbol) ? "color-mix(in srgb, var(--accent) 10%, transparent)" : "var(--s1)", cursor: selected.size >= MAX_COMPARE && !selected.has(stock.symbol) ? "not-allowed" : "pointer" }}>
+                      <input type="checkbox" checked={selected.has(stock.symbol)} disabled={!selected.has(stock.symbol) && selected.size >= MAX_COMPARE} onChange={() => toggleSelect(stock)} aria-label={`Compare ${stock.name}`} style={{ margin: 0, width: 16, height: 16, accentColor: "var(--accent)" }} />
+                    </label>
                     <StarButton symbol={stock.symbol} price={stock.cmp} watched={watchlist.has(stock.symbol)} size={36} />
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, marginTop: 3 }}>

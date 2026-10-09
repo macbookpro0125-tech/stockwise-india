@@ -617,6 +617,18 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   .tap { min-height: 36px; }
 }
 
+@media print {
+  body * { visibility: hidden !important; }
+  .investment-brief-print, .investment-brief-print * { visibility: visible !important; }
+  .investment-brief-print { position: absolute !important; inset: 0 !important; width: 100% !important; height: auto !important; overflow: visible !important; padding: 0 !important; background: #fff !important; color: #111 !important; backdrop-filter: none !important; }
+  .investment-brief-print * { color: #111 !important; }
+  .investment-brief-print article, .investment-brief-print section, .investment-brief-print footer { break-inside: avoid; background: #fff !important; border-color: #ddd !important; color: #111 !important; }
+  .investment-brief-print summary { display: none !important; }
+  .investment-brief-print details { display: block !important; }
+  .brief-toolbar { display: none !important; }
+  .investment-brief-print button, .investment-brief-print input { display: none !important; }
+}
+
 /* Discover's name box and three score boxes: one row on a computer, two on
    a phone (three boxes side by side are too narrow at 16px type) */
 .score-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; gap: 8px; align-items: center; }
