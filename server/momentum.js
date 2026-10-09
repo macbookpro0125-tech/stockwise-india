@@ -34,13 +34,24 @@ const LIMITS = {
 // to those accounts only, MOMENTUM=off closes it. Copies on this Mac (no
 // RENDER) have it on.
 export function momentumAllowed(account, env = process.env) {
-  if (env.MOMENTUM === "on") return true;
-  if (env.MOMENTUM === "off") return false;
-  if (env.MOMENTUM_USERS) {
+  // Typed into Render's form by hand: "On", " on" count too
+  const setting = String(env.MOMENTUM ?? "").trim().toLowerCase();
+  if (setting === "on") return true;
+  if (setting === "off") return false;
+  if (env.MOMENTUM_USERS?.trim()) {
     const allowed = env.MOMENTUM_USERS.split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
     return !!account?.email && allowed.includes(account.email.toLowerCase());
   }
   return !env.RENDER;
+}
+
+// Who the tab is open to, for the health check — no emails, just the reach
+export function momentumAudience(env = process.env) {
+  const setting = String(env.MOMENTUM ?? "").trim().toLowerCase();
+  if (setting === "on") return "everyone";
+  if (setting === "off") return "off";
+  if (env.MOMENTUM_USERS?.trim()) return "named accounts";
+  return env.RENDER ? "off" : "everyone";
 }
 
 export const MIN_SESSIONS = 210; // under this, too little history for a 200-day average and a year's high

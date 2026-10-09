@@ -16,7 +16,7 @@ import { emailConfigured, appUrl, sendEmail, resetEmail } from "./email.js";
 import { listAlerts, createAlert, updateAlert, deleteAlert } from "./user-alerts.js";
 import { screen, screenerMeta, getStock, saveStock, rowsFor, isValidSymbol, countFetched, allMetrics, screenRowCount } from "./screen.js";
 import { startDataPull, pullStatus } from "./data-pull.js";
-import { screenMomentum, momentumAllowed } from "./momentum.js";
+import { screenMomentum, momentumAllowed, momentumAudience } from "./momentum.js";
 import { criteriaToFilters, METRICS, CATEGORY_METRICS } from "./metric-catalog.js";
 import { listWatchlist, addToWatchlist, setWatchlistNote, removeFromWatchlist } from "./user-watchlist.js";
 import { listHoldings, addHolding, updateHolding, removeHolding } from "./user-portfolio.js";
@@ -824,6 +824,8 @@ export function createApp() {
           companiesOnFile: countFetched(),
           // The free copy's evening data from GitHub Actions (data-pull.js)
           ...(pullStatus.enabled && { dataPull: pullStatus }),
+          // Who sees the Momentum tab (set in Render: MOMENTUM, MOMENTUM_USERS)
+          momentum: momentumAudience(),
           pricesDate: snap?.pricesDate ?? null,
           snapshotBuiltAt: snap?.builtAt ?? null,
           snapshotAgeHours: snapshotAgeHours == null ? null : Math.round(snapshotAgeHours * 10) / 10,
