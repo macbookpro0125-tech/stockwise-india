@@ -5,7 +5,7 @@
 // gates hold, the overall formula is what's stated, and the price trend never
 // moves the quality or overall score.
 import { computeMetrics } from "./metrics.js";
-import { band, GROUPS, computeResearch } from "./research.js";
+import { band, GROUPS, computeResearch, justifiedPb, BANK_COST_OF_EQUITY, BANK_LONG_RUN_GROWTH } from "./research.js";
 import { pricePosition } from "./levels.js";
 import { classifyAnnouncement } from "./company-extras.js";
 
@@ -216,6 +216,32 @@ assert(itemOf(partBank.research, "balance", "cet1").score == null && /CET1/.test
 const nbfc = metricsOf(company({ template: "NBFC", tweak: y => ({ ...y, debt: 9000 * CR }) }), snapshot());
 assert(!nbfc.lender || (nbfc.research.capped?.at === 69 && /NBFC/.test(nbfc.research.capped.reason) && !group(nbfc.research, "balance").applicable), "an NBFC lender stays capped — its filings carry no bad-loan or capital ratios");
 for (const g of GROUPS) for (const it of g.items.filter(i => i.bank)) assert(it.compute(metricsOf(company(), snapshot())).na, `${it.label}: not applicable to an ordinary company`);
+assert(near(GROUPS.find(g => g.id === "valuation").items.filter(i => i.bank || i.id !== "fcfYield").reduce((a, i) => a + i.weight, 0), 1, 1e-9), "Valuation for a bank: its book-value check takes the free-cash-flow yield's 15%");
+
+// ── A bank's price-to-book against what its ROE supports ──
+assert(near(justifiedPb(16.5), (16.5 - BANK_LONG_RUN_GROWTH) / (BANK_COST_OF_EQUITY - BANK_LONG_RUN_GROWTH), 1e-9) && justifiedPb(5) === 0.25, "justified P/B = (ROE − g) ÷ (cost of equity − g), floored for a return under growth");
+const pbItem = itemOf(goodBank.research, "valuation", "bookValue");
+assert(pbItem.score != null && /supports about/.test(pbItem.reason) && /cost of equity 12.5%/.test(pbItem.reason), "a bank's valuation checks its P/B against its ROE, stating the assumptions");
+assert(itemOf(goodBank.research, "valuation", "fcfYield").hide, "the free-cash-flow yield isn't listed for a bank");
+
+// ── The arithmetic behind the overall score reproduces it ──
+const math = goodBank.research.overall.math;
+const wavg = parts => parts.reduce((a, p) => a + p.score * p.weight, 0) / parts.reduce((a, p) => a + p.weight, 0);
+assert(math.final === goodBank.research.overall.score, "the worked steps end on the displayed overall score");
+assert(near(math.qualityOnly.raw, wavg(math.qualityOnly.parts), 0.06) && near(math.quality.raw, wavg(math.quality.parts), 0.06), "quality is the weighted average of the groups listed");
+assert(near(math.blend, Math.exp(0.7 * Math.log(math.qualityOnly.value) + 0.3 * Math.log(math.valuation)), 0.06), "blend = quality before valuation^0.7 × valuation^0.3");
+assert(near(math.afterTrim, math.blend * (1 - math.trimPct / 100), 0.06) && near(math.trimPct, 0.35 * math.overlay, 0.06), "trim = 35% of the price-swing and data-gap risk");
+assert(bank.research.overall.math.qualityOnly.capAt === 69 || bank.research.qualityOnly <= 69, "a capped quality says so in the steps");
+
+// ── Stale figures are flagged ──
+const quartersOn = ends => ({ ...company(), quarters: ends.map(qEnd => ({ qEnd, scope: "Consolidated", source: "integrated", filed: qEnd.replace(/-\d\d$/, "-28"), revenue: 260 * CR, expenses: 205 * CR, profit: 35 * CR, eps: 3.5, paidUp: 100 * CR, faceValue: 10 })) });
+const fresh = metricsOf(quartersOn(["2026-06-30", "2026-03-31", "2025-12-31"]), snapshot());
+assert(!fresh.research.flags.some(f => f.id === "resultsOverdue"), "June results on file in October: not overdue");
+const overdue = metricsOf(quartersOn(["2026-03-31", "2025-12-31", "2025-09-30"]), snapshot());
+assert(overdue.research.flags.some(f => f.id === "resultsOverdue" && f.severity === "caution" && /31 Mar 2026/.test(f.text)), "March the latest in October: the June quarter's results are overdue");
+const halfYearly = metricsOf(quartersOn(["2026-03-31", "2025-09-30", "2025-03-31"]), snapshot());
+assert(!halfYearly.research.flags.some(f => f.id === "resultsOverdue"), "a half-yearly filer on its own rhythm isn't overdue");
+assert(!overdue.research.flags.some(f => f.severity === "critical") && overdue.research.overall.status !== "review-required", "overdue results are a caution, not a score override");
 assert(r.capped === null, "a fully checked company isn't capped");
 const noShareholding = metricsOf(company({ holding: { pledgedPct: null, promoterHistory: [] }, tweak: y => ({ ...y, auditOpinion: null }) }), snapshot());
 assert(group(noShareholding.research, "governance").score == null, "no pledge, promoter history or audit opinion: governance has too little to score");

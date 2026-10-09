@@ -127,6 +127,33 @@ function ItemRow({ item, weight }) {
 }
 
 // A collapsible section; native <details>, so it works without script state
+// The arithmetic from the groups to the overall score, every number shown,
+// so a reader can redo it (research.js overall.math; intermediate figures
+// are rounded to one decimal, the result is worked out before rounding)
+const d1 = v => (v == null ? "—" : Number(v).toFixed(1));
+function weightedSum(parts) {
+  const total = parts.reduce((a, p) => a + p.weight, 0);
+  return <>({parts.map((p, i) => <span key={p.id}>{i ? " + " : ""}{p.label} <strong>{d1(p.score)}</strong> × {p.weight}</span>)}) ÷ {total}</>;
+}
+function ScoreMath({ math }) {
+  if (!math?.qualityOnly?.parts?.length) return <div style={{ fontSize: 12, color: "var(--t3)" }}>Too few groups are scored to work out a quality score.</div>;
+  const step = { fontSize: 12, color: "var(--t2)", lineHeight: 1.6, margin: 0 };
+  const res = v => <strong style={{ color: "var(--t1)", ...MONO }}>{d1(v)}</strong>;
+  return (
+    <ol style={{ margin: "4px 0 0", padding: "0 0 0 18px", display: "flex", flexDirection: "column", gap: 8 }}>
+      <li style={step}><strong>Quality before valuation</strong> = {weightedSum(math.qualityOnly.parts)} = {res(math.qualityOnly.raw)}{math.qualityOnly.capAt != null && <> → capped at <strong>{math.qualityOnly.capAt}</strong></>}</li>
+      <li style={step}><strong>Quality</strong> (the headline, with valuation) = {weightedSum(math.quality.parts)} = {res(math.quality.raw)}{math.quality.capAt != null && <> → capped at <strong>{math.quality.capAt}</strong></>}</li>
+      {math.blend != null ? <>
+        <li style={step}><strong>Blend</strong>, 70% quality before valuation and 30% valuation, multiplied so a weak side pulls harder: {d1(math.qualityOnly.value)}<sup>0.7</sup> × {d1(math.valuation)}<sup>0.3</sup> = {res(math.blend)}</li>
+        <li style={step}><strong>Trim</strong> for price swings and data gaps: their risk is {d1(math.overlay)}/100, × 35% = −{d1(math.trimPct)}% → {d1(math.blend)} × {(1 - math.trimPct / 100).toFixed(3)} = {res(math.afterTrim)}</li>
+        {math.provisionalCap != null && <li style={step}><strong>Provisional</strong>: data quality is under 50, so the score stops at <strong>{math.provisionalCap}</strong></li>}
+      </> : <li style={step}>No overall score: valuation couldn't be scored, so there's nothing to blend with.</li>}
+      {math.flagCeiling != null && <li style={step}><strong>Red flag</strong>: the auditor qualified the latest accounts, so the score stops at <strong>{math.flagCeiling}</strong></li>}
+      {math.final != null && <li style={step}><strong>Overall research score</strong> = {res(math.final)}</li>}
+    </ol>
+  );
+}
+
 function Expand({ id, title, right, children, open = false }) {
   return (
     <details id={id} open={open} className="research-expand" style={{ borderTop: "1px solid var(--bdr)", padding: "2px 0" }}>
@@ -184,7 +211,7 @@ export default function ResearchPanel({ research: r }) {
         <Headline label="Overall research score" value={o.score} tone={oTone}
           word={o.score != null ? o.stance : null}
           sub={o.score != null ? `${o.text}${o.status === "provisional" ? " — provisional: limited data coverage caps it at 59" : ""}` : o.text}
-          title="Quality without valuation (70%) and valuation (30%), trimmed for price swings and data gaps. Not a buy or sell signal." details="why-how" />
+          title="Quality without valuation (70%) and valuation (30%), trimmed for price swings and data gaps. Not a buy or sell signal." details="why-math" />
         <Headline label="Data quality" value={r.confidence} tone={confTone}
           sub={`${r.coverage.checked} of ${r.coverage.total} checks have data · also reflects recency, not outcome confidence`}
           title="A data-quality measure based on checks covered, filing recency and price freshness. It does not predict whether the stock or score is correct." details="why-how" />
@@ -239,12 +266,16 @@ export default function ResearchPanel({ research: r }) {
             </div>
           ))}
         </Expand>
+        <Expand id="why-math" title="How this score was worked out" right={r.overall.math?.final != null ? `${d1(r.overall.math.final)}/100` : null}>
+          <ScoreMath math={r.overall.math} />
+        </Expand>
         <Expand id="why-how" title="How the scores work">
           <ul style={{ margin: "4px 0 0", padding: "0 0 0 16px", display: "flex", flexDirection: "column", gap: 7, fontSize: 12, color: "var(--t2)", lineHeight: 1.55 }}>
             <li><strong>Quality (0–100)</strong> weighs six groups: business quality 25, earnings quality 20, balance sheet 15, management &amp; governance 15, growth 10 and valuation 15. Each check scores 0–100 against stated bands — ROCE of 13% scores 50, 20% scores 75, 33% or more scores 100.</li>
             <li><strong>Nothing is guessed.</strong> A check the filings can't show — related-party deals, competitive position, forecasts, market size, a cash-flow model — is listed as not checked and left out of the score (the cash-flow scenario on the stock page uses your own assumptions, so it isn't scored either). Missing data never counts as zero or as a pass. A group needs over a third of its weight checked to be scored.</li>
             <li><strong>Overall research score</strong> blends quality without valuation (70%) with valuation (30%) so one strong side can't fully hide a weak one, then trims up to 35% for price swings and data gaps. Debt and pledging count once, in quality, not again as risk.</li>
-            <li><strong>Red flags override.</strong> If the auditor qualified the latest accounts, the overall score stops at 39 and reads "Review required" until a clean audit. An auditor's resignation in the last three years halves the audit check and shows as a caution — the reasons are in the company's disclosure. Lenders, and companies whose balance sheet or shareholding can't be checked, have quality capped at 69.</li>
+            <li><strong>Red flags override.</strong> If the auditor qualified the latest accounts, the overall score stops at 39 and reads "Review required" until a clean audit. An auditor's resignation in the last three years halves the audit check and shows as a caution — the reasons are in the company's disclosure. Results overdue at NSE, or annual results over 15 months old, show as a caution too. NBFC lenders, and companies whose balance sheet or shareholding can't be checked, have quality capped at 69.</li>
+            <li><strong>Banks</strong> are judged on their own tests from their standalone filings — gross and net bad loans, provision cover, CET1 capital and credit cost for the balance sheet; return on assets and cost-to-income in business quality; price-to-book against what their return on equity supports in valuation.</li>
             <li><strong>Technical setup and risk</strong> are separate lenses. The price trend never moves the quality or overall score.</li>
             <li>Valued at NSE's close so Discover and this page agree; your own EPS or P/E above changes the price levels, not the score. The weights and bands are a stated starting point, not a model tested against past returns.</li>
             <li>A research summary, not a recommendation to buy or sell. Check the filings and your own situation before investing.</li>

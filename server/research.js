@@ -526,6 +526,17 @@ const GROWTH = {
 // jumped on a one-off (metrics.js valuationEps), as the fair value is.
 const closePe = m => (m.close > 0 && m.valuationEps > 0 ? m.close / m.valuationEps : null);
 const closeMcapCr = m => (m.close > 0 && m.shares > 0 ? (m.close * m.shares) / 1e7 : null);
+// A bank is valued on its book: the price-to-book its return on equity can
+// support is (ROE − g) ÷ (cost of equity − g). Stated assumptions, the same
+// for every bank: cost of equity 12.5% (a 7% government bond plus a 5.5%
+// equity premium), long-run growth 8% (below India's nominal GDP growth).
+export const BANK_COST_OF_EQUITY = 12.5, BANK_LONG_RUN_GROWTH = 8;
+export function justifiedPb(roePct) {
+  if (!finite(roePct)) return null;
+  // A return at or under the growth rate supports little more than a
+  // fraction of book — floored so the ratio stays meaningful
+  return Math.max((roePct - BANK_LONG_RUN_GROWTH) / (BANK_COST_OF_EQUITY - BANK_LONG_RUN_GROWTH), 0.25);
+}
 const VALUATION = {
   id: "valuation", label: "Valuation", weight: 15,
   items: [
@@ -565,7 +576,7 @@ const VALUATION = {
     {
       id: "fcfYield", weight: 0.15, label: "Free cash flow yield",
       compute(m) {
-        if (m.lender) return notApplicable("Not meaningful for lenders.");
+        if (m.lender) return m.bank ? notApplicable("Not meaningful for a bank — valued on its book instead.", true) : notApplicable("Not meaningful for lenders.");
         const rows = lastYears(m, 3).filter(h => finite(h.ocfCr) && finite(h.capexCr));
         const mcap = closeMcapCr(m);
         if (rows.length < 2 || mcap == null) return missing("Needs 2 years of cash flow and capital spending.");
@@ -600,6 +611,19 @@ const VALUATION = {
         return checked(score, null, shown.join(" · "), `${shown.join(" and ")} — ${score >= 60 ? "undemanding" : score >= 40 ? "middling" : "demanding"} on simple multiples.`);
       },
     },
+    // A bank's: in the 15% the free-cash-flow yield holds for others
+    bankItem("bookValue", 0.15, "Price-to-book against what its ROE supports (banks)", (b, m) => {
+      const roes = lastYears(m, 5).map(h => h.roe).filter(finite);
+      const h = m.history[0], mcap = closeMcapCr(m);
+      const equity = h.equityOwnersCr > 0 ? h.equityOwnersCr : h.equityCr;
+      if (roes.length < 2) return missing("Needs 2 years of return on equity.");
+      if (mcap == null || !(equity > 0)) return missing("Needs the close price and the bank's equity.");
+      const roe = median(roes), fair = justifiedPb(roe), pb = mcap / equity, ratio = pb / fair;
+      const score = band(ratio, [[0.6, 100], [0.8, 85], [1, 65], [1.25, 45], [1.6, 20], [2.2, 0]]);
+      const perShare = m.shares > 0 ? (fair * equity * 1e7) / m.shares : null;
+      return checked(score, ratio, `P/B ${pb.toFixed(2)} vs ${fair.toFixed(2)}`,
+        `A ${pct(roe)} median ROE supports about ${fair.toFixed(2)}× book (cost of equity ${BANK_COST_OF_EQUITY}%, long-run growth ${BANK_LONG_RUN_GROWTH}%); it trades at ${pb.toFixed(2)}×${perShare ? `, or ${rupees(perShare)} a share at that multiple` : ""} — ${ratio <= 1 ? "at or under" : "above"} what its returns support.`);
+    }),
   ],
 };
 
@@ -826,6 +850,30 @@ export function computeResearch(m, ctx = { peers: PEERS }) {
       text: `The statutory auditor resigned on ${dayText(m.auditorResignations[0])}${m.auditorResignations.length > 1 ? ` (and ${m.auditorResignations.length - 1} more time${m.auditorResignations.length > 2 ? "s" : ""} in three years)` : ""}. Companies must publish the auditor's reasons — worth reading before relying on the accounts.`,
     });
   }
+  // Stale figures: the score is only as current as the filings behind it.
+  // Results are due 45 days after a quarter (60 after the year); a company
+  // past that by a full period hasn't filed one. Half-yearly filers (NSE's
+  // SME platform) are judged on their own six-month rhythm.
+  const asOfMs = Date.parse(m.closeDate ?? "") || (ctx.now ?? Date.now());
+  const DAY_MS = 86400000;
+  const q0 = m.quarters?.[0], q1 = m.quarters?.[1];
+  if (q0?.fyEnd) {
+    const cadence = q1?.fyEnd ? Math.min(Math.max((Date.parse(q0.fyEnd) - Date.parse(q1.fyEnd)) / DAY_MS, 85), 190) : 91;
+    const since = (asOfMs - Date.parse(q0.fyEnd)) / DAY_MS;
+    if (since > cadence + 60) {
+      flags.push({
+        id: "resultsOverdue", severity: "caution",
+        text: `The latest results on NSE are for the ${cadence > 120 ? "half-year" : "quarter"} to ${dayText(q0.fyEnd)} — ${Math.floor((since - 60) / cadence)} later ${cadence > 120 ? "half-year" : "quarter"}${Math.floor((since - 60) / cadence) === 1 ? "'s" : "s'"} results should have been filed by now. Figures here may be out of date.`,
+      });
+    }
+  }
+  const annualAge = (asOfMs - Date.parse(latestYear.fyEnd)) / (30.44 * DAY_MS);
+  if (annualAge > 15) {
+    flags.push({
+      id: "annualStale", severity: "caution",
+      text: `The latest annual results on file are for ${fy(latestYear.fyEnd)}, ${Math.floor(annualAge)} months ago — a later year's results should have been filed. The scores rest on older figures.`,
+    });
+  }
   const critical = flags.some(f => f.severity === "critical");
 
   // Overall research score: quality without valuation (70%) and valuation
@@ -846,6 +894,22 @@ export function computeResearch(m, ctx = { peers: PEERS }) {
   }
   const bandRow = ors == null || status === "review-required" ? null : BANDS_ORS.find(([min]) => ors >= min);
 
+  // Every step from the groups to the overall score, with its numbers, for
+  // the page to show — worked out from the same values as above, unrounded
+  const partsOf = ids => groups.filter(g => ids.includes(g.id) && g.applicable && g.score != null).map(g => ({ id: g.id, label: g.label, score: g.score, weight: g.weight }));
+  const blend = qualityOnly != null && valuation.score != null ? Math.exp(0.7 * Math.log(Math.max(qualityOnly, 1)) + 0.3 * Math.log(Math.max(valuation.score, 1))) : null;
+  const math = {
+    qualityOnly: { parts: partsOf(QUALITY_IDS), raw: rawQualityOnly == null ? null : r1(rawQualityOnly), capAt: capReason && rawQualityOnly != null && rawQualityOnly > CAPPED_AT ? CAPPED_AT : null, value: qualityOnly == null ? null : r1(qualityOnly) },
+    quality: { parts: partsOf([...QUALITY_IDS, "valuation"]), raw: rawQuality == null ? null : r1(rawQuality), capAt: capReason && rawQuality != null && rawQuality > CAPPED_AT ? CAPPED_AT : null, value: quality == null ? null : r1(quality) },
+    ...(blend != null && {
+      blend: r1(blend), valuation: valuation.score,
+      overlay: risk.overlay, trimPct: r1(0.35 * risk.overlay), afterTrim: r1(blend * (1 - 0.35 * (risk.overlay / 100))),
+      provisionalCap: confidence < 50 ? 59 : null,
+    }),
+    flagCeiling: critical && status !== "not-rated" ? FLAG_CEILING : null,
+    final: ors == null ? null : r1(ors),
+  };
+
   const out = {
     version: RESEARCH_VERSION,
     quality: quality == null ? null : r1(quality),
@@ -864,6 +928,7 @@ export function computeResearch(m, ctx = { peers: PEERS }) {
       stance: bandRow?.[1] ?? (status === "review-required" ? "Review required" : status === "quality-only" ? "Quality view only" : "Not rated"),
       text: bandRow?.[2] ?? (status === "review-required" ? `Review required — ${flags[0].text.split(".")[0].replace(/^The/, "the")}.`
         : status === "quality-only" ? "Quality view only — valuation needs more data." : "Not rated — too little filed data to score."),
+      math,
     },
     flags,
   };
