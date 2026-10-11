@@ -555,6 +555,10 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
     api.stock(symbol).then(d => {
       if (cancelled) return;
       setData(d);
+      // Market data is useful even when NSE has no usable annual filings.
+      // Keep the displayed reference price independent of the research score.
+      if (quoteIsNewer(d)) { setActionPrice(String(d.quote.cmp)); setPriceLabel(quoteLabel(d.quote)); }
+      else if (d.close) { setActionPrice(String(d.close.price)); setPriceLabel(closeLabel(d.close)); }
       const m = d.metrics;
       if (!m) return;
       const b = {
@@ -565,8 +569,6 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       };
       setBaseline(b);
       applyBaseline(b);
-      if (quoteIsNewer(d)) { setActionPrice(String(d.quote.cmp)); setPriceLabel(quoteLabel(d.quote)); }
-      else if (d.close) { setActionPrice(String(d.close.price)); setPriceLabel(closeLabel(d.close)); }
     }).catch(e => { if (!cancelled) setError(e.message); });
     return () => { cancelled = true; };
   }, [symbol]);
