@@ -24,8 +24,8 @@ assert(classifyAnnouncement("General update", "") == null, "unmatched filing des
 
 // A steady, debt-light company with six years of filings. `tweak` edits the
 // raw years (newest first) before they're stored.
-function company({ tweak = y => y, template = "INDAS", holding = {}, sector = "Information Technology" } = {}) {
-  const years = [2026, 2025, 2024, 2023, 2022, 2021].map((yr, i) => {
+function company({ tweak = y => y, template = "INDAS", holding = {}, sector = "Information Technology", fys = [2026, 2025, 2024, 2023, 2022, 2021] } = {}) {
+  const years = fys.map((yr, i) => {
     const g = Math.pow(1.12, -i); // 12% a year growth, newest first
     return tweak({
       fyEnd: `${yr}-03-31`, label: `FY${yr}`, scope: "Consolidated", source: "integrated", filed: `${yr}-05-15`, template,
@@ -48,9 +48,9 @@ function company({ tweak = y => y, template = "INDAS", holding = {}, sector = "I
   };
 }
 
-function snapshot({ price = 200, tech = {}, sector = "Information Technology" } = {}) {
+function snapshot({ price = 200, tech = {}, sector = "Information Technology", fys = [2026, 2025, 2024, 2023, 2022, 2021] } = {}) {
   const fyEndPrices = {};
-  [2026, 2025, 2024, 2023, 2022, 2021].forEach((yr, i) => {
+  fys.forEach((yr, i) => {
     fyEndPrices[`${yr}-03-31`] = { date: `${yr}-03-31`, prices: { TESTCO: 260 * Math.pow(1.12, -i) } }; // P/E 20 each year
   });
   return {
@@ -245,6 +245,19 @@ const investCo = metricsOf({ ...company({ template: "NBFC" }), name: "Test Inves
 assert(investCo.valuation.as === "holding company" && investCo.levels == null, "a holding company needs more data rather than a P/E-history value");
 const fundHouse = metricsOf({ ...company({ template: "NBFC" }), name: "Test Asset Management Company Limited" }, snapshot());
 assert(fundHouse.valuation.model === "earnings", "a fund house filing in the NBFC format is still valued on earnings");
+
+// ── Cyclicals on mid-cycle earnings ──
+const EIGHT = [2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019];
+const lossIn2021 = (y, i) => (i === 5 ? { ...y, profit: -20 * CR, pbt: -20 * CR, eps: -2 } : y);
+const cyc = metricsOf(company({ fys: EIGHT, tweak: lossIn2021 }), snapshot({ fys: EIGHT }));
+assert(cyc.valuation.model === "cyclical" && /FY21/.test(cyc.valuation.why), "a loss year in eight flags a cyclical, saying which year");
+assert(near(cyc.valuation.medianMargin, 13, 0.05) && near(cyc.valuation.normalizedEps, 13, 0.01) && near(cyc.valuation.multiple, 20, 0.05) && cyc.valuation.fairValue === 260, "mid-cycle EPS = revenue a share × the median margin (loss year included), at its usual multiple of mid-cycle EPS");
+assert(cyc.levels?.fv25 === cyc.valuation.fairValue && cyc.valuation.positionLabel === "around mid-cycle", "the price levels run on the mid-cycle value");
+const peak = metricsOf(company({ fys: EIGHT, tweak: (y, i) => lossIn2021(i === 0 ? { ...y, profit: 200 * CR, pbt: 260 * CR, eps: 20 } : y, i) }), snapshot({ fys: EIGHT }));
+assert(peak.valuation.positionLabel === "above mid-cycle" && peak.valuation.fairValue < peak.valuation.latestEpsFairValue, "at a profit peak, the mid-cycle value sits under the latest-EPS one — the trap it avoids");
+assert(/mid-cycle fair value/.test(itemOf(peak.research, "valuation", "ownHistory").reason), "the score checks a cyclical against the same mid-cycle value");
+const partial = metricsOf(company({ tweak: lossIn2021 }), snapshot());
+assert(partial.valuation.model === "earnings" && partial.valuation.partialCycle?.years === 6, "under seven years, a cyclical stays on its P/E history, badged a partial cycle");
 
 const pbItem = itemOf(goodBank.research, "valuation", "bookValue");
 assert(pbItem.score != null && /through-cycle ROE/.test(pbItem.reason) && /cost of equity 12%/.test(pbItem.reason) && pbItem.reason.includes(`₹${goodBank.valuation.fairValue}`), "the score's book check is the same model, stating the assumptions and the fair value");
