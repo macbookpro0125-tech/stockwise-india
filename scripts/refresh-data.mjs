@@ -7,12 +7,11 @@
 // Telegram, alert checks or backups — this isn't a server.
 //
 // Tells the workflow whether to publish (`publish=true|false` in
-// $GITHUB_OUTPUT): only when the snapshot was rebuilt in this run, so a run
-// that couldn't reach NSE publishes nothing rather than yesterday's data
-// again. Exits 1 when the snapshot was due and couldn't be rebuilt — after
-// one more try at the end, since NSE refusing the first minutes of a run
-// (9 Oct) needn't mean it refuses all of it. What went wrong is printed as
-// workflow annotations, which the run's page shows without opening the log.
+// $GITHUB_OUTPUT): when the snapshot was rebuilt, or the workflow needs to
+// republish a new data-pack entry. A run that couldn't reach NSE therefore
+// doesn't publish yesterday's data again. Exits 1 when a due snapshot can't
+// be rebuilt after one retry; NSE refusing the first minutes of a run needn't
+// mean it refuses all of it. Failures are printed as workflow annotations.
 import { appendFileSync } from "node:fs";
 import { startDataJobs, jobStatus } from "../server/data-jobs.js";
 import { buildMarketSnapshot, loadMarketSnapshot, clearSnapshotCache } from "../server/market-data.js";
@@ -44,8 +43,13 @@ const start = loadMarketSnapshot();
 const before = start?.builtAt ?? null;
 const ageHours = before ? (Date.now() - Date.parse(before)) / 3600000 : Infinity;
 if (ageHours < FRESH_HOURS) {
-  console.log(`The snapshot is ${ageHours.toFixed(1)} h old (prices ${start.pricesDate}) — already up to date, nothing to do.`);
-  output("publish", "false");
+  if (process.env.FORCE_DATA_PACK === "true") {
+    console.log(`The snapshot is ${ageHours.toFixed(1)} h old (prices ${start.pricesDate}) — republishing the current data with the updated pack format.`);
+    output("publish", "true");
+  } else {
+    console.log(`The snapshot is ${ageHours.toFixed(1)} h old (prices ${start.pricesDate}) — already up to date, nothing to do.`);
+    output("publish", "false");
+  }
   process.exit(0);
 }
 

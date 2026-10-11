@@ -22,6 +22,7 @@ on:
     paths:
       - .github/workflows/data-refresh.yml
       - scripts/refresh-data.mjs
+      - package.json
 
 permissions:
   contents: write # to update the data-latest release
@@ -55,6 +56,7 @@ jobs:
       # The last published data, or the repository's seed when that was built
       # later (a fetch run on a computer and committed) — whichever is newer
       - name: Start from the newest data
+        id: start_data
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -67,10 +69,19 @@ jobs:
           fi
           from=$(node -e 'const fs = require("fs"); const built = d => { try { return Date.parse(JSON.parse(fs.readFileSync(`/tmp/${d}/market-snapshot.json`, "utf8")).builtAt) || 0; } catch { return 0; } }; console.log(built("release") >= built("seed") ? "release" : "seed")')
           cp -R /tmp/$from/. data/
+          # Older release packs don't have the frozen score study. Keep it
+          # from the seed until the next pack is published with this entry.
+          if [ ! -f data/research-score-cohorts.json ] && [ -f /tmp/seed/research-score-cohorts.json ]; then
+            cp /tmp/seed/research-score-cohorts.json data/research-score-cohorts.json
+          fi
+          if [ -f /tmp/release/research-score-cohorts.json ]; then force_pack=false; else force_pack=true; fi
+          echo "force_pack=$force_pack" >> "$GITHUB_OUTPUT"
           echo "Started from the $from data"
 
       - name: Refresh from NSE
         id: refresh
+        env:
+          FORCE_DATA_PACK: ${{ steps.start_data.outputs.force_pack }}
         run: node --no-warnings scripts/refresh-data.mjs
 
       - uses: actions/cache/save@v4
@@ -84,7 +95,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tar -czf market-data.tar.gz -C data market market-snapshot.json performance-snapshots.json shareholding
+          tar -czf market-data.tar.gz -C data market market-snapshot.json performance-snapshots.json research-score-cohorts.json shareholding
           node -e 'const fs = require("fs"); const s = JSON.parse(fs.readFileSync("data/market-snapshot.json", "utf8")); console.log(JSON.stringify({ builtAt: s.builtAt, pricesDate: s.pricesDate, companies: fs.readdirSync("data/market").length, packedAt: new Date().toISOString() }))' > manifest.json
           cat manifest.json
           cp data/jobs-state.json jobs-state.json 2>/dev/null || echo '{}' > jobs-state.json

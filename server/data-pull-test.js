@@ -34,8 +34,9 @@ function makePack(name, { companies, builtAt }) {
   mkdirSync(join(dir, "shareholding"));
   writeFileSync(join(dir, "market-snapshot.json"), JSON.stringify({ builtAt, pricesDate: builtAt.slice(0, 10), prices: { C0: 2 } }));
   writeFileSync(join(dir, "performance-snapshots.json"), "[]");
+  writeFileSync(join(dir, "research-score-cohorts.json"), JSON.stringify([{ month: "2026-10", records: [{ ticker: "C0", overall: 70 }] }]));
   const tgz = join(root, `${name}.tar.gz`);
-  execFileSync("tar", ["-czf", tgz, "-C", dir, "market", "market-snapshot.json", "performance-snapshots.json", "shareholding"]);
+  execFileSync("tar", ["-czf", tgz, "-C", dir, "market", "market-snapshot.json", "performance-snapshots.json", "research-score-cohorts.json", "shareholding"]);
   return tgz;
 }
 
@@ -71,6 +72,7 @@ assert.equal(readdirSync(join(dataDir, "market")).length, 1200, "the pack's comp
 assert.ok(!existsSync(join(dataDir, "market", "OLD.json")));
 assert.equal(loadMarketSnapshot().pricesDate, "2026-10-09", "the snapshot served is the pack's, not a cached old one");
 assert.ok(existsSync(join(dataDir, "performance-snapshots.json")));
+assert.deepEqual(JSON.parse(readFileSync(join(dataDir, "research-score-cohorts.json"), "utf8")), [{ month: "2026-10", records: [{ ticker: "C0", overall: 70 }] }], "monthly score-validation cohorts arrive with the market data");
 assert.ok(!readdirSync(dataDir).some(f => f.startsWith(".old-") || f.startsWith(".pull")), "no leftovers beside the data");
 assert.equal(await pullOnce(base), "current", "the same pack again is left alone");
 
