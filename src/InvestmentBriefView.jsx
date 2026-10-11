@@ -24,26 +24,26 @@ function assumptionBasis(metrics, price) {
   const growth = metrics?.epsGrowth5y != null ? "reported 5-year EPS CAGR"
     : metrics?.epsGrowth3y != null ? "reported 3-year EPS CAGR"
       : metrics?.growthBasis ?? "0% EPS-growth fallback";
-  const pe = metrics?.medianPe != null ? "5-year median P/E"
-    : metrics?.valuationPe != null ? "valuation P/E"
-      : metrics?.pe != null ? "current P/E"
-        : (finite(metrics?.valuationEps) ?? finite(metrics?.eps)) > 0 && price > 0 ? "current price ÷ normalized EPS"
-          : "manual P/E assumption";
-  return `Base EPS growth starts from ${growth}; base P/E uses ${pe}.`;
+  return `Base EPS growth starts from ${growth}; the base case keeps today's P/E (no re-rating), the bull and bear cases move it 25% up and down.`;
 }
 
 function defaultAssumptions(metrics, price) {
   const sourceGrowth = metrics?.epsGrowth5y ?? metrics?.epsGrowth3y ?? metrics?.growthForValuation ?? 0;
   const baseGrowth = bound(Math.round(finite(sourceGrowth) ?? 0), -10, 30);
   const eps = finite(metrics?.valuationEps) ?? finite(metrics?.eps);
-  const historyPe = finite(metrics?.medianPe) ?? finite(metrics?.valuationPe) ?? finite(metrics?.pe) ?? (eps > 0 && price > 0 ? price / eps : 0);
+  // Today's P/E, not the 5-year median: a base case that assumed the old
+  // multiple came back had a de-rated company (Indiamart at 20 against a
+  // median near 50) more than doubling in a year, and a "bear" case with a
+  // higher P/E than today's. A return to the median is a bull-case idea —
+  // edit the exit P/E to try it.
+  const todayPe = eps > 0 && price > 0 ? price / eps : finite(metrics?.pe) ?? finite(metrics?.valuationPe) ?? finite(metrics?.medianPe) ?? 0;
   return {
     bearGrowth: bound(Math.round(Math.min(0, baseGrowth - 25)), -30, 0),
     baseGrowth,
     bullGrowth: Math.round(baseGrowth + 5),
-    bearPe: Math.max(1, Math.round(historyPe * 0.5)),
-    basePe: Math.max(1, Math.round(historyPe)),
-    bullPe: Math.max(1, Math.round(historyPe * 1.2)),
+    bearPe: Math.max(1, Math.round(todayPe * 0.75)),
+    basePe: Math.max(1, Math.round(todayPe)),
+    bullPe: Math.max(1, Math.round(todayPe * 1.25)),
   };
 }
 

@@ -524,11 +524,12 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                     {day == null ? "" : `${day >= 0 ? "+" : ""}${day.toFixed(2)}%`}
                   </div>
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: `repeat(${cells.length}, minmax(0, 1fr))`, gap: 6, marginTop: 10 }}>
+                {/* Six to a row (four filtered measures) only fit "Research" with a little less room between */}
+                <div style={{ display: "grid", gridTemplateColumns: `repeat(${cells.length}, minmax(0, 1fr))`, gap: cells.length > 5 ? 4 : 6, marginTop: 10 }}>
                   {cells.map(([label, value]) => (
                     <div key={label} style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 10.5, color: "var(--t3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 2 }}>{label}</div>
-                      <div style={{ fontSize: label === "Research" && overall == null ? 10.5 : 12.5, fontWeight: 650, whiteSpace: label === "Research" && overall == null ? "normal" : "nowrap", lineHeight: 1.25, ...MONO }}>{value}</div>
+                      <div style={{ fontSize: cells.length > 5 ? 10 : 10.5, color: "var(--t3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 2 }}>{label}</div>
+                      <div style={{ fontSize: label === "Research" && overall == null ? 10.5 : cells.length > 5 ? 12 : 12.5, fontWeight: 650, whiteSpace: label === "Research" && overall == null ? "normal" : "nowrap", lineHeight: 1.25, ...MONO }}>{value}</div>
                     </div>
                   ))}
                 </div>

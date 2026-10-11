@@ -11,6 +11,10 @@ name: Evening data refresh
 on:
   schedule:
     - cron: "30 14 * * 1-5" # 20:00 IST, Monday to Friday
+    # A second try at 07:00 IST next morning, for an evening run that failed
+    # or that GitHub started hours late (9 Oct: 5 h late, then NSE refused
+    # it); does nothing when the evening's data is already out
+    - cron: "30 1 * * 2-6"
   workflow_dispatch:
   # A change to how the refresh runs is tried straight away
   push:
@@ -48,22 +52,25 @@ jobs:
           key: prices-${{ github.run_id }}
           restore-keys: prices-
 
-      - name: Start from the last published data
+      # The last published data, or the repository's seed when that was built
+      # later (a fetch run on a computer and committed) — whichever is newer
+      - name: Start from the newest data
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          mkdir -p data /tmp/pack
+          mkdir -p data /tmp/pack /tmp/release /tmp/seed
+          tar -xzf seed/market-data.tar.gz -C /tmp/seed
           if gh release download data-latest --pattern market-data.tar.gz --dir /tmp/pack; then
-            tar -xzf /tmp/pack/market-data.tar.gz -C data
-            echo "Started from the data-latest release"
-          else
-            tar -xzf seed/market-data.tar.gz -C data
-            echo "No release yet: started from the repository's seed"
+            tar -xzf /tmp/pack/market-data.tar.gz -C /tmp/release
+            # When results were last checked, so the next check starts there
+            gh release download data-latest --pattern jobs-state.json --dir /tmp/release || true
           fi
-          # When results were last checked, so the next check starts there
-          gh release download data-latest --pattern jobs-state.json --dir data || true
+          from=$(node -e 'const fs = require("fs"); const built = d => { try { return Date.parse(JSON.parse(fs.readFileSync(`/tmp/${d}/market-snapshot.json`, "utf8")).builtAt) || 0; } catch { return 0; } }; console.log(built("release") >= built("seed") ? "release" : "seed")')
+          cp -R /tmp/$from/. data/
+          echo "Started from the $from data"
 
       - name: Refresh from NSE
+        id: refresh
         run: node --no-warnings scripts/refresh-data.mjs
 
       - uses: actions/cache/save@v4
@@ -73,6 +80,7 @@ jobs:
           key: prices-${{ github.run_id }}
 
       - name: Publish
+        if: steps.refresh.outputs.publish == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
