@@ -70,70 +70,74 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
           const isCustom = !!p.custom;
 
           return (
-            <button
-              key={p.id}
-              onClick={() => onSelect(p)}
-              title={p.description}
-              className="preset-card"
-              style={{
-                flexShrink: 0,
-                width: 156,
-                padding: "14px 14px 13px",
-                borderRadius: 12,
-                border: active ? "1px solid var(--accent)" : "1px solid var(--bdr2)",
-                background: active ? tint(5) : "var(--s2)",
-                cursor: "pointer",
-                textAlign: "left",
-                position: "relative",
-                transition: "background 150ms, border-color 150ms, box-shadow 150ms",
-                boxShadow: active ? `0 0 0 3px ${tint(12)}` : "var(--sh-xs)",
-              }}
-              onMouseEnter={e => { if (!active) { e.currentTarget.style.borderColor = "var(--bdr3)"; e.currentTarget.style.boxShadow = "var(--sh-sm)"; } }}
-              onMouseLeave={e => { if (!active) { e.currentTarget.style.borderColor = "var(--bdr2)"; e.currentTarget.style.boxShadow = "var(--sh-xs)"; } }}
-            >
-              <div className="preset-icon" style={{
-                width: 30, height: 30, borderRadius: 8,
-                background: active ? tint(14) : "var(--s3)",
-                color: active ? "var(--accent)" : "var(--t2)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                marginBottom: 11,
-                transition: "background 150ms, color 150ms",
-              }}>
-                <PresetIcon preset={p} size={16} strokeWidth={2} />
-              </div>
+            <div key={p.id} className="preset-card-wrap" style={{ position: "relative", flexShrink: 0 }}>
+              <button
+                type="button"
+                onClick={() => onSelect(p)}
+                title={p.description}
+                className="preset-card"
+                aria-pressed={active}
+                style={{
+                  flexShrink: 0,
+                  width: 156,
+                  padding: "14px 14px 13px",
+                  borderRadius: 12,
+                  border: active ? "1px solid var(--accent)" : "1px solid var(--bdr2)",
+                  background: active ? tint(5) : "var(--s2)",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  position: "relative",
+                  transition: "background 150ms, border-color 150ms, box-shadow 150ms",
+                  boxShadow: active ? `0 0 0 3px ${tint(12)}` : "var(--sh-xs)",
+                }}
+                onMouseEnter={e => { if (!active) { e.currentTarget.style.borderColor = "var(--bdr3)"; e.currentTarget.style.boxShadow = "var(--sh-sm)"; } }}
+                onMouseLeave={e => { if (!active) { e.currentTarget.style.borderColor = "var(--bdr2)"; e.currentTarget.style.boxShadow = "var(--sh-xs)"; } }}
+              >
+                <span className="preset-icon" style={{
+                  width: 30, height: 30, borderRadius: 8,
+                  background: active ? tint(14) : "var(--s3)",
+                  color: active ? "var(--accent)" : "var(--t2)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  marginBottom: 11,
+                  transition: "background 150ms, color 150ms",
+                }}>
+                  <PresetIcon preset={p} size={16} strokeWidth={2} />
+                </span>
 
-              <div style={{
-                fontSize: 13, fontWeight: 600,
-                color: "var(--t1)",
-                marginBottom: 4, letterSpacing: "-0.01em",
-                lineHeight: 1.3,
-              }}>
-                {p.name}
-              </div>
+                <span style={{
+                  display: "block",
+                  fontSize: 13, fontWeight: 600,
+                  color: "var(--t1)",
+                  marginBottom: 4, letterSpacing: "-0.01em",
+                  lineHeight: 1.3,
+                }}>
+                  {p.name}
+                </span>
 
-              <div className="preset-desc" style={{ fontSize: 11.5, color: "var(--t3)", lineHeight: 1.45, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                {p.description}
-              </div>
+                <span className="preset-desc" style={{ fontSize: 11.5, color: "var(--t3)", lineHeight: 1.45, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                  {p.description}
+                </span>
+              </button>
 
               {isCustom && (
-                <span
+                <button
+                  type="button"
                   onClick={e => { e.stopPropagation(); setMenuOpen(menuOpen === p.id ? null : p.id); }}
-                  role="button"
-                  tabIndex={0}
-                  aria-label="Strategy options"
+                  aria-label={`${p.name} strategy options`}
+                  aria-expanded={menuOpen === p.id}
                   style={{
                     position: "absolute", top: 8, right: 8,
                     color: "var(--t3)", cursor: "pointer",
-                    padding: 2, borderRadius: 4,
-                    lineHeight: 0,
+                    padding: 2, borderRadius: 4, lineHeight: 0,
+                    background: "var(--s2)", border: "1px solid var(--bdr2)",
                   }}
-                ><Ellipsis size={16} /></span>
+                ><Ellipsis size={16} /></button>
               )}
               {isCustom && menuOpen === p.id && (
-                <div onClick={e => e.stopPropagation()} style={{
-                  position: "absolute", top: 24, right: 4, zIndex: 50,
+                <div role="group" aria-label={`${p.name} strategy options`} onClick={e => e.stopPropagation()} style={{
+                  position: "absolute", top: 32, right: 4, zIndex: 50,
                   background: "var(--s3)", border: "1px solid var(--bdr2)",
-                  borderRadius: 10, padding: 4, minWidth: 130,
+                  borderRadius: 10, padding: 4, minWidth: 150,
                   boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
                 }}>
                   {[
@@ -142,14 +146,15 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
                     { label: "Duplicate", action: e => { e.stopPropagation(); if (onDuplicatePreset) onDuplicatePreset(p); setMenuOpen(null); } },
                     { label: "Delete", action: e => deleteCustom(e, p.id), color: "var(--red)" },
                   ].map(item => (
-                    <div key={item.label} onClick={item.action} style={{
-                      padding: "7px 12px", fontSize: 12, cursor: "pointer",
-                      color: item.color || "var(--t2)", borderRadius: 6,
+                    <button key={item.label} type="button" onClick={item.action} style={{
+                      display: "block", width: "100%", padding: "7px 12px", fontSize: 12,
+                      textAlign: "left", cursor: "pointer", fontFamily: "inherit",
+                      color: item.color || "var(--t2)", border: 0, background: "transparent", borderRadius: 6,
                       transition: "background 100ms",
                     }}
                     onMouseEnter={e => { e.currentTarget.style.background = "var(--s4)"; }}
                     onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
-                    >{item.label}</div>
+                    >{item.label}</button>
                   ))}
                 </div>
               )}
@@ -158,6 +163,7 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
                 <div onClick={e => e.stopPropagation()} style={{ position: "absolute", inset: 0, background: "var(--s2)", borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", padding: 10 }}>
                   <input
                     autoFocus
+                    aria-label={`Rename ${p.name}`}
                     value={renameValue}
                     onChange={e => setRenameValue(e.target.value)}
                     onKeyDown={e => { if (e.key === "Enter") commitRename(p.id); if (e.key === "Escape") setRenaming(null); }}
@@ -170,7 +176,7 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
                   />
                 </div>
               )}
-            </button>
+            </div>
           );
         })}
 

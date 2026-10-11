@@ -3,6 +3,7 @@ import { ChartPie, NotebookPen, Pencil, X } from "lucide-react";
 import { api } from "./api.js";
 import { portfolioStore } from "./stores.js";
 import AddHoldingModal from "./AddHoldingModal.jsx";
+import { portfolioSummary } from "./portfolioMath.js";
 
 // Ported from stock-screener's src/components/PortfolioPanel.jsx — summary
 // bar, sort pills, one row per lot, allocation bar. Holdings are saved to the
@@ -64,17 +65,12 @@ export default function PortfolioView({ onOpenStock }) {
     return { ...h, cmp, invested, currentVal, pl, plPct };
   });
 
-  const totalInvested = enriched.reduce((s, h) => s + h.invested, 0);
-  const totalCurrent = enriched.reduce((s, h) => s + (h.currentVal ?? h.invested), 0);
-  const totalPL = totalCurrent - totalInvested;
-  const totalPLPct = totalInvested > 0 ? (totalPL / totalInvested) * 100 : 0;
   // The prices have all been looked up by now; a holding without one has
   // none to find, so the totals say so rather than showing a loading mark
-  const unpriced = [...new Set(enriched.filter(h => h.cmp == null).map(h => h.ticker))];
-  const allPricesLoaded = unpriced.length === 0;
-  const anyClose = holdings.some(h => prices[h.ticker]?.source === "close");
+  const { totalInvested, totalCurrent, totalPL, totalPLPct, unpriced, allPricesLoaded } = portfolioSummary(enriched);
 
   const sorted = [...enriched].sort((a, b) => {
+    if (sortBy !== "name" && (a.cmp == null) !== (b.cmp == null)) return a.cmp == null ? 1 : -1;
     let c = 0;
     if (sortBy === "value") c = (a.currentVal ?? a.invested) - (b.currentVal ?? b.invested);
     else if (sortBy === "pl") c = (a.plPct ?? 0) - (b.plPct ?? 0);
@@ -86,7 +82,7 @@ export default function PortfolioView({ onOpenStock }) {
   const grouped = {};
   for (const h of enriched) {
     grouped[h.ticker] ??= { ticker: h.ticker, name: h.name, value: 0 };
-    grouped[h.ticker].value += h.currentVal ?? h.invested;
+    grouped[h.ticker].value += h.currentVal ?? 0;
   }
   const groups = Object.values(grouped);
 
@@ -124,7 +120,7 @@ export default function PortfolioView({ onOpenStock }) {
           </div>
           {unpriced.length > 0 && (
             <div style={{ fontSize: 11.5, color: "var(--yellow)", flexBasis: "100%", order: 9 }}>
-              No price found for {unpriced.join(", ")}, so the totals can't be worked out.
+              No price found for {unpriced.join(", ")}. Current value, P&amp;L and allocation percentages need a price for every holding.
             </div>
           )}
           <div style={{ fontSize: 10.5, color: "var(--t3)", flexBasis: "100%", lineHeight: 1.5 }}>
@@ -164,7 +160,7 @@ export default function PortfolioView({ onOpenStock }) {
       {sorted.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {sorted.map(h => {
-            const alloc = totalCurrent > 0 && h.currentVal ? (h.currentVal / totalCurrent) * 100 : null;
+            const alloc = allPricesLoaded && totalCurrent > 0 && h.currentVal != null ? (h.currentVal / totalCurrent) * 100 : null;
             const st = status[h.ticker];
             return (
               <div key={h.id} style={{ padding: "14px 16px", borderRadius: 12, border: "1px solid var(--bdr2)", background: "var(--s2)", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
@@ -244,7 +240,7 @@ export default function PortfolioView({ onOpenStock }) {
 
       {holdings.length > 0 && (
         <p style={{ fontSize: 10, color: "var(--t3)", marginTop: 14, lineHeight: 1.6 }}>
-          Prices are live from Yahoo Finance{anyClose ? " where available, otherwise NSE's last close" : ""}. "Price level" is where the price sits against each stock's levels — a description, not advice (the stock page has the levels). Saved to your account.
+          These are daily closing prices, not live intraday quotes; each CMP shows its source and date. "Price level" is where the price sits against each stock's levels — a description, not advice (the stock page has the levels). Saved to your account.
         </p>
       )}
 

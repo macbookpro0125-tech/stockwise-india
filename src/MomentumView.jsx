@@ -13,7 +13,7 @@ const MONO = { fontVariantNumeric: "tabular-nums" };
 const SETTINGS_KEY = "momentumSettings";
 const read = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } };
 const write = (key, v) => { try { localStorage.setItem(key, JSON.stringify(v)); } catch {} };
-const dayLabel = iso => (iso ? new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" }) : "—");
+const dayLabel = iso => (iso ? new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : "—");
 const rs = (v, d = 2) => (v == null ? "—" : `₹${Number(v).toLocaleString("en-IN", { minimumFractionDigits: d, maximumFractionDigits: d })}`);
 const num = (v, d = 1) => (v == null ? "—" : Number(v).toLocaleString("en-IN", { minimumFractionDigits: d, maximumFractionDigits: d }));
 const pct = (v, d = 1, signed = false) => (v == null ? "—" : `${signed && v > 0 ? "+" : ""}${num(v, d)}%`);
@@ -251,10 +251,10 @@ export default function MomentumView({ onOpenStock }) {
       {passers.length > 0 && isMobile && (
         <div style={{ borderRadius: 12, border: "1px solid var(--bdr2)", background: "var(--s2)", overflow: "hidden" }}>
           {passers.map((r, i) => (
-            <div key={r.symbol} className="phone-row" role="link" tabIndex={0} onClick={() => onOpenStock(r.symbol)} onKeyDown={e => { if (e.key === "Enter") onOpenStock(r.symbol); }}
+            <div key={r.symbol} className="phone-row" onClick={() => onOpenStock(r.symbol)}
               style={{ padding: "12px 12px 12px 14px", borderTop: i ? "1px solid var(--bdr)" : "none", cursor: "pointer" }}>
               <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", columnGap: 10, alignItems: "baseline" }}>
-                <div style={{ fontSize: 14, fontWeight: 650, color: "var(--t1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{i + 1}. {r.name}</div>
+                <button type="button" className="stock-link" onClick={e => { e.stopPropagation(); onOpenStock(r.symbol); }} style={{ display: "block", minWidth: 0, padding: 0, border: 0, background: "none", fontFamily: "inherit", textAlign: "left", fontSize: 14, fontWeight: 650, color: "var(--t1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{i + 1}. {r.name}</button>
                 <div style={{ fontSize: 14, fontWeight: 650, color: "var(--t1)", ...MONO }}>{rs(r.close)}</div>
                 <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.symbol}{r.sector ? ` · ${r.sector}` : ""}</div>
                 <div style={{ fontSize: 11.5, color: "var(--accent)", fontWeight: 650, marginTop: 3, ...MONO }}>Score {num(r.score)}</div>

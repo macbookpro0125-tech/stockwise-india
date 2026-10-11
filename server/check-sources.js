@@ -45,7 +45,7 @@ const checks = [
   }],
   ["NSE bhavcopy (nsearchives)", bhavcopy],
   ["Nifty index lists (niftyindices)", () => status("https://www.niftyindices.com/IndexConstituent/ind_niftytotalmarket_list.csv")],
-  ["Yahoo live price", async () => { const q = await fetchCmp(SYMBOL); return `${SYMBOL} ₹${q.cmp} on ${q.asOf}`; }],
+  ["Yahoo daily close", async () => { const q = await fetchCmp(SYMBOL); return `${SYMBOL} ₹${q.cmp} on ${q.asOf}`; }],
 ];
 
 let failed = 0;

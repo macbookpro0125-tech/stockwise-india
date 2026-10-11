@@ -1,9 +1,8 @@
-import { useState, useEffect } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 import { ArrowDown, ArrowUp, Check, Info, Columns3, Search, ArrowUpRight, SearchX } from "lucide-react";
 import { StarIcon, BellIcon, actionButtonStyle } from "./icons.jsx";
 import { useWatchlist, toggleWatch } from "./watchlist.js";
 import CreateAlertModal from "./CreateAlertModal.jsx";
-import CompareView from "./CompareView.jsx";
 import { formatValue, valueColor } from "./screener/meta.js";
 import { QualityBadge, OverallScore, qualityTone, overallTone, researchTitle, researchMissingText } from "./ResearchBadges.jsx";
 
@@ -21,6 +20,7 @@ const columnLabel = def => (def.unit === "%" ? `${def.short} %` : def.unit === "
 const PAGE_SIZE = 50;
 const PHONE_PAGE_SIZE = 20;
 const MAX_COMPARE = 5;
+const CompareView = lazy(() => import("./CompareView.jsx"));
 // Wide enough for the compare box and a four-digit rank; the name column is
 // pinned right after it.
 const RANK_W = 60;
@@ -338,7 +338,9 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
     <div style={{ animation: "fadeUp 280ms cubic-bezier(0,0,0.2,1) backwards" }}>
       {alertFor && <CreateAlertModal stock={alertFor} onClose={() => setAlertFor(null)} />}
       {showCompare && selected.size >= 2 && (
-        <CompareView stocks={[...selected.values()]} pricesDate={snapshot?.pricesDate} onClose={() => setShowCompare(false)} />
+        <Suspense fallback={<div role="status" className="compare-loading">Loading comparison…</div>}>
+          <CompareView stocks={[...selected.values()]} pricesDate={snapshot?.pricesDate} onClose={() => setShowCompare(false)} />
+        </Suspense>
       )}
 
       {/* ── Top bar ── */}
@@ -501,13 +503,12 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
               }),
             ];
             return (
-              <div key={stock.symbol} data-tour={i === 0 ? "row" : undefined} role="link" tabIndex={0}
+              <div key={stock.symbol} data-tour={i === 0 ? "row" : undefined}
                 onClick={() => onAnalyze(stock.symbol)}
-                onKeyDown={e => { if (e.key === "Enter") onAnalyze(stock.symbol); }}
                 className="phone-row"
                 style={{ padding: "12px 12px 12px 14px", borderTop: i ? "1px solid var(--bdr)" : "none", cursor: "pointer" }}>
                 <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto auto", columnGap: 10, alignItems: "center" }}>
-                  <div style={{ fontSize: 14, fontWeight: 650, color: "var(--t1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", letterSpacing: "-0.01em" }}>{stock.name}</div>
+                  <button type="button" className="stock-link" onClick={e => { e.stopPropagation(); onAnalyze(stock.symbol); }} style={{ display: "block", minWidth: 0, padding: 0, border: 0, background: "none", fontFamily: "inherit", textAlign: "left", fontSize: 14, fontWeight: 650, color: "var(--t1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", letterSpacing: "-0.01em" }}>{stock.name}</button>
                   <div style={{ fontSize: 14, fontWeight: 650, color: "var(--t1)", textAlign: "right", ...MONO }}>{stock.cmp ? `₹${fmt(stock.cmp, stock.cmp < 100 ? 2 : 0)}` : "—"}</div>
                   <div data-tour={i === 0 ? "row-actions" : undefined} style={{ gridRow: "span 2", display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }} onClick={e => e.stopPropagation()}>
                     <label title={selected.has(stock.symbol) ? "Remove from comparison" : `Add to comparison${selected.size >= MAX_COMPARE ? ` (up to ${MAX_COMPARE})` : ""}`} style={{ width: 36, height: 30, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 8, border: "1px solid var(--bdr2)", background: selected.has(stock.symbol) ? "color-mix(in srgb, var(--accent) 10%, transparent)" : "var(--s1)", cursor: selected.size >= MAX_COMPARE && !selected.has(stock.symbol) ? "not-allowed" : "pointer" }}>
@@ -602,7 +603,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                     </td>
 
                     <td style={{ ...cell, minWidth: 200, position: "sticky", left: RANK_W, background: rowBg, zIndex: 1, boxShadow: "inset -1px 0 0 var(--bdr)" }}>
-                      <div title={stock.name} onClick={() => onAnalyze(stock.symbol)} className="stock-link" style={{ fontWeight: 600, fontSize: 13.5, letterSpacing: "-0.01em", marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 240 }}>{stock.name}</div>
+                      <button type="button" title={stock.name} onClick={() => onAnalyze(stock.symbol)} className="stock-link" style={{ display: "block", maxWidth: 240, padding: 0, border: 0, background: "none", fontFamily: "inherit", textAlign: "left", fontWeight: 600, fontSize: 13.5, letterSpacing: "-0.01em", marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{stock.name}</button>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, maxWidth: 260, minWidth: 0 }}>
                         <span className="ticker-chip">{stock.symbol}</span>
                         <NcavBadge stock={stock} />
