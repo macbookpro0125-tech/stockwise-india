@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { lazy, Suspense, useState, useEffect, useRef, useCallback } from "react";
 import { api } from "./api.js";
 import Landing from "./Landing.jsx";
 import { PrivacyPage, DisclaimerPage } from "./LegalPages.jsx";
@@ -7,16 +7,19 @@ import { usePath, navigate, stockFromPath, stockPath, SiteFooter } from "./site.
 import Header, { BottomTabBar, TABS } from "./Header.jsx";
 import PriceStrip from "./PriceStrip.jsx";
 import DiscoverView from "./DiscoverView.jsx";
-import WatchlistView from "./WatchlistView.jsx";
-import PortfolioView from "./PortfolioView.jsx";
-import PerformanceView from "./PerformanceView.jsx";
-import AlertsView from "./AlertsView.jsx";
-import MomentumView from "./MomentumView.jsx";
-import StockDetail from "./StockDetail.jsx";
 import Tour, { APP_TOUR, STOCK_TOUR } from "./Tour.jsx";
 import { resetWatchlist } from "./watchlist.js";
 import { portfolioStore, alertsStore } from "./stores.js";
 import { strategiesStore, notesStore } from "./accountData.js";
+
+// Keep the first Discover screen small; load account tabs and full stock
+// research only when the user opens them.
+const WatchlistView = lazy(() => import("./WatchlistView.jsx"));
+const PortfolioView = lazy(() => import("./PortfolioView.jsx"));
+const PerformanceView = lazy(() => import("./PerformanceView.jsx"));
+const AlertsView = lazy(() => import("./AlertsView.jsx"));
+const MomentumView = lazy(() => import("./MomentumView.jsx"));
+const StockDetail = lazy(() => import("./StockDetail.jsx"));
 
 // Dark by default, as the original; the choice is remembered in this browser
 function useTheme() {
@@ -177,15 +180,17 @@ export default function App() {
       <PriceStrip onOpenStock={openSymbol} />
       <Header tab={open ? null : tab} onTab={goTab} account={account} onLogout={logout} onDeleted={accountDeleted} onSearch={openSymbol} theme={theme} onToggleTheme={toggleTheme} onTour={askForTour} />
       <div style={{ height: 16 }} />
-      {open && <StockDetail key={open.at} symbol={open.symbol} account={account} onBack={closeStock} backTo={TABS.find(t => t.id === tab)?.label} onOpenStock={openSymbol} />}
-      {/* Kept mounted (hidden) while a stock is open, so its filters and
-          results are still there on Back. */}
-      {tab === "discover" && <div hidden={!!open}><DiscoverView onOpenStock={openSymbol} /></div>}
-      {!open && tab === "watchlist" && <WatchlistView onOpenStock={openSymbol} />}
-      {!open && tab === "portfolio" && <PortfolioView onOpenStock={openSymbol} />}
-      {!open && tab === "performance" && <PerformanceView onOpenStock={openSymbol} />}
-      {!open && tab === "alerts" && <AlertsView onOpenStock={openSymbol} />}
-      {!open && tab === "momentum" && account?.features?.momentum && <MomentumView onOpenStock={openSymbol} />}
+      <Suspense fallback={<div role="status" style={{ minHeight: 220, display: "grid", placeItems: "center", color: "var(--t3)", fontSize: 13 }}>Loading this screen…</div>}>
+        {open && <StockDetail key={open.at} symbol={open.symbol} account={account} onBack={closeStock} backTo={TABS.find(t => t.id === tab)?.label} onOpenStock={openSymbol} />}
+        {/* Kept mounted (hidden) while a stock is open, so its filters and
+            results are still there on Back. */}
+        {tab === "discover" && <div hidden={!!open}><DiscoverView onOpenStock={openSymbol} /></div>}
+        {!open && tab === "watchlist" && <WatchlistView onOpenStock={openSymbol} />}
+        {!open && tab === "portfolio" && <PortfolioView onOpenStock={openSymbol} />}
+        {!open && tab === "performance" && <PerformanceView onOpenStock={openSymbol} />}
+        {!open && tab === "alerts" && <AlertsView onOpenStock={openSymbol} />}
+        {!open && tab === "momentum" && account?.features?.momentum && <MomentumView onOpenStock={openSymbol} />}
+      </Suspense>
       <SiteFooter />
       {/* On a company page too: the tab it was opened from stays lit */}
       <BottomTabBar tab={tab} onTab={goTab} theme={theme} account={account} />

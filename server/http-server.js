@@ -708,7 +708,8 @@ export function createApp() {
         const userId = requireAuth(req, res);
         if (userId == null) return;
         // Each alert against the latest price: the day's close, or with
-        // ?live=1 (the Alerts tab's Check Now) a live quote where available.
+        // ?live=1 (the Alerts tab's Check Now) refreshes Yahoo and uses the
+        // newest dated close from Yahoo or the NSE snapshot.
         // Sending them is alert-notifier.js's, to accounts that connected
         // Telegram; notified_at says when one was last sent.
         const alerts = listAlerts(userId);

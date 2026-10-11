@@ -26,7 +26,7 @@ function fmtDate(ts) {
   return `${d.getDate()} ${months[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`;
 }
 
-const priceBasis = source => source === "live" ? "Yahoo close" : source === "cached" ? "Cached Yahoo close" : source === "close" ? "NSE close" : "Price";
+const priceBasis = source => source === "live" ? "Yahoo daily close" : source === "cached" ? "Cached Yahoo daily close" : source === "close" ? "NSE daily close" : "Price";
 
 // Where the price sits against the stock's levels, in a few words — the
 // zone from pricePosition (server/levels.js), which never says buy or sell
@@ -145,10 +145,10 @@ export default function WatchlistView({ onOpenStock }) {
                     <button onClick={() => setEditingNote(null)} style={{ height: 32, padding: "0 10px", borderRadius: 8, border: "1px solid var(--bdr2)", background: "transparent", color: "var(--t3)", fontSize: 11, cursor: "pointer", display: "flex", alignItems: "center" }} aria-label="Cancel"><X size={14} /></button>
                   </div>
                 ) : item.note ? (
-                  <div onClick={() => { setEditingNote(item.ticker); setNoteText(item.note); }}
-                    style={{ marginTop: 8, padding: "6px 10px", borderRadius: 8, background: "var(--s1)", border: "1px solid var(--bdr)", fontSize: 12, color: "var(--t2)", cursor: "pointer", lineHeight: 1.5 }}>
+                  <button type="button" aria-label={`Edit note for ${name}`} onClick={() => { setEditingNote(item.ticker); setNoteText(item.note); }}
+                    style={{ display: "block", width: "100%", marginTop: 8, padding: "6px 10px", borderRadius: 8, background: "var(--s1)", border: "1px solid var(--bdr)", fontSize: 12, color: "var(--t2)", cursor: "pointer", lineHeight: 1.5, textAlign: "left", fontFamily: "inherit" }}>
                     <NotebookPen size={12} style={{ marginRight: 5, verticalAlign: "-1px", color: "var(--t3)" }} />{item.note}
-                  </div>
+                  </button>
                 ) : (
                   <button onClick={() => { setEditingNote(item.ticker); setNoteText(""); }} style={{ marginTop: 6, background: "none", border: "none", color: "var(--t3)", fontSize: 11, cursor: "pointer", padding: 0, opacity: 0.7 }}>
                     + Add note

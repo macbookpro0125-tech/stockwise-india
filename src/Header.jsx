@@ -74,7 +74,7 @@ export default function Header({ tab, onTab, account, onLogout, onDeleted, onSea
       <div style={{ padding: "0 var(--page-x)" }}>
         <div style={{ padding: "12px 0" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, flexShrink: 1, cursor: "pointer" }} onClick={() => onTab("discover")}>
+            <a href="/" aria-label="Stockwise India home" onClick={e => { e.preventDefault(); onTab("discover"); }} style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, flexShrink: 1, cursor: "pointer", color: "inherit", textDecoration: "none" }}>
               <img src="/stockwise-india-icon.svg" alt="" style={{ width: 32, height: 32, borderRadius: 9, flexShrink: 0 }} />
               <div style={{ minWidth: 0 }}>
                 <h1 style={{ fontSize: 17, fontWeight: 700, margin: 0, color: "var(--t1)", letterSpacing: "-0.03em", lineHeight: 1.2 }}>
@@ -82,7 +82,7 @@ export default function Header({ tab, onTab, account, onLogout, onDeleted, onSea
                 </h1>
                 <p className="hide-phone" style={{ fontSize: 11, color: "var(--t3)", margin: 0, letterSpacing: "-0.01em", whiteSpace: "nowrap" }}>Indian market · NSE filings</p>
               </div>
-            </div>
+            </a>
 
             <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
               {[[stats?.strategies ?? "—", "Presets"], [stats?.filters ?? "—", "Filters"], [compact(stats?.companies), "Stocks"]].map(([v, l]) => (

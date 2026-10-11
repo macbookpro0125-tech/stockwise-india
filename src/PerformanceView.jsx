@@ -12,7 +12,7 @@ const MONO = { fontVariantNumeric: "tabular-nums" };
 function fmtDate(d) {
   const [y, m, day] = (d || "").split("-").map(Number);
   if (!y) return d;
-  return new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(Date.UTC(y, m - 1, day, 12)));
+  return new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(Date.UTC(y, m - 1, day, 12)));
 }
 
 // Whole days from an IST snapshot date to the current IST day
@@ -211,7 +211,7 @@ export default function PerformanceView({ onOpenStock }) {
                   </div>
                   {snap.picks.map(pick => (
                     <div key={pick.ticker} style={{ ...ROW_GRID, fontSize: 12, padding: "6px 0", borderBottom: "1px solid var(--bdr)" }}>
-                      <span onClick={() => onOpenStock(pick.ticker)} style={{ color: "var(--accent)", cursor: "pointer", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pick.name}</span>
+                      <button type="button" className="stock-link" onClick={() => onOpenStock(pick.ticker)} style={{ color: "var(--accent)", cursor: "pointer", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", padding: 0, border: 0, background: "none", fontFamily: "inherit", textAlign: "left", minWidth: 0 }}>{pick.name}</button>
                       <span style={{ color: "var(--t2)", fontSize: 11, textAlign: "right", ...MONO }}>₹{pick.cmp?.toLocaleString("en-IN")}</span>
                       <span style={{ color: "var(--t2)", fontSize: 11, textAlign: "right", ...MONO }}>{pick.currentPrice != null ? `₹${pick.currentPrice.toLocaleString("en-IN")}` : "—"}</span>
                       <span style={{ textAlign: "right" }}>{isBaseline ? <span style={{ fontSize: 11, color: "var(--t3)", ...MONO }}>—</span> : <RetBadge pct={pick.returnPct} />}</span>

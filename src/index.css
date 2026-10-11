@@ -596,7 +596,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
      is on the card's hover title and the strategy's own filters */
   .preset-strip { margin-bottom: 16px !important; }
   .preset-card { width: auto !important; max-width: 210px; padding: 9px 12px 9px 9px !important; display: flex !important; flex-direction: row !important; align-items: center; gap: 9px; }
-  .preset-card > div { margin-bottom: 0 !important; white-space: nowrap; }
+  .preset-card > span { margin-bottom: 0 !important; white-space: nowrap; }
   .preset-icon { width: 26px !important; height: 26px !important; flex-shrink: 0; }
   .preset-desc { display: none !important; }
   .preset-save br { display: none; }
@@ -653,3 +653,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 /* Company page: About the company's facts, four across on a computer */
 .company-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px 16px; }
 @media (max-width: 900px) { .company-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Compare and investment-brief modules load on demand; keep the loading state
+   full-screen so the underlying page doesn't look interactive through it. */
+.compare-loading { position: fixed; inset: 0; z-index: 400; display: grid; place-items: center; padding: 24px; color: var(--t2); background: color-mix(in srgb, var(--bg) 94%, transparent); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); font-size: 14px; text-align: center; }

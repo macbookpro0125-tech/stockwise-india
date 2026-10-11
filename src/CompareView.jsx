@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 import { FileText, X } from "lucide-react";
 import { api } from "./api.js";
 import { QualityBadge, overallTone } from "./ResearchBadges.jsx";
-import InvestmentBriefView from "./InvestmentBriefView.jsx";
+const InvestmentBriefView = lazy(() => import("./InvestmentBriefView.jsx"));
 
 // Ported from stock-screener's src/components/CompareView.jsx: up to five
 // stocks side by side — the research score and its groups, fundamentals and
@@ -88,7 +88,11 @@ export default function CompareView({ stocks, pricesDate, onClose }) {
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "color-mix(in srgb, var(--bg) 96%, transparent)", WebkitBackdropFilter: "blur(6px)", backdropFilter: "blur(6px)", overflowY: "auto", padding: "20px var(--page-x)" }}>
-      {showBrief && <InvestmentBriefView stocks={stocks} onClose={() => setShowBrief(false)} />}
+      {showBrief && (
+        <Suspense fallback={<div role="status" className="compare-loading">Building investment brief…</div>}>
+          <InvestmentBriefView stocks={stocks} onClose={() => setShowBrief(false)} />
+        </Suspense>
+      )}
       <div>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
           <div>
