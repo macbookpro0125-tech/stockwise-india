@@ -21,6 +21,8 @@ data/market-snapshot.json
 
 # Background jobs' bookkeeping (last check for new results)
 data/jobs-state.json
+# Installed timestamp for the latest live market-data pack
+data/data-pack-state.json
 
 # Past quarters' shareholding, cached as stock pages are opened
 data/shareholding/
