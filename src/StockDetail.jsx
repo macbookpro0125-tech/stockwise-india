@@ -462,7 +462,7 @@ function KeyNumbers({ data, m }) {
 
 // backTo: the tab Back returns to
 // "2026-10-07" -> "7 Oct"
-const dayLabel = iso => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" });
+const dayLabel = iso => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 // Yahoo's figure is the last finished day's close (quote.js leaves out a day
 // still trading), so once NSE's close for a later day is in, NSE's is the
 // newer price — it was showing 6 Oct's ₹2,100 beside NSE's 7 Oct ₹2,080
@@ -642,7 +642,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
 
       {m && (
         <div style={{ padding: "10px 14px", borderRadius: 10, background: "var(--green-dim)", border: "1px solid var(--green-bdr)", fontSize: 12.5, color: "var(--green)", marginBottom: 14, lineHeight: 1.55 }}>
-          <CircleCheck size={14} strokeWidth={2.2} style={{ verticalAlign: "-2px", marginRight: 6 }} /><strong>From NSE filings</strong> — EPS, P/E and price loaded ({data.annual?.scope?.toLowerCase() ?? "reported"} results, year to {new Date(`${m.fyEnd}T00:00:00Z`).toLocaleString("en-IN", { month: "short", year: "numeric", timeZone: "UTC" })}).{" "}
+          <CircleCheck size={14} strokeWidth={2.2} style={{ verticalAlign: "-2px", marginRight: 6 }} /><strong>Financials from NSE filings</strong> — EPS and valuation inputs use {data.annual?.scope?.toLowerCase() ?? "reported"} results for the year ended {longDate(m.fyEnd)}{m.provenance?.financials?.filedAt ? `, filed ${longDate(m.provenance.financials.filedAt)}` : ""}. The price source and date are shown beside the quote above.{" "}
           <a href={`https://www.nseindia.com/get-quotes/equity?symbol=${encodeURIComponent(data.symbol)}`} target="_blank" rel="noreferrer" style={{ color: "var(--green)", fontWeight: 600, whiteSpace: "nowrap" }}>Open on NSE <ArrowUpRight size={13} style={{ verticalAlign: "-2px" }} /></a>
           <div className="hide-phone" style={{ marginTop: 4, color: "var(--t2)" }}>
             {m.medianPe != null
@@ -690,7 +690,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
 
       {data.quoteError && (
         <div style={{ fontSize: 12, color: "var(--yellow)", background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", borderRadius: 8, padding: "8px 12px", marginBottom: 12 }}>
-          Couldn't fetch a live price ({data.quoteError}){data.close ? " — using NSE's last close." : "."}
+          Couldn't refresh Yahoo's latest daily close ({data.quoteError}){data.close ? " — using NSE's last close." : "."}
         </div>
       )}
       {data.quote?.stale && (

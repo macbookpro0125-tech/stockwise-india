@@ -338,7 +338,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
     <div style={{ animation: "fadeUp 280ms cubic-bezier(0,0,0.2,1) backwards" }}>
       {alertFor && <CreateAlertModal stock={alertFor} onClose={() => setAlertFor(null)} />}
       {showCompare && selected.size >= 2 && (
-        <CompareView stocks={[...selected.values()]} onClose={() => setShowCompare(false)} />
+        <CompareView stocks={[...selected.values()]} pricesDate={snapshot?.pricesDate} onClose={() => setShowCompare(false)} />
       )}
 
       {/* ── Top bar ── */}

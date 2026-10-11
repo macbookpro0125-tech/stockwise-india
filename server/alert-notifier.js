@@ -5,8 +5,8 @@
 // (user-alerts.js).
 //
 // Checked every 15 minutes while NSE trades (9:15–15:30 IST, Monday to
-// Friday) on live quotes, falling back to the last NSE close where a quote
-// fails — the message says which.
+// Friday) against the latest completed Yahoo daily close, falling back to
+// the last NSE close where Yahoo fails — the message says which.
 import { db } from "./db.js";
 import { currentPrices } from "./prices.js";
 import { sendTelegram, escapeHtml, telegramToken } from "./telegram.js";
@@ -15,7 +15,9 @@ const rs = n => `₹${Number(n).toLocaleString("en-IN", { maximumFractionDigits:
 
 export function alertMessage(a, p) {
   const where = a.condition === "below" ? "at or below" : "at or above";
-  const basis = p.source === "live" ? "Live price" : `NSE close${p.asOf ? ` on ${p.asOf}` : ""}`;
+  const basis = p.source === "live" ? `Yahoo daily close${p.asOf ? ` on ${p.asOf}` : ""}`
+    : p.source === "cached" ? `Cached Yahoo daily close${p.asOf ? ` on ${p.asOf}` : ""}`
+      : `NSE daily close${p.asOf ? ` on ${p.asOf}` : ""}`;
   return `<b>${escapeHtml(a.name || a.ticker)}</b> (${escapeHtml(a.ticker)}) is ${rs(p.price)} — ${where} your alert price of ${rs(a.threshold)}.\n<i>${basis}</i>`;
 }
 

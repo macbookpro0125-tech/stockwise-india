@@ -1,4 +1,4 @@
-// Live price from Yahoo Finance — the exact same proven source stock-screener
+// Latest completed daily close from Yahoo Finance — the exact same proven source stock-screener
 // already uses for Indian equities (server/quote.js there), simplified here
 // since every symbol in this project comes from NSE's own EQUITY_L.csv (a
 // clean alphabetic symbol always), not Screener.in's mix of NSE tickers and
@@ -14,7 +14,7 @@ function istDayKey(unixSec) {
 
 // One Yahoo chart request: given up after 10 s, and tried once more after a
 // dropped connection, a rate limit or a server error. A single blip used to
-// put "Couldn't fetch a live price" on the stock page — it happened in half
+// put "Couldn't refresh the latest close" on the stock page — it happened in half
 // of the video-recording runs, and customers would see it too.
 async function yahooChart(url, what) {
   const body = await requestJson(url, { headers: { "User-Agent": UA, Accept: "application/json" }, service: `Yahoo ${what}`, timeoutMs: 10_000, maxBytes: 8 * 1024 * 1024 });
