@@ -26,6 +26,8 @@ function fmtDate(ts) {
   return `${d.getDate()} ${months[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`;
 }
 
+const priceBasis = source => source === "live" ? "Yahoo close" : source === "cached" ? "Cached Yahoo close" : source === "close" ? "NSE close" : "Price";
+
 // Where the price sits against the stock's levels, in a few words — the
 // zone from pricePosition (server/levels.js), which never says buy or sell
 const TONE = { red: "var(--red)", yellow: "var(--yellow)", green: "var(--green)" };
@@ -119,7 +121,8 @@ export default function WatchlistView({ onOpenStock }) {
         {sorted.map(item => {
           const r = rows.get(item.ticker);
           const name = r?.name ?? item.ticker;
-          const cmp = live[item.ticker]?.price ?? r?.cmp ?? null;
+          const quote = live[item.ticker] ?? (r?.cmp != null ? { source: "close", asOf: data.snapshot?.pricesDate } : null);
+          const cmp = quote?.price ?? r?.cmp ?? null;
           const level = levelStatus(cmp, r);
           return (
             <div key={item.ticker} style={{ padding: "14px 16px", borderRadius: 12, border: "1px solid var(--bdr2)", background: "var(--s2)", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
@@ -156,6 +159,7 @@ export default function WatchlistView({ onOpenStock }) {
               <div style={{ textAlign: "center", minWidth: 70 }}>
                 <div style={label}>CMP</div>
                 <div style={{ fontSize: 14, fontWeight: 600, color: "var(--t1)", ...MONO }}>{cmp ? fmtRs(cmp) : <span style={{ opacity: 0.3 }}>…</span>}</div>
+                {cmp && <div style={{ fontSize: 10, color: quote?.stale ? "var(--yellow)" : "var(--t3)", marginTop: 3, whiteSpace: "nowrap" }}>{priceBasis(quote?.source)}{quote?.asOf ? ` · ${fmtDate(quote.asOf)}` : ""}</div>}
                 {cmp && item.addedPrice > 0 && (() => {
                   const chg = ((cmp - item.addedPrice) / item.addedPrice) * 100;
                   return <div style={{ fontSize: 10, fontWeight: 600, color: chg >= 0 ? "var(--green)" : "var(--red)", marginTop: 2, ...MONO }}>{chg >= 0 ? "+" : ""}{chg.toFixed(1)}%</div>;

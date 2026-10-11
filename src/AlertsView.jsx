@@ -6,8 +6,8 @@ import { alertsStore } from "./stores.js";
 // The original's Alerts panel (stock-screener src/components/AlertsPanel.jsx):
 // summary and Check Now, what has triggered, then every alert grouped, each
 // with view / edit / on-off / delete. Plus Telegram: an account that connects
-// it gets each alert as a message when the price crosses (checked every 15
-// minutes while NSE trades — server/alert-notifier.js). There's no email
+// it gets each alert as a message when the latest completed daily close crosses
+// the threshold (checked every 15 minutes while NSE trades). There's no email
 // channel yet; the page says what's checked when.
 
 const MONO = { fontVariantNumeric: "tabular-nums" };
@@ -16,6 +16,9 @@ function fmtRs(n) {
   if (n == null || isNaN(n)) return "—";
   return "₹" + Number(n).toLocaleString("en-IN", { maximumFractionDigits: 2 });
 }
+
+const fmtDate = iso => (iso ? new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : null);
+const priceBasis = source => source === "live" ? "Yahoo close" : source === "cached" ? "Cached Yahoo close" : source === "close" ? "NSE close" : "Price";
 
 function timeAgo(ts) {
   if (!ts) return "";
@@ -98,7 +101,7 @@ function AlertCard({ a, onView, onEdit, onDelete, onToggle }) {
             {" "}Price {a.condition} <strong style={{ color: "var(--t1)" }}>{fmtRs(a.threshold)}</strong>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", fontSize: 10, color: "var(--t3)" }}>
-            <span style={MONO}>{a.cmp != null ? `${a.priceSource === "live" ? "Live" : "Close"} ${fmtRs(a.cmp)}` : "No recent price"}</span>
+            <span style={MONO}>{a.cmp != null ? `${priceBasis(a.priceSource)} ${fmtRs(a.cmp)}${a.priceDate ? ` · ${fmtDate(a.priceDate)}` : ""}` : "No recent price"}</span>
             {a.triggered === false && away != null && <span>· {Math.abs(away).toFixed(1)}% away</span>}
             {a.created_at && <span>· added {timeAgo(a.created_at)}</span>}
             {a.notified_at && <span style={{ color: "var(--accent)" }}>· sent to Telegram {timeAgo(a.notified_at)}</span>}
@@ -195,7 +198,7 @@ function TelegramCard({ onStatus }) {
       <div style={{ flex: "1 1 220px", minWidth: 0 }}>
         <div style={{ fontSize: 14, fontWeight: 600, color: "var(--t1)" }}>Get your alerts on Telegram</div>
         <div style={{ fontSize: 12, color: "var(--t3)", marginTop: 2, lineHeight: 1.5 }}>
-          {waiting ? "Tap Start in Telegram — this page updates once you're connected." : "A message on your phone when a price crosses one of your alerts. Free, no phone number shared with us."}
+          {waiting ? "Tap Start in Telegram — this page updates once you're connected." : "A Telegram message when the latest daily close crosses an alert level. Free, no phone number shared with us."}
           {note && <span style={{ color: "var(--red)", marginLeft: 8 }}>{note.text}</span>}
         </div>
       </div>
@@ -209,7 +212,7 @@ function TelegramCard({ onStatus }) {
 
 export default function AlertsView({ onOpenStock }) {
   const stored = alertsStore.use();
-  const [live, setLive] = useState(null); // alerts re-read with live prices (Check Now)
+  const [live, setLive] = useState(null); // alerts re-read with the latest available daily closes (Check Now)
   const [checkedAt, setCheckedAt] = useState(null);
   const [checking, setChecking] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
@@ -271,7 +274,7 @@ export default function AlertsView({ onOpenStock }) {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ fontWeight: 600, fontSize: 14, color: "var(--t1)" }}>{t.name || t.ticker}</span>
                   <div style={{ fontSize: 12, color: "var(--t2)", marginTop: 4, ...MONO }}>
-                    Price: <strong style={{ color: "var(--yellow)" }}>{fmtRs(t.cmp)}</strong> ({t.condition === "above" ? "▲" : "▼"} {fmtRs(t.threshold)})
+                    Price: <strong style={{ color: "var(--yellow)" }}>{fmtRs(t.cmp)}</strong> · {priceBasis(t.priceSource)}{t.priceDate ? ` · ${fmtDate(t.priceDate)}` : ""} ({t.condition === "above" ? "▲" : "▼"} {fmtRs(t.threshold)})
                   </div>
                 </div>
                 <button onClick={() => onOpenStock(t.ticker)} style={{ height: 28, padding: "0 12px", fontSize: 11, fontWeight: 600, borderRadius: 7, cursor: "pointer", border: "1px solid var(--yellow-bdr)", background: "transparent", color: "var(--yellow)" }}>View</button>
@@ -315,9 +318,9 @@ export default function AlertsView({ onOpenStock }) {
 
       {alerts.length > 0 && (
         <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 16, textAlign: "center", lineHeight: 1.6 }}>
-          Checked against the latest price when you open this tab (NSE's daily close) or press <strong>Check Now</strong> (live where available).
+          Checked against the latest available daily close when you open this tab or press <strong>Check Now</strong>. These are closing-price alerts, not intraday price monitoring.
           {tg?.connected
-            ? " While NSE is open they're also checked every 15 minutes and sent to your Telegram — once when the price crosses, again only if it crosses back and returns."
+            ? " While NSE is open they're checked every 15 minutes against the latest completed daily close and sent to your Telegram — once when the price crosses, again only if it crosses back and returns."
             : tg?.configured ? " Connect Telegram above to get them on your phone." : " Nothing is sent to your phone yet."}
         </div>
       )}

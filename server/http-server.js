@@ -494,7 +494,7 @@ export function createApp() {
           }
         }
 
-        // Live price (fresher than the daily snapshot) — the metrics are the
+        // Freshly fetched Yahoo daily close (fresher than the daily snapshot) — the metrics are the
         // same function the Discover table uses, just with this price.
         let quote = null, quoteError = null;
         try {
@@ -624,7 +624,7 @@ export function createApp() {
         return;
       }
 
-      // Current prices for up to 50 symbols — live where Yahoo answers, else
+      // Current prices for up to 50 symbols — Yahoo's latest daily close where available, else
       // the day's close, each labelled with which it is
       if (url.pathname === "/api/prices" && req.method === "GET") {
         const userId = requireAuth(req, res);

@@ -6,8 +6,8 @@ import AddHoldingModal from "./AddHoldingModal.jsx";
 
 // Ported from stock-screener's src/components/PortfolioPanel.jsx — summary
 // bar, sort pills, one row per lot, allocation bar. Holdings are saved to the
-// account instead of the browser; prices are live where Yahoo answers, else
-// NSE's last close. One addition: each row says where the price sits against
+// account instead of the browser; prices use Yahoo's latest completed daily
+// close where available, else NSE's last close. Each row says where the price sits against
 // the stock's levels (server/levels.js pricePosition) — described, never advised.
 
 const MONO = { fontVariantNumeric: "tabular-nums" };
@@ -27,6 +27,7 @@ function fmtPct(n) {
 const POSITION_TONE = { red: "var(--red)", yellow: "var(--yellow)", green: "var(--green)" };
 const plColor = n => (n == null ? "var(--t3)" : n >= 0 ? "var(--green)" : "var(--red)");
 const fmtDate = iso => (iso ? new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : null);
+const priceBasis = p => p?.source === "live" ? "Yahoo daily close" : p?.source === "cached" ? "Cached Yahoo daily close" : p?.source === "close" ? "NSE daily close" : "Price unavailable";
 
 const label = { fontSize: 11.5, color: "var(--t3)", fontWeight: 600 };
 
@@ -126,6 +127,9 @@ export default function PortfolioView({ onOpenStock }) {
               No price found for {unpriced.join(", ")}, so the totals can't be worked out.
             </div>
           )}
+          <div style={{ fontSize: 10.5, color: "var(--t3)", flexBasis: "100%", lineHeight: 1.5 }}>
+            Price-based P&amp;L before dividends, fees and taxes. Each CMP shows its source and date.
+          </div>
           <div style={{ marginLeft: "auto" }}>
             <div style={label}>Holdings</div>
             <div style={{ fontSize: 18, fontWeight: 700, color: "var(--t1)", ...MONO }}>{holdings.length}</div>
@@ -176,6 +180,9 @@ export default function PortfolioView({ onOpenStock }) {
                 <div style={{ textAlign: "center", minWidth: 65 }}>
                   <div style={label}>CMP</div>
                   <div style={{ fontSize: 14, fontWeight: 600, color: "var(--t1)", ...MONO }}>{h.cmp ? fmtRs(h.cmp) : <span style={{ color: "var(--t3)" }} title="No price found for this symbol">—</span>}</div>
+                  <div style={{ fontSize: 10, color: prices[h.ticker]?.stale ? "var(--yellow)" : "var(--t3)", marginTop: 3, whiteSpace: "nowrap" }}>
+                    {priceBasis(prices[h.ticker])}{prices[h.ticker]?.asOf ? ` · ${fmtDate(prices[h.ticker].asOf)}` : ""}
+                  </div>
                 </div>
 
                 <div style={{ textAlign: "center", minWidth: 70 }}>

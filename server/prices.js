@@ -1,7 +1,7 @@
 // Current prices for a set of symbols (portfolio, watchlist, alerts): the
-// live Yahoo quote where it answers, else NSE's last close from the daily
-// snapshot. Each price says which it is — a close shown as "live" would
-// mislead on a volatile day.
+// latest Yahoo daily close where it answers, else NSE's last close from the daily
+// snapshot. Each price includes its source, date, and whether the Yahoo value
+// is cached after a failed refresh.
 import { fetchCmp } from "./quote.js";
 import { loadMarketSnapshot } from "./market-data.js";
 

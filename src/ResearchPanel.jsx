@@ -204,10 +204,10 @@ export default function ResearchPanel({ research: r }) {
       })}
 
       <div className="research-head" style={{ marginBottom: 12 }}>
-        <Headline label="Quality incl. valuation" value={quality} tone={qTone}
+        <Headline label="Quality score" value={quality} tone={qTone}
           word={r.provisional ? "provisional" : null}
-          sub={quality == null ? "Too few years of filings to score." : `Business quality, excluding valuation: ${n(r.qualityOnly)}/100`}
-          title="Out of 100 across six groups — business, earnings, balance sheet, governance, growth and valuation" details="why-this-score" />
+          sub={quality == null ? "Too few years of filings to score." : `Six groups, including valuation · business-only score: ${n(r.qualityOnly)}/100`}
+          title="Out of 100 across six groups — business, earnings, balance sheet, governance, growth and valuation. The business-only score excludes valuation." details="why-this-score" />
         <Headline label="Overall research score" value={o.score} tone={oTone}
           word={o.score != null ? o.stance : null}
           sub={o.score != null ? `${o.text}${o.status === "provisional" ? " — provisional: limited data coverage caps it at 59" : ""}` : o.text}

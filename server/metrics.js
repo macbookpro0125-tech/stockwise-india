@@ -260,7 +260,7 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
   // The price test is what spares real growth: Bharti Airtel, Dixon and BSE
   // tripled their EPS too, but their prices rose with it; old EPS would have
   // made them sells, and fast growers would have lost their early years. It
-  // uses the last NSE close even when a live price is passed in, so the stock
+  // uses the last NSE close even when a fresher Yahoo daily close is passed in, so the stock
   // page and the Discover table can't disagree about the same stock.
   const priced = peHistory.filter(r => r.pe != null);
   const usualPe = priced.length >= MIN_PE_YEARS ? median(priced.map(r => r.pe)) : null;
@@ -466,7 +466,7 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
         filedAt: latest.filed ?? null,
       },
       marketPrice: {
-        source: overrides.cmp != null ? "Live quote" : close != null ? "NSE daily close" : "unavailable",
+        source: overrides.cmp != null ? "Yahoo daily close" : close != null ? "NSE daily close" : "unavailable",
         date: overrides.cmp != null ? overrides.cmpDate ?? null : snap?.pricesDate ?? cmpDate ?? null,
       },
       historicalPe: {
@@ -509,7 +509,7 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
 
   // For the screener's filters and columns (metric-catalog.js). Returns are
   // from the snapshot's last close, so they stay consistent with each other
-  // even when the stock page passes a live price.
+  // even when the stock page passes a fresher Yahoo daily close.
   const ret = snap?.returns?.[sym] ?? {};
   const pct = (a, b) => (a != null && b > 0 ? (a / b - 1) * 100 : null);
   Object.assign(m, {

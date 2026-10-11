@@ -41,12 +41,12 @@ const FEATURES = [
     icon: <Icon><path d="M6 16v-5a6 6 0 1112 0v5l1.5 2h-15z" /><path d="M10 20.5a2 2 0 004 0" /></Icon>,
     title: "Watchlist, alerts and portfolio",
     text: "Star stocks, set price alerts and record what you own — each holding shows its profit and where its price sits against its levels.",
-    note: "Alerts show in the app for now; phone and email alerts are coming.",
+    note: "Price alerts use the latest daily close. Telegram delivery requires server setup; SMS and email alerts aren't available yet.",
   },
   {
     icon: <Icon><path d="M4 20h16M7 16v-5M12 16V7M17 16v-8" /></Icon>,
     title: "Compare, export, track",
-    text: "Put up to 4 companies side by side, download any list to Excel, and follow how each strategy's picks perform over time.",
+    text: "Compare up to 5 companies side by side, build a sourced investment brief, download lists to Excel, and follow how strategy picks perform over time.",
   },
 ];
 
@@ -158,7 +158,7 @@ export default function Landing({ onAuthed, notice }) {
         {/* ── Features ── */}
         <section style={{ padding: "0 0 48px" }}>
           <h2 style={sectionTitle}>What's inside</h2>
-          <p style={sectionLead}>Everything is worked out from companies' own filings on NSE and updated every trading day.</p>
+          <p style={sectionLead}>Prices update each trading day; company financials refresh as new filings are published on NSE.</p>
           <div className="landing-features">
             {FEATURES.map(f => (
               <div key={f.title} style={{ ...card, padding: 22 }}>

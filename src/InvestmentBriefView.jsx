@@ -21,10 +21,27 @@ function referencePrice(item) {
 const referenceDate = item => (quoteIsNewer(item?.data) ? item.data.quote.asOf : item?.data?.close?.date ?? item?.data?.metrics?.provenance?.marketPrice?.date ?? null);
 
 function assumptionBasis(metrics, price) {
-  const growth = metrics?.epsGrowth5y != null ? "reported 5-year EPS CAGR"
-    : metrics?.epsGrowth3y != null ? "reported 3-year EPS CAGR"
-      : metrics?.growthBasis ?? "0% EPS-growth fallback";
-  return `Base EPS growth starts from ${growth}; the base case keeps today's P/E (no re-rating), the bull and bear cases move it 25% up and down.`;
+  const reportedEpsGrowth = finite(metrics?.epsGrowth5y) ?? finite(metrics?.epsGrowth3y);
+  const valuationGrowth = finite(metrics?.growthForValuation);
+  const sourceGrowth = reportedEpsGrowth ?? valuationGrowth ?? 0;
+  const defaultBaseGrowth = defaultAssumptions(metrics, price).baseGrowth;
+  const growth = reportedEpsGrowth != null
+    ? `reported ${metrics?.epsGrowth5y != null ? "5-year" : "3-year"} EPS CAGR (${pct(reportedEpsGrowth)})`
+    : valuationGrowth != null
+      ? /default/i.test(metrics?.growthBasis ?? "")
+        ? `StockWise's fallback growth assumption (${pct(valuationGrowth)})`
+        : `${metrics?.growthBasis ?? "profit/sales growth"} used as an EPS-growth proxy (${pct(valuationGrowth)})`
+      : "a 0% fallback";
+  const growthAdjustment = Math.abs(sourceGrowth - defaultBaseGrowth) > 0.05 ? `, rounded or capped to ${pct(defaultBaseGrowth)}` : "";
+  const eps = finite(metrics?.valuationEps) ?? finite(metrics?.eps);
+  const currentPe = eps > 0 && price > 0 ? price / eps : null;
+  const normalized = metrics?.epsJump ? "normalized EPS uses the typical EPS from the historical P/E years after a one-off jump" : "normalized EPS uses the latest reported EPS";
+  const sectorNote = metrics?.lender
+    ? "For lenders, this EPS/P-E model does not model credit costs or capital ratios."
+    : metrics?.cyclical
+      ? "For cyclical companies, historical EPS growth can reflect a recovery from a low base."
+      : "";
+  return `Model: ${money(eps)} normalized EPS × (1 + annual EPS growth)^years × exit P/E. ${normalized}. Starting P/E at the reference price: ${currentPe == null ? "unavailable" : `${currentPe.toFixed(1)}×`}. Default base EPS growth is ${pct(defaultBaseGrowth)} from ${growth}${growthAdjustment}; base P/E stays at today's level, while bull and bear defaults change it by 25%. ${sectorNote}`;
 }
 
 function defaultAssumptions(metrics, price) {
@@ -146,19 +163,25 @@ export default function InvestmentBriefView({ stocks, onClose }) {
   }), [items]);
 
   const portfolioCases = ["Bull", "Base", "Bear"].map(name => {
-    const allocations = ranked.map(item => {
+    const rows = ranked.map(item => {
       const metrics = item.data?.metrics;
       const price = referencePrice(item);
       const cases = scenarioRows(metrics, price, years, assumptions[item.stock.symbol] ?? defaultAssumptions(metrics, price));
-      return cases?.find(test => test.name === name) ?? null;
+      const eps = finite(metrics?.valuationEps) ?? finite(metrics?.eps);
+      const reason = !(eps > 0) ? (eps == null ? "normalized EPS unavailable" : "normalized EPS is not positive")
+        : !(price > 0) ? "reference price unavailable"
+          : "P/E input unavailable";
+      return { item, price, row: cases?.find(test => test.name === name) ?? null, reason };
     });
-    if (!ranked.length || allocations.some(row => !row)) return { name, value: null, changePct: null };
+    const missing = rows.filter(entry => !entry.row).map(entry => `${entry.item.stock.symbol}: ${entry.reason}`);
+    if (!ranked.length || missing.length) return { name, value: null, changePct: null, missing };
     const perStock = capital / ranked.length;
-    const valueDirect = allocations.reduce((sum, row, index) => {
-      return sum + perStock * (row.target / referencePrice(ranked[index]));
+    const valueDirect = rows.reduce((sum, entry) => {
+      return sum + perStock * (entry.row.target / entry.price);
     }, 0);
     return { name, value: Number.isFinite(valueDirect) ? valueDirect : null, changePct: capital > 0 ? ((valueDirect / capital) - 1) * 100 : 0 };
   });
+  const portfolioBlockers = [...new Set(portfolioCases.flatMap(test => test.missing ?? []))];
 
   const updateAssumption = (symbol, key, value) => setAssumptions(previous => ({
     ...previous,
@@ -203,10 +226,11 @@ export default function InvestmentBriefView({ stocks, onClose }) {
             {portfolioCases.map(test => <div key={test.name} style={{ padding: 12, borderRadius: 9, background: "var(--s1)", border: "1px solid var(--bdr)" }}>
               <div style={{ fontSize: 11, color: "var(--t3)" }}>{test.name} case · {years} {years === 1 ? "year" : "years"}</div>
               <div style={{ fontSize: 20, fontWeight: 750, color: test.name === "Bull" ? "var(--green)" : test.name === "Bear" ? "var(--red)" : "var(--t1)", marginTop: 3, ...MONO }}>{test.value == null ? "—" : money(test.value)}</div>
-              <div style={{ fontSize: 11, color: "var(--t2)", marginTop: 2 }}>{test.value == null ? "Needs valid EPS, price and P/E for every selected stock." : `Illustrative ${test.changePct < 0 ? "loss" : "gain"}: ${money(Math.abs(test.value - capital))} (${pct(test.changePct)})`}</div>
+              <div style={{ fontSize: 11, color: "var(--t2)", marginTop: 2 }}>{test.value == null ? (test.missing?.length ? "Combined estimate unavailable; see the reason below." : "Waiting for stock data.") : `Illustrative ${test.changePct < 0 ? "loss" : "gain"}: ${money(Math.abs(test.value - capital))} (${pct(test.changePct)})`}</div>
             </div>)}
           </div>
-          <p style={{ fontSize: 10.5, color: "var(--t3)", lineHeight: 1.5, margin: "10px 0 0" }}>These are assumption-based price scenarios, not forecasts or probabilities. Equal weights; dividends, taxes, fees and future share issues are excluded. Actual losses can be larger than the bear case.</p>
+          {portfolioBlockers.length > 0 && <div role="note" style={{ fontSize: 10.5, color: "var(--yellow)", lineHeight: 1.5, marginTop: 10 }}>Combined totals are withheld because {portfolioBlockers.join(" · ")}. Each stock needs positive normalized EPS, a reference price and a valid P/E input.</div>}
+          <p style={{ fontSize: 10.5, color: "var(--t3)", lineHeight: 1.5, margin: "10px 0 0" }}>These are assumption-based price scenarios, not forecasts or probabilities. Portfolio cases use equal weights and each stock's assumptions below; expand a stock to review or edit them. Dividends, taxes, fees and future share issues are excluded; actual losses can be larger than the bear case.</p>
         </section>
 
         <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "baseline", margin: "18px 0 10px", flexWrap: "wrap" }}>
@@ -227,7 +251,7 @@ export default function InvestmentBriefView({ stocks, onClose }) {
             const quarter = metrics?.quarters?.[0];
             const overall = metrics?.research?.overall;
             return (
-              <article key={item.stock.symbol} style={panel}>
+              <article key={item.stock.symbol} style={{ ...panel, minWidth: 0 }}>
                 <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", gap: 12, alignItems: "start" }}>
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: 10, color: "var(--t3)", textTransform: "uppercase", letterSpacing: ".06em" }}>#{index + 1} · {item.stock.symbol}</div>
@@ -257,14 +281,14 @@ export default function InvestmentBriefView({ stocks, onClose }) {
                 <details style={{ marginTop: 12 }}>
                   <summary style={{ cursor: "pointer", fontSize: 12, fontWeight: 650, color: "var(--accent)" }}>Illustrative {years}-year price scenarios</summary>
                   {cases ? <>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 7, marginTop: 9 }}>
+                    <div className="brief-case-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 7, marginTop: 9 }}>
                       {cases.map(test => <div key={test.name} className="brief-case" style={{ padding: 9, borderRadius: 8, background: "var(--s1)", border: "1px solid var(--bdr)" }}>
                         <div style={{ fontSize: 10, color: "var(--t3)" }}>{test.name}</div><div style={{ fontSize: 15, fontWeight: 700, color: "var(--t1)", marginTop: 2, ...MONO }}>{money(test.target)}</div><div style={{ fontSize: 10.5, color: test.returnPct >= 0 ? "var(--green)" : "var(--red)" }}>{pct(test.returnPct)} price return</div><div style={{ fontSize: 9.5, color: "var(--t3)", marginTop: 3 }}>EPS growth {pct(test.growth)} · exit P/E {test.multiple}×</div>
                       </div>)}
                     </div>
                     <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 8 }}>Edit EPS growth and exit P/E. {assumptionBasis(metrics, price)}</div>
                     <div style={{ overflowX: "auto", marginTop: 6 }}>
-                      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 10.5, minWidth: 410 }}>
+                      <table className="brief-assumptions-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 10.5, minWidth: 410 }}>
                         <thead><tr>{["Case", "Annual EPS growth %", "Exit P/E"].map((label, i) => <th key={label} style={{ textAlign: i ? "right" : "left", padding: "5px 4px", color: "var(--t3)", fontWeight: 550 }}>{label}</th>)}</tr></thead>
                         <tbody>{[["Bear", "bearGrowth", "bearPe"], ["Base", "baseGrowth", "basePe"], ["Bull", "bullGrowth", "bullPe"]].map(([label, growthKey, peKey]) => <tr key={label}>
                           <td style={{ padding: "5px 4px", color: "var(--t2)" }}>{label}</td>

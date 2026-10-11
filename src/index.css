@@ -629,6 +629,12 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   .investment-brief-print button, .investment-brief-print input { display: none !important; }
 }
 
+@media (max-width: 640px) {
+  .brief-case-grid { grid-template-columns: minmax(0, 1fr) !important; }
+  .brief-assumptions-table { min-width: 0 !important; }
+  .brief-assumptions-table input { width: 68px !important; }
+}
+
 /* Discover's name box and three score boxes: one row on a computer, two on
    a phone (three boxes side by side are too narrow at 16px type) */
 .score-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; gap: 8px; align-items: center; }

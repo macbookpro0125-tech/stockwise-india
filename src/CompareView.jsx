@@ -66,7 +66,7 @@ const TECH_METRICS = [
   { key: "spark", label: "60D Chart", isSparkline: true },
 ];
 
-export default function CompareView({ stocks, onClose }) {
+export default function CompareView({ stocks, pricesDate, onClose }) {
   const [techData, setTechData] = useState({});
   const [techLoading, setTechLoading] = useState({});
   const [showBrief, setShowBrief] = useState(false);
@@ -91,7 +91,12 @@ export default function CompareView({ stocks, onClose }) {
       {showBrief && <InvestmentBriefView stocks={stocks} onClose={() => setShowBrief(false)} />}
       <div>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: "var(--t1)", margin: 0 }}>Compare stocks ({stocks.length})</h2>
+          <div>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: "var(--t1)", margin: 0 }}>Compare stocks ({stocks.length})</h2>
+            <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 4 }}>
+              Discover prices are NSE closes{pricesDate ? ` as of ${new Date(`${pricesDate}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })}` : "; date unavailable"}.
+            </div>
+          </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button onClick={() => setShowBrief(true)} className="btn-primary" style={{ height: 34, padding: "0 12px", fontSize: 12, boxShadow: "none" }}><FileText size={14} /> Build investment brief</button>
             <button onClick={onClose} className="btn-ghost" style={{ height: 34 }}><X size={15} /> Close</button>
