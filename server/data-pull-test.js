@@ -12,7 +12,7 @@ const root = mkdtempSync(join(tmpdir(), "stockwise-pull-"));
 const dataDir = join(root, "data");
 process.env.DATA_DIR = dataDir;
 const { pullBaseUrl, pullOnce, installPack } = await import("./data-pull.js");
-const { loadMarketSnapshot } = await import("./market-data.js");
+const { loadMarketSnapshot, clearSnapshotCache } = await import("./market-data.js");
 
 // Never on away from Render (a test copy, the demo recorder), unless asked
 assert.equal(pullBaseUrl({}), null, "off on this Mac");
@@ -83,6 +83,21 @@ packedAt = "2026-10-09T16:00:00Z";
 assert.equal(await pullOnce(base), "installed", "a newer pack is installed even when its market snapshot date is unchanged");
 assert.deepEqual(JSON.parse(readFileSync(join(dataDir, "research-score-cohorts.json"), "utf8")), [{ month: "2026-09", records: [{ ticker: "C0", overall: 70 }] }], "same-date pack updates replace the cohort history");
 assert.equal(await pullOnce(base), "current", "the installed pack timestamp prevents repeat downloads");
+
+// A restart forgets which pack was installed (the free host keeps nothing),
+// and serves the build's seed. The release isn't newer just because there's
+// no record: a seed built later stays, and the same data isn't fetched again.
+const restart = snapshot => {
+  rmSync(join(dataDir, "data-pack-state.json"), { force: true });
+  writeFileSync(join(dataDir, "market-snapshot.json"), JSON.stringify(snapshot));
+  clearSnapshotCache();
+};
+packedAt = "2026-10-11T12:00:00Z";
+restart({ builtAt: "2026-10-11T08:00:00Z", pricesDate: "2026-10-10", prices: { C0: 3 } });
+assert.equal(await pullOnce(base), "current", "an older release never replaces a newer seed after a restart");
+assert.equal(loadMarketSnapshot().pricesDate, "2026-10-10", "the seed's prices are still served");
+restart({ builtAt: "2026-10-09T15:00:00Z", pricesDate: "2026-10-09", prices: { C0: 2 } });
+assert.equal(await pullOnce(base), "current", "the same data isn't downloaded again on every wake-up");
 
 server.close();
 rmSync(root, { recursive: true, force: true });

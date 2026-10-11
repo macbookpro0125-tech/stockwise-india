@@ -109,10 +109,18 @@ export async function pullOnce(base, { onInstalled } = {}) {
     const serving = loadMarketSnapshot()?.builtAt;
     const manifestBuiltAt = Date.parse(manifest.builtAt || "");
     if (!Number.isFinite(manifestBuiltAt)) throw new Error("manifest has no valid builtAt");
+    // Newer data always replaces what's served. The same data packed again
+    // (a file added to the pack) replaces it only where this server installed
+    // the earlier pack: after a restart there's no record of one — the free
+    // host forgets everything on waking — and what's served is the build's
+    // seed, which may be newer than the release (a fetch committed from a
+    // computer). Taking "no record" as "anything published is newer" swapped
+    // fresher seed data for an older release on every wake-up.
     const installedAt = Date.parse(installedPackState()?.packedAt || "");
     const publishedAt = Date.parse(manifest.packedAt || "");
-    const packIsNewer = Number.isFinite(publishedAt) && (!Number.isFinite(installedAt) || publishedAt > installedAt);
-    if (serving && manifestBuiltAt <= Date.parse(serving) && !packIsNewer) { pullStatus.lastError = null; return "current"; }
+    const repacked = Number.isFinite(publishedAt) && Number.isFinite(installedAt) && publishedAt > installedAt;
+    const servingAt = serving ? Date.parse(serving) : NaN;
+    if (serving && (manifestBuiltAt < servingAt || (manifestBuiltAt === servingAt && !repacked))) { pullStatus.lastError = null; return "current"; }
 
     const pack = await fetch(`${base}/market-data.tar.gz`, { signal: AbortSignal.timeout(120_000) });
     if (!pack.ok) throw new Error(`pack: HTTP ${pack.status}`);
