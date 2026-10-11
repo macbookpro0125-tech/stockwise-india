@@ -83,6 +83,16 @@ export default function ValuationExplorer({ metrics: m, price, levels, mosPct, e
   const peerCheck = m.research?.groups?.find(group => group.id === "valuation")?.items?.find(item => item.id === "peers");
 
   if (!m) return null;
+  // A re-rated compounder leads with the growth its price implies (the
+  // sector-aware valuation spec): its own median P/E trails a rising multiple
+  const rerated = m.valuation?.rerated ?? null;
+  const impliedCard = (
+    <div style={{ padding: 12, background: "var(--s1)", border: `1px solid ${rerated ? "var(--accent)" : "var(--bdr)"}`, borderRadius: 9 }}>
+      <div style={{ fontSize: 11, color: "var(--t3)" }}>EPS growth implied by current price</div>
+      <div style={{ marginTop: 4, fontSize: 18, color: "var(--t1)", fontWeight: 700, ...mono }}>{impliedGrowth == null ? "—" : pct(impliedGrowth)}</div>
+      <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 4 }}>5-year EPS CAGR needed for price ₹{Number(price || 0).toLocaleString("en-IN")} to equal FY+5 EPS × {basePe}× exit P/E; dividends excluded</div>
+    </div>
+  );
   return (
     <section style={panel} aria-labelledby="valuation-explorer-title">
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
@@ -93,7 +103,13 @@ export default function ValuationExplorer({ metrics: m, price, levels, mosPct, e
         <button type="button" onClick={() => setExpanded(v => !v)} className="btn-ghost" style={{ height: 30, padding: "0 10px", fontSize: 11 }}>{expanded ? "Hide assumptions" : "Show assumptions"}</button>
       </div>
 
+      {rerated && (
+        <div style={{ fontSize: 11.5, color: "var(--t2)", background: "var(--s1)", border: "1px solid var(--bdr)", borderRadius: 8, padding: "9px 11px", marginTop: 12, lineHeight: 1.5 }}>
+          <strong style={{ color: "var(--t1)" }}>Re-rated compounder.</strong> Its P/E rose from about {rerated.from}× to {rerated.to}× over the years on file, and the market still pays {rerated.now}×. Against a rising multiple, the 5-year median ({rerated.median}×) stays below the price for good, so it never marks a fair entry. The growth today's price implies comes first: judge whether the business can deliver it.
+        </div>
+      )}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 9, marginTop: 14 }}>
+        {rerated && impliedCard}
         <div style={{ padding: 12, background: "var(--s1)", border: "1px solid var(--bdr)", borderRadius: 9 }}>
           <div style={{ fontSize: 11, color: "var(--t3)" }}>{m.medianPe != null ? "Historical P/E reference" : "Current P/E reference"}</div>
           <div style={{ marginTop: 4, fontSize: 18, color: "var(--t1)", fontWeight: 700, ...mono }}>{money(levels?.fv25)}</div>
@@ -117,11 +133,7 @@ export default function ValuationExplorer({ metrics: m, price, levels, mosPct, e
               : "Needs positive reported FCF and a discount rate above terminal growth"}</div>
           {heavyInvestment && dcf != null && <div style={{ fontSize: 10.5, color: "var(--yellow)", marginTop: 4 }}>Cash flow is well under profit (heavy investment), so this model undervalues a company still building capacity.</div>}
         </div>
-        <div style={{ padding: 12, background: "var(--s1)", border: "1px solid var(--bdr)", borderRadius: 9 }}>
-          <div style={{ fontSize: 11, color: "var(--t3)" }}>EPS growth implied by current price</div>
-          <div style={{ marginTop: 4, fontSize: 18, color: "var(--t1)", fontWeight: 700, ...mono }}>{impliedGrowth == null ? "—" : pct(impliedGrowth)}</div>
-          <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 4 }}>5-year EPS CAGR needed for price ₹{Number(price || 0).toLocaleString("en-IN")} to equal FY+5 EPS × {basePe}× exit P/E; dividends excluded</div>
-        </div>
+        {!rerated && impliedCard}
       </div>
       <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 9, lineHeight: 1.5 }}>
         Source: {reportSource?.source ?? "NSE financial filings"}, {reportSource?.scope ?? "scope not stated"} results for FY ending {reportSource?.period ?? m.fyEnd ?? "—"}{reportSource?.filedAt ? ` (filed ${reportSource.filedAt})` : ""}. Price: {priceSource?.source ?? "available market price"}{priceSource?.date ? ` dated ${priceSource.date}` : ""}. Historical P/E uses {m.provenance?.historicalPe?.usableYears ?? m.peYears ?? 0} usable years.

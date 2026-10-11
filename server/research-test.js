@@ -259,6 +259,18 @@ assert(/mid-cycle fair value/.test(itemOf(peak.research, "valuation", "ownHistor
 const partial = metricsOf(company({ tweak: lossIn2021 }), snapshot());
 assert(partial.valuation.model === "earnings" && partial.valuation.partialCycle?.years === 6, "under seven years, a cyclical stays on its P/E history, badged a partial cycle");
 
+// ── A re-rated compounder: a P/E that kept rising leads with implied growth ──
+const reratedSnap = snapshot({ price: 390 });
+[30, 27, 24, 20, 16, 14].forEach((pe, i) => { reratedSnap.fyEndPrices[`${2026 - i}-03-31`].prices.TESTCO = 13 * Math.pow(1.12, -i) * pe; });
+const rerated = metricsOf(company(), reratedSnap);
+assert(rerated.valuation.model === "earnings" && rerated.valuation.rerated?.from === 18 && rerated.valuation.rerated?.to === 28.5, "a P/E risen from 18× to 28.5× (five years) on a compounding business marks a re-rated compounder, still valued on its P/E history");
+assert(!metricsOf(company(), snapshot()).valuation.rerated, "a steady multiple isn't a re-rating");
+
+// ── Government-owned: the government's promoter stake, or NSE's PSU lists ──
+assert(metricsOf(company({ holding: { governmentPct: 51.1 } }), snapshot()).governmentOwned, "a government stake of 51% as promoter is government-owned");
+assert(!metricsOf(company({ holding: { governmentPct: 0 } }), snapshot()).governmentOwned, "no government stake, not government-owned");
+assert(metricsOf(company({ holding: { governmentPct: 0 } }), { ...snapshot(), psuIndex: ["TESTCO"] }).governmentOwned, "a member of NSE's PSU lists is government-owned even when held through another government company");
+
 const pbItem = itemOf(goodBank.research, "valuation", "bookValue");
 assert(pbItem.score != null && /through-cycle ROE/.test(pbItem.reason) && /cost of equity 12%/.test(pbItem.reason) && pbItem.reason.includes(`₹${goodBank.valuation.fairValue}`), "the score's book check is the same model, stating the assumptions and the fair value");
 assert(itemOf(goodBank.research, "valuation", "fcfYield").hide, "the free-cash-flow yield isn't listed for a bank");
