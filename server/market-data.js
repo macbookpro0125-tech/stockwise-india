@@ -363,10 +363,11 @@ async function sectorsBySymbol() {
       if (f[iSym] && f[iInd]) fromIndex[f[iSym]] = f[iInd];
     }
   }
-  // A company's industry hardly ever changes: when NSE doesn't answer, the
-  // last snapshot's list stands rather than every mapped sector vanishing
-  let industries = await industriesBySymbol().catch(() => ({}));
-  if (!Object.keys(industries).length) industries = loadMarketSnapshot()?.industries ?? {};
+  // A company's industry hardly ever changes: the last snapshot's labels
+  // stand for companies that announced nothing in the 90 days (JB Chemicals,
+  // 11 Oct 2026) — and for all of them when NSE doesn't answer — rather than
+  // the mapped sectors thinning out a few at a time
+  const industries = { ...loadMarketSnapshot()?.industries, ...await industriesBySymbol().catch(() => ({})) };
   const votes = {};
   for (const [sym, industry] of Object.entries(industries)) {
     const sector = fromIndex[sym];

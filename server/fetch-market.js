@@ -85,7 +85,9 @@ async function fetchOne(stock, kind) {
 // kind "summary": results + shareholding; "holdings": shareholding only.
 // stocks: [{ symbol, name, isin }] from NSE's equity list.
 export async function fetchCompanies(stocks, kind, { onProgress = () => {}, log = console.error } = {}) {
-  let ok = 0, fail = 0, blockedInARow = 0, refused = 0;
+  // notYet: failures that are an answer, not a fault — a new listing with
+  // no full-year filing yet, a company that files no shareholding
+  let ok = 0, fail = 0, notYet = 0, blockedInARow = 0, refused = 0;
   const started = Date.now();
   for (const [i, stock] of stocks.entries()) {
     try {
@@ -114,6 +116,7 @@ export async function fetchCompanies(stocks, kind, { onProgress = () => {}, log 
         else if (stored && !stored.error && stored.years?.length) log(`${stock.symbol}: kept the stored figures — ${e.message}`);
         else {
           const retryable = !!(e.retryable || e instanceof TypeError || e.cause?.code === "ETIMEDOUT");
+          if (!retryable) notYet++;
           saveStock(stock.symbol, {
             symbol: stock.symbol, name: stock.name, schema: SCHEMA, error: e.message,
             retryable,
@@ -133,7 +136,7 @@ export async function fetchCompanies(stocks, kind, { onProgress = () => {}, log 
     }
     await new Promise(r => setTimeout(r, DELAY_MS));
   }
-  return { ok, fail, refused };
+  return { ok, fail, notYet, refused };
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

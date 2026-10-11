@@ -128,9 +128,12 @@ async function refreshNewFilings() {
     const stocks = [...symbols].map(s => bySymbol.get(s)).filter(Boolean);
     console.error(`[jobs] ${stocks.length} companies filed results since ${new Date(since).toISOString().slice(0, 10)}`);
     const result = await fetchCompanies(stocks, "summary", { onProgress });
-    if (result.fail || result.refused) {
+    // A new listing without a full year filed yet isn't a failed refresh —
+    // counted as one, every evening's check reported a problem
+    const failed = result.fail - result.notYet;
+    if (failed || result.refused) {
       writeState({ lastFilingsCheck: new Date(checkStarted).toISOString(), lastFilingsAttempt: new Date(checkStarted).toISOString() });
-      throw new Error(`Results refresh incomplete: ${result.fail} failed, ${result.refused} refused; retryable records remain queued`);
+      throw new Error(`Results refresh incomplete: ${failed} failed, ${result.refused} refused; retryable records remain queued`);
     }
   }
   writeState({ lastFilingsCheck: new Date(checkStarted).toISOString(), lastFilingsAttempt: new Date(checkStarted).toISOString() });
