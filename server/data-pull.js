@@ -22,6 +22,7 @@ const HOUR = 3600 * 1000;
 // A few hundred bytes a look; the pack itself only when it's newer
 const CHECK_EVERY = HOUR / 2;
 const MAX_PACK_BYTES = 60 * 1024 * 1024;
+const PACK_STATE_PATH = join(DATA_DIR, "data-pack-state.json");
 // Market files sent by the release and included in the seed. Keep score
 // cohorts here so the free host's study survives each data update. The
 // snapshot goes last: it's what tells the screen the data changed.
@@ -55,6 +56,11 @@ function replaceContents(from, to) {
 }
 
 export const pullStatus = { enabled: false, lastCheckAt: null, lastPulledAt: null, pulledBuiltAt: null, lastError: null };
+
+function installedPackState() {
+  try { return JSON.parse(readFileSync(PACK_STATE_PATH, "utf8")); }
+  catch { return null; }
+}
 
 export function pullBaseUrl(env = process.env) {
   if (env.DATA_PULL === "off") return null;
@@ -101,7 +107,12 @@ export async function pullOnce(base, { onInstalled } = {}) {
     if (!res.ok) throw new Error(`manifest: HTTP ${res.status}`);
     const manifest = await res.json();
     const serving = loadMarketSnapshot()?.builtAt;
-    if (!manifest.builtAt || (serving && Date.parse(manifest.builtAt) <= Date.parse(serving))) { pullStatus.lastError = null; return "current"; }
+    const manifestBuiltAt = Date.parse(manifest.builtAt || "");
+    if (!Number.isFinite(manifestBuiltAt)) throw new Error("manifest has no valid builtAt");
+    const installedAt = Date.parse(installedPackState()?.packedAt || "");
+    const publishedAt = Date.parse(manifest.packedAt || "");
+    const packIsNewer = Number.isFinite(publishedAt) && (!Number.isFinite(installedAt) || publishedAt > installedAt);
+    if (serving && manifestBuiltAt <= Date.parse(serving) && !packIsNewer) { pullStatus.lastError = null; return "current"; }
 
     const pack = await fetch(`${base}/market-data.tar.gz`, { signal: AbortSignal.timeout(120_000) });
     if (!pack.ok) throw new Error(`pack: HTTP ${pack.status}`);
@@ -114,6 +125,7 @@ export async function pullOnce(base, { onInstalled } = {}) {
       clearSnapshotCache();
       pullStatus.lastPulledAt = new Date().toISOString();
       pullStatus.pulledBuiltAt = got.builtAt;
+      writeFileSync(PACK_STATE_PATH, JSON.stringify({ builtAt: manifest.builtAt, packedAt: manifest.packedAt ?? null }));
       pullStatus.lastError = null;
       console.error(`[pull] installed data built ${got.builtAt} (prices ${got.pricesDate}, ${got.companies} companies)`);
       onInstalled?.();

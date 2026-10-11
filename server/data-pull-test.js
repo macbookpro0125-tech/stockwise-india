@@ -27,14 +27,14 @@ mkdirSync(join(dataDir, "market"), { recursive: true });
 writeFileSync(join(dataDir, "market", "OLD.json"), "{}");
 writeFileSync(join(dataDir, "market-snapshot.json"), JSON.stringify({ builtAt: "2026-10-01T10:00:00Z", pricesDate: "2026-10-01", prices: { OLD: 1 } }));
 
-function makePack(name, { companies, builtAt }) {
+function makePack(name, { companies, builtAt, cohortMonth = "2026-10" }) {
   const dir = join(root, name);
   mkdirSync(join(dir, "market"), { recursive: true });
   for (let i = 0; i < companies; i++) writeFileSync(join(dir, "market", `C${i}.json`), "{}");
   mkdirSync(join(dir, "shareholding"));
   writeFileSync(join(dir, "market-snapshot.json"), JSON.stringify({ builtAt, pricesDate: builtAt.slice(0, 10), prices: { C0: 2 } }));
   writeFileSync(join(dir, "performance-snapshots.json"), "[]");
-  writeFileSync(join(dir, "research-score-cohorts.json"), JSON.stringify([{ month: "2026-10", records: [{ ticker: "C0", overall: 70 }] }]));
+  writeFileSync(join(dir, "research-score-cohorts.json"), JSON.stringify([{ month: cohortMonth, records: [{ ticker: "C0", overall: 70 }] }]));
   const tgz = join(root, `${name}.tar.gz`);
   execFileSync("tar", ["-czf", tgz, "-C", dir, "market", "market-snapshot.json", "performance-snapshots.json", "research-score-cohorts.json", "shareholding"]);
   return tgz;
@@ -49,10 +49,12 @@ assert.ok(!existsSync(join(dataDir, ".incoming")), "the unpacked copy is cleaned
 // Served over HTTP the way GitHub serves release assets
 const good = makePack("good", { companies: 1200, builtAt: "2026-10-09T15:00:00Z" });
 let published = true;
+let packedAt = "2026-10-09T15:30:00Z";
+let latestPack = good;
 const server = createServer((req, res) => {
   if (!published) { res.writeHead(404).end(); return; }
-  if (req.url === "/manifest.json") res.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify({ builtAt: "2026-10-09T15:00:00Z", pricesDate: "2026-10-09" }));
-  else if (req.url === "/market-data.tar.gz") res.writeHead(200).end(readFileSync(good));
+  if (req.url === "/manifest.json") res.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify({ builtAt: "2026-10-09T15:00:00Z", packedAt, pricesDate: "2026-10-09" }));
+  else if (req.url === "/market-data.tar.gz") res.writeHead(200).end(readFileSync(latestPack));
   else res.writeHead(404).end();
 });
 await new Promise(r => server.listen(0, "127.0.0.1", r));
@@ -75,6 +77,12 @@ assert.ok(existsSync(join(dataDir, "performance-snapshots.json")));
 assert.deepEqual(JSON.parse(readFileSync(join(dataDir, "research-score-cohorts.json"), "utf8")), [{ month: "2026-10", records: [{ ticker: "C0", overall: 70 }] }], "monthly score-validation cohorts arrive with the market data");
 assert.ok(!readdirSync(dataDir).some(f => f.startsWith(".old-") || f.startsWith(".pull")), "no leftovers beside the data");
 assert.equal(await pullOnce(base), "current", "the same pack again is left alone");
+
+latestPack = makePack("format-update", { companies: 1200, builtAt: "2026-10-09T15:00:00Z", cohortMonth: "2026-09" });
+packedAt = "2026-10-09T16:00:00Z";
+assert.equal(await pullOnce(base), "installed", "a newer pack is installed even when its market snapshot date is unchanged");
+assert.deepEqual(JSON.parse(readFileSync(join(dataDir, "research-score-cohorts.json"), "utf8")), [{ month: "2026-09", records: [{ ticker: "C0", overall: 70 }] }], "same-date pack updates replace the cohort history");
+assert.equal(await pullOnce(base), "current", "the installed pack timestamp prevents repeat downloads");
 
 server.close();
 rmSync(root, { recursive: true, force: true });
