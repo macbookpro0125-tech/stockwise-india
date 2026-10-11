@@ -38,6 +38,17 @@ export const isHoldingCompany = stock => stock?.template === "NBFC" &&
 // Five years of filings before a fair value: a recent listing's two or three
 // years of P/E are too few to call any of them usual
 const MIN_VALUATION_YEARS = 5;
+// Cyclicals (the spec's step 4): flagged on up to ten years of their own
+// record; valued on mid-cycle earnings from seven years on
+const CYCLE_MAX_YEARS = 10, CYCLE_MIN_YEARS = 7;
+// Operating margins this variable for their average (coefficient of
+// variation) mark a business whose profits swing with the cycle; a little
+// under it, a commodity industry tips the balance
+const CYCLE_CV = 0.4, CYCLE_CV_TIEBREAK = 0.3;
+const CYCLICAL_INDUSTRY = /metal|mining|steel|iron|alumin|copper|zinc|cement|chemical|refiner|petroleum|sugar|paper/i;
+// Latest margin against the through-cycle median: over 1.3 the profits are
+// above mid-cycle, under 0.7 near the trough
+const CYCLE_HIGH = 1.3, CYCLE_LOW = 0.7;
 
 const isoPlusDays = (iso, days) => new Date(new Date(`${iso}T00:00:00Z`).getTime() + days * DAY).toISOString().slice(0, 10);
 const round = (v, dp = 1) => (v == null || !isFinite(v) ? null : Math.round(v * 10 ** dp) / 10 ** dp);
@@ -459,6 +470,80 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     const bvps = h?.equityOwnersCr > 0 && h.sharesCr > 0 ? h.equityOwnersCr / h.sharesCr : null;
     return r.price > 0 && bvps ? r.price / bvps : null;
   });
+  // ── Cyclical: profits that swing with the cycle. Flagged from the
+  // company's own record, not its sector's name — a loss in any year on file
+  // (up to ten), or operating margins swinging more than 0.4 of their average
+  // — with a commodity industry only as a tiebreaker. Valued on mid-cycle
+  // earnings: this year's revenue a share × its through-cycle net margin, at
+  // the multiple the market has usually paid on mid-cycle earnings (computed
+  // the same way at each year-end — a mid-cycle EPS against a multiple of
+  // reported EPS would count the cycle twice). The latest EPS × its usual
+  // P/E made a cyclical look cheapest at its peak: Tata Steel's FY22.
+  const cycle = (() => {
+    if (lender) return null;
+    const span = history.slice(0, CYCLE_MAX_YEARS);
+    const ownProfit = h => h.profitOwnersCr ?? h.profitCr;
+    const rows = span.filter(h => h.revenueCr > 0 && ownProfit(h) != null);
+    const lossYears = rows.filter(h => ownProfit(h) < 0).map(h => h.fyEnd);
+    const opms = span.map(h => h.opm).filter(v => v != null && Number.isFinite(v));
+    const opmMean = opms.length >= 3 ? opms.reduce((a, b) => a + b, 0) / opms.length : null;
+    const opmCv = opmMean > 0 ? Math.sqrt(opms.reduce((t, v) => t + (v - opmMean) ** 2, 0) / (opms.length - 1)) / opmMean : null;
+    const industryCyclical = CYCLICAL_INDUSTRY.test(snap?.industries?.[sym] ?? "") || cyclical;
+    const why = lossYears.length ? `a loss in ${lossYears.map(d => `FY${d.slice(2, 4)}`).reverse().join(", ")}`
+      : opmCv > CYCLE_CV ? `operating margins that swing — their variation is ${opmCv.toFixed(2)} of their average`
+        : opmCv > CYCLE_CV_TIEBREAK && industryCyclical ? `operating margins that swing (variation ${opmCv.toFixed(2)} of their average) in a commodity industry`
+          : null;
+    if (!why) return { flagged: false, opmCv: round(opmCv, 2) };
+    const r1 = v => round(v, 1);
+    const margins = rows.map(h => (ownProfit(h) / h.revenueCr) * 100);
+    const medianMargin = margins.length ? median(margins) : null;
+    const latestMargin = rows[0]?.fyEnd === latest.fyEnd ? margins[0] : null;
+    const base = { flagged: true, why, opmCv: round(opmCv, 2), lossYears, years: rows.length, partial: rows.length < CYCLE_MIN_YEARS, medianMargin: r1(medianMargin), latestMargin: r1(latestMargin) };
+    if (base.partial || !(medianMargin > 0) || !(latest.revenue > 0) || !(shares > 0)) return base;
+    // Revenue a share at each year-end on today's share basis, at the price then
+    const normalizedEps = (latest.revenue / shares) * (medianMargin / 100);
+    const multiples = rows.map(h => {
+      const entry = snap?.fyEndPrices?.[h.fyEnd];
+      const raw = entry?.prices?.[sym];
+      if (raw == null || !entry.date || !(h.sharesCr > 0)) return null;
+      const eps = (h.revenueCr / h.sharesCr) * (medianMargin / 100);
+      return eps > 0 ? raw / factorAfter(entry.date) / eps : null;
+    }).filter(v => v != null && Number.isFinite(v) && v > 0);
+    if (multiples.length < MIN_PE_YEARS) return { ...base, reason: `Prices at only ${multiples.length} year-ends to set its usual multiple.` };
+    const multiple = median(multiples);
+    const position = latestMargin != null ? latestMargin / medianMargin : null;
+    // Where debt is heavy (net debt over twice EBITDA), the same on the whole
+    // business: mid-cycle EBITDA × its usual EV/EBITDA, less today's net debt
+    const netDebtOf = h => (h.debtCr != null && h.liquidCr != null ? h.debtCr + (h.leasesCr ?? 0) - h.liquidCr : null);
+    const netDebt = netDebtOf(history[0]);
+    const ebitdaNow = history[0]?.operatingProfitCr;
+    let ev = null;
+    if (netDebt != null && ebitdaNow > 0 && netDebt / ebitdaNow > 2 && opms.length >= 3) {
+      const evMultiples = span.map(h => {
+        const entry = snap?.fyEndPrices?.[h.fyEnd], raw = entry?.prices?.[sym], nd = netDebtOf(h);
+        if (raw == null || !entry.date || nd == null || !(h.sharesCr > 0) || !(h.operatingProfitCr > 0)) return null;
+        return ((raw / factorAfter(entry.date)) * h.sharesCr + nd) / h.operatingProfitCr;
+      }).filter(v => v != null && Number.isFinite(v) && v > 0);
+      if (evMultiples.length >= MIN_PE_YEARS) {
+        const midEbitda = (latest.revenue / 1e7) * (median(opms) / 100);
+        const equityCr = midEbitda * median(evMultiples) - netDebt;
+        ev = { midEbitdaCr: Math.round(midEbitda), multiple: round(median(evMultiples), 1), years: evMultiples.length, netDebtCr: Math.round(netDebt), perShare: equityCr > 0 ? Math.round((equityCr * 1e7) / shares) : null };
+      }
+    }
+    return {
+      ...base,
+      revenuePerShare: round(latest.revenue / shares, 2),
+      normalizedEps: round(normalizedEps, 2), multiple: round(multiple, 1), multipleYears: multiples.length,
+      exact: { eps: normalizedEps, multiple },
+      fairValue: Math.round(normalizedEps * multiple),
+      latestEpsFairValue: earningsLevels?.fv25 ?? null,
+      position: round(position, 2),
+      positionLabel: position == null ? null : position > CYCLE_HIGH ? "above mid-cycle" : position < CYCLE_LOW ? "near the trough" : "around mid-cycle",
+      ev,
+      growth: round(clampGrowth(steadyGrowth("revenue")?.g ?? 0), 1),
+    };
+  })();
+
   let valuation;
   if (stock.template === "BANKING") {
     // Book per share on the balance sheet's own share count: after a large
@@ -477,12 +562,17 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     valuation = { model: "none", as: "short filing history", reason: `Only ${years.length} year${years.length === 1 ? "" : "s"} of annual results in NSE's filings — a recent listing, or a change of financial year that breaks the series. A fair value needs ${MIN_VALUATION_YEARS}, so that a usual P/E means something.` };
   } else if (!(eps > 0)) {
     valuation = { model: "none", as: "loss-maker", reason: "It made a loss in its latest year, so there are no earnings to value." };
+  } else if (cycle?.flagged && cycle.fairValue > 0) {
+    valuation = { model: "cyclical", as: "cyclical", ...cycle };
   } else if (medianPe == null) {
-    valuation = { model: "none", as: "broken P/E history", reason: `Only ${validPe.length} of the last five years have a usable P/E (losses or missing prices); a fair value from today's P/E would just repeat today's price.` };
+    valuation = { model: "none", as: "broken P/E history", reason: `Only ${validPe.length} of the last five years have a usable P/E (losses or missing prices); a fair value from today's P/E would just repeat today's price.`, cycle: cycle?.flagged ? cycle : null };
   } else {
-    valuation = { model: "earnings", as: "steady earner" };
+    // A cyclical with under seven years on file stays on its P/E history,
+    // badged a partial cycle
+    valuation = cycle?.flagged ? { model: "earnings", as: "cyclical, partial cycle", partialCycle: cycle } : { model: "earnings", as: "steady earner" };
   }
   const levels = valuation.model === "earnings" ? earningsLevels
+    : valuation.model === "cyclical" ? calculateLevels(valuation.exact.eps, valuation.exact.multiple, valuation.growth, 10)
     : valuation.model === "book" && valuation.exact.adjustedBvps > 0 && valuation.exact.pb > 0 ? calculateLevels(valuation.exact.adjustedBvps, valuation.exact.pb, valuation.growth, 10)
       : null;
 

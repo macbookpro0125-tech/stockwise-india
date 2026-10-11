@@ -21,7 +21,7 @@
 // Weights and bands are a stated starting point, not a fitted model — the
 // proposal says so too. Change them here and RESEARCH_VERSION together.
 
-export const RESEARCH_VERSION = "1.6"; // 1.6: banks priced on justified P/B × book less net bad loans — cost of equity 12% (13% government), growth from retained earnings capped at 8%; 1.5: banks scored on their own bad-loan, capital and efficiency figures
+export const RESEARCH_VERSION = "1.7"; // 1.7: cyclicals checked against their mid-cycle fair value; 1.6: banks priced on justified P/B × book less net bad loans — cost of equity 12% (13% government), growth from retained earnings capped at 8%; 1.5: banks scored on their own bad-loan, capital and efficiency figures
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -559,6 +559,14 @@ const VALUATION = {
     {
       id: "ownHistory", weight: 0.20, label: "Price against its own usual P/E",
       compute(m) {
+        // A cyclical against its usual multiple of mid-cycle earnings — the
+        // same fair value as its price levels (metrics.js valuation)
+        const v = m.valuation;
+        if (v?.model === "cyclical" && m.close > 0) {
+          const mos = ((v.fairValue - m.close) / v.fairValue) * 100;
+          const score = band(mos, [[-30, 0], [-10, 25], [0, 50], [20, 75], [40, 100]]);
+          return checked(score, mos, mos >= 0 ? `${pct(mos, 0)} below` : `${pct(-mos, 0)} above`, `${rupees(m.close)} is ${mos >= 0 ? `${pct(mos, 0)} below` : `${pct(-mos, 0)} above`} its mid-cycle fair value of ${rupees(v.fairValue)} (mid-cycle EPS ₹${v.normalizedEps.toFixed(2)} × its usual ${v.multiple.toFixed(1)}× on mid-cycle earnings) — a cyclical, so not its latest EPS.`);
+        }
         if (!finite(m.medianPe) || !(m.valuationEps > 0) || !(m.close > 0)) return missing("Needs 3 years of P/E history and a profit.");
         const fv = m.valuationEps * m.medianPe;
         const mos = ((fv - m.close) / fv) * 100;
