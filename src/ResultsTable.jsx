@@ -124,9 +124,15 @@ function MiniRange({ low, high, cmp }) {
 // value was made sit behind a flag's tooltip.
 function FvCell({ stock }) {
   const { cmp, safeBuyPrice: p1, p2, p3, fairValue } = stock;
+  // How the levels were made (or why there are none) — the company page's
+  // "Valued as", behind the flag's tooltip
+  const v = stock.valuation;
   const notes = [
-    stock.valuationPeBasis === "current" && "Fewer than 3 usable years of P/E history, so this uses today's P/E — fair value then tracks the current price.",
-    stock.epsJump && `This year's EPS (₹${stock.epsJump.eps.toFixed(2)}) is more than 3× its usual ₹${stock.epsJump.usualEps.toFixed(2)} and the share price hasn't followed — how a one-off gain looks. Price levels use the usual EPS.`,
+    v?.model === "book" && "A bank, valued on book: justified P/B × book less net bad loans.",
+    v?.model === "cyclical" && `A cyclical, valued on mid-cycle earnings${v.positionLabel ? ` — this year's profits are ${v.positionLabel}` : ""}.`,
+    v?.partialCycle && "A cyclical with under seven years of results, so still valued on this year's EPS.",
+    v?.as === "re-rated compounder" && "A re-rated compounder: its P/E kept rising, so its usual P/E sits below the price. The company page leads with the growth its price implies.",
+    v?.model === "earnings" && stock.epsJump && `This year's EPS (₹${stock.epsJump.eps.toFixed(2)}) is more than 3× its usual ₹${stock.epsJump.usualEps.toFixed(2)} and the share price hasn't followed — how a one-off gain looks. Price levels use the usual EPS.`,
   ].filter(Boolean);
   const fvLabel = stock.fyEnd ? `FV${String(Number(stock.fyEnd.slice(0, 4)) + 2).slice(2)}` : "FV";
   return (
@@ -143,7 +149,7 @@ function FvCell({ stock }) {
           })}
         </div>
       ) : (
-        <div style={{ color: "var(--t3)" }}>No price levels</div>
+        <div style={{ color: "var(--t3)" }} title={v?.reason ?? undefined}>{v?.model === "needs-data" ? `Needs more data (${v.as})` : v?.as ? `No fair value (${v.as})` : "No price levels"}</div>
       )}
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 3, color: "var(--t3)", fontSize: 10, whiteSpace: "nowrap" }}>
         <MiniRange low={stock.low52w} high={stock.high52w} cmp={cmp} />

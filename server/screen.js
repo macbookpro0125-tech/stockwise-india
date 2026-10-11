@@ -197,6 +197,9 @@ function tableRow(m, columns = [], sizes = null) {
     stopLoss: m.levels?.stopLoss ?? null, target: m.levels?.target ?? null,
     low52w: m.low52w, high52w: m.high52w, ret1d: m.ret1d ?? null, piotroski: m.piotroski ?? null,
     valuationPeBasis: m.valuationPeBasis, epsJump: m.epsJump, research: researchBrief(m.research),
+    // Which model priced it, or why nothing did (metrics.js valuation)
+    valuation: m.valuation ? { model: m.valuation.model, as: m.valuation.as, reason: m.valuation.reason ?? null, positionLabel: m.valuation.positionLabel ?? null, partialCycle: !!m.valuation.partialCycle } : null,
+    governmentOwned: !!m.governmentOwned,
   };
 }
 

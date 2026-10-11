@@ -20,12 +20,23 @@ function referencePrice(item) {
 }
 const referenceDate = item => (quoteIsNewer(item?.data) ? item.data.quote.asOf : item?.data?.close?.date ?? item?.data?.metrics?.provenance?.marketPrice?.date ?? null);
 
+// The EPS the scenarios grow from: a cyclical's mid-cycle EPS (its price
+// levels' basis — this year's at a profit peak would flatter every case),
+// else the usual EPS after a one-off jump, else this year's
+const scenarioEps = metrics => (metrics?.valuation?.model === "cyclical" ? finite(metrics.valuation.normalizedEps) : null)
+  ?? finite(metrics?.valuationEps) ?? finite(metrics?.eps);
+
+// A cyclical's mid-cycle EPS grows with its revenue; its past EPS growth
+// mostly measures where the cycle stood
+const cyclicalGrowth = metrics => (metrics?.valuation?.model === "cyclical" ? finite(metrics.valuation.growth) : null);
+
 function assumptionBasis(metrics, price) {
   const reportedEpsGrowth = finite(metrics?.epsGrowth5y) ?? finite(metrics?.epsGrowth3y);
   const valuationGrowth = finite(metrics?.growthForValuation);
-  const sourceGrowth = reportedEpsGrowth ?? valuationGrowth ?? 0;
+  const sourceGrowth = cyclicalGrowth(metrics) ?? reportedEpsGrowth ?? valuationGrowth ?? 0;
   const defaultBaseGrowth = defaultAssumptions(metrics, price).baseGrowth;
-  const growth = reportedEpsGrowth != null
+  const growth = cyclicalGrowth(metrics) != null ? `revenue growth, as mid-cycle EPS moves with revenue (${pct(cyclicalGrowth(metrics))})`
+    : reportedEpsGrowth != null
     ? `reported ${metrics?.epsGrowth5y != null ? "5-year" : "3-year"} EPS CAGR (${pct(reportedEpsGrowth)})`
     : valuationGrowth != null
       ? /default/i.test(metrics?.growthBasis ?? "")
@@ -33,9 +44,10 @@ function assumptionBasis(metrics, price) {
         : `${metrics?.growthBasis ?? "profit/sales growth"} used as an EPS-growth proxy (${pct(valuationGrowth)})`
       : "a 0% fallback";
   const growthAdjustment = Math.abs(sourceGrowth - defaultBaseGrowth) > 0.05 ? `, rounded or capped to ${pct(defaultBaseGrowth)}` : "";
-  const eps = finite(metrics?.valuationEps) ?? finite(metrics?.eps);
+  const eps = scenarioEps(metrics);
   const currentPe = eps > 0 && price > 0 ? price / eps : null;
-  const normalized = metrics?.epsJump ? "normalized EPS uses the typical EPS from the historical P/E years after a one-off jump" : "normalized EPS uses the latest reported EPS";
+  const normalized = metrics?.valuation?.model === "cyclical" ? "a cyclical, so normalized EPS is mid-cycle: this year's revenue a share × its through-cycle net margin"
+    : metrics?.epsJump ? "normalized EPS uses the typical EPS from the historical P/E years after a one-off jump" : "normalized EPS uses the latest reported EPS";
   const sectorNote = metrics?.lender
     ? "For lenders, this EPS/P-E model does not model credit costs or capital ratios."
     : metrics?.cyclical
@@ -45,9 +57,9 @@ function assumptionBasis(metrics, price) {
 }
 
 function defaultAssumptions(metrics, price) {
-  const sourceGrowth = metrics?.epsGrowth5y ?? metrics?.epsGrowth3y ?? metrics?.growthForValuation ?? 0;
+  const sourceGrowth = cyclicalGrowth(metrics) ?? metrics?.epsGrowth5y ?? metrics?.epsGrowth3y ?? metrics?.growthForValuation ?? 0;
   const baseGrowth = bound(Math.round(finite(sourceGrowth) ?? 0), -10, 30);
-  const eps = finite(metrics?.valuationEps) ?? finite(metrics?.eps);
+  const eps = scenarioEps(metrics);
   // Today's P/E, not the 5-year median: a base case that assumed the old
   // multiple came back had a de-rated company (Indiamart at 20 against a
   // median near 50) more than doubling in a year, and a "bear" case with a
@@ -65,7 +77,7 @@ function defaultAssumptions(metrics, price) {
 }
 
 function scenarioRows(metrics, price, years, assumptions) {
-  const eps = finite(metrics?.valuationEps) ?? finite(metrics?.eps);
+  const eps = scenarioEps(metrics);
   const referencePe = finite(metrics?.medianPe) ?? finite(metrics?.valuationPe) ?? finite(metrics?.pe) ?? (eps > 0 && price > 0 ? price / eps : null);
   if (!(eps > 0) || !(price > 0) || !(referencePe > 0) || ![assumptions.bearPe, assumptions.basePe, assumptions.bullPe].every(value => finite(value) > 0)) return null;
   return [
@@ -167,7 +179,7 @@ export default function InvestmentBriefView({ stocks, onClose }) {
       const metrics = item.data?.metrics;
       const price = referencePrice(item);
       const cases = scenarioRows(metrics, price, years, assumptions[item.stock.symbol] ?? defaultAssumptions(metrics, price));
-      const eps = finite(metrics?.valuationEps) ?? finite(metrics?.eps);
+      const eps = scenarioEps(metrics);
       const reason = !(eps > 0) ? (eps == null ? "normalized EPS unavailable" : "normalized EPS is not positive")
         : !(price > 0) ? "reference price unavailable"
           : "P/E input unavailable";

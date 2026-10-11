@@ -654,7 +654,7 @@ export function createApp() {
           const price = prices[r.symbol]?.price;
           const levels = r.safeBuyPrice ? { fv25: r.fv25, p1: r.safeBuyPrice, p2: r.p2, p3: r.p3, stopLoss: r.stopLoss, target: r.target } : null;
           const position = price && levels ? pricePosition(price, levels) : null;
-          status[r.symbol] = { position, levels, research: r.research ?? null };
+          status[r.symbol] = { position, levels, research: r.research ?? null, valuation: r.valuation ?? null };
         }
         sendJson(res, 200, { holdings, prices, status });
         return;
