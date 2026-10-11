@@ -22,9 +22,10 @@ const HOUR = 3600 * 1000;
 // A few hundred bytes a look; the pack itself only when it's newer
 const CHECK_EVERY = HOUR / 2;
 const MAX_PACK_BYTES = 60 * 1024 * 1024;
-// What a pack replaces — the same list `npm run pack:seed` packs. The
+// Market files sent by the release and included in the seed. Keep score
+// cohorts here so the free host's study survives each data update. The
 // snapshot goes last: it's what tells the screen the data changed.
-const PACK_ENTRIES = ["market", "shareholding", "performance-snapshots.json", "market-snapshot.json"];
+const PACK_ENTRIES = ["market", "shareholding", "performance-snapshots.json", "research-score-cohorts.json", "market-snapshot.json"];
 
 // A file moved into place, copied if a move can't cross over
 function moveFile(from, to) {
