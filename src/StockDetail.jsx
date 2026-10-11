@@ -13,6 +13,7 @@ import TechnicalPanel from "./TechnicalPanel.jsx";
 import PeersPanel from "./PeersPanel.jsx";
 import NewsPanel from "./NewsPanel.jsx";
 import ValuationExplorer from "./ValuationExplorer.jsx";
+import { ValuedAs, BankValuation, NoFairValue, pbAt } from "./ValuationModel.jsx";
 import PhasePositionPlanner from "./PhasePositionPlanner.jsx";
 import ThesisMonitor from "./ThesisMonitor.jsx";
 
@@ -483,7 +484,11 @@ function SectionNav({ ready, sizingReady }) {
   const [active, setActive] = useState("about");
   const rowRef = useRef(null);
   // Only the parts this company has (no price levels without a price, …)
-  useEffect(() => { setPresent(SECTIONS.filter(([id]) => id !== "sizing" || sizingReady).filter(([id]) => document.getElementById(`sec-${id}`))); }, [ready, sizingReady]);
+  // Without price levels (no fair value) that part holds the key numbers
+  useEffect(() => {
+    setPresent(SECTIONS.filter(([id]) => id !== "sizing" || sizingReady).filter(([id]) => document.getElementById(`sec-${id}`))
+      .map(([id, label]) => [id, id === "levels" && !sizingReady ? "Key numbers" : label]));
+  }, [ready, sizingReady]);
   // Where the pinned bar ends once pinned — not where it is now: on a phone
   // the header above it scrolls away on the way down
   const barBottom = () => {
@@ -542,12 +547,15 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
   const [pe, setPe] = useState("");
   const [growthPct, setGrowthPct] = useState("");
   const [mosPct, setMosPct] = useState("10");
+  // A bank's cost of equity (bank-valuation.js), which sets its P/B input
+  const [costOfEquity, setCostOfEquity] = useState(12);
   const [actionPrice, setActionPrice] = useState("");
   const [priceLabel, setPriceLabel] = useState("");
   const [baseline, setBaseline] = useState(null);
 
   const applyBaseline = b => {
     setEps(b.eps); setPe(b.pe); setGrowthPct(b.growthPct); setMosPct(b.mosPct);
+    if (b.costOfEquity != null) setCostOfEquity(b.costOfEquity);
   };
 
   useEffect(() => {
@@ -561,7 +569,16 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       else if (d.close) { setActionPrice(String(d.close.price)); setPriceLabel(closeLabel(d.close)); }
       const m = d.metrics;
       if (!m) return;
-      const b = {
+      // A bank's inputs are its book, P/B and book growth — the same levels
+      // arithmetic, on book instead of earnings
+      const v = m.valuation;
+      const b = v?.model === "book" ? {
+        eps: String(round(v.adjustedBvps, 2)),
+        pe: String(round(v.justifiedPb, 2)),
+        growthPct: String(round(v.growth, 1)),
+        mosPct: "10",
+        costOfEquity: v.costOfEquity,
+      } : {
         eps: m.valuationEps != null ? String(round(m.valuationEps, 2)) : "",
         pe: m.valuationPe ? String(round(m.valuationPe, 1)) : "",
         growthPct: String(round(m.growthForValuation, 1)),
@@ -574,6 +591,10 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
   }, [symbol]);
 
   const m = data?.metrics;
+  const model = m?.valuation?.model;
+  const onBook = model === "book";
+  // No inputs to move without a model that values the company
+  const valued = model === "earnings" || onBook;
   const usingCustomInputs = !!baseline && (eps !== baseline.eps || pe !== baseline.pe || growthPct !== baseline.growthPct || mosPct !== baseline.mosPct);
   // A one-off profit jump: the EPS box holds the usual level until you change it
   const usualEpsShown = !!m?.epsJump && !!baseline && eps === baseline.eps;
@@ -581,8 +602,8 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
   // values, which could move a price level by a rupee against the Discover table
   const levels = useMemo(() => {
     if (!m) return null;
-    return usingCustomInputs ? calculateLevels(eps, pe, growthPct, mosPct) : m.levels;
-  }, [m, usingCustomInputs, eps, pe, growthPct, mosPct]);
+    return usingCustomInputs && valued ? calculateLevels(eps, pe, growthPct, mosPct) : m.levels;
+  }, [m, usingCustomInputs, valued, eps, pe, growthPct, mosPct]);
   const price = Number(actionPrice) || null;
 
   if (error) {
@@ -646,11 +667,16 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         <div style={{ padding: "10px 14px", borderRadius: 10, background: "var(--green-dim)", border: "1px solid var(--green-bdr)", fontSize: 12.5, color: "var(--green)", marginBottom: 14, lineHeight: 1.55 }}>
           <CircleCheck size={14} strokeWidth={2.2} style={{ verticalAlign: "-2px", marginRight: 6 }} /><strong>Financials from NSE filings</strong> — EPS and valuation inputs use {data.annual?.scope?.toLowerCase() ?? "reported"} results for the year ended {longDate(m.fyEnd)}{m.provenance?.financials?.filedAt ? `, filed ${longDate(m.provenance.financials.filedAt)}` : ""}. The price source and date are shown beside the quote above.{" "}
           <a href={`https://www.nseindia.com/get-quotes/equity?symbol=${encodeURIComponent(data.symbol)}`} target="_blank" rel="noreferrer" style={{ color: "var(--green)", fontWeight: 600, whiteSpace: "nowrap" }}>Open on NSE <ArrowUpRight size={13} style={{ verticalAlign: "-2px" }} /></a>
-          <div className="hide-phone" style={{ marginTop: 4, color: "var(--t2)" }}>
-            {m.medianPe != null
-              ? <>P/E is this stock's <em>5-year median</em> ({m.medianPe.toFixed(1)}; today {m.pe?.toFixed(1) ?? "—"}) — override with your own view if needed.</>
-              : <>P/E is <em>today's</em> — fewer than 3 usable years of history for a median. Override with a long-run average for a real valuation.</>}
-          </div>
+          {model === "earnings" && (
+            <div className="hide-phone" style={{ marginTop: 4, color: "var(--t2)" }}>
+              P/E is this stock's <em>5-year median</em> ({m.medianPe.toFixed(1)}; today {m.pe?.toFixed(1) ?? "—"}) — override with your own view if needed.
+            </div>
+          )}
+          {onBook && (
+            <div className="hide-phone" style={{ marginTop: 4, color: "var(--t2)" }}>
+              P/B is what its <em>through-cycle return on equity</em> supports ({m.valuation.justifiedPb.toFixed(2)}×; today {price > 0 && m.valuation.bookPerShare > 0 ? (price / m.valuation.bookPerShare).toFixed(2) : "—"}× on reported book) — override with your own view if needed.
+            </div>
+          )}
           {m.epsRebased && (
             <div style={{ marginTop: 4, color: "var(--t2)" }}>
               EPS here is FY{m.fyEnd.slice(2, 4)} profit over today's {m.epsRebased.sharesCr.toLocaleString("en-IN", { maximumFractionDigits: 1 })} Cr shares (₹{m.eps.toFixed(2)}). The filing's ₹{m.epsRebased.reportedEps.toFixed(2)} is on about {m.epsRebased.epsSharesCr.toLocaleString("en-IN", { maximumFractionDigits: 1 })} Cr, before the company issued more shares — today's count is what the share price is for.
@@ -685,6 +711,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
           {m.sector && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--accent-glow)", color: "var(--accent)", fontWeight: 600 }}>{m.sector}</span>}
           {m.lender && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--s3)", color: "var(--t2)", fontWeight: 500 }}>Lender</span>}
+          {m.valuation?.psu && <span title="The government holds a majority — part of why its multiple is low, and why its cost of equity is a point higher here" style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--s3)", color: "var(--t2)", fontWeight: 500 }}>Government-owned</span>}
           {m.utility && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--s3)", color: "var(--t2)", fontWeight: 500 }}>Regulated utility</span>}
           {m.cyclical && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--yellow-dim)", color: "var(--yellow)", fontWeight: 600 }}>Cyclical</span>}
         </div>
@@ -711,54 +738,83 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
 
       {m && (
         <>
-          {/* Verify & Override */}
+          {/* Verify & Override — or, without a model that values the
+              company, why there's no fair value */}
           <div id="sec-valuation" className="ss-section" data-tour="override" style={{ border: "1px solid var(--bdr2)", borderRadius: 14, padding: 20, marginBottom: 16, background: "var(--s2)" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "var(--t1)", marginBottom: 2, letterSpacing: "-0.01em" }}>Verify & Override</div>
-                <div style={{ fontSize: 11, color: "var(--t3)" }}>
-                  Auto-filled from NSE filings — edit any value to move the price levels; the research score always uses the filings
-                  {usingCustomInputs ? <span style={{ marginLeft: 6, color: "var(--accent)", fontWeight: 600 }}>· custom</span> : <span style={{ marginLeft: 6 }}>· filings baseline</span>}
+            {valued ? (
+              <>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--t1)", marginBottom: 2, letterSpacing: "-0.01em" }}>Verify & Override</div>
+                    <div style={{ fontSize: 11, color: "var(--t3)" }}>
+                      Auto-filled from NSE filings — edit any value to move the price levels; the research score always uses the filings
+                      {usingCustomInputs ? <span style={{ marginLeft: 6, color: "var(--accent)", fontWeight: 600 }}>· custom</span> : <span style={{ marginLeft: 6 }}>· filings baseline</span>}
+                    </div>
+                  </div>
+                  {baseline && usingCustomInputs && (
+                    <button type="button" onClick={() => applyBaseline(baseline)} className="btn-ghost" style={{ height: 30, fontSize: 12 }}>Reset</button>
+                  )}
                 </div>
-              </div>
-              {baseline && usingCustomInputs && (
-                <button type="button" onClick={() => applyBaseline(baseline)} className="btn-ghost" style={{ height: 30, fontSize: 12 }}>Reset</button>
-              )}
-            </div>
+                <ValuedAs valuation={m.valuation} />
 
-            <div className="ss-grid-4">
-              <div>
-                <label style={labelStyle}>{usualEpsShown ? "Usual EPS (₹)" : `EPS ${fyLabel(m.fyEnd)} (₹)`}</label>
-                <input type="number" value={eps} onChange={e => setEps(e.target.value)} style={inputStyle} />
-                {usualEpsShown
-                  ? <div style={{ fontSize: 10, color: "var(--yellow)", marginTop: 3, fontWeight: 600 }}>{fyLabel(m.fyEnd)} was ₹{m.epsJump.eps.toFixed(2)} — see note above</div>
-                  : hint(parseFloat(eps) > 0, "✓ EPS loaded", "From the annual results")}
-              </div>
-              <div>
-                <label style={labelStyle}>Historical P/E</label>
-                <input type="number" value={pe} onChange={e => setPe(e.target.value)} style={inputStyle} />
-                {hint(parseFloat(pe) > 0 && parseFloat(pe) <= 30, "✓ Reasonable P/E", "5-yr median P/E")}
-              </div>
-              <div>
-                <label style={labelStyle}>EPS Growth % p.a.</label>
-                <input type="number" value={growthPct} onChange={e => setGrowthPct(e.target.value)} style={inputStyle} />
-                {(() => {
-                  // Where the default came from, until it's overridden
-                  const basis = baseline && growthPct === baseline.growthPct ? m.growthBasis : null;
-                  return hint(parseFloat(growthPct) >= 15, basis ? `✓ Strong growth · ${basis}` : "✓ Strong growth", basis ?? "Expected annual growth");
-                })()}
-              </div>
-              <div>
-                <label style={labelStyle}>Margin of Safety %</label>
-                <input type="number" value={mosPct} onChange={e => setMosPct(e.target.value)} style={inputStyle} />
-                {hint(parseFloat(mosPct) >= 10, "✓ Good margin", "Discount to fair value")}
-              </div>
-            </div>
+                <div className="ss-grid-4">
+                  <div>
+                    <label style={labelStyle}>{onBook ? "Book/share less net NPA (₹)" : usualEpsShown ? "Usual EPS (₹)" : `EPS ${fyLabel(m.fyEnd)} (₹)`}</label>
+                    <input type="number" value={eps} onChange={e => setEps(e.target.value)} style={inputStyle} />
+                    {onBook ? hint(parseFloat(eps) > 0, "✓ From the filings", "Owners' equity − net NPA, per share")
+                      : usualEpsShown
+                        ? <div style={{ fontSize: 10, color: "var(--yellow)", marginTop: 3, fontWeight: 600 }}>{fyLabel(m.fyEnd)} was ₹{m.epsJump.eps.toFixed(2)} — see note above</div>
+                        : hint(parseFloat(eps) > 0, "✓ EPS loaded", "From the annual results")}
+                  </div>
+                  <div>
+                    <label style={labelStyle}>{onBook ? "Justified P/B" : "Historical P/E"}</label>
+                    <input type="number" value={pe} onChange={e => setPe(e.target.value)} style={inputStyle} />
+                    {onBook ? hint(parseFloat(pe) > 0, "✓ From its return on equity", "(ROE − g) ÷ (cost of equity − g)")
+                      : hint(parseFloat(pe) > 0 && parseFloat(pe) <= 30, "✓ Reasonable P/E", "5-yr median P/E")}
+                  </div>
+                  <div>
+                    <label style={labelStyle}>{onBook ? "Book growth % p.a." : "EPS Growth % p.a."}</label>
+                    <input type="number" value={growthPct} onChange={e => {
+                      setGrowthPct(e.target.value);
+                      // A bank's P/B moves with its growth rate
+                      if (onBook) { const pb = pbAt(m.valuation.roe, Number(e.target.value), costOfEquity); if (pb != null) setPe(String(round(pb, 2))); }
+                    }} style={inputStyle} />
+                    {(() => {
+                      if (onBook) return hint(false, "", "Retained earnings, capped at 8%");
+                      // Where the default came from, until it's overridden
+                      const basis = baseline && growthPct === baseline.growthPct ? m.growthBasis : null;
+                      return hint(parseFloat(growthPct) >= 15, basis ? `✓ Strong growth · ${basis}` : "✓ Strong growth", basis ?? "Expected annual growth");
+                    })()}
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Margin of Safety %</label>
+                    <input type="number" value={mosPct} onChange={e => setMosPct(e.target.value)} style={inputStyle} />
+                    {hint(parseFloat(mosPct) >= 10, "✓ Good margin", "Discount to fair value")}
+                  </div>
+                </div>
 
-            <PeHistoryTable m={m} />
+                {onBook
+                  ? <BankValuation m={m} growthInput={growthPct} costOfEquity={costOfEquity} onCostOfEquity={ke => {
+                      setCostOfEquity(ke);
+                      const pb = pbAt(m.valuation.roe, Number(growthPct), ke);
+                      if (pb != null) setPe(String(round(pb, 2)));
+                    }} />
+                  : <PeHistoryTable m={m} />}
+              </>
+            ) : (
+              <>
+                <ValuedAs valuation={m.valuation} />
+                <NoFairValue m={m} />
+              </>
+            )}
           </div>
 
-          <div data-tour="valuation"><ValuationExplorer key={`valuation-${symbol}`} metrics={m} price={price} levels={levels} mosPct={mosPct} epsInput={eps} peInput={pe} /></div>
+          {model === "earnings" && <div data-tour="valuation"><ValuationExplorer key={`valuation-${symbol}`} metrics={m} price={price} levels={levels} mosPct={mosPct} epsInput={eps} peInput={pe} /></div>}
+          {onBook && (
+            <div data-tour="valuation" style={{ ...card, fontSize: 12, color: "var(--t2)", lineHeight: 1.55 }}>
+              <strong style={{ color: "var(--t1)" }}>Cash-flow (DCF) value and free-cash-flow yield: not meaningful for lenders.</strong> A bank's operating cash flow is deposits and loans moving, not cash the business generates.
+            </div>
+          )}
 
           {levels && <div id="sec-sizing" className="ss-section"><PhasePositionPlanner levels={levels} /></div>}
 
@@ -817,12 +873,12 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
               </div>
               <p style={{ fontSize: 13, color: "var(--t1)", margin: 0, lineHeight: 1.6 }}>{position.detail}</p>
               {/* Valuing at a historical P/E makes this common for de-rated stocks */}
-              {(position.zone === "below-stop" || position.zone === "phase3") && m.pe && Number(pe) > m.pe * 1.3 && (
+              {model === "earnings" && (position.zone === "below-stop" || position.zone === "phase3") && m.pe && Number(pe) > m.pe * 1.3 && (
                 <p style={{ fontSize: 12, color: "var(--t2)", margin: "8px 0 0", lineHeight: 1.6 }}>
                   The market prices it at a P/E of {m.pe.toFixed(1)} against the {Number(pe).toFixed(1)} the levels use. That's either deep value or a sign the old multiple no longer applies — worth finding out why it de-rated.
                 </p>
               )}
-              <p style={{ fontSize: 11, color: "var(--t3)", margin: "8px 0 0" }}>These model reference levels come from the EPS, P/E, growth and margin-of-safety inputs above. They describe price location; they are not trade instructions.</p>
+              <p style={{ fontSize: 11, color: "var(--t3)", margin: "8px 0 0" }}>These model reference levels come from the {onBook ? "book, P/B" : "EPS, P/E"}, growth and margin-of-safety inputs above. They describe price location; they are not trade instructions.</p>
             </div>
           )}
 
@@ -858,14 +914,14 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
           {levels && (
             <details style={{ ...card, padding: 0 }}>
               <summary style={{ cursor: "pointer", padding: "16px 18px", color: "var(--t1)", fontSize: 13, fontWeight: 600, listStyle: "none" }}>
-                EPS and fair-value breakdown · {fmtRs(levels.fv25)} from EPS × {pe || "—"}× P/E
+                {onBook ? "Book" : "EPS"} and fair-value breakdown · {fmtRs(levels.fv25)} from {onBook ? "book" : "EPS"} × {pe || "—"}× {onBook ? "P/B" : "P/E"}
                 {usingCustomInputs && <span style={{ fontSize: 11, marginLeft: 8, color: "var(--accent)", fontWeight: 500 }}>(custom inputs)</span>}
               </summary>
               <div className="ss-grid-fv" style={{ padding: "0 18px 18px" }}>
                 {[
-                  { label: usualEpsShown ? "Usual EPS" : `${fyLabel(m.fyEnd)} EPS`, val: eps ? `₹${Math.round(Number(eps))}` : "—", sub: `FV: ${fmtRs(levels.fv25)}` },
-                  { label: `${fyLabel(m.fyEnd, 1)} EPS (est.)`, val: levels.e26 ? `₹${levels.e26}` : "—", sub: `FV: ${fmtRs(levels.fv26)}` },
-                  { label: `${fyLabel(m.fyEnd, 2)} EPS (est.)`, val: levels.e27 ? `₹${levels.e27}` : "—", sub: `FV: ${fmtRs(levels.fv27)}` },
+                  { label: onBook ? "Book/share less net NPA" : usualEpsShown ? "Usual EPS" : `${fyLabel(m.fyEnd)} EPS`, val: eps ? `₹${Math.round(Number(eps))}` : "—", sub: `FV: ${fmtRs(levels.fv25)}` },
+                  { label: `${fyLabel(m.fyEnd, 1)} ${onBook ? "book" : "EPS"} (est.)`, val: levels.e26 ? `₹${levels.e26}` : "—", sub: `FV: ${fmtRs(levels.fv26)}` },
+                  { label: `${fyLabel(m.fyEnd, 2)} ${onBook ? "book" : "EPS"} (est.)`, val: levels.e27 ? `₹${levels.e27}` : "—", sub: `FV: ${fmtRs(levels.fv27)}` },
                   { label: "Reference level 1", val: fmtRs(levels.safeBuy), sub: `Today's modeled value × ${100 - Number(mosPct || 10)}%`, hi: true },
                 ].map(fc => (
                   <div key={fc.label} style={{ background: "var(--s1)", borderRadius: 8, padding: 12, border: fc.hi ? "1px solid var(--green)" : "1px solid var(--bdr)" }}>

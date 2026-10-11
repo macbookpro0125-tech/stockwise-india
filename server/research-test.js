@@ -5,7 +5,8 @@
 // gates hold, the overall formula is what's stated, and the price trend never
 // moves the quality or overall score.
 import { computeMetrics } from "./metrics.js";
-import { band, GROUPS, computeResearch, justifiedPb, BANK_COST_OF_EQUITY, BANK_LONG_RUN_GROWTH } from "./research.js";
+import { band, GROUPS, computeResearch } from "./research.js";
+import { justifiedPb, sustainableGrowth, bankValuation, costOfEquity } from "./bank-valuation.js";
 import { pricePosition } from "./levels.js";
 import { classifyAnnouncement } from "./company-extras.js";
 
@@ -201,7 +202,9 @@ const BANK_FIGURES = {
   interestEarned: 307522 * CR, interestExpended: 178836 * CR, opex: 72660 * CR, otherIncome: 62533 * CR,
   provisions: 23390 * CR, advances: 2937166 * CR, deposits: 3105250 * CR, advancesPrev: 2619609 * CR, depositsPrev: 2714715 * CR,
 };
-const bankStock = extra => ({ ...company({ template: "BANKING", tweak: y => ({ ...y, cash: null, bankBalances: null, currentInvestments: null, debt: 9000 * CR }) }), bank: { ...BANK_FIGURES, ...extra } });
+// Bad loans scaled to the test bank's ₹900 Cr book, keeping HDFC Bank's
+// provision cover (net ₹1,236 Cr of gross ₹3,584 Cr is more than the book)
+const bankStock = extra => ({ ...company({ template: "BANKING", tweak: y => ({ ...y, cash: null, bankBalances: null, currentInvestments: null, debt: 9000 * CR }) }), bank: { ...BANK_FIGURES, gnpa: 30 * CR * 3584 / 1236, nnpa: 30 * CR, ...extra } });
 const goodBank = metricsOf(bankStock(), snapshot());
 assert(near(goodBank.bank.pcrPct, 65.51, 0.01) && near(goodBank.bank.costToIncomePct, 38, 0.01) && near(goodBank.bank.creditCostPct, 0.84, 0.01) && near(goodBank.bank.loanGrowthPct, 12.12, 0.01), "bank ratios: provision cover, cost-to-income, credit cost and loan growth from the filed amounts");
 const goodBalance = group(goodBank.research, "balance");
@@ -218,10 +221,33 @@ assert(!nbfc.lender || (nbfc.research.capped?.at === 69 && /NBFC/.test(nbfc.rese
 for (const g of GROUPS) for (const it of g.items.filter(i => i.bank)) assert(it.compute(metricsOf(company(), snapshot())).na, `${it.label}: not applicable to an ordinary company`);
 assert(near(GROUPS.find(g => g.id === "valuation").items.filter(i => i.bank || i.id !== "fcfYield").reduce((a, i) => a + i.weight, 0), 1, 1e-9), "Valuation for a bank: its book-value check takes the free-cash-flow yield's 15%");
 
-// ── A bank's price-to-book against what its ROE supports ──
-assert(near(justifiedPb(16.5), (16.5 - BANK_LONG_RUN_GROWTH) / (BANK_COST_OF_EQUITY - BANK_LONG_RUN_GROWTH), 1e-9) && justifiedPb(5) === 0.25, "justified P/B = (ROE − g) ÷ (cost of equity − g), floored for a return under growth");
+// ── A bank valued on book (bank-valuation.js) ──
+assert(near(justifiedPb(15, 8, 12), 1.75, 1e-9) && near(justifiedPb(15, 10, 12), 2.5, 1e-9) && justifiedPb(5, 5, 12) === 0.25 && justifiedPb(15, 12, 12) == null, "justified P/B = (ROE − g) ÷ (cost of equity − g), floored for a return under growth, none as g reaches the cost");
+assert(sustainableGrowth(15, 20, 12).g === 8 && near(sustainableGrowth(15, 20, 12).raw, 12, 1e-9) && near(sustainableGrowth(6, 0, 12).g, 6, 1e-9), "growth is ROE × retention, capped at 8% and 4 points under the cost of equity");
+assert(costOfEquity("SBIN") === 13 && costOfEquity("HDFCBANK") === 12, "cost of equity 12%, a point more for a government bank");
+// The spec's worked example: book ₹295 a share, through-cycle ROE 15%
+const specBank = bankValuation({ symbol: "TESTBANK", roes: [15, 15, 15, 15, 15], payoutPct: 100 / 3, equity: 295 * CR, nnpa: 0, shares: CR });
+const cellValues = specBank.grid.flatMap(r => r.cells.map(c => c.value));
+assert(specBank.fairValue === 516 && specBank.growth === 8 && specBank.growthRaw === 10 && cellValues.join() === "738,492,516,413", "the spec's example: ₹516 capped; uncapped and at 13% the grid reads ₹738 / ₹492 / ₹516 / ₹413");
+assert(bankValuation({ symbol: "X", roes: [15, 15, 15, 15], equity: 295 * CR, shares: CR }).needsData, "under five years of ROE, a bank needs more data rather than a forced number");
+assert(near(bankValuation({ symbol: "X", roes: [15, 15, 15, 15, 15], equity: 295 * CR, nnpa: 45 * CR, shares: CR }).adjustedBvps, 250, 1e-9), "book is adjusted for net bad loans");
+assert(goodBank.valuation.model === "book" && goodBank.levels?.fv25 === goodBank.valuation.fairValue && goodBank.fairValue != null, "a bank's fair value and price levels come from the book model");
+// ── Routing: which model values a company, or why none does ──
+const steady = metricsOf(company(), snapshot());
+assert(steady.valuation.model === "earnings" && steady.levels?.p1 > 0, "a steady earner with five years and a profit stays on EPS × its usual P/E");
+const recent = metricsOf({ ...company(), years: company().years.slice(0, 4) }, snapshot());
+assert(recent.valuation.model === "none" && recent.valuation.as === "short filing history" && recent.levels == null && recent.fairValue == null, "under five years of filings: no fair value or levels");
+const lossMaker = metricsOf(company({ tweak: (y, i) => (i === 0 ? { ...y, profit: -20 * CR, pbt: -20 * CR, eps: -2 } : y) }), snapshot());
+assert(lossMaker.valuation.as === "loss-maker" && lossMaker.levels == null, "a loss this year: no fair value");
+const nbfcLender = metricsOf(company({ template: "NBFC", tweak: y => ({ ...y, debt: 2000 * CR }) }), snapshot());
+assert(nbfcLender.lender && nbfcLender.valuation.model === "needs-data" && /Stage 3/.test(nbfcLender.valuation.reason) && nbfcLender.levels == null, "an NBFC lender needs more data — its filings carry no net Stage 3 assets");
+const investCo = metricsOf({ ...company({ template: "NBFC" }), name: "Test Investments Limited" }, snapshot());
+assert(investCo.valuation.as === "holding company" && investCo.levels == null, "a holding company needs more data rather than a P/E-history value");
+const fundHouse = metricsOf({ ...company({ template: "NBFC" }), name: "Test Asset Management Company Limited" }, snapshot());
+assert(fundHouse.valuation.model === "earnings", "a fund house filing in the NBFC format is still valued on earnings");
+
 const pbItem = itemOf(goodBank.research, "valuation", "bookValue");
-assert(pbItem.score != null && /supports about/.test(pbItem.reason) && /cost of equity 12.5%/.test(pbItem.reason), "a bank's valuation checks its P/B against its ROE, stating the assumptions");
+assert(pbItem.score != null && /through-cycle ROE/.test(pbItem.reason) && /cost of equity 12%/.test(pbItem.reason) && pbItem.reason.includes(`₹${goodBank.valuation.fairValue}`), "the score's book check is the same model, stating the assumptions and the fair value");
 assert(itemOf(goodBank.research, "valuation", "fcfYield").hide, "the free-cash-flow yield isn't listed for a bank");
 
 // ── The arithmetic behind the overall score reproduces it ──

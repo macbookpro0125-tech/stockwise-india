@@ -35,6 +35,18 @@ function fmtPct(pct) {
   return `${pct > 0 ? "+" : ""}${pct.toFixed(1)}%`;
 }
 
+// A forward return under three months old is noise that reads as a claim
+// (two weeks' +5.2% looked like a result), so it's held back until then
+const MIN_TRACK_DAYS = 91;
+const tooEarly = days => days != null && days < MIN_TRACK_DAYS;
+const readyOn = date => {
+  const [y, m, d] = (date || "").split("-").map(Number);
+  return y ? fmtDate(new Date(Date.UTC(y, m - 1, d) + MIN_TRACK_DAYS * 86400000).toISOString().slice(0, 10)) : null;
+};
+function TooEarly({ days }) {
+  return <span style={{ fontSize: 11, color: "var(--t3)", whiteSpace: "nowrap" }}>Too early — {days} day{days === 1 ? "" : "s"} tracked</span>;
+}
+
 // Name · entry · current · return, shared by the header and every pick row
 const ROW_GRID = { display: "grid", gridTemplateColumns: "minmax(0,1fr) 78px 78px 62px", gap: 8, alignItems: "center" };
 
@@ -128,12 +140,13 @@ export default function PerformanceView({ onOpenStock }) {
           {study.cohorts.slice().reverse().map(cohort => {
             const expanded = studyOpen === cohort.date;
             const daysHeld = daysSince(cohort.date);
+            const early = tooEarly(daysHeld);
             return (
               <div key={cohort.date} style={{ borderTop: "1px solid var(--bdr)", paddingTop: 8, marginTop: 8 }}>
                 <button onClick={() => setStudyOpen(expanded ? null : cohort.date)} style={{ display: "flex", width: "100%", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "7px 0", color: "var(--t1)", background: "none", border: 0, cursor: "pointer", textAlign: "left" }}>
                   <span style={{ fontSize: 12, fontWeight: 600 }}>{fmtDate(cohort.date)} · {cohort.companies.toLocaleString("en-IN")} scored · v{cohort.scoreVersion}</span>
                   <span style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--t2)", fontSize: 11, ...MONO }}>
-                    {cohort.benchmarkReturnPct == null ? "Benchmark unavailable" : `NIFTY 500 ${fmtPct(cohort.benchmarkReturnPct)}`}
+                    {early ? <TooEarly days={daysHeld} /> : cohort.benchmarkReturnPct == null ? "Benchmark unavailable" : `NIFTY 500 ${fmtPct(cohort.benchmarkReturnPct)}`}
                     <ChevronDown size={14} style={{ color: "var(--t3)", transform: expanded ? "rotate(180deg)" : "none" }} />
                   </span>
                 </button>
@@ -141,7 +154,7 @@ export default function PerformanceView({ onOpenStock }) {
                   <div style={{ overflowX: "auto", paddingBottom: 4 }}>
                     <table style={{ width: "100%", minWidth: 560, borderCollapse: "collapse", fontSize: 11.5 }}>
                       <thead><tr style={{ color: "var(--t3)", textAlign: "right" }}>
-                        {["Score band", "Score range", "Priced / cohort", "Mean return", "Excess vs NIFTY 500"].map((label, i) => <th key={label} style={{ textAlign: i === 0 ? "left" : "right", fontWeight: 500, padding: "7px 5px", borderBottom: "1px solid var(--bdr2)" }}>{label}</th>)}
+                        {["Score band", "Score range", "Priced / cohort", ...(early ? [] : ["Mean return", "Excess vs NIFTY 500"])].map((label, i) => <th key={label} style={{ textAlign: i === 0 ? "left" : "right", fontWeight: 500, padding: "7px 5px", borderBottom: "1px solid var(--bdr2)" }}>{label}</th>)}
                       </tr></thead>
                       <tbody>{cohort.buckets.map(bucket => {
                         const color = bucket.excessVsBenchmarkPct == null ? "var(--t2)" : bucket.excessVsBenchmarkPct > 0 ? "var(--green)" : bucket.excessVsBenchmarkPct < 0 ? "var(--red)" : "var(--t2)";
@@ -149,13 +162,13 @@ export default function PerformanceView({ onOpenStock }) {
                           <td style={{ padding: "8px 5px", color: "var(--t1)", borderBottom: "1px solid var(--bdr)" }}>{bucket.label}</td>
                           <td style={{ padding: "8px 5px", color: "var(--t2)", textAlign: "right", ...MONO }}>{bucket.scoreMin == null ? "—" : `${bucket.scoreMin}–${bucket.scoreMax}`}</td>
                           <td style={{ padding: "8px 5px", color: "var(--t2)", textAlign: "right", ...MONO }}>{bucket.priced}/{bucket.companies}</td>
-                          <td style={{ padding: "8px 5px", color, textAlign: "right", fontWeight: 700, ...MONO }}>{fmtPct(bucket.meanPriceReturnPct)}</td>
-                          <td style={{ padding: "8px 5px", color, textAlign: "right", fontWeight: 700, ...MONO }}>{fmtPct(bucket.excessVsBenchmarkPct)}</td>
+                          {!early && <td style={{ padding: "8px 5px", color, textAlign: "right", fontWeight: 700, ...MONO }}>{fmtPct(bucket.meanPriceReturnPct)}</td>}
+                          {!early && <td style={{ padding: "8px 5px", color, textAlign: "right", fontWeight: 700, ...MONO }}>{fmtPct(bucket.excessVsBenchmarkPct)}</td>}
                         </tr>;
                       })}</tbody>
                     </table>
                     <div style={{ fontSize: 10.5, color: "var(--t3)", lineHeight: 1.5, marginTop: 8 }}>
-                      Recorded {fmtDate(cohort.date)}; currently held {daysHeld ?? 0} days. Company figures are equal-weighted, split-adjusted price returns; dividends are excluded. Unpriced names remain visible in the cohort denominator and are not counted as zero-return. Benchmark is the NIFTY 500 price index. This is a prospective study of current eligible listings; it needs longer follow-up and does not establish predictive ability.
+                      Recorded {fmtDate(cohort.date)}; currently held {daysHeld ?? 0} days.{early ? ` Returns are shown from ${readyOn(cohort.date)}, once the cohort is three months old.` : ""} Company figures are equal-weighted, split-adjusted price returns; dividends are excluded. Unpriced names remain visible in the cohort denominator and are not counted as zero-return. Benchmark is the NIFTY 500 price index. This is a prospective study of current eligible listings; it needs longer follow-up and does not establish predictive ability.
                     </div>
                   </div>
                 )}
@@ -172,7 +185,13 @@ export default function PerformanceView({ onOpenStock }) {
         <p style={{ fontSize: 11, color: "var(--t3)", margin: "0 0 14px" }}>No strategy snapshots yet. The score study above is tracked separately.</p>
       )}
 
-      {!loading && data?.presets.map(p => {
+      {/* Ranked by return only once returns are shown; the rest by name, so
+          the order doesn't hint at figures held back as too early */}
+      {!loading && [...(data?.presets ?? [])].sort((a, b) => {
+        const ea = tooEarly(daysSince(a.sinceDate)), eb = tooEarly(daysSince(b.sinceDate));
+        if (ea !== eb) return ea ? 1 : -1;
+        return ea ? a.presetName.localeCompare(b.presetName) : (b.overallAvgReturnPct ?? -Infinity) - (a.overallAvgReturnPct ?? -Infinity);
+      }).map(p => {
         const isOpen = open === p.presetId;
         return (
           <div key={p.presetId} style={{ border: "1px solid var(--bdr2)", borderRadius: 14, background: "var(--s2)", marginBottom: 10, overflow: "hidden" }}>
@@ -185,7 +204,7 @@ export default function PerformanceView({ onOpenStock }) {
                 </div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <RetBadge pct={p.overallAvgReturnPct} />
+                {tooEarly(daysSince(p.sinceDate)) ? <TooEarly days={daysSince(p.sinceDate)} /> : <RetBadge pct={p.overallAvgReturnPct} />}
                 <ChevronDown size={16} style={{ color: "var(--t3)", transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 200ms", flexShrink: 0 }} />
               </div>
             </button>
@@ -194,12 +213,13 @@ export default function PerformanceView({ onOpenStock }) {
               // A snapshot taken today has no elapsed time: its "0%" isn't a
               // reading, so it's labelled a baseline instead
               const isBaseline = held != null && held < 1;
+              const early = !isBaseline && tooEarly(held);
               return (
                 <div key={snap.date} style={{ borderTop: "1px solid var(--bdr)", padding: "10px 16px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, fontSize: 11.5, color: "var(--t3)", marginBottom: 8 }}>
                     <span>
                       Picked {fmtDate(snap.date)}
-                      {isBaseline ? " · baseline, no return yet" : <> · held {held} day{held === 1 ? "" : "s"} · avg <RetBadge pct={snap.avgReturnPct} /></>}
+                      {isBaseline ? " · baseline, no return yet" : early ? ` · held ${held} day${held === 1 ? "" : "s"} · returns from ${readyOn(snap.date)}` : <> · held {held} day{held === 1 ? "" : "s"} · avg <RetBadge pct={snap.avgReturnPct} /></>}
                     </span>
                     <span style={{ flexShrink: 0 }}>{snap.priced}/{snap.picks.length} priced</span>
                   </div>
@@ -214,7 +234,7 @@ export default function PerformanceView({ onOpenStock }) {
                       <button type="button" className="stock-link" onClick={() => onOpenStock(pick.ticker)} style={{ color: "var(--accent)", cursor: "pointer", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", padding: 0, border: 0, background: "none", fontFamily: "inherit", textAlign: "left", minWidth: 0 }}>{pick.name}</button>
                       <span style={{ color: "var(--t2)", fontSize: 11, textAlign: "right", ...MONO }}>₹{pick.cmp?.toLocaleString("en-IN")}</span>
                       <span style={{ color: "var(--t2)", fontSize: 11, textAlign: "right", ...MONO }}>{pick.currentPrice != null ? `₹${pick.currentPrice.toLocaleString("en-IN")}` : "—"}</span>
-                      <span style={{ textAlign: "right" }}>{isBaseline ? <span style={{ fontSize: 11, color: "var(--t3)", ...MONO }}>—</span> : <RetBadge pct={pick.returnPct} />}</span>
+                      <span style={{ textAlign: "right" }}>{isBaseline || early ? <span style={{ fontSize: 11, color: "var(--t3)", ...MONO }}>—</span> : <RetBadge pct={pick.returnPct} />}</span>
                     </div>
                   ))}
                 </div>
@@ -227,7 +247,7 @@ export default function PerformanceView({ onOpenStock }) {
       {!empty && !loading && (
         <p style={{ fontSize: 10, color: "var(--t3)", lineHeight: 1.6, marginTop: 14 }}>
           Returns compare each pick's close on the snapshot day with NSE's latest close{data?.pricesDate ? ` (${fmtDate(data.pricesDate)})` : ""}, adjusted for splits and bonuses since.
-          A new snapshot is taken automatically every 3 days. Past picks, not advice.
+          A new snapshot is taken automatically every 3 days. Returns appear once picks are three months old — shorter moves are mostly noise. Past picks, not advice.
         </p>
       )}
     </div>

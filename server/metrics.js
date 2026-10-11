@@ -5,6 +5,7 @@ import { calculateLevels } from "./levels.js";
 import { computeResearch } from "./research.js";
 import { fixUnitSlips } from "./unit-slips.js";
 import { sectorFromName } from "./name-sectors.js";
+import { bankValuation } from "./bank-valuation.js";
 
 const DAY = 86400000;
 const MIN_PE_YEARS = 3;
@@ -23,6 +24,20 @@ const UTILITY_SECTORS = new Set(["Power", "Utilities"]);
 // catches forging and coating firms that don't live on commodity prices.
 const CYCLICAL_NAME_WORDS = ["sugar", "steel", "cement", "fertiliser", "fertilizer", "shipping", "petrochem", "refiner",
   "mining", "coal", "realty", "real estate", "alumin", "copper", "zinc", "iron ore"];
+
+// Holding companies: their value sits in stakes in other companies, which
+// their own earnings understate. They file as investment companies (the NBFC
+// format, little debt) and nearly all say so in the name; the few that don't
+// are listed. A sum-of-the-parts value isn't built, so they show "needs more
+// data" rather than a P/E-history value of the wrong thing.
+const HOLDCO_NAME = /\b(holdings?|investments?|invest|invst|finvest)\b/i;
+const NOT_HOLDCO_NAME = /(manager|management|advis|securities|broking|stock)/i;
+const HOLDCO_SYMBOLS = new Set(["MAHSCOOTER", "KIRLOSIND", "SUMMITSEC", "MFSL", "NDGL"]);
+export const isHoldingCompany = stock => stock?.template === "NBFC" &&
+  (HOLDCO_SYMBOLS.has(stock.symbol) || (HOLDCO_NAME.test(stock.name ?? "") && !NOT_HOLDCO_NAME.test(stock.name ?? "")));
+// Five years of filings before a fair value: a recent listing's two or three
+// years of P/E are too few to call any of them usual
+const MIN_VALUATION_YEARS = 5;
 
 const isoPlusDays = (iso, days) => new Date(new Date(`${iso}T00:00:00Z`).getTime() + days * DAY).toISOString().slice(0, 10);
 const round = (v, dp = 1) => (v == null || !isFinite(v) ? null : Math.round(v * 10 ** dp) / 10 ** dp);
@@ -59,6 +74,8 @@ export function bankHealth(b) {
     loanGrowthPct: b.advances > 0 && b.advancesPrev > 0 ? r2((b.advances / b.advancesPrev - 1) * 100) : null,
     depositGrowthPct: b.deposits > 0 && b.depositsPrev > 0 ? r2((b.deposits / b.depositsPrev - 1) * 100) : null,
     creditDepositPct: b.advances > 0 && b.deposits > 0 ? r2((b.advances / b.deposits) * 100) : null,
+    // The last five quarters, oldest first (BANK_VERSION 2 on)
+    trend: Array.isArray(b.trend) && b.trend.length ? b.trend : null,
   };
 }
 
@@ -312,7 +329,7 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
   const growthForValuation = clampGrowth(growthPick.g);
   const growthBasis = growthPick.basis + (growthPick.g > 25 ? `, ${Math.round(growthPick.g)}% capped at 25%` : growthPick.g < 0 ? ", below 0% so taken as 0%" : "");
   const valuationPe = medianPe ?? pe;
-  const levels = valuationEps > 0 && valuationPe ? calculateLevels(valuationEps, valuationPe, growthForValuation, 10) : null;
+  const earningsLevels = valuationEps > 0 && medianPe ? calculateLevels(valuationEps, medianPe, growthForValuation, 10) : null;
 
   const range = snap?.range52w?.[sym] ?? null;
 
@@ -426,6 +443,49 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     ? (latest.pbt + latest.financeCosts) / latest.financeCosts
     : null;
 
+  // ── Which model values this company (the sector-aware valuation spec,
+  // 11 Oct 2026). Four checks in a fixed order — a bank with a loss year
+  // must reach the bank model, not the no-fair-value branch:
+  // 1. a bank: justified P/B × adjusted book (bank-valuation.js). An NBFC
+  //    lender needs more data — NSE's NBFC filings carry no net Stage 3
+  //    assets, so its book can't be adjusted for bad loans.
+  // 2. a holding company: needs more data (see isHoldingCompany).
+  // 3. under five years of filings, a loss this year, or too few usable
+  //    P/E years: no fair value — EV/Sales against the sector, as context
+  //    only. (A fair value from today's P/E just repeats today's price.)
+  // 4. everyone else: this year's EPS × its usual P/E, as before.
+  const pbHistory = peHistory.map(r => {
+    const h = history.find(x => x.fyEnd === r.fyEnd);
+    const bvps = h?.equityOwnersCr > 0 && h.sharesCr > 0 ? h.equityOwnersCr / h.sharesCr : null;
+    return r.price > 0 && bvps ? r.price / bvps : null;
+  });
+  let valuation;
+  if (stock.template === "BANKING") {
+    // Book per share on the balance sheet's own share count: after a large
+    // issue (RBL Bank's 2026 preferential allotment, 62 Cr shares to 155 Cr)
+    // today's count is on top of a book that doesn't hold the new capital yet
+    const bookShares = history[0]?.sharesCr > 0 ? history[0].sharesCr * 1e7 : shares;
+    const bv = bankValuation({ symbol: sym, roes: history.map(h => h.roe), payoutPct, equity: ownersEquity(latest), nnpa: stock.bank?.nnpa, shares: bookShares, pbHistory });
+    valuation = bv.needsData ? { model: "needs-data", as: "bank", reason: bv.needsData } : { ...bv, as: "bank" };
+  } else if (lender) {
+    valuation = { model: "needs-data", as: "NBFC lender", reason: "A lender is valued on its book adjusted for bad loans, and NSE's NBFC filings don't include net Stage 3 assets." };
+  } else if (isHoldingCompany(stock)) {
+    valuation = { model: "needs-data", as: "holding company", reason: "Its value sits in its stakes in other companies, which its own earnings understate; a sum-of-the-parts value isn't built yet." };
+  } else if (years.length < MIN_VALUATION_YEARS) {
+    // Not always a new listing: a change of financial year breaks the series
+    // too (Nestlé India's move from December to March)
+    valuation = { model: "none", as: "short filing history", reason: `Only ${years.length} year${years.length === 1 ? "" : "s"} of annual results in NSE's filings — a recent listing, or a change of financial year that breaks the series. A fair value needs ${MIN_VALUATION_YEARS}, so that a usual P/E means something.` };
+  } else if (!(eps > 0)) {
+    valuation = { model: "none", as: "loss-maker", reason: "It made a loss in its latest year, so there are no earnings to value." };
+  } else if (medianPe == null) {
+    valuation = { model: "none", as: "broken P/E history", reason: `Only ${validPe.length} of the last five years have a usable P/E (losses or missing prices); a fair value from today's P/E would just repeat today's price.` };
+  } else {
+    valuation = { model: "earnings", as: "steady earner" };
+  }
+  const levels = valuation.model === "earnings" ? earningsLevels
+    : valuation.model === "book" && valuation.exact.adjustedBvps > 0 && valuation.exact.pb > 0 ? calculateLevels(valuation.exact.adjustedBvps, valuation.exact.pb, valuation.growth, 10)
+      : null;
+
   const m = {
     symbol: sym,
     name: stock.name,
@@ -502,6 +562,7 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     growthForValuation, growthBasis,
     valuationPe, valuationPeBasis: medianPe != null ? "median" : "current",
     valuationEps, epsJump, epsRebased, reportedEps,
+    valuation,
     levels,
     fairValue: levels?.fv27 ?? null,
     safeBuyPrice: levels?.p1 ?? null,
@@ -582,6 +643,9 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
         netDebtCr: cr(netDebt),
         netDebtToEbitda: netDebt != null && ebitda > 0 ? netDebt / ebitda : null,
         evToEbitda: ev != null && ebitda > 0 ? ev / ebitda : null,
+        // Context for a company without a fair value (screen.js sets its
+        // sector's median beside it)
+        evToSales: ev != null && latest.revenue > 0 ? ev / latest.revenue : null,
       };
     })(),
 
