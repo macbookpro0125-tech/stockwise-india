@@ -109,6 +109,10 @@ export async function readShareholdingFiling(latest) {
     // As a % of the promoters' own holding — the same measure as Screener's
     // "Pledged percentage". No pledge filed means none pledged.
     pledgedPct: pct(pledged.ShareholdingOfPromoterAndPromoterGroupMember) ?? 0,
+    // The central or a state government's stake as promoter (NTPC 51.1%,
+    // IRCTC 62.4%) — a government-owned company, whose multiple runs lower
+    // for that reason. 0 when the filing has no such row, as parsed above.
+    governmentPct: pct(share.CentralGovernmentOrStateGovernmentSMember) ?? (parsed ? 0 : null),
   };
 }
 

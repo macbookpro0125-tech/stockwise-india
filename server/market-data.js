@@ -9,6 +9,10 @@ import { fetchText as requestText } from "./upstream.js";
 import { momentumStats } from "./momentum.js";
 const SERIES_PREFERENCE = ["EQ", "BE", "BZ", "SM", "ST"];
 const SECTOR_LISTS = ["ind_niftytotalmarket_list", "ind_niftymicrocap250_list"];
+// NSE's own lists of government companies — the "Government-owned" badge
+// beside the shareholding filing's government stake (metrics.js), for those
+// held through another government company (HPCL, through ONGC) or with LIC
+const PSU_LISTS = ["ind_niftypselist", "ind_niftycpselist", "ind_niftypsubanklist"];
 
 mkdirSync(PRICE_DIR, { recursive: true });
 
@@ -384,6 +388,19 @@ async function sectorsBySymbol() {
   return { sectors: fromIndex, industrySectors, industries };
 }
 
+// The PSU index members, or the last snapshot's when none answer
+async function psuIndexSymbols() {
+  const out = new Set();
+  for (const list of PSU_LISTS) {
+    const csv = await fetchText(`https://www.niftyindices.com/IndexConstituent/${list}.csv`).catch(() => null);
+    if (!csv) continue;
+    const [header, ...lines] = csv.trim().split("\n");
+    const iSym = header.split(",").map(c => c.trim()).indexOf("Symbol");
+    for (const line of lines) { const sym = line.split(",")[iSym]?.trim(); if (sym) out.add(sym); }
+  }
+  return out.size ? [...out].sort() : loadMarketSnapshot()?.psuIndex ?? null;
+}
+
 // Each company's next board meeting to approve results, from NSE's event
 // calendar (one request; companies announce a week or two ahead, so most
 // have none listed): { SYMBOL: "2026-10-23" }, the earliest on or after today
@@ -509,6 +526,7 @@ export async function buildMarketSnapshot(fyEndDates, { yearsOfActions = 6 } = {
     // null dates = the calendar couldn't be read, not "none due"
     momentum: year.momentum,
     resultsDates: await resultsDates().catch(() => null),
+    psuIndex: await psuIndexSymbols(),
     fyEndPrices,
     range52w: year.ranges,
     range52wFrom: year.from,

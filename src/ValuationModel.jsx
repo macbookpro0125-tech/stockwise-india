@@ -24,6 +24,7 @@ export const VALUED_AS = {
 export function ValuedAs({ valuation }) {
   if (!valuation) return null;
   const text = valuation.partialCycle ? "cyclical, partial cycle — this year's EPS × its usual P/E, as under seven years of results can't show a full cycle"
+    : valuation.rerated ? "re-rated compounder — this year's EPS × its usual P/E, led by the growth its price implies"
     : VALUED_AS[valuation.model] ?? (valuation.model === "needs-data" ? `${valuation.as} — valuation needs more data` : `no fair value (${valuation.as})`);
   return (
     <div style={{ fontSize: 12, color: "var(--t2)", marginBottom: 12 }}>

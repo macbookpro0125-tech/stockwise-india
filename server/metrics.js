@@ -5,7 +5,7 @@ import { calculateLevels } from "./levels.js";
 import { computeResearch } from "./research.js";
 import { fixUnitSlips } from "./unit-slips.js";
 import { sectorFromName } from "./name-sectors.js";
-import { bankValuation } from "./bank-valuation.js";
+import { bankValuation, PSU_BANKS } from "./bank-valuation.js";
 
 const DAY = 86400000;
 const MIN_PE_YEARS = 3;
@@ -49,6 +49,10 @@ const CYCLICAL_INDUSTRY = /metal|mining|steel|iron|alumin|copper|zinc|cement|che
 // Latest margin against the through-cycle median: over 1.3 the profits are
 // above mid-cycle, under 0.7 near the trough
 const CYCLE_HIGH = 1.3, CYCLE_LOW = 0.7;
+// A re-rated compounder: its year-end P/E rose by this much from the first
+// years on file to the last, the market still pays at least its median, and
+// the business compounds (ROE 15%+, profit growth 10%+ a year)
+const RERATED = 1.4, RERATED_ROE = 15, RERATED_GROWTH = 10;
 
 const isoPlusDays = (iso, days) => new Date(new Date(`${iso}T00:00:00Z`).getTime() + days * DAY).toISOString().slice(0, 10);
 const round = (v, dp = 1) => (v == null || !isFinite(v) ? null : Math.round(v * 10 ** dp) / 10 ** dp);
@@ -570,6 +574,16 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     // A cyclical with under seven years on file stays on its P/E history,
     // badged a partial cycle
     valuation = cycle?.flagged ? { model: "earnings", as: "cyclical, partial cycle", partialCycle: cycle } : { model: "earnings", as: "steady earner" };
+    // Its median trails a multiple that kept rising, so it stays on the P/E
+    // model but the page leads with the growth today's price implies
+    const series = [...validPe].sort((a, b) => a.fyEnd.localeCompare(b.fyEnd));
+    const growth = profitGrowth5y ?? profitGrowth3y;
+    if (!cycle?.flagged && series.length >= 4 && closePe != null) {
+      const early = median(series.slice(0, 2).map(r => r.pe)), late = median(series.slice(-2).map(r => r.pe));
+      if (late >= RERATED * early && closePe >= medianPe && roeAvg >= RERATED_ROE && growth >= RERATED_GROWTH) {
+        valuation = { model: "earnings", as: "re-rated compounder", rerated: { from: round(early), to: round(late), now: round(closePe), median: round(medianPe) } };
+      }
+    }
   }
   const levels = valuation.model === "earnings" ? earningsLevels
     : valuation.model === "cyclical" ? calculateLevels(valuation.exact.eps, valuation.exact.multiple, valuation.growth, 10)
@@ -582,6 +596,11 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     template: stock.template,
     sector, peerSector, sectorByName: sector != null && peerSector == null, lender, utility, cyclical,
     bank: stock.template === "BANKING" ? bankHealth(stock.bank) : null,
+    // The government's stake as promoter, from the shareholding filing; owned
+    // at a majority, or one of NSE's PSU index members (held through another
+    // government company, as HPCL through ONGC), or a government bank
+    governmentPct: holding.governmentPct ?? null,
+    governmentOwned: holding.governmentPct >= 50 || !!snap?.psuIndex?.includes(sym) || PSU_BANKS.has(sym),
     industry: snap?.industries?.[sym] ?? null,
     // Auditor resignations in the last three years (market-data.js); null =
     // the snapshot doesn't know, [] = none filed
