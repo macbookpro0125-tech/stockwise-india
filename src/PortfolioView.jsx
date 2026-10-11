@@ -204,7 +204,7 @@ export default function PortfolioView({ onOpenStock }) {
                   <div style={label}>Price level</div>
                   {st?.position
                     ? <div style={{ fontSize: 11, fontWeight: 700, color: POSITION_TONE[st.position.tone] ?? "var(--t2)" }} title={st.position.detail}>{st.position.label}</div>
-                    : <div style={{ fontSize: 11, color: "var(--t3)" }}>—</div>}
+                    : <div style={{ fontSize: 11, color: "var(--t3)" }} title={st?.valuation?.reason ?? (st?.valuation?.as ? `No price levels (${st.valuation.as})` : undefined)}>—</div>}
                 </div>
 
                 <div style={{ display: "flex", gap: 6, marginLeft: "auto" }}>

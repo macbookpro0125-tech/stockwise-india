@@ -173,7 +173,7 @@ export default function WatchlistView({ onOpenStock }) {
 
               <div style={{ textAlign: "center", minWidth: 80 }}>
                 <div style={label}>Price level</div>
-                {level ? <span style={{ fontSize: 11, fontWeight: 600, color: level.color }}>{level.label}</span> : <span style={{ fontSize: 11, color: "var(--t3)" }}>—</span>}
+                {level ? <span style={{ fontSize: 11, fontWeight: 600, color: level.color }}>{level.label}</span> : <span style={{ fontSize: 11, color: "var(--t3)" }} title={r?.valuation?.reason ?? (r?.valuation?.as ? `No price levels (${r.valuation.as})` : undefined)}>—</span>}
               </div>
 
               <div style={{ textAlign: "center", minWidth: 60 }}>
