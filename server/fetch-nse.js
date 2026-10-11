@@ -70,7 +70,7 @@ export const SCHEMA = 8; // 3: capex, current liabilities, cost of goods, long-t
 const YEARS = 8;
 // Bumped when the bank figures (bankFigures) change shape: only banks are
 // re-read for it, not the whole market (fetch-market.js needsSummary)
-export const BANK_VERSION = 1;
+export const BANK_VERSION = 2; // 2: five quarters of asset quality, capital and return on assets
 // Three years of quarters: this quarter against the same one a year ago, two
 // years running, and trailing-twelve-month figures
 const QUARTERS = 12;
@@ -286,9 +286,20 @@ function pickEps(r, profit, read = r.year) {
   return found.filter(v => v > 0).sort((a, b) => Math.abs(Math.log(a / perShare)) - Math.abs(Math.log(b / perShare)))[0] ?? found[0];
 }
 
+// Older bank results filings (before FY24) have no balance sheet, but state
+// the year-end reserves (excluding revaluation reserves) beside the paid-up
+// capital — together the book, which five years of return on equity need for
+// valuing a bank on book (bank-valuation.js). HDFC Bank FY23: ₹2.89 lakh Cr,
+// its reported net worth. Only the book: debt and the rest stay unknown.
+function bookFromReserves(r) {
+  const reserves = r.year(["ReserveExcludingRevaluationReserves"]), paidUp = r.any(TAGS.paidUp);
+  return reserves > 0 && paidUp > 0 ? reserves + paidUp : null;
+}
+
 function extractYear(xml, row, template = templateOf(row.xbrl)) {
   const r = reader(xml, row);
   const equity = equityOf(r);
+  const reservesBook = equity == null && row.legacy && template === "BANKING" ? bookFromReserves(r) : null;
   const profit = r.year(TAGS.profit);
   // A 0 beside a real profit is an unused box in the template, not a figure
   const nonZero = v => (v === 0 ? null : v);
@@ -312,7 +323,7 @@ function extractYear(xml, row, template = templateOf(row.xbrl)) {
     ocf: r.year(TAGS.ocf),
     // FY22-era legacy filings carry no balance sheet: equity is null there, and
     // debt must be null too rather than a "0" that reads as debt-free.
-    equity,
+    equity: equity ?? reservesBook,
     equityOwners: equity == null ? null : nonZero(r.atEnd(TAGS.equityOwners)),
     debt: equity == null ? null : debtOf(r, template),
     totalAssets: r.atEnd(TAGS.totalAssets),
@@ -489,6 +500,28 @@ export const BANK_TAGS = {
 };
 const positive = v => (v != null && v > 0 ? v : null);
 const pct2 = v => (v == null ? null : Math.round(v * 10000) / 100); // 0.0117 -> 1.17
+// A quarter's ratios as filed for its own period: bad loans and capital at
+// its end, and return on assets as filed (roaRaw, over roaDays) — which some
+// banks file for the quarter alone (HDFC Bank's 0.46% for April–June) and
+// others already annualised (SBI's 1.12%); bankFigures tells them apart
+function quarterRatios(xml, end) {
+  const ctx = parseContexts(xml);
+  const fact = tags => firstFacts(xml, ctx, tags).filter(x => x.end === end).sort((a, b) => a.days - b.days)[0] ?? null;
+  const at = tags => fact(tags)?.value ?? null;
+  const roa = fact(BANK_TAGS.roa);
+  const cet1Pct = pct2(positive(at(BANK_TAGS.cet1)));
+  const at1Pct = at(BANK_TAGS.cet1) > 0 ? pct2(at(BANK_TAGS.at1) ?? 0) : null;
+  return {
+    gnpaPct: pct2(positive(at(BANK_TAGS.gnpaPct))),
+    // 0 net is real once there's a gross figure beside it
+    nnpaPct: at(BANK_TAGS.gnpaPct) > 0 ? pct2(at(BANK_TAGS.nnpaPct)) : null,
+    gnpa: positive(at(BANK_TAGS.gnpa)), nnpa: at(BANK_TAGS.gnpa) > 0 ? at(BANK_TAGS.nnpa) : null,
+    cet1Pct, at1Pct,
+    tier1Pct: cet1Pct != null ? Math.round((cet1Pct + (at1Pct ?? 0)) * 100) / 100 : null,
+    roaRaw: roa?.value != null ? roa.value * 100 : null, roaDays: roa?.days ?? null,
+  };
+}
+
 export async function bankFigures(integrated, getXml, fyLabel) {
   const standalone = integrated.filter(r => r.consolidated !== "Consolidated").map(r => ({ ...integratedRow(r), url: r.xbrl }));
   if (!standalone.length) return { v: BANK_VERSION, missing: "No standalone filing on NSE" };
@@ -497,22 +530,19 @@ export async function bankFigures(integrated, getXml, fyLabel) {
   const years = standalone.filter(r => r.label.startsWith(monthDay));
   const [fy, prev] = years;
   const out = { v: BANK_VERSION, scope: "Standalone" };
-  // Ratios at the latest quarter's end, as filed for its own period
+  // Ratios at the latest quarter's end
   {
-    const xml = await getXml(latest.url), ctx = parseContexts(xml), end = isoDay(latest.periodEnd);
-    const at = tags => {
-      const f = firstFacts(xml, ctx, tags).filter(x => x.end === end).sort((a, b) => a.days - b.days)[0];
-      return f ? f.value : null;
-    };
-    Object.assign(out, {
-      asOf: end, asOfFiled: latest.filed ? isoDay(latest.filed) : null, asOfUrl: latest.url,
-      gnpaPct: pct2(positive(at(BANK_TAGS.gnpaPct))),
-      // 0 net is real once there's a gross figure beside it
-      nnpaPct: at(BANK_TAGS.gnpaPct) > 0 ? pct2(at(BANK_TAGS.nnpaPct)) : null,
-      gnpa: positive(at(BANK_TAGS.gnpa)), nnpa: at(BANK_TAGS.gnpa) > 0 ? at(BANK_TAGS.nnpa) : null,
-      cet1Pct: pct2(positive(at(BANK_TAGS.cet1))),
-      at1Pct: at(BANK_TAGS.cet1) > 0 ? pct2(at(BANK_TAGS.at1) ?? 0) : null,
-    });
+    const end = isoDay(latest.periodEnd);
+    const { gnpaPct, nnpaPct, gnpa, nnpa, cet1Pct, at1Pct } = quarterRatios(await getXml(latest.url), end);
+    Object.assign(out, { asOf: end, asOfFiled: latest.filed ? isoDay(latest.filed) : null, asOfUrl: latest.url, gnpaPct, nnpaPct, gnpa, nnpa, cet1Pct, at1Pct });
+  }
+  // The same for the last five quarters, oldest first — the stock page's
+  // asset-quality trend. A quarter that won't read is left out, not guessed.
+  const quarters = [];
+  for (const q of standalone.slice(0, 5).reverse()) {
+    try {
+      quarters.push({ asOf: isoDay(q.periodEnd), ...quarterRatios(await getXml(q.url), isoDay(q.periodEnd)) });
+    } catch { /* this quarter stays out */ }
   }
   // The year's flows and year-end book
   if (fy) {
@@ -526,6 +556,16 @@ export async function bankFigures(integrated, getXml, fyLabel) {
       advances: positive(r.atEnd(BANK_TAGS.advances)), deposits: positive(r.atEnd(BANK_TAGS.deposits)),
     });
   }
+  // Quarterly return on assets on a yearly basis: a bank whose quarters,
+  // multiplied up to a year, sit nearer its full-year figure than as filed
+  // files them for the quarter alone
+  const partYear = quarters.filter(q => q.roaRaw != null && q.roaDays > 0 && q.roaDays < 200);
+  const typical = partYear.length ? partYear.map(q => q.roaRaw).sort((a, b) => a - b)[partYear.length >> 1] : null;
+  const scaleQuarters = typical != null && out.roaPct != null && Math.abs(typical * 4 - out.roaPct) < Math.abs(typical - out.roaPct);
+  out.trend = quarters.map(({ asOf, gnpaPct, nnpaPct, cet1Pct, tier1Pct, roaRaw, roaDays }) => ({
+    asOf, gnpaPct, nnpaPct, cet1Pct, tier1Pct,
+    roaPct: roaRaw == null ? null : pct2((scaleQuarters && roaDays > 0 && roaDays < 200 ? roaRaw * (365 / roaDays) : roaRaw) / 100),
+  })).filter(q => [q.gnpaPct, q.nnpaPct, q.cet1Pct, q.roaPct].some(v => v != null));
   if (prev) {
     const r = reader(await getXml(prev.url), prev);
     Object.assign(out, { prevFyEnd: isoDay(prev.periodEnd), advancesPrev: positive(r.atEnd(BANK_TAGS.advances)), depositsPrev: positive(r.atEnd(BANK_TAGS.deposits)) });

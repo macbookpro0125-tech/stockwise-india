@@ -505,12 +505,13 @@ export function createApp() {
         const snap = loadMarketSnapshot();
         // The research score's peer comparison needs the market's sector
         // medians, which the screen sets — cached, so this is cheap
-        allMetrics();
+        const market = allMetrics();
         // Yahoo's is the last finished day's close; after NSE's close for a
         // later day is in the snapshot, that one is newer and the metrics
         // keep it (the page showed 6 Oct's price beside 7 Oct's NSE close)
         const quoteNewer = quote && (!snap?.pricesDate || quote.asOf >= snap.pricesDate);
         const metrics = computeMetrics(fundamentals, snap, quoteNewer ? { cmp: quote.cmp, cmpDate: quote.asOf } : {});
+        if (metrics) metrics.evToSalesSector = market.evSales?.get(metrics.peerSector) ?? null;
 
         sendJson(res, 200, {
           symbol: fundamentals.symbol,

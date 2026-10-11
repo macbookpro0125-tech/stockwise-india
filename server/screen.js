@@ -76,8 +76,12 @@ export function allMetrics() {
   // The stock page reuses the same medians (research.js keeps them).
   setResearchPeers({ sectors: sectorPeMedians(fresh), industries: industryPeMedians(fresh) });
   for (const m of fresh) m.research = computeResearch(m);
+  // A company without a fair value shows EV/Sales beside its sector's, as
+  // context only
+  const evSales = sectorEvSalesMedians(fresh);
+  for (const m of fresh) m.evToSalesSector = evSales.get(m.peerSector) ?? null;
   cache = {
-    version, rows: fresh, fetched: countFetched(),
+    version, rows: fresh, fetched: countFetched(), evSales,
     snapshot: snap ? { pricesDate: snap.pricesDate, builtAt: snap.builtAt } : null,
     sizes: capSizes(fresh),
     ranges: metricRanges(fresh),
@@ -99,6 +103,25 @@ function sectorPeMedians(rows) {
     pes.sort((a, b) => a - b);
     const k = pes.length >> 1;
     out.set(sector, { median: pes.length % 2 ? pes[k] : (pes[k - 1] + pes[k]) / 2, n: pes.length });
+  }
+  return out;
+}
+
+// Each sector's median EV/Sales (enterprise value at the last close over the
+// latest year's revenue); sectors with fewer than five companies are left out
+function sectorEvSalesMedians(rows) {
+  const bySector = new Map();
+  for (const m of rows) {
+    if (!m.peerSector || !(m.evToSales > 0)) continue;
+    if (!bySector.has(m.peerSector)) bySector.set(m.peerSector, []);
+    bySector.get(m.peerSector).push(m.evToSales);
+  }
+  const out = new Map();
+  for (const [sector, v] of bySector) {
+    if (v.length < 5) continue;
+    v.sort((a, b) => a - b);
+    const k = v.length >> 1;
+    out.set(sector, { sector, median: Math.round((v.length % 2 ? v[k] : (v[k - 1] + v[k]) / 2) * 100) / 100, n: v.length });
   }
   return out;
 }

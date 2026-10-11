@@ -21,7 +21,7 @@
 // Weights and bands are a stated starting point, not a fitted model — the
 // proposal says so too. Change them here and RESEARCH_VERSION together.
 
-export const RESEARCH_VERSION = "1.5"; // 1.5: banks scored on their own bad-loan, capital and efficiency figures
+export const RESEARCH_VERSION = "1.6"; // 1.6: banks priced on justified P/B × book less net bad loans — cost of equity 12% (13% government), growth from retained earnings capped at 8%; 1.5: banks scored on their own bad-loan, capital and efficiency figures
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -526,17 +526,10 @@ const GROWTH = {
 // jumped on a one-off (metrics.js valuationEps), as the fair value is.
 const closePe = m => (m.close > 0 && m.valuationEps > 0 ? m.close / m.valuationEps : null);
 const closeMcapCr = m => (m.close > 0 && m.shares > 0 ? (m.close * m.shares) / 1e7 : null);
-// A bank is valued on its book: the price-to-book its return on equity can
-// support is (ROE − g) ÷ (cost of equity − g). Stated assumptions, the same
-// for every bank: cost of equity 12.5% (a 7% government bond plus a 5.5%
-// equity premium), long-run growth 8% (below India's nominal GDP growth).
-export const BANK_COST_OF_EQUITY = 12.5, BANK_LONG_RUN_GROWTH = 8;
-export function justifiedPb(roePct) {
-  if (!finite(roePct)) return null;
-  // A return at or under the growth rate supports little more than a
-  // fraction of book — floored so the ratio stays meaningful
-  return Math.max((roePct - BANK_LONG_RUN_GROWTH) / (BANK_COST_OF_EQUITY - BANK_LONG_RUN_GROWTH), 0.25);
-}
+// A bank is valued on its book (bank-valuation.js): the price-to-book its
+// through-cycle return on equity can support, (ROE − g) ÷ (cost of equity −
+// g), times book less net bad loans. The stock page's fair value and levels
+// are the same model, so the score and the price can't disagree.
 const VALUATION = {
   id: "valuation", label: "Valuation", weight: 15,
   items: [
@@ -612,17 +605,14 @@ const VALUATION = {
       },
     },
     // A bank's: in the 15% the free-cash-flow yield holds for others
-    bankItem("bookValue", 0.15, "Price-to-book against what its ROE supports (banks)", (b, m) => {
-      const roes = lastYears(m, 5).map(h => h.roe).filter(finite);
-      const h = m.history[0], mcap = closeMcapCr(m);
-      const equity = h.equityOwnersCr > 0 ? h.equityOwnersCr : h.equityCr;
-      if (roes.length < 2) return missing("Needs 2 years of return on equity.");
-      if (mcap == null || !(equity > 0)) return missing("Needs the close price and the bank's equity.");
-      const roe = median(roes), fair = justifiedPb(roe), pb = mcap / equity, ratio = pb / fair;
+    bankItem("bookValue", 0.15, "Price against its book-value fair value (banks)", (b, m) => {
+      const v = m.valuation;
+      if (v?.model !== "book") return missing(v?.reason ?? "Needs five years of return on equity and the bank's equity.");
+      if (!(m.close > 0) || !(v.fairValue > 0)) return missing("Needs the close price.");
+      const ratio = m.close / v.fairValue, pb = m.close / v.adjustedBvps;
       const score = band(ratio, [[0.6, 100], [0.8, 85], [1, 65], [1.25, 45], [1.6, 20], [2.2, 0]]);
-      const perShare = m.shares > 0 ? (fair * equity * 1e7) / m.shares : null;
-      return checked(score, ratio, `P/B ${pb.toFixed(2)} vs ${fair.toFixed(2)}`,
-        `A ${pct(roe)} median ROE supports about ${fair.toFixed(2)}× book (cost of equity ${BANK_COST_OF_EQUITY}%, long-run growth ${BANK_LONG_RUN_GROWTH}%); it trades at ${pb.toFixed(2)}×${perShare ? `, or ${rupees(perShare)} a share at that multiple` : ""} — ${ratio <= 1 ? "at or under" : "above"} what its returns support.`);
+      return checked(score, ratio, `P/B ${pb.toFixed(2)} vs ${v.justifiedPb.toFixed(2)}`,
+        `A ${pct(v.roe)} through-cycle ROE (the median of ${v.roeYears} years) supports ${v.justifiedPb.toFixed(2)}× book (cost of equity ${v.costOfEquity}%${v.psu ? ", a point more for a government bank" : ""}, growth ${pct(v.growth)}). On book less net bad loans, ${rupees(v.adjustedBvps)} a share, that's ${rupees(v.fairValue)}; it closed at ${rupees(m.close)}, ${pb.toFixed(2)}× — ${ratio <= 1 ? "at or under" : "above"} what its returns support.`);
     }),
   ],
 };
