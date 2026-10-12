@@ -161,7 +161,21 @@ export function screenerMeta() {
       known: x.id === "sector" ? rows.filter(m => m.sector).length : rows.length,
     })),
     companies: rows.length,
+    // The dates behind each metric's basis ("most companies' latest year is
+    // to March 2026"): the most common, as companies' years and filings differ
+    periods: {
+      pricesDate: loadMarketSnapshot()?.pricesDate ?? null,
+      fyEnd: mostCommon(rows.map(m => m.fyEnd)),
+      quarterEnd: mostCommon(rows.map(m => m.latestQuarter)),
+      holdingAsOf: mostCommon(rows.map(m => m.holdingAsOf)),
+    },
   };
+}
+
+function mostCommon(values) {
+  const counts = new Map();
+  for (const v of values) if (v) counts.set(v, (counts.get(v) ?? 0) + 1);
+  return [...counts].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
 }
 
 // The research score's headline numbers — the table, watchlist, compare and
@@ -200,6 +214,8 @@ function tableRow(m, columns = [], sizes = null) {
     // Which model priced it, or why nothing did (metrics.js valuation)
     valuation: m.valuation ? { model: m.valuation.model, as: m.valuation.as, reason: m.valuation.reason ?? null, positionLabel: m.valuation.positionLabel ?? null, partialCycle: !!m.valuation.partialCycle } : null,
     governmentOwned: !!m.governmentOwned,
+    // For the watchlist's "results in" mark
+    latestQuarter: m.latestQuarter ?? null, latestQuarterFiled: m.latestQuarterFiled ?? null, nextResults: m.nextResults ?? null,
   };
 }
 

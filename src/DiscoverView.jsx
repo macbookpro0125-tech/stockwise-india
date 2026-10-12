@@ -381,6 +381,7 @@ export default function DiscoverView({ onOpenStock }) {
               columns={shownColumns}
               filteredIds={(filters ?? []).filter(f => !f.values && isActiveFilter(f)).map(f => f.id)}
               onEditColumns={meta ? () => setPicker("column") : null}
+              meta={meta}
             />
           </main>
         </div>
