@@ -476,8 +476,9 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
   });
   // ── Cyclical: profits that swing with the cycle. Flagged from the
   // company's own record, not its sector's name — a loss in any year on file
-  // (up to ten), or operating margins swinging more than 0.4 of their average
-  // — with a commodity industry only as a tiebreaker. Valued on mid-cycle
+  // (up to ten) where margins also swing over 0.3 of their average or the
+  // industry is a commodity one, or margins swinging more than 0.4 of their
+  // average — with a commodity industry only as a tiebreaker. Valued on mid-cycle
   // earnings: this year's revenue a share × its through-cycle net margin, at
   // the multiple the market has usually paid on mid-cycle earnings (computed
   // the same way at each year-end — a mid-cycle EPS against a multiple of
@@ -493,7 +494,11 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     const opmMean = opms.length >= 3 ? opms.reduce((a, b) => a + b, 0) / opms.length : null;
     const opmCv = opmMean > 0 ? Math.sqrt(opms.reduce((t, v) => t + (v - opmMean) ** 2, 0) / (opms.length - 1)) / opmMean : null;
     const industryCyclical = CYCLICAL_INDUSTRY.test(snap?.industries?.[sym] ?? "") || cyclical;
-    const why = lossYears.length ? `a loss in ${lossYears.map(d => `FY${d.slice(2, 4)}`).reverse().join(", ")}`
+    // A loss year counts only beside margins that swing too, or a commodity
+    // industry: a one-off write-down or a single bad year (Bharti's AGR dues,
+    // Trent's lockdown year, Info Edge's investment write-offs) isn't a cycle
+    const lossesCount = lossYears.length > 0 && (opmCv == null || opmCv > CYCLE_CV_TIEBREAK || industryCyclical);
+    const why = lossesCount ? `a loss in ${lossYears.map(d => `FY${d.slice(2, 4)}`).reverse().join(", ")}${opmCv > CYCLE_CV_TIEBREAK ? ` and operating margins that swing (variation ${opmCv.toFixed(2)} of their average)` : opmCv != null ? " in a commodity industry" : ""}`
       : opmCv > CYCLE_CV ? `operating margins that swing — their variation is ${opmCv.toFixed(2)} of their average`
         : opmCv > CYCLE_CV_TIEBREAK && industryCyclical ? `operating margins that swing (variation ${opmCv.toFixed(2)} of their average) in a commodity industry`
           : null;
@@ -554,7 +559,7 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     // issue (RBL Bank's 2026 preferential allotment, 62 Cr shares to 155 Cr)
     // today's count is on top of a book that doesn't hold the new capital yet
     const bookShares = history[0]?.sharesCr > 0 ? history[0].sharesCr * 1e7 : shares;
-    const bv = bankValuation({ symbol: sym, roes: history.map(h => h.roe), payoutPct, equity: ownersEquity(latest), nnpa: stock.bank?.nnpa, shares: bookShares, pbHistory });
+    const bv = bankValuation({ symbol: sym, roes: history.map(h => h.roe), payoutPct, equity: ownersEquity(latest), nnpa: stock.bank?.nnpa, nnpaPct: stock.bank?.nnpaPct, shares: bookShares, pbHistory });
     valuation = bv.needsData ? { model: "needs-data", as: "bank", reason: bv.needsData } : { ...bv, as: "bank" };
   } else if (lender) {
     valuation = { model: "needs-data", as: "NBFC lender", reason: "A lender is valued on its book adjusted for bad loans, and NSE's NBFC filings don't include net Stage 3 assets." };
