@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { ChevronDown } from "lucide-react";
 import { api } from "./api.js";
 import { SiteLink } from "./site.jsx";
+import { useLogosShown, setLogosShown } from "./CompanyLogo.jsx";
 
 // The header's Account button: who's signed in, Sign out, and Delete account
 // — the way to erase everything that the privacy page points to. An account
@@ -13,6 +14,7 @@ export default function AccountMenu({ account, onLogout, onDeleted, onTour }) {
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const ref = useRef(null);
+  const logos = useLogosShown();
 
   useEffect(() => {
     if (!open) return;
@@ -45,6 +47,10 @@ export default function AccountMenu({ account, onLogout, onDeleted, onTour }) {
               Take the tour
             </button>
           )}
+          <button role="menuitemcheckbox" aria-checked={logos} style={{ ...item, display: "flex", justifyContent: "space-between", alignItems: "center" }} onClick={() => setLogosShown(!logos)}
+            onMouseEnter={e => { e.currentTarget.style.background = "var(--s3)"; }} onMouseLeave={e => { e.currentTarget.style.background = "none"; }}>
+            Company logos <span style={{ fontSize: 12, color: logos ? "var(--accent)" : "var(--t3)", fontWeight: 600 }}>{logos ? "On" : "Off"}</span>
+          </button>
           <button role="menuitem" style={item} onClick={() => { setOpen(false); onLogout(); }}
             onMouseEnter={e => { e.currentTarget.style.background = "var(--s3)"; }} onMouseLeave={e => { e.currentTarget.style.background = "none"; }}>
             Sign out

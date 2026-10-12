@@ -53,7 +53,7 @@ export function PrivacyPage({ signedIn }) {
 
       <H>What stays in your browser</H>
       <P>
-        Your light/dark setting, your last filters, your recent searches and which guided tours you've seen are kept in
+        Your light/dark setting, whether company logos are shown, your last filters, your recent searches and which guided tours you've seen are kept in
         your own browser. They never reach our server. A
         thesis you're editing is also kept here until it's saved to your account. You can clear all of this in your
         browser's settings for this site.

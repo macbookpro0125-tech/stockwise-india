@@ -39,6 +39,7 @@ import { startBackups } from "./backup.js";
 import { fetchTechnicals } from "./technicals.js";
 import { shareholdingHistory, companyFilings, companyNews, sectorPeers, companyProfile } from "./company-extras.js";
 import { summarizeFiling } from "./filing-summary.js";
+import { logoFor } from "./logos.js";
 import { PRESETS } from "./presets.js";
 import { DIST_DIR } from "./paths.js";
 import { HttpError, badRequest, payloadTooLarge } from "./http-errors.js";
@@ -439,6 +440,24 @@ export function createApp() {
         } catch (e) {
           reportUpstreamFailure(res, requestId, e, "Couldn't read this NSE attachment. Try again later.");
         }
+        return;
+      }
+      // A company's logo, from its own website, kept on disk (logos.js).
+      // Only companies on file, so the cache can't be filled with anything else
+      const logoRoute = url.pathname.match(/^\/api\/logo\/([^/]+)$/);
+      if (logoRoute && (req.method === "GET" || req.method === "HEAD")) {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        const symbol = decodePathSegment(logoRoute[1]).toUpperCase();
+        if (!isValidSymbol(symbol) || !getStock(symbol)) { sendJson(res, 404, { error: "Unknown symbol" }); return; }
+        const logo = await logoFor(symbol, async sym => (await companyProfile(sym))?.profile?.website ?? null).catch(() => null);
+        if (!logo) { res.writeHead(404, { "Cache-Control": "private, max-age=86400" }); res.end(); return; }
+        res.writeHead(200, {
+          "Content-Type": logo.type, "Content-Length": logo.body.length,
+          "Cache-Control": "private, max-age=604800",
+          "X-Content-Type-Options": "nosniff", "Content-Security-Policy": "default-src 'none'",
+        });
+        res.end(req.method === "HEAD" ? undefined : logo.body);
         return;
       }
       const panelRoute = url.pathname.match(/^\/api\/stock\/([^/]+)\/(prices|technicals|shareholding|profile|filings|news|peers)$/);

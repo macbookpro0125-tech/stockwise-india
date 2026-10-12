@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import CompanyLogo from "./CompanyLogo.jsx";
 import { Star, X, NotebookPen } from "lucide-react";
 import { BellIcon } from "./icons.jsx";
 import { api } from "./api.js";
@@ -148,7 +149,7 @@ export default function WatchlistView({ onOpenStock }) {
           return (
             <div key={item.ticker} style={{ padding: "14px 16px", borderRadius: 12, border: "1px solid var(--bdr2)", background: "var(--s2)", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
               <div style={{ flex: "1 1 140px", minWidth: 120 }}>
-                <div style={{ fontWeight: 600, fontSize: 14, color: "var(--t1)", letterSpacing: "-0.01em" }}>{name}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 7, fontWeight: 600, fontSize: 14, color: "var(--t1)", letterSpacing: "-0.01em" }}><CompanyLogo symbol={item.ticker} size={18} />{name}</div>
                 <div style={{ fontSize: 10, color: "var(--t3)", marginTop: 2 }}>
                   {item.ticker}
                   {item.addedAt && <span style={{ marginLeft: 8 }}>Added {fmtDate(item.addedAt)}</span>}
