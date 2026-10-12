@@ -902,7 +902,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       )}
 
       <div id="sec-holding" className="ss-section"><ShareholdingPanel symbol={data.symbol} /></div>
-      <div id="sec-chart" className="ss-section"><PriceChartPanel symbol={data.symbol} name={data.name} /></div>
+      <div id="sec-chart" className="ss-section"><PriceChartPanel symbol={data.symbol} name={data.name} levels={valued ? levels : null} /></div>
       {m && <div id="sec-financials" className="ss-section"><FinancialsPanel history={m.history} quarters={m.quarters} /></div>}
       <div id="sec-technicals" className="ss-section"><TechnicalPanel ticker={data.symbol} /></div>
 
