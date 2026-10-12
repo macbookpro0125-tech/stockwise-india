@@ -56,7 +56,8 @@ export function QualityBadge({ research, size = 11.5 }) {
     }}>
       <span style={{ width: 5, height: 5, borderRadius: "50%", background: t.dot, flexShrink: 0 }} />
       {v == null ? "—" : Math.round(v)}
-      {v != null && <span style={{ fontWeight: 500, opacity: 0.7, fontSize: size - 1.5 }}>/100</span>}
+      {/* Full colour: at 70% opacity this fell to 2.7–4.4:1 on the tinted pill */}
+      {v != null && <span style={{ fontWeight: 500, fontSize: size - 1.5 }}>/100</span>}
     </span>
   );
 }
