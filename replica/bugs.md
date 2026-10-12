@@ -14,7 +14,7 @@ No S1 or S2 found.
 - **Evidence:** `test-results/axe.txt` from `e2e/sweep.spec.js`.
 - **Fixed:** `--t3` → #8282A0 (4.6–5.4:1, still dimmer than `--t2`). Remaining after
   the fix: 0 on Discover, ≤9 per company page (BUG-004).
-- **Commit:** see git log, "Fix what the end-to-end test pass found".
+- **Commit:** 464d470.
 
 ## BUG-002 · S3 · Number and form boxes without labels for screen readers
 - **Steps:** company page → Valuation; Portfolio → + Add Holding; axe scan.
@@ -24,6 +24,7 @@ No S1 or S2 found.
   the watchlist note and company note boxes had none.
 - **Fixed:** aria-labels on the valuation and note boxes; `htmlFor`/`id` on Add Holding.
   The Sizing box's "Rs" prefix is now "₹" like the rest of the app.
+- **Commit:** 464d470.
 
 ## BUG-003 · S3 · Notes longer than the limit were cut off silently
 - **Steps:** Watchlist → + Add note → type 700 characters → Save → reload.
@@ -33,6 +34,7 @@ No S1 or S2 found.
   and thesis boxes (4,000).
 - **Evidence:** `e2e/edges.spec.js` F04-E1 — expected 700, received 500.
 - **Fixed:** each box now has `maxLength` equal to what the server keeps; the test passes.
+- **Commit:** 464d470.
 
 ## BUG-004 · S4 · A few low-contrast details left
 - Red "Upper level" text on the highlighted (yellow-tinted) price row: 4.1:1.
