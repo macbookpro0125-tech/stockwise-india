@@ -38,6 +38,10 @@ const SortArrow = ({ active, dir }) => {
   const Arrow = active && dir === "asc" ? ArrowUp : ArrowDown;
   return <Arrow size={12} strokeWidth={2.4} style={{ opacity: active ? 1 : 0, color: "var(--accent)", flexShrink: 0, transition: "opacity 120ms" }} />;
 };
+// A real button so a header can be reached and sorted from the keyboard; its
+// click bubbles to the <th>'s onClick, so the mouse works as before
+const sortBtnStyle = { display: "inline-flex", alignItems: "center", gap: 4, padding: 0, border: 0, background: "none", color: "inherit", font: "inherit", cursor: "pointer" };
+const ariaSort = (active, dir) => (active ? (dir === "asc" ? "ascending" : "descending") : "none");
 
 function fmt(n, decimals = 0) {
   if (n == null || isNaN(n)) return "—";
@@ -65,6 +69,7 @@ function SortTh({ label, title, col, sortBy, sortDir, onSort, accent, info }) {
   return (
     <th
       onClick={() => onSort(col)}
+      aria-sort={ariaSort(active, sortDir)}
       title={title}
       style={{
         ...thStyle,
@@ -76,8 +81,10 @@ function SortTh({ label, title, col, sortBy, sortDir, onSort, accent, info }) {
       }}
     >
       <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-        {label}
-        <SortArrow active={active} dir={sortDir} />
+        <button type="button" style={sortBtnStyle}>
+          {label}
+          <SortArrow active={active} dir={sortDir} />
+        </button>
         {info}
       </span>
     </th>
@@ -590,8 +597,8 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
               <thead>
                 <tr>
                   <th title={`Tick up to ${MAX_COMPARE} to compare`} style={{ ...thStyle, padding: "10px 8px", width: RANK_W, minWidth: RANK_W, boxSizing: "border-box", left: 0, zIndex: 4 }}>#</th>
-                  <th onClick={() => handleSort("name")} style={{ ...thStyle, color: sortBy === "name" ? "var(--t1)" : "var(--t2)", fontWeight: sortBy === "name" ? 600 : 500, left: RANK_W, zIndex: 4, cursor: "pointer", minWidth: 200, boxShadow: "inset -1px 0 0 var(--bdr)" }}>
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>Stock <SortArrow active={sortBy === "name"} dir={sortDir} /></span>
+                  <th onClick={() => handleSort("name")} aria-sort={ariaSort(sortBy === "name", sortDir)} style={{ ...thStyle, color: sortBy === "name" ? "var(--t1)" : "var(--t2)", fontWeight: sortBy === "name" ? 600 : 500, left: RANK_W, zIndex: 4, cursor: "pointer", minWidth: 200, boxShadow: "inset -1px 0 0 var(--bdr)" }}>
+                    <button type="button" style={sortBtnStyle}>Stock <SortArrow active={sortBy === "name"} dir={sortDir} /></button>
                   </th>
                   <SortTh label="Quality" title="Quality score out of 100 — business, earnings, balance sheet, governance, growth and valuation" col="quality" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} info={<MetricInfo def={meta?.byId.get("quality")} meta={meta} />} />
                   <SortTh label="Research" title="Overall research score: quality and valuation blended, trimmed for price swings and data gaps. Not a buy or sell signal." col="overall" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} info={<MetricInfo def={meta?.byId.get("researchScore")} meta={meta} />} />
