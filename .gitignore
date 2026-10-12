@@ -38,3 +38,7 @@ dist/
 
 # Company logos fetched from their own websites (server/logos.js)
 data/logos/
+
+# Playwright output (npm run e2e)
+test-results/
+playwright-report/

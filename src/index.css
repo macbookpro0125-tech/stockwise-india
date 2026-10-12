@@ -36,7 +36,7 @@
   /* ── Text ── */
   --t1: #F4F4FF;
   --t2: #A8A8C0;
-  --t3: #686885;
+  --t3: #8282A0; /* 4.6:1 or more on every dark surface (WCAG AA); #686885 was 3.2–3.7 */
   --t4: #26263A;
 
   /* ── Borders ── */
