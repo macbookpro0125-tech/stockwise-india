@@ -67,7 +67,7 @@ export async function fetchCmp(symbol) {
   return data;
 }
 
-// Daily closes for the stock page's price chart — the same Yahoo series the
+// Daily OHLCV bars for the stock page's price chart — the same Yahoo series the
 // original's chart used. Yahoo's closes are already adjusted for splits and
 // bonuses, so a 1:1 bonus doesn't show as a 50% crash.
 export const PRICE_RANGES = ["1mo", "6mo", "1y", "5y", "max"];
@@ -91,13 +91,29 @@ export async function fetchDailyBars(symbol, range = "1y") {
   }
   if (!result) throw new Error(`No price history for ${symbol}`);
 
+  // Open, high and low come split-adjusted like the close, so candles line up;
+  // a day missing any of them falls back to the close (a flat candle)
   const timestamps = result.timestamp || [];
-  const closes = result.indicators?.quote?.[0]?.close || [];
+  const q = result.indicators?.quote?.[0] || {};
+  const closes = q.close || [];
+  const r2 = n => Math.round(n * 100) / 100;
+  // Yahoo often leaves the latest day's close empty (open, high, low and volume
+  // filled) and gives it only as meta.regularMarketPrice; without this the
+  // chart stopped a trading day short of the NSE close
+  const meta = result.meta || {};
+  const lastDay = timestamps.length ? istDayKey(timestamps[timestamps.length - 1]) : null;
+  const metaClose = meta.regularMarketPrice != null && meta.regularMarketTime && istDayKey(meta.regularMarketTime) === lastDay ? meta.regularMarketPrice : null;
   const byDay = new Map();
   for (let i = 0; i < timestamps.length; i++) {
-    if (closes[i] != null) byDay.set(istDayKey(timestamps[i]), Math.round(closes[i] * 100) / 100);
+    const close = closes[i] ?? (i === timestamps.length - 1 ? metaClose : null);
+    if (close == null) continue;
+    const open = q.open?.[i] ?? close, high = q.high?.[i] ?? close, low = q.low?.[i] ?? close;
+    byDay.set(istDayKey(timestamps[i]), {
+      open: r2(open), high: r2(Math.max(high, open, close)), low: r2(Math.min(low, open, close)), close: r2(close),
+      volume: q.volume?.[i] ?? null,
+    });
   }
-  const data = { symbol: `${symbol}.NS`, range, bars: [...byDay].sort((a, b) => a[0].localeCompare(b[0])).map(([date, close]) => ({ date, close })) };
+  const data = { symbol: `${symbol}.NS`, range, bars: [...byDay].sort((a, b) => a[0].localeCompare(b[0])).map(([date, bar]) => ({ date, ...bar })) };
   BARS_CACHE.set(key, { at: Date.now(), data });
   return data;
 }
