@@ -950,7 +950,9 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
                 const isHere = Math.abs(price - rung.price) / rung.price < 0.03;
                 return (
                   <div key={rung.label} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "8px 12px", borderRadius: 6, marginBottom: 4, fontSize: 13, background: isHere ? "var(--yellow-dim)" : "transparent", border: isHere ? "1px dashed var(--yellow)" : "1px solid var(--bdr)" }}>
-                    <span style={{ color: rung.color, fontWeight: 500 }}>{rung.label}</span>
+                    {/* On the amber "you are here" tint, plain red is 4.1:1 in dark;
+                        blending toward --t1 keeps it red and clears 4.5:1 in both themes */}
+                    <span style={{ color: isHere && rung.color === "var(--red)" ? "color-mix(in srgb, var(--red) 80%, var(--t1))" : rung.color, fontWeight: 500 }}>{rung.label}</span>
                     <span style={{ fontWeight: 600, color: "var(--t1)" }}>{fmtRs(rung.price)}</span>
                   </div>
                 );
