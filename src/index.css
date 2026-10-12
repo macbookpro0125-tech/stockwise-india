@@ -260,8 +260,10 @@ input[type=checkbox]:checked::after {
 input[type=checkbox]:disabled { cursor: not-allowed; opacity: 0.4; }
 
 /* ── Focus rings ── */
-button:focus-visible, input:focus-visible, select:focus-visible {
-  outline: 2px solid var(--accent);
+/* !important: several fields set outline: "none" inline (to drop the mouse-click
+   ring), and an inline style would otherwise hide the keyboard ring too */
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--accent) !important;
   outline-offset: 2px;
 }
 
