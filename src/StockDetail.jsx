@@ -461,6 +461,41 @@ function KeyNumbers({ data, m }) {
 
 // ---- Page ---------------------------------------------------------------------
 
+// Board meetings ahead and corporate actions near today (results, dividends,
+// bonuses, splits, rights, AGMs), from NSE's calendar and corporate actions,
+// plus when the latest quarter's results were filed
+const QUARTER_NAME = ["", "", "Mar", "", "", "Jun", "", "", "Sep", "", "", "Dec"];
+function CompanyEvents({ m }) {
+  if (m.events == null) return null;
+  const today = new Date().toISOString().slice(0, 10);
+  const events = [...m.events];
+  if (m.latestQuarterFiled && m.latestQuarter) {
+    events.push({ date: m.latestQuarterFiled, kind: "results", title: `${QUARTER_NAME[Number(m.latestQuarter.slice(5, 7)) - 1] ?? ""} quarter results filed`.trim(), detail: null });
+  }
+  const ahead = events.filter(e => e.date >= today).sort((a, b) => a.date.localeCompare(b.date));
+  const recent = events.filter(e => e.date < today && Date.parse(today) - Date.parse(e.date) <= 120 * 86400000).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 6);
+  if (!ahead.length && !recent.length) return null;
+  const day = iso => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" });
+  const sentence = t => (t ? t[0].toUpperCase() + t.slice(1) : t);
+  const list = (items, upcoming) => items.map((e, i) => (
+    <div key={`${e.date}-${i}`} style={{ display: "grid", gridTemplateColumns: "62px minmax(0, 1fr)", gap: 10, padding: "8px 0", borderTop: "1px solid var(--bdr)" }}>
+      <span style={{ fontSize: 12, fontWeight: 650, color: upcoming ? "var(--accent)" : "var(--t2)", ...MONO }}>{day(e.date)}</span>
+      <span style={{ minWidth: 0 }}>
+        <span style={{ fontSize: 12.5, color: "var(--t1)", fontWeight: 550 }}>{sentence(e.title)}</span>
+        {e.detail && <span style={{ display: "block", fontSize: 11, color: "var(--t3)", marginTop: 2, lineHeight: 1.45 }}>{e.kind === "action" ? e.detail.replace(/(\d{4}-\d{2}-\d{2})/g, d => day(d)) : e.detail}</span>}
+      </span>
+    </div>
+  ));
+  return (
+    <div id="sec-events" className="ss-section" style={card}>
+      <SectionTitle icon={CalendarDays} style={{ marginBottom: 4 }}>Events</SectionTitle>
+      {ahead.length > 0 && <><div style={{ fontSize: 11.5, color: "var(--t3)", margin: "6px 0 2px", fontWeight: 600 }}>Coming up</div>{list(ahead, true)}</>}
+      {recent.length > 0 && <><div style={{ fontSize: 11.5, color: "var(--t3)", margin: `${ahead.length ? 12 : 6}px 0 2px`, fontWeight: 600 }}>Recent</div>{list(recent, false)}</>}
+      <p style={{ fontSize: 10.5, color: "var(--t3)", margin: "10px 0 0", lineHeight: 1.5 }}>From NSE's board-meeting calendar and corporate actions, as NSE lists them. Companies announce board meetings a week or two ahead; check the exchange for changes.</p>
+    </div>
+  );
+}
+
 // backTo: the tab Back returns to
 // "2026-10-07" -> "7 Oct"
 const dayLabel = iso => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
@@ -474,7 +509,7 @@ const closeLabel = c => `NSE close (${dayLabel(c.date)})`;
 // The page's parts in order, for the shortcut row in the pinned bar — a
 // company page runs to many screens, most of all on a phone
 const SECTIONS = [
-  ["about", "About"], ["scores", "Scores"], ["valuation", "Valuation"], ["sizing", "Sizing"], ["holding", "Shareholding"], ["chart", "Chart"],
+  ["about", "About"], ["events", "Events"], ["scores", "Scores"], ["valuation", "Valuation"], ["sizing", "Sizing"], ["holding", "Shareholding"], ["chart", "Chart"],
   ["financials", "Financials"], ["technicals", "Technicals"], ["thesis", "What to watch"],
   ["levels", "Price levels"], ["peers", "Peers"], ["filings", "Filings"],
 ];
@@ -743,6 +778,8 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       )}
 
       <div id="sec-about" className="ss-section"><CompanyProfile symbol={data.symbol} m={m} /></div>
+
+      {m && <CompanyEvents m={m} />}
 
       {m && <div id="sec-scores" className="ss-section" data-tour="research"><ResearchPanel research={m.research} /></div>}
 

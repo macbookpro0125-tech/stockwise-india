@@ -53,6 +53,7 @@ export const api = {
   removeWatch: (ticker) => request(`/api/watchlist/${encodeURIComponent(ticker)}`, { method: "DELETE" }),
   portfolio: () => request("/api/portfolio"),
   addHolding: (h) => request("/api/portfolio", { method: "POST", body: JSON.stringify(h) }),
+  importHoldings: (rows, commit) => request("/api/portfolio/import", { method: "POST", body: JSON.stringify({ rows, commit }) }),
   updateHolding: (id, h) => request(`/api/portfolio/${id}`, { method: "PUT", body: JSON.stringify(h) }),
   removeHolding: (id) => request(`/api/portfolio/${id}`, { method: "DELETE" }),
   performance: () => request("/api/performance"),

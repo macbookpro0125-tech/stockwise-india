@@ -1,8 +1,9 @@
-import { lazy, Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
+import { lazyPage } from "./lazyPage.js";
 import { FileText, X } from "lucide-react";
 import { api } from "./api.js";
 import { QualityBadge, overallTone } from "./ResearchBadges.jsx";
-const InvestmentBriefView = lazy(() => import("./InvestmentBriefView.jsx"));
+const InvestmentBriefView = lazyPage(() => import("./InvestmentBriefView.jsx"));
 
 // Ported from stock-screener's src/components/CompareView.jsx: up to five
 // stocks side by side — the research score and its groups, fundamentals and
