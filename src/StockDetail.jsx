@@ -16,6 +16,7 @@ import ValuationExplorer from "./ValuationExplorer.jsx";
 import { ValuedAs, BankValuation, CyclicalValuation, NoFairValue, pbAt, CYCLE_TONE } from "./ValuationModel.jsx";
 import PhasePositionPlanner from "./PhasePositionPlanner.jsx";
 import ThesisMonitor from "./ThesisMonitor.jsx";
+import CompanyLogo from "./CompanyLogo.jsx";
 
 // The original Stockwise stock page (stock-screener src/StockScreener.jsx),
 // on this app's NSE data: the research dashboard (in place of the original's
@@ -741,6 +742,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       )}
 
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, flexWrap: "wrap" }}>
+        <CompanyLogo symbol={data.symbol} size={28} />
         <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0, color: "var(--t1)", letterSpacing: "-0.03em" }}>{data.name}</h2>
         <span style={{ fontSize: 11, background: "var(--s3)", color: "var(--t2)", padding: "2px 9px", borderRadius: 6, ...MONO }}>{data.symbol}</span>
       </div>

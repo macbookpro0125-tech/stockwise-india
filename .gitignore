@@ -35,3 +35,6 @@ data/research-score-cohorts.json
 
 # Production build output
 dist/
+
+# Company logos fetched from their own websites (server/logos.js)
+data/logos/

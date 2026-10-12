@@ -1,4 +1,5 @@
 import { useState } from "react";
+import CompanyLogo from "./CompanyLogo.jsx";
 import { ChartPie, NotebookPen, Pencil, X } from "lucide-react";
 import { api } from "./api.js";
 import { portfolioStore } from "./stores.js";
@@ -173,7 +174,7 @@ export default function PortfolioView({ onOpenStock }) {
             return (
               <div key={h.id} style={{ padding: "14px 16px", borderRadius: 12, border: "1px solid var(--bdr2)", background: "var(--s2)", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
                 <div style={{ flex: "1 1 160px", minWidth: 130 }}>
-                  <div style={{ fontWeight: 600, fontSize: 14, color: "var(--t1)", letterSpacing: "-0.01em" }}>{h.name}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 7, fontWeight: 600, fontSize: 14, color: "var(--t1)", letterSpacing: "-0.01em" }}><CompanyLogo symbol={h.ticker} size={18} />{h.name}</div>
                   <div style={{ fontSize: 10, color: "var(--t3)", marginTop: 2 }}>
                     {h.ticker} · {h.qty} @ {fmtRs(h.buyPrice)}
                     {h.buyDate && <span style={{ marginLeft: 6 }}>· {fmtDate(h.buyDate)}</span>}
