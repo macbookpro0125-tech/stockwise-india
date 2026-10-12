@@ -231,6 +231,13 @@ const cellValues = specBank.grid.flatMap(r => r.cells.map(c => c.value));
 assert(specBank.fairValue === 516 && specBank.growth === 8 && specBank.growthRaw === 10 && cellValues.join() === "738,492,516,413", "the spec's example: ₹516 capped; uncapped and at 13% the grid reads ₹738 / ₹492 / ₹516 / ₹413");
 assert(bankValuation({ symbol: "X", roes: [15, 15, 15, 15], equity: 295 * CR, shares: CR }).needsData, "under five years of ROE, a bank needs more data rather than a forced number");
 assert(near(bankValuation({ symbol: "X", roes: [15, 15, 15, 15, 15], equity: 295 * CR, nnpa: 45 * CR, shares: CR }).adjustedBvps, 250, 1e-9), "book is adjusted for net bad loans");
+// PNB's shape: three good years after four of clean-up
+const cleanedUp = { symbol: "PNB", roes: [13, 15.2, 8.9, 3.6, 4.4, 3.5, 0.9], payoutPct: 20, equity: 127.5 * CR, nnpa: 0, shares: CR };
+const recentBank = bankValuation({ ...cleanedUp, nnpaPct: 0.28 });
+assert(recentBank.roeBasis === "recent" && recentBank.roe === 13 && recentBank.fairValue === 128 && recentBank.throughCycle?.roe === 4.4 && recentBank.throughCycle.value < 40, "bad loans cleaned up: valued on the last three years' ROE, the through-cycle value beside it");
+const stillBad = bankValuation({ ...cleanedUp, nnpaPct: 3.1 });
+assert(stillBad.roeBasis === "through-cycle" && stillBad.roe === 4.4 && stillBad.throughCycle == null, "bad loans still high: the through-cycle median, bad years included");
+assert(bankValuation(cleanedUp).roeBasis === "through-cycle", "net NPA not on file: through-cycle");
 assert(goodBank.valuation.model === "book" && goodBank.levels?.fv25 === goodBank.valuation.fairValue && goodBank.fairValue != null, "a bank's fair value and price levels come from the book model");
 // ── Routing: which model values a company, or why none does ──
 const steady = metricsOf(company(), snapshot());
@@ -248,9 +255,12 @@ assert(fundHouse.valuation.model === "earnings", "a fund house filing in the NBF
 
 // ── Cyclicals on mid-cycle earnings ──
 const EIGHT = [2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019];
-const lossIn2021 = (y, i) => (i === 5 ? { ...y, profit: -20 * CR, pbt: -20 * CR, eps: -2 } : y);
+// A loss year whose operating margin collapsed with it (20% to -2%)
+const lossIn2021 = (y, i) => (i === 5 ? { ...y, expenses: y.revenue * 1.02, profit: -20 * CR, pbt: -20 * CR, eps: -2 } : y);
 const cyc = metricsOf(company({ fys: EIGHT, tweak: lossIn2021 }), snapshot({ fys: EIGHT }));
-assert(cyc.valuation.model === "cyclical" && /FY21/.test(cyc.valuation.why), "a loss year in eight flags a cyclical, saying which year");
+assert(cyc.valuation.model === "cyclical" && /FY21/.test(cyc.valuation.why) && /margins that swing/.test(cyc.valuation.why), "a loss year in eight with margins that swing flags a cyclical, saying which year");
+const writeDown = metricsOf(company({ fys: EIGHT, tweak: (y, i) => (i === 5 ? { ...y, profit: -20 * CR, pbt: -20 * CR, eps: -2 } : y) }), snapshot({ fys: EIGHT }));
+assert(writeDown.valuation.model === "earnings" && !writeDown.valuation.partialCycle, "a loss below steady operating margins (a one-off write-down) isn't a cycle");
 assert(near(cyc.valuation.medianMargin, 13, 0.05) && near(cyc.valuation.normalizedEps, 13, 0.01) && near(cyc.valuation.multiple, 20, 0.05) && cyc.valuation.fairValue === 260, "mid-cycle EPS = revenue a share × the median margin (loss year included), at its usual multiple of mid-cycle EPS");
 assert(cyc.levels?.fv25 === cyc.valuation.fairValue && cyc.valuation.positionLabel === "around mid-cycle", "the price levels run on the mid-cycle value");
 const peak = metricsOf(company({ fys: EIGHT, tweak: (y, i) => lossIn2021(i === 0 ? { ...y, profit: 200 * CR, pbt: 260 * CR, eps: 20 } : y, i) }), snapshot({ fys: EIGHT }));
@@ -272,7 +282,7 @@ assert(!metricsOf(company({ holding: { governmentPct: 0 } }), snapshot()).govern
 assert(metricsOf(company({ holding: { governmentPct: 0 } }), { ...snapshot(), psuIndex: ["TESTCO"] }).governmentOwned, "a member of NSE's PSU lists is government-owned even when held through another government company");
 
 const pbItem = itemOf(goodBank.research, "valuation", "bookValue");
-assert(pbItem.score != null && /through-cycle ROE/.test(pbItem.reason) && /cost of equity 12%/.test(pbItem.reason) && pbItem.reason.includes(`₹${goodBank.valuation.fairValue}`), "the score's book check is the same model, stating the assumptions and the fair value");
+assert(pbItem.score != null && /ROE \(the median of/.test(pbItem.reason) && /cost of equity 12%/.test(pbItem.reason) && pbItem.reason.includes(`₹${goodBank.valuation.fairValue}`), "the score's book check is the same model, stating the assumptions and the fair value");
 assert(itemOf(goodBank.research, "valuation", "fcfYield").hide, "the free-cash-flow yield isn't listed for a bank");
 
 // ── The arithmetic behind the overall score reproduces it ──

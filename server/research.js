@@ -21,7 +21,7 @@
 // Weights and bands are a stated starting point, not a fitted model — the
 // proposal says so too. Change them here and RESEARCH_VERSION together.
 
-export const RESEARCH_VERSION = "1.7"; // 1.7: cyclicals checked against their mid-cycle fair value; 1.6: banks priced on justified P/B × book less net bad loans — cost of equity 12% (13% government), growth from retained earnings capped at 8%; 1.5: banks scored on their own bad-loan, capital and efficiency figures
+export const RESEARCH_VERSION = "1.8"; // 1.8: banks with net NPA under 2% priced on their last three years' ROE; a loss year marks a cyclical only beside swinging margins or a commodity industry; 1.7: cyclicals checked against their mid-cycle fair value; 1.6: banks priced on justified P/B × book less net bad loans — cost of equity 12% (13% government), growth from retained earnings capped at 8%; 1.5: banks scored on their own bad-loan, capital and efficiency figures
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -620,7 +620,7 @@ const VALUATION = {
       const ratio = m.close / v.fairValue, pb = m.close / v.adjustedBvps;
       const score = band(ratio, [[0.6, 100], [0.8, 85], [1, 65], [1.25, 45], [1.6, 20], [2.2, 0]]);
       return checked(score, ratio, `P/B ${pb.toFixed(2)} vs ${v.justifiedPb.toFixed(2)}`,
-        `A ${pct(v.roe)} through-cycle ROE (the median of ${v.roeYears} years) supports ${v.justifiedPb.toFixed(2)}× book (cost of equity ${v.costOfEquity}%${v.psu ? ", a point more for a government bank" : ""}, growth ${pct(v.growth)}). On book less net bad loans, ${rupees(v.adjustedBvps)} a share, that's ${rupees(v.fairValue)}; it closed at ${rupees(m.close)}, ${pb.toFixed(2)}× — ${ratio <= 1 ? "at or under" : "above"} what its returns support.`);
+        `A ${pct(v.roe)} ${v.roeBasis === "recent" ? `ROE (the median of the last ${v.roeYears} years, bad loans cleaned up)` : `through-cycle ROE (the median of ${v.roeYears} years)`} supports ${v.justifiedPb.toFixed(2)}× book (cost of equity ${v.costOfEquity}%${v.psu ? ", a point more for a government bank" : ""}, growth ${pct(v.growth)}). On book less net bad loans, ${rupees(v.adjustedBvps)} a share, that's ${rupees(v.fairValue)}; it closed at ${rupees(m.close)}, ${pb.toFixed(2)}× — ${ratio <= 1 ? "at or under" : "above"} what its returns support.`);
     }),
   ],
 };

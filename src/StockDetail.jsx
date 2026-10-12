@@ -717,7 +717,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
           )}
           {onBook && (
             <div className="hide-phone" style={{ marginTop: 4, color: "var(--t2)" }}>
-              P/B is what its <em>through-cycle return on equity</em> supports ({m.valuation.justifiedPb.toFixed(2)}×; today {price > 0 && m.valuation.bookPerShare > 0 ? (price / m.valuation.bookPerShare).toFixed(2) : "—"}× on reported book) — override with your own view if needed.
+              P/B is what its <em>{m.valuation.roeBasis === "recent" ? "recent return on equity" : "through-cycle return on equity"}</em> supports ({m.valuation.justifiedPb.toFixed(2)}×; today {price > 0 && m.valuation.bookPerShare > 0 ? (price / m.valuation.bookPerShare).toFixed(2) : "—"}× on reported book) — override with your own view if needed.
             </div>
           )}
           {m.epsRebased && (

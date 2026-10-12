@@ -58,7 +58,9 @@ export function BankValuation({ m, growthInput, costOfEquity, onCostOfEquity }) 
       <div style={{ fontSize: 12, color: "var(--t2)", lineHeight: 1.55, marginBottom: 8 }}>
         A bank's product is its balance sheet: its profits swing with provisions for bad loans, and its cash flow is deposits and loans moving, so it's valued on book, not on its P/E history.
       </div>
-      {row("Through-cycle return on equity", pct(v.roe), `Median of the last ${v.roeYears} years, bad years included`)}
+      {v.roeBasis === "recent"
+        ? row("Return on equity", pct(v.roe), `Median of the last ${v.roeYears} years — its bad loans are cleaned up (net NPA ${pct(v.nnpaPct)}), so recent years show what it earns now`)
+        : row("Through-cycle return on equity", pct(v.roe), `Median of the last ${v.roeYears} years, bad years included — ${v.nnpaPct != null ? `net NPA is still ${pct(v.nnpaPct)}` : "net NPA isn't on file"}`)}
       {row("Growth retained earnings support", <>{pct(v.growthRaw)}{v.growthRaw > v.growth + 0.05 && <span style={{ color: "var(--t3)", fontWeight: 400 }}> → {pct(v.growth)}</span>}</>,
         `ROE × (1 − ${pct(v.payoutPct, 0)} paid out)${v.growthRaw > v.growth + 0.05 ? `, capped at ${pct(v.growth, 0)} — and kept 4 points under the cost of equity` : ""}. Edit "Book growth" above to change it.`)}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "7px 0", borderTop: "1px solid var(--bdr)", fontSize: 12.5 }}>
@@ -70,6 +72,7 @@ export function BankValuation({ m, growthInput, costOfEquity, onCostOfEquity }) 
       {row("Book less net bad loans", <>{rs(v.adjustedBvps)}<span style={{ color: "var(--t3)", fontWeight: 400 }}> a share</span></>,
         v.nnpaKnown ? `${crore(v.equityCr)} equity − ${crore(v.nnpaCr)} net NPA = ${crore(v.adjustedBookCr)}` : "Net NPA not on file — book isn't adjusted")}
       {row("Today's fair value", <span style={{ color: "var(--accent)" }}>{rs(fair)}</span>, "Justified P/B × book less net bad loans")}
+      {v.throughCycle?.value != null && row(`On ${v.throughCycle.years} years' return on equity`, rs(v.throughCycle.value), `${pct(v.throughCycle.roe)}, the median with the bad years included (P/B ${v.throughCycle.pb.toFixed(2)}×) — ${v.throughCycle.value < v.fairValue ? "what it's worth if they come back" : "higher than it has earned lately"}`)}
       {v.crossCheck != null && row("Cross-check: its usual P/B", rs(v.crossCheck), `Median P/B at the last ${v.usualPbYears} year-ends (${v.usualPb.toFixed(2)}×) × the same book — what the market has usually paid`)}
 
       <div style={{ fontSize: 12, fontWeight: 600, color: "var(--t1)", margin: "16px 0 6px" }}>How fragile the multiple is</div>

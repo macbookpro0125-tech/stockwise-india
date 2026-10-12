@@ -19,8 +19,16 @@ export const COST_OF_EQUITY = 12; // %, as the DCF on the stock page
 export const PSU_PREMIUM = 1;
 export const MAX_GROWTH = 8;
 export const MIN_SPREAD = 4;
-// Through-cycle: five to seven years, the bad ones included — they're the point
+// Five to seven years of return on equity on file, the bad ones included
 export const MIN_ROE_YEARS = 5, MAX_ROE_YEARS = 7;
+// Which return the value runs on (decided 12 Oct 2026). With bad loans
+// cleaned up — net NPA under 2% — the last three years' median: the
+// through-cycle median of seven was mostly the 2018–22 clean-up for the
+// government banks (PNB's 4.4% against 13–15% since, a fair value of ₹32 at
+// ₹117) and the formula punishes a return under the cost of equity hard.
+// The through-cycle value stays beside it, "on seven years, bad ones included".
+// With bad loans still high, the through-cycle median: they may not be over.
+export const RECENT_ROE_YEARS = 3, CLEAN_NNPA_PCT = 2;
 // A return at or under the growth rate supports little more than a fraction
 // of book; floored so the multiple stays meaningful
 export const PB_FLOOR = 0.25;
@@ -59,12 +67,16 @@ export function justifiedPb(roe, g, ke) {
 // share of earnings paid out; equity and nnpa in rupees; shares on today's
 // basis; pbHistory: the bank's P/B at past year-ends, for the cross-check.
 // Returns { needsData } when the inputs aren't there — never a forced number.
-export function bankValuation({ symbol, roes, payoutPct, equity, nnpa, shares, pbHistory = [] }) {
+export function bankValuation({ symbol, roes, payoutPct, equity, nnpa, nnpaPct, shares, pbHistory = [] }) {
   const years = (roes ?? []).slice(0, MAX_ROE_YEARS).filter(finite);
   if (years.length < MIN_ROE_YEARS) return { needsData: `Needs ${MIN_ROE_YEARS} years of return on equity; ${years.length} on file.` };
   if (!(equity > 0) || !(shares > 0)) return { needsData: "Needs the bank's equity and share count." };
   const ke = costOfEquity(symbol);
-  const roe = median(years);
+  const throughRoe = median(years);
+  const recent = years.slice(0, RECENT_ROE_YEARS);
+  const clean = finite(nnpaPct) && nnpaPct < CLEAN_NNPA_PCT;
+  const roeBasis = clean && recent.length === RECENT_ROE_YEARS ? "recent" : "through-cycle";
+  const roe = roeBasis === "recent" ? median(recent) : throughRoe;
   const growth = sustainableGrowth(roe, payoutPct, ke);
   const pb = justifiedPb(roe, growth.g, ke);
   const nnpaKnown = finite(nnpa);
@@ -84,10 +96,15 @@ export function bankValuation({ symbol, roes, payoutPct, equity, nnpa, shares, p
     { label: "the model's", cells: [cell(growth.g, ke), cell(growth.g, ke + 1)] },
   ];
   // The P/B twin of the P/E-median method: what the market has usually paid
+  // The same book on the seven-year median, bad years included
+  const stressG = sustainableGrowth(throughRoe, payoutPct, ke);
+  const stressPb = justifiedPb(throughRoe, stressG.g, ke);
+  const throughCycle = roeBasis === "recent" ? { roe: r2(throughRoe), years: years.length, growth: r2(stressG.g), pb: r2(stressPb), value: stressPb != null ? Math.round(stressPb * adjustedBvps) : null } : null;
   const usualPb = pbHistory.filter(v => finite(v) && v > 0).length >= 3 ? median(pbHistory.filter(v => finite(v) && v > 0)) : null;
   return {
     model: "book",
-    roe: r2(roe), roeYears: years.length,
+    roe: r2(roe), roeYears: roeBasis === "recent" ? RECENT_ROE_YEARS : years.length, roeBasis,
+    nnpaPct: finite(nnpaPct) ? r2(nnpaPct) : null, throughCycle,
     payoutPct: r2(finite(payoutPct) ? payoutPct : 0),
     growthRaw: r2(growth.raw), growth: r2(growth.g), costOfEquity: ke, psu: PSU_BANKS.has(symbol),
     justifiedPb: r2(pb),
