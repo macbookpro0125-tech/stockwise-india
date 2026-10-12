@@ -26,6 +26,27 @@ function fmtDate(ts) {
   return `${d.getDate()} ${months[d.getMonth()]} ${String(d.getFullYear()).slice(2)}`;
 }
 
+// Whether the latest quarter's results are in: the quarter that ended most
+// recently, against the company's latest filed quarter — "results in", or
+// the board meeting NSE lists, or awaited. (Asked for on Screener.in's forum:
+// a tick on watchlist stocks that have declared results, Oct 2026.)
+const MONTH = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+function lastQuarterEnd(now = new Date()) {
+  const y = now.getUTCFullYear(), m = now.getUTCMonth();
+  const ends = [[y, 2, 31], [y, 5, 30], [y, 8, 30], [y, 11, 31], [y - 1, 11, 31]].map(([yy, mm, dd]) => Date.UTC(yy, mm, dd));
+  const end = ends.filter(t => t <= Date.UTC(y, m, now.getUTCDate())).sort((a, b) => b - a)[0];
+  return new Date(end).toISOString().slice(0, 10);
+}
+const shortDay = iso => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" });
+function resultsStatus(r) {
+  if (!r?.latestQuarter && !r?.nextResults) return null;
+  const due = lastQuarterEnd();
+  const qName = `${MONTH[Number(due.slice(5, 7)) - 1]} quarter`;
+  if (r.latestQuarter && r.latestQuarter >= due) return { text: `${qName} results in${r.latestQuarterFiled ? ` · ${shortDay(r.latestQuarterFiled)}` : ""}`, color: "var(--green)", done: true };
+  if (r.nextResults) return { text: `${qName} results due ${shortDay(r.nextResults)}`, color: "var(--t2)" };
+  return { text: `${qName} results awaited`, color: "var(--t3)" };
+}
+
 const priceBasis = source => source === "live" ? "Yahoo daily close" : source === "cached" ? "Cached Yahoo daily close" : source === "close" ? "NSE daily close" : "Price";
 
 // Where the price sits against the stock's levels, in a few words — the
@@ -133,6 +154,10 @@ export default function WatchlistView({ onOpenStock }) {
                   {item.addedAt && <span style={{ marginLeft: 8 }}>Added {fmtDate(item.addedAt)}</span>}
                   {item.addedPrice > 0 && <span style={{ marginLeft: 6 }}>@ {fmtRs(item.addedPrice)}</span>}
                 </div>
+                {(() => {
+                  const st = resultsStatus(r);
+                  return st && <div style={{ fontSize: 10.5, color: st.color, marginTop: 3, fontWeight: st.done ? 600 : 500 }}>{st.done ? "✓ " : ""}{st.text}</div>;
+                })()}
               </div>
 
               <div style={{ flex: "0 0 100%", order: 10 }}>

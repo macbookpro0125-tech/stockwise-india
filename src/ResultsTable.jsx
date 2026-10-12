@@ -1,10 +1,11 @@
 import { lazy, Suspense, useState, useEffect } from "react";
-import { ArrowDown, ArrowUp, Check, Info, Columns3, Search, ArrowUpRight, SearchX } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, Info, Columns3, Search, ArrowUpRight, SearchX, Star } from "lucide-react";
 import { StarIcon, BellIcon, actionButtonStyle } from "./icons.jsx";
 import { useWatchlist, toggleWatch } from "./watchlist.js";
 import CreateAlertModal from "./CreateAlertModal.jsx";
 import { formatValue, valueColor } from "./screener/meta.js";
 import { QualityBadge, OverallScore, qualityTone, overallTone, researchTitle, researchMissingText } from "./ResearchBadges.jsx";
+import { MetricInfo, ColumnGuide } from "./screener/MetricInfo.jsx";
 
 // A metric column's header, with its unit as the table always showed it
 // ("ROCE %", "CMP ₹")
@@ -58,7 +59,7 @@ const MIN_PIOTROSKI = [5, 6, 7, 8, 9];
 
 const nseUrl = symbol => `https://www.nseindia.com/get-quotes/equity?symbol=${encodeURIComponent(symbol)}`;
 
-function SortTh({ label, title, col, sortBy, sortDir, onSort, accent }) {
+function SortTh({ label, title, col, sortBy, sortDir, onSort, accent, info }) {
   const active = sortBy === col;
   return (
     <th
@@ -76,6 +77,7 @@ function SortTh({ label, title, col, sortBy, sortDir, onSort, accent }) {
       <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
         {label}
         <SortArrow active={active} dir={sortDir} />
+        {info}
       </span>
     </th>
   );
@@ -174,7 +176,7 @@ function StarButton({ symbol, price, watched, size = 30 }) {
   );
 }
 
-export default function ResultsTable({ matches, loading, onAnalyze, totalMatches, queryUsed, unsupported = [], notes = [], executionTime, snapshot, netNet = false, noun = "stocks", emptyTitle = "No stocks matched your criteria", emptyHint = "Try relaxing some filters", columns = [], onEditColumns = null, filteredIds = [] }) {
+export default function ResultsTable({ matches, loading, onAnalyze, totalMatches, queryUsed, unsupported = [], notes = [], executionTime, snapshot, netNet = false, noun = "stocks", emptyTitle = "No stocks matched your criteria", emptyHint = "Try relaxing some filters", columns = [], onEditColumns = null, filteredIds = [], meta = null }) {
   const watchlist = useWatchlist();
   const [alertFor, setAlertFor] = useState(null);
   const bell = (stock, size = 30) => (
@@ -208,6 +210,10 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
   const [minQuality, setMinQuality] = useState(0);
   const [minResearch, setMinResearch] = useState(0);
   const [minPiotroski, setMinPiotroski] = useState(0);
+  // Screen your watchlist only: the strategy's filters, run on the companies
+  // you follow (asked for on Screener.in's forum, Oct 2026)
+  const [watchOnly, setWatchOnly] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
   const pageSize = isMobile ? PHONE_PAGE_SIZE : PAGE_SIZE;
   const [visibleCount, setVisibleCount] = useState(() => typeof window !== "undefined" && window.innerWidth < 640 ? PHONE_PAGE_SIZE : PAGE_SIZE);
   useEffect(() => { setVisibleCount(pageSize); }, [matches, pageSize]);
@@ -251,9 +257,9 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
   // row's own field (cmp and the table's fixed fields)
   const colValue = (s, id) => s.values?.[id] ?? s[id] ?? null;
   const q = search.trim().toLowerCase();
-  const textFiltered = q
-    ? (matches || []).filter(s => s.name?.toLowerCase().includes(q) || s.symbol?.toLowerCase().includes(q))
-    : (matches || []);
+  const watchedMatches = (matches || []).filter(s => watchlist.has(s.symbol)).length;
+  const textFiltered = (matches || []).filter(s => (!watchOnly || watchlist.has(s.symbol)) &&
+    (!q || s.name?.toLowerCase().includes(q) || s.symbol?.toLowerCase().includes(q)));
   // The score boxes beside the name box narrow the list together
   const scoreFiltered = minQuality > 0 || minResearch > 0 || minPiotroski > 0;
   const filtered = !scoreFiltered ? textFiltered : textFiltered.filter(s =>
@@ -455,6 +461,31 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
         </div>
       )}
 
+      {/* ── Watchlist only, and what every shown column means ── */}
+      {!loading && (matches?.length ?? 0) > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginBottom: 12 }}>
+          {watchlist.size > 0 && (
+            <button type="button" aria-pressed={watchOnly} onClick={() => setWatchOnly(v => !v)}
+              title="Run these filters on your watchlist only"
+              style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 32, padding: "0 12px", borderRadius: 8, fontSize: 12.5, fontFamily: "inherit", cursor: "pointer",
+                border: `1px solid ${watchOnly ? "var(--accent)" : "var(--bdr2)"}`, background: watchOnly ? "var(--accent-glow)" : "var(--s2)", color: watchOnly ? "var(--accent)" : "var(--t2)", fontWeight: watchOnly ? 650 : 500 }}>
+              <Star size={13} fill={watchOnly ? "currentColor" : "none"} /> Watchlist only <span style={{ ...MONO, opacity: 0.8 }}>({watchedMatches})</span>
+            </button>
+          )}
+          <button type="button" onClick={() => setShowGuide(true)} className="btn-ghost" style={{ height: 32, fontSize: 12.5 }}>
+            <Info size={13} /> What these columns mean
+          </button>
+        </div>
+      )}
+      {showGuide && (
+        <ColumnGuide meta={meta} onClose={() => setShowGuide(false)}
+          extra={[meta?.byId.get("quality"), meta?.byId.get("researchScore"), meta?.byId.get("cmp")].filter(Boolean)}
+          defs={[...columns, {
+            id: "priceLevels", label: "Price levels (P1 · P2 · P3 · FV)", basis: "levels",
+            about: "Reference levels from each company's valuation model: P1 is 10% under today's fair value, P2 and P3 are 10% and 20% under P1, and FV is the fair value two years on, grown at the company's own rate. Banks are valued on book and cyclicals on mid-cycle earnings; NBFC lenders, holding companies, loss-makers and companies with under five years of filings have none.",
+          }]} />
+      )}
+
       {/* ── The screen's filters, one chip each (describeFilters joins them with " · ") ── */}
       {queryUsed && !loading && (
         <div className="filter-chips" style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: notes.length ? 8 : 14 }}>
@@ -479,12 +510,13 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
       {!loading && (matches?.length ?? 0) > 0 && sorted.length === 0 && (
         <div style={{ textAlign: "center", padding: "40px 16px", color: "var(--t2)", fontSize: 13, border: "1px dashed var(--bdr2)", borderRadius: 14 }}>
           None of these {matches.length.toLocaleString("en-IN")} companies {[
+            watchOnly && "are on your watchlist",
             q && `match "${search.trim()}"`,
             minQuality > 0 && `have quality ${minQuality}+`,
             minResearch > 0 && `have research ${minResearch}+`,
             minPiotroski > 0 && `have Piotroski ${minPiotroski}${minPiotroski < 9 ? "+" : ""}`,
           ].filter(Boolean).join(" and ")}.
-          <button className="btn-ghost" onClick={() => { setSearch(""); setMinQuality(0); setMinResearch(0); setMinPiotroski(0); }} style={{ marginLeft: 10, height: 28, fontSize: 12 }}>Show all</button>
+          <button className="btn-ghost" onClick={() => { setSearch(""); setMinQuality(0); setMinResearch(0); setMinPiotroski(0); setWatchOnly(false); }} style={{ marginLeft: 10, height: 28, fontSize: 12 }}>Show all</button>
         </div>
       )}
 
@@ -560,11 +592,11 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                   <th onClick={() => handleSort("name")} style={{ ...thStyle, color: sortBy === "name" ? "var(--t1)" : "var(--t2)", fontWeight: sortBy === "name" ? 600 : 500, left: RANK_W, zIndex: 4, cursor: "pointer", minWidth: 200, boxShadow: "inset -1px 0 0 var(--bdr)" }}>
                     <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>Stock <SortArrow active={sortBy === "name"} dir={sortDir} /></span>
                   </th>
-                  <SortTh label="Quality" title="Quality score out of 100 — business, earnings, balance sheet, governance, growth and valuation" col="quality" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
-                  <SortTh label="Research" title="Overall research score: quality and valuation blended, trimmed for price swings and data gaps. Not a buy or sell signal." col="overall" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
-                  <SortTh label="CMP ₹"   col="cmp"         sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
+                  <SortTh label="Quality" title="Quality score out of 100 — business, earnings, balance sheet, governance, growth and valuation" col="quality" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} info={<MetricInfo def={meta?.byId.get("quality")} meta={meta} />} />
+                  <SortTh label="Research" title="Overall research score: quality and valuation blended, trimmed for price swings and data gaps. Not a buy or sell signal." col="overall" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} info={<MetricInfo def={meta?.byId.get("researchScore")} meta={meta} />} />
+                  <SortTh label="CMP ₹"   col="cmp"         sortBy={sortBy} sortDir={sortDir} onSort={handleSort} info={<MetricInfo def={meta?.byId.get("cmp")} meta={meta} />} />
                   {columns.map(def => (
-                    <SortTh key={def.id} label={columnLabel(def)} title={def.label} col={def.id} sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
+                    <SortTh key={def.id} label={columnLabel(def)} title={def.label} col={def.id} sortBy={sortBy} sortDir={sortDir} onSort={handleSort} info={<MetricInfo def={def} meta={meta} />} />
                   ))}
                   <th style={{ ...thStyle, color: "var(--accent)", fontWeight: 600, background: "color-mix(in srgb, var(--accent) 4%, var(--s1))" }}>
                     Price levels

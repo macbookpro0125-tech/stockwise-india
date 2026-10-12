@@ -414,7 +414,7 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     const op = !lender && q.revenue != null && q.expenses != null ? q.revenue - (q.expenses - (q.financeCosts ?? 0) - (q.depreciation ?? 0)) : null;
     const yearAgo = quarterAgo(q, 365), prior = quarterAgo(q, 91);
     return {
-      fyEnd: q.qEnd, scope: q.scope ?? null, unitFix: q.unitFix ?? null,
+      fyEnd: q.qEnd, filed: q.filed ?? null, scope: q.scope ?? null, unitFix: q.unitFix ?? null,
       revenueCr: cr(q.revenue), expensesCr: cr(q.expenses), operatingProfitCr: cr(op),
       opm: op != null && q.revenue > 0 ? (op / q.revenue) * 100 : null,
       otherIncomeCr: cr(q.otherIncome), depreciationCr: cr(q.depreciation), financeCostsCr: cr(q.financeCosts),
@@ -615,6 +615,10 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     fyEnd: latest.fyEnd,
     quarters,
     latestQuarter: quarters[0]?.fyEnd ?? null,
+    latestQuarterFiled: quarters[0]?.filed ?? null,
+    // The next results board meeting NSE's calendar lists; null when none is
+    // announced (or the calendar couldn't be read)
+    nextResults: snap?.resultsDates?.[sym] ?? null,
     qSalesGrowthYoY: quarters[0]?.salesYoY ?? null,
     qProfitGrowthYoY: quarters[0]?.profitYoY ?? null,
     qSalesGrowthQoQ: quarters[0]?.salesQoQ ?? null,
