@@ -1,4 +1,5 @@
-import { lazy, Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
+import { lazyPage } from "./lazyPage.js";
 import { ArrowDown, ArrowUp, Check, Info, Columns3, Search, ArrowUpRight, SearchX, Star } from "lucide-react";
 import { StarIcon, BellIcon, actionButtonStyle } from "./icons.jsx";
 import { useWatchlist, toggleWatch } from "./watchlist.js";
@@ -21,7 +22,7 @@ const columnLabel = def => (def.unit === "%" ? `${def.short} %` : def.unit === "
 const PAGE_SIZE = 50;
 const PHONE_PAGE_SIZE = 20;
 const MAX_COMPARE = 5;
-const CompareView = lazy(() => import("./CompareView.jsx"));
+const CompareView = lazyPage(() => import("./CompareView.jsx"));
 // Wide enough for the compare box and a four-digit rank; the name column is
 // pinned right after it.
 const RANK_W = 60;

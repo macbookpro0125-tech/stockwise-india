@@ -54,6 +54,22 @@ export function updateHolding(userId, id, input) {
   return row(db.prepare("SELECT * FROM holdings WHERE id = ?").get(id));
 }
 
+// Several lots at once (a broker file's import): all saved or none
+export function addHoldings(userId, inputs) {
+  const lots = inputs.map(validate);
+  const insert = db.prepare("INSERT INTO holdings (user_id, ticker, name, buy_price, qty, buy_date, notes, added_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+  const at = new Date().toISOString();
+  db.exec("BEGIN");
+  try {
+    for (const h of lots) insert.run(userId, h.ticker, h.name, h.buyPrice, h.qty, h.buyDate, h.notes, at);
+    db.exec("COMMIT");
+  } catch (e) {
+    db.exec("ROLLBACK");
+    throw e;
+  }
+  return lots.length;
+}
+
 export function removeHolding(userId, id) {
   db.prepare("DELETE FROM holdings WHERE id = ? AND user_id = ?").run(id, userId);
 }

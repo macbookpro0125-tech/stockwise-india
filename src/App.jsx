@@ -1,4 +1,5 @@
-import { lazy, Suspense, useState, useEffect, useRef, useCallback } from "react";
+import { Suspense, useState, useEffect, useRef, useCallback } from "react";
+import { lazyPage } from "./lazyPage.js";
 import { api } from "./api.js";
 import Landing from "./Landing.jsx";
 import { PrivacyPage, DisclaimerPage } from "./LegalPages.jsx";
@@ -14,12 +15,12 @@ import { strategiesStore, notesStore } from "./accountData.js";
 
 // Keep the first Discover screen small; load account tabs and full stock
 // research only when the user opens them.
-const WatchlistView = lazy(() => import("./WatchlistView.jsx"));
-const PortfolioView = lazy(() => import("./PortfolioView.jsx"));
-const PerformanceView = lazy(() => import("./PerformanceView.jsx"));
-const AlertsView = lazy(() => import("./AlertsView.jsx"));
-const MomentumView = lazy(() => import("./MomentumView.jsx"));
-const StockDetail = lazy(() => import("./StockDetail.jsx"));
+const WatchlistView = lazyPage(() => import("./WatchlistView.jsx"));
+const PortfolioView = lazyPage(() => import("./PortfolioView.jsx"));
+const PerformanceView = lazyPage(() => import("./PerformanceView.jsx"));
+const AlertsView = lazyPage(() => import("./AlertsView.jsx"));
+const MomentumView = lazyPage(() => import("./MomentumView.jsx"));
+const StockDetail = lazyPage(() => import("./StockDetail.jsx"));
 
 // Dark by default, as the original; the choice is remembered in this browser
 function useTheme() {

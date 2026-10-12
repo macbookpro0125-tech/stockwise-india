@@ -404,17 +404,54 @@ async function psuIndexSymbols() {
 // Each company's next board meeting to approve results, from NSE's event
 // calendar (one request; companies announce a week or two ahead, so most
 // have none listed): { SYMBOL: "2026-10-23" }, the earliest on or after today
-async function resultsDates() {
+async function eventCalendar() {
   const rows = await fetchJson(`${NSE_BASE}/api/event-calendar?index=equities`);
+  return Array.isArray(rows) ? rows : [];
+}
+function resultsDates(rows) {
   const today = isoDay(new Date());
   const out = {};
-  for (const r of Array.isArray(rows) ? rows : []) {
+  for (const r of rows) {
     if (!r.symbol || !/financial results/i.test(r.purpose ?? "")) continue;
     const when = parseQeDate(r.date);
     if (!when) continue;
     const iso = isoDay(when);
     if (iso >= today && (!out[r.symbol] || iso < out[r.symbol])) out[r.symbol] = iso;
   }
+  return out;
+}
+
+// Each company's events for its page: board meetings NSE's calendar lists
+// ahead (results, dividends, fund-raising, bonuses), and corporate actions
+// with ex-dates from four months back to four months ahead (dividends,
+// bonuses, splits, rights, demergers, AGMs) — NSE's own wording, with the
+// record date. { SYMBOL: [{ date, kind: "board"|"action", title, detail }] },
+// oldest first. (A per-company events list was asked for on Screener.in's
+// user forum, Oct 2026.)
+const EVENT_WINDOW_DAYS = 120;
+export function eventsBySymbol(calendar, actions, now = new Date()) {
+  const today = isoDay(now);
+  const from = isoDay(new Date(now.getTime() - EVENT_WINDOW_DAYS * 86400000));
+  const to = isoDay(new Date(now.getTime() + EVENT_WINDOW_DAYS * 86400000));
+  const out = {};
+  const add = (sym, e) => (out[sym] ||= []).push(e);
+  for (const r of calendar ?? []) {
+    const when = parseQeDate(r.date);
+    if (!r.symbol || !when || isoDay(when) < today) continue;
+    const purpose = String(r.purpose ?? "").split("/").map(p => p.trim().toLowerCase()).filter(Boolean);
+    add(r.symbol, { date: isoDay(when), kind: "board", title: `Board meeting${purpose.length ? `: ${purpose.join(", ")}` : ""}`, detail: r.bm_desc || null });
+  }
+  const seen = new Set();
+  for (const a of actions ?? []) {
+    const ex = parseQeDate(a.exDate);
+    if (!a.symbol || !ex || !a.subject) continue;
+    const iso = isoDay(ex);
+    if (iso < from || iso > to || seen.has(`${a.symbol}|${iso}|${a.subject}`)) continue;
+    seen.add(`${a.symbol}|${iso}|${a.subject}`);
+    const rec = parseQeDate(a.recDate);
+    add(a.symbol, { date: iso, kind: "action", title: a.subject, detail: rec ? `Ex-date ${iso}; record date ${isoDay(rec)}` : `Ex-date ${iso}` });
+  }
+  for (const list of Object.values(out)) list.sort((x, y) => x.date.localeCompare(y.date));
   return out;
 }
 
@@ -508,6 +545,11 @@ export async function buildMarketSnapshot(fyEndDates, { yearsOfActions = 6 } = {
     }
   }
 
+  // Board meetings ahead, and corporate actions already announced ahead —
+  // NSE lists those a week or two before the ex-date
+  const calendar = await eventCalendar().catch(() => null);
+  const ahead = await corporateActions(now, new Date(now.getTime() + EVENT_WINDOW_DAYS * 86400000)).catch(() => null);
+
   const year = await yearOfDays(latest.date, splits);
   const { sectors, industrySectors, industries } = await sectorsBySymbol();
 
@@ -525,7 +567,9 @@ export async function buildMarketSnapshot(fyEndDates, { yearsOfActions = 6 } = {
     // The Momentum screen's figures (momentum.js) and next results dates;
     // null dates = the calendar couldn't be read, not "none due"
     momentum: year.momentum,
-    resultsDates: await resultsDates().catch(() => null),
+    resultsDates: calendar ? resultsDates(calendar) : null,
+    // null = neither list could be read, not "no events"
+    events: calendar || ahead ? eventsBySymbol(calendar, [...unique, ...(ahead ?? [])], now) : null,
     psuIndex: await psuIndexSymbols(),
     fyEndPrices,
     range52w: year.ranges,

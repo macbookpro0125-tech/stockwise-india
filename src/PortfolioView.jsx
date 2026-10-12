@@ -3,6 +3,7 @@ import { ChartPie, NotebookPen, Pencil, X } from "lucide-react";
 import { api } from "./api.js";
 import { portfolioStore } from "./stores.js";
 import AddHoldingModal from "./AddHoldingModal.jsx";
+import ImportHoldingsModal from "./ImportHoldingsModal.jsx";
 import { portfolioSummary } from "./portfolioMath.js";
 
 // Ported from stock-screener's src/components/PortfolioPanel.jsx — summary
@@ -36,6 +37,8 @@ export default function PortfolioView({ onOpenStock }) {
   const data = portfolioStore.use();
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState(null);
+  const [showImport, setShowImport] = useState(false);
+  const [imported, setImported] = useState(null);
   const [sortBy, setSortBy] = useState("value");
   const [sortDir, setSortDir] = useState("desc");
 
@@ -143,16 +146,21 @@ export default function PortfolioView({ onOpenStock }) {
             </>
           )}
         </div>
-        <button onClick={() => { setEditItem(null); setShowModal(true); }} className="btn-primary" style={{ height: 32, padding: "0 16px", fontSize: 12, borderRadius: 8, boxShadow: "none" }}>
-          + Add Holding
-        </button>
+        <div style={{ display: "flex", gap: 8, marginLeft: "auto" }}>
+          <button onClick={() => setShowImport(true)} className="btn-ghost" style={{ height: 32, padding: "0 12px", fontSize: 12, borderRadius: 8 }}>
+            Import from broker file
+          </button>
+          <button onClick={() => { setEditItem(null); setShowModal(true); }} className="btn-primary" style={{ height: 32, padding: "0 16px", fontSize: 12, borderRadius: 8, boxShadow: "none" }}>
+            + Add Holding
+          </button>
+        </div>
       </div>
 
       {data && holdings.length === 0 && (
         <div style={{ textAlign: "center", padding: "56px 0", color: "var(--t3)", border: "1px dashed var(--bdr2)", borderRadius: 14, background: "var(--s1)" }}>
           <ChartPie size={36} strokeWidth={1.5} style={{ marginBottom: 12, opacity: 0.3 }} />
           <p style={{ fontSize: 14, color: "var(--t2)", fontWeight: 500, marginBottom: 4 }}>Portfolio is empty</p>
-          <p style={{ fontSize: 12 }}>Add your holdings to track P&L and allocation</p>
+          <p style={{ fontSize: 12 }}>Add your holdings one by one, or import your broker's holdings file to track P&L and allocation</p>
         </div>
       )}
       {!data && <div style={{ textAlign: "center", padding: "32px 0", fontSize: 12, color: "var(--t3)" }}>Loading portfolio…</div>}
@@ -244,6 +252,13 @@ export default function PortfolioView({ onOpenStock }) {
         </p>
       )}
 
+      {showImport && <ImportHoldingsModal onClose={() => setShowImport(false)} onImported={n => { setShowImport(false); setImported(n); portfolioStore.refresh(); setTimeout(() => setImported(null), 6000); }} />}
+      {imported != null && (
+        <div role="status" style={{ position: "fixed", left: "50%", bottom: 90, transform: "translateX(-50%)", zIndex: 250, padding: "10px 16px", borderRadius: 10, background: "var(--s3)", border: "1px solid var(--bdr2)", color: "var(--t1)", fontSize: 13, boxShadow: "0 8px 24px rgba(0,0,0,0.35)" }}
+>
+          Added {imported} holding{imported === 1 ? "" : "s"} from the file. <button type="button" onClick={() => setImported(null)} className="btn-ghost" style={{ height: 24, marginLeft: 8, fontSize: 11 }}>OK</button>
+        </div>
+      )}
       {showModal && <AddHoldingModal initial={editItem} onSave={save} onClose={() => { setShowModal(false); setEditItem(null); }} />}
     </div>
   );

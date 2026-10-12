@@ -19,7 +19,8 @@ import { startDataPull, pullStatus } from "./data-pull.js";
 import { screenMomentum, momentumAllowed, momentumAudience } from "./momentum.js";
 import { criteriaToFilters, METRICS, CATEGORY_METRICS } from "./metric-catalog.js";
 import { listWatchlist, addToWatchlist, setWatchlistNote, removeFromWatchlist } from "./user-watchlist.js";
-import { listHoldings, addHolding, updateHolding, removeHolding } from "./user-portfolio.js";
+import { listHoldings, addHolding, addHoldings, updateHolding, removeHolding } from "./user-portfolio.js";
+import { resolveImportRows, MAX_IMPORT_ROWS } from "./portfolio-import.js";
 import { getThesis, saveThesis } from "./user-thesis.js";
 import { listNotes, saveNote, deleteNote, listStrategies, saveStrategies } from "./user-notes.js";
 import { currentPrices } from "./prices.js";
@@ -102,8 +103,18 @@ function serveStatic(req, pathname, res) {
   try { decoded = decodeURIComponent(pathname); } catch { return false; }
   let file = normalize(join(DIST_DIR, decoded));
   if (!file.startsWith(DIST_DIR + sep) && file !== DIST_DIR) return false; // no ../ out of dist
-  // Anything that isn't a file is the app itself (it has no other pages)
-  if (!existsSync(file) || statSync(file).isDirectory()) file = join(DIST_DIR, "index.html");
+  if (!existsSync(file) || statSync(file).isDirectory()) {
+    // A build file that's gone (a page open since the last deploy asking for
+    // the old build's names) is missing, not the app — the page then
+    // reloads (lazyPage.js) rather than choke on HTML served as a script
+    if (decoded.startsWith("/assets/")) {
+      res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" });
+      res.end("Not found");
+      return true;
+    }
+    // Anything else that isn't a file is the app itself (it has no other pages)
+    file = join(DIST_DIR, "index.html");
+  }
   const size = statSync(file).size;
   const headers = {
     "Content-Type": CONTENT_TYPES[extname(file)] ?? "application/octet-stream",
@@ -657,6 +668,27 @@ export function createApp() {
           status[r.symbol] = { position, levels, research: r.research ?? null, valuation: r.valuation ?? null };
         }
         sendJson(res, 200, { holdings, prices, status });
+        return;
+      }
+
+      // A broker's holdings file, read in the browser: each row matched to a
+      // listed company (portfolio-import.js); with commit, the matches are
+      // added — companies already in the portfolio are left alone, so the
+      // same file twice doesn't double them
+      if (url.pathname === "/api/portfolio/import" && req.method === "POST") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        const body = await readJsonBody(req);
+        const rows = Array.isArray(body?.rows) ? body.rows.filter(r => r && typeof r === "object") : [];
+        if (!rows.length) { sendJson(res, 400, { error: "No holdings found in the file." }); return; }
+        if (rows.length > MAX_IMPORT_ROWS) { sendJson(res, 400, { error: `Up to ${MAX_IMPORT_ROWS} holdings at a time.` }); return; }
+        const held = new Set(listHoldings(userId).map(h => h.ticker));
+        const resolved = resolveImportRows(rows, await equityList(), held);
+        const toAdd = resolved.filter(r => r.status === "ok");
+        const added = body.commit && toAdd.length
+          ? addHoldings(userId, toAdd.map(r => ({ ticker: r.symbol, name: r.name, buyPrice: r.avgPrice, qty: r.qty, notes: "Imported from a broker file" })))
+          : 0;
+        sendJson(res, 200, { rows: resolved, added });
         return;
       }
 
