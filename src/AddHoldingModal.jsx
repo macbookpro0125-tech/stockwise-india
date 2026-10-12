@@ -51,34 +51,34 @@ export default function AddHoldingModal({ onSave, onClose, initial = null }) {
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
           <div>
-            <label style={labelStyle}>Ticker *</label>
-            <input value={ticker} onChange={e => setTicker(e.target.value)} placeholder="e.g. TCS" style={{ ...inputStyle, ...MONO }} autoFocus disabled={!!initial} />
+            <label htmlFor="h-ticker" style={labelStyle}>Ticker *</label>
+            <input id="h-ticker" value={ticker} onChange={e => setTicker(e.target.value)} placeholder="e.g. TCS" style={{ ...inputStyle, ...MONO }} autoFocus disabled={!!initial} />
           </div>
           <div>
-            <label style={labelStyle}>Company Name</label>
-            <input value={name} onChange={e => setName(e.target.value)} placeholder="Filled in if blank" style={inputStyle} />
+            <label htmlFor="h-name" style={labelStyle}>Company Name</label>
+            <input id="h-name" maxLength={200} value={name} onChange={e => setName(e.target.value)} placeholder="Filled in if blank" style={inputStyle} />
           </div>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
           <div>
-            <label style={labelStyle}>Buy Price (₹) *</label>
-            <input type="number" value={buyPrice} onChange={e => setBuyPrice(e.target.value)} placeholder="0.00" min="0.01" step="0.01" style={{ ...inputStyle, ...MONO }} />
+            <label htmlFor="h-price" style={labelStyle}>Buy Price (₹) *</label>
+            <input id="h-price" type="number" value={buyPrice} onChange={e => setBuyPrice(e.target.value)} placeholder="0.00" min="0.01" step="0.01" style={{ ...inputStyle, ...MONO }} />
           </div>
           <div>
-            <label style={labelStyle}>Quantity *</label>
-            <input type="number" value={qty} onChange={e => setQty(e.target.value)} placeholder="0" min="1" step="1" style={{ ...inputStyle, ...MONO }} />
+            <label htmlFor="h-qty" style={labelStyle}>Quantity *</label>
+            <input id="h-qty" type="number" value={qty} onChange={e => setQty(e.target.value)} placeholder="0" min="1" step="1" style={{ ...inputStyle, ...MONO }} />
           </div>
         </div>
 
         <div style={{ marginBottom: 14 }}>
-          <label style={labelStyle}>Buy Date</label>
-          <input type="date" value={buyDate} onChange={e => setBuyDate(e.target.value)} style={inputStyle} />
+          <label htmlFor="h-date" style={labelStyle}>Buy Date</label>
+          <input id="h-date" type="date" value={buyDate} onChange={e => setBuyDate(e.target.value)} style={inputStyle} />
         </div>
 
         <div style={{ marginBottom: 20 }}>
-          <label style={labelStyle}>Notes</label>
-          <input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Optional notes..." style={inputStyle} />
+          <label htmlFor="h-notes" style={labelStyle}>Notes</label>
+          <input id="h-notes" maxLength={500} value={notes} onChange={e => setNotes(e.target.value)} placeholder="Optional notes..." style={inputStyle} />
         </div>
 
         {error && <div style={{ fontSize: 12, color: "var(--red)", background: "var(--red-dim)", border: "1px solid var(--red-bdr)", borderRadius: 8, padding: "8px 12px", marginBottom: 14 }}>{error}</div>}

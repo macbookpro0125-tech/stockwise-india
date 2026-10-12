@@ -164,7 +164,7 @@ export default function WatchlistView({ onOpenStock }) {
               <div style={{ flex: "0 0 100%", order: 10 }}>
                 {editingNote === item.ticker ? (
                   <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
-                    <input autoFocus value={noteText} onChange={e => setNoteText(e.target.value)}
+                    <input autoFocus aria-label="Note" maxLength={500} value={noteText} onChange={e => setNoteText(e.target.value)}
                       onKeyDown={e => { if (e.key === "Enter") saveNote(item.ticker); if (e.key === "Escape") setEditingNote(null); }}
                       placeholder="e.g. Wait for Q3 results…" className="input-base" style={{ flex: 1, height: 32, fontSize: 12, borderRadius: 8 }} />
                     <button onClick={() => saveNote(item.ticker)} style={{ height: 32, padding: "0 12px", borderRadius: 8, border: "none", background: "var(--accent)", color: "var(--on-accent)", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Save</button>

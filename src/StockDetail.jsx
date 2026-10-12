@@ -398,7 +398,7 @@ function MyNotes({ symbol }) {
               </button>
             ))}
           </div>
-          <textarea value={text} onChange={e => setText(e.target.value)} rows={2} placeholder="Add a note... e.g. Wait for P2 entry. Watch working-capital days."
+          <textarea aria-label="Your note on this company" maxLength={2000} value={text} onChange={e => setText(e.target.value)} rows={2} placeholder="Add a note... e.g. Wait for P2 entry. Watch working-capital days."
             style={{ width: "100%", fontSize: 13, padding: "8px 12px", borderRadius: 8, border: "1px solid var(--bdr2)", resize: "vertical", fontFamily: "inherit", outline: "none", boxSizing: "border-box", background: "var(--s1)", color: "var(--t1)" }} />
           <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
             <button className="tap" onClick={save} disabled={!verdict} style={{ fontSize: 13, fontWeight: 600, padding: "7px 18px", borderRadius: 8, border: "none", background: verdict ? "var(--accent)" : "var(--card2)", color: verdict ? "var(--on-accent)" : "var(--t3)", cursor: verdict ? "pointer" : "not-allowed" }}>Save Note</button>
@@ -809,7 +809,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
                 <div className="ss-grid-4">
                   <div>
                     <label style={labelStyle}>{onBook ? "Book/share less net NPA (₹)" : onCycle ? "Mid-cycle EPS (₹)" : usualEpsShown ? "Usual EPS (₹)" : `EPS ${fyLabel(m.fyEnd)} (₹)`}</label>
-                    <input type="number" value={eps} onChange={e => setEps(e.target.value)} style={inputStyle} />
+                    <input type="number" aria-label={onBook ? "Book per share less net NPA" : onCycle ? "Mid-cycle EPS" : "EPS"} value={eps} onChange={e => setEps(e.target.value)} style={inputStyle} />
                     {onBook ? hint(parseFloat(eps) > 0, "✓ From the filings", "Owners' equity − net NPA, per share")
                       : onCycle ? hint(parseFloat(eps) > 0, "✓ Revenue a share × through-cycle margin", "")
                       : usualEpsShown
@@ -818,14 +818,14 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
                   </div>
                   <div>
                     <label style={labelStyle}>{onBook ? "Justified P/B" : onCycle ? "Usual multiple (mid-cycle)" : "Historical P/E"}</label>
-                    <input type="number" value={pe} onChange={e => setPe(e.target.value)} style={inputStyle} />
+                    <input type="number" aria-label={onBook ? "Justified P/B" : onCycle ? "Usual multiple" : "Historical P/E"} value={pe} onChange={e => setPe(e.target.value)} style={inputStyle} />
                     {onBook ? hint(parseFloat(pe) > 0, "✓ From its return on equity", "(ROE − g) ÷ (cost of equity − g)")
                       : onCycle ? hint(parseFloat(pe) > 0, "✓ Median on mid-cycle EPS", "")
                       : hint(parseFloat(pe) > 0 && parseFloat(pe) <= 30, "✓ Reasonable P/E", "5-yr median P/E")}
                   </div>
                   <div>
                     <label style={labelStyle}>{onBook ? "Book growth % p.a." : onCycle ? "Revenue growth % p.a." : "EPS Growth % p.a."}</label>
-                    <input type="number" value={growthPct} onChange={e => {
+                    <input type="number" aria-label="Growth % a year" value={growthPct} onChange={e => {
                       setGrowthPct(e.target.value);
                       // A bank's P/B moves with its growth rate
                       if (onBook) { const pb = pbAt(m.valuation.roe, Number(e.target.value), costOfEquity); if (pb != null) setPe(String(round(pb, 2))); }
@@ -840,7 +840,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
                   </div>
                   <div>
                     <label style={labelStyle}>Margin of Safety %</label>
-                    <input type="number" value={mosPct} onChange={e => setMosPct(e.target.value)} style={inputStyle} />
+                    <input type="number" aria-label="Margin of safety %" value={mosPct} onChange={e => setMosPct(e.target.value)} style={inputStyle} />
                     {hint(parseFloat(mosPct) >= 10, "✓ Good margin", "Discount to fair value")}
                   </div>
                 </div>
@@ -879,8 +879,8 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
             </p>
             {priceLabel && <p style={{ fontSize: 12, color: "var(--accent)", margin: "0 0 8px", fontWeight: 500 }}>{priceLabel}</p>}
             <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-              <span style={{ fontSize: 14, color: "var(--t2)", fontWeight: 500 }}>Rs</span>
-              <input type="number" value={actionPrice} onChange={e => { setActionPrice(e.target.value); setPriceLabel("Your price"); }} placeholder="Current price"
+              <span style={{ fontSize: 14, color: "var(--t2)", fontWeight: 500 }}>₹</span>
+              <input type="number" aria-label="Price to test" value={actionPrice} onChange={e => { setActionPrice(e.target.value); setPriceLabel("Your price"); }} placeholder="Current price"
                 style={{ flex: "1 1 140px", minWidth: 120, maxWidth: 320, height: 42, padding: "0 14px", border: "1px solid var(--accent)", borderRadius: 8, fontSize: 15, fontWeight: 500, outline: "none", background: "var(--s1)", color: "var(--t1)" }} />
               {data.quote && String(data.quote.cmp) !== actionPrice && (
                 <button type="button" onClick={() => { setActionPrice(String(data.quote.cmp)); setPriceLabel(quoteLabel(data.quote)); }}

@@ -1,0 +1,96 @@
+# Stockwise India — test plan
+
+Run: `npm run e2e` (build, then Playwright on a private copy at 127.0.0.1:8793 with
+the real market data, a throwaway accounts database, no background jobs, system
+Chrome). Unit and HTTP checks: `npm test`. Every e2e test fails on a console error
+or a 5xx from our server; `e2e/sweep.spec.js` also writes an accessibility scan
+(axe, WCAG A/AA, serious and critical) to `test-results/axe.txt`.
+
+There is no recon map for this app (it wasn't built as a clone), so the flows
+below come from the app itself. ✅ = automated and passing, 👁 = checked by hand
+in the browser, ⏳ = needs Salman (real accounts or services).
+
+## F01 Accounts
+| Case | What | How |
+| --- | --- | --- |
+| F01-H1 | Sign up with email on the front page, land signed in | ✅ flows |
+| F01-H2 | Sign out from the Account menu | ✅ flows |
+| F01-H3 | Sign in again | ✅ flows |
+| F01-N1 | Wrong password is refused with a message | ✅ flows |
+| F01-N2 | Too-short password is refused | ✅ flows |
+| F01-N3 | Same email twice (any case) is refused, 4xx not 5xx | ✅ flows |
+| F01-E1 | Signed-out API calls (watchlist, portfolio, alerts, stock, logo) get 401 | ✅ flows |
+| F01-E3 | Session ends mid-use → back to the sign-up page, not a broken page | ✅ edges |
+| F01-H4 | Google / phone sign-in | ⏳ only works on localhost:5175 and the live site (Firebase domains) |
+| F01-H5 | Password reset email | ⏳ needs RESEND_API_KEY on the server |
+
+## F02 Discover
+| Case | What | How |
+| --- | --- | --- |
+| F02-H1 | Sector + name filter narrow the list | ✅ flows |
+| F02-E1 | No matches says why ("None of these N companies match…") | ✅ flows |
+| F02-H2 | Share link opens the same screen in a new tab | ✅ flows |
+| F02-H3 | Excel and CSV exports download a real file | ✅ flows |
+| F02-H4 | Tick two rows → Compare | ✅ flows |
+| F02-E2 | Watchlist only shows exactly the watched companies | ✅ edges |
+| F02-E3 | Keyboard only: `/` focuses search, arrows + Enter open a company | ✅ edges |
+
+## F03 Company page
+| Case | What | How |
+| --- | --- | --- |
+| F03-H1 | Search → company page → Back to Discover | ✅ flows |
+| F03-H2 | One page per valuation model: bank, cyclical, loss-maker, short history, NBFC lender, holding company, re-rated compounder, steady earner — each says its model and reason | ✅ sweep |
+| F03-E1 | Browser back/forward between Discover and a company | ✅ edges |
+| F03-N1 | Unknown symbol says so | ✅ flows |
+| F03-H3 | Bank page shows recent ROE and the 7-year figure beside it (PNB) | 👁 |
+| F03-H4 | Logo beside the name; Account → Company logos off removes it, survives reload | ✅ flows (F08) |
+
+## F04 Watchlist
+| Case | What | How |
+| --- | --- | --- |
+| F04-H1 | Watch from the company page, add a note with accents/emoji, survives reload, remove | ✅ flows |
+| F04-E1 | A note longer than the limit isn't cut off silently | ✅ edges (was BUG-003) |
+
+## F05 Portfolio
+| Case | What | How |
+| --- | --- | --- |
+| F05-H1 | Add, edit, remove a holding | ✅ flows |
+| F05-H2 | Import a broker CSV; an unknown symbol is listed, not imported | ✅ flows |
+| F05-N1 | A made-up ticker is refused with a message | ✅ flows |
+| F05-E1 | Double-click on Add adds one holding | ✅ edges |
+
+## F06 Alerts
+| Case | What | How |
+| --- | --- | --- |
+| F06-H1 | Set an alert from the company page, see it in Alerts, delete it | ✅ flows |
+| F06-E1 | Double-click on Create alert makes one alert | ✅ edges |
+| F06-H2 | Telegram delivery | ⏳ needs the bot key and a real chat |
+
+## F07 Privacy between accounts
+| Case | What | How |
+| --- | --- | --- |
+| F07-N1 | A second account sees none of the first's watchlist or portfolio | ✅ flows (and `npm test` covers alerts/notes ownership) |
+
+## F08 Settings and other tabs
+| Case | What | How |
+| --- | --- | --- |
+| F08-H1 | Theme and logo switches persist across a reload | ✅ flows |
+| F08-H2 | Momentum, Performance, Alerts, Portfolio, Watchlist tabs open with a heading, no errors | ✅ sweep, 👁 content |
+
+## F09 Delete account
+| Case | What | How |
+| --- | --- | --- |
+| F09-H1 | Delete with password → signed out, the login no longer works | ✅ flows |
+
+## Phone (Pixel 7 size)
+| Case | What | How |
+| --- | --- | --- |
+| P-1 | Discover, a bank page and TCS don't scroll sideways | ✅ sweep |
+| P-2 | Privacy and disclaimer pages fit | ✅ sweep |
+| P-3 | Add a holding and open Alerts from the bottom tab bar | ✅ edges |
+
+## Not covered (and why)
+- Payments: none built yet.
+- Real devices: emulated phone only; a real iPhone/Android pass is still for Salman.
+- Slow network / offline: not automated yet.
+- Time zones: the app shows NSE dates as filed; the alert schedule is IST-only by design.

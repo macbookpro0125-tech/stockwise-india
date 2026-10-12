@@ -17,7 +17,8 @@
     "start": "node --no-warnings server/http-server.js",
     "test": "node server/auth-smoke-test.js && node server/http-smoke-test.js && node --no-warnings server/research-test.js && node --no-warnings server/performance-test.js && node server/upstream-test.js && node --no-warnings server/prices-test.js && node src/portfolioMath.test.js && node --no-warnings server/notice-tags-test.js && node server/unit-slips-test.js && node server/name-sectors-test.js && node server/portfolio-import-test.js && node --no-warnings server/holdings-file-test.js && node --no-warnings server/data-pull-test.js && node --no-warnings scripts/refresh-data-test.mjs && node --no-warnings server/export-excel-test.js && node --no-warnings server/momentum-test.js && node server/logos-test.js",
     "video": "node scripts/record-demo.mjs",
-    "screens": "node scripts/capture-screens.mjs"
+    "screens": "node scripts/capture-screens.mjs",
+    "e2e": "npm run build && playwright test"
   },
   "engines": {
     "node": ">=22.13.0"
@@ -33,6 +34,8 @@
     "xlsx-js-style": "^1.2.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.10.1",
+    "@playwright/test": "1.52.0",
     "@vitejs/plugin-react": "^6.1.1",
     "playwright-core": "1.52.0",
     "vite": "^8.3.1"
