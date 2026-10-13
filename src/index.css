@@ -659,3 +659,13 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 /* Compare and investment-brief modules load on demand; keep the loading state
    full-screen so the underlying page doesn't look interactive through it. */
 .compare-loading { position: fixed; inset: 0; z-index: 400; display: grid; place-items: center; padding: 24px; color: var(--t2); background: color-mix(in srgb, var(--bg) 94%, transparent); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); font-size: 14px; text-align: center; }
+
+/* Price chart on a phone (PriceChartPanel.jsx): toolbars and the range
+   buttons stay one row and scroll sideways instead of wrapping into three */
+/* The right edge fades, the hint that there's more to swipe to; the padding
+   lets the last item scroll clear of the fade */
+.chart-row { display: flex; gap: 6px; align-items: center; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding-right: 24px; -webkit-mask-image: linear-gradient(to right, black calc(100% - 24px), transparent); mask-image: linear-gradient(to right, black calc(100% - 24px), transparent); }
+.chart-row::-webkit-scrollbar { display: none; }
+.chart-row > * { flex-shrink: 0; }
+/* The chart page (ChartPage.jsx): controls keep their height, the chart flexes */
+.chart-page-card > * { flex-shrink: 0; }

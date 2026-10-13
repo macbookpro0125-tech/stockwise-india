@@ -21,6 +21,14 @@ export function stockFromPath(path) {
 }
 export const stockPath = symbol => `/stock/${encodeURIComponent(symbol)}`;
 
+// /chart/TCS: a stock's price chart as a page of its own (ChartPage.jsx),
+// which a phone opens in a new tab from the chart's expand button
+export function chartFromPath(path) {
+  const m = /^\/chart\/([^/]+)\/?$/.exec(path);
+  if (!m) return null;
+  try { return decodeURIComponent(m[1]).toUpperCase(); } catch { return null; }
+}
+
 export function usePath() {
   const [path, setPath] = useState(window.location.pathname);
   useEffect(() => {
