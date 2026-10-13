@@ -4,7 +4,7 @@ import { api } from "./api.js";
 import Landing from "./Landing.jsx";
 import { PrivacyPage, DisclaimerPage } from "./LegalPages.jsx";
 import ResetPassword from "./ResetPassword.jsx";
-import { usePath, navigate, stockFromPath, stockPath, SiteFooter } from "./site.jsx";
+import { usePath, navigate, stockFromPath, stockPath, chartFromPath, SiteFooter } from "./site.jsx";
 import Header, { BottomTabBar, TABS } from "./Header.jsx";
 import PriceStrip from "./PriceStrip.jsx";
 import DiscoverView from "./DiscoverView.jsx";
@@ -21,6 +21,7 @@ const PerformanceView = lazyPage(() => import("./PerformanceView.jsx"));
 const AlertsView = lazyPage(() => import("./AlertsView.jsx"));
 const MomentumView = lazyPage(() => import("./MomentumView.jsx"));
 const StockDetail = lazyPage(() => import("./StockDetail.jsx"));
+const ChartPage = lazyPage(() => import("./ChartPage.jsx"));
 
 // Dark by default, as the original; the choice is remembered in this browser
 function useTheme() {
@@ -134,8 +135,18 @@ export default function App() {
   if (account === undefined) return null; // avoid a front-page flash while the session check is in flight
 
   if (account === null) {
-    // A shared stock link stays where it points once the visitor signs in
-    return <Landing notice={notice} onAuthed={() => { setNotice(null); setTab("discover"); if (!stockFromPath(window.location.pathname)) navigate("/"); loadAccount(); }} />;
+    // A shared stock or chart link stays where it points once the visitor signs in
+    return <Landing notice={notice} onAuthed={() => { setNotice(null); setTab("discover"); if (!stockFromPath(window.location.pathname) && !chartFromPath(window.location.pathname)) navigate("/"); loadAccount(); }} />;
+  }
+
+  // /chart/TCS: the price chart alone, whole-screen (the phone's expand button)
+  const chartSymbol = chartFromPath(path);
+  if (chartSymbol) {
+    return (
+      <Suspense fallback={<div role="status" style={{ minHeight: "100vh", display: "grid", placeItems: "center", color: "var(--t3)", fontSize: 13 }}>Loading the chart…</div>}>
+        <ChartPage symbol={chartSymbol} />
+      </Suspense>
+    );
   }
 
   // A stock page is a page of its own (/stock/TCS): the browser's Back

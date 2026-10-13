@@ -61,7 +61,20 @@ const monthsBack = (iso, months) => {
 };
 const reducedMotion = () => typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-export default function PriceChartPanel({ symbol, name, levels }) {
+// The chart on a page of its own (/chart/TCS, ChartPage.jsx): what the expand
+// button opens in a new tab on a phone, where full screen isn't available or
+// leaves no room. The levels and name ride along in the address.
+export function chartPageUrl(symbol, name, levels) {
+  const q = new URLSearchParams();
+  if (name) q.set("n", name);
+  if (levels) q.set("lv", LEVEL_KEYS.map(k => (levels[k] > 0 ? Math.round(levels[k] * 100) / 100 : "")).join(","));
+  const qs = q.toString();
+  return `/chart/${encodeURIComponent(symbol)}${qs ? `?${qs}` : ""}`;
+}
+export const LEVEL_KEYS = ["target", "fv25", "p1", "p2", "p3", "stopLoss"];
+
+// page: drawn as the whole page (ChartPage.jsx) — fills the window, no card
+export default function PriceChartPanel({ symbol, name, levels, page = false }) {
   const [prefs, setPrefs] = useState(() => {
     const p = readJson(PREFS_KEY, DEFAULT_PREFS);
     return { ...DEFAULT_PREFS, ...p, ind: { ...(p.ind ?? DEFAULT_PREFS.ind) } };
@@ -79,6 +92,7 @@ export default function PriceChartPanel({ symbol, name, levels }) {
   const [fullscreen, setFullscreen] = useState(false);
   const [boxW, setBoxW] = useState(720);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [vh, setVh] = useState(() => (typeof window !== "undefined" ? window.innerHeight : 800));
 
   const cardRef = useRef(null), hostRef = useRef(null), menuRef = useRef(null);
   const chartRef = useRef(null), mainRef = useRef(null);
@@ -99,6 +113,13 @@ export default function PriceChartPanel({ symbol, name, levels }) {
     mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
     return () => mo.disconnect();
   }, []);
+
+  useEffect(() => {
+    if (!page) return;
+    const onResize = () => setVh(window.innerHeight);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [page]);
 
   useEffect(() => {
     const onFs = () => setFullscreen(document.fullscreenElement === cardRef.current);
@@ -143,9 +164,11 @@ export default function PriceChartPanel({ symbol, name, levels }) {
   const bars = useMemo(() => aggregateBars(data?.bars ?? [], prefs.interval), [data, prefs.interval]);
   const narrow = boxW < 560;
   const extraPanes = (prefs.ind.rsi ? 1 : 0) + (prefs.ind.macd ? 1 : 0);
-  const height = fullscreen
-    ? Math.max(320, (typeof window !== "undefined" ? window.innerHeight : 800) - (narrow ? 210 : 150))
-    : (narrow ? 300 : 400) + extraPanes * (narrow ? 90 : 110);
+  const height = page
+    ? Math.max(300, vh - (narrow ? 330 : 260))   // pane proportions only; the page lays out by flex
+    : fullscreen
+      ? Math.max(320, vh - (narrow ? 210 : 150))
+      : (narrow ? 380 : 400) + extraPanes * (narrow ? 90 : 110);
 
   const levelLines = useMemo(() => {
     if (!prefs.levels || !levels) return [];
@@ -194,6 +217,10 @@ export default function PriceChartPanel({ symbol, name, levels }) {
       timeScale: { borderColor: c.border, rightOffset: 3, minBarSpacing: 0.5 },
       localization: { locale: "en-IN" },
       kineticScroll: { touch: !reducedMotion(), mouse: false },
+      // An up-or-down swipe over the chart scrolls the page, as on any other
+      // part of it; sideways drags pan and pinches zoom. On the chart's own
+      // page there's nothing to scroll, so vertical drags move the price scale.
+      handleScroll: { vertTouchDrag: page, horzTouchDrag: true, mouseWheel: true, pressedMouseMove: true },
     });
     chartRef.current = chart;
 
@@ -217,7 +244,9 @@ export default function PriceChartPanel({ symbol, name, levels }) {
       : undefined;
     // No price below zero: the room left under the candles for volume would
     // otherwise label the price axis down to −1,000 on long ranges
-    const priceFormat = { type: "custom", minMove: 0.01, formatter: p => (p < 0 ? "" : fmtNum(p)) };
+    // On a phone whole rupees above ₹100: ".00" on every label cost the candles
+    // a fifth of the screen's width
+    const priceFormat = { type: "custom", minMove: 0.01, formatter: p => (p < 0 ? "" : narrow && Math.abs(p) >= 100 ? Math.round(p).toLocaleString("en-IN") : fmtNum(p)) };
     const base = { priceLineColor: c.t3, autoscaleInfoProvider, priceFormat };
 
     let main;
@@ -334,7 +363,7 @@ export default function PriceChartPanel({ symbol, name, levels }) {
       chartRef.current = null; mainRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bars, prefs.type, prefs.ind, levelLines, lines, themeTick, narrow, symbol, height]);
+  }, [bars, prefs.type, prefs.ind, levelLines, lines, themeTick, narrow, symbol, height, page]);
 
   const pickRange = id => {
     setRange(id);
@@ -388,26 +417,40 @@ export default function PriceChartPanel({ symbol, name, levels }) {
     background: active ? "color-mix(in srgb, var(--accent) 10%, transparent)" : "var(--s3)",
     color: active ? "var(--accent)" : "var(--t2)", ...extra,
   });
-  const group = { display: "inline-flex", gap: 4, flexWrap: "wrap" };
+  const group = { display: "inline-flex", gap: 4, flexWrap: narrow ? "nowrap" : "wrap" };
 
   return (
-    <div ref={cardRef} style={{ border: "1px solid var(--bdr2)", borderRadius: fullscreen ? 0 : 14, background: "var(--s2)", padding: narrow ? 12 : 16, marginBottom: 16, ...(fullscreen ? { overflow: "auto" } : {}) }}>
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 10 }}>
+    <div ref={cardRef} className={page ? "chart-page-card" : undefined} style={page
+      // The chart page is a column the height of the screen: every control
+      // keeps its size and the chart takes what's left (className below)
+      ? { background: "var(--s2)", padding: narrow ? "10px 10px 12px" : 16, flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }
+      : { border: "1px solid var(--bdr2)", borderRadius: fullscreen ? 0 : 14, background: "var(--s2)", padding: narrow ? 12 : 16, marginBottom: 16, ...(fullscreen ? { overflow: "auto" } : {}) }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: narrow ? 8 : 12, flexWrap: narrow ? "nowrap" : "wrap", marginBottom: 10 }}>
         <div style={{ fontSize: 14, fontWeight: 700, color: "var(--t1)", letterSpacing: "-0.01em" }}>
           Share price
-          {data?.symbol && <span style={{ fontSize: 11, fontWeight: 500, color: "var(--t3)", marginLeft: 8 }}>{data.symbol}</span>}
+          {data?.symbol && !narrow && <span style={{ fontSize: 11, fontWeight: 500, color: "var(--t3)", marginLeft: 8 }}>{data.symbol}</span>}
         </div>
-        {rangeChange != null && (
-          // The sign carries the direction too, so it's never colour alone
-          <div style={{ fontSize: 13, fontWeight: 700, color: rangeChange >= 0 ? "var(--green)" : "var(--red)", ...MONO }}>
-            {rangeChange >= 0 ? "+" : "−"}{Math.abs(rangeChange).toFixed(1)}%
-            <span style={{ fontSize: 11, fontWeight: 500, color: "var(--t3)", marginLeft: 6 }}>over {range === "All" ? "all history" : range}</span>
-          </div>
-        )}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginLeft: "auto" }}>
+          {rangeChange != null && (
+            // The sign carries the direction too, so it's never colour alone
+            <div style={{ fontSize: 13, fontWeight: 700, color: rangeChange >= 0 ? "var(--green)" : "var(--red)", ...MONO }}>
+              {rangeChange >= 0 ? "+" : "−"}{Math.abs(rangeChange).toFixed(1)}%
+              <span style={{ fontSize: 11, fontWeight: 500, color: "var(--t3)", marginLeft: 6 }}>{narrow ? (range === "All" ? "all" : range) : `over ${range === "All" ? "all history" : range}`}</span>
+            </div>
+          )}
+          {/* A phone opens the chart in a new tab of its own (ChartPage.jsx):
+              full screen there leaves no room for the controls */}
+          {narrow && !page && (
+            <a href={chartPageUrl(symbol, name, levels)} target="_blank" rel="noopener" aria-label="Open the chart in a new tab" title="Open the chart in a new tab" style={{ ...btn(false), textDecoration: "none", gap: 6 }}>
+              <Maximize2 size={14} aria-hidden="true" />Expand
+            </a>
+          )}
+        </div>
       </div>
 
-      {/* Toolbar */}
-      <div role="toolbar" aria-label="Chart settings" style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: 8 }}>
+      {/* Toolbar: one row that scrolls sideways on a phone */}
+      <div ref={menuRef}>
+      <div role="toolbar" aria-label="Chart settings" className={narrow ? "chart-row" : undefined} style={narrow ? { gap: 8, marginBottom: 8, paddingBottom: 2 } : { display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: 8 }}>
         <div role="group" aria-label="Chart type" style={group}>
           {TYPES.map(({ id, label, Icon }) => (
             <button key={id} type="button" onClick={() => setPref({ type: id })} aria-pressed={prefs.type === id} title={label} aria-label={narrow ? label : undefined} style={btn(prefs.type === id)}>
@@ -421,11 +464,11 @@ export default function PriceChartPanel({ symbol, name, levels }) {
           ))}
         </div>
 
-        <div ref={menuRef} style={{ position: "relative" }}>
+        <div style={{ position: "relative" }}>
           <button type="button" onClick={() => setMenuOpen(o => !o)} aria-expanded={menuOpen} aria-haspopup="true" style={btn(menuOpen || activeInd > 0)}>
             <SlidersHorizontal size={14} aria-hidden="true" />Indicators{activeInd > 0 && <span style={MONO}> · {activeInd}</span>}
           </button>
-          {menuOpen && (
+          {menuOpen && !narrow && (
             <div role="group" aria-label="Indicators" style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, zIndex: 30, minWidth: 230, padding: 6, borderRadius: 10, background: "var(--s3)", border: "1px solid var(--bdr2)", boxShadow: "0 10px 30px rgba(0,0,0,0.3)" }}>
               {INDICATORS.map(i => (
                 <label key={i.id} style={{ display: "flex", alignItems: "center", gap: 9, padding: "8px 8px", borderRadius: 6, fontSize: 13, color: "var(--t1)", cursor: "pointer" }}>
@@ -445,18 +488,30 @@ export default function PriceChartPanel({ symbol, name, levels }) {
           <Minus size={14} aria-hidden="true" />H-Line
         </button>
 
-        <div style={{ ...group, marginLeft: "auto" }}>
+        <div style={{ ...group, marginLeft: narrow ? 0 : "auto", flexWrap: "nowrap" }}>
           <button type="button" onClick={snapshot} title="Save the chart as an image" aria-label="Save the chart as an image" style={btn(false)}><Camera size={14} aria-hidden="true" /></button>
-          {document.fullscreenEnabled && (
+          {!narrow && !page && document.fullscreenEnabled && (
             <button type="button" onClick={toggleFullscreen} aria-label={fullscreen ? "Exit full screen" : "Full screen"} title={fullscreen ? "Exit full screen" : "Full screen"} style={btn(fullscreen)}>
               {fullscreen ? <Minimize2 size={14} aria-hidden="true" /> : <Maximize2 size={14} aria-hidden="true" />}
             </button>
           )}
         </div>
       </div>
+      {menuOpen && narrow && (
+        <div role="group" aria-label="Indicators" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2, padding: 6, marginBottom: 8, borderRadius: 10, background: "var(--s3)", border: "1px solid var(--bdr2)" }}>
+          {INDICATORS.map(i => (
+            <label key={i.id} style={{ display: "flex", alignItems: "center", gap: 8, minHeight: 40, padding: "0 8px", borderRadius: 6, fontSize: 13, color: "var(--t1)", cursor: "pointer" }}>
+              <input type="checkbox" checked={!!prefs.ind[i.id]} onChange={() => toggleInd(i.id)} />
+              {i.color && <span aria-hidden="true" style={{ width: 10, height: 3, borderRadius: 2, background: i.color, flexShrink: 0 }} />}
+              {i.label.replace(" (20, 2)", "").replace(" (12, 26, 9)", "").replace(" (14)", "")}
+            </label>
+          ))}
+        </div>
+      )}
+      </div>
 
       {levelLines.length > 0 && last && (
-        <ul aria-label="Model price levels" style={{ ...(narrow ? { display: "grid", gridTemplateColumns: "1fr 1fr" } : { display: "flex", flexWrap: "wrap" }), gap: "4px 14px", listStyle: "none", margin: "0 0 8px", padding: 0, fontSize: 12, color: "var(--t2)", ...MONO }}>
+        <ul aria-label="Model price levels" className={narrow ? "chart-row" : undefined} style={{ ...(narrow ? {} : { display: "flex", flexWrap: "wrap" }), gap: "4px 14px", listStyle: "none", margin: "0 0 8px", padding: 0, fontSize: 12, color: "var(--t2)", ...MONO }}>
           {levelLines.map(l => {
             const d = (l.price - last.close) / last.close * 100;
             return (
@@ -492,7 +547,7 @@ export default function PriceChartPanel({ symbol, name, levels }) {
         </div>
       )}
 
-      <div style={{ position: "relative" }}>
+      <div style={page ? { position: "relative", flex: "1 1 auto", minHeight: 240, display: "flex", flexDirection: "column" } : { position: "relative" }}>
         {loading && !data && <div style={{ height, display: "flex", alignItems: "center", color: "var(--t3)", fontSize: 12 }}>Loading price history…</div>}
         {error && !loading && !data && (
           <div style={{ height, display: "flex", alignItems: "center", color: "var(--t3)", fontSize: 12, lineHeight: 1.6 }}>No price history available for this symbol. {error}</div>
@@ -503,30 +558,45 @@ export default function PriceChartPanel({ symbol, name, levels }) {
 
         {bars.length >= 2 && (
           <>
-            {/* Legend over the chart, as on TradingView: the hovered bar's OHLC */}
+            {/* Legend: over the chart as on TradingView; above it on a phone,
+                where over it would cover a third of the candles */}
             {legend && (
-              <div aria-hidden="true" style={{ position: "absolute", top: 6, left: 8, zIndex: 3, pointerEvents: "none", fontSize: narrow ? 11 : 12, lineHeight: 1.6, color: "var(--t2)", ...MONO, textShadow: "0 0 4px var(--s2), 0 0 4px var(--s2)" }}>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  <span style={{ color: "var(--t1)", fontWeight: 600 }}>{legend.bar.date}</span>
-                  {prefs.type === "candles" || prefs.type === "bars" ? (
-                    <span>O <b style={{ color: "var(--t1)", fontWeight: 600 }}>{fmtNum(legend.bar.open)}</b> H <b style={{ color: "var(--t1)", fontWeight: 600 }}>{fmtNum(legend.bar.high)}</b> L <b style={{ color: "var(--t1)", fontWeight: 600 }}>{fmtNum(legend.bar.low)}</b> C <b style={{ color: "var(--t1)", fontWeight: 600 }}>{fmtNum(legend.bar.close)}</b></span>
-                  ) : (
-                    <span>C <b style={{ color: "var(--t1)", fontWeight: 600 }}>{fmtNum(legend.bar.close)}</b></span>
-                  )}
-                  {legend.change != null && (
+              <div aria-hidden="true" style={narrow
+                ? { minHeight: 40, marginBottom: 4, fontSize: 11.5, lineHeight: 1.7, color: "var(--t2)", ...MONO }
+                : { position: "absolute", top: 6, left: 8, zIndex: 3, pointerEvents: "none", fontSize: 12, lineHeight: 1.6, color: "var(--t2)", ...MONO, textShadow: "0 0 4px var(--s2), 0 0 4px var(--s2)" }}>
+                {(() => {
+                  const b = legend.bar, ohlc = prefs.type === "candles" || prefs.type === "bars";
+                  const v = n => <b style={{ color: "var(--t1)", fontWeight: 600 }}>{fmtNum(n)}</b>;
+                  const change = legend.change != null && (
                     <span style={{ color: legend.change >= 0 ? "var(--green)" : "var(--red)", fontWeight: 600 }}>
                       {legend.change >= 0 ? "+" : "−"}{fmtNum(Math.abs(legend.change))} ({legend.change >= 0 ? "+" : "−"}{Math.abs(legend.changePct).toFixed(2)}%)
                     </span>
-                  )}
-                  {prefs.ind.volume && legend.bar.volume != null && <span>Vol <b style={{ color: "var(--t1)", fontWeight: 600 }}>{fmtVol(legend.bar.volume)}</b></span>}
-                </div>
+                  );
+                  const vol = prefs.ind.volume && b.volume != null && <span>Vol <b style={{ color: "var(--t1)", fontWeight: 600 }}>{fmtVol(b.volume)}</b></span>;
+                  // A phone puts the close and change first, open/high/low under them
+                  return narrow ? (
+                    <>
+                      <div className="chart-row" style={{ gap: 8 }}>
+                        <span style={{ color: "var(--t1)", fontWeight: 600 }}>{b.date}</span>
+                        <span>C {v(b.close)}</span>{change}
+                      </div>
+                      {ohlc && <div className="chart-row" style={{ gap: 8 }}><span>O {v(b.open)} H {v(b.high)} L {v(b.low)}</span>{vol}</div>}
+                    </>
+                  ) : (
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      <span style={{ color: "var(--t1)", fontWeight: 600 }}>{b.date}</span>
+                      {ohlc ? <span>O {v(b.open)} H {v(b.high)} L {v(b.low)} C {v(b.close)}</span> : <span>C {v(b.close)}</span>}
+                      {change}{vol}
+                    </div>
+                  );
+                })()}
                 {legend.extra.filter(x => !x.pane).length > 0 && (
-                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <div className={narrow ? "chart-row" : undefined} style={narrow ? { gap: 10 } : { display: "flex", gap: 10, flexWrap: "wrap" }}>
                     {legend.extra.filter(x => !x.pane).map(x => <span key={x.label}><span style={{ color: x.color }}>{x.label}</span> {x.text}</span>)}
                   </div>
                 )}
                 {legend.extra.filter(x => x.pane).length > 0 && (
-                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <div className={narrow ? "chart-row" : undefined} style={narrow ? { gap: 10 } : { display: "flex", gap: 10, flexWrap: "wrap" }}>
                     {legend.extra.filter(x => x.pane).map(x => <span key={x.label}><span style={{ color: x.color }}>{x.label}</span> {x.text}</span>)}
                   </div>
                 )}
@@ -536,20 +606,20 @@ export default function PriceChartPanel({ symbol, name, levels }) {
               ref={hostRef}
               role="figure"
               aria-label={`${name || symbol} ${prefs.type} chart, ${INTERVALS.find(i => i.id === prefs.interval)?.title.toLowerCase()} bars, ${first?.date} to ${last?.date}. Last close ${fmtRs(last?.close)}${rangeChange != null ? `, ${rangeChange >= 0 ? "up" : "down"} ${Math.abs(rangeChange).toFixed(1)} percent over ${range === "All" ? "all history" : range}` : ""}.${levelLines.length ? ` Levels shown: ${levelLines.map(l => `${l.title} ${fmtRs(l.price)}`).join(", ")}.` : ""}`}
-              style={{ height, width: "100%", cursor: drawing ? "crosshair" : undefined, opacity: loading ? 0.6 : 1 }}
+              style={{ ...(page ? { flex: 1, minHeight: 200 } : { height }), width: "100%", cursor: drawing ? "crosshair" : undefined, opacity: loading ? 0.6 : 1 }}
             />
           </>
         )}
       </div>
 
       <div style={{ display: "flex", gap: 6, marginTop: 10, flexWrap: "wrap", alignItems: "center" }}>
-        <div role="group" aria-label="Date range" style={group}>
+        <div role="group" aria-label="Date range" className={narrow ? "chart-row" : undefined} style={narrow ? { width: "100%" } : group}>
           {RANGES.map(r => (
             <button key={r.id} type="button" onClick={() => pickRange(r.id)} aria-pressed={range === r.id} style={btn(range === r.id, { minWidth: narrow ? 44 : 38, justifyContent: "center" })}>{r.id}</button>
           ))}
         </div>
-        <span style={{ marginLeft: "auto", fontSize: 10, color: "var(--t3)" }}>
-          {data?.stale ? `${data.staleReason} · ` : ""}{INTERVALS.find(i => i.id === prefs.interval)?.title} bars · Yahoo Finance · drag to pan, scroll to zoom
+        <span style={{ marginLeft: narrow ? 0 : "auto", fontSize: 10, color: "var(--t3)" }}>
+          {data?.stale ? `${data.staleReason} · ` : ""}{INTERVALS.find(i => i.id === prefs.interval)?.title} bars · Yahoo Finance · {narrow ? "drag sideways to pan, pinch to zoom" : "drag to pan, scroll to zoom"}
         </span>
       </div>
     </div>
