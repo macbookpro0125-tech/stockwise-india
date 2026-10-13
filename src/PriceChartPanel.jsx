@@ -7,6 +7,11 @@ import { ChartCandlestick, ChartNoAxesColumn, ChartLine, ChartArea, SlidersHoriz
 import { api } from "./api.js";
 import { aggregateBars, sma, ema, bollinger, rsi, macd, indexFrom } from "./chartMath.js";
 
+// Attribution notice (Lightweight Charts licence, Apache 2.0):
+//   TradingView Lightweight Charts™ — Copyright TradingView, Inc. https://www.tradingview.com/
+// The on-chart logo is off; the "Chart by TradingView" link under the chart is
+// the link the licence asks for.
+//
 // The stock page's price chart: TradingView's open-source Lightweight Charts
 // on our own daily bars, with the model's price levels drawn on the candles.
 // Indicators are computed here (chartMath.js); horizontal lines are kept per
@@ -210,6 +215,9 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
         background: { type: ColorType.Solid, color: c.bg }, textColor: c.text,
         fontFamily: getComputedStyle(document.body).fontFamily, fontSize: narrow ? 11 : 12,
         panes: { separatorColor: c.border, separatorHoverColor: alpha(c.accent, 0.2), enableResize: true },
+        // No logo over the candles: the licence asks for a link to TradingView
+        // on the page, which the credit under the chart gives instead
+        attributionLogo: false,
       },
       grid: { vertLines: { color: c.grid }, horzLines: { color: c.grid } },
       crosshair: { mode: CrosshairMode.Normal },
@@ -620,6 +628,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
         </div>
         <span style={{ marginLeft: narrow ? 0 : "auto", fontSize: 10, color: "var(--t3)" }}>
           {data?.stale ? `${data.staleReason} · ` : ""}{INTERVALS.find(i => i.id === prefs.interval)?.title} bars · Yahoo Finance · {narrow ? "drag sideways to pan, pinch to zoom" : "drag to pan, scroll to zoom"}
+          {" · "}<a href="https://www.tradingview.com/" target="_blank" rel="noopener" style={{ color: "inherit" }}>Chart by TradingView</a>
         </span>
       </div>
     </div>
