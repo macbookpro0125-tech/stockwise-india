@@ -344,9 +344,11 @@ export default function DiscoverView({ onOpenStock }) {
               <button data-tour="filters" className={`btn-ghost ${sideOpen ? "screener-filters-toggle" : ""}`} onClick={() => (window.innerWidth <= 900 ? setSheetOpen(true) : setSideOpen(true))} style={{ height: 34, fontSize: 12.5 }}>
                 <SlidersHorizontal size={14} /> Filters{activeCount > 0 && <span style={{ marginLeft: 2, fontSize: 10.5, padding: "0 7px", borderRadius: 999, fontWeight: 700, background: "var(--accent)", color: "var(--on-accent)" }}>{activeCount}</span>}
               </button>
-              {results && (
+              {/* "Screening 2,250 companies" became "Found 29 of 2,250" in the
+                  results bar; this keeps only the prompts worth a line */}
+              {results && (updating || activeCount === 0) && (
                 <span className="hide-phone" style={{ fontSize: 12, color: "var(--t3)" }}>
-                  {updating ? "Updating…" : activeCount === 0 ? `The whole market — ${results.total.toLocaleString("en-IN")} NSE companies with current filings. Add a filter or pick a strategy.` : `Screening ${results.total.toLocaleString("en-IN")} NSE companies with current filings`}
+                  {updating ? "Updating…" : `The whole market — ${results.total.toLocaleString("en-IN")} NSE companies with current filings. Add a filter or pick a strategy.`}
                 </span>
               )}
             </div>
@@ -372,6 +374,7 @@ export default function DiscoverView({ onOpenStock }) {
               loading={!results && !error}
               onAnalyze={onOpenStock}
               totalMatches={results?.matched}
+              universe={activeCount > 0 ? results?.total : null}
               queryUsed={results?.queryUsed}
               // The counts sit under each filter in the sidebar; one line here says why
               notes={results?.notes?.length ? ["Companies without data for a filter are left out — the sidebar shows how many are known for each."] : []}
