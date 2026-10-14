@@ -184,7 +184,7 @@ function StarButton({ symbol, price, watched, size = 30 }) {
   );
 }
 
-export default function ResultsTable({ matches, loading, onAnalyze, totalMatches, queryUsed, unsupported = [], notes = [], executionTime, snapshot, netNet = false, noun = "stocks", emptyTitle = "No stocks matched your criteria", emptyHint = "Try relaxing some filters", columns = [], onEditColumns = null, filteredIds = [], meta = null }) {
+export default function ResultsTable({ matches, loading, onAnalyze, totalMatches, universe = null, queryUsed, unsupported = [], notes = [], executionTime, snapshot, netNet = false, noun = "stocks", emptyTitle = "No stocks matched your criteria", emptyHint = "Try relaxing some filters", columns = [], onEditColumns = null, filteredIds = [], meta = null }) {
   const watchlist = useWatchlist();
   const [alertFor, setAlertFor] = useState(null);
   const [showNotes, setShowNotes] = useState(false);
@@ -366,7 +366,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
 
       {/* ── Top bar ── */}
       {(totalMatches != null || loading) && (
-        <div className="results-topbar" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, padding: "14px 0", marginBottom: 12, borderBottom: "1px solid var(--bdr)" }}>
+        <div className="results-topbar" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, padding: "6px 0 10px", marginBottom: 10 }}>
           <div style={{ fontSize: 13, color: "var(--t1)" }}>
             {loading ? (
               <span style={{ color: "var(--t3)" }}>Scanning market…</span>
@@ -374,6 +374,8 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
               <span>
                 <span style={{ color: "var(--t2)" }}>Found </span>
                 <strong style={{ color: "var(--t1)" }}>{q || scoreFiltered ? filtered.length.toLocaleString() : totalMatches?.toLocaleString()}</strong>
+                {/* "of 2,250": the market it screened, which used to be a line of its own above */}
+                {universe != null && !(q || scoreFiltered) && <span style={{ color: "var(--t2)" }}> of {universe.toLocaleString("en-IN")}</span>}
                 <span style={{ color: "var(--t2)" }}> {(q || scoreFiltered ? filtered.length : totalMatches) === 1 ? noun.replace(/s$/, "") : noun}</span>
                 {(q || scoreFiltered) && filtered.length !== (matches?.length ?? 0) && <span style={{ color: "var(--t3)" }}> (filtered from {matches?.length})</span>}
                 {visible.length < sorted.length && <span style={{ color: "var(--t2)" }}> · showing <strong style={{ color: "var(--t1)" }}>{visible.length}</strong></span>}
@@ -385,7 +387,6 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                     <Info size={14} aria-hidden="true" />
                   </button>
                 )}
-                {executionTime != null && <span className="hide-phone" style={{ color: "var(--t3)", marginLeft: 8, fontSize: 11, ...MONO }}>{(executionTime / 1000).toFixed(1)}s</span>}
                 {snapshot?.pricesDate && (
                   <span style={{ color: "var(--t3)", marginLeft: 8, fontSize: 11 }}>
                     · prices as of {new Date(`${snapshot.pricesDate}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })}
@@ -424,6 +425,11 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
               </button>
             )}
             {!loading && (matches?.length ?? 0) > 0 && (
+              <button type="button" onClick={() => setShowGuide(true)} className="btn-ghost" style={{ height: 32, fontSize: 12.5 }} title="What these columns mean">
+                <Info size={13} /> Column guide
+              </button>
+            )}
+            {!loading && (matches?.length ?? 0) > 0 && (
               <>
                 <button onClick={exportExcel} disabled={exporting || sorted.length === 0} className="btn-primary hide-phone" style={{ height: 32, padding: "0 14px", fontSize: 12.5, opacity: exporting || sorted.length === 0 ? 0.6 : 1 }}>
                   {exporting ? "Exporting…" : "Export Excel"}
@@ -439,11 +445,6 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
 
       {/* ── Name box + the three scores: pick Quality 70+, then Research or
              Piotroski with it ── */}
-      {!loading && sorted.length > 0 && (
-        <div role="note" style={{ fontSize: 11, color: "var(--t3)", margin: "-2px 0 12px", lineHeight: 1.5 }}>
-          Experimental model: research scores are rule-based summaries, not forecasts of future returns.
-        </div>
-      )}
       {!loading && (matches?.length ?? 0) > 0 && (
         <div className="score-row" style={{ marginBottom: 12 }}>
           <div style={{ position: "relative", minWidth: 0 }}>
@@ -475,25 +476,17 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
               {options.map(([n, text]) => <option key={n} value={n}>{text}</option>)}
             </select>
           ))}
-        </div>
-      )}
-
-      {/* ── Watchlist only, and what every shown column means ── */}
-      {!loading && (matches?.length ?? 0) > 0 && (
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginBottom: 12 }}>
           {watchlist.size > 0 && (
             <button type="button" aria-pressed={watchOnly} onClick={() => setWatchOnly(v => !v)}
               title="Run these filters on your watchlist only"
-              style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 32, padding: "0 12px", borderRadius: 8, fontSize: 12.5, fontFamily: "inherit", cursor: "pointer",
+              style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 40, padding: "0 12px", borderRadius: 8, fontSize: 12.5, fontFamily: "inherit", cursor: "pointer",
                 border: `1px solid ${watchOnly ? "var(--accent)" : "var(--bdr2)"}`, background: watchOnly ? "var(--accent-glow)" : "var(--s2)", color: watchOnly ? "var(--accent)" : "var(--t2)", fontWeight: watchOnly ? 650 : 500 }}>
               <Star size={13} fill={watchOnly ? "currentColor" : "none"} /> Watchlist only <span style={{ ...MONO, opacity: 0.8 }}>({watchedMatches})</span>
             </button>
           )}
-          <button type="button" onClick={() => setShowGuide(true)} className="btn-ghost" style={{ height: 32, fontSize: 12.5 }}>
-            <Info size={13} /> What these columns mean
-          </button>
         </div>
       )}
+
       {showGuide && (
         <ColumnGuide meta={meta} onClose={() => setShowGuide(false)}
           extra={[meta?.byId.get("quality"), meta?.byId.get("researchScore"), meta?.byId.get("cmp")].filter(Boolean)}
@@ -707,6 +700,13 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
             </table>
           </div>
         </div>
+      )}
+
+      {/* The model's caveat, under the results rather than above them */}
+      {!loading && sorted.length > 0 && (
+        <p role="note" style={{ fontSize: 11, color: "var(--t3)", margin: "10px 0 0", lineHeight: 1.5 }}>
+          Experimental model: research scores are rule-based summaries, not forecasts of future returns.
+        </p>
       )}
 
       {/* ── Show more ── */}

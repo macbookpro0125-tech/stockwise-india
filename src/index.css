@@ -517,7 +517,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   padding: 14px;
   box-shadow: var(--sh-xs);
 }
-.screener-toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; min-height: 34px; margin-bottom: 4px; }
+/* No height of its own: with the sidebar open and the button hidden, an empty row took space */
+.screener-toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
 .screener-filters-toggle { display: none; }
 .filter-row { padding: 12px 0; border-top: 1px solid var(--bdr); }
 
@@ -643,9 +644,10 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 
 /* Discover's name box and three score boxes: one row on a computer, two on
    a phone (three boxes side by side are too narrow at 16px type) */
-.score-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; gap: 8px; align-items: center; }
+/* (Watchlist only joins the row when there is a watchlist) */
+.score-row { display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-flow: column; grid-auto-columns: auto; gap: 8px; align-items: center; }
 @media (max-width: 640px) {
-  .score-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .score-row { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-flow: row; }
 }
 
 /* Momentum tab: settings and the position calculator */
