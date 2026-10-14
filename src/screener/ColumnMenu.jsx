@@ -15,7 +15,7 @@ function parse(text) {
   return Number.isFinite(v) ? v : undefined; // undefined: not a number
 }
 
-export default function ColumnMenu({ anchor, label, text = false, def, filter, onSort, onThen = null, onApply, onClose }) {
+export default function ColumnMenu({ anchor, label, text = false, def, filter, onSort, onApply, onClose }) {
   const [at, setAt] = useState(null);
   const [min, setMin] = useState(def ? formatInput(def, filter?.min) : "");
   const [max, setMax] = useState(def ? formatInput(def, filter?.max) : "");
@@ -68,18 +68,6 @@ export default function ColumnMenu({ anchor, label, text = false, def, filter, o
       <button type="button" className="column-menu-item" style={item} onClick={() => { onSort("desc"); onClose(); }}>
         <ArrowDown size={14} aria-hidden="true" /> {text ? "Sort Z to A" : "Sort largest to smallest"}
       </button>
-      {/* Keep the current sort and order the rows it leaves level by this
-          column too (Excel's "Then by") */}
-      {onThen && (
-        <>
-          <button type="button" className="column-menu-item" style={item} onClick={() => { onThen(text ? "asc" : "desc"); onClose(); }}>
-            <span aria-hidden="true" style={{ width: 14, textAlign: "center" }}>+</span> Then by this, {text ? "A to Z" : "largest first"}
-          </button>
-          <button type="button" className="column-menu-item" style={item} onClick={() => { onThen(text ? "desc" : "asc"); onClose(); }}>
-            <span aria-hidden="true" style={{ width: 14, textAlign: "center" }}>+</span> Then by this, {text ? "Z to A" : "smallest first"}
-          </button>
-        </>
-      )}
 
       {def && (
         <form onSubmit={apply} style={{ borderTop: "1px solid var(--bdr2)", marginTop: 6, padding: "10px 6px 4px" }}>
