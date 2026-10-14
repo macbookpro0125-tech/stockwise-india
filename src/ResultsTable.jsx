@@ -1,12 +1,13 @@
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useRef } from "react";
 import { lazyPage } from "./lazyPage.js";
-import { ArrowDown, ArrowUp, Check, Info, Columns3, ArrowUpRight, SearchX, Star } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, Info, Columns3, Search, ArrowUpRight, SearchX, Star, ChevronDown, Funnel } from "lucide-react";
 import { StarIcon, BellIcon, actionButtonStyle } from "./icons.jsx";
 import { useWatchlist, toggleWatch } from "./watchlist.js";
 import CreateAlertModal from "./CreateAlertModal.jsx";
 import { formatValue, valueColor } from "./screener/meta.js";
 import { QualityBadge, OverallScore, qualityTone, overallTone, researchTitle, researchMissingText } from "./ResearchBadges.jsx";
 import { MetricInfo, ColumnGuide } from "./screener/MetricInfo.jsx";
+import ColumnMenu from "./screener/ColumnMenu.jsx";
 
 // A metric column's header, with its unit as the table always showed it
 // ("ROCE %", "CMP ₹")
@@ -61,7 +62,28 @@ const quality = s => s.research?.quality ?? null;
 
 const nseUrl = symbol => `https://www.nseindia.com/get-quotes/equity?symbol=${encodeURIComponent(symbol)}`;
 
-function SortTh({ label, title, col, sortBy, sortDir, onSort, accent, info }) {
+// The ▾ beside a column's name: Excel's filter button. Opens ColumnMenu (sort
+// either way; for a number column, at least / at most). A funnel replaces the
+// arrow while the column is filtered, as in Excel.
+function MenuButton({ label, menu }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const filtered = menu.filter && (menu.filter.min != null || menu.filter.max != null);
+  const Icon = filtered ? Funnel : ChevronDown;
+  return (
+    <>
+      <button ref={ref} type="button" aria-label={`${label}: sort${menu.def ? " and filter" : ""}${filtered ? " (filtered)" : ""}`} aria-haspopup="dialog" aria-expanded={open}
+        title={filtered ? "Filtered — change or clear" : "Sort and filter"}
+        onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
+        className="column-menu-btn" data-on={filtered || open || undefined}>
+        <Icon size={filtered ? 12 : 14} strokeWidth={2.2} aria-hidden="true" fill={filtered ? "currentColor" : "none"} />
+      </button>
+      {open && <ColumnMenu anchor={ref.current} label={label} text={menu.text} def={menu.def} filter={menu.filter} onSort={menu.onSort} onApply={menu.onApply} onClose={() => setOpen(false)} />}
+    </>
+  );
+}
+
+function SortTh({ label, title, col, sortBy, sortDir, onSort, accent, info, menu }) {
   const active = sortBy === col;
   return (
     <th
@@ -83,6 +105,7 @@ function SortTh({ label, title, col, sortBy, sortDir, onSort, accent, info }) {
           <SortArrow active={active} dir={sortDir} />
         </button>
         {info}
+        {menu && <MenuButton label={label} menu={menu} />}
       </span>
     </th>
   );
@@ -181,7 +204,7 @@ function StarButton({ symbol, price, watched, size = 30 }) {
   );
 }
 
-export default function ResultsTable({ matches, loading, onAnalyze, totalMatches, universe = null, search = "", onClearSearch = null, filterBar = null, queryUsed, unsupported = [], notes = [], executionTime, snapshot, netNet = false, noun = "stocks", emptyTitle = "No stocks matched your criteria", emptyHint = "Try relaxing some filters", columns = [], onEditColumns = null, filteredIds = [], meta = null }) {
+export default function ResultsTable({ matches, loading, onAnalyze, totalMatches, universe = null, filters = null, onFiltersChange = null, queryUsed, unsupported = [], notes = [], executionTime, snapshot, netNet = false, noun = "stocks", emptyTitle = "No stocks matched your criteria", emptyHint = "Try relaxing some filters", columns = [], onEditColumns = null, filteredIds = [], meta = null }) {
   const watchlist = useWatchlist();
   const [alertFor, setAlertFor] = useState(null);
   const [showNotes, setShowNotes] = useState(false);
@@ -196,6 +219,23 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
   );
   const [sortBy, setSortBy] = useState("quality");
   const [sortDir, setSortDir] = useState("desc");
+  // A column's ▾ menu: sort to a set direction, or set the column's filter —
+  // the same { id, min, max } the sidebar edits (none when both are empty)
+  const menuFor = (col, filterId, label) => {
+    const def = onFiltersChange && filterId ? meta?.byId.get(filterId) : null;
+    return {
+      def,
+      filter: def ? (filters ?? []).find(f => f.id === filterId) : null,
+      onSort: dir => { setSortBy(col); setSortDir(dir); },
+      onApply: (min, max) => {
+        const list = filters ?? [];
+        const next = { id: filterId, min, max };
+        onFiltersChange(min == null && max == null ? list.filter(f => f.id !== filterId)
+          : list.some(f => f.id === filterId) ? list.map(f => (f.id === filterId ? next : f)) : [...list, next]);
+      },
+      label,
+    };
+  };
 
   // Net-net results are most useful ordered by discount to NCAV (cheapest first),
   // so the deepest Graham bargains surface above shallower net-nets.
@@ -212,6 +252,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
     return () => window.removeEventListener("resize", handler);
   }, []);
 
+  const [search, setSearch] = useState("");
   // Screen your watchlist only: the strategy's filters, run on the companies
   // you follow (asked for on Screener.in's forum, Oct 2026)
   const [watchOnly, setWatchOnly] = useState(false);
@@ -262,8 +303,8 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
   const watchedMatches = (matches || []).filter(s => watchlist.has(s.symbol)).length;
   const textFiltered = (matches || []).filter(s => (!watchOnly || watchlist.has(s.symbol)) &&
     (!q || s.name?.toLowerCase().includes(q) || s.symbol?.toLowerCase().includes(q)));
-  // The name typed in the filter bar, and Watchlist only, narrow the list here;
-  // every other filter is screened by the server
+  // The name box and Watchlist only narrow the list here; every other
+  // filter (sidebar or a column's ▾ menu) is screened by the server
   const narrowed = !!q || watchOnly;
   const filtered = textFiltered;
 
@@ -412,14 +453,6 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                 Clear
               </button>
             )}
-            {!loading && (matches?.length ?? 0) > 0 && watchlist.size > 0 && (
-              <button type="button" aria-pressed={watchOnly} onClick={() => setWatchOnly(v => !v)}
-                title="Run these filters on your watchlist only"
-                style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 32, padding: "0 12px", borderRadius: 8, fontSize: 12.5, fontFamily: "inherit", cursor: "pointer",
-                  border: `1px solid ${watchOnly ? "var(--accent)" : "var(--bdr2)"}`, background: watchOnly ? "var(--accent-glow)" : "var(--s2)", color: watchOnly ? "var(--accent)" : "var(--t2)", fontWeight: watchOnly ? 650 : 500 }}>
-                <Star size={13} fill={watchOnly ? "currentColor" : "none"} /> Watchlist only <span style={{ ...MONO, opacity: 0.8 }}>({watchedMatches})</span>
-              </button>
-            )}
             {onEditColumns && (
               <button onClick={onEditColumns} className="btn-ghost hide-phone" style={{ height: 32, fontSize: 12.5 }} title="Choose which columns the table shows">
                 <Columns3 size={14} /> Columns
@@ -444,9 +477,33 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
         </div>
       )}
 
-      {/* ── Search and filters in one box (DiscoverView passes SmartFilterBar):
-             there even when a filter leaves nothing, so it can be undone ── */}
-      {filterBar}
+      {/* ── Name box, and Watchlist only. Score minimums are set from each
+             column's ▾ menu, as in Excel (ColumnMenu) — no fixed boxes. Was:
+             name box + the three scores: pick Quality 70+, then Research or
+             Piotroski with it ── */}
+      {!loading && (matches?.length ?? 0) > 0 && (
+        <div className="score-row" style={{ marginBottom: 12 }}>
+          <div style={{ position: "relative", minWidth: 0 }}>
+            <Search size={15} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--t3)", pointerEvents: "none" }} />
+            <input
+              type="text"
+              placeholder="Filter by name or ticker…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="input-base"
+              style={{ paddingLeft: 36, background: "var(--s2)" }}
+            />
+          </div>
+          {watchlist.size > 0 && (
+            <button type="button" aria-pressed={watchOnly} onClick={() => setWatchOnly(v => !v)}
+              title="Run these filters on your watchlist only"
+              style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 40, padding: "0 12px", borderRadius: 8, fontSize: 12.5, fontFamily: "inherit", cursor: "pointer",
+                border: `1px solid ${watchOnly ? "var(--accent)" : "var(--bdr2)"}`, background: watchOnly ? "var(--accent-glow)" : "var(--s2)", color: watchOnly ? "var(--accent)" : "var(--t2)", fontWeight: watchOnly ? 650 : 500 }}>
+              <Star size={13} fill={watchOnly ? "currentColor" : "none"} /> Watchlist only <span style={{ ...MONO, opacity: 0.8 }}>({watchedMatches})</span>
+            </button>
+          )}
+        </div>
+      )}
 
       {showGuide && (
         <ColumnGuide meta={meta} onClose={() => setShowGuide(false)}
@@ -457,6 +514,16 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
           }]} />
       )}
 
+      {/* ── The screen's filters, one chip each (describeFilters joins them with " · ").
+          Only on a phone (index.css .filter-chips), where the filter sidebar is
+          behind a button; on a computer the sidebar beside the table lists them ── */}
+      {queryUsed && !loading && (
+        <div className="filter-chips" style={{ flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
+          {queryUsed.split(" · ").map(part => (
+            <span key={part} style={{ fontSize: 12, color: "var(--t2)", background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 6, padding: "3px 9px", lineHeight: 1.5, ...MONO }}>{part}</span>
+          ))}
+        </div>
+      )}
       {notes.length > 0 && !loading && showNotes && (
         <div style={{ display: "flex", alignItems: "flex-start", gap: 6, fontSize: 12, color: "var(--t3)", marginBottom: 14, lineHeight: 1.5 }}>
           <Info size={13} style={{ flexShrink: 0, marginTop: 2 }} />
@@ -469,14 +536,14 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
         </div>
       )}
 
-      {/* A name typed in the filter bar, or Watchlist only, can empty the list */}
+      {/* The name box or quality filter can empty the list on their own */}
       {!loading && (matches?.length ?? 0) > 0 && sorted.length === 0 && (
         <div style={{ textAlign: "center", padding: "40px 16px", color: "var(--t2)", fontSize: 13, border: "1px dashed var(--bdr2)", borderRadius: 14 }}>
           None of these {matches.length.toLocaleString("en-IN")} companies {[
             watchOnly && "are on your watchlist",
             q && `match "${search.trim()}"`,
           ].filter(Boolean).join(" and ")}.
-          <button className="btn-ghost" onClick={() => { onClearSearch?.(); setWatchOnly(false); }} style={{ marginLeft: 10, height: 28, fontSize: 12 }}>Show all</button>
+          <button className="btn-ghost" onClick={() => { setSearch(""); setWatchOnly(false); }} style={{ marginLeft: 10, height: 28, fontSize: 12 }}>Show all</button>
         </div>
       )}
 
@@ -550,13 +617,16 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                 <tr>
                   <th title={`Tick up to ${MAX_COMPARE} to compare`} style={{ ...thStyle, padding: "10px 8px", width: RANK_W, minWidth: RANK_W, boxSizing: "border-box", left: 0, zIndex: 4 }}>#</th>
                   <th onClick={() => handleSort("name")} aria-sort={ariaSort(sortBy === "name", sortDir)} style={{ ...thStyle, color: sortBy === "name" ? "var(--t1)" : "var(--t2)", fontWeight: sortBy === "name" ? 600 : 500, left: RANK_W, zIndex: 4, cursor: "pointer", minWidth: 200, boxShadow: "inset -1px 0 0 var(--bdr)" }}>
-                    <button type="button" style={sortBtnStyle}>Stock <SortArrow active={sortBy === "name"} dir={sortDir} /></button>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                      <button type="button" style={sortBtnStyle}>Stock <SortArrow active={sortBy === "name"} dir={sortDir} /></button>
+                      <MenuButton label="Stock" menu={{ ...menuFor("name", null), text: true }} />
+                    </span>
                   </th>
-                  <SortTh label="Quality" title="Quality score out of 100 — business, earnings, balance sheet, governance, growth and valuation" col="quality" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} info={<MetricInfo def={meta?.byId.get("quality")} meta={meta} />} />
-                  <SortTh label="Research" title="Overall research score: quality and valuation blended, trimmed for price swings and data gaps. Not a buy or sell signal." col="overall" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} info={<MetricInfo def={meta?.byId.get("researchScore")} meta={meta} />} />
-                  <SortTh label="CMP ₹"   col="cmp"         sortBy={sortBy} sortDir={sortDir} onSort={handleSort} info={<MetricInfo def={meta?.byId.get("cmp")} meta={meta} />} />
+                  <SortTh label="Quality" title="Quality score out of 100 — business, earnings, balance sheet, governance, growth and valuation" col="quality" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} menu={menuFor("quality", "quality")} info={<MetricInfo def={meta?.byId.get("quality")} meta={meta} />} />
+                  <SortTh label="Research" title="Overall research score: quality and valuation blended, trimmed for price swings and data gaps. Not a buy or sell signal." col="overall" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} menu={menuFor("overall", "researchScore")} info={<MetricInfo def={meta?.byId.get("researchScore")} meta={meta} />} />
+                  <SortTh label="CMP ₹"   col="cmp"         sortBy={sortBy} sortDir={sortDir} onSort={handleSort} menu={menuFor("cmp", "cmp")} info={<MetricInfo def={meta?.byId.get("cmp")} meta={meta} />} />
                   {columns.map(def => (
-                    <SortTh key={def.id} label={columnLabel(def)} title={def.label} col={def.id} sortBy={sortBy} sortDir={sortDir} onSort={handleSort} info={<MetricInfo def={def} meta={meta} />} />
+                    <SortTh key={def.id} label={columnLabel(def)} title={def.label} col={def.id} sortBy={sortBy} sortDir={sortDir} onSort={handleSort} menu={menuFor(def.id, def.id)} info={<MetricInfo def={def} meta={meta} />} />
                   ))}
                   <th style={{ ...thStyle, color: "var(--accent)", fontWeight: 600, background: "color-mix(in srgb, var(--accent) 4%, var(--s1))" }}>
                     Price levels
