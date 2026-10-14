@@ -1,6 +1,6 @@
 import { Suspense, useState, useEffect } from "react";
 import { lazyPage } from "./lazyPage.js";
-import { ArrowDown, ArrowUp, Check, Info, Columns3, Search, ArrowUpRight, SearchX, Star } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, Info, Columns3, Search, ArrowUpRight, SearchX, Star, ChevronDown } from "lucide-react";
 import { StarIcon, BellIcon, actionButtonStyle } from "./icons.jsx";
 import { useWatchlist, toggleWatch } from "./watchlist.js";
 import CreateAlertModal from "./CreateAlertModal.jsx";
@@ -459,11 +459,19 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
             />
           </div>
           {[
-            ["Minimum quality score", minQuality, setMinQuality, "Any quality", MIN_QUALITY.map(n => [n, `Quality ${n}+`])],
-            ["Minimum research score", minResearch, setMinResearch, "Any research", MIN_RESEARCH.map(n => [n, `Research ${n}+`])],
-            ["Minimum Piotroski score", minPiotroski, setMinPiotroski, "Any Piotroski", MIN_PIOTROSKI.map(n => [n, n === 9 ? "Piotroski 9" : `Piotroski ${n}+`])],
-          ].map(([label, value, set, any, options]) => (
-            <select key={label} value={value} onChange={e => set(Number(e.target.value))} aria-label={label}
+            ["Minimum quality score", minQuality, setMinQuality, "Any quality", MIN_QUALITY.map(n => [n, `Quality ${n}+`]), "Quality"],
+            ["Minimum research score", minResearch, setMinResearch, "Any research", MIN_RESEARCH.map(n => [n, `Research ${n}+`]), "Research"],
+            ["Minimum Piotroski score", minPiotroski, setMinPiotroski, "Any Piotroski", MIN_PIOTROSKI.map(n => [n, n === 9 ? "Piotroski 9" : `Piotroski ${n}+`]), "Piotroski"],
+          ].map(([label, value, set, any, options, short]) => (
+            // On a phone the box is a small label ("Quality ▾", or the chosen
+            // "Quality 70+") with the real select laid over it, invisible at
+            // 16px so iOS opens its picker without zooming the page. On a
+            // computer the wrapper is display: contents and the select shows.
+            <span key={label} className="score-pick" data-on={value > 0}>
+            <span className="score-pick-label" aria-hidden="true">
+              {value > 0 ? options.find(([n]) => n === value)?.[1] : short}<ChevronDown size={13} />
+            </span>
+            <select value={value} onChange={e => set(Number(e.target.value))} aria-label={label}
               style={{
                 height: 40, padding: "0 10px", borderRadius: 8, minWidth: 0,
                 border: `1px solid ${value > 0 ? "var(--green-bdr)" : "var(--bdr2)"}`, fontSize: 12.5,
@@ -475,9 +483,10 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
               <option value="0">{any}</option>
               {options.map(([n, text]) => <option key={n} value={n}>{text}</option>)}
             </select>
+            </span>
           ))}
           {watchlist.size > 0 && (
-            <button type="button" aria-pressed={watchOnly} onClick={() => setWatchOnly(v => !v)}
+            <button type="button" aria-pressed={watchOnly} onClick={() => setWatchOnly(v => !v)} className="score-watch"
               title="Run these filters on your watchlist only"
               style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 40, padding: "0 12px", borderRadius: 8, fontSize: 12.5, fontFamily: "inherit", cursor: "pointer",
                 border: `1px solid ${watchOnly ? "var(--accent)" : "var(--bdr2)"}`, background: watchOnly ? "var(--accent-glow)" : "var(--s2)", color: watchOnly ? "var(--accent)" : "var(--t2)", fontWeight: watchOnly ? 650 : 500 }}>
