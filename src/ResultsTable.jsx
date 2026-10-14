@@ -1,6 +1,6 @@
 import { Suspense, useState, useEffect } from "react";
 import { lazyPage } from "./lazyPage.js";
-import { ArrowDown, ArrowUp, Check, Info, Columns3, Search, ArrowUpRight, SearchX, Star, ChevronDown } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, Info, Columns3, ArrowUpRight, SearchX, Star } from "lucide-react";
 import { StarIcon, BellIcon, actionButtonStyle } from "./icons.jsx";
 import { useWatchlist, toggleWatch } from "./watchlist.js";
 import CreateAlertModal from "./CreateAlertModal.jsx";
@@ -58,9 +58,6 @@ function fmtCr(n) {
 const MONO = { fontVariantNumeric: "tabular-nums" };
 
 const quality = s => s.research?.quality ?? null;
-const MIN_QUALITY = [40, 50, 60, 70, 80];
-const MIN_RESEARCH = [50, 60, 65, 70, 80];
-const MIN_PIOTROSKI = [5, 6, 7, 8, 9];
 
 const nseUrl = symbol => `https://www.nseindia.com/get-quotes/equity?symbol=${encodeURIComponent(symbol)}`;
 
@@ -184,7 +181,7 @@ function StarButton({ symbol, price, watched, size = 30 }) {
   );
 }
 
-export default function ResultsTable({ matches, loading, onAnalyze, totalMatches, universe = null, queryUsed, unsupported = [], notes = [], executionTime, snapshot, netNet = false, noun = "stocks", emptyTitle = "No stocks matched your criteria", emptyHint = "Try relaxing some filters", columns = [], onEditColumns = null, filteredIds = [], meta = null }) {
+export default function ResultsTable({ matches, loading, onAnalyze, totalMatches, universe = null, search = "", onClearSearch = null, filterBar = null, queryUsed, unsupported = [], notes = [], executionTime, snapshot, netNet = false, noun = "stocks", emptyTitle = "No stocks matched your criteria", emptyHint = "Try relaxing some filters", columns = [], onEditColumns = null, filteredIds = [], meta = null }) {
   const watchlist = useWatchlist();
   const [alertFor, setAlertFor] = useState(null);
   const [showNotes, setShowNotes] = useState(false);
@@ -215,10 +212,6 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
     return () => window.removeEventListener("resize", handler);
   }, []);
 
-  const [search, setSearch] = useState("");
-  const [minQuality, setMinQuality] = useState(0);
-  const [minResearch, setMinResearch] = useState(0);
-  const [minPiotroski, setMinPiotroski] = useState(0);
   // Screen your watchlist only: the strategy's filters, run on the companies
   // you follow (asked for on Screener.in's forum, Oct 2026)
   const [watchOnly, setWatchOnly] = useState(false);
@@ -269,10 +262,10 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
   const watchedMatches = (matches || []).filter(s => watchlist.has(s.symbol)).length;
   const textFiltered = (matches || []).filter(s => (!watchOnly || watchlist.has(s.symbol)) &&
     (!q || s.name?.toLowerCase().includes(q) || s.symbol?.toLowerCase().includes(q)));
-  // The score boxes beside the name box narrow the list together
-  const scoreFiltered = minQuality > 0 || minResearch > 0 || minPiotroski > 0;
-  const filtered = !scoreFiltered ? textFiltered : textFiltered.filter(s =>
-    (quality(s) ?? -1) >= minQuality && (s.research?.overall ?? -1) >= minResearch && (colValue(s, "piotroski") ?? -1) >= minPiotroski);
+  // The name typed in the filter bar, and Watchlist only, narrow the list here;
+  // every other filter is screened by the server
+  const narrowed = !!q || watchOnly;
+  const filtered = textFiltered;
 
   const valueFor = (s, key) => {
     if (key === "quality") return quality(s);
@@ -373,11 +366,11 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
             ) : (
               <span>
                 <span style={{ color: "var(--t2)" }}>Found </span>
-                <strong style={{ color: "var(--t1)" }}>{q || scoreFiltered ? filtered.length.toLocaleString() : totalMatches?.toLocaleString()}</strong>
+                <strong style={{ color: "var(--t1)" }}>{narrowed ? filtered.length.toLocaleString() : totalMatches?.toLocaleString()}</strong>
                 {/* "of 2,250": the market it screened, which used to be a line of its own above */}
-                {universe != null && !(q || scoreFiltered) && <span style={{ color: "var(--t2)" }}> of {universe.toLocaleString("en-IN")}</span>}
-                <span style={{ color: "var(--t2)" }}> {(q || scoreFiltered ? filtered.length : totalMatches) === 1 ? noun.replace(/s$/, "") : noun}</span>
-                {(q || scoreFiltered) && filtered.length !== (matches?.length ?? 0) && <span style={{ color: "var(--t3)" }}> (filtered from {matches?.length})</span>}
+                {universe != null && !(narrowed) && <span style={{ color: "var(--t2)" }}> of {universe.toLocaleString("en-IN")}</span>}
+                <span style={{ color: "var(--t2)" }}> {(narrowed ? filtered.length : totalMatches) === 1 ? noun.replace(/s$/, "") : noun}</span>
+                {(narrowed) && filtered.length !== (matches?.length ?? 0) && <span style={{ color: "var(--t3)" }}> (filtered from {matches?.length})</span>}
                 {visible.length < sorted.length && <span style={{ color: "var(--t2)" }}> · showing <strong style={{ color: "var(--t1)" }}>{visible.length}</strong></span>}
                 {/* Why some companies are missing: an ⓘ beside the count, its
                     text on hover and opened below on a click or tap */}
@@ -419,6 +412,14 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                 Clear
               </button>
             )}
+            {!loading && (matches?.length ?? 0) > 0 && watchlist.size > 0 && (
+              <button type="button" aria-pressed={watchOnly} onClick={() => setWatchOnly(v => !v)}
+                title="Run these filters on your watchlist only"
+                style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 32, padding: "0 12px", borderRadius: 8, fontSize: 12.5, fontFamily: "inherit", cursor: "pointer",
+                  border: `1px solid ${watchOnly ? "var(--accent)" : "var(--bdr2)"}`, background: watchOnly ? "var(--accent-glow)" : "var(--s2)", color: watchOnly ? "var(--accent)" : "var(--t2)", fontWeight: watchOnly ? 650 : 500 }}>
+                <Star size={13} fill={watchOnly ? "currentColor" : "none"} /> Watchlist only <span style={{ ...MONO, opacity: 0.8 }}>({watchedMatches})</span>
+              </button>
+            )}
             {onEditColumns && (
               <button onClick={onEditColumns} className="btn-ghost hide-phone" style={{ height: 32, fontSize: 12.5 }} title="Choose which columns the table shows">
                 <Columns3 size={14} /> Columns
@@ -443,58 +444,9 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
         </div>
       )}
 
-      {/* ── Name box + the three scores: pick Quality 70+, then Research or
-             Piotroski with it ── */}
-      {!loading && (matches?.length ?? 0) > 0 && (
-        <div className="score-row" style={{ marginBottom: 12 }}>
-          <div style={{ position: "relative", minWidth: 0 }}>
-            <Search size={15} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--t3)", pointerEvents: "none" }} />
-            <input
-              type="text"
-              placeholder="Filter by name or ticker…"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="input-base"
-              style={{ paddingLeft: 36, background: "var(--s2)" }}
-            />
-          </div>
-          {[
-            ["Minimum quality score", minQuality, setMinQuality, "Any quality", MIN_QUALITY.map(n => [n, `Quality ${n}+`]), "Quality"],
-            ["Minimum research score", minResearch, setMinResearch, "Any research", MIN_RESEARCH.map(n => [n, `Research ${n}+`]), "Research"],
-            ["Minimum Piotroski score", minPiotroski, setMinPiotroski, "Any Piotroski", MIN_PIOTROSKI.map(n => [n, n === 9 ? "Piotroski 9" : `Piotroski ${n}+`]), "Piotroski"],
-          ].map(([label, value, set, any, options, short]) => (
-            // On a phone the box is a small label ("Quality ▾", or the chosen
-            // "Quality 70+") with the real select laid over it, invisible at
-            // 16px so iOS opens its picker without zooming the page. On a
-            // computer the wrapper is display: contents and the select shows.
-            <span key={label} className="score-pick" data-on={value > 0}>
-            <span className="score-pick-label" aria-hidden="true">
-              {value > 0 ? options.find(([n]) => n === value)?.[1] : short}<ChevronDown size={13} />
-            </span>
-            <select value={value} onChange={e => set(Number(e.target.value))} aria-label={label}
-              style={{
-                height: 40, padding: "0 10px", borderRadius: 8, minWidth: 0,
-                border: `1px solid ${value > 0 ? "var(--green-bdr)" : "var(--bdr2)"}`, fontSize: 12.5,
-                background: value > 0 ? "var(--green-dim)" : "var(--s2)",
-                color: value > 0 ? "var(--green)" : "var(--t1)",
-                cursor: "pointer", outline: "none", fontFamily: "inherit",
-                fontWeight: value > 0 ? 650 : 500,
-              }}>
-              <option value="0">{any}</option>
-              {options.map(([n, text]) => <option key={n} value={n}>{text}</option>)}
-            </select>
-            </span>
-          ))}
-          {watchlist.size > 0 && (
-            <button type="button" aria-pressed={watchOnly} onClick={() => setWatchOnly(v => !v)} className="score-watch"
-              title="Run these filters on your watchlist only"
-              style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 40, padding: "0 12px", borderRadius: 8, fontSize: 12.5, fontFamily: "inherit", cursor: "pointer",
-                border: `1px solid ${watchOnly ? "var(--accent)" : "var(--bdr2)"}`, background: watchOnly ? "var(--accent-glow)" : "var(--s2)", color: watchOnly ? "var(--accent)" : "var(--t2)", fontWeight: watchOnly ? 650 : 500 }}>
-              <Star size={13} fill={watchOnly ? "currentColor" : "none"} /> Watchlist only <span style={{ ...MONO, opacity: 0.8 }}>({watchedMatches})</span>
-            </button>
-          )}
-        </div>
-      )}
+      {/* ── Search and filters in one box (DiscoverView passes SmartFilterBar):
+             there even when a filter leaves nothing, so it can be undone ── */}
+      {filterBar}
 
       {showGuide && (
         <ColumnGuide meta={meta} onClose={() => setShowGuide(false)}
@@ -505,16 +457,6 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
           }]} />
       )}
 
-      {/* ── The screen's filters, one chip each (describeFilters joins them with " · ").
-          Only on a phone (index.css .filter-chips), where the filter sidebar is
-          behind a button; on a computer the sidebar beside the table lists them ── */}
-      {queryUsed && !loading && (
-        <div className="filter-chips" style={{ flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
-          {queryUsed.split(" · ").map(part => (
-            <span key={part} style={{ fontSize: 12, color: "var(--t2)", background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 6, padding: "3px 9px", lineHeight: 1.5, ...MONO }}>{part}</span>
-          ))}
-        </div>
-      )}
       {notes.length > 0 && !loading && showNotes && (
         <div style={{ display: "flex", alignItems: "flex-start", gap: 6, fontSize: 12, color: "var(--t3)", marginBottom: 14, lineHeight: 1.5 }}>
           <Info size={13} style={{ flexShrink: 0, marginTop: 2 }} />
@@ -527,17 +469,14 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
         </div>
       )}
 
-      {/* The name box or quality filter can empty the list on their own */}
+      {/* A name typed in the filter bar, or Watchlist only, can empty the list */}
       {!loading && (matches?.length ?? 0) > 0 && sorted.length === 0 && (
         <div style={{ textAlign: "center", padding: "40px 16px", color: "var(--t2)", fontSize: 13, border: "1px dashed var(--bdr2)", borderRadius: 14 }}>
           None of these {matches.length.toLocaleString("en-IN")} companies {[
             watchOnly && "are on your watchlist",
             q && `match "${search.trim()}"`,
-            minQuality > 0 && `have quality ${minQuality}+`,
-            minResearch > 0 && `have research ${minResearch}+`,
-            minPiotroski > 0 && `have Piotroski ${minPiotroski}${minPiotroski < 9 ? "+" : ""}`,
           ].filter(Boolean).join(" and ")}.
-          <button className="btn-ghost" onClick={() => { setSearch(""); setMinQuality(0); setMinResearch(0); setMinPiotroski(0); setWatchOnly(false); }} style={{ marginLeft: 10, height: 28, fontSize: 12 }}>Show all</button>
+          <button className="btn-ghost" onClick={() => { onClearSearch?.(); setWatchOnly(false); }} style={{ marginLeft: 10, height: 28, fontSize: 12 }}>Show all</button>
         </div>
       )}
 

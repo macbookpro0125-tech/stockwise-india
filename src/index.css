@@ -435,8 +435,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   backdrop-filter: blur(16px) saturate(180%);
 }
 .bottom-tab-bar { display: none; }
-/* The active-filter chips show on a phone only (ResultsTable.jsx) */
-.filter-chips { display: none; }
 
 /* On a phone the header would hold a large share of the screen if pinned, so
    it scrolls away; its tabs move to a bar fixed at the bottom. */
@@ -546,9 +544,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 /* Phones: the screen's filters as one row that scrolls sideways, rather than
    a chip per line pushing the results down */
 @media (max-width: 640px) {
-  .filter-chips { display: flex !important; flex-wrap: nowrap !important; overflow-x: auto; scrollbar-width: none; }
-  .filter-chips::-webkit-scrollbar { display: none; }
-  .filter-chips > span { white-space: nowrap; flex-shrink: 0; }
 }
 
 /* The metric picker: categories stack above the list on phones */
@@ -642,25 +637,35 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   .brief-assumptions-table input { width: 68px !important; }
 }
 
-/* Discover's name box and three score boxes: one row on a computer, two on
-   a phone (three boxes side by side are too narrow at 16px type) */
-/* (Watchlist only joins the row when there is a watchlist) */
-.score-row { display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-flow: column; grid-auto-columns: auto; gap: 8px; align-items: center; }
-.score-pick { display: contents; }
-.score-pick-label { display: none; }
-/* On a phone the three score boxes shrink to one quiet row of labels under
-   the name box ("Quality ▾  Research ▾  Piotroski ▾"); a chosen one turns
-   green. The real select lies over its label, invisible, at 16px so iOS
-   doesn't zoom when it opens. */
+/* Discover's search-and-filter box (screener/SmartFilterBar.jsx): the active
+   filters as chips, then the input; suggestions and the chip editor open
+   under it */
+.smart-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-height: 42px; padding: 5px 6px; border: 1px solid var(--bdr2); border-radius: 8px; background: var(--s2); cursor: text; transition: border-color 150ms; }
+.smart-bar:focus-within { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+/* The box's own ring above marks the focus; a second one on the text field
+   inside it read as a box in a box */
+.smart-input:focus-visible { outline: none !important; }
+.smart-input { flex: 1 1 180px; min-width: 120px; height: 30px; border: 0; outline: none; background: transparent; color: var(--t1); font: inherit; font-size: 13.5px; padding: 0 4px; }
+.smart-input::placeholder { color: var(--t3); }
+.smart-chips { display: contents; }
+.smart-chip { display: inline-flex; align-items: center; height: 30px; border-radius: 6px; font-size: 12.5px; font-weight: 600; color: var(--t1); background: color-mix(in srgb, var(--accent) 10%, var(--s2)); border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); font-variant-numeric: tabular-nums; }
+.smart-chip > button:first-child:hover { color: var(--accent); }
+.smart-chip-x { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border: 0; background: none; color: var(--t3); cursor: pointer; border-radius: 4px; flex-shrink: 0; }
+.smart-chip-x:hover { color: var(--t1); }
+.smart-list { position: absolute; top: calc(100% + 4px); left: 0; z-index: 40; width: min(440px, 100%); max-height: 320px; overflow: auto; margin: 0; padding: 4px; list-style: none; background: var(--s2); border: 1px solid var(--bdr2); border-radius: 8px; box-shadow: var(--sh-md); }
+.smart-list-head { padding: 6px 10px 4px; font-size: 11px; font-weight: 600; color: var(--t3); text-transform: uppercase; letter-spacing: 0.04em; }
+.smart-option { display: flex; align-items: center; gap: 12px; min-height: 36px; padding: 0 10px; border-radius: 6px; font-size: 13px; cursor: pointer; }
+.smart-option.on { background: var(--s3); }
+.smart-editor { position: absolute; top: calc(100% + 4px); left: 0; z-index: 40; width: min(360px, 100%); padding: 14px; background: var(--s2); border: 1px solid var(--bdr2); border-radius: 8px; box-shadow: var(--sh-md); }
 @media (max-width: 640px) {
-  .score-row { display: flex !important; flex-wrap: wrap; align-items: center; gap: 2px 16px !important; }
-  .score-row > :first-child { flex-basis: 100%; margin-bottom: 4px; }
-  .score-pick { display: inline-flex; position: relative; align-items: center; height: 32px; font-size: 12.5px; color: var(--t3); border-radius: 4px; }
-  .score-pick[data-on="true"] { color: var(--green); font-weight: 600; }
-  .score-pick-label { display: inline-flex; align-items: center; gap: 2px; white-space: nowrap; }
-  .score-pick > select { position: absolute; inset: 0; width: 100% !important; height: 100% !important; opacity: 0; font-size: 16px !important; padding: 0 !important; border: 0 !important; }
-  .score-pick:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .score-watch { height: 32px !important; padding: 0 !important; border: 0 !important; background: none !important; font-size: 12.5px !important; }
+  /* 16px so iOS doesn't zoom when the box or a number field is tapped */
+  .smart-input, .smart-editor input { font-size: 16px !important; }
+  .smart-chip { height: 32px; flex-shrink: 0; }
+  /* The chips take one row that swipes sideways, the text box the row under */
+  .smart-chips { display: flex; gap: 6px; flex: 1 1 0; min-width: 0; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; padding-right: 20px; -webkit-mask-image: linear-gradient(to right, black calc(100% - 20px), transparent); mask-image: linear-gradient(to right, black calc(100% - 20px), transparent); }
+  .smart-chips::-webkit-scrollbar { display: none; }
+  .smart-chips ~ .smart-input { flex-basis: 100%; }
+  .smart-chip-x { width: 30px; height: 30px; }
 }
 
 /* Momentum tab: settings and the position calculator */

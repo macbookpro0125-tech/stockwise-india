@@ -57,9 +57,9 @@ test("F02-H1 a strategy, sector and name filter narrow the list; sort works", as
   await expect(rows.first()).toBeVisible();
   await page.getByRole("combobox").filter({ has: page.getByRole("option", { name: "All sectors" }) }).selectOption("Information Technology");
   await expect(page.getByRole("button", { name: "Tata Consultancy Services Limited" })).toBeVisible();
-  await page.getByPlaceholder("Filter by name or ticker…").fill("infosys");
+  await page.getByRole("combobox", { name: "Search a company or add a filter" }).fill("infosys");
   await expect(rows).toHaveCount(1);
-  await page.getByPlaceholder("Filter by name or ticker…").fill("zzzz-nothing");
+  await page.getByRole("combobox", { name: "Search a company or add a filter" }).fill("zzzz-nothing");
   await expect(rows).toHaveCount(0);
   await expect(page.getByText(/None of these \d+ companies match/).first()).toBeVisible(); // F02-E1 says why it's empty
 });

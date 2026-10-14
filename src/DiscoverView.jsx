@@ -7,6 +7,7 @@ import { strategiesStore, browserLeftovers, moveLeftovers, discardLeftovers } fr
 import ResultsTable from "./ResultsTable.jsx";
 import HowItWorks from "./HowItWorks.jsx";
 import FilterPanel, { isActiveFilter } from "./screener/FilterPanel.jsx";
+import SmartFilterBar from "./screener/SmartFilterBar.jsx";
 import MetricPicker from "./screener/MetricPicker.jsx";
 import { useScreenerMeta, DEFAULT_COLUMNS, OLD_DEFAULT_COLUMNS } from "./screener/meta.js";
 
@@ -78,6 +79,8 @@ export default function DiscoverView({ onOpenStock }) {
   // A shared link wins; else the last screen. null until the first screen
   // says what the old saved criteria became.
   const [filters, setFilters] = useState(() => filtersFromLink() ?? read("screenerFilters", null));
+  // A company's name typed in the filter bar: narrows the results in the table
+  const [nameQuery, setNameQuery] = useState("");
   // The link has done its job once applied — a reload shouldn't undo later changes
   useEffect(() => {
     if (new URLSearchParams(window.location.search).has("screen")) window.history.replaceState(null, "", window.location.pathname);
@@ -374,6 +377,9 @@ export default function DiscoverView({ onOpenStock }) {
               loading={!results && !error}
               onAnalyze={onOpenStock}
               totalMatches={results?.matched}
+              search={nameQuery}
+              onClearSearch={() => setNameQuery("")}
+              filterBar={meta && filters ? <SmartFilterBar meta={meta} filters={filters} onChange={changeFilters} query={nameQuery} onQuery={setNameQuery} /> : null}
               universe={activeCount > 0 ? results?.total : null}
               queryUsed={results?.queryUsed}
               // The counts sit under each filter in the sidebar; one line here says why
