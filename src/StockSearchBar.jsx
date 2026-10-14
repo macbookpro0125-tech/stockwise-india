@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useId } from "react";
 import { Search, X, History } from "lucide-react";
 import { api } from "./api.js";
 
@@ -28,6 +28,7 @@ function removeFromHistory(ticker) {
 }
 
 export default function StockSearchBar({ onAnalyze, placeholder = "Search any stock…" }) {
+  const listId = useId(); // the suggestions, for the box's combobox role
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -122,6 +123,13 @@ export default function StockSearchBar({ onAnalyze, placeholder = "Search any st
           // A name of its own: the placeholder is short ("Search stocks") and
           // disappears once typing starts
           aria-label="Search any stock by name or symbol"
+          // A combobox with its suggestions as a listbox: screen readers hear
+          // the list open and the highlighted company as ↑ / ↓ move
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded={items.length > 0}
+          aria-controls={listId}
+          aria-activedescendant={items.length > 0 && highlightIdx >= 0 ? `${listId}-${highlightIdx}` : undefined}
           autoComplete="off"
           className="input-base"
           style={{ width: "100%", paddingLeft: 36, paddingRight: 34, height: 38, fontSize: 13.5, borderRadius: 8 }}
@@ -135,7 +143,7 @@ export default function StockSearchBar({ onAnalyze, placeholder = "Search any st
       </div>
 
       {items.length > 0 && (
-        <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 12, zIndex: 200, boxShadow: "var(--sh-lg)", overflow: "hidden" }}>
+        <div id={listId} role="listbox" aria-label={showingHistory ? "Recent searches" : "Companies"} style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 12, zIndex: 200, boxShadow: "var(--sh-lg)", overflow: "hidden" }}>
           {showingHistory && (
             <div style={{ padding: "8px 14px 4px", fontSize: 12, color: "var(--t3)", fontWeight: 500, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span>Recent searches</span>
@@ -143,7 +151,7 @@ export default function StockSearchBar({ onAnalyze, placeholder = "Search any st
             </div>
           )}
           {items.map((s, idx) => (
-            <div key={s.ticker} onPointerDown={() => handleSelect(s)} onMouseEnter={() => setHighlightIdx(idx)} onMouseLeave={() => setHighlightIdx(-1)}
+            <div key={s.ticker} id={`${listId}-${idx}`} role="option" aria-selected={idx === highlightIdx} onPointerDown={() => handleSelect(s)} onMouseEnter={() => setHighlightIdx(idx)} onMouseLeave={() => setHighlightIdx(-1)}
               style={{ padding: "10px 14px", cursor: "pointer", background: idx === highlightIdx ? "var(--s3)" : "transparent", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: idx < items.length - 1 ? "1px solid var(--bdr)" : "none", transition: "background 80ms" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
                 {showingHistory && <History size={13} style={{ color: "var(--t3)", flexShrink: 0 }} />}

@@ -1,5 +1,5 @@
 // The app's flows, one test each (case ids from replica/test-plan.md).
-import { test, expect } from "./fixtures.js";
+import { test, expect, openStocks } from "./fixtures.js";
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 
@@ -53,6 +53,7 @@ test("F01-E2 signed-out API calls are refused", async ({ request, baseURL }) => 
 // ── F02 Discover ─────────────────────────────────────────────────────────────
 test("F02-H1 a strategy, sector and name filter narrow the list; sort works", async ({ page, account }) => {
   await page.goto("/");
+  await openStocks(page);
   const rows = page.getByRole("checkbox", { name: /^Compare / });
   await expect(rows.first()).toBeVisible();
   await page.getByRole("combobox").filter({ has: page.getByRole("option", { name: "All sectors" }) }).selectOption("Information Technology");
@@ -67,6 +68,7 @@ test("F02-H1 a strategy, sector and name filter narrow the list; sort works", as
 test("F02-H2 share link reopens the same screen", async ({ page, context, account }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.goto("/");
+  await openStocks(page);
   await page.getByRole("combobox").filter({ has: page.getByRole("option", { name: "All sectors" }) }).selectOption("Healthcare");
   await page.getByRole("button", { name: "Share link" }).click();
   const link = await page.evaluate(() => navigator.clipboard.readText());
@@ -78,7 +80,7 @@ test("F02-H2 share link reopens the same screen", async ({ page, context, accoun
 
 test("F02-H3 Excel and CSV exports download", async ({ page, account }) => {
   await page.goto("/");
-  await expect(page.getByRole("checkbox", { name: /^Compare / }).first()).toBeVisible();
+  await openStocks(page);
   for (const name of ["Export Excel", "CSV"]) {
     const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name }).click()]);
     const path = await download.path();
@@ -88,6 +90,7 @@ test("F02-H3 Excel and CSV exports download", async ({ page, account }) => {
 
 test("F02-H4 compare two companies", async ({ page, account }) => {
   await page.goto("/");
+  await openStocks(page);
   const rows = page.getByRole("checkbox", { name: /^Compare / });
   await rows.nth(0).check();
   await rows.nth(1).check();
@@ -98,12 +101,12 @@ test("F02-H4 compare two companies", async ({ page, account }) => {
 // ── F03 search → company page ───────────────────────────────────────────────
 test("F03-H1 search opens a company; back returns to Discover", async ({ page, account }) => {
   await page.goto("/");
-  await page.getByRole("textbox", { name: "Search any stock by name or symbol" }).fill("Infosys");
+  await page.getByRole("combobox", { name: "Search any stock by name or symbol" }).fill("Infosys");
   await page.getByRole("option", { name: /Infosys/ }).or(page.getByRole("button", { name: /Infosys/ })).first().click();
   await expect(page.getByRole("heading", { level: 2, name: /Infosys/ })).toBeVisible();
   await expect(page).toHaveURL(/\/stock\/INFY/);
   await page.getByRole("button", { name: /Back/ }).first().click();
-  await expect(page.getByRole("checkbox", { name: /^Compare / }).first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Strategies" })).toBeVisible();
 });
 
 test("F03-N1 an unknown symbol says so", async ({ page, account }) => {

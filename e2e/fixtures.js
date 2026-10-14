@@ -53,4 +53,12 @@ export async function axeCheck(page, label) {
   return bad.map(v => `${label}: ${v.id} (${v.impact}) ×${v.nodes.length} — ${v.help}; e.g. ${v.nodes[0]?.target?.join(" ")} [${(v.nodes[0]?.any?.[0]?.message ?? "").slice(0, 160)}] <${(v.nodes[0]?.html ?? "").slice(0, 140)}>`);
 }
 
+// Discover opens on its strategies (15 Oct 2026); this goes on to the stock
+// list: a new screen of the whole market on a computer, the whole market on a
+// phone
+export async function openStocks(page) {
+  await page.getByRole("button", { name: /Create new screen|Start screening/ }).first().click();
+  await page.getByRole("checkbox", { name: /^Compare / }).first().waitFor();
+}
+
 export { expect };

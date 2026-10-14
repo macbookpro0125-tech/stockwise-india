@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { PanelLeftClose, SlidersHorizontal, ArrowLeft, ChevronRight } from "lucide-react";
+import { PanelLeftClose, SlidersHorizontal, ArrowLeft, ChevronRight, Bookmark } from "lucide-react";
 import { api } from "./api.js";
 import PresetCards from "./PresetCards.jsx";
 import { strategiesStore, browserLeftovers, moveLeftovers, discardLeftovers } from "./accountData.js";
 import ResultsTable from "./ResultsTable.jsx";
-import HowItWorks from "./HowItWorks.jsx";
+import ScreensHome from "./ScreensHome.jsx";
 import FilterPanel, { isActiveFilter } from "./screener/FilterPanel.jsx";
 import MetricPicker from "./screener/MetricPicker.jsx";
 import { useScreenerMeta, DEFAULT_COLUMNS, OLD_DEFAULT_COLUMNS } from "./screener/meta.js";
@@ -88,12 +88,15 @@ export default function DiscoverView({ onOpenStock }) {
   });
   const [activePresetId, setActivePresetId] = useState(null);
   const [activePresetName, setActivePresetName] = useState(null);
+  const [activePresetAbout, setActivePresetAbout] = useState(null);
+  const [strategyCount, setStrategyCount] = useState(null);
 
-  // Phones get Discover in two screens: the strategies, then a strategy's
-  // stocks (asked for 15 Oct 2026: one long page of strategies, filters,
-  // sort rows and cards was too much on a phone). The phone's Back button
-  // returns from the stocks to the strategies (a history entry marks the
-  // stocks screen). A computer keeps the one page.
+  // Discover is two pages, as a screener's list of screens then a screen:
+  // first the strategies (a grid on a computer, a list on a phone), then the
+  // chosen one's filters and stocks (asked for 15 Oct 2026: one page of
+  // strategies, filters, sort and results was confusing). The browser's Back
+  // button returns from the stocks to the strategies (a history entry marks
+  // the stocks page); a shared screen link opens straight on its stocks.
   const [isPhone, setIsPhone] = useState(() => typeof window !== "undefined" && window.matchMedia?.("(max-width: 640px)").matches);
   useEffect(() => {
     const mq = window.matchMedia?.("(max-width: 640px)");
@@ -102,7 +105,7 @@ export default function DiscoverView({ onOpenStock }) {
     mq.addEventListener("change", on);
     return () => mq.removeEventListener("change", on);
   }, []);
-  const [phoneStep, setPhoneStep] = useState(() => (window.history.state?.discoverStep === "stocks" ? "stocks" : "strategies"));
+  const [phoneStep, setPhoneStep] = useState(() => (window.history.state?.discoverStep === "stocks" || filtersFromLink() ? "stocks" : "strategies"));
   useEffect(() => {
     const back = () => setPhoneStep(window.history.state?.discoverStep === "stocks" ? "stocks" : "strategies");
     window.addEventListener("popstate", back);
@@ -185,11 +188,12 @@ export default function DiscoverView({ onOpenStock }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [requestKey]);
 
-  const changeFilters = useCallback(next => { setFilters(next); setActivePresetId(null); setActivePresetName(null); }, []);
+  const changeFilters = useCallback(next => { setFilters(next); setActivePresetId(null); setActivePresetName(null); setActivePresetAbout(null); }, []);
 
   const applyPreset = useCallback(async preset => {
     setActivePresetId(preset.id);
     setActivePresetName(preset.name ?? null);
+    setActivePresetAbout(preset.description ?? null);
     if (Array.isArray(preset.filters)) { setFilters(preset.filters.map(f => ({ ...f }))); return; }
     // Saved before filters existed: the server turns its criteria into filters
     const res = await run({ ...preset.criteria, columns: shownColumnIds });
@@ -339,53 +343,79 @@ export default function DiscoverView({ onOpenStock }) {
 
       <div style={{ animation: "fadeUp 280ms cubic-bezier(0,0,0.2,1) backwards" }}>
         <BrowserLeftovers />
-        {(!isPhone || phoneStep === "strategies") && (<>
-        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-            <h2 style={{ fontSize: 17, fontWeight: 650, color: "var(--t1)", letterSpacing: "-0.02em", margin: 0 }}>Strategies</h2>
-            <span className="hide-phone" style={{ fontSize: 13, color: "var(--t3)" }}>Pick one to start, then change any filter</span>
-          </div>
-          <HowItWorks />
-        </div>
-
-        {/* Phones, first screen: the screen already set comes first */}
-        {isPhone && (
-          <button type="button" onClick={showStocks} className="phone-continue" style={{ margin: "0 0 12px" }}>
-            <span>
-              <span style={{ display: "block", fontSize: 14, fontWeight: 650, color: "var(--t1)" }}>{activeCount > 0 ? "Continue with your filters" : "See the whole market"}</span>
-              <span style={{ display: "block", fontSize: 12.5, color: "var(--t3)", marginTop: 2 }}>
-                {activeCount > 0 ? `${activeCount} filter${activeCount === 1 ? "" : "s"}${matched != null ? ` · ${matched.toLocaleString("en-IN")} stocks` : ""}` : "Every NSE company, to filter yourself"}
+        {phoneStep === "strategies" && (() => {
+          const newScreen = () => { changeFilters([]); setActivePresetName("New screen"); setSideOpen(true); showStocks(); };
+          // The screen already set comes first
+          const continueCard = activeCount > 0 && (
+            <button type="button" onClick={showStocks} className="phone-continue" style={{ margin: isPhone ? "0 0 14px" : "0 0 28px" }}>
+              <span>
+                <span style={{ display: "block", fontSize: 14, fontWeight: 650, color: "var(--t1)" }}>Continue with your filters</span>
+                <span style={{ display: "block", fontSize: 12.5, color: "var(--t3)", marginTop: 2 }}>
+                  {`${activeCount} filter${activeCount === 1 ? "" : "s"}${matched != null ? ` · ${matched.toLocaleString("en-IN")} stocks` : ""}`}
+                </span>
               </span>
-            </span>
-            <ChevronRight size={18} aria-hidden="true" />
-          </button>
-        )}
-        <div data-tour="strategies">
-        <PresetCards
-          stacked={isPhone}
-          onSelect={isPhone ? preset => { applyPreset(preset); showStocks(); } : applyPreset}
-          activePresetId={activePresetId}
-          onSavePreset={activeCount > 0 ? () => setShowSaveModal(true) : null}
-          onUpdatePreset={handleUpdatePreset}
-          onRenamePreset={handleRenamePreset}
-          onDuplicatePreset={handleDuplicatePreset}
-        />
-        </div>
-        </>)}
-
-        {/* Phones, second screen: back to the strategies, and what this list is */}
-        {isPhone && phoneStep === "stocks" && (
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-            <button type="button" onClick={showStrategies} className="btn-ghost" aria-label="Back to strategies" style={{ height: 36, padding: "0 10px", fontSize: 13 }}>
-              <ArrowLeft size={16} aria-hidden="true" /> Strategies
+              <ChevronRight size={18} aria-hidden="true" />
             </button>
-            <h2 style={{ fontSize: 16, fontWeight: 650, color: "var(--t1)", margin: 0, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {activePresetName ?? (activeCount > 0 ? "Your filters" : "Whole market")}
-            </h2>
+          );
+          const cards = (
+            <div data-tour="strategies">
+              <PresetCards
+                layout={isPhone ? "stack" : "grid"}
+                meta={meta}
+                onSelect={preset => { applyPreset(preset); showStocks(); }}
+                activePresetId={activePresetId}
+                onSavePreset={null}
+                onUpdatePreset={handleUpdatePreset}
+                onRenamePreset={handleRenamePreset}
+                onDuplicatePreset={handleDuplicatePreset}
+                onCount={setStrategyCount}
+              />
+            </div>
+          );
+          // The screener's home: a hero, three ways in, then the strategies as
+          // big cards (ScreensHome.jsx); on a phone the hero in short and the
+          // strategies as a list
+          return (
+            <ScreensHome
+              compact={isPhone}
+              meta={meta}
+              total={results?.total}
+              strategies={strategyCount}
+              pricesDate={results?.snapshot?.pricesDate}
+              onStart={newScreen}
+              onCreate={newScreen}
+              onBrowseFilters={() => { newScreen(); setPicker("filter"); }}
+              continueCard={continueCard || null}
+            >{cards}</ScreensHome>
+          );
+        })()}
+
+        {/* Second page: back to the strategies, and which screen this is —
+            its name, what it looks for, and Save */}
+        {phoneStep === "stocks" && (
+          <div className="screen-head">
+            <button type="button" onClick={showStrategies} className="btn-ghost" aria-label="Back to all strategies" style={{ height: 36, padding: "0 10px", fontSize: 13, flexShrink: 0 }}>
+              <ArrowLeft size={16} aria-hidden="true" /> {isPhone ? "Strategies" : "All strategies"}
+            </button>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <h2 style={{ fontSize: isPhone ? 16 : 19, fontWeight: 650, color: "var(--t1)", margin: 0, letterSpacing: "-0.02em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {activePresetName ?? (activeCount > 0 ? "Your filters" : "Whole market")}
+              </h2>
+              {!isPhone && (
+                <p style={{ fontSize: 13, color: "var(--t3)", margin: "2px 0 0" }}>
+                  {activePresetAbout ?? (activeCount > 0 ? `${activeCount} filter${activeCount === 1 ? "" : "s"} of your own — change them in the sidebar` : "Every NSE company — add a filter in the sidebar to narrow it")}
+                </p>
+              )}
+            </div>
+            {!isPhone && activeCount > 0 && (
+              <button type="button" className="btn-ghost" onClick={() => setShowSaveModal(true)} style={{ height: 36, fontSize: 13, flexShrink: 0 }}>
+                <Bookmark size={14} aria-hidden="true" /> Save as strategy
+              </button>
+            )}
           </div>
         )}
 
-        {(!isPhone || phoneStep === "stocks") && (
+        {phoneStep === "stocks" && (
         <div className={`screener ${sideOpen ? "" : "screener-side-closed"}`}>
           {sideOpen && (
             <aside className="screener-side" aria-label="Filters" data-tour="filters">
