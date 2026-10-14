@@ -208,7 +208,7 @@ function StarButton({ symbol, price, watched, size = 30 }) {
   );
 }
 
-export default function ResultsTable({ matches, loading, onAnalyze, totalMatches, universe = null, filters = null, onFiltersChange = null, queryUsed, unsupported = [], notes = [], executionTime, snapshot, netNet = false, noun = "stocks", emptyTitle = "No stocks matched your criteria", emptyHint = "Try relaxing some filters", columns = [], onEditColumns = null, filteredIds = [], meta = null }) {
+export default function ResultsTable({ matches, loading, onAnalyze, totalMatches, universe = null, filters = null, onFiltersChange = null, phoneFilters = null, queryUsed, unsupported = [], notes = [], executionTime, snapshot, netNet = false, noun = "stocks", emptyTitle = "No stocks matched your criteria", emptyHint = "Try relaxing some filters", columns = [], onEditColumns = null, filteredIds = [], meta = null }) {
   const watchlist = useWatchlist();
   const [alertFor, setAlertFor] = useState(null);
   const [showNotes, setShowNotes] = useState(false);
@@ -264,6 +264,8 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
   const [minPiotroski, setMinPiotroski] = useState(0);
   const [watchOnly, setWatchOnly] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
+  // Phones: the name box and score boxes open from the one toolbar
+  const [searchOpen, setSearchOpen] = useState(false);
   const pageSize = isMobile ? PHONE_PAGE_SIZE : PAGE_SIZE;
   const [visibleCount, setVisibleCount] = useState(() => typeof window !== "undefined" && window.innerWidth < 640 ? PHONE_PAGE_SIZE : PAGE_SIZE);
   useEffect(() => { setVisibleCount(pageSize); }, [matches, pageSize]);
@@ -441,7 +443,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
           <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
             {exportError && <span style={{ fontSize: 11, color: "var(--red)" }}>{exportError}</span>}
             {!loading && (matches?.length ?? 0) > 1 && (
-              <div className="sort-control" style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <div className={`sort-control${phoneFilters ? " hide-phone" : ""}`} style={{ display: "flex", alignItems: "center", gap: 4 }}>
                 <select value={sortBy} onChange={e => pickSort(e.target.value)} aria-label="Sort by"
                   style={{ height: 32, padding: "0 8px", borderRadius: 8, border: "1px solid var(--bdr2)", background: "var(--s2)", color: "var(--t1)", fontSize: 12.5, fontFamily: "inherit", cursor: "pointer", maxWidth: 190 }}>
                   {sortOptions.map(([id, label]) => <option key={id} value={id}>Sort: {label}</option>)}
@@ -468,7 +470,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
               </button>
             )}
             {!loading && (matches?.length ?? 0) > 0 && (
-              <button type="button" onClick={() => setShowGuide(true)} className="btn-ghost" style={{ height: 32, fontSize: 12.5 }} title="What these columns mean">
+              <button type="button" onClick={() => setShowGuide(true)} className="btn-ghost hide-phone" style={{ height: 32, fontSize: 12.5 }} title="What these columns mean">
                 <Info size={13} /> Column guide
               </button>
             )}
@@ -486,16 +488,46 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
         </div>
       )}
 
+      {/* ── Phones: one toolbar — Filters, the sort (column and direction), and
+             a search button that opens the name box with the score boxes.
+             There even when the filters leave nothing, so they can be
+             changed ── */}
+      {isMobile && !loading && phoneFilters && (
+        <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
+          {phoneFilters}
+          {(matches?.length ?? 0) > 1 && (
+            <>
+              <select value={sortBy} onChange={e => pickSort(e.target.value)} aria-label="Sort by"
+                style={{ height: 36, padding: "0 6px", borderRadius: 8, border: "1px solid var(--bdr2)", background: "var(--s2)", color: "var(--t1)", fontSize: 16, fontFamily: "inherit", cursor: "pointer", minWidth: 0, maxWidth: 150, flex: "0 1 auto" }}>
+                {/* "Quality", not "Quality score": the box is narrow on a phone */}
+                {sortOptions.map(([id, label]) => <option key={id} value={id}>{label.replace(/ score$/, "")}</option>)}
+              </select>
+              <button type="button" onClick={() => setSortDir(d => (d === "asc" ? "desc" : "asc"))} aria-label={`${dirLabel} — tap to reverse`} title={dirLabel} className="btn-ghost"
+                style={{ height: 36, width: 36, padding: 0, justifyContent: "center", flexShrink: 0 }}>
+                {sortDir === "desc" ? <ArrowDown size={15} aria-hidden="true" /> : <ArrowUp size={15} aria-hidden="true" />}
+              </button>
+            </>
+          )}
+          {(matches?.length ?? 0) > 0 && (
+            <button type="button" className="btn-ghost" aria-label="Search and score filters" aria-expanded={searchOpen || !!q || scoreFiltered} onClick={() => setSearchOpen(o => !o)}
+              style={{ height: 36, width: 40, padding: 0, justifyContent: "center", marginLeft: "auto", flexShrink: 0, ...(searchOpen || q || scoreFiltered ? { borderColor: "var(--accent)", color: "var(--accent)" } : {}) }}>
+              <Search size={16} aria-hidden="true" />
+            </button>
+          )}
+        </div>
+      )}
+
       {/* ── Name box, and Watchlist only. Score minimums are set from each
              Name box + the three scores: pick Quality 70+, then Research or
              Piotroski with it ── */}
-      {!loading && (matches?.length ?? 0) > 0 && (
+      {!loading && (matches?.length ?? 0) > 0 && (!isMobile || searchOpen || !!q || scoreFiltered) && (
         <div className="score-row" style={{ marginBottom: 12 }}>
           <div style={{ position: "relative", minWidth: 0 }}>
             <Search size={15} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--t3)", pointerEvents: "none" }} />
             <input
               type="text"
               placeholder="Filter by name or ticker…"
+              autoFocus={isMobile && searchOpen}
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="input-base"
@@ -552,13 +584,6 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
       {/* ── The screen's filters, one chip each (describeFilters joins them with " · ").
           Only on a phone (index.css .filter-chips), where the filter sidebar is
           behind a button; on a computer the sidebar beside the table lists them ── */}
-      {queryUsed && !loading && (
-        <div className="filter-chips" style={{ flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
-          {queryUsed.split(" · ").map(part => (
-            <span key={part} style={{ fontSize: 12, color: "var(--t2)", background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 6, padding: "3px 9px", lineHeight: 1.5, ...MONO }}>{part}</span>
-          ))}
-        </div>
-      )}
       {notes.length > 0 && !loading && showNotes && (
         <div style={{ display: "flex", alignItems: "flex-start", gap: 6, fontSize: 12, color: "var(--t3)", marginBottom: 14, lineHeight: 1.5 }}>
           <Info size={13} style={{ flexShrink: 0, marginTop: 2 }} />

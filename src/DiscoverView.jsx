@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { PanelLeftClose, SlidersHorizontal } from "lucide-react";
+import { PanelLeftClose, SlidersHorizontal, ArrowLeft, ChevronRight } from "lucide-react";
 import { api } from "./api.js";
 import PresetCards from "./PresetCards.jsx";
 import { strategiesStore, browserLeftovers, moveLeftovers, discardLeftovers } from "./accountData.js";
@@ -87,6 +87,36 @@ export default function DiscoverView({ onOpenStock }) {
     return Array.isArray(saved) && saved.join() === OLD_DEFAULT_COLUMNS.join() ? DEFAULT_COLUMNS : saved;
   });
   const [activePresetId, setActivePresetId] = useState(null);
+  const [activePresetName, setActivePresetName] = useState(null);
+
+  // Phones get Discover in two screens: the strategies, then a strategy's
+  // stocks (asked for 15 Oct 2026: one long page of strategies, filters,
+  // sort rows and cards was too much on a phone). The phone's Back button
+  // returns from the stocks to the strategies (a history entry marks the
+  // stocks screen). A computer keeps the one page.
+  const [isPhone, setIsPhone] = useState(() => typeof window !== "undefined" && window.matchMedia?.("(max-width: 640px)").matches);
+  useEffect(() => {
+    const mq = window.matchMedia?.("(max-width: 640px)");
+    if (!mq) return;
+    const on = () => setIsPhone(mq.matches);
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  const [phoneStep, setPhoneStep] = useState(() => (window.history.state?.discoverStep === "stocks" ? "stocks" : "strategies"));
+  useEffect(() => {
+    const back = () => setPhoneStep(window.history.state?.discoverStep === "stocks" ? "stocks" : "strategies");
+    window.addEventListener("popstate", back);
+    return () => window.removeEventListener("popstate", back);
+  }, []);
+  const showStocks = () => {
+    if (window.history.state?.discoverStep !== "stocks") window.history.pushState({ ...(window.history.state ?? {}), discoverStep: "stocks" }, "");
+    setPhoneStep("stocks");
+    window.scrollTo(0, 0);
+  };
+  const showStrategies = () => {
+    if (window.history.state?.discoverStep === "stocks") window.history.back();
+    else setPhoneStep("strategies");
+  };
   const [results, setResults] = useState(null);
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState("");
@@ -155,10 +185,11 @@ export default function DiscoverView({ onOpenStock }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [requestKey]);
 
-  const changeFilters = useCallback(next => { setFilters(next); setActivePresetId(null); }, []);
+  const changeFilters = useCallback(next => { setFilters(next); setActivePresetId(null); setActivePresetName(null); }, []);
 
   const applyPreset = useCallback(async preset => {
     setActivePresetId(preset.id);
+    setActivePresetName(preset.name ?? null);
     if (Array.isArray(preset.filters)) { setFilters(preset.filters.map(f => ({ ...f }))); return; }
     // Saved before filters existed: the server turns its criteria into filters
     const res = await run({ ...preset.criteria, columns: shownColumnIds });
@@ -308,6 +339,7 @@ export default function DiscoverView({ onOpenStock }) {
 
       <div style={{ animation: "fadeUp 280ms cubic-bezier(0,0,0.2,1) backwards" }}>
         <BrowserLeftovers />
+        {(!isPhone || phoneStep === "strategies") && (<>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
             <h2 style={{ fontSize: 17, fontWeight: 650, color: "var(--t1)", letterSpacing: "-0.02em", margin: 0 }}>Strategies</h2>
@@ -316,9 +348,22 @@ export default function DiscoverView({ onOpenStock }) {
           <HowItWorks />
         </div>
 
+        {/* Phones, first screen: the screen already set comes first */}
+        {isPhone && (
+          <button type="button" onClick={showStocks} className="phone-continue" style={{ margin: "0 0 12px" }}>
+            <span>
+              <span style={{ display: "block", fontSize: 14, fontWeight: 650, color: "var(--t1)" }}>{activeCount > 0 ? "Continue with your filters" : "See the whole market"}</span>
+              <span style={{ display: "block", fontSize: 12.5, color: "var(--t3)", marginTop: 2 }}>
+                {activeCount > 0 ? `${activeCount} filter${activeCount === 1 ? "" : "s"}${matched != null ? ` · ${matched.toLocaleString("en-IN")} stocks` : ""}` : "Every NSE company, to filter yourself"}
+              </span>
+            </span>
+            <ChevronRight size={18} aria-hidden="true" />
+          </button>
+        )}
         <div data-tour="strategies">
         <PresetCards
-          onSelect={applyPreset}
+          stacked={isPhone}
+          onSelect={isPhone ? preset => { applyPreset(preset); showStocks(); } : applyPreset}
           activePresetId={activePresetId}
           onSavePreset={activeCount > 0 ? () => setShowSaveModal(true) : null}
           onUpdatePreset={handleUpdatePreset}
@@ -326,7 +371,21 @@ export default function DiscoverView({ onOpenStock }) {
           onDuplicatePreset={handleDuplicatePreset}
         />
         </div>
+        </>)}
 
+        {/* Phones, second screen: back to the strategies, and what this list is */}
+        {isPhone && phoneStep === "stocks" && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+            <button type="button" onClick={showStrategies} className="btn-ghost" aria-label="Back to strategies" style={{ height: 36, padding: "0 10px", fontSize: 13 }}>
+              <ArrowLeft size={16} aria-hidden="true" /> Strategies
+            </button>
+            <h2 style={{ fontSize: 16, fontWeight: 650, color: "var(--t1)", margin: 0, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {activePresetName ?? (activeCount > 0 ? "Your filters" : "Whole market")}
+            </h2>
+          </div>
+        )}
+
+        {(!isPhone || phoneStep === "stocks") && (
         <div className={`screener ${sideOpen ? "" : "screener-side-closed"}`}>
           {sideOpen && (
             <aside className="screener-side" aria-label="Filters" data-tour="filters">
@@ -340,7 +399,7 @@ export default function DiscoverView({ onOpenStock }) {
           )}
 
           <main style={{ minWidth: 0 }}>
-            <div className="screener-toolbar">
+            <div className="screener-toolbar hide-phone">
               <button data-tour="filters" className={`btn-ghost ${sideOpen ? "screener-filters-toggle" : ""}`} onClick={() => (window.innerWidth <= 900 ? setSheetOpen(true) : setSideOpen(true))} style={{ height: 34, fontSize: 12.5 }}>
                 <SlidersHorizontal size={14} /> Filters{activeCount > 0 && <span style={{ marginLeft: 2, fontSize: 10.5, padding: "0 7px", borderRadius: 999, fontWeight: 700, background: "var(--accent)", color: "var(--on-accent)" }}>{activeCount}</span>}
               </button>
@@ -386,10 +445,16 @@ export default function DiscoverView({ onOpenStock }) {
               columns={shownColumns}
               filteredIds={(filters ?? []).filter(f => !f.values && isActiveFilter(f)).map(f => f.id)}
               onEditColumns={meta ? () => setPicker("column") : null}
+              phoneFilters={isPhone ? (
+                <button data-tour="filters" className="btn-ghost" onClick={() => setSheetOpen(true)} style={{ height: 36, fontSize: 13 }}>
+                  <SlidersHorizontal size={14} /> Filters{activeCount > 0 && <span style={{ marginLeft: 2, fontSize: 10.5, padding: "0 7px", borderRadius: 999, fontWeight: 700, background: "var(--accent)", color: "var(--on-accent)" }}>{activeCount}</span>}
+                </button>
+              ) : null}
               meta={meta}
             />
           </main>
         </div>
+        )}
       </div>
 
       <p style={{ fontSize: 11, color: "var(--t3)", textAlign: "center", marginTop: 48, lineHeight: 1.8, letterSpacing: "-0.01em" }}>

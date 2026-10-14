@@ -13,7 +13,7 @@ const tint = pct => `color-mix(in srgb, var(--accent) ${pct}%, transparent)`;
 
 const loadCustomPresets = () => strategiesStore.get();
 
-export default function PresetCards({ onSelect, activePresetId, onSavePreset, onUpdatePreset, onRenamePreset, onDuplicatePreset }) {
+export default function PresetCards({ onSelect, activePresetId, onSavePreset, onUpdatePreset, onRenamePreset, onDuplicatePreset, stacked = false }) {
   const [presets, setPresets] = useState([]);
   const [customPresets, setCustomPresets] = useState(loadCustomPresets);
   const [menuOpen, setMenuOpen] = useState(null);
@@ -61,7 +61,8 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
   const allPresets = [...presets, ...customPresets];
 
   return (
-    <div className="preset-strip" style={{ marginBottom: 24, position: "relative" }}>
+    // stacked: phones' strategy list (index.css .preset-stack), one under another
+    <div className={`preset-strip${stacked ? " preset-stack" : ""}`} style={{ marginBottom: stacked ? 0 : 24, position: "relative" }}>
       <div className="preset-scroll" style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 6, scrollbarWidth: "none", maskImage: "linear-gradient(to right, transparent 0, black 0, black calc(100% - 48px), transparent 100%)", WebkitMaskImage: "linear-gradient(to right, transparent 0, black 0, black calc(100% - 48px), transparent 100%)" }}>
         <style>{`.preset-scroll::-webkit-scrollbar{display:none}`}</style>
 

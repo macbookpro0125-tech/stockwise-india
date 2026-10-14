@@ -435,8 +435,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   backdrop-filter: blur(16px) saturate(180%);
 }
 .bottom-tab-bar { display: none; }
-/* The active-filter chips show on a phone only (ResultsTable.jsx) */
-.filter-chips { display: none; }
 
 /* On a phone the header would hold a large share of the screen if pinned, so
    it scrolls away; its tabs move to a bar fixed at the bottom. */
@@ -546,9 +544,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 /* Phones: the screen's filters as one row that scrolls sideways, rather than
    a chip per line pushing the results down */
 @media (max-width: 640px) {
-  .filter-chips { display: flex !important; flex-wrap: nowrap !important; overflow-x: auto; scrollbar-width: none; }
-  .filter-chips::-webkit-scrollbar { display: none; }
-  .filter-chips > span { white-space: nowrap; flex-shrink: 0; }
 }
 
 /* The metric picker: categories stack above the list on phones */
@@ -641,6 +636,19 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   .brief-assumptions-table { min-width: 0 !important; }
   .brief-assumptions-table input { width: 68px !important; }
 }
+
+/* Phones: the strategies as a list, the first of Discover's two screens
+   (PresetCards stacked, DiscoverView) */
+@media (max-width: 640px) {
+  .preset-stack .preset-scroll { flex-direction: column; overflow: visible !important; -webkit-mask-image: none !important; mask-image: none !important; padding-bottom: 0 !important; }
+  .preset-stack .preset-card-wrap { width: 100%; }
+  .preset-stack .preset-card { width: 100% !important; max-width: none !important; display: grid !important; grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; align-items: center; padding: 12px 14px !important; }
+  .preset-stack .preset-card > .preset-icon { grid-row: span 2; }
+  .preset-stack .preset-card > span { white-space: normal !important; }
+  .preset-stack .preset-desc { display: -webkit-box !important; -webkit-line-clamp: 2 !important; }
+  .preset-stack .preset-save { width: 100% !important; justify-content: center; padding: 12px !important; flex-direction: row !important; }
+}
+.phone-continue { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; margin-top: 10px; padding: 14px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--bdr2)); background: color-mix(in srgb, var(--accent) 7%, var(--s2)); color: var(--accent); text-align: left; font-family: inherit; cursor: pointer; }
 
 /* A column's ▾ (ResultsTable MenuButton): quiet until hovered, open or the
    column is filtered */
