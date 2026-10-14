@@ -14,6 +14,14 @@ const { base, browser, context } = await startDemoApp({ port: 8793 });
 const page = await context.newPage();
 await page.goto(base, { waitUntil: "networkidle" });
 
+// A new demo account is offered the tour, whose dialog covers the page and
+// takes the clicks below; skip it when it's there
+const skipTour = page.getByRole("button", { name: "Skip tour" });
+if (await skipTour.isVisible().catch(() => false)) {
+  await skipTour.click();
+  await skipTour.waitFor({ state: "hidden" });
+}
+
 // Discover: a strategy's results, just under the header
 await page.getByRole("button", { name: /Buffett-style/ }).click();
 await page.locator("table.data-table tbody tr").first().waitFor();

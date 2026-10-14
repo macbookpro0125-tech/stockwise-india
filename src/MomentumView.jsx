@@ -63,13 +63,13 @@ function PositionCalculator({ row, config, onClose }) {
     </label>
   );
   const out = (label, value, color) => (
-    <div style={{ padding: "10px 12px", borderRadius: 10, background: "var(--s1)", border: "1px solid var(--bdr)", minWidth: 0 }}>
+    <div style={{ padding: "10px 12px", borderRadius: 4, background: "var(--s1)", border: "1px solid var(--bdr)", minWidth: 0 }}>
       <div style={{ fontSize: 11, color: "var(--t3)", marginBottom: 3 }}>{label}</div>
       <div style={{ fontSize: 15, fontWeight: 650, color: color ?? "var(--t1)", ...MONO }}>{value}</div>
     </div>
   );
   return (
-    <div style={{ borderRadius: 14, border: "1px solid var(--bdr2)", background: "var(--s2)", padding: 16, marginBottom: 16, boxShadow: "var(--sh-sm)" }}>
+    <div style={{ borderRadius: 6, border: "1px solid var(--bdr2)", background: "var(--s2)", padding: 16, marginBottom: 16, boxShadow: "var(--sh-sm)" }}>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 12 }}>
         <Calculator size={18} style={{ color: "var(--accent)", marginTop: 2, flexShrink: 0 }} />
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -163,19 +163,19 @@ export default function MomentumView({ onOpenStock }) {
         <h2 style={{ fontSize: 19, fontWeight: 700, color: "var(--t1)", margin: 0, letterSpacing: "-0.02em", display: "flex", alignItems: "center", gap: 8 }}>
           <Zap size={18} style={{ color: "var(--yellow)" }} /> Momentum
         </h2>
-        <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 999, background: "var(--yellow-dim)", color: "var(--yellow)", border: "1px solid var(--yellow-bdr)" }}>Short-term · speculative</span>
+        <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 9px", borderRadius: 3, background: "var(--yellow-dim)", color: "var(--yellow)", border: "1px solid var(--yellow-bdr)" }}>Short-term · speculative</span>
       </div>
       <p style={{ fontSize: 13, color: "var(--t2)", margin: "0 0 12px", lineHeight: 1.55, maxWidth: 820 }}>
         Companies in a confirmed uptrend near their 52-week high, on heavier volume — a screen for moves of about a month. Price and volume only: it's separate from Discover's Quality and Research scores, and a company can rank high here and low there.
       </p>
-      <div style={{ display: "flex", gap: 8, alignItems: "flex-start", padding: "10px 12px", borderRadius: 10, background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", fontSize: 12, color: "var(--t2)", lineHeight: 1.55, marginBottom: 14, maxWidth: 820 }}>
+      <div style={{ display: "flex", gap: 8, alignItems: "flex-start", padding: "10px 12px", borderRadius: 4, background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", fontSize: 12, color: "var(--t2)", lineHeight: 1.55, marginBottom: 14, maxWidth: 820 }}>
         <TriangleAlert size={14} style={{ color: "var(--yellow)", flexShrink: 0, marginTop: 2 }} />
         <span>A screen of price patterns, not a recommendation to buy or sell. Short-term moves reverse often, and these figures use NSE's closing prices{data?.asOf ? ` of ${dayLabel(data.asOf)}` : ""}, not live ones. Educational use only — not investment advice.</span>
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
         <button type="button" className="btn-ghost" onClick={() => setShowSettings(v => !v)} aria-expanded={showSettings} style={{ height: 34, fontSize: 12.5 }}>
-          <SlidersHorizontal size={14} /> Settings{changed && <span style={{ fontSize: 10.5, padding: "0 7px", borderRadius: 999, fontWeight: 700, background: "var(--accent)", color: "var(--on-accent)" }}>changed</span>}
+          <SlidersHorizontal size={14} /> Settings{changed && <span style={{ fontSize: 10.5, padding: "0 7px", borderRadius: 3, fontWeight: 700, background: "var(--accent)", color: "var(--on-accent)" }}>changed</span>}
         </button>
         {data && !loading && data.available && (
           <span style={{ fontSize: 12.5, color: "var(--t2)" }}>
@@ -193,7 +193,7 @@ export default function MomentumView({ onOpenStock }) {
       </div>
 
       {showSettings && defaults && (
-        <div style={{ borderRadius: 12, border: "1px solid var(--bdr2)", background: "var(--s2)", padding: 14, marginBottom: 14 }}>
+        <div style={{ borderRadius: 6, border: "1px solid var(--bdr2)", background: "var(--s2)", padding: 14, marginBottom: 14 }}>
           <div style={{ fontSize: 12, color: "var(--t3)", marginBottom: 10, lineHeight: 1.5 }}>
             Every check must pass. Price over its 20-day average, the 20-day over the 50-day and the 50-day over the 200-day is always required.
           </div>
@@ -220,7 +220,7 @@ export default function MomentumView({ onOpenStock }) {
       {calcFor && config && <PositionCalculator key={calcFor.symbol} row={calcFor} config={config} onClose={() => setCalcFor(null)} />}
 
       {error && (
-        <div style={{ padding: "12px 16px", borderRadius: 12, background: "var(--red-dim)", border: "1px solid var(--red-bdr)", color: "var(--red)", fontSize: 13, marginBottom: 16 }}>
+        <div style={{ padding: "12px 16px", borderRadius: 6, background: "var(--red-dim)", border: "1px solid var(--red-bdr)", color: "var(--red)", fontSize: 13, marginBottom: 16 }}>
           <strong>Error — </strong>{error}
         </div>
       )}
@@ -232,7 +232,7 @@ export default function MomentumView({ onOpenStock }) {
       )}
 
       {data && !error && !data.available && (
-        <div role="status" style={{ textAlign: "center", padding: "40px 20px", border: "1px dashed var(--bdr2)", borderRadius: 14, background: "var(--s1)" }}>
+        <div role="status" style={{ textAlign: "center", padding: "40px 20px", border: "1px dashed var(--bdr2)", borderRadius: 6, background: "var(--s1)" }}>
           <div style={{ fontSize: 15, fontWeight: 650, color: "var(--t1)", marginBottom: 6 }}>Momentum figures aren't in yet</div>
           <p style={{ fontSize: 13, color: "var(--t2)", margin: "0 auto", maxWidth: 520, lineHeight: 1.6 }}>They're worked out with each evening's prices. Check back after the next update.</p>
         </div>
@@ -240,7 +240,7 @@ export default function MomentumView({ onOpenStock }) {
 
       {/* No passers is an answer, not an error — the checks aren't loosened */}
       {data && !error && data.available && passers.length === 0 && (
-        <div role="status" style={{ textAlign: "center", padding: "40px 20px", border: "1px dashed var(--bdr2)", borderRadius: 14, background: "var(--s1)" }}>
+        <div role="status" style={{ textAlign: "center", padding: "40px 20px", border: "1px dashed var(--bdr2)", borderRadius: 6, background: "var(--s1)" }}>
           <div style={{ fontSize: 15, fontWeight: 650, color: "var(--t1)", marginBottom: 6 }}>No confirmed uptrends today</div>
           <p style={{ fontSize: 13, color: "var(--t2)", margin: "0 auto", maxWidth: 520, lineHeight: 1.6 }}>
             Nothing passes every check on NSE's close of {dayLabel(data.asOf)}. That's the screen's answer for today: no setup. The checks aren't loosened to fill the list{changed ? " — your settings differ from the defaults" : ""}.
@@ -249,7 +249,7 @@ export default function MomentumView({ onOpenStock }) {
       )}
 
       {passers.length > 0 && isMobile && (
-        <div style={{ borderRadius: 12, border: "1px solid var(--bdr2)", background: "var(--s2)", overflow: "hidden" }}>
+        <div style={{ borderRadius: 6, border: "1px solid var(--bdr2)", background: "var(--s2)", overflow: "hidden" }}>
           {passers.map((r, i) => (
             <div key={r.symbol} className="phone-row" onClick={() => onOpenStock(r.symbol)}
               style={{ padding: "12px 12px 12px 14px", borderTop: i ? "1px solid var(--bdr)" : "none", cursor: "pointer" }}>
@@ -277,7 +277,7 @@ export default function MomentumView({ onOpenStock }) {
       )}
 
       {passers.length > 0 && !isMobile && (
-        <div style={{ borderRadius: 12, border: "1px solid var(--bdr2)", overflow: "auto", background: "var(--s2)", boxShadow: "var(--sh-xs)" }}>
+        <div style={{ borderRadius: 6, border: "1px solid var(--bdr2)", overflow: "auto", background: "var(--s2)", boxShadow: "var(--sh-xs)" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
             <thead>
               <tr style={{ background: "var(--s3)" }}>

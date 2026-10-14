@@ -28,7 +28,7 @@ export function BellIcon({ filled, size = 15 }) {
 // Icon-only square button, as in the original's results rows
 export function actionButtonStyle({ active, activeColor, size = 30 }) {
   return {
-    width: size, height: size, borderRadius: 8, padding: 0,
+    width: size, height: size, borderRadius: 4, padding: 0,
     border: `1px solid ${active ? activeColor : "var(--bdr3)"}`,
     background: active ? `color-mix(in srgb, ${activeColor} 14%, transparent)` : "var(--s3)",
     color: active ? activeColor : "var(--t2)",

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "./api.js";
 
-const card = { border: "1px solid var(--bdr2)", borderRadius: 12, padding: 18, marginBottom: 12, background: "var(--s2)" };
+const card = { border: "1px solid var(--bdr2)", borderRadius: 6, padding: 18, marginBottom: 12, background: "var(--s2)" };
 const pct = v => v == null ? "not available" : `${v.toFixed(1)}%`;
 // The account is where a thesis lives. This browser keeps only edits that
 // haven't reached the account yet, filed under the account that wrote them —
@@ -78,7 +78,7 @@ export default function ThesisMonitor({ metrics: m, account }) {
 
   const strengths = (m.pros ?? []).slice(0, 4);
   const risks = (m.cons ?? []).slice(0, 4);
-  const editStyle = { width: "100%", minHeight: 62, resize: "vertical", boxSizing: "border-box", border: "1px solid var(--bdr2)", borderRadius: 8, background: "var(--s1)", color: "var(--t1)", padding: "8px 10px", font: "inherit", fontSize: 12, lineHeight: 1.5 };
+  const editStyle = { width: "100%", minHeight: 62, resize: "vertical", boxSizing: "border-box", border: "1px solid var(--bdr2)", borderRadius: 4, background: "var(--s1)", color: "var(--t1)", padding: "8px 10px", font: "inherit", fontSize: 12, lineHeight: 1.5 };
   return (
     <section style={card} aria-labelledby="thesis-monitor-title">
       <h3 id="thesis-monitor-title" style={{ fontSize: 15, fontWeight: 650, margin: "0 0 4px", color: "var(--t1)" }}>Investment case &amp; what to monitor</h3>

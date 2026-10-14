@@ -420,7 +420,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
 
   const btn = (active, extra = {}) => ({
     display: "inline-flex", alignItems: "center", gap: 5, height: narrow ? 34 : 30, padding: narrow ? "0 10px" : "0 9px",
-    borderRadius: 7, fontSize: 12, fontWeight: 600, fontFamily: "inherit", cursor: "pointer", whiteSpace: "nowrap",
+    borderRadius: 4, fontSize: 12, fontWeight: 600, fontFamily: "inherit", cursor: "pointer", whiteSpace: "nowrap",
     border: `1px solid ${active ? "var(--accent)" : "var(--bdr2)"}`,
     background: active ? "color-mix(in srgb, var(--accent) 10%, transparent)" : "var(--s3)",
     color: active ? "var(--accent)" : "var(--t2)", ...extra,
@@ -477,9 +477,9 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
             <SlidersHorizontal size={14} aria-hidden="true" />Indicators{activeInd > 0 && <span style={MONO}> · {activeInd}</span>}
           </button>
           {menuOpen && !narrow && (
-            <div role="group" aria-label="Indicators" style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, zIndex: 30, minWidth: 230, padding: 6, borderRadius: 10, background: "var(--s3)", border: "1px solid var(--bdr2)", boxShadow: "0 10px 30px rgba(0,0,0,0.3)" }}>
+            <div role="group" aria-label="Indicators" style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, zIndex: 30, minWidth: 230, padding: 6, borderRadius: 4, background: "var(--s3)", border: "1px solid var(--bdr2)", boxShadow: "0 10px 30px rgba(0,0,0,0.3)" }}>
               {INDICATORS.map(i => (
-                <label key={i.id} style={{ display: "flex", alignItems: "center", gap: 9, padding: "8px 8px", borderRadius: 6, fontSize: 13, color: "var(--t1)", cursor: "pointer" }}>
+                <label key={i.id} style={{ display: "flex", alignItems: "center", gap: 9, padding: "8px 8px", borderRadius: 4, fontSize: 13, color: "var(--t1)", cursor: "pointer" }}>
                   <input type="checkbox" checked={!!prefs.ind[i.id]} onChange={() => toggleInd(i.id)} />
                   {i.color && <span aria-hidden="true" style={{ width: 12, height: 3, borderRadius: 2, background: i.color, flexShrink: 0 }} />}
                   {i.label}
@@ -506,9 +506,9 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
         </div>
       </div>
       {menuOpen && narrow && (
-        <div role="group" aria-label="Indicators" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2, padding: 6, marginBottom: 8, borderRadius: 10, background: "var(--s3)", border: "1px solid var(--bdr2)" }}>
+        <div role="group" aria-label="Indicators" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2, padding: 6, marginBottom: 8, borderRadius: 4, background: "var(--s3)", border: "1px solid var(--bdr2)" }}>
           {INDICATORS.map(i => (
-            <label key={i.id} style={{ display: "flex", alignItems: "center", gap: 8, minHeight: 40, padding: "0 8px", borderRadius: 6, fontSize: 13, color: "var(--t1)", cursor: "pointer" }}>
+            <label key={i.id} style={{ display: "flex", alignItems: "center", gap: 8, minHeight: 40, padding: "0 8px", borderRadius: 4, fontSize: 13, color: "var(--t1)", cursor: "pointer" }}>
               <input type="checkbox" checked={!!prefs.ind[i.id]} onChange={() => toggleInd(i.id)} />
               {i.color && <span aria-hidden="true" style={{ width: 10, height: 3, borderRadius: 2, background: i.color, flexShrink: 0 }} />}
               {i.label.replace(" (20, 2)", "").replace(" (12, 26, 9)", "").replace(" (14)", "")}
@@ -544,9 +544,9 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
             </form>
           )}
           {lines.map((p, i) => (
-            <span key={`${p}-${i}`} style={{ display: "inline-flex", alignItems: "center", gap: 2, height: narrow ? 34 : 26, padding: "0 2px 0 9px", borderRadius: 999, border: "1px solid var(--bdr2)", background: "var(--s3)", color: "var(--t1)", ...MONO }}>
+            <span key={`${p}-${i}`} style={{ display: "inline-flex", alignItems: "center", gap: 2, height: narrow ? 34 : 26, padding: "0 2px 0 9px", borderRadius: 3, border: "1px solid var(--bdr2)", background: "var(--s3)", color: "var(--t1)", ...MONO }}>
               {fmtRs(p)}
-              <button type="button" onClick={() => saveLines(lines.filter((_, j) => j !== i))} aria-label={`Remove line at ${fmtRs(p)}`} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: narrow ? 32 : 22, minHeight: narrow ? 32 : 22, border: 0, background: "none", color: "var(--t2)", cursor: "pointer", padding: 0, borderRadius: 999 }}>
+              <button type="button" onClick={() => saveLines(lines.filter((_, j) => j !== i))} aria-label={`Remove line at ${fmtRs(p)}`} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: narrow ? 32 : 22, minHeight: narrow ? 32 : 22, border: 0, background: "none", color: "var(--t2)", cursor: "pointer", padding: 0, borderRadius: 3 }}>
                 <X size={13} aria-hidden="true" />
               </button>
             </span>

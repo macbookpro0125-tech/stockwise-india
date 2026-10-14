@@ -22,7 +22,7 @@ const nseDate = s => (s ? String(s).split(" ")[0].replace(/-(\d{4})$/, " $1").re
 function TabButton({ active, onClick, children }) {
   return (
     <button onClick={onClick} style={{
-      height: 34, padding: "0 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer",
+      height: 34, padding: "0 14px", borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: "pointer",
       border: `1px solid ${active ? "var(--accent)" : "var(--bdr2)"}`,
       background: active ? "color-mix(in srgb, var(--accent) 8%, transparent)" : "var(--s3)",
       color: active ? "var(--accent)" : "var(--t2)",
@@ -85,7 +85,7 @@ export default function NewsPanel({ symbol }) {
   };
 
   return (
-    <div style={{ border: "1px solid var(--bdr2)", borderRadius: 14, background: "var(--s2)", padding: 16, marginBottom: 16 }}>
+    <div style={{ border: "1px solid var(--bdr2)", borderRadius: 6, background: "var(--s2)", padding: 16, marginBottom: 16 }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 10 }}>
         <div style={{ fontSize: 14, fontWeight: 700, color: "var(--t1)", letterSpacing: "-0.01em" }}>News &amp; filings</div>
         <a href={`https://www.nseindia.com/get-quotes/equity?symbol=${encodeURIComponent(symbol)}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: "var(--accent)", textDecoration: "none", fontWeight: 600 }}>
@@ -104,7 +104,7 @@ export default function NewsPanel({ symbol }) {
           <div style={{ fontSize: 11.5, fontWeight: 600, color: "var(--t3)", marginBottom: 6 }}>Annual reports</div>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {reports.slice(0, expanded ? reports.length : 8).map(r => (
-              <a key={r.url} href={r.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, fontWeight: 600, textDecoration: "none", padding: "3px 9px", borderRadius: 999, border: "1px solid var(--bdr2)", background: "var(--s3)", color: "var(--t2)", whiteSpace: "nowrap", ...MONO }}>
+              <a key={r.url} href={r.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, fontWeight: 600, textDecoration: "none", padding: "3px 9px", borderRadius: 3, border: "1px solid var(--bdr2)", background: "var(--s3)", color: "var(--t2)", whiteSpace: "nowrap", ...MONO }}>
                 {r.title}
               </a>
             ))}
@@ -138,16 +138,16 @@ export default function NewsPanel({ symbol }) {
             );
             const reviewBlock = tab === "filings" && a.review && <>
                 <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap", marginTop: 6 }}>
-                  <span style={{ fontSize: 10, fontWeight: 650, padding: "2px 7px", borderRadius: 999, color: a.review.priority === "Review promptly" ? "var(--red)" : a.review.priority === "Read for context" ? "var(--yellow)" : "var(--t3)", background: a.review.priority === "Review promptly" ? "var(--red-dim)" : a.review.priority === "Read for context" ? "var(--yellow-dim)" : "var(--s3)" }}>{a.review.priority}</span>
+                  <span style={{ fontSize: 10, fontWeight: 650, padding: "2px 7px", borderRadius: 3, color: a.review.priority === "Review promptly" ? "var(--red)" : a.review.priority === "Read for context" ? "var(--yellow)" : "var(--t3)", background: a.review.priority === "Review promptly" ? "var(--red-dim)" : a.review.priority === "Read for context" ? "var(--yellow-dim)" : "var(--s3)" }}>{a.review.priority}</span>
                   <span style={{ fontSize: 10.5, color: "var(--t3)" }}>{a.review.category} · Matched: “{a.review.matchedText}”</span>
                 </div>
                 <div style={{ fontSize: 11, color: "var(--t2)", lineHeight: 1.5, marginTop: 4 }}>{a.review.reviewPrompt}{a.review.extractedAmounts?.length ? ` Amounts stated in notice: ${a.review.extractedAmounts.join(", ")}.` : ""}</div>
               </>;
             const docBlock = tab === "filings" && a.url && <>
-              <button type="button" className="tap" onClick={() => readAttachment(a.index)} style={{ marginTop: 8, padding: "5px 10px", borderRadius: 7, border: "1px solid var(--bdr2)", background: "var(--s3)", color: "var(--accent)", fontSize: 11, fontWeight: 650, cursor: "pointer" }}>
+              <button type="button" className="tap" onClick={() => readAttachment(a.index)} style={{ marginTop: 8, padding: "5px 10px", borderRadius: 4, border: "1px solid var(--bdr2)", background: "var(--s3)", color: "var(--accent)", fontSize: 11, fontWeight: 650, cursor: "pointer" }}>
                 {doc?.loading ? "Reading filing…" : openSummary === summaryKey && doc ? "Hide document summary" : doc ? "Show document summary" : "Read full filing"}
               </button>
-              {openSummary === summaryKey && doc && <div style={{ marginTop: 8, padding: 11, borderRadius: 9, border: "1px solid var(--bdr2)", background: "var(--s3)" }}>
+              {openSummary === summaryKey && doc && <div style={{ marginTop: 8, padding: 11, borderRadius: 4, border: "1px solid var(--bdr2)", background: "var(--s3)" }}>
                 {doc.loading ? <div style={{ fontSize: 12, color: "var(--t2)" }}>Opening the original attachment and extracting its text…</div> : doc.error
                   ? <div style={{ fontSize: 12, color: "var(--red)" }}>{doc.error}</div>
                   : doc.evidence ? <>
@@ -168,7 +168,7 @@ export default function NewsPanel({ symbol }) {
       )}
 
       {(tab === "reports" ? reports.length > 8 : items.length > INITIAL) && (
-        <button onClick={() => setExpanded(v => !v)} style={{ marginTop: 10, height: 32, padding: "0 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", border: "1px solid var(--bdr2)", background: "var(--s3)", color: "var(--t2)" }}>
+        <button onClick={() => setExpanded(v => !v)} style={{ marginTop: 10, height: 32, padding: "0 14px", borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: "pointer", border: "1px solid var(--bdr2)", background: "var(--s3)", color: "var(--t2)" }}>
           {expanded ? "Show fewer" : `Show all ${tab === "reports" ? reports.length : items.length}`}
         </button>
       )}

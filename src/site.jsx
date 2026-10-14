@@ -76,9 +76,9 @@ export function SiteFooter() {
 export function Logo({ size = 17 }) {
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-      <img src="/stockwise-india-icon.svg" alt="" style={{ width: size * 1.9, height: size * 1.9, borderRadius: 9 }} />
-      <span style={{ fontSize: size, fontWeight: 700, color: "var(--t1)", letterSpacing: "-0.03em" }}>
-        Stock<span style={{ color: "var(--brand-wise)" }}>wise</span> <span style={{ color: "var(--t3)", fontWeight: 500 }}>India</span>
+      <img src="/stockwise-india-icon.svg" alt="" style={{ width: size * 1.5, height: size * 1.5 }} />
+      <span style={{ fontSize: size, fontWeight: 700, color: "var(--t1)" }}>
+        Stockwise <span style={{ color: "var(--t3)", fontWeight: 400 }}>India</span>
       </span>
     </span>
   );

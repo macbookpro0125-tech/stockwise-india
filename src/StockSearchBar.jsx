@@ -119,12 +119,15 @@ export default function StockSearchBar({ onAnalyze, placeholder = "Search any st
           onKeyDown={handleKeyDown}
           onFocus={() => { if ((query && suggestions.length) || (!query && history.length)) setShowSuggestions(true); }}
           placeholder={placeholder}
+          // A name of its own: the placeholder is short ("Search stocks") and
+          // disappears once typing starts
+          aria-label="Search any stock by name or symbol"
           autoComplete="off"
           className="input-base"
-          style={{ width: "100%", paddingLeft: 36, paddingRight: 34, height: 38, fontSize: 13.5, borderRadius: 8 }}
+          style={{ width: "100%", paddingLeft: 36, paddingRight: 34, height: 38, fontSize: 13.5, borderRadius: 4 }}
         />
         {!query && (
-          <kbd aria-hidden="true" className="hide-phone" title='Press "/" to search' style={{ position: "absolute", right: 10, fontSize: 11, color: "var(--t3)", border: "1px solid var(--bdr2)", borderRadius: 5, padding: "0 6px", lineHeight: "18px", fontFamily: "inherit", pointerEvents: "none" }}>/</kbd>
+          <kbd aria-hidden="true" className="hide-phone" title='Press "/" to search' style={{ position: "absolute", right: 10, fontSize: 11, color: "var(--t3)", border: "1px solid var(--bdr2)", borderRadius: 4, padding: "0 6px", lineHeight: "18px", fontFamily: "inherit", pointerEvents: "none" }}>/</kbd>
         )}
         {query && (
           <button onClick={() => { setQuery(""); setSuggestions([]); }} aria-label="Clear search" style={{ position: "absolute", right: 10, background: "none", border: "none", color: "var(--t3)", cursor: "pointer", padding: 0, lineHeight: 0 }}><X size={15} /></button>
@@ -132,7 +135,7 @@ export default function StockSearchBar({ onAnalyze, placeholder = "Search any st
       </div>
 
       {items.length > 0 && (
-        <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 12, zIndex: 200, boxShadow: "var(--sh-lg)", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 6, zIndex: 200, boxShadow: "var(--sh-lg)", overflow: "hidden" }}>
           {showingHistory && (
             <div style={{ padding: "8px 14px 4px", fontSize: 12, color: "var(--t3)", fontWeight: 500, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span>Recent searches</span>

@@ -103,7 +103,7 @@ export function MetricInfo({ def, meta }) {
       </button>
       {open && at && (
         <div ref={pop} role="dialog" aria-label={def.label} onClick={e => e.stopPropagation()}
-          style={{ position: "fixed", left: at.left, top: at.top, width: at.width, zIndex: 300, padding: "12px 14px", borderRadius: 10, background: "var(--s3)", border: "1px solid var(--bdr2)", boxShadow: "0 10px 30px rgba(0,0,0,0.35)", textAlign: "left", whiteSpace: "normal", fontWeight: 400, cursor: "default" }}>
+          style={{ position: "fixed", left: at.left, top: at.top, width: at.width, zIndex: 300, padding: "12px 14px", borderRadius: 4, background: "var(--s3)", border: "1px solid var(--bdr2)", boxShadow: "0 10px 30px rgba(0,0,0,0.35)", textAlign: "left", whiteSpace: "normal", fontWeight: 400, cursor: "default" }}>
           <Definition def={def} meta={meta} />
         </div>
       )}
@@ -122,7 +122,7 @@ export function ColumnGuide({ defs, meta, extra = [], onClose }) {
   return (
     <div role="dialog" aria-modal="true" aria-label="What these columns mean" onClick={onClose}
       style={{ position: "fixed", inset: 0, zIndex: 350, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "6vh 16px", overflowY: "auto" }}>
-      <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 560, background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 14, padding: "16px 18px" }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 560, background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 6, padding: "16px 18px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: "var(--t1)" }}>What these columns mean</div>
           <button type="button" onClick={onClose} aria-label="Close" className="btn-ghost" style={{ height: 30, width: 30, padding: 0, justifyContent: "center" }}><X size={15} /></button>

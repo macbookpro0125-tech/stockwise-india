@@ -54,7 +54,7 @@ function BrowserLeftovers() {
   if (!left) return null;
   const what = [left.strategyCount && `${left.strategyCount} saved strateg${left.strategyCount === 1 ? "y" : "ies"}`, left.noteCount && `${left.noteCount} stock note${left.noteCount === 1 ? "" : "s"}`].filter(Boolean).join(" and ");
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "10px 14px", borderRadius: 10, marginBottom: 16, background: "color-mix(in srgb, var(--accent) 7%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 25%, transparent)", fontSize: 12.5, color: "var(--t1)", lineHeight: 1.5 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "10px 14px", borderRadius: 4, marginBottom: 16, background: "color-mix(in srgb, var(--accent) 7%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 25%, transparent)", fontSize: 12.5, color: "var(--t1)", lineHeight: 1.5 }}>
       <span style={{ flex: "1 1 260px" }}>This browser has {what} from before they were kept with accounts. Move them to your account so they show on every device?</span>
       <button className="btn-primary" disabled={busy} onClick={async () => { setBusy(true); await moveLeftovers(); setLeft(null); }} style={{ height: 30, padding: "0 12px", fontSize: 12 }}>{busy ? "Moving…" : "Move to my account"}</button>
       <button className="btn-ghost" disabled={busy} onClick={() => { discardLeftovers(); setLeft(null); }} style={{ height: 30, padding: "0 12px", fontSize: 12 }}>They're not mine — discard</button>
@@ -64,8 +64,8 @@ function BrowserLeftovers() {
 
 function Modal({ onClose, width = 340, children }) {
   return createPortal(
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 18, padding: 28, width, maxWidth: "100%", boxShadow: "var(--sh-lg)", animation: "fadeUp 200ms cubic-bezier(0,0,0.2,1) backwards" }}>
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 6, padding: 28, width, maxWidth: "100%", boxShadow: "var(--sh-lg)", animation: "fadeUp 200ms cubic-bezier(0,0,0.2,1) backwards" }}>
         {children}
       </div>
     </div>,
@@ -246,7 +246,7 @@ export default function DiscoverView({ onOpenStock }) {
       Couldn't load the filters. <button className="btn-ghost" onClick={retryMeta} style={{ height: 28, fontSize: 12, marginLeft: 6 }}>Try again</button>
     </div>
   ) : (
-    <div className="skeleton-pulse" style={{ height: 240, borderRadius: 12 }} />
+    <div className="skeleton-pulse" style={{ height: 240, borderRadius: 6 }} />
   );
 
   const matched = results?.matched;
@@ -279,7 +279,7 @@ export default function DiscoverView({ onOpenStock }) {
             onChange={e => { setImportText(e.target.value); setImportError(""); }}
             placeholder="https://…/?screen=…"
             className="mono"
-            style={{ width: "100%", height: 140, padding: 12, borderRadius: 10, border: `1px solid ${importError ? "var(--red)" : "var(--bdr2)"}`, background: "var(--s1)", color: "var(--t1)", fontSize: 13, resize: "vertical", outline: "none", boxSizing: "border-box" }}
+            style={{ width: "100%", height: 140, padding: 12, borderRadius: 4, border: `1px solid ${importError ? "var(--red)" : "var(--bdr2)"}`, background: "var(--s1)", color: "var(--t1)", fontSize: 13, resize: "vertical", outline: "none", boxSizing: "border-box" }}
           />
           {importError && <div style={{ fontSize: 12, color: "var(--red)", marginTop: 8 }}>{importError}</div>}
           <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
@@ -342,7 +342,7 @@ export default function DiscoverView({ onOpenStock }) {
           <main style={{ minWidth: 0 }}>
             <div className="screener-toolbar">
               <button data-tour="filters" className={`btn-ghost ${sideOpen ? "screener-filters-toggle" : ""}`} onClick={() => (window.innerWidth <= 900 ? setSheetOpen(true) : setSideOpen(true))} style={{ height: 34, fontSize: 12.5 }}>
-                <SlidersHorizontal size={14} /> Filters{activeCount > 0 && <span style={{ marginLeft: 2, fontSize: 10.5, padding: "0 7px", borderRadius: 999, fontWeight: 700, background: "var(--accent)", color: "var(--on-accent)" }}>{activeCount}</span>}
+                <SlidersHorizontal size={14} /> Filters{activeCount > 0 && <span style={{ marginLeft: 2, fontSize: 10.5, padding: "0 7px", borderRadius: 3, fontWeight: 700, background: "var(--accent)", color: "var(--on-accent)" }}>{activeCount}</span>}
               </button>
               {results && (
                 <span className="hide-phone" style={{ fontSize: 12, color: "var(--t3)" }}>
@@ -352,7 +352,7 @@ export default function DiscoverView({ onOpenStock }) {
             </div>
 
             {results?.jobs?.loadingMarket && (
-              <div style={{ padding: "12px 18px", borderRadius: 12, marginBottom: 16, background: "color-mix(in srgb, var(--accent) 7%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 25%, transparent)", color: "var(--accent)", fontSize: 13, lineHeight: 1.6 }}>
+              <div style={{ padding: "12px 18px", borderRadius: 6, marginBottom: 16, background: "color-mix(in srgb, var(--accent) 7%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 25%, transparent)", color: "var(--accent)", fontSize: 13, lineHeight: 1.6 }}>
                 Market data is still loading
                 {results.jobs.running === "first load" && results.jobs.progress
                   ? <> — {results.jobs.progress.done.toLocaleString("en-IN")} of {results.jobs.progress.total.toLocaleString("en-IN")} companies read from NSE so far</>
@@ -362,7 +362,7 @@ export default function DiscoverView({ onOpenStock }) {
             )}
 
             {error && (
-              <div style={{ padding: "14px 18px", borderRadius: 12, background: "var(--red-dim)", border: "1px solid var(--red-bdr)", color: "var(--red)", fontSize: 13, marginBottom: 20, lineHeight: 1.6 }}>
+              <div style={{ padding: "14px 18px", borderRadius: 6, background: "var(--red-dim)", border: "1px solid var(--red-bdr)", color: "var(--red)", fontSize: 13, marginBottom: 20, lineHeight: 1.6 }}>
                 <strong>Error — </strong>{error}
               </div>
             )}

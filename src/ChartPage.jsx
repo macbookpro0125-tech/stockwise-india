@@ -26,7 +26,7 @@ export default function ChartPage({ symbol }) {
     setTimeout(() => { if (!window.closed) navigate(stockPath(symbol)); }, 150);
   };
 
-  const barBtn = { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, height: 40, minWidth: 40, padding: "0 12px", borderRadius: 8, border: "1px solid var(--bdr2)", background: "var(--s3)", color: "var(--t1)", fontSize: 13, fontWeight: 600, fontFamily: "inherit", cursor: "pointer", textDecoration: "none" };
+  const barBtn = { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, height: 40, minWidth: 40, padding: "0 12px", borderRadius: 4, border: "1px solid var(--bdr2)", background: "var(--s3)", color: "var(--t1)", fontSize: 13, fontWeight: 600, fontFamily: "inherit", cursor: "pointer", textDecoration: "none" };
 
   return (
     // Exactly one screen tall (dvh: a phone's address bar comes and goes)

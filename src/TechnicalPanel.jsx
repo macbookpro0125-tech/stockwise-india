@@ -42,11 +42,11 @@ function SummaryGauge({ summary }) {
   const uPct = total > 0 ? (bullish / total) * 100 : 33;
 
   return (
-    <div style={{ padding: "12px 14px", borderRadius: 8, background: "var(--surf)", marginBottom: 14 }}>
+    <div style={{ padding: "12px 14px", borderRadius: 4, background: "var(--surf)", marginBottom: 14 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
         <span style={{ fontSize: 12, fontWeight: 600, color: "var(--t1)" }}>Summary</span>
         <span style={{
-          fontSize: 12, fontWeight: 700, padding: "3px 10px", borderRadius: 20,
+          fontSize: 12, fontWeight: 700, padding: "3px 10px", borderRadius: 6,
           background: summary.overall === "bullish" ? "var(--green-dim)" : summary.overall === "bearish" ? "var(--red-dim)" : "var(--yellow-dim)",
           color: summary.overall === "bullish" ? "var(--green)" : summary.overall === "bearish" ? "var(--red)" : "var(--yellow)",
         }}>
@@ -84,7 +84,7 @@ function PivotLevels({ pivots, price }) {
   const pricePct = ((price - min) / range) * 100;
 
   return (
-    <div style={{ padding: "12px 14px", borderRadius: 8, background: "var(--surf)", marginBottom: 14 }}>
+    <div style={{ padding: "12px 14px", borderRadius: 4, background: "var(--surf)", marginBottom: 14 }}>
       <div style={{ fontSize: 12, fontWeight: 600, color: "var(--t1)", marginBottom: 10 }}>Support & Resistance</div>
 
       {/* Visual bar */}
@@ -108,7 +108,7 @@ function PivotLevels({ pivots, price }) {
       {/* Level values */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
         {levels.filter(l => l.type === "support").map(l => (
-          <div key={l.label} style={{ textAlign: "center", padding: "6px 4px", borderRadius: 6, background: "var(--red-dim)" }}>
+          <div key={l.label} style={{ textAlign: "center", padding: "6px 4px", borderRadius: 4, background: "var(--red-dim)" }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: "var(--red)", marginBottom: 2 }}>{l.label}</div>
             <div style={{ fontSize: 12, fontWeight: 600, color: "var(--t1)" }}>{l.value.toLocaleString("en-IN")}</div>
           </div>
@@ -116,7 +116,7 @@ function PivotLevels({ pivots, price }) {
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, marginTop: 6 }}>
         {levels.filter(l => l.type === "resistance").map(l => (
-          <div key={l.label} style={{ textAlign: "center", padding: "6px 4px", borderRadius: 6, background: "var(--green-dim)" }}>
+          <div key={l.label} style={{ textAlign: "center", padding: "6px 4px", borderRadius: 4, background: "var(--green-dim)" }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: "var(--green)", marginBottom: 2 }}>{l.label}</div>
             <div style={{ fontSize: 12, fontWeight: 600, color: "var(--t1)" }}>{l.value.toLocaleString("en-IN")}</div>
           </div>
@@ -142,7 +142,7 @@ function BreakoutLevel({ label, price, cmp, type }) {
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: "var(--t1)" }}>₹{price.toLocaleString("en-IN")}</span>
-        <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 12, background: above ? "var(--green-dim)" : atLevel ? "var(--yellow-dim)" : "var(--surf)", color: statusColor }}>
+        <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 6, background: above ? "var(--green-dim)" : atLevel ? "var(--yellow-dim)" : "var(--surf)", color: statusColor }}>
           {icon} {statusText}
         </span>
       </div>
@@ -171,10 +171,10 @@ function BreakoutLevels({ data }) {
   else { verdict = "Not ready — wait for levels to clear"; verdictColor = "var(--red)"; verdictBg = "var(--red-dim)"; }
 
   return (
-    <div style={{ padding: "12px 14px", borderRadius: 8, background: "var(--surf)", marginBottom: 14 }}>
+    <div style={{ padding: "12px 14px", borderRadius: 4, background: "var(--surf)", marginBottom: 14 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
         <span style={{ fontSize: 12, fontWeight: 600, color: "var(--t1)" }}>Breakout Levels</span>
-        <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 20, background: verdictBg, color: verdictColor }}>
+        <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 6, background: verdictBg, color: verdictColor }}>
           {metCount}/4 confirmed
         </span>
       </div>
@@ -193,7 +193,7 @@ function BreakoutLevels({ data }) {
       <BreakoutLevel label="SMA 200 (major trend)" price={sma200} cmp={price} type="long" />
 
       {/* Checklist */}
-      <div style={{ marginTop: 12, padding: "8px 10px", borderRadius: 6, background: "var(--card)" }}>
+      <div style={{ marginTop: 12, padding: "8px 10px", borderRadius: 4, background: "var(--card)" }}>
         <div style={{ fontSize: 11.5, fontWeight: 600, color: "var(--t3)", marginBottom: 6 }}>Trend checklist</div>
         {checks.map((c, i) => (
           <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: c.met ? "var(--green)" : "var(--t3)", marginBottom: 3 }}>
@@ -211,14 +211,14 @@ function SignalRow({ label, signal, crossText }) {
   const bg = signal === "bullish" ? "var(--green-dim)" : signal === "bearish" ? "var(--red-dim)" : "var(--yellow-dim)";
   const text = signal === "bullish" ? "Bullish" : signal === "bearish" ? "Bearish" : "Neutral";
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderRadius: 8, background: "var(--surf)", marginBottom: 6 }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderRadius: 4, background: "var(--surf)", marginBottom: 6 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <div style={{ width: 8, height: 8, borderRadius: "50%", background: color, flexShrink: 0 }} />
         <span style={{ fontSize: 12, color: "var(--t2)" }}>{label}</span>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         {crossText && (
-          <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 12, background: bg, color }}>{crossText}</span>
+          <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 6, background: bg, color }}>{crossText}</span>
         )}
         <span style={{ fontSize: 12, fontWeight: 700, color, minWidth: 50, textAlign: "right" }}>{text}</span>
       </div>
@@ -243,7 +243,7 @@ export default function TechnicalPanel({ ticker }) {
   if (loading) return null;
 
   if (error) return (
-    <div style={{ border: "1px solid var(--bdr2)", borderRadius: 10, padding: "16px 20px", marginBottom: 12, background: "var(--card)" }}>
+    <div style={{ border: "1px solid var(--bdr2)", borderRadius: 4, padding: "16px 20px", marginBottom: 12, background: "var(--card)" }}>
       <div style={{ fontSize: 13, fontWeight: 600, color: "var(--t1)", marginBottom: 6 }}>Technical Analysis</div>
       <div style={{ fontSize: 12, color: "var(--t3)" }}>{error}</div>
     </div>
@@ -254,14 +254,14 @@ export default function TechnicalPanel({ ticker }) {
   const rsiColor = data.rsi14 > 70 ? "var(--red)" : data.rsi14 < 30 ? "var(--green)" : "var(--t1)";
 
   return (
-    <div style={{ border: "1px solid var(--bdr2)", borderRadius: 10, padding: "16px 20px", marginBottom: 12, background: "var(--card)" }}>
+    <div style={{ border: "1px solid var(--bdr2)", borderRadius: 4, padding: "16px 20px", marginBottom: 12, background: "var(--card)" }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: "var(--t1)" }}>
           Technical Analysis <span style={{ fontSize: 11, color: "var(--t3)", fontWeight: 400 }}>· {data.yahooSymbol}</span>
         </div>
       </div>
-      {data.stale && <div style={{ fontSize: 11, color: "var(--yellow)", background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", borderRadius: 7, padding: "7px 10px", marginBottom: 10 }}>{data.staleReason} Verify the date before relying on these signals.</div>}
+      {data.stale && <div style={{ fontSize: 11, color: "var(--yellow)", background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", borderRadius: 4, padding: "7px 10px", marginBottom: 10 }}>{data.staleReason} Verify the date before relying on these signals.</div>}
 
       {/* Summary Gauge */}
       <SummaryGauge summary={data.summary} />
@@ -281,7 +281,7 @@ export default function TechnicalPanel({ ticker }) {
           signal={data.longTermSignal}
           crossText={data.longTermCross ? (data.longTermCross === "bullish" ? "Golden Cross" : "Death Cross") : null}
         />
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderRadius: 8, background: "var(--surf)", marginBottom: 6 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderRadius: 4, background: "var(--surf)", marginBottom: 6 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ width: 8, height: 8, borderRadius: "50%", background: rsiColor, flexShrink: 0 }} />
             <span style={{ fontSize: 12, color: "var(--t2)" }}>RSI (14)</span>

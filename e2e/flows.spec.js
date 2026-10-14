@@ -98,7 +98,7 @@ test("F02-H4 compare two companies", async ({ page, account }) => {
 // ── F03 search → company page ───────────────────────────────────────────────
 test("F03-H1 search opens a company; back returns to Discover", async ({ page, account }) => {
   await page.goto("/");
-  await page.getByPlaceholder("Search any stock by name or symbol…").fill("Infosys");
+  await page.getByRole("textbox", { name: "Search any stock by name or symbol" }).fill("Infosys");
   await page.getByRole("option", { name: /Infosys/ }).or(page.getByRole("button", { name: /Infosys/ })).first().click();
   await expect(page.getByRole("heading", { level: 2, name: /Infosys/ })).toBeVisible();
   await expect(page).toHaveURL(/\/stock\/INFY/);

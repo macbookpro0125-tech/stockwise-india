@@ -66,7 +66,7 @@ function levelStatus(cmp, r) {
 }
 
 const label = { fontSize: 11.5, color: "var(--t3)", fontWeight: 600 };
-const iconBtn = { width: 30, height: 30, borderRadius: 8, border: "1px solid var(--bdr2)", background: "transparent", color: "var(--t3)", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 120ms" };
+const iconBtn = { width: 30, height: 30, borderRadius: 4, border: "1px solid var(--bdr2)", background: "transparent", color: "var(--t3)", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 120ms" };
 
 export default function WatchlistView({ onOpenStock }) {
   const watched = useWatchlist();
@@ -108,7 +108,7 @@ export default function WatchlistView({ onOpenStock }) {
     const active = sortBy === id;
     return (
       <button onClick={() => { if (active) setSortDir(d => (d === "desc" ? "asc" : "desc")); else { setSortBy(id); setSortDir("desc"); } }}
-        style={{ padding: "4px 12px", borderRadius: 20, fontSize: 11, fontWeight: 600, cursor: "pointer", border: `1px solid ${active ? "var(--accent)" : "var(--bdr2)"}`, background: active ? "color-mix(in srgb, var(--accent) 8%, transparent)" : "transparent", color: active ? "var(--accent)" : "var(--t3)", transition: "all 120ms" }}>
+        style={{ padding: "4px 12px", borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer", border: `1px solid ${active ? "var(--accent)" : "var(--bdr2)"}`, background: active ? "color-mix(in srgb, var(--accent) 8%, transparent)" : "transparent", color: active ? "var(--accent)" : "var(--t3)", transition: "all 120ms" }}>
         {text} {active && (sortDir === "desc" ? "↓" : "↑")}
       </button>
     );
@@ -116,11 +116,11 @@ export default function WatchlistView({ onOpenStock }) {
 
   const wrap = children => <div style={{ padding: "8px var(--page-x) 80px", animation: "fadeUp 280ms cubic-bezier(0,0,0.2,1) backwards" }}>{children}</div>;
 
-  if (error) return wrap(<div style={{ padding: "14px 18px", borderRadius: 12, background: "var(--red-dim)", border: "1px solid var(--red-bdr)", color: "var(--red)", fontSize: 13 }}>Couldn't load your watchlist: {error}</div>);
+  if (error) return wrap(<div style={{ padding: "14px 18px", borderRadius: 6, background: "var(--red-dim)", border: "1px solid var(--red-bdr)", color: "var(--red)", fontSize: 13 }}>Couldn't load your watchlist: {error}</div>);
   if (!data) return wrap(<div style={{ textAlign: "center", padding: "32px 0", fontSize: 12, color: "var(--t3)" }}>Loading watchlist…</div>);
   if (items.length === 0) {
     return wrap(
-      <div style={{ textAlign: "center", padding: "56px 0", color: "var(--t3)", border: "1px dashed var(--bdr2)", borderRadius: 14, background: "var(--s1)" }}>
+      <div style={{ textAlign: "center", padding: "56px 0", color: "var(--t3)", border: "1px dashed var(--bdr2)", borderRadius: 6, background: "var(--s1)" }}>
         <Star size={36} strokeWidth={1.5} style={{ marginBottom: 12, opacity: 0.3 }} />
         <p style={{ fontSize: 14, color: "var(--t2)", fontWeight: 500, marginBottom: 4 }}>Watchlist is empty</p>
         <p style={{ fontSize: 12 }}>Star any stock in results or on its page to save it here</p>
@@ -147,7 +147,7 @@ export default function WatchlistView({ onOpenStock }) {
           const cmp = quote?.price ?? r?.cmp ?? null;
           const level = levelStatus(cmp, r);
           return (
-            <div key={item.ticker} style={{ padding: "14px 16px", borderRadius: 12, border: "1px solid var(--bdr2)", background: "var(--s2)", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+            <div key={item.ticker} style={{ padding: "14px 16px", borderRadius: 6, border: "1px solid var(--bdr2)", background: "var(--s2)", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
               <div style={{ flex: "1 1 140px", minWidth: 120 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 7, fontWeight: 600, fontSize: 14, color: "var(--t1)", letterSpacing: "-0.01em" }}><CompanyLogo symbol={item.ticker} size={18} />{name}</div>
                 <div style={{ fontSize: 10, color: "var(--t3)", marginTop: 2 }}>
@@ -166,13 +166,13 @@ export default function WatchlistView({ onOpenStock }) {
                   <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
                     <input autoFocus aria-label="Note" maxLength={500} value={noteText} onChange={e => setNoteText(e.target.value)}
                       onKeyDown={e => { if (e.key === "Enter") saveNote(item.ticker); if (e.key === "Escape") setEditingNote(null); }}
-                      placeholder="e.g. Wait for Q3 results…" className="input-base" style={{ flex: 1, height: 32, fontSize: 12, borderRadius: 8 }} />
-                    <button onClick={() => saveNote(item.ticker)} style={{ height: 32, padding: "0 12px", borderRadius: 8, border: "none", background: "var(--accent)", color: "var(--on-accent)", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Save</button>
-                    <button onClick={() => setEditingNote(null)} style={{ height: 32, padding: "0 10px", borderRadius: 8, border: "1px solid var(--bdr2)", background: "transparent", color: "var(--t3)", fontSize: 11, cursor: "pointer", display: "flex", alignItems: "center" }} aria-label="Cancel"><X size={14} /></button>
+                      placeholder="e.g. Wait for Q3 results…" className="input-base" style={{ flex: 1, height: 32, fontSize: 12, borderRadius: 4 }} />
+                    <button onClick={() => saveNote(item.ticker)} style={{ height: 32, padding: "0 12px", borderRadius: 4, border: "none", background: "var(--accent)", color: "var(--on-accent)", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Save</button>
+                    <button onClick={() => setEditingNote(null)} style={{ height: 32, padding: "0 10px", borderRadius: 4, border: "1px solid var(--bdr2)", background: "transparent", color: "var(--t3)", fontSize: 11, cursor: "pointer", display: "flex", alignItems: "center" }} aria-label="Cancel"><X size={14} /></button>
                   </div>
                 ) : item.note ? (
                   <button type="button" aria-label={`Edit note for ${name}`} onClick={() => { setEditingNote(item.ticker); setNoteText(item.note); }}
-                    style={{ display: "block", width: "100%", marginTop: 8, padding: "6px 10px", borderRadius: 8, background: "var(--s1)", border: "1px solid var(--bdr)", fontSize: 12, color: "var(--t2)", cursor: "pointer", lineHeight: 1.5, textAlign: "left", fontFamily: "inherit" }}>
+                    style={{ display: "block", width: "100%", marginTop: 8, padding: "6px 10px", borderRadius: 4, background: "var(--s1)", border: "1px solid var(--bdr)", fontSize: 12, color: "var(--t2)", cursor: "pointer", lineHeight: 1.5, textAlign: "left", fontFamily: "inherit" }}>
                     <NotebookPen size={12} style={{ marginRight: 5, verticalAlign: "-1px", color: "var(--t3)" }} />{item.note}
                   </button>
                 ) : (
@@ -209,7 +209,7 @@ export default function WatchlistView({ onOpenStock }) {
 
               <div style={{ display: "flex", gap: 8, marginLeft: "auto" }}>
                 <button onClick={() => setAlertTarget({ symbol: item.ticker, name, cmp, p1: r?.safeBuyPrice, p2: r?.p2, p3: r?.p3 })} title="Set alert" aria-label="Set alert" style={iconBtn}><BellIcon /></button>
-                <button onClick={() => onOpenStock(item.ticker)} className="btn-primary" style={{ height: 30, padding: "0 14px", fontSize: 11, borderRadius: 8, boxShadow: "none" }}>Analyze →</button>
+                <button onClick={() => onOpenStock(item.ticker)} className="btn-primary" style={{ height: 30, padding: "0 14px", fontSize: 11, borderRadius: 4, boxShadow: "none" }}>Analyze →</button>
                 <button onClick={() => toggleWatch(item.ticker)} title="Remove from watchlist" aria-label="Remove from watchlist" style={iconBtn}><X size={15} /></button>
               </div>
             </div>

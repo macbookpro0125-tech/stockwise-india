@@ -107,16 +107,16 @@ export default function PerformanceView({ onOpenStock }) {
       </div>
 
       {error && (
-        <div style={{ border: "1px solid var(--red-bdr)", background: "var(--red-dim)", borderRadius: 10, padding: "10px 14px", fontSize: 12, marginBottom: 12, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+        <div style={{ border: "1px solid var(--red-bdr)", background: "var(--red-dim)", borderRadius: 4, padding: "10px 14px", fontSize: 12, marginBottom: 12, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
           <span style={{ color: "var(--red)" }}>{error}</span>
-          <button onClick={load} className="btn-ghost" style={{ height: 26, padding: "0 12px", fontSize: 10, borderRadius: 7, flexShrink: 0 }}>Retry</button>
+          <button onClick={load} className="btn-ghost" style={{ height: 26, padding: "0 12px", fontSize: 10, borderRadius: 4, flexShrink: 0 }}>Retry</button>
         </div>
       )}
 
       {loading && <div style={{ color: "var(--t3)", fontSize: 12, padding: 20 }}>Loading performance…</div>}
 
       {empty && !error && (
-        <div style={{ border: "1px dashed var(--bdr2)", borderRadius: 14, padding: "28px 20px", textAlign: "center", color: "var(--t3)", fontSize: 12, lineHeight: 1.7 }}>
+        <div style={{ border: "1px dashed var(--bdr2)", borderRadius: 6, padding: "28px 20px", textAlign: "center", color: "var(--t3)", fontSize: 12, lineHeight: 1.7 }}>
           No snapshots yet. Take one now to record each strategy's current top picks —<br />
           come back in a few weeks to see which strategies actually made money.
         </div>
@@ -127,7 +127,7 @@ export default function PerformanceView({ onOpenStock }) {
       )}
 
       {!loading && study?.cohortCount > 0 && (
-        <section style={{ border: "1px solid var(--bdr2)", borderRadius: 14, background: "var(--s2)", padding: 15, marginBottom: 18 }}>
+        <section style={{ border: "1px solid var(--bdr2)", borderRadius: 6, background: "var(--s2)", padding: 15, marginBottom: 18 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 8 }}>
             <div>
               <div style={{ fontSize: 15, fontWeight: 700, color: "var(--t1)" }}>Prospective research-score study</div>
@@ -135,7 +135,7 @@ export default function PerformanceView({ onOpenStock }) {
                 Frozen monthly score cohorts compared with the NIFTY 500. {study.cohortCount} cohort{study.cohortCount === 1 ? "" : "s"} recorded · latest prices {fmtDate(study.asOf)}.
               </div>
             </div>
-            <span style={{ fontSize: 10.5, color: "var(--t3)", border: "1px solid var(--bdr2)", borderRadius: 99, padding: "4px 8px" }}>Forward tracking · not a backtest</span>
+            <span style={{ fontSize: 10.5, color: "var(--t3)", border: "1px solid var(--bdr2)", borderRadius: 3, padding: "4px 8px" }}>Forward tracking · not a backtest</span>
           </div>
           {study.cohorts.slice().reverse().map(cohort => {
             const expanded = studyOpen === cohort.date;
@@ -194,7 +194,7 @@ export default function PerformanceView({ onOpenStock }) {
       }).map(p => {
         const isOpen = open === p.presetId;
         return (
-          <div key={p.presetId} style={{ border: "1px solid var(--bdr2)", borderRadius: 14, background: "var(--s2)", marginBottom: 10, overflow: "hidden" }}>
+          <div key={p.presetId} style={{ border: "1px solid var(--bdr2)", borderRadius: 6, background: "var(--s2)", marginBottom: 10, overflow: "hidden" }}>
             <button onClick={() => setOpen(isOpen ? null : p.presetId)} style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "13px 16px", background: "none", border: "none", cursor: "pointer" }}>
               <div style={{ textAlign: "left" }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: "var(--t1)", letterSpacing: "-0.01em" }}>{p.presetName}</div>

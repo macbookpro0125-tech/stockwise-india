@@ -80,7 +80,7 @@ function RowHeader({ def, onRemove, children }) {
         {children}
       </div>
       <button type="button" onClick={onRemove} title="Remove this filter" aria-label={`Remove ${def.label}`}
-        style={{ flexShrink: 0, width: 22, height: 22, borderRadius: 6, border: "none", background: "transparent", color: "var(--t3)", cursor: "pointer", fontSize: 14, lineHeight: 1 }}>×</button>
+        style={{ flexShrink: 0, width: 22, height: 22, borderRadius: 4, border: "none", background: "transparent", color: "var(--t3)", cursor: "pointer", fontSize: 14, lineHeight: 1 }}>×</button>
     </div>
   );
 }
@@ -179,7 +179,7 @@ function CapSize({ def, filter, onChange }) {
           const on = chosen.has(o);
           return (
             <button key={o} type="button" onClick={() => toggle(o)} aria-pressed={on}
-              style={{ height: 32, borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", border: `1px solid ${on ? "var(--accent)" : "var(--bdr2)"}`, background: on ? "color-mix(in srgb, var(--accent) 10%, transparent)" : "transparent", color: on ? "var(--accent)" : "var(--t2)" }}>
+              style={{ height: 32, borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: "pointer", border: `1px solid ${on ? "var(--accent)" : "var(--bdr2)"}`, background: on ? "color-mix(in srgb, var(--accent) 10%, transparent)" : "transparent", color: on ? "var(--accent)" : "var(--t2)" }}>
               {o.replace(" cap", "")}
             </button>
           );
@@ -211,7 +211,7 @@ export default function FilterPanel({ meta, filters, onChange, onAddFilter, onRe
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "2px 0 12px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: 14, fontWeight: 700, color: "var(--t1)" }}>Filters</span>
-          {active > 0 && <span style={{ fontSize: 10.5, padding: "1px 8px", borderRadius: 999, fontWeight: 700, background: "var(--accent)", color: "var(--on-accent)" }}>{active}</span>}
+          {active > 0 && <span style={{ fontSize: 10.5, padding: "1px 8px", borderRadius: 3, fontWeight: 700, background: "var(--accent)", color: "var(--on-accent)" }}>{active}</span>}
         </div>
         {filters.length > 0 && (
           <button type="button" className="btn-ghost" onClick={onReset} style={{ height: 28, fontSize: 11.5, padding: "0 10px" }}>Reset all</button>

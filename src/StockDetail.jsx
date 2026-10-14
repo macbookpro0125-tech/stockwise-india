@@ -40,8 +40,8 @@ const VERDICT_META = {
 const Dot = ({ color }) => <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: color, marginRight: 6, verticalAlign: "1px" }} />;
 
 const MONO = { fontVariantNumeric: "tabular-nums" };
-const card = { border: "1px solid var(--bdr2)", borderRadius: 12, padding: 18, marginBottom: 12, background: "var(--s2)", boxShadow: "var(--sh-xs)" };
-const inputStyle = { width: "100%", height: 40, padding: "0 14px", border: "1px solid var(--bdr2)", borderRadius: 8, fontSize: 13.5, outline: "none", background: "var(--s1)", color: "var(--t1)", boxSizing: "border-box", fontFamily: "inherit", fontVariantNumeric: "tabular-nums" };
+const card = { border: "1px solid var(--bdr2)", borderRadius: 6, padding: 18, marginBottom: 12, background: "var(--s2)", boxShadow: "var(--sh-xs)" };
+const inputStyle = { width: "100%", height: 40, padding: "0 14px", border: "1px solid var(--bdr2)", borderRadius: 4, fontSize: 13.5, outline: "none", background: "var(--s1)", color: "var(--t1)", boxSizing: "border-box", fontFamily: "inherit", fontVariantNumeric: "tabular-nums" };
 const labelStyle = { fontSize: 12, color: "var(--t2)", marginBottom: 6, display: "block", fontWeight: 500 };
 // A section's heading inside a card, with its icon
 const SectionTitle = ({ icon: Icon, children, color = "var(--t1)", style }) => (
@@ -58,7 +58,7 @@ const fyLabel = (fyEnd, plus = 0) => `FY${String(Number(fyEnd.slice(0, 4)) + plu
 
 function labelledActionStyle({ active, activeColor }) {
   return {
-    height: 32, padding: "0 12px", borderRadius: 8,
+    height: 32, padding: "0 12px", borderRadius: 4,
     border: `1px solid ${active ? activeColor : "var(--bdr3)"}`,
     background: active ? `color-mix(in srgb, ${activeColor} 14%, transparent)` : "var(--s3)",
     color: active ? activeColor : "var(--t2)",
@@ -123,7 +123,7 @@ function RangeWidget({ lo, hi, price }) {
   const zoneBg = pct == null ? "var(--card2)" : pct <= 25 ? "var(--green-dim)" : pct <= 65 ? "var(--yellow-dim)" : "var(--red-dim)";
   const zoneClr = pct == null ? "var(--t3)" : pct <= 25 ? "var(--green)" : pct <= 65 ? "var(--yellow)" : "var(--red)";
   return (
-    <div style={{ border: "1px solid var(--bdr2)", borderRadius: 10, padding: "16px 20px", marginBottom: 12, background: "var(--s2)" }}>
+    <div style={{ border: "1px solid var(--bdr2)", borderRadius: 4, padding: "16px 20px", marginBottom: 12, background: "var(--s2)" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 10 }}>
         <div>
           <div style={{ fontSize: 11, color: "var(--t3)", fontWeight: 500, marginBottom: 1 }}>Low</div>
@@ -131,7 +131,7 @@ function RangeWidget({ lo, hi, price }) {
         </div>
         <div style={{ textAlign: "center" }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: "var(--t2)", marginBottom: 1 }}>52W Range</div>
-          {zoneLabel && <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 20, background: zoneBg, color: zoneClr }}>{zoneLabel}</span>}
+          {zoneLabel && <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 6, background: zoneBg, color: zoneClr }}>{zoneLabel}</span>}
         </div>
         <div style={{ textAlign: "right" }}>
           <div style={{ fontSize: 11, color: "var(--t3)", fontWeight: 500, marginBottom: 1 }}>High</div>
@@ -139,7 +139,7 @@ function RangeWidget({ lo, hi, price }) {
         </div>
       </div>
       <div style={{ position: "relative", paddingBottom: pct != null ? 18 : 4 }}>
-        <div style={{ height: 10, borderRadius: 5, background: "linear-gradient(to right, #d32f2f, #f4511e, #fb8c00, #fdd835, #aed136, #43a047, #1b5e20)" }} />
+        <div style={{ height: 10, borderRadius: 4, background: "linear-gradient(to right, var(--red), var(--yellow), var(--green))" }} />
         {pct != null && (
           <div style={{ position: "absolute", bottom: 0, left: `calc(${pct}% - 7px)`, width: 0, height: 0, borderLeft: "7px solid transparent", borderRight: "7px solid transparent", borderBottom: "12px solid var(--t1)" }} />
         )}
@@ -204,7 +204,7 @@ function CompanyProfile({ symbol, m }) {
     ["CIN", p?.cin],
   ].filter(([, v]) => v);
   return (
-    <div style={{ border: "1px solid var(--bdr2)", borderRadius: 12, padding: "16px 18px", marginBottom: 14, background: "var(--s2)" }}>
+    <div style={{ border: "1px solid var(--bdr2)", borderRadius: 6, padding: "16px 18px", marginBottom: 14, background: "var(--s2)" }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
         <h3 style={{ fontSize: 15, fontWeight: 650, margin: 0, color: "var(--t1)" }}>About the company</h3>
         {p?.report?.fy && <span style={{ fontSize: 11.5, color: "var(--t3)" }}>From its {p.report.fy} business responsibility report{p.report.filed ? `, filed ${longDate(p.report.filed)}` : ""}</span>}
@@ -216,7 +216,7 @@ function CompanyProfile({ symbol, m }) {
           {description && <p style={{ fontSize: 13.5, color: "var(--t2)", lineHeight: 1.6, margin: "0 0 8px" }}>{description}.</p>}
           {p?.businessLines?.length > 0 && (
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
-              {p.businessLines.filter(b => b.length <= 70).map(b => <span key={b} style={{ fontSize: 12, padding: "3px 9px", borderRadius: 999, background: "var(--s3)", color: "var(--t2)" }}>{b}</span>)}
+              {p.businessLines.filter(b => b.length <= 70).map(b => <span key={b} style={{ fontSize: 12, padding: "3px 9px", borderRadius: 3, background: "var(--s3)", color: "var(--t2)" }}>{b}</span>)}
             </div>
           )}
           {p?.businessLines?.some(b => b.length > 70) && (
@@ -284,9 +284,9 @@ function ShareholdingPanel({ symbol }) {
   };
 
   return (
-    <div style={{ border: "1px solid var(--bdr2)", borderRadius: 10, padding: "16px 20px", marginBottom: 12, background: "var(--s2)" }}>
+    <div style={{ border: "1px solid var(--bdr2)", borderRadius: 4, padding: "16px 20px", marginBottom: 12, background: "var(--s2)" }}>
       <div style={{ fontSize: 13, fontWeight: 600, color: "var(--t1)", marginBottom: 10 }}>Shareholding as of {period(latest)}</div>
-      <div style={{ display: "flex", height: 12, borderRadius: 6, overflow: "hidden", marginBottom: 10, gap: 1 }}>
+      <div style={{ display: "flex", height: 12, borderRadius: 4, overflow: "hidden", marginBottom: 10, gap: 1 }}>
         {segments.map(({ key, color }) => <div key={key} style={{ flex: latest[key], background: color, minWidth: latest[key] > 1 ? 2 : 0 }} />)}
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 18px", marginBottom: quarters.length > 1 ? 14 : 0 }}>
@@ -370,19 +370,19 @@ function MyNotes({ symbol }) {
   };
 
   return (
-    <div style={{ border: "1px solid var(--bdr2)", borderRadius: 10, padding: 16, marginBottom: 16, background: "var(--s2)" }}>
+    <div style={{ border: "1px solid var(--bdr2)", borderRadius: 4, padding: 16, marginBottom: 16, background: "var(--s2)" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
         <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15, fontWeight: 600, color: "var(--t1)" }}><NotebookPen size={17} style={{ color: "var(--t3)" }} /> My Notes</span>
         {saved && !editing && (
           <div style={{ display: "flex", gap: 8 }}>
-            <button className="tap" onClick={() => setEditing(true)} style={{ fontSize: 12, padding: "3px 10px", borderRadius: 6, border: "1px solid var(--accent)", background: "color-mix(in srgb, var(--accent) 8%, transparent)", color: "var(--accent)", cursor: "pointer" }}>Edit</button>
-            <button className="tap" onClick={remove} style={{ fontSize: 12, padding: "3px 10px", borderRadius: 6, border: "1px solid var(--bdr2)", background: "var(--s1)", color: "var(--t3)", cursor: "pointer" }}>Delete</button>
+            <button className="tap" onClick={() => setEditing(true)} style={{ fontSize: 12, padding: "3px 10px", borderRadius: 4, border: "1px solid var(--accent)", background: "color-mix(in srgb, var(--accent) 8%, transparent)", color: "var(--accent)", cursor: "pointer" }}>Edit</button>
+            <button className="tap" onClick={remove} style={{ fontSize: 12, padding: "3px 10px", borderRadius: 4, border: "1px solid var(--bdr2)", background: "var(--s1)", color: "var(--t3)", cursor: "pointer" }}>Delete</button>
           </div>
         )}
       </div>
       {saved && !editing ? (
         <div>
-          <div style={{ display: "inline-block", fontSize: 12, fontWeight: 650, padding: "4px 12px", borderRadius: 20, background: VERDICT_META[saved.verdict]?.bg, color: VERDICT_META[saved.verdict]?.color, border: `1px solid ${VERDICT_META[saved.verdict]?.border}` }}>
+          <div style={{ display: "inline-block", fontSize: 12, fontWeight: 650, padding: "4px 12px", borderRadius: 6, background: VERDICT_META[saved.verdict]?.bg, color: VERDICT_META[saved.verdict]?.color, border: `1px solid ${VERDICT_META[saved.verdict]?.border}` }}>
             <Dot color={VERDICT_META[saved.verdict]?.color} />{VERDICT_META[saved.verdict]?.label}
           </div>
           {saved.text && <p style={{ fontSize: 13, color: "var(--t2)", margin: "8px 0 4px", lineHeight: 1.5 }}>{saved.text}</p>}
@@ -393,16 +393,16 @@ function MyNotes({ symbol }) {
           <p style={{ fontSize: 12, color: "var(--t2)", margin: "0 0 10px" }}>Set your verdict and add a note for this stock.</p>
           <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
             {Object.entries(VERDICT_META).map(([key, meta]) => (
-              <button key={key} className="tap" onClick={() => setVerdict(key)} style={{ fontSize: 12, fontWeight: 600, padding: "5px 14px", borderRadius: 20, border: `1.5px solid ${verdict === key ? meta.border : "var(--bdr2)"}`, background: verdict === key ? meta.bg : "var(--surf)", color: verdict === key ? meta.color : "var(--t2)", cursor: "pointer", transition: "all 0.15s" }}>
+              <button key={key} className="tap" onClick={() => setVerdict(key)} style={{ fontSize: 12, fontWeight: 600, padding: "5px 14px", borderRadius: 6, border: `1.5px solid ${verdict === key ? meta.border : "var(--bdr2)"}`, background: verdict === key ? meta.bg : "var(--surf)", color: verdict === key ? meta.color : "var(--t2)", cursor: "pointer", transition: "all 0.15s" }}>
                 <Dot color={meta.color} />{meta.label}
               </button>
             ))}
           </div>
           <textarea aria-label="Your note on this company" maxLength={2000} value={text} onChange={e => setText(e.target.value)} rows={2} placeholder="Add a note... e.g. Wait for P2 entry. Watch working-capital days."
-            style={{ width: "100%", fontSize: 13, padding: "8px 12px", borderRadius: 8, border: "1px solid var(--bdr2)", resize: "vertical", fontFamily: "inherit", outline: "none", boxSizing: "border-box", background: "var(--s1)", color: "var(--t1)" }} />
+            style={{ width: "100%", fontSize: 13, padding: "8px 12px", borderRadius: 4, border: "1px solid var(--bdr2)", resize: "vertical", fontFamily: "inherit", outline: "none", boxSizing: "border-box", background: "var(--s1)", color: "var(--t1)" }} />
           <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-            <button className="tap" onClick={save} disabled={!verdict} style={{ fontSize: 13, fontWeight: 600, padding: "7px 18px", borderRadius: 8, border: "none", background: verdict ? "var(--accent)" : "var(--card2)", color: verdict ? "var(--on-accent)" : "var(--t3)", cursor: verdict ? "pointer" : "not-allowed" }}>Save Note</button>
-            {saved && <button onClick={() => { setVerdict(saved.verdict); setText(saved.text); setEditing(false); }} style={{ fontSize: 13, padding: "7px 14px", borderRadius: 8, border: "1px solid var(--bdr2)", background: "var(--s1)", color: "var(--t2)", cursor: "pointer" }}>Cancel</button>}
+            <button className="tap" onClick={save} disabled={!verdict} style={{ fontSize: 13, fontWeight: 600, padding: "7px 18px", borderRadius: 4, border: "none", background: verdict ? "var(--accent)" : "var(--card2)", color: verdict ? "var(--on-accent)" : "var(--t3)", cursor: verdict ? "pointer" : "not-allowed" }}>Save Note</button>
+            {saved && <button onClick={() => { setVerdict(saved.verdict); setText(saved.text); setEditing(false); }} style={{ fontSize: 13, padding: "7px 14px", borderRadius: 4, border: "1px solid var(--bdr2)", background: "var(--s1)", color: "var(--t2)", cursor: "pointer" }}>Cancel</button>}
           </div>
         </div>
       )}
@@ -449,7 +449,7 @@ function KeyNumbers({ data, m }) {
       <h3 style={{ fontSize: 15, fontWeight: 600, margin: "0 0 12px", color: "var(--t1)" }}>Key Numbers</h3>
       <div className="ss-grid-4">
         {stats.map(([label, value]) => (
-          <div key={label} style={{ background: "var(--s1)", borderRadius: 8, padding: "10px 12px", border: "1px solid var(--bdr)" }}>
+          <div key={label} style={{ background: "var(--s1)", borderRadius: 4, padding: "10px 12px", border: "1px solid var(--bdr)" }}>
             <div style={{ fontSize: 11, color: "var(--t3)", marginBottom: 3 }}>{label}</div>
             <div style={{ fontSize: 14, fontWeight: 600, color: "var(--t1)", ...MONO }}>{value}</div>
           </div>
@@ -654,7 +654,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
     return (
       <div style={{ padding: "28px var(--page-x)" }}>
         <button className="btn-ghost" onClick={onBack} style={{ marginBottom: 16 }}><ArrowLeft size={15} /> Back</button>
-        <div style={{ display: "flex", gap: 8, alignItems: "flex-start", padding: 12, borderRadius: 8, background: "var(--red-dim)", border: "1px solid var(--red-bdr)", color: "var(--red)", fontSize: 13 }}><TriangleAlert size={16} style={{ flexShrink: 0, marginTop: 1 }} /> {error}</div>
+        <div style={{ display: "flex", gap: 8, alignItems: "flex-start", padding: 12, borderRadius: 4, background: "var(--red-dim)", border: "1px solid var(--red-bdr)", color: "var(--red)", fontSize: 13 }}><TriangleAlert size={16} style={{ flexShrink: 0, marginTop: 1 }} /> {error}</div>
       </div>
     );
   }
@@ -695,7 +695,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       {/* Sticky action bar */}
       <div data-sticky-top style={{ position: "sticky", top: "var(--header-h, 0px)", zIndex: 40, padding: "10px 0 0", marginBottom: 14, background: "var(--bg)", borderBottom: "1px solid var(--bdr)" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <button onClick={onBack} title={`Back to ${backTo}`} style={{ display: "flex", alignItems: "center", gap: 5, height: 34, borderRadius: 8, background: "var(--s2)", border: "1px solid var(--bdr)", cursor: "pointer", color: "var(--t2)", flexShrink: 0, padding: "0 10px", fontSize: 12, fontWeight: 500, fontFamily: "inherit" }}>
+        <button onClick={onBack} title={`Back to ${backTo}`} style={{ display: "flex", alignItems: "center", gap: 5, height: 34, borderRadius: 4, background: "var(--s2)", border: "1px solid var(--bdr)", cursor: "pointer", color: "var(--t2)", flexShrink: 0, padding: "0 10px", fontSize: 12, fontWeight: 500, fontFamily: "inherit" }}>
           <ArrowLeft size={15} /> Back
         </button>
         <span style={{ fontSize: 14, fontWeight: 650, color: "var(--t1)", letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>
@@ -708,7 +708,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       </div>
 
       {m && (
-        <div style={{ padding: "10px 14px", borderRadius: 10, background: "var(--green-dim)", border: "1px solid var(--green-bdr)", fontSize: 12.5, color: "var(--green)", marginBottom: 14, lineHeight: 1.55 }}>
+        <div style={{ padding: "10px 14px", borderRadius: 4, background: "var(--green-dim)", border: "1px solid var(--green-bdr)", fontSize: 12.5, color: "var(--green)", marginBottom: 14, lineHeight: 1.55 }}>
           <CircleCheck size={14} strokeWidth={2.2} style={{ verticalAlign: "-2px", marginRight: 6 }} /><strong>Financials from NSE filings</strong> — EPS and valuation inputs use {data.annual?.scope?.toLowerCase() ?? "reported"} results for the year ended {longDate(m.fyEnd)}{m.provenance?.financials?.filedAt ? `, filed ${longDate(m.provenance.financials.filedAt)}` : ""}. The price source and date are shown beside the quote above.{" "}
           <a href={`https://www.nseindia.com/get-quotes/equity?symbol=${encodeURIComponent(data.symbol)}`} target="_blank" rel="noreferrer" style={{ color: "var(--green)", fontWeight: 600, whiteSpace: "nowrap" }}>Open on NSE <ArrowUpRight size={13} style={{ verticalAlign: "-2px" }} /></a>
           {model === "earnings" && (
@@ -735,7 +735,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       )}
 
       {m?.epsJump && model === "earnings" && (
-        <div style={{ padding: "10px 14px", borderRadius: 8, background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", fontSize: 12, color: "var(--t2)", lineHeight: 1.5, marginBottom: 14 }}>
+        <div style={{ padding: "10px 14px", borderRadius: 4, background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", fontSize: 12, color: "var(--t2)", lineHeight: 1.5, marginBottom: 14 }}>
           <strong style={{ color: "var(--yellow)" }}>Profit jumped this year — the price levels use the usual level.</strong>{" "}
           {fyLabel(m.fyEnd)} EPS is ₹{m.epsJump.eps.toFixed(2)}, more than 3× the usual ₹{m.epsJump.usualEps.toFixed(2)}, but the share price hasn't followed (P/E {m.epsJump.pe.toFixed(1)} on the last close, against a usual {m.medianPe.toFixed(1)}). That is how a one-off gain looks. If you expect this profit to last, type {round(m.epsJump.eps, 2)} into EPS below.
         </div>
@@ -744,7 +744,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, flexWrap: "wrap" }}>
         <CompanyLogo symbol={data.symbol} size={28} />
         <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0, color: "var(--t1)", letterSpacing: "-0.03em" }}>{data.name}</h2>
-        <span style={{ fontSize: 11, background: "var(--s3)", color: "var(--t2)", padding: "2px 9px", borderRadius: 6, ...MONO }}>{data.symbol}</span>
+        <span style={{ fontSize: 11, background: "var(--s3)", color: "var(--t2)", padding: "2px 9px", borderRadius: 4, ...MONO }}>{data.symbol}</span>
       </div>
       {price > 0 && (
         <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
@@ -754,23 +754,23 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       )}
       {m && (m.sector || m.cyclical || onCycle || m.valuation?.partialCycle || m.lender || m.utility || m.governmentOwned) && (
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
-          {m.sector && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--accent-glow)", color: "var(--accent)", fontWeight: 600 }}>{m.sector}</span>}
-          {m.lender && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--s3)", color: "var(--t2)", fontWeight: 500 }}>Lender</span>}
-          {m.governmentOwned && <span title={`${m.governmentPct > 0 ? `The government holds ${m.governmentPct}% as promoter. ` : "A government company (NSE's PSU lists). "}Government-owned companies usually trade on lower multiples; its own P/E history already reflects that${m.valuation?.psu ? ", and a bank's cost of equity is a point higher here" : ""}.`} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--s3)", color: "var(--t2)", fontWeight: 500 }}>Government-owned</span>}
-          {m.utility && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--s3)", color: "var(--t2)", fontWeight: 500 }}>Regulated utility</span>}
-          {(m.cyclical || onCycle || m.valuation?.partialCycle) && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--yellow-dim)", color: "var(--yellow)", fontWeight: 600 }}>Cyclical{m.valuation?.partialCycle ? " · partial cycle" : ""}</span>}
+          {m.sector && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 4, background: "var(--accent-glow)", color: "var(--accent)", fontWeight: 600 }}>{m.sector}</span>}
+          {m.lender && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 4, background: "var(--s3)", color: "var(--t2)", fontWeight: 500 }}>Lender</span>}
+          {m.governmentOwned && <span title={`${m.governmentPct > 0 ? `The government holds ${m.governmentPct}% as promoter. ` : "A government company (NSE's PSU lists). "}Government-owned companies usually trade on lower multiples; its own P/E history already reflects that${m.valuation?.psu ? ", and a bank's cost of equity is a point higher here" : ""}.`} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 4, background: "var(--s3)", color: "var(--t2)", fontWeight: 500 }}>Government-owned</span>}
+          {m.utility && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 4, background: "var(--s3)", color: "var(--t2)", fontWeight: 500 }}>Regulated utility</span>}
+          {(m.cyclical || onCycle || m.valuation?.partialCycle) && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 4, background: "var(--yellow-dim)", color: "var(--yellow)", fontWeight: 600 }}>Cyclical{m.valuation?.partialCycle ? " · partial cycle" : ""}</span>}
           {/* The cycle-position gauge's reading, beside the price */}
-          {onCycle && m.valuation.positionLabel && <span title={`This year's net margin ${m.valuation.latestMargin}% against a through-cycle ${m.valuation.medianMargin}%`} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--s3)", color: CYCLE_TONE[m.valuation.positionLabel], fontWeight: 600 }}>Profits {m.valuation.positionLabel}</span>}
+          {onCycle && m.valuation.positionLabel && <span title={`This year's net margin ${m.valuation.latestMargin}% against a through-cycle ${m.valuation.medianMargin}%`} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 4, background: "var(--s3)", color: CYCLE_TONE[m.valuation.positionLabel], fontWeight: 600 }}>Profits {m.valuation.positionLabel}</span>}
         </div>
       )}
 
       {data.quoteError && (
-        <div style={{ fontSize: 12, color: "var(--yellow)", background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", borderRadius: 8, padding: "8px 12px", marginBottom: 12 }}>
+        <div style={{ fontSize: 12, color: "var(--yellow)", background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", borderRadius: 4, padding: "8px 12px", marginBottom: 12 }}>
           Couldn't refresh Yahoo's latest daily close ({data.quoteError}){data.close ? " — using NSE's last close." : "."}
         </div>
       )}
       {data.quote?.stale && (
-        <div style={{ fontSize: 12, color: "var(--yellow)", background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", borderRadius: 8, padding: "8px 12px", marginBottom: 12 }}>
+        <div style={{ fontSize: 12, color: "var(--yellow)", background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", borderRadius: 4, padding: "8px 12px", marginBottom: 12 }}>
           <strong>Showing a cached quote</strong> — Yahoo Finance could not refresh it. Quote date: {data.quote.asOf}.
         </div>
       )}
@@ -789,7 +789,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         <>
           {/* Verify & Override — or, without a model that values the
               company, why there's no fair value */}
-          <div id="sec-valuation" className="ss-section" data-tour="override" style={{ border: "1px solid var(--bdr2)", borderRadius: 14, padding: 20, marginBottom: 16, background: "var(--s2)" }}>
+          <div id="sec-valuation" className="ss-section" data-tour="override" style={{ border: "1px solid var(--bdr2)", borderRadius: 6, padding: 20, marginBottom: 16, background: "var(--s2)" }}>
             {valued ? (
               <>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
@@ -881,16 +881,16 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
             <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
               <span style={{ fontSize: 14, color: "var(--t2)", fontWeight: 500 }}>₹</span>
               <input type="number" aria-label="Price to test" value={actionPrice} onChange={e => { setActionPrice(e.target.value); setPriceLabel("Your price"); }} placeholder="Current price"
-                style={{ flex: "1 1 140px", minWidth: 120, maxWidth: 320, height: 42, padding: "0 14px", border: "1px solid var(--accent)", borderRadius: 8, fontSize: 15, fontWeight: 500, outline: "none", background: "var(--s1)", color: "var(--t1)" }} />
+                style={{ flex: "1 1 140px", minWidth: 120, maxWidth: 320, height: 42, padding: "0 14px", border: "1px solid var(--accent)", borderRadius: 4, fontSize: 15, fontWeight: 500, outline: "none", background: "var(--s1)", color: "var(--t1)" }} />
               {data.quote && String(data.quote.cmp) !== actionPrice && (
                 <button type="button" onClick={() => { setActionPrice(String(data.quote.cmp)); setPriceLabel(quoteLabel(data.quote)); }}
-                  style={{ height: 42, padding: "0 12px", borderRadius: 8, border: "1px solid var(--accent)", background: "var(--s1)", fontSize: 12, cursor: "pointer", color: "var(--accent)" }}>
+                  style={{ height: 42, padding: "0 12px", borderRadius: 4, border: "1px solid var(--accent)", background: "var(--s1)", fontSize: 12, cursor: "pointer", color: "var(--accent)" }}>
                   Use Yahoo close
                 </button>
               )}
               {data.close && String(data.close.price) !== actionPrice && (
                 <button type="button" onClick={() => { setActionPrice(String(data.close.price)); setPriceLabel(closeLabel(data.close)); }}
-                  style={{ height: 42, padding: "0 12px", borderRadius: 8, border: "1px solid var(--bdr2)", background: "var(--s2)", fontSize: 12, cursor: "pointer", color: "var(--t2)" }}>
+                  style={{ height: 42, padding: "0 12px", borderRadius: 4, border: "1px solid var(--bdr2)", background: "var(--s2)", fontSize: 12, cursor: "pointer", color: "var(--t2)" }}>
                   Use NSE close
                 </button>
               )}
@@ -914,9 +914,9 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
 
           {/* Where the price sits — described against the levels, never an instruction */}
           {position && (
-            <div data-tour="position" style={{ borderRadius: 12, padding: 18, marginBottom: 16, background: "var(--s2)", border: `1px solid color-mix(in srgb, ${positionTone} 45%, var(--bdr2))` }}>
+            <div data-tour="position" style={{ borderRadius: 6, padding: 18, marginBottom: 16, background: "var(--s2)", border: `1px solid color-mix(in srgb, ${positionTone} 45%, var(--bdr2))` }}>
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8, flexWrap: "wrap" }}>
-                <span style={{ width: 40, height: 40, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: positionTone, background: `color-mix(in srgb, ${positionTone} 12%, transparent)` }}>
+                <span style={{ width: 40, height: 40, borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: positionTone, background: `color-mix(in srgb, ${positionTone} 12%, transparent)` }}>
                   <PositionIcon zone={position.zone} size={20} strokeWidth={2} />
                 </span>
                 <div>
@@ -949,7 +949,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
               ].filter(r => r.price > 0).sort((a, b) => b.price - a.price).map(rung => {
                 const isHere = Math.abs(price - rung.price) / rung.price < 0.03;
                 return (
-                  <div key={rung.label} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "8px 12px", borderRadius: 6, marginBottom: 4, fontSize: 13, background: isHere ? "var(--yellow-dim)" : "transparent", border: isHere ? "1px dashed var(--yellow)" : "1px solid var(--bdr)" }}>
+                  <div key={rung.label} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "8px 12px", borderRadius: 4, marginBottom: 4, fontSize: 13, background: isHere ? "var(--yellow-dim)" : "transparent", border: isHere ? "1px dashed var(--yellow)" : "1px solid var(--bdr)" }}>
                     {/* On the amber "you are here" tint, plain red is 4.1:1 in dark;
                         blending toward --t1 keeps it red and clears 4.5:1 in both themes */}
                     <span style={{ color: isHere && rung.color === "var(--red)" ? "color-mix(in srgb, var(--red) 80%, var(--t1))" : rung.color, fontWeight: 500 }}>{rung.label}</span>
@@ -979,7 +979,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
                   { label: `${fyLabel(m.fyEnd, 2)} ${onBook ? "book" : onCycle ? "mid-cycle EPS" : "EPS"} (est.)`, val: levels.e27 ? `₹${levels.e27}` : "—", sub: `FV: ${fmtRs(levels.fv27)}` },
                   { label: "Reference level 1", val: fmtRs(levels.safeBuy), sub: `Today's modeled value × ${100 - Number(mosPct || 10)}%`, hi: true },
                 ].map(fc => (
-                  <div key={fc.label} style={{ background: "var(--s1)", borderRadius: 8, padding: 12, border: fc.hi ? "1px solid var(--green)" : "1px solid var(--bdr)" }}>
+                  <div key={fc.label} style={{ background: "var(--s1)", borderRadius: 4, padding: 12, border: fc.hi ? "1px solid var(--green)" : "1px solid var(--bdr)" }}>
                     <div style={{ fontSize: 11, color: "var(--t3)", marginBottom: 4 }}>{fc.label}</div>
                     <div style={{ fontSize: 17, fontWeight: 600, color: fc.hi ? "var(--accent)" : "var(--t1)" }}>{fc.val}</div>
                     <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 2 }}>{fc.sub}</div>
@@ -1004,7 +1004,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       </p>
 
       <div className="ss-back-bottom">
-        <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "var(--accent)", background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 12, cursor: "pointer", padding: "12px 24px", fontWeight: 600, margin: "8px auto 0" }}>
+        <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "var(--accent)", background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 6, cursor: "pointer", padding: "12px 24px", fontWeight: 600, margin: "8px auto 0" }}>
           <ArrowLeft size={16} /> Back to {backTo}
         </button>
       </div>

@@ -162,13 +162,13 @@ export default function Tour({ steps: allSteps, onFinish }) {
       <div style={{ position: "absolute", inset: 0, background: hole ? "transparent" : "rgba(6, 8, 14, 0.62)" }} />
       {hole && (
         <div style={{
-          position: "fixed", ...hole, borderRadius: 12, pointerEvents: "none", transition: move,
+          position: "fixed", ...hole, borderRadius: 6, pointerEvents: "none", transition: move,
           boxShadow: "0 0 0 2px var(--accent), 0 0 0 9999px rgba(6, 8, 14, 0.62)",
         }} />
       )}
       <div ref={cardRef} style={{
         position: "fixed", ...cardPos, width: phone ? view.w - 32 : cardW, boxSizing: "border-box", transition: move,
-        background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 14, padding: "16px 18px 14px", boxShadow: "var(--sh-lg)",
+        background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 6, padding: "16px 18px 14px", boxShadow: "var(--sh-lg)",
       }}>
         <div key={i} style={{ animation: reduced ? "none" : "fadeUp 260ms cubic-bezier(0,0,0.2,1) backwards" }}>
           <div style={{ fontSize: 11, color: "var(--t3)", marginBottom: 6, fontVariantNumeric: "tabular-nums" }}>{i + 1} of {steps.length}</div>

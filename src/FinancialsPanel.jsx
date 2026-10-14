@@ -191,7 +191,7 @@ function FinancialsChart({ points }) {
       )}
 
       {hover != null && layout && (
-        <div style={{ position: "absolute", top: 4, left: Math.min(width - 170, Math.max(0, MARGIN.left + hover * layout.band + layout.band / 2 - 80)), width: 160, background: "var(--s3)", border: "1px solid var(--bdr2)", borderRadius: 8, padding: "8px 10px", fontSize: 11, boxShadow: "0 4px 18px rgba(0,0,0,0.35)", pointerEvents: "none" }}>
+        <div style={{ position: "absolute", top: 4, left: Math.min(width - 170, Math.max(0, MARGIN.left + hover * layout.band + layout.band / 2 - 80)), width: 160, background: "var(--s3)", border: "1px solid var(--bdr2)", borderRadius: 4, padding: "8px 10px", fontSize: 11, boxShadow: "0 4px 18px rgba(0,0,0,0.35)", pointerEvents: "none" }}>
           <div style={{ fontWeight: 700, marginBottom: 4 }}>{points[hover].period}</div>
           {[["Revenue", points[hover].revenue, "var(--green)"], ["Profit", points[hover].profit, "var(--accent)"]].map(([l, v, c]) => (
             <div key={l} style={{ display: "flex", justifyContent: "space-between", gap: 10, ...MONO }}>
@@ -267,12 +267,12 @@ export default function FinancialsPanel({ history, quarters = [] }) {
   ];
 
   return (
-    <div style={{ border: "1px solid var(--bdr2)", borderRadius: 14, background: "var(--s2)", padding: 16, marginBottom: 16 }}>
+    <div style={{ border: "1px solid var(--bdr2)", borderRadius: 6, background: "var(--s2)", padding: 16, marginBottom: 16 }}>
       <div style={{ fontSize: 14, fontWeight: 700, color: "var(--t1)", marginBottom: 12, letterSpacing: "-0.01em" }}>Financials</div>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)} style={{
-            height: 30, padding: "0 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer",
+            height: 30, padding: "0 12px", borderRadius: 4, fontSize: 12, fontWeight: 600, cursor: "pointer",
             border: `1px solid ${tab === t.id ? "var(--accent)" : "var(--bdr2)"}`,
             background: tab === t.id ? "color-mix(in srgb, var(--accent) 8%, transparent)" : "var(--s3)",
             color: tab === t.id ? "var(--accent)" : "var(--t2)",

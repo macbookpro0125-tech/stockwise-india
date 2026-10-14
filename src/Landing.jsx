@@ -10,41 +10,29 @@ import { SiteLink, SiteFooter, Logo } from "./site.jsx";
 // claim here is something the app does today — keep it that way (phone and
 // email alerts are labelled as coming until they exist).
 
-const Icon = ({ children }) => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    {children}
-  </svg>
-);
-
 const FEATURES = [
   {
-    icon: <Icon><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1" /><circle cx="15" cy="6" r="2" /><circle cx="9" cy="12" r="2" /><circle cx="17" cy="18" r="2" /></Icon>,
     title: "13 ready-made strategies",
     text: "Quality compounders, dividend payers, undervalued growth, Graham net-nets and more — or build your own from 99 metrics, each as a range.",
   },
   {
-    icon: <Icon><path d="M12 3l7 3v6c0 4.4-3 7.5-7 9-4-1.5-7-4.6-7-9V6l7-3z" /><path d="M9 12l2 2 4-4" /></Icon>,
     title: "A quality score from the filings",
     text: "Out of 100 across six areas — business, earnings, balance sheet, governance, growth and valuation — from each company's results on NSE. What the filings can't show is listed, never guessed.",
   },
   {
-    icon: <Icon><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1.5" /></Icon>,
     title: "Fair value and price levels",
     text: "A valuation reference from the company's own 5-year median P/E, plus three model price levels, a stop-loss level and an upper level. These are reference points, not trade instructions.",
   },
   {
-    icon: <Icon><path d="M7 3h7l5 5v13H7z" /><path d="M14 3v5h5M10 13h6M10 17h6" /></Icon>,
     title: "The whole company on one page",
     text: "A research dashboard with every check explained, Piotroski score, price and financial charts, five quarters of shareholding, results, annual reports and news.",
   },
   {
-    icon: <Icon><path d="M6 16v-5a6 6 0 1112 0v5l1.5 2h-15z" /><path d="M10 20.5a2 2 0 004 0" /></Icon>,
     title: "Watchlist, alerts and portfolio",
     text: "Star stocks, set price alerts and record what you own — each holding shows its profit and where its price sits against its levels.",
     note: "Price alerts use the latest daily close. Telegram delivery requires server setup; SMS and email alerts aren't available yet.",
   },
   {
-    icon: <Icon><path d="M4 20h16M7 16v-5M12 16V7M17 16v-8" /></Icon>,
     title: "Compare, export, track",
     text: "Compare up to 5 companies side by side, build a sourced investment brief, download lists to Excel, and follow how strategy picks perform over time.",
   },
@@ -56,9 +44,11 @@ const STEPS = [
   ["Decide your price", "Star it, set an alert at the price you want, or add it to your portfolio."],
 ];
 
-const card = { background: "var(--s1)", border: "1px solid var(--bdr)", borderRadius: 16 };
-const sectionTitle = { fontSize: 26, fontWeight: 700, letterSpacing: "-0.03em", color: "var(--t1)", margin: "0 0 8px" };
-const sectionLead = { fontSize: 15, color: "var(--t2)", margin: "0 0 24px", lineHeight: 1.6 };
+// Laid out as TradingView's pages: flat sections split by hairlines, plain
+// headings, no icon tiles, badges or floating cards
+const card = { background: "var(--s1)", border: "1px solid var(--bdr)", borderRadius: 4 };
+const sectionTitle = { fontSize: 24, fontWeight: 700, color: "var(--t1)", margin: "0 0 6px" };
+const sectionLead = { fontSize: 15, color: "var(--t2)", margin: "0 0 20px", lineHeight: 1.6 };
 
 function fmtDate(iso) {
   if (!iso) return "—";
@@ -91,12 +81,12 @@ export default function Landing({ onAuthed, notice }) {
 
       <main style={{ maxWidth: 1240, margin: "0 auto", padding: "0 20px" }}>
         {new URLSearchParams(window.location.search).has("screen") && (
-          <div role="status" style={{ margin: "8px 0 0", padding: "10px 14px", borderRadius: 10, background: "color-mix(in srgb, var(--accent) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 30%, transparent)", color: "var(--t1)", fontSize: 13 }}>
+          <div role="status" style={{ margin: "8px 0 0", padding: "10px 14px", borderRadius: 4, background: "color-mix(in srgb, var(--accent) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 30%, transparent)", color: "var(--t1)", fontSize: 13 }}>
             Someone shared a screen with you. Sign in or create a free account and it opens straight away.
           </div>
         )}
         {notice && (
-          <div role="status" style={{ margin: "8px 0 0", padding: "10px 14px", borderRadius: 10, background: "var(--green-dim)", border: "1px solid var(--green-bdr)", color: "var(--t1)", fontSize: 13 }}>
+          <div role="status" style={{ margin: "8px 0 0", padding: "10px 14px", borderRadius: 4, background: "var(--green-dim)", border: "1px solid var(--green-bdr)", color: "var(--t1)", fontSize: 13 }}>
             {notice}
           </div>
         )}
@@ -104,10 +94,10 @@ export default function Landing({ onAuthed, notice }) {
         {/* ── Hero ── */}
         <section className="landing-hero" style={{ padding: "48px 0 40px" }}>
           <div>
-            <span style={{ display: "inline-block", fontSize: 12, fontWeight: 600, color: "var(--accent)", background: "color-mix(in srgb, var(--accent) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 25%, transparent)", borderRadius: 999, padding: "4px 12px", marginBottom: 18 }}>
+            <p style={{ fontSize: 14, fontWeight: 500, color: "var(--t2)", margin: "0 0 12px" }}>
               For investors in NSE-listed companies
-            </span>
-            <h1 className="landing-h1" style={{ fontSize: 46, lineHeight: 1.08, fontWeight: 800, letterSpacing: "-0.04em", color: "var(--t1)", margin: "0 0 18px" }}>
+            </p>
+            <h1 className="landing-h1" style={{ fontSize: 40, lineHeight: 1.15, fontWeight: 700, letterSpacing: "-0.01em", color: "var(--t1)", margin: "0 0 16px" }}>
               Find quality Indian companies — and the price where they turn good value.
             </h1>
             <p style={{ fontSize: 17, lineHeight: 1.6, color: "var(--t2)", margin: "0 0 26px", maxWidth: 600 }}>
@@ -125,31 +115,28 @@ export default function Landing({ onAuthed, notice }) {
 
         {/* ── The product ── */}
         <section style={{ padding: "8px 0 40px" }}>
-          <div style={{ ...card, overflow: "hidden", boxShadow: "var(--sh-lg)" }}>
-            <div style={{ display: "flex", gap: 6, padding: "10px 14px", borderBottom: "1px solid var(--bdr)", background: "var(--s2)" }}>
-              {["#FF5F57", "#FEBC2E", "#28C840"].map(c => <span key={c} style={{ width: 10, height: 10, borderRadius: "50%", background: c, opacity: 0.8 }} />)}
-            </div>
+          <div style={{ ...card, overflow: "hidden" }}>
             <img
               src="/screens/discover.jpg" width="1280" height="800" loading="lazy"
               alt="The Discover screen: a strategy's results, each company with its quality score, research score, price, returns on capital and price levels"
               style={{ display: "block", width: "100%", height: "auto" }}
             />
           </div>
-          <p style={{ fontSize: 12.5, color: "var(--t3)", textAlign: "center", margin: "12px 0 0" }}>
+          <p style={{ fontSize: 13, color: "var(--t3)", margin: "10px 0 0" }}>
             A strategy's results: every company scored, with its price levels and where today's price sits against them.
           </p>
         </section>
 
         {/* ── Figures ── */}
-        <section className="landing-stats" style={{ padding: "0 0 48px" }}>
+        <section className="landing-stats" style={{ padding: "0 0 48px", gap: 0, borderTop: "1px solid var(--bdr)", borderBottom: "1px solid var(--bdr)" }}>
           {[
             [stats?.companies ? stats.companies.toLocaleString("en-IN") : "—", "NSE companies scored"],
             [stats?.strategies ?? 13, "ready-made strategies"],
             [stats?.filters ?? "—", "filters to tune them"],
             [fmtDate(stats?.pricesDate), "latest prices"],
           ].map(([value, label]) => (
-            <div key={label} style={{ ...card, padding: "18px 20px" }}>
-              <div style={{ fontSize: 26, fontWeight: 750, color: "var(--accent)", letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>{value}</div>
+            <div key={label} className="landing-stat" style={{ padding: "16px 20px 16px 0" }}>
+              <div style={{ fontSize: 24, fontWeight: 700, color: "var(--t1)", fontVariantNumeric: "tabular-nums" }}>{value}</div>
               <div style={{ fontSize: 13, color: "var(--t3)", marginTop: 2 }}>{label}</div>
             </div>
           ))}
@@ -161,12 +148,9 @@ export default function Landing({ onAuthed, notice }) {
           <p style={sectionLead}>Prices update each trading day; company financials refresh as new filings are published on NSE.</p>
           <div className="landing-features">
             {FEATURES.map(f => (
-              <div key={f.title} style={{ ...card, padding: 22 }}>
-                <div style={{ width: 40, height: 40, borderRadius: 11, background: "color-mix(in srgb, var(--accent) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 20%, transparent)", color: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 14 }}>
-                  {f.icon}
-                </div>
-                <h3 style={{ fontSize: 15.5, fontWeight: 650, color: "var(--t1)", margin: "0 0 6px", letterSpacing: "-0.01em" }}>{f.title}</h3>
-                <p style={{ fontSize: 13.5, lineHeight: 1.6, color: "var(--t2)", margin: 0 }}>{f.text}</p>
+              <div key={f.title} style={{ padding: "18px 0", borderTop: "1px solid var(--bdr)" }}>
+                <h3 style={{ fontSize: 16, fontWeight: 600, color: "var(--t1)", margin: "0 0 6px" }}>{f.title}</h3>
+                <p style={{ fontSize: 14, lineHeight: 1.6, color: "var(--t2)", margin: 0 }}>{f.text}</p>
                 {f.note && <p style={{ fontSize: 12, lineHeight: 1.5, color: "var(--t3)", margin: "8px 0 0" }}>{f.note}</p>}
               </div>
             ))}
@@ -179,10 +163,10 @@ export default function Landing({ onAuthed, notice }) {
           <p style={sectionLead}>Three steps — or watch the two-minute walkthrough.</p>
           <div className="landing-steps">
             {STEPS.map(([title, text], i) => (
-              <div key={title} style={{ ...card, padding: 22 }}>
-                <div style={{ width: 30, height: 30, borderRadius: 15, background: "var(--accent)", color: "var(--on-accent)", fontWeight: 800, fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>{i + 1}</div>
-                <h3 style={{ fontSize: 15.5, fontWeight: 650, color: "var(--t1)", margin: "0 0 6px" }}>{title}</h3>
-                <p style={{ fontSize: 13.5, lineHeight: 1.6, color: "var(--t2)", margin: 0 }}>{text}</p>
+              <div key={title} style={{ padding: "16px 0", borderTop: "2px solid var(--bdr2)" }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "var(--t3)", marginBottom: 6, fontVariantNumeric: "tabular-nums" }}>{i + 1}</div>
+                <h3 style={{ fontSize: 16, fontWeight: 600, color: "var(--t1)", margin: "0 0 6px" }}>{title}</h3>
+                <p style={{ fontSize: 14, lineHeight: 1.6, color: "var(--t2)", margin: 0 }}>{text}</p>
               </div>
             ))}
           </div>
@@ -202,8 +186,8 @@ export default function Landing({ onAuthed, notice }) {
         </section>
 
         {/* ── Last call ── */}
-        <section style={{ textAlign: "center", padding: "56px 0 8px" }}>
-          <h2 style={{ ...sectionTitle, fontSize: 28 }}>Start with a strategy — it's free.</h2>
+        <section style={{ padding: "48px 0 8px" }}>
+          <h2 style={sectionTitle}>Start with a strategy — it's free.</h2>
           <p style={{ ...sectionLead, margin: "0 0 20px" }}>No card needed during early access.</p>
           <button className="btn-primary" onClick={() => goAuth("signup")} style={{ height: 46 }}>Create free account</button>
         </section>

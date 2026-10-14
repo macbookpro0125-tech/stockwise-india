@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 
 const mono = { fontVariantNumeric: "tabular-nums" };
-const panel = { border: "1px solid var(--bdr2)", borderRadius: 12, padding: 18, marginBottom: 12, background: "var(--s2)" };
-const field = { width: 88, height: 34, padding: "0 8px", border: "1px solid var(--bdr2)", borderRadius: 7, background: "var(--s1)", color: "var(--t1)", fontSize: 12, fontVariantNumeric: "tabular-nums" };
+const panel = { border: "1px solid var(--bdr2)", borderRadius: 6, padding: 18, marginBottom: 12, background: "var(--s2)" };
+const field = { width: 88, height: 34, padding: "0 8px", border: "1px solid var(--bdr2)", borderRadius: 4, background: "var(--s1)", color: "var(--t1)", fontSize: 12, fontVariantNumeric: "tabular-nums" };
 const money = v => v == null || !Number.isFinite(v) || v <= 0 ? "—" : `₹${Math.round(v).toLocaleString("en-IN")}`;
 const pct = v => `${Number(v).toFixed(1)}%`;
 const finite = v => Number.isFinite(Number(v)) ? Number(v) : null;
@@ -87,7 +87,7 @@ export default function ValuationExplorer({ metrics: m, price, levels, mosPct, e
   // sector-aware valuation spec): its own median P/E trails a rising multiple
   const rerated = m.valuation?.rerated ?? null;
   const impliedCard = (
-    <div style={{ padding: 12, background: "var(--s1)", border: `1px solid ${rerated ? "var(--accent)" : "var(--bdr)"}`, borderRadius: 9 }}>
+    <div style={{ padding: 12, background: "var(--s1)", border: `1px solid ${rerated ? "var(--accent)" : "var(--bdr)"}`, borderRadius: 4 }}>
       <div style={{ fontSize: 11, color: "var(--t3)" }}>EPS growth implied by current price</div>
       <div style={{ marginTop: 4, fontSize: 18, color: "var(--t1)", fontWeight: 700, ...mono }}>{impliedGrowth == null ? "—" : pct(impliedGrowth)}</div>
       <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 4 }}>5-year EPS CAGR needed for price ₹{Number(price || 0).toLocaleString("en-IN")} to equal FY+5 EPS × {basePe}× exit P/E; dividends excluded</div>
@@ -104,28 +104,28 @@ export default function ValuationExplorer({ metrics: m, price, levels, mosPct, e
       </div>
 
       {rerated && (
-        <div style={{ fontSize: 11.5, color: "var(--t2)", background: "var(--s1)", border: "1px solid var(--bdr)", borderRadius: 8, padding: "9px 11px", marginTop: 12, lineHeight: 1.5 }}>
+        <div style={{ fontSize: 11.5, color: "var(--t2)", background: "var(--s1)", border: "1px solid var(--bdr)", borderRadius: 4, padding: "9px 11px", marginTop: 12, lineHeight: 1.5 }}>
           <strong style={{ color: "var(--t1)" }}>Re-rated compounder.</strong> Its P/E rose from about {rerated.from}× to {rerated.to}× over the years on file, and the market still pays {rerated.now}×. Against a rising multiple, the 5-year median ({rerated.median}×) stays below the price for good, so it never marks a fair entry. The growth today's price implies comes first: judge whether the business can deliver it.
         </div>
       )}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 9, marginTop: 14 }}>
         {rerated && impliedCard}
-        <div style={{ padding: 12, background: "var(--s1)", border: "1px solid var(--bdr)", borderRadius: 9 }}>
+        <div style={{ padding: 12, background: "var(--s1)", border: "1px solid var(--bdr)", borderRadius: 4 }}>
           <div style={{ fontSize: 11, color: "var(--t3)" }}>{m.medianPe != null ? "Historical P/E reference" : "Current P/E reference"}</div>
           <div style={{ marginTop: 4, fontSize: 18, color: "var(--t1)", fontWeight: 700, ...mono }}>{money(levels?.fv25)}</div>
           <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 4 }}>₹{eps.toFixed(2)} normalized EPS × {historicalPe.toFixed(1)}× {m.medianPe != null ? `5Y median (${m.peYears} usable years)` : "P/E reference"}</div>
         </div>
-        <div style={{ padding: 12, background: "var(--s1)", border: "1px solid var(--bdr)", borderRadius: 9 }}>
+        <div style={{ padding: 12, background: "var(--s1)", border: "1px solid var(--bdr)", borderRadius: 4 }}>
           <div style={{ fontSize: 11, color: "var(--t3)" }}>Margin-of-safety price</div>
           <div style={{ marginTop: 4, fontSize: 18, color: "var(--t1)", fontWeight: 700, ...mono }}>{money(safePrice)}</div>
           <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 4 }}>{money(levels?.fv25)} × (1 − {mos.toFixed(1)}%); based on current normalized EPS, before growth</div>
         </div>
-        <div style={{ padding: 12, background: "var(--s1)", border: "1px solid var(--bdr)", borderRadius: 9 }}>
+        <div style={{ padding: 12, background: "var(--s1)", border: "1px solid var(--bdr)", borderRadius: 4 }}>
           <div style={{ fontSize: 11, color: "var(--t3)" }}>Reported free-cash-flow yield</div>
           <div style={{ marginTop: 4, fontSize: 18, color: "var(--t1)", fontWeight: 700, ...mono }}>{m.fcfYieldPct != null ? pct(m.fcfYieldPct) : "—"}</div>
           <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 4 }}>Latest-year CFO − capex ÷ market value; unavailable for lenders or missing cash-flow data</div>
         </div>
-        <div style={{ padding: 12, background: "var(--s1)", border: "1px solid var(--bdr)", borderRadius: 9 }}>
+        <div style={{ padding: 12, background: "var(--s1)", border: "1px solid var(--bdr)", borderRadius: 4 }}>
           <div style={{ fontSize: 11, color: "var(--t3)" }}>Simplified 5Y cash-flow DCF</div>
           <div style={{ marginTop: 4, fontSize: 18, color: "var(--t1)", fontWeight: 700, ...mono }}>{money(dcf)}</div>
           <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 4 }}>{dcf != null ? `${fcfBasis} FCF/share ₹${fcfPerShare.toFixed(2)} · ${dcfFcfGrowth}% FCF growth · ${discountRate}% discount · ${terminalGrowth}% terminal`
@@ -138,7 +138,7 @@ export default function ValuationExplorer({ metrics: m, price, levels, mosPct, e
       <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 9, lineHeight: 1.5 }}>
         Source: {reportSource?.source ?? "NSE financial filings"}, {reportSource?.scope ?? "scope not stated"} results for FY ending {reportSource?.period ?? m.fyEnd ?? "—"}{reportSource?.filedAt ? ` (filed ${reportSource.filedAt})` : ""}. Price: {priceSource?.source ?? "available market price"}{priceSource?.date ? ` dated ${priceSource.date}` : ""}. Historical P/E uses {m.provenance?.historicalPe?.usableYears ?? m.peYears ?? 0} usable years.
       </div>
-      {m.medianPe != null && <div style={{ fontSize: 11, color: "var(--t2)", background: "var(--s1)", border: "1px solid var(--bdr)", borderRadius: 8, padding: "9px 11px", marginTop: 9, lineHeight: 1.5 }}>
+      {m.medianPe != null && <div style={{ fontSize: 11, color: "var(--t2)", background: "var(--s1)", border: "1px solid var(--bdr)", borderRadius: 4, padding: "9px 11px", marginTop: 9, lineHeight: 1.5 }}>
         <strong>Two different comparisons:</strong> {m.medianPe.toFixed(1)}× is this company's own historical median; {peerCheck?.reason ? peerCheck.reason : "the peer reference compares the stock with its NSE sector"} NSE sectors can include different industries. Neither multiple is a standalone fair value or price target.
       </div>}
 

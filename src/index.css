@@ -6,67 +6,72 @@
 :root { --page-x: clamp(20px, 2.2vw, 36px); }
 
 :root {
-  /* This app: one typeface for text and figures alike (Inter, bundled in
-     main.jsx); figures line up through tabular-nums, not a monospace font */
-  --font: "Inter Variable", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* One typeface for text and figures alike: TradingView's own stack, the
+     system UI font (nothing to download); figures line up through
+     tabular-nums, not a monospace font */
+  --font: -apple-system, BlinkMacSystemFont, "Trebuchet MS", Roboto, Ubuntu, "Segoe UI", sans-serif;
   /* Text on a solid accent or status fill */
-  --on-accent: #07070E;
-  --on-status: #07070E;
+  --on-accent: #131722;
+  --on-status: #131722;
 
   /* ── Depth layers ── */
-  --bg:    #080810;
-  --s1:    #0E0E1A;
-  --s2:    #141424;
-  --s3:    #1A1A2E;
-  --s4:    #222238;
-  --s5:    #2A2A44;
+  /* ── Depth layers: TradingView's dark greys. Flat panels split by 1px
+     lines, not floating cards ── */
+  --bg:    #131722;
+  --s1:    #171B26;
+  --s2:    #1E222D;
+  --s3:    #2A2E39;
+  --s4:    #363A45;
+  --s5:    #434651;
 
   /* The original's legacy names — its ported panels still use them */
-  --surf:  #0C0C17;
-  --card:  #111120;
-  --card2: #171728;
+  --surf:  #171B26;
+  --card:  #1E222D;
+  --card2: #2A2E39;
 
-  /* ── Accent ── */
-  --accent:  #00E0BE;
-  --accent2: #00F5D0;
-  --accent3: #00BFA3;
-  --accent-glow: color-mix(in srgb, var(--accent) 20%, transparent);
-  --brand-wise: #6FA0FF;
+  /* ── Accent: TradingView blue, lightened until text in it reaches 4.5:1
+     on the hover grey, on its own tint too (#2962FF itself is 2.8:1) ── */
+  --accent:  #6AA6FF;
+  --accent2: #85B6FF;
+  --accent3: #4C8DF5;
+  --accent-glow: color-mix(in srgb, var(--accent) 10%, transparent);
+  --brand-wise: #6AA6FF;
 
-  /* ── Text ── */
-  --t1: #F4F4FF;
-  --t2: #A8A8C0;
-  --t3: #8282A0; /* 4.6:1 or more on every dark surface (WCAG AA); #686885 was 3.2–3.7 */
-  --t4: #26263A;
+  /* ── Text (every one 4.8:1 or more on every surface, hover included) ── */
+  --t1: #D1D4DC;
+  --t2: #B2B5BE;
+  --t3: #959AA5;
+  --t4: #2A2E39;
 
-  /* ── Borders ── */
-  --bdr:   rgba(255,255,255,0.08);
-  --bdr2:  rgba(255,255,255,0.14);
-  --bdr3:  rgba(255,255,255,0.22);
+  /* ── Borders: solid hairlines, as TradingView draws them ── */
+  --bdr:   #2A2E39;
+  --bdr2:  #363A45;
+  --bdr3:  #434651;
 
-  /* ── Status ── */
-  --green:      #34D65C;
-  --green-dim:  rgba(52,214,92,0.14);
-  --green-bdr:  rgba(52,214,92,0.30);
-  --yellow:     #FFD60A;
-  --yellow-dim: rgba(255,214,10,0.14);
-  --yellow-bdr: rgba(255,214,10,0.30);
-  --red:        #FF5147;
-  --red-dim:    rgba(255,81,71,0.14);
-  --red-bdr:    rgba(255,81,71,0.30);
+  /* ── Status: TradingView's teal and red, lifted until each reads at 4.5:1
+     on the hover grey and on its own 10% tint (score and status tags) ── */
+  --green:      #2BBCA2;
+  --green-dim:  rgba(43,188,162,0.10);
+  --green-bdr:  rgba(43,188,162,0.32);
+  --yellow:     #FF9800;
+  --yellow-dim: rgba(255,152,0,0.10);
+  --yellow-bdr: rgba(255,152,0,0.32);
+  --red:        #FF7B83;
+  --red-dim:    rgba(255,123,131,0.10);
+  --red-bdr:    rgba(255,123,131,0.32);
 
-  /* ── Shadows ── */
-  --sh-xs: 0 1px 2px rgba(0,0,0,0.4);
-  --sh-sm: 0 2px 8px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
-  --sh-md: 0 4px 20px rgba(0,0,0,0.5), 0 1px 4px rgba(0,0,0,0.3);
-  --sh-lg: 0 12px 48px rgba(0,0,0,0.6), 0 4px 16px rgba(0,0,0,0.3);
+  /* ── Shadows: none on the page; only menus and dialogs lift ── */
+  --sh-xs: none;
+  --sh-sm: none;
+  --sh-md: 0 4px 16px rgba(0,0,0,0.45);
+  --sh-lg: 0 12px 40px rgba(0,0,0,0.55);
 
-  /* ── Radius ── */
-  --r-xs:   6px;
-  --r-sm:   8px;
-  --r-md:   12px;
-  --r-lg:   16px;
-  --r-xl:   20px;
+  /* ── Radius: small and square-ish ── */
+  --r-xs:   2px;
+  --r-sm:   4px;
+  --r-md:   4px;
+  --r-lg:   6px;
+  --r-xl:   6px;
   --r-pill: 999px;
 
   /* ── Motion ── */
@@ -83,48 +88,49 @@
    This app: neutral greys and a near-black navy for text rather than pure
    black, white surfaces on a faint grey page, white text on the blue */
 [data-theme="light"] {
-  --bg:    #F5F6F8;
-  --s1:    #F9FAFB;
+  /* TradingView's light theme: white panels, #E0E3EB hairlines */
+  --bg:    #FFFFFF;
+  --s1:    #F8F9FD;
   --s2:    #FFFFFF;
-  --s3:    #F2F4F7;
-  --s4:    #E4E7EC;
-  --s5:    #C8CDD5;
+  --s3:    #F0F3FA;
+  --s4:    #E0E3EB;
+  --s5:    #C9CBD1;
 
-  --surf:  #F5F6F8;
+  --surf:  #F8F9FD;
   --card:  #FFFFFF;
-  --card2: #F2F4F7;
+  --card2: #F0F3FA;
 
-  --accent:  #2563EB;
-  --accent2: #1D4ED8;
-  --accent3: #1E40AF;
-  --accent-glow: rgba(37,99,235,0.1);
-  --brand-wise: #2C6BED;
+  --accent:  #1E53E5;
+  --accent2: #2962FF;
+  --accent3: #1848CC;
+  --accent-glow: rgba(30,83,229,0.08);
+  --brand-wise: #1E53E5;
   --on-accent: #FFFFFF;
   --on-status: #FFFFFF;
 
-  --t1: #101828;
-  --t2: #475467;
-  --t3: #667085;
-  --t4: #D0D5DD;
+  --t1: #131722;
+  --t2: #434651;
+  --t3: #5D606B;
+  --t4: #D1D4DC;
 
-  --bdr:   rgba(16,24,40,0.07);
-  --bdr2:  rgba(16,24,40,0.12);
-  --bdr3:  rgba(16,24,40,0.2);
+  --bdr:   #E0E3EB;
+  --bdr2:  #D1D4DC;
+  --bdr3:  #B2B5BE;
 
-  --green:      #15803D;
-  --green-dim:  rgba(21,128,61,0.08);
-  --green-bdr:  rgba(21,128,61,0.2);
-  --yellow:     #B45309;
-  --yellow-dim: rgba(180,83,9,0.08);
-  --yellow-bdr: rgba(180,83,9,0.2);
-  --red:        #B91C1C;
-  --red-dim:    rgba(185,28,28,0.06);
-  --red-bdr:    rgba(185,28,28,0.18);
+  --green:      #006B5F;
+  --green-dim:  rgba(0,107,95,0.08);
+  --green-bdr:  rgba(0,107,95,0.24);
+  --yellow:     #A64D00;
+  --yellow-dim: rgba(166,77,0,0.08);
+  --yellow-bdr: rgba(166,77,0,0.24);
+  --red:        #C62233;
+  --red-dim:    rgba(198,34,51,0.06);
+  --red-bdr:    rgba(198,34,51,0.22);
 
-  --sh-xs: 0 1px 2px rgba(16,24,40,0.05);
-  --sh-sm: 0 1px 3px rgba(16,24,40,0.08), 0 1px 2px rgba(16,24,40,0.04);
-  --sh-md: 0 4px 12px -2px rgba(16,24,40,0.08), 0 2px 4px -2px rgba(16,24,40,0.04);
-  --sh-lg: 0 12px 24px -4px rgba(16,24,40,0.1), 0 4px 8px -2px rgba(16,24,40,0.04);
+  --sh-xs: none;
+  --sh-sm: none;
+  --sh-md: 0 4px 16px rgba(19,23,34,0.12);
+  --sh-lg: 0 12px 32px rgba(19,23,34,0.16);
 
   color-scheme: light;
 }
@@ -230,7 +236,7 @@ input[type=checkbox] {
   appearance: none;
   width: 17px;
   height: 17px;
-  border-radius: 5px;
+  border-radius: 4px;
   border: 1.5px solid var(--bdr3);
   background: transparent;
   cursor: pointer;
@@ -430,17 +436,15 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 /* ── Header and phone tab bar (the original's) ── */
 /* The prefixed line goes first: the build's minifier keeps only the last of
    the pair, and Chrome ignores the -webkit- one */
-.discovery-header-sticky {
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  backdrop-filter: blur(16px) saturate(180%);
-}
 .bottom-tab-bar { display: none; }
 
 /* On a phone the header would hold a large share of the screen if pinned, so
    it scrolls away; its tabs move to a bar fixed at the bottom. */
 @media (max-width: 640px) {
   .app-header { position: static !important; }
-  .stat-chip { display: none !important; }
+  /* The search takes its own full-width row under the name and buttons */
+  .app-header-row { flex-wrap: wrap; row-gap: 8px !important; }
+  .app-header-search { order: 3; flex-basis: 100% !important; max-width: none !important; }
   .discovery-tabs { display: none !important; }
   .bottom-tab-bar {
     display: flex !important;
@@ -449,8 +453,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
     z-index: 200;
     padding: 6px 0 calc(6px + env(safe-area-inset-bottom));
     border-top: 1px solid var(--bdr2);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    backdrop-filter: blur(20px) saturate(180%);
   }
   /* Room at the end of every page for the bar */
   body { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
@@ -481,8 +483,10 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 /* ── Front page (Landing.jsx) ── */
 .landing-hero { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 48px; align-items: center; }
 .landing-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
-.landing-features { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
-.landing-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.landing-features { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 32px; row-gap: 0; }
+.landing-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 32px; row-gap: 0; }
+/* Figures split by hairlines, not boxed */
+.landing-stat + .landing-stat { border-left: 1px solid var(--bdr); padding-left: 20px !important; }
 
 @media (max-width: 960px) {
   .landing-hero { grid-template-columns: minmax(0, 1fr); gap: 32px; }
@@ -509,7 +513,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   overscroll-behavior: contain;
   background: var(--s2);
   border: 1px solid var(--bdr2);
-  border-radius: 12px;
+  border-radius: 6px;
   padding: 14px;
   box-shadow: var(--sh-xs);
 }
@@ -570,7 +574,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .research-expand > summary::-webkit-details-marker { display: none; }
 .research-expand[open] > summary .research-chevron { transform: rotate(180deg); }
 .research-expand > summary:hover { color: var(--accent); }
-.research-expand > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+.research-expand > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
 /* The score cards open their explanation below: clickable, and the section
    they land on lights up briefly; it stops clear of the sticky header and a
    company page's action bar */
@@ -580,7 +584,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .research-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .research-expand { scroll-margin-top: calc(var(--header-h, 0px) + 72px); }
 @keyframes researchFlash { from { background: color-mix(in srgb, var(--accent) 14%, transparent); } to { background: transparent; } }
-.research-flash { animation: researchFlash 1.6s cubic-bezier(0.16, 1, 0.3, 1); border-radius: 8px; }
+.research-flash { animation: researchFlash 1.6s cubic-bezier(0.16, 1, 0.3, 1); border-radius: 4px; }
 @media (prefers-reduced-motion: reduce) { .research-flash { animation: none; } }
 .research-head { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .research-groups { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
@@ -597,9 +601,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   /* Strategies as one row of slim cards — name and icon, the description
      is on the card's hover title and the strategy's own filters */
   .preset-strip { margin-bottom: 16px !important; }
-  .preset-card { width: auto !important; max-width: 210px; padding: 9px 12px 9px 9px !important; display: flex !important; flex-direction: row !important; align-items: center; gap: 9px; }
+  .preset-card { width: auto !important; max-width: 210px; padding: 9px 12px !important; display: flex !important; flex-direction: row !important; align-items: center; gap: 9px; }
   .preset-card > span { margin-bottom: 0 !important; white-space: nowrap; }
-  .preset-icon { width: 26px !important; height: 26px !important; flex-shrink: 0; }
   .preset-desc { display: none !important; }
   .preset-save br { display: none; }
   .results-topbar { padding: 4px 0 10px !important; margin-bottom: 10px !important; }
@@ -609,9 +612,11 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 /* Company page: shortcuts to each part, in the pinned bar */
 .section-nav { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 10px 0; margin-top: 2px; -webkit-mask-image: linear-gradient(to right, black calc(100% - 24px), transparent); mask-image: linear-gradient(to right, black calc(100% - 24px), transparent); }
 .section-nav::-webkit-scrollbar { display: none; }
-.section-chip { flex-shrink: 0; height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--bdr2); background: var(--s2); color: var(--t2); font-size: 12.5px; font-weight: 550; font-family: inherit; cursor: pointer; white-space: nowrap; transition: background 150ms, color 150ms, border-color 150ms; }
-.section-chip:hover { color: var(--t1); border-color: var(--bdr3); }
-.section-chip.on { background: color-mix(in srgb, var(--accent) 12%, transparent); border-color: color-mix(in srgb, var(--accent) 45%, transparent); color: var(--accent); }
+/* The stock page's section links, as TradingView's tabs: plain text with a
+   blue underline on the current one, not boxed buttons */
+.section-chip { flex-shrink: 0; height: 34px; padding: 0 10px; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; color: var(--t2); font-size: 13px; font-weight: 500; font-family: inherit; cursor: pointer; white-space: nowrap; transition: color 120ms, border-color 120ms; }
+.section-chip:hover { color: var(--t1); }
+.section-chip.on { color: var(--t1); border-bottom-color: var(--accent); font-weight: 600; }
 .section-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* Buttons that are small on a computer get a finger-sized height on a phone */
