@@ -440,7 +440,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
    it scrolls away; its tabs move to a bar fixed at the bottom. */
 @media (max-width: 640px) {
   .app-header { position: static !important; }
-  .stat-chip { display: none !important; }
+  /* The search takes its own full-width row under the name and buttons */
+  .app-header-row { flex-wrap: wrap; row-gap: 10px !important; }
+  .app-header-search { order: 3; flex-basis: 100% !important; max-width: none !important; }
   .discovery-tabs { display: none !important; }
   .bottom-tab-bar {
     display: flex !important;

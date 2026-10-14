@@ -119,6 +119,9 @@ export default function StockSearchBar({ onAnalyze, placeholder = "Search any st
           onKeyDown={handleKeyDown}
           onFocus={() => { if ((query && suggestions.length) || (!query && history.length)) setShowSuggestions(true); }}
           placeholder={placeholder}
+          // A name of its own: the placeholder is short ("Search stocks") and
+          // disappears once typing starts
+          aria-label="Search any stock by name or symbol"
           autoComplete="off"
           className="input-base"
           style={{ width: "100%", paddingLeft: 36, paddingRight: 34, height: 38, fontSize: 13.5, borderRadius: 8 }}
