@@ -64,7 +64,7 @@ export default function ImportHoldingsModal({ onClose, onImported }) {
   return (
     <div role="dialog" aria-modal="true" aria-label="Import holdings from a broker file" onClick={onClose}
       style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "6vh 16px", overflowY: "auto" }}>
-      <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 640, background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 14, padding: "18px 20px" }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 640, background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 6, padding: "18px 20px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
           <div style={{ fontSize: 16, fontWeight: 700, color: "var(--t1)" }}>Import from a broker file</div>
           <button type="button" onClick={onClose} aria-label="Close" className="btn-ghost" style={{ height: 30, width: 30, padding: 0, justifyContent: "center" }}><X size={15} /></button>
@@ -72,13 +72,13 @@ export default function ImportHoldingsModal({ onClose, onImported }) {
         <p style={{ fontSize: 12.5, color: "var(--t2)", lineHeight: 1.6, margin: "0 0 12px" }}>
           Download your holdings from your broker as CSV or Excel — Zerodha (Console → Portfolio → Holdings → Download, or Kite's holdings download), Groww, Upstox, Angel One or any other — and choose the file here. It's read in your browser: only each stock, its quantity and average price are sent. No broker account is linked.
         </p>
-        <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, height: 44, borderRadius: 10, border: "1px dashed var(--bdr3, var(--bdr2))", background: "var(--s1)", color: "var(--t1)", fontSize: 13, cursor: busy ? "wait" : "pointer" }}>
+        <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, height: 44, borderRadius: 4, border: "1px dashed var(--bdr3, var(--bdr2))", background: "var(--s1)", color: "var(--t1)", fontSize: 13, cursor: busy ? "wait" : "pointer" }}>
           <Upload size={15} /> {file ? file.name : "Choose a CSV or Excel file"}
           <input type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" onChange={e => choose(e.target.files?.[0] ?? null)} style={{ display: "none" }} disabled={busy} />
         </label>
 
         {busy && !preview && <div role="status" style={{ fontSize: 12, color: "var(--t3)", marginTop: 12 }}>Reading the file…</div>}
-        {error && <div role="alert" style={{ fontSize: 12, color: "var(--red)", background: "var(--red-dim)", border: "1px solid var(--red-bdr)", borderRadius: 8, padding: "8px 12px", marginTop: 12 }}>{error}</div>}
+        {error && <div role="alert" style={{ fontSize: 12, color: "var(--red)", background: "var(--red-dim)", border: "1px solid var(--red-bdr)", borderRadius: 4, padding: "8px 12px", marginTop: 12 }}>{error}</div>}
 
         {parsed && preview && (
           <>
@@ -86,7 +86,7 @@ export default function ImportHoldingsModal({ onClose, onImported }) {
               {preview.rows.length} rows from {parsed.sheetName ? `“${parsed.sheetName}”` : "the file"} — using {Object.entries(parsed.used).map(([f, h]) => `“${h}” for ${{ symbol: "the symbol", isin: "the ISIN", name: "the name", qty: "quantity", avgPrice: "average price" }[f]}`).join(", ")}.
               {" "}{ready.length} will be added at their average price, without a buy date.
             </div>
-            <div style={{ maxHeight: 320, overflowY: "auto", border: "1px solid var(--bdr)", borderRadius: 10 }}>
+            <div style={{ maxHeight: 320, overflowY: "auto", border: "1px solid var(--bdr)", borderRadius: 4 }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                 <thead><tr style={{ color: "var(--t3)", textAlign: "left", position: "sticky", top: 0, background: "var(--s2)" }}>
                   {["Stock", "Qty", "Avg price", ""].map((h, i) => <th key={i} style={{ padding: "7px 10px", fontWeight: 500, borderBottom: "1px solid var(--bdr2)", textAlign: i === 1 || i === 2 ? "right" : "left" }}>{h}</th>)}

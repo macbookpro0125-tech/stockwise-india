@@ -57,7 +57,7 @@ export default function PhasePositionPlanner({ levels }) {
   if (!levels || !entries.length) return null;
 
   return (
-    <section aria-labelledby="phase-position-title" style={{ border: "1px solid var(--bdr2)", borderRadius: 12, padding: 18, marginBottom: 12, background: "var(--s2)" }}>
+    <section aria-labelledby="phase-position-title" style={{ border: "1px solid var(--bdr2)", borderRadius: 6, padding: 18, marginBottom: 12, background: "var(--s2)" }}>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 12 }}>
         <Calculator size={18} style={{ color: "var(--accent)", marginTop: 2, flexShrink: 0 }} />
         <div>
@@ -92,7 +92,7 @@ export default function PhasePositionPlanner({ levels }) {
               ["Total modeled amount", money(result.invested), "var(--t1)"],
               ["Cash left unallocated", money(result.reserve), "var(--t1)"],
               ["Estimated loss at displayed stop", result.lossAtStop == null ? "—" : `−${money(result.lossAtStop)}`, "var(--red)"],
-            ].map(([label, value, color]) => <div key={label} style={{ padding: "9px 10px", border: "1px solid var(--bdr)", borderRadius: 8, background: "var(--s1)" }}><div style={{ fontSize: 10.5, color: "var(--t3)" }}>{label}</div><div style={{ fontSize: 13.5, fontWeight: 650, color, marginTop: 3, ...mono }}>{value}</div></div>)}
+            ].map(([label, value, color]) => <div key={label} style={{ padding: "9px 10px", border: "1px solid var(--bdr)", borderRadius: 4, background: "var(--s1)" }}><div style={{ fontSize: 10.5, color: "var(--t3)" }}>{label}</div><div style={{ fontSize: 13.5, fontWeight: 650, color, marginTop: 3, ...mono }}>{value}</div></div>)}
           </div>
           {result.scaled && <p style={{ fontSize: 11, color: "var(--yellow)", margin: "8px 0 0", lineHeight: 1.5 }}>The equal-split share counts were reduced to fit your chosen loss limit.</p>}
           {maxLoss > 0 && result.lossAtStop != null && result.lossAtStop > maxLoss && <p style={{ fontSize: 11, color: "var(--yellow)", margin: "8px 0 0", lineHeight: 1.5 }}>Rounding leaves the estimate slightly above your chosen limit; lower the limit or review the share counts.</p>}

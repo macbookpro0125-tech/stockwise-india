@@ -95,7 +95,7 @@ export default function PortfolioView({ onOpenStock }) {
     return (
       <button
         onClick={() => { if (active) setSortDir(d => (d === "desc" ? "asc" : "desc")); else { setSortBy(id); setSortDir("desc"); } }}
-        style={{ padding: "4px 12px", borderRadius: 20, fontSize: 11, fontWeight: 600, cursor: "pointer", border: `1px solid ${active ? "var(--accent)" : "var(--bdr2)"}`, background: active ? "color-mix(in srgb, var(--accent) 8%, transparent)" : "transparent", color: active ? "var(--accent)" : "var(--t3)", transition: "all 120ms" }}
+        style={{ padding: "4px 12px", borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer", border: `1px solid ${active ? "var(--accent)" : "var(--bdr2)"}`, background: active ? "color-mix(in srgb, var(--accent) 8%, transparent)" : "transparent", color: active ? "var(--accent)" : "var(--t3)", transition: "all 120ms" }}
       >
         {text} {active && (sortDir === "desc" ? "↓" : "↑")}
       </button>
@@ -105,7 +105,7 @@ export default function PortfolioView({ onOpenStock }) {
   return (
     <div style={{ padding: "8px var(--page-x) 80px", animation: "fadeUp 280ms cubic-bezier(0,0,0.2,1) backwards" }}>
       {holdings.length > 0 && (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 20, padding: "16px 20px", borderRadius: 12, border: "1px solid var(--bdr2)", background: "var(--s2)", marginBottom: 20, alignItems: "center" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 20, padding: "16px 20px", borderRadius: 6, border: "1px solid var(--bdr2)", background: "var(--s2)", marginBottom: 20, alignItems: "center" }}>
           <div>
             <div style={label}>Invested</div>
             <div style={{ fontSize: 18, fontWeight: 700, color: "var(--t1)", ...MONO }}>{fmtRs(totalInvested)}</div>
@@ -148,17 +148,17 @@ export default function PortfolioView({ onOpenStock }) {
           )}
         </div>
         <div style={{ display: "flex", gap: 8, marginLeft: "auto" }}>
-          <button onClick={() => setShowImport(true)} className="btn-ghost" style={{ height: 32, padding: "0 12px", fontSize: 12, borderRadius: 8 }}>
+          <button onClick={() => setShowImport(true)} className="btn-ghost" style={{ height: 32, padding: "0 12px", fontSize: 12, borderRadius: 4 }}>
             Import from broker file
           </button>
-          <button onClick={() => { setEditItem(null); setShowModal(true); }} className="btn-primary" style={{ height: 32, padding: "0 16px", fontSize: 12, borderRadius: 8, boxShadow: "none" }}>
+          <button onClick={() => { setEditItem(null); setShowModal(true); }} className="btn-primary" style={{ height: 32, padding: "0 16px", fontSize: 12, borderRadius: 4, boxShadow: "none" }}>
             + Add Holding
           </button>
         </div>
       </div>
 
       {data && holdings.length === 0 && (
-        <div style={{ textAlign: "center", padding: "56px 0", color: "var(--t3)", border: "1px dashed var(--bdr2)", borderRadius: 14, background: "var(--s1)" }}>
+        <div style={{ textAlign: "center", padding: "56px 0", color: "var(--t3)", border: "1px dashed var(--bdr2)", borderRadius: 6, background: "var(--s1)" }}>
           <ChartPie size={36} strokeWidth={1.5} style={{ marginBottom: 12, opacity: 0.3 }} />
           <p style={{ fontSize: 14, color: "var(--t2)", fontWeight: 500, marginBottom: 4 }}>Portfolio is empty</p>
           <p style={{ fontSize: 12 }}>Add your holdings one by one, or import your broker's holdings file to track P&L and allocation</p>
@@ -172,7 +172,7 @@ export default function PortfolioView({ onOpenStock }) {
             const alloc = allPricesLoaded && totalCurrent > 0 && h.currentVal != null ? (h.currentVal / totalCurrent) * 100 : null;
             const st = status[h.ticker];
             return (
-              <div key={h.id} style={{ padding: "14px 16px", borderRadius: 12, border: "1px solid var(--bdr2)", background: "var(--s2)", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+              <div key={h.id} style={{ padding: "14px 16px", borderRadius: 6, border: "1px solid var(--bdr2)", background: "var(--s2)", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
                 <div style={{ flex: "1 1 160px", minWidth: 130 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 7, fontWeight: 600, fontSize: 14, color: "var(--t1)", letterSpacing: "-0.01em" }}><CompanyLogo symbol={h.ticker} size={18} />{h.name}</div>
                   <div style={{ fontSize: 10, color: "var(--t3)", marginTop: 2 }}>
@@ -217,9 +217,9 @@ export default function PortfolioView({ onOpenStock }) {
                 </div>
 
                 <div style={{ display: "flex", gap: 6, marginLeft: "auto" }}>
-                  <button onClick={() => onOpenStock(h.ticker)} className="btn-primary" style={{ height: 30, padding: "0 12px", fontSize: 11, borderRadius: 8, boxShadow: "none" }}>Analyze</button>
-                  <button onClick={() => { setEditItem(h); setShowModal(true); }} title="Edit holding" style={{ width: 30, height: 30, borderRadius: 8, border: "1px solid var(--bdr2)", background: "transparent", color: "var(--t3)", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }} aria-label="Edit holding"><Pencil size={14} /></button>
-                  <button onClick={() => remove(h.id)} title="Remove holding" style={{ width: 30, height: 30, borderRadius: 8, border: "1px solid var(--bdr2)", background: "transparent", color: "var(--t3)", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }} aria-label="Remove holding"><X size={15} /></button>
+                  <button onClick={() => onOpenStock(h.ticker)} className="btn-primary" style={{ height: 30, padding: "0 12px", fontSize: 11, borderRadius: 4, boxShadow: "none" }}>Analyze</button>
+                  <button onClick={() => { setEditItem(h); setShowModal(true); }} title="Edit holding" style={{ width: 30, height: 30, borderRadius: 4, border: "1px solid var(--bdr2)", background: "transparent", color: "var(--t3)", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }} aria-label="Edit holding"><Pencil size={14} /></button>
+                  <button onClick={() => remove(h.id)} title="Remove holding" style={{ width: 30, height: 30, borderRadius: 4, border: "1px solid var(--bdr2)", background: "transparent", color: "var(--t3)", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }} aria-label="Remove holding"><X size={15} /></button>
                 </div>
               </div>
             );
@@ -228,7 +228,7 @@ export default function PortfolioView({ onOpenStock }) {
       )}
 
       {groups.length > 1 && allPricesLoaded && (
-        <div style={{ marginTop: 20, padding: "16px 20px", borderRadius: 12, border: "1px solid var(--bdr2)", background: "var(--s2)" }}>
+        <div style={{ marginTop: 20, padding: "16px 20px", borderRadius: 6, border: "1px solid var(--bdr2)", background: "var(--s2)" }}>
           <div style={{ ...label, marginBottom: 12 }}>Allocation</div>
           <div style={{ display: "flex", height: 8, borderRadius: 4, overflow: "hidden", gap: 2 }}>
             {groups.map((g, i) => {
@@ -255,7 +255,7 @@ export default function PortfolioView({ onOpenStock }) {
 
       {showImport && <ImportHoldingsModal onClose={() => setShowImport(false)} onImported={n => { setShowImport(false); setImported(n); portfolioStore.refresh(); setTimeout(() => setImported(null), 6000); }} />}
       {imported != null && (
-        <div role="status" style={{ position: "fixed", left: "50%", bottom: 90, transform: "translateX(-50%)", zIndex: 250, padding: "10px 16px", borderRadius: 10, background: "var(--s3)", border: "1px solid var(--bdr2)", color: "var(--t1)", fontSize: 13, boxShadow: "0 8px 24px rgba(0,0,0,0.35)" }}
+        <div role="status" style={{ position: "fixed", left: "50%", bottom: 90, transform: "translateX(-50%)", zIndex: 250, padding: "10px 16px", borderRadius: 4, background: "var(--s3)", border: "1px solid var(--bdr2)", color: "var(--t1)", fontSize: 13, boxShadow: "0 8px 24px rgba(0,0,0,0.35)" }}
 >
           Added {imported} holding{imported === 1 ? "" : "s"} from the file. <button type="button" onClick={() => setImported(null)} className="btn-ghost" style={{ height: 24, marginLeft: 8, fontSize: 11 }}>OK</button>
         </div>

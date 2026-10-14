@@ -102,7 +102,7 @@ function NcavBadge({ stock }) {
     <span
       title={`NCAV ₹${fmtCr(ncav)} Cr vs Mkt Cap ₹${fmtCr(mcap)} Cr — buying at ${pct}% of net current asset value${graham ? " · ≥33% Graham margin of safety" : ""}`}
       style={{
-        fontSize: 10, padding: "1px 7px", borderRadius: 5, fontWeight: 700, ...MONO,
+        fontSize: 10, padding: "1px 7px", borderRadius: 4, fontWeight: 700, ...MONO,
         border: `1px solid ${graham ? "var(--green-bdr)" : "var(--yellow-bdr)"}`,
         background: graham ? "var(--green-dim)" : "var(--yellow-dim)",
         color: graham ? "var(--green)" : "var(--yellow)",
@@ -123,7 +123,7 @@ function MiniRange({ low, high, cmp }) {
     (cmp < low ? "below the 52-week low" : `${fromLow}% above the low`) + " · " +
     (cmp > high ? "above the 52-week high" : `${belowHigh}% below the high`);
   return (
-    <span title={title} style={{ position: "relative", display: "inline-block", width: 56, height: 3, borderRadius: 99, background: "linear-gradient(to right, #FF453A 0%, #FFD60A 50%, #30D158 100%)", verticalAlign: "middle", flexShrink: 0 }}>
+    <span title={title} style={{ position: "relative", display: "inline-block", width: 56, height: 3, borderRadius: 3, background: "linear-gradient(to right, var(--red), var(--yellow), var(--green))", verticalAlign: "middle", flexShrink: 0 }}>
       <span style={{ position: "absolute", top: "50%", left: `calc(${pct}% - 3.5px)`, transform: "translateY(-50%)", width: 7, height: 7, borderRadius: "50%", background: "#fff", boxShadow: "0 1px 3px rgba(0,0,0,0.6)" }} />
     </span>
   );
@@ -390,7 +390,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
             {!loading && (matches?.length ?? 0) > 1 && (
               <div className="sort-control" style={{ display: "flex", alignItems: "center", gap: 4 }}>
                 <select value={sortBy} onChange={e => pickSort(e.target.value)} aria-label="Sort by"
-                  style={{ height: 32, padding: "0 8px", borderRadius: 8, border: "1px solid var(--bdr2)", background: "var(--s2)", color: "var(--t1)", fontSize: 12.5, fontFamily: "inherit", cursor: "pointer", maxWidth: 190 }}>
+                  style={{ height: 32, padding: "0 8px", borderRadius: 4, border: "1px solid var(--bdr2)", background: "var(--s2)", color: "var(--t1)", fontSize: 12.5, fontFamily: "inherit", cursor: "pointer", maxWidth: 190 }}>
                   {sortOptions.map(([id, label]) => <option key={id} value={id}>Sort: {label}</option>)}
                 </select>
                 <button type="button" onClick={() => setSortDir(d => (d === "asc" ? "desc" : "asc"))} title={dirLabel} aria-label={`${dirLabel} — tap to reverse`} className="btn-ghost"
@@ -455,7 +455,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
           ].map(([label, value, set, any, options]) => (
             <select key={label} value={value} onChange={e => set(Number(e.target.value))} aria-label={label}
               style={{
-                height: 40, padding: "0 10px", borderRadius: 8, minWidth: 0,
+                height: 40, padding: "0 10px", borderRadius: 4, minWidth: 0,
                 border: `1px solid ${value > 0 ? "var(--green-bdr)" : "var(--bdr2)"}`, fontSize: 12.5,
                 background: value > 0 ? "var(--green-dim)" : "var(--s2)",
                 color: value > 0 ? "var(--green)" : "var(--t1)",
@@ -475,7 +475,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
           {watchlist.size > 0 && (
             <button type="button" aria-pressed={watchOnly} onClick={() => setWatchOnly(v => !v)}
               title="Run these filters on your watchlist only"
-              style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 32, padding: "0 12px", borderRadius: 8, fontSize: 12.5, fontFamily: "inherit", cursor: "pointer",
+              style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 32, padding: "0 12px", borderRadius: 4, fontSize: 12.5, fontFamily: "inherit", cursor: "pointer",
                 border: `1px solid ${watchOnly ? "var(--accent)" : "var(--bdr2)"}`, background: watchOnly ? "var(--accent-glow)" : "var(--s2)", color: watchOnly ? "var(--accent)" : "var(--t2)", fontWeight: watchOnly ? 650 : 500 }}>
               <Star size={13} fill={watchOnly ? "currentColor" : "none"} /> Watchlist only <span style={{ ...MONO, opacity: 0.8 }}>({watchedMatches})</span>
             </button>
@@ -498,7 +498,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
       {queryUsed && !loading && (
         <div className="filter-chips" style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: notes.length ? 8 : 14 }}>
           {queryUsed.split(" · ").map(part => (
-            <span key={part} style={{ fontSize: 12, color: "var(--t2)", background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 6, padding: "3px 9px", lineHeight: 1.5, ...MONO }}>{part}</span>
+            <span key={part} style={{ fontSize: 12, color: "var(--t2)", background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 4, padding: "3px 9px", lineHeight: 1.5, ...MONO }}>{part}</span>
           ))}
         </div>
       )}
@@ -509,14 +509,14 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
         </div>
       )}
       {unsupported.length > 0 && !loading && (
-        <div style={{ fontSize: 11, color: "var(--yellow)", marginBottom: 14, padding: "9px 14px", background: "var(--yellow-dim)", borderRadius: 9, border: "1px solid var(--yellow-bdr)", lineHeight: 1.7 }}>
+        <div style={{ fontSize: 11, color: "var(--yellow)", marginBottom: 14, padding: "9px 14px", background: "var(--yellow-dim)", borderRadius: 4, border: "1px solid var(--yellow-bdr)", lineHeight: 1.7 }}>
           Not applied (no data yet): {unsupported.join(", ")}
         </div>
       )}
 
       {/* The name box or quality filter can empty the list on their own */}
       {!loading && (matches?.length ?? 0) > 0 && sorted.length === 0 && (
-        <div style={{ textAlign: "center", padding: "40px 16px", color: "var(--t2)", fontSize: 13, border: "1px dashed var(--bdr2)", borderRadius: 14 }}>
+        <div style={{ textAlign: "center", padding: "40px 16px", color: "var(--t2)", fontSize: 13, border: "1px dashed var(--bdr2)", borderRadius: 6 }}>
           None of these {matches.length.toLocaleString("en-IN")} companies {[
             watchOnly && "are on your watchlist",
             q && `match "${search.trim()}"`,
@@ -531,7 +531,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
       {/* ── Phone rows: a compact list, ~6 companies a screen; the whole row
              opens the company; controls save or select the stock ── */}
       {!loading && sorted.length > 0 && isMobile && (
-        <div style={{ borderRadius: 12, border: "1px solid var(--bdr2)", background: "var(--s2)", overflow: "hidden" }}>
+        <div style={{ borderRadius: 6, border: "1px solid var(--bdr2)", background: "var(--s2)", overflow: "hidden" }}>
           {visible.map((stock, i) => {
             const day = stock.ret1d;
             const quality = stock.research?.quality, overall = stock.research?.overall;
@@ -557,13 +557,13 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                   <button type="button" className="stock-link" onClick={e => { e.stopPropagation(); onAnalyze(stock.symbol); }} style={{ display: "block", minWidth: 0, padding: 0, border: 0, background: "none", fontFamily: "inherit", textAlign: "left", fontSize: 14, fontWeight: 650, color: "var(--t1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", letterSpacing: "-0.01em" }}>{stock.name}</button>
                   <div style={{ fontSize: 14, fontWeight: 650, color: "var(--t1)", textAlign: "right", ...MONO }}>{stock.cmp ? `₹${fmt(stock.cmp, stock.cmp < 100 ? 2 : 0)}` : "—"}</div>
                   <div data-tour={i === 0 ? "row-actions" : undefined} style={{ gridRow: "span 2", display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }} onClick={e => e.stopPropagation()}>
-                    <label title={selected.has(stock.symbol) ? "Remove from comparison" : `Add to comparison${selected.size >= MAX_COMPARE ? ` (up to ${MAX_COMPARE})` : ""}`} style={{ width: 36, height: 30, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 8, border: "1px solid var(--bdr2)", background: selected.has(stock.symbol) ? "color-mix(in srgb, var(--accent) 10%, transparent)" : "var(--s1)", cursor: selected.size >= MAX_COMPARE && !selected.has(stock.symbol) ? "not-allowed" : "pointer" }}>
+                    <label title={selected.has(stock.symbol) ? "Remove from comparison" : `Add to comparison${selected.size >= MAX_COMPARE ? ` (up to ${MAX_COMPARE})` : ""}`} style={{ width: 36, height: 30, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 4, border: "1px solid var(--bdr2)", background: selected.has(stock.symbol) ? "color-mix(in srgb, var(--accent) 10%, transparent)" : "var(--s1)", cursor: selected.size >= MAX_COMPARE && !selected.has(stock.symbol) ? "not-allowed" : "pointer" }}>
                       <input type="checkbox" checked={selected.has(stock.symbol)} disabled={!selected.has(stock.symbol) && selected.size >= MAX_COMPARE} onChange={() => toggleSelect(stock)} aria-label={`Compare ${stock.name}`} style={{ margin: 0, width: 16, height: 16, accentColor: "var(--accent)" }} />
                     </label>
                     <StarButton symbol={stock.symbol} price={stock.cmp} watched={watchlist.has(stock.symbol)} size={36} />
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, marginTop: 3 }}>
-                    <span style={{ fontSize: 10.5, background: "var(--s3)", color: "var(--t2)", padding: "1px 6px", borderRadius: 5, flexShrink: 0, ...MONO }}>{stock.symbol}</span>
+                    <span style={{ fontSize: 10.5, background: "var(--s3)", color: "var(--t2)", padding: "1px 6px", borderRadius: 4, flexShrink: 0, ...MONO }}>{stock.symbol}</span>
                     <NcavBadge stock={stock} />
                     {stock.sector && <span style={{ fontSize: 11, color: "var(--t3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{stock.sector}</span>}
                   </div>
@@ -591,7 +591,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
 
       {/* ── Desktop table ── */}
       {!isMobile && !noData && (loading || sorted.length > 0) && (
-        <div style={{ borderRadius: 12, border: "1px solid var(--bdr2)", overflow: "hidden", boxShadow: "var(--sh-xs)", background: "var(--s2)" }}>
+        <div style={{ borderRadius: 6, border: "1px solid var(--bdr2)", overflow: "hidden", boxShadow: "var(--sh-xs)", background: "var(--s2)" }}>
           <div style={{ overflowX: "auto", overflowY: "auto", maxHeight: "min(70vh, 780px)" }}>
             <table className="data-table" style={{ minWidth: 640 + columns.length * 80 }}>
               <thead>
@@ -685,7 +685,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                         {bell(stock)}
                         <a
                           href={nseUrl(stock.symbol)} target="_blank" rel="noreferrer" title="Open on NSE" aria-label="Open on NSE"
-                          style={{ width: 30, height: 30, borderRadius: 8, border: "1px solid var(--bdr2)", background: "transparent", color: "var(--t3)", textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 120ms", flexShrink: 0 }}
+                          style={{ width: 30, height: 30, borderRadius: 4, border: "1px solid var(--bdr2)", background: "transparent", color: "var(--t3)", textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 120ms", flexShrink: 0 }}
                         ><ArrowUpRight size={15} /></a>
                       </div>
                     </td>

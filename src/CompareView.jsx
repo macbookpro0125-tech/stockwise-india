@@ -88,7 +88,7 @@ export default function CompareView({ stocks, pricesDate, onClose }) {
   const section = { padding: "8px 16px 4px", fontSize: 11.5, fontWeight: 600, color: "var(--accent)", background: "color-mix(in srgb, var(--accent) 5%, transparent)", borderBottom: "1px solid var(--bdr)" };
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "color-mix(in srgb, var(--bg) 96%, transparent)", WebkitBackdropFilter: "blur(6px)", backdropFilter: "blur(6px)", overflowY: "auto", padding: "20px var(--page-x)" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "color-mix(in srgb, var(--bg) 96%, transparent)", overflowY: "auto", padding: "20px var(--page-x)" }}>
       {showBrief && (
         <Suspense fallback={<div role="status" className="compare-loading">Building investment brief…</div>}>
           <InvestmentBriefView stocks={stocks} onClose={() => setShowBrief(false)} />
@@ -108,7 +108,7 @@ export default function CompareView({ stocks, pricesDate, onClose }) {
           </div>
         </div>
 
-        <div style={{ background: "var(--card)", borderRadius: 12, border: "1px solid var(--bdr2)", overflowX: "auto", boxShadow: "var(--sh-md)" }}>
+        <div style={{ background: "var(--card)", borderRadius: 6, border: "1px solid var(--bdr2)", overflowX: "auto", boxShadow: "var(--sh-md)" }}>
           <div style={{ minWidth: 180 + stocks.length * 140 }}>
             <div style={{ display: "grid", gridTemplateColumns: cols, borderBottom: "1px solid var(--bdr)" }}>
               <div style={{ padding: "12px 16px", fontSize: 12, color: "var(--t3)", fontWeight: 600 }}>Metric</div>

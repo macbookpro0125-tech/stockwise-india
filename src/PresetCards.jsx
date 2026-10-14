@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Plus, Ellipsis } from "lucide-react";
 import { api } from "./api.js";
-import { PresetIcon } from "./icons.jsx";
 import { strategiesStore } from "./accountData.js";
 
 // Ported from stock-screener's src/components/PresetCards.jsx. The strategy
@@ -79,42 +78,32 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
                 aria-pressed={active}
                 style={{
                   flexShrink: 0,
-                  width: 156,
-                  padding: "14px 14px 13px",
-                  borderRadius: 12,
-                  border: active ? "1px solid var(--accent)" : "1px solid var(--bdr2)",
-                  background: active ? tint(5) : "var(--s2)",
+                  // Flat tiles, as TradingView lists screener presets: name and
+                  // a two-line note, the chosen one outlined; no icon, no glow
+                  width: 172,
+                  padding: "10px 12px",
+                  borderRadius: 4,
+                  border: active ? "1px solid var(--accent)" : "1px solid var(--bdr)",
+                  background: active ? tint(8) : "var(--s2)",
                   cursor: "pointer",
                   textAlign: "left",
                   position: "relative",
-                  transition: "background 150ms, border-color 150ms, box-shadow 150ms",
-                  boxShadow: active ? `0 0 0 3px ${tint(12)}` : "var(--sh-xs)",
+                  transition: "background 120ms, border-color 120ms",
                 }}
-                onMouseEnter={e => { if (!active) { e.currentTarget.style.borderColor = "var(--bdr3)"; e.currentTarget.style.boxShadow = "var(--sh-sm)"; } }}
-                onMouseLeave={e => { if (!active) { e.currentTarget.style.borderColor = "var(--bdr2)"; e.currentTarget.style.boxShadow = "var(--sh-xs)"; } }}
+                onMouseEnter={e => { if (!active) e.currentTarget.style.background = "var(--s3)"; }}
+                onMouseLeave={e => { if (!active) e.currentTarget.style.background = "var(--s2)"; }}
               >
-                <span className="preset-icon" style={{
-                  width: 30, height: 30, borderRadius: 8,
-                  background: active ? tint(14) : "var(--s3)",
-                  color: active ? "var(--accent)" : "var(--t2)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  marginBottom: 11,
-                  transition: "background 150ms, color 150ms",
-                }}>
-                  <PresetIcon preset={p} size={16} strokeWidth={2} />
-                </span>
-
                 <span style={{
                   display: "block",
                   fontSize: 13, fontWeight: 600,
-                  color: "var(--t1)",
-                  marginBottom: 4, letterSpacing: "-0.01em",
+                  color: active ? "var(--accent)" : "var(--t1)",
+                  marginBottom: 3,
                   lineHeight: 1.3,
                 }}>
                   {p.name}
                 </span>
 
-                <span className="preset-desc" style={{ fontSize: 11.5, color: "var(--t3)", lineHeight: 1.45, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                <span className="preset-desc" style={{ fontSize: 12, color: "var(--t3)", lineHeight: 1.4, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
                   {p.description}
                 </span>
               </button>
@@ -137,7 +126,7 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
                 <div role="group" aria-label={`${p.name} strategy options`} onClick={e => e.stopPropagation()} style={{
                   position: "absolute", top: 32, right: 4, zIndex: 50,
                   background: "var(--s3)", border: "1px solid var(--bdr2)",
-                  borderRadius: 10, padding: 4, minWidth: 150,
+                  borderRadius: 4, padding: 4, minWidth: 150,
                   boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
                 }}>
                   {[
@@ -149,7 +138,7 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
                     <button key={item.label} type="button" onClick={item.action} style={{
                       display: "block", width: "100%", padding: "7px 12px", fontSize: 12,
                       textAlign: "left", cursor: "pointer", fontFamily: "inherit",
-                      color: item.color || "var(--t2)", border: 0, background: "transparent", borderRadius: 6,
+                      color: item.color || "var(--t2)", border: 0, background: "transparent", borderRadius: 4,
                       transition: "background 100ms",
                     }}
                     onMouseEnter={e => { e.currentTarget.style.background = "var(--s4)"; }}
@@ -160,7 +149,7 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
               )}
 
               {isCustom && renaming === p.id && (
-                <div onClick={e => e.stopPropagation()} style={{ position: "absolute", inset: 0, background: "var(--s2)", borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", padding: 10 }}>
+                <div onClick={e => e.stopPropagation()} style={{ position: "absolute", inset: 0, background: "var(--s2)", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", padding: 10 }}>
                   <input
                     autoFocus
                     aria-label={`Rename ${p.name}`}
@@ -169,7 +158,7 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
                     onKeyDown={e => { if (e.key === "Enter") commitRename(p.id); if (e.key === "Escape") setRenaming(null); }}
                     onBlur={() => commitRename(p.id)}
                     style={{
-                      width: "100%", height: 32, padding: "6px 10px", borderRadius: 8,
+                      width: "100%", height: 32, padding: "6px 10px", borderRadius: 4,
                       border: "1px solid var(--accent)", background: "var(--s1)",
                       color: "var(--t1)", fontSize: 12, outline: "none",
                     }}
@@ -184,25 +173,18 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
           <button className="preset-card preset-save"
             onClick={onSavePreset}
             style={{
-              flexShrink: 0, width: 120,
-              padding: "14px 14px 12px", borderRadius: 12,
+              flexShrink: 0,
+              padding: "0 14px", borderRadius: 4,
               border: "1px dashed var(--bdr3)",
               background: "transparent",
-              cursor: "pointer",
-              display: "flex", flexDirection: "column",
-              alignItems: "center", justifyContent: "center", gap: 6,
-              transition: "all 150ms",
+              cursor: "pointer", color: "var(--t2)", fontSize: 12, fontFamily: "inherit",
+              display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap",
+              transition: "background 120ms",
             }}
-            onMouseEnter={e => { e.currentTarget.style.background = "var(--s2)"; }}
+            onMouseEnter={e => { e.currentTarget.style.background = "var(--s3)"; }}
             onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
           >
-            <span style={{
-              width: 28, height: 28, borderRadius: 8,
-              background: "var(--s3)", border: "1px solid var(--bdr2)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              color: "var(--t3)",
-            }}><Plus size={16} /></span>
-            <span style={{ fontSize: 11, color: "var(--t3)", textAlign: "center", lineHeight: 1.3 }}>Save as<br />preset</span>
+            <Plus size={14} aria-hidden="true" />Save as preset
           </button>
         )}
       </div>

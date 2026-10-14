@@ -25,7 +25,7 @@ export default function AccountMenu({ account, onLogout, onDeleted, onTour }) {
     return () => { document.removeEventListener("pointerdown", close); window.removeEventListener("keydown", onKey); };
   }, [open]);
 
-  const item = { display: "block", width: "100%", textAlign: "left", background: "none", border: "none", padding: "9px 12px", borderRadius: 8, fontSize: 13, color: "var(--t1)", cursor: "pointer" };
+  const item = { display: "block", width: "100%", textAlign: "left", background: "none", border: "none", padding: "9px 12px", borderRadius: 4, fontSize: 13, color: "var(--t1)", cursor: "pointer" };
 
   return (
     <div ref={ref} data-tour="account" style={{ position: "relative" }}>
@@ -33,7 +33,7 @@ export default function AccountMenu({ account, onLogout, onDeleted, onTour }) {
         Account <ChevronDown size={14} style={{ transition: "transform 150ms", transform: open ? "rotate(180deg)" : "none" }} />
       </button>
       {open && (
-        <div role="menu" style={{ position: "absolute", right: 0, top: "calc(100% + 6px)", width: 240, zIndex: 200, background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 12, padding: 6, boxShadow: "var(--sh-lg)" }}>
+        <div role="menu" style={{ position: "absolute", right: 0, top: "calc(100% + 6px)", width: 240, zIndex: 200, background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 6, padding: 6, boxShadow: "var(--sh-lg)" }}>
           {who && (
             <div style={{ padding: "8px 12px 10px", borderBottom: "1px solid var(--bdr)", marginBottom: 4 }}>
               <div style={{ fontSize: 11, color: "var(--t3)" }}>Signed in as</div>
@@ -94,8 +94,8 @@ function DeleteAccountModal({ who, hasPassword, onClose, onDeleted }) {
 
   return (
     <div onClick={e => { if (e.target === e.currentTarget && !busy) onClose(); }}
-      style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>
-      <form onSubmit={submit} style={{ background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 18, padding: 26, width: 420, maxWidth: "100%", boxShadow: "var(--sh-lg)" }}>
+      style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <form onSubmit={submit} style={{ background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 6, padding: 26, width: 420, maxWidth: "100%", boxShadow: "var(--sh-lg)" }}>
         <h3 style={{ fontSize: 18, fontWeight: 700, color: "var(--t1)", margin: "0 0 10px", letterSpacing: "-0.02em" }}>Delete your account?</h3>
         <p style={{ fontSize: 13.5, lineHeight: 1.6, color: "var(--t2)", margin: "0 0 10px" }}>
           This permanently deletes <strong style={{ color: "var(--t1)" }}>{who || "your account"}</strong> and everything saved with it:
@@ -114,13 +114,13 @@ function DeleteAccountModal({ who, hasPassword, onClose, onDeleted }) {
             value={password} onChange={e => setPassword(e.target.value)} required />
         )}
         {error && (
-          <div style={{ fontSize: 12, color: "var(--red)", background: "var(--red-dim)", border: "1px solid var(--red-bdr)", borderRadius: 8, padding: "8px 12px", marginTop: 10 }}>
+          <div style={{ fontSize: 12, color: "var(--red)", background: "var(--red-dim)", border: "1px solid var(--red-bdr)", borderRadius: 4, padding: "8px 12px", marginTop: 10 }}>
             {error}
           </div>
         )}
         <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
           <button type="submit" disabled={busy || !password}
-            style={{ flex: 1, height: 44, borderRadius: 12, border: "none", background: busy || !password ? "var(--s4)" : "var(--red)", color: busy || !password ? "var(--t3)" : "#fff", fontSize: 14, fontWeight: 600, cursor: busy || !password ? "not-allowed" : "pointer" }}>
+            style={{ flex: 1, height: 44, borderRadius: 6, border: "none", background: busy || !password ? "var(--s4)" : "var(--red)", color: busy || !password ? "var(--t3)" : "#fff", fontSize: 14, fontWeight: 600, cursor: busy || !password ? "not-allowed" : "pointer" }}>
             {busy ? "Deleting…" : "Delete my account"}
           </button>
           <button type="button" className="btn-ghost" onClick={onClose} disabled={busy} style={{ flex: 1, height: 44 }}>Cancel</button>

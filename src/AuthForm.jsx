@@ -19,7 +19,7 @@ const AppleLogo = () => (
   </svg>
 );
 
-const errorBox = { fontSize: 12, color: "var(--red)", background: "var(--red-dim)", border: "1px solid var(--red-bdr)", borderRadius: 8, padding: "8px 12px", lineHeight: 1.5 };
+const errorBox = { fontSize: 12, color: "var(--red)", background: "var(--red-dim)", border: "1px solid var(--red-bdr)", borderRadius: 4, padding: "8px 12px", lineHeight: 1.5 };
 const socialBtn = { width: "100%", height: 42, gap: 10, fontSize: 14, fontWeight: 500 };
 
 // Sign in with a phone number: the number, then the 6-digit SMS code
@@ -118,7 +118,7 @@ function ForgotPassword({ initialEmail, onBack }) {
           <p style={{ color: "var(--t3)", fontSize: 13, margin: "0 0 18px" }}>We'll email you a link to choose a new one.</p>
           <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <input className="input-base" type="email" placeholder="Email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} required />
-            {error && <div style={{ fontSize: 12, color: "var(--red)", background: "var(--red-dim)", border: "1px solid var(--red-bdr)", borderRadius: 8, padding: "8px 12px" }}>{error}</div>}
+            {error && <div style={{ fontSize: 12, color: "var(--red)", background: "var(--red-dim)", border: "1px solid var(--red-bdr)", borderRadius: 4, padding: "8px 12px" }}>{error}</div>}
             <button type="submit" className="btn-primary" disabled={busy}>{busy ? "Sending…" : "Send reset link"}</button>
           </form>
         </>
@@ -152,7 +152,7 @@ export default function AuthForm({ onAuthed, mode, onModeChange }) {
   const signup = mode === "signup";
   const done = userId => { try { localStorage.setItem(RETURNING_KEY, "1"); } catch {} onAuthed(userId); };
   const card = children => (
-    <div id="join" style={{ background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 18, padding: 24, boxShadow: "var(--sh-lg)", scrollMarginTop: 24 }}>{children}</div>
+    <div id="join" style={{ background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 6, padding: 24, boxShadow: "var(--sh-lg)", scrollMarginTop: 24 }}>{children}</div>
   );
 
   if (forgot) return card(<ForgotPassword initialEmail={email} onBack={() => setForgot(false)} />);
@@ -195,7 +195,7 @@ export default function AuthForm({ onAuthed, mode, onModeChange }) {
             </button>
           )}
           {has("apple") && (
-            <button type="button" style={{ ...socialBtn, display: "inline-flex", alignItems: "center", justifyContent: "center", borderRadius: 8, background: "var(--t1)", color: "var(--bg)", border: "1px solid var(--t1)", cursor: "pointer", fontFamily: "inherit" }} disabled={!!socialBusy} onClick={() => social("apple")}>
+            <button type="button" style={{ ...socialBtn, display: "inline-flex", alignItems: "center", justifyContent: "center", borderRadius: 4, background: "var(--t1)", color: "var(--bg)", border: "1px solid var(--t1)", cursor: "pointer", fontFamily: "inherit" }} disabled={!!socialBusy} onClick={() => social("apple")}>
               <AppleLogo /> {socialBusy === "apple" ? "Opening Apple…" : "Continue with Apple"}
             </button>
           )}
@@ -219,7 +219,7 @@ export default function AuthForm({ onAuthed, mode, onModeChange }) {
           </button>
         )}
         {error && (
-          <div style={{ fontSize: 12, color: "var(--red)", background: "var(--red-dim)", border: "1px solid var(--red-bdr)", borderRadius: 8, padding: "8px 12px" }}>
+          <div style={{ fontSize: 12, color: "var(--red)", background: "var(--red-dim)", border: "1px solid var(--red-bdr)", borderRadius: 4, padding: "8px 12px" }}>
             {error}
           </div>
         )}

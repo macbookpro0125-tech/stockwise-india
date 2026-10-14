@@ -47,7 +47,7 @@ export default function PeersPanel({ symbol, onAnalyze }) {
   const shown = showAll ? rows : rows.slice(0, 10);
 
   return (
-    <div style={{ border: "1px solid var(--bdr2)", borderRadius: 14, background: "var(--s2)", padding: 16, marginBottom: 16 }}>
+    <div style={{ border: "1px solid var(--bdr2)", borderRadius: 6, background: "var(--s2)", padding: 16, marginBottom: 16 }}>
       <div style={{ fontSize: 14, fontWeight: 700, color: "var(--t1)", letterSpacing: "-0.01em" }}>
         Peers
         {data?.peerLabel && <span style={{ fontSize: 11, fontWeight: 500, color: "var(--t3)", marginLeft: 8 }}>{data.peerLabel}</span>}
@@ -66,7 +66,7 @@ export default function PeersPanel({ symbol, onAnalyze }) {
           ["Peer median P/E", data.benchmark.pe != null ? `${num(data.benchmark.pe)}× · ${data.benchmark.peN} peers` : `Not enough positive P/E peers (${data.benchmark.peN}/5)`],
           ["Peer median EV/EBITDA", data.benchmark.evToEbitda != null ? `${num(data.benchmark.evToEbitda)}× · ${data.benchmark.evToEbitdaN} peers` : `Not enough peers (${data.benchmark.evToEbitdaN}/5)`],
           ["Peer median FCF yield", data.benchmark.fcfYieldPct != null ? `${pct(data.benchmark.fcfYieldPct)} · ${data.benchmark.fcfYieldN} peers` : `Not enough peers (${data.benchmark.fcfYieldN}/5)`],
-        ].map(([label, value]) => <div key={label} style={{ minWidth: 150, padding: "8px 10px", borderRadius: 8, border: "1px solid var(--bdr)", background: "var(--s1)" }}><div style={{ fontSize: 10.5, color: "var(--t3)" }}>{label}</div><div style={{ fontSize: 12, color: "var(--t1)", fontWeight: 650, marginTop: 3 }}>{value}</div></div>)}
+        ].map(([label, value]) => <div key={label} style={{ minWidth: 150, padding: "8px 10px", borderRadius: 4, border: "1px solid var(--bdr)", background: "var(--s1)" }}><div style={{ fontSize: 10.5, color: "var(--t3)" }}>{label}</div><div style={{ fontSize: 12, color: "var(--t1)", fontWeight: 650, marginTop: 3 }}>{value}</div></div>)}
       </div>}
 
       {data?.benchmark && <p style={{ fontSize: 11, color: "var(--t3)", margin: "-2px 0 12px", lineHeight: 1.5 }}>
@@ -108,7 +108,7 @@ export default function PeersPanel({ symbol, onAnalyze }) {
             </table>
           </div>
           {rows.length > 10 && (
-            <button onClick={() => setShowAll(s => !s)} className="btn-ghost" style={{ height: 30, padding: "0 14px", fontSize: 11, borderRadius: 8, marginTop: 10 }}>
+            <button onClick={() => setShowAll(s => !s)} className="btn-ghost" style={{ height: 30, padding: "0 14px", fontSize: 11, borderRadius: 4, marginTop: 10 }}>
               {showAll ? "Show top 10" : `Show all ${rows.length}`}
             </button>
           )}

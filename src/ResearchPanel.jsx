@@ -8,7 +8,7 @@ import { qualityTone, overallTone } from "./ResearchBadges.jsx";
 // points and reason. Checks the filings can't show are listed, not hidden.
 
 const MONO = { fontVariantNumeric: "tabular-nums" };
-const card = { border: "1px solid var(--bdr2)", borderRadius: 12, padding: 18, marginBottom: 12, background: "var(--s2)", boxShadow: "var(--sh-xs)" };
+const card = { border: "1px solid var(--bdr2)", borderRadius: 6, padding: 18, marginBottom: 12, background: "var(--s2)", boxShadow: "var(--sh-xs)" };
 const n = v => (v == null ? "—" : Math.round(v));
 
 // Every card up top opens its own explanation below (a group's checks, the
@@ -35,8 +35,8 @@ const day = iso => new Date(`${iso}T00:00:00Z`).toLocaleString("en-IN", { day: "
 
 function Bar({ value, color, height = 5 }) {
   return (
-    <div style={{ height, borderRadius: 99, background: "var(--s3)", overflow: "hidden" }}>
-      <div style={{ width: `${Math.max(0, Math.min(100, value ?? 0))}%`, height: "100%", borderRadius: 99, background: color, transition: "width 300ms" }} />
+    <div style={{ height, borderRadius: 3, background: "var(--s3)", overflow: "hidden" }}>
+      <div style={{ width: `${Math.max(0, Math.min(100, value ?? 0))}%`, height: "100%", borderRadius: 3, background: color, transition: "width 300ms" }} />
     </div>
   );
 }
@@ -44,7 +44,7 @@ function Bar({ value, color, height = 5 }) {
 // One of the three headline numbers
 function Headline({ label, value, unit = "/100", word, sub, tone, title, details }) {
   return (
-    <div title={title} {...clickable(details)} style={{ minWidth: 0, padding: "14px 16px", borderRadius: 10, background: "var(--s1)", border: `1px solid ${tone.border}` }}>
+    <div title={title} {...clickable(details)} style={{ minWidth: 0, padding: "14px 16px", borderRadius: 4, background: "var(--s1)", border: `1px solid ${tone.border}` }}>
       <div style={{ ...cardLabel, fontSize: 12, color: "var(--t2)", fontWeight: 500, marginBottom: 6 }}>{label}<More /></div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
         <span style={{ fontSize: 30, fontWeight: 700, color: value == null ? "var(--t3)" : "var(--t1)", letterSpacing: "-0.03em", lineHeight: 1, ...MONO }}>{n(value)}</span>
@@ -60,7 +60,7 @@ function Headline({ label, value, unit = "/100", word, sub, tone, title, details
 function GroupCard({ g, word }) {
   const tone = qualityTone(g.score);
   return (
-    <div {...clickable(`why-${g.id}`)} title={`See every ${g.label.toLowerCase()} check below`} style={{ padding: "12px 14px", borderRadius: 10, background: "var(--s1)", border: "1px solid var(--bdr)", minWidth: 0 }}>
+    <div {...clickable(`why-${g.id}`)} title={`See every ${g.label.toLowerCase()} check below`} style={{ padding: "12px 14px", borderRadius: 4, background: "var(--s1)", border: "1px solid var(--bdr)", minWidth: 0 }}>
       <div style={{ ...cardLabel, fontSize: 12, color: "var(--t2)", fontWeight: 500, marginBottom: 6, lineHeight: 1.35 }}>{g.label}<More /></div>
       {!g.applicable ? (
         <div style={{ fontSize: 12, color: "var(--t3)", lineHeight: 1.45 }}>Doesn't apply to lenders</div>
@@ -84,7 +84,7 @@ function GroupCard({ g, word }) {
 
 function LensCard({ title, score, word, note, tone, details }) {
   return (
-    <div {...clickable(details)} title={`See the ${title.toLowerCase()} breakdown below`} style={{ flex: "1 1 200px", minWidth: 0, padding: "12px 14px", borderRadius: 10, background: "var(--s1)", border: "1px solid var(--bdr)" }}>
+    <div {...clickable(details)} title={`See the ${title.toLowerCase()} breakdown below`} style={{ flex: "1 1 200px", minWidth: 0, padding: "12px 14px", borderRadius: 4, background: "var(--s1)", border: "1px solid var(--bdr)" }}>
       <div style={{ ...cardLabel, fontSize: 12, color: "var(--t2)", fontWeight: 500, marginBottom: 6 }}>{title}<More /></div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
         <span style={{ fontSize: 20, fontWeight: 700, color: score == null ? "var(--t3)" : "var(--t1)", ...MONO }}>{n(score)}</span>
@@ -182,7 +182,7 @@ export default function ResearchPanel({ research: r }) {
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
         <ScanSearch size={17} strokeWidth={2} style={{ color: "var(--t3)" }} />
         <h3 style={{ fontSize: 15, fontWeight: 600, margin: 0, color: "var(--t1)", letterSpacing: "-0.01em" }}>Research dashboard</h3>
-        <span style={{ fontSize: 10.5, fontWeight: 600, color: "var(--yellow)", background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", borderRadius: 999, padding: "3px 8px" }}>Experimental model</span>
+        <span style={{ fontSize: 10.5, fontWeight: 600, color: "var(--yellow)", background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", borderRadius: 3, padding: "3px 8px" }}>Experimental model</span>
         <span style={{ fontSize: 11.5, color: "var(--t3)", marginLeft: "auto" }}>
           From NSE filings{r.valuation.asOf ? ` · valued at the ${day(r.valuation.asOf)} close` : ""}
         </span>
@@ -196,7 +196,7 @@ export default function ResearchPanel({ research: r }) {
         // Critical (a qualified audit) in red; a caution (an auditor's resignation) in amber
         const c = f.severity === "critical" ? "red" : "yellow";
         return (
-          <div key={f.id} role={f.severity === "critical" ? "alert" : "note"} style={{ display: "flex", gap: 8, alignItems: "flex-start", fontSize: 12.5, color: "var(--t1)", background: `var(--${c}-dim)`, border: `1px solid var(--${c}-bdr)`, borderRadius: 8, padding: "9px 12px", marginBottom: 12, lineHeight: 1.5 }}>
+          <div key={f.id} role={f.severity === "critical" ? "alert" : "note"} style={{ display: "flex", gap: 8, alignItems: "flex-start", fontSize: 12.5, color: "var(--t1)", background: `var(--${c}-dim)`, border: `1px solid var(--${c}-bdr)`, borderRadius: 4, padding: "9px 12px", marginBottom: 12, lineHeight: 1.5 }}>
             <TriangleAlert size={15} style={{ color: `var(--${c})`, flexShrink: 0, marginTop: 1 }} />
             <span><strong style={{ color: `var(--${c})` }}>{f.severity === "critical" ? "Red flag." : "Caution."}</strong> {f.text}</span>
           </div>
@@ -218,7 +218,7 @@ export default function ResearchPanel({ research: r }) {
       </div>
 
       {r.capped && (
-        <div style={{ display: "flex", gap: 8, alignItems: "flex-start", fontSize: 12, color: "var(--t2)", background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", borderRadius: 8, padding: "8px 12px", marginBottom: 12, lineHeight: 1.5 }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "flex-start", fontSize: 12, color: "var(--t2)", background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", borderRadius: 4, padding: "8px 12px", marginBottom: 12, lineHeight: 1.5 }}>
           <TriangleAlert size={14} style={{ color: "var(--yellow)", flexShrink: 0, marginTop: 2 }} />
           <span>{r.capped.reason} Uncapped, it would be {n(r.capped.uncapped)}/100.</span>
         </div>

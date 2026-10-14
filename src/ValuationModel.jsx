@@ -8,7 +8,7 @@
 //    a model that needs data NSE's filings don't carry (an NBFC lender, a
 //    holding company): why, and EV/Sales against the sector as context only
 const MONO = { fontVariantNumeric: "tabular-nums" };
-const panel = { border: "1px solid var(--bdr2)", borderRadius: 12, padding: 18, marginBottom: 12, background: "var(--s2)" };
+const panel = { border: "1px solid var(--bdr2)", borderRadius: 6, padding: 18, marginBottom: 12, background: "var(--s2)" };
 const rs = v => (v == null || !Number.isFinite(v) ? "—" : `₹${Math.round(v).toLocaleString("en-IN")}`);
 const crore = v => (v == null || !Number.isFinite(v) ? "—" : `₹${Math.round(v).toLocaleString("en-IN")} Cr`);
 const pct = (v, dp = 1) => (v == null || !Number.isFinite(v) ? "—" : `${v.toFixed(dp)}%`);
@@ -66,7 +66,7 @@ export function BankValuation({ m, growthInput, costOfEquity, onCostOfEquity }) 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "7px 0", borderTop: "1px solid var(--bdr)", fontSize: 12.5 }}>
         <span style={{ color: "var(--t2)" }}>Cost of equity<span style={{ display: "block", fontSize: 10.5, color: "var(--t3)", marginTop: 2 }}>{v.psu ? "12%, a point more for a government bank" : "12%, as the cash-flow model uses"}</span></span>
         <input aria-label="Cost of equity %" type="number" step="0.5" min="6" max="25" value={costOfEquity} onChange={e => onCostOfEquity(Number(e.target.value))}
-          style={{ width: 80, height: 32, padding: "0 8px", border: "1px solid var(--bdr2)", borderRadius: 7, background: "var(--s1)", color: "var(--t1)", fontSize: 12.5, textAlign: "right", ...MONO }} />
+          style={{ width: 80, height: 32, padding: "0 8px", border: "1px solid var(--bdr2)", borderRadius: 4, background: "var(--s1)", color: "var(--t1)", fontSize: 12.5, textAlign: "right", ...MONO }} />
       </div>
       {row("Justified P/B", pb == null ? "—" : `${pb.toFixed(2)}×`, `(ROE − growth) ÷ (cost of equity − growth)${costOfEquity - g < 4 ? " · under 4 points apart, the multiple gets fragile" : ""}`)}
       {row("Book less net bad loans", <>{rs(v.adjustedBvps)}<span style={{ color: "var(--t3)", fontWeight: 400 }}> a share</span></>,
@@ -130,7 +130,7 @@ export function CycleGauge({ cycle }) {
         <span style={{ color: "var(--t2)" }}>Where profits sit in the cycle</span>
         <strong style={{ color: CYCLE_TONE[cycle.positionLabel] }}>{cycle.positionLabel[0].toUpperCase() + cycle.positionLabel.slice(1)}</strong>
       </div>
-      <div style={{ position: "relative", height: 8, borderRadius: 99, background: "linear-gradient(90deg, color-mix(in srgb, var(--accent) 35%, transparent) 0 35%, var(--s3) 35% 65%, color-mix(in srgb, var(--yellow) 40%, transparent) 65% 100%)" }}>
+      <div style={{ position: "relative", height: 8, borderRadius: 3, background: "linear-gradient(90deg, color-mix(in srgb, var(--accent) 35%, transparent) 0 35%, var(--s3) 35% 65%, color-mix(in srgb, var(--yellow) 40%, transparent) 65% 100%)" }}>
         <span style={{ position: "absolute", left: `${at}%`, top: -3, width: 4, height: 14, marginLeft: -2, borderRadius: 2, background: "var(--t1)" }} />
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10.5, color: "var(--t3)", marginTop: 4 }}>
@@ -182,7 +182,7 @@ export function NoFairValue({ m }) {
       <div style={{ fontSize: 13, color: "var(--t1)", fontWeight: 600, marginBottom: 4 }}>{v.model === "needs-data" ? "Valuation needs more data" : "No fair value"}</div>
       <p style={{ fontSize: 12, color: "var(--t2)", margin: 0, lineHeight: 1.6 }}>{v.reason} So there are no price levels for it — the research score still rates its quality.</p>
       {v.model === "none" && m.evToSales != null && (
-        <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 8, background: "var(--s1)", border: "1px solid var(--bdr)", fontSize: 12, color: "var(--t2)", lineHeight: 1.55 }}>
+        <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 4, background: "var(--s1)", border: "1px solid var(--bdr)", fontSize: 12, color: "var(--t2)", lineHeight: 1.55 }}>
           <strong style={{ color: "var(--t1)", ...MONO }}>EV/Sales {m.evToSales.toFixed(2)}×</strong>
           {ctx ? <> against a median of <strong style={{ color: "var(--t1)", ...MONO }}>{ctx.median.toFixed(2)}×</strong> across {ctx.n} {ctx.sector} companies.</> : "."}
           <span style={{ display: "block", fontSize: 10.5, color: "var(--t3)", marginTop: 3 }}>Enterprise value (market value plus net debt) over the latest year's revenue. Context only — not a fair value.</span>

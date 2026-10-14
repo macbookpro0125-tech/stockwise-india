@@ -54,15 +54,15 @@ function EditAlertModal({ alert, onSave, onClose }) {
     }
   };
   return (
-    <div onClick={e => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>
-      <div style={{ background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 18, padding: 28, width: 380, maxWidth: "90vw", boxShadow: "var(--sh-lg)", animation: "fadeUp 200ms cubic-bezier(0,0,0.2,1) backwards" }}>
+    <div onClick={e => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 6, padding: 28, width: 380, maxWidth: "90vw", boxShadow: "var(--sh-lg)", animation: "fadeUp 200ms cubic-bezier(0,0,0.2,1) backwards" }}>
         <div style={{ fontSize: 17, fontWeight: 700, color: "var(--t1)", marginBottom: 4, letterSpacing: "-0.02em" }}>Edit Alert</div>
         <div style={{ fontSize: 13, color: "var(--t3)", marginBottom: 20 }}>{alert.name || alert.ticker}</div>
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: "var(--t3)", marginBottom: 8 }}>Condition</div>
           <div style={{ display: "flex", gap: 8 }}>
             {["below", "above"].map(v => (
-              <button key={v} onClick={() => setCondition(v)} style={{ flex: 1, padding: "10px 12px", borderRadius: 10, cursor: "pointer", border: condition === v ? "1.5px solid var(--accent)" : "1px solid var(--bdr2)", background: condition === v ? "color-mix(in srgb, var(--accent) 8%, transparent)" : "var(--s3)", color: condition === v ? "var(--accent)" : "var(--t2)", fontSize: 13, fontWeight: 500, transition: "all 150ms" }}>
+              <button key={v} onClick={() => setCondition(v)} style={{ flex: 1, padding: "10px 12px", borderRadius: 4, cursor: "pointer", border: condition === v ? "1.5px solid var(--accent)" : "1px solid var(--bdr2)", background: condition === v ? "color-mix(in srgb, var(--accent) 8%, transparent)" : "var(--s3)", color: condition === v ? "var(--accent)" : "var(--t2)", fontSize: 13, fontWeight: 500, transition: "all 150ms" }}>
                 {v === "below" ? "▼ Drops to" : "▲ Rises to"}
               </button>
             ))}
@@ -74,7 +74,7 @@ function EditAlertModal({ alert, onSave, onClose }) {
             onKeyDown={e => { if (e.key === "Enter") save(); if (e.key === "Escape") onClose(); }}
             className="input-base" style={{ fontSize: 18, fontWeight: 600, textAlign: "center" }} />
         </div>
-        {error && <div style={{ fontSize: 12, color: "var(--red)", background: "var(--red-dim)", border: "1px solid var(--red-bdr)", borderRadius: 8, padding: "8px 12px", marginBottom: 14 }}>{error}</div>}
+        {error && <div style={{ fontSize: 12, color: "var(--red)", background: "var(--red-dim)", border: "1px solid var(--red-bdr)", borderRadius: 4, padding: "8px 12px", marginBottom: 14 }}>{error}</div>}
         <div style={{ display: "flex", gap: 10 }}>
           <button onClick={save} disabled={!valid} className="btn-primary" style={{ flex: 1 }}>Save Changes</button>
           <button onClick={onClose} className="btn-ghost" style={{ flex: 1, height: 44 }}>Cancel</button>
@@ -84,17 +84,17 @@ function EditAlertModal({ alert, onSave, onClose }) {
   );
 }
 
-const actionBtn = { width: 30, height: 30, borderRadius: 8, border: "1px solid var(--bdr2)", background: "transparent", color: "var(--t3)", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 120ms" };
+const actionBtn = { width: 30, height: 30, borderRadius: 4, border: "1px solid var(--bdr2)", background: "transparent", color: "var(--t3)", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 120ms" };
 
 function AlertCard({ a, onView, onEdit, onDelete, onToggle }) {
   const away = a.cmp != null ? ((a.threshold - a.cmp) / a.cmp) * 100 : null;
   return (
-    <div style={{ padding: "14px 16px", borderRadius: 12, border: "1px solid var(--bdr2)", background: a.enabled ? "var(--s2)" : "var(--s1)", opacity: a.enabled ? 1 : 0.55, transition: "all 150ms" }}>
+    <div style={{ padding: "14px 16px", borderRadius: 6, border: "1px solid var(--bdr2)", background: a.enabled ? "var(--s2)" : "var(--s1)", opacity: a.enabled ? 1 : 0.55, transition: "all 150ms" }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
             <span style={{ fontWeight: 600, fontSize: 14, color: "var(--t1)", letterSpacing: "-0.01em" }}>{a.name || a.ticker}</span>
-            <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 7px", borderRadius: 999, background: "var(--accent-glow)", color: "var(--accent)" }}>Price</span>
+            <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 7px", borderRadius: 3, background: "var(--accent-glow)", color: "var(--accent)" }}>Price</span>
           </div>
           <div style={{ fontSize: 13, color: "var(--t2)", ...MONO, marginBottom: 6 }}>
             <span style={{ color: a.condition === "below" ? "var(--red)" : "var(--green)", fontWeight: 600 }}>{a.condition === "above" ? "▲" : "▼"}</span>
@@ -158,9 +158,9 @@ function TelegramCard({ onStatus }) {
   const disconnect = async () => { await api.telegramDisconnect(); setNote(null); await load(); };
 
   if (!tg) return null;
-  const box = { display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", padding: "14px 16px", borderRadius: 12, border: "1px solid var(--bdr2)", background: "var(--s2)", boxShadow: "var(--sh-xs)", marginBottom: 20 };
+  const box = { display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", padding: "14px 16px", borderRadius: 6, border: "1px solid var(--bdr2)", background: "var(--s2)", boxShadow: "var(--sh-xs)", marginBottom: 20 };
   const icon = (
-    <span style={{ width: 36, height: 36, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: "color-mix(in srgb, var(--accent) 12%, transparent)", color: "var(--accent)" }}>
+    <span style={{ width: 36, height: 36, borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: "color-mix(in srgb, var(--accent) 12%, transparent)", color: "var(--accent)" }}>
       <Send size={17} />
     </span>
   );
@@ -253,7 +253,7 @@ export default function AlertsView({ onOpenStock }) {
             {checkedAt && <span> · checked {timeAgo(checkedAt)}</span>}
           </div>
         </div>
-        <button onClick={check} disabled={checking || alerts.length === 0} className="btn-primary" style={{ height: 34, padding: "0 18px", fontSize: 12, borderRadius: 8, boxShadow: "none", display: "flex", alignItems: "center", gap: 6 }}>
+        <button onClick={check} disabled={checking || alerts.length === 0} className="btn-primary" style={{ height: 34, padding: "0 18px", fontSize: 12, borderRadius: 4, boxShadow: "none", display: "flex", alignItems: "center", gap: 6 }}>
           {checking
             ? <><span style={{ width: 12, height: 12, border: "2px solid color-mix(in srgb, var(--on-accent) 25%, transparent)", borderTopColor: "var(--on-accent)", borderRadius: "50%", animation: "spin 0.7s linear infinite", flexShrink: 0 }} />Checking…</>
             : <><RefreshCw size={14} />Check Now</>}
@@ -270,14 +270,14 @@ export default function AlertsView({ onOpenStock }) {
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {triggered.map(t => (
-              <div key={t.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "12px 16px", borderRadius: 12, background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)" }}>
+              <div key={t.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "12px 16px", borderRadius: 6, background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)" }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ fontWeight: 600, fontSize: 14, color: "var(--t1)" }}>{t.name || t.ticker}</span>
                   <div style={{ fontSize: 12, color: "var(--t2)", marginTop: 4, ...MONO }}>
                     Price: <strong style={{ color: "var(--yellow)" }}>{fmtRs(t.cmp)}</strong> · {priceBasis(t.priceSource)}{t.priceDate ? ` · ${fmtDate(t.priceDate)}` : ""} ({t.condition === "above" ? "▲" : "▼"} {fmtRs(t.threshold)})
                   </div>
                 </div>
-                <button onClick={() => onOpenStock(t.ticker)} style={{ height: 28, padding: "0 12px", fontSize: 11, fontWeight: 600, borderRadius: 7, cursor: "pointer", border: "1px solid var(--yellow-bdr)", background: "transparent", color: "var(--yellow)" }}>View</button>
+                <button onClick={() => onOpenStock(t.ticker)} style={{ height: 28, padding: "0 12px", fontSize: 11, fontWeight: 600, borderRadius: 4, cursor: "pointer", border: "1px solid var(--yellow-bdr)", background: "transparent", color: "var(--yellow)" }}>View</button>
               </div>
             ))}
           </div>
@@ -287,7 +287,7 @@ export default function AlertsView({ onOpenStock }) {
       {stored == null && !live ? (
         <div style={{ textAlign: "center", padding: "32px 0", fontSize: 12, color: "var(--t3)" }}>Loading alerts…</div>
       ) : alerts.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "48px 20px", color: "var(--t3)", border: "1px dashed var(--bdr2)", borderRadius: 14, background: "var(--s1)" }}>
+        <div style={{ textAlign: "center", padding: "48px 20px", color: "var(--t3)", border: "1px dashed var(--bdr2)", borderRadius: 6, background: "var(--s1)" }}>
           <Bell size={38} strokeWidth={1.5} style={{ marginBottom: 12, opacity: 0.3 }} />
           <p style={{ fontSize: 15, color: "var(--t2)", fontWeight: 600, marginBottom: 6 }}>No alerts yet</p>
           <p style={{ fontSize: 12, maxWidth: 300, margin: "0 auto", lineHeight: 1.6 }}>

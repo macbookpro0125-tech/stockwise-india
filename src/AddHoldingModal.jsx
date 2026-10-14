@@ -38,15 +38,15 @@ export default function AddHoldingModal({ onSave, onClose, initial = null }) {
   };
 
   const inputStyle = {
-    width: "100%", height: 40, padding: "10px 12px", borderRadius: 8,
+    width: "100%", height: 40, padding: "10px 12px", borderRadius: 4,
     border: "1px solid var(--bdr2)", background: "var(--s3)",
     color: "var(--t1)", fontSize: 14, outline: "none", boxSizing: "border-box",
   };
   const labelStyle = { fontSize: 11.5, color: "var(--t3)", fontWeight: 600, marginBottom: 6, display: "block" };
 
   return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", animation: "fadeUp 180ms ease backwards" }}>
-      <form onClick={e => e.stopPropagation()} onSubmit={handleSubmit} style={{ width: "min(440px, 92vw)", padding: 28, borderRadius: 16, border: "1px solid var(--bdr2)", background: "var(--s1)", boxShadow: "0 20px 60px rgba(0,0,0,0.4)" }}>
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", animation: "fadeUp 180ms ease backwards" }}>
+      <form onClick={e => e.stopPropagation()} onSubmit={handleSubmit} style={{ width: "min(440px, 92vw)", padding: 28, borderRadius: 6, border: "1px solid var(--bdr2)", background: "var(--s1)", boxShadow: "0 20px 60px rgba(0,0,0,0.4)" }}>
         <h3 style={{ margin: "0 0 20px", fontSize: 17, fontWeight: 700, color: "var(--t1)" }}>{initial ? "Edit Holding" : "Add Holding"}</h3>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
@@ -81,11 +81,11 @@ export default function AddHoldingModal({ onSave, onClose, initial = null }) {
           <input id="h-notes" maxLength={500} value={notes} onChange={e => setNotes(e.target.value)} placeholder="Optional notes..." style={inputStyle} />
         </div>
 
-        {error && <div style={{ fontSize: 12, color: "var(--red)", background: "var(--red-dim)", border: "1px solid var(--red-bdr)", borderRadius: 8, padding: "8px 12px", marginBottom: 14 }}>{error}</div>}
+        {error && <div style={{ fontSize: 12, color: "var(--red)", background: "var(--red-dim)", border: "1px solid var(--red-bdr)", borderRadius: 4, padding: "8px 12px", marginBottom: 14 }}>{error}</div>}
 
         <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-          <button type="button" onClick={onClose} className="btn-ghost" style={{ height: 36, padding: "0 18px", fontSize: 13, borderRadius: 8 }}>Cancel</button>
-          <button type="submit" disabled={!valid || busy} className="btn-primary" style={{ height: 36, padding: "0 20px", fontSize: 13, borderRadius: 8, boxShadow: "none", opacity: valid ? 1 : 0.4 }}>
+          <button type="button" onClick={onClose} className="btn-ghost" style={{ height: 36, padding: "0 18px", fontSize: 13, borderRadius: 4 }}>Cancel</button>
+          <button type="submit" disabled={!valid || busy} className="btn-primary" style={{ height: 36, padding: "0 20px", fontSize: 13, borderRadius: 4, boxShadow: "none", opacity: valid ? 1 : 0.4 }}>
             {busy ? "Saving…" : initial ? "Save Changes" : "Add to Portfolio"}
           </button>
         </div>

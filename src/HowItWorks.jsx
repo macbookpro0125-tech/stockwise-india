@@ -30,7 +30,7 @@ export default function HowItWorks({ label = "How it works", style }) {
               <span style={{ fontSize: 14, fontWeight: 600, color: "#fff" }}>How Stockwise India works · 2 min</span>
               <button type="button" onClick={() => setOpen(false)} className="btn-ghost" style={{ height: 32, fontSize: 12.5 }}><X size={14} /> Close</button>
             </div>
-            <video src="/how-it-works.webm" controls autoPlay playsInline style={{ display: "block", width: "100%", borderRadius: 12, background: "#000", aspectRatio: "16 / 10" }} />
+            <video src="/how-it-works.webm" controls autoPlay playsInline style={{ display: "block", width: "100%", borderRadius: 6, background: "#000", aspectRatio: "16 / 10" }} />
           </div>
         </div>
       )}

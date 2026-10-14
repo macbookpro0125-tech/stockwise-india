@@ -51,10 +51,9 @@ export function QualityBadge({ research, size = 11.5 }) {
   const t = qualityTone(v);
   return (
     <span title={researchTitle(research)} style={{
-      display: "inline-flex", alignItems: "center", gap: 5, padding: "2px 8px", borderRadius: 999,
+      display: "inline-flex", alignItems: "center", gap: 5, padding: "2px 8px", borderRadius: 3,
       border: `1px solid ${t.border}`, background: t.bg, color: t.color, fontSize: size, fontWeight: 650, whiteSpace: "nowrap", ...MONO,
     }}>
-      <span style={{ width: 5, height: 5, borderRadius: "50%", background: t.dot, flexShrink: 0 }} />
       {v == null ? "—" : Math.round(v)}
       {/* Full colour: at 70% opacity this fell to 2.7–4.4:1 on the tinted pill */}
       {v != null && <span style={{ fontWeight: 500, fontSize: size - 1.5 }}>/100</span>}
