@@ -48,6 +48,12 @@ assert.equal(aggregateBars(days, "M").length, 1);
 assert.equal(aggregateBars(days, "D"), days);
 console.log("ok: weekly and monthly bars keep first open, last close, extremes and summed volume");
 
+const inProgress = [...days.slice(0, 3), { ...days[3], partial: true }];
+assert.equal(aggregateBars(inProgress, "W")[1].partial, true);
+assert.equal(aggregateBars(inProgress, "W")[0].partial, undefined);
+assert.equal(aggregateBars([{ ...days[0] }, { ...days[1], partial: true }], "W")[0].partial, true);
+console.log("ok: a week still trading is marked in progress, a finished one isn't");
+
 assert.equal(indexFrom(days, "2026-10-08"), 2);
 assert.equal(indexFrom(days, "2030-01-01"), 3);
 console.log("ok: a range starts at the first bar on or after its date");

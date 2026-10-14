@@ -12,6 +12,45 @@ function istDayKey(unixSec) {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date(unixSec * 1000));
 }
 
+// When a day's price becomes its close. NSE's session ends at 15:30 IST and
+// the official close comes from the closing session after it, so from 16:00
+// IST that day's price is final; before then it is the trade in progress. The
+// stock page's header and its chart both use this, so they agree: they showed
+// the 13 Oct close and a 14 Oct candle side by side all evening.
+const CLOSE_FINAL_IST = "16:00";
+export function sessionClosed(dayKey, nowSec = Date.now() / 1000) {
+  const today = istDayKey(nowSec);
+  if (dayKey !== today) return dayKey < today;
+  const hm = new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(nowSec * 1000));
+  return hm >= CLOSE_FINAL_IST;
+}
+
+// One row per trading day from a Yahoo chart result, oldest first. Open, high
+// and low are split-adjusted like the close; a day missing one falls back to
+// the close (a flat candle). Yahoo often leaves the latest day's close empty
+// (open, high, low and volume filled) and gives it only as
+// meta.regularMarketPrice, so the last row takes that.
+export function dailyRows(result) {
+  const timestamps = result?.timestamp || [];
+  const q = result?.indicators?.quote?.[0] || {};
+  const closes = q.close || [];
+  const meta = result?.meta || {};
+  const lastDay = timestamps.length ? istDayKey(timestamps[timestamps.length - 1]) : null;
+  const metaClose = meta.regularMarketPrice != null && meta.regularMarketTime && istDayKey(meta.regularMarketTime) === lastDay ? meta.regularMarketPrice : null;
+  const r2 = n => Math.round(n * 100) / 100;
+  const byDay = new Map();
+  for (let i = 0; i < timestamps.length; i++) {
+    const close = closes[i] ?? (i === timestamps.length - 1 ? metaClose : null);
+    if (close == null) continue;
+    const open = q.open?.[i] ?? close, high = q.high?.[i] ?? close, low = q.low?.[i] ?? close;
+    byDay.set(istDayKey(timestamps[i]), {
+      open: r2(open), high: r2(Math.max(high, open, close)), low: r2(Math.min(low, open, close)), close: r2(close),
+      volume: q.volume?.[i] ?? null,
+    });
+  }
+  return [...byDay].sort((a, b) => a[0].localeCompare(b[0])).map(([date, bar]) => ({ date, ...bar }));
+}
+
 // One Yahoo chart request: given up after 10 s, and tried once more after a
 // dropped connection, a rate limit or a server error. A single blip used to
 // put "Couldn't refresh the latest close" on the stock page — it happened in half
@@ -44,14 +83,9 @@ export async function fetchCmp(symbol) {
     throw new Error(`No quote data for ${symbol}`);
   }
 
-  const timestamps = result.timestamp || [];
-  const closes = result.indicators?.quote?.[0]?.close || [];
-  const byDay = new Map();
-  for (let i = 0; i < timestamps.length; i++) {
-    if (closes[i] == null) continue;
-    byDay.set(istDayKey(timestamps[i]), closes[i]);
-  }
-  const days = [...byDay.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  // The latest day whose session has closed (sessionClosed): today from
+  // 16:00 IST, the day before until then
+  const days = dailyRows(result).filter(d => sessionClosed(d.date));
   if (!days.length) {
     if (cached) {
       CACHE.set(symbol, { ...cached, retryAt: Date.now() + 60_000 });
@@ -60,8 +94,7 @@ export async function fetchCmp(symbol) {
     throw new Error(`No daily closes for ${symbol}`);
   }
 
-  const today = istDayKey(Date.now() / 1000);
-  const [date, close] = days[days.length - 1][0] === today && days.length >= 2 ? days[days.length - 2] : days[days.length - 1];
+  const { date, close } = days[days.length - 1];
   const data = { cmp: Math.round(close * 100) / 100, asOf: date };
   CACHE.set(symbol, { at: Date.now(), data });
   return data;
@@ -91,29 +124,12 @@ export async function fetchDailyBars(symbol, range = "1y") {
   }
   if (!result) throw new Error(`No price history for ${symbol}`);
 
-  // Open, high and low come split-adjusted like the close, so candles line up;
-  // a day missing any of them falls back to the close (a flat candle)
-  const timestamps = result.timestamp || [];
-  const q = result.indicators?.quote?.[0] || {};
-  const closes = q.close || [];
-  const r2 = n => Math.round(n * 100) / 100;
-  // Yahoo often leaves the latest day's close empty (open, high, low and volume
-  // filled) and gives it only as meta.regularMarketPrice; without this the
-  // chart stopped a trading day short of the NSE close
-  const meta = result.meta || {};
-  const lastDay = timestamps.length ? istDayKey(timestamps[timestamps.length - 1]) : null;
-  const metaClose = meta.regularMarketPrice != null && meta.regularMarketTime && istDayKey(meta.regularMarketTime) === lastDay ? meta.regularMarketPrice : null;
-  const byDay = new Map();
-  for (let i = 0; i < timestamps.length; i++) {
-    const close = closes[i] ?? (i === timestamps.length - 1 ? metaClose : null);
-    if (close == null) continue;
-    const open = q.open?.[i] ?? close, high = q.high?.[i] ?? close, low = q.low?.[i] ?? close;
-    byDay.set(istDayKey(timestamps[i]), {
-      open: r2(open), high: r2(Math.max(high, open, close)), low: r2(Math.min(low, open, close)), close: r2(close),
-      volume: q.volume?.[i] ?? null,
-    });
-  }
-  const data = { symbol: `${symbol}.NS`, range, bars: [...byDay].sort((a, b) => a[0].localeCompare(b[0])).map(([date, bar]) => ({ date, ...bar })) };
+  // Today's candle stays on the chart while the market is open, flagged as
+  // in progress (sessionClosed) so it isn't read as a close
+  const bars = dailyRows(result);
+  const last = bars[bars.length - 1];
+  if (last && !sessionClosed(last.date)) last.partial = true;
+  const data = { symbol: `${symbol}.NS`, range, bars };
   BARS_CACHE.set(key, { at: Date.now(), data });
   return data;
 }

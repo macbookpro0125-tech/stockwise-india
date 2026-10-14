@@ -24,6 +24,7 @@ export function aggregateBars(bars, interval) {
       cur.high = Math.max(cur.high, b.high);
       cur.low = Math.min(cur.low, b.low);
       cur.close = b.close;
+      if (b.partial) cur.partial = true; // a week or month still trading
       cur.volume = cur.volume == null && b.volume == null ? null : (cur.volume ?? 0) + (b.volume ?? 0);
     }
   }

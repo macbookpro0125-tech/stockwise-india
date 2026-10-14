@@ -232,7 +232,14 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
     });
     chartRef.current = chart;
 
-    const ohlc = bars.map(b => ({ time: b.date, open: b.open, high: b.high, low: b.low, close: b.close }));
+    // Today's candle while the market is open (bar.partial, set by the server)
+    // is drawn at half strength: a price in progress, not a close
+    const ohlc = bars.map(b => {
+      const bar = { time: b.date, open: b.open, high: b.high, low: b.low, close: b.close };
+      if (!b.partial) return bar;
+      const col = alpha(b.close >= b.open ? c.up : c.down, 0.45);
+      return { ...bar, color: col, wickColor: col, borderColor: col };
+    });
     const closes = bars.map(b => b.close);
     const withVolume = prefs.ind.volume && bars.some(b => b.volume != null);
 
@@ -585,14 +592,14 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
                   return narrow ? (
                     <>
                       <div className="chart-row" style={{ gap: 8 }}>
-                        <span style={{ color: "var(--t1)", fontWeight: 600 }}>{b.date}</span>
+                        <span style={{ color: "var(--t1)", fontWeight: 600 }}>{b.date}{b.partial && <span style={{ color: "var(--yellow)", fontWeight: 500 }}> · in progress</span>}</span>
                         <span>C {v(b.close)}</span>{change}
                       </div>
                       {ohlc && <div className="chart-row" style={{ gap: 8 }}><span>O {v(b.open)} H {v(b.high)} L {v(b.low)}</span>{vol}</div>}
                     </>
                   ) : (
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                      <span style={{ color: "var(--t1)", fontWeight: 600 }}>{b.date}</span>
+                      <span style={{ color: "var(--t1)", fontWeight: 600 }}>{b.date}{b.partial && <span style={{ color: "var(--yellow)", fontWeight: 500 }}> · in progress</span>}</span>
                       {ohlc ? <span>O {v(b.open)} H {v(b.high)} L {v(b.low)} C {v(b.close)}</span> : <span>C {v(b.close)}</span>}
                       {change}{vol}
                     </div>
@@ -613,7 +620,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
             <div
               ref={hostRef}
               role="figure"
-              aria-label={`${name || symbol} ${prefs.type} chart, ${INTERVALS.find(i => i.id === prefs.interval)?.title.toLowerCase()} bars, ${first?.date} to ${last?.date}. Last close ${fmtRs(last?.close)}${rangeChange != null ? `, ${rangeChange >= 0 ? "up" : "down"} ${Math.abs(rangeChange).toFixed(1)} percent over ${range === "All" ? "all history" : range}` : ""}.${levelLines.length ? ` Levels shown: ${levelLines.map(l => `${l.title} ${fmtRs(l.price)}`).join(", ")}.` : ""}`}
+              aria-label={`${name || symbol} ${prefs.type} chart, ${INTERVALS.find(i => i.id === prefs.interval)?.title.toLowerCase()} bars, ${first?.date} to ${last?.date}. ${last?.partial ? "Latest price, today in progress," : "Last close"} ${fmtRs(last?.close)}${rangeChange != null ? `, ${rangeChange >= 0 ? "up" : "down"} ${Math.abs(rangeChange).toFixed(1)} percent over ${range === "All" ? "all history" : range}` : ""}.${levelLines.length ? ` Levels shown: ${levelLines.map(l => `${l.title} ${fmtRs(l.price)}`).join(", ")}.` : ""}`}
               style={{ ...(page ? { flex: 1, minHeight: 200 } : { height }), width: "100%", cursor: drawing ? "crosshair" : undefined, opacity: loading ? 0.6 : 1 }}
             />
           </>
