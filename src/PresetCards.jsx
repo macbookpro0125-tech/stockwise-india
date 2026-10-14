@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Ellipsis } from "lucide-react";
+import { Plus, Ellipsis, ArrowRight } from "lucide-react";
 import { api } from "./api.js";
 import { PresetIcon } from "./icons.jsx";
 import { strategiesStore } from "./accountData.js";
@@ -13,7 +13,71 @@ const tint = pct => `color-mix(in srgb, var(--accent) ${pct}%, transparent)`;
 
 const loadCustomPresets = () => strategiesStore.get();
 
-export default function PresetCards({ onSelect, activePresetId, onSavePreset, onUpdatePreset, onRenamePreset, onDuplicatePreset, stacked = false }) {
+// A strategy's rules in words, for the cards on Discover's first page
+// ("ROE ≥ 18% · ROCE ≥ 20% · +5 more"). The built-in ones keep their rules as
+// the original's criteria (server/presets.js); saved ones as filters, named
+// from the screener's metric list.
+const inr = v => Number(v).toLocaleString("en-IN");
+const CRITERIA = {
+  revenue_growth_min: v => `Sales growth ≥ ${v}%`,
+  roe_min: v => `ROE ≥ ${v}%`,
+  opm_min: v => `OPM ≥ ${v}%`,
+  roce_min: v => `ROCE ≥ ${v}%`,
+  debt_to_equity_max: v => `D/E ≤ ${v}`,
+  promoter_holding_min: v => `Promoter ≥ ${v}%`,
+  pe_max: v => `P/E ≤ ${v}`,
+  exclude_pledged: v => (v ? "No pledged shares" : null),
+  dividend_yield_min: v => `Div yield ≥ ${v}%`,
+  market_cap_min: v => `Mkt cap ≥ ₹${inr(v)} Cr`,
+  market_cap_max: v => `Mkt cap ≤ ₹${inr(v)} Cr`,
+  fii_holding_min: v => `FII ≥ ${v}%`,
+  dii_holding_min: v => `DII ≥ ${v}%`,
+  net_net: v => (v ? "Below net current assets" : null),
+};
+export function presetRules(p, meta) {
+  if (Array.isArray(p.filters)) {
+    return p.filters.map(f => {
+      const def = meta?.byId.get(f.id);
+      const name = def?.short || def?.label || f.id;
+      if (f.values) return f.values.length ? `${name}: ${f.values.join(", ")}` : null;
+      const unit = def?.unit === "%" ? "%" : "";
+      if (f.min != null && f.max != null) return `${name} ${inr(f.min)}–${inr(f.max)}${unit}`;
+      if (f.min != null) return `${name} ≥ ${inr(f.min)}${unit}`;
+      if (f.max != null) return `${name} ≤ ${inr(f.max)}${unit}`;
+      return null;
+    }).filter(Boolean);
+  }
+  return Object.entries(p.criteria ?? {}).map(([k, v]) => CRITERIA[k]?.(v)).filter(Boolean);
+}
+
+// The grid's cards each have a colour of their own, so the page reads as a
+// set of distinct screens rather than one repeated tile; your own are teal.
+const HUES = {
+  high_quality_compounders: "#00E0BE",
+  dividend_aristocrats: "#F5B83D",
+  undervalued_growth: "#A78BFA",
+  defensive_bluechips: "#6FA0FF",
+  small_cap_multibaggers: "#FF7A9A",
+  ofss_style_filter: "#FACC15",
+  momentum_growth: "#FB923C",
+  turnaround_plays: "#38BDF8",
+  psu_value: "#818CF8",
+  dividend_growth: "#4ADE80",
+  fii_favorites: "#22D3EE",
+  dii_backed: "#C084FC",
+  net_net_value: "#F472B6",
+  up_every_timeframe: "#34D65C",
+};
+const hueOf = p => HUES[p.id] ?? "var(--accent)";
+
+// layout: "strip" — one scrolling row (the original); "stack" — a phone's list;
+// "grid" — Discover's first page on a computer: big cards with the rules, and
+// how many stocks each matches at the latest close (counted by the server, one
+// strategy after another, so the page itself isn't held up)
+export default function PresetCards({ onSelect, activePresetId, onSavePreset, onUpdatePreset, onRenamePreset, onDuplicatePreset, layout = "strip", meta = null, onCount = null }) {
+  const stacked = layout === "stack";
+  const grid = layout === "grid";
+  const [counts, setCounts] = useState({});
   const [presets, setPresets] = useState([]);
   const [customPresets, setCustomPresets] = useState(loadCustomPresets);
   const [menuOpen, setMenuOpen] = useState(null);
@@ -60,9 +124,29 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
 
   const allPresets = [...presets, ...customPresets];
 
+  useEffect(() => { if (presets.length) onCount?.(presets.length + customPresets.length); }, [presets.length, customPresets.length, onCount]);
+
+  const countKey = grid || stacked ? JSON.stringify(allPresets.map(p => [p.id, p.filters])) : null;
+  useEffect(() => {
+    if (!(grid || stacked) || !allPresets.length) return;
+    let stop = false;
+    (async () => {
+      for (const p of allPresets) {
+        if (stop) return;
+        if (!Array.isArray(p.filters)) continue;
+        try {
+          const res = await api.screen({ filters: p.filters, countOnly: true });
+          if (!stop) setCounts(c => ({ ...c, [p.id]: res.matched }));
+        } catch { /* the card just goes without a count */ }
+      }
+    })();
+    return () => { stop = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [countKey]);
+
   return (
     // stacked: phones' strategy list (index.css .preset-stack), one under another
-    <div className={`preset-strip${stacked ? " preset-stack" : ""}`} style={{ marginBottom: stacked ? 0 : 24, position: "relative" }}>
+    <div className={`preset-strip${stacked ? " preset-stack" : grid ? " preset-grid" : ""}`} style={{ marginBottom: layout === "strip" ? 24 : 0, position: "relative" }}>
       <div className="preset-scroll" style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 6, scrollbarWidth: "none", maskImage: "linear-gradient(to right, transparent 0, black 0, black calc(100% - 48px), transparent 100%)", WebkitMaskImage: "linear-gradient(to right, transparent 0, black 0, black calc(100% - 48px), transparent 100%)" }}>
         <style>{`.preset-scroll::-webkit-scrollbar{display:none}`}</style>
 
@@ -70,8 +154,31 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
           const active = p.id === activePresetId;
           const isCustom = !!p.custom;
 
+          const rules = grid ? presetRules(p, meta) : [];
+          const count = counts[p.id];
           return (
             <div key={p.id} className="preset-card-wrap" style={{ position: "relative", flexShrink: 0 }}>
+              {grid ? (
+                <button type="button" onClick={() => onSelect(p)} className="sc-card" aria-pressed={active} style={{ "--hue": hueOf(p) }}>
+                  <span className="sc-top">
+                    <span className="sc-icon"><PresetIcon preset={p} size={20} strokeWidth={2} /></span>
+                    <span className="sc-name">{p.name}{isCustom && <span className="sc-tag">Yours</span>}</span>
+                  </span>
+                  {rules.length > 0 && (
+                    <span className="sc-rules">
+                      {rules.slice(0, 3).map(r => <span key={r} className="sc-rule">{r}</span>)}
+                      {rules.length > 3 && <span className="sc-more">+{rules.length - 3} more</span>}
+                    </span>
+                  )}
+                  <span className="sc-desc">{p.description}</span>
+                  <span className="sc-foot">
+                    <span className="sc-count">
+                      {count == null ? <span className="sc-skel" aria-hidden="true" /> : <><b>{count.toLocaleString("en-IN")}</b> {count === 1 ? "stock matches" : "stocks match"}</>}
+                    </span>
+                    <span className="sc-go" aria-hidden="true"><ArrowRight size={17} /></span>
+                  </span>
+                </button>
+              ) : (
               <button
                 type="button"
                 onClick={() => onSelect(p)}
@@ -79,6 +186,7 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
                 className="preset-card"
                 aria-pressed={active}
                 style={{
+                  "--hue": hueOf(p),
                   flexShrink: 0,
                   width: 156,
                   padding: "14px 14px 13px",
@@ -118,7 +226,14 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
                 <span className="preset-desc" style={{ fontSize: 11.5, color: "var(--t3)", lineHeight: 1.45, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
                   {p.description}
                 </span>
+                {/* A phone's list: how many match, by the arrow */}
+                {stacked && (
+                  <span className="preset-count">
+                    {count == null ? <span className="sc-skel" style={{ width: 28 }} aria-hidden="true" /> : <><b>{count.toLocaleString("en-IN")}</b> stocks</>}
+                  </span>
+                )}
               </button>
+              )}
 
               {isCustom && (
                 <button

@@ -1,6 +1,6 @@
 // Edge cases from the test plan: double submits, long input, a session that
 // ends mid-use, the back button, watchlist-only screening, keyboard and phone.
-import { test, expect } from "./fixtures.js";
+import { test, expect, openStocks } from "./fixtures.js";
 
 test("F05-E1 double-clicking Add to Portfolio adds one holding", async ({ page, account, baseURL }) => {
   await page.goto("/");
@@ -56,7 +56,7 @@ test("F01-E3 a session that ends mid-use returns to sign-in, not a broken page",
 
 test("F03-E1 back and forward move between Discover and a company", async ({ page, account }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Tata Consultancy Services Limited" }).or(page.getByRole("checkbox", { name: /^Compare / }).first()).first().waitFor();
+  await openStocks(page);
   await page.goto("/stock/HDFCBANK");
   await expect(page.getByRole("heading", { level: 2, name: /HDFC Bank/ })).toBeVisible();
   await page.goBack();
@@ -69,6 +69,7 @@ test("F02-E2 Watchlist only screens just the watched companies", async ({ page, 
   const req = page.context().request;
   for (const t of ["TCS", "SBIN"]) expect((await req.post(`${baseURL}/api/watchlist`, { data: { ticker: t } })).ok()).toBeTruthy();
   await page.goto("/");
+  await openStocks(page);
   await page.getByRole("combobox").filter({ has: page.getByRole("option", { name: "All sectors" }) }).selectOption("All sectors");
   await page.getByRole("button", { name: /Watchlist only/ }).click();
   const rows = page.getByRole("checkbox", { name: /^Compare / });
@@ -77,9 +78,9 @@ test("F02-E2 Watchlist only screens just the watched companies", async ({ page, 
 
 test("F02-E3 keyboard only: / focuses search, Enter opens a company", async ({ page, account }) => {
   await page.goto("/");
-  await page.getByRole("checkbox", { name: /^Compare / }).first().waitFor();
+  await page.getByRole("heading", { name: "Strategies" }).waitFor();
   await page.keyboard.press("/");
-  await expect(page.getByRole("textbox", { name: "Search any stock by name or symbol" })).toBeFocused();
+  await expect(page.getByRole("combobox", { name: "Search any stock by name or symbol" })).toBeFocused();
   await page.keyboard.type("Infosys");
   await page.getByText(/Infosys/).first().waitFor();
   await page.keyboard.press("ArrowDown");
