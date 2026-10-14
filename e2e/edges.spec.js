@@ -79,7 +79,7 @@ test("F02-E3 keyboard only: / focuses search, Enter opens a company", async ({ p
   await page.goto("/");
   await page.getByRole("checkbox", { name: /^Compare / }).first().waitFor();
   await page.keyboard.press("/");
-  await expect(page.getByPlaceholder("Search any stock by name or symbol…")).toBeFocused();
+  await expect(page.getByRole("textbox", { name: "Search any stock by name or symbol" })).toBeFocused();
   await page.keyboard.type("Infosys");
   await page.getByText(/Infosys/).first().waitFor();
   await page.keyboard.press("ArrowDown");

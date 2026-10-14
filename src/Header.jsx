@@ -1,13 +1,12 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Compass, Star, BriefcaseBusiness, ChartLine, Bell, Sun, Moon, Zap } from "lucide-react";
-import { api } from "./api.js";
 import { useWatchlist } from "./watchlist.js";
 import { portfolioStore, alertsStore } from "./stores.js";
 import StockSearchBar from "./StockSearchBar.jsx";
 import AccountMenu from "./AccountMenu.jsx";
 
-// The original's sticky header (stock-screener src/Discovery.jsx): logo, stat
-// chips and theme switch, the search bar, then the five tabs with counts. On
+// The original's sticky header (stock-screener src/Discovery.jsx): logo,
+// search, theme switch and account in one row, then the tabs with counts. On
 // phones the tabs move to a bottom bar (BottomTabBar) and the header scrolls
 // away.
 
@@ -42,15 +41,8 @@ export function useTabBadges() {
   };
 }
 
-function compact(n) {
-  if (n == null) return "—";
-  return n >= 1000 ? `${(n / 1000).toFixed(1)}K` : String(n);
-}
-
 export default function Header({ tab, onTab, account, onLogout, onDeleted, onSearch, theme, onToggleTheme, onTour }) {
   const badges = useTabBadges();
-  const [stats, setStats] = useState(null);
-  useEffect(() => { api.stats().then(setStats).catch(() => {}); }, []);
 
   // --header-h: how much of the top the pinned header covers, so bars pinned
   // below it (the stock page's action bar) sit under it at any width — 0 on
@@ -72,34 +64,31 @@ export default function Header({ tab, onTab, account, onLogout, onDeleted, onSea
   return (
     <div ref={ref} className="app-header discovery-header-sticky" style={{ position: "sticky", top: 0, zIndex: 100, background: HEADER_BG[theme] ?? HEADER_BG.dark, borderBottom: "1px solid var(--bdr2)" }}>
       <div style={{ padding: "0 var(--page-x)" }}>
-        <div style={{ padding: "12px 0" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-            <a href="/" aria-label="Stockwise India home" onClick={e => { e.preventDefault(); onTab("discover"); }} style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, flexShrink: 1, cursor: "pointer", color: "inherit", textDecoration: "none" }}>
-              <img src="/stockwise-india-icon.svg" alt="" style={{ width: 32, height: 32, borderRadius: 9, flexShrink: 0 }} />
-              <div style={{ minWidth: 0 }}>
-                <h1 style={{ fontSize: 17, fontWeight: 700, margin: 0, color: "var(--t1)", letterSpacing: "-0.03em", lineHeight: 1.2 }}>
-                  Stock<span style={{ color: "var(--brand-wise)" }}>wise</span> <span style={{ color: "var(--t3)", fontWeight: 500 }}>India</span>
-                </h1>
-                <p className="hide-phone" style={{ fontSize: 11, color: "var(--t3)", margin: 0, letterSpacing: "-0.01em", whiteSpace: "nowrap" }}>Indian market · NSE filings</p>
-              </div>
-            </a>
-
-            <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
-              {[[stats?.strategies ?? "—", "Presets"], [stats?.filters ?? "—", "Filters"], [compact(stats?.companies), "Stocks"]].map(([v, l]) => (
-                <div key={l} className="stat-chip" style={{ padding: "4px 10px", borderRadius: 8, background: "var(--s2)", border: "1px solid var(--bdr)", display: "flex", alignItems: "baseline", gap: 4 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "var(--t1)", fontVariantNumeric: "tabular-nums" }}>{v}</span>
-                  <span style={{ fontSize: 11, color: "var(--t3)" }}>{l}</span>
-                </div>
-              ))}
-              <button onClick={onToggleTheme} title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"} aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-                style={{ width: 32, height: 32, borderRadius: 8, background: "var(--s2)", border: "1px solid var(--bdr)", color: "var(--t2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: 0 }}>
-                {theme === "dark" ? <Sun size={16} strokeWidth={2} /> : <Moon size={16} strokeWidth={2} />}
-              </button>
-              <AccountMenu account={account} onLogout={onLogout} onDeleted={onDeleted} onTour={onTour} />
+        {/* One row: logo, search, theme and account. The search sits beside
+            the name rather than in a bar of its own, and the count chips
+            (presets, filters, stocks) are gone. On a phone the search takes
+            its own row under the name (index.css .app-header-row). */}
+        <div className="app-header-row" style={{ display: "flex", alignItems: "center", gap: 20, padding: "10px 0" }}>
+          <a href="/" aria-label="Stockwise India home" onClick={e => { e.preventDefault(); onTab("discover"); }} style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0, cursor: "pointer", color: "inherit", textDecoration: "none" }}>
+            <img src="/stockwise-india-icon.svg" alt="" style={{ width: 32, height: 32, borderRadius: 9, flexShrink: 0 }} />
+            <div style={{ minWidth: 0 }}>
+              <h1 style={{ fontSize: 17, fontWeight: 700, margin: 0, color: "var(--t1)", letterSpacing: "-0.03em", lineHeight: 1.2, whiteSpace: "nowrap" }}>
+                Stock<span style={{ color: "var(--brand-wise)" }}>wise</span> <span style={{ color: "var(--t3)", fontWeight: 500 }}>India</span>
+              </h1>
+              <p className="hide-phone" style={{ fontSize: 11, color: "var(--t3)", margin: 0, letterSpacing: "-0.01em", whiteSpace: "nowrap" }}>Indian market · NSE filings</p>
             </div>
+          </a>
+
+          <div data-tour="search" className="app-header-search" style={{ flex: "1 1 auto", maxWidth: 560, minWidth: 0 }}>
+            <StockSearchBar onAnalyze={onSearch} placeholder="Search stocks" />
           </div>
-          <div data-tour="search" style={{ marginTop: 8 }}>
-            <StockSearchBar onAnalyze={onSearch} placeholder="Search any stock by name or symbol…" />
+
+          <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0, marginLeft: "auto" }}>
+            <button onClick={onToggleTheme} title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"} aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              style={{ width: 32, height: 32, borderRadius: 8, background: "var(--s2)", border: "1px solid var(--bdr)", color: "var(--t2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: 0 }}>
+              {theme === "dark" ? <Sun size={16} strokeWidth={2} /> : <Moon size={16} strokeWidth={2} />}
+            </button>
+            <AccountMenu account={account} onLogout={onLogout} onDeleted={onDeleted} onTour={onTour} />
           </div>
         </div>
 
