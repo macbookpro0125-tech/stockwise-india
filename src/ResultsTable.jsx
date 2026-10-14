@@ -78,7 +78,7 @@ function MenuButton({ label, menu }) {
         className="column-menu-btn" data-on={filtered || open || undefined}>
         <Icon size={filtered ? 12 : 14} strokeWidth={2.2} aria-hidden="true" fill={filtered ? "currentColor" : "none"} />
       </button>
-      {open && <ColumnMenu anchor={ref.current} label={label} text={menu.text} def={menu.def} filter={menu.filter} onSort={menu.onSort} onApply={menu.onApply} onClose={() => setOpen(false)} />}
+      {open && <ColumnMenu anchor={ref.current} label={label} text={menu.text} def={menu.def} filter={menu.filter} onSort={menu.onSort} onThen={menu.onThen} onApply={menu.onApply} onClose={() => setOpen(false)} />}
     </>
   );
 }
@@ -217,8 +217,20 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
       <BellIcon />
     </button>
   );
-  const [sortBy, setSortBy] = useState("quality");
-  const [sortDir, setSortDir] = useState("desc");
+  // Sort levels, as Excel's "Sort by … then by …": the first decides, each
+  // next one orders the rows the ones before leave level. Starts as the order
+  // the table always used, now shown and changeable.
+  const [sortKeys, setSortKeys] = useState([{ col: "quality", dir: "desc" }, { col: "overall", dir: "desc" }, { col: "piotroski", dir: "desc" }]);
+  // (only the levels on columns the table has: while it loads, or after a
+  // column is taken off, the others wait rather than being thrown away —
+  // see activeKeys below)
+  // Sort by one column only (a header click, the Sort box, a column's menu)
+  const setPrimary = (col, dir) => setSortKeys([{ col, dir }]);
+  const setSortDir = next => setSortKeys(ks => [{ ...ks[0], dir: typeof next === "function" ? next(ks[0].dir) : next }, ...ks.slice(1)]);
+  // Add (or change) a "then by" level
+  const thenBy = (col, dir) => setSortKeys(ks => (ks[0].col === col ? ks : [...ks.filter(k => k.col !== col), { col, dir }]));
+  const flipLevel = col => setSortKeys(ks => ks.map(k => (k.col === col ? { ...k, dir: k.dir === "asc" ? "desc" : "asc" } : k)));
+  const dropLevel = col => setSortKeys(ks => (ks.length > 1 && ks[0].col !== col ? ks.filter(k => k.col !== col) : ks));
   // A column's ▾ menu: sort to a set direction, or set the column's filter —
   // the same { id, min, max } the sidebar edits (none when both are empty)
   const menuFor = (col, filterId, label) => {
@@ -226,7 +238,8 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
     return {
       def,
       filter: def ? (filters ?? []).find(f => f.id === filterId) : null,
-      onSort: dir => { setSortBy(col); setSortDir(dir); },
+      onSort: dir => setPrimary(col, dir),
+      onThen: sortBy === col ? null : dir => thenBy(col, dir),
       onApply: (min, max) => {
         const list = filters ?? [];
         const next = { id: filterId, min, max };
@@ -240,8 +253,8 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
   // Net-net results are most useful ordered by discount to NCAV (cheapest first),
   // so the deepest Graham bargains surface above shallower net-nets.
   useEffect(() => {
-    if (netNet) { setSortBy("ncavPct"); setSortDir("asc"); }
-    else if (sortBy === "ncavPct") { setSortBy("quality"); setSortDir("desc"); }
+    if (netNet) { setPrimary("ncavPct", "asc"); }
+    else if (sortBy === "ncavPct") setPrimary("quality", "desc");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [netNet, matches]);
 
@@ -280,20 +293,23 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
   // "Sort by" beside the count — the only way to sort on a phone, where
   // there are no column headers; on a computer it follows header clicks
   const sortOptions = [
-    ["quality", "Quality score"], ["overall", "Research score"],
+    ["quality", "Quality"], ["overall", "Research"],
     ...(netNet ? [["ncavPct", "Discount to NCAV"]] : []),
     ...columns.map(def => [def.id, def.short ?? def.label]),
     ["cmp", "Price"], ["ret1d", "1-day change"], ["name", "Name"],
   ].filter(([id], i, all) => all.findIndex(([other]) => other === id) === i);
-  const pickSort = col => { setSortBy(col); setSortDir(col === "name" ? "asc" : "desc"); };
-  // Sorted by a column that has since been taken off: back to Quality
-  const sortKnown = sortOptions.some(([id]) => id === sortBy);
-  useEffect(() => { if (!sortKnown) { setSortBy("quality"); setSortDir("desc"); } }, [sortKnown]);
-  const dirLabel = sortBy === "name" ? (sortDir === "asc" ? "A to Z" : "Z to A") : (sortDir === "desc" ? "Highest first" : "Lowest first");
+  const pickSort = col => setPrimary(col, col === "name" ? "asc" : "desc");
+  // The levels in use: those on a column the table has (the columns load
+  // after the first render, and can be taken off); with none left, Quality
+  const known = id => sortOptions.some(([o]) => o === id);
+  const kept = sortKeys.filter(k => known(k.col));
+  const activeKeys = kept.length ? kept : [{ col: "quality", dir: "desc" }];
+  const sortBy = activeKeys[0].col, sortDir = activeKeys[0].dir;
+  const optionLabel = id => sortOptions.find(([o]) => o === id)?.[1] ?? id;
 
   const handleSort = col => {
     if (sortBy === col) setSortDir(d => (d === "asc" ? "desc" : "asc"));
-    else { setSortBy(col); setSortDir("desc"); }
+    else setPrimary(col, "desc");
   };
 
   // A column's value: from the metrics the screen was asked for, else the
@@ -318,14 +334,16 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
   // Compared as shown: two companies that both read Quality 93 are level,
   // and the next score decides between them (below)
   const shownDecimals = key => (key === "quality" || key === "overall" ? 0 : columns.find(d => d.id === key)?.decimals ?? null);
-  const sortVal = s => {
-    const v = valueFor(s, sortBy), d = shownDecimals(sortBy);
+  const sortVal = (s, key = sortBy) => {
+    const v = valueFor(s, key), d = shownDecimals(key);
     return typeof v === "number" && Number.isFinite(v) && d != null ? Number(v.toFixed(d)) : v;
   };
   // Level on the sort: Quality first, then Research, then Piotroski — so
   // "Quality, highest first" lists the 93s by their research score, and a
   // Piotroski sort lists each 9/9, 8/9 … group by quality
-  const tieKeys = sortBy === "quality" ? ["overall", "piotroski"] : sortBy === "overall" ? ["quality", "piotroski"] : ["quality", "overall"];
+  // (after the levels chosen above it, which it skips)
+  const tieKeys = (sortBy === "quality" ? ["overall", "piotroski"] : sortBy === "overall" ? ["quality", "piotroski"] : ["quality", "overall"])
+    .filter(k => !activeKeys.some(l => l.col === k));
   const breakTie = (a, b) => {
     for (const key of [...tieKeys, "roce"]) {
       const av = valueFor(a, key), bv = valueFor(b, key);
@@ -338,13 +356,20 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
 
   // Blanks go last whichever way a column sorts: as -Infinity they led every
   // ascending sort — ~300 loss-makers with no P/E above the cheapest stock
-  const sorted = [...filtered].sort((a, b) => {
-    const av = sortVal(a), bv = sortVal(b);
-    const aBlank = av == null || (typeof av === "number" && !Number.isFinite(av) && sortBy !== "ncavPct");
-    const bBlank = bv == null || (typeof bv === "number" && !Number.isFinite(bv) && sortBy !== "ncavPct");
+  const compareOn = (a, b, { col, dir }) => {
+    const av = sortVal(a, col), bv = sortVal(b, col);
+    const aBlank = av == null || (typeof av === "number" && !Number.isFinite(av) && col !== "ncavPct");
+    const bBlank = bv == null || (typeof bv === "number" && !Number.isFinite(bv) && col !== "ncavPct");
     if (aBlank || bBlank) return aBlank === bBlank ? 0 : aBlank ? 1 : -1;
-    if (av === bv) return breakTie(a, b);
-    return sortDir === "asc" ? (av > bv ? 1 : -1) : (av < bv ? 1 : -1);
+    if (av === bv) return 0;
+    return dir === "asc" ? (av > bv ? 1 : -1) : (av < bv ? 1 : -1);
+  };
+  const sorted = [...filtered].sort((a, b) => {
+    for (const level of activeKeys) {
+      const c = compareOn(a, b, level);
+      if (c) return c;
+    }
+    return breakTie(a, b);
   });
 
   const visible = sorted.slice(0, visibleCount);
@@ -376,7 +401,8 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
     setExporting(true);
     setExportError(null);
     try {
-      const sortLabel = `${sortOptions.find(([id]) => id === sortBy)?.[1] ?? "Quality score"}, ${dirLabel.toLowerCase()}`;
+      // Every level, as the screen shows it: "Quality, highest first, then Research, highest first"
+      const sortLabel = activeKeys.map(k => `${optionLabel(k.col)}, ${k.col === "name" ? (k.dir === "asc" ? "A to Z" : "Z to A") : k.dir === "desc" ? "highest first" : "lowest first"}`).join(", then ");
       const { exportDiscoverExcel } = await import("./exportExcel.js");
       await exportDiscoverExcel(sorted, { pricesDate: snapshot?.pricesDate, extraColumns, screen: queryUsed || "", sortLabel });
     } catch {
@@ -431,18 +457,6 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
           </div>
           <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
             {exportError && <span style={{ fontSize: 11, color: "var(--red)" }}>{exportError}</span>}
-            {!loading && (matches?.length ?? 0) > 1 && (
-              <div className="sort-control" style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                <select value={sortBy} onChange={e => pickSort(e.target.value)} aria-label="Sort by"
-                  style={{ height: 32, padding: "0 8px", borderRadius: 8, border: "1px solid var(--bdr2)", background: "var(--s2)", color: "var(--t1)", fontSize: 12.5, fontFamily: "inherit", cursor: "pointer", maxWidth: 190 }}>
-                  {sortOptions.map(([id, label]) => <option key={id} value={id}>Sort: {label}</option>)}
-                </select>
-                <button type="button" onClick={() => setSortDir(d => (d === "asc" ? "desc" : "asc"))} title={dirLabel} aria-label={`${dirLabel} — tap to reverse`} className="btn-ghost"
-                  style={{ height: 32, padding: "0 10px", fontSize: 12, gap: 4, whiteSpace: "nowrap" }}>
-                  {sortDir === "desc" ? <ArrowDown size={14} /> : <ArrowUp size={14} />}{dirLabel}
-                </button>
-              </div>
-            )}
             {selected.size >= 2 && (
               <button onClick={() => setShowCompare(true)} className="btn-primary" style={{ height: 32, padding: "0 14px", fontSize: 12 }}>
                 Compare {selected.size}
@@ -474,6 +488,53 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
               </>
             )}
           </div>
+        </div>
+      )}
+
+      {/* ── The sort order, Excel's "Sort by … then by …": each level after the
+             first orders the rows the ones before leave level. Tap a level
+             to flip it, × to drop it, "+ Then by" to add one ── */}
+      {!loading && (matches?.length ?? 0) > 1 && (
+        <div className="sort-levels" role="group" aria-label="Sort order">
+          <span style={{ color: "var(--t3)" }}>Sort by</span>
+          {activeKeys.map((k, i) => {
+            const label = optionLabel(k.col);
+            const dirWord = k.col === "name" ? (k.dir === "asc" ? "A to Z" : "Z to A") : (k.dir === "desc" ? "Highest first" : "Lowest first");
+            if (i === 0) return (
+              // The first level: which column (the select over its label, as
+              // the old "Sort:" box) and which way (the arrow beside it)
+              <span key={k.col} className="sort-level">
+                <label className="sort-level-btn sort-level-pick" title="Sort by another column">
+                  <span aria-hidden="true">{label}</span><ChevronDown size={12} aria-hidden="true" />
+                  <select value={k.col} aria-label="Sort by" onChange={e => pickSort(e.target.value)}>
+                    {sortOptions.map(([id, l]) => <option key={id} value={id}>{l}</option>)}
+                  </select>
+                </label>
+                <button type="button" onClick={() => setSortDir(d => (d === "asc" ? "desc" : "asc"))} aria-label={`${dirWord} — tap to reverse`} title="Tap to reverse" className="sort-level-btn" style={{ marginLeft: 4, fontWeight: 500 }}>
+                  {k.dir === "desc" ? <ArrowDown size={12} aria-hidden="true" /> : <ArrowUp size={12} aria-hidden="true" />}{dirWord}
+                </button>
+              </span>
+            );
+            return (
+              <span key={k.col} className="sort-level">
+                <span aria-hidden="true" style={{ color: "var(--t3)", margin: "0 2px" }}>then</span>
+                <button type="button" onClick={() => flipLevel(k.col)}
+                  aria-label={`Then by ${label}, ${dirWord} — tap to reverse`} title="Tap to reverse" className="sort-level-btn">
+                  {label} {k.dir === "desc" ? <ArrowDown size={12} aria-hidden="true" /> : <ArrowUp size={12} aria-hidden="true" />}
+                </button>
+                <button type="button" onClick={() => dropLevel(k.col)} aria-label={`Stop sorting by ${label}`} className="sort-level-x">×</button>
+              </span>
+            );
+          })}
+          {sortOptions.some(([id]) => !activeKeys.some(k => k.col === id)) && (
+            <label className="sort-level-add">
+              <span aria-hidden="true">+ Then by</span>
+              <select value="" aria-label="Then sort by" onChange={e => { if (e.target.value) thenBy(e.target.value, e.target.value === "name" ? "asc" : "desc"); }}>
+                <option value="">Then by…</option>
+                {sortOptions.filter(([id]) => !activeKeys.some(k => k.col === id)).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+              </select>
+            </label>
+          )}
         </div>
       )}
 
