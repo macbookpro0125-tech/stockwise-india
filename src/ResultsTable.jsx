@@ -187,6 +187,7 @@ function StarButton({ symbol, price, watched, size = 30 }) {
 export default function ResultsTable({ matches, loading, onAnalyze, totalMatches, queryUsed, unsupported = [], notes = [], executionTime, snapshot, netNet = false, noun = "stocks", emptyTitle = "No stocks matched your criteria", emptyHint = "Try relaxing some filters", columns = [], onEditColumns = null, filteredIds = [], meta = null }) {
   const watchlist = useWatchlist();
   const [alertFor, setAlertFor] = useState(null);
+  const [showNotes, setShowNotes] = useState(false);
   const bell = (stock, size = 30) => (
     <button
       onClick={() => setAlertFor({ symbol: stock.symbol, name: stock.name, cmp: stock.cmp, p1: stock.safeBuyPrice, p2: stock.p2, p3: stock.p3 })}
@@ -376,6 +377,14 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                 <span style={{ color: "var(--t2)" }}> {(q || scoreFiltered ? filtered.length : totalMatches) === 1 ? noun.replace(/s$/, "") : noun}</span>
                 {(q || scoreFiltered) && filtered.length !== (matches?.length ?? 0) && <span style={{ color: "var(--t3)" }}> (filtered from {matches?.length})</span>}
                 {visible.length < sorted.length && <span style={{ color: "var(--t2)" }}> · showing <strong style={{ color: "var(--t1)" }}>{visible.length}</strong></span>}
+                {/* Why some companies are missing: an ⓘ beside the count, its
+                    text on hover and opened below on a click or tap */}
+                {notes.length > 0 && (
+                  <button type="button" onClick={() => setShowNotes(v => !v)} aria-expanded={showNotes} aria-label="Why some companies are left out" title={notes.join(" ")}
+                    style={{ display: "inline-flex", verticalAlign: "-2px", marginLeft: 6, padding: 2, border: 0, background: "none", color: showNotes ? "var(--t1)" : "var(--t3)", cursor: "pointer", borderRadius: 4 }}>
+                    <Info size={14} aria-hidden="true" />
+                  </button>
+                )}
                 {executionTime != null && <span className="hide-phone" style={{ color: "var(--t3)", marginLeft: 8, fontSize: 11, ...MONO }}>{(executionTime / 1000).toFixed(1)}s</span>}
                 {snapshot?.pricesDate && (
                   <span style={{ color: "var(--t3)", marginLeft: 8, fontSize: 11 }}>
@@ -494,16 +503,18 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
           }]} />
       )}
 
-      {/* ── The screen's filters, one chip each (describeFilters joins them with " · ") ── */}
+      {/* ── The screen's filters, one chip each (describeFilters joins them with " · ").
+          Only on a phone (index.css .filter-chips), where the filter sidebar is
+          behind a button; on a computer the sidebar beside the table lists them ── */}
       {queryUsed && !loading && (
-        <div className="filter-chips" style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: notes.length ? 8 : 14 }}>
+        <div className="filter-chips" style={{ flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
           {queryUsed.split(" · ").map(part => (
             <span key={part} style={{ fontSize: 12, color: "var(--t2)", background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 6, padding: "3px 9px", lineHeight: 1.5, ...MONO }}>{part}</span>
           ))}
         </div>
       )}
-      {notes.length > 0 && !loading && (
-        <div className="hide-phone" style={{ display: "flex", alignItems: "flex-start", gap: 6, fontSize: 12, color: "var(--t3)", marginBottom: 14, lineHeight: 1.5 }}>
+      {notes.length > 0 && !loading && showNotes && (
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 6, fontSize: 12, color: "var(--t3)", marginBottom: 14, lineHeight: 1.5 }}>
           <Info size={13} style={{ flexShrink: 0, marginTop: 2 }} />
           <div>{notes.map(n => <div key={n}>{n}</div>)}</div>
         </div>

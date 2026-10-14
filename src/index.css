@@ -435,6 +435,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   backdrop-filter: blur(16px) saturate(180%);
 }
 .bottom-tab-bar { display: none; }
+/* The active-filter chips show on a phone only (ResultsTable.jsx) */
+.filter-chips { display: none; }
 
 /* On a phone the header would hold a large share of the screen if pinned, so
    it scrolls away; its tabs move to a bar fixed at the bottom. */
@@ -543,7 +545,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 /* Phones: the screen's filters as one row that scrolls sideways, rather than
    a chip per line pushing the results down */
 @media (max-width: 640px) {
-  .filter-chips { flex-wrap: nowrap !important; overflow-x: auto; scrollbar-width: none; }
+  .filter-chips { display: flex !important; flex-wrap: nowrap !important; overflow-x: auto; scrollbar-width: none; }
   .filter-chips::-webkit-scrollbar { display: none; }
   .filter-chips > span { white-space: nowrap; flex-shrink: 0; }
 }
