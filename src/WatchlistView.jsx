@@ -155,7 +155,7 @@ export default function WatchlistView({ onOpenStock }) {
           const level = levelStatus(cmp, r);
           return (
             <div key={item.ticker} className={`wl-row${leaving.has(item.ticker) ? " leaving" : ""}`}>
-              <div style={{ padding: "14px 16px", borderRadius: 12, border: "1px solid var(--bdr2)", background: "var(--s2)", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+              <div className="glow" style={{ padding: "14px 16px", borderRadius: 12, border: "1px solid var(--bdr2)", background: "var(--s2)", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
                 <div style={{ flex: "1 1 140px", minWidth: 120 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 7, fontWeight: 600, fontSize: 14, color: "var(--t1)", letterSpacing: "-0.01em" }}><CompanyLogo symbol={item.ticker} size={18} />{name}</div>
                   <div style={{ fontSize: 10, color: "var(--t3)", marginTop: 2 }}>

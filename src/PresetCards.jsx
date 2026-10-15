@@ -174,7 +174,7 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
                 type="button"
                 onClick={() => onSelect(p)}
                 title={p.description}
-                className="preset-card"
+                className="preset-card glow"
                 aria-pressed={active}
                 style={{
                   "--hue": hueOf(p),

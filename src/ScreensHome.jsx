@@ -85,19 +85,19 @@ export default function ScreensHome({ meta, total, strategies, pricesDate, onSta
       </section>
 
       <section className="ap-tiles" aria-label="Ways to start">
-        <Reveal as="button" type="button" className="ap-tile ap-tile-dark" onClick={scrollToStrategies}>
+        <Reveal as="button" type="button" className="ap-tile ap-tile-dark glow" onClick={scrollToStrategies}>
           <span className="ap-tile-eyebrow">Strategies</span>
           <span className="ap-tile-title">Start from a classic.</span>
           <span className="ap-tile-sub">Quality compounders, dividend payers, deep value. Ready to run.</span>
           <span className="ap-tile-link">Browse strategies<ChevronRight size={17} aria-hidden="true" /></span>
         </Reveal>
-        <Reveal as="button" type="button" delay={1} className="ap-tile" onClick={onCreate}>
+        <Reveal as="button" type="button" delay={1} className="ap-tile glow" onClick={onCreate}>
           <span className="ap-tile-eyebrow">Your screen</span>
           <span className="ap-tile-title">Or make your own.</span>
           <span className="ap-tile-sub">Begin with the whole market. Add only what matters to you.</span>
           <span className="ap-tile-link">Create new screen<ChevronRight size={17} aria-hidden="true" /></span>
         </Reveal>
-        <Reveal as="button" type="button" delay={2} className="ap-tile" onClick={onBrowseFilters}>
+        <Reveal as="button" type="button" delay={2} className="ap-tile glow" onClick={onBrowseFilters}>
           <span className="ap-tile-eyebrow">Filters</span>
           <span className="ap-tile-title">{filters ?? "Every"} ways to look.</span>
           <span className="ap-tile-sub">Growth, value, quality, ownership, momentum. All in one place.</span>

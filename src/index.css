@@ -1280,3 +1280,34 @@ select {
 .sc2-roll-name em { flex-shrink: 0; padding: 1px 8px; border-radius: 6px; font-style: normal; font-size: 12px; font-weight: 700; color: var(--green); background: var(--green-dim); font-variant-numeric: tabular-nums; }
 @keyframes scRoll { from { opacity: 0; transform: translateY(70%); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .sc2-roll-name { animation: none; } }
+
+/* ── Hover glow, everywhere (asked for 16 Oct 2026: "the same kind of glow
+   wherever my cursor goes", after the Strategies tile's teal light) ──
+   Tokens, so every surface glows alike: --glow-color for cards and tiles (a
+   soft light under the pointer, glow.js), --glow-ring for buttons, fields
+   and tabs (too small for a light inside them). Teal in dark mode, the blue
+   accent in light. Mouse and trackpad only. */
+:root {
+  --glow-strength: 22%;
+  --glow-color: color-mix(in srgb, var(--accent) var(--glow-strength), transparent);
+  --glow-ring: 0 0 0 1px color-mix(in srgb, var(--accent) 38%, transparent), 0 0 20px -4px color-mix(in srgb, var(--accent) 55%, transparent);
+  --glow-ring-solid: 0 0 24px -2px color-mix(in srgb, var(--accent) 65%, transparent);
+}
+[data-theme="light"] { --glow-strength: 13%; }
+
+/* Cards and tiles: the light sits behind their content, above their own
+   background, and fades in where the pointer is */
+.glow { position: relative; isolation: isolate; }
+.glow::after {
+  content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none;
+  background: radial-gradient(520px 340px at var(--gx, 50%) var(--gy, 0%), var(--glow-color), transparent 70%);
+  opacity: 0; transition: opacity 250ms ease;
+}
+.glow:focus-visible::after { opacity: 1; }
+
+@media (hover: hover) and (pointer: fine) {
+  .glow:hover::after { opacity: 1; }
+  .btn-ghost, .tb-btn, .tb-select, .sc-kind, .ap-btn, .btn-primary, .sd-action, .screen-back, select, .input-base { transition: box-shadow 200ms ease, background 150ms ease, border-color 150ms ease, color 150ms ease, transform 100ms ease-out; }
+  .btn-ghost:hover:not(:disabled), .tb-select:hover, .sc-kind:hover, .sd-action:not(:first-child):hover, select:hover, .input-base:hover { box-shadow: var(--glow-ring); border-color: color-mix(in srgb, var(--accent) 40%, var(--bdr2)); }
+  .btn-primary:hover:not(:disabled), .ap-btn:hover, .sd.ap .sd-action:first-child:hover { box-shadow: var(--glow-ring-solid); }
+}

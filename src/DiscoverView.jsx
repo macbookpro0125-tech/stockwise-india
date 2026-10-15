@@ -354,7 +354,7 @@ export default function DiscoverView({ onOpenStock }) {
           const newScreen = () => { changeFilters([]); setActivePresetName("New screen"); setSideOpen(true); showStocks(); };
           // The screen already set comes first
           const continueCard = activeCount > 0 && (
-            <button type="button" onClick={showStocks} className="phone-continue" style={{ margin: isPhone ? "0 0 14px" : "0 0 28px" }}>
+            <button type="button" onClick={showStocks} className="phone-continue glow" style={{ margin: isPhone ? "0 0 14px" : "0 0 28px" }}>
               <span>
                 <span style={{ display: "block", fontSize: 14, fontWeight: 650, color: "var(--t1)" }}>Continue with your filters</span>
                 <span style={{ display: "block", fontSize: 12.5, color: "var(--t3)", marginTop: 2 }}>
