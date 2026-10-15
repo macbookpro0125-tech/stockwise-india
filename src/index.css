@@ -1055,3 +1055,87 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   .ls-live::after { animation: none; }
   .ls-bar i, .ls-result, .ls-step { transition: none; }
 }
+
+/* ── The stock page, Apple-style (StockDetail .sd.ap, StockSide, StockSnapshot) ──
+   Same face and ease as Discover's first page; every var(--font) inside
+   follows the system face. Tiles without borders, larger type, an
+   iPhone-settings list for the scorecard, a frosted bar, and sections that
+   rise into place 1:1 with the scroll. */
+.ap { --font: var(--ap-font); }
+.sd.ap .sd-card, .sd.ap .sd-snap-card, .sd.ap .sd-metrics { border: 0; border-radius: 26px; box-shadow: none; }
+.sd.ap .sd-card { padding: 28px; }
+
+/* Summary: name, a large price, returns as plain figures, a pill and a link */
+.sd.ap .sd-id-name h2 { font-size: 21px; font-weight: 600; letter-spacing: -0.015em; line-height: 1.25; }
+.sd.ap .sd-id-name span { font-size: 13px; }
+.sd.ap .sd-price { margin-top: 24px; }
+.sd.ap .sd-price strong { font-size: 56px; font-weight: 700; letter-spacing: -0.045em; }
+.sd.ap .sd-price span { font-size: 14px; }
+.sd.ap .sd-returns { gap: 26px; margin-top: 20px; }
+.sd.ap .sd-returns span { flex-direction: column; align-items: flex-start; gap: 2px; padding: 0; background: none; }
+.sd.ap .sd-returns b { font-size: 19px; font-weight: 600; letter-spacing: -0.01em; }
+.sd.ap .sd-returns em { order: 2; margin: 0; font-size: 12px; font-weight: 500; color: var(--t3); }
+.sd.ap .sd-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 14px 24px; margin-top: 26px; }
+.sd.ap .sd-action { transition: background 200ms, transform 100ms ease-out; }
+.sd.ap .sd-action:first-child { height: 44px; padding: 0 22px; border: 0; border-radius: 980px; background: var(--accent); color: var(--on-accent); font-size: 15px; font-weight: 500; }
+.sd.ap .sd-action:first-child.on { background: var(--s3); color: var(--t1); }
+.sd.ap .sd-action:active { transform: scale(0.97); }
+.sd.ap .sd-action-link { height: auto; padding: 0; gap: 0; border: 0; background: none; color: var(--accent); font-size: 15px; font-weight: 400; }
+.sd.ap .sd-action-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* Scorecard as a grouped list: solid icon squares, the verdict on the right */
+.sd.ap .sd-card-title { font-size: 21px; letter-spacing: -0.02em; }
+.sd.ap .sd-scores li + li { border-top: 0; }
+.sd.ap .sd-score { position: relative; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 12px; padding: 12px 0; transition: opacity 100ms; }
+.sd.ap .sd-scores li + li .sd-score::before { content: ""; position: absolute; top: 0; left: 46px; right: 0; height: 1px; background: var(--bdr); }
+.sd.ap .sd-score-icon { width: 32px; height: 32px; border-radius: 8px; color: #fff; background: var(--tone); }
+.sd.ap .sd-tone-none .sd-score-icon { background: var(--t3); }
+.sd.ap .sd-score-head { font-size: 15px; font-weight: 500; }
+.sd.ap .sd-score:hover .sd-score-head { color: var(--t1); }
+.sd.ap .sd-score-line { font-size: 12.5px; }
+.sd.ap .sd-score-word { font-size: 14px; color: var(--t3); white-space: nowrap; }
+.sd.ap .sd-score:active { opacity: 0.55; }
+
+/* Frosted bar with a text Back link and quiet tabs */
+.sd.ap .sd-bar { background: color-mix(in srgb, var(--bg) 76%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); border-bottom-color: var(--bdr); }
+.sd.ap .sd-back { height: auto; padding: 0 var(--sp-2) 0 0; border: 0; background: none; color: var(--accent); font-size: 14px; }
+.sd.ap .sd-back:hover { text-decoration: underline; text-underline-offset: 3px; }
+.sd.ap .sd-tab { font-size: 14px; }
+.sd.ap .sd-tab.on { color: var(--t1); }
+.sd.ap .sd-tab.on::after { background: var(--t1); height: 2px; }
+@media (prefers-reduced-transparency: reduce) { .sd.ap .sd-bar { background: var(--bg); -webkit-backdrop-filter: none; backdrop-filter: none; } }
+
+/* Two-tone section titles with room above */
+.sd.ap .sd-h2 { max-width: 26ch; margin: 96px 0 28px; font-size: clamp(30px, 3vw, 44px); line-height: 1.08; letter-spacing: -0.03em; }
+.sd.ap .sd-h2 span { color: var(--t3); }
+
+/* Overview: three tiles and the key figures set like a spec sheet */
+.sd.ap .sd-snap { gap: 20px; margin: 20px 0; }
+.sd.ap .sd-snap-card { padding: 30px 28px; }
+.sd.ap .sd-snap-icon { width: auto; height: auto; background: none; }
+.sd.ap .sd-snap-card h3 { margin: 14px 0 8px; font-size: 24px; letter-spacing: -0.025em; }
+.sd.ap .sd-snap-card p { font-size: 15px; line-height: 1.47; }
+.sd.ap .sd-tags span { font-size: 13px; }
+.sd.ap .sd-metrics { padding: 10px 14px; }
+.sd.ap .sd-metrics > div { border: 0; padding: 18px 16px; }
+.sd.ap .sd-metrics span { font-size: 13px; margin-bottom: 6px; }
+.sd.ap .sd-metrics strong { font-size: 30px; font-weight: 600; letter-spacing: -0.035em; }
+
+/* The page's existing panels (inline-styled cards) become the same soft tiles */
+.sd.ap .sd-main [style*="background: var(--s2)"][style*="border-radius: 12px"],
+.sd.ap .sd-main [style*="background: var(--s2)"][style*="border-radius: 14px"] { border-radius: 24px !important; border-color: transparent !important; box-shadow: none !important; }
+
+/* Motion: the summary arrives on load; sections rise in with the scroll */
+@keyframes apRise { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: no-preference) {
+  .sd.ap .sd-side > * { animation: apRise 900ms var(--ap-ease) both; }
+  .sd.ap .sd-side > *:nth-child(2) { animation-delay: 120ms; }
+  @supports (animation-timeline: view()) {
+    .sd.ap .sd-main .ss-section { animation: apRiseScroll linear both; animation-timeline: view(); animation-range: entry 0% entry 38%; }
+  }
+}
+@keyframes apRiseScroll { from { opacity: 0.15; transform: translateY(56px) scale(0.985); } to { opacity: 1; transform: none; } }
+/* The filings note above the valuation: quiet, like a footnote panel */
+.sd-note { margin-bottom: var(--sp-4); padding: var(--sp-4) var(--sp-5); border-radius: var(--r-lg); background: var(--s2); font-size: var(--fs-sm); line-height: 1.55; color: var(--t2); }
+.sd-note strong { color: var(--t1); font-weight: 600; }
+.sd.ap .sd-note { border-radius: 20px; }
