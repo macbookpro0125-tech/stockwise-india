@@ -39,3 +39,30 @@ export function useCountUp(target, run = true, ms = 900) {
   }, [target, run, ms]);
   return target == null ? null : v;
 }
+
+// Ties an element's look to the scroll, 1:1 and every frame (no easing lag,
+// so it can never fall behind or be "interrupted"): `apply(el, p)` gets p
+// from 0 (the element's top at the bottom of the window) to 1 (its top
+// `span` of the window higher up). Writes styles directly — no re-renders.
+export function useScrollScrub(apply, span = 0.75) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (reducedMotion()) { apply(el, 1); return; }
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const vh = window.innerHeight || 1;
+      const top = el.getBoundingClientRect().top;
+      apply(el, Math.min(1, Math.max(0, (vh - top) / (vh * span))));
+    };
+    const onScroll = () => { if (!frame) frame = requestAnimationFrame(update); };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => { cancelAnimationFrame(frame); window.removeEventListener("scroll", onScroll); window.removeEventListener("resize", onScroll); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return ref;
+}

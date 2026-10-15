@@ -1,128 +1,115 @@
-import { ArrowRight, Plus, SlidersHorizontal } from "lucide-react";
-import StrategyMark from "./StrategyMarks.jsx";
+import { ChevronRight } from "lucide-react";
 import LiveScreen from "./LiveScreen.jsx";
-import { useCountUp, useInView } from "./motion.js";
 import HowItWorks from "./HowItWorks.jsx";
+import Reveal from "./Reveal.jsx";
+import { useCountUp, useInView, useScrollScrub } from "./motion.js";
 
-// Discover's first page on a computer (asked for 15 Oct 2026, after a
-// screener's home of screens): a hero with what the screener covers and a way
-// in, three ways to start — the strategies, a screen of your own, the filter
-// list — each with a small picture of itself, then the strategies as cards
-// (`children`). Every figure here is the app's own: companies screened,
-// strategies, filters and the price date; nothing is made up.
-
-// A figure in the banner that counts up from zero
-function Stat({ value, label }) {
-  const n = useCountUp(typeof value === "number" ? value : null);
-  return <div><dt>{label}</dt><dd>{typeof value === "number" ? n.toLocaleString("en-IN") : value}</dd></div>;
-}
+// Discover's first page, set like a product page (asked for 15 Oct 2026: "like
+// the Apple website, wording and motion"): a centred headline over a large
+// picture of the product working — one real strategy narrowing the market —
+// that grows into place as you scroll; the figures in large type; three ways
+// in; then the strategies (`children`). Every figure is the app's own:
+// companies screened, filters, strategies and the price date.
 
 function fmtDate(iso) {
   if (!iso) return null;
-  return new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+  return new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" });
 }
 
-// compact: a phone — the hero in short, then the strategies (no tiles)
+// A large figure that counts up once it scrolls into view
+function Figure({ value, label, delay }) {
+  const [ref, inView] = useInView();
+  const n = useCountUp(typeof value === "number" ? value : null, inView, 1200);
+  return (
+    <div ref={ref} className={`ap-figure ap-reveal${inView ? " in" : ""}`} style={{ "--d": delay }}>
+      <span className="ap-figure-value">{typeof value === "number" ? n.toLocaleString("en-IN") : value ?? "—"}</span>
+      <span className="ap-figure-label">{label}</span>
+    </div>
+  );
+}
+
+// The product shot grows from 90% to full size, and lifts, as it scrolls up
+const growIn = (el, p) => {
+  el.style.transform = `translateY(${(1 - p) * 40}px) scale(${0.9 + 0.1 * p})`;
+  el.style.opacity = String(0.35 + 0.65 * p);
+};
+
+// compact: a phone — the headline, its buttons, then the strategies
 export default function ScreensHome({ meta, total, strategies, pricesDate, onStart, onCreate, onBrowseFilters, children, continueCard, compact = false }) {
   const filters = meta?.metrics?.length ?? null;
-  const [tilesRef, tilesIn] = useInView();
-  // Filters people reach for first, by their short names in the metric list
-  const chips = ["roce", "roe", "pe", "debtToEquity", "salesGrowth3y", "profitGrowth3y", "promoterPct", "divYield", "marketCapCr", "opm", "piotroski", "vsFairValue", "fiiPct", "priceToBook", "ret1y", "rsi14"]
-    .map(id => meta?.byId.get(id)?.short).filter(Boolean);
+  const shotRef = useScrollScrub(growIn, 0.8);
   const scrollToStrategies = () => document.getElementById("popular-strategies")?.scrollIntoView({ behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
 
+  const hero = (
+    <section className="ap-hero" aria-labelledby="ap-title">
+      <Reveal as="p" className="ap-eyebrow">Stockwise Screener</Reveal>
+      <Reveal as="h2" delay={1} id="ap-title" className="ap-title">Find the few worth owning.</Reveal>
+      <Reveal as="p" delay={2} className="ap-sub">
+        Every NSE company, scored on its own filings.{total ? <> Narrow {total.toLocaleString("en-IN")} down to the handful that fit.</> : null}
+      </Reveal>
+      <Reveal delay={3} className="ap-ctas">
+        <button type="button" className="ap-btn" onClick={onStart}>Start screening</button>
+        <HowItWorks plain label="See how it works" />
+      </Reveal>
+    </section>
+  );
+
   if (compact) return (
-    <div className="sh sh-compact">
-      <section className="sh-hero" aria-labelledby="sh-title">
-        <div className="sh-hero-grid" aria-hidden="true" />
-        <div className="sh-glow sh-glow-a" aria-hidden="true" />
-        <h2 id="sh-title" className="sh-title">Find the right stocks with <span>Stockwise Screener</span></h2>
-        <p className="sh-lead">{[total && `${total.toLocaleString("en-IN")} NSE companies`, strategies && `${strategies} strategies`, filters && `${filters} filters`].filter(Boolean).join(" · ")}</p>
-        <div className="sh-cta">
-          <button type="button" className="btn-primary sh-start" onClick={onStart}>Start screening <ArrowRight size={16} aria-hidden="true" /></button>
-          <HowItWorks label="How it works" style={{ height: 42, padding: "0 14px", fontSize: 13.5 }} />
-        </div>
-      </section>
+    <div className="ap ap-compact">
+      {hero}
       {continueCard}
       <section className="sh-section" aria-labelledby="sh-popular">
-        <h2 id="sh-popular" className="sh-compact-head">Popular strategies</h2>
+        <h2 id="sh-popular" className="ap-compact-head">Explore the strategies.</h2>
         {children}
       </section>
     </div>
   );
 
   return (
-    <div className="sh">
-      <section className="sh-hero" aria-labelledby="sh-title">
-        <div className="sh-hero-grid" aria-hidden="true" />
-        <div className="sh-glow sh-glow-a" aria-hidden="true" />
-        <div className="sh-glow sh-glow-b" aria-hidden="true" />
-        <div className="sh-hero-inner">
-          <span className="sh-eyebrow">NSE screener · refreshed every trading evening</span>
-          <h2 id="sh-title" className="sh-title">Find the right stocks with <span>Stockwise Screener</span></h2>
-          <p className="sh-lead">A quality score and a fair value for every NSE company, worked out from its own filings — and {filters ?? "over a hundred"} filters to narrow them down.</p>
-          <div className="sh-cta">
-            <button type="button" className="btn-primary sh-start" onClick={onStart}>Start screening <ArrowRight size={16} aria-hidden="true" /></button>
-            <HowItWorks label="How it works" style={{ height: 46, padding: "0 18px", fontSize: 14 }} />
-          </div>
-          <dl className="sh-stats">
-            <Stat value={total ?? "—"} label="companies" />
-            <Stat value={strategies ?? "—"} label="strategies" />
-            <Stat value={filters ?? "—"} label="filters" />
-            <Stat value={fmtDate(pricesDate) ?? "—"} label="latest prices" />
-          </dl>
-        </div>
+    <div className="ap">
+      {hero}
 
-        {/* One real strategy narrowing the market, step by step (LiveScreen.jsx) */}
-        <div className="sh-visual"><LiveScreen meta={meta} total={total} /></div>
+      {/* The product, working: a real strategy narrowing the market */}
+      <div className="ap-shot-wrap">
+        <div ref={shotRef} className="ap-shot"><LiveScreen meta={meta} total={total} /></div>
+      </div>
+
+      <section className="ap-band" aria-labelledby="ap-band-title">
+        <Reveal as="h2" id="ap-band-title" className="ap-h2">Built on the filings. <span>Not on the noise.</span></Reveal>
+        <div className="ap-figures">
+          <Figure value={total} label="NSE companies, each with a quality score" delay={0} />
+          <Figure value={filters} label="filters, from return on capital to promoter pledges" delay={1} />
+          <Figure value={strategies} label="ready-made strategies to start from" delay={2} />
+          <Figure value={fmtDate(pricesDate)} label="latest closing prices, refreshed every trading evening" delay={3} />
+        </div>
       </section>
 
-      {/* Three ways in, over the hero's lower edge */}
-      <div ref={tilesRef} className={`sh-tiles${tilesIn ? " in" : ""}`}>
-        <button type="button" className="sh-tile" onClick={scrollToStrategies}>
-          <div className="sh-tile-art" aria-hidden="true">
-            <div className="sh-mini sh-mini-back" />
-            <div className="sh-mini">
-              <div style={{ marginBottom: 8 }}><StrategyMark preset={{ id: "high_quality_compounders" }} size={24} /></div>
-              <div className="sh-mini-name">High Quality Compounders</div>
-              <div className="sh-mini-rules">Sales 3Y ≥ 10% · ROE 5Y ≥ 18% <b>+6 more</b></div>
-              <div className="sh-mini-note">Durable businesses with strong moats</div>
-            </div>
-            <span className="sh-badge">{strategies ?? ""} ready-made</span>
-          </div>
-          <span className="sh-tile-foot">Ready-made strategies <ArrowRight size={18} aria-hidden="true" /></span>
-        </button>
-
-        <button type="button" className="sh-tile sh-tile-hl" onClick={onCreate}>
-          <div className="sh-tile-art" aria-hidden="true">
-            <div className="sh-form">
-              <div className="sh-form-head">Your filters</div>
-              {[["Return on capital (ROCE)", "≥", "20", "%"], ["Debt to equity", "≤", "0.5", ""], ["Promoter holding", "≥", "40", "%"]].map(([n, op, v, u]) => (
-                <div key={n} className="sh-form-row"><span>{n}</span><span className="sh-form-val">{op} <b>{v}</b>{u}</span></div>
-              ))}
-              <div className="sh-form-add"><Plus size={12} /> Add filter</div>
-            </div>
-          </div>
-          <span className="sh-tile-foot">Create your own screen <ArrowRight size={18} aria-hidden="true" /></span>
-        </button>
-
-        <button type="button" className="sh-tile" onClick={onBrowseFilters}>
-          <div className="sh-tile-art sh-chips" aria-hidden="true">
-            {chips.map((c, i) => <span key={c} className={i === 0 || i === 3 ? "on" : ""}>{c}</span>)}
-          </div>
-          <span className="sh-tile-foot"><span>{filters ?? ""} filters <span className="sh-tile-sub">· growth, value, quality, ownership…</span></span> <SlidersHorizontal size={18} aria-hidden="true" /></span>
-        </button>
-      </div>
+      <section className="ap-tiles" aria-label="Ways to start">
+        <Reveal as="button" type="button" className="ap-tile ap-tile-dark" onClick={scrollToStrategies}>
+          <span className="ap-tile-eyebrow">Strategies</span>
+          <span className="ap-tile-title">Start from a classic.</span>
+          <span className="ap-tile-sub">Quality compounders, dividend payers, deep value. Ready to run.</span>
+          <span className="ap-tile-link">Browse strategies<ChevronRight size={17} aria-hidden="true" /></span>
+        </Reveal>
+        <Reveal as="button" type="button" delay={1} className="ap-tile" onClick={onCreate}>
+          <span className="ap-tile-eyebrow">Your screen</span>
+          <span className="ap-tile-title">Or make your own.</span>
+          <span className="ap-tile-sub">Begin with the whole market. Add only what matters to you.</span>
+          <span className="ap-tile-link">Create new screen<ChevronRight size={17} aria-hidden="true" /></span>
+        </Reveal>
+        <Reveal as="button" type="button" delay={2} className="ap-tile" onClick={onBrowseFilters}>
+          <span className="ap-tile-eyebrow">Filters</span>
+          <span className="ap-tile-title">{filters ?? "Every"} ways to look.</span>
+          <span className="ap-tile-sub">Growth, value, quality, ownership, momentum. All in one place.</span>
+          <span className="ap-tile-link">See the filters<ChevronRight size={17} aria-hidden="true" /></span>
+        </Reveal>
+      </section>
 
       {continueCard}
 
       <section id="popular-strategies" className="sh-section" aria-labelledby="sh-popular">
-        <div className="sh-section-head">
-          <div>
-            <h2 id="sh-popular">Popular strategies</h2>
-            <p>Screens for common investing styles. Open one, then change any of its filters.</p>
-          </div>
-          <button type="button" className="btn-ghost" onClick={onCreate} style={{ height: 38 }}><Plus size={15} aria-hidden="true" /> Create new screen</button>
+        <div className="ap-section-head">
+          <Reveal as="h2" id="sh-popular" className="ap-h2">Explore the strategies. <span>See what fits today.</span></Reveal>
         </div>
         {children}
       </section>

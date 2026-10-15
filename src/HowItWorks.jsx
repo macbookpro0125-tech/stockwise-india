@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { Play, X } from "lucide-react";
+import { Play, X, ChevronRight } from "lucide-react";
 
 // The "How it works" walkthrough: a button, and the video in a popup. The
 // video (public/how-it-works.webm) is recorded from the real app by
 // scripts/record-demo.mjs — re-run that when the screens change. It only
 // downloads when someone opens it.
-export default function HowItWorks({ label = "How it works", style }) {
+// plain: a text link with a chevron (Discover's first page), not a button
+export default function HowItWorks({ label = "How it works", style, plain = false }) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -17,9 +18,13 @@ export default function HowItWorks({ label = "How it works", style }) {
 
   return (
     <>
-      <button type="button" className="btn-ghost" onClick={() => setOpen(true)} style={{ height: 30, fontSize: 12.5, padding: "0 12px", ...style }}>
-        <Play size={12} fill="currentColor" strokeWidth={0} /> {label}
-      </button>
+      {plain ? (
+        <button type="button" className="ap-link" onClick={() => setOpen(true)} style={style}>{label}<ChevronRight size={18} aria-hidden="true" /></button>
+      ) : (
+        <button type="button" className="btn-ghost" onClick={() => setOpen(true)} style={{ height: 30, fontSize: 12.5, padding: "0 12px", ...style }}>
+          <Play size={12} fill="currentColor" strokeWidth={0} /> {label}
+        </button>
+      )}
       {open && (
         <div
           onClick={e => { if (e.target === e.currentTarget) setOpen(false); }}
