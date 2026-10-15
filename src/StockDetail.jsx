@@ -18,6 +18,7 @@ import PhasePositionPlanner from "./PhasePositionPlanner.jsx";
 import ThesisMonitor from "./ThesisMonitor.jsx";
 import StockSide, { Scorecard } from "./StockSide.jsx";
 import StockSnapshot from "./StockSnapshot.jsx";
+import { docTop } from "./motion.js";
 
 // The original Stockwise stock page (stock-screener src/StockScreener.jsx),
 // on this app's NSE data: the research dashboard (in place of the original's
@@ -551,7 +552,7 @@ function SectionNav({ ready }) {
     const el = document.getElementById(`sec-${parts[0]}`);
     if (!el) return;
     const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - barBottom() - 10, behavior: reduced ? "auto" : "smooth" });
+    window.scrollTo({ top: docTop(el) - barBottom() - 10, behavior: reduced ? "auto" : "smooth" });
   };
   if (present.length < 2) return null;
   return (
@@ -673,7 +674,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         <CreateAlertModal stock={{ symbol: data.symbol, name: data.name, cmp: price, p1: levels?.p1, p2: levels?.p2, p3: levels?.p3 }} onClose={() => setShowAlertModal(false)} />
       )}
 
-      <div className="sd">
+      <div className="sd ap">
       <StockSide data={data} m={m} price={price} priceLabel={priceLabel} watched={watched}
         onWatch={() => toggleWatch(data.symbol, price)} onAlert={() => setShowAlertModal(true)} />
 
@@ -716,7 +717,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
 
       {m && (
         <>
-          <div id="sec-scores" className="ss-section" data-tour="research"><h2 className="sd-h2">Scorecard</h2><div className="sd-phone-only"><Scorecard r={m.research} /></div><ResearchPanel research={m.research} /></div>
+          <div id="sec-scores" className="ss-section" data-tour="research"><h2 className="sd-h2">Scorecard. <span>How the business scores on its own filings.</span></h2><div className="sd-phone-only"><Scorecard r={m.research} /></div><ResearchPanel research={m.research} /></div>
           <div id="sec-thesis" className="ss-section" data-tour="thesis"><ThesisMonitor metrics={m} account={account} /></div>
         </>
       )}
@@ -726,7 +727,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
           {/* Verify & Override — or, without a model that values the
               company, why there's no fair value */}
           <div id="sec-valuation" className="ss-section">
-          <h2 className="sd-h2">Valuation</h2>
+          <h2 className="sd-h2">Valuation. <span>What its own numbers say it is worth.</span></h2>
           {(m.cyclical || onCycle || m.valuation?.partialCycle || m.lender || m.utility || m.governmentOwned) && (
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
           {m.lender && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--s3)", color: "var(--t2)", fontWeight: 500 }}>Lender</span>}
@@ -739,9 +740,9 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
           )}
 
           {(
-        <div style={{ padding: "10px 14px", borderRadius: 10, background: "var(--green-dim)", border: "1px solid var(--green-bdr)", fontSize: 12.5, color: "var(--green)", marginBottom: 14, lineHeight: 1.55 }}>
-          <CircleCheck size={14} strokeWidth={2.2} style={{ verticalAlign: "-2px", marginRight: 6 }} /><strong>Financials from NSE filings</strong> — EPS and valuation inputs use {data.annual?.scope?.toLowerCase() ?? "reported"} results for the year ended {longDate(m.fyEnd)}{m.provenance?.financials?.filedAt ? `, filed ${longDate(m.provenance.financials.filedAt)}` : ""}. The price's source and date are shown under it.{" "}
-          <a href={`https://www.nseindia.com/get-quotes/equity?symbol=${encodeURIComponent(data.symbol)}`} target="_blank" rel="noreferrer" style={{ color: "var(--green)", fontWeight: 600, whiteSpace: "nowrap" }}>Open on NSE <ArrowUpRight size={13} style={{ verticalAlign: "-2px" }} /></a>
+        <div className="sd-note">
+          <CircleCheck size={14} strokeWidth={2.2} style={{ verticalAlign: "-2px", marginRight: 6, color: "var(--green)" }} /><strong>Financials from NSE filings</strong> — EPS and valuation inputs use {data.annual?.scope?.toLowerCase() ?? "reported"} results for the year ended {longDate(m.fyEnd)}{m.provenance?.financials?.filedAt ? `, filed ${longDate(m.provenance.financials.filedAt)}` : ""}. The price's source and date are shown under it.{" "}
+          <a href={`https://www.nseindia.com/get-quotes/equity?symbol=${encodeURIComponent(data.symbol)}`} target="_blank" rel="noreferrer" style={{ color: "var(--accent)", fontWeight: 500, whiteSpace: "nowrap" }}>Open on NSE <ArrowUpRight size={13} style={{ verticalAlign: "-2px" }} /></a>
           {model === "earnings" && (
             <div className="hide-phone" style={{ marginTop: 4, color: "var(--t2)" }}>
               P/E is this stock's <em>5-year median</em> ({m.medianPe.toFixed(1)}; today {m.pe?.toFixed(1) ?? "—"}) — override with your own view if needed.
@@ -972,12 +973,12 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         </>
       )}
 
-      {m && <div id="sec-financials" className="ss-section"><h2 className="sd-h2">Financials</h2><FinancialsPanel history={m.history} quarters={m.quarters} /></div>}
-      <div id="sec-holding" className="ss-section"><h2 className="sd-h2">Holdings</h2><ShareholdingPanel symbol={data.symbol} /></div>
-      <div id="sec-technicals" className="ss-section"><h2 className="sd-h2">Technicals</h2><TechnicalPanel ticker={data.symbol} /></div>
+      {m && <div id="sec-financials" className="ss-section"><h2 className="sd-h2">Financials. <span>Its results, year by year.</span></h2><FinancialsPanel history={m.history} quarters={m.quarters} /></div>}
+      <div id="sec-holding" className="ss-section"><h2 className="sd-h2">Holdings. <span>Who owns it, and how that is changing.</span></h2><ShareholdingPanel symbol={data.symbol} /></div>
+      <div id="sec-technicals" className="ss-section"><h2 className="sd-h2">Technicals. <span>The trend in the price.</span></h2><TechnicalPanel ticker={data.symbol} /></div>
 
-      <div id="sec-peers" className="ss-section"><h2 className="sd-h2">Peers</h2><PeersPanel symbol={data.symbol} onAnalyze={onOpenStock} /></div>
-      <div id="sec-filings" className="ss-section" data-tour="filings"><h2 className="sd-h2">News & filings</h2><NewsPanel symbol={data.symbol} /></div>
+      <div id="sec-peers" className="ss-section"><h2 className="sd-h2">Peers. <span>How it compares with similar companies.</span></h2><PeersPanel symbol={data.symbol} onAnalyze={onOpenStock} /></div>
+      <div id="sec-filings" className="ss-section" data-tour="filings"><h2 className="sd-h2">News & filings. <span>Straight from NSE.</span></h2><NewsPanel symbol={data.symbol} /></div>
       <MyNotes key={data.symbol} symbol={data.symbol} />
 
       <p style={{ fontSize: 11, color: "var(--t3)", textAlign: "center", lineHeight: 1.6 }}>

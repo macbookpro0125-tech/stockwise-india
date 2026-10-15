@@ -174,7 +174,7 @@ test("F05-H2 import a broker holdings file", async ({ page, account }) => {
 // ── F06 alerts ──────────────────────────────────────────────────────────────
 test("F06-H1 set an alert from the company page, see it, delete it", async ({ page, account }) => {
   await page.goto("/stock/TCS");
-  await page.getByRole("button", { name: "Alert", exact: true }).click();
+  await page.getByRole("button", { name: "Set an alert" }).click();
   await page.getByRole("button", { name: "Drops to" }).click();
   await page.locator("input[type=number]").last().fill("1500");
   await page.getByRole("button", { name: "Create alert" }).click();

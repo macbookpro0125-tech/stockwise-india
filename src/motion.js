@@ -66,3 +66,12 @@ export function useScrollScrub(apply, span = 0.75) {
   }, []);
   return ref;
 }
+
+// An element's distance from the top of the page, ignoring transforms — so a
+// section still sliding in (scroll-linked reveal) is measured where it will
+// settle, not where it is drawn this frame
+export function docTop(el) {
+  let y = 0;
+  for (let n = el; n; n = n.offsetParent) y += n.offsetTop;
+  return y;
+}

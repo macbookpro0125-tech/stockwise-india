@@ -19,7 +19,7 @@ test("F05-E1 double-clicking Add to Portfolio adds one holding", async ({ page, 
 
 test("F06-E1 double-clicking Create alert makes one alert", async ({ page, account, baseURL }) => {
   await page.goto("/stock/INFY");
-  await page.getByRole("button", { name: "Alert", exact: true }).click();
+  await page.getByRole("button", { name: "Set an alert" }).click();
   await page.getByRole("button", { name: "Drops to" }).click();
   await page.locator("input[type=number]").last().fill("900");
   await page.getByRole("button", { name: "Create alert" }).dblclick();

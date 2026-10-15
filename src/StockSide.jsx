@@ -1,7 +1,8 @@
 import { Building2, BadgeCheck, Scale, ShieldCheck, TrendingUp, Tag, Activity, Flag, ChevronRight } from "lucide-react";
 import CompanyLogo from "./CompanyLogo.jsx";
-import { StarIcon, BellIcon } from "./icons.jsx";
+import { StarIcon } from "./icons.jsx";
 import { fmtRs } from "../server/levels.js";
+import { docTop } from "./motion.js";
 
 // The stock page's left column (replica/recon.md): who the company is, its
 // price and recent returns, Watch and Alert, then a scorecard — one line per
@@ -34,7 +35,7 @@ function openCheck(id) {
   const header = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--header-h")) || 0;
   const bar = document.querySelector("[data-sticky-top]")?.offsetHeight ?? 0;
   const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-  window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - header - bar - 12, behavior: reduced ? "auto" : "smooth" });
+  window.scrollTo({ top: docTop(el) - header - bar - 12, behavior: reduced ? "auto" : "smooth" });
 }
 
 function Row({ id, label, tone, word, line, target }) {
@@ -44,9 +45,10 @@ function Row({ id, label, tone, word, line, target }) {
       <button type="button" className={`sd-score sd-tone-${tone}`} onClick={() => openCheck(target)}>
         <span className="sd-score-icon" aria-hidden="true"><Icon size={17} strokeWidth={2} /></span>
         <span className="sd-score-text">
-          <span className="sd-score-head">{label}<span className="sd-pill">{word}</span></span>
+          <span className="sd-score-head">{label}</span>
           <span className="sd-score-line">{line}</span>
         </span>
+        <span className="sd-score-word">{word}</span>
         <ChevronRight size={16} className="sd-score-go" aria-hidden="true" />
       </button>
     </li>
@@ -117,7 +119,7 @@ export default function StockSide({ data, m, price, priceLabel, watched, onWatch
         {returns.length > 0 && (
           <div className="sd-returns" aria-label={`Returns to the ${day(m.closeDate ?? m.cmpDate)} NSE close`}>
             {returns.map(([k, v]) => (
-              <span key={k} className={v >= 0 ? "up" : "down"}><em>{k}</em>{v >= 0 ? "▲" : "▼"} {Math.abs(v).toFixed(1)}%</span>
+              <span key={k} className={v >= 0 ? "up" : "down"}><b>{v >= 0 ? "+" : "−"}{Math.abs(v).toFixed(1)}%</b><em>{k}</em></span>
             ))}
           </div>
         )}
@@ -125,7 +127,7 @@ export default function StockSide({ data, m, price, priceLabel, watched, onWatch
           <button type="button" className={`sd-action${watched ? " on" : ""}`} onClick={onWatch} aria-pressed={watched}>
             <StarIcon filled={watched} /> {watched ? "In watchlist" : "Add to watchlist"}
           </button>
-          <button type="button" className="sd-action" onClick={onAlert}><BellIcon /> Alert</button>
+          <button type="button" className="sd-action sd-action-link" onClick={onAlert}>Set an alert<ChevronRight size={17} aria-hidden="true" /></button>
         </div>
       </section>
       <div className="sd-side-scores"><Scorecard r={m?.research} /></div>
