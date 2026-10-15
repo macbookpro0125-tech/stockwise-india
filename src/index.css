@@ -699,7 +699,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 /* A column's ▾ (ResultsTable MenuButton): quiet until hovered, open or the
    column is filtered */
 .column-menu-btn { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 4px; background: none; color: var(--t3); cursor: pointer; }
-.column-menu-btn:hover, .column-menu-btn[data-on] { color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.column-menu-btn:hover { color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+/* Filtered: the funnel in the accent colour, no box (the box only shows on hover) */
+.column-menu-btn[data-on] { color: var(--accent); }
 .column-menu-item:hover, .column-menu-item:focus-visible { background: var(--s4) !important; }
 /* Discover's name box and three score boxes: one row on a computer, two on
    a phone (three boxes side by side are too narrow at 16px type) */
@@ -1332,3 +1334,7 @@ select {
   .filters-drawer { transform: none; transition: opacity 150ms ease, visibility 0s linear 150ms; }
   .filters-drawer.open { transition: opacity 150ms ease, visibility 0s; }
 }
+
+/* Table headers: name and ▾ on one line, the unit small beneath (ResultsTable SortTh) */
+.th-head { display: flex; align-items: center; gap: 2px; }
+.th-unit { display: block; margin-top: 1px; font-size: 11px; font-weight: 500; line-height: 1.2; color: var(--t3); letter-spacing: 0.01em; }
