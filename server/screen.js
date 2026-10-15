@@ -232,7 +232,7 @@ export function rowsFor(symbols) {
 }
 
 // A screen: { filters: [{ id, min, max } | { id, values }], columns: [ids],
-// countOnly? }.
+// countOnly?, top? }.
 // The strategies and older callers send the original's criteria instead,
 // which become the same filters.
 export function screen(request = {}) {
@@ -241,8 +241,14 @@ export function screen(request = {}) {
   const columns = (Array.isArray(request.columns) ? request.columns : [])
     .filter(id => metricById(id) && !metricById(id).options && id !== "sector").slice(0, 40);
   const matches = rows.filter(m => matchesFilters(m, filters, sizes));
-  // countOnly: how many match, for the strategy cards on Discover's first page
-  if (request.countOnly) return { total: rows.length, matched: matches.length, snapshot };
+  // countOnly: how many match, for the strategy cards on Discover's first page;
+  // with top: N, also the N best by quality score (symbol, name, score)
+  if (request.countOnly) {
+    const top = Math.max(0, Math.min(10, Number(request.top) || 0));
+    const best = top ? [...matches].sort((a, b) => (b.research?.quality ?? -1) - (a.research?.quality ?? -1)).slice(0, top)
+      .map(m => ({ symbol: m.symbol, name: m.name, quality: m.research?.quality == null ? null : Math.round(m.research.quality) })) : undefined;
+    return { total: rows.length, matched: matches.length, snapshot, ...(best && { top: best }) };
+  }
   // Quality score first (unscored companies last), then ROCE
   matches.sort((a, b) => (b.research?.quality ?? -1) - (a.research?.quality ?? -1) || (b.roce ?? -Infinity) - (a.roce ?? -Infinity));
   return {

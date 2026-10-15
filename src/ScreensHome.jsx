@@ -1,5 +1,7 @@
-import { ArrowRight, Plus, SlidersHorizontal, ChevronDown } from "lucide-react";
+import { ArrowRight, Plus, SlidersHorizontal } from "lucide-react";
 import StrategyMark from "./StrategyMarks.jsx";
+import LiveScreen from "./LiveScreen.jsx";
+import { useCountUp, useInView } from "./motion.js";
 import HowItWorks from "./HowItWorks.jsx";
 
 // Discover's first page on a computer (asked for 15 Oct 2026, after a
@@ -9,6 +11,12 @@ import HowItWorks from "./HowItWorks.jsx";
 // (`children`). Every figure here is the app's own: companies screened,
 // strategies, filters and the price date; nothing is made up.
 
+// A figure in the banner that counts up from zero
+function Stat({ value, label }) {
+  const n = useCountUp(typeof value === "number" ? value : null);
+  return <div><dt>{label}</dt><dd>{typeof value === "number" ? n.toLocaleString("en-IN") : value}</dd></div>;
+}
+
 function fmtDate(iso) {
   if (!iso) return null;
   return new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
@@ -17,6 +25,7 @@ function fmtDate(iso) {
 // compact: a phone — the hero in short, then the strategies (no tiles)
 export default function ScreensHome({ meta, total, strategies, pricesDate, onStart, onCreate, onBrowseFilters, children, continueCard, compact = false }) {
   const filters = meta?.metrics?.length ?? null;
+  const [tilesRef, tilesIn] = useInView();
   // Filters people reach for first, by their short names in the metric list
   const chips = ["roce", "roe", "pe", "debtToEquity", "salesGrowth3y", "profitGrowth3y", "promoterPct", "divYield", "marketCapCr", "opm", "piotroski", "vsFairValue", "fiiPct", "priceToBook", "ret1y", "rsi14"]
     .map(id => meta?.byId.get(id)?.short).filter(Boolean);
@@ -26,6 +35,7 @@ export default function ScreensHome({ meta, total, strategies, pricesDate, onSta
     <div className="sh sh-compact">
       <section className="sh-hero" aria-labelledby="sh-title">
         <div className="sh-hero-grid" aria-hidden="true" />
+        <div className="sh-glow sh-glow-a" aria-hidden="true" />
         <h2 id="sh-title" className="sh-title">Find the right stocks with <span>Stockwise Screener</span></h2>
         <p className="sh-lead">{[total && `${total.toLocaleString("en-IN")} NSE companies`, strategies && `${strategies} strategies`, filters && `${filters} filters`].filter(Boolean).join(" · ")}</p>
         <div className="sh-cta">
@@ -45,6 +55,8 @@ export default function ScreensHome({ meta, total, strategies, pricesDate, onSta
     <div className="sh">
       <section className="sh-hero" aria-labelledby="sh-title">
         <div className="sh-hero-grid" aria-hidden="true" />
+        <div className="sh-glow sh-glow-a" aria-hidden="true" />
+        <div className="sh-glow sh-glow-b" aria-hidden="true" />
         <div className="sh-hero-inner">
           <span className="sh-eyebrow">NSE screener · refreshed every trading evening</span>
           <h2 id="sh-title" className="sh-title">Find the right stocks with <span>Stockwise Screener</span></h2>
@@ -54,32 +66,19 @@ export default function ScreensHome({ meta, total, strategies, pricesDate, onSta
             <HowItWorks label="How it works" style={{ height: 46, padding: "0 18px", fontSize: 14 }} />
           </div>
           <dl className="sh-stats">
-            {[
-              [total ? total.toLocaleString("en-IN") : "—", "companies"],
-              [strategies ?? "—", "strategies"],
-              [filters ?? "—", "filters"],
-              [fmtDate(pricesDate) ?? "—", "latest prices"],
-            ].map(([v, l]) => (
-              <div key={l}><dt>{l}</dt><dd>{v}</dd></div>
-            ))}
+            <Stat value={total ?? "—"} label="companies" />
+            <Stat value={strategies ?? "—"} label="strategies" />
+            <Stat value={filters ?? "—"} label="filters" />
+            <Stat value={fmtDate(pricesDate) ?? "—"} label="latest prices" />
           </dl>
         </div>
 
-        {/* The screener as a funnel: the market, the filters, a shortlist */}
-        <div className="sh-funnel" aria-hidden="true">
-          <div className="sh-funnel-step s1"><b>{total ? total.toLocaleString("en-IN") : "—"}</b> NSE companies</div>
-          <ChevronDown size={16} />
-          <div className="sh-funnel-step s2"><b>{filters ?? "—"}</b> filters</div>
-          <ChevronDown size={16} />
-          <div className="sh-funnel-step s3">
-            <span className="sh-funnel-label">Your shortlist</span>
-            {[82, 64, 74].map((w, i) => <span key={i} className="sh-funnel-row"><i /><em style={{ width: `${w}%` }} /></span>)}
-          </div>
-        </div>
+        {/* One real strategy narrowing the market, step by step (LiveScreen.jsx) */}
+        <div className="sh-visual"><LiveScreen meta={meta} total={total} /></div>
       </section>
 
       {/* Three ways in, over the hero's lower edge */}
-      <div className="sh-tiles">
+      <div ref={tilesRef} className={`sh-tiles${tilesIn ? " in" : ""}`}>
         <button type="button" className="sh-tile" onClick={scrollToStrategies}>
           <div className="sh-tile-art" aria-hidden="true">
             <div className="sh-mini sh-mini-back" />

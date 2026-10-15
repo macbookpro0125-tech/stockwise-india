@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { Plus, Ellipsis, ArrowRight, ListFilter } from "lucide-react";
+import { Plus, Ellipsis } from "lucide-react";
 import { api } from "./api.js";
 import { PresetIcon } from "./icons.jsx";
 import StrategyMark, { markColor } from "./StrategyMarks.jsx";
+import StrategyCard from "./StrategyCard.jsx";
 import { strategiesStore } from "./accountData.js";
 
 // Ported from stock-screener's src/components/PresetCards.jsx. The strategy
@@ -72,6 +73,7 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
   const stacked = layout === "stack";
   const grid = layout === "grid";
   const [counts, setCounts] = useState({});
+  const [tops, setTops] = useState({});
   const [kind, setKind] = useState("all");
   const [presets, setPresets] = useState([]);
   const [customPresets, setCustomPresets] = useState(loadCustomPresets);
@@ -130,8 +132,8 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
         if (stop) return;
         if (!Array.isArray(p.filters)) continue;
         try {
-          const res = await api.screen({ filters: p.filters, countOnly: true });
-          if (!stop) setCounts(c => ({ ...c, [p.id]: res.matched }));
+          const res = await api.screen({ filters: p.filters, countOnly: true, top: grid ? 5 : 0 });
+          if (!stop) { setCounts(c => ({ ...c, [p.id]: res.matched })); if (res.top) setTops(t => ({ ...t, [p.id]: res.top })); }
         } catch { /* the card just goes without a count */ }
       }
     })();
@@ -157,7 +159,7 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
       <div className="preset-scroll" style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 6, scrollbarWidth: "none", maskImage: "linear-gradient(to right, transparent 0, black 0, black calc(100% - 48px), transparent 100%)", WebkitMaskImage: "linear-gradient(to right, transparent 0, black 0, black calc(100% - 48px), transparent 100%)" }}>
         <style>{`.preset-scroll::-webkit-scrollbar{display:none}`}</style>
 
-        {(grid && kind !== "all" ? allPresets.filter(p => kindOf(p)[0] === kind) : allPresets).map(p => {
+        {(grid && kind !== "all" ? allPresets.filter(p => kindOf(p)[0] === kind) : allPresets).map((p, shownIndex) => {
           const active = p.id === activePresetId;
           const isCustom = !!p.custom;
 
@@ -166,27 +168,8 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
           return (
             <div key={p.id} className="preset-card-wrap" style={{ position: "relative", flexShrink: 0 }}>
               {grid ? (
-                <button type="button" onClick={() => onSelect(p)} className="sc-card" aria-pressed={active} style={{ "--hue": hueOf(p) }}>
-                  <span className="sc-head">
-                    <StrategyMark preset={p} size={40} />
-                    <span className="sc-kind-tag">{kindOf(p)[1]}</span>
-                  </span>
-                  <span className="sc-name">{p.name}</span>
-                  {rules.length > 0 && (
-                    <span className="sc-rules">
-                      {rules.slice(0, 2).map((r, i) => <span key={r}>{i > 0 && <i aria-hidden="true"> • </i>}{r}</span>)}
-                      {rules.length > 2 && <span className="sc-more"> +{rules.length - 2} more</span>}
-                    </span>
-                  )}
-                  <span className="sc-desc">{p.description}</span>
-                  <span className="sc-foot">
-                    <span className="sc-count">
-                      <ListFilter size={15} aria-hidden="true" />
-                      {count == null ? <span className="sc-skel" aria-hidden="true" /> : <span><b>{count.toLocaleString("en-IN")}</b> {count === 1 ? "stock matches" : "stocks match"}</span>}
-                    </span>
-                    <span className="sc-go" aria-hidden="true"><ArrowRight size={16} /></span>
-                  </span>
-                </button>
+                <StrategyCard p={p} kind={kindOf(p)[1]} rules={rules} count={count} top={tops[p.id]} featured={shownIndex === 0}
+                  index={shownIndex} active={active} onSelect={onSelect} hue={hueOf(p)} />
               ) : (
               <button
                 type="button"
