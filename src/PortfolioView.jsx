@@ -40,6 +40,9 @@ export default function PortfolioView({ onOpenStock }) {
   const [editItem, setEditItem] = useState(null);
   const [showImport, setShowImport] = useState(false);
   const [imported, setImported] = useState(null);
+  const [toastLeaving, setToastLeaving] = useState(false);
+  // Drops the message back down before it goes (index.css .status-toast.leaving)
+  const dismissToast = () => { setToastLeaving(true); setTimeout(() => { setImported(null); setToastLeaving(false); }, 200); };
   const [sortBy, setSortBy] = useState("value");
   const [sortDir, setSortDir] = useState("desc");
 
@@ -253,11 +256,11 @@ export default function PortfolioView({ onOpenStock }) {
         </p>
       )}
 
-      {showImport && <ImportHoldingsModal onClose={() => setShowImport(false)} onImported={n => { setShowImport(false); setImported(n); portfolioStore.refresh(); setTimeout(() => setImported(null), 6000); }} />}
+      {showImport && <ImportHoldingsModal onClose={() => setShowImport(false)} onImported={n => { setShowImport(false); setImported(n); portfolioStore.refresh(); setTimeout(dismissToast, 6000); }} />}
       {imported != null && (
-        <div role="status" style={{ position: "fixed", left: "50%", bottom: 90, transform: "translateX(-50%)", zIndex: 250, padding: "10px 16px", borderRadius: 10, background: "var(--s3)", border: "1px solid var(--bdr2)", color: "var(--t1)", fontSize: 13, boxShadow: "0 8px 24px rgba(0,0,0,0.35)" }}
+        <div role="status" className={`status-toast${toastLeaving ? " leaving" : ""}`} style={{ position: "fixed", bottom: 90, zIndex: 250, padding: "10px 16px", borderRadius: 10, background: "var(--s3)", border: "1px solid var(--bdr2)", color: "var(--t1)", fontSize: 13, boxShadow: "0 8px 24px rgba(0,0,0,0.35)" }}
 >
-          Added {imported} holding{imported === 1 ? "" : "s"} from the file. <button type="button" onClick={() => setImported(null)} className="btn-ghost" style={{ height: 24, marginLeft: 8, fontSize: 11 }}>OK</button>
+          Added {imported} holding{imported === 1 ? "" : "s"} from the file. <button type="button" onClick={dismissToast} className="btn-ghost" style={{ height: 24, marginLeft: 8, fontSize: 11 }}>OK</button>
         </div>
       )}
       {showModal && <AddHoldingModal initial={editItem} onSave={save} onClose={() => { setShowModal(false); setEditItem(null); }} />}

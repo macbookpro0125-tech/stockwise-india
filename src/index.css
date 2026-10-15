@@ -1196,3 +1196,13 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 @media (prefers-reduced-motion: reduce) {
   @starting-style { .account-menu { opacity: 0; transform: none; } }
 }
+
+/* Portfolio import message enters and leaves along the bottom edge */
+.status-toast { left: 50%; translate: -50% 0; opacity: 1; /* no transform here: the minifier folds it into translate */
+  transition: transform 300ms var(--ease-out-strong), opacity 300ms var(--ease-out-strong); }
+@starting-style { .status-toast { transform: translateY(100%); opacity: 0; } }
+.status-toast.leaving { transform: translateY(100%); opacity: 0; transition-duration: 200ms; }
+@media (prefers-reduced-motion: reduce) {
+  .status-toast, .status-toast.leaving { transform: none; }
+  @starting-style { .status-toast { transform: none; opacity: 0; } }
+}
