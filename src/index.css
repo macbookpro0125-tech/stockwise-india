@@ -1188,3 +1188,11 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   .wl-row { transition: opacity 150ms ease; }
   .wl-row.leaving { grid-template-rows: 1fr; margin-bottom: 0; }
 }
+
+/* Account menu grows from its button (AccountMenu.jsx) */
+.account-menu { transform-origin: top right;
+  transition: opacity 150ms var(--ease-out-strong), transform 150ms var(--ease-out-strong); }
+@starting-style { .account-menu { opacity: 0; transform: scale(0.97); } }
+@media (prefers-reduced-motion: reduce) {
+  @starting-style { .account-menu { opacity: 0; transform: none; } }
+}

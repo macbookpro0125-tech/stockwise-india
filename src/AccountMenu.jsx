@@ -33,7 +33,7 @@ export default function AccountMenu({ account, onLogout, onDeleted, onTour }) {
         Account <ChevronDown size={14} style={{ transition: "transform 150ms", transform: open ? "rotate(180deg)" : "none" }} />
       </button>
       {open && (
-        <div role="menu" style={{ position: "absolute", right: 0, top: "calc(100% + 6px)", width: 240, zIndex: 200, background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 12, padding: 6, boxShadow: "var(--sh-lg)" }}>
+        <div role="menu" className="account-menu" style={{ position: "absolute", right: 0, top: "calc(100% + 6px)", width: 240, zIndex: 200, background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 12, padding: 6, boxShadow: "var(--sh-lg)" }}>
           {who && (
             <div style={{ padding: "8px 12px 10px", borderBottom: "1px solid var(--bdr)", marginBottom: 4 }}>
               <div style={{ fontSize: 11, color: "var(--t3)" }}>Signed in as</div>
