@@ -1,14 +1,17 @@
 import { useState, useEffect } from "react";
 import { api } from "./api.js";
-import AuthForm, { defaultAuthMode } from "./AuthForm.jsx";
+import AuthDialog from "./AuthDialog.jsx";
 import HowItWorks from "./HowItWorks.jsx";
 import PriceStrip from "./PriceStrip.jsx";
-import { SiteLink, SiteFooter, Logo } from "./site.jsx";
+import { SiteLink, SiteFooter } from "./site.jsx";
+import CinematicStory from "./CinematicStory.jsx";
+import "./story-colours.css";
 
-// The front page for visitors who aren't signed in: what the app does, the
-// sign-up / sign-in card, the walkthrough video and the disclaimer. Every
-// claim here is something the app does today — keep it that way (phone and
-// email alerts are labelled as coming until they exist).
+// The front page for visitors who aren't signed in: the scroll story at the
+// top (CinematicStory, its own header and buttons), then what the app does,
+// the walkthrough video and the disclaimer. Sign-in is a dialog (AuthDialog).
+// Every claim here is something the app does today — keep it that way (phone
+// and email alerts are labelled as coming until they exist).
 
 const Icon = ({ children }) => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -66,65 +69,36 @@ function fmtDate(iso) {
 }
 
 export default function Landing({ onAuthed, notice }) {
-  const [mode, setMode] = useState(defaultAuthMode);
+  // The sign-in dialog: "login", "signup", or closed
+  const [auth, setAuth] = useState(null);
   const [stats, setStats] = useState(null);
   useEffect(() => { api.stats().then(setStats).catch(() => {}); }, []);
 
-  // The header and hero buttons bring the card into view in the right mode
-  const goAuth = m => {
-    setMode(m);
-    document.getElementById("join")?.scrollIntoView({ behavior: "smooth", block: "center" });
-    setTimeout(() => document.getElementById("auth-email")?.focus({ preventScroll: true }), 400);
+  // The header and hero buttons open the sign-in dialog in the right mode
+  const goAuth = m => setAuth(m);
+  // The story's "Discover our research" / "View the stock screener" links
+  // scroll to that part of the page
+  const SECTIONS = { research: "research-features", screener: "product-preview" };
+  // (window.scrollTo: a smooth scrollIntoView stalled under the story's pinned scenes)
+  const goResearch = target => {
+    const el = document.getElementById(SECTIONS[target] ?? target);
+    if (!el) return;
+    const top = el.getBoundingClientRect().top + window.scrollY - (parseFloat(getComputedStyle(el).scrollMarginTop) || 0);
+    window.scrollTo({ top, behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
+    <div id="top" style={{ minHeight: "100vh", background: "var(--bg)" }}>
+      {(new URLSearchParams(window.location.search).has("screen") || notice) && <div className="landing-notices">
+        {new URLSearchParams(window.location.search).has("screen") && <div role="status" style={{ margin: "8px auto 0", maxWidth: 1240, padding: "10px 14px", borderRadius: 10, background: "color-mix(in srgb, var(--accent) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 30%, transparent)", color: "var(--t1)", fontSize: 13 }}>Someone shared a screen with you. Sign in or create a free account and it opens straight away.</div>}
+        {notice && <div role="status" style={{ margin: "8px auto 0", maxWidth: 1240, padding: "10px 14px", borderRadius: 10, background: "var(--green-dim)", border: "1px solid var(--green-bdr)", color: "var(--t1)", fontSize: 13 }}>{notice}</div>}
+      </div>}
+      <CinematicStory onJoin={() => goAuth("signup")} onLogin={() => goAuth("login")} onDiscover={goResearch} stats={stats} />
       <PriceStrip />
-      <header style={{ maxWidth: 1240, margin: "0 auto", padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-        <Logo />
-        <nav style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span className="landing-nav-extra"><HowItWorks label="How it works" style={{ height: 34 }} /></span>
-          <button className="btn-ghost" onClick={() => goAuth("login")} style={{ height: 34, fontSize: 12 }}>Sign in</button>
-          <button className="btn-primary landing-nav-extra" onClick={() => goAuth("signup")} style={{ height: 34, fontSize: 12, padding: "0 14px", boxShadow: "none" }}>Get started free</button>
-        </nav>
-      </header>
-
-      <main style={{ maxWidth: 1240, margin: "0 auto", padding: "0 20px" }}>
-        {new URLSearchParams(window.location.search).has("screen") && (
-          <div role="status" style={{ margin: "8px 0 0", padding: "10px 14px", borderRadius: 10, background: "color-mix(in srgb, var(--accent) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 30%, transparent)", color: "var(--t1)", fontSize: 13 }}>
-            Someone shared a screen with you. Sign in or create a free account and it opens straight away.
-          </div>
-        )}
-        {notice && (
-          <div role="status" style={{ margin: "8px 0 0", padding: "10px 14px", borderRadius: 10, background: "var(--green-dim)", border: "1px solid var(--green-bdr)", color: "var(--t1)", fontSize: 13 }}>
-            {notice}
-          </div>
-        )}
-
-        {/* ── Hero ── */}
-        <section className="landing-hero" style={{ padding: "48px 0 40px" }}>
-          <div>
-            <span style={{ display: "inline-block", fontSize: 12, fontWeight: 600, color: "var(--accent)", background: "color-mix(in srgb, var(--accent) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 25%, transparent)", borderRadius: 999, padding: "4px 12px", marginBottom: 18 }}>
-              For investors in NSE-listed companies
-            </span>
-            <h1 className="landing-h1" style={{ fontSize: 46, lineHeight: 1.08, fontWeight: 800, letterSpacing: "-0.04em", color: "var(--t1)", margin: "0 0 18px" }}>
-              Find quality Indian companies — and the price where they turn good value.
-            </h1>
-            <p style={{ fontSize: 17, lineHeight: 1.6, color: "var(--t2)", margin: "0 0 26px", maxWidth: 600 }}>
-              Stockwise India reads each NSE-listed company's own filings, scores its quality out of 100, and works out three
-              price levels below its fair value. Your watchlist, alerts and portfolio are measured against the same levels.
-            </p>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
-              <button className="btn-primary" onClick={() => goAuth("signup")} style={{ height: 46 }}>Create free account</button>
-              <HowItWorks label="Watch how it works · 2 min" style={{ height: 46, fontSize: 14, padding: "0 18px" }} />
-            </div>
-            <p style={{ fontSize: 12.5, color: "var(--t3)", margin: "14px 0 0" }}>Free during early access · No card needed</p>
-          </div>
-          <AuthForm onAuthed={onAuthed} mode={mode} onModeChange={setMode} />
-        </section>
-
+      {auth && <AuthDialog mode={auth} onModeChange={setAuth} onAuthed={onAuthed} onClose={() => setAuth(null)} />}
+      <main style={{ maxWidth: 1240, margin: "0 auto", padding: "40px 20px 0" }}>
         {/* ── The product ── */}
-        <section style={{ padding: "8px 0 40px" }}>
+        <section id="product-preview" style={{ padding: "8px 0 40px", scrollMarginTop: 24 }}>
           <div style={{ ...card, overflow: "hidden", boxShadow: "var(--sh-lg)" }}>
             <div style={{ display: "flex", gap: 6, padding: "10px 14px", borderBottom: "1px solid var(--bdr)", background: "var(--s2)" }}>
               {["#FF5F57", "#FEBC2E", "#28C840"].map(c => <span key={c} style={{ width: 10, height: 10, borderRadius: "50%", background: c, opacity: 0.8 }} />)}
@@ -156,7 +130,7 @@ export default function Landing({ onAuthed, notice }) {
         </section>
 
         {/* ── Features ── */}
-        <section style={{ padding: "0 0 48px" }}>
+        <section id="research-features" style={{ padding: "0 0 48px", scrollMarginTop: 24 }}>
           <h2 style={sectionTitle}>What's inside</h2>
           <p style={sectionLead}>Prices update each trading day; company financials refresh as new filings are published on NSE.</p>
           <div className="landing-features">

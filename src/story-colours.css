@@ -1,0 +1,104 @@
+/* The front page's story (CinematicStory.jsx) in the app's own colours and
+   type: navy, lavender greys and teal, Inter headlines (asked 16 Oct 2026 —
+   keep the original look). Layout and motion stay in index.css; this only
+   recolours it, scoped under .cinematic-track so it wins whatever the load
+   order. The story is always dark, so these are fixed values, not theme tokens. */
+.cinematic-track.cinematic-track { color: #EDEDFA; background: #080810; }
+.cinematic-track .cinematic-sticky { background: radial-gradient(ellipse at 70% 48%, rgba(23,68,60,.16), transparent 40%), #080810; }
+.cinematic-track .story-atmosphere { background-image: linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px), radial-gradient(ellipse at 74% 48%, rgba(59,136,123,.13), transparent 55%); }
+.cinematic-track .story-atmosphere::after { background: linear-gradient(90deg, #080810 2%, transparent 55%, rgba(8,8,16,.4)), linear-gradient(0deg, #080810, transparent 20%, transparent 80%, #080810); }
+.cinematic-track .story-atmosphere i { background: #8BDDD0; box-shadow: 0 0 12px 2px rgba(118,214,198,.25); }
+.cinematic-track .story-brand { color: #EDEDFA; }
+.cinematic-track .story-brand i { color: #8C8CAC; }
+.cinematic-track .story-nav a { color: #A1A1BB; }
+.cinematic-track .story-nav button { color: #EDEDFA; }
+.cinematic-track .story-nav button:hover { border-color: rgba(168,227,217,.52); }
+.cinematic-track .story-nav a:focus-visible, .cinematic-track .story-brand:focus-visible, .cinematic-track .story-nav button:focus-visible, .cinematic-track .story-cta:focus-visible, .cinematic-track .story-link:focus-visible { outline: 2px solid #85DECF; }
+.cinematic-track .story-eyebrow { color: #9797B3; }
+.cinematic-track .story-eyebrow i { background: #77D2C3; box-shadow: 0 0 0 4px rgba(119,210,195,.09); }
+.cinematic-track .story-copy h2 { color: #EDEDFA; font-family: inherit; font-weight: 700; letter-spacing: -0.035em; line-height: 1.04; }
+.cinematic-track .story-cta { color: #07070E; background: #00E0BE; border: 1px solid #00E0BE; }
+.cinematic-track .story-cta:hover { background: #33E8CC; }
+.cinematic-track .story-link { color: #DFDFE8; }
+.cinematic-track .story-truth { color: #9696B3; }
+.cinematic-track .story-truth svg { color: #86CEC2; }
+.cinematic-track .story-scroll-cue { color: #8787A8; }
+.cinematic-track .story-scroll-cue span { background: #82C5BA; }
+.cinematic-track .story-progress-rail i { background: #A0DAD0; }
+.cinematic-track .story-counter span { color: #CECEDC; }
+.cinematic-track .story-visual-label, .cinematic-track .story-visual-footer { color: #8E8EAD; }
+.cinematic-track .story-visual-label span:first-child { color: #CDCDDB; }
+.cinematic-track .story-visual-label i { background: #7AD2C3; }
+.cinematic-track .story-visual-label span:last-child { color: #8282A0; }
+.cinematic-track .story-opening-chart { background-image: linear-gradient(rgba(225,225,233,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(225,225,233,.05) 1px,transparent 1px); }
+.cinematic-track .story-chart-legend { color: #9898B5; }
+.cinematic-track .story-chart-legend i { background: #94D7CC; }
+.cinematic-track .story-chart-legend .legend-cash { background: #D6D6E2; }
+.cinematic-track .story-chart-legend .legend-health { background: #7B6AAF; }
+.cinematic-track .story-grid-path { stroke: rgba(220,220,229,.18); }
+.cinematic-track .story-line-main { stroke: #8EDBCE; filter: drop-shadow(0 0 5px rgba(142,219,206,.17)); }
+.cinematic-track .story-line-secondary { stroke: #D2D2DF; }
+.cinematic-track .story-line-tertiary { stroke: #7B6AAF; }
+.cinematic-track .story-chart-markers { fill: #CEEBE6; }
+.cinematic-track .story-chart-axis { color: #8282A0; }
+.cinematic-track .story-visual-footer { color: #8686A8; }
+.cinematic-track .story-visual-footer span:last-child { color: #C4C4D4; }
+.cinematic-track .story-screener { border: 1px solid rgba(223,223,232,.15); background: linear-gradient(140deg,rgba(14,14,27,.97),rgba(9,9,17,.98)); }
+.cinematic-track .story-kicker { color: #8D8DAC; }
+.cinematic-track .story-kicker svg { color: #ACACC3; }
+.cinematic-track .story-screen-heading strong { color: #E5E5F9; font-family: inherit; font-weight: 650; }
+.cinematic-track .story-screen-stat { color: #7C7CA0; }
+.cinematic-track .story-screen-stat b { color: #D8D8E2; }
+.cinematic-track .story-universe-head span { color: #8282A0; }
+.cinematic-track .story-universe-head strong { color: #E5E5F8; }
+.cinematic-track .story-universe-head small { color: #7D7DA1; }
+.cinematic-track .universe-dot { fill: #78789D; }
+.cinematic-track .universe-dot.is-match { fill: #B3E4DC; }
+.cinematic-track .story-universe-caption { color: #7D7DA0; }
+.cinematic-track .story-universe-caption span:last-child { color: #8282A0; }
+.cinematic-track .story-filter-title span { color: #7A7A9F; }
+.cinematic-track .story-filter-title b { color: #D9D9F5; }
+.cinematic-track .story-filter { color: #CECEDB; }
+.cinematic-track .story-filter>i { border: 1px solid rgba(138,203,192,.44); color: #A3D5CD; }
+.cinematic-track .story-filter small { color: #8F8FAE; }
+.cinematic-track .story-match-output { color: #C1C1D2; }
+.cinematic-track .story-match-output small { color: #8282A0; }
+.cinematic-track .story-match-output>svg { color: #ABABC3; }
+.cinematic-track .story-match-bracket { background: #7FC5B9; }
+.cinematic-track .story-screen-footer { color: #A4A4BD; }
+.cinematic-track .story-screen-footer span:last-child { color: #8282A0; }
+.cinematic-track .story-product-shot { border: 1px solid rgba(227,227,248,.16); background: #0D0D19; }
+.cinematic-track .story-shot-bar { color: #DBDBE5; }
+.cinematic-track .story-shot-bar>span:first-child i { background: #717198; }
+.cinematic-track .story-shot-bar>span:first-child i:first-child { background: #7B6AAF; }
+.cinematic-track .story-shot-bar small { color: #8C8CAB; }
+.cinematic-track .story-shot-bar>span:last-child { color: #8080A3; }
+.cinematic-track .story-method { border: 1px solid rgba(223,223,232,.14); background: linear-gradient(143deg,#0E0E1A,#080810); }
+.cinematic-track .story-method-head span { color: #D9D9E3; }
+.cinematic-track .story-method-head svg { color: #ABABC3; }
+.cinematic-track .story-method-head small { color: #8383A6; }
+.cinematic-track .story-lens-index { color: #8282A0; }
+.cinematic-track .story-lens b { color: #E0E0E9; }
+.cinematic-track .story-lens small { color: #9191AF; }
+.cinematic-track .story-lens-trace span { background: #9CD2C9; }
+.cinematic-track .story-method-note { color: #9D9DB8; }
+.cinematic-track .story-method-note i { background: #8383A5; }
+.cinematic-track .story-workflow { border: 1px solid rgba(223,223,232,.14); background: linear-gradient(140deg,#0D0D19,#080810); }
+.cinematic-track .story-workflow-top { color: #D6D6E2; }
+.cinematic-track .story-workflow-top small { color: #8181A3; }
+.cinematic-track .story-work-item { background: rgba(7,7,13,.7); }
+.cinematic-track .story-work-index { color: #8282A0; }
+.cinematic-track .story-work-icon { border: 1px solid rgba(145,207,197,.22); color: #BBBBCD; }
+.cinematic-track .story-work-item b { color: #DBDBF6; }
+.cinematic-track .story-work-item small { color: #9090AE; }
+.cinematic-track .story-workflow-rail { background: #74749A; }
+.cinematic-track .story-workflow-rail i { background: #B9E3DC; }
+.cinematic-track .story-workflow-footer { color: #AEAEC4; }
+.cinematic-track .story-workflow-footer svg { color: #90CCC2; }
+.cinematic-track .story-final-caption { background: linear-gradient(transparent,rgba(4,4,9,.95)); }
+.cinematic-track .story-final-caption span { color: #C3C3D3; }
+.cinematic-track .story-final-caption strong { color: #EDEDFA; font-family: inherit; font-weight: 650; }
+.cinematic-track .story-final-caption small { color: #ACACC3; }
+/* The opening chart's gradients (stop colours set in the markup; CSS wins) */
+.cinematic-track #story-chart-area stop { stop-color: #00E0BE; }
+.cinematic-track #story-chart-fade stop { stop-color: #080810; }
