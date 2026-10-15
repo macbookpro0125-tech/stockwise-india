@@ -63,8 +63,8 @@ export default function ImportHoldingsModal({ onClose, onImported }) {
   const fmt = n => (n == null ? "—" : Number(n).toLocaleString("en-IN", { maximumFractionDigits: 2 }));
   return (
     <div role="dialog" aria-modal="true" aria-label="Import holdings from a broker file" onClick={onClose}
-      style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "6vh 16px", overflowY: "auto" }}>
-      <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 640, background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 14, padding: "18px 20px" }}>
+      style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "6vh 16px", overflowY: "auto", animation: "fadeIn 150ms cubic-bezier(0.23, 1, 0.32, 1) backwards" }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 640, background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 14, padding: "18px 20px", animation: "fadeUp 200ms cubic-bezier(0,0,0.2,1) backwards" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
           <div style={{ fontSize: 16, fontWeight: 700, color: "var(--t1)" }}>Import from a broker file</div>
           <button type="button" onClick={onClose} aria-label="Close" className="btn-ghost" style={{ height: 30, width: 30, padding: 0, justifyContent: "center" }}><X size={15} /></button>
