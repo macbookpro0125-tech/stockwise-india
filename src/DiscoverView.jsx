@@ -127,6 +127,13 @@ export default function DiscoverView({ onOpenStock }) {
   const [picker, setPicker] = useState(null); // "filter" | "column"
   const [sideOpen, setSideOpen] = useState(() => read("screenerSideOpen", true));
   const [sheetOpen, setSheetOpen] = useState(false); // phones: filters in a full-screen sheet
+  const [sheetClosing, setSheetClosing] = useState(false);
+  // Slides the sheet back down before it goes (index.css .filter-sheet.closing)
+  const closeSheet = () => {
+    setSheetClosing(true);
+    const ms = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? 200 : 250;
+    setTimeout(() => { setSheetOpen(false); setSheetClosing(false); window.scrollTo(0, 0); }, ms);
+  };
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [savePresetName, setSavePresetName] = useState("");
   const [showImportModal, setShowImportModal] = useState(false);
@@ -330,10 +337,10 @@ export default function DiscoverView({ onOpenStock }) {
 
       {/* Phones: the filters open over the page, with the result count on the way back */}
       {sheetOpen && createPortal(
-        <div className="filter-sheet">
+        <div className={`filter-sheet${sheetClosing ? " closing" : ""}`}>
           <div className="filter-sheet-body">{panel}</div>
           <div className="filter-sheet-foot">
-            <button className="btn-primary" onClick={() => { setSheetOpen(false); window.scrollTo(0, 0); }} style={{ width: "100%" }}>
+            <button className="btn-primary" onClick={closeSheet} disabled={sheetClosing} style={{ width: "100%" }}>
               {updating ? "Updating…" : `Show ${matched != null ? matched.toLocaleString("en-IN") : ""} results`}
             </button>
           </div>
