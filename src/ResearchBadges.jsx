@@ -67,7 +67,7 @@ export function OverallScore({ research }) {
   const v = research?.overall ?? null;
   const t = overallTone(v);
   return (
-    <span title={researchTitle(research)} style={{ display: "inline-flex", flexDirection: "column", lineHeight: 1.25, whiteSpace: "nowrap" }}>
+    <span title={researchTitle(research)} style={{ display: "inline-flex", flexDirection: "column", lineHeight: 1.25 }}>
       <span style={{ fontSize: 13, fontWeight: 650, color: v == null ? "var(--t3)" : "var(--t1)", ...MONO }}>{v == null ? "—" : Math.round(v)}</span>
       <span style={{ fontSize: 10.5, color: research?.stance === "Review required" ? "var(--red)" : v == null ? "var(--t3)" : t.color, fontWeight: 500 }}>{research?.stance ?? "Not rated"}</span>
     </span>

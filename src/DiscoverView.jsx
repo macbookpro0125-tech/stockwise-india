@@ -369,7 +369,7 @@ export default function DiscoverView({ onOpenStock }) {
               <PresetCards
                 layout={isPhone ? "stack" : "grid"}
                 meta={meta}
-                onSelect={preset => { applyPreset(preset); showStocks(); }}
+                onSelect={preset => { applyPreset(preset); setSideOpen(false); showStocks(); }} // a ready-made screen opens to its results, full width
                 activePresetId={activePresetId}
                 onSavePreset={null}
                 onUpdatePreset={handleUpdatePreset}
