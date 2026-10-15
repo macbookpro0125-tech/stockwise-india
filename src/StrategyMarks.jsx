@@ -1,0 +1,88 @@
+import { PresetIcon } from "./icons.jsx";
+
+// A bold, solid mark for each built-in strategy — the strategy cards on
+// Discover's first page show these rather than a line icon in a box, so each
+// screen is recognisable at a glance. Drawn on a 40×40 grid; each has its own
+// colour. Unknown ones (and your own) fall back to the line icon.
+
+const W = "#fff";
+const MARKS = {
+  high_quality_compounders: ["#12B886", <>
+    <rect x="4" y="24" width="6" height="12" rx="1.5" />
+    <rect x="13" y="17" width="6" height="19" rx="1.5" />
+    <rect x="22" y="10" width="6" height="26" rx="1.5" />
+    <rect x="31" y="3" width="6" height="33" rx="1.5" />
+  </>],
+  dividend_aristocrats: ["#F59F00", <>
+    <path d="M7 26v5c0 2.8 5.8 5 13 5s13-2.2 13-5v-5" opacity=".6" />
+    <ellipse cx="20" cy="26" rx="13" ry="5" />
+    <path d="M7 17v5c0 2.8 5.8 5 13 5s13-2.2 13-5v-5" opacity=".6" />
+    <ellipse cx="20" cy="17" rx="13" ry="5" />
+    <path d="M7 8v5c0 2.8 5.8 5 13 5s13-2.2 13-5V8" opacity=".6" />
+    <ellipse cx="20" cy="8" rx="13" ry="5" />
+  </>],
+  undervalued_growth: ["#7C5CFC", <>
+    <path d="M11 5h18l7 10-16 21L4 15z" />
+    <path d="M4 15h32M14 5l-3 10 9 21 9-21-3-10" fill="none" stroke={W} strokeOpacity=".5" strokeWidth="1.6" strokeLinejoin="round" />
+  </>],
+  defensive_bluechips: ["#2F80ED", <>
+    <path d="M20 3l14 5v10c0 9-6 16-14 19C12 34 6 27 6 18V8z" />
+    <path d="M13.5 19.5l4.5 4.5 8.5-9" fill="none" stroke={W} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+  </>],
+  small_cap_multibaggers: ["#E64980", <>
+    <path d="M16 3c1.4 8 4.8 11.4 13 13-8.2 1.6-11.6 5-13 13-1.4-8-4.8-11.4-13-13 8.2-1.6 11.6-5 13-13z" />
+    <path d="M31 23c.7 4 2.2 5.4 6 6.1-3.8.7-5.3 2.1-6 6.1-.7-4-2.2-5.4-6-6.1 3.8-.7 5.3-2.1 6-6.1z" opacity=".6" />
+  </>],
+  ofss_style_filter: ["#94B91A", <>
+    {[0, 45, 90, 135].map(a => <rect key={a} x="16.5" y="3" width="7" height="34" rx="3.5" transform={`rotate(${a} 20 20)`} />)}
+  </>],
+  momentum_growth: ["#F76707", <>
+    <path d="M24 2L7 23h11.5L15 38l18-22.5H21.5z" />
+  </>],
+  turnaround_plays: ["#1C9BD8", <>
+    <path d="M32 21a12 12 0 1 1-4.2-9.1" fill="none" stroke="currentColor" strokeWidth="5.5" strokeLinecap="round" />
+    <path d="M33.5 15.5L22.6 15l8.4-9.8z" />
+  </>],
+  psu_value: ["#4C6EF5", <>
+    <path d="M20 3L4 12v3h32v-3z" />
+    <rect x="7" y="17" width="5" height="13" rx="1" />
+    <rect x="17.5" y="17" width="5" height="13" rx="1" />
+    <rect x="28" y="17" width="5" height="13" rx="1" />
+    <rect x="4" y="32" width="32" height="5" rx="1.5" />
+  </>],
+  dividend_growth: ["#2FB344", <>
+    <path d="M20 37V19" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+    <path d="M20 23C20 14 14 8 5 8c0 9 6 15 15 15z" />
+    <path d="M20 18c0-8 5-14 14-14 0 8-5 14-14 14z" opacity=".65" />
+  </>],
+  fii_favorites: ["#0CA5B0", <>
+    <circle cx="20" cy="20" r="16.5" />
+    <path d="M3.5 20h33M20 3.5c-4.6 4.6-6.5 10-6.5 16.5S15.4 31.9 20 36.5c4.6-4.6 6.5-10 6.5-16.5S24.6 8.1 20 3.5z" fill="none" stroke={W} strokeOpacity=".55" strokeWidth="2" />
+  </>],
+  dii_backed: ["#9C36B5", <>
+    <rect x="4" y="22" width="14" height="14" rx="3" />
+    <rect x="22" y="22" width="14" height="14" rx="3" opacity=".7" />
+    <rect x="13" y="5" width="14" height="14" rx="3" opacity=".85" />
+  </>],
+  net_net_value: ["#D6336C", <>
+    {[0, 45, 90, 135, 180, 225, 270, 315].map(a => <circle key={a} cx={20 + 11 * Math.cos(a * Math.PI / 180)} cy={20 + 11 * Math.sin(a * Math.PI / 180)} r="6" />)}
+    <circle cx="20" cy="20" r="11" />
+    <circle cx="20" cy="20" r="4.5" fill={W} />
+  </>],
+  up_every_timeframe: ["#2B8A3E", <>
+    <path d="M8 34l12-11 12 11" fill="none" stroke="currentColor" strokeWidth="5.5" strokeLinecap="round" strokeLinejoin="round" opacity=".55" />
+    <path d="M8 21L20 10l12 11" fill="none" stroke="currentColor" strokeWidth="5.5" strokeLinecap="round" strokeLinejoin="round" />
+  </>],
+};
+
+export const markColor = id => MARKS[id]?.[0] ?? null;
+
+export default function StrategyMark({ preset, size = 40 }) {
+  const mark = MARKS[preset.id];
+  if (!mark) return <span className="strategy-mark-fallback" style={{ width: size, height: size }}><PresetIcon preset={preset} size={Math.round(size * 0.6)} strokeWidth={2.2} /></span>;
+  return (
+    <svg className="strategy-mark" width={size} height={size} viewBox="0 0 40 40" fill="currentColor" style={{ color: mark[0], flexShrink: 0 }} aria-hidden="true">
+      {mark[1]}
+    </svg>
+  );
+}
