@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { Plus, Ellipsis, ArrowRight } from "lucide-react";
+import { Plus, Ellipsis, ArrowRight, ListFilter } from "lucide-react";
 import { api } from "./api.js";
 import { PresetIcon } from "./icons.jsx";
+import StrategyMark, { markColor } from "./StrategyMarks.jsx";
 import { strategiesStore } from "./accountData.js";
 
 // Ported from stock-screener's src/components/PresetCards.jsx. The strategy
@@ -50,25 +51,18 @@ export function presetRules(p, meta) {
   return Object.entries(p.criteria ?? {}).map(([k, v]) => CRITERIA[k]?.(v)).filter(Boolean);
 }
 
-// The grid's cards each have a colour of their own, so the page reads as a
-// set of distinct screens rather than one repeated tile; your own are teal.
-const HUES = {
-  high_quality_compounders: "#00E0BE",
-  dividend_aristocrats: "#F5B83D",
-  undervalued_growth: "#A78BFA",
-  defensive_bluechips: "#6FA0FF",
-  small_cap_multibaggers: "#FF7A9A",
-  ofss_style_filter: "#FACC15",
-  momentum_growth: "#FB923C",
-  turnaround_plays: "#38BDF8",
-  psu_value: "#818CF8",
-  dividend_growth: "#4ADE80",
-  fii_favorites: "#22D3EE",
-  dii_backed: "#C084FC",
-  net_net_value: "#F472B6",
-  up_every_timeframe: "#34D65C",
-};
-const hueOf = p => HUES[p.id] ?? "var(--accent)";
+// Each strategy's colour is its mark's (StrategyMarks.jsx); your own are teal
+const hueOf = p => markColor(p.id) ?? "var(--accent)";
+
+// The grid's strategies by kind, for the tabs over it and the label on each card
+const KINDS = [
+  ["quality", "Quality & growth", ["high_quality_compounders", "undervalued_growth", "small_cap_multibaggers", "ofss_style_filter"]],
+  ["value", "Value", ["turnaround_plays", "psu_value", "net_net_value"]],
+  ["income", "Income & safety", ["dividend_aristocrats", "dividend_growth", "defensive_bluechips"]],
+  ["momentum", "Momentum", ["momentum_growth", "up_every_timeframe"]],
+  ["owners", "Big investors", ["fii_favorites", "dii_backed"]],
+];
+const kindOf = p => (p.custom ? ["yours", "Yours"] : KINDS.find(k => k[2].includes(p.id)) ?? ["other", "Other"]);
 
 // layout: "strip" — one scrolling row (the original); "stack" — a phone's list;
 // "grid" — Discover's first page on a computer: big cards with the rules, and
@@ -78,6 +72,7 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
   const stacked = layout === "stack";
   const grid = layout === "grid";
   const [counts, setCounts] = useState({});
+  const [kind, setKind] = useState("all");
   const [presets, setPresets] = useState([]);
   const [customPresets, setCustomPresets] = useState(loadCustomPresets);
   const [menuOpen, setMenuOpen] = useState(null);
@@ -147,10 +142,22 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
   return (
     // stacked: phones' strategy list (index.css .preset-stack), one under another
     <div className={`preset-strip${stacked ? " preset-stack" : grid ? " preset-grid" : ""}`} style={{ marginBottom: layout === "strip" ? 24 : 0, position: "relative" }}>
+      {grid && allPresets.length > 0 && (
+        <div className="sc-kinds" role="group" aria-label="Show strategies of one kind">
+          {[["all", "All"], ...KINDS, ...(customPresets.length ? [["yours", "Yours"]] : [])].map(([id, label]) => {
+            const n = id === "all" ? allPresets.length : allPresets.filter(p => kindOf(p)[0] === id).length;
+            return n > 0 && (
+              <button key={id} type="button" className="sc-kind" aria-pressed={kind === id} onClick={() => setKind(id)}>
+                {label} <span>{n}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
       <div className="preset-scroll" style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 6, scrollbarWidth: "none", maskImage: "linear-gradient(to right, transparent 0, black 0, black calc(100% - 48px), transparent 100%)", WebkitMaskImage: "linear-gradient(to right, transparent 0, black 0, black calc(100% - 48px), transparent 100%)" }}>
         <style>{`.preset-scroll::-webkit-scrollbar{display:none}`}</style>
 
-        {allPresets.map(p => {
+        {(grid && kind !== "all" ? allPresets.filter(p => kindOf(p)[0] === kind) : allPresets).map(p => {
           const active = p.id === activePresetId;
           const isCustom = !!p.custom;
 
@@ -160,22 +167,24 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
             <div key={p.id} className="preset-card-wrap" style={{ position: "relative", flexShrink: 0 }}>
               {grid ? (
                 <button type="button" onClick={() => onSelect(p)} className="sc-card" aria-pressed={active} style={{ "--hue": hueOf(p) }}>
-                  <span className="sc-top">
-                    <span className="sc-icon"><PresetIcon preset={p} size={20} strokeWidth={2} /></span>
-                    <span className="sc-name">{p.name}{isCustom && <span className="sc-tag">Yours</span>}</span>
+                  <span className="sc-head">
+                    <StrategyMark preset={p} size={40} />
+                    <span className="sc-kind-tag">{kindOf(p)[1]}</span>
                   </span>
+                  <span className="sc-name">{p.name}</span>
                   {rules.length > 0 && (
                     <span className="sc-rules">
-                      {rules.slice(0, 3).map(r => <span key={r} className="sc-rule">{r}</span>)}
-                      {rules.length > 3 && <span className="sc-more">+{rules.length - 3} more</span>}
+                      {rules.slice(0, 2).map((r, i) => <span key={r}>{i > 0 && <i aria-hidden="true"> • </i>}{r}</span>)}
+                      {rules.length > 2 && <span className="sc-more"> +{rules.length - 2} more</span>}
                     </span>
                   )}
                   <span className="sc-desc">{p.description}</span>
                   <span className="sc-foot">
                     <span className="sc-count">
-                      {count == null ? <span className="sc-skel" aria-hidden="true" /> : <><b>{count.toLocaleString("en-IN")}</b> {count === 1 ? "stock matches" : "stocks match"}</>}
+                      <ListFilter size={15} aria-hidden="true" />
+                      {count == null ? <span className="sc-skel" aria-hidden="true" /> : <span><b>{count.toLocaleString("en-IN")}</b> {count === 1 ? "stock matches" : "stocks match"}</span>}
                     </span>
-                    <span className="sc-go" aria-hidden="true"><ArrowRight size={17} /></span>
+                    <span className="sc-go" aria-hidden="true"><ArrowRight size={16} /></span>
                   </span>
                 </button>
               ) : (
@@ -210,7 +219,7 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
                   marginBottom: 11,
                   transition: "background 150ms, color 150ms",
                 }}>
-                  <PresetIcon preset={p} size={16} strokeWidth={2} />
+                  {stacked ? <StrategyMark preset={p} size={22} /> : <PresetIcon preset={p} size={16} strokeWidth={2} />}
                 </span>
 
                 <span style={{

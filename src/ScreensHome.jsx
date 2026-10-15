@@ -1,4 +1,5 @@
-import { ArrowRight, Plus, SlidersHorizontal, TrendingUp, ChevronDown } from "lucide-react";
+import { ArrowRight, Plus, SlidersHorizontal, ChevronDown } from "lucide-react";
+import StrategyMark from "./StrategyMarks.jsx";
 import HowItWorks from "./HowItWorks.jsx";
 
 // Discover's first page on a computer (asked for 15 Oct 2026, after a
@@ -83,7 +84,7 @@ export default function ScreensHome({ meta, total, strategies, pricesDate, onSta
           <div className="sh-tile-art" aria-hidden="true">
             <div className="sh-mini sh-mini-back" />
             <div className="sh-mini">
-              <div className="sh-mini-icon"><TrendingUp size={14} /></div>
+              <div style={{ marginBottom: 8 }}><StrategyMark preset={{ id: "high_quality_compounders" }} size={24} /></div>
               <div className="sh-mini-name">High Quality Compounders</div>
               <div className="sh-mini-rules">Sales 3Y ≥ 10% · ROE 5Y ≥ 18% <b>+6 more</b></div>
               <div className="sh-mini-note">Durable businesses with strong moats</div>
