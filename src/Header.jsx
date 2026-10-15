@@ -21,7 +21,7 @@ export const TABS = [
   { id: "alerts", label: "Alerts", short: "Alerts", Icon: Bell },
 ];
 
-const HEADER_BG = { light: "rgba(255,255,255,0.82)", dark: "rgba(0,0,0,0.72)" };
+const HEADER_BG = { light: "rgba(255,255,255,0.82)", dark: "rgba(7,7,14,0.85)" };
 
 export const tabsFor = account => TABS.filter(t => !t.gated || account?.features?.[t.gated]);
 

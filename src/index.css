@@ -24,19 +24,17 @@
   --on-status: #07070E;
 
   /* ── Depth layers ── */
-  /* 15 Oct 2026: true black and neutral greys, as Apple's dark pages — the
-     navy tints sat too close together for the cards to stand out */
-  --bg:    #000000;
-  --s1:    #0D0D0F;
-  --s2:    #1C1C1E;
-  --s3:    #2C2C2E;
-  --s4:    #3A3A3C;
-  --s5:    #48484A;
+  --bg:    #080810;
+  --s1:    #0E0E1A;
+  --s2:    #141424;
+  --s3:    #1A1A2E;
+  --s4:    #222238;
+  --s5:    #2A2A44;
 
   /* The original's legacy names — its ported panels still use them */
-  --surf:  #0A0A0B;
-  --card:  #161618;
-  --card2: #1F1F21;
+  --surf:  #0C0C17;
+  --card:  #111120;
+  --card2: #171728;
 
   /* ── Accent ── */
   --accent:  #00E0BE;
@@ -46,10 +44,10 @@
   --brand-wise: #6FA0FF;
 
   /* ── Text ── */
-  --t1: #F5F5F7;
-  --t2: #B4B4B9;
-  --t3: #96969C; /* neutral; 4.9:1 on --s3, 6:1 on --s2 (WCAG AA) */
-  --t4: #2C2C2E;
+  --t1: #F4F4FF;
+  --t2: #A8A8C0;
+  --t3: #8282A0; /* 4.6:1 or more on every dark surface (WCAG AA); #686885 was 3.2–3.7 */
+  --t4: #26263A;
 
   /* ── Borders ── */
   --bdr:   rgba(255,255,255,0.08);
@@ -1152,13 +1150,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .sd-note strong { color: var(--t1); font-weight: 600; }
 .sd.ap .sd-note { border-radius: 20px; }
 
-/* Dark: colour once, for the action. Category labels go neutral (the
-   strategy's mark carries its colour); tiles are lit slightly from above. */
-:root:not([data-theme="light"]) .ap .sc2-eyebrow, :root:not([data-theme="light"]) .ap .ap-tile-eyebrow { color: var(--t2); }
-:root:not([data-theme="light"]) .ap .sc2, :root:not([data-theme="light"]) .ap .ap-tile:not(.ap-tile-dark), :root:not([data-theme="light"]) .sd.ap .sd-card, :root:not([data-theme="light"]) .sd.ap .sd-snap-card, :root:not([data-theme="light"]) .sd.ap .sd-metrics, :root:not([data-theme="light"]) .ap-band { background: linear-gradient(180deg, #232325, var(--s2) 140px); }
-:root:not([data-theme="light"]) .ap .sc2-featured { background: radial-gradient(600px 300px at 100% 0%, color-mix(in srgb, var(--hue) 10%, transparent), transparent 70%), linear-gradient(180deg, #232325, var(--s2) 160px); }
-:root:not([data-theme="light"]) .ap .sc2.in:hover, :root:not([data-theme="light"]) .ap .ap-tile.in:hover { background: linear-gradient(180deg, #2A2A2D, #212123 160px); }
-
 /* Theme switch: a 250ms cross-fade (App.jsx useTheme) */
 ::view-transition-old(root), ::view-transition-new(root) {
   animation-duration: 250ms;
@@ -1206,7 +1197,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .sc2-count b { margin-right: 4px; font-size: 30px; font-weight: 700; letter-spacing: -0.035em; color: var(--t1); font-variant-numeric: tabular-nums; }
 .ap .sc2-go { margin: 0; padding: 0; display: inline-flex; align-items: center; gap: 0; }
 .ap .sc2-featured { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 64px; padding: 56px 56px 48px; min-height: 0; }
-.ap .sc2-featured .sc2-eyebrow { margin-bottom: 22px; font-size: 14px; font-weight: 600; letter-spacing: 0.01em; text-transform: none; color: var(--t3); }
+.ap .sc2-featured .sc2-eyebrow { margin-bottom: 22px; font-size: 14px; font-weight: 600; letter-spacing: 0.01em; text-transform: none; color: var(--accent); }
 .ap .sc2-featured .sc2-name { margin-top: 28px; font-size: 44px; line-height: 1.06; letter-spacing: -0.035em; }
 .ap .sc2-featured .sc2-desc { font-size: 19px; max-width: 30ch; }
 .ap .sc2-featured .sc2-count b { font-size: 56px; letter-spacing: -0.045em; }
