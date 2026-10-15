@@ -1,6 +1,6 @@
 import { Suspense, useState, useEffect, useRef } from "react";
 import { lazyPage } from "./lazyPage.js";
-import { ArrowDown, ArrowUp, Check, Info, Columns3, Search, ArrowUpRight, SearchX, Star, ChevronDown, Funnel } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, Info, Columns3, Search, ArrowUpRight, SearchX, Star, ChevronDown, Funnel, Download } from "lucide-react";
 import { StarIcon, BellIcon, actionButtonStyle } from "./icons.jsx";
 import { useWatchlist, toggleWatch } from "./watchlist.js";
 import CreateAlertModal from "./CreateAlertModal.jsx";
@@ -71,6 +71,34 @@ const MIN_RESEARCH = [50, 60, 65, 70, 80];
 const MIN_PIOTROSKI = [5, 6, 7, 8, 9];
 
 const nseUrl = symbol => `https://www.nseindia.com/get-quotes/equity?symbol=${encodeURIComponent(symbol)}`;
+
+// Export: one quiet button with its two formats in a small menu, rather than
+// the page's brightest button
+function ExportMenu({ onExcel, onCsv, busy }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!open) return;
+    const away = e => { if (!ref.current?.contains(e.target)) setOpen(false); };
+    const key = e => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("pointerdown", away); document.addEventListener("keydown", key);
+    return () => { document.removeEventListener("pointerdown", away); document.removeEventListener("keydown", key); };
+  }, [open]);
+  const pick = fn => () => { setOpen(false); fn(); };
+  return (
+    <span ref={ref} className="export-menu hide-phone">
+      <button type="button" className="btn-ghost tb-btn" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(o => !o)} disabled={busy}>
+        <Download size={14} aria-hidden="true" /> {busy ? "Exporting…" : "Export"} <ChevronDown size={13} aria-hidden="true" />
+      </button>
+      {open && (
+        <span role="menu" className="export-menu-list">
+          <button type="button" role="menuitem" onClick={pick(onExcel)}>Excel workbook <em>.xlsx</em></button>
+          <button type="button" role="menuitem" onClick={pick(onCsv)}>Spreadsheet text <em>.csv</em></button>
+        </span>
+      )}
+    </span>
+  );
+}
 
 // The ▾ beside a column's name: Excel's filter button. Opens ColumnMenu (sort
 // either way; for a number column, at least / at most). A funnel replaces the
@@ -191,7 +219,7 @@ function FvCell({ stock }) {
           })}
         </div>
       ) : (
-        <div style={{ color: "var(--t3)" }} title={v?.reason ?? undefined}>{v?.model === "needs-data" ? `Needs more data (${v.as})` : v?.as ? `No fair value (${v.as})` : "No price levels"}</div>
+        <div style={{ color: "var(--t3)" }} title={[v?.as && `No fair value: ${v.as}.`, v?.reason].filter(Boolean).join(" ") || undefined}>{v?.model === "needs-data" ? "Needs more data" : v?.as ? "No fair value" : "No price levels"}</div>
       )}
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 3, color: "var(--t3)", fontSize: 10, whiteSpace: "nowrap" }}>
         <MiniRange low={stock.low52w} high={stock.high52w} cmp={cmp} />
@@ -216,7 +244,7 @@ function StarButton({ symbol, price, watched, size = 30 }) {
   );
 }
 
-export default function ResultsTable({ matches, loading, onAnalyze, totalMatches, universe = null, filters = null, onFiltersChange = null, phoneFilters = null, queryUsed, unsupported = [], notes = [], executionTime, snapshot, netNet = false, noun = "stocks", emptyTitle = "No stocks matched your criteria", emptyHint = "Try relaxing some filters", columns = [], onEditColumns = null, filteredIds = [], meta = null }) {
+export default function ResultsTable({ matches, loading, onAnalyze, totalMatches, universe = null, filters = null, onFiltersChange = null, phoneFilters = null, filtersButton = null, updating = false, queryUsed, unsupported = [], notes = [], executionTime, snapshot, netNet = false, noun = "stocks", emptyTitle = "No stocks matched your criteria", emptyHint = "Try relaxing some filters", columns = [], onEditColumns = null, filteredIds = [], meta = null }) {
   const watchlist = useWatchlist();
   const [alertFor, setAlertFor] = useState(null);
   const [showNotes, setShowNotes] = useState(false);
@@ -418,80 +446,74 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
         </Suspense>
       )}
 
-      {/* ── Top bar ── */}
+      {/* ── Top bar: the count, large, on the left; sort, columns, the guide
+             and export on the right — quiet buttons; Compare lights up only
+             when rows are ticked ── */}
       {(totalMatches != null || loading) && (
-        <div className="results-topbar" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, padding: "6px 0 10px", marginBottom: 10 }}>
-          <div style={{ fontSize: 13, color: "var(--t1)" }}>
+        <div className="results-topbar">
+          <div className="rt-count">
             {loading ? (
               <span style={{ color: "var(--t3)" }}>Scanning market…</span>
             ) : (
-              <span>
-                <span style={{ color: "var(--t2)" }}>Found </span>
-                <strong style={{ color: "var(--t1)" }}>{narrowed ? filtered.length.toLocaleString() : totalMatches?.toLocaleString()}</strong>
-                {/* "of 2,250": the market it screened, which used to be a line of its own above */}
-                {universe != null && !(narrowed) && <span style={{ color: "var(--t2)" }}> of {universe.toLocaleString("en-IN")}</span>}
-                <span style={{ color: "var(--t2)" }}> {(narrowed ? filtered.length : totalMatches) === 1 ? noun.replace(/s$/, "") : noun}</span>
-                {(narrowed) && filtered.length !== (matches?.length ?? 0) && <span style={{ color: "var(--t3)" }}> (filtered from {matches?.length})</span>}
-                {visible.length < sorted.length && <span style={{ color: "var(--t2)" }}> · showing <strong style={{ color: "var(--t1)" }}>{visible.length}</strong></span>}
-                {/* Why some companies are missing: an ⓘ beside the count, its
-                    text on hover and opened below on a click or tap */}
+              <>
+                <strong>{(narrowed ? filtered.length : totalMatches)?.toLocaleString("en-IN")}</strong>
+                <span className="rt-noun">
+                  {(narrowed ? filtered.length : totalMatches) === 1 ? noun.replace(/s$/, "") : noun}
+                  {/* "of 2,250": the market it screened */}
+                  {universe != null && !narrowed && <> of {universe.toLocaleString("en-IN")}</>}
+                  {narrowed && filtered.length !== (matches?.length ?? 0) && <> (filtered from {matches?.length})</>}
+                </span>
+                {/* Why some companies are missing: an ⓘ beside the count */}
                 {notes.length > 0 && (
                   <button type="button" onClick={() => setShowNotes(v => !v)} aria-expanded={showNotes} aria-label="Why some companies are left out" title={notes.join(" ")}
-                    style={{ display: "inline-flex", verticalAlign: "-2px", marginLeft: 6, padding: 2, border: 0, background: "none", color: showNotes ? "var(--t1)" : "var(--t3)", cursor: "pointer", borderRadius: 4 }}>
+                    className="rt-why" data-on={showNotes || undefined}>
                     <Info size={14} aria-hidden="true" />
                   </button>
                 )}
-                {snapshot?.pricesDate && (
-                  <span style={{ color: "var(--t3)", marginLeft: 8, fontSize: 11 }}>
-                    · prices as of {new Date(`${snapshot.pricesDate}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })}
-                  </span>
-                )}
-              </span>
+                <span className="rt-meta">
+                  {updating ? "Updating…" : <>
+                    {visible.length < sorted.length && <>Showing {visible.length}</>}
+                    {visible.length < sorted.length && snapshot?.pricesDate && " · "}
+                    {snapshot?.pricesDate && <>Prices as of {new Date(`${snapshot.pricesDate}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })}</>}
+                  </>}
+                </span>
+              </>
             )}
           </div>
-          <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+          <div className="rt-actions">
             {exportError && <span style={{ fontSize: 11, color: "var(--red)" }}>{exportError}</span>}
-            {!loading && (matches?.length ?? 0) > 1 && (
-              <div className={`sort-control${phoneFilters ? " hide-phone" : ""}`} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                <select value={sortBy} onChange={e => pickSort(e.target.value)} aria-label="Sort by"
-                  style={{ height: 32, padding: "0 8px", borderRadius: 8, border: "1px solid var(--bdr2)", background: "var(--s2)", color: "var(--t1)", fontSize: 12.5, fontFamily: "inherit", cursor: "pointer", maxWidth: 190 }}>
-                  {sortOptions.map(([id, label]) => <option key={id} value={id}>Sort: {label}</option>)}
-                </select>
-                <button type="button" onClick={() => setSortDir(d => (d === "asc" ? "desc" : "asc"))} title={dirLabel} aria-label={`${dirLabel} — tap to reverse`} className="btn-ghost"
-                  style={{ height: 32, padding: "0 10px", fontSize: 12, gap: 4, whiteSpace: "nowrap" }}>
-                  {sortDir === "desc" ? <ArrowDown size={14} /> : <ArrowUp size={14} />}{dirLabel}
-                </button>
-              </div>
-            )}
             {selected.size >= 2 && (
-              <button onClick={() => setShowCompare(true)} className="btn-primary" style={{ height: 32, padding: "0 14px", fontSize: 12 }}>
+              <button onClick={() => setShowCompare(true)} className="btn-primary tb-btn">
                 Compare {selected.size}
               </button>
             )}
             {selected.size > 0 && (
-              <button onClick={() => setSelected(new Map())} className="btn-ghost" style={{ height: 32, fontSize: 12 }}>
+              <button onClick={() => setSelected(new Map())} className="btn-ghost tb-btn">
                 Clear
               </button>
             )}
+            {!loading && (matches?.length ?? 0) > 1 && (
+              <div className={`sort-control${phoneFilters ? " hide-phone" : ""}`}>
+                <select value={sortBy} onChange={e => pickSort(e.target.value)} aria-label="Sort by" className="tb-select">
+                  {sortOptions.map(([id, label]) => <option key={id} value={id}>Sort: {label}</option>)}
+                </select>
+                <button type="button" onClick={() => setSortDir(d => (d === "asc" ? "desc" : "asc"))} title={dirLabel} aria-label={`${dirLabel} — tap to reverse`} className="btn-ghost tb-btn tb-icon">
+                  {sortDir === "desc" ? <ArrowDown size={15} /> : <ArrowUp size={15} />}
+                </button>
+              </div>
+            )}
             {onEditColumns && (
-              <button onClick={onEditColumns} className="btn-ghost hide-phone" style={{ height: 32, fontSize: 12.5 }} title="Choose which columns the table shows">
+              <button onClick={onEditColumns} className="btn-ghost tb-btn hide-phone" title="Choose which columns the table shows">
                 <Columns3 size={14} /> Columns
               </button>
             )}
             {!loading && (matches?.length ?? 0) > 0 && (
-              <button type="button" onClick={() => setShowGuide(true)} className="btn-ghost hide-phone" style={{ height: 32, fontSize: 12.5 }} title="What these columns mean">
-                <Info size={13} /> Column guide
+              <button type="button" onClick={() => setShowGuide(true)} className="btn-ghost tb-btn tb-icon hide-phone" title="What these columns mean" aria-label="Column guide: what these columns mean">
+                <Info size={15} />
               </button>
             )}
             {!loading && (matches?.length ?? 0) > 0 && (
-              <>
-                <button onClick={exportExcel} disabled={exporting || sorted.length === 0} className="btn-primary hide-phone" style={{ height: 32, padding: "0 14px", fontSize: 12.5, opacity: exporting || sorted.length === 0 ? 0.6 : 1 }}>
-                  {exporting ? "Exporting…" : "Export Excel"}
-                </button>
-                <button onClick={exportCsv} className="btn-ghost hide-phone" style={{ height: 32, fontSize: 12.5 }}>
-                  CSV
-                </button>
-              </>
+              <ExportMenu onExcel={exportExcel} onCsv={exportCsv} busy={exporting || sorted.length === 0} />
             )}
           </div>
         </div>
@@ -530,7 +552,9 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
              Name box + the three scores: pick Quality 70+, then Research or
              Piotroski with it ── */}
       {!loading && (matches?.length ?? 0) > 0 && (!isMobile || searchOpen || !!q || scoreFiltered) && (
-        <div className="score-row" style={{ marginBottom: 12 }}>
+        <div className="score-line">
+        {filtersButton}
+        <div className="score-row">
           <div style={{ position: "relative", minWidth: 0 }}>
             <Search size={15} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--t3)", pointerEvents: "none" }} />
             <input
@@ -578,6 +602,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
               <Star size={13} fill={watchOnly ? "currentColor" : "none"} /> Watchlist only <span style={{ ...MONO, opacity: 0.8 }}>({watchedMatches})</span>
             </button>
           )}
+        </div>
         </div>
       )}
 
@@ -703,7 +728,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                   <th style={{ ...thStyle, color: "var(--accent)", fontWeight: 600, background: "color-mix(in srgb, var(--accent) 4%, var(--s1))" }}>
                     Price levels
                   </th>
-                  <th style={thStyle}>Actions</th>
+                  <th style={{ ...thStyle, right: 0, zIndex: 4, boxShadow: "inset 1px 0 0 var(--bdr)" }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -769,7 +794,9 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
 
                     <td style={{ ...cell, background: "color-mix(in srgb, var(--accent) 2%, transparent)" }}><FvCell stock={stock} /></td>
 
-                    <td style={cell}>
+                    {/* Pinned to the right edge, as the name is to the left: watch, alert
+                        and NSE stay in reach while wide screens scroll sideways */}
+                    <td style={{ ...cell, position: "sticky", right: 0, background: rowBg, zIndex: 1, boxShadow: "inset 1px 0 0 var(--bdr)" }}>
                       <div data-tour={i === 0 ? "row-actions" : undefined} style={{ display: "flex", gap: 5, alignItems: "center" }}>
                         {/* The company's name opens it; the row keeps only watch, alert and NSE */}
                         <StarButton symbol={stock.symbol} price={stock.cmp} watched={watchlist.has(stock.symbol)} />
