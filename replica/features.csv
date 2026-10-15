@@ -13,3 +13,9 @@ S-STOCK,Holdings,yes,yes,Existing panel
 S-STOCK,Events and news,yes,yes,Existing panels
 S-STOCK,Forecasts and analyst ratings,yes,no,We have no forecast data; not invented
 S-STOCK,Sentiment / earnings-call summaries,yes,no,No such data
+S-AUTH,Sign-in as a two-half dialog,yes,yes,AuthDialog.jsx
+S-AUTH,Animated scene with pause,yes,yes,Orbit.jsx in the left panel; pause button; still frame for reduced motion
+S-AUTH,Provider step then email step,yes,yes,Google and phone from the server's options; email-only goes straight to the form
+S-AUTH,Show/hide password,yes,yes,
+S-AUTH,Remember me,yes,no,Sessions persist already
+S-HOME,Earth-from-orbit hero on the front page,yes,partial,Built (Orbit.jsx) and shown in sign-in; the front page opens on the scroll story (CinematicStory.jsx) instead

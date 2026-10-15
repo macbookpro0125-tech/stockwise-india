@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Smartphone } from "lucide-react";
+import { Smartphone, Mail, ChevronLeft, Eye, EyeOff } from "lucide-react";
 import { api } from "./api.js";
 import { SiteLink } from "./site.jsx";
 import { preloadFirebase, signInWithProvider, sendPhoneCode, toE164 } from "./socialSignIn.js";
@@ -20,7 +20,6 @@ const AppleLogo = () => (
 );
 
 const errorBox = { fontSize: 12, color: "var(--red)", background: "var(--red-dim)", border: "1px solid var(--red-bdr)", borderRadius: 8, padding: "8px 12px", lineHeight: 1.5 };
-const socialBtn = { width: "100%", height: 42, gap: 10, fontSize: 14, fontWeight: 500 };
 
 // Sign in with a phone number: the number, then the 6-digit SMS code
 function PhoneSignIn({ config, onAuthed, onBack }) {
@@ -82,9 +81,9 @@ function PhoneSignIn({ config, onAuthed, onBack }) {
   );
 }
 
-// Sign-up / sign-in card on the front page. The front page can switch the
-// mode (its "Sign in" and "Create free account" buttons); a browser that has
-// signed in before opens on "Sign in".
+// Sign-up or sign-in: the front page picks the mode (its "Sign in" and
+// "Create free account" buttons); a browser that has signed in before opens
+// on "Sign in".
 const RETURNING_KEY = "stockwise-india-returning";
 
 export function defaultAuthMode() {
@@ -128,13 +127,19 @@ function ForgotPassword({ initialEmail, onBack }) {
   );
 }
 
+// The sign-in flow inside the sign-in dialog (AuthDialog.jsx), in steps like
+// a trading site's: first the ways in (Google, phone — whatever the server
+// offers — and email), then the chosen one. With email the only way in, it
+// opens straight on the email step.
+const label = { display: "block", margin: "0 0 6px", fontSize: 12.5, fontWeight: 500, color: "var(--t2)" };
+
 export default function AuthForm({ onAuthed, mode, onModeChange }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [forgot, setForgot] = useState(false);
-  const [phoneMode, setPhoneMode] = useState(false);
+  const [step, setStep] = useState("choose"); // "choose" | "email" | "phone" | "forgot"
   const [socialBusy, setSocialBusy] = useState(null);
   // What the server can offer: password reset needs email; Google / Apple /
   // phone need Firebase (its public web config comes with the answer)
@@ -150,13 +155,22 @@ export default function AuthForm({ onAuthed, mode, onModeChange }) {
     }).catch(() => {});
   }, []);
   const signup = mode === "signup";
+  const hasChoices = !!fb?.providers?.length;
+  const shown = step === "choose" && !hasChoices ? "email" : step;
   const done = userId => { try { localStorage.setItem(RETURNING_KEY, "1"); } catch {} onAuthed(userId); };
-  const card = children => (
-    <div id="join" style={{ background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 18, padding: 24, boxShadow: "var(--sh-lg)", scrollMarginTop: 24 }}>{children}</div>
+  const back = () => { setStep("choose"); setError(""); };
+  const Back = () => (
+    <button type="button" className="auth-back" onClick={back}><ChevronLeft size={18} aria-hidden="true" /> Back</button>
+  );
+  const switchMode = (
+    <p className="auth-switch">
+      {signup ? "Already have an account?" : "New to Stockwise India?"}{" "}
+      <button type="button" onClick={() => { onModeChange(signup ? "login" : "signup"); setError(""); }}>{signup ? "Sign in" : "Create an account"}</button>
+    </p>
   );
 
-  if (forgot) return card(<ForgotPassword initialEmail={email} onBack={() => setForgot(false)} />);
-  if (phoneMode) return card(<PhoneSignIn config={fb} onAuthed={done} onBack={() => setPhoneMode(false)} />);
+  if (shown === "forgot") return <div className="auth-step"><ForgotPassword initialEmail={email} onBack={() => { setStep("email"); setError(""); }} /></div>;
+  if (shown === "phone") return <div className="auth-step"><PhoneSignIn config={fb} onAuthed={done} onBack={back} /></div>;
 
   const social = async which => {
     setError("");
@@ -165,6 +179,36 @@ export default function AuthForm({ onAuthed, mode, onModeChange }) {
     catch (err) { if (!err.cancelled) setError(err.message); setSocialBusy(null); }
   };
   const has = p => fb?.providers.includes(p);
+
+  if (shown === "choose") return (
+    <div className="auth-step">
+      <h2 className="auth-title">{signup ? "Create your account" : "Sign in"}</h2>
+      <p className="auth-sub">{signup ? "Free while in early access. No card needed." : "Your watchlist, alerts and portfolio are waiting."}</p>
+      <div className="auth-choices">
+        {has("google") && (
+          <button type="button" className="auth-choice" disabled={!!socialBusy} onClick={() => social("google")}>
+            <GoogleLogo /> {socialBusy === "google" ? "Opening Google…" : "Continue with Google"}
+          </button>
+        )}
+        {has("apple") && (
+          <button type="button" className="auth-choice" disabled={!!socialBusy} onClick={() => social("apple")}>
+            <AppleLogo /> {socialBusy === "apple" ? "Opening Apple…" : "Continue with Apple"}
+          </button>
+        )}
+        {has("phone") && (
+          <button type="button" className="auth-choice" disabled={!!socialBusy} onClick={() => { setError(""); setStep("phone"); }}>
+            <Smartphone size={18} aria-hidden="true" /> Continue with phone number
+          </button>
+        )}
+        <div className="auth-or" aria-hidden="true"><span />or<span /></div>
+        <button type="button" className="auth-choice" onClick={() => { setError(""); setStep("email"); }}>
+          <Mail size={18} aria-hidden="true" /> Continue with email
+        </button>
+      </div>
+      {error && <div style={{ ...errorBox, marginTop: 12 }}>{error}</div>}
+      {switchMode}
+    </div>
+  );
 
   const submit = async (e) => {
     e.preventDefault();
@@ -179,67 +223,39 @@ export default function AuthForm({ onAuthed, mode, onModeChange }) {
     }
   };
 
-  return card(
-    <>
-      <h2 style={{ fontSize: 19, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--t1)", margin: "0 0 4px" }}>
-        {signup ? "Create your free account" : "Welcome back"}
-      </h2>
-      <p style={{ color: "var(--t3)", fontSize: 13, margin: "0 0 18px" }}>
-        {signup ? "Takes a minute. No card needed." : "Sign in to your watchlist, alerts and portfolio."}
-      </p>
-      {fb && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
-          {has("google") && (
-            <button type="button" className="btn-ghost" style={socialBtn} disabled={!!socialBusy} onClick={() => social("google")}>
-              <GoogleLogo /> {socialBusy === "google" ? "Opening Google…" : "Continue with Google"}
-            </button>
-          )}
-          {has("apple") && (
-            <button type="button" style={{ ...socialBtn, display: "inline-flex", alignItems: "center", justifyContent: "center", borderRadius: 8, background: "var(--t1)", color: "var(--bg)", border: "1px solid var(--t1)", cursor: "pointer", fontFamily: "inherit" }} disabled={!!socialBusy} onClick={() => social("apple")}>
-              <AppleLogo /> {socialBusy === "apple" ? "Opening Apple…" : "Continue with Apple"}
-            </button>
-          )}
-          {has("phone") && (
-            <button type="button" className="btn-ghost" style={socialBtn} disabled={!!socialBusy} onClick={() => { setError(""); setPhoneMode(true); }}>
-              <Smartphone size={17} /> Continue with phone number
-            </button>
-          )}
-          <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "6px 0 0", color: "var(--t3)", fontSize: 12 }}>
-            <span style={{ flex: 1, height: 1, background: "var(--bdr2)" }} /> or with email <span style={{ flex: 1, height: 1, background: "var(--bdr2)" }} />
-          </div>
+  return (
+    <div className="auth-step">
+      {hasChoices && <Back />}
+      <h2 className="auth-title">{signup ? "Create your account" : "Sign in with email"}</h2>
+      <p className="auth-sub">{signup ? "Free while in early access. No card needed." : "Welcome back."}</p>
+      <form onSubmit={submit} className="auth-form">
+        <div>
+          <label htmlFor="auth-email" style={label}>Email</label>
+          <input id="auth-email" className="input-base" type="email" placeholder="you@example.com" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} required autoFocus />
         </div>
-      )}
-      <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        <input id="auth-email" className="input-base" type="email" placeholder="Email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} required />
-        <input className="input-base" type="password" placeholder={signup ? "Password (8+ characters)" : "Password"} autoComplete={signup ? "new-password" : "current-password"} minLength={signup ? 8 : undefined} value={password} onChange={e => setPassword(e.target.value)} required />
-        {!signup && canReset && (
-          <button type="button" onClick={() => { setForgot(true); setError(""); }}
-            style={{ alignSelf: "flex-end", background: "none", border: "none", padding: 0, marginTop: -2, fontSize: 12.5, color: "var(--accent)", cursor: "pointer", fontFamily: "inherit" }}>
-            Forgot password?
-          </button>
-        )}
-        {error && (
-          <div style={{ fontSize: 12, color: "var(--red)", background: "var(--red-dim)", border: "1px solid var(--red-bdr)", borderRadius: 8, padding: "8px 12px" }}>
-            {error}
+        <div>
+          <label htmlFor="auth-password" style={label}>Password</label>
+          <div className="auth-password">
+            <input id="auth-password" className="input-base" type={showPassword ? "text" : "password"} placeholder={signup ? "8 or more characters" : ""} autoComplete={signup ? "new-password" : "current-password"} minLength={signup ? 8 : undefined} value={password} onChange={e => setPassword(e.target.value)} required />
+            <button type="button" className="auth-eye" onClick={() => setShowPassword(v => !v)} aria-label={showPassword ? "Hide password" : "Show password"} aria-pressed={showPassword}>
+              {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+            </button>
           </div>
-        )}
-        <button type="submit" className="btn-primary" disabled={busy}>
+          {!signup && canReset && (
+            <button type="button" className="auth-link" onClick={() => { setStep("forgot"); setError(""); }}>Forgot your password?</button>
+          )}
+        </div>
+        {error && <div style={errorBox}>{error}</div>}
+        <button type="submit" className="btn-primary auth-submit" disabled={busy}>
           {busy ? "Working…" : signup ? "Create free account" : "Sign in"}
         </button>
       </form>
       {signup && (
-        <p style={{ fontSize: 11.5, color: "var(--t3)", lineHeight: 1.6, margin: "12px 0 0" }}>
+        <p className="auth-legal">
           By creating an account you agree to the <SiteLink to="/disclaimer" newTab>disclaimer</SiteLink> and <SiteLink to="/privacy" newTab>privacy policy</SiteLink>.
         </p>
       )}
-      <button
-        type="button"
-        className="btn-ghost"
-        style={{ marginTop: 14, width: "100%" }}
-        onClick={() => { onModeChange(signup ? "login" : "signup"); setError(""); }}
-      >
-        {signup ? "Already have an account? Sign in" : "New here? Create an account"}
-      </button>
-    </>
+      {switchMode}
+    </div>
   );
 }

@@ -1,0 +1,83 @@
+/* The sign-in dialog (AuthDialog.jsx) and its steps (AuthForm.jsx). Kept in
+   its own file, beside the components that use it. The left panel is space
+   in both themes; the right side follows the app's tokens. */
+.auth-dialog {
+  position: fixed; inset: 0; z-index: 2000;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  padding: 12px; background: var(--bg);
+  animation: authIn 260ms var(--ease-out-strong, ease-out) both;
+}
+@keyframes authIn { from { opacity: 0; } to { opacity: 1; } }
+
+.auth-visual { position: relative; isolation: isolate; overflow: hidden; border-radius: 22px; background: #03040A; }
+.auth-visual .orbit { position: absolute; inset: 0; z-index: -1; display: block; width: 100%; height: 100%; }
+.auth-visual-line {
+  position: absolute; left: 0; right: 0; top: 9%; margin: 0; padding: 0 24px; text-align: center;
+  font-family: var(--ap-font, var(--font)); font-size: clamp(26px, 2.6vw, 40px); font-weight: 700;
+  line-height: 1.12; letter-spacing: -0.03em; color: #F5F5F7; text-shadow: 0 2px 30px rgba(0, 0, 0, 0.55);
+}
+.auth-pause {
+  position: absolute; right: 16px; bottom: 16px; width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 50%; background: rgba(0, 0, 0, 0.35); color: #fff;
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); cursor: pointer;
+}
+.auth-pause:focus-visible, .auth-close:focus-visible, .auth-choice:focus-visible, .auth-back:focus-visible, .auth-eye:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.auth-side { display: flex; flex-direction: column; min-height: 0; }
+.auth-top { position: relative; display: flex; align-items: center; justify-content: center; flex-shrink: 0; height: 64px; }
+.auth-close {
+  position: absolute; top: 10px; right: 10px; width: 40px; height: 40px;
+  display: flex; align-items: center; justify-content: center;
+  border: 0; border-radius: 50%; background: none; color: var(--t2); cursor: pointer;
+}
+.auth-close:hover { background: var(--s3); color: var(--t1); }
+.auth-body { flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px; overflow-y: auto; }
+
+.auth-step { width: min(400px, 100%); }
+.auth-title { margin: 0 0 6px; text-align: center; font-size: 28px; font-weight: 700; letter-spacing: -0.03em; color: var(--t1); }
+.auth-sub { margin: 0 0 28px; text-align: center; font-size: 14.5px; line-height: 1.5; color: var(--t3); }
+.auth-choices { display: flex; flex-direction: column; gap: 10px; }
+.auth-choice {
+  display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; height: 48px;
+  border: 1px solid var(--bdr2); border-radius: 12px; background: var(--s2); color: var(--t1);
+  font: 500 15px var(--font); cursor: pointer; transition: border-color 150ms, box-shadow 200ms, background 150ms;
+}
+.auth-choice:hover:not(:disabled) { border-color: color-mix(in srgb, var(--accent) 40%, var(--bdr2)); box-shadow: var(--glow-ring, none); }
+.auth-choice:disabled { opacity: 0.6; cursor: progress; }
+.auth-or { display: flex; align-items: center; gap: 12px; margin: 8px 0; font-size: 12.5px; color: var(--t3); }
+.auth-or span { flex: 1; height: 1px; background: var(--bdr2); }
+
+.auth-back {
+  display: inline-flex; align-items: center; gap: 2px; margin: 0 0 18px -6px; padding: 4px 6px;
+  border: 0; border-radius: 8px; background: none; color: var(--t2); font: 500 14px var(--font); cursor: pointer;
+}
+.auth-back:hover { color: var(--t1); }
+.auth-form { display: flex; flex-direction: column; gap: 16px; }
+.auth-form .input-base { height: 46px; border-radius: 12px; font-size: 15px; }
+.auth-password { position: relative; }
+.auth-password .input-base { padding-right: 46px; }
+.auth-eye {
+  position: absolute; top: 50%; right: 6px; width: 34px; height: 34px; transform: translateY(-50%);
+  display: flex; align-items: center; justify-content: center;
+  border: 0; border-radius: 8px; background: none; color: var(--t3); cursor: pointer;
+}
+.auth-eye:hover { color: var(--t1); }
+.auth-link { margin-top: 8px; padding: 0; border: 0; background: none; color: var(--accent); font: 500 13px var(--font); cursor: pointer; }
+.auth-submit { height: 48px !important; margin-top: 4px; border-radius: 12px !important; font-size: 15px !important; }
+.auth-legal { margin: 16px 0 0; text-align: center; font-size: 12px; line-height: 1.6; color: var(--t3); }
+.auth-switch { margin: 28px 0 0; padding-top: 18px; border-top: 1px solid var(--bdr); text-align: center; font-size: 14px; color: var(--t2); }
+.auth-switch button { padding: 0; border: 0; background: none; color: var(--accent); font: 600 14px var(--font); cursor: pointer; }
+.auth-switch button:hover, .auth-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* A tablet or phone: the panel becomes a band above the steps */
+@media (max-width: 900px) {
+  .auth-dialog { grid-template-columns: minmax(0, 1fr); grid-template-rows: 190px minmax(0, 1fr); padding: 8px; }
+  .auth-visual { border-radius: 18px; }
+  .auth-visual-line { top: 18px; font-size: 21px; }
+  .auth-pause { right: 12px; bottom: 12px; width: 28px; height: 28px; }
+  .auth-top { height: 52px; }
+  .auth-body { align-items: flex-start; padding: 12px 20px 24px; }
+  .auth-title { font-size: 24px; }
+}
+@media (prefers-reduced-motion: reduce) { .auth-dialog { animation: none; } }

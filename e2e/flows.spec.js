@@ -10,13 +10,17 @@ test("F01-H1/H2/N1/N2 sign up, out, wrong password, back in", async ({ page }) =
   await page.setExtraHTTPHeaders({ "x-forwarded-for": uniqueIp() });
   const email = `ui-${Date.now()}@example.test`, password = randomUUID();
   await page.goto("/");
-  const form = page.locator("form").filter({ has: page.getByPlaceholder("Email") }).first();
-  await form.getByPlaceholder("Email").fill(email);
-  await form.getByPlaceholder(/Password/).fill("short");
-  await form.getByRole("button", { name: "Create free account" }).click();
+  // Sign-up and sign-in open a dialog: the ways in first, then email
+  await page.getByRole("button", { name: "Create free account" }).first().click();
+  const dialog = page.getByRole("dialog");
+  const viaEmail = dialog.getByRole("button", { name: "Continue with email" });
+  if (await viaEmail.isVisible().catch(() => false)) await viaEmail.click();
+  await dialog.getByLabel("Email").fill(email);
+  await dialog.getByLabel("Password", { exact: true }).fill("short");
+  await dialog.getByRole("button", { name: "Create free account" }).click();
   await expect(page.getByRole("button", { name: "Account", exact: true })).toHaveCount(0);  // F01-E1 short password refused
-  await form.getByPlaceholder(/Password/).fill(password);
-  await form.getByRole("button", { name: "Create free account" }).click();
+  await dialog.getByLabel("Password", { exact: true }).fill(password);
+  await dialog.getByRole("button", { name: "Create free account" }).click();
   await expect(page.getByRole("button", { name: "Account", exact: true })).toBeVisible();
   // A new account gets the guided tour first; close it as a user would
   await page.getByRole("button", { name: "Skip tour" }).click();
@@ -24,13 +28,15 @@ test("F01-H1/H2/N1/N2 sign up, out, wrong password, back in", async ({ page }) =
   await page.getByRole("menuitem", { name: "Sign out" }).click();
   await expect(page.getByRole("button", { name: "Account", exact: true })).toHaveCount(0);
   // Wrong password, then the right one
-  await page.getByRole("button", { name: "Sign in" }).first().click();
-  const signIn = page.locator("form").filter({ has: page.getByPlaceholder("Email") }).first();
-  await signIn.getByPlaceholder("Email").fill(email);
-  await signIn.getByPlaceholder(/Password/).fill(password + "x");
+  await page.getByRole("button", { name: /^Sign in/ }).first().click();
+  const signIn = page.getByRole("dialog");
+  const signInEmail = signIn.getByRole("button", { name: "Continue with email" });
+  if (await signInEmail.isVisible().catch(() => false)) await signInEmail.click();
+  await signIn.getByLabel("Email").fill(email);
+  await signIn.getByLabel("Password", { exact: true }).fill(password + "x");
   await signIn.getByRole("button", { name: /^Sign in$/ }).click();
   await expect(page.getByText(/wrong|incorrect|doesn.t match|invalid/i).first()).toBeVisible();
-  await signIn.getByPlaceholder(/Password/).fill(password);
+  await signIn.getByLabel("Password", { exact: true }).fill(password);
   await signIn.getByRole("button", { name: /^Sign in$/ }).click();
   await expect(page.getByRole("button", { name: "Account", exact: true })).toBeVisible();
 });
