@@ -28,9 +28,9 @@ export default function HowItWorks({ label = "How it works", style, plain = fals
       {open && (
         <div
           onClick={e => { if (e.target === e.currentTarget) setOpen(false); }}
-          style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.82)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+          style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.82)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeIn 150ms cubic-bezier(0.23, 1, 0.32, 1) backwards" }}
         >
-          <div style={{ width: "min(1100px, 100%)" }}>
+          <div style={{ width: "min(1100px, 100%)", animation: "fadeUp 200ms cubic-bezier(0,0,0.2,1) backwards" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 10 }}>
               <span style={{ fontSize: 14, fontWeight: 600, color: "#fff" }}>How Stockwise India works · 2 min</span>
               <button type="button" onClick={() => setOpen(false)} className="btn-ghost" style={{ height: 32, fontSize: 12.5 }}><X size={14} /> Close</button>

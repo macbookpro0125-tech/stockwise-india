@@ -24,9 +24,9 @@ export default function MetricPicker({ meta, mode, chosen, onToggle, onClose }) 
 
   return createPortal(
     <div onClick={e => { if (e.target === e.currentTarget) onClose(); }}
-      style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)" }}>
+      style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", animation: "fadeIn 150ms cubic-bezier(0.23, 1, 0.32, 1) backwards" }}>
       <div role="dialog" aria-label={mode === "filter" ? "Add filters" : "Choose columns"}
-        style={{ width: "min(760px, 100%)", height: "min(620px, 100%)", display: "flex", flexDirection: "column", background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 18, boxShadow: "var(--sh-lg)", overflow: "hidden" }}>
+        style={{ width: "min(760px, 100%)", height: "min(620px, 100%)", display: "flex", flexDirection: "column", background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 18, boxShadow: "var(--sh-lg)", overflow: "hidden", animation: "fadeUp 200ms cubic-bezier(0,0,0.2,1) backwards" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "16px 18px", borderBottom: "1px solid var(--bdr)" }}>
           <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--t1)", margin: 0, whiteSpace: "nowrap" }}>{mode === "filter" ? "Add filters" : "Columns"}</h3>
           <input className="input-base" autoFocus placeholder={`Search ${all.length} metrics — e.g. ROCE, dividend, return`} value={q} onChange={e => setQ(e.target.value)} style={{ height: 36, fontSize: 13, flex: 1, minWidth: 0 }} />

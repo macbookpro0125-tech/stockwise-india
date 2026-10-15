@@ -88,7 +88,7 @@ export default function CompareView({ stocks, pricesDate, onClose }) {
   const section = { padding: "8px 16px 4px", fontSize: 11.5, fontWeight: 600, color: "var(--accent)", background: "color-mix(in srgb, var(--accent) 5%, transparent)", borderBottom: "1px solid var(--bdr)" };
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "color-mix(in srgb, var(--bg) 96%, transparent)", WebkitBackdropFilter: "blur(6px)", backdropFilter: "blur(6px)", overflowY: "auto", padding: "20px var(--page-x)" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "color-mix(in srgb, var(--bg) 96%, transparent)", WebkitBackdropFilter: "blur(6px)", backdropFilter: "blur(6px)", overflowY: "auto", padding: "20px var(--page-x)", animation: "fadeIn 200ms cubic-bezier(0.23, 1, 0.32, 1) backwards" }}>
       {showBrief && (
         <Suspense fallback={<div role="status" className="compare-loading">Building investment brief…</div>}>
           <InvestmentBriefView stocks={stocks} onClose={() => setShowBrief(false)} />
