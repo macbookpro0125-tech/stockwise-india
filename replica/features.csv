@@ -1,0 +1,15 @@
+screen,feature,reference,clone,note
+S-STOCK,Sticky summary card (logo, name, price, returns),yes,yes,Returns are 1W/1M/1Y to the last NSE close; no intraday change (we have none)
+S-STOCK,Watch and alert from the summary,yes,yes,
+S-STOCK,Scorecard of verdict rows,yes,yes,8 rows from the research model; each opens its checks
+S-STOCK,Sticky underlined tabs with scroll-spy,yes,yes,8 tabs over 13 parts
+S-STOCK,Price chart first,yes,yes,Existing chart (range buttons, indicators, levels)
+S-STOCK,Sector / size / risk cards,yes,yes,Size by SEBI rank counted live; risk from beta to NIFTY 50
+S-STOCK,Key ratios grid,yes,yes,Plus 52-week range bar
+S-STOCK,Company profile,yes,yes,Existing panel
+S-STOCK,Peers,yes,yes,Existing panel
+S-STOCK,Financial statements,yes,yes,Existing panel
+S-STOCK,Holdings,yes,yes,Existing panel
+S-STOCK,Events and news,yes,yes,Existing panels
+S-STOCK,Forecasts and analyst ratings,yes,no,We have no forecast data; not invented
+S-STOCK,Sentiment / earnings-call summaries,yes,no,No such data

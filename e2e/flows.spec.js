@@ -117,7 +117,7 @@ test("F03-N1 an unknown symbol says so", async ({ page, account }) => {
 // ── F04 watchlist ───────────────────────────────────────────────────────────
 test("F04-H1 watch from the company page, note it, remove it", async ({ page, account }) => {
   await page.goto("/stock/TCS");
-  await page.getByRole("button", { name: "Watch", exact: true }).click();
+  await page.getByRole("button", { name: "Add to watchlist" }).click();
   await page.getByRole("button", { name: "Watchlist" }).first().click();
   await expect(page.getByText("Tata Consultancy Services Limited").first()).toBeVisible();
   await page.getByRole("button", { name: "+ Add note" }).first().click();

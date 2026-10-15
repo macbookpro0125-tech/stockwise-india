@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { NotebookPen, Check, X, TriangleAlert, LoaderCircle, ArrowLeft, ArrowUpRight, CalendarDays, CircleCheck, Layers, ArrowRight } from "lucide-react";
 import { api } from "./api.js";
 import { calculateLevels, pricePosition, fmtRs } from "../server/levels.js";
-import { StarIcon, BellIcon, PositionIcon } from "./icons.jsx";
+import { PositionIcon } from "./icons.jsx";
 import ResearchPanel from "./ResearchPanel.jsx";
 import { useWatchlist, toggleWatch } from "./watchlist.js";
 import { notesStore } from "./accountData.js";
@@ -16,7 +16,8 @@ import ValuationExplorer from "./ValuationExplorer.jsx";
 import { ValuedAs, BankValuation, CyclicalValuation, NoFairValue, pbAt, CYCLE_TONE } from "./ValuationModel.jsx";
 import PhasePositionPlanner from "./PhasePositionPlanner.jsx";
 import ThesisMonitor from "./ThesisMonitor.jsx";
-import CompanyLogo from "./CompanyLogo.jsx";
+import StockSide, { Scorecard } from "./StockSide.jsx";
+import StockSnapshot from "./StockSnapshot.jsx";
 
 // The original Stockwise stock page (stock-screener src/StockScreener.jsx),
 // on this app's NSE data: the research dashboard (in place of the original's
@@ -55,18 +56,6 @@ const pctText = v => (v == null ? "—" : `${round(v, 1)}%`);
 
 // Fiscal-year labels from the latest filed year: FY26 = the year to Mar 2026
 const fyLabel = (fyEnd, plus = 0) => `FY${String(Number(fyEnd.slice(0, 4)) + plus).slice(2)}`;
-
-function labelledActionStyle({ active, activeColor }) {
-  return {
-    height: 32, padding: "0 12px", borderRadius: 8,
-    border: `1px solid ${active ? activeColor : "var(--bdr3)"}`,
-    background: active ? `color-mix(in srgb, ${activeColor} 14%, transparent)` : "var(--s3)",
-    color: active ? activeColor : "var(--t2)",
-    fontSize: 12, fontWeight: 600, cursor: "pointer",
-    display: "flex", alignItems: "center", gap: 6,
-    transition: "all 120ms", flexShrink: 0,
-  };
-}
 
 // ---- Panels -------------------------------------------------------------------
 
@@ -507,24 +496,27 @@ const quoteIsNewer = d => !!d.quote && (!d.close || d.quote.asOf >= d.close.date
 const quoteLabel = q => `${q.stale ? "Cached close" : "Latest close"} (${dayLabel(q.asOf)})`;
 const closeLabel = c => `NSE close (${dayLabel(c.date)})`;
 
-// The page's parts in order, for the shortcut row in the pinned bar — a
-// company page runs to many screens, most of all on a phone
-const SECTIONS = [
-  ["about", "About"], ["events", "Events"], ["scores", "Scores"], ["valuation", "Valuation"], ["sizing", "Sizing"], ["holding", "Shareholding"], ["chart", "Chart"],
-  ["financials", "Financials"], ["technicals", "Technicals"], ["thesis", "What to watch"],
-  ["levels", "Price levels"], ["peers", "Peers"], ["filings", "Filings"],
+// The page's tabs, pinned over it (replica/recon.md): each jumps to its
+// first part on the page and lights up while any of its parts is in view
+const TABS = [
+  ["overview", "Overview", ["overview", "about", "events"]],
+  ["scores", "Scorecard", ["scores", "thesis"]],
+  ["valuation", "Valuation", ["valuation", "sizing", "levels"]],
+  ["financials", "Financials", ["financials"]],
+  ["holding", "Holdings", ["holding"]],
+  ["technicals", "Technicals", ["technicals"]],
+  ["peers", "Peers", ["peers"]],
+  ["filings", "News & filings", ["filings"]],
 ];
 
-function SectionNav({ ready, sizingReady }) {
-  const [present, setPresent] = useState(SECTIONS);
-  const [active, setActive] = useState("about");
+function SectionNav({ ready }) {
+  const [present, setPresent] = useState(TABS);
+  const [active, setActive] = useState("overview");
   const rowRef = useRef(null);
-  // Only the parts this company has (no price levels without a price, …)
-  // Without price levels (no fair value) that part holds the key numbers
+  // Only the tabs this company has a part for (no valuation without filings, …)
   useEffect(() => {
-    setPresent(SECTIONS.filter(([id]) => id !== "sizing" || sizingReady).filter(([id]) => document.getElementById(`sec-${id}`))
-      .map(([id, label]) => [id, id === "levels" && !sizingReady ? "Key numbers" : label]));
-  }, [ready, sizingReady]);
+    setPresent(TABS.map(([id, label, parts]) => [id, label, parts.filter(p => document.getElementById(`sec-${p}`))]).filter(t => t[2].length));
+  }, [ready]);
   // Where the pinned bar ends once pinned — not where it is now: on a phone
   // the header above it scrolls away on the way down
   const barBottom = () => {
@@ -538,9 +530,8 @@ function SectionNav({ ready, sizingReady }) {
       frame = requestAnimationFrame(() => {
         const line = barBottom() + 32;
         let current = present[0]?.[0];
-        for (const [id] of present) {
-          const el = document.getElementById(`sec-${id}`);
-          if (el && el.getBoundingClientRect().top <= line) current = id;
+        for (const [id, , parts] of present) {
+          if (parts.some(p => (document.getElementById(`sec-${p}`)?.getBoundingClientRect().top ?? Infinity) <= line)) current = id;
         }
         setActive(current);
       });
@@ -549,24 +540,24 @@ function SectionNav({ ready, sizingReady }) {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => { cancelAnimationFrame(frame); window.removeEventListener("scroll", onScroll); };
   }, [present]);
-  // Keep the lit shortcut in view as the page scrolls past the parts
+  // Keep the lit tab in view as the page scrolls past the parts
   useEffect(() => {
-    const row = rowRef.current, chip = row?.querySelector(`[data-sec="${active}"]`);
-    if (!row || !chip) return;
-    const left = chip.offsetLeft - row.offsetLeft, right = left + chip.offsetWidth;
+    const row = rowRef.current, tab = row?.querySelector(`[data-sec="${active}"]`);
+    if (!row || !tab) return;
+    const left = tab.offsetLeft - row.offsetLeft, right = left + tab.offsetWidth;
     if (left < row.scrollLeft + 8 || right > row.scrollLeft + row.clientWidth - 8) row.scrollTo({ left: left - 12, behavior: "smooth" });
   }, [active]);
-  const go = id => {
-    const el = document.getElementById(`sec-${id}`);
+  const go = parts => {
+    const el = document.getElementById(`sec-${parts[0]}`);
     if (!el) return;
     const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - barBottom() - 10, behavior: reduced ? "auto" : "smooth" });
   };
   if (present.length < 2) return null;
   return (
-    <nav ref={rowRef} aria-label="Parts of this page" className="section-nav">
-      {present.map(([id, label]) => (
-        <button key={id} type="button" data-sec={id} aria-current={active === id ? "true" : undefined} onClick={() => go(id)} className={`section-chip${active === id ? " on" : ""}`}>{label}</button>
+    <nav ref={rowRef} aria-label="Parts of this page" className="sd-tabs">
+      {present.map(([id, label, parts]) => (
+        <button key={id} type="button" data-sec={id} aria-current={active === id ? "true" : undefined} onClick={() => go(parts)} className={`sd-tab${active === id ? " on" : ""}`}>{label}</button>
       ))}
     </nav>
   );
@@ -675,16 +666,6 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
   const hint = (ok, good, neutral, color = "var(--green)") => (
     <div style={{ fontSize: 10, color: ok ? color : "var(--t2)", marginTop: 3, fontWeight: ok ? 600 : 400 }}>{ok ? good : neutral}</div>
   );
-  const actions = (
-    <>
-      <button onClick={() => toggleWatch(data.symbol, price)} title={watched ? "Remove from watchlist" : "Add to watchlist"} style={labelledActionStyle({ active: watched, activeColor: "var(--yellow)" })}>
-        <StarIcon filled={watched} />{watched ? "Watchlist" : "Watch"}
-      </button>
-      <button onClick={() => setShowAlertModal(true)} title="Set price alert" style={labelledActionStyle({ active: false, activeColor: "var(--accent)" })}>
-        <BellIcon />Alert
-      </button>
-    </>
-  );
 
   return (
     <div style={{ padding: "8px var(--page-x) 80px", color: "var(--t1)" }}>
@@ -692,24 +673,74 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         <CreateAlertModal stock={{ symbol: data.symbol, name: data.name, cmp: price, p1: levels?.p1, p2: levels?.p2, p3: levels?.p3 }} onClose={() => setShowAlertModal(false)} />
       )}
 
-      {/* Sticky action bar */}
-      <div data-sticky-top style={{ position: "sticky", top: "var(--header-h, 0px)", zIndex: 40, padding: "10px 0 0", marginBottom: 14, background: "var(--bg)", borderBottom: "1px solid var(--bdr)" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <button onClick={onBack} title={`Back to ${backTo}`} style={{ display: "flex", alignItems: "center", gap: 5, height: 34, borderRadius: 8, background: "var(--s2)", border: "1px solid var(--bdr)", cursor: "pointer", color: "var(--t2)", flexShrink: 0, padding: "0 10px", fontSize: 12, fontWeight: 500, fontFamily: "inherit" }}>
-          <ArrowLeft size={15} /> Back
-        </button>
-        <span style={{ fontSize: 14, fontWeight: 650, color: "var(--t1)", letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>
-          {data.name}
-          {price > 0 && <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 600, color: "var(--t3)" }}>{fmtRs(price)}</span>}
-        </span>
-        <span data-tour="stock-actions" style={{ display: "flex", gap: 8, flexShrink: 0 }}>{actions}</span>
-      </div>
-      <SectionNav ready={!!m} sizingReady={!!levels} />
+      <div className="sd">
+      <StockSide data={data} m={m} price={price} priceLabel={priceLabel} watched={watched}
+        onWatch={() => toggleWatch(data.symbol, price)} onAlert={() => setShowAlertModal(true)} />
+
+      <div className="sd-right">
+      {/* Pinned bar: Back and the tabs (on a phone also the name and price,
+          once the summary above has scrolled away) */}
+      <div data-sticky-top className="sd-bar">
+        <div className="sd-bar-row">
+          <button type="button" onClick={onBack} title={`Back to ${backTo}`} className="sd-back"><ArrowLeft size={15} aria-hidden="true" /> Back</button>
+          <span className="sd-bar-name">{data.name}{price > 0 && <b>{fmtRs(price)}</b>}</span>
+          <SectionNav ready={!!m} />
+        </div>
       </div>
 
+      <div className="sd-main">
+
+      {data.quoteError && (
+        <div style={{ fontSize: 12, color: "var(--yellow)", background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", borderRadius: 8, padding: "8px 12px", marginBottom: 12 }}>
+          Couldn't refresh Yahoo's latest daily close ({data.quoteError}){data.close ? " — using NSE's last close." : "."}
+        </div>
+      )}
+      {data.quote?.stale && (
+        <div style={{ fontSize: 12, color: "var(--yellow)", background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", borderRadius: 8, padding: "8px 12px", marginBottom: 12 }}>
+          <strong>Showing a cached quote</strong> — Yahoo Finance could not refresh it. Quote date: {data.quote.asOf}.
+        </div>
+      )}
+
+      {!m && (
+        <div style={{ ...card, color: "var(--t3)", fontSize: 13 }}>No usable annual results in NSE's filings for this company, so there's nothing to value or score.</div>
+      )}
+
+      <section id="sec-overview" className="ss-section sd-section">
+        <PriceChartPanel symbol={data.symbol} name={data.name} levels={valued ? levels : null} />
+        <StockSnapshot m={m} price={price} />
+      </section>
+
+      <div id="sec-about" className="ss-section"><CompanyProfile symbol={data.symbol} m={m} /></div>
+
+      {m && <CompanyEvents m={m} />}
+
       {m && (
+        <>
+          <div id="sec-scores" className="ss-section" data-tour="research"><h2 className="sd-h2">Scorecard</h2><div className="sd-phone-only"><Scorecard r={m.research} /></div><ResearchPanel research={m.research} /></div>
+          <div id="sec-thesis" className="ss-section" data-tour="thesis"><ThesisMonitor metrics={m} account={account} /></div>
+        </>
+      )}
+
+      {m && (
+        <>
+          {/* Verify & Override — or, without a model that values the
+              company, why there's no fair value */}
+          <div id="sec-valuation" className="ss-section">
+          <h2 className="sd-h2">Valuation</h2>
+          {(m.cyclical || onCycle || m.valuation?.partialCycle || m.lender || m.utility || m.governmentOwned) && (
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
+          {m.lender && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--s3)", color: "var(--t2)", fontWeight: 500 }}>Lender</span>}
+          {m.governmentOwned && <span title={`${m.governmentPct > 0 ? `The government holds ${m.governmentPct}% as promoter. ` : "A government company (NSE's PSU lists). "}Government-owned companies usually trade on lower multiples; its own P/E history already reflects that${m.valuation?.psu ? ", and a bank's cost of equity is a point higher here" : ""}.`} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--s3)", color: "var(--t2)", fontWeight: 500 }}>Government-owned</span>}
+          {m.utility && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--s3)", color: "var(--t2)", fontWeight: 500 }}>Regulated utility</span>}
+          {(m.cyclical || onCycle || m.valuation?.partialCycle) && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--yellow-dim)", color: "var(--yellow)", fontWeight: 600 }}>Cyclical{m.valuation?.partialCycle ? " · partial cycle" : ""}</span>}
+          {/* The cycle-position gauge's reading, beside the price */}
+          {onCycle && m.valuation.positionLabel && <span title={`This year's net margin ${m.valuation.latestMargin}% against a through-cycle ${m.valuation.medianMargin}%`} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--s3)", color: CYCLE_TONE[m.valuation.positionLabel], fontWeight: 600 }}>Profits {m.valuation.positionLabel}</span>}
+        </div>
+          )}
+
+          {(
         <div style={{ padding: "10px 14px", borderRadius: 10, background: "var(--green-dim)", border: "1px solid var(--green-bdr)", fontSize: 12.5, color: "var(--green)", marginBottom: 14, lineHeight: 1.55 }}>
-          <CircleCheck size={14} strokeWidth={2.2} style={{ verticalAlign: "-2px", marginRight: 6 }} /><strong>Financials from NSE filings</strong> — EPS and valuation inputs use {data.annual?.scope?.toLowerCase() ?? "reported"} results for the year ended {longDate(m.fyEnd)}{m.provenance?.financials?.filedAt ? `, filed ${longDate(m.provenance.financials.filedAt)}` : ""}. The price source and date are shown beside the quote above.{" "}
+          <CircleCheck size={14} strokeWidth={2.2} style={{ verticalAlign: "-2px", marginRight: 6 }} /><strong>Financials from NSE filings</strong> — EPS and valuation inputs use {data.annual?.scope?.toLowerCase() ?? "reported"} results for the year ended {longDate(m.fyEnd)}{m.provenance?.financials?.filedAt ? `, filed ${longDate(m.provenance.financials.filedAt)}` : ""}. The price's source and date are shown under it.{" "}
           <a href={`https://www.nseindia.com/get-quotes/equity?symbol=${encodeURIComponent(data.symbol)}`} target="_blank" rel="noreferrer" style={{ color: "var(--green)", fontWeight: 600, whiteSpace: "nowrap" }}>Open on NSE <ArrowUpRight size={13} style={{ verticalAlign: "-2px" }} /></a>
           {model === "earnings" && (
             <div className="hide-phone" style={{ marginTop: 4, color: "var(--t2)" }}>
@@ -741,55 +772,8 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         </div>
       )}
 
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, flexWrap: "wrap" }}>
-        <CompanyLogo symbol={data.symbol} size={28} />
-        <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0, color: "var(--t1)", letterSpacing: "-0.03em" }}>{data.name}</h2>
-        <span style={{ fontSize: 11, background: "var(--s3)", color: "var(--t2)", padding: "2px 9px", borderRadius: 6, ...MONO }}>{data.symbol}</span>
-      </div>
-      {price > 0 && (
-        <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
-          <span style={{ fontSize: 26, fontWeight: 700, color: "var(--t1)", letterSpacing: "-0.02em", ...MONO }}>{fmtRs(price)}</span>
-          {priceLabel && <span style={{ fontSize: 12, color: "var(--t3)" }}>{priceLabel}</span>}
-        </div>
-      )}
-      {m && (m.sector || m.cyclical || onCycle || m.valuation?.partialCycle || m.lender || m.utility || m.governmentOwned) && (
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
-          {m.sector && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--accent-glow)", color: "var(--accent)", fontWeight: 600 }}>{m.sector}</span>}
-          {m.lender && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--s3)", color: "var(--t2)", fontWeight: 500 }}>Lender</span>}
-          {m.governmentOwned && <span title={`${m.governmentPct > 0 ? `The government holds ${m.governmentPct}% as promoter. ` : "A government company (NSE's PSU lists). "}Government-owned companies usually trade on lower multiples; its own P/E history already reflects that${m.valuation?.psu ? ", and a bank's cost of equity is a point higher here" : ""}.`} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--s3)", color: "var(--t2)", fontWeight: 500 }}>Government-owned</span>}
-          {m.utility && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--s3)", color: "var(--t2)", fontWeight: 500 }}>Regulated utility</span>}
-          {(m.cyclical || onCycle || m.valuation?.partialCycle) && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--yellow-dim)", color: "var(--yellow)", fontWeight: 600 }}>Cyclical{m.valuation?.partialCycle ? " · partial cycle" : ""}</span>}
-          {/* The cycle-position gauge's reading, beside the price */}
-          {onCycle && m.valuation.positionLabel && <span title={`This year's net margin ${m.valuation.latestMargin}% against a through-cycle ${m.valuation.medianMargin}%`} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--s3)", color: CYCLE_TONE[m.valuation.positionLabel], fontWeight: 600 }}>Profits {m.valuation.positionLabel}</span>}
-        </div>
-      )}
-
-      {data.quoteError && (
-        <div style={{ fontSize: 12, color: "var(--yellow)", background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", borderRadius: 8, padding: "8px 12px", marginBottom: 12 }}>
-          Couldn't refresh Yahoo's latest daily close ({data.quoteError}){data.close ? " — using NSE's last close." : "."}
-        </div>
-      )}
-      {data.quote?.stale && (
-        <div style={{ fontSize: 12, color: "var(--yellow)", background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", borderRadius: 8, padding: "8px 12px", marginBottom: 12 }}>
-          <strong>Showing a cached quote</strong> — Yahoo Finance could not refresh it. Quote date: {data.quote.asOf}.
-        </div>
-      )}
-
-      {!m && (
-        <div style={{ ...card, color: "var(--t3)", fontSize: 13 }}>No usable annual results in NSE's filings for this company, so there's nothing to value or score.</div>
-      )}
-
-      <div id="sec-about" className="ss-section"><CompanyProfile symbol={data.symbol} m={m} /></div>
-
-      {m && <CompanyEvents m={m} />}
-
-      {m && <div id="sec-scores" className="ss-section" data-tour="research"><ResearchPanel research={m.research} /></div>}
-
-      {m && (
-        <>
-          {/* Verify & Override — or, without a model that values the
-              company, why there's no fair value */}
-          <div id="sec-valuation" className="ss-section" data-tour="override" style={{ border: "1px solid var(--bdr2)", borderRadius: 14, padding: 20, marginBottom: 16, background: "var(--s2)" }}>
+          </div>
+          <div className="ss-section" data-tour="override" style={{ border: "1px solid var(--bdr2)", borderRadius: 14, padding: 20, marginBottom: 16, background: "var(--s2)" }}>
             {valued ? (
               <>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
@@ -901,15 +885,8 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         </>
       )}
 
-      <div id="sec-holding" className="ss-section"><ShareholdingPanel symbol={data.symbol} /></div>
-      <div id="sec-chart" className="ss-section"><PriceChartPanel symbol={data.symbol} name={data.name} levels={valued ? levels : null} /></div>
-      {m && <div id="sec-financials" className="ss-section"><FinancialsPanel history={m.history} quarters={m.quarters} /></div>}
-      <div id="sec-technicals" className="ss-section"><TechnicalPanel ticker={data.symbol} /></div>
-
       {m && (
         <>
-          <div id="sec-thesis" className="ss-section" data-tour="thesis"><ThesisMonitor metrics={m} account={account} /></div>
-
           <div id="sec-levels" className="ss-section">
 
           {/* Where the price sits — described against the levels, never an instruction */}
@@ -995,8 +972,12 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         </>
       )}
 
-      <div id="sec-peers" className="ss-section"><PeersPanel symbol={data.symbol} onAnalyze={onOpenStock} /></div>
-      <div id="sec-filings" className="ss-section" data-tour="filings"><NewsPanel symbol={data.symbol} /></div>
+      {m && <div id="sec-financials" className="ss-section"><h2 className="sd-h2">Financials</h2><FinancialsPanel history={m.history} quarters={m.quarters} /></div>}
+      <div id="sec-holding" className="ss-section"><h2 className="sd-h2">Holdings</h2><ShareholdingPanel symbol={data.symbol} /></div>
+      <div id="sec-technicals" className="ss-section"><h2 className="sd-h2">Technicals</h2><TechnicalPanel ticker={data.symbol} /></div>
+
+      <div id="sec-peers" className="ss-section"><h2 className="sd-h2">Peers</h2><PeersPanel symbol={data.symbol} onAnalyze={onOpenStock} /></div>
+      <div id="sec-filings" className="ss-section" data-tour="filings"><h2 className="sd-h2">News & filings</h2><NewsPanel symbol={data.symbol} /></div>
       <MyNotes key={data.symbol} symbol={data.symbol} />
 
       <p style={{ fontSize: 11, color: "var(--t3)", textAlign: "center", lineHeight: 1.6 }}>
@@ -1007,6 +988,9 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "var(--accent)", background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 12, cursor: "pointer", padding: "12px 24px", fontWeight: 600, margin: "8px auto 0" }}>
           <ArrowLeft size={16} /> Back to {backTo}
         </button>
+      </div>
+      </div>
+      </div>
       </div>
     </div>
   );
