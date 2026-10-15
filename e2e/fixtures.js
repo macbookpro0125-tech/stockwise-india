@@ -48,6 +48,12 @@ export const test = base.extend({
 
 // Accessibility scan of what's on screen; serious and critical only
 export async function axeCheck(page, label) {
+  // Scan a still page: half-way through a fade-in, text is partly transparent
+  // and reads as low contrast. Content that arrives with its data fades in
+  // later, so wait until nothing finite has run for a moment (endless ones —
+  // the price strip, pulses — are ignored).
+  const settled = () => page.waitForFunction(() => !document.getAnimations().some(a => a.playState === "running" && a.effect?.getComputedTiming?.().iterations !== Infinity), null, { timeout: 5000 }).catch(() => {});
+  await settled(); await page.waitForTimeout(400); await settled();
   const { violations } = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
   const bad = violations.filter(v => v.impact === "serious" || v.impact === "critical");
   return bad.map(v => `${label}: ${v.id} (${v.impact}) ×${v.nodes.length} — ${v.help}; e.g. ${v.nodes[0]?.target?.join(" ")} [${(v.nodes[0]?.any?.[0]?.message ?? "").slice(0, 160)}] <${(v.nodes[0]?.html ?? "").slice(0, 140)}>`);
