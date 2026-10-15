@@ -1178,3 +1178,13 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   animation-duration: 250ms;
   animation-timing-function: ease;
 }
+
+/* Watchlist: a removed card folds away (WatchlistView.jsx removeCard) */
+.wl-row { display: grid; grid-template-rows: 1fr; opacity: 1;
+  transition: grid-template-rows 200ms var(--ease-out-strong), opacity 200ms var(--ease-out-strong), margin 200ms var(--ease-out-strong); }
+.wl-row > * { min-height: 0; overflow: hidden; }
+.wl-row.leaving { grid-template-rows: 0fr; opacity: 0; margin-bottom: -10px; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) {
+  .wl-row { transition: opacity 150ms ease; }
+  .wl-row.leaving { grid-template-rows: 1fr; margin-bottom: 0; }
+}
