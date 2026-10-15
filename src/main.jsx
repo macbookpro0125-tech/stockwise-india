@@ -5,6 +5,9 @@ import App from "./App.jsx";
 // request); the optical-size axis tightens it at heading sizes
 import "@fontsource-variable/inter/opsz.css";
 import "./index.css";
+import { installGlow } from "./glow.js";
+
+installGlow();
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>

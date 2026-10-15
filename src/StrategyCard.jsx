@@ -45,7 +45,7 @@ export default function StrategyCard({ p, kind, count, top, featured, index, act
 
   return (
     <button ref={ref} type="button" onClick={() => onSelect(p)} aria-pressed={active}
-      className={`sc2${featured ? " sc2-featured" : ""}${inView ? " in" : ""}`}
+      className={`sc2 glow${featured ? " sc2-featured" : ""}${inView ? " in" : ""}`}
       style={{ "--hue": hue, "--i": index % 3 }}>
       <span className="sc2-main">
         {featured && <span className="sc2-eyebrow">Featured · {kind}</span>}

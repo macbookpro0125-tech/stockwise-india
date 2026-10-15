@@ -175,7 +175,7 @@ export default function PortfolioView({ onOpenStock }) {
             const alloc = allPricesLoaded && totalCurrent > 0 && h.currentVal != null ? (h.currentVal / totalCurrent) * 100 : null;
             const st = status[h.ticker];
             return (
-              <div key={h.id} style={{ padding: "14px 16px", borderRadius: 12, border: "1px solid var(--bdr2)", background: "var(--s2)", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+              <div key={h.id} className="glow" style={{ padding: "14px 16px", borderRadius: 12, border: "1px solid var(--bdr2)", background: "var(--s2)", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
                 <div style={{ flex: "1 1 160px", minWidth: 130 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 7, fontWeight: 600, fontSize: 14, color: "var(--t1)", letterSpacing: "-0.01em" }}><CompanyLogo symbol={h.ticker} size={18} />{h.name}</div>
                   <div style={{ fontSize: 10, color: "var(--t3)", marginTop: 2 }}>

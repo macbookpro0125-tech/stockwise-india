@@ -89,7 +89,7 @@ const actionBtn = { width: 30, height: 30, borderRadius: 8, border: "1px solid v
 function AlertCard({ a, onView, onEdit, onDelete, onToggle }) {
   const away = a.cmp != null ? ((a.threshold - a.cmp) / a.cmp) * 100 : null;
   return (
-    <div style={{ padding: "14px 16px", borderRadius: 12, border: "1px solid var(--bdr2)", background: a.enabled ? "var(--s2)" : "var(--s1)", opacity: a.enabled ? 1 : 0.55, transition: "all 150ms" }}>
+    <div className="glow" style={{ padding: "14px 16px", borderRadius: 12, border: "1px solid var(--bdr2)", background: a.enabled ? "var(--s2)" : "var(--s1)", opacity: a.enabled ? 1 : 0.55, transition: "all 150ms" }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
