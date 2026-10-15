@@ -1172,3 +1172,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 :root:not([data-theme="light"]) .ap .sc2, :root:not([data-theme="light"]) .ap .ap-tile:not(.ap-tile-dark), :root:not([data-theme="light"]) .sd.ap .sd-card, :root:not([data-theme="light"]) .sd.ap .sd-snap-card, :root:not([data-theme="light"]) .sd.ap .sd-metrics, :root:not([data-theme="light"]) .ap-band { background: linear-gradient(180deg, #232325, var(--s2) 140px); }
 :root:not([data-theme="light"]) .ap .sc2-featured { background: radial-gradient(600px 300px at 100% 0%, color-mix(in srgb, var(--hue) 10%, transparent), transparent 70%), linear-gradient(180deg, #232325, var(--s2) 160px); }
 :root:not([data-theme="light"]) .ap .sc2.in:hover, :root:not([data-theme="light"]) .ap .ap-tile.in:hover { background: linear-gradient(180deg, #2A2A2D, #212123 160px); }
+
+/* Theme switch: a 250ms cross-fade (App.jsx useTheme) */
+::view-transition-old(root), ::view-transition-new(root) {
+  animation-duration: 250ms;
+  animation-timing-function: ease;
+}

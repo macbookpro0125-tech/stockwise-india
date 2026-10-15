@@ -1,4 +1,5 @@
 import { Suspense, useState, useEffect, useRef, useCallback } from "react";
+import { flushSync } from "react-dom";
 import { lazyPage } from "./lazyPage.js";
 import { api } from "./api.js";
 import Landing from "./Landing.jsx";
@@ -32,7 +33,17 @@ function useTheme() {
     document.documentElement.setAttribute("data-theme", theme);
     try { localStorage.setItem("stockwise-india-theme", theme); } catch {}
   }, [theme]);
-  const toggle = useCallback(() => setTheme(t => (t === "dark" ? "light" : "dark")), []);
+  // Cross-fades the two themes (View Transitions); instant without support or with reduced motion
+  const toggle = useCallback(() => {
+    const next = (document.documentElement.getAttribute("data-theme") === "light") ? "dark" : "light";
+    const apply = () => {
+      document.documentElement.setAttribute("data-theme", next);
+      flushSync(() => setTheme(next));
+    };
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (!document.startViewTransition || reduce) { apply(); return; }
+    document.startViewTransition(apply);
+  }, []);
   return [theme, toggle];
 }
 
