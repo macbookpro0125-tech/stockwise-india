@@ -31,7 +31,7 @@ test("F06-E1 double-clicking Create alert makes one alert", async ({ page, accou
 
 test("F04-E1 a long note isn't cut off without warning", async ({ page, account }) => {
   await page.goto("/stock/TCS");
-  await page.getByRole("button", { name: "Watch", exact: true }).click();
+  await page.getByRole("button", { name: "Add to watchlist" }).click();
   await page.getByRole("button", { name: "Watchlist" }).first().click();
   await page.getByRole("button", { name: "+ Add note" }).first().click();
   const box = page.getByPlaceholder("e.g. Wait for Q3 results…");
