@@ -163,12 +163,11 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
           const active = p.id === activePresetId;
           const isCustom = !!p.custom;
 
-          const rules = grid ? presetRules(p, meta) : [];
           const count = counts[p.id];
           return (
             <div key={p.id} className="preset-card-wrap" style={{ position: "relative", flexShrink: 0 }}>
               {grid ? (
-                <StrategyCard p={p} kind={kindOf(p)[1]} rules={rules} count={count} top={tops[p.id]} featured={shownIndex === 0}
+                <StrategyCard p={p} kind={kindOf(p)[1]} count={count} top={tops[p.id]} featured={shownIndex === 0}
                   index={shownIndex} active={active} onSelect={onSelect} hue={hueOf(p)} />
               ) : (
               <button

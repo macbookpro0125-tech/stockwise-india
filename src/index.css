@@ -891,7 +891,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 /* ── Discover's first page in motion (ScreensHome, LiveScreen, StrategyCard) ── */
 /* Strategy cards, editorial: label, name, line, big count, best names, rules */
 .preset-grid .preset-scroll { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 20px !important; }
-.preset-grid .preset-card-wrap:has(.sc2-featured) { grid-column: span 2; }
+.preset-grid .preset-card-wrap:has(.sc2-featured) { grid-column: 1 / -1; }
 .sc2 {
   position: relative; overflow: hidden; width: 100%; height: 100%;
   display: grid; grid-template-columns: minmax(0, 1fr); gap: 0;
@@ -911,17 +911,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .sc2-eyebrow { display: flex; align-items: center; gap: 10px; font-size: 11.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--t3); }
 .sc2-name { margin: 16px 0 8px; font-size: 21px; font-weight: 700; letter-spacing: -0.025em; line-height: 1.2; }
 .sc2-desc { font-size: 14px; line-height: 1.55; color: var(--t2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.sc2-stat { display: flex; align-items: baseline; gap: 8px; margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--bdr); }
-.sc2-stat b { font-size: 44px; font-weight: 700; letter-spacing: -0.04em; line-height: 1; font-variant-numeric: tabular-nums; color: var(--t1); }
-.sc2-stat span { font-size: 13px; color: var(--t3); }
-.sc2-roll { display: flex; align-items: baseline; gap: 8px; margin-top: 10px; min-height: 22px; overflow: hidden; font-size: 13px; }
-.sc2-roll-label { flex-shrink: 0; color: var(--t3); }
-.sc2-roll-name { display: inline-flex; align-items: baseline; gap: 6px; min-width: 0; font-weight: 600; color: var(--t1); animation: scRoll 450ms var(--ease-out) both; }
-.sc2-roll-name > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sc2-roll-name em { font-style: normal; font-size: 11.5px; font-weight: 700; padding: 1px 6px; border-radius: 5px; color: var(--green); background: var(--green-dim); font-variant-numeric: tabular-nums; }
-@keyframes scRoll { from { opacity: 0; transform: translateY(70%); } to { opacity: 1; transform: none; } }
-.sc2-rules { margin-top: 16px; font-size: 12.5px; line-height: 1.6; color: var(--t3); white-space: pre-wrap; }
-.sc2-rules em { font-style: normal; color: var(--t2); font-weight: 600; white-space: nowrap; }
 .sc2-go { display: inline-flex; align-items: center; gap: 6px; margin-top: auto; padding-top: 18px; font-size: 13.5px; font-weight: 600; color: var(--t1); }
 .sc2-go svg { transition: transform 200ms var(--ease-out); }
 .sc2:hover .sc2-go { color: var(--accent); }
@@ -930,8 +919,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 /* The featured one: wider, a bigger count, its five best listed */
 .sc2-featured { grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 36px; padding: 32px; background: radial-gradient(600px 300px at 100% 0%, color-mix(in srgb, var(--hue) 8%, transparent), transparent 70%), var(--s2); }
 .sc2-featured .sc2-name { font-size: 30px; letter-spacing: -0.035em; }
-.sc2-featured .sc2-stat b { font-size: 72px; }
-.sc2-list { display: flex; flex-direction: column; gap: 4px; padding: 20px; border-radius: 14px; background: var(--s1); border: 1px solid var(--bdr); align-self: start; }
+.sc2-featured .sc2-list { display: flex; flex-direction: column; gap: 4px; padding: 20px; border-radius: 14px; background: var(--s1); border: 1px solid var(--bdr); align-self: start; }
 .sc2-list-head { font-size: 11.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--t3); margin-bottom: 8px; }
 .sc2-row { display: grid; grid-template-columns: 26px minmax(0, 1fr) 90px 30px; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid var(--bdr); font-size: 13.5px; }
 .sc2-row:first-of-type { border-top: 0; }
@@ -950,8 +938,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   .preset-grid .preset-card-wrap:has(.sc2-featured) { grid-column: auto; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .sc2-roll-name { animation: none !important; }
-  .sc2 { opacity: 1 !important; transform: none !important; transition: none !important; }
+    .sc2 { opacity: 1 !important; transform: none !important; transition: none !important; }
   .sc2-row-bar i, .sc2::before, .sc2-go svg { transition: none !important; }
 }
 
@@ -1051,7 +1038,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .ap .sc2-featured { padding: 40px; }
 .ap .sc2-eyebrow { letter-spacing: 0.02em; text-transform: none; font-size: 14px; color: var(--accent); }
 .ap .sc2-name { font-size: 26px; letter-spacing: -0.03em; }
-.ap .sc2-featured .sc2-name { font-size: 40px; }
 .ap .sc2-desc { font-size: 16px; }
 .ap .sc2-go { color: var(--accent); font-weight: 400; font-size: 17px; }
 .ap .sc2:hover .sc2-go { text-decoration: underline; text-underline-offset: 3px; }
@@ -1205,4 +1191,28 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 @media (prefers-reduced-motion: reduce) {
   .status-toast, .status-toast.leaving { transform: none; }
   @starting-style { .status-toast { transform: none; opacity: 0; } }
+}
+
+/* Strategy cards with room to breathe (StrategyCard.jsx): mark, name, one
+   line, then the count and the way in — no dividers; wider gaps; the
+   featured one takes a full row */
+.ap .preset-grid .preset-scroll { gap: 28px !important; }
+.ap .sc2 { padding: 40px 36px 34px; min-height: 290px; }
+.ap .sc2-main { height: 100%; }
+.ap .sc2-name { margin: 26px 0 10px; font-size: 26px; line-height: 1.15; letter-spacing: -0.03em; }
+.ap .sc2-desc { font-size: 16px; line-height: 1.5; color: var(--t2); }
+.sc2-foot { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-top: auto; padding-top: 36px; }
+.sc2-count { font-size: 15px; color: var(--t3); }
+.sc2-count b { margin-right: 4px; font-size: 30px; font-weight: 700; letter-spacing: -0.035em; color: var(--t1); font-variant-numeric: tabular-nums; }
+.ap .sc2-go { margin: 0; padding: 0; display: inline-flex; align-items: center; gap: 0; }
+.ap .sc2-featured { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 64px; padding: 56px 56px 48px; min-height: 0; }
+.ap .sc2-featured .sc2-eyebrow { margin-bottom: 22px; font-size: 14px; font-weight: 600; letter-spacing: 0.01em; text-transform: none; color: var(--t3); }
+.ap .sc2-featured .sc2-name { margin-top: 28px; font-size: 44px; line-height: 1.06; letter-spacing: -0.035em; }
+.ap .sc2-featured .sc2-desc { font-size: 19px; max-width: 30ch; }
+.ap .sc2-featured .sc2-count b { font-size: 56px; letter-spacing: -0.045em; }
+.ap .sc2-featured .sc2-list { align-self: center; padding: 28px 30px; border-radius: 22px; }
+.ap .sc2-featured .sc2-row { padding: 14px 0; font-size: 15px; grid-template-columns: 30px minmax(0, 1fr) 120px 34px; gap: 14px; }
+@media (max-width: 1100px) {
+  .ap .sc2-featured { grid-template-columns: minmax(0, 1fr); gap: 36px; padding: 40px; }
+  .ap .sc2-featured .sc2-name { font-size: 36px; }
 }
