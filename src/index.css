@@ -1311,3 +1311,24 @@ select {
   .btn-ghost:hover:not(:disabled), .tb-select:hover, .sc-kind:hover, .sd-action:not(:first-child):hover, select:hover, .input-base:hover { box-shadow: var(--glow-ring); border-color: color-mix(in srgb, var(--accent) 40%, var(--bdr2)); }
   .btn-primary:hover:not(:disabled), .ap-btn:hover, .sd.ap .sd-action:first-child:hover { box-shadow: var(--glow-ring-solid); }
 }
+
+/* The filters drawer (DiscoverView): over the table, growing out of the
+   Filters button; open while the pointer is on the button or the drawer */
+.filters-drawer {
+  position: fixed; z-index: 70;
+  top: var(--drawer-top, calc(var(--header-h, 0px) + 12px)); left: var(--drawer-left, var(--page-x));
+  width: 330px; max-height: calc(100vh - var(--drawer-top, calc(var(--header-h, 0px) + 12px)) - 16px);
+  overflow-y: auto; overscroll-behavior: contain;
+  padding: 18px 20px; border-radius: 20px; border: 1px solid var(--bdr2); background: var(--s2);
+  box-shadow: var(--sh-lg), 0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent), 0 0 40px -12px color-mix(in srgb, var(--accent) 40%, transparent);
+  transform-origin: top left; opacity: 0; transform: scale(0.96); visibility: hidden;
+  transition: opacity 160ms var(--ease-out-strong), transform 220ms var(--ease-out-strong), visibility 0s linear 220ms;
+}
+.filters-drawer.open { opacity: 1; transform: none; visibility: visible; transition: opacity 160ms var(--ease-out-strong), transform 220ms var(--ease-out-strong), visibility 0s; }
+.filters-drawer-foot { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--bdr); }
+.filters-btn.on { color: var(--t1); border-color: color-mix(in srgb, var(--accent) 45%, var(--bdr2)); box-shadow: var(--glow-ring); }
+@media (max-width: 900px) { .filters-drawer { display: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .filters-drawer { transform: none; transition: opacity 150ms ease, visibility 0s linear 150ms; }
+  .filters-drawer.open { transition: opacity 150ms ease, visibility 0s; }
+}

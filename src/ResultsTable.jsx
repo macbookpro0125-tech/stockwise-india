@@ -213,7 +213,7 @@ function FvCell({ stock }) {
             const hit = cmp != null && price != null && cmp <= price;
             return (
               <span key={label} style={{ display: "inline-flex", alignItems: "center", gap: 2, color: hit ? "var(--accent)" : "var(--t3)", fontWeight: hit ? 650 : 500 }}>
-                <span style={{ fontWeight: 500, opacity: 0.8 }}>{label}</span>&nbsp;{price ? price.toLocaleString("en-IN") : "—"}{hit && <Check size={11} strokeWidth={3} style={{ color: "var(--green)" }} />}
+                <span style={{ fontWeight: 500 }}>{label}</span>&nbsp;{price ? price.toLocaleString("en-IN") : "—"}{hit && <Check size={11} strokeWidth={3} style={{ color: "var(--green)" }} />}
               </span>
             );
           })}
@@ -551,10 +551,12 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
       {/* ── Name box, and Watchlist only. Score minimums are set from each
              Name box + the three scores: pick Quality 70+, then Research or
              Piotroski with it ── */}
-      {!loading && (matches?.length ?? 0) > 0 && (!isMobile || searchOpen || !!q || scoreFiltered) && (
+      {/* The Filters button stays even when the filters leave nothing (the
+          way back out); the name box and scores need rows to work on */}
+      {!loading && ((matches?.length ?? 0) > 0 || filtersButton) && (!isMobile || searchOpen || !!q || scoreFiltered) && (
         <div className="score-line">
         {filtersButton}
-        <div className="score-row">
+        {(matches?.length ?? 0) > 0 && <div className="score-row">
           <div style={{ position: "relative", minWidth: 0 }}>
             <Search size={15} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--t3)", pointerEvents: "none" }} />
             <input
@@ -602,7 +604,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
               <Star size={13} fill={watchOnly ? "currentColor" : "none"} /> Watchlist only <span style={{ ...MONO, opacity: 0.8 }}>({watchedMatches})</span>
             </button>
           )}
-        </div>
+        </div>}
         </div>
       )}
 
