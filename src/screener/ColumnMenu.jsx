@@ -1,6 +1,7 @@
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { ArrowUp, ArrowDown, X } from "lucide-react";
 import { formatInput, unitLabel } from "./meta.js";
+import { Definition } from "./MetricInfo.jsx";
 
 // A column's ▾ menu on Discover's table, as Excel's filter button: sort the
 // column either way, or keep only rows whose value is at least / at most a
@@ -15,7 +16,9 @@ function parse(text) {
   return Number.isFinite(v) ? v : undefined; // undefined: not a number
 }
 
-export default function ColumnMenu({ anchor, label, text = false, def, filter, onSort, onApply, onClose }) {
+// about: the column's metric, whose definition and period head the menu (the
+// ⓘ that used to sit beside every header now lives here)
+export default function ColumnMenu({ anchor, label, text = false, def, about = null, meta = null, filter, onSort, onApply, onClose }) {
   const [at, setAt] = useState(null);
   const [min, setMin] = useState(def ? formatInput(def, filter?.min) : "");
   const [max, setMax] = useState(def ? formatInput(def, filter?.max) : "");
@@ -23,7 +26,7 @@ export default function ColumnMenu({ anchor, label, text = false, def, filter, o
   const ref = useRef(null);
 
   useLayoutEffect(() => {
-    const r = anchor.getBoundingClientRect(), width = 248;
+    const r = anchor.getBoundingClientRect(), width = about ? 300 : 248;
     setAt({ left: Math.max(8, Math.min(r.right - width, window.innerWidth - width - 8)), top: r.bottom + 6, width });
   }, [anchor]);
 
@@ -62,6 +65,11 @@ export default function ColumnMenu({ anchor, label, text = false, def, filter, o
     <div ref={ref} role="dialog" aria-label={`${label}: sort and filter`} className="column-menu"
       onClick={e => e.stopPropagation()}
       style={{ position: "fixed", left: at.left, top: at.top, width: at.width, zIndex: 300, padding: 6, borderRadius: 10, background: "var(--s3)", border: "1px solid var(--bdr2)", boxShadow: "0 10px 30px rgba(0,0,0,0.35)", textAlign: "left", fontWeight: 400, cursor: "default", whiteSpace: "normal" }}>
+      {about && (
+        <div style={{ padding: "8px 10px 10px", marginBottom: 4, borderBottom: "1px solid var(--bdr2)" }}>
+          <Definition def={about} meta={meta} />
+        </div>
+      )}
       <button type="button" className="column-menu-item" style={item} onClick={() => { onSort("asc"); onClose(); }}>
         <ArrowUp size={14} aria-hidden="true" /> {text ? "Sort A to Z" : "Sort smallest to largest"}
       </button>

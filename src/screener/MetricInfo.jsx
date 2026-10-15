@@ -51,7 +51,7 @@ export function basisText(basis, periods = {}) {
   }
 }
 
-function Definition({ def, meta }) {
+export function Definition({ def, meta }) {
   const basis = basisText(def.basis, meta?.periods);
   const known = def.range?.known ?? def.known;
   return (

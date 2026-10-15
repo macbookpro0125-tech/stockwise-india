@@ -26,18 +26,21 @@ const MAX_COMPARE = 5;
 const CompareView = lazyPage(() => import("./CompareView.jsx"));
 // Wide enough for the compare box and a four-digit rank; the name column is
 // pinned right after it.
-const RANK_W = 60;
+const RANK_W = 50;
 
 // Column headers: sentence case at reading size; the sorted one darker, with
 // its arrow (the others keep the arrow's room so headers don't shift)
 const thStyle = {
-  padding: "10px 12px", textAlign: "left", fontSize: 12, fontWeight: 500, color: "var(--t2)",
+  padding: "10px 8px", textAlign: "left", fontSize: 12, fontWeight: 500, color: "var(--t2)",
   whiteSpace: "nowrap", userSelect: "none", borderBottom: "1px solid var(--bdr2)", background: "var(--s1)",
   position: "sticky", top: 0, zIndex: 3,
 };
+// Only the sorted column shows its arrow; the others don't keep room for one
+// (twelve reserved arrows were most of a column's width)
 const SortArrow = ({ active, dir }) => {
-  const Arrow = active && dir === "asc" ? ArrowUp : ArrowDown;
-  return <Arrow size={12} strokeWidth={2.4} style={{ opacity: active ? 1 : 0, color: "var(--accent)", flexShrink: 0, transition: "opacity 120ms" }} />;
+  if (!active) return null;
+  const Arrow = dir === "asc" ? ArrowUp : ArrowDown;
+  return <Arrow size={12} strokeWidth={2.4} style={{ color: "var(--accent)", flexShrink: 0 }} />;
 };
 // A real button so a header can be reached and sorted from the keyboard; its
 // click bubbles to the <th>'s onClick, so the mouse works as before
@@ -57,6 +60,9 @@ function fmtCr(n) {
 }
 
 const MONO = { fontVariantNumeric: "tabular-nums" };
+// "Osia Hyper Retail Limited" -> "Osia Hyper Retail" in the table (the full
+// name is the link's tooltip and on the company page)
+const shortName = name => String(name ?? "").replace(/\s+(Limited|Ltd\.?)$/i, "");
 
 const quality = s => s.research?.quality ?? null;
 
@@ -82,7 +88,7 @@ function MenuButton({ label, menu }) {
         className="column-menu-btn" data-on={filtered || open || undefined}>
         <Icon size={filtered ? 12 : 14} strokeWidth={2.2} aria-hidden="true" fill={filtered ? "currentColor" : "none"} />
       </button>
-      {open && <ColumnMenu anchor={ref.current} label={label} text={menu.text} def={menu.def} filter={menu.filter} onSort={menu.onSort} onApply={menu.onApply} onClose={() => setOpen(false)} />}
+      {open && <ColumnMenu anchor={ref.current} label={label} text={menu.text} def={menu.def} about={menu.about} meta={menu.meta} filter={menu.filter} onSort={menu.onSort} onApply={menu.onApply} onClose={() => setOpen(false)} />}
     </>
   );
 }
@@ -96,6 +102,7 @@ function SortTh({ label, title, col, sortBy, sortDir, onSort, accent, info, menu
       title={title}
       style={{
         ...thStyle,
+        whiteSpace: "normal", verticalAlign: "bottom", minWidth: 64,
         color: active ? "var(--t1)" : "var(--t2)",
         fontWeight: active ? 600 : 500,
         cursor: "pointer",
@@ -103,13 +110,14 @@ function SortTh({ label, title, col, sortBy, sortDir, onSort, accent, info, menu
         transition: "color 120ms",
       }}
     >
-      <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-        <button type="button" style={sortBtnStyle}>
-          {label}
+      {/* The name may wrap onto two lines, so a column is as wide as its
+          figures, not its title; the definition is in the ▾ menu */}
+      <span style={{ display: "flex", alignItems: "flex-end", gap: 2 }}>
+        <button type="button" style={{ ...sortBtnStyle, textAlign: "left", lineHeight: 1.25 }}>
+          <span>{typeof label === "string" ? label.replace(/\//g, "/\u200b") : label}</span>
           <SortArrow active={active} dir={sortDir} />
         </button>
-        {info}
-        {menu && <MenuButton label={label} menu={menu} />}
+        {menu ? <MenuButton label={label} menu={menu} /> : info}
       </span>
     </th>
   );
@@ -170,9 +178,9 @@ function FvCell({ stock }) {
   ].filter(Boolean);
   const fvLabel = stock.fyEnd ? `FV${String(Number(stock.fyEnd.slice(0, 4)) + 2).slice(2)}` : "FV";
   return (
-    <div style={{ fontSize: 11, lineHeight: 1.5, minWidth: 190, ...MONO }}>
+    <div style={{ fontSize: 11, lineHeight: 1.5, minWidth: 158, ...MONO }}>
       {p1 ? (
-        <div style={{ display: "flex", gap: 8, whiteSpace: "nowrap" }}>
+        <div style={{ display: "flex", gap: 6, whiteSpace: "nowrap" }}>
           {[["P1", p1], ["P2", p2], ["P3", p3]].map(([label, price]) => {
             const hit = cmp != null && price != null && cmp <= price;
             return (
@@ -226,9 +234,10 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
   // A column's ▾ menu: sort to a set direction, or set the column's filter —
   // the same { id, min, max } the sidebar edits (none when both are empty)
   const menuFor = (col, filterId, label) => {
-    const def = onFiltersChange && filterId ? meta?.byId.get(filterId) : null;
+    const about = filterId ? meta?.byId.get(filterId) ?? null : null;
+    const def = onFiltersChange ? about : null;
     return {
-      def,
+      def, about, meta,
       filter: def ? (filters ?? []).find(f => f.id === filterId) : null,
       onSort: dir => { setSortBy(col); setSortDir(dir); },
       onApply: (min, max) => {
@@ -398,7 +407,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
   };
 
   const noData = !loading && (!matches || matches.length === 0);
-  const cell = { padding: "9px 12px", borderBottom: "1px solid var(--bdr)" };
+  const cell = { padding: "9px 8px", borderBottom: "1px solid var(--bdr)" };
 
   return (
     <div style={{ animation: "fadeUp 280ms cubic-bezier(0,0,0.2,1) backwards" }}>
@@ -734,8 +743,8 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                     </td>
 
                     <td style={{ ...cell, minWidth: 200, position: "sticky", left: RANK_W, background: rowBg, zIndex: 1, boxShadow: "inset -1px 0 0 var(--bdr)" }}>
-                      <button type="button" title={stock.name} onClick={() => onAnalyze(stock.symbol)} className="stock-link" style={{ display: "block", maxWidth: 240, padding: 0, border: 0, background: "none", fontFamily: "inherit", textAlign: "left", fontWeight: 600, fontSize: 13.5, letterSpacing: "-0.01em", marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{stock.name}</button>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6, maxWidth: 260, minWidth: 0 }}>
+                      <button type="button" title={stock.name} aria-label={stock.name} onClick={() => onAnalyze(stock.symbol)} className="stock-link" style={{ display: "block", maxWidth: 196, padding: 0, border: 0, background: "none", fontFamily: "inherit", textAlign: "left", fontWeight: 600, fontSize: 13.5, letterSpacing: "-0.01em", marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shortName(stock.name)}</button>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, maxWidth: 196, minWidth: 0 }}>
                         <span className="ticker-chip">{stock.symbol}</span>
                         <NcavBadge stock={stock} />
                         {stock.sector && <span title={stock.sector} style={{ fontSize: 10.5, color: "var(--t3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{stock.sector}</span>}
@@ -762,10 +771,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
 
                     <td style={cell}>
                       <div data-tour={i === 0 ? "row-actions" : undefined} style={{ display: "flex", gap: 5, alignItems: "center" }}>
-                        {/* One solid button per page reads as the action; fifty in a column read as noise */}
-                        <button onClick={() => onAnalyze(stock.symbol)} className="btn-ghost" style={{ height: 30, padding: "0 12px", fontSize: 12.5, boxShadow: "none" }}>
-                          Analyze
-                        </button>
+                        {/* The company's name opens it; the row keeps only watch, alert and NSE */}
                         <StarButton symbol={stock.symbol} price={stock.cmp} watched={watchlist.has(stock.symbol)} />
                         {bell(stock)}
                         <a
