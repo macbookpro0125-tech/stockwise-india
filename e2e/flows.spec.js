@@ -70,7 +70,7 @@ test("F02-H2 share link reopens the same screen", async ({ page, context, accoun
   await page.goto("/");
   await openStocks(page);
   await page.getByRole("combobox").filter({ has: page.getByRole("option", { name: "All sectors" }) }).selectOption("Healthcare");
-  await page.getByRole("button", { name: "Share link" }).click();
+  await page.getByRole("button", { name: "Share", exact: true }).click();
   const link = await page.evaluate(() => navigator.clipboard.readText());
   expect(link).toContain("screen=");
   const other = await context.newPage();
@@ -81,8 +81,10 @@ test("F02-H2 share link reopens the same screen", async ({ page, context, accoun
 test("F02-H3 Excel and CSV exports download", async ({ page, account }) => {
   await page.goto("/");
   await openStocks(page);
-  for (const name of ["Export Excel", "CSV"]) {
-    const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name }).click()]);
+  // One Export button; its menu holds the two formats
+  for (const name of [/^Excel workbook/, /^Spreadsheet text/]) {
+    await page.getByRole("button", { name: "Export" }).click();
+    const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("menuitem", { name }).click()]);
     const path = await download.path();
     expect(readFileSync(path).length, name).toBeGreaterThan(1000);
   }

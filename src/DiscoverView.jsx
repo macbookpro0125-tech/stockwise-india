@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { PanelLeftClose, SlidersHorizontal, ArrowLeft, ChevronRight, Bookmark } from "lucide-react";
+import { PanelLeftClose, SlidersHorizontal, ChevronLeft, ChevronRight, Bookmark, Share } from "lucide-react";
 import { api } from "./api.js";
 import PresetCards from "./PresetCards.jsx";
 import { strategiesStore, browserLeftovers, moveLeftovers, discardLeftovers } from "./accountData.js";
@@ -400,26 +400,33 @@ export default function DiscoverView({ onOpenStock }) {
         {/* Second page: back to the strategies, and which screen this is —
             its name, what it looks for, and Save */}
         {phoneStep === "stocks" && (
-          <div className="screen-head">
-            <button type="button" onClick={showStrategies} className="btn-ghost" aria-label="Back to all strategies" style={{ height: 36, padding: "0 10px", fontSize: 13, flexShrink: 0 }}>
-              <ArrowLeft size={16} aria-hidden="true" /> {isPhone ? "Strategies" : "All strategies"}
+          <header className="screen-head">
+            <button type="button" onClick={showStrategies} className="screen-back" aria-label="Back to all strategies">
+              <ChevronLeft size={17} aria-hidden="true" /> {isPhone ? "Strategies" : "All strategies"}
             </button>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <h2 style={{ fontSize: isPhone ? 16 : 19, fontWeight: 650, color: "var(--t1)", margin: 0, letterSpacing: "-0.02em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {activePresetName ?? (activeCount > 0 ? "Your filters" : "Whole market")}
-              </h2>
+            <div className="screen-head-row">
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <h2 className="screen-title">{activePresetName ?? (activeCount > 0 ? "Your filters" : "Whole market")}</h2>
+                {!isPhone && (
+                  <p className="screen-about">
+                    {activePresetAbout ?? (activeCount > 0 ? `${activeCount} filter${activeCount === 1 ? "" : "s"} of your own.` : "Every NSE company. Add a filter to narrow it down.")}
+                  </p>
+                )}
+              </div>
               {!isPhone && (
-                <p style={{ fontSize: 13, color: "var(--t3)", margin: "2px 0 0" }}>
-                  {activePresetAbout ?? (activeCount > 0 ? `${activeCount} filter${activeCount === 1 ? "" : "s"} of your own — change them in the sidebar` : "Every NSE company — add a filter in the sidebar to narrow it")}
-                </p>
+                <div className="screen-actions">
+                  <button type="button" onClick={handleShare} disabled={!activeCount} title="Copy a link that opens this screen" className="btn-ghost tb-btn">
+                    <Share size={14} aria-hidden="true" /> {copyFeedback || "Share"}
+                  </button>
+                  {activeCount > 0 && (
+                    <button type="button" className="btn-primary tb-btn" onClick={() => setShowSaveModal(true)}>
+                      <Bookmark size={14} aria-hidden="true" /> Save as strategy
+                    </button>
+                  )}
+                </div>
               )}
             </div>
-            {!isPhone && activeCount > 0 && (
-              <button type="button" className="btn-ghost" onClick={() => setShowSaveModal(true)} style={{ height: 36, fontSize: 13, flexShrink: 0 }}>
-                <Bookmark size={14} aria-hidden="true" /> Save as strategy
-              </button>
-            )}
-          </div>
+          </header>
         )}
 
         {phoneStep === "stocks" && (
@@ -429,26 +436,12 @@ export default function DiscoverView({ onOpenStock }) {
               {panel}
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", paddingTop: 12, marginTop: 12, borderTop: "1px solid var(--bdr)" }}>
                 <button onClick={() => setSideOpen(false)} className="btn-ghost" style={{ height: 28, padding: "0 10px", fontSize: 11.5 }}><PanelLeftClose size={13} /> Hide filters</button>
-                <button onClick={handleShare} disabled={!activeCount} title="Copy a link that opens this screen" className="btn-ghost" style={{ height: 28, padding: "0 10px", fontSize: 11 }}>{copyFeedback || "Share link"}</button>
                 <button onClick={() => setShowImportModal(true)} className="btn-ghost" style={{ height: 28, padding: "0 10px", fontSize: 11 }}>Import</button>
               </div>
             </aside>
           )}
 
           <main style={{ minWidth: 0 }}>
-            <div className="screener-toolbar hide-phone">
-              <button data-tour="filters" className={`btn-ghost ${sideOpen ? "screener-filters-toggle" : ""}`} onClick={() => (window.innerWidth <= 900 ? setSheetOpen(true) : setSideOpen(true))} style={{ height: 34, fontSize: 12.5 }}>
-                <SlidersHorizontal size={14} /> Filters{activeCount > 0 && <span style={{ marginLeft: 2, fontSize: 10.5, padding: "0 7px", borderRadius: 999, fontWeight: 700, background: "var(--accent)", color: "var(--on-accent)" }}>{activeCount}</span>}
-              </button>
-              {/* "Screening 2,250 companies" became "Found 29 of 2,250" in the
-                  results bar; this keeps only the prompts worth a line */}
-              {results && (updating || activeCount === 0) && (
-                <span className="hide-phone" style={{ fontSize: 12, color: "var(--t3)" }}>
-                  {updating ? "Updating…" : `The whole market — ${results.total.toLocaleString("en-IN")} NSE companies with current filings. Add a filter or pick a strategy.`}
-                </span>
-              )}
-            </div>
-
             {results?.jobs?.loadingMarket && (
               <div style={{ padding: "12px 18px", borderRadius: 12, marginBottom: 16, background: "color-mix(in srgb, var(--accent) 7%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 25%, transparent)", color: "var(--accent)", fontSize: 13, lineHeight: 1.6 }}>
                 Market data is still loading
@@ -482,6 +475,13 @@ export default function DiscoverView({ onOpenStock }) {
               columns={shownColumns}
               filteredIds={(filters ?? []).filter(f => !f.values && isActiveFilter(f)).map(f => f.id)}
               onEditColumns={meta ? () => setPicker("column") : null}
+              updating={updating}
+              // Shown while the panel is hidden — and on a narrow window, where the panel never shows (index.css .screener-filters-toggle)
+              filtersButton={!isPhone ? (
+                <button data-tour="filters" className={`btn-ghost tb-btn filters-btn${sideOpen ? " screener-filters-toggle" : ""}`} onClick={() => (window.innerWidth <= 900 ? setSheetOpen(true) : setSideOpen(true))}>
+                  <SlidersHorizontal size={14} aria-hidden="true" /> Filters{activeCount > 0 && <span className="filters-count">{activeCount}</span>}
+                </button>
+              ) : null}
               phoneFilters={isPhone ? (
                 <button data-tour="filters" className="btn-ghost" onClick={() => setSheetOpen(true)} style={{ height: 36, fontSize: 13 }}>
                   <SlidersHorizontal size={14} /> Filters{activeCount > 0 && <span style={{ marginLeft: 2, fontSize: 10.5, padding: "0 7px", borderRadius: 999, fontWeight: 700, background: "var(--accent)", color: "var(--on-accent)" }}>{activeCount}</span>}
