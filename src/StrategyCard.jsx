@@ -1,17 +1,40 @@
+import { useState, useEffect } from "react";
 import { ChevronRight } from "lucide-react";
 import StrategyMark from "./StrategyMarks.jsx";
-import { useInView, useCountUp } from "./motion.js";
+import { useInView, useCountUp, reducedMotion } from "./motion.js";
 
 // One strategy on Discover's first page (PresetCards layout="grid"). Kept to
 // what earns its place (15 Oct 2026, "too packed — give it breathing space"):
-// its mark, its name, one line on what it looks for, and how many stocks
-// match today with the way in. The tabs above already say each one's kind,
-// and its rules are the filters on its own page. The first card is the
+// its mark, its name, one line on what it looks for, its best match rolling
+// through, and how many stocks match today with the way in. The tabs above
+// already say each one's kind, and its rules are the filters on its own page. The first card is the
 // featured one: a full row of its own, with its five best by quality score.
 // Cards glide in as they come into view and the count ticks up — or, for
 // anyone who asked their system for less motion, simply show.
 
 const short = name => name.replace(/\s+(Limited|Ltd\.?)$/i, "");
+
+// Its best matches by quality score, one after another (asked back on 16 Oct
+// 2026: "that animation, between the details and the number of stocks").
+// Pauses under the pointer; still for anyone who asked for less motion.
+function Rolling({ top, run }) {
+  const [i, setI] = useState(0);
+  const [paused, setPaused] = useState(false);
+  useEffect(() => {
+    if (!run || paused || top.length < 2 || reducedMotion()) return;
+    const t = setInterval(() => setI(x => (x + 1) % top.length), 2600);
+    return () => clearInterval(t);
+  }, [run, paused, top.length]);
+  const c = top[i];
+  return (
+    <span className="sc2-roll" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
+      <span className="sc2-roll-label">Best by quality</span>
+      <span className="sc2-roll-name" key={c.symbol}>
+        <span>{short(c.name)}</span>{c.quality != null && <em>{c.quality}</em>}
+      </span>
+    </span>
+  );
+}
 
 export default function StrategyCard({ p, kind, count, top, featured, index, active, onSelect, hue }) {
   const [ref, inView] = useInView();
@@ -29,6 +52,7 @@ export default function StrategyCard({ p, kind, count, top, featured, index, act
         <StrategyMark preset={p} size={featured ? 44 : 36} />
         <span className="sc2-name">{p.name}</span>
         <span className="sc2-desc">{p.description}</span>
+        {!featured && top?.length > 0 && <Rolling top={top.slice(0, 3)} run={inView} />}
         <span className="sc2-foot">
           <span className="sc2-count">{matches}</span>
           <span className="sc2-go">{featured ? "Open screen" : "Open"}<ChevronRight size={17} aria-hidden="true" /></span>

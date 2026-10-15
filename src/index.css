@@ -1271,3 +1271,12 @@ select {
   .rt-meta:not(:empty)::before { content: none; }
   .score-line { margin-bottom: 10px; }
 }
+
+/* A card's best matches, rolling between its line and its count (StrategyCard Rolling) */
+.sc2-roll { display: flex; align-items: center; gap: 10px; min-height: 26px; margin-top: 20px; overflow: hidden; font-size: 14px; }
+.sc2-roll-label { flex-shrink: 0; color: var(--t3); }
+.sc2-roll-name { display: inline-flex; align-items: center; gap: 8px; min-width: 0; font-weight: 600; color: var(--t1); animation: scRoll 450ms var(--ease-out-strong) both; }
+.sc2-roll-name > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sc2-roll-name em { flex-shrink: 0; padding: 1px 8px; border-radius: 6px; font-style: normal; font-size: 12px; font-weight: 700; color: var(--green); background: var(--green-dim); font-variant-numeric: tabular-nums; }
+@keyframes scRoll { from { opacity: 0; transform: translateY(70%); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .sc2-roll-name { animation: none; } }
