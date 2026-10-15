@@ -1,6 +1,6 @@
 // Edge cases from the test plan: double submits, long input, a session that
 // ends mid-use, the back button, watchlist-only screening, keyboard and phone.
-import { test, expect, openStocks } from "./fixtures.js";
+import { test, expect, openStocks, openFilters } from "./fixtures.js";
 
 test("F05-E1 double-clicking Add to Portfolio adds one holding", async ({ page, account, baseURL }) => {
   await page.goto("/");
@@ -70,6 +70,7 @@ test("F02-E2 Watchlist only screens just the watched companies", async ({ page, 
   for (const t of ["TCS", "SBIN"]) expect((await req.post(`${baseURL}/api/watchlist`, { data: { ticker: t } })).ok()).toBeTruthy();
   await page.goto("/");
   await openStocks(page);
+  await openFilters(page);
   await page.getByRole("combobox").filter({ has: page.getByRole("option", { name: "All sectors" }) }).selectOption("All sectors");
   await page.getByRole("button", { name: /Watchlist only/ }).click();
   const rows = page.getByRole("checkbox", { name: /^Compare / });

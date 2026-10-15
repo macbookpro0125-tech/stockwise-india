@@ -1,5 +1,5 @@
 // The app's flows, one test each (case ids from replica/test-plan.md).
-import { test, expect, openStocks } from "./fixtures.js";
+import { test, expect, openStocks, openFilters } from "./fixtures.js";
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 
@@ -56,6 +56,7 @@ test("F02-H1 a strategy, sector and name filter narrow the list; sort works", as
   await openStocks(page);
   const rows = page.getByRole("checkbox", { name: /^Compare / });
   await expect(rows.first()).toBeVisible();
+  await openFilters(page);
   await page.getByRole("combobox").filter({ has: page.getByRole("option", { name: "All sectors" }) }).selectOption("Information Technology");
   await expect(page.getByRole("button", { name: "Tata Consultancy Services Limited" })).toBeVisible();
   await page.getByPlaceholder("Filter by name or ticker…").fill("infosys");
@@ -69,6 +70,7 @@ test("F02-H2 share link reopens the same screen", async ({ page, context, accoun
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.goto("/");
   await openStocks(page);
+  await openFilters(page);
   await page.getByRole("combobox").filter({ has: page.getByRole("option", { name: "All sectors" }) }).selectOption("Healthcare");
   await page.getByRole("button", { name: "Share", exact: true }).click();
   const link = await page.evaluate(() => navigator.clipboard.readText());

@@ -59,6 +59,12 @@ export async function axeCheck(page, label) {
   return bad.map(v => `${label}: ${v.id} (${v.impact}) ×${v.nodes.length} — ${v.help}; e.g. ${v.nodes[0]?.target?.join(" ")} [${(v.nodes[0]?.any?.[0]?.message ?? "").slice(0, 160)}] <${(v.nodes[0]?.html ?? "").slice(0, 140)}>`);
 }
 
+// The filters live in a drawer that opens from the Filters button (16 Oct 2026)
+export async function openFilters(page) {
+  await page.getByRole("button", { name: /^Filters/ }).first().click();
+  await page.locator(".filters-drawer.open").waitFor();
+}
+
 // Discover opens on its strategies (15 Oct 2026); this goes on to the stock
 // list: a new screen of the whole market on a computer, the whole market on a
 // phone

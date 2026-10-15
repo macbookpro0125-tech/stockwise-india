@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { PanelLeftClose, SlidersHorizontal, ChevronLeft, ChevronRight, Bookmark, Share } from "lucide-react";
+import { SlidersHorizontal, ChevronLeft, ChevronRight, Bookmark, Share } from "lucide-react";
 import { api } from "./api.js";
 import PresetCards from "./PresetCards.jsx";
 import { strategiesStore, browserLeftovers, moveLeftovers, discardLeftovers } from "./accountData.js";
@@ -125,7 +125,8 @@ export default function DiscoverView({ onOpenStock }) {
   const [error, setError] = useState("");
   const [executionTime, setExecutionTime] = useState(null);
   const [picker, setPicker] = useState(null); // "filter" | "column"
-  const [sideOpen, setSideOpen] = useState(() => read("screenerSideOpen", true));
+  // The filters drawer on a computer; open from the start on a shared link
+  const [filtersOpen, setFiltersOpen] = useState(() => !!filtersFromLink());
   const [sheetOpen, setSheetOpen] = useState(false); // phones: filters in a full-screen sheet
   const [sheetClosing, setSheetClosing] = useState(false);
   // Slides the sheet back down before it goes (index.css .filter-sheet.closing)
@@ -143,7 +144,60 @@ export default function DiscoverView({ onOpenStock }) {
 
   useEffect(() => { if (filters) write("screenerFilters", filters); }, [filters]);
   useEffect(() => { write("screenerColumns", columns); }, [columns]);
-  useEffect(() => { write("screenerSideOpen", sideOpen); }, [sideOpen]);
+  // ── Filters drawer (computer): opens while the pointer is on the Filters
+  // button or the drawer and closes a moment after it leaves (asked 16 Oct
+  // 2026: "open when the mouse goes there, otherwise closed"). A click opens
+  // it too (keyboard, touch laptops); a click elsewhere or Esc closes it. It
+  // never closes mid-drag on a slider, or while the metric picker or import
+  // it opened is up.
+  const drawerRef = useRef(null);
+  const filtersBtnRef = useRef(null);
+  const closeTimer = useRef(0);
+  const dragging = useRef(false);
+  const hoverable = useMemo(() => !!window.matchMedia?.("(hover: hover) and (pointer: fine)").matches, []);
+  // The drawer grows out of the button: its top-left corner sits where the
+  // button is (index.css .filters-drawer)
+  const cancelClose = () => { clearTimeout(closeTimer.current); closeTimer.current = 0; };
+  const openDrawer = () => {
+    cancelClose();
+    const b = filtersBtnRef.current?.getBoundingClientRect(), d = drawerRef.current;
+    if (b && d && b.width) { d.style.setProperty("--drawer-top", `${Math.max(b.top, 12)}px`); d.style.setProperty("--drawer-left", `${b.left}px`); }
+    setFiltersOpen(true);
+  };
+  const leaveDrawer = () => {
+    if (!hoverable || closeTimer.current) return;
+    closeTimer.current = setTimeout(() => { closeTimer.current = 0; if (!dragging.current) setFiltersOpen(false); }, 350);
+  };
+  useEffect(() => () => clearTimeout(closeTimer.current), []);
+  useEffect(() => { if (!filtersOpen) cancelClose(); }, [filtersOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!filtersOpen) return;
+    const down = e => {
+      if (drawerRef.current?.contains(e.target)) { dragging.current = true; return; }
+      if (filtersBtnRef.current?.contains(e.target) || picker || showImportModal) return;
+      setFiltersOpen(false);
+    };
+    const up = () => {
+      if (!dragging.current) return;
+      dragging.current = false;
+      if (!drawerRef.current?.matches(":hover")) leaveDrawer();
+    };
+    const key = e => { if (e.key === "Escape" && !picker && !showImportModal) { setFiltersOpen(false); filtersBtnRef.current?.focus(); } };
+    // Wherever the pointer goes: on the button or drawer it stays; anywhere
+    // else it closes a moment later (also when it opened by itself, from a
+    // shared link, without the pointer ever entering it)
+    const move = e => {
+      if (dragging.current || picker || showImportModal) return;
+      if (drawerRef.current?.contains(e.target) || filtersBtnRef.current?.contains(e.target)) cancelClose();
+      else leaveDrawer();
+    };
+    document.addEventListener("pointermove", move, { passive: true });
+    document.addEventListener("pointerdown", down);
+    document.addEventListener("pointerup", up);
+    document.addEventListener("keydown", key);
+    return () => { document.removeEventListener("pointermove", move); document.removeEventListener("pointerdown", down); document.removeEventListener("pointerup", up); document.removeEventListener("keydown", key); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtersOpen, picker, showImportModal]);
 
   // The table's columns: yours, then any metric you're filtering on
   const shownColumnIds = useMemo(() => {
@@ -351,7 +405,7 @@ export default function DiscoverView({ onOpenStock }) {
       <div style={{ animation: "fadeUp 280ms cubic-bezier(0,0,0.2,1) backwards" }}>
         <BrowserLeftovers />
         {phoneStep === "strategies" && (() => {
-          const newScreen = () => { changeFilters([]); setActivePresetName("New screen"); setSideOpen(true); showStocks(); };
+          const newScreen = () => { changeFilters([]); setActivePresetName("New screen"); setFiltersOpen(false); showStocks(); };
           // The screen already set comes first
           const continueCard = activeCount > 0 && (
             <button type="button" onClick={showStocks} className="phone-continue glow" style={{ margin: isPhone ? "0 0 14px" : "0 0 28px" }}>
@@ -369,7 +423,7 @@ export default function DiscoverView({ onOpenStock }) {
               <PresetCards
                 layout={isPhone ? "stack" : "grid"}
                 meta={meta}
-                onSelect={preset => { applyPreset(preset); setSideOpen(false); showStocks(); }} // a ready-made screen opens to its results, full width
+                onSelect={preset => { applyPreset(preset); setFiltersOpen(false); showStocks(); }} // a ready-made screen opens to its results, full width
                 activePresetId={activePresetId}
                 onSavePreset={null}
                 onUpdatePreset={handleUpdatePreset}
@@ -430,13 +484,14 @@ export default function DiscoverView({ onOpenStock }) {
         )}
 
         {phoneStep === "stocks" && (
-        <div className={`screener ${sideOpen ? "" : "screener-side-closed"}`}>
-          {sideOpen && (
-            <aside className="screener-side" aria-label="Filters" data-tour="filters">
+        <div className="screener screener-side-closed">
+          {/* The filters drawer: over the table, beside the Filters button */}
+          {!isPhone && (
+            <aside ref={drawerRef} id="filters-drawer" className={`filters-drawer${filtersOpen ? " open" : ""}`} aria-label="Filters"
+              inert={!filtersOpen} onMouseEnter={openDrawer} onMouseLeave={leaveDrawer}>
               {panel}
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", paddingTop: 12, marginTop: 12, borderTop: "1px solid var(--bdr)" }}>
-                <button onClick={() => setSideOpen(false)} className="btn-ghost" style={{ height: 28, padding: "0 10px", fontSize: 11.5 }}><PanelLeftClose size={13} /> Hide filters</button>
-                <button onClick={() => setShowImportModal(true)} className="btn-ghost" style={{ height: 28, padding: "0 10px", fontSize: 11 }}>Import</button>
+              <div className="filters-drawer-foot">
+                <button onClick={() => setShowImportModal(true)} className="btn-ghost" style={{ height: 30, padding: "0 12px", fontSize: 12 }}>Import filters</button>
               </div>
             </aside>
           )}
@@ -476,9 +531,13 @@ export default function DiscoverView({ onOpenStock }) {
               filteredIds={(filters ?? []).filter(f => !f.values && isActiveFilter(f)).map(f => f.id)}
               onEditColumns={meta ? () => setPicker("column") : null}
               updating={updating}
-              // Shown while the panel is hidden — and on a narrow window, where the panel never shows (index.css .screener-filters-toggle)
+              // Hover or click opens the drawer; on a narrow window, the full-screen sheet
               filtersButton={!isPhone ? (
-                <button data-tour="filters" className={`btn-ghost tb-btn filters-btn${sideOpen ? " screener-filters-toggle" : ""}`} onClick={() => (window.innerWidth <= 900 ? setSheetOpen(true) : setSideOpen(true))}>
+                <button ref={filtersBtnRef} data-tour="filters" className={`btn-ghost tb-btn filters-btn${filtersOpen ? " on" : ""}`}
+                  aria-expanded={filtersOpen} aria-controls="filters-drawer"
+                  onMouseEnter={() => { if (hoverable && window.innerWidth > 900) openDrawer(); }}
+                  onMouseLeave={leaveDrawer}
+                  onClick={() => (window.innerWidth <= 900 ? setSheetOpen(true) : filtersOpen && !hoverable ? setFiltersOpen(false) : openDrawer())}>
                   <SlidersHorizontal size={14} aria-hidden="true" /> Filters{activeCount > 0 && <span className="filters-count">{activeCount}</span>}
                 </button>
               ) : null}
