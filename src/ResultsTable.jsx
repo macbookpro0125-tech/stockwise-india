@@ -4,14 +4,10 @@ import { ArrowDown, ArrowUp, Check, Info, Columns3, Search, ArrowUpRight, Search
 import { StarIcon, BellIcon, actionButtonStyle } from "./icons.jsx";
 import { useWatchlist, toggleWatch } from "./watchlist.js";
 import CreateAlertModal from "./CreateAlertModal.jsx";
-import { formatValue, valueColor } from "./screener/meta.js";
+import { formatValue, valueColor, unitLabel } from "./screener/meta.js";
 import { QualityBadge, OverallScore, qualityTone, overallTone, researchTitle, researchMissingText } from "./ResearchBadges.jsx";
 import { MetricInfo, ColumnGuide } from "./screener/MetricInfo.jsx";
 import ColumnMenu from "./screener/ColumnMenu.jsx";
-
-// A metric column's header, with its unit as the table always showed it
-// ("ROCE %", "CMP ₹")
-const columnLabel = def => (def.unit === "%" ? `${def.short} %` : def.unit === "₹" ? `${def.short} ₹` : def.short);
 
 // Ported from stock-screener's src/components/ResultsTable.jsx — same columns,
 // price levels with 52-week range, NCAV badge, watchlist star, compare (up to
@@ -31,7 +27,7 @@ const RANK_W = 50;
 // Column headers: sentence case at reading size; the sorted one darker, with
 // its arrow (the others keep the arrow's room so headers don't shift)
 const thStyle = {
-  padding: "10px 8px", textAlign: "left", fontSize: 12, fontWeight: 500, color: "var(--t2)",
+  padding: "10px 6px", textAlign: "left", fontSize: 12, fontWeight: 500, color: "var(--t2)",
   whiteSpace: "nowrap", userSelect: "none", borderBottom: "1px solid var(--bdr2)", background: "var(--s1)",
   position: "sticky", top: 0, zIndex: 3,
 };
@@ -121,7 +117,7 @@ function MenuButton({ label, menu }) {
   );
 }
 
-function SortTh({ label, title, col, sortBy, sortDir, onSort, accent, info, menu }) {
+function SortTh({ label, unit = "", title, col, sortBy, sortDir, onSort, accent, info, menu }) {
   const active = sortBy === col;
   return (
     <th
@@ -130,7 +126,7 @@ function SortTh({ label, title, col, sortBy, sortDir, onSort, accent, info, menu
       title={title}
       style={{
         ...thStyle,
-        whiteSpace: "normal", verticalAlign: "bottom", minWidth: 64,
+        whiteSpace: "nowrap", verticalAlign: "bottom",
         color: active ? "var(--t1)" : "var(--t2)",
         fontWeight: active ? 600 : 500,
         cursor: "pointer",
@@ -138,15 +134,17 @@ function SortTh({ label, title, col, sortBy, sortDir, onSort, accent, info, menu
         transition: "color 120ms",
       }}
     >
-      {/* The name may wrap onto two lines, so a column is as wide as its
-          figures, not its title; the definition is in the ▾ menu */}
-      <span style={{ display: "flex", alignItems: "flex-end", gap: 2 }}>
-        <button type="button" style={{ ...sortBtnStyle, textAlign: "left", lineHeight: 1.25 }}>
-          <span>{typeof label === "string" ? label.replace(/\//g, "/\u200b") : label}</span>
+      {/* Every header the same shape: the name on one line with its ▾, the
+          unit small beneath it (blank when there's none), so names and
+          units line up across the row; the definition is in the ▾ menu */}
+      <span className="th-head">
+        <button type="button" style={{ ...sortBtnStyle, whiteSpace: "nowrap" }}>
+          <span>{label}</span>
           <SortArrow active={active} dir={sortDir} />
         </button>
-        {menu ? <MenuButton label={label} menu={menu} /> : info}
+        {menu ? <MenuButton label={unit ? `${label} ${unit}` : label} menu={menu} /> : info}
       </span>
+      <span className="th-unit" aria-hidden={!unit}>{unit || "\u00a0"}</span>
     </th>
   );
 }
@@ -435,7 +433,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
   };
 
   const noData = !loading && (!matches || matches.length === 0);
-  const cell = { padding: "9px 8px", borderBottom: "1px solid var(--bdr)" };
+  const cell = { padding: "9px 6px", borderBottom: "1px solid var(--bdr)" };
 
   return (
     <div style={{ animation: "fadeUp 280ms cubic-bezier(0,0,0.2,1) backwards" }}>
@@ -714,23 +712,25 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
             <table className="data-table" style={{ minWidth: 640 + columns.length * 80 }}>
               <thead>
                 <tr>
-                  <th title={`Tick up to ${MAX_COMPARE} to compare`} style={{ ...thStyle, padding: "10px 8px", width: RANK_W, minWidth: RANK_W, boxSizing: "border-box", left: 0, zIndex: 4 }}>#</th>
-                  <th onClick={() => handleSort("name")} aria-sort={ariaSort(sortBy === "name", sortDir)} style={{ ...thStyle, color: sortBy === "name" ? "var(--t1)" : "var(--t2)", fontWeight: sortBy === "name" ? 600 : 500, left: RANK_W, zIndex: 4, cursor: "pointer", minWidth: 200, boxShadow: "inset -1px 0 0 var(--bdr)" }}>
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                  <th title={`Tick up to ${MAX_COMPARE} to compare`} style={{ ...thStyle, padding: "10px 8px", width: RANK_W, minWidth: RANK_W, boxSizing: "border-box", left: 0, zIndex: 4, verticalAlign: "bottom" }}>#<span className="th-unit" aria-hidden="true">{"\u00a0"}</span></th>
+                  <th onClick={() => handleSort("name")} aria-sort={ariaSort(sortBy === "name", sortDir)} style={{ ...thStyle, color: sortBy === "name" ? "var(--t1)" : "var(--t2)", fontWeight: sortBy === "name" ? 600 : 500, left: RANK_W, zIndex: 4, cursor: "pointer", minWidth: 200, boxShadow: "inset -1px 0 0 var(--bdr)", verticalAlign: "bottom" }}>
+                    <span className="th-head">
                       <button type="button" style={sortBtnStyle}>Stock <SortArrow active={sortBy === "name"} dir={sortDir} /></button>
                       <MenuButton label="Stock" menu={{ ...menuFor("name", null), text: true }} />
                     </span>
+                    <span className="th-unit" aria-hidden="true">{"\u00a0"}</span>
                   </th>
-                  <SortTh label="Quality" title="Quality score out of 100 — business, earnings, balance sheet, governance, growth and valuation" col="quality" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} menu={menuFor("quality", "quality")} info={<MetricInfo def={meta?.byId.get("quality")} meta={meta} />} />
-                  <SortTh label="Research" title="Overall research score: quality and valuation blended, trimmed for price swings and data gaps. Not a buy or sell signal." col="overall" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} menu={menuFor("overall", "researchScore")} info={<MetricInfo def={meta?.byId.get("researchScore")} meta={meta} />} />
-                  <SortTh label="CMP ₹"   col="cmp"         sortBy={sortBy} sortDir={sortDir} onSort={handleSort} menu={menuFor("cmp", "cmp")} info={<MetricInfo def={meta?.byId.get("cmp")} meta={meta} />} />
+                  <SortTh label="Quality" unit="of 100" title="Quality score out of 100 — business, earnings, balance sheet, governance, growth and valuation" col="quality" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} menu={menuFor("quality", "quality")} info={<MetricInfo def={meta?.byId.get("quality")} meta={meta} />} />
+                  <SortTh label="Research" unit="of 100" title="Overall research score: quality and valuation blended, trimmed for price swings and data gaps. Not a buy or sell signal." col="overall" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} menu={menuFor("overall", "researchScore")} info={<MetricInfo def={meta?.byId.get("researchScore")} meta={meta} />} />
+                  <SortTh label="CMP" unit="₹" col="cmp"         sortBy={sortBy} sortDir={sortDir} onSort={handleSort} menu={menuFor("cmp", "cmp")} info={<MetricInfo def={meta?.byId.get("cmp")} meta={meta} />} />
                   {columns.map(def => (
-                    <SortTh key={def.id} label={columnLabel(def)} title={def.label} col={def.id} sortBy={sortBy} sortDir={sortDir} onSort={handleSort} menu={menuFor(def.id, def.id)} info={<MetricInfo def={def} meta={meta} />} />
+                    <SortTh key={def.id} label={def.short} unit={unitLabel(def)} title={def.label} col={def.id} sortBy={sortBy} sortDir={sortDir} onSort={handleSort} menu={menuFor(def.id, def.id)} info={<MetricInfo def={def} meta={meta} />} />
                   ))}
-                  <th style={{ ...thStyle, color: "var(--accent)", fontWeight: 600, background: "color-mix(in srgb, var(--accent) 4%, var(--s1))" }}>
+                  <th style={{ ...thStyle, color: "var(--accent)", fontWeight: 600, background: "color-mix(in srgb, var(--accent) 4%, var(--s1))", verticalAlign: "bottom" }}>
                     Price levels
+                    <span className="th-unit">₹ · P1 P2 P3 · FV</span>
                   </th>
-                  <th style={{ ...thStyle, right: 0, zIndex: 4, boxShadow: "inset 1px 0 0 var(--bdr)" }}>Actions</th>
+                  <th style={{ ...thStyle, right: 0, zIndex: 4, boxShadow: "inset 1px 0 0 var(--bdr)", verticalAlign: "bottom" }}>Actions<span className="th-unit" aria-hidden="true">{"\u00a0"}</span></th>
                 </tr>
               </thead>
               <tbody>
@@ -770,8 +770,8 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                     </td>
 
                     <td style={{ ...cell, minWidth: 200, position: "sticky", left: RANK_W, background: rowBg, zIndex: 1, boxShadow: "inset -1px 0 0 var(--bdr)" }}>
-                      <button type="button" title={stock.name} aria-label={stock.name} onClick={() => onAnalyze(stock.symbol)} className="stock-link" style={{ display: "block", maxWidth: 196, padding: 0, border: 0, background: "none", fontFamily: "inherit", textAlign: "left", fontWeight: 600, fontSize: 13.5, letterSpacing: "-0.01em", marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shortName(stock.name)}</button>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6, maxWidth: 196, minWidth: 0 }}>
+                      <button type="button" title={stock.name} aria-label={stock.name} onClick={() => onAnalyze(stock.symbol)} className="stock-link" style={{ display: "block", maxWidth: 184, padding: 0, border: 0, background: "none", fontFamily: "inherit", textAlign: "left", fontWeight: 600, fontSize: 13.5, letterSpacing: "-0.01em", marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shortName(stock.name)}</button>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, maxWidth: 184, minWidth: 0 }}>
                         <span className="ticker-chip">{stock.symbol}</span>
                         <NcavBadge stock={stock} />
                         {stock.sector && <span title={stock.sector} style={{ fontSize: 10.5, color: "var(--t3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{stock.sector}</span>}
