@@ -104,6 +104,9 @@ function addColumn(table, column, type) {
 // The original's watchlist cards show the price when a stock was starred and
 // a note per stock
 addColumn("watchlist", "added_price", "REAL");
+// The date a lot's price and quantity are on — when they were entered or last
+// edited — so splits and bonuses after it can be applied (user-portfolio.js)
+addColumn("holdings", "basis_date", "TEXT");
 addColumn("watchlist", "note", "TEXT");
 
 // Telegram alerts (telegram.js, alert-notifier.js): the chat an account's

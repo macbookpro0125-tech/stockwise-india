@@ -173,6 +173,24 @@ async function main() {
   await json("DELETE", `/api/portfolio/${added.id}`, aliceCookie);
   assert((await (await fetch(`${BASE}/api/portfolio`, { headers: { Cookie: aliceCookie } })).json()).holdings.length === 0, "deleting a holding removes it");
 
+  // Splits and bonuses after a lot was entered (Nestlé India's 1:1 bonus,
+  // ex-date 8 Aug 2025, in the market snapshot): shown on today's basis, and
+  // an edit saves them so — never adjusted twice
+  const { db: pdb } = await import("./db.js");
+  const lot = await (await json("POST", "/api/portfolio", aliceCookie, { ticker: "NESTLEIND", buyPrice: 2500, qty: 10 })).json();
+  assert(lot.qty === 10 && lot.buyPrice === 2500 && !lot.splitAdjusted, "a lot entered today isn't adjusted");
+  pdb.prepare("UPDATE holdings SET basis_date = ? WHERE id = ?").run("2025-01-01T00:00:00.000Z", lot.id);
+  const before = (await (await fetch(`${BASE}/api/portfolio`, { headers: { Cookie: aliceCookie } })).json()).holdings.find(h => h.id === lot.id);
+  assert(before.qty === 20 && before.buyPrice === 1250 && before.splitAdjusted?.ratio === 2, "a lot entered before a 1:1 bonus shows twice the shares at half the price");
+  const renoted = await (await json("PUT", `/api/portfolio/${lot.id}`, aliceCookie, { notes: "after the bonus" })).json();
+  assert(renoted.qty === 20 && renoted.buyPrice === 1250 && !renoted.splitAdjusted, "editing it saves the adjusted figures, and they aren't adjusted again");
+  await json("DELETE", `/api/portfolio/${lot.id}`, aliceCookie);
+  await json("POST", "/api/watchlist", aliceCookie, { ticker: "NESTLEIND", price: 2500 });
+  pdb.prepare("UPDATE watchlist SET added_at = ? WHERE ticker = 'NESTLEIND'").run("2025-01-01T00:00:00.000Z");
+  const starred = (await (await fetch(`${BASE}/api/watchlist`, { headers: { Cookie: aliceCookie } })).json()).items.find(i => i.ticker === "NESTLEIND");
+  assert(starred.addedPrice === 1250, "the price when starred is put on today's basis after a bonus");
+  await json("DELETE", "/api/watchlist/NESTLEIND", aliceCookie);
+
   // Alerts: edit, pause, and ownership
   const [tcsAlert] = await (await fetch(`${BASE}/api/alerts`, { headers: { Cookie: aliceCookie } })).json();
   assert((await json("PUT", `/api/alerts/${tcsAlert.id}`, bobCookie, { threshold: 1 })).status === 404, "bob can't edit alice's alert");

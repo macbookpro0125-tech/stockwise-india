@@ -7,6 +7,11 @@
 // multiplier and the discount cancel out, leaving little to no real cushion
 // on high-growth names. (fv25/26/27 are this year and the next two — the
 // names are the original's.)
+// Rupees to the rupee from ₹100 up, to the paisa below (16 Oct 2026): rounded
+// to whole rupees, a ₹2 share's levels — ten paise apart — all became ₹2, and
+// 76 companies' ladders collapsed onto the same figures
+export const roundPrice = v => (v == null || !Number.isFinite(v) ? v : Math.abs(v) < 100 ? Math.round(v * 100) / 100 : Math.round(v));
+
 export function calculateLevels(eps25, pe, growthPct, mosPct = 10) {
   const e25 = Number(eps25) || 0;
   const peN = Number(pe) || 0;
@@ -27,11 +32,12 @@ export function calculateLevels(eps25, pe, growthPct, mosPct = 10) {
   const stopLoss = p3 * 0.93; // anchored to Phase 3, not Phase 1, so all phases can fill before exit triggers
   const target = fv27 * 1.1;
 
+  const r = roundPrice;
   return {
-    e26: Math.round(e26), e27: Math.round(e27),
-    fv25: Math.round(fv25), fv26: Math.round(fv26), fv27: Math.round(fv27),
-    safeBuy: Math.round(safeBuy), p1: Math.round(p1), p2: Math.round(p2), p3: Math.round(p3),
-    stopLoss: Math.round(stopLoss), target: Math.round(target),
+    e26: r(e26), e27: r(e27),
+    fv25: r(fv25), fv26: r(fv26), fv27: r(fv27),
+    safeBuy: r(safeBuy), p1: r(p1), p2: r(p2), p3: r(p3),
+    stopLoss: r(stopLoss), target: r(target),
   };
 }
 
@@ -39,6 +45,8 @@ export function fmtRs(n) {
   if (n == null || n === "" || isNaN(Number(n))) return "—";
   const num = Number(n);
   if (num === 0) return "—";
+  // paise only where they matter: under ₹100 and not a whole rupee
+  if (Math.abs(num) < 100 && Math.round(num * 100) % 100 !== 0) return "₹" + num.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   return "₹" + Math.round(num).toLocaleString("en-IN");
 }
 

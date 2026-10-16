@@ -17,7 +17,8 @@ const MONO = { fontVariantNumeric: "tabular-nums" };
 
 function fmtRs(n) {
   if (n == null || isNaN(n)) return "—";
-  return "₹" + Number(n).toLocaleString("en-IN", { maximumFractionDigits: 0 });
+  // paise under ₹100, where a whole rupee is a big step (₹8.23, not ₹8)
+  return "₹" + Number(n).toLocaleString("en-IN", { maximumFractionDigits: Math.abs(n) < 100 ? 2 : 0 });
 }
 
 function fmtDate(ts) {
@@ -210,9 +211,9 @@ export default function WatchlistView({ onOpenStock }) {
                   {level ? <span style={{ fontSize: 11, fontWeight: 600, color: level.color }}>{level.label}</span> : <span style={{ fontSize: 11, color: "var(--t3)" }} title={r?.valuation?.reason ?? (r?.valuation?.as ? `No price levels (${r.valuation.as})` : undefined)}>—</span>}
                 </div>
 
-                <div style={{ textAlign: "center", minWidth: 60 }}>
-                  <div style={label}>FV</div>
-                  <div style={{ fontSize: 12, fontWeight: 500, color: "var(--t2)", ...MONO }}>{r?.fairValue ? fmtRs(r.fairValue) : "—"}</div>
+                <div style={{ textAlign: "center", minWidth: 72 }}>
+                  <div style={label} title="Today's fair value, as on the company page">Fair value</div>
+                  <div style={{ fontSize: 12, fontWeight: 500, color: "var(--t2)", ...MONO }}>{r?.fv25 ? fmtRs(r.fv25) : "—"}</div>
                 </div>
 
                 <div style={{ display: "flex", gap: 8, marginLeft: "auto" }}>

@@ -1,15 +1,18 @@
 import { db } from "./db.js";
 import { isValidSymbol } from "./screen.js";
+import { splitFactorSince } from "./user-portfolio.js";
 import { badRequest } from "./http-errors.js";
 
 // Per-user watchlist — the original kept it in the browser's localStorage;
 // here it follows the account, like alerts. Each entry remembers the price
 // when it was starred (the original's cards show the move since) and a note.
 
+// The price when starred, on today's share basis: a split or bonus since
+// would otherwise read as a fall
 export function listWatchlist(userId) {
   return db.prepare(
     "SELECT ticker, added_at AS addedAt, added_price AS addedPrice, note FROM watchlist WHERE user_id = ? ORDER BY added_at DESC"
-  ).all(userId);
+  ).all(userId).map(w => (w.addedPrice > 0 ? { ...w, addedPrice: w.addedPrice / splitFactorSince(w.ticker, w.addedAt) } : w));
 }
 
 export function addToWatchlist(userId, ticker, price = null) {

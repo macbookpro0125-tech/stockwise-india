@@ -13,6 +13,8 @@
 // page's fair value and levels (metrics.js) both come from here, so they
 // can't disagree.
 
+import { roundPrice } from "./levels.js";
+
 export const COST_OF_EQUITY = 12; // %, as the DCF on the stock page
 // Government-owned banks: a point more for the state's say in lending and
 // capital (the spec's +1)
@@ -89,7 +91,7 @@ export function bankValuation({ symbol, roes, payoutPct, equity, nnpa, nnpaPct, 
   const gHigh = growth.raw > growth.g + 0.05 ? growth.raw : growth.g + 2;
   const cell = (g, k) => {
     const m = justifiedPb(roe, g, k);
-    return { g: r2(g), ke: k, pb: r2(m), value: m != null ? Math.round(m * adjustedBvps) : null };
+    return { g: r2(g), ke: k, pb: r2(m), value: m != null ? roundPrice(m * adjustedBvps) : null };
   };
   const grid = [
     { label: growth.raw > growth.g + 0.05 ? "uncapped" : "+2 points", cells: [cell(gHigh, ke), cell(gHigh, ke + 1)] },
@@ -99,7 +101,7 @@ export function bankValuation({ symbol, roes, payoutPct, equity, nnpa, nnpaPct, 
   // The same book on the seven-year median, bad years included
   const stressG = sustainableGrowth(throughRoe, payoutPct, ke);
   const stressPb = justifiedPb(throughRoe, stressG.g, ke);
-  const throughCycle = roeBasis === "recent" ? { roe: r2(throughRoe), years: years.length, growth: r2(stressG.g), pb: r2(stressPb), value: stressPb != null ? Math.round(stressPb * adjustedBvps) : null } : null;
+  const throughCycle = roeBasis === "recent" ? { roe: r2(throughRoe), years: years.length, growth: r2(stressG.g), pb: r2(stressPb), value: stressPb != null ? roundPrice(stressPb * adjustedBvps) : null } : null;
   const usualPb = pbHistory.filter(v => finite(v) && v > 0).length >= 3 ? median(pbHistory.filter(v => finite(v) && v > 0)) : null;
   return {
     model: "book",
@@ -113,9 +115,9 @@ export function bankValuation({ symbol, roes, payoutPct, equity, nnpa, nnpaPct, 
     exact: { pb, adjustedBvps },
     equityCr: equity / 1e7, nnpaCr: nnpaKnown ? nnpa / 1e7 : null, nnpaKnown,
     adjustedBookCr: adjustedBook / 1e7, adjustedBvps: r2(adjustedBvps), bookPerShare: r2(equity / shares),
-    fairValue: pb != null ? Math.round(pb * adjustedBvps) : null,
+    fairValue: pb != null ? roundPrice(pb * adjustedBvps) : null,
     grid,
     usualPb: r2(usualPb), usualPbYears: pbHistory.filter(v => finite(v) && v > 0).length,
-    crossCheck: usualPb != null ? Math.round(usualPb * adjustedBvps) : null,
+    crossCheck: usualPb != null ? roundPrice(usualPb * adjustedBvps) : null,
   };
 }

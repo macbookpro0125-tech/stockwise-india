@@ -18,7 +18,8 @@ const COLORS = ["var(--accent)", "var(--green)", "var(--yellow)", "#A78BFA", "#F
 
 function fmtRs(n) {
   if (n == null || isNaN(n)) return "—";
-  return "₹" + Number(n).toLocaleString("en-IN", { maximumFractionDigits: 0 });
+  // paise under ₹100, where a whole rupee is a big step (₹8.23, not ₹8)
+  return "₹" + Number(n).toLocaleString("en-IN", { maximumFractionDigits: Math.abs(n) < 100 ? 2 : 0 });
 }
 
 function fmtPct(n) {
@@ -179,7 +180,8 @@ export default function PortfolioView({ onOpenStock }) {
                 <div style={{ flex: "1 1 160px", minWidth: 130 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 7, fontWeight: 600, fontSize: 14, color: "var(--t1)", letterSpacing: "-0.01em" }}><CompanyLogo symbol={h.ticker} size={18} />{h.name}</div>
                   <div style={{ fontSize: 10, color: "var(--t3)", marginTop: 2 }}>
-                    {h.ticker} · {h.qty} @ {fmtRs(h.buyPrice)}
+                    {h.ticker} · {Number(h.qty.toFixed(4))} @ {fmtRs(h.buyPrice)}
+                    {h.splitAdjusted && <span title={`Quantity and price adjusted for a split or bonus issue after ${h.splitAdjusted.since} (×${h.splitAdjusted.ratio} shares)`}> · adjusted for a split</span>}
                     {h.buyDate && <span style={{ marginLeft: 6 }}>· {fmtDate(h.buyDate)}</span>}
                   </div>
                   {h.notes && <div style={{ fontSize: 11.5, color: "var(--t2)", marginTop: 4 }}><NotebookPen size={12} style={{ marginRight: 5, verticalAlign: "-1px", color: "var(--t3)" }} />{h.notes}</div>}
