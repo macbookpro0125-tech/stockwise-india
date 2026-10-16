@@ -88,7 +88,11 @@
 .sf-glass-names { position: relative; height: 22px; margin: 4px 0 14px; }
 .sf-glass-name { position: absolute; inset: 0; font-size: 15.5px; font-weight: 700; letter-spacing: -.015em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0; transform: translateY(6px); transition: opacity 300ms var(--ap-ease), transform 300ms var(--ap-ease); }
 .sf-glass-name.on { opacity: 1; transform: none; }
-.sf-glass-btn { display: flex; align-items: center; justify-content: space-between; height: 40px; padding: 0 6px 0 16px; border-radius: 999px; background: var(--t1); color: var(--bg); font-size: 14px; font-weight: 600; }
+.sf-glass-btn { display: flex; align-items: center; justify-content: space-between; width: 100%; height: 40px; padding: 0 6px 0 16px; border: 0; border-radius: 999px; background: var(--t1); color: var(--bg);
+  font: 600 14px/1 var(--ap-font); cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform 160ms ease-out, background-color 200ms; }
+.sf-glass-btn:active { transform: scale(.97); transition-duration: 100ms; }
+.sf-glass-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+@media (hover: hover) and (pointer: fine) { .sf-glass-btn:hover { background: color-mix(in srgb, var(--t1) 86%, var(--accent)); } }
 .sf-glass-btn i { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--bg); color: var(--t1); }
 .sf-blurcard { position: absolute; z-index: 30; right: -2%; bottom: 14%; width: 190px; padding: 16px; border-radius: 18px; display: grid; gap: 9px;
   background: color-mix(in srgb, var(--s2) 85%, transparent); border: 1px solid var(--bdr2); filter: blur(3px); opacity: .75; }

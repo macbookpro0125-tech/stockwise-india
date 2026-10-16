@@ -55,6 +55,29 @@ export function cameraAt(p, reduce = false) {
   return { eye, target, roll, dist: d };
 }
 
+// The story's stages for scroll progress p: what the lines, the ring and the
+// light are doing. The film uses these; the sign-in panel sets its own.
+export function stagesAt(p) {
+  return {
+    lines: p, lineFade: 1 - seg(p, 0.5, 0.57),          // constellations drawn by p, then gone
+    boost: 0.6 + 1.2 * seg(p, 0.2, 0.62), yield: 1 - seg(p, 0.54, 0.6), // the star's brightness, and its glare giving way
+    ring: c01((p - 0.47) / 0.115), ringFade: 1 - seg(p, 0.6, 0.645),   // the score's six arcs
+    reveal: seg(p, 0.56, 0.74), vfull: seg(p, 0.74, 0.82), rimFade: 1 - seg(p, 0.72, 0.8), // the page opening
+  };
+}
+
+// The sign-in panel's camera: held back from the star where the
+// constellations show, drifting slowly, and moved a little by the pointer
+// (look: -1…1 each way) so near stars shift more than far ones — real depth
+export function panelCamera(t, look = [0, 0], dist = 118) {
+  const back = nrm(sub(C0, HERO));
+  const ux = nrm(cross(back, [0, 1, 0])), uy = cross(ux, back);
+  const drift = [Math.sin(t * 0.05) * 2.5, Math.cos(t * 0.037) * 1.6];
+  const ox = drift[0] - look[0] * 6, oy = drift[1] - look[1] * 4;
+  const eye = add(add(HERO, scl(back, dist)), add(scl(ux, ox), scl(uy, oy)));
+  return { eye, target: HERO, roll: 0, dist };
+}
+
 // ── shaders ──
 const QUAD_VS = `#version 300 es
 layout(location = 0) in vec2 a_pos; out vec2 v_uv;
@@ -188,7 +211,9 @@ void main(){
 const OVER_FS = `#version 300 es
 precision highp float;
 in vec2 v_uv; out vec4 o;
-uniform vec2 u_res, u_h; uniform float u_hr, u_dpr, u_p, u_t, u_tw, u_rot, u_vis;
+uniform vec2 u_res, u_h; uniform float u_hr, u_dpr, u_t, u_tw, u_rot, u_vis;
+// the story's stages (stagesAt() for the film; the sign-in panel sets its own)
+uniform float u_boost, u_yield, u_ring, u_ringFade, u_reveal, u_vfull, u_rimFade;
 uniform vec3 u_page;                                 // the page's --bg, per theme
 ${NOISE}
 float arc(float d, float w){ return exp(-d * d / (2. * w * w)); }
@@ -209,30 +234,30 @@ void main(){
   float ray = 0.;
   for (int k = 0; k < 4; k++){ float ang = float(k) * .7853982; float dd = abs(sin(a - ang)) * r; ray += exp(-dd * dd / (2. * .55 * .55)); }
   ray *= exp(-r / (R * 5. + 55.)) * (1. - smoothstep(25., 110., R));
-  float boost = .6 + 1.2 * sg(u_p, .2, .62);
+  float boost = u_boost;
   float flick = 1. + u_tw * .05 * sin(u_t * 1.7);
-  float yield = 1. - sg(u_p, .54, .6);                // the glare gives way as the page opens
+  float yield = u_yield;                               // the glare gives way as the page opens
   vec3 star = (photo * disc * 1.15 + vec3(1., .9, .74) * cor * wob * boost * flick + vec3(1., .96, .9) * ray * .5 * boost) * u_vis * yield;
   // The score: six arcs drawn one after another around the star, clear of its glare
   float RR = max(R * 3.4 + 18., md * .15);
   float ring = 0.;
   for (int k = 0; k < 6; k++){
-    float s = sg(u_p, .47 + float(k) * .017, .5 + float(k) * .017);
+    float s = sg(u_ring, .148 * float(k), .148 * float(k) + .261);
     float start = 1.5708 - float(k) * 1.0472 - .07;   // clockwise from the top
     float span = (1.0472 - .14) * s;
     float rel = mod(start - a + 12.56637, 6.28319);
     ring += step(rel, span) * step(.0001, s) * (arc(r - RR, .6) + .25 * arc(r - RR, 3.5));
   }
-  ring *= 1. - sg(u_p, .6, .645);
+  ring *= u_ringFade;
   // The light: a disc of it spreading from the star until it is the page,
   // with a warm edge as it travels
   vec2 far2 = max(h, res - h);
   float reach = length(far2) + md * .35;
   // a crisp edge, so the page arrives clean; a fine teal line rides it
-  float vr = sg(u_p, .56, .74) * reach;
+  float vr = u_reveal * reach;
   float v = vr > 0. ? 1. - smoothstep(vr - 1.5, vr + .5, r) : 0.;
-  v = max(v, sg(u_p, .74, .82));
-  float rimOn = step(.001, vr) * (1. - sg(u_p, .72, .8));
+  v = max(v, u_vfull);
+  float rimOn = step(.001, vr) * u_rimFade;
   float rim = (arc(r - vr, .9) + .35 * arc(r - vr - 6., 10.)) * rimOn;
   vec3 teal = vec3(0., .878, .745);
   vec3 glow = star + teal * ring * 1.3 + teal * rim;
@@ -386,8 +411,7 @@ export function createStarScene(canvas, { companies = 2252, strategies = 13, red
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   }
 
-  function matrices(p) {
-    const cam = cameraAt(p, reduce);
+  function matrices(cam) {
     const f = nrm(sub(cam.target, cam.eye));
     let r = nrm(cross(f, [0, 1, 0])), u = cross(r, f);
     const cr = Math.cos(cam.roll), sr = Math.sin(cam.roll);
@@ -408,8 +432,10 @@ export function createStarScene(canvas, { companies = 2252, strategies = 13, red
     return { cam, VP, r, u, f, tanX, tanY, hero, heroR, vis: zc > 0 ? 1 : 0, hd: nrm(rel) };
   }
 
-  function render(p, t) {
-    const m = matrices(p);
+  // o: { camera, stages } to override the film's (the sign-in panel)
+  function render(p, t, o = {}) {
+    const st = o.stages ?? stagesAt(p);
+    const m = matrices(o.camera ?? cameraAt(p, reduce));
     const tw = reduce ? 0 : 1;
     gl.disable(gl.DEPTH_TEST);
     gl.disable(gl.BLEND);
@@ -429,22 +455,23 @@ export function createStarScene(canvas, { companies = 2252, strategies = 13, red
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     // stars and lines, added light
     gl.enable(gl.BLEND); gl.blendFunc(gl.ONE, gl.ONE);
-    const lineFade = 1 - seg(p, 0.5, 0.57);
+    const lineFade = st.lineFade;
     gl.useProgram(lineP.p); gl.bindVertexArray(lineVao);
     gl.uniformMatrix4fv(lineP.u.u_vp, false, m.VP); gl.uniform3fv(lineP.u.u_eye, m.cam.eye);
-    gl.uniform2f(lineP.u.u_res, W, H); gl.uniform1f(lineP.u.u_dpr, dpr); gl.uniform1f(lineP.u.u_p, p); gl.uniform1f(lineP.u.u_fade, lineFade);
+    gl.uniform2f(lineP.u.u_res, W, H); gl.uniform1f(lineP.u.u_dpr, dpr); gl.uniform1f(lineP.u.u_p, st.lines); gl.uniform1f(lineP.u.u_fade, lineFade);
     if (lineFade > 0) gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, nLines);
     gl.useProgram(starP.p); gl.bindVertexArray(starVao);
     gl.uniformMatrix4fv(starP.u.u_vp, false, m.VP); gl.uniform3fv(starP.u.u_eye, m.cam.eye);
     gl.uniform2f(starP.u.u_res, W, H); gl.uniform1f(starP.u.u_dpr, dpr); gl.uniform1f(starP.u.u_t, t); gl.uniform1f(starP.u.u_tw, tw);
-    gl.uniform1f(starP.u.u_p, p); gl.uniform1f(starP.u.u_lines, lineFade); gl.uniform1f(starP.u.u_fade, 1);
+    gl.uniform1f(starP.u.u_p, st.lines); gl.uniform1f(starP.u.u_lines, lineFade); gl.uniform1f(starP.u.u_fade, 1);
     gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, nStars);
     // the star, the score, the level, the light
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     gl.useProgram(over.p); gl.bindVertexArray(quadVao);
     gl.uniform2f(over.u.u_res, W, H); gl.uniform2f(over.u.u_h, m.hero[0], m.hero[1]);
-    gl.uniform1f(over.u.u_hr, m.heroR); gl.uniform1f(over.u.u_dpr, dpr); gl.uniform1f(over.u.u_p, p);
-    gl.uniform1f(over.u.u_t, t); gl.uniform1f(over.u.u_tw, tw); gl.uniform1f(over.u.u_rot, 0); gl.uniform1f(over.u.u_vis, m.vis);
+    gl.uniform1f(over.u.u_hr, m.heroR); gl.uniform1f(over.u.u_dpr, dpr);
+    for (const [k, v] of [["u_boost", st.boost], ["u_yield", st.yield], ["u_ring", st.ring], ["u_ringFade", st.ringFade], ["u_reveal", st.reveal], ["u_vfull", st.vfull], ["u_rimFade", st.rimFade]]) gl.uniform1f(over.u[k], v);
+    gl.uniform1f(over.u.u_t, t); gl.uniform1f(over.u.u_tw, tw); gl.uniform1f(over.u.u_rot, 0); gl.uniform1f(over.u.u_vis, m.vis * (st.hero ?? 1)); // hero 0: the sign-in panel draws its own
     gl.uniform3fv(over.u.u_page, page);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     gl.bindVertexArray(null);

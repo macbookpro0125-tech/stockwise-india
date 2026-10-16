@@ -41,6 +41,29 @@ test("F01-H1/H2/N1/N2 sign up, out, wrong password, back in", async ({ page }) =
   await expect(page.getByRole("button", { name: "Account", exact: true })).toBeVisible();
 });
 
+// The front page's film offers a strategy ("Then, choose a strategy"): its
+// Open screen button signs you up, then opens that strategy in Discover
+test("F01-H3 Open screen on the front page signs up into that strategy", async ({ page }) => {
+  await page.setExtraHTTPHeaders({ "x-forwarded-for": uniqueIp() });
+  await page.goto("/");
+  // scroll the film to the strategy cards and let them settle
+  await page.evaluate(() => { const t = document.querySelector(".sf-track"), s = document.querySelector(".sf-stage"); window.scrollTo(0, t.offsetTop + (t.offsetHeight - s.clientHeight) * 0.84); });
+  const open = page.getByRole("button", { name: /^Open (Dividend Aristocrats|High Quality Compounders|Undervalued Growth)$/ });
+  await expect(open).toBeVisible();
+  await page.waitForTimeout(1200);
+  const name = (await open.getAttribute("aria-label")).replace(/^Open /, "");
+  await open.click();
+  const dialog = page.getByRole("dialog");
+  const viaEmail = dialog.getByRole("button", { name: "Continue with email" });
+  if (await viaEmail.isVisible().catch(() => false)) await viaEmail.click();
+  await dialog.getByLabel("Email").fill(`ui-${Date.now()}-open@example.test`);
+  await dialog.getByLabel("Password", { exact: true }).fill(randomUUID());
+  await dialog.getByRole("button", { name: "Create free account" }).click();
+  await page.getByRole("button", { name: "Skip tour" }).click();
+  await expect(page.locator(".screen-title")).toHaveText(name);
+  expect(new URL(page.url()).searchParams.has("strategy")).toBe(false); // used once, then gone
+});
+
 test("F01-N3 the same email can't sign up twice", async ({ request, baseURL }) => {
   const email = `dup-${Date.now()}@example.test`;
   const first = await request.post(`${baseURL}/api/auth/signup`, { data: { email, password: randomUUID() }, headers: { "x-forwarded-for": uniqueIp() } });

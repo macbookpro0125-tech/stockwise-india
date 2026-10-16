@@ -128,7 +128,7 @@ function readTheme() {
 export default function StarFilm({ onJoin, onLogin, stats }) {
   const [gl2] = useState(hasWebGL2);
   const trackRef = useRef(null), stageRef = useRef(null), canvasRef = useRef(null);
-  const barRef = useRef(null), cueRef = useRef(null), capsRef = useRef([]), pickRef = useRef(null), pointerRef = useRef(null);
+  const barRef = useRef(null), cueRef = useRef(null), capsRef = useRef([]), pickRef = useRef(null), pointerRef = useRef(null), openRef = useRef(null), frontRef = useRef(0);
   const sceneRef = useRef(null);
   const cap = i => el => { capsRef.current[i] = el; };
   const companies = stats?.companies;
@@ -168,6 +168,7 @@ export default function StarFilm({ onJoin, onLogin, stats }) {
       });
       const front = Math.round(step);
       names.forEach((el, i) => el.classList.toggle("on", i === front));
+      if (frontRef.current !== front) { frontRef.current = front; openRef.current?.setAttribute("aria-label", `Open ${PICK[front].name}`); }
       blooms.forEach((el, i) => { el.style.opacity = Math.max(0, 1 - Math.abs(step - i)).toFixed(3); });
       // the pointer comes in and taps "Open screen" while a card rests
       const resting = t >= last || f > 0.72 || f < 0.28;
@@ -207,7 +208,7 @@ export default function StarFilm({ onJoin, onLogin, stats }) {
     const now = () => (performance.now() - t0) / 1000;
     function tick(ts) {
       raf = 0;
-      if (frozen || !onScreen) return;
+      if (frozen || !onScreen || resting()) return;
       const dt = Math.min((ts - last) / 1000, 0.5) || 0.016; last = ts;
       const d = target - p;
       const moving = !(reduce || Math.abs(d) < 0.0004);
@@ -215,8 +216,10 @@ export default function StarFilm({ onJoin, onLogin, stats }) {
       if (moving || ts - lastDraw > 32) { scene.render(p, now()); captions(p); lastDraw = ts; }
       if (moving || !reduce) raf = requestAnimationFrame(tick); // less motion: no twinkle, so stop once caught up
     }
+    // the sign-in dialog covers the film: it rests until the dialog closes
+    const resting = () => document.documentElement.classList.contains("auth-open");
     const kick = () => {
-      if (!onScreen || frozen) return;
+      if (!onScreen || frozen || resting()) return;
       readTarget();
       if (!raf) { last = performance.now(); raf = requestAnimationFrame(tick); }
     };
@@ -231,8 +234,8 @@ export default function StarFilm({ onJoin, onLogin, stats }) {
     });
     io.observe(track);
     // light or dark: the ending opens onto whichever page is showing
-    const themeWatch = new MutationObserver(() => { scene.setTheme(readTheme()); redraw(); });
-    themeWatch.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    const themeWatch = new MutationObserver(() => { scene.setTheme(readTheme()); if (!resting()) { redraw(); kick(); } });
+    themeWatch.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme", "class"] });
     resize(); readTarget(); p = target; scene.render(p, 0); captions(p); kick();
 
     // The 4K export (scripts/render-star-film.mjs) steps the film frame by frame
@@ -305,24 +308,31 @@ export default function StarFilm({ onJoin, onLogin, stats }) {
           <p>Pick a ready-made screen in the app and the companies that fit it are listed for you.</p>
         </div></div>
 
-        <div ref={cap(8)} className="sf-cap sf-page sf-pick-wrap" data-in="0.78" data-hold="0.84" data-out="0.905" aria-hidden="true"><div className="sf-ci">
+        <div ref={cap(8)} className="sf-cap sf-page sf-pick-wrap" data-in="0.78" data-hold="0.84" data-out="0.905"><div className="sf-ci">
           <div ref={pickRef} className="sf-pick">
-            {PICK.map(p => <div key={p.id} className="sf-bloom" style={{ "--hue": markColor(p.id) }} />)}
-            <div className="sf-orbits"><i /><i /><i /></div>
+            {PICK.map(p => <div key={p.id} className="sf-bloom" style={{ "--hue": markColor(p.id) }} aria-hidden="true" />)}
+            <div className="sf-orbits" aria-hidden="true"><i /><i /><i /></div>
             {PICK.map((p, i) => (
-              <div key={p.id} className="sf-tall" style={{ "--hue": markColor(p.id) }}>
+              <div key={p.id} className="sf-tall" style={{ "--hue": markColor(p.id) }} aria-hidden="true">
                 <div className="sf-tall-top"><StrategyMark preset={p} size={44} /><span className="sf-tall-info">i</span></div>
                 <Constellation seed={i + 3} />
                 <div className="sf-tall-text"><b>{p.name}</b><span>{p.description}</span></div>
               </div>
             ))}
+            {/* A real button: notes the strategy, then opens sign-up; once
+                signed in, Discover opens that strategy (DiscoverView.jsx) */}
             <div className="sf-glass">
               <small>Choose a strategy</small>
-              <div className="sf-glass-names">{PICK.map(p => <b key={p.id} className="sf-glass-name">{p.name}</b>)}</div>
-              <span className="sf-glass-btn">Open screen<i><ChevronRight size={15} /></i></span>
+              <div className="sf-glass-names" aria-hidden="true">{PICK.map(p => <b key={p.id} className="sf-glass-name">{p.name}</b>)}</div>
+              <button ref={openRef} type="button" className="sf-glass-btn" aria-label={`Open ${PICK[0].name}`} onClick={() => {
+                const u = new URL(window.location.href);
+                u.searchParams.set("strategy", PICK[frontRef.current].id);
+                window.history.replaceState(null, "", u);
+                onJoin();
+              }}>Open screen<i aria-hidden="true"><ChevronRight size={15} /></i></button>
             </div>
-            <div className="sf-blurcard"><i /><i /><i /></div>
-            <div ref={pointerRef} className="sf-pointer"><MousePointer2 size={26} strokeWidth={1.6} /></div>
+            <div className="sf-blurcard" aria-hidden="true"><i /><i /><i /></div>
+            <div ref={pointerRef} className="sf-pointer" aria-hidden="true"><MousePointer2 size={26} strokeWidth={1.6} /></div>
           </div>
         </div></div>
 

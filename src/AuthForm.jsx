@@ -133,7 +133,8 @@ function ForgotPassword({ initialEmail, onBack }) {
 // opens straight on the email step.
 const label = { display: "block", margin: "0 0 6px", fontSize: 12.5, fontWeight: 500, color: "var(--t2)" };
 
-export default function AuthForm({ onAuthed, mode, onModeChange }) {
+// onProgress(0–1): how far along the form is, for the sky beside it
+export default function AuthForm({ onAuthed, mode, onModeChange, onProgress }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -157,6 +158,16 @@ export default function AuthForm({ onAuthed, mode, onModeChange }) {
   const signup = mode === "signup";
   const hasChoices = !!fb?.providers?.length;
   const shown = step === "choose" && !hasChoices ? "email" : step;
+  // email chosen, a real-looking address, a password that's long enough
+  useEffect(() => {
+    if (!onProgress) return;
+    let v = shown === "choose" ? 0 : 0.2;
+    if (shown === "email") {
+      if (/^\S+@\S+\.\S+$/.test(email.trim())) v = 0.55;
+      v += 0.45 * Math.min(1, password.length / 8);
+    }
+    onProgress(Math.min(1, v));
+  }, [shown, email, password, onProgress]);
   const done = userId => { try { localStorage.setItem(RETURNING_KEY, "1"); } catch {} onAuthed(userId); };
   const back = () => { setStep("choose"); setError(""); };
   const Back = () => (

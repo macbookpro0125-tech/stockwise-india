@@ -10,7 +10,30 @@
 @keyframes authIn { from { opacity: 0; } to { opacity: 1; } }
 
 .auth-visual { position: relative; isolation: isolate; overflow: hidden; border-radius: 22px; background: #03040A; }
-.auth-visual .orbit { position: absolute; inset: 0; z-index: -1; display: block; width: 100%; height: 100%; }
+.auth-visual .orbit, .auth-visual .auth-sky { position: absolute; inset: 0; z-index: -1; display: block; width: 100%; height: 100%; }
+/* a soft shade under the line at the top, so it reads over the sky */
+.auth-visual::before { content: ""; position: absolute; inset: 0 0 auto; height: 34%; z-index: 0; pointer-events: none; background: linear-gradient(to bottom, rgba(3,4,10,.72), rgba(3,4,10,0)); }
+.auth-visual-line { z-index: 1; }
+/* the app's mark drawn as a constellation (SkyPanel.jsx): stars along the S
+   and the logo's chart line, joined as --s and --c go 0 → 1; the end star;
+   the score ring (--r); the name (--w); all of it fading together (--all) */
+.auth-mark { --s: 0; --c: 0; --r: 0; --w: 0; --all: 1; --px: 0px; --py: 0px;
+  position: absolute; left: 50%; top: 57%; z-index: 0; width: min(88%, 64vh); height: auto; overflow: visible; pointer-events: none;
+  transform: translate(-50%, -50%) translate(var(--px), var(--py)); }
+.auth-mark-all { opacity: var(--all); }
+.am-line { fill: none; stroke: #00E0BE; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; }
+.am-glow { stroke-width: 10; opacity: .2; }
+.am-s { stroke-dashoffset: calc(1 - var(--s)); }
+.am-c { stroke-dashoffset: calc(1 - var(--c)); }
+.am-core { fill: #fff; }
+.am-s-star { opacity: clamp(.22, calc((var(--s) - var(--at)) * 40 + .22), 1); }
+.am-c-star { opacity: clamp(.22, calc((var(--c) - var(--at)) * 40 + .22), 1); }
+.am-end { opacity: clamp(.5, calc(.5 + var(--c) * .5), 1); transform-box: fill-box; transform-origin: center; transform: scale(calc(1 + var(--r) * .22)); }
+.am-rays { stroke: rgba(255,255,255,.7); stroke-width: 1.2; stroke-linecap: round; }
+.am-arc { --a: clamp(0, calc(var(--r) * 6 - var(--k)), 1); fill: none; stroke: #00E0BE; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: calc(1 - var(--a)); filter: drop-shadow(0 0 6px rgba(0,224,190,.6)); }
+.am-word { font: 700 46px var(--ap-font, var(--font)); letter-spacing: -.03em; fill: #F4F4FF; opacity: var(--w); }
+.am-wise { fill: #6FA0FF; }
+.am-india { fill: #8282A0; font-weight: 500; }
 .auth-visual-line {
   position: absolute; left: 0; right: 0; top: 9%; margin: 0; padding: 0 24px; text-align: center;
   font-family: var(--ap-font, var(--font)); font-size: clamp(26px, 2.6vw, 40px); font-weight: 700;
@@ -75,7 +98,10 @@
   .auth-dialog { grid-template-columns: minmax(0, 1fr); grid-template-rows: 190px minmax(0, 1fr); padding: 8px; }
   .auth-visual { border-radius: 18px; }
   .auth-visual-line { top: 18px; font-size: 21px; }
-  .auth-pause { right: 12px; bottom: 12px; width: 28px; height: 28px; }
+  .auth-visual::before { inset: 0 auto 0 0; width: 70%; height: auto; background: linear-gradient(to right, rgba(3,4,10,.75), rgba(3,4,10,0)); }
+  .auth-visual-line { top: 50%; transform: translateY(-50%); right: auto; max-width: 58%; padding: 0 0 0 20px; text-align: left; }
+  .auth-mark { left: auto; right: 2%; top: 52%; width: auto; height: 86%; transform: translateY(-50%) translate(var(--px), var(--py)); }
+  .auth-pause { right: auto; left: 12px; bottom: 12px; width: 28px; height: 28px; } /* clear of the name on the right */
   .auth-top { height: 52px; }
   .auth-body { align-items: flex-start; padding: 12px 20px 24px; }
   .auth-title { font-size: 24px; }
