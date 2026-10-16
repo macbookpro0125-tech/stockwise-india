@@ -261,6 +261,22 @@ export default function DiscoverView({ onOpenStock }) {
     if (res?.filters) setFilters(res.filters);
   }, [run, shownColumnIds]);
 
+  // A strategy chosen on the front page before signing in ("Open screen" in
+  // the film, ?strategy=<id>): open it as its card would, once, then drop it
+  // from the address
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("strategy");
+    if (!id) return;
+    const u = new URL(window.location.href);
+    u.searchParams.delete("strategy");
+    window.history.replaceState(window.history.state, "", u.pathname + u.search);
+    api.presets().then(list => {
+      const preset = list?.find(p => p.id === id);
+      if (preset) { applyPreset(preset); showStocks(); }
+    }).catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ── The picker adds or removes a filter, or a column ──
   const pickerChosen = useMemo(() => new Set(picker === "filter" ? (filters ?? []).map(f => f.id) : shownColumnIds), [picker, filters, shownColumnIds]);
   // From the latest list each time, not the one this render saw: several
