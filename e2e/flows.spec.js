@@ -95,6 +95,30 @@ test("F02-H1 a strategy, sector and name filter narrow the list; sort works", as
   await expect(page.getByText(/None of these \d+ companies match/).first()).toBeVisible(); // F02-E1 says why it's empty
 });
 
+test("F02-H5 the curved row of strategies pauses on hover; a card opens its strategy", async ({ page, account }) => {
+  await page.goto("/");
+  await expect(page.locator(".cr-tile").first()).toBeAttached();
+  await expect(page.getByRole("button", { name: "Start screening" })).toBeInViewport(); // the row doesn't push it below the fold
+  await page.waitForTimeout(1500); // the band fades in once measured
+  // the middle of the card nearest the centre of the screen
+  const spot = await page.evaluate(() => {
+    let best = null;
+    for (const t of document.querySelectorAll(".cr-tile")) {
+      if (getComputedStyle(t).visibility !== "visible") continue;
+      const r = t.querySelectorAll(".cr-strip")[8].getBoundingClientRect();
+      const x = r.left + r.width / 2, y = r.top + r.height / 2, d = Math.abs(x - innerWidth / 2);
+      if (!best || d < best.d) best = { x, y, d };
+    }
+    return best;
+  });
+  await page.mouse.move(spot.x, spot.y);
+  const states = await page.locator(".cr-tile").evaluateAll(ts => ts.map(t => getComputedStyle(t).animationPlayState));
+  expect(new Set(states)).toEqual(new Set(["paused"]));
+  const name = await page.evaluate(({ x, y }) => document.elementFromPoint(x, y).closest(".cr-tile").querySelector(".rb-card b").textContent, spot);
+  await page.mouse.click(spot.x, spot.y);
+  await expect(page.locator(".screen-title")).toHaveText(name);
+});
+
 test("F02-H2 share link reopens the same screen", async ({ page, context, account }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.goto("/");
