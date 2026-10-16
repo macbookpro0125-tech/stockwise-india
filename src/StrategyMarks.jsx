@@ -73,6 +73,30 @@ const MARKS = {
     <path d="M8 34l12-11 12 11" fill="none" stroke="currentColor" strokeWidth="5.5" strokeLinecap="round" strokeLinejoin="round" opacity=".55" />
     <path d="M8 21L20 10l12 11" fill="none" stroke="currentColor" strokeWidth="5.5" strokeLinecap="round" strokeLinejoin="round" />
   </>],
+  // a peak with a flag on it: at the high
+  near_highs_cheap: ["#0B7285", <>
+    <path d="M2 37L15.5 14l7 11 4.5-6.5L38 37z" />
+    <rect x="14.5" y="3" width="2.4" height="12" rx="1.2" />
+    <path d="M16.5 3.5h9l-2.6 3.3 2.6 3.3h-9z" opacity=".7" />
+  </>],
+  // the debt bars falling while the business line climbs over them
+  debt_paydown: ["#364FC7", <>
+    <rect x="4" y="9" width="8" height="27" rx="1.5" opacity=".5" />
+    <rect x="16" y="18" width="8" height="18" rx="1.5" opacity=".5" />
+    <rect x="28" y="27" width="8" height="9" rx="1.5" opacity=".5" />
+    <path d="M5 29l11-8 7 3 12-15" fill="none" stroke="currentColor" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
+  </>],
+  // a badge with a downward arrow: good, and down
+  fallen_quality: ["#A61E4D", <>
+    <circle cx="20" cy="20" r="17" />
+    <path d="M20 10v19M12.5 21.5L20 29l7.5-7.5" fill="none" stroke={W} strokeWidth="3.6" strokeLinecap="round" strokeLinejoin="round" />
+  </>],
+  // a bar, and one twice its height
+  doubled_in_year: ["#5C940D", <>
+    <rect x="5" y="22" width="12" height="14" rx="2" opacity=".55" />
+    <rect x="23" y="8" width="12" height="28" rx="2" />
+    <path d="M11 17l9-10" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" opacity=".55" />
+  </>],
 };
 
 export const markColor = id => MARKS[id]?.[0] ?? null;

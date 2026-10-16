@@ -84,11 +84,15 @@ export function unitLabel(def) {
   return { "%": "%", x: "x", "₹": "₹", "₹ Cr": "₹ Cr", "/10": "of 10", "/9": "of 9", shares: "shares", "Cr shares": "crore shares" }[def.unit] ?? "";
 }
 
-// Colour for a cell: gains green and losses red for signed metrics, and the
-// table's old good/bad marks for the metrics it always coloured
+// Colour for a cell: gains green and losses red for signed metrics (the other
+// way round where a fall is the good news, as with debt), and the table's old
+// good/bad marks for the metrics it always coloured
 export function valueColor(def, v) {
   if (v == null || !Number.isFinite(v)) return "var(--t3)";
-  if (def.signed) return v > 0 ? "var(--green)" : v < 0 ? "var(--red)" : "var(--t1)";
+  if (def.signed) {
+    const up = def.lowerIsBetter ? "var(--red)" : "var(--green)", down = def.lowerIsBetter ? "var(--green)" : "var(--red)";
+    return v > 0 ? up : v < 0 ? down : "var(--t1)";
+  }
   if (def.id === "roce") return v >= 18 ? "var(--green)" : "var(--t1)";
   if (def.id === "roe" || def.id === "roeAvg") return v >= 15 ? "var(--green)" : "var(--t1)";
   if (def.id === "promoterPct") return v >= 50 ? "var(--green)" : v < 30 ? "var(--red)" : "var(--t1)";
