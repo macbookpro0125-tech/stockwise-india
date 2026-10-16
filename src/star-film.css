@@ -1,0 +1,118 @@
+/* The front page's star film (StarFilm.jsx) in the app's own design (16 Oct
+   2026, "make it match the app"): Discover's type — bold, tight, a muted
+   second phrase, a teal eyebrow — its pill button and text link, and the
+   header's material. Over the night sky the colours are the dark theme's,
+   whatever the theme (it's night); once the film opens into the page,
+   everything follows the page's own theme tokens. sf- classes, so the dome
+   film's df- styles stay as they are. */
+
+.sf-track {
+  /* Discover's face and ease (index.css .ap), the same values */
+  --ap-font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter Variable", "Inter", "Helvetica Neue", Arial, sans-serif;
+  --ap-ease: cubic-bezier(0.28, 0.11, 0.32, 1);
+  position: relative; height: 720vh; background: #080810; font-family: var(--ap-font); font-optical-sizing: auto;
+}
+.sf-stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; background: #080810; }
+.sf-film { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+/* ── captions ── */
+.sf-cap { position: absolute; z-index: 3; opacity: 0; pointer-events: none; max-width: min(34rem, 44vw); }
+.sf-cap.live { pointer-events: auto; }
+.sf-ci { position: relative; will-change: transform; }
+.sf-ci::before { content: ""; position: absolute; inset: -24% -18%; z-index: -1; pointer-events: none; }
+.sf-cap h1, .sf-cap h2 { margin: 0; font-weight: 700; text-wrap: balance; }
+.sf-cap h1, .sf-cap .sf-h1 { font-size: clamp(44px, 6.4vw, 96px); line-height: 1.04; letter-spacing: -0.035em; }
+.sf-cap h2 { font-size: clamp(32px, 4.4vw, 56px); line-height: 1.07; letter-spacing: -0.03em; }
+.sf-cap p { margin: 18px 0 0; max-width: 34ch; font-size: clamp(17px, 1.45vw, 21px); line-height: 1.42; letter-spacing: 0.004em; }
+.sf-cap .sf-eb { margin: 0 0 12px; max-width: none; font-size: clamp(17px, 1.4vw, 21px); font-weight: 600; letter-spacing: 0.005em; }
+
+/* over the night sky: the dark theme's colours, with a soft navy backing */
+.sf-sky { color: #F4F4FF; text-shadow: 0 2px 24px rgba(8,8,16,.85); }
+.sf-sky .sf-ci::before { background: radial-gradient(closest-side, rgba(8,8,16,.72), rgba(8,8,16,.45) 55%, rgba(8,8,16,0)); }
+.sf-sky h1 span, .sf-sky h2 span { color: #8282A0; }
+.sf-sky p { color: #A8A8C0; }
+.sf-sky .sf-eb { color: #00E0BE; }
+/* on the page: the page's own theme */
+.sf-page { color: var(--t1); }
+.sf-page h1 span, .sf-page h2 span { color: var(--t3); }
+.sf-page p { color: var(--t2); }
+.sf-page .sf-eb { color: var(--accent); }
+
+.sf-open { right: max(7vw, calc(env(safe-area-inset-right, 0px) + 16px)); top: 64%; transform: translateY(-50%); text-align: right; }
+.sf-right { right: max(7vw, calc(env(safe-area-inset-right, 0px) + 16px)); top: 50%; transform: translateY(-50%); text-align: right; }
+.sf-left { left: max(7vw, calc(env(safe-area-inset-left, 0px) + 16px)); top: 50%; transform: translateY(-50%); }
+.sf-open p, .sf-right p { margin-left: auto; }
+.sf-center { left: 50%; top: 50%; transform: translate(-50%, -50%); text-align: center; max-width: min(44rem, 88vw); }
+.sf-center p { margin-left: auto; margin-right: auto; }
+
+/* ── Discover's pill button and text link; they answer on press ── */
+.sf-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; margin-top: 28px; padding: 0 28px; border: 0; border-radius: 980px;
+  background: var(--accent); color: var(--on-accent); font: 500 17px/1 var(--ap-font); letter-spacing: -0.01em; text-shadow: none; cursor: pointer;
+  -webkit-tap-highlight-color: transparent; transition: background-color 200ms, transform 160ms ease-out; }
+.sf-btn:active { transform: scale(.97); transition-duration: 100ms; }
+.sf-link { display: inline-flex; align-items: center; gap: 2px; min-height: 44px; padding: 0; border: 0; background: none; color: var(--accent);
+  font: 400 19px/1.3 var(--ap-font); letter-spacing: 0.01em; text-shadow: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.sf-link svg { width: 17px; height: 17px; transition: transform 200ms var(--ap-ease); }
+.sf-link:active { opacity: .7; }
+.sf-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 14px 30px; margin-top: 28px; }
+.sf-actions .sf-btn { margin-top: 0; }
+
+/* ── the bar: clear at rest; the app header's material once the film moves —
+   its dark one over the sky, then the page theme's own ── */
+.sf-bar { position: absolute; z-index: 4; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  height: calc(60px + env(safe-area-inset-top, 0px)); padding: env(safe-area-inset-top, 0px) max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px));
+  --t1: #F4F4FF; --t3: #8282A0; --brand-wise: #6FA0FF; /* the Logo, in the dark theme over the sky */
+  color: var(--t1); }
+.sf-bar::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; background-color: rgba(7,7,14,0); border-bottom: 1px solid transparent;
+  -webkit-backdrop-filter: saturate(100%) blur(0px); backdrop-filter: saturate(100%) blur(0px);
+  transition: background-color .45s ease, border-color .45s ease, -webkit-backdrop-filter .45s ease, backdrop-filter .45s ease; }
+.sf-bar-on::before { background-color: rgba(7,7,14,.85); border-bottom-color: rgba(255,255,255,.14); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); }
+.sf-bar span { transition: color .45s ease; }
+.sf-bar-page { --t1: inherit; --t3: inherit; --brand-wise: inherit; }
+:root[data-theme="light"] .sf-bar-page::before { background-color: rgba(255,255,255,.82); border-bottom-color: rgba(16,24,40,.12); }
+.sf-signin { position: relative; display: inline-flex; align-items: center; height: 34px; padding: 0 14px; border-radius: var(--r-sm); border: 1px solid rgba(255,255,255,.14);
+  background: rgba(20,20,36,.6); color: var(--t1); font: 500 13px/1 var(--font); cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: transform 160ms ease-out, background-color 200ms ease, border-color .45s ease, color .45s ease; }
+.sf-signin::after { content: ""; position: absolute; inset: -5px -4px; } /* a 44px target */
+.sf-signin:active { transform: scale(.97); transition-duration: 100ms; }
+.sf-bar-page .sf-signin { border-color: var(--bdr2); background: var(--s2); }
+
+@media (hover: hover) and (pointer: fine) {
+  .sf-btn:hover { background: color-mix(in srgb, var(--accent) 88%, var(--t1)); }
+  .sf-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .sf-link:hover svg { transform: translateX(3px); }
+  .sf-signin:hover { background: rgba(26,26,46,.85); }
+  .sf-bar-page .sf-signin:hover { background: var(--s3); }
+}
+
+/* ── scroll cue ── */
+.sf-cue { position: absolute; left: 50%; bottom: calc(26px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 3;
+  display: flex; flex-direction: column; align-items: center; gap: 10px; font: 600 11px/1 var(--font); letter-spacing: .2em; text-indent: .2em;
+  text-transform: uppercase; color: #A8A8C0; transition: opacity .5s ease; }
+.sf-cue::after { content: ""; width: 1px; height: 34px; background: linear-gradient(to bottom, #00E0BE, transparent); animation: sf-cue 1.8s ease-in-out infinite; }
+@keyframes sf-cue { 0%, 100% { transform: translateY(0); opacity: 1; } 50% { transform: translateY(8px); opacity: .4; } }
+
+@media (max-width: 720px) {
+  .sf-cap, .sf-open, .sf-right, .sf-left, .sf-center { left: max(16px, env(safe-area-inset-left, 0px)); right: max(16px, env(safe-area-inset-right, 0px));
+    top: auto; bottom: calc(16vh + env(safe-area-inset-bottom, 0px)); transform: none; max-width: none; text-align: left; }
+  .sf-center { text-align: center; bottom: auto; top: 50%; transform: translateY(-50%); }
+  .sf-cap p { margin-left: 0; }
+  .sf-center p { margin-left: auto; }
+  .sf-sky .sf-ci::before { inset: -26% -10%; background: radial-gradient(closest-side, rgba(8,8,16,.85), rgba(8,8,16,.6) 60%, rgba(8,8,16,0)); }
+}
+
+/* Less motion: no press scale (a dimming instead) and no bobbing cue; the
+   camera holds in starScene.js. Less transparency: a solid bar. More
+   contrast: firmer backing and full-strength text over the sky. */
+@media (prefers-reduced-motion: reduce) {
+  .sf-cue::after { animation: none; }
+  .sf-btn:active, .sf-signin:active { transform: none; opacity: .8; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .sf-bar-on::before { -webkit-backdrop-filter: none; backdrop-filter: none; background-color: rgb(7,7,14); }
+  :root[data-theme="light"] .sf-bar-page::before { background-color: rgb(255,255,255); }
+}
+@media (prefers-contrast: more) {
+  .sf-sky .sf-ci::before { background: radial-gradient(closest-side, rgba(8,8,16,.92), rgba(8,8,16,.8) 60%, rgba(8,8,16,0)); }
+  .sf-sky p, .sf-sky h1 span, .sf-sky h2 span { color: #F4F4FF; }
+}
