@@ -274,7 +274,7 @@ export default function DomeFilm({ onJoin, onLogin }) {
 
           <div ref={cap(4)} className="df-cap df-lt df-right" data-in="0.64" data-hold="0.72" data-out="0.80"><div className="df-ci">
             <h2>Then, a<br /><i>fair price.</i></h2>
-            <p>Five valuation methods side by side, even when they disagree.</p>
+            <p>A fair value from the company's own history, with price levels around it.</p>
           </div></div>
 
           <div ref={cap(5)} className="df-cap df-lt df-center" data-in="0.86" data-hold="0.95" data-out="1.2"><div className="df-ci">

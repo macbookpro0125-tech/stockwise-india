@@ -10,12 +10,12 @@
 //         NSE company — near stars streaming past with real depth
 //   0.29  each strategy draws a constellation of teal lines around that star
 //   0.47  close to the star, six arcs draw around it — the six areas of its score
-//   0.63  the ring gives way to a level line with five marks — five valuations
+//   0.66  the page shows the fair value and the price levels around it (HTML)
 //   0.55+ the star opens into the page: its colour spreads from the star with a
 //         teal edge until it is the page's own background (light or dark theme)
 // The stars keep real star colours (white, warm, blue-white); the app's teal
-// is for what the interface draws: lines, the ring, the level, the opening edge.
-// The stars, lines, arcs and marks are decoration, not data: positions are
+// is for what the interface draws: lines, the ring, the opening edge.
+// The stars, lines and arcs are decoration, not data: positions are
 // seeded, only the counts (companies, strategies) are the app's own.
 
 const FOV = 55; // degrees, across the screen's shorter side
@@ -154,7 +154,7 @@ void main(){
 }`;
 
 // The constellation lines: each drawn from star to star as the scroll moves,
-// a crisp gold line with a soft glow, in screen pixels at any zoom
+// a crisp teal line with a soft glow, in screen pixels at any zoom
 const LINE_VS = `#version 300 es
 in vec2 a_c; in vec3 a_a; in vec3 a_b; in vec2 a_w;
 uniform mat4 u_vp; uniform vec3 u_eye; uniform vec2 u_res; uniform float u_dpr, u_p, u_fade;
@@ -189,7 +189,7 @@ const OVER_FS = `#version 300 es
 precision highp float;
 in vec2 v_uv; out vec4 o;
 uniform vec2 u_res, u_h; uniform float u_hr, u_dpr, u_p, u_t, u_tw, u_rot, u_vis;
-uniform vec3 u_page, u_ink;                          // the page's --bg and --accent, per theme
+uniform vec3 u_page;                                 // the page's --bg, per theme
 ${NOISE}
 float arc(float d, float w){ return exp(-d * d / (2. * w * w)); }
 float sg(float p, float a, float b){ float t = clamp((p - a) / (b - a), 0., 1.); return t < .5 ? 4. * t * t * t : 1. - pow(-2. * t + 2., 3.) / 2.; }
@@ -234,32 +234,12 @@ void main(){
   v = max(v, sg(u_p, .74, .82));
   float rimOn = step(.001, vr) * (1. - sg(u_p, .72, .8));
   float rim = (arc(r - vr, .9) + .35 * arc(r - vr - 6., 10.)) * rimOn;
-  // The price level, on the light: a line with five marks and a gold point
-  // where the star sits — below the caption, or above it on a tall screen
-  bool tall = res.y > res.x;
-  float ly = tall ? res.y * .7 : res.y * .28;           // from the bottom
-  float lv = sg(u_p, .645, .71);
-  float hw = res.x * (tall ? .4 : .34) * lv, cx = res.x * .5;
-  float line = arc(fp.y - ly, .55) * step(abs(fp.x - cx), hw) * step(.0001, lv);
-  float marks = 0.;
-  float xs[5] = float[5](-.86, -.5, -.18, .34, .72);
-  for (int k = 0; k < 5; k++){
-    float s = sg(u_p, .67 + float(k) * .015, .69 + float(k) * .015);
-    marks += s * arc(fp.x - (cx + xs[k] * res.x * (tall ? .4 : .34)), .6) * step(abs(fp.y - ly), 7.);
-  }
-  float dotm = sg(u_p, .74, .77) * smoothstep(5.2, 4., length(fp - vec2(h.x, ly)));
-  float lvFade = 1. - sg(u_p, .84, .93);
-  float ink = clamp((line * .85 + marks) * lvFade, 0., 1.);
-  float gold = dotm * lvFade;
   vec3 teal = vec3(0., .878, .745);
   vec3 glow = star + teal * ring * 1.3 + teal * rim;
-  vec3 pagec = u_page;                                 // the light opens onto the page itself
-  vec3 inkc = u_ink, goldc = u_ink;
   // Premultiplied over the scene (blend ONE, ONE_MINUS_SRC_ALPHA): the stars
-  // show through where nothing here covers them
-  float A = 1. - (1. - v) * (1. - ink) * (1. - gold);
-  vec3 src = (glow * (1. - v) * (1. - ink) + pagec * v * (1. - ink) + inkc * ink) * (1. - gold) + goldc * gold;
-  o = vec4(src, A);
+  // show through until the page covers them. (The price levels that follow
+  // are HTML, labelled, in StarFilm.jsx.)
+  o = vec4(glow * (1. - v) + u_page * v, v);
 }`;
 
 function compile(gl, type, src) {
@@ -338,9 +318,9 @@ function buildField(companies, strategies) {
 }
 
 // preserve: keep the last frame readable (the 4K export reads it back)
-// theme: { page: [r, g, b], ink: [r, g, b] } in 0–1, the page's --bg and --accent
+// theme: { page: [r, g, b] } in 0–1, the page's --bg
 export function createStarScene(canvas, { companies = 2252, strategies = 13, reduce = false, preserve = false, theme } = {}) {
-  let page = theme?.page ?? [0.031, 0.031, 0.063], ink = theme?.ink ?? [0, 0.878, 0.745];
+  let page = theme?.page ?? [0.031, 0.031, 0.063];
   const gl = canvas.getContext("webgl2", { antialias: false, alpha: false, premultipliedAlpha: false, preserveDrawingBuffer: preserve, powerPreference: "high-performance" });
   if (!gl) return null;
   let sky, starP, lineP, over, neb;
@@ -465,7 +445,7 @@ export function createStarScene(canvas, { companies = 2252, strategies = 13, red
     gl.uniform2f(over.u.u_res, W, H); gl.uniform2f(over.u.u_h, m.hero[0], m.hero[1]);
     gl.uniform1f(over.u.u_hr, m.heroR); gl.uniform1f(over.u.u_dpr, dpr); gl.uniform1f(over.u.u_p, p);
     gl.uniform1f(over.u.u_t, t); gl.uniform1f(over.u.u_tw, tw); gl.uniform1f(over.u.u_rot, 0); gl.uniform1f(over.u.u_vis, m.vis);
-    gl.uniform3fv(over.u.u_page, page); gl.uniform3fv(over.u.u_ink, ink);
+    gl.uniform3fv(over.u.u_page, page);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     gl.bindVertexArray(null);
   }
@@ -473,7 +453,7 @@ export function createStarScene(canvas, { companies = 2252, strategies = 13, red
   return {
     resize,
     render,
-    setTheme(th) { page = th.page; ink = th.ink; },
+    setTheme(th) { page = th.page; },
     setCounts(c, s) { if (c === counts[0] && s === counts[1]) return; counts = [c, s]; upload(buildField(c, s)); },
     // Free what this scene made, but keep the context: React may set the film
     // up again on the same canvas (StrictMode), and a lost context stays lost
