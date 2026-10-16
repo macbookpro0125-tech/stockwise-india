@@ -72,6 +72,12 @@ async function main() {
 
   const screenNoCookie = await fetch(`${BASE}/api/screen`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
   assert(screenNoCookie.status === 401, "POST /api/screen with no cookie is rejected");
+  assert((await fetch(`${BASE}/api/screen?q=%7B%7D`)).status === 401, "GET /api/screen with no cookie is rejected");
+  // A reply the browser keeps and re-checks: same data, same fingerprint, a 304
+  const metaRes = await fetch(`${BASE}/api/metrics`);
+  const metaTag = metaRes.headers.get("etag");
+  assert(metaTag?.startsWith('W/"') && /no-cache/.test(metaRes.headers.get("cache-control") ?? ""), "the filter catalogue comes with a fingerprint the browser re-checks");
+  assert((await fetch(`${BASE}/api/metrics`, { headers: { "If-None-Match": metaTag } })).status === 304, "an unchanged filter catalogue is a 304, no body");
 
   const emptyRes = await fetch(`${BASE}/api/alerts`, { headers: { Cookie: aliceCookie } });
   const empty = await emptyRes.json();
@@ -217,6 +223,17 @@ async function main() {
   assert(stats.strategies === 18 && stats.companies > 0 && stats.filters >= 40, "the header's counts come back");
 
   // The screener: filters on any metric, the columns asked for, and the strategies' criteria still working
+  // The whole market as the app asks for it: a GET the browser can keep
+  const wholeQ = encodeURIComponent(JSON.stringify({ filters: [], columns: ["roce"] }));
+  const whole1 = await fetch(`${BASE}/api/screen?q=${wholeQ}`, { headers: { Cookie: aliceCookie } });
+  const wholeTag = whole1.headers.get("etag");
+  const wholeBody = await whole1.json();
+  assert(whole1.status === 200 && wholeBody.matched > 100 && wholeTag, "the whole market comes back as a GET, with a fingerprint");
+  const whole2 = await fetch(`${BASE}/api/screen?q=${wholeQ}`, { headers: { Cookie: aliceCookie } });
+  assert(whole2.headers.get("etag") === wholeTag, "the same market gives the same fingerprint (nothing in it changes by the second)");
+  const whole304 = await fetch(`${BASE}/api/screen?q=${wholeQ}`, { headers: { Cookie: aliceCookie, "If-None-Match": wholeTag } });
+  assert(whole304.status === 304 && (await whole304.text()) === "", "a return visit with the market unchanged gets a 304 and no body");
+  assert((await fetch(`${BASE}/api/screen?q=%7Bnope`, { headers: { Cookie: aliceCookie } })).status === 400, "a GET screen with broken JSON is a 400");
   const screenRes = await json("POST", "/api/screen", aliceCookie, { filters: [{ id: "roce", min: 25, max: null }, { id: "capSize", values: ["Large cap"] }], columns: ["roce", "ret1m"] });
   const screened = await screenRes.json();
   assert(screenRes.status === 200 && screened.matched > 0 && screened.results.every(r => r.values.roce >= 25 && r.capSize === "Large cap"), "a screen keeps only companies inside every filter");

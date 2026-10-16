@@ -6,7 +6,7 @@
 // account takeover. httpOnly means client-side JS can't read it at all.
 import "./env.js"; // first, so the rest see .env's settings
 import { createServer } from "node:http";
-import { randomUUID } from "node:crypto";
+import { randomUUID, createHash } from "node:crypto";
 import { gzipSync } from "node:zlib";
 import { existsSync, statSync, createReadStream } from "node:fs";
 import { join, normalize, extname, sep } from "node:path";
@@ -186,20 +186,39 @@ function clearSessionCookie(req, res) {
 // Compressed when the browser accepts it and the body is big enough to
 // matter: a screen of the whole market is ~1.3 MB of JSON and about a tenth
 // of that gzipped — the difference between a filter feeling live or not.
-function sendJson(res, status, body) {
-  const json = JSON.stringify(body);
+function sendJson(res, status, body, headers = {}, json = JSON.stringify(body)) {
   if (json.length > 2048 && /\bgzip\b/.test(res.req?.headers["accept-encoding"] ?? "")) {
-    res.writeHead(status, { "Content-Type": "application/json", "Content-Encoding": "gzip", Vary: "Accept-Encoding" });
+    res.writeHead(status, { "Content-Type": "application/json", "Content-Encoding": "gzip", Vary: "Accept-Encoding", ...headers });
     res.end(gzipSync(json, { level: 5 }));
     return;
   }
-  res.writeHead(status, { "Content-Type": "application/json" });
+  res.writeHead(status, { "Content-Type": "application/json", ...headers });
   res.end(json);
+}
+
+// A reply the browser may keep and re-check (16 Oct 2026): the whole
+// market's screen is ~600 KB compressed and changes once a day, yet every
+// visit downloaded it again. With a fingerprint of the reply (ETag) and
+// "keep it, but ask first" (no-cache), a return visit's browser asks "still
+// this one?" and an unchanged reply is a 304 with no body. Private: never
+// kept by a shared cache. Weak, so a compressing proxy keeps it.
+function sendJsonCached(req, res, body) {
+  const json = JSON.stringify(body);
+  const etag = `W/"${createHash("sha1").update(json).digest("base64url").slice(0, 22)}"`;
+  const headers = { ETag: etag, "Cache-Control": "private, no-cache" };
+  if ((req.headers["if-none-match"] ?? "").split(/\s*,\s*/).includes(etag)) {
+    res.writeHead(304, headers);
+    res.end();
+    return;
+  }
+  sendJson(res, 200, body, headers, json);
 }
 
 // The largest body any form here sends is a screen's filters, a few KB — a
 // cap keeps one huge request from filling the server's memory
 const MAX_BODY_BYTES = 256 * 1024;
+// A screen sent as a GET's query (?q=): longer ones go as a POST
+const MAX_SCREEN_QUERY = 8000;
 async function readJsonBody(req) {
   const chunks = [];
   let size = 0;
@@ -420,7 +439,7 @@ export function createApp() {
       // What the filter picker and column picker offer: every metric, its
       // category, unit and spread across the market
       if (url.pathname === "/api/metrics" && req.method === "GET") {
-        sendJson(res, 200, screenerMeta());
+        sendJsonCached(req, res, screenerMeta());
         return;
       }
 
@@ -585,6 +604,19 @@ export function createApp() {
         // jobs: on a fresh host the first load runs for ~2 h — the screen
         // says so instead of passing off a partial market as the whole one
         sendJson(res, 200, { ...screen(await readJsonBody(req)), jobs: jobStatus() });
+        return;
+      }
+      // The same as a GET (?q= the request as JSON), so the browser can keep
+      // the reply and re-check it (sendJsonCached) — what the app sends
+      if (url.pathname === "/api/screen" && req.method === "GET") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        const q = url.searchParams.get("q") ?? "{}";
+        if (q.length > MAX_SCREEN_QUERY) throw badRequest("Screen request is too long");
+        let body;
+        try { body = JSON.parse(q); } catch { throw badRequest("Screen request must be valid JSON"); }
+        if (!body || typeof body !== "object" || Array.isArray(body)) throw badRequest("Screen request must be a JSON object");
+        sendJsonCached(req, res, { ...screen(body), jobs: jobStatus() });
         return;
       }
 
