@@ -13,6 +13,8 @@
 //   0.63  the ring gives way to a level line with five marks — five valuations
 //   0.55+ the star opens into the page: its colour spreads from the star with a
 //         teal edge until it is the page's own background (light or dark theme)
+// The stars keep real star colours (white, warm, blue-white); the app's teal
+// is for what the interface draws: lines, the ring, the level, the opening edge.
 // The stars, lines, arcs and marks are decoration, not data: positions are
 // seeded, only the counts (companies, strategies) are the app's own.
 
@@ -86,7 +88,7 @@ void main(){
   col += band * smoothstep(.42, .95, fbm(d * 3.2 + 4.)) * vec3(.13, .13, .28) * .8;
   col += band * smoothstep(.55, 1.05, fbm(d * 7.5 + 11.)) * vec3(.66, .66, .75) * .06;
   col -= band * smoothstep(.6, .9, fbm(d * 5.1 + 3.)) * .03;  // dust lanes
-  col += pow(max(dot(d, u_hd), 0.), 60.) * vec3(0., .88, .75) * .07; // teal around the star
+  col += pow(max(dot(d, u_hd), 0.), 60.) * vec3(.22, .17, .11) * .5; // the star's warmth on the sky
   o = vec4(col, band);
 }`;
 const SKY_FS = `#version 300 es
@@ -201,7 +203,7 @@ void main(){
   // The star: a disc, warmer at its rim; a corona held close; four fine rays
   // that shorten as the camera arrives
   float disc = smoothstep(R + .8, R - .8, r);
-  vec3 photo = mix(vec3(1.), vec3(.82, 1., .96), pow(clamp(r / R, 0., 1.), 3.));
+  vec3 photo = mix(vec3(1.), vec3(1., .86, .62), pow(clamp(r / R, 0., 1.), 3.));
   float wob = .9 + .1 * sin(a * 7. + u_t * .3) * sin(a * 13. - u_t * .2 + u_rot);
   float cor = exp(-max(r - R, 0.) / (R * .75 + 2.)) * .85 + (R * 2.5 + 5.) / (r + R * 2.5 + 5.) * .1;
   float ray = 0.;
@@ -210,7 +212,7 @@ void main(){
   float boost = .6 + 1.2 * sg(u_p, .2, .62);
   float flick = 1. + u_tw * .05 * sin(u_t * 1.7);
   float yield = 1. - sg(u_p, .54, .6);                // the glare gives way as the page opens
-  vec3 star = (photo * disc * 1.15 + vec3(.72, .98, .94) * cor * wob * boost * flick + vec3(.92, .96, 1.) * ray * .5 * boost) * u_vis * yield;
+  vec3 star = (photo * disc * 1.15 + vec3(1., .9, .74) * cor * wob * boost * flick + vec3(1., .96, .9) * ray * .5 * boost) * u_vis * yield;
   // The score: six arcs drawn one after another around the star, clear of its glare
   float RR = max(R * 3.4 + 18., md * .15);
   float ring = 0.;
@@ -291,7 +293,7 @@ function buildField(companies, strategies) {
     if (len(sub(pt, lerp3(pathA, pathB, t))) < 3.2) continue;   // keep the flight path clear
     const b = 0.16 + 2.3 * Math.pow(rand(), 4);
     const k = rand();
-    const col = k < 0.22 ? [0.62, 0.75, 1.0] : k < 0.84 ? [0.96, 0.96, 1.0] : [0.62, 1.0, 0.92]; // the logo's blue, #F4F4FF, the teal
+    const col = k < 0.16 ? [0.74, 0.84, 1.0] : k < 0.72 ? [1.0, 0.97, 0.92] : [1.0, 0.86, 0.66]; // real star colours: blue-white, white, warm
     stars.push({ p: pt, b, col, ph: rand(), lit: 9 });
   }
   // Constellations: one small group per strategy, set in a crown around the
