@@ -1,0 +1,104 @@
+/* The front page's scroll film (DomeFilm.jsx), ported from
+   stockwise-scroll/source/film.html. The film sets its own palette — night
+   sky, then the light it ends in — so its colours are fixed, not theme
+   tokens. Type: Bodoni Moda for the headlines (self-hosted), Inter for the
+   rest. Classes carry a df- prefix so nothing here touches the app. */
+
+.df-track {
+  --df-night: #05060a;
+  --df-paper: #fff7ea;       /* the light the film ends in, exactly */
+  --df-ink: #0e1424;
+  --df-ink-soft: #4b5266;
+  --df-gold: #d9a24a;
+  --df-gold-ink: #8a5c17;
+  --df-champagne: #ffe8c4;
+  --df-star: #f5efe4;
+  --df-star-dim: #ddd6ca;
+  --df-display: "Bodoni Moda Variable", "Bodoni 72", Didot, "Times New Roman", serif;
+  position: relative; height: 720vh; background: var(--df-night);
+  font-family: var(--font); font-size: 16px; line-height: 1.55; color: var(--df-ink);
+}
+.df-stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; background: var(--df-night); }
+.df-film { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+/* ── captions ── */
+.df-cap { position: absolute; z-index: 3; opacity: 0; pointer-events: none; max-width: min(32rem, 42vw); }
+.df-cap.live { pointer-events: auto; }
+.df-cap .df-ci { position: relative; will-change: transform; }
+.df-cap .df-ci::before { content: ""; position: absolute; inset: -22% -16%; z-index: -1; pointer-events: none; }
+.df-dk .df-ci::before { background: radial-gradient(closest-side, rgba(5,6,10,.7), rgba(5,6,10,.42) 55%, rgba(5,6,10,0)); }
+.df-lt .df-ci::before { background: radial-gradient(closest-side, rgba(255,247,234,.78), rgba(255,247,234,.45) 55%, rgba(255,247,234,0)); }
+.df-cap h1, .df-cap h2 { font-family: var(--df-display); font-weight: 500; line-height: 1.02; letter-spacing: -.012em; margin: 0; text-wrap: balance; }
+.df-cap h1, .df-cap .df-h1 { font-size: clamp(46px, 6.2vw, 100px); }
+.df-cap h2 { font-size: clamp(34px, 4.3vw, 66px); }
+.df-cap h1 i, .df-cap h2 i { font-weight: 400; }
+.df-cap p { font-size: clamp(15.5px, 1.25vw, 19px); line-height: 1.55; margin: 18px 0 0; max-width: 34ch; }
+.df-cap .df-eb { font-size: 11.5px; font-weight: 500; letter-spacing: .24em; text-transform: uppercase; margin: 0 0 18px; max-width: none; }
+.df-dk { color: var(--df-star); text-shadow: 0 2px 26px rgba(5,6,10,.92), 0 0 3px rgba(5,6,10,.75); }
+.df-dk p { color: var(--df-star-dim); }
+.df-dk .df-eb, .df-dk i { color: var(--df-champagne); }
+.df-lt { color: var(--df-ink); text-shadow: 0 0 30px rgba(255,247,234,.95), 0 0 2px rgba(255,247,234,.8); }
+.df-lt p { color: var(--df-ink-soft); }
+.df-lt .df-eb, .df-lt i { color: var(--df-gold-ink); }
+
+.df-open { right: max(7vw, calc(env(safe-area-inset-right, 0px) + 16px)); top: 64%; transform: translateY(-50%); text-align: right; }
+.df-right { right: max(7vw, calc(env(safe-area-inset-right, 0px) + 16px)); top: 50%; transform: translateY(-50%); text-align: right; }
+.df-left { left: max(7vw, calc(env(safe-area-inset-left, 0px) + 16px)); top: 50%; transform: translateY(-50%); }
+.df-open p, .df-right p { margin-left: auto; }
+.df-center { left: 50%; top: 50%; transform: translate(-50%, -50%); text-align: center; max-width: min(44rem, 88vw); }
+.df-center p { margin-left: auto; margin-right: auto; }
+
+/* ── buttons ── */
+.df-btn { display: inline-flex; align-items: center; gap: 10px; margin-top: 30px; padding: 14px 28px; border: 0; border-radius: 999px;
+  font-family: var(--font); font-weight: 600; font-size: 15.5px; line-height: 1.2; text-shadow: none; cursor: pointer;
+  transition: transform .2s ease, box-shadow .2s ease, background .2s ease, color .2s ease; }
+.df-btn:hover { transform: translateY(-1px); }
+.df-btn svg { width: 16px; height: 16px; }
+.df-btn-ink { background: var(--df-ink); color: var(--df-paper); box-shadow: 0 10px 30px -12px rgba(14,20,36,.55); }
+.df-btn-glow { background: var(--df-champagne); color: var(--df-ink); box-shadow: 0 0 0 1px rgba(255,232,196,.4), 0 12px 40px -10px rgba(255,214,160,.55); }
+.df-btn-line { background: transparent; color: var(--df-ink); box-shadow: inset 0 0 0 1px var(--df-ink); }
+.df-btn-line:hover { background: var(--df-ink); color: var(--df-paper); }
+.df-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px; margin-top: 30px; }
+.df-actions .df-btn { margin-top: 0; }
+
+/* ── the bar over the film: logo and Sign in, readable on the night and on the light ── */
+.df-bar { position: absolute; z-index: 4; top: 0; left: 0; right: 0; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  height: calc(64px + env(safe-area-inset-top, 0px)); padding: env(safe-area-inset-top, 0px) max(16px, env(safe-area-inset-right, 0px)) 0 max(16px, env(safe-area-inset-left, 0px));
+  /* the Logo reads these */
+  --t1: #f5efe4; --t3: #c9c2b6; --brand-wise: #8fb4ff;
+  color: var(--t1); text-shadow: 0 1px 12px rgba(5,6,10,.6); }
+.df-bar::before, .df-bar::after { content: ""; position: absolute; inset: 0 0 -24px; z-index: -1; pointer-events: none; transition: opacity .45s ease; }
+.df-bar::before { background: linear-gradient(to bottom, rgba(5,6,10,.6), rgba(5,6,10,0)); }
+.df-bar::after { background: linear-gradient(to bottom, rgba(255,247,234,.9), rgba(255,247,234,0)); opacity: 0; }
+.df-bar span { transition: color .45s ease; }
+.df-bar-light { --t1: #0e1424; --t3: #4b5266; --brand-wise: #2c6bed; text-shadow: none; }
+.df-bar-light::before { opacity: 0; }
+.df-bar-light::after { opacity: 1; }
+.df-signin { min-height: 36px; padding: 0 18px; border: 1px solid currentColor; border-radius: 999px; background: transparent; color: var(--t1);
+  font-family: var(--font); font-size: 14px; font-weight: 600; text-shadow: none; cursor: pointer; transition: background .2s ease, color .45s ease, border-color .45s ease; }
+.df-signin:hover { background: #f5efe4; color: #0e1424; }
+.df-bar-light .df-signin:hover { background: #0e1424; color: #fff7ea; }
+
+/* ── scroll cue ── */
+.df-cue { position: absolute; left: 50%; bottom: calc(26px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 3;
+  display: flex; flex-direction: column; align-items: center; gap: 10px; font-size: 11px; font-weight: 500; letter-spacing: .32em; text-indent: .32em;
+  text-transform: uppercase; color: var(--df-star-dim); transition: opacity .5s ease; }
+.df-cue::after { content: ""; width: 1px; height: 34px; background: linear-gradient(to bottom, var(--df-gold), transparent); animation: df-cue 1.8s ease-in-out infinite; }
+@keyframes df-cue { 0%, 100% { transform: translateY(0); opacity: 1; } 50% { transform: translateY(8px); opacity: .4; } }
+
+/* ── the handoff: the film's last light fades into the page, in either theme ── */
+.df-handoff { height: 40vh; background: linear-gradient(to bottom, #fff7ea, var(--bg)); }
+
+@media (max-width: 720px) {
+  .df-cap, .df-open, .df-right, .df-left, .df-center { left: max(16px, env(safe-area-inset-left, 0px)); right: max(16px, env(safe-area-inset-right, 0px));
+    top: auto; bottom: calc(16vh + env(safe-area-inset-bottom, 0px)); transform: none; max-width: none; text-align: left; }
+  .df-center { text-align: center; bottom: auto; top: 50%; transform: translateY(-50%); }
+  .df-cap p { margin-left: 0; }
+  .df-center p { margin-left: auto; }
+  .df-lt .df-ci::before { inset: -26% -10%; background: radial-gradient(closest-side, rgba(255,247,234,.94), rgba(255,247,234,.78) 60%, rgba(255,247,234,0)); }
+  .df-dk .df-ci::before { inset: -26% -10%; background: radial-gradient(closest-side, rgba(5,6,10,.85), rgba(5,6,10,.6) 60%, rgba(5,6,10,0)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .df-cue::after { animation: none; }
+  .df-btn:hover { transform: none; }
+}
