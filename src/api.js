@@ -31,7 +31,13 @@ export const api = {
   metrics: () => request("/api/metrics"),
   marketStrip: () => request("/api/market-strip"),
   stats: () => request("/api/stats"),
-  screen: (criteria) => request("/api/screen", { method: "POST", body: JSON.stringify(criteria) }),
+  // As a GET the browser keeps the reply and re-checks it on the next visit
+  // (an unchanged market is a 304, not ~600 KB again); a very long request
+  // still goes as a POST
+  screen: (criteria) => {
+    const q = JSON.stringify(criteria), inUrl = encodeURIComponent(q);
+    return inUrl.length <= 6000 ? request(`/api/screen?q=${inUrl}`) : request("/api/screen", { method: "POST", body: q });
+  },
   momentum: (body) => request("/api/momentum", { method: "POST", body: JSON.stringify(body) }),
   stock: (symbol) => request(`/api/stock/${encodeURIComponent(symbol)}`),
   prices: (symbol, range) => request(`/api/stock/${encodeURIComponent(symbol)}/prices?range=${range}`),
