@@ -761,7 +761,7 @@ export function createApp() {
       if (url.pathname === "/api/performance/snapshot" && req.method === "POST") {
         const userId = requireAuth(req, res);
         if (userId == null) return;
-        sendJson(res, 200, await takeSnapshots());
+        sendJson(res, 200, await takeSnapshots({ keepToday: true })); // a day's record is kept
         return;
       }
 

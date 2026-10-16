@@ -139,11 +139,20 @@ export function summarizeResearchCohort(cohort, market, benchmarkNow = null) {
 // that day's. Picks are the strategy's top 10 in its own ranking (quality
 // score, then ROCE), priced at the day's close. Snapshots before 3 Oct 2026
 // record the old 10-point score (score/scoreMax) instead.
-export async function takeSnapshots() {
+// keepToday (the Performance tab's button, 16 Oct 2026): a strategy already
+// recorded today keeps that record — anyone signed in can press the button,
+// and the day's picks are a shared record, so later presses add only what's
+// missing (a strategy new today) and change nothing else. The evening job
+// leaves it off.
+export async function takeSnapshots({ keepToday = false } = {}) {
   const date = istToday();
   const snaps = loadSnapshots();
   const results = [];
   for (const preset of PRESETS) {
+    if (keepToday && snaps.some(s => s.presetId === preset.id && s.date === date)) {
+      results.push({ presetId: preset.id, kept: "already recorded today" });
+      continue;
+    }
     // A strategy defined by filters (Up on Every Timeframe) or old criteria
     const res = screen(preset.filters ? { filters: preset.filters } : preset.criteria);
     const picks = res.results
