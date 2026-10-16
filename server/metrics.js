@@ -1,7 +1,7 @@
 // Every number the Discover table and the stock page show, derived from one
 // company's stored filings plus the market-wide snapshot — one place, so the
 // same stock can't show two different P/Es on two screens.
-import { calculateLevels } from "./levels.js";
+import { calculateLevels, roundPrice } from "./levels.js";
 import { computeResearch } from "./research.js";
 import { fixUnitSlips } from "./unit-slips.js";
 import { sectorFromName } from "./name-sectors.js";
@@ -536,7 +536,7 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
       if (evMultiples.length >= MIN_PE_YEARS) {
         const midEbitda = (latest.revenue / 1e7) * (median(opms) / 100);
         const equityCr = midEbitda * median(evMultiples) - netDebt;
-        ev = { midEbitdaCr: Math.round(midEbitda), multiple: round(median(evMultiples), 1), years: evMultiples.length, netDebtCr: Math.round(netDebt), perShare: equityCr > 0 ? Math.round((equityCr * 1e7) / shares) : null };
+        ev = { midEbitdaCr: Math.round(midEbitda), multiple: round(median(evMultiples), 1), years: evMultiples.length, netDebtCr: Math.round(netDebt), perShare: equityCr > 0 ? roundPrice((equityCr * 1e7) / shares) : null };
       }
     }
     return {
@@ -544,7 +544,7 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
       revenuePerShare: round(latest.revenue / shares, 2),
       normalizedEps: round(normalizedEps, 2), multiple: round(multiple, 1), multipleYears: multiples.length,
       exact: { eps: normalizedEps, multiple },
-      fairValue: Math.round(normalizedEps * multiple),
+      fairValue: roundPrice(normalizedEps * multiple),
       latestEpsFairValue: earningsLevels?.fv25 ?? null,
       position: round(position, 2),
       positionLabel: position == null ? null : position > CYCLE_HIGH ? "above mid-cycle" : position < CYCLE_LOW ? "near the trough" : "around mid-cycle",
@@ -701,7 +701,10 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     netMargin: latest.profit != null && latest.revenue > 0 ? (latest.profit / latest.revenue) * 100 : null,
     currentRatio: !lender && latest.currentAssets != null && latest.currentLiabilities > 0 ? latest.currentAssets / latest.currentLiabilities : null,
     mcapToNcav: ncavCr > 0 && marketCapCr != null ? marketCapCr / ncavCr : null,
-    vsFairValue: pct(cmp, m.fairValue),
+    // Against today's fair value, as the company page shows it — not the
+    // two-year value (m.fairValue, the Discover table's labelled "FV28"),
+    // which made every stock look a growth-rate cheaper (16 Oct 2026)
+    vsFairValue: pct(cmp, levels?.fv25),
     vsPhase1: pct(cmp, m.safeBuyPrice),
   });
 
