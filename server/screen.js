@@ -38,14 +38,14 @@ export function saveStock(symbol, data) {
   const path = join(MARKET_DIR, `${symbol}.json`);
   writeFileSync(`${path}.tmp`, JSON.stringify(data, null, 2));
   renameSync(`${path}.tmp`, path);
-  cache = null;
+  if (cache) cache.version = "changed"; // rebuilt in slices; the last one serves meanwhile
 }
 
 export function countFetched() {
   return existsSync(MARKET_DIR) ? readdirSync(MARKET_DIR).filter(f => f.endsWith(".json")).length : 0;
 }
 
-let cache = null;
+let cache = null, building = null;
 // Companies in the screener, once it has been worked out since the server
 // started (null before — the health check mustn't wait ~6 s to build it)
 export const screenRowCount = () => cache?.rows.length ?? null;
@@ -58,9 +58,14 @@ function marketVersion() {
 // Every company with a usable filing, with its metrics. Companies whose
 // latest audited year is ~18 months older than the newest in the data have
 // stopped filing and are left out.
-export function allMetrics() {
-  const version = marketVersion();
-  if (cache?.version === version) return cache;
+//
+// Built in slices (16 Oct 2026): the whole market is ~4.6 s of work on a
+// full laptop core, ~9 s on a $7 Render instance and longer on a free one,
+// and a server busy that long misses Render's 5-second health check and is
+// restarted. So the work is a generator that yields between companies:
+// buildInSlices runs it ~25 ms at a time and lets requests in between, while
+// the last market keeps answering until the new one is swapped in whole.
+function* buildSteps(version) {
   const snap = loadMarketSnapshot();
   const rows = [];
   const files = existsSync(MARKET_DIR) ? readdirSync(MARKET_DIR).filter(f => f.endsWith(".json")) : [];
@@ -68,25 +73,89 @@ export function allMetrics() {
     const stock = JSON.parse(readFileSync(join(MARKET_DIR, f), "utf-8"));
     const m = computeMetrics(stock, snap, {}, { research: false });
     if (m) rows.push(m);
+    yield;
   }
   const newest = Math.max(...rows.map(r => new Date(r.fyEnd).getTime()));
   const fresh = rows.filter(r => newest - new Date(r.fyEnd).getTime() <= STALE_AFTER_DAYS * 86400000);
   // The research score compares each P/E with its sector's median, so it
   // waits for the whole market: medians first, then every company's score.
-  // The stock page reuses the same medians (research.js keeps them).
-  setResearchPeers({ sectors: sectorPeMedians(fresh), industries: industryPeMedians(fresh) });
-  for (const m of fresh) m.research = computeResearch(m);
+  // The stock page reuses the same medians (research.js keeps them) — set
+  // only when this market is swapped in, so a page served mid-build still
+  // matches the market it sits beside.
+  const peers = { sectors: sectorPeMedians(fresh), industries: industryPeMedians(fresh) };
+  yield;
+  for (const m of fresh) { m.research = computeResearch(m, { peers }); yield; }
   // A company without a fair value shows EV/Sales beside its sector's, as
   // context only
   const evSales = sectorEvSalesMedians(fresh);
   for (const m of fresh) m.evToSalesSector = evSales.get(m.peerSector) ?? null;
-  cache = {
-    version, rows: fresh, fetched: countFetched(), evSales,
-    snapshot: snap ? { pricesDate: snap.pricesDate, builtAt: snap.builtAt } : null,
-    sizes: capSizes(fresh),
-    ranges: metricRanges(fresh),
+  yield;
+  const sizes = capSizes(fresh);
+  yield;
+  return {
+    peers,
+    market: {
+      version, rows: fresh, fetched: countFetched(), evSales,
+      snapshot: snap ? { pricesDate: snap.pricesDate, builtAt: snap.builtAt } : null,
+      sizes, ranges: metricRanges(fresh),
+    },
   };
+}
+
+function install({ peers, market }) {
+  setResearchPeers(peers);
+  cache = market;
   return cache;
+}
+
+function buildNow(version) {
+  const steps = buildSteps(version);
+  let step;
+  while (!(step = steps.next()).done);
+  return install(step.value);
+}
+
+const SLICE_MS = 25;
+async function buildInSlices(version) {
+  const steps = buildSteps(version);
+  for (;;) {
+    const until = performance.now() + SLICE_MS;
+    let step;
+    while (!(step = steps.next()).done && performance.now() < until);
+    if (step.done) return install(step.value);
+    await new Promise(resolve => setImmediate(resolve));
+  }
+}
+
+// One rebuild at a time; a change that lands mid-build is picked up by the
+// next call, which sees the version move again
+function rebuild(version) {
+  building ??= buildInSlices(version).finally(() => { building = null; });
+  return building;
+}
+
+// The market as it stands. Out of date: the last one, with a rebuild started
+// behind it. Nothing built yet (a script, a test): built here and now.
+export function allMetrics() {
+  const version = marketVersion();
+  if (cache?.version === version) return cache;
+  if (cache) {
+    rebuild(version).catch(e => console.error(`[market] rebuild failed: ${e.message}`));
+    return cache;
+  }
+  return buildNow(version);
+}
+
+// For the server: resolves once there's a market to answer from, building
+// the first one in slices — so no request, and no health check, ever waits
+// on a build run straight through
+export function marketReady() {
+  const version = marketVersion();
+  if (cache) {
+    if (cache.version !== version) rebuild(version).catch(e => console.error(`[market] rebuild failed: ${e.message}`));
+    return Promise.resolve(cache);
+  }
+  return rebuild(version);
 }
 
 // Each sector's median P/E at the last close, on the same earnings the fair

@@ -14,7 +14,7 @@ import { signup, login, logout, verifySession, accountInfo, deleteAccount, creat
 import { firebaseConfig, verifyFirebaseIdToken } from "./firebase-auth.js";
 import { emailConfigured, appUrl, sendEmail, resetEmail } from "./email.js";
 import { listAlerts, createAlert, updateAlert, deleteAlert } from "./user-alerts.js";
-import { screen, screenerMeta, getStock, saveStock, rowsFor, isValidSymbol, countFetched, allMetrics, screenRowCount } from "./screen.js";
+import { screen, screenerMeta, getStock, saveStock, rowsFor, isValidSymbol, countFetched, allMetrics, screenRowCount, marketReady } from "./screen.js";
 import { startDataPull, pullStatus } from "./data-pull.js";
 import { screenMomentum, momentumAllowed, momentumAudience } from "./momentum.js";
 import { criteriaToFilters, METRICS, CATEGORY_METRICS } from "./metric-catalog.js";
@@ -276,6 +276,10 @@ export function createApp() {
     if (req.headers["x-forwarded-proto"] === "https") res.setHeader("Strict-Transport-Security", "max-age=15552000");
     if (url.pathname.startsWith("/api/")) res.setHeader("X-Request-Id", requestId);
     try {
+      // Anything that reads the market waits for one to exist (built in
+      // slices, screen.js) — never sign-in, and never the health check, which
+      // must answer while the first market is still being built
+      if (url.pathname.startsWith("/api/") && !url.pathname.startsWith("/api/auth/") && url.pathname !== "/api/health") await marketReady();
       if (url.pathname === "/api/auth/signup" && req.method === "POST") {
         const { email, password } = await readJsonBody(req);
         const ip = `ip:${clientIp(req)}`;
@@ -955,7 +959,11 @@ export function createApp() {
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const port = Number(process.env.PORT) || 8787;
-  createApp().listen(port, () => console.log(`stockwise-india on http://localhost:${port}`));
+  createApp().listen(port, () => {
+    console.log(`stockwise-india on http://localhost:${port}`);
+    // The first market, built in slices while the server already answers
+    marketReady().catch(e => console.error(`[market] first build failed: ${e.message}`));
+  });
   // DATA_JOBS=off for a server that should only serve what's on disk — and
   // that mustn't answer the Telegram bot either (one poller per bot)
   if (process.env.DATA_JOBS !== "off") {
@@ -966,6 +974,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   } else {
     // The free copy: pull each evening's data instead (only on Render); the
     // screen is worked out at once so the next visitor doesn't wait for it
-    startDataPull({ onInstalled: () => allMetrics() });
+    startDataPull({ onInstalled: () => marketReady().catch(e => console.error(`[market] rebuild failed: ${e.message}`)) });
   }
 }

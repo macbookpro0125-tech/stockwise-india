@@ -54,6 +54,16 @@ async function main() {
   const healthBody = await health.json();
   assert(health.status === 200 && healthBody.ok === true && "jobs" in healthBody && "degraded" in healthBody && "snapshotAgeHours" in healthBody, "GET /api/health answers the host's check and reports data freshness");
   assert((await fetch(`${BASE}/api/no-such-route`)).status === 404, "an unknown /api/ route is a 404, not the app page");
+  // The market rebuilds in slices (screen.js): bump the company folder's date
+  // (nothing edited) and the health check must still answer at once, while a
+  // data request is answered from the last market
+  await fetch(`${BASE}/api/stats`); // a market exists
+  const { utimesSync } = await import("node:fs");
+  utimesSync(join(__dirname, "..", "data", "market"), new Date(), new Date());
+  let slowest = 0;
+  const statsDuring = fetch(`${BASE}/api/stats`);
+  for (let i = 0; i < 20; i++) { const t = performance.now(); await fetch(`${BASE}/api/health`); slowest = Math.max(slowest, performance.now() - t); await new Promise(r => setTimeout(r, 50)); }
+  assert(slowest < 1000 && (await statsDuring).status === 200, `the server keeps answering while the market rebuilds (slowest health check ${Math.round(slowest)} ms)`);
   const headHealth = await fetch(`${BASE}/api/health`, { method: "HEAD" });
   assert(headHealth.status === 200 && (await headHealth.text()) === "", "HEAD /api/health is 200 with no body (uptime monitors check with HEAD)");
 
