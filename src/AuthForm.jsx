@@ -47,10 +47,10 @@ function PhoneSignIn({ config, onAuthed, onBack }) {
 
   return (
     <>
-      <h2 style={{ fontSize: 19, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--t1)", margin: "0 0 4px" }}>Continue with your phone</h2>
+      <h2 className="auth-title">Continue with your phone</h2>
       {!pending ? (
         <>
-          <p style={{ color: "var(--t3)", fontSize: 13, margin: "0 0 18px" }}>We'll text you a 6-digit code. Standard SMS rates may apply.</p>
+          <p className="auth-sub">We'll text you a 6-digit code. Standard SMS rates may apply.</p>
           <form onSubmit={send} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <div style={{ display: "flex", gap: 8 }}>
               <span className="input-base" style={{ width: 64, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--t2)" }}>+91</span>
@@ -63,7 +63,7 @@ function PhoneSignIn({ config, onAuthed, onBack }) {
         </>
       ) : (
         <>
-          <p style={{ color: "var(--t3)", fontSize: 13, margin: "0 0 18px" }}>Enter the code we sent to <strong style={{ color: "var(--t2)" }}>{toE164(phone)}</strong>.</p>
+          <p className="auth-sub">Enter the code we sent to <strong style={{ color: "var(--t2)" }}>{toE164(phone)}</strong>.</p>
           <form onSubmit={verify} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <input className="input-base" inputMode="numeric" autoComplete="one-time-code" placeholder="6-digit code" maxLength={6} pattern="\d{6}"
               value={code} onChange={e => setCode(e.target.value.replace(/\D/g, ""))} required autoFocus style={{ letterSpacing: "0.3em", fontSize: 18, textAlign: "center" }} />
@@ -197,7 +197,7 @@ export default function AuthForm({ onAuthed, mode, onModeChange, onProgress }) {
       <p className="auth-sub">{signup ? "Free while in early access. No card needed." : "Your watchlist, alerts and portfolio are waiting."}</p>
       <div className="auth-choices">
         {has("google") && (
-          <button type="button" className="auth-choice" disabled={!!socialBusy} onClick={() => social("google")}>
+          <button type="button" className="auth-choice auth-choice-primary" disabled={!!socialBusy} onClick={() => social("google")}>
             <GoogleLogo /> {socialBusy === "google" ? "Opening Google…" : "Continue with Google"}
           </button>
         )}
@@ -206,17 +206,19 @@ export default function AuthForm({ onAuthed, mode, onModeChange, onProgress }) {
             <AppleLogo /> {socialBusy === "apple" ? "Opening Apple…" : "Continue with Apple"}
           </button>
         )}
+        <button type="button" className="auth-choice" onClick={() => { setError(""); setStep("email"); }}>
+          <Mail size={18} aria-hidden="true" /> Continue with email
+        </button>
         {has("phone") && (
           <button type="button" className="auth-choice" disabled={!!socialBusy} onClick={() => { setError(""); setStep("phone"); }}>
             <Smartphone size={18} aria-hidden="true" /> Continue with phone number
           </button>
         )}
-        <div className="auth-or" aria-hidden="true"><span />or<span /></div>
-        <button type="button" className="auth-choice" onClick={() => { setError(""); setStep("email"); }}>
-          <Mail size={18} aria-hidden="true" /> Continue with email
-        </button>
       </div>
       {error && <div style={{ ...errorBox, marginTop: 12 }}>{error}</div>}
+      <p className="auth-legal">
+        By continuing you agree to the <SiteLink to="/disclaimer" newTab>disclaimer</SiteLink> and <SiteLink to="/privacy" newTab>privacy policy</SiteLink>.
+      </p>
       {switchMode}
     </div>
   );

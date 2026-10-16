@@ -31,6 +31,8 @@ function plain(e) {
   if (code === "auth/too-many-requests" || code === "auth/quota-exceeded") return "Too many attempts. Please wait a while and try again.";
   if (code === "auth/network-request-failed") return "Couldn't reach the sign-in service. Check your connection and try again.";
   if (code === "auth/account-exists-with-different-credential") return "This email already signs in another way — try Google or your email and password.";
+  // Firebase's SMS region policy: the project hasn't allowed texts to this country
+  if (code === "auth/operation-not-allowed" && /region/i.test(e?.message ?? "")) return "Text-message sign-in isn't available for this number yet. Please use Google or email.";
   if (code === "auth/operation-not-allowed" || code === "auth/unauthorized-domain") return "This way of signing in isn't switched on yet.";
   return e?.message || "Sign-in failed. Please try again.";
 }
