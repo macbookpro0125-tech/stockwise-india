@@ -43,8 +43,8 @@ const Arrow = () => (
   <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h9M8.5 4.5 12 8l-3.5 3.5" stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>
 );
 
-// stats: the front page's api.stats() — companies, strategies (null until loaded)
-export default function DomeFilm({ onJoin, onLogin, stats }) {
+// The captions carry no figures (asked 16 Oct 2026: no numbers on this page)
+export default function DomeFilm({ onJoin, onLogin }) {
   const trackRef = useRef(null), stageRef = useRef(null), canvasRef = useRef(null);
   const barRef = useRef(null), cueRef = useRef(null), capsRef = useRef([]);
   const cap = i => el => { capsRef.current[i] = el; };
@@ -238,8 +238,6 @@ export default function DomeFilm({ onJoin, onLogin, stats }) {
     };
   }, []);
 
-  const companies = stats?.companies;
-  const strategies = stats?.strategies ?? 13;
 
   return (
     <>
@@ -260,13 +258,13 @@ export default function DomeFilm({ onJoin, onLogin, stats }) {
           </div></div>
 
           <div ref={cap(1)} className="df-cap df-dk df-left" data-in="0.13" data-hold="0.20" data-out="0.27"><div className="df-ci">
-            <h2>{companies != null ? `${companies.toLocaleString("en-IN")} companies.` : "Every NSE company."}<br /><i>One night sky.</i></h2>
+            <h2>Every NSE company.<br /><i>One night sky.</i></h2>
             <p>Every NSE-listed business, read from its own filings.</p>
           </div></div>
 
           <div ref={cap(2)} className="df-cap df-dk df-right" data-in="0.30" data-hold="0.37" data-out="0.44"><div className="df-ci">
             <h2>Strategies draw<br /><i>the lines.</i></h2>
-            <p>{strategies} ready-made screens connect the companies worth a closer look.</p>
+            <p>Ready-made screens connect the companies worth a closer look.</p>
           </div></div>
 
           <div ref={cap(3)} className="df-cap df-lt df-left" data-in="0.47" data-hold="0.54" data-out="0.61"><div className="df-ci">
