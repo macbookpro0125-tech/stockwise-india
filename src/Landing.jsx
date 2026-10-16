@@ -4,10 +4,10 @@ import AuthDialog from "./AuthDialog.jsx";
 import HowItWorks from "./HowItWorks.jsx";
 import PriceStrip from "./PriceStrip.jsx";
 import { SiteLink, SiteFooter } from "./site.jsx";
-import DomeFilm from "./DomeFilm.jsx";
+import StarFilm from "./StarFilm.jsx";
 
 // The front page for visitors who aren't signed in: the scroll film at the
-// top (DomeFilm, with its own bar and buttons), then what the app does,
+// top (StarFilm, with its own bar and buttons), then what the app does,
 // the walkthrough video and the disclaimer. Sign-in is a dialog (AuthDialog).
 // Every claim here is something the app does today — keep it that way (phone
 // and email alerts are labelled as coming until they exist).
@@ -82,8 +82,9 @@ export default function Landing({ onAuthed, notice }) {
         {new URLSearchParams(window.location.search).has("screen") && <div role="status" style={{ margin: "8px auto 0", maxWidth: 1240, padding: "10px 14px", borderRadius: 10, background: "color-mix(in srgb, var(--accent) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 30%, transparent)", color: "var(--t1)", fontSize: 13 }}>Someone shared a screen with you. Sign in or create a free account and it opens straight away.</div>}
         {notice && <div role="status" style={{ margin: "8px auto 0", maxWidth: 1240, padding: "10px 14px", borderRadius: 10, background: "var(--green-dim)", border: "1px solid var(--green-bdr)", color: "var(--t1)", fontSize: 13 }}>{notice}</div>}
       </div>}
-      {/* The earlier scroll story is kept: CinematicStory.jsx (+ ./story-colours.css) */}
-      <DomeFilm onJoin={() => goAuth("signup")} onLogin={() => goAuth("login")} stats={stats} />
+      {/* Kept, either can go back here: DomeFilm.jsx (the dome picture film), and
+          CinematicStory.jsx (+ ./story-colours.css), the earlier scroll story */}
+      <StarFilm onJoin={() => goAuth("signup")} onLogin={() => goAuth("login")} stats={stats} />
       <PriceStrip />
       {auth && <AuthDialog mode={auth} onModeChange={setAuth} onAuthed={onAuthed} onClose={() => setAuth(null)} />}
       <main style={{ maxWidth: 1240, margin: "0 auto", padding: "40px 20px 0" }}>
