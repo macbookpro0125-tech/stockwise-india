@@ -23,9 +23,11 @@ function verifyPassword(password, salt, expectedHash) {
 }
 
 export function signup(email, password) {
-  email = email.trim().toLowerCase();
+  // Anything but text (a number, null, an object) is refused as such, not
+  // left to crash the hash and come back as a server error
+  email = typeof email === "string" ? email.trim().toLowerCase() : "";
   if (!email || !email.includes("@")) throw badRequest("Valid email required");
-  if (!password || password.length < 8) throw badRequest("Password must be at least 8 characters");
+  if (typeof password !== "string" || password.length < 8) throw badRequest("Password must be at least 8 characters");
 
   const existing = db.prepare("SELECT id FROM users WHERE email = ?").get(email);
   if (existing) throw conflict("An account with this email already exists");
@@ -128,7 +130,7 @@ export function createPasswordReset(email) {
 // Sets the new password and signs the account out everywhere (whoever knew
 // the old one), then opens a fresh session for the person who reset it
 export function resetPassword(token, password) {
-  if (!password || password.length < 8) throw badRequest("Password must be at least 8 characters");
+  if (typeof password !== "string" || password.length < 8) throw badRequest("Password must be at least 8 characters");
   const row = db.prepare("SELECT user_id, expires_at, used_at FROM password_resets WHERE token_hash = ?").get(tokenHash(token));
   if (!row || row.used_at || row.expires_at < new Date().toISOString()) {
     throw badRequest("This reset link has expired or was already used. Ask for a new one from the sign-in page.");
