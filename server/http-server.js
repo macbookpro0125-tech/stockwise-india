@@ -246,6 +246,15 @@ export function createApp() {
   return createServer(async (req, res) => {
     const url = new URL(req.url, "http://localhost");
     const requestId = randomUUID();
+    // Every reply: no sniffing types, no framing this site inside another
+    // (clickjacking), only the origin as referrer, no camera/microphone/
+    // location, and https only once a browser has seen it over https
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("Content-Security-Policy", "frame-ancestors 'none'");
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
+    if (req.headers["x-forwarded-proto"] === "https") res.setHeader("Strict-Transport-Security", "max-age=15552000");
     if (url.pathname.startsWith("/api/")) res.setHeader("X-Request-Id", requestId);
     try {
       if (url.pathname === "/api/auth/signup" && req.method === "POST") {
@@ -903,6 +912,9 @@ export function createApp() {
         console.error(JSON.stringify({ event: "api_request_failed", requestId, method: req.method, path: url.pathname, errorName: e?.name, message: e?.message }));
         sendJson(res, status, { error: "The server couldn't complete this request. Please try again shortly.", requestId });
       } else {
+        // A body refused part-way is still arriving: close the connection
+        // after the reply, or the next request on it waits behind the rest
+        if (status === 413) res.setHeader("Connection", "close");
         sendJson(res, status, { error: e.message || "Invalid request" });
       }
     }

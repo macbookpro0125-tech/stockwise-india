@@ -179,6 +179,18 @@ async function main() {
   const paused = await (await json("PUT", `/api/alerts/${tcsAlert.id}`, aliceCookie, { threshold: 3200, enabled: false })).json();
   assert(paused.threshold === 3200 && paused.enabled === 0, "editing an alert changes its price and can pause it");
   assert((await json("PUT", `/api/alerts/${tcsAlert.id}`, aliceCookie, { threshold: -5 })).status === 400, "an alert price below 0 is refused");
+  // Found by a probe of every route (16 Oct 2026)
+  assert((await json("PUT", `/api/alerts/${tcsAlert.id}`, aliceCookie, { threshold: "Infinity" })).status === 400, "an alert price of Infinity is refused");
+  assert((await json("POST", "/api/alerts", aliceCookie, { ticker: "<script>", condition: "above", threshold: 5 })).status === 400, "an alert for something that isn't an NSE symbol is refused");
+  const longName = await (await json("POST", "/api/alerts", aliceCookie, { ticker: "INFY", condition: "below", threshold: 100, name: "n".repeat(5000) })).json();
+  assert(longName.name?.length === 200, "an alert's name is kept to 200 characters");
+  await json("DELETE", `/api/alerts/${longName.id}`, aliceCookie); // leave Alice's alerts as they were
+  for (const body of [{}, { email: 5, password: "abcdefgh1" }, { email: "x@example.com", password: 123456789 }]) {
+    const r = await fetch(`${BASE}/api/auth/signup`, { method: "POST", headers: { "Content-Type": "application/json", "x-forwarded-for": `10.9.9.${Math.floor(Math.random() * 250)}` }, body: JSON.stringify(body) });
+    assert(r.status === 400, `a sign-up with ${JSON.stringify(body)} is a 400, not a server error`);
+  }
+  const headers = (await fetch(`${BASE}/`, { headers: { "x-forwarded-proto": "https" } })).headers;
+  assert(headers.get("x-frame-options") === "DENY" && headers.get("x-content-type-options") === "nosniff" && /frame-ancestors 'none'/.test(headers.get("content-security-policy") ?? "") && headers.get("referrer-policy") && headers.get("strict-transport-security"), "pages can't be framed, types aren't sniffed, and https is kept to");
 
   // Search, header counts, performance
   const found = await (await fetch(`${BASE}/api/search?q=tcs`, { headers: { Cookie: aliceCookie } })).json();
