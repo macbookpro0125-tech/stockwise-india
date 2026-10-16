@@ -35,7 +35,9 @@ function readTheme() {
   return { page: rgb("--bg", [0.031, 0.031, 0.063]), ink: rgb("--accent", [0, 0.878, 0.745]) };
 }
 
-// stats: the front page's api.stats() — companies, strategies (null until loaded)
+// stats: the front page's api.stats() — companies, strategies (null until loaded).
+// They only set how many stars and constellations the film draws; the captions
+// carry no figures (asked 16 Oct 2026: no numbers on this page).
 export default function StarFilm({ onJoin, onLogin, stats }) {
   const [gl2] = useState(hasWebGL2);
   const trackRef = useRef(null), stageRef = useRef(null), canvasRef = useRef(null);
@@ -133,7 +135,7 @@ export default function StarFilm({ onJoin, onLogin, stats }) {
   // The real counts, once they arrive: one star per company, one constellation per strategy
   useEffect(() => { if (companies != null) sceneRef.current?.setCounts(companies, strategies); }, [companies, strategies]);
 
-  if (!gl2) return <DomeFilm onJoin={onJoin} onLogin={onLogin} stats={stats} />;
+  if (!gl2) return <DomeFilm onJoin={onJoin} onLogin={onLogin} />;
 
   return (
     <section ref={trackRef} className="sf-track" aria-label="Stockwise India">
@@ -153,13 +155,13 @@ export default function StarFilm({ onJoin, onLogin, stats }) {
         </div></div>
 
         <div ref={cap(1)} className="sf-cap sf-sky sf-left" data-in="0.13" data-hold="0.20" data-out="0.27"><div className="sf-ci">
-          <h2>{companies != null ? `${companies.toLocaleString("en-IN")} companies.` : "Every NSE company."}<br /><span>One night sky.</span></h2>
+          <h2>Every NSE company.<br /><span>One night sky.</span></h2>
           <p>Every NSE-listed business, read from its own filings.</p>
         </div></div>
 
         <div ref={cap(2)} className="sf-cap sf-sky sf-right" data-in="0.30" data-hold="0.37" data-out="0.44"><div className="sf-ci">
           <h2>Strategies draw <span>the lines.</span></h2>
-          <p>{strategies} ready-made screens connect the companies worth a closer look.</p>
+          <p>Ready-made screens connect the companies worth a closer look.</p>
         </div></div>
 
         <div ref={cap(3)} className="sf-cap sf-sky sf-left" data-in="0.47" data-hold="0.54" data-out="0.61"><div className="sf-ci">
