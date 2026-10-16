@@ -3,6 +3,9 @@ import LiveScreen from "./LiveScreen.jsx";
 import HowItWorks from "./HowItWorks.jsx";
 import Reveal from "./Reveal.jsx";
 import { useCountUp, useInView, useScrollScrub } from "./motion.js";
+import CurvedRow from "./CurvedRow.jsx";
+import StrategyMark, { markColor } from "./StrategyMarks.jsx";
+import "./curved-row.css";
 
 // Discover's first page, set like a product page (asked for 15 Oct 2026: "like
 // the Apple website, wording and motion"): a centred headline over a large
@@ -28,6 +31,16 @@ function Figure({ value, label, delay }) {
   );
 }
 
+// A strategy on the curved row through the hero: its mark, name and line,
+// in its own colour (no figures)
+const RibbonCard = ({ p }) => (
+  <div className="rb-card" style={{ "--hue": markColor(p.id) ?? "#00E0BE" }}>
+    <StrategyMark preset={p} size={40} />
+    <b>{p.name}</b>
+    <span>{p.description}</span>
+  </div>
+);
+
 // The product shot grows from 90% to full size, and lifts, as it scrolls up
 const growIn = (el, p) => {
   el.style.transform = `translateY(${(1 - p) * 40}px) scale(${0.9 + 0.1 * p})`;
@@ -35,23 +48,39 @@ const growIn = (el, p) => {
 };
 
 // compact: a phone — the headline, its buttons, then the strategies
-export default function ScreensHome({ meta, total, strategies, pricesDate, onStart, onCreate, onBrowseFilters, children, continueCard, compact = false }) {
+// ribbon: the strategies for the curved row through the hero (16 Oct 2026,
+// "Scroll Tilted Grid"); onPickStrategy opens one, as its card in the grid does
+export default function ScreensHome({ meta, total, strategies, pricesDate, onStart, onCreate, onBrowseFilters, children, continueCard, compact = false, ribbon = [], onPickStrategy }) {
   const filters = meta?.metrics?.length ?? null;
   const shotRef = useScrollScrub(growIn, 0.8);
   const scrollToStrategies = () => document.getElementById("popular-strategies")?.scrollIntoView({ behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
 
-  const hero = (
-    <section className="ap-hero" aria-labelledby="ap-title">
-      <Reveal as="p" className="ap-eyebrow">Stockwise Screener</Reveal>
-      <Reveal as="h2" delay={1} id="ap-title" className="ap-title">Find the few worth owning.</Reveal>
-      <Reveal as="p" delay={2} className="ap-sub">
-        Every NSE company, scored on its own filings.{total ? <> Narrow {total.toLocaleString("en-IN")} down to the handful that fit.</> : null}
-      </Reveal>
-      <Reveal delay={3} className="ap-ctas">
-        <button type="button" className="ap-btn" onClick={onStart}>Start screening</button>
-        <HowItWorks plain label="See how it works" />
-      </Reveal>
-    </section>
+  const title = <>
+    <Reveal as="p" className="ap-eyebrow">Stockwise Screener</Reveal>
+    <Reveal as="h2" delay={1} id="ap-title" className="ap-title">Find the few worth owning.</Reveal>
+  </>;
+  const rest = <>
+    <Reveal as="p" delay={2} className="ap-sub">
+      Every NSE company, scored on its own filings.{total ? <> Narrow {total.toLocaleString("en-IN")} down to the handful that fit.</> : null}
+    </Reveal>
+    <Reveal delay={3} className="ap-ctas">
+      <button type="button" className="ap-btn" onClick={onStart}>Start screening</button>
+      <HowItWorks plain label="See how it works" />
+    </Reveal>
+  </>;
+  // The strategies curve past between the title and the buttons; hovering
+  // pauses them, a click opens one. The grid below stays the way to choose
+  // by keyboard (the row is decorative to screen readers).
+  const hero = ribbon.length ? (
+    <CurvedRow items={ribbon} render={p => <RibbonCard p={p} />} onPick={onPickStrategy} className="ap-ribbon"
+      tileHeight={compact ? 24 : 25} aspectRatio={16 / 10} axis={52} curve={compact ? 46 : 76} speed={4.5}>
+      <section className="ap-hero ap-hero-ribbon" aria-labelledby="ap-title">
+        <div className="ap-hero-top">{title}</div>
+        <div className="ap-hero-bottom">{rest}</div>
+      </section>
+    </CurvedRow>
+  ) : (
+    <section className="ap-hero" aria-labelledby="ap-title">{title}{rest}</section>
   );
 
   if (compact) return (

@@ -37,7 +37,9 @@ export function useCountUp(target, run = true, ms = 900) {
     frame = requestAnimationFrame(step);
     return () => cancelAnimationFrame(frame);
   }, [target, run, ms]);
-  return target == null ? null : v;
+  // less motion: the figure itself, from the first render it's known (the
+  // state above only catches up after that render, and is null till then)
+  return target == null ? null : reducedMotion() ? target : v;
 }
 
 // Ties an element's look to the scroll, 1:1 and every frame (no easing lag,

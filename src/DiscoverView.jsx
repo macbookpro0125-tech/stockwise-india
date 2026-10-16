@@ -261,6 +261,10 @@ export default function DiscoverView({ onOpenStock }) {
     if (res?.filters) setFilters(res.filters);
   }, [run, shownColumnIds]);
 
+  // The ready-made strategies for the curved row at the top of Discover
+  const [ribbon, setRibbon] = useState([]);
+  useEffect(() => { api.presets().then(list => setRibbon(Array.isArray(list) ? list : [])).catch(() => {}); }, []);
+
   // A strategy chosen on the front page before signing in ("Open screen" in
   // the film, ?strategy=<id>): open it as its card would, once, then drop it
   // from the address
@@ -454,6 +458,8 @@ export default function DiscoverView({ onOpenStock }) {
           // strategies as a list
           return (
             <ScreensHome
+              ribbon={ribbon}
+              onPickStrategy={preset => { applyPreset(preset); setFiltersOpen(false); showStocks(); }}
               compact={isPhone}
               meta={meta}
               total={results?.total}
