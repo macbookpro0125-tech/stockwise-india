@@ -6,7 +6,7 @@
 //
 // Run the app first (npm run api, npm run dev), then:
 //   node scripts/render-star-film.mjs ~/Projects/stockwise-scroll/assets/stockwise-star-film-4k.mp4
-// Options: --seconds 22 (the whole film, with a 1 s hold at the start and 2 s
+// Options: --seconds 26 (the whole film, with a 1 s hold at the start and 2 s
 // at the end), --fps 30, --mbps 40, --url http://localhost:5175
 import { chromium } from "playwright-core";
 import { readFileSync, openSync, writeSync, closeSync } from "node:fs";
@@ -16,15 +16,15 @@ import { dirname, join } from "node:path";
 const args = process.argv.slice(2);
 const opt = (name, def) => { const i = args.indexOf(`--${name}`); return i >= 0 ? args[i + 1] : def; };
 const out = args.find(a => !a.startsWith("--") && !args[args.indexOf(a) - 1]?.startsWith("--"));
-if (!out) { console.error("usage: node scripts/render-star-film.mjs <out.mp4> [--seconds 22] [--fps 30] [--mbps 40] [--url http://localhost:5175]"); process.exit(1); }
-const SECONDS = +opt("seconds", 22), FPS = +opt("fps", 30), MBPS = +opt("mbps", 40), URL_ = opt("url", "http://localhost:5175");
+if (!out) { console.error("usage: node scripts/render-star-film.mjs <out.mp4> [--seconds 26] [--fps 30] [--mbps 40] [--url http://localhost:5175]"); process.exit(1); }
+const SECONDS = +opt("seconds", 26), FPS = +opt("fps", 30), MBPS = +opt("mbps", 40), URL_ = opt("url", "http://localhost:5175");
 const W = 3840, H = 2160, HOLD_IN = 1, HOLD_OUT = 2;
 const frames = Math.round(SECONDS * FPS);
 // Progress through the film at time s: a hold, the run through, a hold. The
-// run lingers (twice the time per step) from the star to the light — the
-// score ring, the light spreading, the price level — so the light grows over
-// a second and a half rather than flashing.
-const linger = p => (p > 0.5 && p < 0.76 ? 2 : 1);
+// run lingers where most happens: from the star to the light (the score ring,
+// the light spreading, the fair-price gauge), and on the strategy cards, so
+// each card has time to be seen.
+const linger = p => (p > 0.5 && p < 0.76 ? 2 : p > 0.78 && p < 0.9 ? 2.4 : 1);
 const grid = [0]; for (let i = 1; i <= 1000; i++) grid.push(grid[i - 1] + linger((i - 0.5) / 1000));
 const progress = s => {
   const k = Math.min(1, Math.max(0, (s - HOLD_IN) / (SECONDS - HOLD_IN - HOLD_OUT))) * grid[1000];
