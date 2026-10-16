@@ -1,6 +1,7 @@
 import {
   TrendingUp, Coins, Gem, Shield, Rocket, Star, Zap, RefreshCw, Landmark, Sprout, Globe, Building2,
-  Calculator, Bookmark, ChartLine, TriangleAlert, ArrowDownToLine, ArrowUpToLine, ArrowUpFromLine, Minus, ChevronsUp } from "lucide-react";
+  Calculator, Bookmark, ChartLine, TriangleAlert, ArrowDownToLine, ArrowUpToLine, ArrowUpFromLine, Minus, ChevronsUp,
+  Mountain, Scale, CircleArrowDown, Layers2 } from "lucide-react";
 
 // Ported from stock-screener's src/components/icons.jsx — line icons rather
 // than ★/🔔 glyphs, which render in whatever font the platform supplies and
@@ -56,6 +57,10 @@ const PRESET_ICONS = {
   dii_backed: Building2,
   net_net_value: Calculator,
   up_every_timeframe: ChevronsUp,
+  near_highs_cheap: Mountain,
+  debt_paydown: Scale,
+  fallen_quality: CircleArrowDown,
+  doubled_in_year: Layers2,
 };
 
 export function PresetIcon({ preset, ...props }) {

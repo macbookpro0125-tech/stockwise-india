@@ -177,4 +177,52 @@ export const PRESETS = [
       { id: "priceCagr5y", min: 0, max: null },
     ],
   },
+  // Four more, 16 Oct 2026, after a look at the ready-made screens other
+  // screeners offer for India: the ideas that work on NSE companies and on
+  // this app's figures, in its own words. (Long dividend streaks find no
+  // Indian company; staff counts and R&D spending aren't in the filings here.)
+  {
+    id: "near_highs_cheap",
+    name: "Near Highs, Still Cheap",
+    icon: "⛰️",
+    description: "Close to their 52-week high, yet still on a low P/E with earnings rising fast",
+    filters: [
+      { id: "downFrom52wHigh", min: null, max: 10 },
+      { id: "pe", min: 0, max: 20 },
+      { id: "epsGrowth1y", min: 25, max: null },
+      { id: "marketCapCr", min: 500, max: null },
+    ],
+  },
+  {
+    id: "debt_paydown",
+    name: "Paying Down Debt",
+    icon: "⚖️",
+    description: "Cutting debt hard while sales and operating profit keep growing",
+    filters: [
+      { id: "debtChange1y", min: null, max: -15 },
+      { id: "salesGrowth1y", min: 15, max: null },
+      { id: "ebitdaGrowth1y", min: 15, max: null },
+      { id: "debtToEquity", min: null, max: 1 },
+    ],
+  },
+  {
+    id: "fallen_quality",
+    name: "Fallen Quality",
+    icon: "🔻",
+    description: "Well-run companies whose shares have been sold off hard lately",
+    filters: [
+      { id: "quality", min: 60, max: null },
+      { id: "rsi14", min: null, max: 30 },
+    ],
+  },
+  {
+    id: "doubled_in_year",
+    name: "Doubled in a Year",
+    icon: "⏫",
+    description: "Established companies whose share price has at least doubled in a year",
+    filters: [
+      { id: "ret1y", min: 100, max: null },
+      { id: "marketCapCr", min: 1000, max: null },
+    ],
+  },
 ];

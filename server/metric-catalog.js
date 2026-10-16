@@ -117,6 +117,7 @@ export const METRICS = [
 
   // ── Financial health ──
   { id: "debtToEquity", label: "Debt to equity", short: "D/E", category: "Financial health", unit: "x", decimals: 2 },
+  { id: "debtChange1y", label: "Debt change, last year", short: "Debt 1Y", category: "Financial health", unit: "%", decimals: 1, signed: true, lowerIsBetter: true, about: "Borrowings and leases at the last year-end against the year before; below 0 means debt was paid down. Not shown when the year before had next to no debt (under 5% of equity)." + NO_LENDERS },
   { id: "ltDebtToEquity", label: "Long-term debt to equity", short: "LT D/E", category: "Financial health", unit: "x", decimals: 2 },
   { id: "netDebtToEbitda", label: "Net debt ÷ EBITDA", short: "ND/EBITDA", category: "Financial health", unit: "x", decimals: 1, signed: true, about: "Debt and leases less cash and liquid investments, ÷ operating profit. Below 0 means more cash than debt." + NO_LENDERS },
   { id: "interestCoverage", label: "Interest coverage", short: "Int. cover", category: "Financial health", unit: "x", decimals: 1, about: "Operating profit ÷ interest." + NO_LENDERS },
@@ -255,7 +256,7 @@ const BASIS = {
   qSalesGrowthYoY: "q-yoy", qProfitGrowthYoY: "q-yoy", qSalesGrowthQoQ: "q-qoq", qProfitGrowthQoQ: "q-qoq", qOpm: "quarter",
   ttmRevenueCr: "ttm", ttmProfitCr: "ttm",
   piotroski: "fy-vs-prior", ocfPat3yPct: "3y", payoutPct: "ttm-div", dividendPerShare: "ttm-div",
-  debtToEquity: "fy-end", ltDebtToEquity: "fy-end", currentRatio: "fy-end", netDebtToEbitda: "fy-end",
+  debtToEquity: "fy-end", debtChange1y: "fy-vs-prior", ltDebtToEquity: "fy-end", currentRatio: "fy-end", netDebtToEbitda: "fy-end",
   marketCapCr: "close", sharesCr: "holding", faceValue: "fy",
 };
 const CATEGORY_BASIS = {

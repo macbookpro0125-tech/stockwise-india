@@ -781,6 +781,17 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     totalAssetsCr: cr(latest.totalAssets),
     equityCr: cr(latest.equity),
     totalDebtCr: cr(totalDebt(latest)),
+    // Borrowings and leases at the last year-end against the year before (for
+    // "Paying down debt", 16 Oct 2026). Left out for lenders, whose borrowing
+    // is the business, and when the year before had next to no debt (under 5%
+    // of equity), where a sliver of a loan coming or going reads as a swing.
+    debtChange1y: (() => {
+      if (lender) return null;
+      const prev = yearBack(latest, 1);
+      const now = totalDebt(latest), then = totalDebt(prev);
+      if (now == null || !(then > 0) || !(prev.equity > 0) || then < 0.05 * prev.equity) return null;
+      return (now / then - 1) * 100;
+    })(),
     ltDebtCr: cr(latest.longTermDebt),
     currentAssetsCr: cr(latest.currentAssets),
     currentLiabilitiesCr: cr(latest.currentLiabilities),

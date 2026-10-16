@@ -19,3 +19,10 @@ S-AUTH,Provider step then email step,yes,yes,Google and phone from the server's 
 S-AUTH,Show/hide password,yes,yes,
 S-AUTH,Remember me,yes,no,Sessions persist already
 S-HOME,Earth-from-orbit hero on the front page,yes,partial,Built (Orbit.jsx) and shown in sign-in; the front page opens on the scroll story (CinematicStory.jsx) instead
+S-DISCOVER,Ready-made screen: shares near their high yet cheap,yes,yes,"Near Highs, Still Cheap: within 10% of the 52-week high, P/E 0-20, EPS growth 25%+, ₹500 Cr+"
+S-DISCOVER,Ready-made screen: debt falling while the business grows,yes,yes,"Paying Down Debt: needed a new figure, debt change over the last year (debtChange1y); D/E 1 or less"
+S-DISCOVER,Ready-made screen: oversold shares,yes,yes,"Fallen Quality: RSI 30 or under, paired with our quality score 60+ (theirs has no quality score)"
+S-DISCOVER,Ready-made screen: doubled in a year,yes,yes,"Doubled in a Year: 1-year return 100%+, ₹1,000 Cr+"
+S-DISCOVER,Ready-made screen: decades of rising dividends,yes,no,"Skipped: finds no Indian company even on the reference; Dividend Aristocrats and Dividend Growth cover payers"
+S-DISCOVER,Ready-made screen: revenue per employee and R&D,yes,no,"Skipped: staff counts and R&D spending aren't in the filings we read"
+S-DISCOVER,Daily market-mover lists (gainers, losers, most active),yes,partial,"Momentum tab covers breakouts near the 52-week high; plain daily movers not added (trading lists, not research)"
