@@ -2,6 +2,8 @@ import { useEffect, useRef } from "react";
 import "@fontsource-variable/bodoni-moda/opsz.css";
 import "@fontsource-variable/bodoni-moda/opsz-italic.css";
 import domeUrl from "./assets/dome.webp";
+import domeMidUrl from "./assets/dome-mid.webp";
+import domeStarUrl from "./assets/dome-star.webp";
 import { Logo } from "./site.jsx";
 import "./dome-film.css";
 
@@ -12,10 +14,25 @@ import "./dome-film.css";
 // fade in and out at set points in the scroll. The drawing code is the film's
 // own, unchanged: at scroll 0 the canvas shows the picture exactly as it is.
 // The light it ends in (#fff7ea) fades into the page below (.df-handoff).
+// Brought in line with Apple's guidance (16 Oct 2026): a local-nav bar that
+// frosts once the film moves, press feedback, size-specific type, and a still
+// camera for anyone who asked their system for less motion.
+// On large screens two sharper close-ups (LAYERS) fade in as the camera zooms,
+// so the picture stays crisp instead of showing its pixels.
 // The earlier story (CinematicStory.jsx + story-colours.css) is kept, unused.
 
 // The source frame and the star it converges on (measured: 38.7% across, 11.9% down)
 const IW = 1672, IH = 941, DX = 647, DY = 112, ZEND = 4.4, VOID = "#05060a";
+// Sharper close-ups of the part of the dome the camera moves into, cut from a
+// 4× upscale (scripts/make-dome-layers.mjs). Each rectangle is in the picture's
+// own pixels; it is drawn over the picture in exactly the same place and faded
+// in as the zoom passes z0 → z1, so the first frame is the picture alone. A
+// screen loads one only if full zoom would stretch the picture past `need`
+// screen px per picture px, so phones never fetch them.
+const LAYERS = [
+  { url: domeMidUrl, sx: 127, sy: 0, sw: 1305, sh: 941, z0: 1.3, z1: 1.6, need: 2.5 },
+  { url: domeStarUrl, sx: 346, sy: 0, sw: 686, sh: 433, z0: 2.5, z1: 2.8, need: 4.5 },
+];
 
 const ease = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 const c01 = t => t < 0 ? 0 : t > 1 ? 1 : t;
@@ -42,7 +59,22 @@ export default function DomeFilm({ onJoin, onLogin, stats }) {
 
     let cw, ch, dpr, s0, bx, by, Px, Py, D0x, D0y;
     const img = new Image();
-    let bloom = null, ready = false;
+    let bloom = null, ready = false, disposed = false;
+    const layers = LAYERS.map(l => ({ ...l, img: null, asked: false }));
+    // Fetch the close-ups this screen needs, once the picture itself is up.
+    // The camera never moves for less motion, so nothing to sharpen there.
+    function loadLayers() {
+      if (!ready || reduce) return;
+      const most = ZEND * s0 * dpr;
+      for (const l of layers) {
+        if (l.asked || most <= l.need) continue;
+        l.asked = true;
+        const im = new Image();
+        im.decoding = "async";
+        im.src = l.url;
+        im.decode().then(() => { if (disposed) return; l.img = im; if (onScreen) draw(p); }).catch(() => {}); // the picture alone still works
+      }
+    }
 
     function makeBloom() { // only the existing stars glow: bright points, warm tint, soft blur
       const w = Math.round(IW / 3), h = Math.round(IH / 3);
@@ -76,6 +108,7 @@ export default function DomeFilm({ onJoin, onLogin, stats }) {
       Px = (ZEND * D0x - cw / 2) / (ZEND - 1); Py = (ZEND * D0y - ch / 2) / (ZEND - 1);
       const L = Math.max(0, bx), T = Math.max(0, by), R = Math.min(cw, bx + IW * s0), B = Math.min(ch, by + IH * s0);
       Px = Math.min(R, Math.max(L, Px)); Py = Math.min(B, Math.max(T, Py));
+      loadLayers(); // a window made larger may now need them
     }
 
     function feather(ix, iy, iw, ih) { // letterboxed screens only: blend the frame edge into the night
@@ -92,7 +125,9 @@ export default function DomeFilm({ onJoin, onLogin, stats }) {
 
     function draw(p) {
       if (!ready) return;
-      const z = 1 + (ZEND - 1) * ease(p), tx = Px * (1 - z), ty = Py * (1 - z);
+      // Less motion asked for: the camera holds still (a full-screen push is the
+      // movement that unsettles most) and the light still grows in place
+      const z = reduce ? 1 : 1 + (ZEND - 1) * ease(p), tx = Px * (1 - z), ty = Py * (1 - z);
       const ix = tx + z * bx, iy = ty + z * by, iw = IW * s0 * z, ih = IH * s0 * z;
       const dx = Px + z * (D0x - Px), dy = Py + z * (D0y - Py);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -100,6 +135,13 @@ export default function DomeFilm({ onJoin, onLogin, stats }) {
       ctx.fillStyle = VOID; ctx.fillRect(0, 0, cw, ch);
       ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
       ctx.drawImage(img, ix, iy, iw, ih);
+      for (const l of layers) { // the sharper close-ups, in the picture's own place
+        const a = l.img ? c01((z - l.z0) / (l.z1 - l.z0)) : 0;
+        if (a <= 0) continue;
+        ctx.globalAlpha = a;
+        ctx.drawImage(l.img, ix + l.sx * s0 * z, iy + l.sy * s0 * z, l.sw * s0 * z, l.sh * s0 * z);
+      }
+      ctx.globalAlpha = 1;
       feather(ix, iy, iw, ih);
       const minD = Math.min(cw, ch), diag = Math.hypot(cw, ch);
 
@@ -149,7 +191,8 @@ export default function DomeFilm({ onJoin, onLogin, stats }) {
         if (!reduce) el.firstElementChild.style.transform = "translateY(" + ((p - h) * -40).toFixed(1) + "px)";
       }
       cue.style.opacity = p < 0.015 ? 1 : 0;
-      // the bar's text turns dark when the captions do, as the frame fills with light
+      // the bar frosts once the film moves, and turns light when the captions do
+      bar.classList.toggle("df-bar-on", p > 0.004);
       bar.classList.toggle("df-bar-light", p > 0.45);
     }
 
@@ -186,6 +229,7 @@ export default function DomeFilm({ onJoin, onLogin, stats }) {
     resize(); readTarget(); captions(target);
 
     return () => {
+      disposed = true;
       img.onload = null;
       cancelAnimationFrame(raf);
       window.removeEventListener("scroll", kick);
