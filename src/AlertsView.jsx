@@ -247,7 +247,7 @@ export default function AlertsView({ onOpenStock }) {
     <div style={{ padding: "8px var(--page-x) 80px", animation: "fadeUp 280ms cubic-bezier(0,0,0.2,1) backwards" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 10 }}>
         <div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: "var(--t1)", letterSpacing: "-0.02em" }}>Alerts</div>
+          <div className="hide-phone" style={{ fontSize: 18, fontWeight: 700, color: "var(--t1)", letterSpacing: "-0.02em" }}>Alerts</div>
           <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 2 }}>
             {alerts.length === 0 ? "No alerts configured" : `${activeCount} active of ${alerts.length}`}
             {checkedAt && <span> · checked {timeAgo(checkedAt)}</span>}

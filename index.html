@@ -2,9 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- viewport-fit=cover: the page may run under the notch and home bar,
+       and index.css pads what matters with env(safe-area-inset-*);
+       resizes-content: the keyboard shrinks the page on Android as on iOS -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
   <title>Jocular Insights — NSE stock screener and fair values</title>
   <meta name="description" content="NSE stock research: screen every listed company with ready-made strategies, see a quality score out of 100 from each company's own filings, with every check explained, and a fair value from its own history. Free during early access." />
+  <!-- The dark theme's page colour; App.jsx switches it with the theme -->
   <meta name="theme-color" content="#080810" />
   <link rel="icon" href="/jocular-insights-mark.svg" type="image/svg+xml" />
   <!-- Installable as an app: the manifest for Android and desktop, and the
@@ -18,6 +22,9 @@
   <meta name="apple-mobile-web-app-title" content="Jocular" />
 </head>
 <body>
+  <!-- Under the status bar in the Android app (index.css .safe-top), on
+       every page; nothing in a browser -->
+  <div class="safe-top" aria-hidden="true"></div>
   <div id="root"></div>
   <script type="module" src="/src/main.jsx"></script>
 </body>

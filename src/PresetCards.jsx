@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { Plus, Ellipsis } from "lucide-react";
+import { Plus, Ellipsis, Search, ChevronRight } from "lucide-react";
 import { api } from "./api.js";
 import { PresetIcon } from "./icons.jsx";
 import StrategyMark, { markColor } from "./StrategyMarks.jsx";
 import StrategyCard from "./StrategyCard.jsx";
 import { strategiesStore } from "./accountData.js";
+import { AdCard, useAdFeed } from "./ads.jsx";
 
 // Ported from stock-screener's src/components/PresetCards.jsx. The strategy
 // list comes from the server (the original 13 presets and Up on Every Timeframe); the user's own are saved to
@@ -65,16 +66,28 @@ const KINDS = [
 ];
 const kindOf = p => (p.custom ? ["yours", "Yours"] : KINDS.find(k => k[2].includes(p.id)) ?? ["other", "Other"]);
 
+// Settings → Your strategies opens Discover on that kind
+let kindOnOpen = "all";
+export const showStrategiesOfKind = kind => { kindOnOpen = kind; };
+
+// A phone's list (17 Oct 2026, after the Stock Screeners: India app): a
+// search box and the kinds as chips over the cards; each card its mark, name,
+// what it looks for and its first rules as chips, with how many stocks match;
+// an ad card after the third strategy and then every sixth, in the store app
+const AD_FIRST = 3, AD_EVERY = 6;
+const PHONE_RULES = 3;
+
 // layout: "strip" — one scrolling row (the original); "stack" — a phone's list;
 // "grid" — Discover's first page on a computer: big cards with the rules, and
 // how many stocks each matches at the latest close (counted by the server, one
 // strategy after another, so the page itself isn't held up)
-export default function PresetCards({ onSelect, activePresetId, onSavePreset, onUpdatePreset, onRenamePreset, onDuplicatePreset, layout = "strip", meta = null, onCount = null }) {
+export default function PresetCards({ onSelect, activePresetId, onSavePreset, onUpdatePreset, onRenamePreset, onDuplicatePreset, layout = "strip", meta = null, onCount = null, theme = "dark" }) {
   const stacked = layout === "stack";
   const grid = layout === "grid";
   const [counts, setCounts] = useState({});
   const [tops, setTops] = useState({});
-  const [kind, setKind] = useState("all");
+  const [kind, setKind] = useState(() => { const k = kindOnOpen; kindOnOpen = "all"; return k; });
+  const [query, setQuery] = useState("");
   const [presets, setPresets] = useState([]);
   const [customPresets, setCustomPresets] = useState(loadCustomPresets);
   const [menuOpen, setMenuOpen] = useState(null);
@@ -140,6 +153,84 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
     return () => { stop = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [countKey]);
+
+  useAdFeed(stacked ? "strategies" : null, theme, "medium");
+
+  if (stacked) {
+    const kinds = [["all", "All"], ...KINDS, ...(customPresets.length ? [["yours", "Yours"]] : [])]
+      .filter(([id]) => id === "all" || allPresets.some(p => kindOf(p)[0] === id));
+    const q = query.trim().toLowerCase();
+    const shown = allPresets
+      .filter(p => kind === "all" || kindOf(p)[0] === kind)
+      .filter(p => !q || `${p.name} ${p.description ?? ""}`.toLowerCase().includes(q));
+    return (
+      <div className="ph-strategies">
+        <label className="ph-search">
+          <Search size={17} aria-hidden="true" />
+          <input type="search" placeholder="Search strategies" value={query} onChange={e => setQuery(e.target.value)}
+            aria-label="Search strategies" enterKeyHint="search" autoComplete="off" />
+        </label>
+        <div className="ph-chips" role="group" aria-label="Show strategies of one kind">
+          {kinds.map(([id, label]) => (
+            <button key={id} type="button" className="ph-chip" aria-pressed={kind === id} onClick={() => setKind(id)}>{label}</button>
+          ))}
+        </div>
+        <p className="ph-count">{allPresets.length ? `${shown.length} ${shown.length === 1 ? "strategy" : "strategies"}` : "\u00a0"}</p>
+        {!allPresets.length && [0, 1, 2].map(i => <div key={i} className="ph-card ph-card-skel skeleton-pulse" aria-hidden="true" />)}
+        {allPresets.length > 0 && !shown.length && (
+          <p className="ph-empty">No strategy matches “{query.trim()}”.</p>
+        )}
+        {shown.map((p, i) => {
+          const count = counts[p.id];
+          const rules = presetRules(p, meta);
+          const ad = i + 1 === AD_FIRST || (i + 1 > AD_FIRST && (i + 1 - AD_FIRST) % AD_EVERY === 0);
+          return (
+            <div key={p.id} className="ph-card-wrap">
+              <button type="button" className="ph-card" aria-pressed={p.id === activePresetId} onClick={() => onSelect(p)} style={{ "--hue": hueOf(p) }}>
+                <span className="ph-card-top">
+                  <span className="ph-mark" aria-hidden="true"><StrategyMark preset={p} size={26} /></span>
+                  <span className="ph-card-text">
+                    <span className="ph-card-name">{p.name}</span>
+                    <span className="ph-card-about">{p.description}</span>
+                  </span>
+                </span>
+                {rules.length > 0 && (
+                  <span className="ph-rules">
+                    {rules.slice(0, PHONE_RULES).map(r => <span key={r} className="ph-rule">{r}</span>)}
+                    {rules.length > PHONE_RULES && <span className="ph-rule ph-rule-more">+{rules.length - PHONE_RULES}</span>}
+                  </span>
+                )}
+                <span className="ph-card-foot">
+                  <span className="ph-card-count">
+                    {count == null ? <span className="sc-skel" style={{ width: 44 }} aria-hidden="true" /> : <><b>{count.toLocaleString("en-IN")}</b> {count === 1 ? "stock" : "stocks"} today</>}
+                  </span>
+                  <ChevronRight size={18} aria-hidden="true" />
+                </span>
+              </button>
+              {p.custom && (
+                <button type="button" className="ph-card-menu" onClick={e => { e.stopPropagation(); setMenuOpen(menuOpen === p.id ? null : p.id); }}
+                  aria-label={`${p.name} strategy options`} aria-expanded={menuOpen === p.id}><Ellipsis size={18} /></button>
+              )}
+              {p.custom && menuOpen === p.id && (
+                <div role="group" aria-label={`${p.name} strategy options`} className="ph-card-options" onClick={e => e.stopPropagation()}>
+                  <button type="button" onClick={e => startRename(e, p)}>Rename</button>
+                  <button type="button" onClick={e => { e.stopPropagation(); onDuplicatePreset?.(p); setMenuOpen(null); }}>Duplicate</button>
+                  <button type="button" className="danger" onClick={e => deleteCustom(e, p.id)}>Delete</button>
+                </div>
+              )}
+              {p.custom && renaming === p.id && (
+                <div className="ph-card-rename" onClick={e => e.stopPropagation()}>
+                  <input autoFocus aria-label={`Rename ${p.name}`} value={renameValue} onChange={e => setRenameValue(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter") commitRename(p.id); if (e.key === "Escape") setRenaming(null); }} onBlur={() => commitRename(p.id)} />
+                </div>
+              )}
+              {ad && <AdCard feed="strategies" slot={`strategies-after-${p.id}`} size="medium" />}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
 
   return (
     // stacked: phones' strategy list (index.css .preset-stack), one under another

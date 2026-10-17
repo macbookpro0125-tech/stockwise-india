@@ -149,8 +149,13 @@ export default function AuthForm({ onAuthed, mode, onModeChange, onProgress }) {
   useEffect(() => {
     api.authOptions().then(o => {
       setCanReset(!!o.passwordReset);
-      if (o.firebase?.providers?.length) {
-        setFb(o.firebase);
+      // Inside the Android and iPhone apps Google and Apple refuse to sign in
+      // through the app's web view (Google's "disallowed_useragent"), so the
+      // app offers email (and phone) until they're added as native sign-ins
+      const inApp = !!window.Capacitor?.isNativePlatform?.();
+      const providers = (o.firebase?.providers ?? []).filter(p => !inApp || p === "phone");
+      if (providers.length) {
+        setFb({ ...o.firebase, providers });
         preloadFirebase(o.firebase).catch(() => {});
       }
     }).catch(() => {});

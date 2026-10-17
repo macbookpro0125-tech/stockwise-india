@@ -1,4 +1,4 @@
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Plus } from "lucide-react";
 import LiveScreen from "./LiveScreen.jsx";
 import HowItWorks from "./HowItWorks.jsx";
 import Reveal from "./Reveal.jsx";
@@ -71,7 +71,7 @@ export default function ScreensHome({ meta, total, strategies, pricesDate, onSta
   // The strategies curve past between the title and the buttons; hovering
   // pauses them, a click opens one. The grid below stays the way to choose
   // by keyboard (the row is decorative to screen readers).
-  const hero = ribbon.length ? (
+  const hero = compact ? null : ribbon.length ? (
     <CurvedRow items={ribbon} render={p => <RibbonCard p={p} />} onPick={onPickStrategy} className="ap-ribbon"
       tileHeight={compact ? 24 : 25} aspectRatio={16 / 10} axis={52} curve={compact ? 46 : 76} speed={4.5}>
       <section className="ap-hero ap-hero-ribbon" aria-labelledby="ap-title">
@@ -83,14 +83,25 @@ export default function ScreensHome({ meta, total, strategies, pricesDate, onSta
     <section className="ap-hero" aria-labelledby="ap-title">{title}{rest}</section>
   );
 
+  // A phone (17 Oct 2026, the app on a phone as clean as a native one): no
+  // hero — a large title, one line, then the strategies; a new screen from
+  // the + beside the title or the card at the end
   if (compact) return (
-    <div className="ap ap-compact">
-      {hero}
+    <div className="ph-home">
+      <div className="ph-title-row">
+        <h2 className="phone-title" id="sh-popular">Strategies</h2>
+        <button type="button" className="ph-round" onClick={onCreate} aria-label="New screen: start from the whole market"><Plus size={22} aria-hidden="true" /></button>
+      </div>
+      <p className="ph-lede">Every NSE company, scored on its own filings. Pick a strategy to see what fits today.</p>
       {continueCard}
-      <section className="sh-section" aria-labelledby="sh-popular">
-        <h2 id="sh-popular" className="ap-compact-head">Explore the strategies.</h2>
-        {children}
-      </section>
+      {children}
+      <button type="button" className="ph-build" onClick={onCreate}>
+        <span>
+          <span className="ph-build-title">Build your own</span>
+          <span className="ph-build-sub">Start from the whole market and add only the filters you want.</span>
+        </span>
+        <ChevronRight size={18} aria-hidden="true" />
+      </button>
     </div>
   );
 

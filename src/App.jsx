@@ -13,6 +13,7 @@ import Tour, { APP_TOUR, STOCK_TOUR } from "./Tour.jsx";
 import { resetWatchlist } from "./watchlist.js";
 import { portfolioStore, alertsStore } from "./stores.js";
 import { strategiesStore, notesStore } from "./accountData.js";
+import { useAdPause } from "./ads.jsx";
 
 // Keep the first Discover screen small; load account tabs and full stock
 // research only when the user opens them.
@@ -21,6 +22,7 @@ const PortfolioView = lazyPage(() => import("./PortfolioView.jsx"));
 const PerformanceView = lazyPage(() => import("./PerformanceView.jsx"));
 const AlertsView = lazyPage(() => import("./AlertsView.jsx"));
 const MomentumView = lazyPage(() => import("./MomentumView.jsx"));
+const SettingsView = lazyPage(() => import("./SettingsView.jsx"));
 const StockDetail = lazyPage(() => import("./StockDetail.jsx"));
 const ChartPage = lazyPage(() => import("./ChartPage.jsx"));
 
@@ -32,6 +34,12 @@ function useTheme() {
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
     try { localStorage.setItem("stockwise-india-theme", theme); } catch {}
+    // The phone's status bar and the browser's bar take the page's colour;
+    // in the Android and iPhone apps, its clock and icons the theme's
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", theme === "light" ? "#F5F6F8" : "#080810");
+    if (window.Capacitor?.isNativePlatform?.()) {
+      import("@capacitor/core").then(({ SystemBars, SystemBarsStyle }) => SystemBars.setStyle({ style: theme === "light" ? SystemBarsStyle.Light : SystemBarsStyle.Dark })).catch(() => {});
+    }
   }, [theme]);
   // Cross-fades the two themes (View Transitions); instant without support or with reduced motion
   const toggle = useCallback(() => {
@@ -75,6 +83,72 @@ export default function App() {
   const [open, setOpen] = useState(null);
   // Where the Discover list was scrolled to, so Back lands on the same row
   const discoverScroll = useRef(0);
+  // Native Android Back walks the app's tab history after leaving a stock or
+  // linked page. Tabs do not add browser history entries on the web.
+  const tabHistory = useRef([]);
+  const tabRef = useRef(tab);
+  tabRef.current = tab;
+
+  const goTab = (t) => {
+    if (t !== tabRef.current) tabHistory.current.push(tabRef.current);
+    if (open) navigate("/");
+    setOpen(null);
+    tabRef.current = t;
+    setTab(t);
+    window.scrollTo(0, 0);
+  };
+
+  // Capacitor's listener lets us handle system Back consistently with the
+  // app's own stock routes and tab navigation, then exit from the root.
+  useEffect(() => {
+    if (window.Capacitor?.getPlatform?.() !== "android") return;
+    let cancelled = false;
+    let listener;
+    import("@capacitor/app").then(({ App: NativeApp }) =>
+      NativeApp.addListener("backButton", ({ canGoBack }) => {
+        const currentPath = window.location.pathname;
+        const stock = stockFromPath(currentPath);
+        const chart = chartFromPath(currentPath);
+
+        if (chart) {
+          if (canGoBack) window.history.back();
+          else navigate(stockPath(chart), { replace: true });
+          return;
+        }
+
+        if (stock) {
+          const depth = window.history.state?.fromApp ? window.history.state.depth ?? 1 : 0;
+          if (depth) window.history.go(-depth);
+          else navigate("/", { replace: true });
+          return;
+        }
+
+        if (["/privacy", "/disclaimer", "/reset-password"].includes(currentPath)) {
+          if (canGoBack) window.history.back();
+          else navigate("/", { replace: true });
+          return;
+        }
+
+        const previousTab = tabHistory.current.pop();
+        if (previousTab) {
+          tabRef.current = previousTab;
+          setTab(previousTab);
+          window.scrollTo(0, 0);
+          return;
+        }
+
+        if (currentPath !== "/" && canGoBack) window.history.back();
+        else NativeApp.exitApp();
+      })
+    ).then(handle => {
+      if (cancelled) handle.remove();
+      else listener = handle;
+    }).catch(() => {});
+    return () => {
+      cancelled = true;
+      listener?.remove();
+    };
+  }, []);
 
   // email or phone (a phone sign-in has no email), name, and whether there is a password at all
   const loadAccount = () => api.me().then(d => setAccount({ userId: d.userId, email: d.email ?? null, phone: d.phone ?? null, name: d.name ?? null, hasPassword: d.hasPassword !== false, features: d.features ?? {} })).catch(() => setAccount(null));
@@ -102,6 +176,10 @@ export default function App() {
   useEffect(() => {
     document.title = open ? `${open.symbol} · Jocular Insights` : TITLE;
   }, [open?.symbol]);
+
+  // The store app's ad cards sit over the page: hidden while a company page
+  // covers the kept Discover list (ads.jsx)
+  useAdPause(!!open);
 
   // The guided tour: Discover's the first time an account signs in here, the
   // company page's the first time it opens one; again from the Account menu.
@@ -132,7 +210,7 @@ export default function App() {
   };
   const askForTour = () => {
     if (stockFromPath(window.location.pathname)) { setTourAsked("stock"); return; }
-    setTab("discover");
+    goTab("discover");
     window.scrollTo(0, 0);
     setTourAsked("app");
   };
@@ -141,13 +219,13 @@ export default function App() {
   if (path === "/privacy") return <PrivacyPage signedIn={!!account} />;
   if (path === "/disclaimer") return <DisclaimerPage signedIn={!!account} />;
   // The page a reset email links to: saving signs in, then into the app
-  if (path === "/reset-password") return <ResetPassword onDone={() => { setTab("discover"); navigate("/"); loadAccount(); }} />;
+  if (path === "/reset-password") return <ResetPassword onDone={() => { tabHistory.current = []; tabRef.current = "discover"; setTab("discover"); navigate("/"); loadAccount(); }} />;
 
   if (account === undefined) return null; // avoid a front-page flash while the session check is in flight
 
   if (account === null) {
     // A shared stock or chart link stays where it points once the visitor signs in
-    return <Landing notice={notice} onAuthed={() => { setNotice(null); setTab("discover"); if (!stockFromPath(window.location.pathname) && !chartFromPath(window.location.pathname)) navigate("/"); loadAccount(); }} />;
+    return <Landing notice={notice} onAuthed={() => { setNotice(null); tabHistory.current = []; tabRef.current = "discover"; setTab("discover"); if (!stockFromPath(window.location.pathname) && !chartFromPath(window.location.pathname)) navigate("/"); loadAccount(); }} />;
   }
 
   // /chart/TCS: the price chart alone, whole-screen (the phone's expand button)
@@ -190,33 +268,37 @@ export default function App() {
     notesStore.reset();
     setOpen(null);
     setTour(null);
+    tabHistory.current = [];
+    tabRef.current = "discover";
+    setTab("discover");
     setNotice(message);
     setAccount(null);
     navigate("/");
   };
   const logout = () => api.logout().then(() => signedOut());
   const accountDeleted = () => signedOut("Your account and everything saved with it have been deleted.");
-  const goTab = (t) => { if (open) navigate("/"); setOpen(null); setTab(t); window.scrollTo(0, 0); };
-
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
       <PriceStrip onOpenStock={openSymbol} />
       <Header tab={open ? null : tab} onTab={goTab} account={account} onLogout={logout} onDeleted={accountDeleted} onSearch={openSymbol} theme={theme} onToggleTheme={toggleTheme} onTour={askForTour} />
       <div style={{ height: 16 }} />
+      {/* A phone: the page's name in large type, as a native app's (index.css .phone-title) */}
+      {!open && tab !== "discover" && <h2 className="phone-title phone-only" style={{ padding: "0 var(--page-x)" }}>{TABS.find(t => t.id === tab)?.label === "Performance" ? "Strategy performance" : TABS.find(t => t.id === tab)?.label}</h2>}
       <Suspense fallback={<div role="status" style={{ minHeight: 220, display: "grid", placeItems: "center", color: "var(--t3)", fontSize: 13 }}>Loading this screen…</div>}>
         {open && <StockDetail key={open.at} symbol={open.symbol} account={account} onBack={closeStock} backTo={TABS.find(t => t.id === tab)?.label} onOpenStock={openSymbol} />}
         {/* Kept mounted (hidden) while a stock is open, so its filters and
             results are still there on Back. */}
-        {tab === "discover" && <div hidden={!!open}><DiscoverView onOpenStock={openSymbol} /></div>}
+        {tab === "discover" && <div hidden={!!open}><DiscoverView onOpenStock={openSymbol} theme={theme} /></div>}
         {!open && tab === "watchlist" && <WatchlistView onOpenStock={openSymbol} />}
         {!open && tab === "portfolio" && <PortfolioView onOpenStock={openSymbol} />}
         {!open && tab === "performance" && <PerformanceView onOpenStock={openSymbol} />}
         {!open && tab === "alerts" && <AlertsView onOpenStock={openSymbol} />}
         {!open && tab === "momentum" && account?.features?.momentum && <MomentumView onOpenStock={openSymbol} />}
+        {!open && tab === "settings" && <SettingsView account={account} theme={theme} onToggleTheme={toggleTheme} onTab={goTab} onLogout={logout} onDeleted={accountDeleted} onTour={askForTour} />}
       </Suspense>
       <SiteFooter />
       {/* On a company page too: the tab it was opened from stays lit */}
-      <BottomTabBar tab={tab} onTab={goTab} theme={theme} account={account} />
+      <BottomTabBar tab={tab} onTab={goTab} />
       {tour && <Tour key={tour} steps={tour === "app" ? APP_TOUR : STOCK_TOUR} onFinish={finishTour} />}
     </div>
   );

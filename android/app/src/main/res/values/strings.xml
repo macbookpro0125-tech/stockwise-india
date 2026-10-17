@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Jocular Insights</string>
+    <string name="title_activity_main">Jocular Insights</string>
+    <string name="package_name">com.jocularinsights.app</string>
+    <string name="custom_url_scheme">com.jocularinsights.app</string>
+</resources>

@@ -91,7 +91,7 @@ export default function PerformanceView({ onOpenStock }) {
     <div style={{ padding: "8px var(--page-x) 80px", animation: "fadeUp 280ms cubic-bezier(0,0,0.2,1) backwards" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, gap: 10, flexWrap: "wrap" }}>
         <div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: "var(--t1)", letterSpacing: "-0.02em" }}>Strategy performance</div>
+          <div className="hide-phone" style={{ fontSize: 18, fontWeight: 700, color: "var(--t1)", letterSpacing: "-0.02em" }}>Strategy performance</div>
           <div style={{ fontSize: 12, color: "var(--t2)", marginTop: 3, maxWidth: 560, lineHeight: 1.5 }}>
             How each strategy's top 10 has moved since it was recorded — a record of past screen results, not a forecast or advice.
           </div>

@@ -85,7 +85,7 @@ export default function AccountMenu({ account, onLogout, onDeleted, onTour }) {
   );
 }
 
-function DeleteAccountModal({ who, hasPassword, onClose, onDeleted }) {
+export function DeleteAccountModal({ who, hasPassword, onClose, onDeleted }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);

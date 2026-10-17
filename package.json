@@ -24,6 +24,10 @@
     "node": ">=22.13.0"
   },
   "dependencies": {
+    "@capacitor-community/admob": "8.2.1",
+    "@capacitor/android": "8.5.2",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "8.5.2",
     "@firebase/app": "^0.16.2",
     "@firebase/auth": "^1.13.6",
     "@fontsource-variable/bodoni-moda": "^5.3.0",
@@ -38,10 +42,12 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.1",
+    "@capacitor/cli": "8.5.2",
     "@playwright/test": "1.52.0",
     "@vitejs/plugin-react": "^6.1.1",
     "mediabunny": "^1.61.5",
     "playwright-core": "1.52.0",
+    "typescript": "5.9.3",
     "vite": "^8.3.1"
   }
 }

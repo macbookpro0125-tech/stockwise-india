@@ -280,7 +280,28 @@ export function createApp() {
       // Anything that reads the market waits for one to exist (built in
       // slices, screen.js) — never sign-in, and never the health check, which
       // must answer while the first market is still being built
-      if (url.pathname.startsWith("/api/") && !url.pathname.startsWith("/api/auth/") && url.pathname !== "/api/health") await marketReady();
+      if (url.pathname.startsWith("/api/") && !url.pathname.startsWith("/api/auth/") && url.pathname !== "/api/health" && url.pathname !== "/api/app-config") await marketReady();
+
+      // The Android and iPhone apps ask whether to show ads, and which ad
+      // units (src/ads.jsx): ADS=off (the default), test (Google's sample
+      // ads) or live (the units below). Not secret — ad unit IDs ship inside
+      // every app — but kept here so ads can change without an app release.
+      if (url.pathname === "/api/app-config" && req.method === "GET") {
+        const mode = ["test", "live"].includes(process.env.ADS) ? process.env.ADS : "off";
+        const unit = name => (/^ca-app-pub-\d+\/\d+$/.test(process.env[name] ?? "") ? process.env[name] : null);
+        // "test": Google's published sample units, which only ever show
+        // sample ads (an emulator or a registered test phone ignores the
+        // plugin's own test switch and needs the unit itself)
+        const units = mode === "live" ? {
+          android: { native: unit("ADMOB_ANDROID_NATIVE"), rewarded: unit("ADMOB_ANDROID_REWARDED") },
+          ios: { native: unit("ADMOB_IOS_NATIVE"), rewarded: unit("ADMOB_IOS_REWARDED") },
+        } : mode === "test" ? {
+          android: { native: "ca-app-pub-3940256099942544/2247696110", rewarded: "ca-app-pub-3940256099942544/5224354917" },
+          ios: { native: "ca-app-pub-3940256099942544/3986624511", rewarded: "ca-app-pub-3940256099942544/1712485313" },
+        } : {};
+        sendJson(res, 200, { ads: { mode, units } });
+        return;
+      }
       if (url.pathname === "/api/auth/signup" && req.method === "POST") {
         const { email, password } = await readJsonBody(req);
         const ip = `ip:${clientIp(req)}`;
@@ -941,6 +962,15 @@ export function createApp() {
         return;
       }
 
+      // AdMob checks the app's website for this file before it serves real
+      // ads to the app (the publisher ID, from the AdMob account)
+      if (url.pathname === "/app-ads.txt" && (req.method === "GET" || req.method === "HEAD")) {
+        const pub = /^pub-\d+$/.test(process.env.ADMOB_PUBLISHER_ID ?? "") ? process.env.ADMOB_PUBLISHER_ID : null;
+        if (!pub) { sendJson(res, 404, { error: "Not found" }); return; }
+        res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=3600" });
+        res.end(`google.com, ${pub}, DIRECT, f08c47fec0942fa0\n`);
+        return;
+      }
       if ((req.method === "GET" || req.method === "HEAD") && serveStatic(req, url.pathname, res)) return;
       sendJson(res, 404, { error: "Not found" });
     } catch (e) {
