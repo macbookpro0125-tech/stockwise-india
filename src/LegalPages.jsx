@@ -4,9 +4,9 @@ import { SiteLink, SiteFooter, Logo, navigate } from "./site.jsx";
 // the code does — check them when changing what's stored, adding analytics
 // or ads, or moving hosts.
 
-const UPDATED = "3 October 2026";
+const UPDATED = "18 October 2026";
 // Shown once set: a privacy policy needs a way to reach you
-const CONTACT_EMAIL = null;
+const CONTACT_EMAIL = "jocularinsights@gmail.com";
 
 function PublicPage({ title, signedIn, children }) {
   return (
@@ -39,8 +39,10 @@ export function PrivacyPage({ signedIn }) {
   return (
     <PublicPage title="Privacy policy" signedIn={signedIn}>
       <P>
-        This page explains what Jocular Insights keeps about you, why, and how to delete it. In short: we keep only what
-        you need to use the app, we don't track you, and we don't sell or share your data.
+        This page explains what Jocular Insights keeps about you, why, and how to delete it. In short: we use your
+        account and saved data to provide the service, and we don't sell your personal data. The website has no analytics;
+        the mobile apps use Google AdMob, which processes ad-related device information as explained below. We don't
+        send AdMob your account or saved investing data.
       </P>
 
       <H>What we keep on our server</H>
@@ -62,7 +64,7 @@ export function PrivacyPage({ signedIn }) {
       <H>What we don't do</H>
       <UL>
         <LI>On the website (and the web app installed from it): no ads, no advertising or tracking cookies, no analytics, and no third-party scripts on our pages — apart from the sign-in services below, and only when you choose them. The Android and iPhone apps show ads; see "Ads in the Android and iPhone apps" below.</LI>
-        <LI>We don't sell, rent or share your personal data, and we use what you save only to show it back to you — and, if you connect Telegram, to send you your own alerts there.</LI>
+        <LI>We don't sell your personal data or share your saved account information for advertising. Service providers process only the information needed for features you use, as described below.</LI>
       </UL>
 
       <H>Signing in with Google, Apple or your phone</H>
@@ -124,7 +126,7 @@ export function PrivacyPage({ signedIn }) {
       <P>
         Under India's Digital Personal Data Protection Act, 2023 you can ask to see, correct or erase your personal data,
         and to have a grievance addressed. Everything we hold about you is visible in the app, and you can correct or delete
-        it there yourself.{CONTACT_EMAIL && <> For anything else, write to <B>{CONTACT_EMAIL}</B>.</>}
+        it there yourself.{CONTACT_EMAIL && <> For privacy questions or requests, email <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "var(--accent)" }}>{CONTACT_EMAIL}</a>.</>}
       </P>
 
       <H>Children</H>
