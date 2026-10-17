@@ -568,7 +568,7 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
   } else if (years.length < MIN_VALUATION_YEARS) {
     // Not always a new listing: a change of financial year breaks the series
     // too (Nestlé India's move from December to March)
-    valuation = { model: "none", as: "short filing history", reason: `Only ${years.length} year${years.length === 1 ? "" : "s"} of annual results in NSE's filings — a recent listing, or a change of financial year that breaks the series. A fair value needs ${MIN_VALUATION_YEARS}, so that a usual P/E means something.` };
+    valuation = { model: "none", as: "short filing history", reason: `Only ${years.length} year${years.length === 1 ? "" : "s"} of annual results in NSE's filings — a recent listing, a move up from NSE's SME platform (whose results aren't in this series), or a change of financial year that breaks the series. A fair value needs ${MIN_VALUATION_YEARS}, so that a usual P/E means something.` };
   } else if (!(eps > 0)) {
     valuation = { model: "none", as: "loss-maker", reason: "It made a loss in its latest year, so there are no earnings to value." };
   } else if (cycle?.flagged && cycle.fairValue > 0) {

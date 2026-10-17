@@ -174,7 +174,11 @@ function CompanyProfile({ symbol, m }) {
   const facts = [
     ["Sector", m?.sector],
     ["NSE industry", m?.industry],
-    ["Listed on NSE", longDate(l?.listedOn)],
+    // NSE's list dates the main board: for a company that moved up from its
+    // SME platform (Emerge), that's the move, not its first listing — Kotyark
+    // reads 12 Mar 2026, listed on Emerge in Nov 2021. No public list keeps
+    // migrated companies' SME dates, so the label says which listing it is.
+    ["On NSE main board since", longDate(l?.listedOn)],
     ["Incorporated", longDate(p?.incorporated)],
     ["Employees", p?.employees != null ? `${count(p.employees)}${p.workers ? ` · ${count(p.workers)} workers` : ""}` : null],
     ["Market cap", m?.marketCapCr != null ? `₹${Math.round(m.marketCapCr).toLocaleString("en-IN")} Cr` : null],
