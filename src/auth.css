@@ -131,6 +131,8 @@
   .auth-visual-line { top: auto; bottom: 48px; right: auto; max-width: 100%; padding: 0 22px; text-align: left; font-size: 26px; }
   .auth-mark { left: auto; right: 0; top: 10%; width: auto; height: 58%; transform: translate(var(--px), var(--py)); }
   .auth-points { display: none; }
+  /* the name beside the sky's J crowds the line on a phone; the sheet below shows it */
+  .am-word { display: none; }
   .auth-pause { top: 14px; left: 14px; right: auto; bottom: auto; width: 30px; height: 30px; }
   .auth-side { z-index: 1; margin-top: -24px; border-radius: 24px 24px 0 0; background: var(--bg); box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.35); max-height: calc(100dvh - 110px); }
   .auth-body { justify-content: flex-start; padding: 24px 20px calc(20px + env(safe-area-inset-bottom)); }
