@@ -440,17 +440,30 @@ function integratedRow(r) {
 
 // The pre-2025 endpoint: frozen at Q3 FY25, but it holds every earlier
 // year-end, which is where 3- and 5-year history comes from.
-async function legacyAnnualRows(symbol) {
+//
+// A company that moved up from NSE's SME platform (Emerge) filed its earlier
+// years there, under index=sme (16 Oct 2026): Kotyark has none under
+// equities but FY24 as XBRL under sme (FY22-23 there are PDF only). Asked
+// only when the main board's list is short, so a long-listed company costs
+// no extra request.
+async function annualRowsFrom(symbol, index) {
   const rows = await fetchJson(
-    `${NSE_BASE}/api/corporates-financial-results?index=equities&period=Annual&symbol=${encodeURIComponent(symbol)}`
+    `${NSE_BASE}/api/corporates-financial-results?index=${index}&period=Annual&symbol=${encodeURIComponent(symbol)}`
   ).catch(() => []);
-  return (Array.isArray(rows) ? rows : []).filter(r => r.xbrl && /\.xml$/i.test(r.xbrl)).map(r => ({
+  return Array.isArray(rows) ? rows : [];
+}
+async function legacyAnnualRows(symbol) {
+  const withXbrl = list => list.filter(r => r.xbrl && /\.xml$/i.test(r.xbrl));
+  let rows = withXbrl(await annualRowsFrom(symbol, "equities"));
+  if (rows.length < 8) rows = [...rows, ...withXbrl(await annualRowsFrom(symbol, "sme")).map(r => ({ ...r, sme: true }))];
+  return rows.map(r => ({
     periodEnd: parseQeDate(r.toDate),
     label: String(r.toDate).toUpperCase(),
     scope: r.consolidated === "Consolidated" ? "Consolidated" : "Standalone",
     xbrl: r.xbrl,
     filed: parseQeDate(r.filingDate || r.broadCastDate),
     legacy: true,
+    ...(r.sme && { sme: true }),
   })).filter(r => r.periodEnd);
 }
 
