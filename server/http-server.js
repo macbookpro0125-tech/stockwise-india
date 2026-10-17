@@ -93,6 +93,7 @@ const CONTENT_TYPES = {
   ".svg": "image/svg+xml", ".png": "image/png", ".ico": "image/x-icon", ".json": "application/json",
   ".woff2": "font/woff2", ".txt": "text/plain", ".webm": "video/webm",
   ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp",
+  ".webmanifest": "application/manifest+json",
 };
 
 // Streams the file, and answers Range requests with just the bytes asked

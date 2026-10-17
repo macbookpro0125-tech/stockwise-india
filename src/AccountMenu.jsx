@@ -4,6 +4,7 @@ import { ChevronDown } from "lucide-react";
 import { api } from "./api.js";
 import { SiteLink } from "./site.jsx";
 import { useLogosShown, setLogosShown } from "./CompanyLogo.jsx";
+import { installState, onInstallChange, promptInstall } from "./installApp.js";
 
 // The header's Account button: who's signed in, Sign out, and Delete account
 // — the way to erase everything that the privacy page points to. An account
@@ -15,6 +16,11 @@ export default function AccountMenu({ account, onLogout, onDeleted, onTour }) {
   const [confirming, setConfirming] = useState(false);
   const ref = useRef(null);
   const logos = useLogosShown();
+  // Install the app: the browser's own prompt where there is one; on an
+  // iPhone, how to add it to the home screen; nothing once it's installed
+  const [install, setInstall] = useState(installState);
+  const [iosHint, setIosHint] = useState(false);
+  useEffect(() => onInstallChange(() => setInstall(installState())), []);
 
   useEffect(() => {
     if (!open) return;
@@ -51,6 +57,17 @@ export default function AccountMenu({ account, onLogout, onDeleted, onTour }) {
             onMouseEnter={e => { e.currentTarget.style.background = "var(--s3)"; }} onMouseLeave={e => { e.currentTarget.style.background = "none"; }}>
             Company logos <span style={{ fontSize: 12, color: logos ? "var(--accent)" : "var(--t3)", fontWeight: 600 }}>{logos ? "On" : "Off"}</span>
           </button>
+          {(install === "prompt" || install === "ios") && (
+            <button role="menuitem" style={item} onClick={() => { if (install === "prompt") { setOpen(false); promptInstall(); } else setIosHint(h => !h); }}
+              onMouseEnter={e => { e.currentTarget.style.background = "var(--s3)"; }} onMouseLeave={e => { e.currentTarget.style.background = "none"; }}>
+              Install the app
+              {install === "ios" && iosHint && (
+                <span style={{ display: "block", marginTop: 4, fontSize: 12, lineHeight: 1.45, color: "var(--t2)" }}>
+                  In Safari, tap Share, then Add to Home Screen.
+                </span>
+              )}
+            </button>
+          )}
           <button role="menuitem" style={item} onClick={() => { setOpen(false); onLogout(); }}
             onMouseEnter={e => { e.currentTarget.style.background = "var(--s3)"; }} onMouseLeave={e => { e.currentTarget.style.background = "none"; }}>
             Sign out

@@ -1,0 +1,18 @@
+{
+  "id": "/",
+  "name": "Jocular Insights — NSE stock research",
+  "short_name": "Jocular",
+  "description": "Every NSE company, scored on its own filings, with a fair value from its own history and strategies ready to run.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#080810",
+  "theme_color": "#080810",
+  "categories": ["finance", "business", "education"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/jocular-insights-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
