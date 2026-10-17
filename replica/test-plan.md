@@ -1,4 +1,4 @@
-# Stockwise India — test plan
+# Jocular Insights — test plan
 
 Run: `npm run e2e` (build, then Playwright on a private copy at 127.0.0.1:8793 with
 the real market data, a throwaway accounts database, no background jobs, system
@@ -89,8 +89,24 @@ in the browser, ⏳ = needs Salman (real accounts or services).
 | P-2 | Privacy and disclaimer pages fit | ✅ sweep |
 | P-3 | Add a holding and open Alerts from the bottom tab bar | ✅ edges |
 
+## M — the installed app (17 Oct 2026, `e2e/mobile.spec.js`)
+The site as an app on a phone (the PWA, `replica/deploy.md` stage 1). Run in the
+phone project; M-E3 is skipped on desktop, which has no bottom tab bar.
+| Case | What | How |
+| --- | --- | --- |
+| M-H1 | `/manifest.webmanifest` is `application/manifest+json`, name, `standalone`, a 512 maskable icon; every icon and `/apple-touch-icon.png` 200 | ✅ mobile |
+| M-H2 | The service worker controls the page after a reload; Chrome's installability check has no errors (bar "in-incognito", a test browser's private window) | ✅ mobile |
+| M-H3 | On an iPhone: Account → Install the app shows the Add to Home Screen steps | ✅ mobile |
+| M-E1 | Offline: the front page opens, logo included (from the copy made at install) | ✅ mobile |
+| M-E2 | Offline: `/api/` fails — market data is never served from a copy | ✅ mobile |
+| M-E3 | Bottom tabs and header buttons at least 44 × 44 px | ✅ mobile |
+| M-N1 | Account menu usable on Discover on a phone (BUG-005) | ✅ mobile |
+| M-N2 | No hand-written counts on the front page (BUG-006) | ✅ mobile |
+| M-R1 | Install on a real Android phone from Chrome's prompt; opens full screen with the icon | ⏳ needs the pushed site |
+| M-R2 | Add to Home Screen on a real iPhone; status bar and safe areas look right | ⏳ needs the pushed site |
+
 ## Not covered (and why)
 - Payments: none built yet.
 - Real devices: emulated phone only; a real iPhone/Android pass is still for Salman.
-- Slow network / offline: not automated yet.
+- Offline: automated for the installed app (M-E1, M-E2). Slow network: not automated yet.
 - Time zones: the app shows NSE dates as filed; the alert schedule is IST-only by design.

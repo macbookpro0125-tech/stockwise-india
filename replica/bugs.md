@@ -1,4 +1,4 @@
-# Stockwise India — bugs
+# Jocular Insights — bugs
 
 From the test pass of 12 Oct 2026 (`replica/test-plan.md`). Only bugs reproduced
 are listed. Severity: S1 data loss / security / core flow blocked · S2 feature
@@ -40,6 +40,30 @@ No S1 or S2 found.
 - Red "Upper level" text on the highlighted (yellow-tinted) price row: 4.1:1.
 - The faded "/100" after score badges on green: 4.0:1.
 - Not fixed — small text, near the line; listed so they aren't forgotten.
+
+## BUG-005 · S3 · Phone: the Account menu was covered on Discover
+Found 17 Oct 2026, testing the installed app (`replica/test-plan.md` M cases).
+- **Steps:** phone width, signed in → Discover → Account → tap Sign out.
+- **Expected:** the menu sits above the page and Sign out works.
+- **Actual:** the menu opened but Discover's hero lay on top of it: Sign out,
+  Delete account and Install the app couldn't be tapped. On a phone the header
+  was `position: static` (so it scrolls away), which ignores its z-index; the
+  hero's z-index 2 won. Workaround: open the menu from another tab.
+- **Evidence:** `e2e/mobile.spec.js` BUG-005 — the Sign out click timed out
+  before the fix; M-H3 (Install the app, same menu) failed the same way.
+- **Fixed:** `.app-header { position: relative }` in the phone rules — still
+  scrolls away, keeps its z-index. Both tests pass.
+- **Commit:** acc040f.
+
+## BUG-006 · S4 · Front page counts written in by hand
+- **Steps:** open the front page signed out → What's inside, and the figures row.
+- **Expected:** counts that follow the app.
+- **Actual:** "13 ready-made strategies" and "99 metrics" were typed into the
+  page when the front page was made; the server offers 18 strategies now.
+- **Fixed:** the figures row takes the strategy count from the server (a dash
+  until it loads); the feature card and the film's footer say "Ready-made
+  strategies" without a number. Test: BUG-006 in `e2e/mobile.spec.js`.
+- **Commit:** acc040f.
 
 ## To check (not reproduced as bugs)
 - Momentum's score runs past 100 (West Coast Paper 113.9). It isn't labelled "/100",
