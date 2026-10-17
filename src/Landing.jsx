@@ -96,7 +96,7 @@ export default function Landing({ onAuthed, notice }) {
             </div>
             <img
               src="/screens/discover.jpg" width="1280" height="800" loading="lazy"
-              alt="The Discover screen: a strategy's results, each company with its quality score, research score, price, returns on capital and price levels"
+              alt="The Discover screen: a strategy's results, each company with its quality and research scores, price, P/E and returns on capital"
               style={{ display: "block", width: "100%", height: "auto" }}
             />
           </div>
