@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Plus, Ellipsis, Search, ChevronRight } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Plus, Ellipsis, Search, ChevronRight, ChevronDown, TrendingUp, CircleDollarSign, Coins, Activity, Landmark, Sparkles, ArrowRight } from "lucide-react";
 import { api } from "./api.js";
 import { PresetIcon } from "./icons.jsx";
 import StrategyMark, { markColor } from "./StrategyMarks.jsx";
@@ -65,13 +65,21 @@ const KINDS = [
   ["owners", "Big investors", ["fii_favorites", "dii_backed"]],
 ];
 const kindOf = p => (p.custom ? ["yours", "Yours"] : KINDS.find(k => k[2].includes(p.id)) ?? ["other", "Other"]);
+const GROUP_TILES = {
+  quality: { icon: TrendingUp, className: "quality" },
+  value: { icon: CircleDollarSign, className: "value" },
+  income: { icon: Coins, className: "income" },
+  momentum: { icon: Activity, className: "momentum" },
+  owners: { icon: Landmark, className: "owners" },
+  yours: { icon: Sparkles, className: "yours" },
+};
 
 // Settings → Your strategies opens Discover on that kind
 let kindOnOpen = "all";
 export const showStrategiesOfKind = kind => { kindOnOpen = kind; };
 
-// A phone's list (17 Oct 2026, after the Stock Screeners: India app): a
-// search box and the kinds as chips over the cards; each card its mark, name,
+// A phone's strategy page: a swipeable collection rail, search and kind chips;
+// each strategy card has its mark, name,
 // what it looks for and its first rules as chips, with how many stocks match;
 // an ad card after the third strategy and then every sixth, in the store app
 const AD_FIRST = 3, AD_EVERY = 6;
@@ -93,6 +101,9 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
   const [menuOpen, setMenuOpen] = useState(null);
   const [renaming, setRenaming] = useState(null);
   const [renameValue, setRenameValue] = useState("");
+  const [expandedRules, setExpandedRules] = useState({});
+  const strategyRailDrag = useRef(null);
+  const suppressStrategyClick = useRef(false);
 
   useEffect(() => {
     api.presets().then(setPresets).catch(() => {});
@@ -159,75 +170,236 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
   if (stacked) {
     const kinds = [["all", "All"], ...KINDS, ...(customPresets.length ? [["yours", "Yours"]] : [])]
       .filter(([id]) => id === "all" || allPresets.some(p => kindOf(p)[0] === id));
+    const groups = kinds
+      .filter(([id]) => id !== "all" && GROUP_TILES[id])
+      .map(([id, label]) => ({
+        id,
+        label,
+        count: allPresets.filter(p => kindOf(p)[0] === id).length,
+        ...GROUP_TILES[id],
+      }))
+      .filter(group => group.count > 0);
     const q = query.trim().toLowerCase();
     const shown = allPresets
       .filter(p => kind === "all" || kindOf(p)[0] === kind)
       .filter(p => !q || `${p.name} ${p.description ?? ""}`.toLowerCase().includes(q));
+    const beginStrategyRailDrag = e => {
+      // Finger drags use touch events below; pointer handling here is for a
+      // mouse or stylus, so Android's touch path never depends on capture.
+      if (e.pointerType === "touch") return;
+      if (e.button !== 0) return;
+      strategyRailDrag.current = {
+        pointerId: e.pointerId,
+        startX: e.clientX,
+        lastX: e.clientX,
+        startY: e.clientY,
+        scrollLeft: e.currentTarget.scrollLeft,
+        dragging: false,
+      };
+    };
+    const moveStrategyRailDrag = e => {
+      const drag = strategyRailDrag.current;
+      if (!drag || drag.pointerId !== e.pointerId) return;
+      const dx = e.clientX - drag.startX;
+      const dy = e.clientY - drag.startY;
+      drag.lastX = e.clientX;
+      if (!drag.dragging && Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy)) {
+        drag.dragging = true;
+        e.currentTarget.classList.add("is-dragging");
+        e.currentTarget.setPointerCapture?.(e.pointerId);
+      }
+      if (drag.dragging) {
+        e.currentTarget.scrollLeft = drag.scrollLeft - dx;
+        if (e.cancelable) e.preventDefault();
+      }
+    };
+    const beginStrategyRailTouch = e => {
+      if (e.touches.length !== 1) return;
+      const touch = e.touches[0];
+      strategyRailDrag.current = {
+        pointerId: null,
+        startX: touch.clientX,
+        lastX: touch.clientX,
+        startY: touch.clientY,
+        scrollLeft: e.currentTarget.scrollLeft,
+        dragging: false,
+      };
+    };
+    const moveStrategyRailTouch = e => {
+      const drag = strategyRailDrag.current;
+      if (!drag || drag.pointerId !== null || e.touches.length !== 1) return;
+      const touch = e.touches[0];
+      const dx = touch.clientX - drag.startX;
+      const dy = touch.clientY - drag.startY;
+      drag.lastX = touch.clientX;
+      if (!drag.dragging && Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy)) {
+        drag.dragging = true;
+        e.currentTarget.classList.add("is-dragging");
+      }
+      if (drag.dragging) e.currentTarget.scrollLeft = drag.scrollLeft - dx;
+    };
+    const scrollStrategyRailFromWheel = e => {
+      const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      if (!delta) return;
+      e.currentTarget.scrollLeft += delta;
+      if (e.cancelable) e.preventDefault();
+    };
+    const endStrategyRailDrag = (rail, pointerId) => {
+      const drag = strategyRailDrag.current;
+      if (!drag || drag.pointerId !== pointerId) return;
+      if (drag.dragging) {
+        suppressStrategyClick.current = true;
+        window.setTimeout(() => { suppressStrategyClick.current = false; }, 400);
+        // Android can retain :focus-visible on the last touched control after
+        // a rail swipe, making an unrelated tile or button look selected.
+        if (document.activeElement instanceof HTMLElement && document.activeElement !== document.body) {
+          document.activeElement.blur();
+        }
+        const dx = (drag.lastX ?? drag.startX) - drag.startX;
+        if (Math.abs(dx) > 14) {
+          const firstCard = rail.firstElementChild;
+          const stride = (firstCard?.getBoundingClientRect().width ?? rail.clientWidth * 0.74)
+            + (parseFloat(getComputedStyle(rail).columnGap) || 0);
+          const steps = Math.max(1, Math.round(Math.abs(dx) / stride));
+          const direction = dx < 0 ? 1 : -1;
+          const maxScroll = Math.max(0, rail.scrollWidth - rail.clientWidth);
+          const target = Math.max(0, Math.min(maxScroll, drag.scrollLeft + direction * stride * steps));
+          rail.classList.remove("is-dragging");
+          rail.scrollTo({
+            left: target,
+            behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+          });
+        } else {
+          rail.classList.remove("is-dragging");
+        }
+      } else {
+        rail.classList.remove("is-dragging");
+      }
+      strategyRailDrag.current = null;
+    };
     return (
       <div className="ph-strategies">
-        <label className="ph-search">
-          <Search size={17} aria-hidden="true" />
-          <input type="search" placeholder="Search strategies" value={query} onChange={e => setQuery(e.target.value)}
-            aria-label="Search strategies" enterKeyHint="search" autoComplete="off" />
-        </label>
-        <div className="ph-chips" role="group" aria-label="Show strategies of one kind">
-          {kinds.map(([id, label]) => (
-            <button key={id} type="button" className="ph-chip" aria-pressed={kind === id} onClick={() => setKind(id)}>{label}</button>
-          ))}
-        </div>
-        <p className="ph-count">{allPresets.length ? `${shown.length} ${shown.length === 1 ? "strategy" : "strategies"}` : "\u00a0"}</p>
-        {!allPresets.length && [0, 1, 2].map(i => <div key={i} className="ph-card ph-card-skel skeleton-pulse" aria-hidden="true" />)}
-        {allPresets.length > 0 && !shown.length && (
-          <p className="ph-empty">No strategy matches “{query.trim()}”.</p>
-        )}
-        {shown.map((p, i) => {
-          const count = counts[p.id];
-          const rules = presetRules(p, meta);
-          const ad = i + 1 === AD_FIRST || (i + 1 > AD_FIRST && (i + 1 - AD_FIRST) % AD_EVERY === 0);
-          return (
-            <div key={p.id} className="ph-card-wrap">
-              <button type="button" className="ph-card" aria-pressed={p.id === activePresetId} onClick={() => onSelect(p)} style={{ "--hue": hueOf(p) }}>
-                <span className="ph-card-top">
-                  <span className="ph-mark" aria-hidden="true"><StrategyMark preset={p} size={26} /></span>
-                  <span className="ph-card-text">
-                    <span className="ph-card-name">{p.name}</span>
-                    <span className="ph-card-about">{p.description}</span>
-                  </span>
-                </span>
-                {rules.length > 0 && (
-                  <span className="ph-rules">
-                    {rules.slice(0, PHONE_RULES).map(r => <span key={r} className="ph-rule">{r}</span>)}
-                    {rules.length > PHONE_RULES && <span className="ph-rule ph-rule-more">+{rules.length - PHONE_RULES}</span>}
-                  </span>
-                )}
-                <span className="ph-card-foot">
-                  <span className="ph-card-count">
-                    {count == null ? <span className="sc-skel" style={{ width: 44 }} aria-hidden="true" /> : <><b>{count.toLocaleString("en-IN")}</b> {count === 1 ? "stock" : "stocks"} today</>}
-                  </span>
-                  <ChevronRight size={18} aria-hidden="true" />
+        {groups.length > 0 && (
+          <div
+            className="strategy-rail"
+            role="group"
+            aria-label="Swipe or drag to browse strategy collections"
+            onPointerDown={beginStrategyRailDrag}
+            onPointerMove={moveStrategyRailDrag}
+            onPointerUp={e => endStrategyRailDrag(e.currentTarget, e.pointerId)}
+            onPointerCancel={e => endStrategyRailDrag(e.currentTarget, e.pointerId)}
+            onTouchStart={beginStrategyRailTouch}
+            onTouchMove={moveStrategyRailTouch}
+            onTouchEnd={e => endStrategyRailDrag(e.currentTarget, null)}
+            onTouchCancel={e => endStrategyRailDrag(e.currentTarget, null)}
+            onWheel={scrollStrategyRailFromWheel}
+            onClickCapture={e => {
+              if (!suppressStrategyClick.current) return;
+              suppressStrategyClick.current = false;
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          >
+            {groups.map(({ id, label, count, icon: Icon, className }) => (
+              <button
+                key={id}
+                type="button"
+                className={`strategy-tile strategy-tile-${className}`}
+                aria-label={`${label}, ${count} ${count === 1 ? "screener" : "screeners"}. Show this collection`}
+                aria-pressed={kind === id}
+                onClick={() => {
+                  setQuery("");
+                  setKind(id);
+                  const list = document.getElementById("ph-strategy-list");
+                  if (list) list.scrollIntoView({ behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+                }}
+              >
+                <span className="strategy-tile-icon" aria-hidden="true"><Icon size={30} strokeWidth={2.4} /></span>
+                <span className="strategy-tile-watermark" aria-hidden="true"><Icon size={164} strokeWidth={2.8} /></span>
+                <span className="strategy-tile-copy">
+                  <span className="strategy-tile-title">{label}</span>
+                  <span className="strategy-tile-count">{count} {count === 1 ? "screener" : "screeners"}<ArrowRight size={20} strokeWidth={2.6} aria-hidden="true" /></span>
                 </span>
               </button>
-              {p.custom && (
-                <button type="button" className="ph-card-menu" onClick={e => { e.stopPropagation(); setMenuOpen(menuOpen === p.id ? null : p.id); }}
-                  aria-label={`${p.name} strategy options`} aria-expanded={menuOpen === p.id}><Ellipsis size={18} /></button>
-              )}
-              {p.custom && menuOpen === p.id && (
-                <div role="group" aria-label={`${p.name} strategy options`} className="ph-card-options" onClick={e => e.stopPropagation()}>
-                  <button type="button" onClick={e => startRename(e, p)}>Rename</button>
-                  <button type="button" onClick={e => { e.stopPropagation(); onDuplicatePreset?.(p); setMenuOpen(null); }}>Duplicate</button>
-                  <button type="button" className="danger" onClick={e => deleteCustom(e, p.id)}>Delete</button>
+            ))}
+          </div>
+        )}
+        <div className="ph-strategy-list" id="ph-strategy-list">
+          <label className="ph-search">
+            <Search size={17} aria-hidden="true" />
+            <input type="search" placeholder="Search strategies" value={query} onChange={e => setQuery(e.target.value)}
+              aria-label="Search strategies" enterKeyHint="search" autoComplete="off" />
+          </label>
+          <div className="ph-chips" role="group" aria-label="Show strategies of one kind">
+            {kinds.map(([id, label]) => (
+              <button key={id} type="button" className="ph-chip" aria-pressed={kind === id} onClick={() => setKind(id)}>{label}</button>
+            ))}
+          </div>
+          <p className="ph-count">{allPresets.length ? `${shown.length} ${shown.length === 1 ? "strategy" : "strategies"}` : "\u00a0"}</p>
+          {!allPresets.length && [0, 1, 2].map(i => <div key={i} className="ph-card ph-card-skel skeleton-pulse" aria-hidden="true" />)}
+          {allPresets.length > 0 && !shown.length && (
+            <p className="ph-empty">No strategy matches “{query.trim()}”.</p>
+          )}
+          {shown.map((p, i) => {
+            const count = counts[p.id];
+            const rules = presetRules(p, meta);
+            const rulesExpanded = !!expandedRules[p.id];
+            const rulesId = `ph-rules-${encodeURIComponent(p.id)}`;
+            const ad = i + 1 === AD_FIRST || (i + 1 > AD_FIRST && (i + 1 - AD_FIRST) % AD_EVERY === 0);
+            return (
+              <div key={p.id} className="ph-card-wrap">
+                <div className={`ph-card${p.id === activePresetId ? " is-active" : ""}`} style={{ "--hue": hueOf(p) }}>
+                  <button type="button" className="ph-card-select" aria-label={`View matching stocks for ${p.name}`} aria-pressed={p.id === activePresetId} onClick={() => onSelect(p)} />
+                  <div className="ph-card-content">
+                    <span className="ph-card-top">
+                      <span className="ph-mark" aria-hidden="true"><StrategyMark preset={p} size={26} /></span>
+                      <span className="ph-card-text">
+                        <span className="ph-card-name">{p.name}</span>
+                        <span className="ph-card-about">{p.description}</span>
+                      </span>
+                    </span>
+                    {rules.length > 0 && (
+                      <span className="ph-rules" id={rulesId}>
+                        {rules.slice(0, rulesExpanded ? rules.length : PHONE_RULES).map((r, ruleIndex) => <span key={`${ruleIndex}-${r}`} className="ph-rule">{r}</span>)}
+                        {rules.length > PHONE_RULES && (
+                          <button type="button" className="ph-rule ph-rule-more" aria-expanded={rulesExpanded}
+                            aria-controls={rulesId} aria-label={rulesExpanded ? `Show fewer rules for ${p.name}` : `Show ${rules.length - PHONE_RULES} more rules for ${p.name}`}
+                            onClick={() => setExpandedRules(current => ({ ...current, [p.id]: !current[p.id] }))}>
+                            {rulesExpanded ? "Show less" : `+${rules.length - PHONE_RULES}`}<ChevronDown size={14} aria-hidden="true" />
+                          </button>
+                        )}
+                      </span>
+                    )}
+                    <span className="ph-card-foot">
+                      <span className="ph-card-count">
+                        {count == null ? <span className="sc-skel" style={{ width: 44 }} aria-hidden="true" /> : <><b>{count.toLocaleString("en-IN")}</b> {count === 1 ? "stock" : "stocks"} today</>}
+                      </span>
+                      <ChevronRight size={18} aria-hidden="true" />
+                    </span>
+                  </div>
                 </div>
-              )}
-              {p.custom && renaming === p.id && (
-                <div className="ph-card-rename" onClick={e => e.stopPropagation()}>
-                  <input autoFocus aria-label={`Rename ${p.name}`} value={renameValue} onChange={e => setRenameValue(e.target.value)}
-                    onKeyDown={e => { if (e.key === "Enter") commitRename(p.id); if (e.key === "Escape") setRenaming(null); }} onBlur={() => commitRename(p.id)} />
-                </div>
-              )}
-              {ad && <AdCard feed="strategies" slot={`strategies-after-${p.id}`} size="medium" />}
-            </div>
-          );
-        })}
+                {p.custom && (
+                  <button type="button" className="ph-card-menu" onClick={e => { e.stopPropagation(); setMenuOpen(menuOpen === p.id ? null : p.id); }}
+                    aria-label={`${p.name} strategy options`} aria-expanded={menuOpen === p.id}><Ellipsis size={18} /></button>
+                )}
+                {p.custom && menuOpen === p.id && (
+                  <div role="group" aria-label={`${p.name} strategy options`} className="ph-card-options" onClick={e => e.stopPropagation()}>
+                    <button type="button" onClick={e => startRename(e, p)}>Rename</button>
+                    <button type="button" onClick={e => { e.stopPropagation(); onDuplicatePreset?.(p); setMenuOpen(null); }}>Duplicate</button>
+                    <button type="button" className="danger" onClick={e => deleteCustom(e, p.id)}>Delete</button>
+                  </div>
+                )}
+                {p.custom && renaming === p.id && (
+                  <div className="ph-card-rename" onClick={e => e.stopPropagation()}>
+                    <input autoFocus aria-label={`Rename ${p.name}`} value={renameValue} onChange={e => setRenameValue(e.target.value)}
+                      onKeyDown={e => { if (e.key === "Enter") commitRename(p.id); if (e.key === "Escape") setRenaming(null); }} onBlur={() => commitRename(p.id)} />
+                  </div>
+                )}
+                {ad && <AdCard feed="strategies" slot={`strategies-after-${p.id}`} size="medium" />}
+              </div>
+            );
+          })}
+        </div>
       </div>
     );
   }
