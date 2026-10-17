@@ -455,7 +455,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 /* On a phone the header would hold a large share of the screen if pinned, so
    it scrolls away; its tabs move to a bar fixed at the bottom. */
 @media (max-width: 640px) {
-  .app-header { position: static !important; }
+  /* relative, not static: still scrolls away, but keeps its z-index — static
+     dropped it under Discover's hero, which covered the Account menu (BUG-005) */
+  .app-header { position: relative !important; }
   /* The search takes its own full-width row under the name and buttons */
   .app-header-row { flex-wrap: wrap; row-gap: 10px !important; }
   .app-header-search { order: 3; flex-basis: 100% !important; max-width: none !important; }
