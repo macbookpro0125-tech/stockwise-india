@@ -964,16 +964,21 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     // The first market, built in slices while the server already answers
     marketReady().catch(e => console.error(`[market] first build failed: ${e.message}`));
   });
-  // DATA_JOBS=off for a server that should only serve what's on disk — and
-  // that mustn't answer the Telegram bot either (one poller per bot)
-  if (process.env.DATA_JOBS !== "off") {
-    startDataJobs();
+  // DATA_JOBS, three ways:
+  //   on (unset)  fetch from NSE here, and run the account jobs (a laptop)
+  //   pull        the evening's data from GitHub (the refresh workflow that
+  //               already fetches it), and the account jobs here — alerts,
+  //               Telegram, backups: the paid copy (render-paid.yaml)
+  //   off         the evening's data only, no account jobs, and no Telegram
+  //               polling (one poller per bot): the free copy
+  const mode = process.env.DATA_JOBS ?? "on";
+  if (mode !== "off" && mode !== "pull") startDataJobs();
+  // on Render only (data-pull.js pullBaseUrl); the market is rebuilt in
+  // slices at once, so the next visitor doesn't wait for it
+  if (mode === "off" || mode === "pull") startDataPull({ onInstalled: () => marketReady().catch(e => console.error(`[market] rebuild failed: ${e.message}`)) });
+  if (mode !== "off") {
     startTelegramPolling();
     startAlertChecks();
     startBackups();
-  } else {
-    // The free copy: pull each evening's data instead (only on Render); the
-    // screen is worked out at once so the next visitor doesn't wait for it
-    startDataPull({ onInstalled: () => marketReady().catch(e => console.error(`[market] rebuild failed: ${e.message}`)) });
   }
 }

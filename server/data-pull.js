@@ -65,7 +65,9 @@ function installedPackState() {
 export function pullBaseUrl(env = process.env) {
   if (env.DATA_PULL === "off") return null;
   if (env.DATA_PULL_URL) return env.DATA_PULL_URL.replace(/\/+$/, "");
-  if (!env.RENDER || env.DATA_JOBS !== "off") return null;
+  // The free copy (DATA_JOBS=off) and the paid one (pull: the evening's data
+  // from here, the account jobs on the server itself)
+  if (!env.RENDER || !["off", "pull"].includes(env.DATA_JOBS)) return null;
   const repo = env.RENDER_GIT_REPO_SLUG || "macbookpro0125-tech/stockwise-india";
   return `https://github.com/${repo}/releases/download/data-latest`;
 }
