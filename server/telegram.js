@@ -84,7 +84,7 @@ export function handleTelegramUpdate(update) {
   if (start?.[1]) {
     const row = db.prepare("SELECT user_id, expires_at FROM telegram_links WHERE code = ?").get(start[1]);
     if (!row || row.expires_at < new Date().toISOString()) {
-      return [chatId, "That link has expired. In Stockwise India, open Alerts and press Connect Telegram for a new one."];
+      return [chatId, "That link has expired. In Jocular Insights, open Alerts and press Connect Telegram for a new one."];
     }
     const name = [msg.from?.first_name, msg.from?.last_name].filter(Boolean).join(" ") || msg.from?.username || null;
     db.exec("BEGIN");
@@ -98,12 +98,12 @@ export function handleTelegramUpdate(update) {
       db.exec("ROLLBACK");
       throw e;
     }
-    return [chatId, "Connected. Your Stockwise India price alerts will arrive in this chat.\n\nSend /stop to disconnect."];
+    return [chatId, "Connected. Your Jocular Insights price alerts will arrive in this chat.\n\nSend /stop to disconnect."];
   }
   if (/^\/stop\b/.test(text)) {
-    return [chatId, unlinkChat(chatId) ? "Disconnected. No more alerts will be sent here." : "This chat isn't connected to a Stockwise India account."];
+    return [chatId, unlinkChat(chatId) ? "Disconnected. No more alerts will be sent here." : "This chat isn't connected to a Jocular Insights account."];
   }
-  return [chatId, "This bot sends Stockwise India price alerts. To connect it, open the app, go to Alerts and press Connect Telegram."];
+  return [chatId, "This bot sends Jocular Insights price alerts. To connect it, open the app, go to Alerts and press Connect Telegram."];
 }
 
 let polling = false;

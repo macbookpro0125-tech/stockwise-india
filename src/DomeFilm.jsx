@@ -241,7 +241,7 @@ export default function DomeFilm({ onJoin, onLogin }) {
 
   return (
     <>
-      <section ref={trackRef} className="df-track" aria-label="Stockwise India">
+      <section ref={trackRef} className="df-track" aria-label="Jocular Insights">
         <div ref={stageRef} className="df-stage">
           <canvas ref={canvasRef} className="df-film" role="img" aria-label="A visitor in a planetarium looks up at a dome of stars joined by gold constellation lines. The camera pushes toward the brightest star until its light fills the screen." />
 
@@ -278,7 +278,7 @@ export default function DomeFilm({ onJoin, onLogin }) {
           </div></div>
 
           <div ref={cap(5)} className="df-cap df-lt df-center" data-in="0.86" data-hold="0.95" data-out="1.2"><div className="df-ci">
-            <p className="df-eb">Stockwise India</p>
+            <p className="df-eb">Jocular Insights</p>
             <h2 className="df-h1">See the market <i>clearly.</i></h2>
             <p>Quality NSE companies and their fair value. Free during early access.</p>
             <div className="df-actions">

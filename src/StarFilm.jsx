@@ -263,7 +263,7 @@ export default function StarFilm({ onJoin, onLogin, stats }) {
   if (!gl2) return <DomeFilm onJoin={onJoin} onLogin={onLogin} />;
 
   return (
-    <section ref={trackRef} className="sf-track" aria-label="Stockwise India">
+    <section ref={trackRef} className="sf-track" aria-label="Jocular Insights">
       <div ref={stageRef} className="sf-stage">
         <canvas ref={canvasRef} className="sf-film" role="img" aria-label="A night sky of stars, one for each company. Teal constellation lines join groups of them around one star; the camera flies toward it until it opens onto the page." />
 
@@ -274,7 +274,7 @@ export default function StarFilm({ onJoin, onLogin, stats }) {
 
         <div ref={cap(0)} className="sf-cap sf-sky sf-open" data-in="-0.05" data-hold="0.02" data-out="0.10"><div className="sf-ci">
           <p className="sf-eb">NSE · Fundamental research</p>
-          <h1>Stockwise <span>India</span></h1>
+          <h1>Jocular <span>Insights</span></h1>
           <p>Find great businesses. Invest with clarity.</p>
           <button type="button" className="sf-btn" onClick={onJoin}>Create free account<Arrow /></button>
         </div></div>
@@ -337,7 +337,7 @@ export default function StarFilm({ onJoin, onLogin, stats }) {
         </div></div>
 
         <div ref={cap(6)} className="sf-cap sf-page sf-center" data-in="0.91" data-hold="0.97" data-out="1.2"><div className="sf-ci">
-          <p className="sf-eb">Stockwise India</p>
+          <p className="sf-eb">Jocular Insights</p>
           <h2 className="sf-h1">See the market <span>clearly.</span></h2>
           <p>Quality NSE companies and their fair value. Free during early access.</p>
           <div className="sf-actions">

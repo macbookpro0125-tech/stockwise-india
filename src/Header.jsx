@@ -69,13 +69,13 @@ export default function Header({ tab, onTab, account, onLogout, onDeleted, onSea
             (presets, filters, stocks) are gone. On a phone the search takes
             its own row under the name (index.css .app-header-row). */}
         <div className="app-header-row" style={{ display: "flex", alignItems: "center", gap: 20, padding: "10px 0" }}>
-          <a href="/" aria-label="Stockwise India home" onClick={e => { e.preventDefault(); onTab("discover"); }} style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0, cursor: "pointer", color: "inherit", textDecoration: "none" }}>
-            <img src="/stockwise-india-icon.svg" alt="" style={{ width: 32, height: 32, borderRadius: 9, flexShrink: 0 }} />
+          <a href="/" aria-label="Jocular Insights home" onClick={e => { e.preventDefault(); onTab("discover"); }} style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0, cursor: "pointer", color: "inherit", textDecoration: "none" }}>
+            <img src="/jocular-insights-mark.svg" alt="" style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0 }} />
             <div style={{ minWidth: 0 }}>
               <h1 style={{ fontSize: 17, fontWeight: 700, margin: 0, color: "var(--t1)", letterSpacing: "-0.03em", lineHeight: 1.2, whiteSpace: "nowrap" }}>
-                Stock<span style={{ color: "var(--brand-wise)" }}>wise</span> <span style={{ color: "var(--t3)", fontWeight: 500 }}>India</span>
+                Jocular <span style={{ color: "var(--brand-wise)", fontWeight: 600 }}>Insights</span>
               </h1>
-              <p className="hide-phone" style={{ fontSize: 11, color: "var(--t3)", margin: 0, letterSpacing: "-0.01em", whiteSpace: "nowrap" }}>Indian market · NSE filings</p>
+              <p className="hide-phone" style={{ fontSize: 11, color: "var(--t3)", margin: 0, letterSpacing: "-0.01em", whiteSpace: "nowrap" }}>NSE stock research</p>
             </div>
           </a>
 

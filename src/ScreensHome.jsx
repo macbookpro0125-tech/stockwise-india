@@ -56,7 +56,7 @@ export default function ScreensHome({ meta, total, strategies, pricesDate, onSta
   const scrollToStrategies = () => document.getElementById("popular-strategies")?.scrollIntoView({ behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
 
   const title = <>
-    <Reveal as="p" className="ap-eyebrow">Stockwise Screener</Reveal>
+    <Reveal as="p" className="ap-eyebrow">NSE stock research</Reveal>
     <Reveal as="h2" delay={1} id="ap-title" className="ap-title">Find the few worth owning.</Reveal>
   </>;
   const rest = <>

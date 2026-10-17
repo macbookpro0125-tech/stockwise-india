@@ -16,7 +16,7 @@ export default function ChartPage({ symbol }) {
     return { name: q.get("n") || "", levels: LEVEL_KEYS.some(k => lv[k]) ? lv : null };
   }, []);
 
-  useEffect(() => { document.title = `${symbol} chart · Stockwise India`; }, [symbol]);
+  useEffect(() => { document.title = `${symbol} chart · Jocular Insights`; }, [symbol]);
 
   // Opened in a new tab, closing it returns to the stock page left open in the
   // tab before; opened any other way (a shared link), there's no tab to return

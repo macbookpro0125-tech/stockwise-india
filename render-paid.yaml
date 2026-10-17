@@ -39,7 +39,7 @@ services:
       # address from it (server/rate-limit.js)
       - key: TRUST_PROXY
         value: "1"
-      # The site's own address, e.g. https://stockwise.in — reset emails link to it
+      # The site's own address, e.g. https://jocularinsights.com — reset emails link to it
       - key: APP_URL
         sync: false
       # Telegram alerts: the key from @BotFather (server/telegram.js). One bot
@@ -48,7 +48,7 @@ services:
       - key: TELEGRAM_BOT_TOKEN
         sync: false
       # Password-reset email through Resend, from an address on the verified
-      # domain, e.g. "Stockwise India <no-reply@stockwise.in>" (server/email.js)
+      # domain, e.g. "Jocular Insights <no-reply@jocularinsights.com>" (server/email.js)
       - key: RESEND_API_KEY
         sync: false
       - key: EMAIL_FROM

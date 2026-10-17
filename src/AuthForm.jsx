@@ -175,7 +175,7 @@ export default function AuthForm({ onAuthed, mode, onModeChange, onProgress }) {
   );
   const switchMode = (
     <p className="auth-switch">
-      {signup ? "Already have an account?" : "New to Stockwise India?"}{" "}
+      {signup ? "Already have an account?" : "New to Jocular Insights?"}{" "}
       <button type="button" onClick={() => { onModeChange(signup ? "login" : "signup"); setError(""); }}>{signup ? "Sign in" : "Create an account"}</button>
     </p>
   );

@@ -4,7 +4,7 @@ import { createStarScene, panelCamera } from "./starScene.js";
 // The sign-in panel's sky (16 Oct 2026): the front page's live star sky
 // (starScene.js), and in it the app's own mark drawn as a constellation —
 // "the lines should mean something: show my app's name". Stars along the
-// logo's S are joined one by one, then the logo's rising chart line is drawn
+// logo's J are joined one by one, then the logo's rising chart line is drawn
 // across it to its end star; "Stockwise India" appears beneath. At rest it
 // draws, holds, fades and draws again; as the form fills in (progress 0–1)
 // it draws with it; on success the score ring closes around the end star.
@@ -12,8 +12,9 @@ import { createStarScene, panelCamera } from "./starScene.js";
 // Less motion: everything shown, still; the ring closed at once.
 // paused: hold the frame (the panel's pause button).
 
-// In the logo's own 512 × 512 coordinates (public/stockwise-india-icon.svg)
-const S = [[340, 168], [312, 146], [262, 138], [214, 150], [188, 184], [204, 222], [256, 246], [306, 268], [334, 306], [318, 348], [266, 372], [214, 366], [178, 340]];
+// In the logo's own 512 × 512 coordinates (public/jocular-insights-icon.svg):
+// the J's stars, top to tail (17 Oct 2026, the rename to Jocular Insights)
+const S = [[300, 108], [300, 194], [300, 280], [286, 346], [238, 386], [180, 382], [140, 340]];
 const CHART = [[72, 338], [169, 302], [256, 322], [348, 240], [450, 194]]; // the logo's line, to its dot
 const END = CHART[CHART.length - 1];
 // where along each line a star is reached (0–1 of its length), so it lights as the line arrives
@@ -60,7 +61,7 @@ function Mark({ markRef }) {
         {/* the score ring, closing when you're in */}
         {[0, 1, 2, 3, 4, 5].map(k => <path key={k} d={arc(k)} pathLength="1" className="am-arc" style={{ "--k": k }} />)}
         {/* the name, as in the logo */}
-        <text x="256" y="532" textAnchor="middle" className="am-word">Stock<tspan className="am-wise">wise</tspan><tspan className="am-india"> India</tspan></text>
+        <text x="256" y="532" textAnchor="middle" className="am-word">Jocular <tspan className="am-wise">Insights</tspan></text>
       </g>
     </svg>
   );
@@ -92,13 +93,13 @@ export default function SkyPanel({ progress = 0, success = false, paused = false
       const k = 1 - Math.exp(-dt * 5); // smoothing toward each target
       if (reduce) { s = c = word = all = 1; ring = ok ? 1 : 0; }
       else if (ok || pr > 0) {
-        // the form draws the mark: the S, then the chart line; success completes it
+        // the form draws the mark: the J, then the chart line; success completes it
         const ws = ok ? 1 : c01(pr / 0.55), wc = ok ? 1 : c01((pr - 0.55) / 0.45);
         s += (ws - s) * k; c += (wc - c) * k; all += (1 - all) * k;
         word = c01((c - 0.8) / 0.2);
         if (ok) ring = Math.min(1, ring + dt / 0.7);
       } else {
-        // at rest: the S, the line, the name; hold; fade; rest; again
+        // at rest: the J, the line, the name; hold; fade; rest; again
         const u = (t % LOOP) / LOOP;
         s = ease(c01(u / 0.36)); c = ease(c01((u - 0.36) / 0.18)); word = c01((u - 0.54) / 0.08);
         all = u < 0.84 ? 1 : 1 - c01((u - 0.84) / 0.1);
