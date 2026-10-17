@@ -4,6 +4,7 @@ import { ArrowDown, ArrowUp, Check, Info, Columns3, Search, ArrowUpRight, Search
 import { StarIcon, BellIcon, actionButtonStyle } from "./icons.jsx";
 import { useWatchlist, toggleWatch } from "./watchlist.js";
 import CreateAlertModal from "./CreateAlertModal.jsx";
+import { AdCard, useAdFeed } from "./ads.jsx";
 import { formatValue, valueColor, unitLabel } from "./screener/meta.js";
 import { QualityBadge, OverallScore, qualityTone, overallTone, researchTitle, researchMissingText } from "./ResearchBadges.jsx";
 import { MetricInfo, ColumnGuide } from "./screener/MetricInfo.jsx";
@@ -18,6 +19,7 @@ import ColumnMenu from "./screener/ColumnMenu.jsx";
 
 const PAGE_SIZE = 50;
 const PHONE_PAGE_SIZE = 20;
+const PHONE_AD_EVERY = 10; // the store app: an ad card after every tenth row (ads.jsx)
 const MAX_COMPARE = 5;
 const CompareView = lazyPage(() => import("./CompareView.jsx"));
 // Wide enough for the compare box and a four-digit rank; the name column is
@@ -242,7 +244,7 @@ function StarButton({ symbol, price, watched, size = 30 }) {
   );
 }
 
-export default function ResultsTable({ matches, loading, onAnalyze, totalMatches, universe = null, filters = null, onFiltersChange = null, phoneFilters = null, filtersButton = null, updating = false, queryUsed, unsupported = [], notes = [], executionTime, snapshot, netNet = false, noun = "stocks", emptyTitle = "No stocks matched your criteria", emptyHint = "Try relaxing some filters", columns = [], onEditColumns = null, filteredIds = [], meta = null }) {
+export default function ResultsTable({ matches, loading, onAnalyze, totalMatches, universe = null, filters = null, onFiltersChange = null, phoneFilters = null, filtersButton = null, updating = false, queryUsed, unsupported = [], notes = [], executionTime, snapshot, netNet = false, noun = "stocks", emptyTitle = "No stocks matched your criteria", emptyHint = "Try relaxing some filters", columns = [], onEditColumns = null, filteredIds = [], meta = null, theme = "dark" }) {
   const watchlist = useWatchlist();
   const [alertFor, setAlertFor] = useState(null);
   const [showNotes, setShowNotes] = useState(false);
@@ -290,6 +292,8 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
     window.addEventListener("resize", handler);
     return () => window.removeEventListener("resize", handler);
   }, []);
+  // In the store app, an ad card after every tenth row on a phone (ads.jsx)
+  useAdFeed(isMobile ? "stocks" : null, theme, "medium");
 
   const [search, setSearch] = useState("");
   // Screen your watchlist only: the strategy's filters, run on the companies
@@ -522,28 +526,34 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
              There even when the filters leave nothing, so they can be
              changed ── */}
       {isMobile && !loading && phoneFilters && (
-        <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 10 }}>
-          {phoneFilters}
-          {(matches?.length ?? 0) > 1 && (
-            <>
-              <select value={sortBy} onChange={e => pickSort(e.target.value)} aria-label="Sort by"
-                style={{ height: 36, padding: "0 6px", borderRadius: 8, border: "1px solid var(--bdr2)", background: "var(--s2)", color: "var(--t1)", fontSize: 16, fontFamily: "inherit", cursor: "pointer", minWidth: 0, maxWidth: 150, flex: "0 1 auto" }}>
-                {/* "Quality", not "Quality score": the box is narrow on a phone */}
-                {sortOptions.map(([id, label]) => <option key={id} value={id}>{label.replace(/ score$/, "")}</option>)}
-              </select>
-              <button type="button" onClick={() => setSortDir(d => (d === "asc" ? "desc" : "asc"))} aria-label={`${dirLabel} — tap to reverse`} title={dirLabel} className="btn-ghost"
-                style={{ height: 36, width: 36, padding: 0, justifyContent: "center", flexShrink: 0 }}>
-                {sortDir === "desc" ? <ArrowDown size={15} aria-hidden="true" /> : <ArrowUp size={15} aria-hidden="true" />}
+        <>
+          <div className="ph-toolbar">
+            {phoneFilters}
+            {(matches?.length ?? 0) > 0 && (
+              <button type="button" className="btn-ghost ph-toolbar-search" aria-label="Search and score filters" aria-expanded={searchOpen || !!q || scoreFiltered} data-on={searchOpen || q || scoreFiltered || undefined} onClick={() => setSearchOpen(o => !o)}>
+                <Search size={17} aria-hidden="true" />
               </button>
-            </>
+            )}
+          </div>
+          {/* The sort as chips (17 Oct 2026, after the Stock Screeners: India
+              app): tap one to sort by it, tap it again to reverse */}
+          {(matches?.length ?? 0) > 1 && (
+            <div className="ph-sort" role="group" aria-label="Sort by">
+              <span className="ph-sort-label" aria-hidden="true">Sort</span>
+              {sortOptions.map(([id, label]) => {
+                const on = sortBy === id;
+                const name = label.replace(/ score$/, "");
+                return (
+                  <button key={id} type="button" className="ph-chip" aria-pressed={on}
+                    aria-label={on ? `Sorted by ${name}, ${dirLabel.toLowerCase()} — tap to reverse` : `Sort by ${name}`}
+                    onClick={() => (on ? setSortDir(d => (d === "asc" ? "desc" : "asc")) : pickSort(id))}>
+                    {name}{on && (sortDir === "desc" ? <ArrowDown size={13} aria-hidden="true" /> : <ArrowUp size={13} aria-hidden="true" />)}
+                  </button>
+                );
+              })}
+            </div>
           )}
-          {(matches?.length ?? 0) > 0 && (
-            <button type="button" className="btn-ghost" aria-label="Search and score filters" aria-expanded={searchOpen || !!q || scoreFiltered} onClick={() => setSearchOpen(o => !o)}
-              style={{ height: 36, width: 40, padding: 0, justifyContent: "center", marginLeft: "auto", flexShrink: 0, ...(searchOpen || q || scoreFiltered ? { borderColor: "var(--accent)", color: "var(--accent)" } : {}) }}>
-              <Search size={16} aria-hidden="true" />
-            </button>
-          )}
-        </div>
+        </>
       )}
 
       {/* ── Name box, and Watchlist only. Score minimums are set from each
@@ -644,10 +654,13 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
         </div>
       )}
 
-      {/* ── Phone rows: a compact list, ~6 companies a screen; the whole row
-             opens the company; controls save or select the stock ── */}
+      {/* ── Phone rows (17 Oct 2026, cleaner, after the Stock Screeners:
+             India app): the name and price, the symbol and sector with the
+             day's move, then the scores and the screen's own measures in
+             one quiet line; the star saves it. The whole row opens the
+             company. Compare is on a computer. ── */}
       {!loading && sorted.length > 0 && isMobile && (
-        <div style={{ borderRadius: 12, border: "1px solid var(--bdr2)", background: "var(--s2)", overflow: "hidden" }}>
+        <div className="ph-rows">
           {visible.map((stock, i) => {
             const day = stock.ret1d;
             const quality = stock.research?.quality, overall = stock.research?.overall;
@@ -655,50 +668,42 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
             // Coloured as the pills and stance words on a computer
             const cells = [
               ["Quality", <span key="q" title={researchTitle(stock.research)} style={{ color: qualityTone(quality).color }}>{quality == null ? "—" : Math.round(quality)}</span>],
-              ["Research", <span key="r" title={researchTitle(stock.research)} aria-label={missingResearch ?? `Research score ${Math.round(overall)} — ${stock.research?.stance ?? "rated"}`} style={{ color: overallTone(overall).color }}>{overall == null ? (stock.research?.status === "review-required" ? "Review required" : stock.research?.status === "quality-only" ? "Quality only" : "Not rated") : Math.round(overall)}</span>],
-              // What's being filtered on first: a phone row has room for three,
-              // four when that many are filtered on (1M, 6M, 1Y and 5Y returns)
-              ...[...columns.filter(def => filteredIds.includes(def.id)), ...columns.filter(def => !filteredIds.includes(def.id))].slice(0, filteredIds.length >= 4 ? 4 : 3).map(def => {
+              ["Research", <span key="r" title={researchTitle(stock.research)} aria-label={missingResearch ?? `Research score ${Math.round(overall)} — ${stock.research?.stance ?? "rated"}`} style={{ color: overallTone(overall).color }}>{overall == null ? (stock.research?.status === "review-required" ? "review" : stock.research?.status === "quality-only" ? "quality only" : "not rated") : Math.round(overall)}</span>],
+              // What's being filtered on first: one of the screen's measures,
+              // so the line fits a phone (the company page has the rest)
+              ...[...columns.filter(def => filteredIds.includes(def.id)), ...columns.filter(def => !filteredIds.includes(def.id))].slice(0, 1).map(def => {
                 const v = colValue(stock, def.id);
                 // Coloured as the table's cells are (strong ROCE, Piotroski 7+ green)
                 return [def.short, <span key={def.id} style={{ color: valueColor(def, v) }}>{formatValue(def, v)}</span>];
               }),
             ];
+            const adAfter = (i + 1) % PHONE_AD_EVERY === 0 && i + 1 < visible.length;
             return (
-              <div key={stock.symbol} data-tour={i === 0 ? "row" : undefined}
-                onClick={() => onAnalyze(stock.symbol)}
-                className="phone-row"
-                style={{ padding: "12px 12px 12px 14px", borderTop: i ? "1px solid var(--bdr)" : "none", cursor: "pointer" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto auto", columnGap: 10, alignItems: "center" }}>
-                  <button type="button" className="stock-link" onClick={e => { e.stopPropagation(); onAnalyze(stock.symbol); }} style={{ display: "block", minWidth: 0, padding: 0, border: 0, background: "none", fontFamily: "inherit", textAlign: "left", fontSize: 14, fontWeight: 650, color: "var(--t1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", letterSpacing: "-0.01em" }}>{stock.name}</button>
-                  <div style={{ fontSize: 14, fontWeight: 650, color: "var(--t1)", textAlign: "right", ...MONO }}>{stock.cmp ? `₹${fmt(stock.cmp, stock.cmp < 100 ? 2 : 0)}` : "—"}</div>
-                  <div data-tour={i === 0 ? "row-actions" : undefined} style={{ gridRow: "span 2", display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }} onClick={e => e.stopPropagation()}>
-                    <label title={selected.has(stock.symbol) ? "Remove from comparison" : `Add to comparison${selected.size >= MAX_COMPARE ? ` (up to ${MAX_COMPARE})` : ""}`} style={{ width: 36, height: 30, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 8, border: "1px solid var(--bdr2)", background: selected.has(stock.symbol) ? "color-mix(in srgb, var(--accent) 10%, transparent)" : "var(--s1)", cursor: selected.size >= MAX_COMPARE && !selected.has(stock.symbol) ? "not-allowed" : "pointer" }}>
-                      <input type="checkbox" checked={selected.has(stock.symbol)} disabled={!selected.has(stock.symbol) && selected.size >= MAX_COMPARE} onChange={() => toggleSelect(stock)} aria-label={`Compare ${stock.name}`} style={{ margin: 0, width: 16, height: 16, accentColor: "var(--accent)" }} />
-                    </label>
-                    <StarButton symbol={stock.symbol} price={stock.cmp} watched={watchlist.has(stock.symbol)} size={36} />
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0, marginTop: 3 }}>
-                    <span style={{ fontSize: 10.5, background: "var(--s3)", color: "var(--t2)", padding: "1px 6px", borderRadius: 5, flexShrink: 0, ...MONO }}>{stock.symbol}</span>
-                    <NcavBadge stock={stock} />
-                    {stock.sector && <span style={{ fontSize: 11, color: "var(--t3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{stock.sector}</span>}
-                  </div>
-                  <div style={{ fontSize: 11.5, fontWeight: 600, textAlign: "right", marginTop: 3, color: day == null ? "var(--t3)" : day >= 0 ? "var(--green)" : "var(--red)", ...MONO }}>
-                    {day == null ? "" : `${day >= 0 ? "+" : ""}${day.toFixed(2)}%`}
-                  </div>
-                </div>
-                {/* Six to a row (four filtered measures) only fit "Research" with a little less room between */}
-                <div style={{ display: "grid", gridTemplateColumns: `repeat(${cells.length}, minmax(0, 1fr))`, gap: cells.length > 5 ? 4 : 6, marginTop: 10 }}>
-                  {cells.map(([label, value]) => (
-                    <div key={label} style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: cells.length > 5 ? 10 : 10.5, color: "var(--t3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: 2 }}>{label}</div>
-                      <div style={{ fontSize: label === "Research" && overall == null ? 10.5 : cells.length > 5 ? 12 : 12.5, fontWeight: 650, whiteSpace: label === "Research" && overall == null ? "normal" : "nowrap", lineHeight: 1.25, ...MONO }}>{value}</div>
+              <div key={stock.symbol} className="ph-row-group">
+                <div data-tour={i === 0 ? "row" : undefined} onClick={() => onAnalyze(stock.symbol)} className="ph-row phone-row">
+                  <div className="ph-row-main">
+                    <button type="button" className="ph-row-name stock-link" onClick={e => { e.stopPropagation(); onAnalyze(stock.symbol); }}>{stock.name}</button>
+                    <div className="ph-row-sub">
+                      <span className="ticker-chip">{stock.symbol}</span>
+                      <NcavBadge stock={stock} />
+                      {stock.sector && <span className="ph-row-sector">{stock.sector}</span>}
                     </div>
-                  ))}
+                    <div className="ph-row-metrics">
+                      {cells.map(([label, value]) => <span key={label}><span className="ph-row-k">{label}</span> {value}</span>)}
+                    </div>
+                    {missingResearch && <div role="note" className="ph-row-note">{missingResearch}</div>}
+                  </div>
+                  <div className="ph-row-side">
+                    <span className="ph-row-price">{stock.cmp ? `₹${fmt(stock.cmp, stock.cmp < 100 ? 2 : 0)}` : "—"}</span>
+                    <span className="ph-row-day" style={{ color: day == null ? "var(--t3)" : day >= 0 ? "var(--green)" : "var(--red)" }}>
+                      {day == null ? "" : `${day >= 0 ? "+" : ""}${day.toFixed(2)}%`}
+                    </span>
+                    <span data-tour={i === 0 ? "row-actions" : undefined} onClick={e => e.stopPropagation()}>
+                      <StarButton symbol={stock.symbol} price={stock.cmp} watched={watchlist.has(stock.symbol)} size={40} />
+                    </span>
+                  </div>
                 </div>
-                {missingResearch && (
-                  <div role="note" style={{ marginTop: 7, fontSize: 10.5, color: "var(--t3)", lineHeight: 1.4 }}>{missingResearch}</div>
-                )}
+                {adAfter && <AdCard feed="stocks" slot={`stocks-after-${i + 1}`} size="medium" className="ph-row-ad" />}
               </div>
             );
           })}

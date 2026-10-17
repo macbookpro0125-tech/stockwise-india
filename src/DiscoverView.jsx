@@ -2,7 +2,8 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { SlidersHorizontal, ChevronLeft, ChevronRight, Bookmark, Share } from "lucide-react";
 import { api } from "./api.js";
-import PresetCards from "./PresetCards.jsx";
+import PresetCards, { presetRules } from "./PresetCards.jsx";
+import { useAdPause } from "./ads.jsx";
 import { strategiesStore, browserLeftovers, moveLeftovers, discardLeftovers } from "./accountData.js";
 import ResultsTable from "./ResultsTable.jsx";
 import ScreensHome from "./ScreensHome.jsx";
@@ -73,7 +74,7 @@ function Modal({ onClose, width = 340, children }) {
   );
 }
 
-export default function DiscoverView({ onOpenStock }) {
+export default function DiscoverView({ onOpenStock, theme }) {
   const { meta, error: metaError, retry: retryMeta } = useScreenerMeta();
   // A shared link wins; else the last screen. null until the first screen
   // says what the old saved criteria became.
@@ -141,6 +142,9 @@ export default function DiscoverView({ onOpenStock }) {
   const [importText, setImportText] = useState("");
   const [importError, setImportError] = useState("");
   const [copyFeedback, setCopyFeedback] = useState("");
+  // The store app's ad cards are native views over the page: hidden while a
+  // sheet or dialog covers the list (ads.jsx)
+  useAdPause(sheetOpen || showSaveModal || showImportModal || !!picker);
 
   useEffect(() => { if (filters) write("screenerFilters", filters); }, [filters]);
   useEffect(() => { write("screenerColumns", columns); }, [columns]);
@@ -442,6 +446,7 @@ export default function DiscoverView({ onOpenStock }) {
             <div data-tour="strategies">
               <PresetCards
                 layout={isPhone ? "stack" : "grid"}
+                theme={theme}
                 meta={meta}
                 onSelect={preset => { applyPreset(preset); setFiltersOpen(false); showStocks(); }} // a ready-made screen opens to its results, full width
                 activePresetId={activePresetId}
@@ -483,10 +488,15 @@ export default function DiscoverView({ onOpenStock }) {
             <div className="screen-head-row">
               <div style={{ minWidth: 0, flex: 1 }}>
                 <h2 className="screen-title">{activePresetName ?? (activeCount > 0 ? "Your filters" : "Whole market")}</h2>
-                {!isPhone && (
-                  <p className="screen-about">
-                    {activePresetAbout ?? (activeCount > 0 ? `${activeCount} filter${activeCount === 1 ? "" : "s"} of your own.` : "Every NSE company. Add a filter to narrow it down.")}
-                  </p>
+                <p className="screen-about">
+                  {activePresetAbout ?? (activeCount > 0 ? `${activeCount} filter${activeCount === 1 ? "" : "s"} of your own.` : "Every NSE company. Add a filter to narrow it down.")}
+                </p>
+                {/* A phone: the screen's rules as chips under it (the
+                    computer's drawer lists them) */}
+                {isPhone && activeCount > 0 && (
+                  <div className="ph-rules ph-rules-on" aria-label="This screen's filters">
+                    {presetRules({ filters: filters.filter(isActiveFilter) }, meta).map(r => <span key={r} className="ph-rule">{r}</span>)}
+                  </div>
                 )}
               </div>
               {!isPhone && (
@@ -536,6 +546,7 @@ export default function DiscoverView({ onOpenStock }) {
             )}
 
             <ResultsTable
+              theme={theme}
               matches={results?.results}
               loading={!results && !error}
               onAnalyze={onOpenStock}

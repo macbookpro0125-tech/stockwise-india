@@ -1,0 +1,55 @@
+<!doctype html>
+<!-- The Android and iPhone apps show this, from inside the app, when the site
+     can't be reached (capacitor.config.ts server.errorPath). ?to= is the
+     site; the page tries it again every few seconds and on "Try again". -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Offline · Jocular Insights</title>
+  <style>
+    :root { color-scheme: dark; }
+    html, body { margin: 0; height: 100%; background: #080810; color: #F4F4FF; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+    main { min-height: 100%; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 32px 28px; text-align: center; }
+    svg { margin-bottom: 8px; }
+    h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.02em; }
+    p { margin: 0; max-width: 320px; font-size: 15px; line-height: 1.5; color: #A8A8C0; }
+    button { margin-top: 12px; min-height: 48px; padding: 0 28px; border: 0; border-radius: 999px; background: #00E0BE; color: #07070E; font: inherit; font-size: 16px; font-weight: 650; touch-action: manipulation; }
+    button:active { transform: scale(0.97); }
+    .status { font-size: 13px; color: #8282A0; min-height: 1.5em; }
+  </style>
+</head>
+<body>
+  <main>
+    <!-- The mark inline: inside the app only this page is served, not the files beside it -->
+    <svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true">
+      <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3E79FF"/><stop offset="1" stop-color="#1E4FD6"/></linearGradient></defs>
+      <rect width="64" height="64" rx="14" fill="url(#g)"/>
+      <polyline points="38,12 38,40 34,47 27,50 19,46" fill="none" stroke="#fff" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round"/>
+      <g fill="#fff"><circle cx="38" cy="12" r="4.6"/><circle cx="38" cy="30" r="3.8"/><circle cx="19" cy="46" r="4.6"/><circle cx="54" cy="22" r="4"/></g>
+    </svg>
+    <h1>You're offline</h1>
+    <p>Jocular Insights needs the internet for prices and filings. It will reconnect by itself.</p>
+    <button type="button" id="retry">Try again</button>
+    <span class="status" id="status" role="status"></span>
+  </main>
+  <script>
+    // Only ever back to a web address (the app sets it)
+    var to = new URLSearchParams(location.search).get("to") || "";
+    if (!/^https?:\/\/[^\s]+$/.test(to)) to = "";
+    var status = document.getElementById("status");
+    function go() { if (to) location.replace(to); }
+    // Reachable? An opaque answer is enough: any reply means the network is back
+    function check() {
+      if (!to || !navigator.onLine) return;
+      fetch(to.replace(/\/$/, "") + "/api/health", { mode: "no-cors", cache: "no-store" }).then(go, function () {});
+    }
+    document.getElementById("retry").addEventListener("click", function () {
+      status.textContent = "Connecting…";
+      go();
+    });
+    window.addEventListener("online", check);
+    setInterval(check, 5000);
+  </script>
+</body>
+</html>

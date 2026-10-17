@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Compass, Star, BriefcaseBusiness, ChartLine, Bell, Sun, Moon, Zap } from "lucide-react";
+import { Compass, Star, BriefcaseBusiness, ChartLine, Bell, Sun, Moon, Zap, Settings } from "lucide-react";
 import { useWatchlist } from "./watchlist.js";
 import { portfolioStore, alertsStore } from "./stores.js";
 import StockSearchBar from "./StockSearchBar.jsx";
@@ -7,8 +7,10 @@ import AccountMenu from "./AccountMenu.jsx";
 
 // The original's sticky header (stock-screener src/Discovery.jsx): logo,
 // search, theme switch and account in one row, then the tabs with counts. On
-// phones the tabs move to a bottom bar (BottomTabBar) and the header scrolls
-// away.
+// phones the tabs move to a floating bar at the bottom (BottomTabBar), the
+// header is the logo and the search and scrolls away, and the theme and
+// account move to the Settings tab (asked for 17 Oct 2026: the app on a phone
+// as clean as a native one).
 
 export const TABS = [
   { id: "discover", label: "Discover", short: "Discover", Icon: Compass },
@@ -19,11 +21,16 @@ export const TABS = [
   { id: "portfolio", label: "Portfolio", short: "Portfolio", Icon: BriefcaseBusiness },
   { id: "performance", label: "Performance", short: "Perf", Icon: ChartLine },
   { id: "alerts", label: "Alerts", short: "Alerts", Icon: Bell },
+  // A phone's bar: Settings holds the account, the theme, Performance and
+  // Momentum, so the bar keeps five tabs
+  { id: "settings", label: "Settings", short: "Settings", Icon: Settings, phone: true },
 ];
+const PHONE_TABS = ["discover", "watchlist", "portfolio", "alerts", "settings"];
 
 const HEADER_BG = { light: "rgba(255,255,255,0.82)", dark: "rgba(7,7,14,0.85)" };
 
-export const tabsFor = account => TABS.filter(t => !t.gated || account?.features?.[t.gated]);
+export const tabsFor = account => TABS.filter(t => !t.phone && (!t.gated || account?.features?.[t.gated]));
+const phoneTabs = PHONE_TABS.map(id => TABS.find(t => t.id === id));
 
 // Counts and badges for the tabs, shared by the header and the bottom bar
 export function useTabBadges() {
@@ -71,7 +78,7 @@ export default function Header({ tab, onTab, account, onLogout, onDeleted, onSea
         <div className="app-header-row" style={{ display: "flex", alignItems: "center", gap: 20, padding: "10px 0" }}>
           <a href="/" aria-label="Jocular Insights home" onClick={e => { e.preventDefault(); onTab("discover"); }} style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0, cursor: "pointer", color: "inherit", textDecoration: "none" }}>
             <img src="/jocular-insights-mark.svg" alt="" style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0 }} />
-            <div style={{ minWidth: 0 }}>
+            <div className="hide-phone" style={{ minWidth: 0 }}>
               <h1 style={{ fontSize: 17, fontWeight: 700, margin: 0, color: "var(--t1)", letterSpacing: "-0.03em", lineHeight: 1.2, whiteSpace: "nowrap" }}>
                 Jocular <span style={{ color: "var(--brand-wise)", fontWeight: 600 }}>Insights</span>
               </h1>
@@ -83,7 +90,7 @@ export default function Header({ tab, onTab, account, onLogout, onDeleted, onSea
             <StockSearchBar onAnalyze={onSearch} placeholder="Search stocks" />
           </div>
 
-          <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0, marginLeft: "auto" }}>
+          <div className="hide-phone" style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0, marginLeft: "auto" }}>
             <button onClick={onToggleTheme} title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"} aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
               style={{ width: 32, height: 32, borderRadius: 8, background: "var(--s2)", border: "1px solid var(--bdr)", color: "var(--t2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: 0 }}>
               {theme === "dark" ? <Sun size={16} strokeWidth={2} /> : <Moon size={16} strokeWidth={2} />}
@@ -120,25 +127,26 @@ export default function Header({ tab, onTab, account, onLogout, onDeleted, onSea
   );
 }
 
-// The original's phone tab bar: the same five tabs, fixed to the bottom
-export function BottomTabBar({ tab, onTab, theme, account }) {
+// A phone's tab bar: five tabs on a floating, frosted bar, the current one
+// on a tinted pill (asked for 17 Oct 2026, after the Stock Screeners: India
+// app). No counts; a dot when an alert's price has been reached.
+export function BottomTabBar({ tab, onTab }) {
   const badges = useTabBadges();
+  const reached = badges.alerts.badgeColor === "var(--yellow)";
   return (
-    <div className="bottom-tab-bar" data-tour="tabs" style={{ background: HEADER_BG[theme] ?? HEADER_BG.dark }}>
-      {tabsFor(account).map(t => {
-        const b = badges[t.id] ?? {};
+    <nav className="bottom-tab-bar" data-tour="tabs" aria-label="Pages">
+      {phoneTabs.map(t => {
+        const on = tab === t.id || (t.id === "settings" && ["performance", "momentum"].includes(tab));
         return (
-          <button key={t.id} onClick={() => onTab(t.id)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "6px 0", background: "none", border: "none", cursor: "pointer", color: tab === t.id ? "var(--accent)" : "var(--t3)", transition: "color 150ms", position: "relative" }}>
-            <t.Icon size={20} strokeWidth={tab === t.id ? 2.2 : 1.8} />
-            <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "-0.01em" }}>{t.short}</span>
-            {(b.count > 0 || b.badge != null) && (
-              <span style={{ position: "absolute", top: 2, right: "calc(50% - 18px)", fontSize: 8, fontWeight: 700, padding: "0 4px", borderRadius: 999, lineHeight: "14px", background: b.badgeColor || "var(--accent)", color: "var(--on-accent)", minWidth: 14, textAlign: "center" }}>
-                {b.count > 0 ? b.count : b.badge}
-              </span>
-            )}
+          <button key={t.id} type="button" className="btb-tab" aria-current={on ? "page" : undefined} onClick={() => onTab(t.id)}>
+            <span className="btb-icon">
+              <t.Icon size={22} strokeWidth={on ? 2.3 : 1.9} aria-hidden="true" />
+              {t.id === "alerts" && reached && <span className="btb-dot" aria-label="An alert's price was reached" />}
+            </span>
+            <span className="btb-label">{t.short}</span>
           </button>
         );
       })}
-    </div>
+    </nav>
   );
 }

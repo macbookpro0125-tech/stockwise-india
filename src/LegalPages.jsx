@@ -61,7 +61,7 @@ export function PrivacyPage({ signedIn }) {
 
       <H>What we don't do</H>
       <UL>
-        <LI>No advertising or tracking cookies, no analytics, and no third-party scripts on our pages — apart from the sign-in services below, and only when you choose them.</LI>
+        <LI>On the website (and the web app installed from it): no ads, no advertising or tracking cookies, no analytics, and no third-party scripts on our pages — apart from the sign-in services below, and only when you choose them. The Android and iPhone apps show ads; see "Ads in the Android and iPhone apps" below.</LI>
         <LI>We don't sell, rent or share your personal data, and we use what you save only to show it back to you — and, if you connect Telegram, to send you your own alerts there.</LI>
       </UL>
 
@@ -71,6 +71,18 @@ export function PrivacyPage({ signedIn }) {
         address or phone number, and your name if you allow it. For a phone number, Google sends the SMS code and runs its
         reCAPTCHA check to stop automated abuse. Their privacy policies cover that step; we never see your Google or Apple
         password. Signing in with email and a password uses none of this.
+      </P>
+
+      <H>Ads in the Android and iPhone apps</H>
+      <P>
+        The apps from the Google Play Store and the Apple App Store show ads from Google AdMob: a few marked "Ad" among
+        the strategies and the stock lists, and a short video in Settings only if you choose "Watch an ad". Nothing in
+        the app is locked behind an ad. To show and measure ads and to prevent fraud, Google's ads software in the app
+        collects your device's advertising ID, your IP address and how you interact with the ads. Where the law asks for
+        it (for example in the EU or the UK), Google's consent form asks you first, and on an iPhone ads are personalised
+        only if you allow tracking. We don't give Google your email, your watchlist, your portfolio or anything else
+        you save. You can reset your advertising ID or turn off personalised ads in your phone's settings. How Google
+        uses this is described at policies.google.com/technologies/partner-sites.
       </P>
 
       <H>Emails</H>
