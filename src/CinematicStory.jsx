@@ -105,7 +105,7 @@ function ScreenerVisual({ stats }) {
 function ProductVisual({ final = false }) {
   return <div className={"story-visual story-product-shot" + (final ? " is-final" : "")}>
     <div className="story-shot-bar"><span><i/><i/><i/></span><b>STOCKWISE INDIA <small>· DISCOVER</small></b><span>PRODUCT SCREEN</span></div>
-    <img src="/screens/discover.jpg" alt="Jocular Insights Discover interface with filters, strategy results, company quality scores and financial metrics; prices as of 1 October 2026." />
+    <img src="/screens/discover.jpg" alt="Jocular Insights showing the High Quality Compounders strategy: 30 companies with their quality and research scores, P/E, return on capital and promoter holding; prices as of 16 October 2026." />
     {final && <div className="story-final-caption"><span>STOCKWISE INDIA</span><strong>Research, in context.</strong><small>Company results · filters · scores · financial metrics</small></div>}
   </div>;
 }
