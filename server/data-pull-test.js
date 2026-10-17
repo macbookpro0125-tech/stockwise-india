@@ -20,6 +20,8 @@ assert.equal(pullBaseUrl({ DATA_JOBS: "off" }), null, "off on a local DATA_JOBS=
 assert.equal(pullBaseUrl({ RENDER: "true" }), null, "off on a Render host that runs its own jobs");
 assert.equal(pullBaseUrl({ RENDER: "true", DATA_JOBS: "off", RENDER_GIT_REPO_SLUG: "me/app" }), "https://github.com/me/app/releases/download/data-latest");
 assert.equal(pullBaseUrl({ RENDER: "true", DATA_JOBS: "off", DATA_PULL: "off" }), null, "DATA_PULL=off wins");
+assert.equal(pullBaseUrl({ RENDER: "true", DATA_JOBS: "pull", RENDER_GIT_REPO_SLUG: "me/app" }), "https://github.com/me/app/releases/download/data-latest", "on for the paid copy (DATA_JOBS=pull)");
+assert.equal(pullBaseUrl({ DATA_JOBS: "pull" }), null, "off on this Mac even with DATA_JOBS=pull");
 assert.equal(pullBaseUrl({ DATA_PULL_URL: "http://x/y/" }), "http://x/y");
 
 // What's being served: an older snapshot and one company
