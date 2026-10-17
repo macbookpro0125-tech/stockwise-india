@@ -10,7 +10,7 @@ const MAX_BYTES = 15 * 1024 * 1024;
 const MAX_PAGES = 100;
 const MAX_TEXT = 90_000;
 const NSE_HOST = /(^|\.)nseindia\.com$/i;
-const UA = "Mozilla/5.0 (compatible; StockwiseIndia/1.0; educational)";
+const UA = "Mozilla/5.0 (compatible; JocularInsights/1.0; educational)";
 const STOP = new Set(["about", "after", "also", "because", "being", "could", "from", "have", "into", "more", "other", "should", "their", "there", "these", "those", "under", "were", "which", "while", "would", "your", "company", "notice", "filing", "board", "meeting"]);
 const summaryCache = new Map();
 

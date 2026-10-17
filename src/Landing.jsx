@@ -160,7 +160,7 @@ export default function Landing({ onAuthed, notice }) {
         <section style={{ ...card, padding: "20px 22px", borderColor: "var(--yellow-bdr)", background: "var(--yellow-dim)" }}>
           <h2 style={{ fontSize: 15, fontWeight: 650, color: "var(--t1)", margin: "0 0 6px" }}>An educational tool, not investment advice</h2>
           <p style={{ fontSize: 13.5, lineHeight: 1.65, color: "var(--t2)", margin: 0 }}>
-            Stockwise India isn't registered with SEBI as an investment adviser or research analyst. Scores, fair values and
+            Jocular Insights isn't registered with SEBI as an investment adviser or research analyst. Scores, fair values and
             price levels are worked out automatically from public data, can be wrong, and aren't recommendations to buy or
             sell. <SiteLink to="/disclaimer">Read the full disclaimer</SiteLink>.
           </p>

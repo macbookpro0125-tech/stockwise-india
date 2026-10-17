@@ -852,7 +852,7 @@ export function createApp() {
         const chat = telegramChat(userId);
         if (!chat) { sendJson(res, 400, { error: "Connect Telegram first." }); return; }
         try {
-          await sendTelegram(chat.chatId, "Test message from <b>Stockwise India</b>. Your price alerts will arrive in this chat.");
+          await sendTelegram(chat.chatId, "Test message from <b>Jocular Insights</b>. Your price alerts will arrive in this chat.");
         } catch (e) {
           // Telegram's own reason ("bot was blocked by the user") tells the
           // user what to do; a generic server error wouldn't

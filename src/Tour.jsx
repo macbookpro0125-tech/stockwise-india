@@ -7,7 +7,7 @@ import { createPortal } from "react-dom";
 // without a target is a card in the middle of the screen.
 
 export const APP_TOUR = [
-  { title: "Welcome to Stockwise India", body: "A one-minute look at what's where. Use Next to go through it, or skip — you can take it again any time from the Account menu." },
+  { title: "Welcome to Jocular Insights", body: "A one-minute look at what's where. Use Next to go through it, or skip — you can take it again any time from the Account menu." },
   { target: "search", title: "Find any company", body: "Search every NSE-listed company by name or symbol. On a keyboard, press / to jump here." },
   { target: "strategies", title: "Start from a strategy", body: "Each card is a ready-made screen, such as High Quality Compounders. Pick one, then change any of its filters." },
   { target: "filters", title: "Filters", body: "Add or change filters — ROE, debt, promoter holding, valuation and many more. The results update as you go." },

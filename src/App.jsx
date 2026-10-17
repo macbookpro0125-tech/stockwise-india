@@ -100,7 +100,7 @@ export default function App() {
     }
   }, [pathStock]);
   useEffect(() => {
-    document.title = open ? `${open.symbol} · Stockwise India` : TITLE;
+    document.title = open ? `${open.symbol} · Jocular Insights` : TITLE;
   }, [open?.symbol]);
 
   // The guided tour: Discover's the first time an account signs in here, the

@@ -221,7 +221,7 @@ export function classifyAnnouncement(title = "", body = "") {
 
 // ---- News (ported from stock-screener's server/news.js) -----------------------
 
-const NEWS_UA = "Mozilla/5.0 (compatible; StockwiseIndia/1.0; educational)";
+const NEWS_UA = "Mozilla/5.0 (compatible; JocularInsights/1.0; educational)";
 
 function decode(s) {
   return String(s ?? "")

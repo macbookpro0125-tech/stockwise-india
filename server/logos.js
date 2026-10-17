@@ -22,7 +22,7 @@ const PAGE_BYTES = 512 * 1024, IMAGE_BYTES = 200 * 1024, TIMEOUT_MS = 8000, MAX_
 // Says plainly what it is. A browser's name without a browser's other headers
 // is what bot filters (TCS', Infosys') turn away, and so is a crawler-style
 // "+https://…" contact link
-const UA = "StockwiseIndia-logo/1.0";
+const UA = "JocularInsights-logo/1.0";
 
 // ── Public addresses only ───────────────────────────────────────────────────
 export function isPublicAddress(ip) {

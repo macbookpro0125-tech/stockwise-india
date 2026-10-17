@@ -3,7 +3,7 @@
 // since every symbol in this project comes from NSE's own EQUITY_L.csv (a
 // clean alphabetic symbol always), not Screener.in's mix of NSE tickers and
 // raw BSE scrip codes that needed a fallback chain to resolve.
-const UA = "Mozilla/5.0 (compatible; StockwiseIndia/1.0; educational)";
+const UA = "Mozilla/5.0 (compatible; JocularInsights/1.0; educational)";
 const CACHE = new Map();
 const CACHE_MS = 15 * 60 * 1000;
 import { fetchJson as requestJson } from "./upstream.js";

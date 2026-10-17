@@ -63,7 +63,7 @@ export function SiteFooter() {
   return (
     <footer style={{ borderTop: "1px solid var(--bdr)", marginTop: 56, padding: "22px var(--page-x) 30px" }}>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "10px 24px", alignItems: "center", justifyContent: "space-between", fontSize: 12, color: "var(--t3)" }}>
-        <span>Stockwise India · An educational tool, not investment advice</span>
+        <span>Jocular Insights · An educational tool, not investment advice</span>
         <nav style={{ display: "flex", gap: 18 }}>
           <SiteLink to="/disclaimer">Disclaimer</SiteLink>
           <SiteLink to="/privacy">Privacy</SiteLink>
@@ -76,9 +76,10 @@ export function SiteFooter() {
 export function Logo({ size = 17 }) {
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-      <img src="/stockwise-india-icon.svg" alt="" style={{ width: size * 1.9, height: size * 1.9, borderRadius: 9 }} />
+      {/* the bold small mark up to 48 px, the J drawn as stars above that */}
+      <img src={size * 1.9 > 48 ? "/jocular-insights-icon.svg" : "/jocular-insights-mark.svg"} alt="" style={{ width: size * 1.9, height: size * 1.9, borderRadius: size * 1.9 > 48 ? 12 : 8 }} />
       <span style={{ fontSize: size, fontWeight: 700, color: "var(--t1)", letterSpacing: "-0.03em" }}>
-        Stock<span style={{ color: "var(--brand-wise)" }}>wise</span> <span style={{ color: "var(--t3)", fontWeight: 500 }}>India</span>
+        Jocular <span style={{ color: "var(--brand-wise)", fontWeight: 600 }}>Insights</span>
       </span>
     </span>
   );

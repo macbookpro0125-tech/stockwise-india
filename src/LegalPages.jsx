@@ -39,7 +39,7 @@ export function PrivacyPage({ signedIn }) {
   return (
     <PublicPage title="Privacy policy" signedIn={signedIn}>
       <P>
-        This page explains what Stockwise India keeps about you, why, and how to delete it. In short: we keep only what
+        This page explains what Jocular Insights keeps about you, why, and how to delete it. In short: we keep only what
         you need to use the app, we don't track you, and we don't sell or share your data.
       </P>
 
@@ -116,7 +116,7 @@ export function PrivacyPage({ signedIn }) {
       </P>
 
       <H>Children</H>
-      <P>Stockwise India is meant for adults. Please don't create an account if you're under 18.</P>
+      <P>Jocular Insights is meant for adults. Please don't create an account if you're under 18.</P>
 
       <H>Changes to this policy</H>
       <P>
@@ -131,7 +131,7 @@ export function DisclaimerPage({ signedIn }) {
   return (
     <PublicPage title="Disclaimer" signedIn={signedIn}>
       <P>
-        <B>Stockwise India is an educational research tool.</B> Nothing on this site is investment advice, a research
+        <B>Jocular Insights is an educational research tool.</B> Nothing on this site is investment advice, a research
         report, or a recommendation to buy, sell or hold any security.
       </P>
       <P>
@@ -169,7 +169,7 @@ export function DisclaimerPage({ signedIn }) {
 
       <H>Not affiliated</H>
       <P>
-        Stockwise India is independent and is not affiliated with NSE, BSE, SEBI, Yahoo, Google or any company shown.
+        Jocular Insights is independent and is not affiliated with NSE, BSE, SEBI, Yahoo, Google or any company shown.
         Company names and trademarks belong to their owners.
       </P>
       <P>

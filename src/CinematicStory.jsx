@@ -6,7 +6,7 @@ import {
 
 const SCENES = [
   {
-    eyebrow: "Stockwise India · NSE research",
+    eyebrow: "Jocular Insights · NSE stock research",
     title: <>See beyond<br />the stock price.</>,
     body: "Discover stronger businesses, understand their financial health, and decide what deserves a closer look.",
   },
@@ -31,7 +31,7 @@ const SCENES = [
     body: "Save a company, compare it with others, set an alert, and revisit it against your own price levels.",
   },
   {
-    eyebrow: "Stockwise India",
+    eyebrow: "Jocular Insights",
     title: <>Make each decision<br />more informed.</>,
     body: "Research the fundamentals. Understand the risks. Find the businesses worth watching.",
   },
@@ -105,13 +105,13 @@ function ScreenerVisual({ stats }) {
 function ProductVisual({ final = false }) {
   return <div className={"story-visual story-product-shot" + (final ? " is-final" : "")}>
     <div className="story-shot-bar"><span><i/><i/><i/></span><b>STOCKWISE INDIA <small>· DISCOVER</small></b><span>PRODUCT SCREEN</span></div>
-    <img src="/screens/discover.jpg" alt="Stockwise Discover interface with filters, strategy results, company quality scores and financial metrics; prices as of 1 October 2026." />
+    <img src="/screens/discover.jpg" alt="Jocular Insights Discover interface with filters, strategy results, company quality scores and financial metrics; prices as of 1 October 2026." />
     {final && <div className="story-final-caption"><span>STOCKWISE INDIA</span><strong>Research, in context.</strong><small>Company results · filters · scores · financial metrics</small></div>}
   </div>;
 }
 
 function MethodVisual() {
-  return <div className="story-visual story-method" aria-label="The six research lenses used in Stockwise quality scoring">
+  return <div className="story-visual story-method" aria-label="The six research lenses used in Jocular Insights quality scoring">
     <div className="story-method-head"><span><ShieldCheck size={15}/> THE QUALITY SCORE</span><small>Six lenses · checks explained</small></div>
     <div className="story-method-grid">{LENSES.map(([title, copy], i) => <div className="story-lens" key={title}><span className="story-lens-index">0{i + 1}</span><div><b>{title}</b><small>{copy}</small></div><i className="story-lens-trace"><span/></i></div>)}</div>
     <div className="story-method-note"><span>From NSE filings</span><i/><span>Missing data stays visible</span><i/><span>Not a buy or sell signal</span></div>
@@ -125,7 +125,7 @@ function WorkflowVisual() {
     [Bell, "Price alerts", "At the latest daily close"],
     [BriefcaseBusiness, "Portfolio", "Track your own holdings"],
   ];
-  return <div className="story-visual story-workflow" aria-label="Stockwise watchlist, comparison, price-alert, and portfolio features">
+  return <div className="story-visual story-workflow" aria-label="Jocular Insights watchlist, comparison, price-alert, and portfolio features">
     <div className="story-workflow-top"><span>YOUR RESEARCH, IN ONE PLACE</span><small>Find · understand · follow</small></div>
     <div className="story-workflow-rail"><i/><i/><i/></div>
     <div className="story-workflow-grid">{steps.map(([Icon, title, copy], i) => <div className="story-work-item" key={title}><span className="story-work-index">0{i + 1}</span><span className="story-work-icon"><Icon size={19}/></span><b>{title}</b><small>{copy}</small></div>)}</div>
@@ -208,11 +208,11 @@ export default function CinematicStory({ onJoin, onLogin, onDiscover, stats }) {
     return () => { disposed = true; media?.revert(); };
   }, []);
 
-  return <section className="cinematic-track" ref={root} aria-label="The Stockwise India research story">
+  return <section className="cinematic-track" ref={root} aria-label="The Jocular Insights research story">
     <div className="cinematic-sticky">
       <div className="story-atmosphere" aria-hidden="true"><i/><i/><i/></div>
       <header className="story-topline">
-        <a className="story-brand" href="#top" aria-label="Stockwise India, home"><img src="/stockwise-india-icon.svg" alt=""/><span>Stockwise <i>India</i></span></a>
+        <a className="story-brand" href="#top" aria-label="Jocular Insights, home"><img src="/jocular-insights-mark.svg" alt=""/><span>Jocular <i>Insights</i></span></a>
         <nav className="story-nav" aria-label="Landing page">
           <a href="#product-preview">The platform</a><a href="#research-features">Research</a>
           <button type="button" onClick={onLogin}>Sign in <ArrowRight size={14}/></button>
@@ -223,7 +223,7 @@ export default function CinematicStory({ onJoin, onLogin, onDiscover, stats }) {
           <span className="story-eyebrow"><i/>{scene.eyebrow}</span>
           <h2>{scene.title}</h2><p>{scene.body}</p>
           {(i === 0 || i === SCENES.length - 1) && <div className="story-actions">
-            <button className="story-cta" type="button" onClick={onJoin}>{i === 0 ? "Explore Stockwise" : "Start exploring Stockwise"}<ArrowRight size={16}/></button>
+            <button className="story-cta" type="button" onClick={onJoin}>{i === 0 ? "Explore Jocular Insights" : "Start exploring"}<ArrowRight size={16}/></button>
             <button className="story-link" type="button" onClick={() => onDiscover(i === 0 ? "research" : "screener")}>{i === 0 ? "Discover our research" : "View the stock screener"}<ArrowDown size={14}/></button>
           </div>}
           {i === 1 && <div className="story-truth"><ScanSearch size={14}/><span>{formatted(stats?.companies)} listed companies · {formatted(stats?.filters)} filters</span></div>}
