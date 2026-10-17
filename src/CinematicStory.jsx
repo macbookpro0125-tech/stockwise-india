@@ -98,7 +98,7 @@ function ScreenerVisual({ stats }) {
         <div className="story-match-output"><span className="story-match-bracket"/><div><b>From broad to focused</b><small>Each condition adds context</small></div><ArrowRight size={17}/></div>
       </div>
     </div>
-    <div className="story-screen-footer"><span>13 ready-made strategies</span><span>Build your own from the metrics</span></div>
+    <div className="story-screen-footer"><span>Ready-made strategies</span><span>Build your own from the metrics</span></div>
   </div>;
 }
 
