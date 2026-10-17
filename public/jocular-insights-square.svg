@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- Edge to edge for home screens that round the corners themselves (iPhone) -->
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3E79FF"/><stop offset="1" stop-color="#1E4FD6"/></linearGradient>
+    <radialGradient id="glow"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset=".4" stop-color="#BFE3FF" stop-opacity=".4"/><stop offset="1" stop-color="#BFE3FF" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#g)"/>
+  <g transform="translate(256 256) scale(0.92) translate(-256 -256)">
+  <polyline points="72,338 169,302 256,322 348,240 450,194" fill="none" stroke="#fff" stroke-opacity=".24" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/>
+  <polyline points="300,108 300,194 300,280 286,346 238,386 180,382 140,340" fill="none" stroke="#fff" stroke-width="17" stroke-linecap="round" stroke-linejoin="round"/>
+  <g fill="#fff">
+    <circle cx="300" cy="108" r="21"/><circle cx="300" cy="194" r="18"/><circle cx="300" cy="280" r="18"/><circle cx="286" cy="346" r="18"/>
+    <circle cx="238" cy="386" r="18"/><circle cx="180" cy="382" r="18"/><circle cx="140" cy="340" r="21"/>
+  </g>
+  <circle cx="450" cy="194" r="50" fill="url(#glow)"/>
+  <circle cx="450" cy="194" r="16" fill="#fff"/>
+  <path d="M450 162v64M418 194h64" stroke="#fff" stroke-opacity=".8" stroke-width="6" stroke-linecap="round"/>
+</g>
+</svg>

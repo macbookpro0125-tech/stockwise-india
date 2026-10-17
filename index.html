@@ -7,7 +7,15 @@
   <meta name="description" content="NSE stock research: screen every listed company with ready-made strategies, see a quality score out of 100 from each company's own filings, with every check explained, and a fair value from its own history. Free during early access." />
   <meta name="theme-color" content="#080810" />
   <link rel="icon" href="/jocular-insights-mark.svg" type="image/svg+xml" />
-  <link rel="apple-touch-icon" href="/jocular-insights-icon.svg" />
+  <!-- Installable as an app: the manifest for Android and desktop, and the
+       tags an iPhone reads when it's added to the home screen (a PNG: iOS
+       ignores an SVG icon) -->
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  <meta name="apple-mobile-web-app-title" content="Jocular" />
 </head>
 <body>
   <div id="root"></div>
