@@ -9,9 +9,9 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
-        // The AdMob app ID (src/ads.jsx): ADMOB_APP_ID from the AdMob account
-        // (-PADMOB_APP_ID=… or ~/.gradle/gradle.properties); Google's sample
-        // app ID until then, which only ever shows sample ads
+        // The AdMob app ID (src/ads.jsx): ADMOB_APP_ID in android/gradle.properties
+        // (the real one since 20 Oct 2026; -PADMOB_APP_ID=… overrides it);
+        // Google's sample app ID without it, which only ever shows sample ads
         manifestPlaceholders = [admobAppId: project.findProperty("ADMOB_APP_ID") ?: "ca-app-pub-3940256099942544~3347511713"]
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {

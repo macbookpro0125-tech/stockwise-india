@@ -80,6 +80,25 @@ the phone layout, the medium ad card among the strategies and the stock rows
 (Google's validator: "No implementation issues found"), "Watch an ad" played
 to the end and was rewarded, the offline page and Try again, the launcher icon.
 
+### AdMob (20 Oct 2026)
+
+Account: **jocularinsights@gmail.com**, payments account "AdSense (India)",
+publisher `pub-4001463380481442`. Payment profile: started; the "Payment
+setup incomplete" banner still showed on 20 Oct — the account and the app are
+reviewed only once it clears.
+
+| | ID |
+|---|---|
+| App "Jocular Insights – Stock Screener" (Android) | `ca-app-pub-4001463380481442~5693283483` — in `android/gradle.properties` |
+| Native advanced "List cards" | `ca-app-pub-4001463380481442/5035552798` |
+| Rewarded "Support the app" | `ca-app-pub-4001463380481442/4217295148` |
+
+None of these are secrets (they ship inside the app). On Render: `ADS=test`
+until AdMob approves the app (Google's sample ads, so nobody taps our own
+real ones), `ADMOB_ANDROID_NATIVE` and `ADMOB_ANDROID_REWARDED` set to the
+units above, `ADMOB_PUBLISHER_ID=pub-4001463380481442` (serves
+`/app-ads.txt`); then `ADS=live`.
+
 ### The owner's steps, in order
 
 1. **AdMob account** (admob.google.com, signed in as the company's Google
