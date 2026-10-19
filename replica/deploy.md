@@ -10,6 +10,20 @@ hold will lift automatically by 18 Oct 2026 at 22:40. The domain is not yet
 connected to the app host, and the paid web host and domain email are still
 pending.
 
+## Web host and domain (19 Oct 2026)
+
+| What | State |
+|---|---|
+| Render service `stockwise-india` | Starter plan (0.5 CPU, 512 MB), Singapore; `render.yaml` describes it |
+| Persistent disk | 1 GB at `/var/data` (`DATA_DIR`): the accounts database and market data; Render snapshots it daily |
+| Data | `DATA_JOBS=pull`: the evening refresh's data-latest release; alerts and backups run on the server |
+| Domain | https://jocularinsights.in (A record to Render), `www` redirects to it; TLS by Render |
+| `APP_URL` | https://jocularinsights.in (set 19 Oct) |
+| Blueprint Auto Sync | **Off** (19 Oct): `render.yaml` said free plan and no disk while the dashboard ran paid with a disk; a sync could have undone that |
+| Google sign-in on the domain | **Not yet**: Firebase's authorized domains lack jocularinsights.in, and the Firebase console needs 2-step verification on the owner's Google account before anyone can add it |
+| Password-reset email | Not set up: a Resend account, its DNS records at Domain India, then `RESEND_API_KEY` and `EMAIL_FROM` |
+| Telegram alerts | Not set up on the server: `TELEGRAM_BOT_TOKEN` |
+
 ## Mobile
 
 | Stage | What people get | Cost | Status |

@@ -1,36 +1,90 @@
-# Render Blueprint for a FREE test copy — no card needed. The real launch uses
-# render-paid.yaml (Starter instance + disk). This one is render.yaml because
-# Render's Blueprint form reads render.yaml first, and a paid one there makes
-# it demand a card before the path can be changed.
+# Render Blueprint — the live service as it runs at https://jocularinsights.in
+# (19 Oct 2026): one web service on the Starter plan with a persistent disk.
+# Until then this file described a free test copy; the service was upgraded
+# and given its disk, domain and settings in Render's dashboard, and this file
+# now matches it.
 #
-# A free instance has no disk and sleeps after 15 minutes without visitors,
-# losing everything it wrote. So this copy doesn't fetch from NSE
-# (DATA_JOBS=off: no data jobs, Telegram, alert checks or backups) — the build
-# unpacks seed/market-data.tar.gz instead: the market snapshot, every
-# company's figures and the strategy picks, packed on a machine that ran the
-# fetch (`npm run pack:seed`). After that the server keeps itself current:
-# every half hour it looks for the data GitHub Actions publishes each weekday
-# evening and pulls it in (the data-latest release;
-# .github/workflows/data-refresh.yml, server/data-pull.js).
-# Accounts, watchlists and alerts last only until the instance next sleeps.
+# Auto Sync is OFF for this Blueprint (Render → Blueprints → stockwise-india
+# → Settings), so editing this file changes nothing by itself. Before syncing
+# by hand or turning Auto Sync back on, check it against the dashboard — the
+# disk's name above all: Render matches disks by name, and the dashboard
+# doesn't show the live one's, so "stockwise-data" here is an assumption.
 #
-# In Render: New -> Blueprint -> Public Git Repository -> this repository's
-# URL (the Blueprint Path can stay empty).
+# The disk holds the accounts database (with 14 days of daily copies in
+# backups/) and the market data, so a redeploy keeps them — about 120 MB
+# today, growing ~150 MB a year with daily prices; Render also snapshots it
+# daily. Disks need a paid instance (Starter: 512 MB of memory; the app peaks
+# near 250 MB with the whole market loaded). The market data comes from the
+# evening refresh workflow's data-latest release (DATA_JOBS=pull): installed
+# within a minute of a start, checked every half hour after, and only the
+# workflow ever fetches from NSE. Price alerts, Telegram and the daily backups
+# run on this server. Singapore is Render's region nearest India.
+#
+# The settings marked sync: false are secrets or yours to choose — set in the
+# dashboard, never in this repository.
 services:
   - type: web
     name: stockwise-india
     runtime: node
-    plan: free
+    plan: starter
     region: singapore
-    buildCommand: npm ci --include=dev && npm run build && mkdir -p data && tar -xzf seed/market-data.tar.gz -C data
+    # www.jocularinsights.in redirects here (Render adds it with the apex)
+    domains:
+      - jocularinsights.in
+    buildCommand: npm ci --include=dev && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
       - key: NODE_VERSION
         value: 22.16.0
+      - key: DATA_DIR
+        value: /var/data
+      # the evening's data from GitHub; alerts, Telegram and backups here
+      # (server/http-server.js)
+      - key: DATA_JOBS
+        value: pull
       # Render's proxy sits in front: the login limits read the visitor's
       # address from it (server/rate-limit.js)
       - key: TRUST_PROXY
         value: "1"
-      - key: DATA_JOBS
+      # The site's own address — reset emails link to it
+      - key: APP_URL
+        value: https://jocularinsights.in
+      # The Momentum tab stays off for everyone (17 Oct 2026)
+      - key: MOMENTUM
         value: "off"
+      # Telegram alerts: the key from @BotFather (server/telegram.js). One bot
+      # can be polled by one server only — stop the laptop copy, or give it
+      # its own bot. Not set yet.
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      # Password-reset email through Resend, from an address on the verified
+      # domain, e.g. "Jocular Insights <no-reply@jocularinsights.in>"
+      # (server/email.js). Not set yet.
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      # Sign-in with Google / Apple / phone (server/firebase-auth.js): the
+      # Firebase web app's config — public values, but this site's own.
+      # FIREBASE_PROVIDERS lists the buttons: google for now — phone needs
+      # Firebase's pay-as-you-go plan before it can send texts (add phone then,
+      # and apple once Sign in with Apple is set up). Firebase must list
+      # jocularinsights.in under Authentication → Settings → Authorized
+      # domains, or Google sign-in fails on it.
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_API_KEY
+        sync: false
+      - key: FIREBASE_APP_ID
+        sync: false
+      - key: FIREBASE_PROVIDERS
+        value: google
+      # The Android and iPhone apps' ads (src/ads.jsx): off until the AdMob
+      # account's ad units are set (ADS=live and the ADMOB_* settings)
+      - key: ADS
+        value: "off"
+    disk:
+      name: stockwise-data
+      mountPath: /var/data
+      sizeGB: 1

@@ -1054,9 +1054,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   //   on (unset)  fetch from NSE here, and run the account jobs (a laptop)
   //   pull        the evening's data from GitHub (the refresh workflow that
   //               already fetches it), and the account jobs here — alerts,
-  //               Telegram, backups: the paid copy (render-paid.yaml)
+  //               Telegram, backups: the live site (render.yaml)
   //   off         the evening's data only, no account jobs, and no Telegram
-  //               polling (one poller per bot): the free copy
+  //               polling (one poller per bot): a test copy
   const mode = process.env.DATA_JOBS ?? "on";
   if (mode !== "off" && mode !== "pull") startDataJobs();
   // on Render only (data-pull.js pullBaseUrl); the market is rebuilt in
