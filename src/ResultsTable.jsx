@@ -1,4 +1,4 @@
-import { Suspense, useState, useEffect, useRef } from "react";
+import { Fragment, Suspense, useState, useEffect, useRef } from "react";
 import { lazyPage } from "./lazyPage.js";
 import { ArrowDown, ArrowUp, Check, Info, Columns3, Search, ArrowUpRight, SearchX, Star, ChevronDown, Funnel, Download } from "lucide-react";
 import { StarIcon, BellIcon, actionButtonStyle } from "./icons.jsx";
@@ -7,6 +7,7 @@ import CreateAlertModal from "./CreateAlertModal.jsx";
 import { AdCard, useAdFeed } from "./ads.jsx";
 import { formatValue, valueColor, unitLabel } from "./screener/meta.js";
 import { QualityBadge, OverallScore, qualityTone, overallTone, researchTitle, researchMissingText } from "./ResearchBadges.jsx";
+import ResearchProfile from "./ResearchProfile.jsx";
 import { MetricInfo, ColumnGuide } from "./screener/MetricInfo.jsx";
 import ColumnMenu from "./screener/ColumnMenu.jsx";
 
@@ -203,6 +204,9 @@ function FvCell({ stock }) {
     v?.partialCycle && "A cyclical with under seven years of results, so still valued on this year's EPS.",
     v?.as === "re-rated compounder" && "A re-rated compounder: its P/E kept rising, so its usual P/E sits below the price. The company page leads with the growth its price implies.",
     v?.model === "earnings" && stock.epsJump && `This year's EPS (₹${stock.epsJump.eps.toFixed(2)}) is more than 3× its usual ₹${stock.epsJump.usualEps.toFixed(2)} and the share price hasn't followed — how a one-off gain looks. Price levels use the usual EPS.`,
+    stock.valuationMultipleBasis && `Fair-value multiple: ${stock.valuationMultipleBasis}.`,
+    stock.epsCorrection && `Annual EPS corrected from ₹${stock.epsCorrection.reportedEps.toFixed(2)} (one quarter's, as filed) to ₹${stock.epsCorrection.correctedEps.toFixed(2)} from profit and paid-up shares.`,
+    !stock.epsCorrection && stock.epsMismatch && `The filed EPS (₹${stock.epsMismatch.reportedEps.toFixed(2)}) doesn't agree with profit ÷ shares (₹${stock.epsMismatch.correctedEps.toFixed(2)}); the filed figure is used — check the filing.`,
   ].filter(Boolean);
   const fvLabel = stock.fyEnd ? `FV${String(Number(stock.fyEnd.slice(0, 4)) + 2).slice(2)}` : "FV";
   return (
@@ -303,6 +307,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
   const [minPiotroski, setMinPiotroski] = useState(0);
   const [watchOnly, setWatchOnly] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
+  const [openResearchProfile, setOpenResearchProfile] = useState(null);
   // Phones: the name box and score boxes open from the one toolbar
   const [searchOpen, setSearchOpen] = useState(false);
   const pageSize = isMobile ? PHONE_PAGE_SIZE : PAGE_SIZE;
@@ -400,17 +405,17 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
   const visible = sorted.slice(0, visibleCount);
 
   // Columns chosen or filtered on that the file doesn't already have
-  const CSV_FIXED = new Set(["pe", "roce", "roe", "opm", "promoterPct", "fiiPct", "diiPct", "marketCapCr", "divYield"]);
+  const CSV_FIXED = new Set(["pe", "peTtm", "peFy", "eps", "ttmEps", "roce", "roe", "opm", "promoterPct", "fiiPct", "diiPct", "marketCapCr", "divYield"]);
   const extraColumns = columns.filter(def => !CSV_FIXED.has(def.id));
 
   const exportCsv = () => {
     const quote = v => `"${String(v).replace(/"/g, '""')}"`;
-    const cols = ["Rank", "Name", "Symbol", "Sector", "Quality/100", "Research/100", "Research stance", "Valuation/100", "Risk/100", "CMP", "PE", "ROCE", "ROE", "OPM", "Promoter%", "FII%", "DII%", "MarketCap(Cr)", "DivYield", "P1", "P2", "P3", "FairValue2Y", "52WLow", "52WHigh", ...extraColumns.map(def => quote(def.label))];
+    const cols = ["Rank", "Name", "Symbol", "Sector / industry", "Quality/100", "Research/100", "Research stance", "Valuation/100", "Risk/100", "CMP", "PE TTM", "PE FY", "ROCE", "ROE", "OPM", "Promoter%", "FII%", "DII%", "MarketCap(Cr)", "DivYield", "EPS FY", "EPS TTM", "P1", "P2", "P3", "FairValue2Y", "52WLow", "52WHigh", ...extraColumns.map(def => quote(def.label))];
     const r1 = v => (v == null ? "" : Math.round(v * 10) / 10);
     const rows = sorted.map((s, i) => [
       i + 1, quote(s.name), s.symbol, s.sector ? quote(s.sector) : "", r1(s.research?.quality), r1(s.research?.overall), quote(s.research?.stance ?? ""), r1(s.research?.valuation), r1(s.research?.risk),
-      r1(s.cmp), r1(s.pe), r1(s.roce), r1(s.roe), r1(s.opm), r1(s.promoterPct), r1(s.fiiPct), r1(s.diiPct),
-      r1(s.marketCapCr), r1(s.divYield), s.safeBuyPrice ?? "", s.p2 ?? "", s.p3 ?? "", s.fairValue ?? "",
+      r1(s.cmp), r1(s.peTtm), r1(s.peFy), r1(s.roce), r1(s.roe), r1(s.opm), r1(s.promoterPct), r1(s.fiiPct), r1(s.diiPct),
+      r1(s.marketCapCr), r1(s.divYield), r1(s.eps), r1(s.ttmEps), s.safeBuyPrice ?? "", s.p2 ?? "", s.p3 ?? "", s.fairValue ?? "",
       s.low52w ?? "", s.high52w ?? "",
       ...extraColumns.map(def => { const v = colValue(s, def.id); return v == null ? "" : Math.round(v * 100) / 100; }),
     ]);
@@ -692,6 +697,12 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                       {cells.map(([label, value]) => <span key={label}><span className="ph-row-k">{label}</span> {value}</span>)}
                     </div>
                     {missingResearch && <div role="note" className="ph-row-note">{missingResearch}</div>}
+                    <ResearchProfile
+                      research={stock.research}
+                      symbol={stock.symbol}
+                      expanded={openResearchProfile === stock.symbol}
+                      onToggle={() => setOpenResearchProfile(current => current === stock.symbol ? null : stock.symbol)}
+                    />
                   </div>
                   <div className="ph-row-side">
                     <span className="ph-row-price">{stock.cmp ? `₹${fmt(stock.cmp, stock.cmp < 100 ? 2 : 0)}` : "—"}</span>
@@ -751,11 +762,12 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
 
                 {!loading && visible.map((stock, i) => {
                   const isSelected = selected.has(stock.symbol);
+                  const profileOpen = openResearchProfile === stock.symbol;
                   // Opaque, so the pinned cells still hide what scrolls under them
                   const rowBg = isSelected ? "linear-gradient(color-mix(in srgb, var(--accent) 6%, transparent), color-mix(in srgb, var(--accent) 6%, transparent)), var(--s2)" : "var(--s2)";
                   return (
+                  <Fragment key={stock.symbol}>
                   <tr
-                    key={stock.symbol}
                     data-tour={i === 0 ? "row" : undefined}
                     style={{ background: rowBg, transition: "background 100ms" }}
                     onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = "var(--s3)"; }}
@@ -781,6 +793,12 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                         <NcavBadge stock={stock} />
                         {stock.sector && <span title={stock.sector} style={{ fontSize: 10.5, color: "var(--t3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{stock.sector}</span>}
                       </div>
+                      <ResearchProfile
+                        research={stock.research}
+                        expanded={profileOpen}
+                        triggerOnly
+                        onToggle={() => setOpenResearchProfile(current => current === stock.symbol ? null : stock.symbol)}
+                      />
                     </td>
 
                     <td style={cell}><QualityBadge research={stock.research} /></td>
@@ -815,6 +833,14 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                       </div>
                     </td>
                   </tr>
+                  {profileOpen && (
+                    <tr className="research-profile-table-row">
+                      <td colSpan={7 + columns.length}>
+                        <ResearchProfile research={stock.research} symbol={stock.symbol} expanded panelOnly />
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                   );
                 })}
               </tbody>

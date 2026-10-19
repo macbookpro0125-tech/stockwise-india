@@ -37,13 +37,14 @@ export default function StockSnapshot({ m, price }) {
   const risk = m.research?.risk;
   const tags = [m.industry, m.lender && "Lender", m.governmentOwned && "Government-owned", m.utility && "Regulated utility", m.cyclical && "Cyclical"].filter(Boolean);
   const metrics = [
-    ["P/E (last 4 quarters)", m.peTtm != null ? m.peTtm.toFixed(1) : m.pe != null ? m.pe.toFixed(1) : "—"],
-    ["5-year median P/E", m.medianPe != null ? m.medianPe.toFixed(1) : "—"],
+    ["P/E (last 4 quarters)", m.peTtm?.toFixed(1) ?? "—"],
+    ["P/E (latest audited year)", m.peFy?.toFixed(1) ?? "—"],
+    ["5-year median annual P/E", m.medianPe != null ? m.medianPe.toFixed(1) : "—"],
     ["Price to book", x(m.priceToBook, 2)],
     ["Dividend yield", pct(m.divYield)],
     ["Return on equity", pct(m.roe)],
     ["Return on capital", pct(m.roce)],
-    ["Debt to equity", x(m.debtToEquity, 2)],
+    ["Debt to equity", m.template === "BANKING" ? "Not applicable for a bank" : x(m.debtToEquity, 2)],
     ["EPS (last 4 quarters)", m.ttmEps != null ? `₹${m.ttmEps.toFixed(2)}` : "—"],
   ];
   const lo = m.low52w, hi = m.high52w;

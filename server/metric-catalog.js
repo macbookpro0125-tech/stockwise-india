@@ -29,17 +29,18 @@ export const METRICS = [
   { id: "confidence", label: "Data quality", short: "Data quality", category: "Research score", unit: "/100", decimals: 0, get: m => m.research?.confidence ?? null, about: "A data-quality measure based on checks covered, filing recency and price freshness; it does not predict the stock's outcome." },
 
   // ── Valuation ──
-  { id: "pe", label: "P/E ratio", short: "P/E", category: "Valuation", unit: "x", decimals: 1, about: "Price ÷ last year's earnings per share. Loss-making companies have none." },
-  { id: "peTtm", label: "P/E on the last four quarters", short: "P/E TTM", category: "Valuation", unit: "x", decimals: 1, about: "Price ÷ EPS over the last four quarters (trailing twelve months) — the basis Screener's P/E uses." },
-  { id: "medianPe", label: "5-year median P/E", short: "Median P/E", category: "Valuation", unit: "x", decimals: 1, about: "The company's usual P/E over its last five years — what its fair value is based on." },
-  { id: "peVsMedian", label: "P/E vs its 5-year median", short: "P/E vs med", category: "Valuation", unit: "%", decimals: 0, signed: true, about: "How far today's P/E is above (+) or below (−) the company's own usual P/E." },
+  { id: "pe", label: "P/E (TTM, else latest FY)", short: "P/E TTM/FY", category: "Valuation", unit: "x", decimals: 1, about: "Today's price ÷ EPS over the latest four consecutive quarters. If four consecutive quarters aren't available, it uses the latest audited year's EPS; P/E FY shows that figure separately." },
+  { id: "peTtm", label: "P/E on the last four quarters", short: "P/E TTM", category: "Valuation", unit: "x", decimals: 1, about: "Price ÷ EPS over the last four quarters (trailing twelve months), when all four consecutive quarters are available." },
+  { id: "peFy", label: "P/E on latest audited year", short: "P/E FY", category: "Valuation", unit: "x", decimals: 1, about: "Today's price ÷ the latest audited financial year's EPS. Use this when comparing to the app's annual P/E history." },
+  { id: "medianPe", label: "5-year median annual P/E", short: "Median FY P/E", category: "Valuation", unit: "x", decimals: 1, about: "Median of the company's year-end price ÷ audited annual EPS over up to five years. Fair value uses this, capped at twice the sector's median P/E when enough peers have one." },
+  { id: "peVsMedian", label: "Annual P/E vs its 5-year median", short: "FY P/E vs med", category: "Valuation", unit: "%", decimals: 0, signed: true, about: "How far today's P/E on the latest audited year is above (+) or below (−) its median annual P/E history." },
   { id: "priceToBook", label: "Price to book", short: "P/B", category: "Valuation", unit: "x", decimals: 2 },
   { id: "priceToSales", label: "Price to sales", short: "P/S", category: "Valuation", unit: "x", decimals: 2, about: "Market cap ÷ last year's sales." },
   { id: "priceToFcf", label: "Price to free cash flow", short: "P/FCF", category: "Valuation", unit: "x", decimals: 1, about: "Market cap ÷ last year's free cash flow; only where that was positive." + NO_LENDERS },
   { id: "priceToCfo", label: "Price to operating cash flow", short: "P/CFO", category: "Valuation", unit: "x", decimals: 1, about: "Market cap ÷ last year's cash from operations; only where that was positive." + NO_LENDERS },
-  { id: "earningsYield", label: "Earnings yield", short: "Earn. yield", category: "Valuation", unit: "%", decimals: 1, signed: true, about: "Earnings per share ÷ price — the P/E turned upside down." },
+  { id: "earningsYield", label: "Earnings yield", short: "Earn. yield", category: "Valuation", unit: "%", decimals: 1, signed: true, about: "Latest four-quarter EPS ÷ price (or latest audited-year EPS if four consecutive quarters aren't available) — the P/E turned upside down." },
   { id: "divYield", label: "Dividend yield", short: "Div yield", category: "Valuation", unit: "%", decimals: 1, about: "Dividends paid over the last 12 months ÷ today's price. Every payout counts, special one-off dividends too (NSE's records don't mark which are special), so a year with a special dividend reads higher than the usual yield." },
-  { id: "vsFairValue", label: "Price vs fair value", short: "vs FV", category: "Valuation", unit: "%", decimals: 1, signed: true, about: "How far today's price is above (+) or below (−) the company's fair value today — the company page's \"Today's fair value\" (this year's EPS × its usual P/E; book for banks, mid-cycle earnings for cyclicals). Only companies with one: five years of filings and a profit (banks valued on book); NBFC lenders, holding companies, loss-makers and companies with under five years of filings have none." },
+  { id: "vsFairValue", label: "Price vs fair value", short: "vs FV", category: "Valuation", unit: "%", decimals: 1, signed: true, about: "How far today's price is above (+) or below (−) fair value today (normalized EPS × the company's annual historical median P/E, capped at twice its sector's (or industry's) median P/E when 5+ peers have one; book for banks, mid-cycle earnings for cyclicals)." },
   { id: "vsPhase1", label: "Price vs Phase 1 level", short: "vs P1", category: "Valuation", unit: "%", decimals: 1, signed: true, about: "0 or less means today's price is at or under the Phase 1 level (10% below today's fair value)." },
   { id: "mcapToNcav", label: "Market cap ÷ net current assets", short: "MCap/NCAV", category: "Valuation", unit: "x", decimals: 2, about: "Graham's net-net test: under 1 means the market values the company at less than its current assets minus all its liabilities." },
   { id: "evToEbitda", label: "EV / EBITDA", short: "EV/EBITDA", category: "Valuation", unit: "x", decimals: 1, about: "Enterprise value (market cap plus net debt, at the last close) ÷ operating profit; only where that was positive." + NO_LENDERS },
@@ -116,7 +117,7 @@ export const METRICS = [
   { id: "pledgedPct", label: "Promoter shares pledged", short: "Pledged", category: "Ownership", unit: "%", decimals: 1, about: "Share of the promoters' own holding that is pledged." },
 
   // ── Financial health ──
-  { id: "debtToEquity", label: "Debt to equity", short: "D/E", category: "Financial health", unit: "x", decimals: 2 },
+  { id: "debtToEquity", label: "Debt to equity", short: "D/E", category: "Financial health", unit: "x", decimals: 2, about: "Borrowings plus lease liabilities ÷ equity at year-end. Not shown for banks: deposits are part of their operating funding and make this ratio misleading." },
   { id: "debtChange1y", label: "Debt change, last year", short: "Debt 1Y", category: "Financial health", unit: "%", decimals: 1, signed: true, lowerIsBetter: true, about: "Borrowings and leases at the last year-end against the year before; below 0 means debt was paid down. Not shown when the year before had next to no debt (under 5% of equity)." + NO_LENDERS },
   { id: "ltDebtToEquity", label: "Long-term debt to equity", short: "LT D/E", category: "Financial health", unit: "x", decimals: 2 },
   { id: "netDebtToEbitda", label: "Net debt ÷ EBITDA", short: "ND/EBITDA", category: "Financial health", unit: "x", decimals: 1, signed: true, about: "Debt and leases less cash and liquid investments, ÷ operating profit. Below 0 means more cash than debt." + NO_LENDERS },
@@ -250,7 +251,7 @@ const ABOUT = {
 // What period each figure covers — the client words it with the actual
 // dates (screen.js screenerMeta periods)
 const BASIS = {
-  peTtm: "close-ttm", medianPe: "pe-history", peVsMedian: "pe-history", divYield: "close-ttm-div",
+  pe: "close-ttm-or-fy", peTtm: "close-ttm", peFy: "close-fy", medianPe: "pe-history", peVsMedian: "pe-history", divYield: "close-ttm-div",
   vsFairValue: "levels", vsPhase1: "levels",
   roce5y: "fy-avg", roeAvg: "fy-avg", roa5y: "fy-avg", opm5y: "fy-avg", netMargin5y: "fy-avg",
   qSalesGrowthYoY: "q-yoy", qProfitGrowthYoY: "q-yoy", qSalesGrowthQoQ: "q-qoq", qProfitGrowthQoQ: "q-qoq", qOpm: "quarter",

@@ -1,6 +1,6 @@
 // Discover's Excel download (src/exportExcel.js): the categorized sheet's
 // buckets and risk tiers, the four sheets in order, frozen headers, and the
-// app's wording ("Price position", never "buy").
+// app's wording ("% vs P1" and "Price position", never "buy").
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import { bucketOf, riskTier, writeDiscoverWorkbook } from "../src/exportExcel.js";
@@ -33,7 +33,9 @@ assert.deepEqual(wb.SheetNames, ["Categorized", "How to read", "Dashboard", "Sto
 const cat = XLSX.utils.sheet_to_json(wb.Sheets.Categorized, { header: 1, defval: null });
 assert.match(cat[0][0], /4 COMPANIES, CATEGORIZED/);
 assert.match(cat[1][0], /Quality score ≥ 70/, "the note names the screen");
-assert.equal(cat[3][15], "Price position");
+assert.equal(cat[3][14], "P/E FY");
+assert.equal(cat[3][15], "% vs P1");
+assert.equal(cat[3][16], "Price position");
 assert.ok(!cat.flat().some(v => typeof v === "string" && /\bbuy status\b|\baccumulate\b/i.test(v)), "no buy wording");
 const buckets = cat.filter(r => r[0] && typeof r[0] === "string" && /\(\d+ stocks?\)/.test(r[0])).map(r => r[0].trim());
 assert.deepEqual(buckets, ["CORE COMPOUNDER   (2 stocks)", "HIGH-GROWTH   (1 stock)", "NOT RATED — TOO FEW FILINGS   (1 stock)"]);
@@ -41,8 +43,8 @@ assert.deepEqual(buckets, ["CORE COMPOUNDER   (2 stocks)", "HIGH-GROWTH   (1 sto
 const ranks = cat.filter(r => typeof r[0] === "number").map(r => [r[0], r[2]]);
 assert.deepEqual(ranks, [[1, "CORE1"], [3, "CORE2"], [2, "GROW1"], [4, "NEW1"]]);
 const core2 = cat.find(r => r[2] === "CORE2");
-assert.equal(core2[15], "At or below reference level 3", "the app's own price position");
-assert.equal(core2[14], -27.27, "% vs P1");
+assert.equal(core2[16], "At or below reference level 3", "the app's own price position");
+assert.equal(core2[15], -27.27, "% vs P1");
 
 // Frozen headers: the library writes no panes, so they're added to the file
 const zip = XLSX.CFB.read(new Uint8Array(bytes), { type: "array" });

@@ -100,6 +100,9 @@ export const TAGS = {
   depreciation: ["DepreciationDepletionAndAmortisationExpense"],
   otherIncome: ["OtherIncome"],
   pbt: ["ProfitBeforeTax", "ProfitLossFromOrdinaryActivitiesBeforeTax"],
+  tax: ["IncomeTaxExpenseContinuingOperations", "IncomeTaxExpense", "TaxExpense", "IncomeTaxExpenseFromContinuingOperations"],
+  currentTax: ["CurrentTax", "CurrentTaxExpense"],
+  deferredTax: ["DeferredTax", "DeferredTaxExpense"],
   ocf: ["CashFlowsFromUsedInOperatingActivities"],
   totalAssets: ["EquityAndLiabilities", "CapitalAndLiabilities"],
   currentAssets: ["CurrentAssets"],
@@ -185,6 +188,11 @@ function reader(xml, row) {
 function sumKnown(...values) {
   const known = values.filter(v => v != null);
   return known.length ? known.reduce((a, b) => a + b, 0) : null;
+}
+
+function taxExpense(read) {
+  const total = read(TAGS.tax);
+  return total ?? sumKnown(read(TAGS.currentTax), read(TAGS.deferredTax));
 }
 
 function equityOf(r) {
@@ -275,12 +283,15 @@ function auditOpinionOf(xml) {
 // ₹16.94 (profit ÷ shares is ₹2.70; "after" says ₹2.81), while Yes Bank's FY23
 // "after" holds a quarter's ₹0.07 and Central Bank's FY23 a placeholder 0.
 // Without share capital to check against, the first non-zero one, in TAGS
-// order, is used.
+// order, is used. A single EPS is kept as filed: metrics.js corrects only the
+// known slip (a quarter's EPS filed as the year's) once the share count is
+// confirmed, and flags any other disagreement.
 function pickEps(r, profit, read = r.year) {
   const found = TAGS.eps.map(tag => read([tag])).filter(v => v != null && v !== 0);
   if (found.length < 2 || found.every(v => Math.abs(v - found[0]) <= Math.abs(found[0]) * 0.05)) return found[0] ?? read(TAGS.eps);
-  // read as extractYear reads them (filed against the period, not a date)
-  const paidUp = r.any(TAGS.paidUp), faceValue = r.any(TAGS.faceValue);
+  // share capital at the period's end, where filed, as extractYear reads it
+  const paidUp = r.atEnd?.(TAGS.paidUp) ?? r.any(TAGS.paidUp);
+  const faceValue = r.atEnd?.(TAGS.faceValue) ?? r.any(TAGS.faceValue);
   if (!(profit > 0) || !(paidUp > 0) || !(faceValue > 0)) return found[0];
   const perShare = profit / (paidUp / faceValue);
   return found.filter(v => v > 0).sort((a, b) => Math.abs(Math.log(a / perShare)) - Math.abs(Math.log(b / perShare)))[0] ?? found[0];
@@ -320,6 +331,7 @@ function extractYear(xml, row, template = templateOf(row.xbrl)) {
     depreciation: r.year(TAGS.depreciation),
     otherIncome: r.year(TAGS.otherIncome),
     pbt: r.year(TAGS.pbt),
+    tax: taxExpense(r.year),
     ocf: r.year(TAGS.ocf),
     // FY22-era legacy filings carry no balance sheet: equity is null there, and
     // debt must be null too rather than a "0" that reads as debt-free.
@@ -328,8 +340,8 @@ function extractYear(xml, row, template = templateOf(row.xbrl)) {
     debt: equity == null ? null : debtOf(r, template),
     totalAssets: r.atEnd(TAGS.totalAssets),
     currentAssets: r.atEnd(TAGS.currentAssets),
-    paidUp: r.any(TAGS.paidUp),
-    faceValue: r.any(TAGS.faceValue),
+    paidUp: r.atEnd(TAGS.paidUp) ?? r.any(TAGS.paidUp),
+    faceValue: r.atEnd(TAGS.faceValue) ?? r.any(TAGS.faceValue),
     // null when neither purchase line is filed — unknown, not "spent nothing",
     // or free cash flow would come out as the whole operating cash flow.
     capex: sumKnown(r.year(TAGS.capexPpe), r.year(TAGS.capexIntangibles)),
@@ -386,6 +398,7 @@ function extractQuarter(xml, row) {
     depreciation: r.quarter(TAGS.depreciation),
     otherIncome: r.quarter(TAGS.otherIncome),
     pbt: r.quarter(TAGS.pbt),
+    tax: taxExpense(r.quarter),
     profit,
     profitOwners,
     eps: pickEps(r, profitOwners ?? profit, r.quarter),

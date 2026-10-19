@@ -98,7 +98,7 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
   if (!stock || stock.error || !Array.isArray(stock.years)) return null;
   // A year filed in the wrong unit (lakhs as rupees…) is put back on the
   // company's own scale first — see unit-slips.js
-  const years = fixUnitSlips(stock.years.filter(y => !y.error && y.fyEnd));
+  const years = fixUnitSlips(stock.years.filter(y => !y.error && y.fyEnd)).map(y => ({ ...y }));
   const latest = years[0];
   if (!latest) return null;
   const sym = stock.symbol;
@@ -111,6 +111,7 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     target.setUTCFullYear(target.getUTCFullYear() - n);
     return years.find(y => Math.abs(new Date(`${y.fyEnd}T00:00:00Z`) - target) <= 45 * DAY) ?? null;
   };
+  const quarterList = fixUnitSlips((stock.quarters ?? []).filter(q => !q.error && q.qEnd).map(q => ({ ...q, fyEnd: q.qEnd })));
 
   // Splits and bonuses change the share count. Anything filed before one is
   // per old share: divide per-share figures (and multiply share counts) by
@@ -122,7 +123,7 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
   const cmp = overrides.cmp ?? snap?.prices?.[sym] ?? null;
   const cmpDate = overrides.cmpDate ?? snap?.pricesDate ?? null;
   const latestFactor = factorAfter(filedOf(latest));
-  const reportedEps = latest.eps != null ? latest.eps / latestFactor : null;
+  const rawReportedEps = latest.eps != null ? latest.eps / latestFactor : null;
   const holding = stock.holding ?? {};
   // The parent's own shareholders' profit and equity, where the filing gives
   // them — a holding company's group figures include its subsidiaries'
@@ -139,6 +140,53 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     if (filed && y.eps > 0 && !near(y.profitOwners / filed, y.eps, 0.15) && near(y.profit / filed, y.eps, 0.15)) return y.profit;
     return y.profitOwners;
   };
+  // A filed EPS that disagrees with profit ÷ paid-up shares (17–19 Oct 2026).
+  // Corrected only for the two slips NSE filings are known to make, and only
+  // when that share count agrees with the latest shareholding filing:
+  //   - a quarter's EPS in the annual box (RPG Life Sciences FY26: ₹18.08
+  //     filed against about ₹70 for the year) — 3 to 5 times too low;
+  //   - a year-to-date EPS in a quarter's box — 2, 3 or 4 times too high.
+  // Any other disagreement (Jindal Poly Investment FY26: ₹33.45 filed,
+  // profit ÷ shares ₹816) keeps the filed EPS and shows a caution: which of
+  // the two filed facts is wrong can't be told from the numbers. This also
+  // repairs already-cached summaries without a full re-download.
+  const near1 = (a, b, tolerance) => a > 0 && b > 0 && Math.max(a / b, b / a) <= tolerance;
+  const currentShares = holding.totalShares > 0
+    ? holding.totalShares * (holding.asOfIso ? factorAfter(holding.asOfIso) : 1)
+    : null;
+  const epsCheckFor = (y, period) => {
+    if (!(y?.eps > 0) || !(y.paidUp > 0) || !(y.faceValue > 0) || !(ownersProfit(y) > 0)) return null;
+    const filingShares = y.paidUp / y.faceValue;
+    const calculatedEps = ownersProfit(y) / filingShares;
+    const ratio = calculatedEps / y.eps; // above 1: the filed EPS is too low
+    if (near1(calculatedEps, y.eps, 1.5)) return null;
+    const sharesAgree = near1(currentShares, filingShares * factorAfter(filedOf(y)), 1.5);
+    const knownSlip = period === "Annual"
+      ? ratio >= 3 && ratio <= 5
+      : [2, 3, 4].some(k => Math.abs(1 / ratio - k) <= k * 0.15);
+    const factor = factorAfter(filedOf(y));
+    return {
+      reportedEps: y.eps / factor,
+      correctedEps: calculatedEps / factor,
+      method: `${period} profit ÷ paid-up shares`,
+      corrected: sharesAgree && knownSlip,
+    };
+  };
+  for (const y of years) {
+    y.reportedEps = y.eps;
+    const check = epsCheckFor(y, "Annual");
+    if (check?.corrected) {
+      y.epsCorrection = check;
+      y.eps = check.correctedEps * factorAfter(filedOf(y));
+    } else if (check) y.epsMismatch = check;
+  }
+  for (const q of quarterList) {
+    const check = epsCheckFor(q, "Quarterly");
+    if (check?.corrected) q.eps = check.correctedEps * factorAfter(filedOf(q));
+  }
+  const latestEpsCorrection = latest.epsCorrection ?? null;
+  const latestEpsMismatch = latest.epsMismatch ?? null;
+  const reportedEps = latest.eps != null ? latest.eps / latestFactor : null;
   const ownersEquity = y => y?.equityOwners ?? y?.equity ?? null;
   // ROE pairs like with like: own profit over own equity where both are
   // known, else the group's over the group's
@@ -178,8 +226,13 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
   const epsRebased = sharesSource === "shareholding filing" && issuedRatio >= 1.25 && issuedRatio <= 4
     ? { reportedEps, epsSharesCr: epsShares / 1e7, sharesCr: shares / 1e7, asOf: holding.asOfIso ?? null } : null;
   const eps = epsRebased ? ownersProfit(latest) / shares : reportedEps;
-  const pe = cmp != null && eps > 0 ? cmp / eps : null;
+  const peFy = cmp != null && eps > 0 ? cmp / eps : null;
   const marketCapCr = cmp != null && shares ? (cmp * shares) / 1e7 : null;
+
+  // Tax as filed (fetch-nse.js reads it from results filed from 18 Oct 2026
+  // on); never inferred as profit before tax less profit, which also takes
+  // in associates' share, discontinued operations and exceptional items
+  const taxOf = row => row.tax ?? null;
 
   const cagr = (field, n) => {
     const base = yearBack(latest, n);
@@ -268,7 +321,7 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     const row = {
       fyEnd: y.fyEnd,
       eps: y.eps != null ? y.eps / epsFactor : null,
-      reportedEps: y.eps,
+      reportedEps: y.reportedEps ?? y.eps,
       splitFactor: epsFactor,
       price: rawPrice != null && entry?.date ? rawPrice / factorAfter(entry.date) : null,
       priceDate: entry?.date ?? null,
@@ -343,7 +396,7 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
   const growthPick = clampGrowth(steady.g) < clampGrowth(original.g) ? steady : original;
   const growthForValuation = clampGrowth(growthPick.g);
   const growthBasis = growthPick.basis + (growthPick.g > 25 ? `, ${Math.round(growthPick.g)}% capped at 25%` : growthPick.g < 0 ? ", below 0% so taken as 0%" : "");
-  const valuationPe = medianPe ?? pe;
+  const valuationPe = medianPe ?? peFy;
   const earningsLevels = valuationEps > 0 && medianPe ? calculateLevels(valuationEps, medianPe, growthForValuation, 10) : null;
 
   const range = snap?.range52w?.[sym] ?? null;
@@ -380,8 +433,10 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
       depreciationCr: cr(y.depreciation),
       financeCostsCr: cr(y.financeCosts),
       pbtCr: cr(y.pbt),
+      taxCr: cr(taxOf(y)),
       profitCr: cr(y.profit),
       eps: y.eps != null ? y.eps / factorAfter(filedOf(y)) : null,
+      epsCorrection: y.epsCorrection ?? null,
       equityCr: cr(y.equity),
       profitOwnersCr: cr(ownersProfit(y)),
       equityOwnersCr: cr(ownersEquity(y)),
@@ -398,7 +453,7 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
       fcfCr: !lender && y.ocf != null && y.capex != null ? cr(y.ocf - y.capex) : null,
       roe: roeOf(y),
       roce: roceOf(y),
-      debtToEquity: y.equity > 0 && y.debt != null ? totalDebt(y) / y.equity : null,
+      debtToEquity: stock.template === "BANKING" ? null : y.equity > 0 && y.debt != null ? totalDebt(y) / y.equity : null,
       auditOpinion: y.auditOpinion ?? null,
       auditor: y.auditor ?? null,
     };
@@ -407,7 +462,6 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
   // Quarter by quarter (the last twelve), newest first, on today's share
   // basis, each against the same quarter a year earlier and the one before.
   // A quarter filed in the wrong unit is put back first, as years are.
-  const quarterList = fixUnitSlips((stock.quarters ?? []).filter(q => !q.error && q.qEnd).map(q => ({ ...q, fyEnd: q.qEnd })));
   const quarterAgo = (q, days) => quarterList.find(x => Math.abs(Date.parse(x.qEnd) - (Date.parse(q.qEnd) - days * DAY)) <= 20 * DAY) ?? null;
   const change = (now, then) => (now != null && then > 0 ? (now / then - 1) * 100 : null);
   const quarters = quarterList.map(q => {
@@ -418,7 +472,7 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
       revenueCr: cr(q.revenue), expensesCr: cr(q.expenses), operatingProfitCr: cr(op),
       opm: op != null && q.revenue > 0 ? (op / q.revenue) * 100 : null,
       otherIncomeCr: cr(q.otherIncome), depreciationCr: cr(q.depreciation), financeCostsCr: cr(q.financeCosts),
-      pbtCr: cr(q.pbt), profitCr: cr(q.profit),
+      pbtCr: cr(q.pbt), profitCr: cr(q.profit), taxCr: cr(taxOf(q)),
       eps: q.eps != null ? q.eps / factorAfter(q.filed ?? isoPlusDays(q.qEnd, 45)) : null,
       salesYoY: yearAgo ? change(q.revenue, yearAgo.revenue) : null,
       profitYoY: yearAgo ? change(ownersProfit(q), ownersProfit(yearAgo)) : null,
@@ -432,6 +486,8 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
   const inARow = last4.length === 4 && last4.every((q, i) => i === 0 || Math.abs(Date.parse(last4[i - 1].fyEnd) - Date.parse(q.fyEnd) - 91 * DAY) <= 20 * DAY);
   const sum4 = key => (inARow && last4.every(q => q[key] != null) ? last4.reduce((a, q) => a + q[key], 0) : null);
   const ttm = { revenueCr: sum4("revenueCr"), profitCr: sum4("profitCr"), eps: sum4("eps") };
+  const peTtm = cmp != null && ttm.eps > 0 ? cmp / ttm.eps : null;
+  const pe = peTtm ?? peFy;
   // …and the four before them, for growth over the last twelve months — what
   // a company listed too recently for 3 years of annual results is judged on
   const last8 = quarters.slice(0, 8);
@@ -445,13 +501,16 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
   // under FMCG, and a mapped sector mustn't make a sugar mill non-cyclical.
   const indexSector = snap?.sectors?.[sym] ?? null;
   const peerSector = indexSector ?? snap?.industrySectors?.[sym] ?? null;
+  const industry = snap?.industries?.[sym] ?? null;
+  const nameSector = sectorFromName(stock.name);
   const utility = peerSector ? UTILITY_SECTORS.has(peerSector) : false;
   const nameLower = String(stock.name || "").toLowerCase();
   const cyclical = indexSector ? CYCLICAL_SECTORS.has(indexSector)
     : (peerSector != null && CYCLICAL_SECTORS.has(peerSector)) || CYCLICAL_NAME_WORDS.some(w => nameLower.includes(w));
   // For finding companies by sector, the smaller ones NSE doesn't classify
   // get one from their name (name-sectors.js); peers stay on NSE's sectors
-  const sector = peerSector ?? sectorFromName(stock.name);
+  const sector = peerSector ?? nameSector;
+  const sectorSource = peerSector ? (indexSector ? "NSE sector" : "NSE industry mapped to sector") : nameSector ? "company name" : null;
 
   // Interest cover = EBIT / interest, the original's definition
   const interestCoverage = !lender && latest.financeCosts > 0 && latest.pbt != null
@@ -599,18 +658,21 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     symbol: sym,
     name: stock.name,
     template: stock.template,
-    sector, peerSector, sectorByName: sector != null && peerSector == null, lender, utility, cyclical,
+    sector, sectorSource, peerSector, sectorByName: nameSector != null && peerSector == null, lender, utility, cyclical,
     bank: stock.template === "BANKING" ? bankHealth(stock.bank) : null,
     // The government's stake as promoter, from the shareholding filing; owned
     // at a majority, or one of NSE's PSU index members (held through another
     // government company, as HPCL through ONGC), or a government bank
     governmentPct: holding.governmentPct ?? null,
     governmentOwned: holding.governmentPct >= 50 || !!snap?.psuIndex?.includes(sym) || PSU_BANKS.has(sym),
-    industry: snap?.industries?.[sym] ?? null,
+    industry,
     // Auditor resignations in the last three years (market-data.js); null =
     // the snapshot doesn't know, [] = none filed
-    auditorResignations: snap?.auditorResignations ? (snap.auditorResignations[sym] ?? []) : null,
-    cmp, cmpDate, eps, pe, marketCapCr, shares, sharesSource,
+    auditorResignations: snap?.auditorResignations
+      ? (snap.auditorResignations[sym] ?? []).map(event => typeof event === "string" ? { date: event, url: null } : event)
+      : null,
+    cmp, cmpDate, eps, pe, peFy, marketCapCr, shares, sharesSource,
+    epsCorrection: latestEpsCorrection, epsMismatch: latestEpsMismatch,
     // NSE's last close: the research score values the company at it whatever
     // price the page shows, so Discover and the stock page give the same score
     close, closeDate: snap?.prices?.[sym] != null ? snap.pricesDate : cmpDate,
@@ -633,7 +695,7 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     qProfitGrowthQoQ: quarters[0]?.profitQoQ ?? null,
     qOpm: quarters[0]?.opm ?? null,
     ttmRevenueCr: ttm.revenueCr, ttmProfitCr: ttm.profitCr, ttmEps: ttm.eps,
-    peTtm: cmp != null && ttm.eps > 0 ? cmp / ttm.eps : null,
+    peTtm,
     ttmSalesGrowth: ttm.revenueCr != null && ttmPrev.revenueCr > 0 ? (ttm.revenueCr / ttmPrev.revenueCr - 1) * 100 : null,
     ttmEpsGrowth: ttm.eps > 0 && ttmPrev.eps > 0 ? (ttm.eps / ttmPrev.eps - 1) * 100 : null,
     yearsOnFile: years.length,
@@ -660,7 +722,7 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     salesGrowth3y, salesGrowth5y, profitGrowth3y, profitGrowth5y,
     roe, roeAvg, roeAvgYears: roeHistory.length,
     roce: roceOf(latest), opm,
-    debtToEquity, leasesCr, priceToBook, interestCoverage,
+    debtToEquity: stock.template === "BANKING" ? null : debtToEquity, leasesCr, priceToBook, interestCoverage,
     promoterPct: holding.promoterPct ?? null,
     fiiPct: holding.fiiPct ?? null,
     diiPct: holding.diiPct ?? null,
@@ -681,8 +743,8 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     medianPe, peYears: validPe.length,
     history,
     growthForValuation, growthBasis,
-    valuationPe, valuationPeBasis: medianPe != null ? "median" : "current",
-    valuationEps, epsJump, epsRebased, reportedEps,
+    valuationPe, valuationPeBasis: medianPe != null ? "median" : "current FY P/E",
+    valuationEps, epsJump, epsRebased, reportedEps: rawReportedEps,
     valuation,
     levels,
     fairValue: levels?.fv27 ?? null,
@@ -750,8 +812,8 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     priceToSales: ratio(marketCapCr, cr(latest.revenue)),
     priceToFcf: m.fcfCr > 0 ? ratio(marketCapCr, m.fcfCr) : null,
     priceToCfo: lender ? null : ratio(marketCapCr, cr(latest.ocf)),
-    earningsYield: eps != null && cmp > 0 ? (eps / cmp) * 100 : null,
-    peVsMedian: pe != null && medianPe > 0 ? (pe / medianPe - 1) * 100 : null,
+    earningsYield: cmp > 0 && (ttm.eps > 0 || eps > 0) ? ((ttm.eps > 0 ? ttm.eps : eps) / cmp) * 100 : null,
+    peVsMedian: peFy != null && medianPe > 0 ? (peFy / medianPe - 1) * 100 : null,
 
     ltDebtToEquity: ratio(latest.longTermDebt, latest.equity),
     assetTurnover: ratio(latest.revenue, latest.totalAssets),

@@ -59,3 +59,39 @@ export function saveStrategies(userId, list) {
   `).run(userId, JSON.stringify(clean), new Date().toISOString());
   return clean;
 }
+
+// Keep a moving baseline per strategy and accumulate unread arrivals until
+// the user opens that strategy. A changed filter set starts a fresh baseline.
+export function checkStrategyMatches(userId, strategies, symbolsById) {
+  const get = db.prepare("SELECT filter_hash, match_symbols, new_symbols FROM strategy_match_state WHERE user_id = ? AND strategy_id = ?");
+  const put = db.prepare(`
+    INSERT INTO strategy_match_state (user_id, strategy_id, filter_hash, match_symbols, new_symbols, checked_at)
+    VALUES (?, ?, ?, ?, ?, ?)
+    ON CONFLICT(user_id, strategy_id) DO UPDATE SET
+      filter_hash = excluded.filter_hash, match_symbols = excluded.match_symbols,
+      new_symbols = excluded.new_symbols, checked_at = excluded.checked_at
+  `);
+  const now = new Date().toISOString();
+  const result = Object.create(null);
+  for (const strategy of strategies) {
+    if (!strategy.custom || !Array.isArray(strategy.filters)) continue;
+    const symbols = [...new Set(symbolsById[strategy.id] ?? [])].filter(s => isValidSymbol(s)).sort();
+    const filterHash = JSON.stringify(strategy.filters.length ? strategy.filters : strategy.criteria ?? []);
+    const old = get.get(userId, strategy.id);
+    let arrivals = [];
+    if (old?.filter_hash === filterHash) {
+      let previous = [], unread = [];
+      try { previous = JSON.parse(old.match_symbols) ?? []; } catch {}
+      try { unread = JSON.parse(old.new_symbols) ?? []; } catch {}
+      const previousSet = new Set(previous);
+      arrivals = [...new Set([...unread, ...symbols.filter(s => !previousSet.has(s))])].sort();
+    }
+    put.run(userId, strategy.id, filterHash, JSON.stringify(symbols), JSON.stringify(arrivals), now);
+    result[strategy.id] = { newMatches: arrivals.length, checkedAt: now };
+  }
+  return result;
+}
+
+export function acknowledgeStrategyMatches(userId, strategyId) {
+  db.prepare("UPDATE strategy_match_state SET new_symbols = '[]' WHERE user_id = ? AND strategy_id = ?").run(userId, strategyId);
+}

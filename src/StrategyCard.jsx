@@ -36,7 +36,7 @@ function Rolling({ top, run }) {
   );
 }
 
-export default function StrategyCard({ p, kind, count, top, featured, index, active, onSelect, hue }) {
+export default function StrategyCard({ p, kind, count, top, newMatches = 0, featured, index, active, onSelect, hue }) {
   const [ref, inView] = useInView();
   const n = useCountUp(count ?? null, inView);
   const matches = count == null
@@ -54,7 +54,7 @@ export default function StrategyCard({ p, kind, count, top, featured, index, act
         <span className="sc2-desc">{p.description}</span>
         {!featured && top?.length > 0 && <Rolling top={top.slice(0, 3)} run={inView} />}
         <span className="sc2-foot">
-          <span className="sc2-count">{matches}</span>
+          <span className="sc2-count">{matches}{newMatches > 0 && <em className="strategy-new-count" title="New stocks since your last check">{newMatches} new</em>}</span>
           <span className="sc2-go">{featured ? "Open screen" : "Open"}<ChevronRight size={17} aria-hidden="true" /></span>
         </span>
       </span>

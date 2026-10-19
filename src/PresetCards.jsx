@@ -373,6 +373,7 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
                     <span className="ph-card-foot">
                       <span className="ph-card-count">
                         {count == null ? <span className="sc-skel" style={{ width: 44 }} aria-hidden="true" /> : <><b>{count.toLocaleString("en-IN")}</b> {count === 1 ? "stock" : "stocks"} today</>}
+                        {p.newMatches > 0 && <span className="strategy-new-count" title="New stocks since your last check">{p.newMatches} new</span>}
                       </span>
                       <ChevronRight size={18} aria-hidden="true" />
                     </span>
@@ -430,7 +431,7 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
           return (
             <div key={p.id} className="preset-card-wrap" style={{ position: "relative", flexShrink: 0 }}>
               {grid ? (
-                <StrategyCard p={p} kind={kindOf(p)[1]} count={count} top={tops[p.id]} featured={shownIndex === 0}
+                <StrategyCard p={p} kind={kindOf(p)[1]} count={count} top={tops[p.id]} newMatches={p.newMatches} featured={shownIndex === 0}
                   index={shownIndex} active={active} onSelect={onSelect} hue={hueOf(p)} />
               ) : (
               <button
@@ -480,6 +481,7 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
                 <span className="preset-desc" style={{ fontSize: 11.5, color: "var(--t3)", lineHeight: 1.45, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
                   {p.description}
                 </span>
+                {!stacked && p.newMatches > 0 && <span className="strategy-new-count" title="New stocks since your last check" style={{ margin: "8px 0 0" }}>{p.newMatches} new matches</span>}
                 {/* A phone's list: how many match, by the arrow */}
                 {stacked && (
                   <span className="preset-count">

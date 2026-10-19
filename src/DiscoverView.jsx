@@ -91,6 +91,18 @@ export default function DiscoverView({ onOpenStock, theme }) {
   const [activePresetName, setActivePresetName] = useState(null);
   const [activePresetAbout, setActivePresetAbout] = useState(null);
   const [strategyCount, setStrategyCount] = useState(null);
+  useEffect(() => {
+    let lastCheck = 0;
+    const check = () => {
+      if (document.visibilityState === "hidden" || Date.now() - lastCheck < 5 * 60 * 1000) return;
+      lastCheck = Date.now();
+      strategiesStore.checkMatches().catch(() => {});
+    };
+    check();
+    window.addEventListener("focus", check);
+    document.addEventListener("visibilitychange", check);
+    return () => { window.removeEventListener("focus", check); document.removeEventListener("visibilitychange", check); };
+  }, []);
 
   // Discover is two pages, as a screener's list of screens then a screen:
   // first the strategies (a grid on a computer, a list on a phone), then the
@@ -256,6 +268,7 @@ export default function DiscoverView({ onOpenStock, theme }) {
   const changeFilters = useCallback(next => { setFilters(next); setActivePresetId(null); setActivePresetName(null); setActivePresetAbout(null); }, []);
 
   const applyPreset = useCallback(async preset => {
+    if (preset.custom) strategiesStore.acknowledge(preset.id);
     setActivePresetId(preset.id);
     setActivePresetName(preset.name ?? null);
     setActivePresetAbout(preset.description ?? null);
@@ -310,13 +323,19 @@ export default function DiscoverView({ onOpenStock, theme }) {
       id: `custom_${Date.now()}`, name, icon: "📌", custom: true,
       description: `${activeCount} filter${activeCount === 1 ? "" : "s"}`,
       filters: filters.filter(isActiveFilter),
-    }]);
+    }]).then(() => strategiesStore.checkMatches()).catch(() => {});
     setSavePresetName("");
     setShowSaveModal(false);
   };
-  const handleUpdatePreset = id => writeCustomPresets(readCustomPresets().map(p => (p.id === id ? { ...p, filters: filters.filter(isActiveFilter), criteria: undefined, description: `${activeCount} filters` } : p)));
+  const handleUpdatePreset = id => writeCustomPresets(readCustomPresets().map(p => (p.id === id ? { ...p, newMatches: 0, filters: filters.filter(isActiveFilter), criteria: undefined, description: `${activeCount} filters` } : p))).then(() => strategiesStore.checkMatches()).catch(() => {});
   const handleRenamePreset = (id, name) => writeCustomPresets(readCustomPresets().map(p => (p.id === id ? { ...p, name } : p)));
-  const handleDuplicatePreset = p => writeCustomPresets([...readCustomPresets(), { ...p, id: `custom_${Date.now()}`, name: `${p.name} (copy)`, custom: true }]);
+  const handleDuplicatePreset = p => {
+    const copy = { ...p };
+    delete copy.newMatches;
+    delete copy.checkedAt;
+    writeCustomPresets([...readCustomPresets(), { ...copy, id: `custom_${Date.now()}`, name: `${p.name} (copy)`, custom: true }])
+      .then(() => strategiesStore.checkMatches()).catch(() => {});
+  };
 
   const handleShare = () => {
     navigator.clipboard.writeText(screenLink(filters.filter(isActiveFilter)))

@@ -8,15 +8,44 @@ import { api } from "./api.js";
 const emit = name => window.dispatchEvent(new Event(name));
 
 let strategies = null;
+let strategyRevision = 0;
 export const strategiesStore = {
   get: () => strategies ?? [],
-  load: () => api.strategies().then(d => { strategies = d.strategies ?? []; emit("customPresetsUpdated"); }).catch(() => {}),
+  load() {
+    const revision = ++strategyRevision;
+    return api.strategies().then(d => {
+      if (revision === strategyRevision) { strategies = d.strategies ?? []; emit("customPresetsUpdated"); }
+      return strategies ?? [];
+    }).catch(() => {});
+  },
+  checkMatches() {
+    const revision = ++strategyRevision;
+    return api.checkStrategyMatches().then(d => {
+      if (revision === strategyRevision) { strategies = d.strategies ?? []; emit("customPresetsUpdated"); }
+      return strategies ?? [];
+    });
+  },
+  acknowledge(id) {
+    const revision = ++strategyRevision;
+    strategies = (strategies ?? []).map(p => p.id === id ? { ...p, newMatches: 0 } : p);
+    emit("customPresetsUpdated");
+    return api.acknowledgeStrategyMatches(id).then(() => {
+      if (revision === strategyRevision) emit("customPresetsUpdated");
+    }).catch(() => {});
+  },
   set(list) {
+    const revision = ++strategyRevision;
     strategies = list;
     emit("customPresetsUpdated");
-    return api.saveStrategies(list).then(d => { strategies = d.strategies ?? list; emit("customPresetsUpdated"); }).catch(() => {});
+    const unread = new Map((list ?? []).map(p => [p.id, p.newMatches]));
+    return api.saveStrategies(list).then(d => {
+      if (revision === strategyRevision) {
+        strategies = (d.strategies ?? list).map(p => unread.has(p.id) ? { ...p, newMatches: unread.get(p.id) } : p);
+        emit("customPresetsUpdated");
+      }
+    }).catch(() => {});
   },
-  reset() { strategies = null; emit("customPresetsUpdated"); },
+  reset() { strategyRevision++; strategies = null; emit("customPresetsUpdated"); },
 };
 
 let notes = null;

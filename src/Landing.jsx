@@ -32,7 +32,7 @@ const FEATURES = [
   {
     icon: <Icon><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1.5" /></Icon>,
     title: "Fair value and price levels",
-    text: "A valuation reference from the company's own 5-year median P/E, plus three model price levels, a stop-loss level and an upper level. These are reference points, not trade instructions.",
+    text: "Fair value uses normalized earnings and the company's own 5-year median P/E, capped at twice its sector's median when it runs far above its peers. Banks use book value. Model price levels are reference points, not trade instructions.",
   },
   {
     icon: <Icon><path d="M7 3h7l5 5v13H7z" /><path d="M14 3v5h5M10 13h6M10 17h6" /></Icon>,
@@ -69,12 +69,20 @@ function fmtDate(iso) {
 
 export default function Landing({ onAuthed, notice }) {
   // The sign-in dialog: "login", "signup", or closed
-  const [auth, setAuth] = useState(null);
+  const [auth, setAuth] = useState(() => new URLSearchParams(window.location.search).get("auth") === "login" ? "login" : null);
   const [stats, setStats] = useState(null);
   useEffect(() => { api.stats().then(setStats).catch(() => {}); }, []);
 
   // The header and hero buttons open the sign-in dialog in the right mode
   const goAuth = m => setAuth(m);
+  const closeAuth = () => {
+    setAuth(null);
+    const url = new URL(window.location.href);
+    if (url.searchParams.has("auth")) {
+      url.searchParams.delete("auth");
+      window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+    }
+  };
 
   return (
     <div id="top" style={{ minHeight: "100vh", background: "var(--bg)" }}>
@@ -86,7 +94,7 @@ export default function Landing({ onAuthed, notice }) {
           CinematicStory.jsx (+ ./story-colours.css), the earlier scroll story */}
       <StarFilm onJoin={() => goAuth("signup")} onLogin={() => goAuth("login")} stats={stats} />
       <PriceStrip />
-      {auth && <AuthDialog mode={auth} onModeChange={setAuth} onAuthed={onAuthed} onClose={() => setAuth(null)} />}
+      {auth && <AuthDialog mode={auth} onModeChange={setAuth} onAuthed={onAuthed} onClose={closeAuth} />}
       <main style={{ maxWidth: 1240, margin: "0 auto", padding: "40px 20px 0" }}>
         {/* ── The product ── */}
         <section id="product-preview" style={{ padding: "8px 0 40px", scrollMarginTop: 24 }}>

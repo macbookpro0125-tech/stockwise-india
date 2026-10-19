@@ -39,6 +39,7 @@ export function basisText(basis, periods = {}) {
     case "close": return `NSE's close on ${close}`;
     case "close-fy": return most(`Price at the ${close} close, against the latest full year's figures`, fy && `the year to ${fy}`);
     case "close-ttm": return `Price at the ${close} close, against the last four quarters`;
+    case "close-ttm-or-fy": return `Price at the ${close} close, against the last four quarters when available, else the latest audited year`;
     case "close-ttm-div": return `Dividends with ex-dates in the last 12 months, against the ${close} close`;
     case "ttm-div": return "Dividends with ex-dates in the last 12 months";
     case "pe-history": return "Each of the last five year-ends' price ÷ that year's EPS";

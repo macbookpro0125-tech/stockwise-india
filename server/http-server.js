@@ -14,7 +14,7 @@ import { signup, login, logout, verifySession, accountInfo, deleteAccount, creat
 import { firebaseConfig, verifyFirebaseIdToken } from "./firebase-auth.js";
 import { emailConfigured, appUrl, sendEmail, resetEmail } from "./email.js";
 import { listAlerts, createAlert, updateAlert, deleteAlert } from "./user-alerts.js";
-import { screen, screenerMeta, getStock, saveStock, rowsFor, isValidSymbol, countFetched, allMetrics, screenRowCount, marketReady } from "./screen.js";
+import { screen, matchingSymbols, screenerMeta, getStock, saveStock, rowsFor, isValidSymbol, countFetched, allMetrics, screenRowCount, marketReady, capHistoricalMultiples } from "./screen.js";
 import { startDataPull, pullStatus } from "./data-pull.js";
 import { screenMomentum, momentumAllowed, momentumAudience } from "./momentum.js";
 import { criteriaToFilters, METRICS, CATEGORY_METRICS } from "./metric-catalog.js";
@@ -22,7 +22,7 @@ import { listWatchlist, addToWatchlist, setWatchlistNote, removeFromWatchlist } 
 import { listHoldings, addHolding, addHoldings, updateHolding, removeHolding } from "./user-portfolio.js";
 import { resolveImportRows, MAX_IMPORT_ROWS } from "./portfolio-import.js";
 import { getThesis, saveThesis } from "./user-thesis.js";
-import { listNotes, saveNote, deleteNote, listStrategies, saveStrategies } from "./user-notes.js";
+import { listNotes, saveNote, deleteNote, listStrategies, saveStrategies, checkStrategyMatches, acknowledgeStrategyMatches } from "./user-notes.js";
 import { currentPrices } from "./prices.js";
 import { getPerformance, takeSnapshots } from "./performance.js";
 import { pricePosition } from "./levels.js";
@@ -514,6 +514,32 @@ export function createApp() {
         res.end(req.method === "HEAD" ? undefined : logo.body);
         return;
       }
+      const researchRoute = url.pathname.match(/^\/api\/stock\/([^/]+)\/research$/);
+      if (researchRoute && req.method === "GET") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        const symbol = decodePathSegment(researchRoute[1]).toUpperCase();
+        if (!isValidSymbol(symbol)) { sendJson(res, 400, { error: "Unknown symbol" }); return; }
+        const row = allMetrics().rows.find(m => m.symbol === symbol);
+        if (!row?.research) { sendJson(res, 404, { error: "Detailed research checks are not available for this company yet." }); return; }
+        sendJson(res, 200, {
+          symbol,
+          quality: row.research.quality,
+          coverage: row.research.coverage,
+          capped: row.research.capped,
+          groups: row.research.groups.map(group => ({
+            id: group.id, label: group.label, score: group.score,
+            checked: group.checked, total: group.total, applicable: group.applicable,
+            items: group.items.map(item => ({
+              id: item.id, label: item.label, score: item.score,
+              display: item.display ?? null, reason: item.reason ?? null,
+              missing: item.missing ?? null, na: item.na ?? null,
+            })),
+          })),
+        });
+        return;
+      }
+
       const panelRoute = url.pathname.match(/^\/api\/stock\/([^/]+)\/(prices|technicals|shareholding|profile|filings|news|peers)$/);
       if (panelRoute && req.method === "GET") {
         const userId = requireAuth(req, res);
@@ -595,7 +621,10 @@ export function createApp() {
         // keep it (the page showed 6 Oct's price beside 7 Oct's NSE close)
         const quoteNewer = quote && (!snap?.pricesDate || quote.asOf >= snap.pricesDate);
         const metrics = computeMetrics(fundamentals, snap, quoteNewer ? { cmp: quote.cmp, cmpDate: quote.asOf } : {});
-        if (metrics) metrics.evToSalesSector = market.evSales?.get(metrics.peerSector) ?? null;
+        if (metrics) {
+          capHistoricalMultiples([metrics]);
+          metrics.evToSalesSector = market.evSales?.get(metrics.peerSector) ?? null;
+        }
 
         sendJson(res, 200, {
           symbol: fundamentals.symbol,
@@ -688,6 +717,27 @@ export function createApp() {
         else sendJson(res, 200, { strategies: saveStrategies(userId, (await readJsonBody(req)).strategies) });
         return;
       }
+      if (url.pathname === "/api/strategies/check" && req.method === "POST") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        const strategies = listStrategies(userId);
+        const symbolsById = Object.create(null);
+        for (const strategy of strategies) {
+          if (!strategy.custom || !Array.isArray(strategy.filters)) continue;
+          symbolsById[strategy.id] = matchingSymbols(strategy.filters.length ? { filters: strategy.filters } : strategy.criteria ?? { filters: [] });
+        }
+        const states = checkStrategyMatches(userId, strategies, symbolsById);
+        sendJson(res, 200, { strategies: strategies.map(p => ({ ...p, ...(states[p.id] ?? {}) })) });
+        return;
+      }
+      const strategyAck = url.pathname.match(/^\/api\/strategies\/([^/]+)\/matches\/ack$/);
+      if (strategyAck && req.method === "POST") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        acknowledgeStrategyMatches(userId, decodePathSegment(strategyAck[1]));
+        sendJson(res, 200, { ok: true });
+        return;
+      }
 
       if (url.pathname === "/api/watchlist" && req.method === "POST") {
         const userId = requireAuth(req, res);
@@ -751,7 +801,12 @@ export function createApp() {
           const price = prices[r.symbol]?.price;
           const levels = r.safeBuyPrice ? { fv25: r.fv25, p1: r.safeBuyPrice, p2: r.p2, p3: r.p3, stopLoss: r.stopLoss, target: r.target } : null;
           const position = price && levels ? pricePosition(price, levels) : null;
-          status[r.symbol] = { position, levels, research: r.research ?? null, valuation: r.valuation ?? null };
+          status[r.symbol] = {
+            position, levels, research: r.research ?? null, valuation: r.valuation ?? null,
+            divYield: r.divYield ?? null, salesGrowth3y: r.salesGrowth3y ?? null,
+            // today's fair value, as Discover's "vs FV" uses (not the 2-year one)
+            roce: r.roce ?? null, fv25: r.fv25 ?? null,
+          };
         }
         sendJson(res, 200, { holdings, prices, status });
         return;

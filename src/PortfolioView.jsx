@@ -46,6 +46,7 @@ export default function PortfolioView({ onOpenStock }) {
   const dismissToast = () => { setToastLeaving(true); setTimeout(() => { setImported(null); setToastLeaving(false); }, 200); };
   const [sortBy, setSortBy] = useState("value");
   const [sortDir, setSortDir] = useState("desc");
+  const [portfolioView, setPortfolioView] = useState("overview");
 
   const holdings = data?.holdings ?? [];
   const prices = data?.prices ?? {};
@@ -78,13 +79,46 @@ export default function PortfolioView({ onOpenStock }) {
   const { totalInvested, totalCurrent, totalPL, totalPLPct, unpriced, allPricesLoaded } = portfolioSummary(enriched);
 
   const sorted = [...enriched].sort((a, b) => {
-    if (sortBy !== "name" && (a.cmp == null) !== (b.cmp == null)) return a.cmp == null ? 1 : -1;
+    if (portfolioView === "overview" && sortBy !== "name" && (a.cmp == null) !== (b.cmp == null)) return a.cmp == null ? 1 : -1;
     let c = 0;
-    if (sortBy === "value") c = (a.currentVal ?? a.invested) - (b.currentVal ?? b.invested);
+    const focusedValue = h => {
+      const insight = status[h.ticker] ?? {};
+      if (portfolioView === "quality") return insight.research?.quality ?? null;
+      if (portfolioView === "income") return insight.divYield ?? null;
+      // the furthest below today's fair value first (the list sorts high to low)
+      if (portfolioView === "value") return insight.fv25 > 0 && h.cmp > 0 ? -((h.cmp / insight.fv25 - 1) * 100) : null;
+      if (portfolioView === "growth") return insight.salesGrowth3y ?? null;
+      return null;
+    };
+    if (portfolioView !== "overview") {
+      const av = focusedValue(a), bv = focusedValue(b);
+      if ((av == null) !== (bv == null)) return av == null ? 1 : -1;
+      return (bv ?? -Infinity) - (av ?? -Infinity);
+    } else if (sortBy === "value") c = (a.currentVal ?? a.invested) - (b.currentVal ?? b.invested);
     else if (sortBy === "pl") c = (a.plPct ?? 0) - (b.plPct ?? 0);
     else if (sortBy === "name") c = (a.name || "").localeCompare(b.name || "");
     return sortDir === "desc" ? -c : c;
   });
+
+  const focusText = h => {
+    const insight = status[h.ticker] ?? {};
+    if (portfolioView === "quality") {
+      const q = insight.research?.quality;
+      return q == null ? "Quality score unavailable" : `Quality ${Math.round(q)}/100`;
+    }
+    if (portfolioView === "income") return insight.divYield == null ? "Dividend yield unavailable" : `Dividend yield ${fmtPct(insight.divYield)}`;
+    if (portfolioView === "value") {
+      // as Discover's "vs FV": the price against today's fair value
+      const vs = insight.fv25 > 0 && h.cmp > 0 ? (h.cmp / insight.fv25 - 1) * 100 : null;
+      return vs == null ? "No fair value for this company" : `Price ${fmtPct(Math.abs(vs)).replace(/^[+-]/, "")} ${vs >= 0 ? "above" : "below"} today's fair value`;
+    }
+    if (portfolioView === "growth") {
+      const growth = insight.salesGrowth3y;
+      const roce = insight.roce;
+      return `3-year sales growth ${growth == null ? "—" : fmtPct(growth)} · ROCE ${roce == null ? "—" : fmtPct(roce)}`;
+    }
+    return null;
+  };
 
   // One allocation segment per stock, across its lots
   const grouped = {};
@@ -142,8 +176,16 @@ export default function PortfolioView({ onOpenStock }) {
       )}
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+          {[["overview", "Overview"], ["quality", "Quality"], ["income", "Income"], ["value", "Value"], ["growth", "Growth"]].map(([id, text]) => (
+            <button key={id} type="button" aria-pressed={portfolioView === id} onClick={() => setPortfolioView(id)}
+              style={{ padding: "5px 11px", borderRadius: 20, fontSize: 11, fontWeight: 600, cursor: "pointer", border: `1px solid ${portfolioView === id ? "var(--accent)" : "var(--bdr2)"}`, background: portfolioView === id ? "color-mix(in srgb, var(--accent) 8%, transparent)" : "transparent", color: portfolioView === id ? "var(--accent)" : "var(--t3)" }}>
+              {text}
+            </button>
+          ))}
+        </div>
         <div style={{ display: "flex", gap: 6 }}>
-          {holdings.length > 0 && (
+          {holdings.length > 0 && portfolioView === "overview" && (
             <>
               <SortPill id="value" label="Value" />
               <SortPill id="pl" label="P&L" />
@@ -184,6 +226,7 @@ export default function PortfolioView({ onOpenStock }) {
                     {h.splitAdjusted && <span title={`Quantity and price adjusted for a split or bonus issue after ${h.splitAdjusted.since} (×${h.splitAdjusted.ratio} shares)`}> · adjusted for a split</span>}
                     {h.buyDate && <span style={{ marginLeft: 6 }}>· {fmtDate(h.buyDate)}</span>}
                   </div>
+                  {portfolioView !== "overview" && <div className="portfolio-focus-value">{focusText(h)}</div>}
                   {h.notes && <div style={{ fontSize: 11.5, color: "var(--t2)", marginTop: 4 }}><NotebookPen size={12} style={{ marginRight: 5, verticalAlign: "-1px", color: "var(--t3)" }} />{h.notes}</div>}
                 </div>
 

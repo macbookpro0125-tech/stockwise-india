@@ -40,7 +40,7 @@ function ScenarioRow({ name, color, growth, multiple, onGrowth, onMultiple, eps,
 }
 
 export default function ValuationExplorer({ metrics: m, price, levels, mosPct, epsInput, peInput }) {
-  const historicalPe = Number(peInput) || Number(m?.medianPe ?? m?.valuationPe ?? m?.pe) || 0;
+  const historicalPe = Number(peInput) || Number(m?.valuationPe ?? m?.medianPe ?? m?.pe) || 0;
   const baseGrowth = clamp(Number(m?.epsGrowth5y ?? m?.epsGrowth3y ?? m?.growthForValuation ?? 0), -10, 30);
   // A downside case should stress both earnings and the valuation multiple.
   // Keep the default editable, but don't call a lightly reduced growth rate a
@@ -105,15 +105,16 @@ export default function ValuationExplorer({ metrics: m, price, levels, mosPct, e
 
       {rerated && (
         <div style={{ fontSize: 11.5, color: "var(--t2)", background: "var(--s1)", border: "1px solid var(--bdr)", borderRadius: 8, padding: "9px 11px", marginTop: 12, lineHeight: 1.5 }}>
-          <strong style={{ color: "var(--t1)" }}>Re-rated compounder.</strong> Its P/E rose from about {rerated.from}× to {rerated.to}× over the years on file, and the market still pays {rerated.now}×. Against a rising multiple, the 5-year median ({rerated.median}×) stays below the price for good, so it never marks a fair entry. The growth today's price implies comes first: judge whether the business can deliver it.
+          <strong style={{ color: "var(--t1)" }}>Re-rated compounder.</strong> Its P/E rose from about {rerated.from}× to {rerated.to}× over the years on file, and the market still pays {rerated.now}×. Its own 5-year median ({rerated.median}×) is historical context; price levels use {m.valuationMultipleBasis ?? "the available valuation multiple"}. The growth today's price implies still deserves scrutiny.
         </div>
       )}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 9, marginTop: 14 }}>
         {rerated && impliedCard}
         <div style={{ padding: 12, background: "var(--s1)", border: "1px solid var(--bdr)", borderRadius: 9 }}>
-          <div style={{ fontSize: 11, color: "var(--t3)" }}>{m.medianPe != null ? "Historical P/E reference" : "Current P/E reference"}</div>
+          <div style={{ fontSize: 11, color: "var(--t3)" }}>Multiple used for the price levels</div>
           <div style={{ marginTop: 4, fontSize: 18, color: "var(--t1)", fontWeight: 700, ...mono }}>{money(levels?.fv25)}</div>
-          <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 4 }}>₹{eps.toFixed(2)} normalized EPS × {historicalPe.toFixed(1)}× {m.medianPe != null ? `5Y median (${m.peYears} usable years)` : "P/E reference"}</div>
+          <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 4 }}>₹{eps.toFixed(2)} normalized EPS × {historicalPe.toFixed(1)}×</div>
+          <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 3 }}>{m.valuationMultipleBasis ?? (m.medianPe != null ? `5-year median annual P/E (${m.peYears} usable years)` : "P/E reference")}</div>
         </div>
         <div style={{ padding: 12, background: "var(--s1)", border: "1px solid var(--bdr)", borderRadius: 9 }}>
           <div style={{ fontSize: 11, color: "var(--t3)" }}>Margin-of-safety price</div>
@@ -139,7 +140,7 @@ export default function ValuationExplorer({ metrics: m, price, levels, mosPct, e
         Source: {reportSource?.source ?? "NSE financial filings"}, {reportSource?.scope ?? "scope not stated"} results for FY ending {reportSource?.period ?? m.fyEnd ?? "—"}{reportSource?.filedAt ? ` (filed ${reportSource.filedAt})` : ""}. Price: {priceSource?.source ?? "available market price"}{priceSource?.date ? ` dated ${priceSource.date}` : ""}. Historical P/E uses {m.provenance?.historicalPe?.usableYears ?? m.peYears ?? 0} usable years.
       </div>
       {m.medianPe != null && <div style={{ fontSize: 11, color: "var(--t2)", background: "var(--s1)", border: "1px solid var(--bdr)", borderRadius: 8, padding: "9px 11px", marginTop: 9, lineHeight: 1.5 }}>
-        <strong>Two different comparisons:</strong> {m.medianPe.toFixed(1)}× is this company's own historical median; {peerCheck?.reason ? peerCheck.reason : "the peer reference compares the stock with its NSE sector"} NSE sectors can include different industries. Neither multiple is a standalone fair value or price target.
+        <strong>Two different comparisons:</strong> {m.medianPe.toFixed(1)}× is this company's own historical median; price levels use {m.valuationMultipleBasis ?? (peerCheck?.reason ? peerCheck.reason : "the available peer reference")}. NSE sectors can include different industries. The resulting level is an estimate, not a standalone price target.
       </div>}
 
       {expanded && (
@@ -150,7 +151,7 @@ export default function ValuationExplorer({ metrics: m, price, levels, mosPct, e
               {[3, 5].map(y => <button key={y} type="button" onClick={() => setYears(y)} className="btn-ghost" aria-pressed={years === y} style={{ height: 28, padding: "0 10px", fontSize: 11, borderColor: years === y ? "var(--accent)" : undefined, color: years === y ? "var(--accent)" : undefined }}>{y} years</button>)}
             </div>
           </div>
-          <div style={{ fontSize: 11, color: "var(--t3)", marginBottom: 8, lineHeight: 1.5 }}>Future EPS = ₹{eps.toFixed(2)} × (1 + growth)^{years}. Future price = future EPS × terminal P/E. CAGR excludes dividends. The default Bear / stress case assumes no EPS growth (or 25 percentage points below reported growth, capped at −30%) and half the historical P/E. Base growth defaults use {growthSource}. Edit every assumption; these cases are scenarios, not forecasts.</div>
+          <div style={{ fontSize: 11, color: "var(--t3)", marginBottom: 8, lineHeight: 1.5 }}>Future EPS = ₹{eps.toFixed(2)} × (1 + growth)^{years}. Future price = future EPS × terminal P/E. CAGR excludes dividends. The default Bear / stress case assumes no EPS growth (or 25 percentage points below reported growth, capped at −30%) and half the selected valuation multiple ({historicalPe.toFixed(1)}×). Base growth defaults use {growthSource}. Edit every assumption; these cases are scenarios, not forecasts.</div>
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", minWidth: 700, borderCollapse: "collapse", fontSize: 11.5 }}>
               <thead><tr>{["Case", "EPS growth p.a.", "Terminal P/E", `FY+${years} EPS`, "Scenario price", "Price CAGR"].map((h, i) => <th key={h} style={{ textAlign: i < 1 ? "left" : "right", padding: "7px 8px", borderBottom: "1px solid var(--bdr2)", color: "var(--t3)", fontWeight: 550 }}>{h}</th>)}</tr></thead>

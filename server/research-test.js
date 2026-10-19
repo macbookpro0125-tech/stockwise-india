@@ -9,6 +9,7 @@ import { band, GROUPS, computeResearch } from "./research.js";
 import { justifiedPb, sustainableGrowth, bankValuation, costOfEquity } from "./bank-valuation.js";
 import { pricePosition } from "./levels.js";
 import { classifyAnnouncement } from "./company-extras.js";
+import { capHistoricalMultiples, PEER_CAP_TIMES } from "./screen.js";
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`FAILED: ${msg}`);
@@ -127,7 +128,13 @@ assert(ym.research.quality != null, "a company listed two years ago is scored, i
 assert(["marginStability", "revenueConsistency", "salesGrowth3y", "epsGrowth3y"].every(id => yItems.find(i => i.id === id)?.fromQuarters), "…margin steadiness, sales consistency and growth come from the quarters, and say so");
 assert(/eight quarters/.test(ym.research.summary), "…and the summary says the company listed recently");
 const established = metricsOf(withQuarters(), snapshot());
-assert(established.research.quality === base.research.quality && !established.research.groups.some(g => g.items.some(i => i.fromQuarters)), "a company with the years keeps its year-based checks — quarters change nothing");
+const establishedAnnualGroups = established.research.groups.filter(g => g.id !== "valuation");
+const baseAnnualGroups = base.research.groups.filter(g => g.id !== "valuation");
+const annualChecksUnchanged = establishedAnnualGroups.every((g, gi) =>
+  g.score === baseAnnualGroups[gi]?.score && g.items.every((item, ii) => item.score === baseAnnualGroups[gi]?.items[ii]?.score && !item.fromQuarters));
+assert(annualChecksUnchanged, "a company with the years keeps its year-based checks when quarters arrive");
+const establishedPeerCheck = itemOf(established.research, "valuation", "peers");
+assert(established.peTtm != null && near(establishedPeerCheck.value, established.peTtm / 22, 1e-9), "complete quarterly data updates valuation P/E checks to TTM while annual checks stay annual");
 const tooNew = metricsOf({ ...company(), years: company().years.slice(0, 2) }, snapshot());
 assert(tooNew.research.quality == null && /2 years of annual results/.test(tooNew.research.summary), "two years and no quarters is still too little, and the page says how many years there are");
 const broken = metricsOf(company({ holding: { totalShares: 900 * CR } }), snapshot());
@@ -166,10 +173,12 @@ assert(qn.flags.some(f => f.id === "auditQualified" && f.severity === "critical"
 assert(qn.overall.status === "review-required" && qn.overall.score <= 39 && qn.overall.stance === "Review required", "…which holds the overall score at 39 or under, marked Review required");
 const qualifiedBefore = metricsOf(company({ tweak: (y, i) => (i === 2 ? { ...y, auditOpinion: "qualified" } : y) }), snapshot());
 assert(itemOf(qualifiedBefore.research, "governance", "auditor").score === 50 && qualifiedBefore.research.flags.length === 0, "an older qualification scores 50 and isn't a red flag");
-const resignedSnap = { ...snapshot(), auditorResignations: { TESTCO: ["2026-05-12"] } };
+const resignedSnap = { ...snapshot(), auditorResignations: { TESTCO: [{ date: "2026-05-12", url: "https://nsearchives.nseindia.com/corporate/TESTCO_auditor_notice.pdf" }] } };
 const resigned = metricsOf(company(), resignedSnap).research;
-assert(itemOf(resigned, "governance", "auditor").score === 50 && /resigned on 12 May 2026/.test(itemOf(resigned, "governance", "auditor").reason), "an auditor's resignation halves the audit check and says when");
+assert(itemOf(resigned, "governance", "auditor").score === 50 && /resignation notice was filed on 12 May 2026/.test(itemOf(resigned, "governance", "auditor").reason), "a source-linked auditor resignation halves the audit check and says when");
 assert(resigned.flags.some(f => f.id === "auditorResigned" && f.severity === "caution") && resigned.overall.status === "rated", "…shows as a caution, without the review-required override");
+const legacyNotice = metricsOf(company(), { ...snapshot(), auditorResignations: { TESTCO: ["2026-05-12"] } }).research;
+assert(itemOf(legacyNotice, "governance", "auditor").score === 50 && legacyNotice.flags.some(f => f.id === "auditorResigned" && !f.url), "a resignation saved as a date only (before filing links were kept) still halves the audit check and shows as a caution");
 const knownNone = metricsOf(company(), { ...snapshot(), auditorResignations: {} }).research;
 assert(/no auditor resignation/.test(itemOf(knownNone, "governance", "auditor").reason) && knownNone.flags.length === 0, "resignations checked and none found: the reason says so");
 assert(!/resignation/.test(itemOf(r, "governance", "auditor").reason), "resignations not checked: the reason doesn't claim there were none");
@@ -341,5 +350,48 @@ const levels = { fv25: 1000, p1: 900, p2: 810, p3: 720, stopLoss: 670, target: 1
 const zones = [[650, "below-stop"], [700, "phase3"], [800, "phase2"], [880, "phase1"], [950, "above-phase1"], [1350, "above-upper"], [1600, "far-above"]];
 for (const [p, z] of zones) assert(pricePosition(p, levels).zone === z, `₹${p} sits in the ${z} zone`);
 assert(zones.every(([p]) => !/\b(BUY|SELL|buy|sell|deploy|exit)/i.test(JSON.stringify(pricePosition(p, levels)))), "price positions never say buy, sell, deploy or exit");
+
+// ── Valuation inputs (17–19 Oct 2026: ChatGPT's changes, narrowed) ──
+// P/E is the last four quarters' where all four are filed, else the year's
+const withQ = metricsOf(withQuarters(), snapshot());
+assert(withQ.pe === withQ.peTtm && withQ.peTtm != null && withQ.peFy != null && withQ.pe !== withQ.peFy, "P/E is on the last four quarters when they're all filed, with the latest year's beside it");
+const yearsOnly = metricsOf(company(), snapshot());
+assert(yearsOnly.peTtm == null && yearsOnly.pe === yearsOnly.peFy && near(yearsOnly.pe, 200 / 13, 1e-9), "…and on the latest year's EPS without them");
+
+// A filed EPS that disagrees with profit ÷ shares: only a quarter's EPS filed
+// as the year's (3–5× too low) is corrected, and only when the share count
+// matches the shareholding filing; anything else is kept and flagged
+const filedEps = eps => company({ tweak: (y, i) => (i === 0 ? { ...y, eps } : y) });
+const quarterAsYear = metricsOf(filedEps(13 / 4), snapshot());
+assert(near(quarterAsYear.eps, 13, 1e-9) && quarterAsYear.epsCorrection && quarterAsYear.research.flags.some(f => f.id === "annualEpsCorrected"), "a quarter's EPS filed as the year's (₹3.25 against ₹13 of profit a share) is corrected, and says so");
+const farOff = metricsOf(filedEps(13 / 24), snapshot());
+assert(near(farOff.eps, 13 / 24, 1e-9) && !farOff.epsCorrection && farOff.epsMismatch && farOff.research.flags.some(f => f.id === "annualEpsMismatch"), "a 24× disagreement isn't that slip: the filed EPS stays and a caution says to check the filing");
+const sharesOff = metricsOf(company({ holding: { totalShares: 50 * CR }, tweak: (y, i) => (i === 0 ? { ...y, eps: 13 / 4 } : y) }), snapshot());
+assert(!sharesOff.epsCorrection && sharesOff.epsMismatch, "…nor is the slip corrected when the share count doesn't match the shareholding filing");
+assert(!yearsOnly.epsCorrection && !yearsOnly.epsMismatch && !yearsOnly.research.flags.some(f => /Eps/.test(f.id)), "a filed EPS in line with profit ÷ shares is left alone, without a caution");
+
+// Tax: as filed, never inferred; no tax-credit adjustment to the levels
+const profitAbovePbt = metricsOf(company({ tweak: y => ({ ...y, pbt: y.profit * 0.9 }) }), snapshot());
+assert(!("taxNormalization" in profitAbovePbt) && profitAbovePbt.history[0].taxCr == null && near(profitAbovePbt.valuationEps, profitAbovePbt.eps, 1e-9), "profit above profit before tax isn't read as a tax credit: no inferred tax, no adjustment");
+const taxFiled = metricsOf(company({ tweak: y => ({ ...y, tax: 45 * CR }) }), snapshot());
+assert(near(taxFiled.history[0].taxCr, 45, 1e-9), "a filed tax charge is shown as filed");
+
+// No sector from NSE or the name: none, not "Industry: …" in the sector list
+const unsectored = metricsOf(company(), { ...snapshot(), sectors: {}, industries: { TESTCO: "Trading" } });
+assert(unsectored.sector == null && unsectored.industry === "Trading", "a company without an NSE sector keeps its industry apart from the sector filter");
+
+// Fair value's multiple: its own usual P/E, capped at twice the peers' median
+const capped = (median, n = 30) => {
+  const m = metricsOf(company(), snapshot());
+  const before = { levels: m.levels, multiple: m.medianPe };
+  capHistoricalMultiples([m], { sectors: new Map([["Information Technology", { median, n }]]), industries: new Map() });
+  return { m, before };
+};
+const within = capped(12);
+assert(PEER_CAP_TIMES === 2 && within.m.levels === within.before.levels && within.m.valuationMultiple === within.before.multiple && /within twice/.test(within.m.valuationMultipleBasis), "a usual P/E of 20 within twice the peers' 12 keeps its own levels, untouched");
+const over = capped(5);
+assert(near(over.m.valuationMultiple, 10, 1e-9) && near(over.m.levels.fv25 / over.before.levels.fv25, 10 / 20, 0.02) && /capped at twice/.test(over.m.valuationMultipleBasis), "a usual P/E of 20 against peers at 5 is capped at 10, and fair value follows");
+const fewPeers = capped(5, 3);
+assert(fewPeers.m.levels === fewPeers.before.levels && /no peer group/.test(fewPeers.m.valuationMultipleBasis), "fewer than five peers with a P/E: no cap");
 
 console.log("\nAll research-score checks passed.");

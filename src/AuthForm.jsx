@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Smartphone, Mail, ChevronLeft, Eye, EyeOff } from "lucide-react";
+import { Smartphone, Mail, MailCheck, ChevronLeft, Eye, EyeOff } from "lucide-react";
 import { api } from "./api.js";
 import { SiteLink } from "./site.jsx";
 import { preloadFirebase, signInWithProvider, sendPhoneCode, toE164 } from "./socialSignIn.js";
@@ -20,6 +20,7 @@ const AppleLogo = () => (
 );
 
 const errorBox = { fontSize: 12, color: "var(--red)", background: "var(--red-dim)", border: "1px solid var(--red-bdr)", borderRadius: 8, padding: "8px 12px", lineHeight: 1.5 };
+const label = { display: "block", margin: "0 0 6px", fontSize: 12.5, fontWeight: 500, color: "var(--t2)" };
 
 // Sign in with a phone number: the number, then the 6-digit SMS code
 function PhoneSignIn({ config, onAuthed, onBack }) {
@@ -90,9 +91,9 @@ export function defaultAuthMode() {
   try { return localStorage.getItem(RETURNING_KEY) ? "login" : "signup"; } catch { return "signup"; }
 }
 
-// "Forgot password?": the email box and, once sent, the same message whether
-// or not the email has an account (the server answers alike)
-function ForgotPassword({ initialEmail, onBack }) {
+// Keep the same confirmation for known and unknown addresses; it should not
+// be possible to use the reset form to discover which emails have accounts.
+function ForgotPassword({ initialEmail, onBack, available }) {
   const [email, setEmail] = useState(initialEmail);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
@@ -101,28 +102,45 @@ function ForgotPassword({ initialEmail, onBack }) {
     e.preventDefault();
     setError("");
     setBusy(true);
-    try { await api.forgotPassword(email); setSent(true); }
+    try { await api.forgotPassword(email.trim()); setSent(true); }
     catch (err) { setError(err.message); }
     finally { setBusy(false); }
   };
   return (
     <>
-      <h2 style={{ fontSize: 19, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--t1)", margin: "0 0 4px" }}>Reset your password</h2>
-      {sent ? (
-        <p style={{ color: "var(--t2)", fontSize: 13.5, lineHeight: 1.6, margin: "0 0 4px" }}>
-          If an account exists for <strong>{email.trim()}</strong>, an email with a reset link is on its way. The link works once, for one hour — check your spam folder if it doesn't arrive.
-        </p>
+      {available === false ? (
+        <div className="auth-sent" role="status">
+          <span className="auth-sent-icon"><Mail size={22} aria-hidden="true" /></span>
+          <h2 className="auth-title">Reset email isn't set up yet</h2>
+          <p className="auth-sub">Automated password resets aren't available right now. Email <a href="mailto:jocularinsights@gmail.com">jocularinsights@gmail.com</a> for help signing in.</p>
+        </div>
+      ) : sent ? (
+        <div className="auth-sent" role="status" aria-live="polite">
+          <span className="auth-sent-icon"><MailCheck size={22} aria-hidden="true" /></span>
+          <h2 className="auth-title">Check your inbox</h2>
+          <p className="auth-sub">
+            If an account exists for <strong>{email.trim()}</strong>, we sent a password reset link. It works once and expires in one hour.
+          </p>
+          <p className="auth-help">Can't find it? Check your spam folder or try another address.</p>
+          <button type="button" className="auth-link auth-link-centered" onClick={() => { setSent(false); setError(""); }}>
+            Try a different email
+          </button>
+        </div>
       ) : (
         <>
-          <p style={{ color: "var(--t3)", fontSize: 13, margin: "0 0 18px" }}>We'll email you a link to choose a new one.</p>
-          <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            <input className="input-base" type="email" placeholder="Email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} required />
-            {error && <div style={{ fontSize: 12, color: "var(--red)", background: "var(--red-dim)", border: "1px solid var(--red-bdr)", borderRadius: 8, padding: "8px 12px" }}>{error}</div>}
+          <h2 className="auth-title">Reset your password</h2>
+          <p className="auth-sub">Enter the email linked to your account and we'll send you a secure reset link.</p>
+          <form onSubmit={submit} className="auth-form">
+            <div>
+              <label htmlFor="auth-reset-email" style={label}>Email</label>
+              <input id="auth-reset-email" className="input-base" type="email" placeholder="you@example.com" autoComplete="email" autoCapitalize="none" spellCheck="false" autoFocus value={email} onChange={e => { setEmail(e.target.value); if (error) setError(""); }} required />
+            </div>
+            {error && <div role="alert" style={errorBox}>{error}</div>}
             <button type="submit" className="btn-primary" disabled={busy}>{busy ? "Sending…" : "Send reset link"}</button>
           </form>
         </>
       )}
-      <button type="button" className="btn-ghost" style={{ marginTop: 14, width: "100%" }} onClick={onBack}>Back to sign in</button>
+      <button type="button" className="btn-ghost auth-back-full" onClick={onBack}>Back to sign in</button>
     </>
   );
 }
@@ -131,8 +149,6 @@ function ForgotPassword({ initialEmail, onBack }) {
 // a trading site's: first the ways in (Google, phone — whatever the server
 // offers — and email), then the chosen one. With email the only way in, it
 // opens straight on the email step.
-const label = { display: "block", margin: "0 0 6px", fontSize: 12.5, fontWeight: 500, color: "var(--t2)" };
-
 // onProgress(0–1): how far along the form is, for the sky beside it
 export default function AuthForm({ onAuthed, mode, onModeChange, onProgress }) {
   const [email, setEmail] = useState("");
@@ -144,7 +160,7 @@ export default function AuthForm({ onAuthed, mode, onModeChange, onProgress }) {
   const [socialBusy, setSocialBusy] = useState(null);
   // What the server can offer: password reset needs email; Google / Apple /
   // phone need Firebase (its public web config comes with the answer)
-  const [canReset, setCanReset] = useState(false);
+  const [canReset, setCanReset] = useState(null);
   const [fb, setFb] = useState(null);
   useEffect(() => {
     api.authOptions().then(o => {
@@ -158,7 +174,7 @@ export default function AuthForm({ onAuthed, mode, onModeChange, onProgress }) {
         setFb({ ...o.firebase, providers });
         preloadFirebase(o.firebase).catch(() => {});
       }
-    }).catch(() => {});
+    }).catch(() => setCanReset(false));
   }, []);
   const signup = mode === "signup";
   const hasChoices = !!fb?.providers?.length;
@@ -185,7 +201,7 @@ export default function AuthForm({ onAuthed, mode, onModeChange, onProgress }) {
     </p>
   );
 
-  if (shown === "forgot") return <div className="auth-step"><ForgotPassword initialEmail={email} onBack={() => { setStep("email"); setError(""); }} /></div>;
+  if (shown === "forgot") return <div className="auth-step"><ForgotPassword initialEmail={email} available={canReset} onBack={() => { setStep("email"); setError(""); }} /></div>;
   if (shown === "phone") return <div className="auth-step"><PhoneSignIn config={fb} onAuthed={done} onBack={back} /></div>;
 
   const social = async which => {
@@ -198,7 +214,7 @@ export default function AuthForm({ onAuthed, mode, onModeChange, onProgress }) {
 
   if (shown === "choose") return (
     <div className="auth-step">
-      <h2 className="auth-title">{signup ? "Create your account" : "Sign in"}</h2>
+      <h2 className="auth-title">{signup ? "Create your account" : "Welcome back"}</h2>
       <p className="auth-sub">{signup ? "Free while in early access. No card needed." : "Your watchlist, alerts and portfolio are waiting."}</p>
       <div className="auth-choices">
         {has("google") && (
@@ -233,7 +249,7 @@ export default function AuthForm({ onAuthed, mode, onModeChange, onProgress }) {
     setError("");
     setBusy(true);
     try {
-      const result = signup ? await api.signup(email, password) : await api.login(email, password);
+      const result = signup ? await api.signup(email.trim(), password) : await api.login(email.trim(), password);
       done(result.userId);
     } catch (err) {
       setError(err.message);
@@ -244,26 +260,28 @@ export default function AuthForm({ onAuthed, mode, onModeChange, onProgress }) {
   return (
     <div className="auth-step">
       {hasChoices && <Back />}
-      <h2 className="auth-title">{signup ? "Create your account" : "Sign in with email"}</h2>
-      <p className="auth-sub">{signup ? "Free while in early access. No card needed." : "Welcome back."}</p>
+      <h2 className="auth-title">{signup ? "Create your account" : "Welcome back"}</h2>
+      <p className="auth-sub">{signup ? "Free while in early access. No card needed." : "Sign in with the email and password for your account."}</p>
       <form onSubmit={submit} className="auth-form">
         <div>
           <label htmlFor="auth-email" style={label}>Email</label>
-          <input id="auth-email" className="input-base" type="email" placeholder="you@example.com" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} required autoFocus />
+          <input id="auth-email" className="input-base" type="email" placeholder="you@example.com" autoComplete="email" autoCapitalize="none" spellCheck="false" value={email} onChange={e => { setEmail(e.target.value); if (error) setError(""); }} required autoFocus />
         </div>
         <div>
           <label htmlFor="auth-password" style={label}>Password</label>
           <div className="auth-password">
-            <input id="auth-password" className="input-base" type={showPassword ? "text" : "password"} placeholder={signup ? "8 or more characters" : ""} autoComplete={signup ? "new-password" : "current-password"} minLength={signup ? 8 : undefined} value={password} onChange={e => setPassword(e.target.value)} required />
+            <input id="auth-password" className="input-base" type={showPassword ? "text" : "password"} placeholder={signup ? "8 or more characters" : ""} autoComplete={signup ? "new-password" : "current-password"} minLength={signup ? 8 : undefined} value={password} onChange={e => { setPassword(e.target.value); if (error) setError(""); }} required />
             <button type="button" className="auth-eye" onClick={() => setShowPassword(v => !v)} aria-label={showPassword ? "Hide password" : "Show password"} aria-pressed={showPassword}>
               {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
             </button>
           </div>
-          {!signup && canReset && (
-            <button type="button" className="auth-link" onClick={() => { setStep("forgot"); setError(""); }}>Forgot your password?</button>
+          {!signup && (
+            <div className="auth-link-row">
+              <button type="button" className="auth-link" onClick={() => { setStep("forgot"); setPassword(""); setShowPassword(false); setError(""); }}>Forgot password?</button>
+            </div>
           )}
         </div>
-        {error && <div style={errorBox}>{error}</div>}
+        {error && <div role="alert" style={errorBox}>{error}</div>}
         <button type="submit" className="btn-primary auth-submit" disabled={busy}>
           {busy ? "Working…" : signup ? "Create free account" : "Sign in"}
         </button>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Eye, EyeOff, KeyRound } from "lucide-react";
 import { api } from "./api.js";
 import { Logo, navigate } from "./site.jsx";
 
@@ -8,8 +9,10 @@ export default function ResetPassword({ onDone }) {
   const token = new URLSearchParams(window.location.search).get("token") ?? "";
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [showPasswords, setShowPasswords] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const expired = /expired|already used/i.test(error);
 
   const submit = async e => {
     e.preventDefault();
@@ -25,29 +28,48 @@ export default function ResetPassword({ onDone }) {
     }
   };
 
+  const backToSignIn = e => {
+    e?.preventDefault?.();
+    navigate("/?auth=login");
+  };
+
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-      <div style={{ width: "100%", maxWidth: 400 }}>
-        <a href="/" onClick={e => { e.preventDefault(); navigate("/"); }} style={{ display: "inline-block", textDecoration: "none", marginBottom: 22 }}><Logo /></a>
-        <div style={{ background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 18, padding: 24, boxShadow: "var(--sh-lg)" }}>
-          <h1 style={{ fontSize: 19, fontWeight: 700, letterSpacing: "-0.02em", color: "var(--t1)", margin: "0 0 4px" }}>Choose a new password</h1>
+    <main className="reset-page">
+      <div className="reset-wrap">
+        <a href="/" onClick={e => { e.preventDefault(); navigate("/"); }} className="reset-brand"><Logo /></a>
+        <section className="reset-card" aria-labelledby="reset-title">
+          <span className="reset-icon"><KeyRound size={21} aria-hidden="true" /></span>
+          <h1 id="reset-title" className="reset-title">{token ? "Choose a new password" : "This reset link is incomplete"}</h1>
           {token ? (
             <>
-              <p style={{ color: "var(--t3)", fontSize: 13, margin: "0 0 18px" }}>You'll be signed out on every other device.</p>
-              <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <input className="input-base" type="password" placeholder="New password (8+ characters)" autoComplete="new-password" minLength={8} value={password} onChange={e => setPassword(e.target.value)} required />
-                <input className="input-base" type="password" placeholder="The same again" autoComplete="new-password" minLength={8} value={confirm} onChange={e => setConfirm(e.target.value)} required />
-                {error && <div style={{ fontSize: 12, color: "var(--red)", background: "var(--red-dim)", border: "1px solid var(--red-bdr)", borderRadius: 8, padding: "8px 12px", lineHeight: 1.5 }}>{error}</div>}
-                <button type="submit" className="btn-primary" disabled={busy}>{busy ? "Saving…" : "Save and sign in"}</button>
+              <p className="reset-copy">Use at least 8 characters. We'll sign out any other devices when you save it.</p>
+              <form onSubmit={submit} className="reset-form">
+                <div>
+                  <label htmlFor="reset-password" style={{ display: "block", margin: "0 0 6px", fontSize: 12.5, fontWeight: 500, color: "var(--t2)" }}>New password</label>
+                  <div className="auth-password">
+                    <input id="reset-password" className="input-base" type={showPasswords ? "text" : "password"} placeholder="At least 8 characters" autoComplete="new-password" minLength={8} value={password} onChange={e => { setPassword(e.target.value); if (error) setError(""); }} required autoFocus />
+                    <button type="button" className="auth-eye" onClick={() => setShowPasswords(v => !v)} aria-label={showPasswords ? "Hide passwords" : "Show passwords"} aria-pressed={showPasswords}>
+                      {showPasswords ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="reset-confirm" style={{ display: "block", margin: "0 0 6px", fontSize: 12.5, fontWeight: 500, color: "var(--t2)" }}>Confirm new password</label>
+                  <input id="reset-confirm" className="input-base" type={showPasswords ? "text" : "password"} placeholder="Enter it again" autoComplete="new-password" minLength={8} value={confirm} onChange={e => { setConfirm(e.target.value); if (error) setError(""); }} required />
+                </div>
+                {error && <div role="alert" style={{ fontSize: 12, color: "var(--red)", background: "var(--red-dim)", border: "1px solid var(--red-bdr)", borderRadius: 8, padding: "8px 12px", lineHeight: 1.5 }}>{error}</div>}
+                <button type="submit" className="btn-primary reset-submit" disabled={busy}>{busy ? "Saving…" : "Save new password"}</button>
               </form>
+              {expired && <button type="button" className="reset-back" onClick={backToSignIn}>Request a new reset link</button>}
             </>
           ) : (
-            <p style={{ color: "var(--t2)", fontSize: 13.5, lineHeight: 1.6, margin: "8px 0 0" }}>
-              This link is incomplete. Open the link from the email again, or ask for a new one from the sign-in page.
-            </p>
+            <>
+              <p className="reset-copy">Open the link from your reset email again, or request a new one from the sign-in page.</p>
+              <button type="button" className="btn-primary reset-submit" onClick={backToSignIn}>Return to sign in</button>
+            </>
           )}
-        </div>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }

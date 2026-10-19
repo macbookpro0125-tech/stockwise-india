@@ -68,7 +68,8 @@
   border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 50%; background: rgba(0, 0, 0, 0.35); color: #fff;
   -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); cursor: pointer;
 }
-.auth-pause:focus-visible, .auth-close:focus-visible, .auth-choice:focus-visible, .auth-back:focus-visible, .auth-eye:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.auth-pause:focus-visible, .auth-close:focus-visible, .auth-choice:focus-visible, .auth-back:focus-visible, .auth-eye:focus-visible,
+.auth-link:focus-visible, .auth-back-full:focus-visible, .auth-switch button:focus-visible, .reset-back:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
 .auth-side { position: relative; display: flex; flex-direction: column; min-height: 0; }
 .auth-close {
@@ -114,13 +115,38 @@
   border: 0; border-radius: 8px; background: none; color: var(--t3); cursor: pointer;
 }
 .auth-eye:hover { color: var(--t1); }
-.auth-link { margin-top: 8px; padding: 0; border: 0; background: none; color: var(--accent); font: 500 13px var(--font); cursor: pointer; }
+.auth-link-row { display: flex; justify-content: flex-end; margin-top: 8px; }
+.auth-link { padding: 2px 0; border: 0; background: none; color: var(--accent); font: 600 13px var(--font); cursor: pointer; }
+.auth-link-centered { display: block; margin: 14px auto 0; }
+.auth-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+.auth-back-full { width: 100%; min-height: 42px; margin-top: 20px; }
+.auth-sent { text-align: center; }
+.auth-sent-icon { width: 52px; height: 52px; display: grid; place-items: center; margin: 0 auto 18px; border-radius: 16px; color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--s1)); border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--bdr)); }
+.auth-sent .auth-sub { margin-bottom: 10px; }
+.auth-sent strong { color: var(--t1); overflow-wrap: anywhere; }
+.auth-help { margin: 0; color: var(--t3); font-size: 13px; line-height: 1.55; }
 .auth-submit { height: 48px !important; margin-top: 4px; border-radius: 12px !important; font-size: 15px !important; }
 .auth-legal { margin: 18px 0 0; text-align: center; font-size: 12px; line-height: 1.6; color: var(--t3); }
 .auth-legal a { color: var(--t2); text-decoration: underline; text-underline-offset: 2px; }
 .auth-switch { margin: 22px 0 0; padding-top: 18px; border-top: 1px solid var(--bdr); text-align: center; font-size: 14px; color: var(--t2); }
 .auth-switch button { padding: 0; border: 0; background: none; color: var(--accent); font: 600 14px var(--font); cursor: pointer; }
-.auth-switch button:hover, .auth-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+.auth-switch button:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* The password-reset link is a full page rather than a dialog step, but it
+   shares the sign-in form's type, fields and feedback styles. */
+.reset-page { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: max(24px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom)); background: var(--bg); }
+.reset-wrap { width: min(420px, 100%); }
+.reset-brand { display: inline-flex; margin: 0 0 24px; text-decoration: none; }
+.reset-card { padding: clamp(22px, 6vw, 32px); border: 1px solid var(--bdr2); border-radius: 20px; background: var(--s2); box-shadow: var(--sh-lg); }
+.reset-icon { width: 44px; height: 44px; display: grid; place-items: center; margin-bottom: 18px; border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--bdr)); border-radius: 14px; color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--s1)); }
+.reset-title { margin: 0 0 8px; color: var(--t1); font-size: 24px; font-weight: 700; line-height: 1.2; letter-spacing: -.03em; }
+.reset-copy { margin: 0 0 22px; color: var(--t3); font-size: 14px; line-height: 1.55; }
+.reset-form { display: flex; flex-direction: column; gap: 16px; }
+.reset-form .input-base { height: 48px; border-radius: 12px; font-size: 15px; }
+.reset-form .auth-password .input-base { padding-right: 48px; }
+.reset-submit { width: 100%; min-height: 48px; margin-top: 4px; border-radius: 12px !important; font-size: 15px !important; }
+.reset-back { display: flex; justify-content: center; width: 100%; margin-top: 14px; padding: 8px; border: 0; border-radius: 8px; background: none; color: var(--accent); font: 600 14px var(--font); cursor: pointer; text-decoration: none; }
+.reset-back:hover { text-decoration: underline; text-underline-offset: 3px; }
 
 /* A tablet or phone: the sky fills the top with the line low on it, and the
    steps rise from the bottom as a sheet, where the thumb is */

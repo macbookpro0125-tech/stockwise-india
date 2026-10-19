@@ -6,6 +6,7 @@ import { readdirSync, readFileSync, existsSync, writeFileSync, mkdirSync, statSy
 import { join } from "node:path";
 import { badRequest } from "./http-errors.js";
 import { computeMetrics } from "./metrics.js";
+import { calculateLevels } from "./levels.js";
 import { computeResearch, setResearchPeers } from "./research.js";
 import { loadMarketSnapshot } from "./market-data.js";
 import { MARKET_DIR } from "./paths.js";
@@ -46,6 +47,7 @@ export function countFetched() {
 }
 
 let cache = null, building = null;
+let peerMultiples = { sectors: new Map(), industries: new Map() };
 // Companies in the screener, once it has been worked out since the server
 // started (null before — the health check mustn't wait ~6 s to build it)
 export const screenRowCount = () => cache?.rows.length ?? null;
@@ -83,6 +85,7 @@ function* buildSteps(version) {
   // only when this market is swapped in, so a page served mid-build still
   // matches the market it sits beside.
   const peers = { sectors: sectorPeMedians(fresh), industries: industryPeMedians(fresh) };
+  capHistoricalMultiples(fresh, peers);
   yield;
   for (const m of fresh) { m.research = computeResearch(m, { peers }); yield; }
   // A company without a fair value shows EV/Sales beside its sector's, as
@@ -103,6 +106,7 @@ function* buildSteps(version) {
 }
 
 function install({ peers, market }) {
+  peerMultiples = peers;
   setResearchPeers(peers);
   cache = market;
   return cache;
@@ -158,14 +162,15 @@ export function marketReady() {
   return rebuild(version);
 }
 
-// Each sector's median P/E at the last close, on the same earnings the fair
-// value uses (the usual EPS after a one-off jump); loss-makers left out
+// Each sector's median P/E on the last four consecutive quarters at the last
+// close; stocks without a complete positive TTM EPS are left out.
 function sectorPeMedians(rows) {
   const bySector = new Map();
   for (const m of rows) {
-    if (!m.peerSector || !(m.close > 0) || !(m.valuationEps > 0)) continue;
+    const epsTtm = m.ttmEps;
+    if (!m.peerSector || !(m.close > 0) || !(epsTtm > 0)) continue;
     if (!bySector.has(m.peerSector)) bySector.set(m.peerSector, []);
-    bySector.get(m.peerSector).push(m.close / m.valuationEps);
+    bySector.get(m.peerSector).push(m.close / epsTtm);
   }
   const out = new Map();
   for (const [sector, pes] of bySector) {
@@ -200,9 +205,10 @@ function sectorEvSalesMedians(rows) {
 function industryPeMedians(rows) {
   const byIndustry = new Map();
   for (const m of rows) {
-    if (!m.industry || !(m.close > 0) || !(m.valuationEps > 0)) continue;
+    const epsTtm = m.ttmEps;
+    if (!m.industry || !(m.close > 0) || !(epsTtm > 0)) continue;
     if (!byIndustry.has(m.industry)) byIndustry.set(m.industry, []);
-    byIndustry.get(m.industry).push(m.close / m.valuationEps);
+    byIndustry.get(m.industry).push(m.close / epsTtm);
   }
   const out = new Map();
   for (const [industry, pes] of byIndustry) {
@@ -211,6 +217,66 @@ function industryPeMedians(rows) {
     out.set(industry, { median: pes.length % 2 ? pes[k] : (pes[k - 1] + pes[k]) / 2, n: pes.length });
   }
   return out;
+}
+
+// A company's own historical median P/E can be absurd when its earnings were
+// tiny for years (Nykaa's ran to 1,472×, MMTC's past 4,000×), and fair value
+// built on it means nothing. So the multiple behind fair value and the price
+// levels is capped at twice the median P/E of its NSE sector — or of its NSE
+// industry when the sector has fewer than five usable peers. Twice, not once:
+// a company valued above its peers isn't wrong for it, and a cap at the plain
+// median pulled every above-median company down to it (Reliance's fair value
+// halved, TCS's down a fifth; 17–19 Oct 2026). The P/E history stays on the
+// page as it is; only the multiple used for valuation changes.
+export const PEER_CAP_TIMES = 2;
+export function capHistoricalMultiples(rows, peers = peerMultiples) {
+  for (const m of rows) {
+    const model = m.valuation?.model;
+    if (model !== "earnings" && model !== "cyclical") continue;
+    const sector = m.peerSector ? peers.sectors.get(m.peerSector) : null;
+    const industry = m.industry ? peers.industries.get(m.industry) : null;
+    const cohort = sector?.n >= 5 ? { ...sector, label: m.peerSector }
+      : industry?.n >= 5 ? { ...industry, label: `NSE industry ${m.industry}` }
+        : null;
+    const originalMultiple = model === "cyclical" ? m.valuation.multiple : m.medianPe;
+    if (!(originalMultiple > 0)) continue;
+    const cap = cohort ? cohort.median * PEER_CAP_TIMES : null;
+    const multiple = cap != null ? Math.min(originalMultiple, cap) : originalMultiple;
+    const clipped = multiple < originalMultiple;
+    const basis = clipped
+      ? `its own usual multiple (${originalMultiple.toFixed(1)}×) capped at twice the ${cohort.label} peers' median P/E (${cohort.median.toFixed(1)}×)`
+      : cohort
+        ? `its own usual multiple (${originalMultiple.toFixed(1)}×), within twice the ${cohort.label} peers' median P/E (${cohort.median.toFixed(1)}×)`
+        : `its own usual multiple (${originalMultiple.toFixed(1)}×); no peer group with five usable P/Es`;
+    m.valuationMultipleBasis = basis;
+    // Within the cap: the levels metrics.js worked out stand, unchanged
+    if (!clipped) {
+      m.valuationMultiple = originalMultiple;
+      m.valuationPeBasis = cohort ? "historical median, within twice the peers'" : "historical median; no peer group";
+      continue;
+    }
+    const eps = model === "cyclical" ? m.valuation.exact?.eps : m.valuationEps;
+    const growth = model === "cyclical" ? m.valuation.growth : m.growthForValuation;
+    const levels = eps > 0 ? calculateLevels(eps, multiple, growth, 10) : null;
+    if (!levels) continue;
+    m.valuationMultiple = Math.round(multiple * 100) / 100;
+    m.valuationPe = m.valuationMultiple;
+    m.valuationPeBasis = "historical median, capped at twice the peers'";
+    m.levels = levels;
+    m.fairValue = levels.fv27;
+    m.safeBuyPrice = levels.p1;
+    m.vsFairValue = m.cmp > 0 && levels.fv25 > 0 ? (m.cmp / levels.fv25 - 1) * 100 : null;
+    m.vsPhase1 = m.cmp > 0 && levels.p1 > 0 ? (m.cmp / levels.p1 - 1) * 100 : null;
+    if (model === "cyclical") {
+      m.valuation = {
+        ...m.valuation,
+        multiple: m.valuationMultiple,
+        exact: { ...m.valuation.exact, multiple },
+        fairValue: levels.fv25,
+      };
+    }
+    if (m.research) m.research = computeResearch(m);
+  }
 }
 
 // What the screener's filter picker and column picker offer, with each
@@ -252,7 +318,7 @@ function mostCommon(values) {
 export function researchBrief(r) {
   if (!r) return null;
   return {
-    quality: r.quality, qualityOnly: r.qualityOnly, provisional: r.provisional, capped: !!r.capped,
+    quality: r.quality, qualityOnly: r.qualityOnly, provisional: r.provisional, capped: !!r.capped, capReason: r.capped?.reason ?? null,
     overall: r.overall.score, stance: r.overall.stance, status: r.overall.status, overallText: r.overall.text,
     valuation: r.valuation.score, valuationLabel: r.valuation.label,
     technical: r.technical.score, technicalLabel: r.technical.label,
@@ -270,8 +336,8 @@ function tableRow(m, columns = [], sizes = null) {
   return {
     ...(columns.length && { values: Object.fromEntries(columns.map(id => [id, valueOf(metricById(id), m)])) }),
     capSize: sizes?.get(m.symbol) ?? null,
-    symbol: m.symbol, name: m.name, sector: m.sector, lender: m.lender, fyEnd: m.fyEnd,
-    cmp: m.cmp, eps: m.eps, pe: m.pe, roce: m.roce, roe: m.roe, roeAvg: m.roeAvg, roeAvgYears: m.roeAvgYears,
+    symbol: m.symbol, name: m.name, sector: m.sector, sectorSource: m.sectorSource, lender: m.lender, fyEnd: m.fyEnd,
+    cmp: m.cmp, eps: m.eps, ttmEps: m.ttmEps, pe: m.pe, peTtm: m.peTtm, peFy: m.peFy, roce: m.roce, roe: m.roe, roeAvg: m.roeAvg, roeAvgYears: m.roeAvgYears,
     opm: m.opm, promoterPct: m.promoterPct, fiiPct: m.fiiPct, diiPct: m.diiPct, pledgedPct: m.pledgedPct,
     marketCapCr: m.marketCapCr, divYield: m.divYield,
     debtToEquity: m.debtToEquity, salesGrowth3y: m.salesGrowth3y, profitGrowth5y: m.profitGrowth5y,
@@ -279,7 +345,10 @@ function tableRow(m, columns = [], sizes = null) {
     fv25: m.levels?.fv25 ?? null, p2: m.levels?.p2 ?? null, p3: m.levels?.p3 ?? null,
     stopLoss: m.levels?.stopLoss ?? null, target: m.levels?.target ?? null,
     low52w: m.low52w, high52w: m.high52w, ret1d: m.ret1d ?? null, piotroski: m.piotroski ?? null,
-    valuationPeBasis: m.valuationPeBasis, epsJump: m.epsJump, research: researchBrief(m.research),
+    valuationPeBasis: m.valuationPeBasis, valuationMultipleBasis: m.valuationMultipleBasis,
+    epsCorrection: m.epsCorrection, epsMismatch: m.epsMismatch,
+    auditorResignations: m.auditorResignations,
+    epsJump: m.epsJump, research: researchBrief(m.research),
     // Which model priced it, or why nothing did (metrics.js valuation)
     valuation: m.valuation ? { model: m.valuation.model, as: m.valuation.as, reason: m.valuation.reason ?? null, positionLabel: m.valuation.positionLabel ?? null, partialCycle: !!m.valuation.partialCycle } : null,
     governmentOwned: !!m.governmentOwned,
@@ -331,4 +400,12 @@ export function screen(request = {}) {
     snapshot,
     results: matches.map(m => tableRow(m, columns, sizes)),
   };
+}
+
+// The strategy tracker compares symbols only; avoid building full table rows
+// for every match when a user opens Discover.
+export function matchingSymbols(request = {}) {
+  const { rows, sizes } = allMetrics();
+  const filters = Array.isArray(request.filters) ? cleanFilters(request.filters) : criteriaToFilters(request);
+  return rows.filter(m => matchesFilters(m, filters, sizes)).map(m => m.symbol);
 }

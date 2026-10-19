@@ -47,7 +47,10 @@ function assumptionBasis(metrics, price) {
   const eps = scenarioEps(metrics);
   const currentPe = eps > 0 && price > 0 ? price / eps : null;
   const normalized = metrics?.valuation?.model === "cyclical" ? "a cyclical, so normalized EPS is mid-cycle: this year's revenue a share × its through-cycle net margin"
-    : metrics?.epsJump ? "normalized EPS uses the typical EPS from the historical P/E years after a one-off jump" : "normalized EPS uses the latest reported EPS";
+    : [
+      metrics?.epsJump && "uses typical EPS from the historical P/E years after a one-off jump",
+      metrics?.epsCorrection && "corrects an annual EPS filed as one quarter's, from annual profit and paid-up shares",
+    ].filter(Boolean).join(" and ") || "uses the latest reported EPS";
   const sectorNote = metrics?.lender
     ? "For lenders, this EPS/P-E model does not model credit costs or capital ratios."
     : metrics?.cyclical
@@ -78,7 +81,7 @@ function defaultAssumptions(metrics, price) {
 
 function scenarioRows(metrics, price, years, assumptions) {
   const eps = scenarioEps(metrics);
-  const referencePe = finite(metrics?.medianPe) ?? finite(metrics?.valuationPe) ?? finite(metrics?.pe) ?? (eps > 0 && price > 0 ? price / eps : null);
+  const referencePe = finite(metrics?.valuationPe) ?? finite(metrics?.medianPe) ?? finite(metrics?.peFy) ?? (eps > 0 && price > 0 ? price / eps : null);
   if (!(eps > 0) || !(price > 0) || !(referencePe > 0) || ![assumptions.bearPe, assumptions.basePe, assumptions.bullPe].every(value => finite(value) > 0)) return null;
   return [
     ["Bull", assumptions.bullGrowth, assumptions.bullPe],

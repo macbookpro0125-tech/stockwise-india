@@ -25,7 +25,7 @@ const STATEMENTS = {
   profitLoss: [
     ["Sales", "revenueCr", "cr"], ["Expenses", "expensesCr", "cr"], ["Operating Profit", "operatingProfitCr", "cr"],
     ["OPM %", "opm", "pct"], ["Other Income", "otherIncomeCr", "cr"], ["Depreciation", "depreciationCr", "cr"],
-    ["Interest", "financeCostsCr", "cr"], ["Profit before tax", "pbtCr", "cr"], ["Net Profit", "profitCr", "cr"],
+    ["Interest", "financeCostsCr", "cr"], ["Profit before tax", "pbtCr", "cr"], ["Tax", "taxCr", "cr"], ["Net Profit", "profitCr", "cr"],
     ["EPS in Rs", "eps", "rs"],
   ],
   balanceSheet: [
@@ -42,7 +42,7 @@ const STATEMENTS = {
   quarterly: [
     ["Sales", "revenueCr", "cr"], ["Expenses", "expensesCr", "cr"], ["Operating Profit", "operatingProfitCr", "cr"],
     ["OPM %", "opm", "pct"], ["Other Income", "otherIncomeCr", "cr"], ["Depreciation", "depreciationCr", "cr"],
-    ["Interest", "financeCostsCr", "cr"], ["Profit before tax", "pbtCr", "cr"], ["Net Profit", "profitCr", "cr"],
+    ["Interest", "financeCostsCr", "cr"], ["Profit before tax", "pbtCr", "cr"], ["Tax", "taxCr", "cr"], ["Net Profit", "profitCr", "cr"],
     ["EPS in Rs", "eps", "rs"], ["Sales vs a year ago", "salesYoY", "pct"], ["Profit vs a year ago", "profitYoY", "pct"],
   ],
   ratios: [
@@ -248,7 +248,7 @@ function MarginChart({ points, width, band }) {
   );
 }
 
-export default function FinancialsPanel({ history, quarters = [] }) {
+export default function FinancialsPanel({ history, quarters = [], template }) {
   const [tab, setTab] = useState("summary");
   if (!history?.length) return null;
 
@@ -286,7 +286,11 @@ export default function FinancialsPanel({ history, quarters = [] }) {
           : <div style={{ fontSize: 12, color: "var(--t3)", padding: "24px 0" }}>Not enough reported years to chart. The tables show everything available.</div>)
         : tab === "quarterly"
           ? <StatementTable history={quarters} rows={STATEMENTS.quarterly} note="Each quarter is its own three months; the last two columns compare with the same quarter a year earlier." />
-          : <StatementTable history={history} rows={STATEMENTS[tab]} />}
+          : <StatementTable
+            history={history}
+            rows={template === "BANKING" && tab === "ratios" ? STATEMENTS.ratios.filter(([label]) => label !== "Debt / equity") : STATEMENTS[tab]}
+            note={template === "BANKING" && tab === "ratios" ? "Debt/equity is not shown for banks because deposits are operating funding, not comparable corporate borrowing." : null}
+          />}
     </div>
   );
 }

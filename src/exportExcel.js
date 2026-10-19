@@ -31,14 +31,15 @@ const COLUMNS = [
   { h: "Rank", w: 5, get: (s, i) => i + 1 },
   { h: "Name", w: 30, get: s => s.name },
   { h: "Symbol", w: 12, get: s => s.symbol },
-  { h: "Sector", w: 24, get: s => s.sector },
+  { h: "Sector / industry", w: 24, get: s => s.sector },
   { h: "Quality", w: 8, get: quality, z: "0" },
   { h: "Research", w: 9, get: s => s.research?.overall ?? null, z: "0" },
   { h: "Research stance", w: 16, get: s => s.research?.stance ?? null },
   { h: "Valuation", w: 9, get: s => s.research?.valuation ?? null, z: "0" },
   { h: "Risk", w: 6, get: s => s.research?.risk ?? null, z: "0" },
   { h: "CMP", w: 10, get: s => s.cmp, z: "#,##0.00" },
-  { h: "P/E", w: 7, get: s => s.pe, z: "0.0" },
+  { h: "P/E TTM", w: 8, get: s => s.peTtm, z: "0.0" },
+  { h: "P/E FY", w: 7, get: s => s.peFy, z: "0.0" },
   { h: "ROCE %", w: 8, get: s => s.roce, z: "0.0" },
   { h: "ROE %", w: 8, get: s => s.roe, z: "0.0" },
   { h: "OPM %", w: 8, get: s => s.opm, z: "0.0" },
@@ -47,7 +48,8 @@ const COLUMNS = [
   { h: "DII %", w: 7, get: s => s.diiPct, z: "0.0" },
   { h: "Mkt Cap (Cr)", w: 12, get: s => s.marketCapCr, z: "#,##0" },
   { h: "Div Yield %", w: 10, get: s => s.divYield, z: "0.00" },
-  { h: "EPS", w: 9, get: s => s.eps, z: "0.00" },
+  { h: "EPS FY", w: 9, get: s => s.eps, z: "0.00" },
+  { h: "EPS TTM", w: 9, get: s => s.ttmEps, z: "0.00" },
   { h: "Fair Value (2Y)", w: 13, get: s => s.fairValue, z: "#,##0" },
   { h: "P1", w: 9, get: s => s.safeBuyPrice, z: "#,##0" },
   { h: "P2", w: 9, get: s => s.p2, z: "#,##0" },
@@ -127,7 +129,7 @@ export function buildDiscoverWorkbook(XLSX, stocks, { pricesDate, extraColumns =
     ["Avg quality score (of 100)", F(`ROUND(AVERAGE(${range("Quality")}),1)`, sValue, "0.0")],
     ["Avg ROE %", F(`ROUND(AVERAGE(${range("ROE %")}),1)`, sValue, "0.0")],
     ["Avg ROCE %", F(`ROUND(AVERAGE(${range("ROCE %")}),1)`, sValue, "0.0")],
-    ["Median P/E", F(`ROUND(MEDIAN(${range("P/E")}),1)`, sValue, "0.0")],
+    ["Median P/E TTM", F(`ROUND(MEDIAN(${range("P/E TTM")}),1)`, sValue, "0.0")],
     ["Avg dividend yield %", F(`ROUND(AVERAGE(${range("Div Yield %")}),2)`, sValue, "0.00")],
   ];
   summary.forEach(([label, cell], i) => { put(4 + i, 0, C(label, sLabel)); put(4 + i, 1, cell); });
@@ -148,8 +150,8 @@ export function buildDiscoverWorkbook(XLSX, stocks, { pricesDate, extraColumns =
   put(20, 0, C("Within 10% above P1", sLabel)); put(20, 1, C(near, sValue));
   put(21, 0, C("Stocks with price levels", sLabel)); put(21, 1, C(withP1.length, sValue));
 
-  put(23, 0, C("P1 = EPS × median P/E, less a 10% margin of safety · P2 = P1 × 0.9 · P3 = P1 × 0.8 · Fair value (2Y) = EPS × (1 + growth)² × median P/E, growth = 5-yr profit CAGR held to 0–25%", sSub));
-  put(24, 0, C("When a stock trades at under a third of its median P/E: EPS over 3× its usual level is a one-off, valued at the usual EPS; otherwise years with under a third of this year's EPS leave the median", sSub));
+  put(23, 0, C("P1 uses normalized EPS × the stock's 5-year median annual P/E — capped at twice its sector's (or industry's) median P/E when 5+ peers are available — less a 10% margin of safety. Cyclicals use mid-cycle EPS; banks use book.", sSub));
+  put(24, 0, C("P2 = P1 × 0.9 · P3 = P1 × 0.8 · Fair value (2Y) = normalized EPS × (1 + growth)² × the valuation multiple; growth uses profit CAGR held to 0–25%. Large one-off EPS jumps are valued at the usual EPS.", sSub));
   put(25, 0, C("Quality = research score out of 100 over six groups, checks the filings can't show left out · Research = quality and valuation blended, trimmed for price swings and data gaps · Educational use only — not financial advice or a buy/sell recommendation", sSub));
 
   // Right: the ten closest to (or furthest under) their Phase 1 level
@@ -226,8 +228,13 @@ function flagsOf(s) {
   const f = [];
   if (s.marketCapCr != null && s.marketCapCr < 1500) f.push("Microcap");
   if (s.research?.flags?.includes("auditQualified")) f.push("Audit qualified");
-  if (s.research?.flags?.includes("auditorResigned")) f.push("Auditor resigned");
+  if (s.research?.flags?.includes("auditorResigned")) {
+    const event = s.auditorResignations?.[0];
+    f.push(`Auditor event${(event?.date ?? event) ? ` ${event?.date ?? event}` : ""}`);
+  }
   if (s.epsJump) f.push("One-off profit");
+  if (s.epsCorrection) f.push("Annual EPS corrected");
+  else if (s.epsMismatch) f.push("Filed EPS doesn't match profit");
   return f.join(" · ") || null;
 }
 
@@ -235,7 +242,7 @@ const CAT_COLUMNS = [
   { h: "Rank", w: 6, get: (s, i) => i + 1, center: true },
   { h: "Company", w: 34, get: s => s.name, bold: true },
   { h: "Ticker", w: 12, get: s => s.symbol },
-  { h: "Sector", w: 18, get: s => s.sector },
+  { h: "Sector / industry", w: 22, get: s => s.sector },
   { h: "Research", w: 8, get: s => s.research?.overall ?? null, z: "0.0", center: true },
   { h: "Quality", w: 8, get: quality, z: "0.0", center: true },
   { h: "Val", w: 7, get: s => s.research?.valuation ?? null, z: "0.0", center: true },
@@ -244,8 +251,9 @@ const CAT_COLUMNS = [
   { h: "3Y Sales Gr%", w: 10, get: s => s.salesGrowth3y, z: "0.0", center: true },
   { h: "ROCE%", w: 8, get: s => s.roce, z: "0.0", center: true },
   { h: "ROE%", w: 8, get: s => s.roe, z: "0.0", center: true },
-  { h: "D/E", w: 7, get: s => s.debtToEquity, z: "0.00", center: true },
-  { h: "P/E", w: 7, get: s => s.pe, z: "0.0", center: true },
+  { h: "D/E¹", w: 8, get: s => s.debtToEquity, z: "0.00", center: true },
+  { h: "P/E TTM", w: 8, get: s => s.peTtm, z: "0.0", center: true },
+  { h: "P/E FY", w: 7, get: s => s.peFy, z: "0.0", center: true },
   { h: "% vs P1", w: 9, get: vsP1, z: "0.0", center: true, fill: v => (v == null ? null : v <= 0 ? "C8E6C9" : "FCE4E4") },
   { h: "Price position", w: 24, get: s => pricePosition(s.cmp, { p1: s.safeBuyPrice, p2: s.p2, p3: s.p3, stopLoss: s.stopLoss, target: s.target, fv25: s.fv25 }), position: true },
   { h: "CMP", w: 9, get: s => s.cmp, z: "#,##0.00", center: true },
@@ -355,8 +363,10 @@ export function buildGuideSheet(XLSX, { n, asOf, screen, sortLabel } = {}) {
     ["Risk / Risk tier", "Risk score out of 100, higher = riskier — price swings, thin trading and gaps in the data. Tier, as on the company page: Low under 25, Moderate 25–49, Elevated 50–74, High 75+."],
     ["% vs P1", "Price against the Phase 1 level. Under 0 (green) = already below it."],
     ["Price position", "Where the price sits against the levels: the Phase 1, 2 or 3 zone, above Phase 1, the stop-loss or the upper level. It describes the price — it is not a buy or sell instruction."],
-    ["P1 / P2 / P3", "P1 = EPS × the stock's median P/E, less a 10% margin of safety. P2 = P1 × 0.9. P3 = P1 × 0.8."],
-    ["FairVal 2Y", "EPS grown for two years × the median P/E. An estimate from reported figures, not a price target."],
+    ["P/E TTM / FY", "P/E TTM uses the last four consecutive quarters. P/E FY uses the latest audited full-year EPS; the columns stay separate."],
+    ["P1 / P2 / P3", "P1 uses normalized EPS × the stock's 5-year median annual P/E — capped at twice its sector's (or industry's) median P/E when at least five peers are available — less a 10% margin of safety. Cyclicals use mid-cycle EPS; banks use book."],
+    ["FairVal 2Y", "Normalized EPS grown for two years × the valuation multiple. An estimate from reported figures, not a price target."],
+    ["D/E¹", "Debt/equity is blank for banks because deposits are part of their operating funding and the ratio is not comparable."],
     ["Piotr.", "Piotroski score out of 9 — 7 or more is strong. Not scored for banks and other lenders."],
     [],
     ["CAVEAT", "A score is a screen, not a buy order. Check the latest results and filings on NSE, keep speculative and microcap names small, and spread across buckets rather than loading one."],

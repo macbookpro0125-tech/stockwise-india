@@ -26,12 +26,12 @@ import { docTop } from "./motion.js";
 // override, current price, 52-week range, shareholding, price chart,
 // financials, technicals, pros & cons, where the price sits, the price levels,
 // fair value, Piotroski, key numbers, peers, news & filings, and your notes.
-// Where it differs from the original: the P/E defaults to the stock's own
-// 5-year median (the original's current P/E made fair value = price), a
-// one-off profit jump is valued at the usual EPS and years of near-zero profit
-// can leave that median (server/metrics.js), the P/E history behind it sits
-// under the inputs, and the price levels are described, never turned into
-// buy or sell instructions.
+// Where it differs from the original: historical annual P/E is shown as
+// context; the multiple behind the price levels is capped at twice the
+// sector's median P/E when enough peers have one (screen.js). One-off profit
+// jumps and an annual EPS filed as one quarter's are corrected before
+// valuation; the price levels are described, never turned
+// into buy or sell instructions.
 
 const VERDICT_META = {
   ACCUMULATE: { label: "Accumulate", color: "var(--green)", bg: "var(--green-dim)", border: "var(--green-bdr)" },
@@ -66,7 +66,7 @@ function PeHistoryTable({ m }) {
   const fy = iso => new Date(`${iso}T00:00:00Z`).toLocaleString("en-IN", { month: "short", year: "numeric", timeZone: "UTC" });
   return (
     <div style={{ marginTop: 16, borderTop: "1px solid var(--bdr)", paddingTop: 14 }}>
-      <div style={{ fontSize: 12, fontWeight: 600, color: "var(--accent)", marginBottom: 6 }}>Where the P/E comes from — this stock's P/E, last {m.peHistory.length} fiscal years</div>
+      <div style={{ fontSize: 12, fontWeight: 600, color: "var(--accent)", marginBottom: 6 }}>Historical annual P/E — the company's own record, last {m.peHistory.length} fiscal years</div>
       <div style={{ overflowX: "auto" }}>
         <table>
           <thead>
@@ -95,8 +95,8 @@ function PeHistoryTable({ m }) {
       </div>
       <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 8, lineHeight: 1.5 }}>
         {m.medianPe != null
-          ? <>Median of {m.peYears} years: <strong style={{ color: "var(--t1)" }}>{m.medianPe.toFixed(1)}</strong> — the default P/E above. A median, so one unusual year can't drag it.</>
-          : <>Only {m.peYears} usable year{m.peYears === 1 ? "" : "s"} — at least 3 are needed for a median, so the default is today's P/E, which makes fair value track the price.</>}
+          ? <>Median of {m.peYears} annual observations: <strong style={{ color: "var(--t1)" }}>{m.medianPe.toFixed(1)}×</strong>. The price levels use it, capped at twice the sector's median P/E if it runs higher.</>
+          : <>Only {m.peYears} usable annual observations — there is not enough history for a median.</>}
         {m.epsJump && <> Median EPS of the same years: <strong style={{ color: "var(--t1)" }}>₹{m.epsJump.usualEps.toFixed(2)}</strong> — the usual level, used instead of {fyLabel(m.fyEnd)}'s ₹{m.epsJump.eps.toFixed(2)}.</>}
       </div>
     </div>
@@ -429,10 +429,10 @@ function KeyNumbers({ data, m }) {
   const cr = n => (n == null ? "—" : `₹${Math.round(n).toLocaleString("en-IN")} Cr`);
   const crRaw = n => (n == null ? "—" : cr(n / 1e7));
   const stats = [
-    ["Market cap", cr(m.marketCapCr)], ["P/E (today)", m.pe ? m.pe.toFixed(1) : "—"], ["Price / book", m.priceToBook?.toFixed(2) ?? "—"], ["Dividend yield", pctText(m.divYield)],
+    ["Market cap", cr(m.marketCapCr)], ["P/E (TTM)", m.peTtm?.toFixed(1) ?? "—"], ["P/E (latest FY)", m.peFy?.toFixed(1) ?? "—"], ["Price / book", m.priceToBook?.toFixed(2) ?? "—"], ["Dividend yield", pctText(m.divYield)],
     ["ROCE", pctText(m.roce)], ["ROE", pctText(m.roe)], [`ROE (${m.roeAvgYears}Y avg)`, pctText(m.roeAvg)], ["OPM", pctText(m.opm)],
     ["Sales growth 3Y / 5Y", `${pctText(m.salesGrowth3y)} / ${pctText(m.salesGrowth5y)}`], ["Profit growth 3Y / 5Y", `${pctText(m.profitGrowth3y)} / ${pctText(m.profitGrowth5y)}`],
-    ["Debt / equity", m.debtToEquity != null ? `${m.debtToEquity.toFixed(2)}×` : "—"], ["Interest cover", m.interestCoverage != null ? `${m.interestCoverage.toFixed(1)}×` : "—"],
+    ["Debt / equity", m.template === "BANKING" ? "Not applicable for a bank" : m.debtToEquity != null ? `${m.debtToEquity.toFixed(2)}×` : "—"], ["Interest cover", m.interestCoverage != null ? `${m.interestCoverage.toFixed(1)}×` : "—"],
     ["Free cash flow (last year)", cr(m.fcfCr)], ["Payout", pctText(m.payoutPct)],
     ["FII / DII", `${pctText(m.fiiPct)} / ${pctText(m.diiPct)}`], ["Promoter shares pledged", pctText(m.pledgedPct)],
     ["Revenue (latest qtr)", crRaw(data.pnl?.revenueQuarter)], ["Profit (latest qtr)", crRaw(data.pnl?.profitQuarter)],
@@ -749,7 +749,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
           <a href={`https://www.nseindia.com/get-quotes/equity?symbol=${encodeURIComponent(data.symbol)}`} target="_blank" rel="noreferrer" style={{ color: "var(--accent)", fontWeight: 500, whiteSpace: "nowrap" }}>Open on NSE <ArrowUpRight size={13} style={{ verticalAlign: "-2px" }} /></a>
           {model === "earnings" && (
             <div className="hide-phone" style={{ marginTop: 4, color: "var(--t2)" }}>
-              P/E is this stock's <em>5-year median</em> ({m.medianPe.toFixed(1)}; today {m.pe?.toFixed(1) ?? "—"}) — override with your own view if needed.
+              The price levels use a P/E of {m.valuationPe?.toFixed(1) ?? m.medianPe?.toFixed(1) ?? "—"}×{m.valuationMultipleBasis ? <>: <em>{m.valuationMultipleBasis}</em></> : null}. Today's P/E on the {m.peTtm != null ? "last four quarters" : "latest audited year"} is {(m.peTtm ?? m.peFy)?.toFixed(1) ?? "—"}×. Override the multiple above if needed.
             </div>
           )}
           {onBook && (
@@ -760,6 +760,11 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
           {m.epsRebased && (
             <div style={{ marginTop: 4, color: "var(--t2)" }}>
               EPS here is FY{m.fyEnd.slice(2, 4)} profit over today's {m.epsRebased.sharesCr.toLocaleString("en-IN", { maximumFractionDigits: 1 })} Cr shares (₹{m.eps.toFixed(2)}). The filing's ₹{m.epsRebased.reportedEps.toFixed(2)} is on about {m.epsRebased.epsSharesCr.toLocaleString("en-IN", { maximumFractionDigits: 1 })} Cr, before the company issued more shares — today's count is what the share price is for.
+            </div>
+          )}
+          {m.epsCorrection && (
+            <div style={{ marginTop: 4, color: "var(--yellow)" }}>
+              The filing's annual EPS was ₹{m.epsCorrection.reportedEps.toFixed(2)}, inconsistent with profit and paid-up shares. EPS-based ratios and price levels use ₹{m.epsCorrection.correctedEps.toFixed(2)} instead.
             </div>
           )}
           {m.unitFixes?.length > 0 && (
@@ -810,7 +815,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
                     <input type="number" aria-label={onBook ? "Justified P/B" : onCycle ? "Usual multiple" : "Historical P/E"} value={pe} onChange={e => setPe(e.target.value)} style={inputStyle} />
                     {onBook ? hint(parseFloat(pe) > 0, "✓ From its return on equity", "(ROE − g) ÷ (cost of equity − g)")
                       : onCycle ? hint(parseFloat(pe) > 0, "✓ Median on mid-cycle EPS", "")
-                      : hint(parseFloat(pe) > 0 && parseFloat(pe) <= 30, "✓ Reasonable P/E", "5-yr median P/E")}
+                      : hint(parseFloat(pe) > 0 && parseFloat(pe) <= 30, "✓ Reasonable P/E", "Review high P/E assumption")}
                   </div>
                   <div>
                     <label style={labelStyle}>{onBook ? "Book growth % p.a." : onCycle ? "Revenue growth % p.a." : "EPS Growth % p.a."}</label>
@@ -908,9 +913,9 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
               </div>
               <p style={{ fontSize: 13, color: "var(--t1)", margin: 0, lineHeight: 1.6 }}>{position.detail}</p>
               {/* Valuing at a historical P/E makes this common for de-rated stocks */}
-              {model === "earnings" && (position.zone === "below-stop" || position.zone === "phase3") && m.pe && Number(pe) > m.pe * 1.3 && (
+              {model === "earnings" && (position.zone === "below-stop" || position.zone === "phase3") && m.peFy && Number(pe) > m.peFy * 1.3 && (
                 <p style={{ fontSize: 12, color: "var(--t2)", margin: "8px 0 0", lineHeight: 1.6 }}>
-                  The market prices it at a P/E of {m.pe.toFixed(1)} against the {Number(pe).toFixed(1)} the levels use. That's either deep value or a sign the old multiple no longer applies — worth finding out why it de-rated.
+                  The latest audited-year P/E is {m.peFy.toFixed(1)} against the {Number(pe).toFixed(1)} multiple the levels use. Today's TTM P/E is {m.peTtm?.toFixed(1) ?? "—"}. Check whether the historical multiple still applies.
                 </p>
               )}
               <p style={{ fontSize: 11, color: "var(--t3)", margin: "8px 0 0" }}>These model reference levels come from the {onBook ? "book, P/B" : onCycle ? "mid-cycle EPS, multiple" : "EPS, P/E"}, growth and margin-of-safety inputs above. They describe price location; they are not trade instructions.</p>
@@ -977,7 +982,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         </>
       )}
 
-      {m && <div id="sec-financials" className="ss-section"><h2 className="sd-h2">Financials. <span>Its results, year by year.</span></h2><FinancialsPanel history={m.history} quarters={m.quarters} /></div>}
+      {m && <div id="sec-financials" className="ss-section"><h2 className="sd-h2">Financials. <span>Its results, year by year.</span></h2><FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} /></div>}
       <div id="sec-holding" className="ss-section"><h2 className="sd-h2">Holdings. <span>Who owns it, and how that is changing.</span></h2><ShareholdingPanel symbol={data.symbol} /></div>
       <div id="sec-technicals" className="ss-section"><h2 className="sd-h2">Technicals. <span>The trend in the price.</span></h2><TechnicalPanel ticker={data.symbol} /></div>
 

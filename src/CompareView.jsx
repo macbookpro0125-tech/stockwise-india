@@ -45,7 +45,8 @@ const RESEARCH_ROWS = [
 
 const ROW_METRICS = [
   { key: "cmp", label: "CMP (₹)", fmt: s => rs(s.cmp) },
-  { key: "pe", label: "P/E", fmt: s => (s.pe ? s.pe.toFixed(1) : "—") },
+  { key: "peTtm", label: "P/E (TTM)", fmt: s => (s.peTtm != null ? s.peTtm.toFixed(1) : "—") },
+  { key: "peFy", label: "P/E (latest FY)", fmt: s => (s.peFy != null ? s.peFy.toFixed(1) : "—") },
   { key: "roce", label: "ROCE %", fmt: s => (s.roce != null ? `${s.roce.toFixed(1)}%` : "—") },
   { key: "mcap", label: "Mkt Cap (Cr)", fmt: s => (s.marketCapCr ? (s.marketCapCr >= 1000 ? `${(s.marketCapCr / 1000).toFixed(1)}K` : Math.round(s.marketCapCr)) : "—") },
   { key: "divYield", label: "Div Yield", fmt: s => (s.divYield ? `${s.divYield.toFixed(1)}%` : "—") },

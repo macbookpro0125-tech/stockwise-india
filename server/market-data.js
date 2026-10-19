@@ -455,20 +455,34 @@ export function eventsBySymbol(calendar, actions, now = new Date()) {
   return out;
 }
 
-// Statutory auditors who resigned in the last three years, by company — NSE
-// files these under their own subject, apart from routine "Change in
-// Auditors" rotations, and filters on it, so it's one small request (~220
-// over three years). { SYMBOL: ["2026-05-12", …] }, newest first.
+// Auditor resignations in the last three years, by NSE symbol. Preserve the
+// source link and only call an event subsidiary-scoped when the attachment
+// text says so; a notice filed under a parent symbol can concern a subsidiary.
 async function auditorResignations() {
   const to = new Date(), from = new Date(to.getTime() - 3 * 365 * 86400000);
   const rows = await fetchJson(`${NSE_BASE}/api/corporate-announcements?index=equities&from_date=${ddmmyyyy(from, "-")}&to_date=${ddmmyyyy(to, "-")}&subject=${encodeURIComponent("Resignation of Statutory Auditor")}`);
-  const out = {};
+  const grouped = {};
   for (const r of Array.isArray(rows) ? rows : []) {
     const when = parseQeDate(String(r.an_dt ?? r.sort_date ?? "").slice(0, 11));
     if (!r.symbol || !when || r.desc !== "Resignation of Statutory Auditor") continue;
-    (out[r.symbol] ??= []).push(when.toISOString().slice(0, 10));
+    let url = null;
+    try {
+      const candidate = new URL(r.attchmntFile);
+      if (candidate.protocol === "https:" && /(^|\.)nseindia\.com$/i.test(candidate.hostname)) url = candidate.href;
+    } catch { /* no readable exchange attachment link */ }
+    const summary = typeof r.attchmntText === "string" && r.attchmntText !== r.desc ? r.attchmntText.trim() : null;
+    const noticeText = `${r.desc ?? ""} ${summary ?? ""}`;
+    const scope = /(?:statutory auditor|auditor|auditors).{0,100}subsidiar|subsidiar.{0,100}(?:statutory auditor|auditor|auditors)/i.test(noticeText)
+      ? "subsidiary"
+      : null;
+    const event = { date: when.toISOString().slice(0, 10), scope, summary, url };
+    const entries = grouped[r.symbol] ??= new Map();
+    entries.set(url ?? event.date, event);
   }
-  for (const dates of Object.values(out)) dates.sort().reverse();
+  const out = Object.fromEntries(Object.entries(grouped).map(([symbol, events]) => [
+    symbol,
+    [...events.values()].sort((a, b) => b.date.localeCompare(a.date)),
+  ]));
   return out;
 }
 

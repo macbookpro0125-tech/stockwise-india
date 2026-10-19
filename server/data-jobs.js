@@ -149,7 +149,9 @@ function oldestFetch() {
 }
 
 // The latest quarter end (31 Mar / 30 Jun / 30 Sep / 31 Dec) whose
-// shareholding filing deadline has passed
+// shareholding filing deadline has passed. Checking daily from a week after
+// the quarter (tried 17–18 Oct 2026) would re-ask NSE for ~2,000 companies a
+// day for two weeks each quarter — enough to get the server's address blocked.
 export function lastDueQuarterEnd(now = new Date()) {
   const due = new Date(now.getTime() - SHP_DEADLINE_DAYS * DAY);
   for (let back = 0; back < 4; back++) {

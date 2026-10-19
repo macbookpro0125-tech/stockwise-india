@@ -21,7 +21,7 @@
 // Weights and bands are a stated starting point, not a fitted model — the
 // proposal says so too. Change them here and RESEARCH_VERSION together.
 
-export const RESEARCH_VERSION = "1.8"; // 1.8: banks with net NPA under 2% priced on their last three years' ROE; a loss year marks a cyclical only beside swinging margins or a commodity industry; 1.7: cyclicals checked against their mid-cycle fair value; 1.6: banks priced on justified P/B × book less net bad loans — cost of equity 12% (13% government), growth from retained earnings capped at 8%; 1.5: banks scored on their own bad-loan, capital and efficiency figures
+export const RESEARCH_VERSION = "1.10"; // 1.10: P/E on the last four quarters; fair value's multiple capped at twice the sector's median P/E; a quarter's EPS filed as the year's corrected, other EPS disagreements shown; auditor notices keep their filing link and scope; 1.8: banks with net NPA under 2% priced on their last three years' ROE
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -463,8 +463,13 @@ const GOVERNANCE = {
         const qualified = rows.filter(h => h.auditOpinion === "qualified").map(h => fy(h.fyEnd));
         const latest = m.history[0];
         const firm = m.history.find(h => h.auditor)?.auditor;
+        // NSE's "Resignation of Statutory Auditor" notices (market-data.js);
+        // snapshots before 18 Oct 2026 kept only the date, newer ones the
+        // filing's link and, when its text says so, that it's a subsidiary's
         const resigned = m.auditorResignations?.[0] ?? null;
-        const resignedText = resigned ? ` The statutory auditor resigned on ${dayText(resigned)}.` : "";
+        const resignedText = resigned
+          ? ` An auditor resignation notice was filed on ${dayText(resigned.date)}${resigned.scope === "subsidiary" ? " for an entity the notice names as a subsidiary" : ""} — ${resigned.url ? "read it to see which entity and why" : "NSE's announcements show which entity and why"}.`
+          : "";
         if (latest.auditOpinion === "qualified") {
           return checked(0, "qualified", "Qualified", `The auditor qualified ${fy(latest.fyEnd)}'s ${scopeWord(m)}accounts — the company filed a statement on the impact of audit qualifications with its results.${resignedText}`);
         }
@@ -524,7 +529,9 @@ const GROWTH = {
 
 // Valued at NSE's last close. P/E on the usual EPS when one year's profit
 // jumped on a one-off (metrics.js valuationEps), as the fair value is.
-const closePe = m => (m.close > 0 && m.valuationEps > 0 ? m.close / m.valuationEps : null);
+const closePe = m => (m.close > 0 && (m.ttmEps > 0 || m.valuationEps > 0)
+  ? m.close / (m.ttmEps > 0 ? m.ttmEps : m.valuationEps)
+  : null);
 const closeMcapCr = m => (m.close > 0 && m.shares > 0 ? (m.close * m.shares) / 1e7 : null);
 // A bank is valued on its book (bank-valuation.js): the price-to-book its
 // through-cycle return on equity can support, (ROE − g) ÷ (cost of equity −
@@ -567,11 +574,13 @@ const VALUATION = {
           const score = band(mos, [[-30, 0], [-10, 25], [0, 50], [20, 75], [40, 100]]);
           return checked(score, mos, mos >= 0 ? `${pct(mos, 0)} below` : `${pct(-mos, 0)} above`, `${rupees(m.close)} is ${mos >= 0 ? `${pct(mos, 0)} below` : `${pct(-mos, 0)} above`} its mid-cycle fair value of ${rupees(v.fairValue)} (mid-cycle EPS ₹${v.normalizedEps.toFixed(2)} × its usual ${v.multiple.toFixed(1)}× on mid-cycle earnings) — a cyclical, so not its latest EPS.`);
         }
-        if (!finite(m.medianPe) || !(m.valuationEps > 0) || !(m.close > 0)) return missing("Needs 3 years of P/E history and a profit.");
-        const fv = m.valuationEps * m.medianPe;
+        const multiple = m.valuationMultiple ?? m.medianPe;
+        if (!finite(multiple) || !(m.valuationEps > 0) || !(m.close > 0)) return missing("Needs 3 years of P/E history and a profit.");
+        const fv = m.valuationEps * multiple;
         const mos = ((fv - m.close) / fv) * 100;
         const score = band(mos, [[-30, 0], [-10, 25], [0, 50], [20, 75], [40, 100]]);
-        return checked(score, mos, mos >= 0 ? `${pct(mos, 0)} below` : `${pct(-mos, 0)} above`, `${rupees(m.close)} is ${mos >= 0 ? `${pct(mos, 0)} below` : `${pct(-mos, 0)} above`} today's fair value of ${rupees(fv)} (EPS × its usual P/E of ${m.medianPe.toFixed(1)}).`);
+        const basis = m.valuationMultipleBasis ? `; ${m.valuationMultipleBasis}` : "";
+        return checked(score, mos, mos >= 0 ? `${pct(mos, 0)} below` : `${pct(-mos, 0)} above`, `${rupees(m.close)} is ${mos >= 0 ? `${pct(mos, 0)} below` : `${pct(-mos, 0)} above`} today's fair value of ${rupees(fv)} (normalized EPS × ${multiple.toFixed(1)}×${basis}).`);
       },
     },
     {
@@ -843,9 +852,28 @@ export function computeResearch(m, ctx = { peers: PEERS }) {
     });
   }
   if (m.auditorResignations?.length) {
+    const event = m.auditorResignations[0];
+    const more = m.auditorResignations.length - 1;
+    const reason = event.reason
+      ? ` The filing states: ${event.reason}`
+      : event.summary
+        ? ` From the filing: ${String(event.summary).slice(0, 320)}`
+        : "";
     flags.push({
       id: "auditorResigned", severity: "caution",
-      text: `The statutory auditor resigned on ${dayText(m.auditorResignations[0])}${m.auditorResignations.length > 1 ? ` (and ${m.auditorResignations.length - 1} more time${m.auditorResignations.length > 2 ? "s" : ""} in three years)` : ""}. Companies must publish the auditor's reasons — worth reading before relying on the accounts.`,
+      text: `An auditor resignation notice was filed on ${dayText(event.date)}${event.scope === "subsidiary" ? " for an entity the notice names as a subsidiary" : ""}${more > 0 ? ` (and ${more} more in three years)` : ""}.${reason} Companies must publish the auditor's reasons — worth reading before relying on the accounts.`,
+      ...(event.url && { url: event.url }),
+    });
+  }
+  if (m.epsCorrection) {
+    flags.push({
+      id: "annualEpsCorrected", severity: "caution",
+      text: `The filed annual EPS (₹${m.epsCorrection.reportedEps.toFixed(2)}) looks like one quarter's: annual profit ÷ paid-up shares gives ₹${m.epsCorrection.correctedEps.toFixed(2)}, and the share count matches the latest shareholding filing. The app uses ₹${m.epsCorrection.correctedEps.toFixed(2)} for EPS-based ratios and price levels.`,
+    });
+  } else if (m.epsMismatch) {
+    flags.push({
+      id: "annualEpsMismatch", severity: "caution",
+      text: `The filed annual EPS (₹${m.epsMismatch.reportedEps.toFixed(2)}) doesn't agree with annual profit ÷ paid-up shares (₹${m.epsMismatch.correctedEps.toFixed(2)}). The app uses the filed EPS; check the filing before relying on P/E or the price levels.`,
     });
   }
   // Stale figures: the score is only as current as the filings behind it.
