@@ -23,6 +23,10 @@ services:
     runtime: node
     plan: starter
     region: singapore
+    # The Render service will request TLS and show the DNS records needed
+    # once this Blueprint is created; this line alone does not change DNS.
+    domains:
+      - jocularinsights.in
     buildCommand: npm ci --include=dev && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
@@ -39,7 +43,7 @@ services:
       # address from it (server/rate-limit.js)
       - key: TRUST_PROXY
         value: "1"
-      # The site's own address, e.g. https://jocularinsights.com — reset emails link to it
+      # The site's own address, e.g. https://jocularinsights.in — reset emails link to it
       - key: APP_URL
         sync: false
       # Telegram alerts: the key from @BotFather (server/telegram.js). One bot
@@ -48,7 +52,7 @@ services:
       - key: TELEGRAM_BOT_TOKEN
         sync: false
       # Password-reset email through Resend, from an address on the verified
-      # domain, e.g. "Jocular Insights <no-reply@jocularinsights.com>" (server/email.js)
+      # domain, e.g. "Jocular Insights <no-reply@jocularinsights.in>" (server/email.js)
       - key: RESEND_API_KEY
         sync: false
       - key: EMAIL_FROM

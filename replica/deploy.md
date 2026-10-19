@@ -4,15 +4,19 @@ Scope so far (17 Oct 2026): the mobile app only, at the owner's request.
 Plan changed the same day: one Capacitor app for both stores (not a Trusted
 Web Activity for Play), because the ads the owner wants — AdMob's in-list
 cards and rewarded video — need the native AdMob SDK.
-The web host, domain and email sections are filled in when those go live.
+The domain `jocularinsights.in` was registered on 17 Oct 2026. Its NIXI identity
+and registrant-email checks are complete; Domain India says the initial safety
+hold will lift automatically by 18 Oct 2026 at 22:40. The domain is not yet
+connected to the app host, and the paid web host and domain email are still
+pending.
 
 ## Mobile
 
 | Stage | What people get | Cost | Status |
 |---|---|---|---|
 | 1. Installable web app (PWA) | Install from the site on Android and desktop; Add to Home Screen on iPhone; full screen with its own icon; opens offline | free | **Done** — `390fe56`, not yet pushed |
-| 2. Google Play (Capacitor app, `android/`) | A Play Store app running the live site, with AdMob ads (cards in the lists, "Watch an ad" in Settings) | $25 once (Google Play developer account, owner's); AdMob free | **Built and run on the emulator** with Google's sample ads (17 Oct 2026); waits for the owner's AdMob and Play accounts, the domain and the paid server |
-| 3. Apple App Store (the same Capacitor app, `ios/` to add) | An App Store listing, with the same ads and push notifications for price alerts — Apple rejects a website in a wrapper (guideline 4.2) | $99 a year (Apple developer account, owner's) | Waits for the domain, the paid server, a D-U-N-S number, and a Mac on macOS 15 or later (this one is on 13; Apple's current Xcode needs 15) — or GitHub's Macs |
+| 2. Google Play (Capacitor app, `android/`) | A Play Store app running the live site, with AdMob ads (cards in the lists, "Watch an ad" in Settings) | $25 once (Google Play developer account, owner's); AdMob free | **Built and run on the emulator** with Google's sample ads (17 Oct 2026); waits for the owner's AdMob and Play accounts, and paid hosting/DNS for `jocularinsights.in` |
+| 3. Apple App Store (the same Capacitor app, `ios/` to add) | An App Store listing, with the same ads and push notifications for price alerts — Apple rejects a website in a wrapper (guideline 4.2) | $99 a year (Apple developer account, owner's) | Waits for paid hosting/DNS for `jocularinsights.in`, a D-U-N-S number, and a Mac on macOS 15 or later (this one is on 13; Apple's current Xcode needs 15) — or GitHub's Macs |
 
 ### Stage 1 checks (run 17 Oct 2026, local copy)
 
@@ -25,7 +29,7 @@ The web host, domain and email sections are filled in when those go live.
 
 ### Before the stores
 
-- The domain (jocularinsights.com) live on the paid server — Play checks the
+- The domain (`jocularinsights.in`) connected to the paid server — Play checks the
   app against `https://<domain>/.well-known/assetlinks.json`; both stores
   need the privacy policy and a support address at the domain.
 - Developer accounts enrolled as the company, not a person (the listing shows
