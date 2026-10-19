@@ -8,10 +8,14 @@ Insights is not SEBI-registered, so the listing says it's educational.
 
 ## Store listing
 
-**App name** (30 max) — `Jocular Insights: NSE Research` (30)
+**App name** (30 max) — `Jocular Insights: NSE Screener` (30). The owner
+wanted the name to say it's a stock screener (20 Oct 2026); "Jocular Insights:
+Stock Screener" is 32, over Play's limit, so "stock screener" leads the short
+description instead — Play searches both. The AdMob app is named
+"Jocular Insights – Stock Screener" (only the owner sees that one).
 
 **Short description** (80 max) —
-`Screen NSE stocks with ready-made strategies, quality scores and fair values.` (77)
+`NSE stock screener with ready-made strategies, quality scores and fair values.` (78)
 
 **Full description** (4,000 max) —
 
