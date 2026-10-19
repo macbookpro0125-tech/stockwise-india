@@ -42,3 +42,8 @@ data/logos/
 # Playwright output (npm run e2e)
 test-results/
 playwright-report/
+
+# Android signing keys live in ~/.jocular, never here
+*.jks
+*.keystore
+upload-keystore.properties

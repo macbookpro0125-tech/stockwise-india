@@ -20,10 +20,30 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // The upload key Play Store builds are signed with (19 Oct 2026): kept
+    // outside the repository, in ~/.jocular/upload-keystore.properties
+    // (storeFile, storePassword, keyAlias, keyPassword) or the file
+    // -PJOCULAR_SIGNING=… names. Google re-signs for users (Play App
+    // Signing), so a lost upload key can be replaced through Play support —
+    // but back the folder up.
+    def signingFile = file(project.findProperty("JOCULAR_SIGNING") ?: "${System.getProperty("user.home")}/.jocular/upload-keystore.properties")
+    if (signingFile.exists()) {
+        def signing = new Properties()
+        signingFile.withInputStream { signing.load(it) }
+        signingConfigs {
+            upload {
+                storeFile file(signing.storeFile)
+                storePassword signing.storePassword
+                keyAlias signing.keyAlias
+                keyPassword signing.keyPassword
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (signingFile.exists()) signingConfig signingConfigs.upload
         }
     }
 }

@@ -4,10 +4,11 @@ import type { CapacitorConfig } from "@capacitor/cli";
 // site, so the app is always the same version as the website, plus what a
 // website can't do — AdMob's ad cards and rewarded ads (src/ads.jsx).
 //
-// APP_URL: the site the app opens. The live site by default; for a local
-// copy on the Android emulator, http://10.0.2.2:<port> (the emulator's name
-// for this computer) — plain http is allowed only for that.
-const url = process.env.APP_URL ?? "https://stockwise-india.onrender.com";
+// APP_URL: the site the app opens. The live site, https://jocularinsights.in,
+// by default (19 Oct 2026); for a local copy on the Android emulator,
+// http://10.0.2.2:<port> (the emulator's name for this computer) — plain
+// http is allowed only for that.
+const url = process.env.APP_URL ?? "https://jocularinsights.in";
 const local = /^http:\/\/(10\.0\.2\.2|localhost|127\.0\.0\.1)(:\d+)?$/.test(url);
 
 const config: CapacitorConfig = {
