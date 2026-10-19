@@ -305,7 +305,7 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
                 key={id}
                 type="button"
                 className={`strategy-tile strategy-tile-${className}`}
-                aria-label={`${label}, ${count} ${count === 1 ? "screener" : "screeners"}. Show this collection`}
+                aria-label={`${label}, ${count} ${count === 1 ? "strategy" : "strategies"}. Show this collection`}
                 aria-pressed={kind === id}
                 onClick={() => {
                   setQuery("");
@@ -318,7 +318,7 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
                 <span className="strategy-tile-watermark" aria-hidden="true"><Icon size={164} strokeWidth={2.8} /></span>
                 <span className="strategy-tile-copy">
                   <span className="strategy-tile-title">{label}</span>
-                  <span className="strategy-tile-count">{count} {count === 1 ? "screener" : "screeners"}<ArrowRight size={20} strokeWidth={2.6} aria-hidden="true" /></span>
+                  <span className="strategy-tile-count">{count} {count === 1 ? "strategy" : "strategies"}<ArrowRight size={20} strokeWidth={2.6} aria-hidden="true" /></span>
                 </span>
               </button>
             ))}

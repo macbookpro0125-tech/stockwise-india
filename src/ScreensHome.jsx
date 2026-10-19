@@ -89,10 +89,10 @@ export default function ScreensHome({ meta, total, strategies, pricesDate, onSta
   if (compact) return (
     <div className="ph-home">
       <div className="ph-title-row">
-        <h2 className="phone-title" id="sh-popular">Trading strategies</h2>
+        <h2 className="phone-title" id="sh-popular">Strategies</h2>
         <button type="button" className="ph-round" onClick={onCreate} aria-label="New screen: start from the whole market"><Plus size={22} aria-hidden="true" /></button>
       </div>
-      <p className="ph-lede">Curated playbooks for Indian stocks. Pick a strategy to see what fits today.</p>
+      <p className="ph-lede">Every NSE company, scored on its own filings. Pick a strategy to see what fits today.</p>
       {continueCard}
       {children}
       <button type="button" className="ph-build" onClick={onCreate}>

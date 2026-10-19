@@ -53,8 +53,8 @@ test("legal pages @phone", async ({ page }) => {
 
 test("phone: tabs and a company page fit the screen @phone", async ({ page, account }) => {
   await page.goto("/");
-  // The account is in the Settings tab on a phone (17 Oct 2026)
-  await expect(page.getByRole("navigation", { name: "Pages" }).getByRole("button", { name: "Settings" })).toBeVisible();
+  // The account: the Settings tab on a phone (17 Oct 2026), the Account menu on a computer
+  await expect(page.getByRole("navigation", { name: "Pages" }).getByRole("button", { name: "Settings" }).or(page.getByRole("button", { name: "Account" })).first()).toBeVisible();
   for (const path of ["/", "/stock/HDFCBANK", "/stock/TCS"]) {
     await page.goto(path);
     await page.waitForLoadState("networkidle");

@@ -129,6 +129,14 @@ export default function App() {
           return;
         }
 
+        // Discover's second page (a strategy's stocks) is a history entry on
+        // "/" itself (DiscoverView): Back returns to the strategies, not out
+        // of the app
+        if (window.history.state?.discoverStep === "stocks") {
+          window.history.back();
+          return;
+        }
+
         const previousTab = tabHistory.current.pop();
         if (previousTab) {
           tabRef.current = previousTab;

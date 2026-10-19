@@ -100,10 +100,33 @@ phone project; M-E3 is skipped on desktop, which has no bottom tab bar.
 | M-E1 | Offline: the front page opens, logo included (from the copy made at install) | ✅ mobile |
 | M-E2 | Offline: `/api/` fails — market data is never served from a copy | ✅ mobile |
 | M-E3 | Bottom tabs and header buttons at least 44 × 44 px | ✅ mobile |
-| M-N1 | Account menu usable on Discover on a phone (BUG-005) | ✅ mobile |
+| M-N1 | Settings → Sign out works on a phone (BUG-005; the Account menu moved to Settings) | ✅ mobile |
 | M-N2 | No hand-written counts on the front page (BUG-006) | ✅ mobile |
+| M-H4 | The floating bar has Discover, Watchlist, Portfolio, Alerts, Settings; Settings switches dark mode and opens Strategy performance (bar keeps Settings lit) | ✅ mobile |
+| M-H5 | Strategies: the kind chips and Search strategies narrow the cards; a search with no match says so | ✅ mobile |
+| M-H6 | A strategy's stocks: a sort chip sorts, tapping it again reverses | ✅ mobile |
+| M-E4 | Ads: the server's switch is off by default, no app-ads.txt without a publisher ID, none on the website; ?ads=preview shows where they go | ✅ mobile |
 | M-R1 | Install on a real Android phone from Chrome's prompt; opens full screen with the icon | ⏳ needs the pushed site |
 | M-R2 | Add to Home Screen on a real iPhone; status bar and safe areas look right | ⏳ needs the pushed site |
+
+## A — the Android app (17 Oct 2026, by hand on the emulator, Android 17, `ADS=test`)
+| Case | What | Result |
+| --- | --- | --- |
+| A-1 | The app opens the site; sign in with email; the phone layout as on the web | 👁 pass |
+| A-2 | A medium ad card after the third strategy, in the app's colours; Google's validator: no implementation issues | 👁 pass |
+| A-3 | An ad card after the tenth stock row | 👁 pass |
+| A-4 | Settings → Watch an ad: Google's sample video plays, is rewarded, "Thank you" | 👁 pass (after the fix below) |
+| A-5 | No network: our offline page; Try again returns to the app | 👁 pass (reconnecting by itself needs https — the live site) |
+| A-6 | Our icon in the app list; dark launch screen; status bar dark with light icons | 👁 pass |
+| A-7 | Google sign-in hidden in the app (Google refuses it in a web view) | 👁 pass |
+| A-8 | A real phone, real ads, Play's pre-launch report | ⏳ needs the owner's AdMob and Play accounts |
+
+Found and fixed on the way: on an emulator or a registered test phone the ad
+plugin ignores its own test switch and asks for the ad unit it's given — with
+none it got "no fill". The server now hands out Google's published sample
+units in test mode. Seen only on the emulator: rows drawn twice while
+scrolling with its software renderer (SwiftShader) — gone with `-gpu host`,
+so not the app.
 
 ## Not covered (and why)
 - Payments: none built yet.

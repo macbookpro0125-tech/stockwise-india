@@ -118,7 +118,8 @@ test.describe("the phone layout", () => {
 
   test("M-H6 a strategy's stocks: sort chips sort, and tapping again reverses @phone", async ({ page, account }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: /High Quality Compounders/ }).click();
+    // the card itself (its "+N rules" button names the strategy too)
+    await page.getByRole("button", { name: "View matching stocks for High Quality Compounders" }).click();
     await expect(page.getByRole("heading", { level: 2, name: "High Quality Compounders" })).toBeVisible();
     const sort = page.getByRole("group", { name: "Sort by" });
     const prices = () => page.locator(".ph-row-price").allTextContents().then(t => t.map(v => Number(v.replace(/[₹,]/g, ""))).filter(Number.isFinite));
