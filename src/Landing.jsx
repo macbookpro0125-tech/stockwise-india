@@ -53,7 +53,7 @@ const FEATURES = [
 ];
 
 const STEPS = [
-  ["Pick a strategy", "Start from one of 13 screens, or set your own filters. Results come back in seconds."],
+  ["Pick a strategy", "Start from a ready-made screen, or set your own filters. Results come back in seconds."],
   ["Check the company", "Open any result for its research dashboard — every check explained — fair value, charts and filings."],
   ["Decide your price", "Star it, set an alert at the price you want, or add it to your portfolio."],
 ];

@@ -148,4 +148,5 @@ test("BUG-006 the front page's counts aren't written in by hand", async ({ page 
   await page.getByRole("heading", { name: "What's inside" }).scrollIntoViewIfNeeded();
   await expect(page.getByText(/\b13 ready-made strategies/)).toHaveCount(0);
   await expect(page.getByText(/\b99 metrics/)).toHaveCount(0);
+  await expect(page.getByText(/one of \d+ screens/)).toHaveCount(0);
 });
