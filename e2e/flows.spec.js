@@ -199,6 +199,24 @@ test("F03-H3 the company page says when its figures are from; Help explains them
   await expect(page.getByRole("link", { name: "jocularinsights@gmail.com" })).toHaveAttribute("href", /^mailto:jocularinsights@gmail\.com\?subject=.*body=.*build/);
 });
 
+test("F03-H4 chart indicators: pivot points and their kinds, an oscillator in its own pane", async ({ page, account }) => {
+  await page.goto("/stock/TCS");
+  await page.getByRole("button", { name: /^Indicators/ }).click();
+  const menu = page.getByRole("group", { name: "Indicators" });
+  await menu.getByLabel("Pivot points").check();
+  const pivots = page.getByLabel("Pivot points", { exact: true }).and(page.locator("div"));
+  await expect(pivots).toContainText(/Classic pivots, from the last month:/);
+  for (const level of ["R3", "R1", "P", "S1", "S3"]) await expect(pivots).toContainText(level);
+  const classicR1 = await pivots.locator("span", { hasText: /^R1 / }).textContent();
+  await menu.getByRole("button", { name: "Fibonacci" }).click();
+  await expect(pivots).toContainText(/Fibonacci pivots/);
+  expect(await pivots.locator("span", { hasText: /^R1 / }).textContent()).not.toBe(classicR1);
+  await menu.getByRole("button", { name: "From the last year" }).click();
+  await expect(pivots).toContainText(/from the last year/);
+  await menu.getByLabel("Stochastic (14, 3, 3)").check();
+  await expect(page.getByText(/Stoch\s*%K [\d.,]+ %D [\d.,]+/)).toBeVisible();
+});
+
 test("F03-N1 an unknown symbol says so", async ({ page, account }) => {
   await page.goto("/stock/NOTAREALCO");
   await expect(page.getByText(/not found|isn.t|no company|unknown|couldn.t/i).first()).toBeVisible();
