@@ -197,3 +197,6 @@ function rebuildUsersForSocialSignIn() {
   }
 }
 rebuildUsersForSocialSignIn();
+// When an account's email was proven its owner's (a verified Google or Apple
+// sign-in with it); a typed email at sign-up isn't proof (auth.js)
+addColumn("users", "email_verified_at", "TEXT");

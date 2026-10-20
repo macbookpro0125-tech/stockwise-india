@@ -391,7 +391,18 @@ async function main() {
   assert(frank.status === 200 && frankMe.email === "frank@gmail.com" && frankMe.name === "Frank Test" && frankMe.hasPassword === false, "a first Google sign-in makes an account with the Google email and name, no password");
   assert((await (await fbSignIn(google("uid-frank", "frank@gmail.com"))).json()).userId === frankMe.userId, "signing in with Google again opens the same account");
   const aliceId = (await (await fetch(`${BASE}/api/auth/me`, { headers: { Cookie: aliceCookie } })).json()).userId;
-  assert((await (await fbSignIn(google("uid-alice-google", "alice@example.com"))).json()).userId === aliceId, "a verified Google email joins the email account already using it");
+  const aliceGoogle = await fbSignIn(google("uid-alice-google", "alice@example.com"));
+  const aliceGoogleCookie = extractCookie(aliceGoogle);
+  assert((await aliceGoogle.json()).userId === aliceId, "a verified Google email joins the email account already using it");
+  // Anyone can type any email at sign-up, so a password account's email isn't
+  // proven. Whoever proves it with Google takes the account over: the
+  // unproven password stops working and its sessions end — else someone who
+  // signed up with your Gmail first would keep a way into your account.
+  assert((await json("POST", "/api/auth/login", "", { email: "alice@example.com", password: "correcthorsebattery" })).status === 401, "after a Google sign-in proves the email, the password typed at sign-up no longer opens the account");
+  assert((await fetch(`${BASE}/api/auth/me`, { headers: { Cookie: aliceCookie } })).status === 401, "and the password's sessions are signed out");
+  const aliceMe = await (await fetch(`${BASE}/api/auth/me`, { headers: { Cookie: aliceGoogleCookie } })).json();
+  assert(aliceMe.userId === aliceId && aliceMe.hasPassword === false, "the Google sign-in keeps the account, its data, and no password");
+  assert((await (await fbSignIn(google("uid-alice-google", "alice@example.com"))).json()).userId === aliceId, "the next Google sign-in opens it again");
   const unverified = await fbSignIn(google("uid-mallory", "alice@example.com", { email_verified: false }));
   assert(unverified.status === 401, "an unverified email never opens someone else's account");
   const phoneRes = await fbSignIn(idToken({ sub: "uid-phone", phone_number: "+919876543210", firebase: { sign_in_provider: "phone" } }));
@@ -443,10 +454,10 @@ async function main() {
   const leftovers = ["users", "sessions", "alerts", "watchlist", "holdings", "thesis_notes", "stock_notes", "saved_strategies", "telegram_links"]
     .map(t => db.prepare(`SELECT COUNT(*) AS n FROM ${t} WHERE ${t === "users" ? "id" : "user_id"} = ?`).get(carolId).n);
   assert(leftovers.every(n => n === 0), "nothing of the deleted account is left in any table");
-  assert((await (await fetch(`${BASE}/api/alerts`, { headers: { Cookie: aliceCookie } })).json()).length === 1, "deleting one account leaves other accounts' data alone");
+  assert((await (await fetch(`${BASE}/api/alerts`, { headers: { Cookie: aliceGoogleCookie } })).json()).length === 1, "deleting one account leaves other accounts' data alone");
 
-  await fetch(`${BASE}/api/auth/logout`, { method: "POST", headers: { Cookie: aliceCookie } });
-  const afterLogout = await fetch(`${BASE}/api/alerts`, { headers: { Cookie: aliceCookie } });
+  await fetch(`${BASE}/api/auth/logout`, { method: "POST", headers: { Cookie: aliceGoogleCookie } });
+  const afterLogout = await fetch(`${BASE}/api/alerts`, { headers: { Cookie: aliceGoogleCookie } });
   assert(afterLogout.status === 401, "the old cookie stops working after logout — the session was actually deleted server-side, not just cleared client-side");
 
   console.log("\nAll HTTP-layer checks passed.");

@@ -56,6 +56,12 @@ export function login(email, password) {
 // account Firebase's id belongs to; else, for a verified Google/Apple email,
 // the account already using that email (it gains the sign-in); else a new
 // account. Then our own session.
+//
+// Anyone can type any email at sign-up, so a password account's email is
+// unproven until a verified sign-in with it. That sign-in takes the account
+// over, as Firebase itself does: the unproven password is removed and its
+// sessions end — else someone who signed up with your Gmail first would keep
+// a way into the account you then use.
 export function signInWithFirebase(claims) {
   const uid = claims.sub;
   const provider = claims.firebase?.sign_in_provider;
@@ -64,15 +70,26 @@ export function signInWithFirebase(claims) {
   const email = claims.email && claims.email_verified ? String(claims.email).trim().toLowerCase() : null;
   const phone = provider === "phone" && claims.phone_number ? String(claims.phone_number) : null;
   const name = typeof claims.name === "string" && claims.name.trim() ? claims.name.trim().slice(0, 80) : null;
-  let user = db.prepare("SELECT id FROM users WHERE firebase_uid = ?").get(uid)
-    ?? (email ? db.prepare("SELECT id FROM users WHERE email = ?").get(email) : null)
-    ?? (phone ? db.prepare("SELECT id FROM users WHERE phone = ?").get(phone) : null);
+  const now = new Date().toISOString();
+  let user = db.prepare("SELECT id FROM users WHERE firebase_uid = ?").get(uid);
+  if (!user && email) {
+    const owner = db.prepare("SELECT id, password_hash, email_verified_at FROM users WHERE email = ?").get(email);
+    if (owner) {
+      if (owner.password_hash && !owner.email_verified_at) {
+        db.prepare("UPDATE users SET password_hash = NULL, password_salt = NULL WHERE id = ?").run(owner.id);
+        db.prepare("DELETE FROM sessions WHERE user_id = ?").run(owner.id);
+      }
+      db.prepare("UPDATE users SET email_verified_at = COALESCE(email_verified_at, ?) WHERE id = ?").run(now, owner.id);
+      user = owner;
+    }
+  }
+  user ??= phone ? db.prepare("SELECT id FROM users WHERE phone = ?").get(phone) : null;
   if (user) {
     db.prepare("UPDATE users SET firebase_uid = COALESCE(firebase_uid, ?), display_name = COALESCE(display_name, ?) WHERE id = ?").run(uid, name, user.id);
   } else {
     if (!email && !phone) throw unauthorized("That sign-in didn't come with a verified email or phone number.");
-    const result = db.prepare("INSERT INTO users (email, phone, firebase_uid, display_name, created_at) VALUES (?, ?, ?, ?, ?)")
-      .run(email, phone, uid, name, new Date().toISOString());
+    const result = db.prepare("INSERT INTO users (email, phone, firebase_uid, display_name, created_at, email_verified_at) VALUES (?, ?, ?, ?, ?, ?)")
+      .run(email, phone, uid, name, now, email ? now : null);
     user = { id: result.lastInsertRowid };
   }
   return createSession(Number(user.id));
