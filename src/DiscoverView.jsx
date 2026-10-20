@@ -8,6 +8,7 @@ import { strategiesStore, browserLeftovers, moveLeftovers, discardLeftovers } fr
 import ResultsTable from "./ResultsTable.jsx";
 import ScreensHome from "./ScreensHome.jsx";
 import FilterPanel, { isActiveFilter } from "./screener/FilterPanel.jsx";
+import WheelPicker from "./WheelPicker.jsx";
 import MetricPicker from "./screener/MetricPicker.jsx";
 import { useScreenerMeta, DEFAULT_COLUMNS, OLD_DEFAULT_COLUMNS } from "./screener/meta.js";
 
@@ -282,6 +283,30 @@ export default function DiscoverView({ onOpenStock, theme }) {
   const [ribbon, setRibbon] = useState([]);
   useEffect(() => { api.presets().then(list => setRibbon(Array.isArray(list) ? list : [])).catch(() => {}); }, []);
 
+  // The strategy wheel beside the screen's name (computer): your filters
+  // when you've changed them, the whole market, the ready-made strategies,
+  // then your own. Settling on one opens it, as its card would.
+  const [ownStrategies, setOwnStrategies] = useState(readCustomPresets);
+  useEffect(() => {
+    const update = () => setOwnStrategies(readCustomPresets());
+    window.addEventListener("customPresetsUpdated", update);
+    return () => window.removeEventListener("customPresetsUpdated", update);
+  }, []);
+  const wheelPresets = useMemo(() => [...ribbon, ...ownStrategies.map(p => ({ ...p, custom: true }))], [ribbon, ownStrategies]);
+  const yours = !activePresetId && (filters ?? []).some(isActiveFilter);
+  const wheelItems = useMemo(() => [
+    ...(yours ? [{ id: "__yours", label: "Your filters" }] : []),
+    { id: "__all", label: "Whole market" },
+    ...wheelPresets.map(p => ({ id: p.id, label: p.name })),
+  ], [yours, wheelPresets]);
+  const wheelValue = activePresetId ?? (yours ? "__yours" : "__all");
+  const pickFromWheel = id => {
+    if (id === "__yours") return;
+    if (id === "__all") return changeFilters([]);
+    const preset = wheelPresets.find(p => p.id === id);
+    if (preset) applyPreset(preset);
+  };
+
   // A strategy chosen on the front page before signing in ("Open screen" in
   // the film, ?strategy=<id>): open it as its card would, once, then drop it
   // from the address
@@ -518,6 +543,12 @@ export default function DiscoverView({ onOpenStock, theme }) {
                   </div>
                 )}
               </div>
+              {!isPhone && wheelItems.length > 1 && (
+                <div className="screen-wheel">
+                  <span className="screen-wheel-label" aria-hidden="true">Strategy</span>
+                  <WheelPicker label="Strategy" items={wheelItems} value={wheelValue} onChange={pickFromWheel} rowHeight={38} />
+                </div>
+              )}
               {!isPhone && (
                 <div className="screen-actions">
                   <button type="button" onClick={handleShare} disabled={!activeCount} title="Copy a link that opens this screen" className="btn-ghost tb-btn">

@@ -140,6 +140,32 @@ test("F02-H6 Sound Banks screens on bad loans and capital; filters move up and d
   expect(await names()).toEqual(["Net NPA", "Gross NPA", "Return on assets", "CET1 capital ratio"]);
 });
 
+// The strategy wheel beside the screen's name (computer): spinning it
+// switches strategy where the stocks are, without going back to the cards
+test("F02-H7 the strategy wheel switches strategy from the stock list", async ({ page, account }) => {
+  await page.goto("/");
+  const card = page.locator("button.sc2").filter({ hasText: "Sound Banks" });
+  await card.scrollIntoViewIfNeeded();
+  await card.click();
+  const wheel = page.getByRole("listbox", { name: "Strategy" });
+  await expect(wheel.getByRole("option", { selected: true })).toHaveText("Sound Banks");
+  // the mouse wheel turns it; it opens the row it settles on
+  const box = await wheel.boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.wheel(0, -100);
+  await expect(page.locator(".screen-title")).toHaveText("Doubled in a Year");
+  await expect(page.getByRole("button", { name: "HDFC Bank Limited" })).toHaveCount(0);
+  // and the keyboard: Home is the whole market
+  await wheel.focus();
+  await page.keyboard.press("Home");
+  await expect(page.locator(".screen-title")).toHaveText("Whole market");
+  await expect(wheel.getByRole("option", { selected: true })).toHaveText("Whole market");
+  // a strategy card chosen elsewhere turns the wheel to it
+  await page.getByRole("button", { name: "Back to all strategies" }).click();
+  await page.locator("button.sc2").filter({ hasText: "Sound Banks" }).click();
+  await expect(wheel.getByRole("option", { selected: true })).toHaveText("Sound Banks");
+});
+
 test("F02-H2 share link reopens the same screen", async ({ page, context, account }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.goto("/");
