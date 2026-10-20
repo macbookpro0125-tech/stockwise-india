@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { SlidersHorizontal, ChevronLeft, ChevronRight, Bookmark, Share } from "lucide-react";
 import { api } from "./api.js";
@@ -9,6 +9,7 @@ import ResultsTable from "./ResultsTable.jsx";
 import ScreensHome from "./ScreensHome.jsx";
 import FilterPanel, { isActiveFilter } from "./screener/FilterPanel.jsx";
 import WheelPicker from "./WheelPicker.jsx";
+import { returnScroll } from "./returnScroll.js";
 import MetricPicker from "./screener/MetricPicker.jsx";
 import { useScreenerMeta, DEFAULT_COLUMNS, OLD_DEFAULT_COLUMNS } from "./screener/meta.js";
 
@@ -125,11 +126,45 @@ export default function DiscoverView({ onOpenStock, theme }) {
     window.addEventListener("popstate", back);
     return () => window.removeEventListener("popstate", back);
   }, []);
+  // Where the strategies page was when a list opened, to come back to it
+  const strategiesY = useRef(null);
   const showStocks = () => {
+    if (phoneStep === "strategies") strategiesY.current = window.scrollY;
     if (window.history.state?.discoverStep !== "stocks") window.history.pushState({ ...(window.history.state ?? {}), discoverStep: "stocks" }, "");
     setPhoneStep("stocks");
     window.scrollTo(0, 0);
   };
+  // Back from a list: the strategies on screen — where you left them, or the
+  // top of their grid — not the intro you'd have to scroll past (asked for
+  // 20 Oct 2026). The strategies load again on the way back, so the page
+  // grows for a moment: keep placing it each frame until it holds still
+  // (2 s at most), and stop the moment you scroll yourself.
+  const lastStep = useRef(phoneStep);
+  useLayoutEffect(() => {
+    const from = lastStep.current;
+    lastStep.current = phoneStep;
+    if (!(from === "stocks" && phoneStep === "strategies")) return;
+    const headerH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--header-h")) || 0;
+    const target = () => {
+      const grid = document.getElementById("popular-strategies");
+      return returnScroll(strategiesY.current, grid ? grid.getBoundingClientRect().top + window.scrollY : null, headerH);
+    };
+    let frame = 0, still = 0, done = false;
+    const until = performance.now() + 2000;
+    const stop = () => { done = true; cancelAnimationFrame(frame); };
+    const place = () => {
+      if (done) return;
+      const y = target();
+      const reachable = y <= document.documentElement.scrollHeight - window.innerHeight + 1;
+      if (Math.abs(window.scrollY - y) > 1) { window.scrollTo(0, y); still = 0; } else if (reachable) still++;
+      if (still >= 8 || performance.now() > until) return stop();
+      frame = requestAnimationFrame(place);
+    };
+    place();
+    const yours = ["wheel", "touchstart", "keydown", "pointerdown"];
+    yours.forEach(e => window.addEventListener(e, stop, { passive: true, once: true }));
+    return () => { stop(); yours.forEach(e => window.removeEventListener(e, stop)); };
+  }, [phoneStep]);
   const showStrategies = () => {
     if (window.history.state?.discoverStep === "stocks") window.history.back();
     else setPhoneStep("strategies");
@@ -522,13 +557,23 @@ export default function DiscoverView({ onOpenStock, theme }) {
           );
         })()}
 
+        {/* A computer: back to the strategies on a pill pinned under the
+            header, so it's in reach however far down the list you are */}
+        {phoneStep === "stocks" && !isPhone && (
+          <button type="button" onClick={showStrategies} className="screen-back-pin" aria-label="Back to all strategies">
+            <ChevronLeft size={18} strokeWidth={2.2} aria-hidden="true" /> All strategies
+          </button>
+        )}
+
         {/* Second page: back to the strategies, and which screen this is —
             its name, what it looks for, and Save */}
         {phoneStep === "stocks" && (
           <header className="screen-head">
-            <button type="button" onClick={showStrategies} className="screen-back" aria-label="Back to all strategies">
-              <ChevronLeft size={17} aria-hidden="true" /> {isPhone ? "Strategies" : "All strategies"}
-            </button>
+            {isPhone && (
+              <button type="button" onClick={showStrategies} className="screen-back" aria-label="Back to all strategies">
+                <ChevronLeft size={17} aria-hidden="true" /> Strategies
+              </button>
+            )}
             <div className="screen-head-row">
               <div style={{ minWidth: 0, flex: 1 }}>
                 <h2 className="screen-title">{activePresetName ?? (activeCount > 0 ? "Your filters" : "Whole market")}</h2>

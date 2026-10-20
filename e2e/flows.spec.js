@@ -166,6 +166,33 @@ test("F02-H7 the strategy wheel switches strategy from the stock list", async ({
   await expect(wheel.getByRole("option", { selected: true })).toHaveText("Sound Banks");
 });
 
+// The way back from a stock list (computer): a pill pinned under the header
+// however far down the list, landing on the strategies — the card you left,
+// or the top of the grid — never the intro above them
+test("F02-H8 back from a stock list is always in reach and lands on the strategies", async ({ page, account }) => {
+  await page.goto("/");
+  const card = page.locator("button.sc2").filter({ hasText: "Sound Banks" });
+  await card.scrollIntoViewIfNeeded();
+  await card.click();
+  await expect(page.locator(".screen-title")).toHaveText("Sound Banks");
+  await page.evaluate(() => window.scrollTo(0, 1500));
+  const back = page.getByRole("button", { name: "Back to all strategies" });
+  await expect(back).toBeInViewport();
+  await back.click();
+  await expect(card).toBeInViewport();
+  // started from the top of Discover: back at the strategies, not the intro
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.getByRole("button", { name: /Start screening/ }).first().click();
+  await expect(page.locator(".screen-title")).toBeVisible();
+  await back.click();
+  await expect(page.getByRole("heading", { name: /Explore the strategies/ })).toBeInViewport();
+  // and the browser's own Back
+  await page.locator("button.sc2").filter({ hasText: "Doubled in a Year" }).click();
+  await expect(page.locator(".screen-title")).toHaveText("Doubled in a Year");
+  await page.goBack();
+  await expect(page.locator("button.sc2").filter({ hasText: "Doubled in a Year" })).toBeInViewport();
+});
+
 test("F02-H2 share link reopens the same screen", async ({ page, context, account }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.goto("/");
