@@ -1,7 +1,7 @@
 // A sweep of every screen: each tab and one company page per valuation model
 // loads without console errors or server failures, says what it should, and
 // gets an accessibility scan (written to test-results/axe.txt, not failed on).
-import { test, expect, axeCheck, openStocks } from "./fixtures.js";
+import { test, expect, axeCheck, openStocks, openPage } from "./fixtures.js";
 import { appendFileSync, mkdirSync } from "node:fs";
 
 const axeLog = lines => { mkdirSync("test-results", { recursive: true }); if (lines.length) appendFileSync("test-results/axe.txt", lines.join("\n") + "\n"); };
@@ -10,12 +10,15 @@ const nav = page => page.getByRole("navigation").first();
 test("every tab opens", async ({ page, account }) => {
   await page.goto("/");
   await expect(page.getByRole("button", { name: "Account" })).toBeVisible();
+  // Discover has no tab row (20 Oct 2026); its pages are in the Account menu
+  await expect(page.locator(".discovery-tabs")).toHaveCount(0);
   await openStocks(page);
   await expect(page.locator("table, [role=table]").first()).toBeVisible();
   axeLog(await axeCheck(page, "Discover"));
   for (const tab of ["Momentum", "Watchlist", "Portfolio", "Performance", "Alerts"]) {
-    await page.getByRole("button", { name: new RegExp(`^${tab}`) }).first().click();
+    await openPage(page, tab);
     await page.waitForLoadState("networkidle");
+    await expect(page.locator(".discovery-tabs"), "the other pages keep the tab row").toBeVisible();
     await expect(page.getByRole("heading").first()).toBeVisible();
     axeLog(await axeCheck(page, tab));
   }

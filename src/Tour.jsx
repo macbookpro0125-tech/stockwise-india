@@ -14,7 +14,7 @@ export const APP_TOUR = [
   { target: "row", title: "One company per row", body: "Quality (out of 100) is how strong the business is, worked out from its NSE filings. Research adds valuation and risk. Click or tap a company's name to open its full page." },
   { target: "row-actions", title: "Save it, or get an alert", body: "The star adds it to your Watchlist. The bell tells you when the price reaches a level you set — it's on each row on a computer, and on the company's page on a phone." },
   { target: "tabs", title: "Your other pages", body: "Watchlist: companies you saved. Portfolio: what you own, with your gain or loss. Performance: how each strategy's past picks have done. Alerts: your price alerts." },
-  { target: "account", title: "Your account", body: "Sign out, delete your account, or take this tour again. The button beside it switches between light and dark." },
+  { target: "account", title: "Your pages and account", body: "Watchlist, Portfolio, Performance and Alerts are in this menu while you're on Discover, with sign out, delete account and this tour. The button beside it switches between light and dark." },
   { title: "You're all set", body: "Open any company to see its scores, fair value, financials and NSE filings. A short tour of that page shows the first time you open one." },
 ];
 

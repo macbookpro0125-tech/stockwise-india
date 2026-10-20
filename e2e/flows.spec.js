@@ -1,5 +1,5 @@
 // The app's flows, one test each (case ids from replica/test-plan.md).
-import { test, expect, openStocks, openFilters } from "./fixtures.js";
+import { test, expect, openStocks, openFilters, openPage } from "./fixtures.js";
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 
@@ -372,13 +372,13 @@ test("F03-N1 an unknown symbol says so", async ({ page, account }) => {
 test("F04-H1 watch from the company page, note it, remove it", async ({ page, account }) => {
   await page.goto("/stock/TCS");
   await page.getByRole("button", { name: "Add to watchlist" }).click();
-  await page.getByRole("button", { name: "Watchlist" }).first().click();
+  await openPage(page, "Watchlist");
   await expect(page.getByText("Tata Consultancy Services Limited").first()).toBeVisible();
   await page.getByRole("button", { name: "+ Add note" }).first().click();
   await page.getByPlaceholder("e.g. Wait for Q3 results…").fill("Résumé check ✓ — wait for Q3");
   await page.getByRole("button", { name: "Save" }).click();
   await page.reload();
-  await page.getByRole("button", { name: "Watchlist" }).first().click();
+  await openPage(page, "Watchlist");
   await expect(page.getByText("Résumé check ✓ — wait for Q3")).toBeVisible();
   await page.getByRole("button", { name: "Remove from watchlist" }).first().click();
   await expect(page.getByText("Tata Consultancy Services Limited")).toHaveCount(0);
@@ -387,7 +387,7 @@ test("F04-H1 watch from the company page, note it, remove it", async ({ page, ac
 // ── F05 portfolio ───────────────────────────────────────────────────────────
 test("F05-H1 add, edit and remove a holding", async ({ page, account }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Portfolio" }).first().click();
+  await openPage(page, "Portfolio");
   await page.getByRole("button", { name: "+ Add Holding" }).click();
   await page.getByPlaceholder("e.g. TCS").fill("INFY");
   await page.getByPlaceholder("0.00").fill("1400");
@@ -405,7 +405,7 @@ test("F05-H1 add, edit and remove a holding", async ({ page, account }) => {
 
 test("F05-N1 a made-up ticker is refused", async ({ page, account }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Portfolio" }).first().click();
+  await openPage(page, "Portfolio");
   await page.getByRole("button", { name: "+ Add Holding" }).click();
   await page.getByPlaceholder("e.g. TCS").fill("FAKECO123");
   await page.getByPlaceholder("0.00").fill("100");
@@ -416,7 +416,7 @@ test("F05-N1 a made-up ticker is refused", async ({ page, account }) => {
 
 test("F05-H2 import a broker holdings file", async ({ page, account }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Portfolio" }).first().click();
+  await openPage(page, "Portfolio");
   await page.getByRole("button", { name: "Import from broker file" }).click();
   const csv = "Instrument,Qty.,Avg. cost\nTCS,5,3100\nHDFCBANK,20,1500.5\nNOTAREAL,3,10\n";
   await page.locator("input[type=file]").setInputFiles({ name: "holdings.csv", mimeType: "text/csv", buffer: Buffer.from(csv) });
@@ -433,7 +433,7 @@ test("F06-H1 set an alert from the company page, see it, delete it", async ({ pa
   await page.locator("input[type=number]").last().fill("1500");
   await page.getByRole("button", { name: "Create alert" }).click();
   await page.goto("/");
-  await page.getByRole("button", { name: "Alerts" }).first().click();
+  await openPage(page, "Alerts");
   await expect(page.getByText(/Tata Consultancy/).first()).toBeVisible();
   page.once("dialog", d => d.accept());
   await page.getByRole("button", { name: "Delete alert" }).first().click();

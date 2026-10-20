@@ -51,6 +51,10 @@ export function useTabBadges() {
 
 export default function Header({ tab, onTab, account, onLogout, onDeleted, onSearch, theme, onToggleTheme, onTour }) {
   const badges = useTabBadges();
+  // On Discover the header is one row: no tab row (asked for 20 Oct 2026 —
+  // "not important there"); the other pages are in the Account menu instead.
+  // Watchlist, Portfolio and the rest keep the row.
+  const tabsHidden = tab === "discover";
 
   // --header-h: how much of the top the pinned header covers, so bars pinned
   // below it (the stock page's action bar) sit under it at any width — 0 on
@@ -96,11 +100,12 @@ export default function Header({ tab, onTab, account, onLogout, onDeleted, onSea
               style={{ width: 32, height: 32, borderRadius: 8, background: "var(--s2)", border: "1px solid var(--bdr)", color: "var(--t2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: 0 }}>
               {theme === "dark" ? <Sun size={16} strokeWidth={2} /> : <Moon size={16} strokeWidth={2} />}
             </button>
-            <AccountMenu account={account} onLogout={onLogout} onDeleted={onDeleted} onTour={onTour} />
+            <AccountMenu account={account} onLogout={onLogout} onDeleted={onDeleted} onTour={onTour}
+              pages={tabsHidden ? tabsFor(account).filter(t => t.id !== "discover") : null} onPage={onTab} />
           </div>
         </div>
 
-        <div className="discovery-tabs" data-tour="tabs" style={{ display: "flex", gap: 0 }}>
+        {!tabsHidden && <div className="discovery-tabs" data-tour="tabs" style={{ display: "flex", gap: 0 }}>
           {tabsFor(account).map(t => {
             const b = badges[t.id] ?? {};
             const active = tab === t.id;
@@ -122,7 +127,7 @@ export default function Header({ tab, onTab, account, onLogout, onDeleted, onSea
               </button>
             );
           })}
-        </div>
+        </div>}
       </div>
     </div>
   );

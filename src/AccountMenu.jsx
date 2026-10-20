@@ -11,7 +11,8 @@ import { installState, onInstallChange, promptInstall } from "./installApp.js";
 // — the way to erase everything that the privacy page points to. An account
 // made with Google, Apple or a phone has no password; it confirms the delete
 // by typing DELETE.
-export default function AccountMenu({ account, onLogout, onDeleted, onTour }) {
+// pages: on Discover, which shows no tab row, the other pages as items here
+export default function AccountMenu({ account, onLogout, onDeleted, onTour, pages, onPage }) {
   const who = account?.email || account?.phone || null;
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -46,6 +47,16 @@ export default function AccountMenu({ account, onLogout, onDeleted, onTour }) {
               <div style={{ fontSize: 11, color: "var(--t3)" }}>Signed in as</div>
               {account.name && <div style={{ fontSize: 13, fontWeight: 600, color: "var(--t1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{account.name}</div>}
               <div style={{ fontSize: 13, color: account.name ? "var(--t2)" : "var(--t1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={who}>{who}</div>
+            </div>
+          )}
+          {pages?.length > 0 && (
+            <div style={{ paddingBottom: 4, marginBottom: 4, borderBottom: "1px solid var(--bdr)" }}>
+              {pages.map(p => (
+                <button key={p.id} role="menuitem" style={{ ...item, display: "flex", alignItems: "center", gap: 10 }} onClick={() => { setOpen(false); onPage?.(p.id); }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "var(--s3)"; }} onMouseLeave={e => { e.currentTarget.style.background = "none"; }}>
+                  <p.Icon size={15} strokeWidth={2} style={{ color: "var(--t3)" }} aria-hidden="true" /> {p.label}
+                </button>
+              ))}
             </div>
           )}
           {onTour && (

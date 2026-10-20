@@ -73,4 +73,21 @@ export async function openStocks(page) {
   await page.getByRole("checkbox", { name: /^Compare / }).first().waitFor();
 }
 
+// Open a page as a person would: its tab in the header's tab row; on a
+// phone, the bottom tab bar (opening it first if it has folded into one
+// button); on Discover on a computer, which has no tab row, the Account menu
+export async function openPage(page, name) {
+  const re = new RegExp(`^${name}`);
+  const row = page.locator(".discovery-tabs");
+  if (await row.isVisible().catch(() => false)) return row.getByRole("button", { name: re }).click();
+  const bar = page.getByRole("navigation", { name: "Pages" });
+  if (await bar.isVisible().catch(() => false)) {
+    const folded = bar.getByRole("button", { name: /: show all tabs$/ });
+    if (await folded.isVisible().catch(() => false)) await folded.click();
+    return bar.getByRole("button", { name: re }).click();
+  }
+  await page.getByRole("button", { name: "Account", exact: true }).click();
+  await page.getByRole("menuitem", { name: re }).click();
+}
+
 export { expect };

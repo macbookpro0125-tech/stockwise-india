@@ -1,10 +1,10 @@
 // Edge cases from the test plan: double submits, long input, a session that
 // ends mid-use, the back button, watchlist-only screening, keyboard and phone.
-import { test, expect, openStocks, openFilters } from "./fixtures.js";
+import { test, expect, openStocks, openFilters, openPage } from "./fixtures.js";
 
 test("F05-E1 double-clicking Add to Portfolio adds one holding", async ({ page, account, baseURL }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Portfolio" }).first().click();
+  await openPage(page, "Portfolio");
   await page.getByRole("button", { name: "+ Add Holding" }).click();
   await page.getByPlaceholder("e.g. TCS").fill("ITC");
   await page.getByPlaceholder("0.00").fill("400");
@@ -32,14 +32,14 @@ test("F06-E1 double-clicking Create alert makes one alert", async ({ page, accou
 test("F04-E1 a long note isn't cut off without warning", async ({ page, account }) => {
   await page.goto("/stock/TCS");
   await page.getByRole("button", { name: "Add to watchlist" }).click();
-  await page.getByRole("button", { name: "Watchlist" }).first().click();
+  await openPage(page, "Watchlist");
   await page.getByRole("button", { name: "+ Add note" }).first().click();
   const box = page.getByPlaceholder("e.g. Wait for Q3 results…");
   await box.fill("x".repeat(700));
   const kept = await box.inputValue();
   await page.getByRole("button", { name: "Save" }).click();
   await page.reload();
-  await page.getByRole("button", { name: "Watchlist" }).first().click();
+  await openPage(page, "Watchlist");
   const shown = (await page.getByRole("button", { name: /^Edit note for/ }).first().innerText()).trim();
   // Either the box stops at the limit, or what was typed is what was saved
   expect(shown.length, "saved note length vs what the box accepted").toBe(kept.length);
@@ -49,7 +49,7 @@ test("F01-E3 a session that ends mid-use returns to sign-in, not a broken page",
   await page.goto("/");
   await expect(page.getByRole("button", { name: "Account", exact: true })).toBeVisible();
   await page.context().clearCookies();
-  await page.getByRole("button", { name: "Watchlist" }).first().click();
+  await openPage(page, "Watchlist");
   await page.goto("/stock/TCS");
   await expect(page.getByRole("button", { name: "Create free account" }).first()).toBeVisible();
 });
@@ -92,7 +92,7 @@ test("F02-E3 keyboard only: / focuses search, Enter opens a company", async ({ p
 
 test("phone: add a holding and open Alerts @phone", async ({ page, account }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Portfolio" }).filter({ visible: true }).first().click();
+  await openPage(page, "Portfolio");
   await page.getByRole("button", { name: "+ Add Holding" }).click();
   await page.getByPlaceholder("e.g. TCS").fill("TCS");
   await page.getByPlaceholder("0.00").fill("3000");
@@ -102,9 +102,7 @@ test("phone: add a holding and open Alerts @phone", async ({ page, account }) =>
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(1);
   // the page scrolled as the holding was added, so the tab bar may have
-  // folded into one button (M-H8): open it as a person would
-  const folded = page.getByRole("button", { name: /: show all tabs$/ });
-  if (await folded.isVisible().catch(() => false)) await folded.click();
-  await page.getByRole("button", { name: "Alerts" }).filter({ visible: true }).first().click();
+  // folded into one button (M-H8): openPage opens it as a person would
+  await openPage(page, "Alerts");
   await expect(page.getByText(/No alerts yet/)).toBeVisible();
 });
