@@ -49,7 +49,8 @@ test("F01-E3 a session that ends mid-use returns to sign-in, not a broken page",
   await page.goto("/");
   await expect(page.getByRole("button", { name: "Account", exact: true })).toBeVisible();
   await page.context().clearCookies();
-  await openPage(page, "Watchlist");
+  // something that asks the server, once the session has gone
+  await page.getByRole("button", { name: /Create new screen|Start screening/ }).first().click();
   await page.goto("/stock/TCS");
   await expect(page.getByRole("button", { name: "Create free account" }).first()).toBeVisible();
 });

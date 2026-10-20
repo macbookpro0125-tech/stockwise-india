@@ -75,7 +75,8 @@ export async function openStocks(page) {
 
 // Open a page as a person would: its tab in the header's tab row; on a
 // phone, the bottom tab bar (opening it first if it has folded into one
-// button); on Discover on a computer, which has no tab row, the Account menu
+// button); on Discover on a computer, which has no tab row, by way of a
+// company's page, whose header has the tabs
 export async function openPage(page, name) {
   const re = new RegExp(`^${name}`);
   const row = page.locator(".discovery-tabs");
@@ -86,8 +87,9 @@ export async function openPage(page, name) {
     if (await folded.isVisible().catch(() => false)) await folded.click();
     return bar.getByRole("button", { name: re }).click();
   }
-  await page.getByRole("button", { name: "Account", exact: true }).click();
-  await page.getByRole("menuitem", { name: re }).click();
+  await page.goto("/stock/TCS");
+  await row.waitFor();
+  await row.getByRole("button", { name: re }).click();
 }
 
 export { expect };
