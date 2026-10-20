@@ -1,5 +1,7 @@
 import { Fragment, Suspense, useState, useEffect, useRef } from "react";
 import { lazyPage } from "./lazyPage.js";
+import CompanyLogo from "./CompanyLogo.jsx";
+import { cardName } from "./stockName.js";
 import { ArrowDown, ArrowUp, Check, Info, Columns3, Search, ArrowUpRight, SearchX, Star, ChevronDown, Funnel, Download } from "lucide-react";
 import { StarIcon, BellIcon, actionButtonStyle } from "./icons.jsx";
 import { useWatchlist, toggleWatch } from "./watchlist.js";
@@ -673,14 +675,15 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
             const missingResearch = overall == null ? researchMissingText(stock.research) : null;
             // Coloured as the pills and stance words on a computer
             const cells = [
-              ["Quality", <span key="q" title={researchTitle(stock.research)} style={{ color: qualityTone(quality).color }}>{quality == null ? "—" : Math.round(quality)}</span>],
-              ["Research", <span key="r" title={researchTitle(stock.research)} aria-label={missingResearch ?? `Research score ${Math.round(overall)} — ${stock.research?.stance ?? "rated"}`} style={{ color: overallTone(overall).color }}>{overall == null ? (stock.research?.status === "review-required" ? "review" : stock.research?.status === "quality-only" ? "quality only" : "not rated") : Math.round(overall)}</span>],
+              ["Quality", <span key="q" title={researchTitle(stock.research)} style={{ color: qualityTone(quality).color }}>{quality == null ? "—" : Math.round(quality)}</span>, quality == null ? null : "/100"],
+              ["Research", <span key="r" title={researchTitle(stock.research)} aria-label={missingResearch ?? `Research score ${Math.round(overall)} — ${stock.research?.stance ?? "rated"}`} style={{ color: overallTone(overall).color }}>{overall == null ? (stock.research?.status === "review-required" ? "review" : stock.research?.status === "quality-only" ? "quality only" : "not rated") : Math.round(overall)}</span>, overall == null ? null : "/100"],
               // What's being filtered on first: one of the screen's measures,
               // so the line fits a phone (the company page has the rest)
               ...[...columns.filter(def => filteredIds.includes(def.id)), ...columns.filter(def => !filteredIds.includes(def.id))].slice(0, 1).map(def => {
                 const v = colValue(stock, def.id);
                 // Coloured as the table's cells are (strong ROCE, Piotroski 7+ green)
-                return [def.short, <span key={def.id} style={{ color: valueColor(def, v) }}>{formatValue(def, v)}</span>];
+                // a short name for a phone's column ("P/E TTM/FY" → "P/E")
+                return [def.short.replace(/\s+TTM\/FY$/, ""), <span key={def.id} style={{ color: valueColor(def, v) }}>{formatValue(def, v)}</span>];
               }),
             ];
             const adAfter = (i + 1) % PHONE_AD_EVERY === 0 && i + 1 < visible.length;
@@ -691,14 +694,21 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                     change; then the scores in even columns with the star at
                     the end. The research profile isn't repeated here — the
                     company page, a tap away, has the whole scorecard. */}
+                {/* One card per company, apart from the next, so every figure
+                    plainly belongs to the company it's under (20 Oct 2026:
+                    rows in one box read as "what is what"): its logo (or
+                    letters), name and price; ticker · sector and the day's
+                    change; then its scores in a tray, each with its scale,
+                    and the star. */}
                 <div data-tour={i === 0 ? "row" : undefined} onClick={() => onAnalyze(stock.symbol)} className="ph-row phone-row">
                   <div className="ph-row-top">
+                    <CompanyLogo symbol={stock.symbol} size={42} fallback={stock.name} />
                     <div className="ph-row-id">
-                      <button type="button" className="ph-row-name stock-link" onClick={e => { e.stopPropagation(); onAnalyze(stock.symbol); }}>{stock.name}</button>
+                      <button type="button" className="ph-row-name stock-link" aria-label={stock.name} onClick={e => { e.stopPropagation(); onAnalyze(stock.symbol); }}>{cardName(stock.name)}</button>
                       <div className="ph-row-sub">
-                        <span className="ticker-chip">{stock.symbol}</span>
+                        <span className="ph-row-ticker">{stock.symbol}</span>
                         <NcavBadge stock={stock} />
-                        {stock.sector && <span className="ph-row-sector">{stock.sector}</span>}
+                        {stock.sector && <><span className="ph-row-dot" aria-hidden="true">·</span><span className="ph-row-sector">{stock.sector}</span></>}
                       </div>
                     </div>
                     <div className="ph-row-quote">
@@ -706,12 +716,14 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                       {day != null && <span className={`ph-row-day ${day >= 0 ? "up" : "down"}`}>{`${day >= 0 ? "+" : "−"}${Math.abs(day).toFixed(2)}%`}</span>}
                     </div>
                   </div>
-                  <div className="ph-row-stats" style={{ "--n": cells.length }}>
-                    {cells.map(([label, value]) => (
-                      <div key={label} className="ph-stat"><span className="ph-stat-k">{label}</span><span className="ph-stat-v">{value}</span></div>
-                    ))}
+                  <div className="ph-row-foot">
+                    <div className="ph-row-stats" style={{ "--n": cells.length }}>
+                      {cells.map(([label, value, unit]) => (
+                        <div key={label} className="ph-stat"><span className="ph-stat-k">{label}</span><span className="ph-stat-v">{value}{unit && <small>{unit}</small>}</span></div>
+                      ))}
+                    </div>
                     <span className="ph-row-star" data-tour={i === 0 ? "row-actions" : undefined} onClick={e => e.stopPropagation()}>
-                      <StarButton symbol={stock.symbol} price={stock.cmp} watched={watchlist.has(stock.symbol)} size={36} />
+                      <StarButton symbol={stock.symbol} price={stock.cmp} watched={watchlist.has(stock.symbol)} size={40} />
                     </span>
                   </div>
                   {missingResearch && <div role="note" className="ph-row-note">{missingResearch}</div>}
