@@ -1668,6 +1668,23 @@ select {
 /* Discover's start page: no tab row; its stock lists have it (Header.jsx) */
 html[data-discover-step="strategies"] .discovery-tabs.tabs-on-discover { display: none !important; }
 
+/* The company page on a phone: one tab's parts at a time (StockDetail.jsx,
+   phoneTabs.js); a wrapper of several parts is invisible to the layout */
+.sd-tabpart { display: contents; }
+@media (max-width: 640px) {
+  /* in a tab of a few screens, headings need no long-page spacing */
+  .sd.ap .sd-main .sd-h2 { max-width: none; margin: 14px 0 14px; font-size: 25px; line-height: 1.15; }
+  .sd-main[data-phone-tab="overview"] > [data-tab]:not([data-tab="overview"]) { display: none !important; }
+  .sd-main[data-phone-tab="scores"] > [data-tab]:not([data-tab="scores"]) { display: none !important; }
+  .sd-main[data-phone-tab="valuation"] > [data-tab]:not([data-tab="valuation"]) { display: none !important; }
+  .sd-main[data-phone-tab="financials"] > [data-tab]:not([data-tab="financials"]) { display: none !important; }
+  .sd-main[data-phone-tab="dividends"] > [data-tab]:not([data-tab="dividends"]) { display: none !important; }
+  .sd-main[data-phone-tab="holding"] > [data-tab]:not([data-tab="holding"]) { display: none !important; }
+  .sd-main[data-phone-tab="technicals"] > [data-tab]:not([data-tab="technicals"]) { display: none !important; }
+  .sd-main[data-phone-tab="peers"] > [data-tab]:not([data-tab="peers"]) { display: none !important; }
+  .sd-main[data-phone-tab="filings"] > [data-tab]:not([data-tab="filings"]) { display: none !important; }
+}
+
 /* Read by screen readers, not shown */
 .sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 

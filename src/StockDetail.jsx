@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
+import { SHOW_TAB, usePhone } from "./phoneTabs.js";
 import { NotebookPen, Check, X, TriangleAlert, LoaderCircle, ArrowLeft, ArrowUpRight, CalendarDays, CircleCheck, Layers, ArrowRight } from "lucide-react";
 import { api } from "./api.js";
 import { calculateLevels, pricePosition, fmtRs } from "../server/levels.js";
@@ -451,9 +452,11 @@ const TABS = [
   ["filings", "News & filings", ["filings"]],
 ];
 
-function SectionNav({ ready }) {
+function SectionNav({ ready, phone = false, phoneTab = "overview", onPhoneTab }) {
   const [present, setPresent] = useState(TABS);
-  const [active, setActive] = useState("overview");
+  const [spied, setSpied] = useState("overview");
+  const active = phone ? phoneTab : spied;
+  const setActive = setSpied;
   const rowRef = useRef(null);
   // Only the tabs this company has a part for (no valuation without filings, …)
   useEffect(() => {
@@ -466,6 +469,7 @@ function SectionNav({ ready }) {
     return pinnedAt + (document.querySelector("[data-sticky-top]")?.offsetHeight ?? 0);
   };
   useEffect(() => {
+    if (phone) return;
     let frame = 0;
     const onScroll = () => {
       cancelAnimationFrame(frame);
@@ -481,7 +485,7 @@ function SectionNav({ ready }) {
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => { cancelAnimationFrame(frame); window.removeEventListener("scroll", onScroll); };
-  }, [present]);
+  }, [present, phone]);
   // Keep the lit tab in view as the page scrolls past the parts
   useEffect(() => {
     const row = rowRef.current, tab = row?.querySelector(`[data-sec="${active}"]`);
@@ -489,7 +493,8 @@ function SectionNav({ ready }) {
     const left = tab.offsetLeft - row.offsetLeft, right = left + tab.offsetWidth;
     if (left < row.scrollLeft + 8 || right > row.scrollLeft + row.clientWidth - 8) row.scrollTo({ left: left - 12, behavior: "smooth" });
   }, [active]);
-  const go = parts => {
+  const go = (parts, id) => {
+    if (phone) return onPhoneTab?.(id);
     const el = document.getElementById(`sec-${parts[0]}`);
     if (!el) return;
     const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -499,7 +504,7 @@ function SectionNav({ ready }) {
   return (
     <nav ref={rowRef} aria-label="Parts of this page" className="sd-tabs">
       {present.map(([id, label, parts]) => (
-        <button key={id} type="button" data-sec={id} aria-current={active === id ? "true" : undefined} onClick={() => go(parts)} className={`sd-tab${active === id ? " on" : ""}`}>{label}</button>
+        <button key={id} type="button" data-sec={id} aria-current={active === id ? "true" : undefined} onClick={() => go(parts, id)} className={`sd-tab${active === id ? " on" : ""}`}>{label}</button>
       ))}
     </nav>
   );
@@ -507,6 +512,29 @@ function SectionNav({ ready }) {
 
 export default function StockDetail({ symbol, account, onBack, backTo = "Discover", onOpenStock }) {
   const watched = useWatchlist().has(symbol);
+  // A phone shows one tab's parts at a time (asked for 20 Oct 2026: the
+  // page was 25 screens in one scroll, "congested and not understandable");
+  // a computer keeps the one page, its tabs jumping down it. A jump to a
+  // part on another tab (a scorecard row, "See Financial health") switches
+  // to that tab first (phoneTabs.js).
+  const isPhone = usePhone();
+  const [phoneTab, setPhoneTab] = useState("overview");
+  useEffect(() => { setPhoneTab("overview"); }, [symbol]);
+  useEffect(() => {
+    const show = e => setPhoneTab(e.detail);
+    window.addEventListener(SHOW_TAB, show);
+    return () => window.removeEventListener(SHOW_TAB, show);
+  }, []);
+  const showPhoneTab = id => {
+    setPhoneTab(id);
+    // the tab's start just under the pinned bar, unless the page is above it
+    requestAnimationFrame(() => {
+      const main = document.querySelector(".sd-main"), bar = document.querySelector("[data-sticky-top]");
+      if (!main) return;
+      const top = docTop(main) - (bar?.offsetHeight ?? 0) - 8;
+      if (window.scrollY > top) window.scrollTo(0, top);
+    });
+  };
   const [showAlertModal, setShowAlertModal] = useState(false);
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
@@ -616,8 +644,12 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       )}
 
       <div className="sd ap">
-      <StockSide data={data} m={m} price={price} priceLabel={priceLabel} watched={watched}
-        onWatch={() => toggleWatch(data.symbol, price)} onAlert={() => setShowAlertModal(true)} />
+      {/* A phone shows the company's card on Overview only: the other tabs
+          start with their own content, the pinned bar giving name and price */}
+      {(!isPhone || phoneTab === "overview") && (
+        <StockSide data={data} m={m} price={price} priceLabel={priceLabel} watched={watched}
+          onWatch={() => toggleWatch(data.symbol, price)} onAlert={() => setShowAlertModal(true)} />
+      )}
 
       <div className="sd-right">
       {/* Pinned bar: Back and the tabs (on a phone also the name and price,
@@ -626,11 +658,11 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         <div className="sd-bar-row">
           <button type="button" onClick={onBack} title={`Back to ${backTo}`} className="sd-back"><ArrowLeft size={15} aria-hidden="true" /> Back</button>
           <span className="sd-bar-name">{data.name}{price > 0 && <b>{fmtRs(price)}</b>}</span>
-          <SectionNav ready={!!m} />
+          <SectionNav ready={!!m} phone={isPhone} phoneTab={phoneTab} onPhoneTab={showPhoneTab} />
         </div>
       </div>
 
-      <div className="sd-main">
+      <div className="sd-main" data-phone-tab={phoneTab}>
 
       {data.quoteError && (
         <div style={{ fontSize: 12, color: "var(--yellow)", background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", borderRadius: 8, padding: "8px 12px", marginBottom: 12 }}>
@@ -647,26 +679,26 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         <div style={{ ...card, color: "var(--t3)", fontSize: 13 }}>No usable annual results in NSE's filings for this company, so there's nothing to value or score.</div>
       )}
 
-      <section id="sec-overview" className="ss-section sd-section">
+      <section id="sec-overview" className="ss-section sd-section" data-tab="overview">
         <PriceChartPanel symbol={data.symbol} name={data.name} levels={valued ? levels : null} />
         {m && <StockGlance r={m.research} />}
         <StockSnapshot m={m} price={price} dates={data.dataDates} />
         <StockPerformance m={m} />
       </section>
 
-      <div id="sec-about" className="ss-section"><CompanyProfile symbol={data.symbol} m={m} /></div>
+      <div id="sec-about" className="ss-section" data-tab="overview"><CompanyProfile symbol={data.symbol} m={m} /></div>
 
-      {m && <div id="sec-events" className="ss-section"><StockRecent m={m} holding={data.holding} /></div>}
+      {m && <div id="sec-events" className="ss-section" data-tab="overview"><StockRecent m={m} holding={data.holding} /></div>}
 
       {m && (
-        <>
+        <div className="sd-tabpart" data-tab="scores">
           <div id="sec-scores" className="ss-section" data-tour="research"><h2 className="sd-h2">Scorecard. <span>How the business scores on its own filings.</span></h2><div className="sd-phone-only"><Scorecard r={m.research} /></div><ResearchPanel research={m.research} /></div>
           <div id="sec-thesis" className="ss-section" data-tour="thesis"><ThesisMonitor metrics={m} account={account} /></div>
-        </>
+        </div>
       )}
 
       {m && (
-        <>
+        <div className="sd-tabpart" data-tab="valuation">
           {/* Verify & Override — or, without a model that values the
               company, why there's no fair value */}
           <div id="sec-valuation" className="ss-section">
@@ -825,11 +857,11 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
             </div>
           </div>
 
-        </>
+        </div>
       )}
 
       {m && (
-        <>
+        <div className="sd-tabpart" data-tab="valuation">
           <div id="sec-levels" className="ss-section">
 
           {/* Where the price sits — described against the levels, never an instruction */}
@@ -911,19 +943,21 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
           <PiotroskiCard m={m} />
           <KeyNumbers data={data} m={m} />
           </div>
-        </>
+        </div>
       )}
 
-      {m && <div id="sec-financials" className="ss-section"><h2 className="sd-h2">Financials. <span>Its results, year by year.</span></h2><FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} /></div>}
-      {m && <div id="sec-health" className="ss-section"><h2 className="sd-h2">Financial health. <span>What it owns, what it owes, and how its debt is covered.</span></h2><StockHealth m={m} /></div>}
-      {m?.dividendRecord && <div id="sec-dividends" className="ss-section"><h2 className="sd-h2">Dividends. <span>What it pays, and what that takes.</span></h2><StockDividends m={m} /></div>}
-      <div id="sec-holding" className="ss-section"><h2 className="sd-h2">Holdings. <span>Who owns it, and how that is changing.</span></h2><ShareholdingPanel symbol={data.symbol} /><InsidersPanel symbol={data.symbol} /></div>
-      <div id="sec-technicals" className="ss-section"><h2 className="sd-h2">Technicals. <span>The trend in the price.</span></h2><TechnicalPanel ticker={data.symbol} /></div>
+      {m && <div id="sec-financials" className="ss-section" data-tab="financials"><h2 className="sd-h2">Financials. <span>Its results, year by year.</span></h2><FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} /></div>}
+      {m && <div id="sec-health" className="ss-section" data-tab="financials"><h2 className="sd-h2">Financial health. <span>What it owns, what it owes, and how its debt is covered.</span></h2><StockHealth m={m} /></div>}
+      {m?.dividendRecord && <div id="sec-dividends" className="ss-section" data-tab="dividends"><h2 className="sd-h2">Dividends. <span>What it pays, and what that takes.</span></h2><StockDividends m={m} /></div>}
+      <div id="sec-holding" className="ss-section" data-tab="holding"><h2 className="sd-h2">Holdings. <span>Who owns it, and how that is changing.</span></h2><ShareholdingPanel symbol={data.symbol} /><InsidersPanel symbol={data.symbol} /></div>
+      <div id="sec-technicals" className="ss-section" data-tab="technicals"><h2 className="sd-h2">Technicals. <span>The trend in the price.</span></h2><TechnicalPanel ticker={data.symbol} /></div>
 
-      <div id="sec-peers" className="ss-section"><h2 className="sd-h2">Peers. <span>How it compares with similar companies.</span></h2>{m && <StockSectorCompare m={m} />}<PeersPanel symbol={data.symbol} onAnalyze={onOpenStock} /></div>
-      <div id="sec-filings" className="ss-section" data-tour="filings"><h2 className="sd-h2">News & filings. <span>Straight from NSE.</span></h2><StockEarningsCall symbol={data.symbol} m={m} /><NewsPanel symbol={data.symbol} /></div>
-      <MyNotes key={data.symbol} symbol={data.symbol} />
-      <StockDataDates dates={data.dataDates} quote={data.quote} research={m?.research} />
+      <div id="sec-peers" className="ss-section" data-tab="peers"><h2 className="sd-h2">Peers. <span>How it compares with similar companies.</span></h2>{m && <StockSectorCompare m={m} />}<PeersPanel symbol={data.symbol} onAnalyze={onOpenStock} /></div>
+      <div id="sec-filings" className="ss-section" data-tour="filings" data-tab="filings"><h2 className="sd-h2">News & filings. <span>Straight from NSE.</span></h2><StockEarningsCall symbol={data.symbol} m={m} /><NewsPanel symbol={data.symbol} /></div>
+      <div className="sd-tabpart" data-tab="overview">
+        <MyNotes key={data.symbol} symbol={data.symbol} />
+        <StockDataDates dates={data.dataDates} quote={data.quote} research={m?.research} />
+      </div>
 
       <p style={{ fontSize: 11, color: "var(--t3)", textAlign: "center", lineHeight: 1.6 }}>
         <TriangleAlert size={12} style={{ verticalAlign: "-1px", marginRight: 4 }} />Always cross-check figures on NSE or BSE before investing.

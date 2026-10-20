@@ -197,3 +197,26 @@ test("M-H9 the stock list's title is the strategy wheel, its detail on an ⓘ pa
   await expect(info).toHaveCount(0);
   await expect(wheel).toBeVisible();
 });
+
+// A phone's company page (20 Oct 2026, "congested and not understandable" —
+// 25 screens in one scroll): its tabs are pages, one tab's parts at a time,
+// and a jump to a part on another tab switches to that tab
+test("M-H10 a company's tabs are pages of their own on a phone @phone", async ({ page, account, isMobile }) => {
+  test.skip(!isMobile, "the phone layout");
+  await page.goto("/stock/TCS");
+  await expect(page.locator("#sec-overview")).toBeVisible();
+  await expect(page.locator("#sec-scores")).toBeHidden();
+  await expect(page.locator("#sec-levels")).toBeHidden();
+  const tabs = page.getByRole("navigation", { name: "Parts of this page" });
+  await tabs.getByRole("button", { name: "Valuation" }).click();
+  await expect(page.locator("#sec-levels")).toBeVisible();
+  await expect(page.locator("#sec-overview")).toBeHidden();
+  await expect(tabs.getByRole("button", { name: "Valuation" })).toHaveAttribute("aria-current", "true");
+  const height = await page.evaluate(() => document.documentElement.scrollHeight);
+  expect(height, "a tab is a few screens, not the whole page").toBeLessThan(12000);
+  // the investment case's "See Financial health" opens the Financials tab
+  await tabs.getByRole("button", { name: "Scorecard" }).click();
+  await page.getByRole("button", { name: "See Financial health" }).first().click();
+  await expect(page.locator("#sec-health")).toBeInViewport();
+  await expect(tabs.getByRole("button", { name: "Financials" })).toHaveAttribute("aria-current", "true");
+});

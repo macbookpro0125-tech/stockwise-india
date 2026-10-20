@@ -1,3 +1,4 @@
+import { revealPart } from "./phoneTabs.js";
 import { Building2, BadgeCheck, Scale, ShieldCheck, TrendingUp, Tag, Activity, Flag, ChevronRight } from "lucide-react";
 import CompanyLogo from "./CompanyLogo.jsx";
 import { StarIcon } from "./icons.jsx";
@@ -31,6 +32,8 @@ const ICONS = { business: Building2, earnings: BadgeCheck, balance: Scale, gover
 export function openCheck(id) {
   const el = document.getElementById(id);
   if (!el) return;
+  // on a phone it may be on another tab: show that, then come back here
+  if (revealPart(el)) { requestAnimationFrame(() => requestAnimationFrame(() => openCheck(id))); return; }
   if (el.tagName === "DETAILS") el.open = true;
   const header = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--header-h")) || 0;
   const bar = document.querySelector("[data-sticky-top]")?.offsetHeight ?? 0;

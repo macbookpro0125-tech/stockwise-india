@@ -1,3 +1,4 @@
+import { revealPart } from "./phoneTabs.js";
 import { CalendarClock } from "lucide-react";
 import { navigate } from "./site.jsx";
 import { docTop } from "./motion.js";
@@ -14,6 +15,7 @@ const short = iso => (iso ? new Date(`${iso.slice(0, 10)}T00:00:00Z`).toLocaleDa
 function toList() {
   const el = document.getElementById("sec-data");
   if (!el) return;
+  if (revealPart(el)) { requestAnimationFrame(() => requestAnimationFrame(toList)); return; }
   const header = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--header-h")) || 0;
   const bar = document.querySelector("[data-sticky-top]")?.offsetHeight ?? 0;
   const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
