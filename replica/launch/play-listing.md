@@ -94,6 +94,13 @@ Research
 
 ## Before the first upload
 
+**20 Oct 2026:** the signed `.aab` is rebuilt with the real AdMob app ID
+(`ca-app-pub-4001463380481442~5693283483`), version 1.0 (code 1), target
+SDK 36, signed with the upload key in `~/.jocular`; a copy is at
+`replica/launch/release/jocular-insights-1.0.aab` (not in git). The build
+needs Android Studio's Java: `JAVA_HOME="/Applications/Android
+Studio.app/Contents/jbr/Contents/Home"`.
+
 1. AdMob: the app ID and the Native and Rewarded ad unit IDs (deploy.md).
 2. Build: `npm run build`, `npx cap sync android`, then
    `cd android && ./gradlew bundleRelease -PADMOB_APP_ID=<your app ID>` —
