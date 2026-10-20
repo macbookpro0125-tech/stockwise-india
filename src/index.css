@@ -1380,6 +1380,23 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .sd.ap .sd-metrics > div { border: 0; padding: 18px 16px; }
 .sd.ap .sd-metrics span { font-size: 13px; margin-bottom: 6px; }
 .sd.ap .sd-metrics strong { font-size: 30px; font-weight: 600; letter-spacing: -0.035em; }
+/* A phone: the three tiles become one grouped list (icon, title, line), and
+   the key figures sit two to a row — they were three tall cards and nine
+   full-width rows, several screens of scrolling (20 Oct 2026) */
+@media (max-width: 640px) {
+  .sd.ap .sd-snap { gap: 0; margin: var(--sp-4) 0; border-radius: 22px; background: var(--s2); overflow: hidden; }
+  .sd.ap .sd-snap-card { display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: var(--sp-4); align-items: start; padding: var(--sp-4) var(--sp-5); border-radius: 0; background: none; }
+  .sd.ap .sd-snap-card + .sd-snap-card { border-top: 1px solid var(--bdr); }
+  .sd.ap .sd-snap-icon { grid-row: span 2; margin-top: 2px; }
+  .sd.ap .sd-snap-card h3 { margin: 0 0 2px; font-size: var(--fs-lg); letter-spacing: -0.015em; }
+  .sd.ap .sd-snap-card p, .sd.ap .sd-snap-card .sd-tags { grid-column: 2; }
+  .sd.ap .sd-snap-card p { font-size: var(--fs-sm); line-height: 1.45; color: var(--t2); }
+  .sd.ap .sd-snap-card .sd-tags { margin-top: var(--sp-1); }
+  .sd.ap .sd-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: var(--sp-2); border-radius: 22px; }
+  .sd.ap .sd-metrics > div { padding: var(--sp-3); }
+  .sd.ap .sd-metrics span { font-size: var(--fs-xs); line-height: 1.35; }
+  .sd.ap .sd-metrics strong { font-size: var(--fs-2xl); letter-spacing: -0.03em; }
+}
 
 /* The page's existing panels (inline-styled cards) become the same soft tiles */
 .sd.ap .sd-main [style*="background: var(--s2)"][style*="border-radius: 12px"],
