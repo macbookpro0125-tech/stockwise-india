@@ -464,9 +464,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   .app-header-search { max-width: none !important; }
   .discovery-tabs { display: none !important; }
   .price-strip { display: none !important; }
-  /* Keep the last card and its actions scrollable above the floating tab bar,
-     with a little breathing room after the bar as well. */
-  body { padding-bottom: calc(144px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))); }
+  /* Room for the floating tab bar (78px with its gap) under the footer, and
+     no more: 144px left a wide empty band at the bottom (21 Oct 2026) */
+  body { padding-bottom: calc(80px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))); }
 }
 
 @media (max-width: 640px) {
@@ -1025,10 +1025,11 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .sd-bar-row { display: flex; align-items: center; gap: var(--sp-3); min-height: var(--tab-h); }
 .sd-back { display: inline-flex; align-items: center; gap: var(--sp-1); flex-shrink: 0; height: var(--icon-sm); padding: 0 var(--sp-3); border-radius: var(--r-sm); border: 1px solid var(--bdr2); background: var(--s2); color: var(--t2); font: 500 var(--fs-xs)/1 var(--font); cursor: pointer; }
 .sd-bar-name { display: none; }
-.sd-tabs { display: flex; gap: var(--sp-6); overflow-x: auto; scrollbar-width: none; align-self: stretch; padding-left: var(--sp-2); }
+/* across only: on an iPhone the row also scrolled up and down under a finger (21 Oct 2026) */
+.sd-tabs { display: flex; gap: var(--sp-6); overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: none; align-self: stretch; padding-left: var(--sp-2); }
 .sd-tabs::-webkit-scrollbar { display: none; }
 .sd-tab { position: relative; flex-shrink: 0; height: var(--tab-h); padding: 0; border: 0; background: none; color: var(--t2); font: 500 var(--fs-md)/1 var(--font); white-space: nowrap; cursor: pointer; transition: color 150ms; }
-.sd-tab::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; border-radius: 2px; background: transparent; transition: background 150ms; }
+.sd-tab::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; border-radius: 2px; background: transparent; transition: background 150ms; }
 .sd-tab:hover { color: var(--t1); }
 .sd-tab.on { color: var(--accent); font-weight: 600; }
 .sd-tab.on::after { background: var(--accent); }
@@ -2350,3 +2351,14 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 
 /* The screener's filter-row buttons (move up, move down, remove): bigger for a finger */
 @media (pointer: coarse) { .filter-row { --filter-btn: 32px; } }
+
+/* A phone's company tab ends by pointing on to the next one (StockDetail.jsx
+   NextTab, 21 Oct 2026) */
+.sd-next { display: flex; align-items: center; gap: 12px; width: 100%; margin-top: 8px; padding: 18px 20px; border: 1px solid var(--bdr2); border-radius: 20px; background: var(--s2); color: var(--t1); font: inherit; text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; transition: transform 120ms var(--ease-out, ease-out), border-color 150ms; }
+.sd-next:active { transform: scale(0.98); border-color: var(--accent); }
+.sd-next:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sd-next-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.sd-next-text small { font-size: 12px; font-weight: 600; color: var(--accent); }
+.sd-next-text b { font-size: 19px; font-weight: 700; letter-spacing: -0.01em; }
+.sd-next-text span { font-size: 14px; line-height: 1.4; color: var(--t2); }
+.sd-next svg { flex: none; color: var(--accent); }

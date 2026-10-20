@@ -440,18 +440,40 @@ const quoteLabel = q => `${q.stale ? "Cached close" : "Latest close"} (${dayLabe
 const closeLabel = c => `NSE close (${dayLabel(c.date)})`;
 
 // The page's tabs, pinned over it (replica/recon.md): each jumps to its
-// first part on the page and lights up while any of its parts is in view
+// first part on the page and lights up while any of its parts is in view.
+// The last item is what the tab holds, for the "Next" card a phone's tab
+// ends with (as its heading says it)
 const TABS = [
-  ["overview", "Overview", ["overview", "about", "events"]],
-  ["scores", "Scorecard", ["scores", "thesis"]],
-  ["valuation", "Valuation", ["valuation", "sizing", "levels"]],
-  ["financials", "Financials", ["financials", "health"]],
-  ["dividends", "Dividends", ["dividends"]],
-  ["holding", "Holdings", ["holding"]],
-  ["technicals", "Technicals", ["technicals"]],
-  ["peers", "Peers", ["peers"]],
-  ["filings", "News & filings", ["filings"]],
+  ["overview", "Overview", ["overview", "about", "events"], "The price, the business and what changed recently."],
+  ["scores", "Scorecard", ["scores", "thesis"], "How the business scores on its own filings."],
+  ["valuation", "Valuation", ["valuation", "sizing", "levels"], "What its own numbers say it is worth."],
+  ["financials", "Financials", ["financials", "health"], "Its results, year by year, and its debt."],
+  ["dividends", "Dividends", ["dividends"], "What it pays, and what that takes."],
+  ["holding", "Holdings", ["holding"], "Who owns it, and how that is changing."],
+  ["technicals", "Technicals", ["technicals"], "The trend in the price."],
+  ["peers", "Peers", ["peers"], "How it compares with similar companies."],
+  ["filings", "News & filings", ["filings"], "Straight from NSE."],
 ];
+
+// A phone's tab ends by pointing on to the next one (asked for 21 Oct 2026,
+// in place of "Back to Discover": "go forward and check all other things",
+// so people see there's more); the last tab ends plainly
+function NextTab({ ready, current, onGo }) {
+  const [present, setPresent] = useState([]);
+  useEffect(() => {
+    setPresent(TABS.filter(([, , parts]) => parts.some(p => document.getElementById(`sec-${p}`))));
+  }, [ready]);
+  const at = present.findIndex(([id]) => id === current);
+  const next = at >= 0 ? present[at + 1] : null;
+  if (!next) return null;
+  const [id, label, , holds] = next;
+  return (
+    <button type="button" className="sd-next" onClick={() => onGo(id)} aria-label={`Next: ${label}. ${holds}`}>
+      <span className="sd-next-text"><small>Next</small><b>{label}</b><span>{holds}</span></span>
+      <ArrowRight size={20} aria-hidden="true" />
+    </button>
+  );
+}
 
 function SectionNav({ ready, phone = false, phoneTab = "overview", onPhoneTab }) {
   const [present, setPresent] = useState(TABS);
@@ -964,11 +986,11 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         <TriangleAlert size={12} style={{ verticalAlign: "-1px", marginRight: 4 }} />Always cross-check figures on NSE or BSE before investing.
       </p>
 
-      <div className="ss-back-bottom">
+      {isPhone ? <NextTab ready={!!m} current={phoneTab} onGo={showPhoneTab} /> : <div className="ss-back-bottom">
         <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "var(--accent)", background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 12, cursor: "pointer", padding: "12px 24px", fontWeight: 600, margin: "8px auto 0" }}>
           <ArrowLeft size={16} /> Back to {backTo}
         </button>
-      </div>
+      </div>}
       </div>
       </div>
       </div>

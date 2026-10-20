@@ -250,3 +250,41 @@ test("M-H12 the company page's top bar keeps its price in view @phone", async ({
   const [b, p] = [await bar.boundingBox(), await price.boundingBox()];
   expect(p.x + p.width, "the price ends inside the bar").toBeLessThanOrEqual(b.x + b.width + 1);
 });
+
+// 21 Oct 2026, on an iPhone: the company page's tab row moved up and down
+// under a finger ("they go down, not stable") — the lit tab's line hung a
+// pixel below the row, so the row scrolled up and down as well as across.
+test("M-H13 the company page's tab row only scrolls across @phone", async ({ page, account, isMobile }) => {
+  test.skip(!isMobile, "the phone layout");
+  await page.goto("/stock/TCS");
+  const row = page.getByRole("navigation", { name: "Parts of this page" });
+  await expect(row).toBeVisible();
+  const { overflowY, scrollHeight, clientHeight } = await row.evaluate(el => ({ overflowY: getComputedStyle(el).overflowY, scrollHeight: el.scrollHeight, clientHeight: el.clientHeight }));
+  expect(overflowY).toBe("hidden");
+  expect(scrollHeight).toBeLessThanOrEqual(clientHeight);
+});
+
+// 21 Oct 2026: each tab ends by pointing on to the next one ("go forward and
+// check all other things"), not Back to Discover; the last tab ends plainly.
+// And no wide empty band under the footer: the page keeps only the tab bar's
+// room below it.
+test("M-H14 each company tab ends with the next one, and no empty band below @phone", async ({ page, account, isMobile }) => {
+  test.skip(!isMobile, "the phone layout");
+  await page.goto("/stock/TCS");
+  const tabs = page.getByRole("navigation", { name: "Parts of this page" });
+  await expect(page.getByRole("button", { name: /Back to Discover/ })).toHaveCount(0);
+  const next = page.getByRole("button", { name: /^Next: Scorecard/ });
+  await expect(next).toBeVisible();
+  await next.click();
+  await expect(tabs.getByRole("button", { name: "Scorecard" })).toHaveAttribute("aria-current", "true");
+  await expect(page.locator("#sec-scores")).toBeInViewport();
+  await expect(page.getByRole("button", { name: /^Next: Valuation/ })).toBeAttached();
+  await tabs.getByRole("button", { name: "News & filings" }).click();
+  await expect(page.getByRole("button", { name: /^Next:/ })).toHaveCount(0);
+
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await page.waitForTimeout(600);
+  const gap = await page.evaluate(() => document.querySelector(".bottom-tab-bar").getBoundingClientRect().top - document.querySelector("footer nav").getBoundingClientRect().bottom);
+  expect(gap, "the footer clears the tab bar").toBeGreaterThanOrEqual(8);
+  expect(gap, "no wide empty band").toBeLessThanOrEqual(48);
+});
