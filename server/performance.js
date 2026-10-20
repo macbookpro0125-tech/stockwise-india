@@ -202,7 +202,8 @@ export async function getPerformance() {
     const rets = picks.map(p => p.returnPct).filter(r => r != null);
     const avgReturnPct = rets.length ? Math.round((rets.reduce((a, b) => a + b, 0) / rets.length) * 10) / 10 : null;
     const entry = byPreset.get(snap.presetId) ?? { presetId: snap.presetId, presetName: snap.presetName, snapshots: [] };
-    entry.presetName = snap.presetName;
+    // today's name, though older snapshots kept the name they were taken under
+    entry.presetName = PRESETS.find(p => p.id === snap.presetId)?.name ?? snap.presetName;
     entry.snapshots.push({ date: snap.date, picks, avgReturnPct, priced: rets.length });
     byPreset.set(snap.presetId, entry);
   }

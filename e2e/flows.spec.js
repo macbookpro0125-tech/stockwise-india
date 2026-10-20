@@ -193,6 +193,29 @@ test("F02-H8 back from a stock list is always in reach and lands on the strategi
   await expect(page.locator("button.sc2").filter({ hasText: "Doubled in a Year" })).toBeInViewport();
 });
 
+// On the wheel's pill (computer): every strategy as a list (also a
+// double-click), and what this one looks for, rule by rule
+test("F02-H9 the strategy list and what a strategy looks for", async ({ page, account }) => {
+  await page.goto("/");
+  const card = page.locator("button.sc2").filter({ hasText: "Sound Banks" });
+  await card.scrollIntoViewIfNeeded();
+  await card.click();
+  await page.getByRole("button", { name: "About this strategy" }).click();
+  const about = page.getByRole("dialog", { name: "Sound Banks" });
+  await expect(about.getByText("What it looks for")).toBeVisible();
+  await expect(about.getByText("Gross NPA at most 2%")).toBeVisible();
+  await expect(about.getByText(/Gross bad loans as a share of all loans/)).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(about).toHaveCount(0);
+  await page.locator(".wheel-title").dblclick();
+  const list = page.getByRole("dialog", { name: "Every strategy" });
+  await expect(list.getByRole("button", { name: /Sound Banks/ })).toHaveAttribute("aria-current", "true");
+  await expect(list.getByText(/OFSS/)).toHaveCount(0);
+  await list.getByRole("button", { name: /High Margins, Low Debt/ }).click();
+  await expect(page.locator(".screen-title")).toHaveText("High Margins, Low Debt");
+  await expect(list).toHaveCount(0);
+});
+
 test("F02-H2 share link reopens the same screen", async ({ page, context, account }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.goto("/");

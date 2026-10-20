@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Plus, Ellipsis, Search, ChevronRight, ChevronDown, TrendingUp, CircleDollarSign, Coins, Activity, Landmark, Sparkles, ArrowRight } from "lucide-react";
 import { api } from "./api.js";
 import { PresetIcon } from "./icons.jsx";
+import { KINDS, kindOf } from "./strategyAbout.js";
 import StrategyMark, { markColor } from "./StrategyMarks.jsx";
 import StrategyCard from "./StrategyCard.jsx";
 import { strategiesStore } from "./accountData.js";
@@ -56,15 +57,8 @@ export function presetRules(p, meta) {
 // Each strategy's colour is its mark's (StrategyMarks.jsx); your own are teal
 const hueOf = p => markColor(p.id) ?? "var(--accent)";
 
-// The grid's strategies by kind, for the tabs over it and the label on each card
-const KINDS = [
-  ["quality", "Quality & growth", ["high_quality_compounders", "undervalued_growth", "small_cap_multibaggers", "ofss_style_filter", "debt_paydown", "sound_banks"]],
-  ["value", "Value", ["turnaround_plays", "psu_value", "net_net_value", "fallen_quality"]],
-  ["income", "Income & safety", ["dividend_aristocrats", "dividend_growth", "defensive_bluechips"]],
-  ["momentum", "Momentum", ["momentum_growth", "up_every_timeframe", "near_highs_cheap", "doubled_in_year"]],
-  ["owners", "Big investors", ["fii_favorites", "dii_backed"]],
-];
-const kindOf = p => (p.custom ? ["yours", "Yours"] : KINDS.find(k => k[2].includes(p.id)) ?? ["other", "Other"]);
+// The grid's strategies by kind (strategyAbout.js), for the tabs over it and
+// the label on each card
 const GROUP_TILES = {
   quality: { icon: TrendingUp, className: "quality" },
   value: { icon: CircleDollarSign, className: "value" },

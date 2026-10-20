@@ -17,9 +17,10 @@ import { indexAt, rowLook, stepIndex, notchStep, drumHeight } from "./wheelMath.
 //   label     its name for screen readers ("Strategy")
 //   rowHeight px; the drum is about 3.3 rows tall
 //   className for a look of its own (Discover's title-sized "wheel-title")
+//   onDoubleClick  (Discover opens its list of every strategy)
 const SETTLE_MS = 140;
 
-export default function WheelPicker({ items, value, onChange, label, rowHeight = 40, className = "" }) {
+export default function WheelPicker({ items, value, onChange, label, rowHeight = 40, className = "", onDoubleClick }) {
   const scroller = useRef(null);
   const rows = useRef([]);
   const quiet = useRef(false);
@@ -106,7 +107,7 @@ export default function WheelPicker({ items, value, onChange, label, rowHeight =
   };
 
   return (
-    <div className={`wheel ${className}`} style={{ height }}>
+    <div className={`wheel ${className}`} style={{ height }} onDoubleClick={onDoubleClick}>
       <div className="wheel-pill" aria-hidden="true" style={{ top: pad, height: rowHeight }} />
       <div ref={scroller} className="wheel-scroll" role="listbox" aria-label={label} tabIndex={0}
         aria-activedescendant={items.length ? `${id}-${middle}` : undefined} onScroll={onScroll} onKeyDown={onKeyDown}>

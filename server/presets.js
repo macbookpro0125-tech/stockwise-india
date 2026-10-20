@@ -67,10 +67,12 @@ export const PRESETS = [
     },
   },
   {
+    // Named for what it finds (20 Oct 2026; was "My OFSS-Style Filter"); the
+    // id stays, so its performance record carries on
     id: "ofss_style_filter",
-    name: "My OFSS-Style Filter",
+    name: "High Margins, Low Debt",
     icon: "⭐",
-    description: "Based on OFSS pattern: steady growth, high margins, strong promoter",
+    description: "Wide margins and high returns on equity, little debt, and promoters who own over half",
     criteria: {
       revenue_growth_min: 5,
       opm_min: 25,

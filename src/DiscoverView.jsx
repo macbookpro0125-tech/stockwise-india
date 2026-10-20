@@ -8,7 +8,7 @@ import { strategiesStore, browserLeftovers, moveLeftovers, discardLeftovers } fr
 import ResultsTable from "./ResultsTable.jsx";
 import ScreensHome from "./ScreensHome.jsx";
 import FilterPanel, { isActiveFilter } from "./screener/FilterPanel.jsx";
-import WheelPicker from "./WheelPicker.jsx";
+import StrategyPicker from "./StrategyPicker.jsx";
 import { returnScroll } from "./returnScroll.js";
 import MetricPicker from "./screener/MetricPicker.jsx";
 import { useScreenerMeta, DEFAULT_COLUMNS, OLD_DEFAULT_COLUMNS } from "./screener/meta.js";
@@ -581,7 +581,8 @@ export default function DiscoverView({ onOpenStock, theme }) {
                     scroll to (one name, in one place) */}
                 <h2 className={`screen-title${!isPhone && wheelItems.length > 1 ? " sr-only" : ""}`}>{activePresetName ?? (activeCount > 0 ? "Your filters" : "Whole market")}</h2>
                 {!isPhone && wheelItems.length > 1 && (
-                  <WheelPicker label="Strategy" items={wheelItems} value={wheelValue} onChange={pickFromWheel} rowHeight={42} className="wheel-title" />
+                  <StrategyPicker presets={wheelPresets} items={wheelItems} value={wheelValue} onPick={pickFromWheel}
+                    meta={meta} filters={filters} onEditRules={() => setFiltersOpen(true)} />
                 )}
                 <p className="screen-about">
                   {activePresetAbout ?? (activeCount > 0 ? `${activeCount} filter${activeCount === 1 ? "" : "s"} of your own.` : "Every NSE company. Add a filter to narrow it down.")}
