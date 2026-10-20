@@ -1467,6 +1467,31 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .sd.ap .sd-price { margin-top: 24px; }
 .sd.ap .sd-price strong { font-size: 56px; font-weight: 700; letter-spacing: -0.045em; }
 .sd.ap .sd-price span { font-size: 14px; }
+/* The price and, beside it, its change on the last close (a tinted badge) */
+.sd-price-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 12px; }
+.sd-day { padding: 3px 9px; border-radius: 8px; font-style: normal; font-size: 15px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.sd-day.up { color: var(--green); background: var(--green-dim); }
+.sd-day.down { color: var(--red); background: var(--red-dim); }
+.sd-action-bell { display: none; }
+/* A phone: the company's card kept short — the name over its ticker, the
+   price with its change, the returns on one line, and Watchlist and Alert
+   side by side as two equal buttons */
+@media (max-width: 640px) {
+  .sd.ap .sd-id { padding: 18px; }
+  .sd.ap .sd-id-name h2 { font-size: 19px; }
+  .sd.ap .sd-price { margin-top: 16px; }
+  .sd.ap .sd-price strong { font-size: 42px; }
+  .sd.ap .sd-price span { font-size: 12.5px; }
+  .sd.ap .sd-id .sd-returns { gap: 8px; margin-top: 14px; }
+  .sd.ap .sd-id .sd-returns span { flex-direction: row; align-items: baseline; gap: 5px; padding: 5px 10px; border-radius: 9px; background: var(--s1); }
+  .sd.ap .sd-id .sd-returns b { font-size: 14.5px; }
+  .sd.ap .sd-id .sd-returns em { order: 0; font-size: 12px; }
+  .sd.ap .sd-id .sd-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+  .sd.ap .sd-id .sd-actions .sd-action { height: 46px; padding: 0 12px; border-radius: 14px; font-size: 15px; font-weight: 600; }
+  .sd.ap .sd-id .sd-actions .sd-action-link { justify-content: center; gap: 8px; border: 1px solid var(--bdr2); background: var(--s1); color: var(--t1); }
+  .sd.ap .sd-actions .sd-action-link .sd-action-bell { display: inline; color: var(--accent); }
+  .sd.ap .sd-actions .sd-action-link .sd-action-chev { display: none; }
+}
 .sd.ap .sd-returns { gap: 26px; margin-top: 20px; }
 .sd.ap .sd-returns span { flex-direction: column; align-items: flex-start; gap: 2px; padding: 0; background: none; }
 .sd.ap .sd-returns b { font-size: 19px; font-weight: 600; letter-spacing: -0.01em; }

@@ -1,5 +1,5 @@
 import { revealPart } from "./phoneTabs.js";
-import { Building2, BadgeCheck, Scale, ShieldCheck, TrendingUp, Tag, Activity, Flag, ChevronRight } from "lucide-react";
+import { Building2, BadgeCheck, Scale, ShieldCheck, TrendingUp, Tag, Activity, Flag, ChevronRight, Bell } from "lucide-react";
 import CompanyLogo from "./CompanyLogo.jsx";
 import { StarIcon } from "./icons.jsx";
 import { fmtRs } from "../server/levels.js";
@@ -115,7 +115,11 @@ export default function StockSide({ data, m, price, priceLabel, watched, onWatch
         </div>
         {price > 0 && (
           <div className="sd-price">
-            <strong>{fmtRs(price)}</strong>
+            <div className="sd-price-row">
+              <strong>{fmtRs(price)}</strong>
+              {/* the last close against the one before */}
+              {m?.ret1d != null && <em className={`sd-day ${m.ret1d >= 0 ? "up" : "down"}`}>{m.ret1d >= 0 ? "+" : "−"}{Math.abs(m.ret1d).toFixed(2)}%</em>}
+            </div>
             {priceLabel && <span>{priceLabel}</span>}
           </div>
         )}
@@ -127,10 +131,11 @@ export default function StockSide({ data, m, price, priceLabel, watched, onWatch
           </div>
         )}
         <div className="sd-actions" data-tour="stock-actions">
-          <button type="button" className={`sd-action${watched ? " on" : ""}`} onClick={onWatch} aria-pressed={watched}>
-            <StarIcon filled={watched} /> {watched ? "In watchlist" : "Add to watchlist"}
+          {/* a phone's half-width button says it short; the name stays whole */}
+          <button type="button" className={`sd-action${watched ? " on" : ""}`} onClick={onWatch} aria-pressed={watched} aria-label={watched ? "In watchlist" : "Add to watchlist"}>
+            <StarIcon filled={watched} /> <span className="hide-phone">{watched ? "In watchlist" : "Add to watchlist"}</span><span className="phone-only" aria-hidden="true">{watched ? "In watchlist" : "Watchlist"}</span>
           </button>
-          <button type="button" className="sd-action sd-action-link" onClick={onAlert}>Set an alert<ChevronRight size={17} aria-hidden="true" /></button>
+          <button type="button" className="sd-action sd-action-link" onClick={onAlert}><Bell className="sd-action-bell" size={17} aria-hidden="true" />Set an alert<ChevronRight className="sd-action-chev" size={17} aria-hidden="true" /></button>
         </div>
       </section>
       <div className="sd-side-scores"><Scorecard r={m?.research} /></div>
