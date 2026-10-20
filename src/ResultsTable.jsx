@@ -469,8 +469,6 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                 <strong>{(narrowed ? filtered.length : totalMatches)?.toLocaleString("en-IN")}</strong>
                 <span className="rt-noun">
                   {(narrowed ? filtered.length : totalMatches) === 1 ? noun.replace(/s$/, "") : noun}
-                  {/* "of 2,250": the market it screened */}
-                  {universe != null && !narrowed && <> of {universe.toLocaleString("en-IN")}</>}
                   {narrowed && filtered.length !== (matches?.length ?? 0) && <> (filtered from {matches?.length})</>}
                 </span>
                 {/* Why some companies are missing: an ⓘ beside the count */}

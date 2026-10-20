@@ -61,7 +61,7 @@ export default function ScreensHome({ meta, total, strategies, pricesDate, onSta
   </>;
   const rest = <>
     <Reveal as="p" delay={2} className="ap-sub">
-      Every NSE company, scored on its own filings.{total ? <> Narrow {total.toLocaleString("en-IN")} down to the handful that fit.</> : null}
+      Every NSE company, scored on its own filings. Narrow the market down to the handful that fit.
     </Reveal>
     <Reveal delay={3} className="ap-ctas">
       <button type="button" className="ap-btn" onClick={onStart}>Start screening</button>
@@ -92,9 +92,10 @@ export default function ScreensHome({ meta, total, strategies, pricesDate, onSta
         <h2 className="phone-title" id="sh-popular">Strategies</h2>
         <button type="button" className="ph-round" onClick={onCreate} aria-label="New screen: start from the whole market"><Plus size={22} aria-hidden="true" /></button>
       </div>
-      <p className="ph-lede">Every NSE company, scored on its own filings. Pick a strategy to see what fits today.</p>
-      {continueCard}
+      <p className="ph-lede">Each strategy is a ready-made screen. Pick one to see which companies fit it today.</p>
       {children}
+      {/* The screen you set yourself, at the end with "Build your own" (20 Oct 2026) */}
+      {continueCard}
       <button type="button" className="ph-build" onClick={onCreate}>
         <span>
           <span className="ph-build-title">Build your own</span>
@@ -145,13 +146,13 @@ export default function ScreensHome({ meta, total, strategies, pricesDate, onSta
         </Reveal>
       </section>
 
-      {continueCard}
-
       <section id="popular-strategies" className="sh-section" aria-labelledby="sh-popular">
         <div className="ap-section-head">
           <Reveal as="h2" id="sh-popular" className="ap-h2">Explore the strategies. <span>See what fits today.</span></Reveal>
         </div>
         {children}
+        {/* The screen you set yourself, after the strategies (20 Oct 2026) */}
+        {continueCard}
       </section>
     </div>
   );

@@ -177,7 +177,7 @@ function StrategyInfoPage({ preset, value, meta, filters, stats, onClose, onEdit
         {stats?.matched != null && (
           <p className="sip-meta">
             <strong>{stats.matched.toLocaleString("en-IN")}</strong>
-            {stats.universe != null ? <> of {stats.universe.toLocaleString("en-IN")} companies pass today</> : <> {stats.matched === 1 ? "company passes" : "companies pass"} today</>}
+            {" "}{stats.matched === 1 ? "company passes" : "companies pass"} today
             {stats.pricesDate && <> · prices as of {dateOf(stats.pricesDate)}</>}
           </p>
         )}

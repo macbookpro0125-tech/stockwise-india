@@ -51,12 +51,12 @@ export default function LiveScreen({ meta, total }) {
   if (!screen || !total) return <div className="ls ls-empty" aria-hidden="true" />;
   const last = screen.steps[screen.steps.length - 1];
   return (
-    <figure className="ls" aria-label={`${screen.name}: ${total.toLocaleString("en-IN")} companies narrowed to ${last.count} by its filters`}>
+    <figure className="ls" aria-label={`${screen.name}: every NSE company narrowed to ${last.count} by its filters`}>
       <figcaption className="ls-head"><span className="ls-live" aria-hidden="true" />Live screen · {screen.name}</figcaption>
       <ol className="ls-steps" aria-hidden="true">
         <li className="ls-step on">
           <span className="ls-label">All NSE companies screened</span>
-          <span className="ls-count">{total.toLocaleString("en-IN")}</span>
+          <span className="ls-count">All</span>
           <span className="ls-bar"><i style={{ width: "100%" }} /></span>
         </li>
         {screen.steps.map((s, i) => {
@@ -71,7 +71,7 @@ export default function LiveScreen({ meta, total }) {
         })}
       </ol>
       <div className={`ls-result${shown >= screen.steps.length ? " on" : ""}`}>
-        <strong>{last.count}</strong> companies to study, from {total.toLocaleString("en-IN")}
+        <strong>{last.count}</strong> companies to study
       </div>
     </figure>
   );

@@ -110,7 +110,7 @@ function NumericFilter({ def, filter, companies, onChange, onRemove, move, onMov
       {r && <DualRange q={r.q} min={filter.min} max={filter.max} onChange={set} />}
       {r && r.known < companies && isActiveFilter(filter) && (
         <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 2 }}>
-          Known for {r.known.toLocaleString("en-IN")} of {companies.toLocaleString("en-IN")} — the rest are left out
+          Only {r.known.toLocaleString("en-IN")} companies have this figure — the rest are left out
         </div>
       )}
     </div>
@@ -131,7 +131,7 @@ function SectorFilter({ def, filter, companies, onChange, onRemove }) {
       <RowHeader def={def} onRemove={onRemove}>
         {def.known < companies && (
           <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 2 }}>
-            Known for {def.known.toLocaleString("en-IN")} of {companies.toLocaleString("en-IN")} companies so far
+            Known for {def.known.toLocaleString("en-IN")} companies so far
           </div>
         )}
       </RowHeader>
@@ -168,7 +168,7 @@ function SectorPick({ def, filter, companies, onChange }) {
       </select>
       {values.length > 0 && def.known < companies && (
         <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 4 }}>
-          Known for {def.known.toLocaleString("en-IN")} of {companies.toLocaleString("en-IN")} companies so far
+          Known for {def.known.toLocaleString("en-IN")} companies so far
         </div>
       )}
     </div>
