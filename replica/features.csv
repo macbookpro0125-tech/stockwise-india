@@ -31,7 +31,7 @@ S-STOCK,The six group scores in one picture,yes,yes,"Our own hexagon of the six 
 S-STOCK,Returns against the sector and the market,yes,yes,"1W–5Y beside the sector's NSE index (17 sectors have one; the rest are set against NIFTY 50 alone) and NIFTY 50, with a line saying ahead or behind"
 S-STOCK,How much the price swings against others,yes,yes,"Typical weekly move from a year's volatility; against the sector's middle, the market's middle and the market's 10th–90th percentile band"
 S-STOCK,3-month and 3- and 5-year price changes,yes,yes,"Also new screener measures: 3M, 3Y, 5Y return and 1Y vs sector index"
-S-STOCK,Dividend section (yield vs market; payout; next dates; history),yes,no,"Next: replica/simplywallst-gaps.md #6"
+S-STOCK,Dividend section (yield vs market; payout; next dates; history),yes,yes,"Built 20 Oct 2026 (StockDividends.jsx, server/dividends.js): last 12 months' dividends and yield against the market's payers (quartiles) and its sector's middle, payout of earnings and of free cash flow, the next ex-date announced, six financial years a share on today's share count with specials apart, and how often raised, held or cut. Gaps #6"
 S-STOCK,Financial health as a picture,yes,no,"Next: gaps #7"
 S-STOCK,Growth and returns on capital against the sector's medians,yes,no,"Next: gaps #8"
 S-STOCK,Insider and promoter trades,yes,no,"Next: gaps #9 — needs a new NSE data job (PIT/SAST)"

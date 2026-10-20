@@ -100,6 +100,18 @@ export function dividendAmount(subject) {
   return [...subject.matchAll(/(?:Rs|Re)\.?\s*(\d+(?:\.\d+)?)/gi)].reduce((sum, m) => sum + Number(m[1]), 0);
 }
 
+// The same, split into the ordinary and the special part: "Dividend - Rs 5
+// Per Share/Special Dividend - Re 0.50 Per Share" is 5 ordinary, 0.5 special;
+// the parts are joined by "/", "&", "And" or nothing at all ("…Rs 10 Per
+// Share Special Dividend - Rs 66…", TCS, Jan 2025). The company page's
+// dividend record keeps specials apart.
+export function dividendParts(subject) {
+  const parts = { regular: 0, special: 0 };
+  if (!/dividend/i.test(subject)) return parts;
+  for (const piece of String(subject).split(/\/|&|\band\b|(?=special\s+dividend)/i)) parts[/special/i.test(piece) ? "special" : "regular"] += dividendAmount(piece.includes("ividend") ? piece : `Dividend ${piece}`);
+  return parts;
+}
+
 // Share-count multiplier: "Bonus 1:1" doubles the shares (x2), "Bonus 1:2" is
 // one new share per two held (x1.5); "Face Value Split ... From Rs 10/- ...
 // To Rs 2/-" is x5.
@@ -549,6 +561,7 @@ export async function buildMarketSnapshot(fyEndDates, { yearsOfActions = 6 } = {
   // per old share, and must be scaled down or the yield reads 2x too high.
   const yearAgo = isoDay(new Date(now.getTime() - 365 * 86400000));
   const dividends = {};
+  const dividendHistory = {}; // six years, for the company page's record (dividends.js)
   const splits = {};
   for (const a of unique) {
     const ex = parseQeDate(a.exDate);
@@ -556,6 +569,11 @@ export async function buildMarketSnapshot(fyEndDates, { yearsOfActions = 6 } = {
     const exIso = isoDay(ex);
     const dividend = dividendAmount(a.subject || "");
     if (dividend > 0 && exIso > yearAgo) (dividends[a.symbol] ||= []).push({ exDate: exIso, amount: dividend });
+    if (dividend > 0) {
+      const { regular, special } = dividendParts(a.subject);
+      if (regular > 0) (dividendHistory[a.symbol] ||= []).push({ exDate: exIso, amount: regular });
+      if (special > 0) (dividendHistory[a.symbol] ||= []).push({ exDate: exIso, amount: special, special: true });
+    }
     const ratio = splitRatio(a.subject || "");
     if (ratio && ratio !== 1) (splits[a.symbol] ||= []).push({ exDate: exIso, ratio });
   }
@@ -582,6 +600,7 @@ export async function buildMarketSnapshot(fyEndDates, { yearsOfActions = 6 } = {
     pricesDate: latest.date,
     prices: latest.prices,
     dividends,
+    dividendHistory,
     splits,
     sectors,
     industrySectors,

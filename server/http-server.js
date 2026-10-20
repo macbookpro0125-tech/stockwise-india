@@ -30,7 +30,8 @@ import { fetchCmp, fetchDailyBars, PRICE_RANGES } from "./quote.js";
 import { fetchStockSummary, SCHEMA } from "./fetch-nse.js";
 import { fetchEquityList } from "./equity-list.js";
 import { computeMetrics } from "./metrics.js";
-import { loadMarketSnapshot } from "./market-data.js";
+import { loadMarketSnapshot, dividendAmount } from "./market-data.js";
+import { dividendRecord } from "./dividends.js";
 import { startDataJobs, jobStatus } from "./data-jobs.js";
 import { botInfo, linkCode, telegramChat, unlinkTelegram, sendTelegram, startTelegramPolling } from "./telegram.js";
 import { startAlertChecks } from "./alert-notifier.js";
@@ -160,6 +161,32 @@ function parseCookies(header) {
     catch { out[part.slice(0, eq).trim()] = ""; }
   }
   return out;
+}
+
+// The company page's dividends (StockDividends.jsx): the last 12 months'
+// dividends and yield against the market's and its sector's payers, the share
+// of earnings and of free cash flow they take, the next one announced, and
+// six years' record (dividends.js) — all from NSE's corporate actions and
+// the company's own filings
+function dividendSummary(m, snap, market) {
+  const today = snap?.pricesDate ?? new Date().toISOString().slice(0, 10);
+  const record = dividendRecord({ history: snap?.dividendHistory ? snap.dividendHistory[m.symbol] ?? [] : null, splits: snap?.splits?.[m.symbol] ?? [], today });
+  const cashPaid = m.dividendsTtm > 0 && m.shares > 0 ? m.dividendsTtm * m.shares : null;
+  const next = (m.events ?? []).find(e => e.kind === "action" && e.date >= today && /dividend/i.test(e.title ?? ""));
+  return {
+    ttm: m.dividendsTtm ?? null,
+    yield: m.divYield ?? null,
+    payoutEarnings: m.payoutPct ?? null,
+    // the last 12 months' dividends against the latest year's free cash
+    // flow; a lender's cash flow isn't a measure of what it can pay
+    payoutCash: !m.lender && cashPaid && m.fcfCr > 0 ? Math.round((cashPaid / (m.fcfCr * 1e7)) * 1000) / 10 : null,
+    fcfNegative: !m.lender && m.fcfCr != null && m.fcfCr <= 0,
+    next: next ? { date: next.date, title: next.title, amount: dividendAmount(next.title) || null } : null,
+    market: market.dividends?.market ?? null,
+    sector: (m.sector && market.dividends?.sectors.get(m.sector)) || null,
+    byYear: record?.byYear ?? null,
+    track: record?.track ?? null,
+  };
 }
 
 // The dates behind a company page's figures: the NSE close the returns and
@@ -649,6 +676,7 @@ export function createApp() {
             sector: (metrics.sector && market.volatility?.sectors.get(metrics.sector)) || null,
             market: market.volatility?.market ?? null,
           };
+          metrics.dividendRecord = dividendSummary(metrics, snap, market);
         }
 
         sendJson(res, 200, {

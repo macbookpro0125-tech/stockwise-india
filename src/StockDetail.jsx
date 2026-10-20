@@ -20,6 +20,7 @@ import StockSide, { Scorecard } from "./StockSide.jsx";
 import StockGlance from "./StockGlance.jsx";
 import StockPerformance from "./StockPerformance.jsx";
 import StockDataDates from "./StockDataDates.jsx";
+import StockDividends from "./StockDividends.jsx";
 import StockSnapshot from "./StockSnapshot.jsx";
 import { docTop } from "./motion.js";
 
@@ -511,6 +512,7 @@ const TABS = [
   ["scores", "Scorecard", ["scores", "thesis"]],
   ["valuation", "Valuation", ["valuation", "sizing", "levels"]],
   ["financials", "Financials", ["financials"]],
+  ["dividends", "Dividends", ["dividends"]],
   ["holding", "Holdings", ["holding"]],
   ["technicals", "Technicals", ["technicals"]],
   ["peers", "Peers", ["peers"]],
@@ -988,6 +990,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       )}
 
       {m && <div id="sec-financials" className="ss-section"><h2 className="sd-h2">Financials. <span>Its results, year by year.</span></h2><FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} /></div>}
+      {m?.dividendRecord && <div id="sec-dividends" className="ss-section"><h2 className="sd-h2">Dividends. <span>What it pays, and what that takes.</span></h2><StockDividends m={m} price={price} /></div>}
       <div id="sec-holding" className="ss-section"><h2 className="sd-h2">Holdings. <span>Who owns it, and how that is changing.</span></h2><ShareholdingPanel symbol={data.symbol} /></div>
       <div id="sec-technicals" className="ss-section"><h2 className="sd-h2">Technicals. <span>The trend in the price.</span></h2><TechnicalPanel ticker={data.symbol} /></div>
 

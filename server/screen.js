@@ -95,11 +95,12 @@ function* buildSteps(version) {
   yield;
   const sizes = capSizes(fresh);
   const volatility = volatilitySpread(fresh);
+  const dividends = dividendSpread(fresh);
   yield;
   return {
     peers,
     market: {
-      version, rows: fresh, fetched: countFetched(), evSales, volatility,
+      version, rows: fresh, fetched: countFetched(), evSales, volatility, dividends,
       snapshot: snap ? { pricesDate: snap.pricesDate, builtAt: snap.builtAt } : null,
       sizes, ranges: metricRanges(fresh),
     },
@@ -199,6 +200,27 @@ function volatilitySpread(rows) {
   const sectors = new Map();
   for (const [sector, v] of bySector) if (v.length >= 5) sectors.set(sector, { median: at(v.sort(asc), 0.5), n: v.length });
   return { market: all.length >= 20 ? { p10: at(all, 0.1), median: at(all, 0.5), p90: at(all, 0.9), n: all.length } : null, sectors };
+}
+
+// Dividend yields across the companies that paid one in the last 12 months:
+// the lowest quarter's top, the middle, the top quarter's floor — and each
+// sector's middle (five payers or more), for the company page's dividends
+function dividendSpread(rows) {
+  const at = (v, p) => { const i = (v.length - 1) * p, lo = Math.floor(i); return Math.round((v[lo] + (v[Math.ceil(i)] - v[lo]) * (i - lo)) * 100) / 100; };
+  const asc = (a, b) => a - b;
+  const payers = [], bySector = new Map();
+  let priced = 0;
+  for (const m of rows) {
+    if (m.divYield == null) continue;
+    priced++;
+    if (!(m.divYield > 0)) continue;
+    payers.push(m.divYield);
+    if (m.sector) (bySector.get(m.sector) ?? bySector.set(m.sector, []).get(m.sector)).push(m.divYield);
+  }
+  payers.sort(asc);
+  const sectors = new Map();
+  for (const [sector, v] of bySector) if (v.length >= 5) sectors.set(sector, { median: at(v.sort(asc), 0.5), n: v.length });
+  return { market: payers.length >= 20 ? { p25: at(payers, 0.25), median: at(payers, 0.5), p75: at(payers, 0.75), payers: payers.length, of: priced } : null, sectors };
 }
 
 // Each sector's median EV/Sales (enterprise value at the last close over the

@@ -217,6 +217,17 @@ test("F03-H4 chart indicators: pivot points and their kinds, an oscillator in it
   await expect(page.getByText(/Stoch\s*%K [\d.,]+ %D [\d.,]+/)).toBeVisible();
 });
 
+test("F03-H5 the dividends section: yield against other payers, payout, the yearly record", async ({ page, account }) => {
+  await page.goto("/stock/TCS");
+  const div = page.getByRole("region", { name: "Dividends" });
+  await expect(div.getByText(/^It paid ₹[\d,.]+ a share over the last 12 months — a yield of [\d.]+%/)).toBeVisible();
+  for (const label of ["Yield", "Other payers", "Payout"]) await expect(div.getByText(label, { exact: true })).toBeVisible();
+  await expect(div.getByRole("img", { name: /Dividends a share by financial year: FY\d\d/ })).toBeVisible();
+  await expect(div.getByText(/^Paid in \d of the last \d financial years/)).toBeVisible();
+  await page.getByRole("button", { name: "Dividends" }).first().click();
+  await expect(div).toBeInViewport();
+});
+
 test("F03-N1 an unknown symbol says so", async ({ page, account }) => {
   await page.goto("/stock/NOTAREALCO");
   await expect(page.getByText(/not found|isn.t|no company|unknown|couldn.t/i).first()).toBeVisible();

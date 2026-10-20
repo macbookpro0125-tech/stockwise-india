@@ -1106,6 +1106,33 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   .sd-dates dl > div { grid-template-columns: minmax(0, 1fr); gap: 2px; }
 }
 
+/* Dividends (StockDividends.jsx) */
+.sd-div-lead { margin: 0 0 var(--sp-4); font-size: var(--fs-lg); line-height: 1.5; color: var(--t1); }
+.sd-div-lead b { font-weight: 700; font-variant-numeric: tabular-nums; }
+.sd-div-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-4); margin-bottom: var(--sp-4); }
+.sd-div-stats span { display: block; font-size: var(--fs-xs); color: var(--t3); }
+.sd-div-stats strong { display: block; margin: 2px 0; font-size: var(--fs-xl); font-weight: 700; letter-spacing: -0.02em; color: var(--t1); font-variant-numeric: tabular-nums; }
+.sd-div-stats em { display: block; font-style: normal; font-size: var(--fs-xs); line-height: 1.4; color: var(--t2); }
+.sd-div-line { margin: 0 0 var(--sp-3); font-size: var(--fs-sm); line-height: 1.55; color: var(--t2); }
+.sd-div-line b { color: var(--t1); }
+.sd-div-h { margin-top: var(--sp-5); }
+.sd-divbars { display: flex; align-items: flex-end; gap: var(--sp-2); height: 9rem; margin: var(--sp-2) 0 var(--sp-3); }
+.sd-divbar { flex: 1; min-width: 0; height: 100%; display: flex; flex-direction: column; align-items: center; gap: var(--sp-1); }
+.sd-divbar-val { font-size: var(--fs-2xs); font-weight: 650; color: var(--t2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sd-divbar-col { flex: 1; width: 100%; max-width: 3rem; display: flex; flex-direction: column; justify-content: flex-end; }
+.sd-divbar-col i { display: block; width: 100%; background: var(--accent); border-radius: 0; }
+.sd-divbar-col i:first-child { border-radius: var(--r-xs) var(--r-xs) 0 0; }
+.sd-divbar-col i.special { background: color-mix(in srgb, var(--accent) 40%, transparent); }
+.sd-divbar.partial .sd-divbar-col i:not(.special) { background: color-mix(in srgb, var(--accent) 65%, transparent); }
+.sd-divbar-fy { font-size: var(--fs-2xs); color: var(--t3); }
+@media (max-width: 640px) {
+  .sd-div-stats { grid-template-columns: minmax(0, 1fr); gap: var(--sp-3); }
+  .sd-div-stats > div { display: grid; grid-template-columns: 6.5rem minmax(0, 1fr); column-gap: var(--sp-3); align-items: baseline; }
+  .sd-div-stats strong { margin: 0; font-size: var(--fs-lg); }
+  .sd-div-stats em { grid-column: 2; }
+  .sd-divbars { gap: var(--sp-1); height: 8rem; }
+}
+
 /* How the price has done (StockPerformance.jsx) */
 .sd-perf-lead { margin: 0 0 var(--sp-3); font-size: var(--fs-md); line-height: 1.5; color: var(--t1); }
 .sd-perf-h { margin-top: var(--sp-6); }
