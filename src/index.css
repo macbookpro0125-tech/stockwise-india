@@ -2162,6 +2162,10 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 .ph-card-tray .ph-stat-v { display: flex; align-items: baseline; gap: 6px; margin-top: 2px; font-size: 18px; font-weight: 700; letter-spacing: -0.02em; color: var(--t1); font-variant-numeric: tabular-nums; min-width: 0; }
 .ph-tray-top { font-size: 15.5px !important; font-weight: 650 !important; }
 .ph-tray-name { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* The best matches rolling through, each sliding up in turn (TopRoller) */
+.ph-roll { overflow: hidden; }
+.ph-roll-item { display: flex; align-items: baseline; gap: 6px; min-width: 0; animation: scRoll 450ms var(--ease-out-strong) both; }
+@media (prefers-reduced-motion: reduce) { .ph-roll-item { animation: none; } }
 .ph-tray-top small { flex-shrink: 0; padding: 0 6px; border-radius: 6px; font-size: 12px; font-weight: 650; color: var(--green); background: color-mix(in srgb, var(--green) 14%, transparent); }
 .ph-rules { display: flex; gap: 6px; overflow: hidden; -webkit-mask-image: linear-gradient(to right, black calc(100% - 28px), transparent); mask-image: linear-gradient(to right, black calc(100% - 28px), transparent); }
 .ph-rule { flex-shrink: 0; height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--bdr2); color: var(--t2); font-size: 13px; line-height: 28px; white-space: nowrap; font-variant-numeric: tabular-nums; }

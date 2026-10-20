@@ -4,6 +4,7 @@ import { api } from "./api.js";
 import { PresetIcon } from "./icons.jsx";
 import { KINDS, kindOf } from "./strategyAbout.js";
 import { cardName } from "./stockName.js";
+import { reducedMotion } from "./motion.js";
 import StrategyMark, { markColor } from "./StrategyMarks.jsx";
 import StrategyCard from "./StrategyCard.jsx";
 import { strategiesStore } from "./accountData.js";
@@ -53,6 +54,41 @@ export function presetRules(p, meta) {
     }).filter(Boolean);
   }
   return Object.entries(p.criteria ?? {}).map(([k, v]) => CRITERIA[k]?.(v)).filter(Boolean);
+}
+
+// A phone card's best matches by quality, one after another (asked for 20
+// Oct 2026: "they should not be static"), as the computer's cards roll
+// theirs: each slides up in turn, every 2.6 s, the cards a beat apart so they
+// don't all change at once. Only while the card is on screen; still for
+// anyone who asked their system for less motion.
+function TopRoller({ top, offset = 0 }) {
+  const ref = useRef(null);
+  const [i, setI] = useState(0);
+  const [onScreen, setOnScreen] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([e]) => setOnScreen(e.isIntersecting));
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  useEffect(() => {
+    if (!onScreen || top.length < 2 || reducedMotion()) return;
+    let tick;
+    const start = setTimeout(() => {
+      setI(x => (x + 1) % top.length);
+      tick = setInterval(() => setI(x => (x + 1) % top.length), 2600);
+    }, 2600 + (offset % 4) * 650);
+    return () => { clearTimeout(start); clearInterval(tick); };
+  }, [onScreen, top.length, offset]);
+  const c = top[i % top.length];
+  return (
+    <span ref={ref} className="ph-stat-v ph-tray-top ph-roll" aria-live="off">
+      <span className="ph-roll-item" key={c.symbol}>
+        <span className="ph-tray-name">{cardName(c.name)}</span>{c.quality != null && <small>{c.quality}</small>}
+      </span>
+    </span>
+  );
 }
 
 // Each strategy's colour is its mark's (StrategyMarks.jsx); your own are teal
@@ -153,8 +189,8 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
     const worker = async () => {
       for (let p = queue.shift(); p && !stop; p = queue.shift()) {
         try {
-          // the grid rolls through five; a phone's card shows the first
-          const res = await api.screen({ filters: p.filters, countOnly: true, top: grid ? 5 : 1 });
+          // the five best by quality, which the cards roll through
+          const res = await api.screen({ filters: p.filters, countOnly: true, top: 5 });
           if (!stop) { setCounts(c => ({ ...c, [p.id]: res.matched })); if (res.top) setTops(t => ({ ...t, [p.id]: res.top })); }
         } catch {
           if (!stop) setFailed(f => ({ ...f, [p.id]: true }));
@@ -370,12 +406,10 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
                         </span>
                       </span>
                       <span className="ph-tray-cell ph-tray-wide">
-                        <span className="ph-stat-k">Highest quality</span>
-                        <span className="ph-stat-v ph-tray-top">
-                          {tops[p.id]?.[0]
-                            ? <><span className="ph-tray-name">{cardName(tops[p.id][0].name)}</span>{tops[p.id][0].quality != null && <small>{tops[p.id][0].quality}</small>}</>
-                            : count === 0 ? "—" : failed[p.id] ? "—" : <span className="sc-skel" style={{ width: 96 }} aria-hidden="true" />}
-                        </span>
+                        <span className="ph-stat-k">Best by quality</span>
+                        {tops[p.id]?.length
+                          ? <TopRoller top={tops[p.id]} offset={i} />
+                          : <span className="ph-stat-v ph-tray-top">{count === 0 || failed[p.id] ? "—" : <span className="sc-skel" style={{ width: 96 }} aria-hidden="true" />}</span>}
                       </span>
                     </span>
                   </div>
