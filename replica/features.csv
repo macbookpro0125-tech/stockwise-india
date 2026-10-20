@@ -38,3 +38,9 @@ S-STOCK,Insider and promoter trades,yes,no,"Next: gaps #9 — needs a new NSE da
 S-STOCK,What changed recently,yes,no,"Next: gaps #10"
 S-STOCK,Latest earnings call,yes,no,"Next: gaps #11 — the transcript NSE files, not an AI summary"
 S-STOCK,Where the data comes from and when,yes,no,"Next: gaps #12"
+S-SETTINGS,Help and feedback: email with app version and screen; how the figures work,no,no,"Fix #1 in replica/fixes.md — support complaints: 11 reviews, 2 sources"
+ALL,"Ads only in lists — no pop-ups, no paid tier, no loan or credit offers",no,partial,"Fix #3 — true in the app today (native ads in lists, an optional support ad); not yet written as a rule or in the listing. 23 reviews, 2 sources"
+S-ALERTS,"Alert when a watched company files results, a dividend or a board meeting",no,no,Fix #4 — from the NSE announcements we already read; 3 reviews (thin)
+S-DISCOVER,"Bank filters: gross and net NPA, capital ratio, provision cover",no,no,"Fix #5 — the scorecard already reads them for banks; 1 review (thin), cheap"
+S-DISCOVER,Reorder screener filters,no,no,"Fix #6 — 1 review (thin), cheap"
+S-STOCK,3-year range on the price chart,no,no,Fix #7 — 3M and 6M exist; 2 reviews (thin)
