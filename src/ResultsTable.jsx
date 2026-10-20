@@ -248,7 +248,7 @@ function StarButton({ symbol, price, watched, size = 30 }) {
   );
 }
 
-export default function ResultsTable({ matches, loading, onAnalyze, totalMatches, universe = null, filters = null, onFiltersChange = null, phoneFilters = null, filtersButton = null, updating = false, queryUsed, unsupported = [], notes = [], executionTime, snapshot, netNet = false, noun = "stocks", emptyTitle = "No stocks matched your criteria", emptyHint = "Try relaxing some filters", columns = [], onEditColumns = null, filteredIds = [], meta = null, theme = "dark" }) {
+export default function ResultsTable({ matches, loading, onAnalyze, totalMatches, hideCountOnPhone = false, universe = null, filters = null, onFiltersChange = null, phoneFilters = null, filtersButton = null, updating = false, queryUsed, unsupported = [], notes = [], executionTime, snapshot, netNet = false, noun = "stocks", emptyTitle = "No stocks matched your criteria", emptyHint = "Try relaxing some filters", columns = [], onEditColumns = null, filteredIds = [], meta = null, theme = "dark" }) {
   const watchlist = useWatchlist();
   const [alertFor, setAlertFor] = useState(null);
   const [showNotes, setShowNotes] = useState(false);
@@ -456,7 +456,8 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
       {/* ── Top bar: the count, large, on the left; sort, columns, the guide
              and export on the right — quiet buttons; Compare lights up only
              when rows are ticked ── */}
-      {(totalMatches != null || loading) && (
+      {/* A phone on Discover: the count and dates are on the strategy's ⓘ page */}
+      {(totalMatches != null || loading) && !(isMobile && hideCountOnPhone) && (
         <div className="results-topbar">
           <div className="rt-count">
             {loading ? (

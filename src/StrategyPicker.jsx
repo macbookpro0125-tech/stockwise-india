@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Check, Globe, Info, List } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Check, ChevronLeft, Globe, Info, List } from "lucide-react";
 import WheelPicker from "./WheelPicker.jsx";
 import StrategyMark from "./StrategyMarks.jsx";
 import { groupStrategies, describeRules } from "./strategyAbout.js";
@@ -14,9 +15,13 @@ import { groupStrategies, describeRules } from "./strategyAbout.js";
 //   value     the current row's id; onPick(id) opens another
 //   meta      the metric catalogue (labels and notes); filters: the current ones
 //   onEditRules  opens the filters, to change this screen's rules
+//   phone     a phone: the wheel and ⓘ only; ⓘ opens a page of its own with
+//             everything about the strategy — what it is, each rule, how many
+//             companies pass, the prices' date — so the list stays clean
+//   stats     { matched, universe, pricesDate, notes } for that page
 const ALL = "__all", YOURS = "__yours";
 
-export default function StrategyPicker({ presets, items, value, onPick, meta, filters, onEditRules }) {
+export default function StrategyPicker({ presets, items, value, onPick, meta, filters, onEditRules, phone = false, stats = null }) {
   const [panel, setPanel] = useState(null); // "list" | "about" | null
   const wrap = useRef(null);
   const listBtn = useRef(null), aboutBtn = useRef(null);
@@ -41,6 +46,23 @@ export default function StrategyPicker({ presets, items, value, onPick, meta, fi
   const pick = id => { setPanel(null); if (id !== value) onPick(id); listBtn.current?.focus(); };
   const toggle = which => setPanel(p => (p === which ? null : which));
   const current = presets.find(p => p.id === value);
+
+  if (phone) return (
+    <div ref={wrap} className="screen-wheel-wrap screen-wheel-phone">
+      <WheelPicker label="Strategy" items={items} value={value} onChange={onPick} rowHeight={36} className="wheel-title" />
+      <div className="sp-buttons">
+        <button ref={aboutBtn} type="button" className="sp-btn" aria-label="About this strategy" aria-haspopup="dialog"
+          aria-expanded={panel === "about"} onClick={() => setPanel("about")}>
+          <Info size={19} strokeWidth={2.2} aria-hidden="true" />
+        </button>
+      </div>
+      {panel === "about" && (
+        <StrategyInfoPage preset={current} value={value} meta={meta} filters={filters} stats={stats}
+          onClose={() => { setPanel(null); aboutBtn.current?.focus(); }}
+          onEditRules={() => { setPanel(null); onEditRules?.(); }} />
+      )}
+    </div>
+  );
 
   return (
     <div ref={wrap} className="screen-wheel-wrap">
@@ -120,5 +142,64 @@ function StrategyAbout({ preset, value, meta, filters, onEditRules }) {
       )}
       <button type="button" className="btn-ghost sp-edit" onClick={onEditRules}>{rules.length ? "Change the rules" : "Add a filter"}</button>
     </div>
+  );
+}
+
+// A phone: everything about the strategy on a page of its own, sliding in
+// from the right like a pushed screen, with its own history entry — Back
+// (the button, the browser's, Android's) closes it
+const dateOf = iso => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+
+function StrategyInfoPage({ preset, value, meta, filters, stats, onClose, onEditRules }) {
+  const heading = useRef(null);
+  useEffect(() => {
+    window.history.pushState({ ...(window.history.state ?? {}), strategyInfo: true }, "");
+    const onPop = () => { if (!window.history.state?.strategyInfo) onClose(); };
+    window.addEventListener("popstate", onPop);
+    heading.current?.focus();
+    const scrollY = window.scrollY;
+    document.body.style.overflow = "hidden";
+    return () => { window.removeEventListener("popstate", onPop); document.body.style.overflow = ""; window.scrollTo(0, scrollY); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const back = () => { if (window.history.state?.strategyInfo) window.history.back(); else onClose(); };
+  const name = preset?.name ?? (value === YOURS ? "Your filters" : "Whole market");
+  const description = preset?.description ?? (value === YOURS ? "The filters you've set yourself." : "Every NSE company screened here — no rules yet. Pick a strategy, or add filters of your own.");
+  const rules = describeRules(preset ? preset.filters : value === YOURS ? filters : [], meta);
+  return createPortal(
+    <div className="sip" role="dialog" aria-modal="true" aria-labelledby="sip-title">
+      <div className="sip-bar">
+        <button type="button" className="sip-back" onClick={back}><ChevronLeft size={22} strokeWidth={2.2} aria-hidden="true" /> Back</button>
+      </div>
+      <div className="sip-body">
+        <div className="sip-mark">{preset ? <StrategyMark preset={preset} size={52} /> : <span className="sp-icon sip-icon"><Globe size={24} aria-hidden="true" /></span>}</div>
+        <h1 id="sip-title" ref={heading} tabIndex={-1}>{name}</h1>
+        {stats?.matched != null && (
+          <p className="sip-meta">
+            <strong>{stats.matched.toLocaleString("en-IN")}</strong>
+            {stats.universe != null ? <> of {stats.universe.toLocaleString("en-IN")} companies pass today</> : <> {stats.matched === 1 ? "company passes" : "companies pass"} today</>}
+            {stats.pricesDate && <> · prices as of {dateOf(stats.pricesDate)}</>}
+          </p>
+        )}
+        <p className="sip-lead">{description}</p>
+        {rules.length > 0 && (
+          <section>
+            <h2>What it looks for</h2>
+            {rules.map(r => (
+              <div key={`${r.id}-${r.text}`} className="sip-rule">
+                <h3>{r.text}</h3>
+                {r.about && <p>{r.about}</p>}
+              </div>
+            ))}
+          </section>
+        )}
+        <section>
+          <h2>Good to know</h2>
+          <p>{rules.length > 0 ? "A company missing a figure that a rule needs is left out, so the count can be lower than you'd expect. " : ""}Figures come from companies' filings with NSE and its daily closing prices. A screen to research from — not advice to buy or sell.</p>
+        </section>
+        <button type="button" className="btn-primary sip-edit" onClick={onEditRules}>{rules.length ? "Change the rules" : "Add a filter"}</button>
+      </div>
+    </div>,
+    document.body,
   );
 }

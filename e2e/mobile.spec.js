@@ -173,3 +173,27 @@ test("M-H8 the tab bar folds into one button while reading down @phone", async (
   await bar.getByRole("button", { name: "Watchlist" }).click();
   await expect(bar.getByRole("button", { name: "Watchlist" })).toHaveAttribute("aria-current", "page");
 });
+
+// A phone's stock list (20 Oct 2026): clean — the strategy wheel as its
+// title, no count or dates; ⓘ opens a page with everything about the
+// strategy, and Back closes it
+test("M-H9 the stock list's title is the strategy wheel, its detail on an ⓘ page @phone", async ({ page, account, isMobile }) => {
+  test.skip(!isMobile, "the phone layout");
+  await page.goto("/");
+  await page.locator(".strategy-tile-quality").click();
+  const card = page.getByText("High Quality Compounders", { exact: true }).last();
+  await card.scrollIntoViewIfNeeded();
+  const b = await card.boundingBox();
+  await page.mouse.click(b.x + 20, b.y + 10);
+  const wheel = page.getByRole("listbox", { name: "Strategy" });
+  await expect(wheel.getByRole("option", { selected: true })).toHaveText("High Quality Compounders");
+  await expect(page.getByText(/stocks of [\d,]+/)).toHaveCount(0);
+  await expect(page.getByText(/Prices as of/)).toHaveCount(0);
+  await page.getByRole("button", { name: "About this strategy" }).click();
+  const info = page.getByRole("dialog", { name: "High Quality Compounders" });
+  await expect(info.getByRole("heading", { name: "What it looks for" })).toBeVisible();
+  await expect(info.getByText(/companies pass today/)).toBeVisible();
+  await page.goBack();
+  await expect(info).toHaveCount(0);
+  await expect(wheel).toBeVisible();
+});

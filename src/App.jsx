@@ -116,6 +116,11 @@ export default function App() {
           window.history.back();
           return;
         }
+        // So is a strategy's ⓘ page on a phone (StrategyPicker.jsx)
+        if (window.history.state?.strategyInfo) {
+          window.history.back();
+          return;
+        }
 
         if (chart) {
           if (canGoBack) window.history.back();

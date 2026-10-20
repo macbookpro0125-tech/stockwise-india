@@ -579,17 +579,21 @@ export default function DiscoverView({ onOpenStock, theme }) {
                 {/* A computer: the name is the strategy wheel itself — the
                     strategy on its pill, the others above and below to
                     scroll to (one name, in one place) */}
-                <h2 className={`screen-title${!isPhone && wheelItems.length > 1 ? " sr-only" : ""}`}>{activePresetName ?? (activeCount > 0 ? "Your filters" : "Whole market")}</h2>
-                {!isPhone && wheelItems.length > 1 && (
+                <h2 className={`screen-title${wheelItems.length > 1 ? " sr-only" : ""}`}>{activePresetName ?? (activeCount > 0 ? "Your filters" : "Whole market")}</h2>
+                {wheelItems.length > 1 && (
                   <StrategyPicker presets={wheelPresets} items={wheelItems} value={wheelValue} onPick={pickFromWheel}
-                    meta={meta} filters={filters} onEditRules={() => setFiltersOpen(true)} />
+                    meta={meta} filters={filters} phone={isPhone}
+                    stats={{ matched: results?.matched ?? null, universe: results?.total ?? null, pricesDate: results?.snapshot?.pricesDate ?? null }}
+                    onEditRules={() => (isPhone ? setSheetOpen(true) : setFiltersOpen(true))} />
                 )}
-                <p className="screen-about">
+                {/* A phone keeps the list clean: the strategy's line, rules,
+                    count and dates are on its ⓘ page */}
+                {!(isPhone && wheelItems.length > 1) && <p className="screen-about">
                   {activePresetAbout ?? (activeCount > 0 ? `${activeCount} filter${activeCount === 1 ? "" : "s"} of your own.` : "Every NSE company. Add a filter to narrow it down.")}
-                </p>
+                </p>}
                 {/* A phone: the screen's rules as chips under it (the
                     computer's drawer lists them) */}
-                {isPhone && activeCount > 0 && (
+                {isPhone && activeCount > 0 && wheelItems.length <= 1 && (
                   <div className="ph-rules ph-rules-on" aria-label="This screen's filters">
                     {presetRules({ filters: filters.filter(isActiveFilter) }, meta).map(r => <span key={r} className="ph-rule">{r}</span>)}
                   </div>
@@ -647,6 +651,7 @@ export default function DiscoverView({ onOpenStock, theme }) {
               loading={!results && !error}
               onAnalyze={onOpenStock}
               totalMatches={results?.matched}
+              hideCountOnPhone={wheelItems.length > 1}
               filters={filters}
               onFiltersChange={changeFilters}
               universe={activeCount > 0 ? results?.total : null}
