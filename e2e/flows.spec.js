@@ -249,6 +249,13 @@ test("F03-H7 against its sector: the sector's middle and how many it beats", asy
   await expect(card.getByText(/^(Cheaper|Dearer) than/)).toBeVisible();
 });
 
+test("F03-H8 what changed recently: dated lines above the filings", async ({ page, account }) => {
+  await page.goto("/stock/TCS");
+  const card = page.getByRole("region", { name: "What changed recently" });
+  await expect(card).toBeVisible();
+  await expect(card.locator("li time").first().or(card.getByText(/^Nothing new in the last six weeks/))).toBeVisible();
+});
+
 test("F03-N1 an unknown symbol says so", async ({ page, account }) => {
   await page.goto("/stock/NOTAREALCO");
   await expect(page.getByText(/not found|isn.t|no company|unknown|couldn.t/i).first()).toBeVisible();

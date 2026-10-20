@@ -1171,6 +1171,13 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .sd-sector-words { font-size: var(--fs-xs); color: var(--t2); }
 @media (max-width: 640px) { .sd-sector-rows { grid-template-columns: minmax(0, 1fr); gap: var(--sp-4); } }
 
+/* What changed recently (StockRecent.jsx) */
+.sd-recent { margin-bottom: var(--sp-4); }
+.sd-recent-list { list-style: none; margin: var(--sp-2) 0 0; padding: 0; display: grid; gap: var(--sp-2); }
+.sd-recent-list li { display: grid; grid-template-columns: 4.25rem minmax(0, 1fr); gap: var(--sp-3); align-items: baseline; font-size: var(--fs-sm); line-height: 1.5; color: var(--t1); }
+.sd-recent-list time { font-size: var(--fs-xs); font-weight: 650; color: var(--t3); font-variant-numeric: tabular-nums; }
+.sd-recent-h { margin-top: var(--sp-4); }
+
 /* How the price has done (StockPerformance.jsx) */
 .sd-perf-lead { margin: 0 0 var(--sp-3); font-size: var(--fs-md); line-height: 1.5; color: var(--t1); }
 .sd-perf-h { margin-top: var(--sp-6); }

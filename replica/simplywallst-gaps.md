@@ -21,8 +21,9 @@ actions), the company profile (website, employees), your notes.
 ## Missing — buildable from our data
 
 Built 20 Oct 2026: #1–5 (At a glance and How the price has done on the
-overview), #6 (Dividends), #7 (Financial health), #8 (Against its sector)
-and #12 (Where these figures come from). Still to build: #9–11.
+overview), #6 (Dividends), #7 (Financial health), #8 (Against its sector),
+#10 (What changed recently) and #12 (Where these figures come from). Still
+to build: #9 and #11.
 
 | # | What | Theirs (in short) | Ours would be | Size |
 |---|---|---|---|---|
