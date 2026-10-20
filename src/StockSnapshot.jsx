@@ -12,6 +12,13 @@ const cr = v => `₹${Math.round(v).toLocaleString("en-IN")} Cr`;
 const pct = v => (v == null ? "—" : `${v.toFixed(1)}%`);
 const x = (v, dp = 1) => (v == null ? "—" : `${v.toFixed(dp)}×`);
 
+// Where the sector came from (metrics.js sectorSource): [line, a phone's line]
+const SECTOR_SOURCE = {
+  "NSE sector": ["Sector from NSE's index lists", "Sector as NSE lists it"],
+  "NSE industry mapped to sector": ["Sector from its NSE industry", "Sector from its NSE industry"],
+  "company name": ["Sector read from the company's name", "Sector read from its name"],
+};
+
 function sizeClass(rank) {
   if (rank <= 100) return "Large cap";
   if (rank <= 250) return "Mid cap";
@@ -41,7 +48,10 @@ export default function StockSnapshot({ m, price }) {
   const size = useSizeRank(m?.marketCapCr);
   if (!m) return null;
   const risk = m.research?.risk;
-  const tags = [m.industry, m.lender && "Lender", m.governmentOwned && "Government-owned", m.utility && "Regulated utility", m.cyclical && "Cyclical"].filter(Boolean);
+  const tags = [m.lender && "Lender", m.governmentOwned && "Government-owned", m.utility && "Regulated utility", m.cyclical && "Cyclical"].filter(Boolean);
+  // The sector's line: its NSE industry where NSE gives one (1,368 companies
+  // have none, e.g. Indiamart), else where the sector came from
+  const source = SECTOR_SOURCE[m.sectorSource];
   // [label, short label for a phone's three-to-a-row grid, value]
   const metrics = [
     ["P/E (last 4 quarters)", "P/E · 4 qtrs", m.peTtm?.toFixed(1) ?? "—"],
@@ -63,6 +73,9 @@ export default function StockSnapshot({ m, price }) {
         <div className="sd-snap-card">
           <span className="sd-snap-icon" aria-hidden="true"><Factory size={18} /></span>
           <h3>{m.sector ?? "Sector not on file"}</h3>
+          {(m.industry || source) && <p><Fit
+            wide={m.industry ? <>Industry: {m.industry}{source ? ` · ${source[0]}` : ""}</> : source[0]}
+            narrow={m.industry ?? source[1]} /></p>}
           {tags.length > 0 && <div className="sd-tags">{tags.map(t => <span key={t}>{t}</span>)}</div>}
         </div>
         <div className="sd-snap-card">
