@@ -96,7 +96,10 @@ Picked by evidence against cost. Each is a row in `features.csv` (reference
 `no`: something to do better than the reference). **Built 20 Oct 2026:** #1,
 #2, #3 and #7, and #4 inside the app (the Watchlist shows each company's next
 ex-date or board meeting; a message outside the app waits for Telegram or
-push notifications). Still to build: #5 and #6.
+push notifications). #5 and #6 built 20 Oct 2026: the bank filters were
+already in (9 Oct), so #5 added Tier 1 and the credit-deposit ratio and a
+"Sound Banks" strategy that leads to them; CASA isn't in NSE's filings data,
+so it isn't offered. #6 is up and down arrows on each filter.
 
 | # | What | Size | Skill | Evidence |
 |---|---|---|---|---|

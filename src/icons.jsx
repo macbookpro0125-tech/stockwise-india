@@ -1,7 +1,7 @@
 import {
   TrendingUp, Coins, Gem, Shield, Rocket, Star, Zap, RefreshCw, Landmark, Sprout, Globe, Building2,
   Calculator, Bookmark, ChartLine, TriangleAlert, ArrowDownToLine, ArrowUpToLine, ArrowUpFromLine, Minus, ChevronsUp,
-  Mountain, Scale, CircleArrowDown, Layers2 } from "lucide-react";
+  Mountain, Scale, CircleArrowDown, Layers2, Vault } from "lucide-react";
 
 // Ported from stock-screener's src/components/icons.jsx — line icons rather
 // than ★/🔔 glyphs, which render in whatever font the platform supplies and
@@ -52,6 +52,7 @@ const PRESET_ICONS = {
   momentum_growth: Zap,
   turnaround_plays: RefreshCw,
   psu_value: Landmark,
+  sound_banks: Vault,
   dividend_growth: Sprout,
   fii_favorites: Globe,
   dii_backed: Building2,

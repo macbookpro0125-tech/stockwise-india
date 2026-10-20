@@ -168,6 +168,8 @@ export const METRICS = [
     ["nnpaPct", "Net NPA", "Net NPA", "Bad loans left after provisions, as a share of loans, at the latest quarter's end."],
     ["pcrPct", "Provision cover", "PCR", "How much of the bad loans is already provided for (before technical write-offs)."],
     ["cet1Pct", "CET1 capital ratio", "CET1", "Core equity capital as a share of risk-weighted assets. 8% is the floor with buffer."],
+    ["tier1Pct", "Tier 1 capital ratio", "Tier 1", "CET1 plus additional tier 1 capital, as a share of risk-weighted assets. 9.5% is the floor with buffer."],
+    ["creditDepositPct", "Credit-deposit ratio", "C/D ratio", "Loans as a share of deposits at the latest year-end. High means lending leans on other borrowing as well as deposits."],
     ["roaPct", "Return on assets", "ROA", "The latest year's profit on the bank's assets. Over 1% is good for a bank."],
     ["costToIncomePct", "Cost-to-income", "Cost/income", "Operating costs as a share of net interest and other income, the latest year. Lower is more efficient."],
     ["creditCostPct", "Credit cost", "Credit cost", "The latest year's provisions as a share of the average loan book."],

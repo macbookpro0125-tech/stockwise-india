@@ -2119,3 +2119,6 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
    status bar, so the page doesn't scroll beneath the clock (0 px tall in a
    browser) */
 .safe-top { position: fixed; top: 0; left: 0; right: 0; z-index: 250; height: var(--safe-area-inset-top, env(safe-area-inset-top, 0px)); background: var(--bg); pointer-events: none; }
+
+/* The screener's filter-row buttons (move up, move down, remove): bigger for a finger */
+@media (pointer: coarse) { .filter-row { --filter-btn: 32px; } }

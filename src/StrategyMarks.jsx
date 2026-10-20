@@ -91,6 +91,14 @@ const MARKS = {
     <circle cx="20" cy="20" r="17" />
     <path d="M20 10v19M12.5 21.5L20 29l7.5-7.5" fill="none" stroke={W} strokeWidth="3.6" strokeLinecap="round" strokeLinejoin="round" />
   </>],
+  // a bank: a pediment over three columns on a step
+  sound_banks: ["#B0721C", <>
+    <path d="M20 3l17 9H3z" />
+    <rect x="6" y="15" width="5" height="15" rx="1" />
+    <rect x="17.5" y="15" width="5" height="15" rx="1" />
+    <rect x="29" y="15" width="5" height="15" rx="1" />
+    <rect x="3" y="32" width="34" height="5" rx="1.5" />
+  </>],
   // a bar, and one twice its height
   doubled_in_year: ["#5C940D", <>
     <rect x="5" y="22" width="12" height="14" rx="2" opacity=".55" />

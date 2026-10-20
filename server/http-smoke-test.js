@@ -68,12 +68,18 @@ async function main() {
   assert(headHealth.status === 200 && (await headHealth.text()) === "", "HEAD /api/health is 200 with no body (uptime monitors check with HEAD)");
 
   const presets = await (await fetch(`${BASE}/api/presets`)).json();
-  assert(Array.isArray(presets) && presets.length === 18 && presets.every(p => p.criteria || p.filters) && presets.every(p => Array.isArray(p.filters)), "GET /api/presets returns the 18 strategies, each with its filters");
+  assert(Array.isArray(presets) && presets.length === 19 && presets.every(p => p.criteria || p.filters) && presets.every(p => Array.isArray(p.filters)), "GET /api/presets returns the 19 strategies, each with its filters");
   const upEvery = presets.find(p => p.id === "up_every_timeframe");
   assert(upEvery && ["ret1m", "ret6m", "ret1y", "priceCagr5y"].every(id => upEvery.filters.some(f => f.id === id && f.min === 0)), "Up on Every Timeframe asks for a rise over 1M, 6M, 1Y and 5Y");
   assert(presets.every(p => Array.isArray(p.filters) && p.filters.length > 0 && p.filters.every(f => f.id)), "each strategy also comes as the screener's filters");
 
   const metrics = await (await fetch(`${BASE}/api/metrics`)).json();
+  // Sound Banks screens on the banks' own figures, so a bank-filter request
+  // from the reviews (gross and net NPA, capital) has a way in from Discover
+  const banks = presets.find(p => p.id === "sound_banks");
+  const bankIds = new Set(metrics.metrics.filter(x => x.category === "Banks").map(x => x.id));
+  assert(banks && ["gnpaPct", "nnpaPct", "cet1Pct"].every(id => banks.filters.some(f => f.id === id)) && banks.filters.every(f => bankIds.has(f.id)), "Sound Banks uses only the Banks filters: gross and net NPA, capital and more");
+  assert(["tier1Pct", "creditDepositPct"].every(id => bankIds.has(id)), "Tier 1 capital and the credit-deposit ratio are bank filters too");
   assert(metrics.metrics.length >= 90 && metrics.metrics.every(x => x.id && x.label && x.category), "GET /api/metrics lists 90+ metrics with labels and categories");
   const strip = await (await fetch(`${BASE}/api/market-strip`)).json();
   assert(strip.asOf && strip.stocks.length > 0 && strip.stocks.every(s => s.symbol && s.cmp > 0), "the price strip has the latest close date and the largest companies' prices");
@@ -231,7 +237,7 @@ async function main() {
   const found = await (await fetch(`${BASE}/api/search?q=tcs`, { headers: { Cookie: aliceCookie } })).json();
   assert(found[0]?.ticker === "TCS", "searching 'tcs' puts TCS first");
   const stats = await (await fetch(`${BASE}/api/stats`, { headers: { Cookie: aliceCookie } })).json();
-  assert(stats.strategies === 18 && stats.companies > 0 && stats.filters >= 40, "the header's counts come back");
+  assert(stats.strategies === 19 && stats.companies > 0 && stats.filters >= 40, "the header's counts come back");
 
   // The screener: filters on any metric, the columns asked for, and the strategies' criteria still working
   // The whole market as the app asks for it: a GET the browser can keep
@@ -267,7 +273,7 @@ async function main() {
 
   // The front page's figures need no sign-in; who's signed in comes with /me
   const publicStats = await fetch(`${BASE}/api/stats`);
-  assert(publicStats.status === 200 && (await publicStats.json()).strategies === 18, "the front page's figures load without signing in");
+  assert(publicStats.status === 200 && (await publicStats.json()).strategies === 19, "the front page's figures load without signing in");
   assert((await (await fetch(`${BASE}/api/auth/me`, { headers: { Cookie: aliceCookie } })).json()).email === "alice@example.com", "/me says which email is signed in");
 
   // The Momentum tab: on for a copy off Render, behind sign-in, an answer

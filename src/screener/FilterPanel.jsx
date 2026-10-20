@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef, useId } from "react";
+import { ChevronUp, ChevronDown } from "lucide-react";
 import { formatInput, unitLabel } from "./meta.js";
+import { moveFilter, canMove } from "./filterOrder.js";
 
 // The screener's filter sidebar: market-cap size, one row per filter (a
 // min–max range with a two-handle slider, or a sector checklist), and
 // "+ Add filter". Filters are { id, min, max } or { id, values } — see
-// server/metric-catalog.js.
+// server/metric-catalog.js. The arrows on a row move it up or down (and its
+// column in the results with it).
 
 export const isActiveFilter = f => (f.values ? f.values.length > 0 : f.min != null || f.max != null);
 
@@ -70,7 +73,10 @@ function BoundInput({ def, value, placeholder, onCommit, label }) {
   );
 }
 
-function RowHeader({ def, onRemove, children }) {
+// 22px with a mouse, bigger for a finger (--filter-btn in index.css)
+const iconBtn = { flexShrink: 0, width: "var(--filter-btn, 22px)", height: "var(--filter-btn, 22px)", borderRadius: 6, border: "none", background: "transparent", color: "var(--t3)", cursor: "pointer", fontSize: 14, lineHeight: 1, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: 0 };
+
+function RowHeader({ def, onRemove, move, onMove, children }) {
   return (
     <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
       <div style={{ minWidth: 0 }}>
@@ -79,18 +85,23 @@ function RowHeader({ def, onRemove, children }) {
         </div>
         {children}
       </div>
-      <button type="button" onClick={onRemove} title="Remove this filter" aria-label={`Remove ${def.label}`}
-        style={{ flexShrink: 0, width: 22, height: 22, borderRadius: 6, border: "none", background: "transparent", color: "var(--t3)", cursor: "pointer", fontSize: 14, lineHeight: 1 }}>×</button>
+      <div style={{ display: "flex", flexShrink: 0 }}>
+        {move && (move.up || move.down) && <>
+          <button type="button" className="filter-move" onClick={() => onMove(-1)} disabled={!move.up} title="Move up" aria-label={`Move ${def.label} up`} style={{ ...iconBtn, opacity: move.up ? 1 : 0.3, cursor: move.up ? "pointer" : "default" }}><ChevronUp size={15} strokeWidth={2.2} /></button>
+          <button type="button" className="filter-move" onClick={() => onMove(1)} disabled={!move.down} title="Move down" aria-label={`Move ${def.label} down`} style={{ ...iconBtn, opacity: move.down ? 1 : 0.3, cursor: move.down ? "pointer" : "default" }}><ChevronDown size={15} strokeWidth={2.2} /></button>
+        </>}
+        <button type="button" onClick={onRemove} title="Remove this filter" aria-label={`Remove ${def.label}`} style={iconBtn}>×</button>
+      </div>
     </div>
   );
 }
 
-function NumericFilter({ def, filter, companies, onChange, onRemove }) {
+function NumericFilter({ def, filter, companies, onChange, onRemove, move, onMove }) {
   const r = def.range;
   const set = (side, v) => onChange({ ...filter, [side]: v == null ? null : Number(formatInput(def, v)) });
   return (
     <div className="filter-row">
-      <RowHeader def={def} onRemove={onRemove} />
+      <RowHeader def={def} onRemove={onRemove} move={move} onMove={onMove} />
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) auto minmax(0,1fr)", alignItems: "center", gap: 6 }}>
         <BoundInput def={def} value={filter.min} label={`${def.label}: lowest`} placeholder={r ? `Min ${formatInput(def, r.min)}` : "Min"} onCommit={v => set("min", v)} />
         <span style={{ fontSize: 11, color: "var(--t3)" }}>to</span>
@@ -224,7 +235,7 @@ export default function FilterPanel({ meta, filters, onChange, onAddFilter, onRe
       {filters.filter(f => f.id !== "capSize" && f.id !== "sector").map(f => {
         const def = meta.byId.get(f.id);
         if (!def) return null;
-        const props = { key: f.id, def, filter: f, companies: meta.companies, onChange: next => replace(f.id, next), onRemove: () => remove(f.id) };
+        const props = { key: f.id, def, filter: f, companies: meta.companies, onChange: next => replace(f.id, next), onRemove: () => remove(f.id), move: canMove(filters, f.id), onMove: step => onChange(moveFilter(filters, f.id, step)) };
         return <NumericFilter {...props} />;
       })}
 

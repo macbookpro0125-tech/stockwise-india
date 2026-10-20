@@ -58,7 +58,7 @@ const hueOf = p => markColor(p.id) ?? "var(--accent)";
 
 // The grid's strategies by kind, for the tabs over it and the label on each card
 const KINDS = [
-  ["quality", "Quality & growth", ["high_quality_compounders", "undervalued_growth", "small_cap_multibaggers", "ofss_style_filter", "debt_paydown"]],
+  ["quality", "Quality & growth", ["high_quality_compounders", "undervalued_growth", "small_cap_multibaggers", "ofss_style_filter", "debt_paydown", "sound_banks"]],
   ["value", "Value", ["turnaround_plays", "psu_value", "net_net_value", "fallen_quality"]],
   ["income", "Income & safety", ["dividend_aristocrats", "dividend_growth", "defensive_bluechips"]],
   ["momentum", "Momentum", ["momentum_growth", "up_every_timeframe", "near_highs_cheap", "doubled_in_year"]],

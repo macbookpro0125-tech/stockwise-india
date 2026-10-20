@@ -119,6 +119,27 @@ test("F02-H5 the curved row of strategies pauses on hover; a card opens its stra
   await expect(page.locator(".screen-title")).toHaveText(name);
 });
 
+// Fix plan #5 and #6 (replica/fixes.md): a screen on the banks' own figures,
+// and filters that can be put in your own order
+test("F02-H6 Sound Banks screens on bad loans and capital; filters move up and down", async ({ page, account }) => {
+  await page.goto("/");
+  const card = page.locator("button.sc2").filter({ hasText: "Sound Banks" });
+  await card.scrollIntoViewIfNeeded();
+  await card.click();
+  await expect(page.locator(".screen-title")).toHaveText("Sound Banks");
+  await expect(page.getByRole("button", { name: "HDFC Bank Limited" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Tata Consultancy Services Limited" })).toHaveCount(0);
+  await openFilters(page);
+  const drawer = page.locator(".filters-drawer.open");
+  const names = () => drawer.locator(".filter-row").evaluateAll(rows => rows.map(r => r.querySelector("[title], div > div")?.textContent ?? "").filter(t => /NPA|CET1|Return on assets/.test(t)).map(t => t.split(" · ")[0]));
+  expect(await names()).toEqual(["Gross NPA", "Net NPA", "CET1 capital ratio", "Return on assets"]);
+  await expect(drawer.getByRole("button", { name: "Move Gross NPA up" })).toBeDisabled();
+  await drawer.getByRole("button", { name: "Move Return on assets up" }).click();
+  expect(await names()).toEqual(["Gross NPA", "Net NPA", "Return on assets", "CET1 capital ratio"]);
+  await drawer.getByRole("button", { name: "Move Gross NPA down" }).click();
+  expect(await names()).toEqual(["Net NPA", "Gross NPA", "Return on assets", "CET1 capital ratio"]);
+});
+
 test("F02-H2 share link reopens the same screen", async ({ page, context, account }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.goto("/");

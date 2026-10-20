@@ -225,4 +225,19 @@ export const PRESETS = [
       { id: "marketCapCr", min: 1000, max: null },
     ],
   },
+  {
+    // Banks on their own figures (bad loans, capital, return on assets) —
+    // debt and margins don't fit a bank. Usual Indian yardsticks: gross NPA
+    // under 2% healthy, CET1 well over the 8% floor with buffer, ROA over 1%.
+    id: "sound_banks",
+    name: "Sound Banks",
+    icon: "🏦",
+    description: "Banks with few bad loans, plenty of capital and a good return on assets",
+    filters: [
+      { id: "gnpaPct", min: null, max: 2 },
+      { id: "nnpaPct", min: null, max: 0.5 },
+      { id: "cet1Pct", min: 12, max: null },
+      { id: "roaPct", min: 1, max: null },
+    ],
+  },
 ];
