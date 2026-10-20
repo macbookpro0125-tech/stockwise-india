@@ -50,16 +50,20 @@ export function fmtRs(n) {
   return "₹" + Math.round(num).toLocaleString("en-IN");
 }
 
-// Where a price sits against the levels: { zone, label, tone, detail }.
+// Where a price sits against the levels: { zone, label, tone, detail, gist }.
 // Tone distinguishes risk levels (red past the stop-loss level or far above
-// the upper level); model reference levels use a neutral accent.
+// the upper level); model reference levels use a neutral accent. detail
+// names the price and the level (watchlist, portfolio, export); gist is for
+// the company page, which lists them right below, so it gives only how far
+// off they are.
 export function pricePosition(price, levels) {
   const p = Number(price);
   if (!levels || !(p > 0)) return null;
   const { p1, p2, p3, stopLoss, target, fv25 } = levels;
   const vsFv = fv25 > 0 ? ((p - fv25) / fv25) * 100 : null;
-  const fvText = vsFv == null ? "" : ` — ${Math.abs(vsFv).toFixed(0)}% ${vsFv <= 0 ? "below" : "above"} today's fair value of ${fmtRs(fv25)}`;
-  const at = (zone, label, tone, detail) => ({ zone, label, tone, detail: `${detail}${fvText}.` });
+  const fvGap = vsFv == null ? "" : `${Math.abs(vsFv).toFixed(0)}% ${vsFv <= 0 ? "below" : "above"} today's fair value`;
+  const fvText = fvGap && ` — ${fvGap} of ${fmtRs(fv25)}`;
+  const at = (zone, label, tone, detail, apart = "") => ({ zone, label, tone, detail: `${detail}${fvText}.`, gist: apart ? `${apart}${fvGap ? ` — ${fvGap}` : ""}.` : fvGap ? `${fvGap.replace(/^./, c => c.toUpperCase())}.` : "" });
   if (stopLoss > 0 && p <= stopLoss) return at("below-stop", "Below the stop-loss level", "red", `${fmtRs(p)} is under the stop-loss level of ${fmtRs(stopLoss)}`);
   if (target > 0 && p >= target * 1.15) return at("far-above", "Far above the upper level", "red", `${fmtRs(p)} is more than 15% over the upper level of ${fmtRs(target)}`);
   if (target > 0 && p >= target) return at("above-upper", "At or above the upper level", "yellow", `${fmtRs(p)} has reached the upper level of ${fmtRs(target)}`);
@@ -68,7 +72,8 @@ export function pricePosition(price, levels) {
   if (p1 > 0 && p <= p1) return at("phase1", "At or below reference level 1", "neutral", `${fmtRs(p)} is at or under reference level 1 of ${fmtRs(p1)}`);
   if (p1 > 0) {
     const toUpper = target > p ? ` and ${(((target - p) / p) * 100).toFixed(0)}% under the upper level` : "";
-    return at("above-phase1", "Above reference level 1", "neutral", `${fmtRs(p)} is ${(((p - p1) / p1) * 100).toFixed(0)}% above reference level 1 of ${fmtRs(p1)}${toUpper}`);
+    const above = `${(((p - p1) / p1) * 100).toFixed(0)}% above reference level 1`;
+    return at("above-phase1", "Above reference level 1", "neutral", `${fmtRs(p)} is ${above.replace("level 1", `level 1 of ${fmtRs(p1)}`)}${toUpper}`, `${above}${toUpper}`);
   }
   return null;
 }

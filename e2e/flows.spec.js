@@ -220,7 +220,8 @@ test("F03-H4 chart indicators: pivot points and their kinds, an oscillator in it
 test("F03-H5 the dividends section: yield against other payers, payout, the yearly record", async ({ page, account }) => {
   await page.goto("/stock/TCS");
   const div = page.getByRole("region", { name: "Dividends" });
-  await expect(div.getByText(/^It paid ₹[\d,.]+ a share over the last 12 months — a yield of [\d.]+%/)).toBeVisible();
+  // the yield is the tile below, so the lead doesn't repeat it
+  await expect(div.getByText(/^It paid ₹[\d,.]+ a share over the last 12 months\.$/)).toBeVisible();
   for (const label of ["Yield", "Other payers", "Payout"]) await expect(div.getByText(label, { exact: true })).toBeVisible();
   await expect(div.getByRole("img", { name: /Dividends a share by financial year: FY\d\d/ })).toBeVisible();
   await expect(div.getByText(/^Paid in \d of the last \d financial years/)).toBeVisible();
@@ -254,6 +255,15 @@ test("F03-H8 what changed recently: dated lines above the filings", async ({ pag
   const card = page.getByRole("region", { name: "What changed recently" });
   await expect(card).toBeVisible();
   await expect(card.locator("li time").first().or(card.getByText(/^Nothing new in the last six weeks/))).toBeVisible();
+});
+
+test("F03-H9 what to review in the next filing: questions without figures, each linking to its section", async ({ page, account }) => {
+  await page.goto("/stock/TCS");
+  const list = page.getByText("What to review in the next filing").locator("xpath=following-sibling::ul[1]");
+  await expect(list.locator("li").first()).toBeVisible();
+  await expect(list).not.toContainText(/\d+(\.\d+)?%|₹|\d×/);
+  await list.getByRole("button", { name: "See Financial health" }).first().click();
+  await expect(page.locator("#sec-health")).toBeInViewport();
 });
 
 test("F03-N1 an unknown symbol says so", async ({ page, account }) => {

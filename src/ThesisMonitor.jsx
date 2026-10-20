@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "./api.js";
+import { openCheck } from "./StockSide.jsx";
 
 const card = { border: "1px solid var(--bdr2)", borderRadius: 12, padding: 18, marginBottom: 12, background: "var(--s2)" };
-const pct = v => v == null ? "not available" : `${v.toFixed(1)}%`;
 // The account is where a thesis lives. This browser keeps only edits that
 // haven't reached the account yet, filed under the account that wrote them —
 // on a shared computer the next person never sees, or saves, someone else's.
@@ -69,23 +69,26 @@ export default function ThesisMonitor({ metrics: m, account }) {
     return () => clearTimeout(timer);
   }, [ready, m?.symbol, owner, thesis]);
   if (!m) return null;
+  // Questions for the next filing, each pointing to the section that holds
+  // the figure — the figures themselves aren't repeated here (each is shown
+  // in one place on the page)
   const monitors = [];
-  if (m.salesGrowth3y != null) monitors.push({ label: "Revenue trend", detail: `Three-year sales CAGR is ${pct(m.salesGrowth3y)}. Check future filings for acceleration or a sustained slowdown.` });
-  if (m.opm != null && m.opm5y != null) monitors.push({ label: "Operating margin", detail: `Latest margin is ${pct(m.opm)} versus a five-year average of ${pct(m.opm5y)}; watch whether the gap persists.` });
-  if (m.fcfCr != null) monitors.push({ label: "Cash generation", detail: `Latest reported free cash flow is ₹${m.fcfCr.toLocaleString("en-IN", { maximumFractionDigits: 1 })} Cr. Check whether cash conversion remains consistent with earnings.` });
-  if (m.debtToEquity != null) monitors.push({ label: "Leverage", detail: `Debt/equity is ${m.debtToEquity.toFixed(2)}×. Review any sustained increase alongside interest coverage and cash flow.` });
-  if (m.promoterPct != null) monitors.push({ label: "Ownership", detail: `Promoters hold ${pct(m.promoterPct)}${m.pledgedPct == null ? "; pledge data is unavailable" : `; ${pct(m.pledgedPct)} of promoter shares are pledged`}. Compare with the next shareholding filing.` });
+  if (m.salesGrowth3y != null) monitors.push({ label: "Revenue trend", detail: "Is sales growth speeding up or slowing down?", go: "sec-financials", where: "Financials" });
+  if (m.opm != null && m.opm5y != null) monitors.push({ label: "Operating margin", detail: "Is the margin holding near its five-year average?", go: "sec-financials", where: "Financials" });
+  if (m.fcfCr != null) monitors.push({ label: "Cash generation", detail: "Is free cash flow keeping up with profit?", go: "sec-health", where: "Financial health" });
+  if (m.debtToEquity != null) monitors.push({ label: "Leverage", detail: "Is debt growing faster than equity, or interest getting harder to cover?", go: "sec-health", where: "Financial health" });
+  if (m.promoterPct != null) monitors.push({ label: "Ownership", detail: "Are the promoters' holding or pledges changing?", go: "sec-holding", where: "Holdings" });
 
   const editStyle = { width: "100%", minHeight: 62, resize: "vertical", boxSizing: "border-box", border: "1px solid var(--bdr2)", borderRadius: 8, background: "var(--s1)", color: "var(--t1)", padding: "8px 10px", font: "inherit", fontSize: 12, lineHeight: 1.5 };
   return (
     <section style={card} aria-labelledby="thesis-monitor-title">
       <h3 id="thesis-monitor-title" style={{ fontSize: 15, fontWeight: 650, margin: "0 0 4px", color: "var(--t1)" }}>Investment case &amp; what to monitor</h3>
-      <div style={{ fontSize: 11, color: "var(--t3)", marginBottom: 13, lineHeight: 1.5 }}>Evidence-led prompts from reported figures. These are not forecasts or automatic thesis-break signals.</div>
+      <div style={{ fontSize: 11, color: "var(--t3)", marginBottom: 13, lineHeight: 1.5 }}>Questions to take to each new filing; the figures are in the sections linked. These are not forecasts or automatic thesis-break signals.</div>
       {/* The strengths and things to watch are At a glance's, at the top of
           the page (StockGlance.jsx); a second list here disagreed with it */}
       <div>
         <div style={{ fontSize: 12, fontWeight: 650, color: "var(--t1)", marginBottom: 7 }}>What to review in the next filing</div>
-        {monitors.length ? <ul style={{ margin: 0, paddingLeft: 17, display: "grid", gap: 8 }}>{monitors.map((x, i) => <li key={i} style={{ fontSize: 12, lineHeight: 1.5, color: "var(--t2)" }}><strong style={{ color: "var(--t1)" }}>{x.label}:</strong> {x.detail}</li>)}</ul> : <div style={{ fontSize: 12, color: "var(--t3)" }}>Too few current observations to build company-specific monitoring prompts.</div>}
+        {monitors.length ? <ul style={{ margin: 0, paddingLeft: 17, display: "grid", gap: 8 }}>{monitors.map((x, i) => <li key={i} style={{ fontSize: 12, lineHeight: 1.5, color: "var(--t2)" }}><strong style={{ color: "var(--t1)" }}>{x.label}:</strong> {x.detail} <button type="button" onClick={() => openCheck(x.go)} style={{ padding: 0, border: 0, background: "none", font: "inherit", color: "var(--accent)", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2 }}>See {x.where}</button></li>)}</ul> : <div style={{ fontSize: 12, color: "var(--t3)" }}>Too few current observations to build company-specific monitoring prompts.</div>}
       </div>
       <div style={{ marginTop: 16, paddingTop: 13, borderTop: "1px solid var(--bdr)" }}>
         <div style={{ fontSize: 12, fontWeight: 650, color: "var(--t1)", marginBottom: 8 }}>Your investment thesis</div>

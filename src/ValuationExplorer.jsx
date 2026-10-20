@@ -39,7 +39,7 @@ function ScenarioRow({ name, color, growth, multiple, onGrowth, onMultiple, eps,
   );
 }
 
-export default function ValuationExplorer({ metrics: m, price, levels, mosPct, epsInput, peInput }) {
+export default function ValuationExplorer({ metrics: m, price, levels, epsInput, peInput }) {
   const historicalPe = Number(peInput) || Number(m?.valuationPe ?? m?.medianPe ?? m?.pe) || 0;
   const baseGrowth = clamp(Number(m?.epsGrowth5y ?? m?.epsGrowth3y ?? m?.growthForValuation ?? 0), -10, 30);
   // A downside case should stress both earnings and the valuation multiple.
@@ -74,13 +74,10 @@ export default function ValuationExplorer({ metrics: m, price, levels, mosPct, e
     { label: `Bull · ${bullGrowth}%`, growth: bullGrowth },
   ];
   const multiples = [bearPe, basePe, bullPe];
-  const mos = clamp(finite(mosPct) ?? 10, 0, 80);
-  const safePrice = levels?.fv25 > 0 ? levels.fv25 * (1 - mos / 100) : null;
   const impliedGrowth = eps > 0 && price > 0 && basePe > 0 ? (Math.pow(price / (eps * basePe), 1 / 5) - 1) * 100 : null;
   const growthSource = m.epsGrowth5y != null ? "reported 5-year EPS CAGR" : m.epsGrowth3y != null ? "reported 3-year EPS CAGR" : m.growthBasis ?? "editable analyst assumption";
   const reportSource = m.provenance?.financials;
   const priceSource = m.provenance?.marketPrice;
-  const peerCheck = m.research?.groups?.find(group => group.id === "valuation")?.items?.find(item => item.id === "peers");
 
   if (!m) return null;
   // A re-rated compounder leads with the growth its price implies (the
@@ -111,15 +108,10 @@ export default function ValuationExplorer({ metrics: m, price, levels, mosPct, e
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 9, marginTop: 14 }}>
         {rerated && impliedCard}
         <div style={{ padding: 12, background: "var(--s1)", border: "1px solid var(--bdr)", borderRadius: 9 }}>
-          <div style={{ fontSize: 11, color: "var(--t3)" }}>Multiple used for the price levels</div>
+          <div style={{ fontSize: 11, color: "var(--t3)" }}>Today's fair value</div>
           <div style={{ marginTop: 4, fontSize: 18, color: "var(--t1)", fontWeight: 700, ...mono }}>{money(levels?.fv25)}</div>
           <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 4 }}>₹{eps.toFixed(2)} normalized EPS × {historicalPe.toFixed(1)}×</div>
           <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 3 }}>{m.valuationMultipleBasis ?? (m.medianPe != null ? `5-year median annual P/E (${m.peYears} usable years)` : "P/E reference")}</div>
-        </div>
-        <div style={{ padding: 12, background: "var(--s1)", border: "1px solid var(--bdr)", borderRadius: 9 }}>
-          <div style={{ fontSize: 11, color: "var(--t3)" }}>Margin-of-safety price</div>
-          <div style={{ marginTop: 4, fontSize: 18, color: "var(--t1)", fontWeight: 700, ...mono }}>{money(safePrice)}</div>
-          <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 4 }}>{money(levels?.fv25)} × (1 − {mos.toFixed(1)}%); based on current normalized EPS, before growth</div>
         </div>
         <div style={{ padding: 12, background: "var(--s1)", border: "1px solid var(--bdr)", borderRadius: 9 }}>
           <div style={{ fontSize: 11, color: "var(--t3)" }}>Reported free-cash-flow yield</div>
@@ -139,9 +131,6 @@ export default function ValuationExplorer({ metrics: m, price, levels, mosPct, e
       <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 9, lineHeight: 1.5 }}>
         Source: {reportSource?.source ?? "NSE financial filings"}, {reportSource?.scope ?? "scope not stated"} results for FY ending {reportSource?.period ?? m.fyEnd ?? "—"}{reportSource?.filedAt ? ` (filed ${reportSource.filedAt})` : ""}. Price: {priceSource?.source ?? "available market price"}{priceSource?.date ? ` dated ${priceSource.date}` : ""}. Historical P/E uses {m.provenance?.historicalPe?.usableYears ?? m.peYears ?? 0} usable years.
       </div>
-      {m.medianPe != null && <div style={{ fontSize: 11, color: "var(--t2)", background: "var(--s1)", border: "1px solid var(--bdr)", borderRadius: 8, padding: "9px 11px", marginTop: 9, lineHeight: 1.5 }}>
-        <strong>Two different comparisons:</strong> {m.medianPe.toFixed(1)}× is this company's own historical median; price levels use {m.valuationMultipleBasis ?? (peerCheck?.reason ? peerCheck.reason : "the available peer reference")}. NSE sectors can include different industries. The resulting level is an estimate, not a standalone price target.
-      </div>}
 
       {expanded && (
         <div style={{ marginTop: 16 }}>

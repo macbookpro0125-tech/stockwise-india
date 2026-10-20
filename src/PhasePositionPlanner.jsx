@@ -62,7 +62,7 @@ export default function PhasePositionPlanner({ levels }) {
         <Calculator size={18} style={{ color: "var(--accent)", marginTop: 2, flexShrink: 0 }} />
         <div>
           <h3 id="phase-position-title" style={{ fontSize: 14.5, fontWeight: 650, color: "var(--t1)", margin: 0 }}>Position sizing worksheet</h3>
-          <p style={{ fontSize: 11.5, lineHeight: 1.5, color: "var(--t3)", margin: "3px 0 0" }}>Illustrates an equal cash split across the three model levels. Enter your own capital and, optionally, the maximum loss you choose.</p>
+          <p style={{ fontSize: 11.5, lineHeight: 1.5, color: "var(--t3)", margin: "3px 0 0" }}>Illustrates an equal cash split across the three model levels (their prices are in the model price levels below). Enter your own capital and, optionally, the maximum loss you choose.</p>
         </div>
       </div>
 
@@ -74,12 +74,11 @@ export default function PhasePositionPlanner({ levels }) {
       {result && (
         <>
           <div style={{ overflowX: "auto", marginTop: 12 }}>
-            <table style={{ width: "100%", minWidth: 470, borderCollapse: "collapse", fontSize: 11.5 }}>
-              <thead><tr>{["Model level", "Price", "Cash budget", "Illustrative shares", "Amount used"].map((label, index) => <th key={label} style={{ textAlign: index === 0 ? "left" : "right", padding: "7px 6px", color: "var(--t3)", fontWeight: 550, borderBottom: "1px solid var(--bdr2)", whiteSpace: "nowrap" }}>{label}</th>)}</tr></thead>
+            <table style={{ width: "100%", minWidth: 360, borderCollapse: "collapse", fontSize: 11.5 }}>
+              <thead><tr>{["Model level", "Cash budget", "Illustrative shares", "Amount used"].map((label, index) => <th key={label} style={{ textAlign: index === 0 ? "left" : "right", padding: "7px 6px", color: "var(--t3)", fontWeight: 550, borderBottom: "1px solid var(--bdr2)", whiteSpace: "nowrap" }}>{label}</th>)}</tr></thead>
               <tbody>{result.tranches.map((row, index) => (
                 <tr key={index}>
                   <td style={{ padding: "8px 6px", color: "var(--t1)", borderBottom: "1px solid var(--bdr)" }}>Level {index + 1}</td>
-                  <td style={{ padding: "8px 6px", textAlign: "right", color: "var(--t1)", borderBottom: "1px solid var(--bdr)", ...mono }}>{money(row.entry)}</td>
                   <td style={{ padding: "8px 6px", textAlign: "right", color: "var(--t2)", borderBottom: "1px solid var(--bdr)", ...mono }}>{money(row.budget)}</td>
                   <td style={{ padding: "8px 6px", textAlign: "right", color: "var(--t1)", borderBottom: "1px solid var(--bdr)", ...mono }}>{row.shares.toLocaleString("en-IN")}</td>
                   <td style={{ padding: "8px 6px", textAlign: "right", color: "var(--t1)", borderBottom: "1px solid var(--bdr)", ...mono }}>{money(row.shares * row.entry)}</td>

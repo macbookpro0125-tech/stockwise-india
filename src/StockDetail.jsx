@@ -104,52 +104,10 @@ function PeHistoryTable({ m }) {
       </div>
       <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 8, lineHeight: 1.5 }}>
         {m.medianPe != null
-          ? <>Median of {m.peYears} annual observations: <strong style={{ color: "var(--t1)" }}>{m.medianPe.toFixed(1)}×</strong>. The price levels use it, capped at twice the sector's median P/E if it runs higher.</>
+          ? <>The price levels use the median of these {m.peYears} years (in the Overview's key figures), capped at twice the sector's median P/E if it runs higher.</>
           : <>Only {m.peYears} usable annual observations — there is not enough history for a median.</>}
         {m.epsJump && <> Median EPS of the same years: <strong style={{ color: "var(--t1)" }}>₹{m.epsJump.usualEps.toFixed(2)}</strong> — the usual level, used instead of {fyLabel(m.fyEnd)}'s ₹{m.epsJump.eps.toFixed(2)}.</>}
       </div>
-    </div>
-  );
-}
-
-function RangeWidget({ lo, hi, price }) {
-  if (!lo && !hi) return null;
-  const hasCmp = price > 0 && lo && hi && hi > lo;
-  const pct = hasCmp ? Math.min(98, Math.max(2, ((price - lo) / (hi - lo)) * 100)) : null;
-  const fromLow = hasCmp ? Math.round(((price - lo) / lo) * 100) : null;
-  const belowHigh = hasCmp ? Math.round(((hi - price) / hi) * 100) : null;
-  const zoneLabel = pct == null ? null : pct <= 25 ? "Near 52W Low — value zone" : pct <= 65 ? "Mid-range" : "Near 52W High";
-  const zoneBg = pct == null ? "var(--card2)" : pct <= 25 ? "var(--green-dim)" : pct <= 65 ? "var(--yellow-dim)" : "var(--red-dim)";
-  const zoneClr = pct == null ? "var(--t3)" : pct <= 25 ? "var(--green)" : pct <= 65 ? "var(--yellow)" : "var(--red)";
-  return (
-    <div style={{ border: "1px solid var(--bdr2)", borderRadius: 10, padding: "16px 20px", marginBottom: 12, background: "var(--s2)" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 10 }}>
-        <div>
-          <div style={{ fontSize: 11, color: "var(--t3)", fontWeight: 500, marginBottom: 1 }}>Low</div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: "var(--t1)" }}>{lo ? lo.toLocaleString("en-IN") : "—"}</div>
-        </div>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: "var(--t2)", marginBottom: 1 }}>52W Range</div>
-          {zoneLabel && <span style={{ fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 20, background: zoneBg, color: zoneClr }}>{zoneLabel}</span>}
-        </div>
-        <div style={{ textAlign: "right" }}>
-          <div style={{ fontSize: 11, color: "var(--t3)", fontWeight: 500, marginBottom: 1 }}>High</div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: "var(--t1)" }}>{hi ? hi.toLocaleString("en-IN") : "—"}</div>
-        </div>
-      </div>
-      <div style={{ position: "relative", paddingBottom: pct != null ? 18 : 4 }}>
-        <div style={{ height: 10, borderRadius: 5, background: "linear-gradient(to right, #d32f2f, #f4511e, #fb8c00, #fdd835, #aed136, #43a047, #1b5e20)" }} />
-        {pct != null && (
-          <div style={{ position: "absolute", bottom: 0, left: `calc(${pct}% - 7px)`, width: 0, height: 0, borderLeft: "7px solid transparent", borderRight: "7px solid transparent", borderBottom: "12px solid var(--t1)" }} />
-        )}
-      </div>
-      {hasCmp && (
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginTop: 6 }}>
-          <span style={{ color: "var(--red)", fontWeight: 600 }}>{fromLow >= 0 ? `+${fromLow}% above low` : "Below 52W Low"}</span>
-          <span style={{ fontWeight: 700, color: "var(--t1)" }}>{fmtRs(price)}</span>
-          <span style={{ color: "var(--green)", fontWeight: 600 }}>{belowHigh > 0 ? `${belowHigh}% below high` : "At/above 52W High"}</span>
-        </div>
-      )}
     </div>
   );
 }
@@ -269,6 +227,13 @@ function ShareholdingPanel({ symbol }) {
     api.panel(symbol, "shareholding").then(d => { if (!cancelled) setQuarters(d.quarters); }).catch(() => { if (!cancelled) setQuarters([]); });
     return () => { cancelled = true; };
   }, [symbol]);
+  // The latest quarter and the change are the table's last columns: on a
+  // phone the table opens scrolled to them, not to the oldest quarter
+  const tableRef = useRef(null);
+  useEffect(() => {
+    const el = tableRef.current;
+    if (el) el.scrollLeft = el.scrollWidth;
+  }, [quarters]);
   if (!quarters?.length) return null;
 
   const defs = [
@@ -292,23 +257,20 @@ function ShareholdingPanel({ symbol }) {
         {segments.map(({ key, color }) => <div key={key} style={{ flex: latest[key], background: color, minWidth: latest[key] > 1 ? 2 : 0 }} />)}
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 18px", marginBottom: quarters.length > 1 ? 14 : 0 }}>
-        {segments.map(({ label, key, color }) => {
-          const chg = change(key);
-          return (
-            <span key={key} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "var(--t2)" }}>
-              <span style={{ width: 9, height: 9, borderRadius: "50%", background: color, display: "inline-block", flexShrink: 0 }} />
-              {label} <strong style={{ color: "var(--t1)" }}>{latest[key]}%</strong>
-              {chg != null && chg !== 0 && <span style={{ fontSize: 10, fontWeight: 600, color: chg > 0 ? "var(--green)" : "var(--red)" }}>{chg > 0 ? "+" : ""}{chg}%</span>}
-            </span>
-          );
-        })}
+        {/* The bar's key; with a table below, the figures are in it, not here too */}
+        {segments.map(({ label, key, color }) => (
+          <span key={key} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "var(--t2)" }}>
+            <span style={{ width: 9, height: 9, borderRadius: "50%", background: color, display: "inline-block", flexShrink: 0 }} />
+            {label}{quarters.length === 1 && <> <strong style={{ color: "var(--t1)" }}>{latest[key]}%</strong></>}
+          </span>
+        ))}
       </div>
       {quarters.length > 1 && (
-        <div style={{ overflowX: "auto" }}>
+        <div ref={tableRef} style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
             <thead>
               <tr>
-                <th style={{ textAlign: "left", padding: "6px 8px", color: "var(--t3)", fontWeight: 600, borderBottom: "1px solid var(--bdr2)" }}></th>
+                <th style={{ textAlign: "left", padding: "6px 8px", color: "var(--t3)", fontWeight: 600, borderBottom: "1px solid var(--bdr2)", position: "sticky", left: 0, background: "var(--s2)" }}></th>
                 {quarters.map(q => <th key={q.period} style={{ textAlign: "right", padding: "6px 8px", color: "var(--t3)", fontWeight: 500, borderBottom: "1px solid var(--bdr2)", whiteSpace: "nowrap" }}>{period(q)}</th>)}
                 <th style={{ textAlign: "right", padding: "6px 8px", color: "var(--t3)", fontWeight: 600, borderBottom: "1px solid var(--bdr2)" }}>Change</th>
               </tr>
@@ -319,7 +281,7 @@ function ShareholdingPanel({ symbol }) {
                 const chg = change(key);
                 return (
                   <tr key={key}>
-                    <td style={{ padding: "6px 8px", color: "var(--t1)", fontWeight: 500, borderBottom: "1px solid var(--bdr2)", whiteSpace: "nowrap" }}>
+                    <td style={{ padding: "6px 8px", color: "var(--t1)", fontWeight: 500, borderBottom: "1px solid var(--bdr2)", whiteSpace: "nowrap", position: "sticky", left: 0, background: "var(--s2)" }}>
                       <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: color, marginRight: 6, verticalAlign: "middle" }} />{label}
                     </td>
                     {quarters.map(q => (
@@ -724,14 +686,9 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         <div className="sd-note">
           <CircleCheck size={14} strokeWidth={2.2} style={{ verticalAlign: "-2px", marginRight: 6, color: "var(--green)" }} /><strong>Financials from NSE filings</strong> — EPS and valuation inputs use {data.annual?.scope?.toLowerCase() ?? "reported"} results for the year ended {longDate(m.fyEnd)}{m.provenance?.financials?.filedAt ? `, filed ${longDate(m.provenance.financials.filedAt)}` : ""}. The price's source and date are shown under it.{" "}
           <a href={`https://www.nseindia.com/get-quotes/equity?symbol=${encodeURIComponent(data.symbol)}`} target="_blank" rel="noreferrer" style={{ color: "var(--accent)", fontWeight: 500, whiteSpace: "nowrap" }}>Open on NSE <ArrowUpRight size={13} style={{ verticalAlign: "-2px" }} /></a>
-          {model === "earnings" && (
-            <div className="hide-phone" style={{ marginTop: 4, color: "var(--t2)" }}>
-              The price levels use a P/E of {m.valuationPe?.toFixed(1) ?? m.medianPe?.toFixed(1) ?? "—"}×{m.valuationMultipleBasis ? <>: <em>{m.valuationMultipleBasis}</em></> : null}. Today's P/E on the {m.peTtm != null ? "last four quarters" : "latest audited year"} is {(m.peTtm ?? m.peFy)?.toFixed(1) ?? "—"}×. Override the multiple above if needed.
-            </div>
-          )}
           {onBook && (
             <div className="hide-phone" style={{ marginTop: 4, color: "var(--t2)" }}>
-              P/B is what its <em>{m.valuation.roeBasis === "recent" ? "recent return on equity" : "through-cycle return on equity"}</em> supports ({m.valuation.justifiedPb.toFixed(2)}×; today {price > 0 && m.valuation.bookPerShare > 0 ? (price / m.valuation.bookPerShare).toFixed(2) : "—"}× on reported book) — override with your own view if needed.
+              P/B is what its <em>{m.valuation.roeBasis === "recent" ? "recent return on equity" : "through-cycle return on equity"}</em> supports ({m.valuation.justifiedPb.toFixed(2)}×; today's is in the key figures) — override with your own view if needed.
             </div>
           )}
           {m.epsRebased && (
@@ -833,7 +790,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
             )}
           </div>
 
-          {model === "earnings" && <div data-tour="valuation"><ValuationExplorer key={`valuation-${symbol}`} metrics={m} price={price} levels={levels} mosPct={mosPct} epsInput={eps} peInput={pe} /></div>}
+          {model === "earnings" && <div data-tour="valuation"><ValuationExplorer key={`valuation-${symbol}`} metrics={m} price={price} levels={levels} epsInput={eps} peInput={pe} /></div>}
           {onBook && (
             <div data-tour="valuation" style={{ ...card, fontSize: 12, color: "var(--t2)", lineHeight: 1.55 }}>
               <strong style={{ color: "var(--t1)" }}>Cash-flow (DCF) value and free-cash-flow yield: not meaningful for lenders.</strong> A bank's operating cash flow is deposits and loans moving, not cash the business generates.
@@ -868,7 +825,6 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
             </div>
           </div>
 
-          <RangeWidget lo={m.low52w} hi={m.high52w} price={price} />
         </>
       )}
 
@@ -888,11 +844,11 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
                   <div style={{ fontSize: 19, fontWeight: 700, color: positionTone, letterSpacing: "-0.02em" }}>{position.label}</div>
                 </div>
               </div>
-              <p style={{ fontSize: 13, color: "var(--t1)", margin: 0, lineHeight: 1.6 }}>{position.detail}</p>
+              <p style={{ fontSize: 13, color: "var(--t1)", margin: 0, lineHeight: 1.6 }}>{position.gist || position.detail}</p>
               {/* Valuing at a historical P/E makes this common for de-rated stocks */}
               {model === "earnings" && (position.zone === "below-stop" || position.zone === "phase3") && m.peFy && Number(pe) > m.peFy * 1.3 && (
                 <p style={{ fontSize: 12, color: "var(--t2)", margin: "8px 0 0", lineHeight: 1.6 }}>
-                  The latest audited-year P/E is {m.peFy.toFixed(1)} against the {Number(pe).toFixed(1)} multiple the levels use. Today's TTM P/E is {m.peTtm?.toFixed(1) ?? "—"}. Check whether the historical multiple still applies.
+                  Today's P/E (in the key figures) is well under the multiple the levels use. Check whether the historical multiple still applies.
                 </p>
               )}
               <p style={{ fontSize: 11, color: "var(--t3)", margin: "8px 0 0" }}>These model reference levels come from the {onBook ? "book, P/B" : onCycle ? "mid-cycle EPS, multiple" : "EPS, P/E"}, growth and margin-of-safety inputs above. They describe price location; they are not trade instructions.</p>
@@ -933,7 +889,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
           {levels && (
             <details style={{ ...card, padding: 0 }}>
               <summary style={{ cursor: "pointer", padding: "16px 18px", color: "var(--t1)", fontSize: 13, fontWeight: 600, listStyle: "none" }}>
-                {onBook ? "Book" : onCycle ? "Mid-cycle EPS" : "EPS"} and fair-value breakdown · {fmtRs(levels.fv25)} from {onBook ? "book" : onCycle ? "mid-cycle EPS" : "EPS"} × {pe || "—"}× {onBook ? "P/B" : onCycle ? "multiple" : "P/E"}
+                {onBook ? "Book" : onCycle ? "Mid-cycle EPS" : "EPS"} and fair value, year by year
                 {usingCustomInputs && <span style={{ fontSize: 11, marginLeft: 8, color: "var(--accent)", fontWeight: 500 }}>(custom inputs)</span>}
               </summary>
               <div className="ss-grid-fv" style={{ padding: "0 18px 18px" }}>
@@ -941,7 +897,6 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
                   { label: onBook ? "Book/share less net NPA" : onCycle ? "Mid-cycle EPS" : usualEpsShown ? "Usual EPS" : `${fyLabel(m.fyEnd)} EPS`, val: eps ? `₹${Math.round(Number(eps))}` : "—", sub: `FV: ${fmtRs(levels.fv25)}` },
                   { label: `${fyLabel(m.fyEnd, 1)} ${onBook ? "book" : onCycle ? "mid-cycle EPS" : "EPS"} (est.)`, val: levels.e26 ? `₹${levels.e26}` : "—", sub: `FV: ${fmtRs(levels.fv26)}` },
                   { label: `${fyLabel(m.fyEnd, 2)} ${onBook ? "book" : onCycle ? "mid-cycle EPS" : "EPS"} (est.)`, val: levels.e27 ? `₹${levels.e27}` : "—", sub: `FV: ${fmtRs(levels.fv27)}` },
-                  { label: "Reference level 1", val: fmtRs(levels.safeBuy), sub: `Today's modeled value × ${100 - Number(mosPct || 10)}%`, hi: true },
                 ].map(fc => (
                   <div key={fc.label} style={{ background: "var(--s1)", borderRadius: 8, padding: 12, border: fc.hi ? "1px solid var(--green)" : "1px solid var(--bdr)" }}>
                     <div style={{ fontSize: 11, color: "var(--t3)", marginBottom: 4 }}>{fc.label}</div>
@@ -961,7 +916,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
 
       {m && <div id="sec-financials" className="ss-section"><h2 className="sd-h2">Financials. <span>Its results, year by year.</span></h2><FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} /></div>}
       {m && <div id="sec-health" className="ss-section"><h2 className="sd-h2">Financial health. <span>What it owns, what it owes, and how its debt is covered.</span></h2><StockHealth m={m} /></div>}
-      {m?.dividendRecord && <div id="sec-dividends" className="ss-section"><h2 className="sd-h2">Dividends. <span>What it pays, and what that takes.</span></h2><StockDividends m={m} price={price} /></div>}
+      {m?.dividendRecord && <div id="sec-dividends" className="ss-section"><h2 className="sd-h2">Dividends. <span>What it pays, and what that takes.</span></h2><StockDividends m={m} /></div>}
       <div id="sec-holding" className="ss-section"><h2 className="sd-h2">Holdings. <span>Who owns it, and how that is changing.</span></h2><ShareholdingPanel symbol={data.symbol} /><InsidersPanel symbol={data.symbol} /></div>
       <div id="sec-technicals" className="ss-section"><h2 className="sd-h2">Technicals. <span>The trend in the price.</span></h2><TechnicalPanel ticker={data.symbol} /></div>
 

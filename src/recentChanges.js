@@ -4,7 +4,9 @@
 // price, a close near the 52-week high or low, a change in the promoters'
 // holding — and the board meetings and ex-dates announced for the next two
 // months. It's the page's one list of events (it replaced a separate Events
-// card that repeated half of it). Facts only; nothing here is a signal.
+// card that repeated half of it). Facts only; nothing here is a signal. A
+// figure the page shows elsewhere (the week's change, the 52-week range, the
+// promoters' holding) isn't repeated: the line says what happened.
 
 const DAY = 86400000;
 // shareholding is filed within 21 days of a quarter's end: a quarter that
@@ -13,7 +15,6 @@ const WINDOW = 42, AHEAD = 60, HOLDING_WINDOW = WINDOW + 21;
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const shift = (iso, days) => new Date(Date.parse(`${iso}T00:00:00Z`) + days * DAY).toISOString().slice(0, 10);
 const month = iso => MONTHS[Number(iso.slice(5, 7)) - 1];
-const rupees = n => `₹${Math.round(n).toLocaleString("en-IN")}`;
 const move = (v, what) => `${what} ${v >= 0 ? "up" : "down"} ${Math.abs(v).toFixed(1)}%`;
 const amount = t => [...t.matchAll(/(?:Rs|Re)\.?\s*(\d+(?:\.\d+)?)/gi)].reduce((s, m) => s + Number(m[1]), 0);
 const QUARTER_END = /-(03-31|06-30|09-30|12-31)$/;
@@ -55,14 +56,15 @@ export function recentChanges(m, holding, today) {
   }
 
   const priced = m?.closeDate ?? today;
-  if (m?.ret1w != null && Math.abs(m.ret1w) >= 7) recent.push({ date: priced, kind: "price", text: `The price ${m.ret1w >= 0 ? "rose" : "fell"} ${Math.abs(m.ret1w).toFixed(1)}% over the past week.` });
-  if (m?.close > 0 && m.high52w > 0 && m.close >= m.high52w * 0.98) recent.push({ date: priced, kind: "high", text: `It closed within 2% of its 52-week high of ${rupees(m.high52w)}.` });
-  else if (m?.close > 0 && m.low52w > 0 && m.close <= m.low52w * 1.02) recent.push({ date: priced, kind: "low", text: `It closed within 2% of its 52-week low of ${rupees(m.low52w)}.` });
+  // a week of 7% or more; within 2% of the 52-week high or low
+  if (m?.ret1w != null && Math.abs(m.ret1w) >= 7) recent.push({ date: priced, kind: "price", text: `The price ${m.ret1w >= 0 ? "rose" : "fell"} sharply over the past week.` });
+  if (m?.close > 0 && m.high52w > 0 && m.close >= m.high52w * 0.98) recent.push({ date: priced, kind: "high", text: "It closed near its 52-week high." });
+  else if (m?.close > 0 && m.low52w > 0 && m.close <= m.low52w * 1.02) recent.push({ date: priced, kind: "low", text: "It closed near its 52-week low." });
 
   const quarters = (holding?.promoterHistory ?? []).filter(h => QUARTER_END.test(h.asOfIso ?? "")).sort((a, b) => b.asOfIso.localeCompare(a.asOfIso));
   const [now, before] = quarters;
   if (now && before && now.asOfIso >= shift(today, -HOLDING_WINDOW) && Math.abs(now.pct - before.pct) >= 0.25) {
-    recent.push({ date: now.asOfIso, kind: "promoters", text: `Promoters held ${now.pct.toFixed(2)}% at the end of ${month(now.asOfIso)}, ${now.pct > before.pct ? "up" : "down"} from ${before.pct.toFixed(2)}% at the end of ${month(before.asOfIso)}.` });
+    recent.push({ date: now.asOfIso, kind: "promoters", text: `Promoters' holding ${now.pct > before.pct ? "rose" : "fell"} ${Math.abs(now.pct - before.pct).toFixed(2)} percentage points in the quarter to ${month(now.asOfIso)}.` });
   }
 
   recent.sort((a, b) => b.date.localeCompare(a.date));

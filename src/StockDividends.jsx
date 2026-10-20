@@ -49,7 +49,7 @@ function Bars({ years }) {
   );
 }
 
-export default function StockDividends({ m, price }) {
+export default function StockDividends({ m }) {
   const d = m?.dividendRecord;
   if (!d) return null;
   const years = d.byYear ?? [];
@@ -79,7 +79,7 @@ export default function StockDividends({ m, price }) {
     <section className="sd-card sd-div" aria-label="Dividends">
       <p className="sd-div-lead">
         {pays
-          ? <>It paid <b>{rupees(d.ttm)}</b> a share over the last 12 months{d.yield != null && price > 0 ? <> — a yield of <b>{pct(d.yield, 2)}</b> at {rupees(price)}</> : ""}.</>
+          ? <>It paid <b>{rupees(d.ttm)}</b> a share over the last 12 months.</>
           : <>No dividend in the last 12 months{lastPaid ? <>; it last paid in {fy(lastPaid.fy)}</> : ""}.</>}
       </p>
 

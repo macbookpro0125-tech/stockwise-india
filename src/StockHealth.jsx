@@ -50,7 +50,7 @@ export default function StockHealth({ m }) {
   const balance = m.research?.groups?.find(g => g.id === "balance");
   const verdict = balance?.applicable && balance.score != null && (
     <button type="button" className="sd-health-verdict" onClick={() => openCheck("why-balance")}>
-      The Scorecard rates its balance sheet <b>{balance.score >= 70 ? "strong" : balance.score >= 50 ? "fair" : "weak"} ({Math.round(balance.score)}/100)</b> — see the checks
+      The Scorecard rates its balance sheet <b>{balance.score >= 70 ? "strong" : balance.score >= 50 ? "fair" : "weak"}</b> — see the checks
     </button>
   );
 
@@ -70,13 +70,14 @@ export default function StockHealth({ m }) {
 
   return (
     <section className="sd-card sd-health" aria-label="Financial health">
+      {/* The amounts are in the bars below; the lead says what they add up to */}
       <p className="sd-div-lead">
         {st.cover != null && <>Its short-term assets cover its short-term liabilities <b>{times(st.cover)}</b>{lt.cover != null ? <> and its long-term liabilities <b>{times(lt.cover)}</b></> : ""}. </>}
         {debt.total === 0
-          ? <>It has no debt{debt.cash > 0 ? <>, and {cr(debt.cash)} of cash and liquid investments</> : ""}.</>
+          ? <>It has no debt.</>
           : debt.net <= 0
-            ? <>It holds more cash than debt: <b>{cr(debt.cash)}</b> of cash and liquid investments against {cr(debt.total)} of debt.</>
-            : <>Its debt of <b>{cr(debt.total)}</b> is {cr(debt.net)} more than its cash and liquid investments.</>}
+            ? <>It holds more cash and liquid investments than debt.</>
+            : <>Its debt is <b>{cr(debt.net)}</b> more than its cash and liquid investments.</>}
       </p>
 
       <div className="sd-health-grid">
@@ -94,7 +95,7 @@ export default function StockHealth({ m }) {
             { name: "Debt", parts: [{ name: "borrowings", value: debt.borrowings, tone: "owe" }, { name: "lease liabilities", value: debt.leases, tone: "owe2" }] },
             { name: "Cash and liquid investments", parts: [{ name: "cash", value: debt.cash, tone: "good" }] },
           ]} />
-          {debt.leases > 0 && <p className="sd-foot sd-health-note">Debt includes {cr(debt.leases)} of lease liabilities (the lighter part){debt.borrowings === 0 ? " — it has no borrowings" : ""}.</p>}
+          {debt.leases > 0 && <p className="sd-foot sd-health-note">{debt.borrowings === 0 ? "All of its debt is lease liabilities — it has no borrowings." : <>Debt includes {cr(debt.leases)} of lease liabilities (the lighter part).</>}</p>}
         </div>
       </div>
 
@@ -103,7 +104,7 @@ export default function StockHealth({ m }) {
           <h4 className="sd-glance-h sd-div-h">Borrowings to equity, by year</h4>
           <DeBars points={f.deHistory} />
           {debt.leases > 0 && f.deWithLeases != null && (
-            <p className="sd-foot sd-health-note">Lease liabilities are left out of this chart: the older years' filings don't carry them. With leases, {year}'s debt to equity is {f.deWithLeases.toFixed(2)}.</p>
+            <p className="sd-foot sd-health-note">Lease liabilities are left out of this chart: the older years' filings don't carry them. The debt to equity in the key figures counts them.</p>
           )}
         </>
       )}

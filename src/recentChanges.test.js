@@ -25,19 +25,22 @@ const holding = { promoterHistory: [{ asOfIso: "2026-09-30", pct: 13.82 }, { asO
   assert.equal(recent[0].date, "2026-10-16");
   assert.equal(recent[0].text, "Results for the September 2026 quarter: sales up 14.2% and profit down 3.4% on a year ago.");
   assert.equal(recent[1].text, "Went ex-dividend: ₹12 a share (record date 15 Oct).");
-  assert.equal(recent[2].text, "Promoters held 13.82% at the end of September, down from 14.38% at the end of June.");
+  // the holding itself is in Holdings; here, only how much it moved
+  assert.equal(recent[2].text, "Promoters' holding fell 0.56 percentage points in the quarter to September.");
   assert.deepEqual(upcoming.map(u => u.text), ["Board meeting: fund raising.", "Ex-bonus 1:1."], "announced dates up to two months ahead");
   console.log("ok: results, an ex-dividend date with its record date and a promoter change, newest first; what's announced for the next two months");
 }
 {
   const { recent } = recentChanges({ ...base, quarters: [], events: [], ret1w: -11.4, close: 990 }, null, TODAY);
+  // the week's change and the 52-week range are in the Overview, so not repeated here
   assert.deepEqual(recent.map(r => r.text), [
-    "The price fell 11.4% over the past week.",
-    "It closed within 2% of its 52-week low of ₹980.",
+    "The price fell sharply over the past week.",
+    "It closed near its 52-week low.",
   ]);
   const high = recentChanges({ ...base, quarters: [], events: [], ret1w: 8, close: 1720 }, null, TODAY).recent;
-  assert.ok(high.some(r => r.text === "The price rose 8.0% over the past week.") && high.some(r => r.text === "It closed within 2% of its 52-week high of ₹1,728."));
-  console.log("ok: a big week, and a close near the 52-week high or low");
+  assert.ok(high.some(r => r.text === "The price rose sharply over the past week.") && high.some(r => r.text === "It closed near its 52-week high."));
+  assert.ok(!recent.concat(high).some(r => /%|₹/.test(r.text)), "no figure the page already shows");
+  console.log("ok: a big week, and a close near the 52-week high or low, without repeating the figures");
 }
 {
   // Old news isn't news: results filed in July, a bonus in July, a tiny promoter change

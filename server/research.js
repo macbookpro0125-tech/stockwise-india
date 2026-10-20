@@ -318,7 +318,8 @@ const BALANCE = {
         const h = m.history[0];
         if (!finite(h.liquidCr) || !finite(h.debtCr)) return missing("Cash or debt isn't in the latest balance sheet.");
         const netDebt = h.debtCr + (h.leasesCr ?? 0) - h.liquidCr;
-        if (netDebt <= 0) return checked(100, netDebt, `Net cash ${crore(-netDebt)}`, `Net cash: ${crore(h.liquidCr)} of cash and liquid investments against ${crore(h.debtCr + (h.leasesCr ?? 0))} of debt and leases.`);
+        // the cash and debt themselves are in Financial health, so not repeated here
+        if (netDebt <= 0) return checked(100, netDebt, `Net cash ${crore(-netDebt)}`, "Net cash: more cash and liquid investments than debt and leases.");
         if (!(h.operatingProfitCr > 0)) return missing("Debt with no operating profit to cover it — the ratio isn't meaningful (it counts in the risk score instead).");
         const ratio = netDebt / h.operatingProfitCr;
         const score = band(ratio, [[0, 100], [1, 80], [2, 60], [3, 35], [4, 15], [5, 0]]);
@@ -418,8 +419,8 @@ const GOVERNANCE = {
         const since = new Date(`${then.asOfIso}T00:00:00Z`).toLocaleString("en-IN", { month: "short", year: "numeric", timeZone: "UTC" });
         const score = band(delta, [[-20, 0], [-12, 20], [-7, 45], [-3, 75], [-1, 100]]);
         return checked(score, delta, `${delta >= 0 ? "+" : ""}${delta.toFixed(1)} pts`, delta >= -1
-          ? `Promoters hold ${pct(latest.pct)}, ${delta >= 0.05 ? `up from ${pct(then.pct)}` : "about the same as"} in ${since}.`
-          : `Promoters cut their holding from ${pct(then.pct)} to ${pct(latest.pct)} since ${since} — ${word(score)}.`);
+          ? (delta >= 0.05 ? `Promoters' holding is up from ${pct(then.pct)} in ${since}.` : `Promoters' holding is about the same as in ${since}.`)
+          : `Promoters cut their holding by ${(-delta).toFixed(1)} points since ${since}, from ${pct(then.pct)} — ${word(score)}.`);
       },
     },
     {

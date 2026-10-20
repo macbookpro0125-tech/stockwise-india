@@ -350,6 +350,12 @@ const levels = { fv25: 1000, p1: 900, p2: 810, p3: 720, stopLoss: 670, target: 1
 const zones = [[650, "below-stop"], [700, "phase3"], [800, "phase2"], [880, "phase1"], [950, "above-phase1"], [1350, "above-upper"], [1600, "far-above"]];
 for (const [p, z] of zones) assert(pricePosition(p, levels).zone === z, `₹${p} sits in the ${z} zone`);
 assert(zones.every(([p]) => !/\b(BUY|SELL|buy|sell|deploy|exit)/i.test(JSON.stringify(pricePosition(p, levels)))), "price positions never say buy, sell, deploy or exit");
+// The company page lists the price and every level just below the zone, so
+// its line (gist) repeats none of them — only how far off they are
+assert(pricePosition(650, levels).gist === "35% below today's fair value.", "the stop-loss zone's gist is the fair-value gap");
+assert(pricePosition(950, levels).gist === "6% above reference level 1 and 37% under the upper level — 5% below today's fair value.", "above level 1, the gist keeps the distances");
+assert(zones.every(([p]) => !/₹/.test(pricePosition(p, levels).gist)), "the gist names no price or level");
+assert(pricePosition(650, levels).detail === "₹650 is under the stop-loss level of ₹670 — 35% below today's fair value of ₹1,000.", "the full line stays for the watchlist, portfolio and export");
 
 // ── Valuation inputs (17–19 Oct 2026: ChatGPT's changes, narrowed) ──
 // P/E is the last four quarters' where all four are filed, else the year's

@@ -988,11 +988,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .sd-price { display: flex; flex-direction: column; gap: var(--sp-1); margin-top: var(--sp-5); }
 .sd-price strong { font-size: var(--fs-price); font-weight: 700; letter-spacing: -0.03em; line-height: 1; color: var(--t1); font-variant-numeric: tabular-nums; }
 .sd-price span { font-size: var(--fs-xs); color: var(--t3); }
-.sd-returns { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-4); }
-.sd-returns span { display: inline-flex; align-items: center; gap: var(--sp-1); padding: var(--sp-1) var(--sp-2); border-radius: var(--r-xs); font-size: var(--fs-xs); font-weight: 600; font-variant-numeric: tabular-nums; }
-.sd-returns em { font-style: normal; font-weight: 500; color: var(--t3); margin-right: 2px; }
-.sd-returns .up { color: var(--green); background: var(--green-dim); }
-.sd-returns .down { color: var(--red); background: var(--red-dim); }
 .sd-actions { display: grid; grid-template-columns: 1fr auto; gap: var(--sp-2); margin-top: var(--sp-5); }
 .sd-action { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2); height: var(--tab-h); padding: 0 var(--sp-4); border-radius: var(--r-md); border: 1px solid var(--bdr2); background: var(--s2); color: var(--t1); font: 600 var(--fs-sm)/1 var(--font); cursor: pointer; transition: background 150ms, border-color 150ms; }
 .sd-action:first-child { background: var(--t1); border-color: var(--t1); color: var(--bg); }
@@ -1467,10 +1462,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .sd.ap .sd-price { margin-top: 24px; }
 .sd.ap .sd-price strong { font-size: 56px; font-weight: 700; letter-spacing: -0.045em; }
 .sd.ap .sd-price span { font-size: 14px; }
-.sd.ap .sd-returns { gap: 26px; margin-top: 20px; }
-.sd.ap .sd-returns span { flex-direction: column; align-items: flex-start; gap: 2px; padding: 0; background: none; }
-.sd.ap .sd-returns b { font-size: 19px; font-weight: 600; letter-spacing: -0.01em; }
-.sd.ap .sd-returns em { order: 2; margin: 0; font-size: 12px; font-weight: 500; color: var(--t3); }
 .sd.ap .sd-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 14px 24px; margin-top: 26px; }
 .sd.ap .sd-action { transition: background 200ms, transform 100ms ease-out; }
 .sd.ap .sd-action:first-child { height: 44px; padding: 0 22px; border: 0; border-radius: 980px; background: var(--accent); color: var(--on-accent); font-size: 15px; font-weight: 500; }
