@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { Plus, Ellipsis, Search, ChevronRight, ChevronDown, TrendingUp, CircleDollarSign, Coins, Activity, Landmark, Sparkles, ArrowRight } from "lucide-react";
+import { Plus, Ellipsis, Search, ChevronRight, TrendingUp, CircleDollarSign, Coins, Activity, Landmark, Sparkles, ArrowRight } from "lucide-react";
 import { api } from "./api.js";
 import { PresetIcon } from "./icons.jsx";
 import { KINDS, kindOf } from "./strategyAbout.js";
+import { cardName } from "./stockName.js";
 import StrategyMark, { markColor } from "./StrategyMarks.jsx";
 import StrategyCard from "./StrategyCard.jsx";
 import { strategiesStore } from "./accountData.js";
@@ -77,7 +78,6 @@ export const showStrategiesOfKind = kind => { kindOnOpen = kind; };
 // what it looks for and its first rules as chips, with how many stocks match;
 // an ad card after the third strategy and then every sixth, in the store app
 const AD_FIRST = 3, AD_EVERY = 6;
-const PHONE_RULES = 3;
 
 // layout: "strip" — one scrolling row (the original); "stack" — a phone's list;
 // "grid" — Discover's first page on a computer: big cards with the rules, and
@@ -98,7 +98,6 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
   const [menuOpen, setMenuOpen] = useState(null);
   const [renaming, setRenaming] = useState(null);
   const [renameValue, setRenameValue] = useState("");
-  const [expandedRules, setExpandedRules] = useState({});
   const strategyRailDrag = useRef(null);
   const suppressStrategyClick = useRef(false);
 
@@ -154,7 +153,8 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
     const worker = async () => {
       for (let p = queue.shift(); p && !stop; p = queue.shift()) {
         try {
-          const res = await api.screen({ filters: p.filters, countOnly: true, top: grid ? 5 : 0 });
+          // the grid rolls through five; a phone's card shows the first
+          const res = await api.screen({ filters: p.filters, countOnly: true, top: grid ? 5 : 1 });
           if (!stop) { setCounts(c => ({ ...c, [p.id]: res.matched })); if (res.top) setTops(t => ({ ...t, [p.id]: res.top })); }
         } catch {
           if (!stop) setFailed(f => ({ ...f, [p.id]: true }));
@@ -343,14 +343,15 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
           )}
           {shown.map((p, i) => {
             const count = counts[p.id];
-            const rules = presetRules(p, meta);
-            const rulesExpanded = !!expandedRules[p.id];
-            const rulesId = `ph-rules-${encodeURIComponent(p.id)}`;
             const ad = i + 1 === AD_FIRST || (i + 1 > AD_FIRST && (i + 1 - AD_FIRST) % AD_EVERY === 0);
             return (
               <div key={p.id} className="ph-card-wrap">
                 <div className={`ph-card${p.id === activePresetId ? " is-active" : ""}`} style={{ "--hue": hueOf(p) }}>
                   <button type="button" className="ph-card-select" aria-label={`View matching stocks for ${p.name}`} aria-pressed={p.id === activePresetId} onClick={() => onSelect(p)} />
+                  {/* Laid out as the stock cards are (20 Oct 2026): the mark,
+                      name and line; then a tray of two figures — how many
+                      stocks pass today, and the highest by quality. The rules
+                      are on the strategy's ⓘ page once it's open. */}
                   <div className="ph-card-content">
                     <span className="ph-card-top">
                       <span className="ph-mark" aria-hidden="true"><StrategyMark preset={p} size={26} /></span>
@@ -358,25 +359,24 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
                         <span className="ph-card-name">{p.name}</span>
                         <span className="ph-card-about">{p.description}</span>
                       </span>
+                      <ChevronRight className="ph-card-go" size={20} aria-hidden="true" />
                     </span>
-                    {rules.length > 0 && (
-                      <span className="ph-rules" id={rulesId}>
-                        {rules.slice(0, rulesExpanded ? rules.length : PHONE_RULES).map((r, ruleIndex) => <span key={`${ruleIndex}-${r}`} className="ph-rule">{r}</span>)}
-                        {rules.length > PHONE_RULES && (
-                          <button type="button" className="ph-rule ph-rule-more" aria-expanded={rulesExpanded}
-                            aria-controls={rulesId} aria-label={rulesExpanded ? `Show fewer rules for ${p.name}` : `Show ${rules.length - PHONE_RULES} more rules for ${p.name}`}
-                            onClick={() => setExpandedRules(current => ({ ...current, [p.id]: !current[p.id] }))}>
-                            {rulesExpanded ? "Show less" : `+${rules.length - PHONE_RULES}`}<ChevronDown size={14} aria-hidden="true" />
-                          </button>
-                        )}
+                    <span className="ph-card-tray">
+                      <span className="ph-tray-cell">
+                        <span className="ph-stat-k">Stocks today</span>
+                        <span className="ph-stat-v">
+                          {count == null ? (failed[p.id] ? "—" : <span className="sc-skel" style={{ width: 36 }} aria-hidden="true" />) : count.toLocaleString("en-IN")}
+                          {p.newMatches > 0 && <span className="strategy-new-count" title="New stocks since your last check">{p.newMatches} new</span>}
+                        </span>
                       </span>
-                    )}
-                    <span className="ph-card-foot">
-                      <span className="ph-card-count">
-                        {count == null ? (failed[p.id] ? null : <span className="sc-skel" style={{ width: 44 }} aria-hidden="true" />) : <><b>{count.toLocaleString("en-IN")}</b> {count === 1 ? "stock" : "stocks"} today</>}
-                        {p.newMatches > 0 && <span className="strategy-new-count" title="New stocks since your last check">{p.newMatches} new</span>}
+                      <span className="ph-tray-cell ph-tray-wide">
+                        <span className="ph-stat-k">Highest quality</span>
+                        <span className="ph-stat-v ph-tray-top">
+                          {tops[p.id]?.[0]
+                            ? <><span className="ph-tray-name">{cardName(tops[p.id][0].name)}</span>{tops[p.id][0].quality != null && <small>{tops[p.id][0].quality}</small>}</>
+                            : count === 0 ? "—" : failed[p.id] ? "—" : <span className="sc-skel" style={{ width: 96 }} aria-hidden="true" />}
+                        </span>
                       </span>
-                      <ChevronRight size={18} aria-hidden="true" />
                     </span>
                   </div>
                 </div>

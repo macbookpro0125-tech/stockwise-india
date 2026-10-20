@@ -2153,6 +2153,16 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 .ph-card-name { font-size: 17.5px; font-weight: 650; line-height: 1.25; letter-spacing: -0.02em; color: var(--t1); }
 .ph-card-wrap:has(.ph-card-menu) .ph-card-name { padding-right: 34px; }
 .ph-card-about { font-size: 14px; line-height: 1.42; color: var(--t2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.ph-card-go { flex-shrink: 0; margin-top: 2px; color: var(--t3); }
+/* The strategy's figures in a tray, as on the stock cards */
+.ph-card-tray { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.6fr); padding: 8px 0; border-radius: 14px; background: var(--s1); }
+.ph-tray-cell { min-width: 0; padding: 0 12px; }
+.ph-tray-cell + .ph-tray-cell { border-left: 1px solid var(--bdr); }
+.ph-card-tray .ph-stat-k { display: block; font-size: 11.5px; font-weight: 500; color: var(--t3); white-space: nowrap; }
+.ph-card-tray .ph-stat-v { display: flex; align-items: baseline; gap: 6px; margin-top: 2px; font-size: 18px; font-weight: 700; letter-spacing: -0.02em; color: var(--t1); font-variant-numeric: tabular-nums; min-width: 0; }
+.ph-tray-top { font-size: 15.5px !important; font-weight: 650 !important; }
+.ph-tray-name { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ph-tray-top small { flex-shrink: 0; padding: 0 6px; border-radius: 6px; font-size: 12px; font-weight: 650; color: var(--green); background: color-mix(in srgb, var(--green) 14%, transparent); }
 .ph-rules { display: flex; gap: 6px; overflow: hidden; -webkit-mask-image: linear-gradient(to right, black calc(100% - 28px), transparent); mask-image: linear-gradient(to right, black calc(100% - 28px), transparent); }
 .ph-rule { flex-shrink: 0; height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--bdr2); color: var(--t2); font-size: 13px; line-height: 28px; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .ph-rules:not(.ph-rules-on) { flex-wrap: wrap; overflow: visible; -webkit-mask-image: none; mask-image: none; }
