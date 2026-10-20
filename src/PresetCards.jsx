@@ -93,6 +93,9 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
   const stacked = layout === "stack";
   const grid = layout === "grid";
   const [counts, setCounts] = useState({});
+  // A count that couldn't be fetched: the card goes without one, not a
+  // loading bar that never ends
+  const [failed, setFailed] = useState({});
   const [tops, setTops] = useState({});
   const [kind, setKind] = useState(() => { const k = kindOnOpen; kindOnOpen = "all"; return k; });
   const [query, setQuery] = useState("");
@@ -151,16 +154,20 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
   useEffect(() => {
     if (!(grid || stacked) || !allPresets.length) return;
     let stop = false;
-    (async () => {
-      for (const p of allPresets) {
-        if (stop) return;
-        if (!Array.isArray(p.filters)) continue;
+    // Four at a time, in order: one after another kept the last strategies
+    // loading for seconds on a phone's connection
+    const queue = allPresets.filter(p => Array.isArray(p.filters));
+    const worker = async () => {
+      for (let p = queue.shift(); p && !stop; p = queue.shift()) {
         try {
           const res = await api.screen({ filters: p.filters, countOnly: true, top: grid ? 5 : 0 });
           if (!stop) { setCounts(c => ({ ...c, [p.id]: res.matched })); if (res.top) setTops(t => ({ ...t, [p.id]: res.top })); }
-        } catch { /* the card just goes without a count */ }
+        } catch {
+          if (!stop) setFailed(f => ({ ...f, [p.id]: true }));
+        }
       }
-    })();
+    };
+    for (let i = 0; i < 4; i++) worker();
     return () => { stop = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [countKey]);
@@ -372,7 +379,7 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
                     )}
                     <span className="ph-card-foot">
                       <span className="ph-card-count">
-                        {count == null ? <span className="sc-skel" style={{ width: 44 }} aria-hidden="true" /> : <><b>{count.toLocaleString("en-IN")}</b> {count === 1 ? "stock" : "stocks"} today</>}
+                        {count == null ? (failed[p.id] ? null : <span className="sc-skel" style={{ width: 44 }} aria-hidden="true" />) : <><b>{count.toLocaleString("en-IN")}</b> {count === 1 ? "stock" : "stocks"} today</>}
                         {p.newMatches > 0 && <span className="strategy-new-count" title="New stocks since your last check">{p.newMatches} new</span>}
                       </span>
                       <ChevronRight size={18} aria-hidden="true" />
@@ -431,7 +438,7 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
           return (
             <div key={p.id} className="preset-card-wrap" style={{ position: "relative", flexShrink: 0 }}>
               {grid ? (
-                <StrategyCard p={p} kind={kindOf(p)[1]} count={count} top={tops[p.id]} newMatches={p.newMatches} featured={shownIndex === 0}
+                <StrategyCard p={p} kind={kindOf(p)[1]} count={count} failed={!!failed[p.id]} top={tops[p.id]} newMatches={p.newMatches} featured={shownIndex === 0}
                   index={shownIndex} active={active} onSelect={onSelect} hue={hueOf(p)} />
               ) : (
               <button

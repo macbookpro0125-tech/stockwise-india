@@ -59,11 +59,12 @@ export function SiteLink({ to, newTab = false, style, children }) {
   );
 }
 
+// The one disclaimer line under every page (pages don't repeat it above)
 export function SiteFooter() {
   return (
-    <footer style={{ borderTop: "1px solid var(--bdr)", marginTop: 56, padding: "22px var(--page-x) 30px" }}>
+    <footer style={{ borderTop: "1px solid var(--bdr)", marginTop: 32, padding: "22px var(--page-x) 30px" }}>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "10px 24px", alignItems: "center", justifyContent: "space-between", fontSize: 12, color: "var(--t3)" }}>
-        <span>Jocular Insights · An educational tool, not investment advice</span>
+        <span>Jocular Insights · Data from NSE filings and daily prices · An educational tool, not investment advice — consult a SEBI-registered adviser</span>
         <nav style={{ display: "flex", gap: 18 }}>
           <SiteLink to="/help">Help</SiteLink>
           <SiteLink to="/disclaimer">Disclaimer</SiteLink>

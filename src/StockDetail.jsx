@@ -610,7 +610,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
   );
 
   return (
-    <div style={{ padding: "8px var(--page-x) 80px", color: "var(--t1)" }}>
+    <div style={{ padding: "8px var(--page-x) 16px", color: "var(--t1)" }}>
       {showAlertModal && (
         <CreateAlertModal stock={{ symbol: data.symbol, name: data.name, cmp: price, p1: levels?.p1, p2: levels?.p2, p3: levels?.p3 }} onClose={() => setShowAlertModal(false)} />
       )}
@@ -926,7 +926,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       <StockDataDates dates={data.dataDates} quote={data.quote} research={m?.research} />
 
       <p style={{ fontSize: 11, color: "var(--t3)", textAlign: "center", lineHeight: 1.6 }}>
-        <TriangleAlert size={12} style={{ verticalAlign: "-1px", marginRight: 4 }} />Educational purposes only. Not financial advice. Always cross-verify data on NSE / BSE before investing. Consult a SEBI registered advisor.
+        <TriangleAlert size={12} style={{ verticalAlign: "-1px", marginRight: 4 }} />Always cross-check figures on NSE or BSE before investing.
       </p>
 
       <div className="ss-back-bottom">

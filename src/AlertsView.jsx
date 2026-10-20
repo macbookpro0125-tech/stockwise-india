@@ -244,7 +244,7 @@ export default function AlertsView({ onOpenStock }) {
   const activeCount = alerts.filter(a => a.enabled).length;
 
   return (
-    <div style={{ padding: "8px var(--page-x) 80px", animation: "fadeUp 280ms cubic-bezier(0,0,0.2,1) backwards" }}>
+    <div style={{ padding: "8px var(--page-x) 16px", animation: "fadeUp 280ms cubic-bezier(0,0,0.2,1) backwards" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 10 }}>
         <div>
           <div className="hide-phone" style={{ fontSize: 18, fontWeight: 700, color: "var(--t1)", letterSpacing: "-0.02em" }}>Alerts</div>

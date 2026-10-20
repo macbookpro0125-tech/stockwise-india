@@ -83,7 +83,8 @@ test("F02-E3 keyboard only: / focuses search, Enter opens a company", async ({ p
   await page.keyboard.press("/");
   await expect(page.getByRole("combobox", { name: "Search any stock by name or symbol" })).toBeFocused();
   await page.keyboard.type("Infosys");
-  await page.getByText(/Infosys/).first().waitFor();
+  // the search's own result, not a strategy card that lists Infosys
+  await page.getByRole("option", { name: /Infosys/ }).first().waitFor();
   await page.keyboard.press("ArrowDown");
   await page.keyboard.press("Enter");
   await expect(page.getByRole("heading", { level: 2, name: /Infosys/ })).toBeVisible();

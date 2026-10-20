@@ -158,7 +158,7 @@ export default function MomentumView({ onOpenStock }) {
   const cell = { padding: "9px 10px", borderBottom: "1px solid var(--bdr)", whiteSpace: "nowrap" };
 
   return (
-    <div style={{ padding: "var(--page-top, 24px) var(--page-x) 80px", animation: "fadeUp 280ms cubic-bezier(0,0,0.2,1) backwards" }}>
+    <div style={{ padding: "var(--page-top, 24px) var(--page-x) 16px", animation: "fadeUp 280ms cubic-bezier(0,0,0.2,1) backwards" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 6 }}>
         <h2 style={{ fontSize: 19, fontWeight: 700, color: "var(--t1)", margin: 0, letterSpacing: "-0.02em", display: "flex", alignItems: "center", gap: 8 }}>
           <Zap size={18} style={{ color: "var(--yellow)" }} /> Momentum

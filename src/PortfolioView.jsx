@@ -141,7 +141,7 @@ export default function PortfolioView({ onOpenStock }) {
   };
 
   return (
-    <div style={{ padding: "8px var(--page-x) 80px", animation: "fadeUp 280ms cubic-bezier(0,0,0.2,1) backwards" }}>
+    <div style={{ padding: "8px var(--page-x) 16px", animation: "fadeUp 280ms cubic-bezier(0,0,0.2,1) backwards" }}>
       {holdings.length > 0 && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 20, padding: "16px 20px", borderRadius: 12, border: "1px solid var(--bdr2)", background: "var(--s2)", marginBottom: 20, alignItems: "center" }}>
           <div>

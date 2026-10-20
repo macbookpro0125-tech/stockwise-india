@@ -391,7 +391,7 @@ export default function DiscoverView({ onOpenStock, theme }) {
   const matched = results?.matched;
 
   return (
-    <div className="screener-page" style={{ padding: "var(--page-top, 24px) var(--page-x) 80px" }}>
+    <div className="screener-page" style={{ padding: "var(--page-top, 24px) var(--page-x) 16px" }}>
       {showSaveModal && (
         <Modal onClose={() => setShowSaveModal(false)}>
           <div style={{ fontSize: 17, fontWeight: 700, color: "var(--t1)", marginBottom: 6, letterSpacing: "-0.02em" }}>Save as a strategy</div>
@@ -605,9 +605,6 @@ export default function DiscoverView({ onOpenStock, theme }) {
         )}
       </div>
 
-      <p style={{ fontSize: 11, color: "var(--t3)", textAlign: "center", marginTop: 48, lineHeight: 1.8, letterSpacing: "-0.01em" }}>
-        Data from NSE filings and daily prices · Educational use only · Not financial advice · Consult a SEBI-registered advisor
-      </p>
     </div>
   );
 }

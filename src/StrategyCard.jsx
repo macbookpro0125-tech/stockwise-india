@@ -36,11 +36,11 @@ function Rolling({ top, run }) {
   );
 }
 
-export default function StrategyCard({ p, kind, count, top, newMatches = 0, featured, index, active, onSelect, hue }) {
+export default function StrategyCard({ p, kind, count, top, newMatches = 0, featured, index, active, onSelect, hue, failed }) {
   const [ref, inView] = useInView();
   const n = useCountUp(count ?? null, inView);
   const matches = count == null
-    ? <span className="sc-skel" aria-hidden="true" />
+    ? (failed ? null : <span className="sc-skel" aria-hidden="true" />)
     : <><b>{n.toLocaleString("en-IN")}</b> {count === 1 ? "stock matches" : "stocks match"}</>;
 
   return (
