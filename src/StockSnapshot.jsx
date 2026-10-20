@@ -18,6 +18,12 @@ function sizeClass(rank) {
   return "Small cap";
 }
 
+// A long wording, and a short one a phone shows instead (index.css hides
+// whichever doesn't apply, so a screen reader reads only the one on screen)
+function Fit({ wide, narrow }) {
+  return <><span className="sd-wide">{wide}</span><span className="sd-narrow">{narrow}</span></>;
+}
+
 function useSizeRank(mcap) {
   const [rank, setRank] = useState(null);
   useEffect(() => {
@@ -36,16 +42,17 @@ export default function StockSnapshot({ m, price }) {
   if (!m) return null;
   const risk = m.research?.risk;
   const tags = [m.industry, m.lender && "Lender", m.governmentOwned && "Government-owned", m.utility && "Regulated utility", m.cyclical && "Cyclical"].filter(Boolean);
+  // [label, short label for a phone's three-to-a-row grid, value]
   const metrics = [
-    ["P/E (last 4 quarters)", m.peTtm?.toFixed(1) ?? "—"],
-    ["P/E (latest audited year)", m.peFy?.toFixed(1) ?? "—"],
-    ["5-year median annual P/E", m.medianPe != null ? m.medianPe.toFixed(1) : "—"],
-    ["Price to book", x(m.priceToBook, 2)],
-    ["Dividend yield", pct(m.divYield)],
-    ["Return on equity", pct(m.roe)],
-    ["Return on capital", pct(m.roce)],
-    ["Debt to equity", m.template === "BANKING" ? "Not applicable for a bank" : x(m.debtToEquity, 2)],
-    ["EPS (last 4 quarters)", m.ttmEps != null ? `₹${m.ttmEps.toFixed(2)}` : "—"],
+    ["P/E (last 4 quarters)", "P/E · 4 qtrs", m.peTtm?.toFixed(1) ?? "—"],
+    ["P/E (latest audited year)", "P/E · last year", m.peFy?.toFixed(1) ?? "—"],
+    ["5-year median annual P/E", "5Y median P/E", m.medianPe != null ? m.medianPe.toFixed(1) : "—"],
+    ["Price to book", "Price/book", x(m.priceToBook, 2)],
+    ["Dividend yield", "Div. yield", pct(m.divYield)],
+    ["Return on equity", "ROE", pct(m.roe)],
+    ["Return on capital", "ROCE", pct(m.roce)],
+    ["Debt to equity", "Debt/equity", m.template === "BANKING" ? <Fit wide="Not applicable for a bank" narrow="n/a (bank)" /> : x(m.debtToEquity, 2)],
+    ["EPS (last 4 quarters)", "EPS · 4 qtrs", m.ttmEps != null ? `₹${m.ttmEps.toFixed(2)}` : "—"],
   ];
   const lo = m.low52w, hi = m.high52w;
   const at = price > 0 && hi > lo ? Math.min(100, Math.max(0, ((price - lo) / (hi - lo)) * 100)) : null;
@@ -61,20 +68,22 @@ export default function StockSnapshot({ m, price }) {
         <div className="sd-snap-card">
           <span className="sd-snap-icon" aria-hidden="true"><Ruler size={18} /></span>
           <h3>{size ? sizeClass(size.rank) : <span className="sd-skel" aria-label="Working out its size" />}</h3>
-          <p>Market cap of {cr(m.marketCapCr)}{size ? <>, #{size.rank.toLocaleString("en-IN")} by size of the {size.of.toLocaleString("en-IN")} companies screened here</> : ""}</p>
+          <p><Fit
+            wide={<>Market cap of {cr(m.marketCapCr)}{size ? <>, #{size.rank.toLocaleString("en-IN")} by size of the {size.of.toLocaleString("en-IN")} companies screened here</> : ""}</>}
+            narrow={<>{cr(m.marketCapCr)}{size ? <> · #{size.rank.toLocaleString("en-IN")} of {size.of.toLocaleString("en-IN")}</> : ""}</>} /></p>
         </div>
         <div className="sd-snap-card">
           <span className="sd-snap-icon" aria-hidden="true"><Gauge size={18} /></span>
           <h3>{risk ? `${risk.label} risk` : "Risk"}</h3>
           <p>{m.beta1y != null
-            ? `Over the past year it moved about ${m.beta1y.toFixed(1)}× as much as the NIFTY 50`
-            : m.volatility1y != null ? `Its price swung ${m.volatility1y.toFixed(0)}% a year (volatility)` : "Not enough price history to measure"}</p>
+            ? <Fit wide={`Over the past year it moved about ${m.beta1y.toFixed(1)}× as much as the NIFTY 50`} narrow={`Moves ${m.beta1y.toFixed(1)}× the NIFTY 50`} />
+            : m.volatility1y != null ? <Fit wide={`Its price swung ${m.volatility1y.toFixed(0)}% a year (volatility)`} narrow={`Swings ${m.volatility1y.toFixed(0)}% a year`} /> : "Not enough price history to measure"}</p>
         </div>
       </div>
 
       <div className="sd-metrics" role="list" aria-label="Key ratios">
-        {metrics.map(([label, value]) => (
-          <div key={label} role="listitem"><span>{label}</span><strong>{value}</strong></div>
+        {metrics.map(([label, short, value]) => (
+          <div key={label} role="listitem"><span><Fit wide={label} narrow={short} /></span><strong>{value}</strong></div>
         ))}
         {at != null && (
           <div role="listitem" className="sd-range">
