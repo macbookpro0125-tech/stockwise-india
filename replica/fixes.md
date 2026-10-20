@@ -94,7 +94,9 @@ Quotes:
 
 Picked by evidence against cost. Each is a row in `features.csv` (reference
 `no`: something to do better than the reference). **Built 20 Oct 2026:** #1,
-#2, #3 and #7. Still to build: #4, #5 and #6.
+#2, #3 and #7, and #4 inside the app (the Watchlist shows each company's next
+ex-date or board meeting; a message outside the app waits for Telegram or
+push notifications). Still to build: #5 and #6.
 
 | # | What | Size | Skill | Evidence |
 |---|---|---|---|---|

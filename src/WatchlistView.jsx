@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import CompanyLogo from "./CompanyLogo.jsx";
-import { Star, X, NotebookPen } from "lucide-react";
+import { Star, X, NotebookPen, CalendarDays } from "lucide-react";
 import { BellIcon } from "./icons.jsx";
 import { api } from "./api.js";
 import { useWatchlist, toggleWatch } from "./watchlist.js";
 import CreateAlertModal from "./CreateAlertModal.jsx";
 import { QualityBadge } from "./ResearchBadges.jsx";
 import { pricePosition } from "../server/levels.js";
+import { nextEvent, todayIst } from "./watchEvents.js";
 
 // Ported from stock-screener's src/components/WatchlistPanel.jsx — one card
 // per starred stock: price when starred and the move since, quality score,
@@ -70,6 +71,7 @@ const label = { fontSize: 11.5, color: "var(--t3)", fontWeight: 600 };
 const iconBtn = { width: 30, height: 30, borderRadius: 8, border: "1px solid var(--bdr2)", background: "transparent", color: "var(--t3)", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 120ms" };
 
 export default function WatchlistView({ onOpenStock }) {
+  const today = todayIst();
   const watched = useWatchlist();
   const [data, setData] = useState(null);
   const [live, setLive] = useState({});
@@ -167,6 +169,10 @@ export default function WatchlistView({ onOpenStock }) {
                   {(() => {
                     const st = resultsStatus(r);
                     return st && <div style={{ fontSize: 10.5, color: st.color, marginTop: 3, fontWeight: st.done ? 600 : 500 }}>{st.done ? "✓ " : ""}{st.text}</div>;
+                  })()}
+                  {(() => {
+                    const ev = nextEvent(r, today);
+                    return ev && <div className="wl-event" data-kind={ev.kind}><CalendarDays size={11} aria-hidden="true" />{ev.text}</div>;
                   })()}
                 </div>
 

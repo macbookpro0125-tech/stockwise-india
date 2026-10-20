@@ -1448,6 +1448,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   animation-timing-function: ease;
 }
 
+/* Watchlist: what's coming up — the soonest ex-date or board meeting (watchEvents.js) */
+.wl-event { display: flex; align-items: center; gap: 4px; margin-top: 3px; font-size: 10.5px; font-weight: 600; color: var(--accent); }
+
 /* Watchlist: a removed card folds away (WatchlistView.jsx removeCard) */
 .wl-row { display: grid; grid-template-rows: 1fr; opacity: 1;
   transition: grid-template-rows 200ms var(--ease-out-strong), opacity 200ms var(--ease-out-strong), margin 200ms var(--ease-out-strong); }

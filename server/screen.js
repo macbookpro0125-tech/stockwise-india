@@ -385,7 +385,9 @@ export function rowsFor(symbols) {
   const bySymbol = new Map(rows.map(m => [m.symbol, m]));
   return symbols.map(s => {
     const m = bySymbol.get(s) ?? computeMetrics(getStock(s), loadMarketSnapshot());
-    return m ? tableRow(m, [], sizes) : { symbol: s, name: s, missing: true };
+    // with its upcoming board meetings and ex-dates, for the Watchlist's
+    // "coming up" line (src/watchEvents.js)
+    return m ? { ...tableRow(m, [], sizes), events: m.events ?? null } : { symbol: s, name: s, missing: true };
   });
 }
 

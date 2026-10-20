@@ -148,6 +148,7 @@ async function main() {
   assert((await star()).status === 200 && (await star()).status === 200, "starring a stock twice is fine, not an error");
   const aliceWatch = await (await fetch(`${BASE}/api/watchlist`, { headers: { Cookie: aliceCookie } })).json();
   assert(aliceWatch.items.length === 1 && aliceWatch.items[0].ticker === "TCS" && aliceWatch.results.length === 1, "alice's watchlist holds TCS once, upper-cased, with a table row");
+  assert("events" in aliceWatch.results[0], "a watchlist row carries its upcoming events (or null when the calendar couldn't be read)");
   const badStar = await fetch(`${BASE}/api/watchlist`, {
     method: "POST", headers: { "Content-Type": "application/json", Cookie: aliceCookie },
     body: JSON.stringify({ ticker: "../../server/x" }),
