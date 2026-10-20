@@ -228,6 +228,18 @@ test("F03-H5 the dividends section: yield against other payers, payout, the year
   await expect(div).toBeInViewport();
 });
 
+test("F03-H6 financial health: cover, debt and cash, the yearly chart, the Scorecard's verdict", async ({ page, account }) => {
+  await page.goto("/stock/LT");
+  const health = page.getByRole("region", { name: "Financial health" });
+  await expect(health.getByText(/Its short-term assets cover its short-term liabilities [\d.]+ times/)).toBeVisible();
+  await expect(health.getByRole("img", { name: /FY\d\d balance sheet: Short-term assets ₹[\d,]+ Cr/ })).toBeVisible();
+  await expect(health.getByRole("img", { name: /debt and cash: Debt ₹[\d,]+ Cr/ })).toBeVisible();
+  await expect(health.getByRole("img", { name: /Borrowings to equity by year: FY\d\d/ })).toBeVisible();
+  await expect(health.getByText(/Operating profit covers its interest [\d.]+ times/)).toBeVisible();
+  await health.getByRole("button", { name: /The Scorecard rates its balance sheet/ }).click();
+  await expect(page.locator("details#why-balance[open]")).toBeInViewport();
+});
+
 test("F03-N1 an unknown symbol says so", async ({ page, account }) => {
   await page.goto("/stock/NOTAREALCO");
   await expect(page.getByText(/not found|isn.t|no company|unknown|couldn.t/i).first()).toBeVisible();
