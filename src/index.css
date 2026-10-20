@@ -2145,7 +2145,17 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 
 .ph-card-wrap { position: relative; margin-bottom: 12px; }
 .ph-card { position: relative; display: flex; flex-direction: column; width: 100%; padding: 16px; border-radius: 22px; border: 1px solid var(--bdr2); background: var(--s2); box-shadow: var(--sh-sm); color: inherit; font: inherit; text-align: left; transition: transform 140ms var(--ease-out, ease-out), background 160ms, border-color 160ms; }
-.ph-card:has(.ph-card-select:active) { transform: scale(0.985); background: var(--s3); }
+.ph-card:has(.ph-card-select:active) { transform: scale(0.985); --glow-press: 1.6; }
+/* The computer's cards glow where the pointer is; a phone has no pointer, so
+   its strategy cards keep a still glow (asked for 20 Oct 2026): the same teal
+   light from the top, a wash of the strategy's own colour behind its mark,
+   brighter while pressed */
+.ph-card {
+  background:
+    radial-gradient(460px 260px at 30% -10%, color-mix(in srgb, var(--accent) calc(var(--glow-strength) * var(--glow-press, 1)), transparent), transparent 72%),
+    radial-gradient(220px 170px at 0% 0%, color-mix(in srgb, var(--hue) 16%, transparent), transparent 72%),
+    var(--s2);
+}
 .ph-card.is-active { border-color: color-mix(in srgb, var(--accent) 50%, transparent); }
 .ph-card-select { position: absolute; inset: 0; z-index: 0; margin: 0; padding: 0; border: 0; border-radius: inherit; background: transparent; color: inherit; font: inherit; cursor: pointer; -webkit-appearance: none; appearance: none; }
 .ph-card-content { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 14px; min-width: 0; pointer-events: none; }
