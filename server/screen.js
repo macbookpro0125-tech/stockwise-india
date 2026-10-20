@@ -10,6 +10,7 @@ import { calculateLevels } from "./levels.js";
 import { computeResearch, setResearchPeers } from "./research.js";
 import { loadMarketSnapshot } from "./market-data.js";
 import { MARKET_DIR } from "./paths.js";
+import { buildSectorStats } from "./sector-compare.js";
 import {
   CATEGORIES, METRICS, CATEGORY_METRICS, metricById, valueOf, capSizes, metricRanges,
   criteriaToFilters, cleanFilters, matchesFilters, describeFilters, coverageNotes,
@@ -96,11 +97,14 @@ function* buildSteps(version) {
   const sizes = capSizes(fresh);
   const volatility = volatilitySpread(fresh);
   const dividends = dividendSpread(fresh);
+  // each sector's spread on growth, returns, margins, debt and P/E, for the
+  // company page's "Against its sector" (sector-compare.js)
+  const sectorStats = buildSectorStats(fresh);
   yield;
   return {
     peers,
     market: {
-      version, rows: fresh, fetched: countFetched(), evSales, volatility, dividends,
+      version, rows: fresh, fetched: countFetched(), evSales, volatility, dividends, sectorStats,
       snapshot: snap ? { pricesDate: snap.pricesDate, builtAt: snap.builtAt } : null,
       sizes, ranges: metricRanges(fresh),
     },

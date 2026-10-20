@@ -240,6 +240,15 @@ test("F03-H6 financial health: cover, debt and cash, the yearly chart, the Score
   await expect(page.locator("details#why-balance[open]")).toBeInViewport();
 });
 
+test("F03-H7 against its sector: the sector's middle and how many it beats", async ({ page, account }) => {
+  await page.goto("/stock/TCS");
+  const card = page.getByRole("region", { name: "Against its sector" });
+  await expect(card.getByText("Return on equity")).toBeVisible();
+  await expect(card.getByText(/middle [\d.]+%/).first()).toBeVisible();
+  await expect(card.getByText(/^(Higher|Lower) than (all \d+|\d+% of the \d+) others$/).first()).toBeVisible();
+  await expect(card.getByText(/^(Cheaper|Dearer) than/)).toBeVisible();
+});
+
 test("F03-N1 an unknown symbol says so", async ({ page, account }) => {
   await page.goto("/stock/NOTAREALCO");
   await expect(page.getByText(/not found|isn.t|no company|unknown|couldn.t/i).first()).toBeVisible();

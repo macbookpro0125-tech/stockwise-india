@@ -33,7 +33,7 @@ S-STOCK,How much the price swings against others,yes,yes,"Typical weekly move fr
 S-STOCK,3-month and 3- and 5-year price changes,yes,yes,"Also new screener measures: 3M, 3Y, 5Y return and 1Y vs sector index"
 S-STOCK,Dividend section (yield vs market; payout; next dates; history),yes,yes,"Built 20 Oct 2026 (StockDividends.jsx, server/dividends.js): last 12 months' dividends and yield against the market's payers (quartiles) and its sector's middle, payout of earnings and of free cash flow, the next ex-date announced, six financial years a share on today's share count with specials apart, and how often raised, held or cut. Gaps #6"
 S-STOCK,Financial health as a picture,yes,yes,"Built 20 Oct 2026 (StockHealth.jsx, healthMath.js): short-term assets against short- and long-term liabilities, debt (borrowings and leases) against cash, borrowings to equity by year, operating cash flow against debt, interest cover, a loss-maker's cash runway, the Scorecard's balance-sheet verdict; lenders get a pointer to their bank checks. Gaps #7"
-S-STOCK,Growth and returns on capital against the sector's medians,yes,no,"Next: gaps #8"
+S-STOCK,Growth and returns on capital against the sector's medians,yes,yes,"Built 20 Oct 2026 (StockSectorCompare.jsx, server/sector-compare.js): sales and EPS growth over 5 years, ROE, 5-year ROCE and operating margin, debt to equity and P/E beside the sector's middle company and the share of its other companies it beats; lenders against lenders, on ROE and P/E. Gaps #8"
 S-STOCK,Insider and promoter trades,yes,no,"Next: gaps #9 — needs a new NSE data job (PIT/SAST)"
 S-STOCK,What changed recently,yes,no,"Next: gaps #10"
 S-STOCK,Latest earnings call,yes,no,"Next: gaps #11 — the transcript NSE files, not an AI summary"

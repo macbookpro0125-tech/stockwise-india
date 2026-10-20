@@ -32,6 +32,7 @@ import { fetchEquityList } from "./equity-list.js";
 import { computeMetrics } from "./metrics.js";
 import { loadMarketSnapshot, dividendAmount } from "./market-data.js";
 import { dividendRecord } from "./dividends.js";
+import { sectorComparison } from "./sector-compare.js";
 import { startDataJobs, jobStatus } from "./data-jobs.js";
 import { botInfo, linkCode, telegramChat, unlinkTelegram, sendTelegram, startTelegramPolling } from "./telegram.js";
 import { startAlertChecks } from "./alert-notifier.js";
@@ -677,6 +678,7 @@ export function createApp() {
             market: market.volatility?.market ?? null,
           };
           metrics.dividendRecord = dividendSummary(metrics, snap, market);
+          metrics.sectorCompare = market.sectorStats ? sectorComparison(metrics, market.sectorStats) : [];
         }
 
         sendJson(res, 200, {
