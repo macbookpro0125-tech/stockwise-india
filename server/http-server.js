@@ -39,7 +39,7 @@ import { startAlertChecks } from "./alert-notifier.js";
 import { limits, clientIp, waitText } from "./rate-limit.js";
 import { startBackups } from "./backup.js";
 import { fetchTechnicals } from "./technicals.js";
-import { shareholdingHistory, companyFilings, companyNews, sectorPeers, companyProfile } from "./company-extras.js";
+import { shareholdingHistory, companyFilings, companyNews, sectorPeers, companyProfile, insiderTrades } from "./company-extras.js";
 import { summarizeFiling } from "./filing-summary.js";
 import { logoFor } from "./logos.js";
 import { PRESETS } from "./presets.js";
@@ -582,7 +582,7 @@ export function createApp() {
         return;
       }
 
-      const panelRoute = url.pathname.match(/^\/api\/stock\/([^/]+)\/(prices|technicals|shareholding|profile|filings|news|peers)$/);
+      const panelRoute = url.pathname.match(/^\/api\/stock\/([^/]+)\/(prices|technicals|shareholding|profile|filings|news|peers|insiders)$/);
       if (panelRoute && req.method === "GET") {
         const userId = requireAuth(req, res);
         if (userId == null) return;
@@ -605,6 +605,7 @@ export function createApp() {
             case "filings": sendJson(res, 200, await companyFilings(symbol)); return;
             case "news": sendJson(res, 200, await companyNews(getStock(symbol)?.name ?? symbol)); return;
             case "peers": sendJson(res, 200, sectorPeers(symbol)); return;
+            case "insiders": sendJson(res, 200, await insiderTrades(symbol)); return;
           }
         } catch (e) {
           reportUpstreamFailure(res, requestId, e, "This company data is temporarily unavailable. Try again shortly.");

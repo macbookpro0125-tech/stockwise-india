@@ -12,6 +12,7 @@ import { shareholdingFilings, readShareholdingFiling } from "./fetch-shareholdin
 import { allMetrics, researchBrief } from "./screen.js";
 import { isPeerIndustry } from "./research.js";
 import { fetchText as requestText } from "./upstream.js";
+import { summarizeInsiders } from "./insiders.js";
 
 const HOUR = 3600 * 1000;
 const memo = new Map();
@@ -154,6 +155,23 @@ export function shareholdingHistory(symbol, quarters = 5) {
         retail: known ? Math.round((100 - q.promoterPct - q.fiiPct - q.diiPct) * 100) / 100 : null,
       };
     });
+  });
+}
+
+// ---- Insider and promoter trades -------------------------------------------------
+
+// A year of NSE's insider-trading (PIT) disclosures, summed up (insiders.js):
+// market purchases and sales by promoters and by directors and officers, the
+// latest trades, other moves counted apart
+export function insiderTrades(symbol) {
+  return cached(`insiders:${symbol}`, 6 * HOUR, async () => {
+    const today = new Date(Date.now() + 330 * 60000).toISOString().slice(0, 10);
+    const ddmm = iso => `${iso.slice(8, 10)}-${iso.slice(5, 7)}-${iso.slice(0, 4)}`;
+    const from = new Date(Date.parse(`${today}T00:00:00Z`) - 364 * 86400000).toISOString().slice(0, 10);
+    const res = await fetchJson(`${NSE_BASE}/api/corporates-pit?index=equities&symbol=${encodeURIComponent(symbol)}&from_date=${ddmm(from)}&to_date=${ddmm(today)}`);
+    const rows = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : null;
+    if (!rows) throw new Error("NSE's insider-trading disclosures couldn't be read");
+    return summarizeInsiders(rows, today);
   });
 }
 
