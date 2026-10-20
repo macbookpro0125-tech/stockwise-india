@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
   createChart, CandlestickSeries, BarSeries, LineSeries, AreaSeries, HistogramSeries,
   ColorType, CrosshairMode, LineStyle,
@@ -98,6 +99,8 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
   const [boxW, setBoxW] = useState(720);
   const [menuOpen, setMenuOpen] = useState(false);
   const [vh, setVh] = useState(() => (typeof window !== "undefined" ? window.innerHeight : 800));
+  const [expanded, setExpanded] = useState(false);
+  const [levelTags, setLevelTags] = useState([]);
 
   const cardRef = useRef(null), hostRef = useRef(null), menuRef = useRef(null);
   const chartRef = useRef(null), mainRef = useRef(null);
@@ -148,6 +151,39 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
     document.addEventListener("keydown", esc);
     return () => { document.removeEventListener("pointerdown", away); document.removeEventListener("keydown", esc); };
   }, [menuOpen]);
+
+  // Expand on a phone: the chart over the whole screen, on top of the page,
+  // which stays where it was. It's a history entry, so Back (the browser's,
+  // or Android's, App.jsx) closes it. It used to open /chart/… in a new tab,
+  // which in the Android app could mean leaving the app.
+  useEffect(() => {
+    if (!expanded) return;
+    const onPop = () => { if (!window.history.state?.chartOverlay) setExpanded(false); };
+    const onKey = e => { if (e.key === "Escape") closeExpanded(); };
+    window.addEventListener("popstate", onPop);
+    document.addEventListener("keydown", onKey);
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("popstate", onPop);
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = overflow;
+      // Settings and lines changed in the expanded chart carry back here
+      const p = readJson(PREFS_KEY, DEFAULT_PREFS);
+      setPrefs({ ...DEFAULT_PREFS, ...p, ind: { ...(p.ind ?? DEFAULT_PREFS.ind) } });
+      setLines(readJson(LINES_KEY, {})[symbol] ?? []);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expanded]);
+  const openExpanded = e => {
+    e.preventDefault();
+    window.history.pushState({ ...(window.history.state ?? {}), chartOverlay: true }, "");
+    setExpanded(true);
+  };
+  function closeExpanded() {
+    if (window.history.state?.chartOverlay) window.history.back();
+    else setExpanded(false);
+  }
 
   useEffect(() => {
     if (!drawing) return;
@@ -279,7 +315,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
       main.setData(bars.map(b => ({ time: b.date, value: b.close })));
     }
     mainRef.current = main;
-    main.priceScale().applyOptions({ scaleMargins: { top: 0.08, bottom: withVolume ? 0.24 : 0.06 } });
+    main.priceScale().applyOptions({ scaleMargins: { top: 0.08, bottom: withVolume ? (narrow ? 0.15 : 0.24) : 0.06 } });
 
     // Warm-up bars stay as whitespace, so every series shares the same time axis
     const toLine = vals => bars.map((b, i) => (vals[i] == null ? { time: b.date } : { time: b.date, value: vals[i] }));
@@ -304,7 +340,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
 
     if (withVolume) {
       const vol = chart.addSeries(HistogramSeries, { priceFormat: { type: "volume" }, priceScaleId: "", priceLineVisible: false, lastValueVisible: false });
-      vol.priceScale().applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
+      vol.priceScale().applyOptions({ scaleMargins: { top: narrow ? 0.88 : 0.8, bottom: 0 } });
       vol.setData(bars.map(b => ({ time: b.date, value: b.volume ?? 0, color: alpha(b.close >= b.open ? c.up : c.down, 0.45) })));
     }
 
@@ -339,7 +375,10 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
     }
 
     for (const l of levelLines) {
-      main.createPriceLine({ price: l.price, color: resolve(l.color), lineWidth: 1, lineStyle: l.style, axisLabelVisible: true, title: narrow ? "" : l.title });
+      // A phone's price scale is too short for six more labels: they hid its
+      // numbers. There each line gets a small tag drawn over the chart
+      // (levelTags below), and the list above the chart gives its price.
+      main.createPriceLine({ price: l.price, color: resolve(l.color), lineWidth: 1, lineStyle: l.style, axisLabelVisible: !narrow, title: narrow ? "" : l.title });
     }
     for (const p of lines) {
       main.createPriceLine({ price: p, color: c.text, lineWidth: 1, lineStyle: LineStyle.Solid, axisLabelVisible: true, title: "" });
@@ -372,7 +411,36 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
     if (kept && kept.bars === bars) chart.timeScale().setVisibleLogicalRange(kept.range);
     else applyRange(range, chart);
 
+    // The level tags on a phone, placed where each line is drawn: the price
+    // scale rescales as the view moves, so they're placed again each time.
+    // Tags closer than a tag's height step left rather than overlap.
+    let frame = 0;
+    const placeTags = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        if (!narrow || !levelLines.length || chartRef.current !== chart) { setLevelTags([]); return; }
+        const paneH = chart.panes()[0]?.getHeight?.() ?? host.clientHeight;
+        const right = chart.priceScale("right").width() + 4;
+        const placed = [];
+        for (const l of [...levelLines].sort((a, b) => b.price - a.price)) {
+          const y = main.priceToCoordinate(l.price);
+          if (y == null || y < 8 || y > paneH - 8) continue;
+          const near = placed.filter(t => Math.abs(t.y - y) < 15).length;
+          placed.push({ key: l.title, text: l.short, color: resolve(l.color), y, right: right + near * 48 });
+        }
+        setLevelTags(placed);
+      });
+    };
+    placeTags();
+    chart.timeScale().subscribeVisibleLogicalRangeChange(placeTags);
+    // the chart's height settles after this (the full-screen chart fills the
+    // screen by flex), and a taller chart rescales its prices
+    const tagRo = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(placeTags);
+    tagRo?.observe(host);
+
     return () => {
+      cancelAnimationFrame(frame);
+      tagRo?.disconnect();
       keepView.current = { bars, range: chart.timeScale().getVisibleLogicalRange() };
       chart.remove();
       chartRef.current = null; mainRef.current = null;
@@ -433,6 +501,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
     color: active ? "var(--accent)" : "var(--t2)", ...extra,
   });
   const group = { display: "inline-flex", gap: 4, flexWrap: narrow ? "nowrap" : "wrap" };
+  const sheetLabel = { margin: "0 0 6px 2px", fontSize: 11, fontWeight: 650, letterSpacing: "0.02em", textTransform: "uppercase", color: "var(--t3)" };
 
   return (
     <div ref={cardRef} className={page ? "chart-page-card" : undefined} style={page
@@ -453,19 +522,21 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
               <span style={{ fontSize: 11, fontWeight: 500, color: "var(--t3)", marginLeft: 6 }}>{narrow ? (range === "All" ? "all" : range) : `over ${range === "All" ? "all history" : range}`}</span>
             </div>
           )}
-          {/* A phone opens the chart in a new tab of its own (ChartPage.jsx):
-              full screen there leaves no room for the controls */}
+          {/* A phone expands the chart over the whole screen (see openExpanded) */}
           {narrow && !page && (
-            <a href={chartPageUrl(symbol, name, levels)} target="_blank" rel="noopener" aria-label="Open the chart in a new tab" title="Open the chart in a new tab" style={{ ...btn(false), textDecoration: "none", gap: 6 }}>
+            <a href={chartPageUrl(symbol, name, levels)} onClick={openExpanded} aria-label="Expand the chart to full screen" style={{ ...btn(false), textDecoration: "none", gap: 6 }}>
               <Maximize2 size={14} aria-hidden="true" />Expand
             </a>
           )}
         </div>
       </div>
 
-      {/* Toolbar: one row that scrolls sideways on a phone */}
+      {/* Toolbar. A phone has one row — the bar interval and "Chart options",
+          which opens everything else below it; the row of every control
+          scrolled sideways there and hid most of them. */}
       <div ref={menuRef}>
-      <div role="toolbar" aria-label="Chart settings" className={narrow ? "chart-row" : undefined} style={narrow ? { gap: 8, marginBottom: 8, paddingBottom: 2 } : { display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: 8 }}>
+      {!narrow ? (
+      <div role="toolbar" aria-label="Chart settings" style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: 8 }}>
         <div role="group" aria-label="Chart type" style={group}>
           {TYPES.map(({ id, label, Icon }) => (
             <button key={id} type="button" onClick={() => setPref({ type: id })} aria-pressed={prefs.type === id} title={label} aria-label={narrow ? label : undefined} style={btn(prefs.type === id)}>
@@ -512,26 +583,64 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
           )}
         </div>
       </div>
+      ) : (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+          <div role="group" aria-label="Bar interval" style={group}>
+            {INTERVALS.map(iv => (
+              <button key={iv.id} type="button" onClick={() => pickInterval(iv.id)} aria-pressed={prefs.interval === iv.id} title={iv.title} aria-label={iv.title} style={btn(prefs.interval === iv.id, { minWidth: 40, justifyContent: "center" })}>{iv.label}</button>
+            ))}
+          </div>
+          <button type="button" onClick={() => setMenuOpen(o => !o)} aria-expanded={menuOpen} aria-controls={`chart-options-${symbol}${page ? "-page" : ""}`} style={btn(menuOpen, { marginLeft: "auto" })}>
+            <SlidersHorizontal size={14} aria-hidden="true" />Chart options{activeInd > 0 && <span style={MONO}> · {activeInd}</span>}
+          </button>
+        </div>
+      )}
       {menuOpen && narrow && (
-        <div role="group" aria-label="Indicators" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2, padding: 6, marginBottom: 8, borderRadius: 10, background: "var(--s3)", border: "1px solid var(--bdr2)" }}>
-          {INDICATORS.map(i => (
-            <label key={i.id} style={{ display: "flex", alignItems: "center", gap: 8, minHeight: 40, padding: "0 8px", borderRadius: 6, fontSize: 13, color: "var(--t1)", cursor: "pointer" }}>
-              <input type="checkbox" checked={!!prefs.ind[i.id]} onChange={() => toggleInd(i.id)} />
-              {i.color && <span aria-hidden="true" style={{ width: 10, height: 3, borderRadius: 2, background: i.color, flexShrink: 0 }} />}
-              {i.label.replace(" (20, 2)", "").replace(" (12, 26, 9)", "").replace(" (14)", "")}
-            </label>
-          ))}
+        <div id={`chart-options-${symbol}${page ? "-page" : ""}`} role="group" aria-label="Chart options" style={{ display: "grid", gap: 12, padding: 10, marginBottom: 8, borderRadius: 12, background: "var(--s3)", border: "1px solid var(--bdr2)" }}>
+          <div>
+            <div style={sheetLabel}>Chart type</div>
+            <div role="group" aria-label="Chart type" style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 4 }}>
+              {TYPES.map(({ id, label, Icon }) => (
+                <button key={id} type="button" onClick={() => setPref({ type: id })} aria-pressed={prefs.type === id} style={btn(prefs.type === id, { flexDirection: "column", height: 52, gap: 3, padding: 0, justifyContent: "center", fontSize: 11 })}>
+                  <Icon size={16} aria-hidden="true" />{label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div style={sheetLabel}>Indicators</div>
+            <div role="group" aria-label="Indicators" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 2 }}>
+              {INDICATORS.map(i => (
+                <label key={i.id} style={{ display: "flex", alignItems: "center", gap: 8, minHeight: 40, padding: "0 8px", borderRadius: 6, fontSize: 13, color: "var(--t1)", cursor: "pointer" }}>
+                  <input type="checkbox" checked={!!prefs.ind[i.id]} onChange={() => toggleInd(i.id)} />
+                  {i.color && <span aria-hidden="true" style={{ width: 10, height: 3, borderRadius: 2, background: i.color, flexShrink: 0 }} />}
+                  {i.label.replace(" (20, 2)", "").replace(" (12, 26, 9)", "").replace(" (14)", "")}
+                </label>
+              ))}
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 4 }}>
+            <button type="button" onClick={() => setPref({ levels: !prefs.levels })} aria-pressed={prefs.levels} disabled={!levels} style={btn(prefs.levels && !!levels, { justifyContent: "center", ...(!levels ? { opacity: 0.5, cursor: "not-allowed" } : {}) })}>
+              <Layers size={14} aria-hidden="true" />Levels
+            </button>
+            <button type="button" onClick={() => { setDrawing(d => !d); setMenuOpen(false); }} aria-pressed={drawing} style={btn(drawing, { justifyContent: "center" })}>
+              <Minus size={14} aria-hidden="true" />Line
+            </button>
+            <button type="button" onClick={snapshot} style={btn(false, { justifyContent: "center" })}>
+              <Camera size={14} aria-hidden="true" />Image
+            </button>
+          </div>
         </div>
       )}
       </div>
 
       {levelLines.length > 0 && last && (
-        <ul aria-label="Model price levels" className={narrow ? "chart-row" : undefined} style={{ ...(narrow ? {} : { display: "flex", flexWrap: "wrap" }), gap: "4px 14px", listStyle: "none", margin: "0 0 8px", padding: 0, fontSize: 12, color: "var(--t2)", ...MONO }}>
+        <ul aria-label="Model price levels" style={{ ...(narrow ? { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "2px 12px" } : { display: "flex", flexWrap: "wrap", gap: "4px 14px" }), listStyle: "none", margin: "0 0 8px", padding: 0, fontSize: 12, color: "var(--t2)", ...MONO }}>
           {levelLines.map(l => {
             const d = (l.price - last.close) / last.close * 100;
             return (
               <li key={l.title} style={{ display: "inline-flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", minWidth: 0 }}>
-                <span aria-hidden="true" style={{ width: 14, borderTop: `2px ${l.style === LineStyle.Solid ? "solid" : l.style === LineStyle.Dotted ? "dotted" : "dashed"} ${l.color}` }} />
+                <span aria-hidden="true" style={{ width: 14, flexShrink: 0, borderTop: `2px ${l.style === LineStyle.Solid ? "solid" : l.style === LineStyle.Dotted ? "dotted" : "dashed"} ${l.color}` }} />
                 {/* Phones: short names, whole rupees and percents, so each fits one line */}
                 <span style={{ color: "var(--t1)" }}>{narrow ? l.short : l.title}</span> {narrow ? `₹${Math.round(l.price).toLocaleString("en-IN")}` : fmtRs(l.price)}
                 <span style={{ color: "var(--t3)" }}>{d >= 0 ? "+" : "−"}{Math.abs(d).toFixed(narrow ? 0 : 1)}%</span>
@@ -545,7 +654,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginBottom: 8, fontSize: 12, color: "var(--t2)" }}>
           {drawing && (
             <form onSubmit={addTyped} style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
-              <span>Click the chart, or type a price:</span>
+              <span>{narrow ? "Tap the chart, or type a price:" : "Click the chart, or type a price:"}</span>
               <input aria-label="Line price in rupees" inputMode="decimal" value={typedPrice} onChange={e => setTypedPrice(e.target.value)} placeholder="₹" autoFocus style={{ width: 96, height: 30 }} />
               <button type="submit" style={btn(false)}>Add</button>
             </form>
@@ -617,6 +726,13 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
                 )}
               </div>
             )}
+            {narrow && levelTags.length > 0 && (
+              <div aria-hidden="true" style={{ position: "relative", height: 0, zIndex: 2 }}>
+                {levelTags.map(t => (
+                  <span key={t.key} className="chart-level-tag" style={{ top: t.y, right: t.right, color: t.color, borderColor: t.color }}>{t.text}</span>
+                ))}
+              </div>
+            )}
             <div
               ref={hostRef}
               role="figure"
@@ -628,9 +744,9 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
       </div>
 
       <div style={{ display: "flex", gap: 6, marginTop: 10, flexWrap: "wrap", alignItems: "center" }}>
-        <div role="group" aria-label="Date range" className={narrow ? "chart-row" : undefined} style={narrow ? { width: "100%" } : group}>
+        <div role="group" aria-label="Date range" style={narrow ? { display: "grid", gridTemplateColumns: `repeat(${RANGES.length}, minmax(0, 1fr))`, gap: 4, width: "100%" } : group}>
           {RANGES.map(r => (
-            <button key={r.id} type="button" onClick={() => pickRange(r.id)} aria-pressed={range === r.id} style={btn(range === r.id, { minWidth: narrow ? 44 : 38, justifyContent: "center" })}>{r.id}</button>
+            <button key={r.id} type="button" onClick={() => pickRange(r.id)} aria-pressed={range === r.id} style={btn(range === r.id, narrow ? { minWidth: 0, padding: 0, justifyContent: "center", fontSize: 11.5 } : { minWidth: 38, justifyContent: "center" })}>{r.id}</button>
           ))}
         </div>
         <span style={{ marginLeft: narrow ? 0 : "auto", fontSize: 10, color: "var(--t3)" }}>
@@ -638,6 +754,17 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
           {" · "}<a href="https://www.tradingview.com/" target="_blank" rel="noopener" style={{ color: "inherit" }}>Chart by TradingView</a>
         </span>
       </div>
+
+      {expanded && createPortal(
+        <div className="chart-overlay" role="dialog" aria-modal="true" aria-label={`${name || symbol} price chart`}>
+          <div className="chart-overlay-bar">
+            <h2>{symbol}{name && <span> · {name}</span>}</h2>
+            <button type="button" onClick={closeExpanded} aria-label="Close the full-screen chart" autoFocus><X size={18} aria-hidden="true" /></button>
+          </div>
+          <PriceChartPanel symbol={symbol} name={name} levels={levels} page />
+        </div>,
+        document.body,
+      )}
     </div>
   );
 }

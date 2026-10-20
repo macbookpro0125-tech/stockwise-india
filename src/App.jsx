@@ -110,6 +110,13 @@ export default function App() {
         const stock = stockFromPath(currentPath);
         const chart = chartFromPath(currentPath);
 
+        // A chart expanded over the page (PriceChartPanel.jsx) is its own
+        // history entry: Back closes it, and the page stays where it was
+        if (window.history.state?.chartOverlay) {
+          window.history.back();
+          return;
+        }
+
         if (chart) {
           if (canGoBack) window.history.back();
           else navigate(stockPath(chart), { replace: true });
