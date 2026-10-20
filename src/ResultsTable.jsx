@@ -686,34 +686,35 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
             const adAfter = (i + 1) % PHONE_AD_EVERY === 0 && i + 1 < visible.length;
             return (
               <div key={stock.symbol} className="ph-row-group">
+                {/* A phone's card, laid out as the Stocks app's rows (20 Oct
+                    2026): name and price, then ticker · sector and the day's
+                    change; then the scores in even columns with the star at
+                    the end. The research profile isn't repeated here — the
+                    company page, a tap away, has the whole scorecard. */}
                 <div data-tour={i === 0 ? "row" : undefined} onClick={() => onAnalyze(stock.symbol)} className="ph-row phone-row">
-                  <div className="ph-row-main">
-                    <button type="button" className="ph-row-name stock-link" onClick={e => { e.stopPropagation(); onAnalyze(stock.symbol); }}>{stock.name}</button>
-                    <div className="ph-row-sub">
-                      <span className="ticker-chip">{stock.symbol}</span>
-                      <NcavBadge stock={stock} />
-                      {stock.sector && <span className="ph-row-sector">{stock.sector}</span>}
+                  <div className="ph-row-top">
+                    <div className="ph-row-id">
+                      <button type="button" className="ph-row-name stock-link" onClick={e => { e.stopPropagation(); onAnalyze(stock.symbol); }}>{stock.name}</button>
+                      <div className="ph-row-sub">
+                        <span className="ticker-chip">{stock.symbol}</span>
+                        <NcavBadge stock={stock} />
+                        {stock.sector && <span className="ph-row-sector">{stock.sector}</span>}
+                      </div>
                     </div>
-                    <div className="ph-row-metrics">
-                      {cells.map(([label, value]) => <span key={label}><span className="ph-row-k">{label}</span> {value}</span>)}
+                    <div className="ph-row-quote">
+                      <span className="ph-row-price">{stock.cmp ? `₹${fmt(stock.cmp, stock.cmp < 100 ? 2 : 0)}` : "—"}</span>
+                      {day != null && <span className={`ph-row-day ${day >= 0 ? "up" : "down"}`}>{`${day >= 0 ? "+" : "−"}${Math.abs(day).toFixed(2)}%`}</span>}
                     </div>
-                    {missingResearch && <div role="note" className="ph-row-note">{missingResearch}</div>}
-                    <ResearchProfile
-                      research={stock.research}
-                      symbol={stock.symbol}
-                      expanded={openResearchProfile === stock.symbol}
-                      onToggle={() => setOpenResearchProfile(current => current === stock.symbol ? null : stock.symbol)}
-                    />
                   </div>
-                  <div className="ph-row-side">
-                    <span className="ph-row-price">{stock.cmp ? `₹${fmt(stock.cmp, stock.cmp < 100 ? 2 : 0)}` : "—"}</span>
-                    <span className="ph-row-day" style={{ color: day == null ? "var(--t3)" : day >= 0 ? "var(--green)" : "var(--red)" }}>
-                      {day == null ? "" : `${day >= 0 ? "+" : ""}${day.toFixed(2)}%`}
-                    </span>
-                    <span data-tour={i === 0 ? "row-actions" : undefined} onClick={e => e.stopPropagation()}>
-                      <StarButton symbol={stock.symbol} price={stock.cmp} watched={watchlist.has(stock.symbol)} size={40} />
+                  <div className="ph-row-stats" style={{ "--n": cells.length }}>
+                    {cells.map(([label, value]) => (
+                      <div key={label} className="ph-stat"><span className="ph-stat-k">{label}</span><span className="ph-stat-v">{value}</span></div>
+                    ))}
+                    <span className="ph-row-star" data-tour={i === 0 ? "row-actions" : undefined} onClick={e => e.stopPropagation()}>
+                      <StarButton symbol={stock.symbol} price={stock.cmp} watched={watchlist.has(stock.symbol)} size={36} />
                     </span>
                   </div>
+                  {missingResearch && <div role="note" className="ph-row-note">{missingResearch}</div>}
                 </div>
                 {adAfter && <AdCard feed="stocks" slot={`stocks-after-${i + 1}`} size="medium" className="ph-row-ad" />}
               </div>
