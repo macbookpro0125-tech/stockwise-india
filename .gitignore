@@ -50,3 +50,6 @@ upload-keystore.properties
 
 # The signed app file for Play (replica/launch/play-listing.md); rebuilt, not kept in git
 replica/launch/release/
+
+# Firebase settings for the Android app (download from the Firebase console; kept out of git)
+android/app/google-services.json
