@@ -126,6 +126,13 @@ export default function DiscoverView({ onOpenStock, theme }) {
     window.addEventListener("popstate", back);
     return () => window.removeEventListener("popstate", back);
   }, []);
+  // Which of Discover's two is showing, for the header: its tab row shows on
+  // the stock lists, not on the start page (Header.jsx, index.css). Before
+  // paint, so the row never flashes on the start page.
+  useLayoutEffect(() => {
+    document.documentElement.dataset.discoverStep = phoneStep;
+    return () => { delete document.documentElement.dataset.discoverStep; };
+  }, [phoneStep]);
   // Where the strategies page was when a list opened, to come back to it
   const strategiesY = useRef(null);
   const showStocks = () => {

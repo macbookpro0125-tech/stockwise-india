@@ -51,11 +51,12 @@ export function useTabBadges() {
 
 export default function Header({ tab, onTab, account, onLogout, onDeleted, onSearch, theme, onToggleTheme, onTour }) {
   const badges = useTabBadges();
-  // On Discover the header is one row: no tab row (asked for 20 Oct 2026 —
-  // "not important there"), and the pages aren't in the Account menu either
-  // (asked the same day). A company's page, and Watchlist, Portfolio and the
-  // rest, keep the row.
-  const tabsHidden = tab === "discover";
+  // Discover's start page has a one-row header — no tab row (asked for 20 Oct
+  // 2026: "not important there"); its stock lists have the row, as every
+  // other page does (asked the same day). Discover says which of its two it's
+  // showing (html[data-discover-step], DiscoverView.jsx) and index.css hides
+  // the row on the start page.
+  const onDiscover = tab === "discover";
 
   // --header-h: how much of the top the pinned header covers, so bars pinned
   // below it (the stock page's action bar) sit under it at any width — 0 on
@@ -105,7 +106,7 @@ export default function Header({ tab, onTab, account, onLogout, onDeleted, onSea
           </div>
         </div>
 
-        {!tabsHidden && <div className="discovery-tabs" data-tour="tabs" style={{ display: "flex", gap: 0 }}>
+        <div className={`discovery-tabs${onDiscover ? " tabs-on-discover" : ""}`} data-tour="tabs" style={{ display: "flex", gap: 0 }}>
           {tabsFor(account).map(t => {
             const b = badges[t.id] ?? {};
             const active = tab === t.id;
@@ -127,7 +128,7 @@ export default function Header({ tab, onTab, account, onLogout, onDeleted, onSea
               </button>
             );
           })}
-        </div>}
+        </div>
       </div>
     </div>
   );

@@ -10,13 +10,15 @@ const nav = page => page.getByRole("navigation").first();
 test("every tab opens", async ({ page, account }) => {
   await page.goto("/");
   await expect(page.getByRole("button", { name: "Account" })).toBeVisible();
-  // Discover has no tab row, and the pages aren't in the Account menu (20 Oct 2026)
-  await expect(page.locator(".discovery-tabs")).toHaveCount(0);
+  // Discover's start page has no tab row, and the pages aren't in the
+  // Account menu; its stock lists have the row (20 Oct 2026)
+  await expect(page.locator(".discovery-tabs")).toBeHidden();
   await page.getByRole("button", { name: "Account", exact: true }).click();
   await expect(page.getByRole("menuitem", { name: /^Watchlist/ })).toHaveCount(0);
   await page.keyboard.press("Escape");
   await openStocks(page);
   await expect(page.locator("table, [role=table]").first()).toBeVisible();
+  await expect(page.locator(".discovery-tabs"), "a stock list has the tab row").toBeVisible();
   axeLog(await axeCheck(page, "Discover"));
   for (const tab of ["Momentum", "Watchlist", "Portfolio", "Performance", "Alerts"]) {
     await openPage(page, tab);
