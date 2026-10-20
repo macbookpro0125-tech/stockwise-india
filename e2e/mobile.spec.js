@@ -150,3 +150,26 @@ test("BUG-006 the front page's counts aren't written in by hand", async ({ page 
   await expect(page.getByText(/\b99 metrics/)).toHaveCount(0);
   await expect(page.getByText(/one of \d+ screens/)).toHaveCount(0);
 });
+
+// As in Reddit's app (20 Oct 2026): reading down folds the tab bar into one
+// round button, the current tab's; tapping it, or scrolling back up, opens it
+test("M-H8 the tab bar folds into one button while reading down @phone", async ({ page, account, isMobile }) => {
+  test.skip(!isMobile, "the phone's tab bar");
+  await page.goto("/");
+  const bar = page.getByRole("navigation", { name: "Pages" });
+  await expect(bar.getByRole("button", { name: "Watchlist" })).toBeVisible();
+  const readDown = async () => { for (let i = 0; i < 6; i++) { await page.evaluate(() => window.scrollBy(0, 120)); await page.waitForTimeout(60); } };
+  await readDown();
+  const folded = bar.getByRole("button", { name: "Discover: show all tabs" });
+  await expect(folded).toBeVisible();
+  await expect(bar.getByRole("button", { name: "Watchlist" })).toHaveCount(0);
+  await expect.poll(async () => (await bar.boundingBox()).width).toBeLessThan(80);
+  await folded.click();
+  await expect(bar.getByRole("button", { name: "Watchlist" })).toBeVisible();
+  await readDown();
+  await expect(folded).toBeVisible();
+  for (let i = 0; i < 3; i++) { await page.evaluate(() => window.scrollBy(0, -60)); await page.waitForTimeout(60); }
+  await expect(bar.getByRole("button", { name: "Watchlist" })).toBeVisible();
+  await bar.getByRole("button", { name: "Watchlist" }).click();
+  await expect(bar.getByRole("button", { name: "Watchlist" })).toHaveAttribute("aria-current", "page");
+});

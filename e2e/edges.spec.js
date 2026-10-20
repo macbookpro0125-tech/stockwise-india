@@ -101,6 +101,10 @@ test("phone: add a holding and open Alerts @phone", async ({ page, account }) =>
   await expect(page.getByText(/Tata Consultancy/).first()).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(1);
+  // the page scrolled as the holding was added, so the tab bar may have
+  // folded into one button (M-H8): open it as a person would
+  const folded = page.getByRole("button", { name: /: show all tabs$/ });
+  if (await folded.isVisible().catch(() => false)) await folded.click();
   await page.getByRole("button", { name: "Alerts" }).filter({ visible: true }).first().click();
   await expect(page.getByText(/No alerts yet/)).toBeVisible();
 });

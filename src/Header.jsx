@@ -1,8 +1,9 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Compass, Star, BriefcaseBusiness, ChartLine, Bell, Sun, Moon, Zap, Settings } from "lucide-react";
 import { useWatchlist } from "./watchlist.js";
 import { portfolioStore, alertsStore } from "./stores.js";
 import StockSearchBar from "./StockSearchBar.jsx";
+import { scrollStep } from "./tabBarScroll.js";
 import AccountMenu from "./AccountMenu.jsx";
 
 // The original's sticky header (stock-screener src/Discovery.jsx): logo,
@@ -130,15 +131,44 @@ export default function Header({ tab, onTab, account, onLogout, onDeleted, onSea
 // A phone's tab bar: five tabs on a floating, frosted bar, the current one
 // on a tinted pill (asked for 17 Oct 2026, after the Stock Screeners: India
 // app). No counts; a dot when an alert's price has been reached.
+//
+// Reading down a page folds it into one round button, the current tab's, at
+// the bottom left (as Reddit's app does, asked for 20 Oct 2026); scrolling
+// back up, reaching the top, or tapping that button opens it again
+// (tabBarScroll.js).
 export function BottomTabBar({ tab, onTab }) {
   const badges = useTabBadges();
   const reached = badges.alerts.badgeColor === "var(--yellow)";
+  const [collapsed, setCollapsed] = useState(false);
+  const scroll = useRef({ collapsed: false, anchor: 0 });
+  const open = () => { scroll.current = { collapsed: false, anchor: window.scrollY }; setCollapsed(false); };
+  useEffect(() => {
+    let frame = 0;
+    const onScroll = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        scroll.current = scrollStep(scroll.current, window.scrollY);
+        setCollapsed(scroll.current.collapsed);
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => { cancelAnimationFrame(frame); window.removeEventListener("scroll", onScroll); };
+  }, []);
+  // A new tab opens with the bar open
+  useEffect(open, [tab]);
+  const isOn = t => tab === t.id || (t.id === "settings" && ["performance", "momentum"].includes(tab));
+  // The one left showing when folded (Discover on a page that isn't a tab's)
+  const kept = (phoneTabs.find(isOn) ?? phoneTabs[0]).id;
   return (
-    <nav className="bottom-tab-bar" data-tour="tabs" aria-label="Pages">
+    <nav className={`bottom-tab-bar${collapsed ? " collapsed" : ""}`} data-tour="tabs" aria-label="Pages">
       {phoneTabs.map(t => {
-        const on = tab === t.id || (t.id === "settings" && ["performance", "momentum"].includes(tab));
+        const on = isOn(t);
+        const hidden = collapsed && t.id !== kept;
+        const folded = collapsed && t.id === kept;
         return (
-          <button key={t.id} type="button" className="btb-tab" aria-current={on ? "page" : undefined} onClick={() => onTab(t.id)}>
+          <button key={t.id} type="button" className={`btb-tab${t.id === kept ? " btb-kept" : ""}`} aria-current={on ? "page" : undefined}
+            tabIndex={hidden ? -1 : undefined} aria-hidden={hidden || undefined} aria-label={folded ? `${t.short}: show all tabs` : undefined}
+            onClick={() => (folded ? open() : onTab(t.id))}>
             <span className="btb-icon">
               <t.Icon size={22} strokeWidth={on ? 2.3 : 1.9} aria-hidden="true" />
               {t.id === "alerts" && reached && <span className="btb-dot" aria-label="An alert's price was reached" />}

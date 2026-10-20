@@ -1947,6 +1947,20 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 .btb-icon { position: relative; display: inline-flex; }
 .btb-dot { position: absolute; top: -1px; right: -3px; width: 9px; height: 9px; border-radius: 50%; background: var(--yellow); box-shadow: 0 0 0 2px var(--s2); }
 .btb-label { font-size: 11px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; }
+/* Folded into one round button while reading down (Header.jsx BottomTabBar):
+   the bar's right edge slides in to a 66px circle at the left, the other
+   tabs shrink away inside it, and the kept tab drops its label */
+@media (max-width: 640px) {
+  .bottom-tab-bar { overflow: hidden; transition: right 280ms var(--ease-out, cubic-bezier(0.2, 0.8, 0.2, 1)), gap 280ms; }
+  .bottom-tab-bar .btb-tab { transition: background 180ms, color 180ms, transform 120ms var(--ease-out, ease-out), flex-grow 280ms var(--ease-out, cubic-bezier(0.2, 0.8, 0.2, 1)), opacity 160ms; }
+  .bottom-tab-bar.collapsed { right: calc(100% - 12px - 66px); gap: 0; }
+  .bottom-tab-bar.collapsed .btb-tab:not(.btb-kept) { flex-grow: 0; opacity: 0; pointer-events: none; }
+  .bottom-tab-bar.collapsed .btb-label { display: none; }
+  .bottom-tab-bar.collapsed .btb-kept { border-radius: 50%; }
+}
+@media (max-width: 640px) and (prefers-reduced-motion: reduce) {
+  .bottom-tab-bar, .bottom-tab-bar .btb-tab { transition: none; }
+}
 @media (prefers-reduced-transparency: reduce) { .bottom-tab-bar { background: var(--s2) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; } }
 
 /* Discover's first page */
