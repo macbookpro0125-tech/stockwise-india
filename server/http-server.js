@@ -624,6 +624,17 @@ export function createApp() {
         if (metrics) {
           capHistoricalMultiples([metrics]);
           metrics.evToSalesSector = market.evSales?.get(metrics.peerSector) ?? null;
+          // The price against its sector's index and the market, and its
+          // swings against theirs (StockPerformance.jsx)
+          const ix = snap?.indexReturns ?? {};
+          metrics.benchmarks = {
+            sector: metrics.sectorIndex ? { name: metrics.sectorIndex, returns: ix[metrics.sectorIndex] ?? {} } : null,
+            market: { name: "Nifty 50", returns: ix["Nifty 50"] ?? {} },
+          };
+          metrics.volatilityPeers = {
+            sector: (metrics.sector && market.volatility?.sectors.get(metrics.sector)) || null,
+            market: market.volatility?.market ?? null,
+          };
         }
 
         sendJson(res, 200, {

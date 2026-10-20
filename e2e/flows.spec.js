@@ -159,11 +159,31 @@ test("F02-H4 compare two companies", async ({ page, account }) => {
 test("F03-H1 search opens a company; back returns to Discover", async ({ page, account }) => {
   await page.goto("/");
   await page.getByRole("combobox", { name: "Search any stock by name or symbol" }).fill("Infosys");
-  await page.getByRole("option", { name: /Infosys/ }).or(page.getByRole("button", { name: /Infosys/ })).first().click();
+  // The search's own result — a strategy card can list Infosys among its names too
+  await page.getByRole("listbox", { name: "Companies" }).getByRole("option", { name: /Infosys/ }).first().click();
   await expect(page.getByRole("heading", { level: 2, name: /Infosys/ })).toBeVisible();
   await expect(page).toHaveURL(/\/stock\/INFY/);
   await page.getByRole("button", { name: /Back/ }).first().click();
   await expect(page.getByRole("heading", { name: "Strategies" })).toBeVisible();
+});
+
+test("F03-H2 the overview leads with the six scores, strengths, and price against its sector", async ({ page, account }) => {
+  await page.goto("/stock/TCS");
+  const glance = page.getByRole("region", { name: "At a glance" });
+  await expect(glance.getByRole("img", { name: /Scores out of 100: Business \d+, Earnings \d+/ })).toBeVisible();
+  await expect(glance.getByRole("heading", { name: "What stands out" })).toBeVisible();
+  // A line opens its check in the scorecard
+  const first = glance.getByRole("listitem").first().getByRole("button");
+  const group = (await first.locator("b").textContent()).trim();
+  await first.click();
+  await expect(page.locator("details[open] summary", { hasText: group }).first()).toBeVisible();
+
+  const perf = page.getByRole("region", { name: "How the price has done" });
+  const table = perf.getByRole("table");
+  for (const row of ["TCS", "NIFTY IT", "NIFTY 50"]) await expect(table.getByRole("rowheader", { name: row })).toBeVisible();
+  for (const col of ["1W", "3M", "1Y", "3Y", "5Y"]) await expect(table.getByRole("columnheader", { name: col })).toBeVisible();
+  await expect(perf.getByText(/^Over the past year its price (rose|fell) [\d.]+%/)).toBeVisible();
+  await expect(perf.getByText(/In a typical week its price moves about ±[\d.]+%/)).toBeVisible();
 });
 
 test("F03-N1 an unknown symbol says so", async ({ page, account }) => {

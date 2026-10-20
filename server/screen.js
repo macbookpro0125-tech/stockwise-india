@@ -94,11 +94,12 @@ function* buildSteps(version) {
   for (const m of fresh) m.evToSalesSector = evSales.get(m.peerSector) ?? null;
   yield;
   const sizes = capSizes(fresh);
+  const volatility = volatilitySpread(fresh);
   yield;
   return {
     peers,
     market: {
-      version, rows: fresh, fetched: countFetched(), evSales,
+      version, rows: fresh, fetched: countFetched(), evSales, volatility,
       snapshot: snap ? { pricesDate: snap.pricesDate, builtAt: snap.builtAt } : null,
       sizes, ranges: metricRanges(fresh),
     },
@@ -179,6 +180,25 @@ function sectorPeMedians(rows) {
     out.set(sector, { median: pes.length % 2 ? pes[k] : (pes[k - 1] + pes[k]) / 2, n: pes.length });
   }
   return out;
+}
+
+// How much prices swing across the market — the calmest tenth, the middle,
+// the wildest tenth of a year's volatility — and each sector's middle, for
+// the stock page's "how jumpy is the price" line. By the sector the page
+// shows (m.sector). Sectors with fewer than five companies get no median.
+function volatilitySpread(rows) {
+  const at = (v, p) => { const i = (v.length - 1) * p, lo = Math.floor(i); return Math.round((v[lo] + (v[Math.ceil(i)] - v[lo]) * (i - lo)) * 10) / 10; };
+  const all = [], bySector = new Map();
+  for (const m of rows) {
+    if (!(m.volatility1y > 0)) continue;
+    all.push(m.volatility1y);
+    if (m.sector) (bySector.get(m.sector) ?? bySector.set(m.sector, []).get(m.sector)).push(m.volatility1y);
+  }
+  const asc = (a, b) => a - b;
+  all.sort(asc);
+  const sectors = new Map();
+  for (const [sector, v] of bySector) if (v.length >= 5) sectors.set(sector, { median: at(v.sort(asc), 0.5), n: v.length });
+  return { market: all.length >= 20 ? { p10: at(all, 0.1), median: at(all, 0.5), p90: at(all, 0.9), n: all.length } : null, sectors };
 }
 
 // Each sector's median EV/Sales (enterprise value at the last close over the

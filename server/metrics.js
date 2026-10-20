@@ -6,6 +6,7 @@ import { computeResearch } from "./research.js";
 import { fixUnitSlips } from "./unit-slips.js";
 import { sectorFromName } from "./name-sectors.js";
 import { bankValuation, PSU_BANKS } from "./bank-valuation.js";
+import { SECTOR_INDEX } from "./sector-indices.js";
 
 const DAY = 86400000;
 const MIN_PE_YEARS = 3;
@@ -756,8 +757,14 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
   // even when the stock page passes a fresher Yahoo daily close.
   const ret = snap?.returns?.[sym] ?? {};
   const pct = (a, b) => (a != null && b > 0 ? (a / b - 1) * 100 : null);
+  // The NSE index for its sector, where NSE has one (sector-indices.js)
+  const sectorIndex = SECTOR_INDEX[m.sector] ?? null;
+  const sectorRet = sectorIndex ? snap?.indexReturns?.[sectorIndex] : null;
   Object.assign(m, {
-    ret1d: ret.d1 ?? null, ret1w: ret.w1 ?? null, ret1m: ret.m1 ?? null, ret6m: ret.m6 ?? null, ret1y: ret.y1 ?? null,
+    ret1d: ret.d1 ?? null, ret1w: ret.w1 ?? null, ret1m: ret.m1 ?? null, ret3m: ret.m3 ?? null, ret6m: ret.m6 ?? null, ret1y: ret.y1 ?? null,
+    ret3y: ret.y3 ?? null, ret5y: ret.y5 ?? null,
+    sectorIndex,
+    ret1yVsSector: ret.y1 != null && sectorRet?.y1 != null ? Math.round((ret.y1 - sectorRet.y1) * 100) / 100 : null,
     upFrom52wLow: pct(cmp, m.low52w),
     downFrom52wHigh: cmp != null && m.high52w > 0 ? (1 - cmp / m.high52w) * 100 : null,
     netMargin: latest.profit != null && latest.revenue > 0 ? (latest.profit / latest.revenue) * 100 : null,

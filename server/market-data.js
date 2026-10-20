@@ -7,6 +7,7 @@ import { UA, NSE_BASE, fetchJson, parseQeDate } from "./fetch-nse.js";
 import { PRICE_DIR, SNAPSHOT_PATH } from "./paths.js";
 import { fetchText as requestText } from "./upstream.js";
 import { momentumStats } from "./momentum.js";
+import { SECTOR_INDEX } from "./sector-indices.js";
 const SERIES_PREFERENCE = ["EQ", "BE", "BZ", "SM", "ST"];
 const SECTOR_LISTS = ["ind_niftytotalmarket_list", "ind_niftymicrocap250_list"];
 // NSE's own lists of government companies — the "Government-owned" badge
@@ -250,17 +251,20 @@ function technicals(days, nifty) {
 // Price change over the screener's return periods, on today's share basis
 // like the 52-week range: a close from before a split or bonus is divided by
 // the ratios since. 1D is against the previous trading day; the others
-// against the last close on or before the same date a week, a month, six
-// months and a year back (calendar months — the original app doesn't say which
-// base it uses; theirs differ from these by under a point). All the days
-// come from cached bhavcopies.
-const RETURN_PERIODS = [["d1", { days: 1 }], ["w1", { days: 7 }], ["m1", { months: 1 }], ["m6", { months: 6 }], ["y1", { months: 12 }]];
+// against the last close on or before the same date a week, a month, three
+// and six months, and one, three and five years back (calendar months —
+// the original app doesn't say which base it uses; theirs differ from these by
+// under a point). All the days come from cached bhavcopies.
+const RETURN_PERIODS = [["d1", { days: 1 }], ["w1", { days: 7 }], ["m1", { months: 1 }], ["m3", { months: 3 }], ["m6", { months: 6 }], ["y1", { months: 12 }], ["y3", { months: 36 }], ["y5", { months: 60 }]];
+
+// The market and each sector's index, over the same periods (sector-indices.js)
+const BENCHMARKS = ["Nifty 50", ...new Set(Object.values(SECTOR_INDEX))];
 
 async function periodReturns(latest, splits) {
   const factorBetween = (sym, fromIso) => (splits[sym] ?? [])
     .filter(s => s.exDate > fromIso && s.exDate <= latest.date)
     .reduce((f, s) => f * s.ratio, 1);
-  const out = {};
+  const out = {}, byIndex = {};
   for (const [key, { days = 0, months = 0 }] of RETURN_PERIODS) {
     const base = new Date(`${latest.date}T00:00:00Z`);
     base.setUTCDate(base.getUTCDate() - days);
@@ -270,8 +274,14 @@ async function periodReturns(latest, splits) {
     const past = await pricesOnOrBefore(base).catch(() => null);
     if (!past || past.date >= latest.date) continue;
     // NIFTY 50 over the same days, for "return vs NIFTY" (percentage points)
-    const n0 = (await indexFile(past.date))?.get("Nifty 50")?.close, n1 = (await indexFile(latest.date))?.get("Nifty 50")?.close;
+    const then0 = await indexFile(past.date), now0 = await indexFile(latest.date);
+    const n0 = then0?.get("Nifty 50")?.close, n1 = now0?.get("Nifty 50")?.close;
     const niftyRet = n0 > 0 && n1 > 0 ? (n1 / n0 - 1) * 100 : null;
+    // The benchmarks over the same two closes, for the stock page
+    for (const name of BENCHMARKS) {
+      const a = then0?.get(name)?.close, b = now0?.get(name)?.close;
+      if (a > 0 && b > 0) (byIndex[name] ||= {})[key] = Math.round((b / a - 1) * 10000) / 100;
+    }
     for (const [sym, close] of Object.entries(latest.prices)) {
       const then = past.prices[sym];
       if (!(then > 0)) continue;
@@ -293,7 +303,7 @@ async function periodReturns(latest, splits) {
       if (then > 0 && years > 4.5) (out[sym] ||= {}).cagr5y = Math.round((Math.pow(close / (then / factorBetween(sym, past5.date)), 1 / years) - 1) * 10000) / 100;
     }
   }
-  return out;
+  return { bySymbol: out, byIndex };
 }
 
 // The day's closes of the indices shown in the price strip, from NSE's daily
@@ -589,7 +599,7 @@ export async function buildMarketSnapshot(fyEndDates, { yearsOfActions = 6 } = {
     range52w: year.ranges,
     range52wFrom: year.from,
     range52wTradingDays: year.tradingDays,
-    returns: await periodReturns(latest, splits),
+    ...await periodReturns(latest, splits).then(r => ({ returns: r.bySymbol, indexReturns: r.byIndex })),
     tech: year.tech,
     indices: await indexCloses(latest.date),
   };

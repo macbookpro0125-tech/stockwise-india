@@ -1048,6 +1048,72 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 /* Light theme: the page sits on a soft grey, its cards white */
 [data-theme="light"] .sd-card, [data-theme="light"] .sd-snap-card, [data-theme="light"] .sd-metrics { box-shadow: 0 1px 2px rgba(16,24,40,0.05); }
 
+/* At a glance (StockGlance.jsx): the six scores as one shape, then the
+   strongest and weakest checks */
+.sd-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.sd-glance, .sd-perf { margin: var(--sp-4) 0; }
+.sd-glance-body { display: grid; grid-template-columns: minmax(0, 17rem) minmax(0, 1fr); gap: var(--sp-6); align-items: center; }
+.sd-hex { width: 100%; height: auto; overflow: visible; }
+.sd-hex-ring { fill: none; stroke: var(--bdr2); stroke-width: 1; }
+.sd-hex-axis { stroke: var(--bdr); stroke-width: 1; }
+.sd-hex-area { fill: color-mix(in srgb, var(--accent) 20%, transparent); stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; }
+.sd-hex-dot { fill: var(--tone); stroke: var(--s2); stroke-width: 1.5; }
+.sd-hex-label { font-size: var(--fs-2xs); font-weight: 600; fill: var(--t2); }
+.sd-hex-num { font-size: var(--fs-sm); font-weight: 700; fill: var(--tone); font-variant-numeric: tabular-nums; }
+.sd-hex-q { font-size: var(--fs-2xl); font-weight: 750; letter-spacing: -0.03em; fill: var(--t1); font-variant-numeric: tabular-nums; }
+.sd-hex-qlabel { font-size: var(--fs-2xs); fill: var(--t3); }
+.sd-glance-lists { display: grid; gap: var(--sp-4); min-width: 0; }
+.sd-glance-h { margin: 0 0 var(--sp-1); font-size: var(--fs-xs); font-weight: 650; letter-spacing: 0.02em; text-transform: uppercase; color: var(--t3); }
+.sd-glance-list { list-style: none; margin: 0; padding: 0; }
+.sd-glance-line { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; gap: var(--sp-2); width: 100%; padding: var(--sp-2) 0; border: 0; background: none; text-align: left; font-family: inherit; color: var(--t2); cursor: pointer; touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+.sd-glance-line:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--r-xs); }
+.sd-glance-line:active .sd-glance-text { color: var(--t1); }
+.sd-glance-icon { display: inline-flex; align-items: center; justify-content: center; width: 1.375rem; height: 1.375rem; margin-top: 1px; border-radius: 50%; color: var(--tone); background: color-mix(in srgb, var(--tone) 14%, transparent); }
+.sd-glance-text { font-size: var(--fs-sm); line-height: 1.5; }
+.sd-glance-text b { display: block; font-size: var(--fs-2xs); font-weight: 650; color: var(--t3); }
+.sd-glance-line .sd-score-go { margin-top: var(--sp-2); }
+@media (hover: hover) and (pointer: fine) {
+  .sd-glance-line:hover .sd-glance-text { color: var(--t1); }
+  .sd-glance-line:hover .sd-score-go { color: var(--t1); transform: translateX(2px); }
+}
+
+/* How the price has done (StockPerformance.jsx) */
+.sd-perf-lead { margin: 0 0 var(--sp-3); font-size: var(--fs-md); line-height: 1.5; color: var(--t1); }
+.sd-perf-h { margin-top: var(--sp-6); }
+.sd-perf-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; table-layout: fixed; }
+.sd-perf-table th, .sd-perf-table td { padding: var(--sp-2) var(--sp-1); text-align: right; font-size: var(--fs-sm); border-bottom: 1px solid var(--bdr); }
+.sd-perf-table thead th { font-size: var(--fs-2xs); font-weight: 650; color: var(--t3); }
+.sd-perf-table th:first-child { width: 34%; text-align: left; }
+.sd-perf-table tbody th { font-weight: 600; color: var(--t2); line-height: 1.3; overflow-wrap: anywhere; }
+.sd-perf-table tbody tr:last-child > * { border-bottom: 0; }
+.sd-perf-stock th { color: var(--t1); }
+.sd-perf-stock td { font-weight: 700; }
+.sd-perf-table td.up { color: var(--green); }
+.sd-perf-table td.down { color: var(--red); }
+.sd-perf-table td span { color: var(--t3); }
+.sd-swing { padding: var(--sp-3) 0 var(--sp-2); }
+.sd-swing-track { position: relative; height: 0.5rem; border-radius: var(--r-pill); background: var(--s4); }
+.sd-swing-track .sd-swing-band { position: absolute; top: 0; bottom: 0; border-radius: var(--r-pill); }
+.sd-swing-band { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.sd-swing-mark { display: inline-block; width: 0.75rem; height: 0.75rem; border-radius: 50%; border: 2px solid var(--s2); vertical-align: -1px; }
+.sd-swing-track .sd-swing-mark { position: absolute; top: 50%; transform: translate(-50%, -50%); }
+.sd-swing-track .sd-swing-stock { width: 1rem; height: 1rem; z-index: 1; box-shadow: var(--sh-sm); }
+.sd-swing-stock { background: var(--t1); }
+.sd-swing-sector { background: var(--brand-wise); }
+.sd-swing-market { background: var(--t3); }
+.sd-swing-key { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-5); list-style: none; margin: var(--sp-2) 0 0; padding: 0; font-size: var(--fs-xs); color: var(--t2); }
+.sd-swing-key li { display: inline-flex; align-items: center; gap: var(--sp-2); }
+.sd-swing-key b { font-weight: 650; color: var(--t1); font-variant-numeric: tabular-nums; }
+.sd-swing-key .sd-swing-band { display: inline-block; width: 1.25rem; height: 0.5rem; border-radius: var(--r-pill); }
+@media (max-width: 640px) {
+  .sd-glance-body { grid-template-columns: minmax(0, 1fr); gap: var(--sp-3); }
+  .sd-hex { max-width: 17rem; margin: 0 auto; display: block; }
+  .sd-perf-table th, .sd-perf-table td { padding: var(--sp-2) 0 var(--sp-2) var(--sp-1); font-size: var(--fs-2xs); letter-spacing: -0.01em; }
+  .sd-perf-table th:first-child { width: 24%; padding-left: 0; }
+  .sd-perf-stock td { font-weight: 650; }
+}
+@media (prefers-reduced-motion: reduce) { .sd-glance-line .sd-score-go { transition: none; } }
+
 @media (max-width: 1100px) { :root { --side-w: 300px; } .sd { gap: var(--sp-6); } }
 @media (max-width: 900px) {
   /* One column: the pinned bar first, then the summary, then the page */

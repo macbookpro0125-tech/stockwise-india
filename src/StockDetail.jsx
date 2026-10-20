@@ -17,6 +17,8 @@ import { ValuedAs, BankValuation, CyclicalValuation, NoFairValue, pbAt, CYCLE_TO
 import PhasePositionPlanner from "./PhasePositionPlanner.jsx";
 import ThesisMonitor from "./ThesisMonitor.jsx";
 import StockSide, { Scorecard } from "./StockSide.jsx";
+import StockGlance from "./StockGlance.jsx";
+import StockPerformance from "./StockPerformance.jsx";
 import StockSnapshot from "./StockSnapshot.jsx";
 import { docTop } from "./motion.js";
 
@@ -712,7 +714,9 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
 
       <section id="sec-overview" className="ss-section sd-section">
         <PriceChartPanel symbol={data.symbol} name={data.name} levels={valued ? levels : null} />
+        {m && <StockGlance r={m.research} />}
         <StockSnapshot m={m} price={price} />
+        <StockPerformance m={m} />
       </section>
 
       <div id="sec-about" className="ss-section"><CompanyProfile symbol={data.symbol} m={m} /></div>

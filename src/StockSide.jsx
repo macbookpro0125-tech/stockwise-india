@@ -28,7 +28,7 @@ const LINES = {
 const ICONS = { business: Building2, earnings: BadgeCheck, balance: Scale, governance: ShieldCheck, growth: TrendingUp, valuation: Tag, technical: Activity, flags: Flag };
 
 // Opens a <details> of the research dashboard and brings it under the pinned bar
-function openCheck(id) {
+export function openCheck(id) {
   const el = document.getElementById(id);
   if (!el) return;
   if (el.tagName === "DETAILS") el.open = true;
