@@ -1,4 +1,4 @@
-import { StrictMode } from "react";
+import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.jsx";
 // Inter, served with the app rather than from Google Fonts (no third-party
@@ -6,6 +6,7 @@ import App from "./App.jsx";
 import "@fontsource-variable/inter/opsz.css";
 import "./index.css";
 import { installGlow } from "./glow.js";
+import { onReconnecting } from "./api.js";
 import "./installApp.js"; // early: the browser offers installing soon after load
 
 installGlow();
@@ -16,8 +17,17 @@ if (import.meta.env.PROD && "serviceWorker" in navigator) {
   window.addEventListener("load", () => { navigator.serviceWorker.register("/sw.js").catch(() => {}); });
 }
 
+// While a deploy swaps the server (20–30 s), requests wait it out (api.js):
+// a small notice says so, rather than an error
+function ReconnectNotice() {
+  const [on, setOn] = useState(false);
+  useEffect(() => onReconnecting(setOn), []);
+  return on ? <div role="status" className="reconnect-notice">Jocular Insights is updating — reconnecting…</div> : null;
+}
+
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <App />
+    <ReconnectNotice />
   </StrictMode>
 );

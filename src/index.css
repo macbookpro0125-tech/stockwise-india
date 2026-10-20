@@ -1459,6 +1459,11 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   animation-timing-function: ease;
 }
 
+/* The notice while a deploy swaps the server (main.jsx ReconnectNotice) */
+.reconnect-notice { position: fixed; top: calc(env(safe-area-inset-top, 0px) + var(--sp-3)); left: 0; right: 0; margin: 0 auto; width: max-content; z-index: 1000; max-width: calc(100vw - 2 * var(--sp-4));
+  padding: var(--sp-2) var(--sp-4); border-radius: var(--r-pill); border: 1px solid var(--bdr2); background: var(--s3); box-shadow: var(--sh-md); color: var(--t1); font-size: var(--fs-sm); font-weight: 600; text-align: center; pointer-events: none; }
+@media (prefers-reduced-motion: no-preference) { .reconnect-notice { animation: apRise 300ms var(--ease-out) both; } }
+
 /* Watchlist: what's coming up — the soonest ex-date or board meeting (watchEvents.js) */
 .wl-event { display: flex; align-items: center; gap: 4px; margin-top: 3px; font-size: 10.5px; font-weight: 600; color: var(--accent); }
 

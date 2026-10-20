@@ -5,7 +5,8 @@
 // come from the server, never from a copy on the phone. Pages go to the
 // network first (a deploy shows at once) and fall back to the last copy
 // offline; the built files carry a hash in their names and never change, so
-// they come from the copy first. Bump VERSION to drop every copy.
+// they come from the copy first. Bump VERSION to drop every copy. A page
+// that gets the host's 502 during a deploy opens from the copy too.
 const VERSION = "v2";
 const SHELL = `jocular-shell-${VERSION}`, ASSETS = `jocular-assets-${VERSION}`;
 const KEEP_ASSETS = 80; // a few deploys' worth; the oldest go first
@@ -33,11 +34,15 @@ self.addEventListener("fetch", event => {
   if (req.method !== "GET" || url.origin !== self.location.origin || url.pathname.startsWith("/api/")) return;
 
   if (req.mode === "navigate") {
-    event.respondWith(fetch(req).then(res => {
+    event.respondWith(fetch(req).then(async res => {
       if (res.ok && (res.headers.get("content-type") ?? "").includes("text/html")) {
         const copy = res.clone();
         caches.open(SHELL).then(cache => cache.put("/", copy));
       }
+      // While a deploy swaps the server, Render answers with its own 502
+      // page for 20–30 s: the last copy of the app opens instead, and its
+      // requests wait the swap out (src/api.js)
+      if (res.status === 502 || res.status === 503 || res.status === 504) return (await caches.match("/")) ?? res;
       return res;
     }).catch(async () => (await caches.match("/")) ?? Response.error()));
     return;

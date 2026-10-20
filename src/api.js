@@ -3,15 +3,52 @@
 // fetch omits cookies on same-origin requests through the Vite proxy by
 // default only for cross-origin, but being explicit here means this still
 // works once the API moves to its own subdomain in production.
-async function request(path, options = {}) {
-  const res = await fetch(path, {
-    ...options,
-    credentials: "include",
-    headers: { "Content-Type": "application/json", ...options.headers },
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
-  return data;
+//
+// Riding out a deploy (20 Oct 2026): the server keeps its data on a disk, and
+// Render can't hand a disk from the old server to the new one without a gap,
+// so for 20–30 seconds each deploy it answers every request with its own HTML
+// 502 page. That page means the request never reached the server, so it's
+// sent again after a short wait, writes included, while onReconnecting's
+// listeners show a notice (main.jsx). Our own errors are JSON (an NSE
+// failure is a JSON 502) and come straight back, and so does a dropped
+// connection: Render answers during a deploy, so that's being offline, which
+// the app says at once rather than waiting.
+let RETRY_DELAYS = [2000, 3000, 4000, 5000, 6000, 8000, 8000, 8000]; // ~45 s
+export const setRetryDelays = delays => { RETRY_DELAYS = delays; };
+const listeners = new Set();
+export const onReconnecting = fn => { listeners.add(fn); return () => listeners.delete(fn); };
+let waiting = 0;
+const reconnecting = on => {
+  waiting += on ? 1 : -1;
+  if ((on && waiting === 1) || (!on && waiting === 0)) for (const fn of listeners) fn(on);
+};
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+const gatewayPage = res => [502, 503, 504].includes(res.status) && !(res.headers.get("content-type") ?? "").includes("application/json");
+
+export async function request(path, options = {}) {
+  const read = !options.method || options.method === "GET";
+  let attempt = 0, flagged = false;
+  try {
+    for (;;) {
+      const res = await fetch(path, {
+        ...options,
+        credentials: "include",
+        headers: { "Content-Type": "application/json", ...options.headers },
+      });
+      if (!gatewayPage(res)) {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+        return data;
+      }
+      // a gateway timeout on a write: the server may have done it
+      if (res.status === 504 && !read) throw new Error("The server took too long to answer. Check whether it was saved before trying again.");
+      if (attempt >= RETRY_DELAYS.length) throw new Error("Jocular Insights is updating. Try again in a minute.");
+      if (!flagged) { flagged = true; reconnecting(true); }
+      await sleep(RETRY_DELAYS[attempt++]);
+    }
+  } finally {
+    if (flagged) reconnecting(false);
+  }
 }
 
 export const api = {

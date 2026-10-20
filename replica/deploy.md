@@ -129,3 +129,27 @@ What the ads earn depends on how many people use the app and where they
 are; rates for Indian users are among the lower ones, so ads add up only
 with thousands of daily users. AdMob's reports show the real figures once
 live ads run.
+
+### Deploys and the 20–30 second gap (20 Oct 2026)
+
+The service has a disk (accounts database, market data), and Render can't
+hand a disk from the old server to the new one without stopping the old one
+first, so every deploy leaves 20–30 seconds in which Render answers with its
+own "502 Bad Gateway" page (logs, 20 Oct: "Deploying…" 10:12:03, server up
+10:12:21, live 10:12:31). Our server itself starts in under a second.
+
+What the app does about it:
+- `src/api.js` waits out Render's 502 page (HTML; our own errors are JSON),
+  retrying for up to ~45 s with "Jocular Insights is updating — reconnecting…"
+  showing (`main.jsx`). Writes are sent again too: that page means the
+  request never reached the server. A dropped connection is not retried —
+  that's being offline. Tested in `src/apiRetry.test.js`.
+- `public/sw.js` opens the last copy of the app for a page that gets the
+  502, so a reload mid-deploy shows the app, not Render's page. A first-ever
+  visit during the gap still sees Render's page.
+
+To make deploys gapless the disk has to go: accounts in a managed database
+(Render Postgres, or a hosted SQLite such as Turso) and the market data
+pulled in at start (`DATA_JOBS=pull` already does). Not done — a migration of
+every account query. Until then, push outside market hours when possible.
+
