@@ -2116,8 +2116,8 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
     backdrop-filter: blur(20px) saturate(180%);
   }
 }
-.btb-tab { flex: 1 1 0; min-width: 0; min-height: 54px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 0; border: 0; border-radius: 26px; background: transparent; color: var(--t2); font: inherit; cursor: pointer; transition: background 180ms, color 180ms, transform 120ms var(--ease-out, ease-out); }
-.btb-tab[aria-current="page"] { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
+.btb-tab { position: relative; z-index: 1; flex: 1 1 0; min-width: 0; min-height: 54px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 0; border: 0; border-radius: 26px; background: transparent; color: var(--t2); font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; transition: background 180ms, color 180ms, transform 120ms var(--ease-out, ease-out); }
+.btb-tab.lit { color: var(--accent); }
 .btb-tab:active { transform: scale(0.94); }
 .btb-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .btb-icon { position: relative; display: inline-flex; }
@@ -2133,6 +2133,47 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
   .bottom-tab-bar.collapsed .btb-tab:not(.btb-kept) { flex-grow: 0; opacity: 0; pointer-events: none; }
   .bottom-tab-bar.collapsed .btb-label { display: none; }
   .bottom-tab-bar.collapsed .btb-kept { border-radius: 50%; }
+  /* folded, the kept tab is its own tinted circle; the lens steps aside */
+  .bottom-tab-bar.collapsed .btb-kept.lit { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+  .bottom-tab-bar.collapsed .btb-glass { opacity: 0; transition: opacity 120ms; }
+}
+
+/* The glass lens under the current tab (Header.jsx BottomTabBar, 21 Oct
+   2026): one piece of tinted glass that slides to the tab pressed with a
+   little spring, stretching the way it travels (more for a longer trip) and
+   settling back, a bright rim where the light catches it. Tabs are equal, so
+   its place is worked out from the tab's number, nothing measured. */
+.btb-glass {
+  position: absolute; z-index: 0; top: 6px; bottom: 6px; left: 6px;
+  width: calc((100% - 12px - (var(--n) - 1) * 2px) / var(--n));
+  pointer-events: none;
+  transform: translateX(calc(var(--i) * (100% + 2px)));
+  transition: transform 460ms cubic-bezier(0.34, 1.12, 0.5, 1), opacity 180ms;
+  will-change: transform;
+}
+.btb-glass-body {
+  position: absolute; inset: 0; border-radius: 26px; overflow: hidden;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 24%, transparent), color-mix(in srgb, var(--accent) 9%, transparent));
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), inset 0 -1px 1px rgba(0, 0, 0, 0.22), 0 6px 16px color-mix(in srgb, var(--accent) 16%, transparent);
+  transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 220ms;
+}
+/* the sheen: light caught across the top of the glass */
+.btb-glass-body::before { content: ""; position: absolute; inset: 0; border-radius: inherit; background: radial-gradient(120% 70% at 30% 0%, rgba(255, 255, 255, 0.2), transparent 62%); }
+.btb-glass.go .btb-glass-body { animation: btb-stretch 460ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+/* held down: the glass lifts a little toward the finger */
+.btb-glass.pressing .btb-glass-body { transform: scale(1.06); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), inset 0 -1px 1px rgba(0, 0, 0, 0.22), 0 8px 22px color-mix(in srgb, var(--accent) 26%, transparent); }
+@keyframes btb-stretch {
+  0% { transform: scale(1, 1); }
+  22% { transform: scale(calc(1 + var(--d, 1) * 0.06), 0.92); }
+  62% { transform: scale(0.98, 1.02); }
+  100% { transform: scale(1, 1); }
+}
+[data-theme="light"] .btb-glass-body { border-color: rgba(255, 255, 255, 0.6); }
+@media (prefers-reduced-motion: reduce) {
+  .btb-glass { transition: opacity 160ms; }
+  .btb-glass.go .btb-glass-body { animation: none; }
+  .btb-glass.pressing .btb-glass-body { transform: none; }
 }
 @media (max-width: 640px) and (prefers-reduced-motion: reduce) {
   .bottom-tab-bar, .bottom-tab-bar .btb-tab { transition: none; }

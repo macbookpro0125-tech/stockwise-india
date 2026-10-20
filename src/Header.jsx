@@ -165,18 +165,42 @@ export function BottomTabBar({ tab, onTab }) {
   const isOn = t => tab === t.id || (t.id === "settings" && ["performance", "momentum"].includes(tab));
   // The one left showing when folded (Discover on a page that isn't a tab's)
   const kept = (phoneTabs.find(isOn) ?? phoneTabs[0]).id;
+  // One glass lens under the tabs (asked for 21 Oct 2026: "glass movement
+  // when I click on another"): it slides to the tab pressed — on the press,
+  // not the release — stretching the way it goes and settling, as iOS's tab
+  // bar does. A press that turns into a scroll puts it back.
+  const [pressed, setPressed] = useState(null);
+  // (let go after the tap has opened its tab — a touch's pointerleave comes
+  // before its click, and clearing then flicked the lens back for a frame)
+  const release = useRef(0);
+  useEffect(() => () => clearTimeout(release.current), []);
+  const at = pressed ?? phoneTabs.findIndex(isOn);
+  const from = useRef(at);
+  const moves = useRef(0);
+  if (from.current !== at) { moves.current += 1; }
+  const distance = Math.abs(at - from.current);
+  useEffect(() => { from.current = at; });
   return (
     <nav className={`bottom-tab-bar${collapsed ? " collapsed" : ""}`} data-tour="tabs" aria-label="Pages">
-      {phoneTabs.map(t => {
+      {at >= 0 && (
+        <span className={`btb-glass${moves.current ? " go" : ""}${pressed != null ? " pressing" : ""}`} aria-hidden="true"
+          style={{ "--i": at, "--n": phoneTabs.length, "--d": Math.min(distance || 1, 4) }}>
+          <span key={moves.current} className="btb-glass-body" />
+        </span>
+      )}
+      {phoneTabs.map((t, i) => {
         const on = isOn(t);
         const hidden = collapsed && t.id !== kept;
         const folded = collapsed && t.id === kept;
         return (
-          <button key={t.id} type="button" className={`btb-tab${t.id === kept ? " btb-kept" : ""}`} aria-current={on ? "page" : undefined}
+          <button key={t.id} type="button" className={`btb-tab${t.id === kept ? " btb-kept" : ""}${i === at ? " lit" : ""}`} aria-current={on ? "page" : undefined}
             tabIndex={hidden ? -1 : undefined} aria-hidden={hidden || undefined} aria-label={folded ? `${t.short}: show all tabs` : undefined}
-            onClick={() => (folded ? open() : onTab(t.id))}>
+            onPointerDown={e => { if (!collapsed && e.isPrimary) setPressed(i); }}
+            onPointerCancel={() => setPressed(null)}
+            onPointerUp={() => { clearTimeout(release.current); release.current = setTimeout(() => setPressed(null), 350); }}
+            onClick={() => { setPressed(null); folded ? open() : onTab(t.id); }}>
             <span className="btb-icon">
-              <t.Icon size={22} strokeWidth={on ? 2.3 : 1.9} aria-hidden="true" />
+              <t.Icon size={22} strokeWidth={i === at ? 2.3 : 1.9} aria-hidden="true" />
               {t.id === "alerts" && reached && <span className="btb-dot" aria-label="An alert's price was reached" />}
             </span>
             <span className="btb-label">{t.short}</span>

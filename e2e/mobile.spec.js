@@ -307,3 +307,21 @@ test("M-H15 the Overview says what each tab answers @phone", async ({ page, acco
   await expect(page.locator("#sec-valuation")).toBeInViewport();
   await expect(page.getByRole("button", { name: "Next: Financials. Is it growing, and can it carry its debt?" })).toBeAttached();
 });
+
+// 21 Oct 2026: "glass movement when I click on another" — one glass lens
+// under the tabs slides from the current tab to the one tapped (it starts on
+// the press), instead of each tab lighting up on its own.
+test("M-H16 the tab bar's glass slides to the tab tapped @phone", async ({ page, account, isMobile }) => {
+  test.skip(!isMobile, "the phone's tab bar");
+  await page.goto("/");
+  const bar = page.getByRole("navigation", { name: "Pages" });
+  const glass = bar.locator(".btb-glass");
+  const centre = async loc => { const b = await loc.boundingBox(); return b.x + b.width / 2; };
+  await expect(glass).toBeVisible();
+  await expect.poll(async () => Math.abs(await centre(glass) - await centre(bar.getByRole("button", { name: "Discover" })))).toBeLessThan(3);
+  const watchlist = bar.getByRole("button", { name: "Watchlist" });
+  await watchlist.click();
+  await expect(watchlist).toHaveAttribute("aria-current", "page");
+  await expect.poll(async () => Math.abs(await centre(glass) - await centre(watchlist))).toBeLessThan(3);
+  expect(await glass.getAttribute("aria-hidden")).toBe("true");
+});
