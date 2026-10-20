@@ -85,7 +85,7 @@ function PivotLevels({ pivots, price }) {
 
   return (
     <div style={{ padding: "12px 14px", borderRadius: 8, background: "var(--surf)", marginBottom: 14 }}>
-      <div style={{ fontSize: 12, fontWeight: 600, color: "var(--t1)", marginBottom: 10 }}>Support & Resistance</div>
+      <div style={{ fontSize: 12, fontWeight: 600, color: "var(--t1)", marginBottom: 10 }}>Support & Resistance <span style={{ fontWeight: 500, color: "var(--t3)" }}>· daily pivots, from the last session's high, low and close (the chart's pivot points use a longer period)</span></div>
 
       {/* Visual bar */}
       <div style={{ position: "relative", height: 28, marginBottom: 10 }}>

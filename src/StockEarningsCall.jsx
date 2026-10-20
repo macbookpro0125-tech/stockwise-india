@@ -3,14 +3,13 @@ import { api } from "./api.js";
 import { latestCall } from "./earningsCall.js";
 
 // "Latest earnings call", in News & filings: the transcript companies must
-// file with NSE after the call (earningsCall.js), the results it discussed
-// against the same quarter a year ago (not against forecasts — there are
-// none here), and on request the passages the attachment reader picks out,
-// quoted with their pages. The transcript itself is the source.
+// file with NSE after the call (earningsCall.js), which quarter's results it
+// was about (the results themselves are in What changed recently), and on
+// request the passages the attachment reader picks out, quoted with their
+// pages. The transcript itself is the source.
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const day = iso => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
-const move = (v, what) => `${what} ${v >= 0 ? "up" : "down"} ${Math.abs(v).toFixed(1)}%`;
 
 export default function StockEarningsCall({ symbol, m }) {
   const [call, setCall] = useState(undefined); // undefined loading, null failed
@@ -42,17 +41,10 @@ export default function StockEarningsCall({ symbol, m }) {
       {t && (
         <>
           <p className="sd-div-line">
-            Transcript filed on <b>{day(t.date)}</b>.{" "}
+            {results ? <>The call on the {MONTHS[Number(results.fyEnd.slice(5, 7)) - 1]} {results.fyEnd.slice(0, 4)} quarter's results: transcript</> : "Transcript"} filed on <b>{day(t.date)}</b>.{" "}
             <a href={t.url} target="_blank" rel="noopener noreferrer">Read it on NSE (PDF)</a>
             {call.recording && <> · <a href={call.recording.url} target="_blank" rel="noopener noreferrer">the recording's link</a></>}
           </p>
-          {results && (
-            <p className="sd-div-line">
-              The results it discussed, for the quarter to {MONTHS[Number(results.fyEnd.slice(5, 7)) - 1]} {results.fyEnd.slice(0, 4)}: {results.profitCr < 0
-                ? `${results.salesYoY != null ? `${move(results.salesYoY, "sales")} on a year ago, and ` : ""}a loss`
-                : [results.salesYoY != null && move(results.salesYoY, "sales"), results.profitYoY != null && move(results.profitYoY, "profit")].filter(Boolean).join(" and ") + " on the same quarter a year ago"}.
-            </p>
-          )}
           {!passages && <button type="button" className="sd-call-read" onClick={read}>Show key passages from the transcript</button>}
           {passages?.loading && <p className="sd-muted">Reading the transcript…</p>}
           {passages?.error && <p className="sd-muted">{passages.error}</p>}

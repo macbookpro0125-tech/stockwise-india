@@ -1,13 +1,15 @@
 // "What changed recently" on the company page (StockRecent.jsx): the last
 // six weeks of news from data the page already has — results filed (against
-// a year ago), ex-dates passed, a big week for the price, a close near the
-// 52-week high or low, a change in the promoters' holding — and the next two
-// weeks' board meetings and ex-dates. Facts only; nothing here is a signal.
+// a year ago), ex-dates passed (with the record date), a big week for the
+// price, a close near the 52-week high or low, a change in the promoters'
+// holding — and the board meetings and ex-dates announced for the next two
+// months. It's the page's one list of events (it replaced a separate Events
+// card that repeated half of it). Facts only; nothing here is a signal.
 
 const DAY = 86400000;
 // shareholding is filed within 21 days of a quarter's end: a quarter that
 // ended within six weeks plus those 21 days was filed recently
-const WINDOW = 42, AHEAD = 14, HOLDING_WINDOW = WINDOW + 21;
+const WINDOW = 42, AHEAD = 60, HOLDING_WINDOW = WINDOW + 21;
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const shift = (iso, days) => new Date(Date.parse(`${iso}T00:00:00Z`) + days * DAY).toISOString().slice(0, 10);
 const month = iso => MONTHS[Number(iso.slice(5, 7)) - 1];
@@ -15,6 +17,9 @@ const rupees = n => `₹${Math.round(n).toLocaleString("en-IN")}`;
 const move = (v, what) => `${what} ${v >= 0 ? "up" : "down"} ${Math.abs(v).toFixed(1)}%`;
 const amount = t => [...t.matchAll(/(?:Rs|Re)\.?\s*(\d+(?:\.\d+)?)/gi)].reduce((s, m) => s + Number(m[1]), 0);
 const QUARTER_END = /-(03-31|06-30|09-30|12-31)$/;
+
+const dayMonth = iso => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" });
+const recordDate = detail => { const m = /record date (\d{4}-\d{2}-\d{2})/i.exec(detail ?? ""); return m ? ` (record date ${dayMonth(m[1])})` : ""; };
 
 function actionText(title) {
   if (/dividend/i.test(title)) { const a = amount(title); return `ex-dividend${a > 0 ? `: ₹${Number(a.toFixed(2))} a share` : ""}`; }
@@ -43,9 +48,9 @@ export function recentChanges(m, holding, today) {
     if (!e?.date) continue;
     if (e.kind === "action" && e.date >= since && e.date <= today) {
       const t = actionText(e.title ?? "");
-      recent.push({ date: e.date, kind: /dividend/i.test(e.title) ? "dividend" : "action", text: `Went ${t}.` });
+      recent.push({ date: e.date, kind: /dividend/i.test(e.title) ? "dividend" : "action", text: `Went ${t}${recordDate(e.detail)}.` });
     } else if (e.date > today && e.date <= until) {
-      upcoming.push({ date: e.date, kind: e.kind, text: e.kind === "board" ? `${e.title}.` : `${actionText(e.title ?? "").replace(/^./, c => c.toUpperCase())}.` });
+      upcoming.push({ date: e.date, kind: e.kind, text: e.kind === "board" ? `${e.title}.` : `${actionText(e.title ?? "").replace(/^./, c => c.toUpperCase())}${recordDate(e.detail)}.` });
     }
   }
 

@@ -1,9 +1,10 @@
 import { recentChanges } from "./recentChanges.js";
 import { todayIst } from "./watchEvents.js";
 
-// "What changed recently", at the top of News & filings: the last six weeks'
-// results, ex-dates, price moves and promoter changes, and what's due in the
-// next two weeks (recentChanges.js). The filings themselves are below it.
+// "What changed recently", in the Overview: the last six weeks' results,
+// ex-dates, price moves and promoter changes, and what's announced for the
+// next two months (recentChanges.js) — the page's one list of events. The
+// filings themselves are in News & filings.
 
 const day = iso => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" });
 
@@ -22,7 +23,7 @@ export default function StockRecent({ m, holding }) {
           <ol className="sd-recent-list">{upcoming.map(r => <li key={`${r.kind}-${r.date}`}><time dateTime={r.date}>{day(r.date)}</time><span>{r.text}</span></li>)}</ol>
         </>
       )}
-      <p className="sd-foot">From the company's filings with NSE and NSE's daily closes. The announcements themselves are below.</p>
+      <p className="sd-foot">From the company's filings with NSE, NSE's corporate actions and board-meeting calendar, and its daily closes. Companies announce board meetings a week or two ahead. The announcements themselves are in News &amp; filings.</p>
     </section>
   );
 }

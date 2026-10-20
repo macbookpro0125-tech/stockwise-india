@@ -180,9 +180,9 @@ function CompanyProfile({ symbol, m }) {
   }, [symbol]);
   const p = d?.profile, l = d?.listing, latest = m?.history?.[0];
   const description = p?.about || p?.mainActivity || null;
+  // The sector, industry and market cap are on the cards just above
+  // (StockSnapshot.jsx), so they aren't repeated here
   const facts = [
-    ["Sector", m?.sector],
-    ["NSE industry", m?.industry],
     // NSE's list dates the main board: for a company that moved up from its
     // SME platform (Emerge), that's the move, not its first listing — Kotyark
     // reads 12 Mar 2026, listed on Emerge in Nov 2021. No public list keeps
@@ -190,7 +190,6 @@ function CompanyProfile({ symbol, m }) {
     ["On NSE main board since", longDate(l?.listedOn)],
     ["Incorporated", longDate(p?.incorporated)],
     ["Employees", p?.employees != null ? `${count(p.employees)}${p.workers ? ` · ${count(p.workers)} workers` : ""}` : null],
-    ["Market cap", m?.marketCapCr != null ? `₹${Math.round(m.marketCapCr).toLocaleString("en-IN")} Cr` : null],
     ["Shares", m?.shares > 0 ? `${(m.shares / 1e7).toLocaleString("en-IN", { maximumFractionDigits: 2 })} Cr` : null],
     ["Face value", l?.faceValue != null ? `₹${l.faceValue}` : null],
     ["Year ends", latest?.fyEnd ? new Date(`${latest.fyEnd}T00:00:00Z`).toLocaleDateString("en-IN", { month: "long", timeZone: "UTC" }) : null],
@@ -434,22 +433,23 @@ function PiotroskiCard({ m }) {
   );
 }
 
+// Figures the page shows nowhere else. The rest have one home each: P/E,
+// P/B, yield, ROE, ROCE, debt to equity and market cap in the Overview;
+// interest cover and free cash flow in Financial health; payout in
+// Dividends; FII/DII in Holdings (this box once showed an older quarter's
+// beside the newer one there); shares in About.
 function KeyNumbers({ data, m }) {
   const cr = n => (n == null ? "—" : `₹${Math.round(n).toLocaleString("en-IN")} Cr`);
   const crRaw = n => (n == null ? "—" : cr(n / 1e7));
   const stats = [
-    ["Market cap", cr(m.marketCapCr)], ["P/E (TTM)", m.peTtm?.toFixed(1) ?? "—"], ["P/E (latest FY)", m.peFy?.toFixed(1) ?? "—"], ["Price / book", m.priceToBook?.toFixed(2) ?? "—"], ["Dividend yield", pctText(m.divYield)],
-    ["ROCE", pctText(m.roce)], ["ROE", pctText(m.roe)], [`ROE (${m.roeAvgYears}Y avg)`, pctText(m.roeAvg)], ["OPM", pctText(m.opm)],
+    [`ROE (${m.roeAvgYears}Y avg)`, pctText(m.roeAvg)], ["OPM", pctText(m.opm)],
     ["Sales growth 3Y / 5Y", `${pctText(m.salesGrowth3y)} / ${pctText(m.salesGrowth5y)}`], ["Profit growth 3Y / 5Y", `${pctText(m.profitGrowth3y)} / ${pctText(m.profitGrowth5y)}`],
-    ["Debt / equity", m.template === "BANKING" ? "Not applicable for a bank" : m.debtToEquity != null ? `${m.debtToEquity.toFixed(2)}×` : "—"], ["Interest cover", m.interestCoverage != null ? `${m.interestCoverage.toFixed(1)}×` : "—"],
-    ["Free cash flow (last year)", cr(m.fcfCr)], ["Payout", pctText(m.payoutPct)],
-    ["FII / DII", `${pctText(m.fiiPct)} / ${pctText(m.diiPct)}`], ["Promoter shares pledged", pctText(m.pledgedPct)],
     ["Revenue (latest qtr)", crRaw(data.pnl?.revenueQuarter)], ["Profit (latest qtr)", crRaw(data.pnl?.profitQuarter)],
-    ["Net current assets (NCAV)", cr(m.ncavCr)], ["Shares outstanding", m.shares ? `${(m.shares / 1e7).toLocaleString("en-IN", { maximumFractionDigits: 2 })} Cr` : "—"],
+    ["Net current assets (NCAV)", cr(m.ncavCr)],
   ];
   return (
     <div style={card}>
-      <h3 style={{ fontSize: 15, fontWeight: 600, margin: "0 0 12px", color: "var(--t1)" }}>Key Numbers</h3>
+      <h3 style={{ fontSize: 15, fontWeight: 600, margin: "0 0 12px", color: "var(--t1)" }}>More figures</h3>
       <div className="ss-grid-4">
         {stats.map(([label, value]) => (
           <div key={label} style={{ background: "var(--s1)", borderRadius: 8, padding: "10px 12px", border: "1px solid var(--bdr)" }}>
@@ -458,47 +458,12 @@ function KeyNumbers({ data, m }) {
           </div>
         ))}
       </div>
-      <div style={{ fontSize: 10, color: "var(--t3)", marginTop: 10 }}>Share count from the {m.sharesSource ?? "filings"}; shareholding as of {m.holdingAsOf ?? "—"}.</div>
+      <div style={{ fontSize: 10, color: "var(--t3)", marginTop: 10 }}>The other key figures are in the Overview; debt and cash in Financial health; payout in Dividends; who owns it in Holdings.</div>
     </div>
   );
 }
 
 // ---- Page ---------------------------------------------------------------------
-
-// Board meetings ahead and corporate actions near today (results, dividends,
-// bonuses, splits, rights, AGMs), from NSE's calendar and corporate actions,
-// plus when the latest quarter's results were filed
-const QUARTER_NAME = ["", "", "Mar", "", "", "Jun", "", "", "Sep", "", "", "Dec"];
-function CompanyEvents({ m }) {
-  if (m.events == null) return null;
-  const today = new Date().toISOString().slice(0, 10);
-  const events = [...m.events];
-  if (m.latestQuarterFiled && m.latestQuarter) {
-    events.push({ date: m.latestQuarterFiled, kind: "results", title: `${QUARTER_NAME[Number(m.latestQuarter.slice(5, 7)) - 1] ?? ""} quarter results filed`.trim(), detail: null });
-  }
-  const ahead = events.filter(e => e.date >= today).sort((a, b) => a.date.localeCompare(b.date));
-  const recent = events.filter(e => e.date < today && Date.parse(today) - Date.parse(e.date) <= 120 * 86400000).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 6);
-  if (!ahead.length && !recent.length) return null;
-  const day = iso => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" });
-  const sentence = t => (t ? t[0].toUpperCase() + t.slice(1) : t);
-  const list = (items, upcoming) => items.map((e, i) => (
-    <div key={`${e.date}-${i}`} style={{ display: "grid", gridTemplateColumns: "62px minmax(0, 1fr)", gap: 10, padding: "8px 0", borderTop: "1px solid var(--bdr)" }}>
-      <span style={{ fontSize: 12, fontWeight: 650, color: upcoming ? "var(--accent)" : "var(--t2)", ...MONO }}>{day(e.date)}</span>
-      <span style={{ minWidth: 0 }}>
-        <span style={{ fontSize: 12.5, color: "var(--t1)", fontWeight: 550 }}>{sentence(e.title)}</span>
-        {e.detail && <span style={{ display: "block", fontSize: 11, color: "var(--t3)", marginTop: 2, lineHeight: 1.45 }}>{e.kind === "action" ? e.detail.replace(/(\d{4}-\d{2}-\d{2})/g, d => day(d)) : e.detail}</span>}
-      </span>
-    </div>
-  ));
-  return (
-    <div id="sec-events" className="ss-section" style={card}>
-      <SectionTitle icon={CalendarDays} style={{ marginBottom: 4 }}>Events</SectionTitle>
-      {ahead.length > 0 && <><div style={{ fontSize: 11.5, color: "var(--t3)", margin: "6px 0 2px", fontWeight: 600 }}>Coming up</div>{list(ahead, true)}</>}
-      {recent.length > 0 && <><div style={{ fontSize: 11.5, color: "var(--t3)", margin: `${ahead.length ? 12 : 6}px 0 2px`, fontWeight: 600 }}>Recent</div>{list(recent, false)}</>}
-      <p style={{ fontSize: 10.5, color: "var(--t3)", margin: "10px 0 0", lineHeight: 1.5 }}>From NSE's board-meeting calendar and corporate actions, as NSE lists them. Companies announce board meetings a week or two ahead; check the exchange for changes.</p>
-    </div>
-  );
-}
 
 // backTo: the tab Back returns to
 // "2026-10-07" -> "7 Oct"
@@ -729,7 +694,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
 
       <div id="sec-about" className="ss-section"><CompanyProfile symbol={data.symbol} m={m} /></div>
 
-      {m && <CompanyEvents m={m} />}
+      {m && <div id="sec-events" className="ss-section"><StockRecent m={m} holding={data.holding} /></div>}
 
       {m && (
         <>
@@ -1001,7 +966,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       <div id="sec-technicals" className="ss-section"><h2 className="sd-h2">Technicals. <span>The trend in the price.</span></h2><TechnicalPanel ticker={data.symbol} /></div>
 
       <div id="sec-peers" className="ss-section"><h2 className="sd-h2">Peers. <span>How it compares with similar companies.</span></h2>{m && <StockSectorCompare m={m} />}<PeersPanel symbol={data.symbol} onAnalyze={onOpenStock} /></div>
-      <div id="sec-filings" className="ss-section" data-tour="filings"><h2 className="sd-h2">News & filings. <span>Straight from NSE.</span></h2>{m && <StockRecent m={m} holding={data.holding} />}<StockEarningsCall symbol={data.symbol} m={m} /><NewsPanel symbol={data.symbol} /></div>
+      <div id="sec-filings" className="ss-section" data-tour="filings"><h2 className="sd-h2">News & filings. <span>Straight from NSE.</span></h2><StockEarningsCall symbol={data.symbol} m={m} /><NewsPanel symbol={data.symbol} /></div>
       <MyNotes key={data.symbol} symbol={data.symbol} />
       <StockDataDates dates={data.dataDates} quote={data.quote} research={m?.research} />
 

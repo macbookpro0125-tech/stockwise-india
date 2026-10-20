@@ -531,7 +531,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
         const items = [
-          ...(narrow ? levelLines.map(l => ({ key: l.title, text: l.short, color: resolve(l.color), price: l.price })) : []),
+          ...(narrow ? levelLines.map(l => ({ key: l.title, text: `${l.short} ${Math.round(l.price).toLocaleString("en-IN")}`, color: resolve(l.color), price: l.price })) : []),
           ...(pivotsLatest ? PIVOT_LEVELS.map(L => ({ key: `pivot-${L}`, text: L, color: PIVOT_COLORS[L[0]], price: pivotsLatest[L] })) : []),
         ];
         if (!items.length || chartRef.current !== chart) { setLevelTags([]); return; }
@@ -542,7 +542,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
           const y = main.priceToCoordinate(t.price);
           if (y == null || y < 8 || y > paneH - 8) continue;
           const near = placed.filter(p => Math.abs(p.y - y) < 15).length;
-          placed.push({ ...t, y, right: right + near * 48 });
+          placed.push({ ...t, y, right: right + near * 84 });
         }
         setLevelTags(placed);
       });
@@ -604,7 +604,10 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
     const r = RANGES.find(x => x.id === range);
     if (range === "All" || !r) return bars;
     const lastDate = bars.at(-1).date;
-    return bars.slice(indexFrom(bars, range === "YTD" ? `${lastDate.slice(0, 4)}-01-01` : monthsBack(lastDate, r.months)));
+    // from the last close before the range, as the returns table counts a
+    // year (the close on or before the same day a year back) — starting at the
+    // first bar inside it gave a 1Y of −18.4% beside the table's −16.9%
+    return bars.slice(Math.max(0, indexFrom(bars, range === "YTD" ? `${lastDate.slice(0, 4)}-01-01` : monthsBack(lastDate, r.months)) - 1));
   }, [bars, range]);
   const rangeChange = rangeBars && rangeBars.length > 1 ? ((rangeBars.at(-1).close - rangeBars[0].close) / rangeBars[0].close) * 100 : null;
   const activeInd = INDICATORS.filter(i => prefs.ind[i.id]).length;
@@ -662,26 +665,12 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
     </div>
   );
 
-  // The model's levels and the pivots, listed: above the chart on a wide
-  // screen, under the range buttons on a phone, where the top stays clean
+  // The pivots, listed: above the chart on a wide screen, under the range
+  // buttons on a phone, where the top stays clean. The model's levels aren't
+  // listed here — the Levels section does, and the lines carry their values
+  // (on the price scale, or on a phone in the tags)
   const levelLists = (
     <>
-        {levelLines.length > 0 && last && (
-          <ul aria-label="Model price levels" style={{ ...(narrow ? { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "2px 12px" } : { display: "flex", flexWrap: "wrap", gap: "4px 14px" }), listStyle: "none", margin: "0 0 8px", padding: 0, fontSize: 12, color: "var(--t2)", ...MONO }}>
-            {levelLines.map(l => {
-              const d = (l.price - last.close) / last.close * 100;
-              return (
-                <li key={l.title} style={{ display: "inline-flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", minWidth: 0 }}>
-                  <span aria-hidden="true" style={{ width: 14, flexShrink: 0, borderTop: `2px ${l.style === LineStyle.Solid ? "solid" : l.style === LineStyle.Dotted ? "dotted" : "dashed"} ${l.color}` }} />
-                  {/* Phones: short names, whole rupees and percents, so each fits one line */}
-                  <span style={{ color: "var(--t1)" }}>{narrow ? l.short : l.title}</span> {narrow ? `₹${Math.round(l.price).toLocaleString("en-IN")}` : fmtRs(l.price)}
-                  <span style={{ color: "var(--t3)" }}>{d >= 0 ? "+" : "−"}{Math.abs(d).toFixed(narrow ? 0 : 1)}%</span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-
         {pivotNow && (
           <div aria-label="Pivot points" style={{ display: "flex", flexWrap: "wrap", gap: "2px 12px", alignItems: "baseline", margin: "0 0 8px", fontSize: 12, color: "var(--t2)", ...MONO }}>
             <span style={{ color: "var(--t3)", fontFamily: "inherit" }}>{PIVOT_KINDS.find(([id]) => id === prefs.pivotKind)?.[1] ?? "Classic"} pivots, from the last {basisWord}:</span>
@@ -937,7 +926,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
           {" · "}<a href="https://www.tradingview.com/" target="_blank" rel="noopener" style={{ color: "inherit" }}>Chart by TradingView</a>
         </span>
       </div>
-      {narrow && (levelLines.length > 0 || pivotNow) && <div style={{ marginTop: 10 }}>{levelLists}</div>}
+      {narrow && pivotNow && <div style={{ marginTop: 10 }}>{levelLists}</div>}
 
       {expanded && createPortal(
         <div className="chart-overlay" role="dialog" aria-modal="true" aria-label={`${name || symbol} price chart`}>

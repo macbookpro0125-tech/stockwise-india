@@ -10,9 +10,10 @@ const base = {
     { fyEnd: "2026-06-30", filed: "2026-07-23", salesYoY: 10, profitYoY: 9 },
   ],
   events: [
-    { date: "2026-10-14", kind: "action", title: "Interim Dividend - Rs 12 Per Share" },
+    { date: "2026-10-14", kind: "action", title: "Interim Dividend - Rs 12 Per Share", detail: "Ex-date 2026-10-14; record date 2026-10-15" },
     { date: "2026-10-28", kind: "board", title: "Board meeting: fund raising" },
-    { date: "2026-12-20", kind: "board", title: "Board meeting: buyback" },
+    { date: "2026-12-10", kind: "action", title: "Bonus 1:1", detail: "Ex-date 2026-12-10" },
+    { date: "2027-01-20", kind: "board", title: "Board meeting: buyback" },
     { date: "2026-07-01", kind: "action", title: "Bonus 1:1" },
   ],
 };
@@ -23,10 +24,10 @@ const holding = { promoterHistory: [{ asOfIso: "2026-09-30", pct: 13.82 }, { asO
   assert.deepEqual(recent.map(r => r.kind), ["results", "dividend", "promoters"], "newest first");
   assert.equal(recent[0].date, "2026-10-16");
   assert.equal(recent[0].text, "Results for the September 2026 quarter: sales up 14.2% and profit down 3.4% on a year ago.");
-  assert.equal(recent[1].text, "Went ex-dividend: ₹12 a share.");
+  assert.equal(recent[1].text, "Went ex-dividend: ₹12 a share (record date 15 Oct).");
   assert.equal(recent[2].text, "Promoters held 13.82% at the end of September, down from 14.38% at the end of June.");
-  assert.deepEqual(upcoming.map(u => u.text), ["Board meeting: fund raising."], "the next two weeks only");
-  console.log("ok: results, an ex-dividend date and a promoter change, newest first; a board meeting coming up");
+  assert.deepEqual(upcoming.map(u => u.text), ["Board meeting: fund raising.", "Ex-bonus 1:1."], "announced dates up to two months ahead");
+  console.log("ok: results, an ex-dividend date with its record date and a promoter change, newest first; what's announced for the next two months");
 }
 {
   const { recent } = recentChanges({ ...base, quarters: [], events: [], ret1w: -11.4, close: 990 }, null, TODAY);
