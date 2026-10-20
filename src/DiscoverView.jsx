@@ -576,7 +576,13 @@ export default function DiscoverView({ onOpenStock, theme }) {
             )}
             <div className="screen-head-row">
               <div style={{ minWidth: 0, flex: 1 }}>
-                <h2 className="screen-title">{activePresetName ?? (activeCount > 0 ? "Your filters" : "Whole market")}</h2>
+                {/* A computer: the name is the strategy wheel itself — the
+                    strategy on its pill, the others above and below to
+                    scroll to (one name, in one place) */}
+                <h2 className={`screen-title${!isPhone && wheelItems.length > 1 ? " sr-only" : ""}`}>{activePresetName ?? (activeCount > 0 ? "Your filters" : "Whole market")}</h2>
+                {!isPhone && wheelItems.length > 1 && (
+                  <WheelPicker label="Strategy" items={wheelItems} value={wheelValue} onChange={pickFromWheel} rowHeight={42} className="wheel-title" />
+                )}
                 <p className="screen-about">
                   {activePresetAbout ?? (activeCount > 0 ? `${activeCount} filter${activeCount === 1 ? "" : "s"} of your own.` : "Every NSE company. Add a filter to narrow it down.")}
                 </p>
@@ -588,12 +594,6 @@ export default function DiscoverView({ onOpenStock, theme }) {
                   </div>
                 )}
               </div>
-              {!isPhone && wheelItems.length > 1 && (
-                <div className="screen-wheel">
-                  <span className="screen-wheel-label" aria-hidden="true">Strategy</span>
-                  <WheelPicker label="Strategy" items={wheelItems} value={wheelValue} onChange={pickFromWheel} rowHeight={38} />
-                </div>
-              )}
               {!isPhone && (
                 <div className="screen-actions">
                   <button type="button" onClick={handleShare} disabled={!activeCount} title="Copy a link that opens this screen" className="btn-ghost tb-btn">

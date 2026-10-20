@@ -14,13 +14,18 @@ import { indexAt, rowLook, stepIndex, notchStep } from "./wheelMath.js";
   console.log("ok: the row in the middle, from how far it has scrolled");
 }
 {
-  const mid = rowLook(0), one = rowLook(1), up = rowLook(-1), far = rowLook(6);
-  assert.deepEqual(mid, { opacity: 1, rotate: 0, scale: 1 }, "the middle row is plain");
-  assert.ok(one.opacity < 1 && one.scale < 1 && one.rotate < 0, "rows below tip away and fade");
-  assert.equal(up.rotate, -one.rotate, "rows above tip the other way, the same amount");
-  assert.ok(far.opacity >= 0.12 && Math.abs(far.rotate) <= 72, "far rows stay faint, never flip over");
-  assert.ok(rowLook(2).opacity < one.opacity, "the further, the fainter");
-  console.log("ok: rows tip and fade with their distance from the middle, like a drum");
+  // A drum like the iPhone's: rows sit on a cylinder, so away from the middle
+  // they squeeze in height and bunch toward it — upright, never slanted
+  const H = 40;
+  const mid = rowLook(0, H), one = rowLook(1, H), up = rowLook(-1, H), two = rowLook(2, H);
+  assert.deepEqual(mid, { opacity: 1, y: 0, scaleY: 1 }, "the middle row is plain");
+  assert.ok(one.scaleY < 1 && one.scaleY > 0.6, "the next row is a little flatter");
+  assert.ok(one.y < 0, "and drawn a little nearer the middle than its place");
+  assert.deepEqual(up, { ...one, y: -one.y }, "rows above mirror rows below");
+  assert.ok(two.scaleY < one.scaleY && two.opacity < one.opacity && two.y < one.y, "further rows flatter, fainter, more bunched");
+  assert.equal(rowLook(3, H).opacity, 0, "past the edge of the drum, gone");
+  assert.ok(!("rotate" in mid), "no tilt — text stays upright");
+  console.log("ok: rows squeeze and bunch on a drum, like the iPhone's picker, upright");
 }
 {
   assert.equal(stepIndex(3, "ArrowDown", 10), 4);
