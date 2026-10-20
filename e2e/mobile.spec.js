@@ -288,3 +288,22 @@ test("M-H14 each company tab ends with the next one, and no empty band below @ph
   expect(gap, "the footer clears the tab bar").toBeGreaterThanOrEqual(8);
   expect(gap, "no wide empty band").toBeLessThanOrEqual(48);
 });
+
+// 21 Oct 2026: "how will people know they need the scorecard or valuation
+// or the others?" — the Overview says which tab answers which question, in
+// plain words, and each row opens its tab. The Next cards ask the same.
+test("M-H15 the Overview says what each tab answers @phone", async ({ page, account, isMobile }) => {
+  test.skip(!isMobile, "the phone layout");
+  await page.goto("/stock/TCS");
+  const guide = page.getByRole("region", { name: "Go deeper" });
+  await expect(guide).toBeVisible();
+  for (const [question, tab] of [["Is it a good business?", "Scorecard"], ["Is the price fair for what it earns?", "Valuation"], ["What has it told NSE lately?", "News & filings"]]) {
+    await expect(guide.getByRole("button", { name: `${question} ${tab}` })).toBeVisible();
+  }
+  await expect(guide.getByRole("button", { name: /Overview$/ })).toHaveCount(0);
+  await guide.getByRole("button", { name: "Is the price fair for what it earns? Valuation" }).click();
+  const tabs = page.getByRole("navigation", { name: "Parts of this page" });
+  await expect(tabs.getByRole("button", { name: "Valuation" })).toHaveAttribute("aria-current", "true");
+  await expect(page.locator("#sec-valuation")).toBeInViewport();
+  await expect(page.getByRole("button", { name: "Next: Financials. Is it growing, and can it carry its debt?" })).toBeAttached();
+});

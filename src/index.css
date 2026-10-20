@@ -2362,3 +2362,18 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 .sd-next-text b { font-size: 19px; font-weight: 700; letter-spacing: -0.01em; }
 .sd-next-text span { font-size: 14px; line-height: 1.4; color: var(--t2); }
 .sd-next svg { flex: none; color: var(--accent); }
+
+/* A phone's Overview: which tab answers which question (StockDetail.jsx
+   TabGuide, 21 Oct 2026) — rows as the Scorecard's, the question leading */
+.sd-guide { margin-top: var(--sp-4); }
+.sd-guide-lede { margin: 0 0 var(--sp-2); font-size: 14px; color: var(--t2); }
+.sd-guide-list { display: flex; flex-direction: column; }
+.sd-guide-row { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 60px; padding: 10px 0; border: 0; border-top: 1px solid var(--bdr); background: none; color: var(--t1); font: inherit; text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; transition: opacity 120ms; }
+.sd-guide-row:first-child { border-top: 0; }
+.sd-guide-row:active { opacity: 0.6; }
+.sd-guide-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 10px; }
+.sd-guide-icon { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 11px; background: var(--s1); color: var(--accent); }
+.sd-guide-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.sd-guide-text b { font-size: 15.5px; font-weight: 600; line-height: 1.3; }
+.sd-guide-text span { font-size: 13px; font-weight: 600; color: var(--accent); }
+.sd-guide-chev { flex: none; color: var(--t3); }

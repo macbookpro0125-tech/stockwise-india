@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { cardName } from "./stockName.js";
 import { SHOW_TAB, usePhone } from "./phoneTabs.js";
-import { NotebookPen, Check, X, TriangleAlert, LoaderCircle, ArrowLeft, ArrowUpRight, CalendarDays, CircleCheck, Layers, ArrowRight } from "lucide-react";
+import { NotebookPen, Check, X, TriangleAlert, LoaderCircle, ArrowLeft, ArrowUpRight, CalendarDays, CircleCheck, Layers, ArrowRight, ChevronRight, Gauge, ClipboardCheck, Scale, ChartColumn, Coins, ChartPie, Activity, Users, Newspaper } from "lucide-react";
 import { api } from "./api.js";
 import { calculateLevels, pricePosition, fmtRs } from "../server/levels.js";
 import { PositionIcon } from "./icons.jsx";
@@ -441,28 +441,59 @@ const closeLabel = c => `NSE close (${dayLabel(c.date)})`;
 
 // The page's tabs, pinned over it (replica/recon.md): each jumps to its
 // first part on the page and lights up while any of its parts is in view.
-// The last item is what the tab holds, for the "Next" card a phone's tab
-// ends with (as its heading says it)
+// Then the question each answers, in plain words, and its icon: how people
+// know which tab they need (asked for 21 Oct 2026: "how will people know
+// they need the scorecard or valuation or the others?") — the Overview's
+// Go deeper list and the Next card at a tab's end ask them; a computer
+// shows them on a tab's hover
 const TABS = [
-  ["overview", "Overview", ["overview", "about", "events"], "The price, the business and what changed recently."],
-  ["scores", "Scorecard", ["scores", "thesis"], "How the business scores on its own filings."],
-  ["valuation", "Valuation", ["valuation", "sizing", "levels"], "What its own numbers say it is worth."],
-  ["financials", "Financials", ["financials", "health"], "Its results, year by year, and its debt."],
-  ["dividends", "Dividends", ["dividends"], "What it pays, and what that takes."],
-  ["holding", "Holdings", ["holding"], "Who owns it, and how that is changing."],
-  ["technicals", "Technicals", ["technicals"], "The trend in the price."],
-  ["peers", "Peers", ["peers"], "How it compares with similar companies."],
-  ["filings", "News & filings", ["filings"], "Straight from NSE."],
+  ["overview", "Overview", ["overview", "about", "events"], "What is it, and what's the gist?", Gauge],
+  ["scores", "Scorecard", ["scores", "thesis"], "Is it a good business?", ClipboardCheck],
+  ["valuation", "Valuation", ["valuation", "sizing", "levels"], "Is the price fair for what it earns?", Scale],
+  ["financials", "Financials", ["financials", "health"], "Is it growing, and can it carry its debt?", ChartColumn],
+  ["dividends", "Dividends", ["dividends"], "What does it pay its shareholders?", Coins],
+  ["holding", "Holdings", ["holding"], "Who owns it, and are they buying or selling?", ChartPie],
+  ["technicals", "Technicals", ["technicals"], "Which way is the price trending?", Activity],
+  ["peers", "Peers", ["peers"], "How does it compare with similar companies?", Users],
+  ["filings", "News & filings", ["filings"], "What has it told NSE lately?", Newspaper],
 ];
+
+// The tabs this company has a part for (no valuation without filings, …)
+function usePresentTabs(ready) {
+  const [present, setPresent] = useState([]);
+  useEffect(() => {
+    setPresent(TABS.filter(([, , parts]) => parts.some(p => document.getElementById(`sec-${p}`))));
+  }, [ready]);
+  return present;
+}
+
+// On a phone's Overview, under At a glance: the gist first, then where to
+// look for each question — the question leads, the tab it opens under it
+function TabGuide({ ready, onGo }) {
+  const present = usePresentTabs(ready).filter(([id]) => id !== "overview");
+  if (!present.length) return null;
+  return (
+    <section className="sd-card sd-guide" aria-labelledby="sd-guide-title">
+      <h3 id="sd-guide-title" className="sd-card-title">Go deeper</h3>
+      <p className="sd-guide-lede">Each tab answers one question.</p>
+      <div className="sd-guide-list">
+        {present.map(([id, label, , question, Icon]) => (
+          <button key={id} type="button" className="sd-guide-row" onClick={() => onGo(id)}>
+            <span className="sd-guide-icon"><Icon size={18} strokeWidth={2.2} aria-hidden="true" /></span>
+            <span className="sd-guide-text"><b>{question}</b> <span>{label}</span></span>
+            <ChevronRight size={18} className="sd-guide-chev" aria-hidden="true" />
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 // A phone's tab ends by pointing on to the next one (asked for 21 Oct 2026,
 // in place of "Back to Discover": "go forward and check all other things",
 // so people see there's more); the last tab ends plainly
 function NextTab({ ready, current, onGo }) {
-  const [present, setPresent] = useState([]);
-  useEffect(() => {
-    setPresent(TABS.filter(([, , parts]) => parts.some(p => document.getElementById(`sec-${p}`))));
-  }, [ready]);
+  const present = usePresentTabs(ready);
   const at = present.findIndex(([id]) => id === current);
   const next = at >= 0 ? present[at + 1] : null;
   if (!next) return null;
@@ -483,7 +514,7 @@ function SectionNav({ ready, phone = false, phoneTab = "overview", onPhoneTab })
   const rowRef = useRef(null);
   // Only the tabs this company has a part for (no valuation without filings, …)
   useEffect(() => {
-    setPresent(TABS.map(([id, label, parts]) => [id, label, parts.filter(p => document.getElementById(`sec-${p}`))]).filter(t => t[2].length));
+    setPresent(TABS.map(([id, label, parts, question]) => [id, label, parts.filter(p => document.getElementById(`sec-${p}`)), question]).filter(t => t[2].length));
   }, [ready]);
   // Where the pinned bar ends once pinned — not where it is now: on a phone
   // the header above it scrolls away on the way down
@@ -526,8 +557,8 @@ function SectionNav({ ready, phone = false, phoneTab = "overview", onPhoneTab })
   if (present.length < 2) return null;
   return (
     <nav ref={rowRef} aria-label="Parts of this page" className="sd-tabs">
-      {present.map(([id, label, parts]) => (
-        <button key={id} type="button" data-sec={id} aria-current={active === id ? "true" : undefined} onClick={() => go(parts, id)} className={`sd-tab${active === id ? " on" : ""}`}>{label}</button>
+      {present.map(([id, label, parts, question]) => (
+        <button key={id} type="button" data-sec={id} title={phone ? undefined : question} aria-current={active === id ? "true" : undefined} onClick={() => go(parts, id)} className={`sd-tab${active === id ? " on" : ""}`}>{label}</button>
       ))}
     </nav>
   );
@@ -705,6 +736,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       <section id="sec-overview" className="ss-section sd-section" data-tab="overview">
         <PriceChartPanel symbol={data.symbol} name={data.name} levels={valued ? levels : null} />
         {m && <StockGlance r={m.research} />}
+        {isPhone && <TabGuide ready={!!m} onGo={showPhoneTab} />}
         <StockSnapshot m={m} price={price} dates={data.dataDates} />
         <StockPerformance m={m} />
       </section>
