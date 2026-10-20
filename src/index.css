@@ -1265,7 +1265,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   .sd-snap { grid-template-columns: minmax(0, 1fr); }
   .sd-bar-row { flex-wrap: wrap; row-gap: 0; padding-top: var(--sp-2); }
   .sd-bar-name { display: flex; align-items: baseline; gap: var(--sp-2); flex: 1; min-width: 0; font-size: var(--fs-md); font-weight: 650; color: var(--t1); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-  .sd-bar-name b { font-size: var(--fs-xs); color: var(--t3); font-weight: 600; }
+  .sd-bar-name b { flex: none; font-size: var(--fs-xs); color: var(--t3); font-weight: 600; }
+  /* the name shortens with "…", never the price (a flex row's text doesn't) */
+  .sd-bar-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .sd-tabs { flex-basis: 100%; gap: var(--sp-5); padding-left: 0; }
   .sd-h2 { margin-top: var(--sp-8); font-size: var(--fs-xl); }
   .sd-range { grid-column: 1 / -1; }

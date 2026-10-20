@@ -34,7 +34,8 @@ const browser = await chromium.launch({ channel: "chrome" });
 // 360 × 640 CSS pixels at 3× = 1080 × 1920
 const ctx = await browser.newContext({ viewport: { width: 360, height: 640 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true, colorScheme: "dark", extraHTTPHeaders: { "x-forwarded-for": "10.77.1.1" } });
 await ctx.addInitScript(() => { try { localStorage.setItem("stockwise-india-theme", "dark"); } catch {} });
-const email = `play-${Date.now()}@example.test`;
+// a throwaway database each run, so a plain address (it shows on Settings)
+const email = "you@example.com";
 const signup = await ctx.request.post(`${base}/api/auth/signup`, { data: { email, password: randomUUID() } });
 const { userId } = await signup.json();
 await ctx.addInitScript(o => { try { localStorage.setItem("stockwise-tours", JSON.stringify({ [o]: { app: true, stock: true } })); } catch {} }, `${userId}:${email}`);
@@ -47,12 +48,16 @@ const shot = async name => { await page.screenshot({ path: join(OUT, name) }); c
 
 await page.goto(`${base}/`); await page.locator(".ph-card").first().waitFor(); await settle(2500);
 await shot("1-strategies.png");
-await page.goto(`${base}/?strategy=high_quality_compounders`); await page.locator('[data-tour="row"]').first().waitFor(); await settle();
+// a name short enough to fit the wheel on a phone
+await page.goto(`${base}/?strategy=dividend_aristocrats`); await page.locator('[data-tour="row"]').first().waitFor(); await settle();
 await shot("2-strategy-stocks.png");
 await page.goto(`${base}/stock/TCS`); await page.getByRole("heading", { level: 2 }).first().waitFor(); await settle(3000);
 await shot("3-company.png");
-await page.locator("#sec-valuation, [data-tour='valuation']").first().scrollIntoViewIfNeeded().catch(() => {}); await settle(1200);
-await shot("4-valuation.png");
+// a phone shows one tab of the company page at a time (20 Oct 2026); the
+// scorecard, not the valuation tab — its price levels open on a warning
+// ("below the stop-loss level") that reads as a trade call in a store
+await page.getByRole("navigation", { name: "Parts of this page" }).getByRole("button", { name: "Scorecard" }).click(); await settle(1500);
+await shot("4-scorecard.png");
 await page.goto(`${base}/`); await page.getByRole("navigation", { name: "Pages" }).getByRole("button", { name: "Watchlist" }).click(); await settle(2500);
 await shot("5-watchlist.png");
 await page.getByRole("navigation", { name: "Pages" }).getByRole("button", { name: "Settings" }).click(); await settle();

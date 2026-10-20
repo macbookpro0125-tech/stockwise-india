@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
+import { cardName } from "./stockName.js";
 import { SHOW_TAB, usePhone } from "./phoneTabs.js";
 import { NotebookPen, Check, X, TriangleAlert, LoaderCircle, ArrowLeft, ArrowUpRight, CalendarDays, CircleCheck, Layers, ArrowRight } from "lucide-react";
 import { api } from "./api.js";
@@ -657,7 +658,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       <div data-sticky-top className="sd-bar">
         <div className="sd-bar-row">
           <button type="button" onClick={onBack} title={`Back to ${backTo}`} className="sd-back"><ArrowLeft size={15} aria-hidden="true" /> Back</button>
-          <span className="sd-bar-name">{data.name}{price > 0 && <b>{fmtRs(price)}</b>}</span>
+          <span className="sd-bar-name"><span className="sd-bar-title">{cardName(data.name)}</span>{price > 0 && <b>{fmtRs(price)}</b>}</span>
           <SectionNav ready={!!m} phone={isPhone} phoneTab={phoneTab} onPhoneTab={showPhoneTab} />
         </div>
       </div>

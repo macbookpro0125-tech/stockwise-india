@@ -220,3 +220,33 @@ test("M-H10 a company's tabs are pages of their own on a phone @phone", async ({
   await expect(page.locator("#sec-health")).toBeInViewport();
   await expect(tabs.getByRole("button", { name: "Financials" })).toHaveAttribute("aria-current", "true");
 });
+
+// 21 Oct 2026, seen in the Play Store pictures: a card's figures were cut
+// off on a small phone ("qual…" for an unrated research score, "71.…" for a
+// promoters' holding). Every figure on a card fits, at 360 wide.
+test("M-H11 a stock card's figures fit a small phone @phone", async ({ page, account, isMobile }) => {
+  test.skip(!isMobile, "the phone layout");
+  await page.setViewportSize({ width: 360, height: 740 });
+  await page.goto("/?strategy=dividend_aristocrats");
+  await expect(page.getByRole("option", { name: "Dividend Aristocrats", selected: true })).toBeVisible();
+  await page.waitForLoadState("networkidle");
+  const values = page.locator(".ph-stat-v");
+  await expect(values.first()).toBeVisible();
+  const cut = await values.evaluateAll(els => els.filter(e => e.scrollWidth > e.clientWidth + 1).map(e => e.textContent));
+  expect(await values.count()).toBeGreaterThan(5);
+  expect(cut, "figures cut off").toEqual([]);
+});
+
+// 21 Oct 2026, seen in the Play Store pictures: a long name ("Tata
+// Consultancy Services Limited") pushed the price out of the company page's
+// top bar, leaving a stray "₹". The name shortens; the price stays.
+test("M-H12 the company page's top bar keeps its price in view @phone", async ({ page, account, isMobile }) => {
+  test.skip(!isMobile, "the phone layout");
+  await page.setViewportSize({ width: 360, height: 740 });
+  await page.goto("/stock/TCS");
+  const bar = page.locator(".sd-bar-name");
+  const price = bar.locator("b");
+  await expect(price).toBeVisible();
+  const [b, p] = [await bar.boundingBox(), await price.boundingBox()];
+  expect(p.x + p.width, "the price ends inside the bar").toBeLessThanOrEqual(b.x + b.width + 1);
+});

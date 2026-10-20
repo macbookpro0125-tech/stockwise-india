@@ -63,6 +63,12 @@ Research
 | `feature-graphic.png` | Feature graphic | 1024 × 500 |
 | `1-strategies.png` … `6-settings.png` | Phone screenshots (2–8 allowed) | 1080 × 1920 |
 
+Retaken 21 Oct 2026 after the phone redesign: strategies, a strategy's
+stocks (Dividend Aristocrats: its name fits the wheel), the company page, its
+Scorecard tab (not Valuation, whose price levels open on a red "below the
+stop-loss level" that reads as a trade call in a store), watchlist and
+settings (as you@example.com).
+
 ## App content (Play Console → Policy → App content)
 
 - **Privacy policy** — the URL above.

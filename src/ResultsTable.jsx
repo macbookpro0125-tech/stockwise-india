@@ -1,7 +1,7 @@
 import { Fragment, Suspense, useState, useEffect, useRef } from "react";
 import { lazyPage } from "./lazyPage.js";
 import CompanyLogo from "./CompanyLogo.jsx";
-import { cardName } from "./stockName.js";
+import { cardName, splitUnit } from "./stockName.js";
 import { ArrowDown, ArrowUp, Check, Info, Columns3, Search, ArrowUpRight, SearchX, Star, ChevronDown, Funnel, Download } from "lucide-react";
 import { StarIcon, BellIcon, actionButtonStyle } from "./icons.jsx";
 import { useWatchlist, toggleWatch } from "./watchlist.js";
@@ -670,14 +670,19 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
             // Coloured as the pills and stance words on a computer
             const cells = [
               ["Quality", <span key="q" title={researchTitle(stock.research)} style={{ color: qualityTone(quality).color }}>{quality == null ? "—" : Math.round(quality)}</span>, quality == null ? null : "/100"],
-              ["Research", <span key="r" title={researchTitle(stock.research)} aria-label={missingResearch ?? `Research score ${Math.round(overall)} — ${stock.research?.stance ?? "rated"}`} style={{ color: overallTone(overall).color }}>{overall == null ? (stock.research?.status === "review-required" ? "review" : stock.research?.status === "quality-only" ? "quality only" : "not rated") : Math.round(overall)}</span>, overall == null ? null : "/100"],
+              ["Research", <span key="r" title={researchTitle(stock.research)} aria-label={missingResearch ?? `Research score ${Math.round(overall)} — ${stock.research?.stance ?? "rated"}`} style={{ color: overallTone(overall).color }}>{overall == null ? "—" : Math.round(overall)}</span>, overall == null ? null : "/100"],
+              // (an unrated one is a dash: the note under the card says why —
+              // a word there was cut off on a small phone, "qual…")
               // What's being filtered on first: one of the screen's measures,
               // so the line fits a phone (the company page has the rest)
               ...[...columns.filter(def => filteredIds.includes(def.id)), ...columns.filter(def => !filteredIds.includes(def.id))].slice(0, 1).map(def => {
                 const v = colValue(stock, def.id);
+                // One decimal, and the unit set small as "/100" is, so it fits
+                // a third of a small phone ("71.23%" showed as "71.…")
+                const [figure, unit] = splitUnit(formatValue({ ...def, decimals: Math.min(def.decimals ?? 1, 1) }, v));
                 // Coloured as the table's cells are (strong ROCE, Piotroski 7+ green)
                 // a short name for a phone's column ("P/E TTM/FY" → "P/E")
-                return [def.short.replace(/\s+TTM\/FY$/, ""), <span key={def.id} style={{ color: valueColor(def, v) }}>{formatValue(def, v)}</span>];
+                return [def.short.replace(/\s+TTM\/FY$/, ""), <span key={def.id} style={{ color: valueColor(def, v) }}>{figure}</span>, unit];
               }),
             ];
             const adAfter = (i + 1) % PHONE_AD_EVERY === 0 && i + 1 < visible.length;
