@@ -65,6 +65,7 @@ export function SiteFooter() {
       <div style={{ display: "flex", flexWrap: "wrap", gap: "10px 24px", alignItems: "center", justifyContent: "space-between", fontSize: 12, color: "var(--t3)" }}>
         <span>Jocular Insights · An educational tool, not investment advice</span>
         <nav style={{ display: "flex", gap: 18 }}>
+          <SiteLink to="/help">Help</SiteLink>
           <SiteLink to="/disclaimer">Disclaimer</SiteLink>
           <SiteLink to="/privacy">Privacy</SiteLink>
         </nav>

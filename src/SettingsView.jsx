@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { ChevronRight, Heart, Bookmark, ChartLine, Zap, Moon, Image, Compass, Download, ShieldCheck, FileText, LogOut, Trash2 } from "lucide-react";
+import { ChevronRight, Heart, Bookmark, ChartLine, Zap, Moon, Image, Compass, Download, ShieldCheck, FileText, LogOut, Trash2, BookOpen, Mail } from "lucide-react";
 import { navigate } from "./site.jsx";
+import { problemMailto } from "./help.js";
 import { useLogosShown, setLogosShown } from "./CompanyLogo.jsx";
 import { installState, onInstallChange, promptInstall } from "./installApp.js";
 import { strategiesStore } from "./accountData.js";
@@ -104,6 +105,8 @@ export default function SettingsView({ account, theme, onToggleTheme, onTab, onL
       </Group>
 
       <Group title="Help">
+        <Row icon={BookOpen} tint="#0EA5E9" label="How the figures work" detail="Where they come from, and when they change" href="/help" />
+        <Row icon={Mail} tint="#F59E0B" label="Report a problem" detail="Or ask a question. An email opens with the app's version filled in" onClick={() => { window.location.href = problemMailto(); }} />
         {onTour && <Row icon={Compass} tint="#14B892" label="Take the tour" onClick={() => { onTab("discover"); onTour(); }} />}
         {(install === "prompt" || install === "ios") && (
           <Row icon={Download} tint="#8B5CF6" label="Install the app"

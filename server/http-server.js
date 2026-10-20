@@ -162,6 +162,20 @@ function parseCookies(header) {
   return out;
 }
 
+// The dates behind a company page's figures: the NSE close the returns and
+// scores use, the latest quarter and year filed (and when NSE got them), and
+// when its filings were last read — nothing estimated
+function dataDates(fundamentals, snap) {
+  const latest = (rows, key) => (rows ?? []).reduce((a, b) => (b?.[key] && b[key] > (a?.[key] ?? "") ? b : a), null);
+  const q = latest(fundamentals.quarters, "qEnd"), y = latest(fundamentals.years, "fyEnd");
+  return {
+    prices: snap?.pricesDate ?? null,
+    quarter: q ? { end: q.qEnd, filed: q.filed ?? null } : null,
+    year: y ? { end: y.fyEnd, filed: y.filed ?? null } : null,
+    read: fundamentals.fetchedAt ?? null,
+  };
+}
+
 function decodePathSegment(value) {
   try { return decodeURIComponent(value); }
   catch { throw badRequest("URL contains invalid encoding"); }
@@ -648,6 +662,8 @@ export function createApp() {
           quote, quoteError, metrics,
           // NSE's own last close, for the price box's "Use NSE close"
           close: snap?.prices?.[symbol] != null ? { price: snap.prices[symbol], date: snap.pricesDate } : null,
+          // When each kind of figure is from (StockDataDates.jsx)
+          dataDates: dataDates(fundamentals, snap),
         });
         return;
       }

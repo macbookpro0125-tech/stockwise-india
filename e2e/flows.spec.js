@@ -186,6 +186,19 @@ test("F03-H2 the overview leads with the six scores, strengths, and price agains
   await expect(perf.getByText(/In a typical week its price moves about ±[\d.]+%/)).toBeVisible();
 });
 
+test("F03-H3 the company page says when its figures are from; Help explains them; a 3-year chart", async ({ page, account }) => {
+  await page.goto("/stock/TCS");
+  await expect(page.getByText(/^Results to \d+ \w+ \d{4}, filed \d+ \w+ · NSE close of \d+ \w+/)).toBeVisible();
+  const dates = page.getByRole("region", { name: "Where these figures come from" });
+  for (const term of ["Share price", "Latest quarter", "Latest audited year", "Scores and fair value"]) await expect(dates.getByText(term, { exact: true })).toBeVisible();
+  await page.getByRole("group", { name: "Date range" }).getByRole("button", { name: "3Y" }).click();
+  await expect(page.getByRole("button", { name: "3Y" })).toHaveAttribute("aria-pressed", "true");
+  await dates.getByRole("link", { name: "How the figures work" }).click();
+  await expect(page).toHaveURL(/\/help$/);
+  await expect(page.getByRole("heading", { level: 1, name: "How the figures work" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "jocularinsights@gmail.com" })).toHaveAttribute("href", /^mailto:jocularinsights@gmail\.com\?subject=.*body=.*build/);
+});
+
 test("F03-N1 an unknown symbol says so", async ({ page, account }) => {
   await page.goto("/stock/NOTAREALCO");
   await expect(page.getByText(/not found|isn.t|no company|unknown|couldn.t/i).first()).toBeVisible();

@@ -11,6 +11,13 @@ import { createElement, useEffect, useState } from "react";
 // a new app release. "test" asks Google for its sample ads, which earn
 // nothing and are safe to tap.
 //
+// The rule (20 Oct 2026): ads are cards among lists, plus the rewarded ad a
+// person starts themselves from Settings. Never a banner over the page, a
+// full-screen ad between screens, an ad when the app opens, a paid tier, or a
+// loan or credit offer. Reviews of other Indian screeners are full of
+// complaints about exactly those (replica/fixes.md); src/adsRule.test.js
+// fails if one of those AdMob formats is used.
+//
 // ?ads=preview on the website shows a grey placeholder where each card would
 // go, to check the layout; it lasts for the browser tab.
 

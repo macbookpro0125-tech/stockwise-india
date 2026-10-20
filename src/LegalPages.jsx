@@ -1,6 +1,7 @@
 import { SiteLink, SiteFooter, Logo, navigate } from "./site.jsx";
+import { problemMailto } from "./help.js";
 
-// /privacy and /disclaimer. Every statement here has to stay true to what
+// /privacy, /disclaimer and /help. Every statement here has to stay true to what
 // the code does — check them when changing what's stored, adding analytics
 // or ads, or moving hosts.
 
@@ -8,7 +9,7 @@ const UPDATED = "18 October 2026";
 // Shown once set: a privacy policy needs a way to reach you
 const CONTACT_EMAIL = "jocularinsights@gmail.com";
 
-function PublicPage({ title, signedIn, children }) {
+function PublicPage({ title, signedIn, updated = UPDATED, children }) {
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
       <header style={{ borderBottom: "1px solid var(--bdr)" }}>
@@ -21,7 +22,7 @@ function PublicPage({ title, signedIn, children }) {
       </header>
       <main style={{ flex: 1, width: "100%", maxWidth: 760, margin: "0 auto", padding: "40px 20px 0", boxSizing: "border-box" }}>
         <h1 style={{ fontSize: 30, fontWeight: 700, letterSpacing: "-0.03em", color: "var(--t1)", margin: "0 0 6px" }}>{title}</h1>
-        <p style={{ fontSize: 12, color: "var(--t3)", margin: "0 0 28px" }}>Last updated {UPDATED}</p>
+        <p style={{ fontSize: 12, color: "var(--t3)", margin: "0 0 28px" }}>Last updated {updated}</p>
         {children}
       </main>
       <SiteFooter />
@@ -188,6 +189,69 @@ export function DisclaimerPage({ signedIn }) {
       </P>
       <P>
         See also our <SiteLink to="/privacy">privacy policy</SiteLink>.
+      </P>
+    </PublicPage>
+  );
+}
+
+// /help: how the figures work and how to reach us. Users of other Indian
+// screeners complain most about support that never answers and figures that
+// lag without saying so (replica/fixes.md), so this says plainly where each
+// figure comes from, when it changes, and who to write to.
+export function HelpPage({ signedIn }) {
+  return (
+    <PublicPage title="How the figures work" signedIn={signedIn} updated="20 October 2026">
+      <P>
+        Everything in Jocular Insights is worked out from public data by fixed rules. This page says where each figure
+        comes from, when it changes, and why one can be missing. If something looks wrong, <a href={problemMailto()} style={{ color: "var(--accent)" }}>tell us</a>.
+      </P>
+
+      <H>Where the figures come from</H>
+      <UL>
+        <LI><B>Company results:</B> the quarterly and annual results each company files with NSE. Ratios such as P/E, ROE and debt to equity are calculated from them.</LI>
+        <LI><B>Prices and returns:</B> NSE's daily closing prices, and NSE's index closes for comparisons with the NIFTY 50 and sector indices. The price chart and the latest close at the top of a company page come from Yahoo Finance.</LI>
+        <LI><B>Shareholding and announcements:</B> the shareholding patterns and announcements companies file with NSE.</LI>
+      </UL>
+
+      <H>When they change</H>
+      <P>
+        Each weekday evening, after NSE publishes the day's prices, we read the closing prices and the results companies
+        have filed since the last check. If that run fails, it is tried again the next morning. So prices are the last
+        trading day's close, and new results usually appear the evening they are filed.
+      </P>
+      <P>
+        Every company page ends with <B>Where these figures come from</B>: the close the returns use, the latest quarter
+        and year filed and when, and when its filings were last read.
+      </P>
+
+      <H>Why a figure or score can be missing</H>
+      <UL>
+        <LI>The company hasn't filed enough years for a check that needs them, such as five-year growth.</LI>
+        <LI>The check doesn't apply. Banks and other lenders are judged on bad loans and capital instead of debt to equity.</LI>
+        <LI>The filings can't show it, such as related-party deals or forecasts. Those are left out, never guessed.</LI>
+        <LI>A company whose latest audited year is about 18 months behind the rest has stopped filing, and drops out of the screener.</LI>
+      </UL>
+
+      <H>Scores, fair values and levels</H>
+      <P>
+        The quality score is out of 100, across six groups: business quality, earnings quality, balance sheet,
+        governance, growth and valuation. Every check shows its reason on the company's Scorecard. A fair value is an
+        estimate from each company's normalized earnings and its own usual P/E, capped at twice its sector's (banks on book
+        value). These are estimates to help you think, not targets or advice; see the <SiteLink to="/disclaimer">disclaimer</SiteLink>.
+      </P>
+
+      <H>What it costs</H>
+      <P>
+        Nothing. There is no subscription, so there is nothing to renew or cancel, and nothing is sold to you: no loans,
+        no credit offers, no paid tier. The Android app shows a few ads among lists, never in front of what you are
+        reading, and nothing is ever locked behind one.
+      </P>
+
+      <H>Contact us</H>
+      <P>
+        Email <a href={problemMailto()} style={{ color: "var(--accent)" }}>jocularinsights@gmail.com</a>. The email opens with the page you were on and the
+        app's version filled in. Tell us the company and the figure that looks wrong; a screenshot helps. For
+        privacy requests, see the <SiteLink to="/privacy">privacy policy</SiteLink>.
       </P>
     </PublicPage>
   );

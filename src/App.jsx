@@ -3,7 +3,7 @@ import { flushSync } from "react-dom";
 import { lazyPage } from "./lazyPage.js";
 import { api } from "./api.js";
 import Landing from "./Landing.jsx";
-import { PrivacyPage, DisclaimerPage } from "./LegalPages.jsx";
+import { PrivacyPage, DisclaimerPage, HelpPage } from "./LegalPages.jsx";
 import ResetPassword from "./ResetPassword.jsx";
 import { usePath, navigate, stockFromPath, stockPath, chartFromPath, SiteFooter } from "./site.jsx";
 import Header, { BottomTabBar, TABS } from "./Header.jsx";
@@ -123,7 +123,7 @@ export default function App() {
           return;
         }
 
-        if (["/privacy", "/disclaimer", "/reset-password"].includes(currentPath)) {
+        if (["/privacy", "/disclaimer", "/help", "/reset-password"].includes(currentPath)) {
           if (canGoBack) window.history.back();
           else navigate("/", { replace: true });
           return;
@@ -223,9 +223,10 @@ export default function App() {
     setTourAsked("app");
   };
 
-  // /privacy and /disclaimer are for everyone, signed in or not
+  // /privacy, /disclaimer and /help are for everyone, signed in or not
   if (path === "/privacy") return <PrivacyPage signedIn={!!account} />;
   if (path === "/disclaimer") return <DisclaimerPage signedIn={!!account} />;
+  if (path === "/help") return <HelpPage signedIn={!!account} />;
   // The page a reset email links to: saving signs in, then into the app
   if (path === "/reset-password") return <ResetPassword onDone={() => { tabHistory.current = []; tabRef.current = "discover"; setTab("discover"); navigate("/"); loadAccount(); }} />;
 

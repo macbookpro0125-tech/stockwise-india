@@ -19,6 +19,7 @@ import ThesisMonitor from "./ThesisMonitor.jsx";
 import StockSide, { Scorecard } from "./StockSide.jsx";
 import StockGlance from "./StockGlance.jsx";
 import StockPerformance from "./StockPerformance.jsx";
+import StockDataDates from "./StockDataDates.jsx";
 import StockSnapshot from "./StockSnapshot.jsx";
 import { docTop } from "./motion.js";
 
@@ -715,7 +716,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       <section id="sec-overview" className="ss-section sd-section">
         <PriceChartPanel symbol={data.symbol} name={data.name} levels={valued ? levels : null} />
         {m && <StockGlance r={m.research} />}
-        <StockSnapshot m={m} price={price} />
+        <StockSnapshot m={m} price={price} dates={data.dataDates} />
         <StockPerformance m={m} />
       </section>
 
@@ -993,6 +994,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       <div id="sec-peers" className="ss-section"><h2 className="sd-h2">Peers. <span>How it compares with similar companies.</span></h2><PeersPanel symbol={data.symbol} onAnalyze={onOpenStock} /></div>
       <div id="sec-filings" className="ss-section" data-tour="filings"><h2 className="sd-h2">News & filings. <span>Straight from NSE.</span></h2><NewsPanel symbol={data.symbol} /></div>
       <MyNotes key={data.symbol} symbol={data.symbol} />
+      <StockDataDates dates={data.dataDates} quote={data.quote} research={m?.research} />
 
       <p style={{ fontSize: 11, color: "var(--t3)", textAlign: "center", lineHeight: 1.6 }}>
         <TriangleAlert size={12} style={{ verticalAlign: "-1px", marginRight: 4 }} />Educational purposes only. Not financial advice. Always cross-verify data on NSE / BSE before investing. Consult a SEBI registered advisor.

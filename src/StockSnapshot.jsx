@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Factory, Ruler, Gauge } from "lucide-react";
 import { api } from "./api.js";
+import { DataNote } from "./StockDataDates.jsx";
 
 // The stock page's overview under the chart (replica/recon.md): three cards —
 // its sector, its size, its risk — and a row of key ratios. The size class is
@@ -44,7 +45,7 @@ function useSizeRank(mcap) {
   return rank;
 }
 
-export default function StockSnapshot({ m, price }) {
+export default function StockSnapshot({ m, price, dates }) {
   const size = useSizeRank(m?.marketCapCr);
   if (!m) return null;
   const risk = m.research?.risk;
@@ -106,6 +107,7 @@ export default function StockSnapshot({ m, price }) {
           </div>
         )}
       </div>
+      <DataNote dates={dates} />
     </>
   );
 }

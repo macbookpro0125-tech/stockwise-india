@@ -67,6 +67,11 @@ What's built (`capacitor.config.ts`, `android/`, `src/ads.jsx`):
   "Watch an ad" in Settings → Support the app. Nothing is locked behind an ad
   (owner's choice: no credits). Google's consent form where the law asks for
   one. The website and the installed web app show none.
+- The ads rule (20 Oct 2026, from reviews of other Indian screeners —
+  replica/fixes.md): cards among lists and the opt-in rewarded ad only. Never
+  a banner, a full-screen or app-open ad, a paid tier, or a loan or credit
+  offer. `src/adsRule.test.js` (in `npm test`) fails if one is added; the
+  Play listing promises it.
 - The server's switch, set in Render — no new app release needed:
   `ADS=off` (default) | `test` (Google's sample ads) | `live` with
   `ADMOB_ANDROID_NATIVE`, `ADMOB_ANDROID_REWARDED` (and `ADMOB_IOS_*` later),

@@ -92,8 +92,9 @@ Quotes:
 
 ## 4. Fix plan
 
-Picked by evidence against cost. None is built yet. Each is a row in
-`features.csv` (reference `no`: something to do better than the reference).
+Picked by evidence against cost. Each is a row in `features.csv` (reference
+`no`: something to do better than the reference). **Built 20 Oct 2026:** #1,
+#2, #3 and #7. Still to build: #4, #5 and #6.
 
 | # | What | Size | Skill | Evidence |
 |---|---|---|---|---|

@@ -37,10 +37,10 @@ S-STOCK,Growth and returns on capital against the sector's medians,yes,no,"Next:
 S-STOCK,Insider and promoter trades,yes,no,"Next: gaps #9 — needs a new NSE data job (PIT/SAST)"
 S-STOCK,What changed recently,yes,no,"Next: gaps #10"
 S-STOCK,Latest earnings call,yes,no,"Next: gaps #11 — the transcript NSE files, not an AI summary"
-S-STOCK,Where the data comes from and when,yes,no,"Next: gaps #12"
-S-SETTINGS,Help and feedback: email with app version and screen; how the figures work,no,no,"Fix #1 in replica/fixes.md — support complaints: 11 reviews, 2 sources"
-ALL,"Ads only in lists — no pop-ups, no paid tier, no loan or credit offers",no,partial,"Fix #3 — true in the app today (native ads in lists, an optional support ad); not yet written as a rule or in the listing. 23 reviews, 2 sources"
+S-STOCK,Where the data comes from and when,yes,yes,"Built 20 Oct 2026 (StockDataDates.jsx): a line under the key figures and a card at the end — NSE close used, latest quarter and year with filing dates, when scores were worked out, when filings were last read. Gaps #12, fix #2"
+S-SETTINGS,Help and feedback: email with app version and screen; how the figures work,no,yes,"Built 20 Oct 2026: /help (how the figures work, what it costs, contact), Settings → Help and the account menu; the email opens with the page, app and build filled in. Fix #1, replica/fixes.md"
+ALL,"Ads only in lists — no pop-ups, no paid tier, no loan or credit offers",no,yes,"Built 20 Oct 2026: the rule in src/ads.jsx, src/adsRule.test.js in npm test, the Play listing and /help say so. Fix #3"
 S-ALERTS,"Alert when a watched company files results, a dividend or a board meeting",no,no,Fix #4 — from the NSE announcements we already read; 3 reviews (thin)
 S-DISCOVER,"Bank filters: gross and net NPA, capital ratio, provision cover",no,no,"Fix #5 — the scorecard already reads them for banks; 1 review (thin), cheap"
 S-DISCOVER,Reorder screener filters,no,no,"Fix #6 — 1 review (thin), cheap"
-S-STOCK,3-year range on the price chart,no,no,Fix #7 — 3M and 6M exist; 2 reviews (thin)
+S-STOCK,3-year range on the price chart,no,yes,Built 20 Oct 2026. Fix #7

@@ -1078,6 +1078,23 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   .sd-glance-line:hover .sd-score-go { color: var(--t1); transform: translateX(2px); }
 }
 
+/* When the figures are from (StockDataDates.jsx) */
+.sd-datanote { margin: calc(-1 * var(--sp-2)) 0 var(--sp-4); font-size: var(--fs-xs); line-height: 1.5; color: var(--t3); }
+.sd-datanote button { padding: 0; border: 0; background: none; font: inherit; color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; touch-action: manipulation; }
+.sd-datanote button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+.sd-dates { margin: var(--sp-6) 0 var(--sp-4); }
+.sd-dates .sd-card-title { display: flex; align-items: center; gap: var(--sp-2); }
+.sd-dates .sd-card-title svg { color: var(--accent); }
+.sd-dates dl { margin: 0; }
+.sd-dates dl > div { display: grid; grid-template-columns: minmax(0, 11rem) minmax(0, 1fr); gap: var(--sp-4); padding: var(--sp-3) 0; border-bottom: 1px solid var(--bdr); }
+.sd-dates dl > div:last-child { border-bottom: 0; }
+.sd-dates dt { font-size: var(--fs-sm); font-weight: 600; color: var(--t1); }
+.sd-dates dd { margin: 0; font-size: var(--fs-sm); line-height: 1.5; color: var(--t2); }
+.sd-dates .sd-foot a { color: var(--accent); }
+@media (max-width: 640px) {
+  .sd-dates dl > div { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+}
+
 /* How the price has done (StockPerformance.jsx) */
 .sd-perf-lead { margin: 0 0 var(--sp-3); font-size: var(--fs-md); line-height: 1.5; color: var(--t1); }
 .sd-perf-h { margin-top: var(--sp-6); }

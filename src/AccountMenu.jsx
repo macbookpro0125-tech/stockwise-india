@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown } from "lucide-react";
 import { api } from "./api.js";
-import { SiteLink } from "./site.jsx";
+import { SiteLink, navigate } from "./site.jsx";
+import { problemMailto } from "./help.js";
 import { useLogosShown, setLogosShown } from "./CompanyLogo.jsx";
 import { installState, onInstallChange, promptInstall } from "./installApp.js";
 
@@ -68,6 +69,14 @@ export default function AccountMenu({ account, onLogout, onDeleted, onTour }) {
               )}
             </button>
           )}
+          <button role="menuitem" style={item} onClick={() => { setOpen(false); navigate("/help"); window.scrollTo(0, 0); }}
+            onMouseEnter={e => { e.currentTarget.style.background = "var(--s3)"; }} onMouseLeave={e => { e.currentTarget.style.background = "none"; }}>
+            How the figures work
+          </button>
+          <button role="menuitem" style={item} onClick={() => { setOpen(false); window.location.href = problemMailto(); }}
+            onMouseEnter={e => { e.currentTarget.style.background = "var(--s3)"; }} onMouseLeave={e => { e.currentTarget.style.background = "none"; }}>
+            Report a problem
+          </button>
           <button role="menuitem" style={item} onClick={() => { setOpen(false); onLogout(); }}
             onMouseEnter={e => { e.currentTarget.style.background = "var(--s3)"; }} onMouseLeave={e => { e.currentTarget.style.background = "none"; }}>
             Sign out

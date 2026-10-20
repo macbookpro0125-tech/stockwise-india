@@ -17,7 +17,8 @@ description instead — Play searches both. The AdMob app is named
 **Short description** (80 max) —
 `NSE stock screener with ready-made strategies, quality scores and fair values.` (78)
 
-**Full description** (4,000 max) —
+**Full description** (4,000 max; the last section added 20 Oct 2026 from
+the review study, replica/fixes.md) —
 
 ```
 Jocular Insights helps you research NSE-listed companies from their own filings.
@@ -42,7 +43,8 @@ Prices are NSE's daily closing prices; company figures update as new results are
 IMPORTANT
 Jocular Insights is an educational research tool. It is not investment advice, and it is not registered with SEBI as an investment adviser or research analyst. Scores, fair values and levels come from rules applied to public filings and can be wrong. Do your own research and consult a SEBI-registered adviser before investing.
 
-The app shows ads. Nothing in the app is locked behind an ad.
+FREE, WITH NOTHING TO CANCEL
+There is no subscription and no paid tier, so there is nothing to renew or cancel, and nothing is sold to you: no loans, no credit offers. The app shows a few ads among lists, never pop-ups or full-screen ads, and nothing is locked behind one.
 ```
 
 **App category** — Finance · **Tags** — Finance, Investing, Stock market,
