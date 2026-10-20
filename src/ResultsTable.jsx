@@ -466,25 +466,21 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
               <span style={{ color: "var(--t3)" }}>Scanning market…</span>
             ) : (
               <>
-                <strong>{(narrowed ? filtered.length : totalMatches)?.toLocaleString("en-IN")}</strong>
-                <span className="rt-noun">
-                  {(narrowed ? filtered.length : totalMatches) === 1 ? noun.replace(/s$/, "") : noun}
-                  {narrowed && filtered.length !== (matches?.length ?? 0) && <> (filtered from {matches?.length})</>}
+                {/* Only what's on screen (20 Oct 2026: no total, no "of the
+                    market") — "Showing 50", and Load more at the end */}
+                <span className="rt-showing">
+                  {updating ? "Updating…" : <>Showing <b>{visible.length.toLocaleString("en-IN")}</b></>}
                 </span>
-                {/* Why some companies are missing: an ⓘ beside the count */}
+                {/* Why some companies are missing: an ⓘ beside it */}
                 {notes.length > 0 && (
                   <button type="button" onClick={() => setShowNotes(v => !v)} aria-expanded={showNotes} aria-label="Why some companies are left out" title={notes.join(" ")}
                     className="rt-why" data-on={showNotes || undefined}>
                     <Info size={14} aria-hidden="true" />
                   </button>
                 )}
-                <span className="rt-meta">
-                  {updating ? "Updating…" : <>
-                    {visible.length < sorted.length && <>Showing {visible.length}</>}
-                    {visible.length < sorted.length && snapshot?.pricesDate && " · "}
-                    {snapshot?.pricesDate && <>Prices as of {new Date(`${snapshot.pricesDate}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })}</>}
-                  </>}
-                </span>
+                {snapshot?.pricesDate && (
+                  <span className="rt-meta">Prices as of {new Date(`${snapshot.pricesDate}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })}</span>
+                )}
               </>
             )}
           </div>
@@ -872,7 +868,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
       {!loading && sorted.length > visibleCount && (
         <div style={{ textAlign: "center", marginTop: 16 }}>
           <button onClick={() => setVisibleCount(c => c + pageSize)} className="btn-ghost" style={{ fontSize: 13, padding: "10px 24px" }}>
-            Show {Math.min(pageSize, sorted.length - visibleCount)} more · {sorted.length - visibleCount} remaining
+            Load more
           </button>
         </div>
       )}
