@@ -4,6 +4,7 @@
 // (server/firebase-auth.js) and opens our own session. Firebase is told to
 // keep nothing between visits and is signed out of straight after.
 import { api } from "./api.js";
+import { cancelledNative } from "./signInChoices.js";
 
 let loading = null;
 // Started when the buttons appear, so a click doesn't wait on a download —
@@ -48,8 +49,35 @@ async function finish({ a, auth }, credential) {
   }
 }
 
-// "google" or "apple", in a pop-up window
+// Inside the app (1.1 on): Google's own sign-in on the phone, through the
+// FirebaseAuthentication plugin — the account picker, no web page. Firebase
+// signs in natively, hands over the same kind of ID token the website gets,
+// and is signed out of straight after.
+export const nativeGoogleAvailable = () => !!window.Capacitor?.isNativePlatform?.() && !!window.Capacitor?.isPluginAvailable?.("FirebaseAuthentication");
+
+async function signInWithNativeGoogle() {
+  const { registerPlugin } = await import("@capacitor/core");
+  const native = registerPlugin("FirebaseAuthentication");
+  try {
+    let token;
+    try {
+      await native.signInWithGoogle();
+      ({ token } = await native.getIdToken());
+    } catch (e) {
+      if (cancelledNative(e)) throw Object.assign(new Error("Cancelled"), { cancelled: true });
+      if (/no credentials/i.test(e?.message ?? "")) throw new Error("There's no Google account on this phone. Add one in the phone's settings, or continue with email.");
+      throw new Error("Google sign-in didn't work. Please try again, or continue with email.");
+    }
+    // our own server's answer is already in plain words
+    return await api.firebaseSignIn(token);
+  } finally {
+    native.signOut().catch(() => {});
+  }
+}
+
+// "google" or "apple", in a pop-up window (Google natively inside the app)
 export async function signInWithProvider(config, which) {
+  if (which === "google" && nativeGoogleAvailable()) return signInWithNativeGoogle();
   const fb = await preloadFirebase(config);
   try {
     const provider = which === "apple" ? new fb.auth.OAuthProvider("apple.com") : new fb.auth.GoogleAuthProvider();

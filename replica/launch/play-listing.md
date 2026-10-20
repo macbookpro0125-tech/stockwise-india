@@ -94,6 +94,16 @@ Research
 
 ## Before the first upload
 
+**Google sign-in in the app (20 Oct 2026):** the app signs in with Google
+natively (`@capacitor-firebase/authentication`, src/socialSignIn.js). Firebase
+has the Android app `com.jocularinsights.app` with the upload key's and the
+debug key's SHA-1. Still to do: put `google-services.json` (Firebase →
+Project settings → Jocular Insights Android) in `android/app/` — **never
+build the app without it: the plugin needs it at start** — then
+`npx cap sync android` and rebuild; after the first upload, add Play's app
+signing key SHA-1 (Play Console → Test and release → App integrity) in
+Firebase, or Google sign-in fails for installs from Play.
+
 **20 Oct 2026:** the signed `.aab` is rebuilt with the real AdMob app ID
 (`ca-app-pub-4001463380481442~5693283483`), version 1.0 (code 1), target
 SDK 36, signed with the upload key in `~/.jocular`; a copy is at

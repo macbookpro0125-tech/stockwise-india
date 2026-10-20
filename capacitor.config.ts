@@ -29,6 +29,9 @@ const config: CapacitorConfig = {
     // Light clock and icons from launch, on the dark theme; the page switches
     // them with its theme (App.jsx)
     SystemBars: { style: "DARK" },
+    // Google's own sign-in on the phone (src/socialSignIn.js, app 1.1): it
+    // signs in natively and hands the page an ID token for our server
+    FirebaseAuthentication: { skipNativeAuth: false, providers: ["google.com"] },
   },
   android: {
     allowMixedContent: false,

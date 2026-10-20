@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { Smartphone, Mail, MailCheck, ChevronLeft, Eye, EyeOff } from "lucide-react";
 import { api } from "./api.js";
 import { SiteLink } from "./site.jsx";
-import { preloadFirebase, signInWithProvider, sendPhoneCode, toE164 } from "./socialSignIn.js";
+import { preloadFirebase, signInWithProvider, sendPhoneCode, toE164, nativeGoogleAvailable } from "./socialSignIn.js";
+import { providersFor } from "./signInChoices.js";
 
 // The two companies' own marks, as their sign-in button guidelines ask
 const GoogleLogo = () => (
@@ -165,11 +166,11 @@ export default function AuthForm({ onAuthed, mode, onModeChange, onProgress }) {
   useEffect(() => {
     api.authOptions().then(o => {
       setCanReset(!!o.passwordReset);
-      // Inside the Android and iPhone apps Google and Apple refuse to sign in
-      // through the app's web view (Google's "disallowed_useragent"), so the
-      // app offers email (and phone) until they're added as native sign-ins
+      // Inside the apps Google and Apple refuse to sign in through the web
+      // view; Google is offered there once the app signs in with it natively
+      // (signInChoices.js)
       const inApp = !!window.Capacitor?.isNativePlatform?.();
-      const providers = (o.firebase?.providers ?? []).filter(p => !inApp || p === "phone");
+      const providers = providersFor(o.firebase?.providers, { inApp, nativeGoogle: nativeGoogleAvailable() });
       if (providers.length) {
         setFb({ ...o.firebase, providers });
         preloadFirebase(o.firebase).catch(() => {});
