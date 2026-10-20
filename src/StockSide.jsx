@@ -10,6 +10,7 @@ import { docTop } from "./motion.js";
 // Every word and number comes from the research model (server/research.js)
 // and NSE's closes; nothing here is a buy or sell call.
 
+const day = iso => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" });
 
 // Same bands as the research dashboard (ResearchBadges.jsx qualityTone)
 const band = s => (s == null ? "none" : s >= 70 ? "good" : s >= 50 ? "mid" : "bad");
@@ -98,6 +99,7 @@ export function Scorecard({ r }) {
 }
 
 export default function StockSide({ data, m, price, priceLabel, watched, onWatch, onAlert }) {
+  const returns = m ? [["1W", m.ret1w], ["1M", m.ret1m], ["1Y", m.ret1y]].filter(([, v]) => v != null) : [];
   return (
     <aside className="sd-side" aria-label={`${data.name} summary`}>
       <section className="sd-card sd-id">
@@ -112,6 +114,13 @@ export default function StockSide({ data, m, price, priceLabel, watched, onWatch
           <div className="sd-price">
             <strong>{fmtRs(price)}</strong>
             {priceLabel && <span>{priceLabel}</span>}
+          </div>
+        )}
+        {returns.length > 0 && (
+          <div className="sd-returns" aria-label={`Returns to the ${day(m.closeDate ?? m.cmpDate)} NSE close`}>
+            {returns.map(([k, v]) => (
+              <span key={k} className={v >= 0 ? "up" : "down"}><b>{v >= 0 ? "+" : "−"}{Math.abs(v).toFixed(1)}%</b><em>{k}</em></span>
+            ))}
           </div>
         )}
         <div className="sd-actions" data-tour="stock-actions">
