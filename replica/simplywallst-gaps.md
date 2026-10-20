@@ -22,8 +22,9 @@ actions), the company profile (website, employees), your notes.
 
 Built 20 Oct 2026: #1–5 (At a glance and How the price has done on the
 overview), #6 (Dividends), #7 (Financial health), #8 (Against its sector),
-#9 (Insider and promoter trades, PIT only), #10 (What changed recently) and
-#12 (Where these figures come from). Still to build: #11.
+#9 (Insider and promoter trades, PIT only), #10 (What changed recently),
+#11 (Latest earnings call) and #12 (Where these figures come from). All
+twelve built; left for later: the takeover-code (SAST) disclosures beside #9.
 
 | # | What | Theirs (in short) | Ours would be | Size |
 |---|---|---|---|---|

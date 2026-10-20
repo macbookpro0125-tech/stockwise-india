@@ -1203,6 +1203,16 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
   .sd-insiders-table [role=row].head { display: none; }
 }
 
+/* Latest earnings call (StockEarningsCall.jsx) */
+.sd-call { margin-bottom: var(--sp-4); }
+.sd-call a { color: var(--accent); }
+.sd-call-read { padding: var(--sp-2) var(--sp-4); min-height: 2.5rem; border: 1px solid var(--bdr2); border-radius: var(--r-sm); background: var(--s3); color: var(--t1); font: inherit; font-size: var(--fs-sm); font-weight: 600; cursor: pointer; touch-action: manipulation; }
+.sd-call-read:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) { .sd-call-read:hover { border-color: var(--accent); } }
+.sd-call-quotes { list-style: none; margin: var(--sp-2) 0 0; padding: 0; display: grid; gap: var(--sp-3); }
+.sd-call-quotes li { padding-left: var(--sp-3); border-left: 2px solid var(--accent); font-size: var(--fs-sm); line-height: 1.55; color: var(--t2); }
+.sd-call-quotes li span { display: block; font-size: var(--fs-2xs); color: var(--t3); }
+
 /* How the price has done (StockPerformance.jsx) */
 .sd-perf-lead { margin: 0 0 var(--sp-3); font-size: var(--fs-md); line-height: 1.5; color: var(--t1); }
 .sd-perf-h { margin-top: var(--sp-6); }

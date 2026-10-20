@@ -25,6 +25,7 @@ import StockHealth from "./StockHealth.jsx";
 import StockSectorCompare from "./StockSectorCompare.jsx";
 import StockRecent from "./StockRecent.jsx";
 import InsidersPanel from "./InsidersPanel.jsx";
+import StockEarningsCall from "./StockEarningsCall.jsx";
 import StockSnapshot from "./StockSnapshot.jsx";
 import { docTop } from "./motion.js";
 
@@ -1000,7 +1001,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       <div id="sec-technicals" className="ss-section"><h2 className="sd-h2">Technicals. <span>The trend in the price.</span></h2><TechnicalPanel ticker={data.symbol} /></div>
 
       <div id="sec-peers" className="ss-section"><h2 className="sd-h2">Peers. <span>How it compares with similar companies.</span></h2>{m && <StockSectorCompare m={m} />}<PeersPanel symbol={data.symbol} onAnalyze={onOpenStock} /></div>
-      <div id="sec-filings" className="ss-section" data-tour="filings"><h2 className="sd-h2">News & filings. <span>Straight from NSE.</span></h2>{m && <StockRecent m={m} holding={data.holding} />}<NewsPanel symbol={data.symbol} /></div>
+      <div id="sec-filings" className="ss-section" data-tour="filings"><h2 className="sd-h2">News & filings. <span>Straight from NSE.</span></h2>{m && <StockRecent m={m} holding={data.holding} />}<StockEarningsCall symbol={data.symbol} m={m} /><NewsPanel symbol={data.symbol} /></div>
       <MyNotes key={data.symbol} symbol={data.symbol} />
       <StockDataDates dates={data.dataDates} quote={data.quote} research={m?.research} />
 

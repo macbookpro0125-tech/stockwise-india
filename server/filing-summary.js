@@ -83,8 +83,18 @@ function extractText(bytes, contentType) {
 // about the event — the first version quoted them as "evidence"
 const BOILERPLATE = /e-?mail\s*:|website\s*:|\btel(?:ephone)?\s*[:.]|\bfax\b|www\.|registered office|corporate office|corporate identi(?:ty|fication) (?:no|number)|\bCIN\b|exchange plaza|bandra kurla|dalal street|phiroze jeejeebhoy|listing (?:department|compliance)|scrip code|dear sir|yours (?:faithfully|truly|sincerely)|for and on behalf of|membership no|standard on review engagements|nothing has come to our attention|we conducted our review|SRE 2410|whether due to fraud or error|this report is intended solely/i;
 
+// Text as a PDF hands it over: a bullet from a symbol font arrives as a
+// private-use character (U+F0B7 in TCS's transcript, Oct 2026) and Word's
+// ligatures as single characters (ﬁ, ﬃ). NFKC turns ligatures back into
+// letters; the bullets become bullets. A font that maps a ligature to an
+// unrelated letter (TCS's "eƯiciency") is left as filed — one sample isn't
+// enough to know what that letter stands for elsewhere.
+export function cleanText(text) {
+  return String(text).normalize("NFKC").replace(/[\uF0B7\uF0A7\uF076\uF0D8]/g, "•");
+}
+
 function sentencesFor(pages) {
-  return pages.flatMap(({ page, text }) => text.split(/(?<=[.!?])\s+(?=[A-Z0-9₹“"(])/)
+  return pages.flatMap(({ page, text: raw }) => cleanText(raw).split(/(?<=[.!?])\s+(?=[A-Z0-9₹“"(])/)
     .map(sentence => ({ page, text: sentence.trim() }))
     .filter(s => s.text.length >= 55 && s.text.length <= 900)
     // prose, not a flattened table of figures or a letterhead
