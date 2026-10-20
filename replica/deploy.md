@@ -153,3 +153,23 @@ To make deploys gapless the disk has to go: accounts in a managed database
 pulled in at start (`DATA_JOBS=pull` already does). Not done — a migration of
 every account query. Until then, push outside market hours when possible.
 
+### Email: sign-up codes and password reset (20 Oct 2026)
+
+Anyone could type any email at sign-up. With email set up, sign-up now
+sends a 6-digit code and makes the account only when it comes back
+(15 minutes, five tries); "Forgot password" switches on with the same
+settings. Without them sign-up works as before. A verified Google sign-in
+with an email whose account was never proven takes it over (the typed
+password is removed, its sessions end).
+
+The owner's steps (Claude doesn't sign up or paste keys):
+1. resend.com — sign up with jocularinsights@gmail.com (free: 3,000
+   emails a month, 100 a day).
+2. Domains → Add domain → `jocularinsights.in`; add the DNS records Resend
+   lists (an MX and a TXT on `send`, a TXT on `resend._domainkey`) where the
+   domain's DNS is managed, then Verify.
+3. API Keys → Create API key (sending access) → copy it.
+4. Render → stockwise-india → Environment: `RESEND_API_KEY` = the key,
+   `EMAIL_FROM` = `Jocular Insights <no-reply@jocularinsights.in>`,
+   `APP_URL` = `https://jocularinsights.in` → Save (it redeploys).
+

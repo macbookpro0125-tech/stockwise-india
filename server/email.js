@@ -1,4 +1,4 @@
-// Outgoing email — today only password-reset links — through Resend's HTTP
+// Outgoing email — sign-up codes and password-reset links — through Resend's HTTP
 // API. Needs a domain Resend has verified, so it's off until three settings
 // exist (in .env locally, the host's dashboard live):
 //   RESEND_API_KEY  the key from resend.com
@@ -6,7 +6,8 @@
 //   APP_URL         e.g. "https://yourdomain.in" — links in emails are built
 //                   from this, never from the request's Host header, which a
 //                   visitor can set (and so point a victim's link at their site)
-// Until then the app doesn't offer password reset at all.
+// Until then the app doesn't offer password reset, and sign-up doesn't check
+// the email with a code.
 
 export const emailConfigured = () => !!(process.env.RESEND_API_KEY && process.env.EMAIL_FROM && process.env.APP_URL);
 export const appUrl = () => String(process.env.APP_URL || "").replace(/\/+$/, "");
@@ -29,6 +30,23 @@ export const setEmailSender = fn => { sender = fn; };
 export const sendEmail = message => sender(message);
 
 const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+export function signupCodeEmail(code) {
+  const text = [
+    `Your Jocular Insights sign-up code is ${code}.`,
+    "",
+    "Type it in the app to finish creating your account. It works for 15 minutes.",
+    "",
+    "If you didn't sign up, ignore this email: no account is made without the code.",
+  ].join("\n");
+  const html = `<div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;font-size:15px;line-height:1.6;color:#101828;max-width:520px">
+<p>Your <b>Jocular Insights</b> sign-up code is</p>
+<p style="font-size:28px;font-weight:700;letter-spacing:6px;margin:8px 0 14px">${esc(code)}</p>
+<p>Type it in the app to finish creating your account. It works for 15 minutes.</p>
+<p style="color:#475467;font-size:13px">If you didn't sign up, ignore this email: no account is made without the code.</p>
+</div>`;
+  return { subject: `Your Jocular Insights code: ${code}`, text, html };
+}
 
 export function resetEmail(link) {
   const text = [

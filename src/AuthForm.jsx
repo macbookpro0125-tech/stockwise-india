@@ -83,6 +83,53 @@ function PhoneSignIn({ config, onAuthed, onBack }) {
   );
 }
 
+// The code emailed at sign-up (the server sends one once email is set up):
+// the account is made only when it matches. A new code after 30 seconds.
+function EmailCode({ email, onAuthed, onBack }) {
+  const [code, setCode] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [wait, setWait] = useState(30);
+  const [resent, setResent] = useState(false);
+  useEffect(() => {
+    if (wait <= 0) return;
+    const t = setTimeout(() => setWait(w => w - 1), 1000);
+    return () => clearTimeout(t);
+  }, [wait]);
+  const verify = async e => {
+    e.preventDefault();
+    setError("");
+    setBusy(true);
+    try { onAuthed((await api.signupVerify(email, code)).userId); }
+    catch (err) { setError(err.message); setBusy(false); }
+  };
+  const resend = async () => {
+    setError("");
+    setResent(false);
+    try { await api.signupResend(email); setResent(true); setCode(""); setWait(30); }
+    catch (err) { setError(err.message); }
+  };
+  return (
+    <>
+      <h2 className="auth-title">Check your email</h2>
+      <p className="auth-sub">We sent a 6-digit code to <strong style={{ color: "var(--t2)" }}>{email}</strong>. Type it here to finish creating your account.</p>
+      <form onSubmit={verify} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <input className="input-base" inputMode="numeric" autoComplete="one-time-code" aria-label="6-digit code" placeholder="6-digit code" maxLength={6} pattern="\d{6}"
+          value={code} onChange={e => { setCode(e.target.value.replace(/\D/g, "")); if (error) setError(""); }} required autoFocus style={{ letterSpacing: code ? "0.3em" : 0, fontSize: 18, textAlign: "center" }} />
+        {error && <div role="alert" style={errorBox}>{error}</div>}
+        {resent && !error && <div role="status" style={{ fontSize: 12.5, color: "var(--t2)" }}>A new code is on its way.</div>}
+        <button type="submit" className="btn-primary" disabled={busy || code.length !== 6}>{busy ? "Checking…" : "Create my account"}</button>
+        <button type="button" onClick={resend} disabled={wait > 0}
+          style={{ background: "none", border: "none", padding: 0, fontSize: 12.5, color: wait > 0 ? "var(--t3)" : "var(--accent)", cursor: wait > 0 ? "default" : "pointer", fontFamily: "inherit" }}>
+          {wait > 0 ? `No email? Send a new code in ${wait}s` : "No email? Send a new code"}
+        </button>
+        <p style={{ fontSize: 12, color: "var(--t3)", margin: 0, lineHeight: 1.5 }}>It can take a minute, and sometimes lands in spam or promotions.</p>
+      </form>
+      <button type="button" className="btn-ghost" style={{ marginTop: 14, width: "100%" }} onClick={onBack}>Use a different email</button>
+    </>
+  );
+}
+
 // Sign-up or sign-in: the front page picks the mode (its "Sign in" and
 // "Create free account" buttons); a browser that has signed in before opens
 // on "Sign in".
@@ -157,7 +204,7 @@ export default function AuthForm({ onAuthed, mode, onModeChange, onProgress }) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [step, setStep] = useState("choose"); // "choose" | "email" | "phone" | "forgot"
+  const [step, setStep] = useState("choose"); // "choose" | "email" | "phone" | "forgot" | "code"
   const [socialBusy, setSocialBusy] = useState(null);
   // What the server can offer: password reset needs email; Google / Apple /
   // phone need Firebase (its public web config comes with the answer)
@@ -204,6 +251,7 @@ export default function AuthForm({ onAuthed, mode, onModeChange, onProgress }) {
 
   if (shown === "forgot") return <div className="auth-step"><ForgotPassword initialEmail={email} available={canReset} onBack={() => { setStep("email"); setError(""); }} /></div>;
   if (shown === "phone") return <div className="auth-step"><PhoneSignIn config={fb} onAuthed={done} onBack={back} /></div>;
+  if (shown === "code") return <div className="auth-step"><EmailCode email={email.trim()} onAuthed={done} onBack={() => { setStep("email"); setError(""); }} /></div>;
 
   const social = async which => {
     setError("");
@@ -251,6 +299,8 @@ export default function AuthForm({ onAuthed, mode, onModeChange, onProgress }) {
     setBusy(true);
     try {
       const result = signup ? await api.signup(email.trim(), password) : await api.login(email.trim(), password);
+      // the server emailed a code: the account waits for it
+      if (result.verify) { setBusy(false); setStep("code"); return; }
       done(result.userId);
     } catch (err) {
       setError(err.message);

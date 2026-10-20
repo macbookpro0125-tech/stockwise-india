@@ -38,6 +38,9 @@ export const limits = {
   // Password-reset emails: per account and per address
   resetEmail: limiter({ max: 3, windowMs: 60 * MIN }),
   resetIp: limiter({ max: 10, windowMs: 60 * MIN }),
+  // Sign-up codes: per email and per address, sending and resending
+  codeEmail: limiter({ max: 5, windowMs: 60 * MIN }),
+  codeIp: limiter({ max: 15, windowMs: 60 * MIN }),
 };
 
 // The visitor's address. Behind a host's proxy (TRUST_PROXY=1) the socket is

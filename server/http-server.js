@@ -10,9 +10,9 @@ import { randomUUID, createHash } from "node:crypto";
 import { gzipSync } from "node:zlib";
 import { existsSync, statSync, createReadStream } from "node:fs";
 import { join, normalize, extname, sep } from "node:path";
-import { signup, login, logout, verifySession, accountInfo, deleteAccount, createPasswordReset, resetPassword, signInWithFirebase } from "./auth.js";
+import { signup, startSignup, resendSignupCode, finishSignup, login, logout, verifySession, accountInfo, deleteAccount, createPasswordReset, resetPassword, signInWithFirebase } from "./auth.js";
 import { firebaseConfig, verifyFirebaseIdToken } from "./firebase-auth.js";
-import { emailConfigured, appUrl, sendEmail, resetEmail } from "./email.js";
+import { emailConfigured, appUrl, sendEmail, resetEmail, signupCodeEmail } from "./email.js";
 import { listAlerts, createAlert, updateAlert, deleteAlert } from "./user-alerts.js";
 import { screen, matchingSymbols, screenerMeta, getStock, saveStock, rowsFor, isValidSymbol, countFetched, allMetrics, screenRowCount, marketReady, capHistoricalMultiples } from "./screen.js";
 import { startDataPull, pullStatus } from "./data-pull.js";
@@ -352,9 +352,61 @@ export function createApp() {
         // Every attempt counts, failed ones too: "already exists" would
         // otherwise let anyone test thousands of emails for an account
         limits.signupIp.hit(ip);
+        // With email set up, the account waits for the code sent to the
+        // email (anyone can type any address); without it, as before
+        if (emailConfigured()) {
+          const account = `email:${String(email ?? "").trim().toLowerCase()}`;
+          const codeWait = Math.max(limits.codeEmail.blockedFor(account), limits.codeIp.blockedFor(ip));
+          if (codeWait) return tooMany(res, codeWait, "Too many codes asked for.");
+          const code = startSignup(email, password);
+          limits.codeEmail.hit(account);
+          limits.codeIp.hit(ip);
+          try {
+            await sendEmail({ to: String(email).trim().toLowerCase(), ...signupCodeEmail(code) });
+          } catch (e) {
+            console.error(`[email] sign-up code: ${e.message}`);
+            sendJson(res, 502, { error: "We couldn't send the code just now. Please try again in a minute." });
+            return;
+          }
+          sendJson(res, 202, { verify: true });
+          return;
+        }
         const { token, userId } = signup(email, password);
         setSessionCookie(req, res, token);
         sendJson(res, 200, { userId });
+        return;
+      }
+
+      // The code from the sign-up email: right, the account is made and signed in
+      if (url.pathname === "/api/auth/signup/verify" && req.method === "POST") {
+        const ip = `ip:${clientIp(req)}`;
+        const wait = limits.wrongPasswordIp.blockedFor(ip);
+        if (wait) return tooMany(res, wait, "Too many attempts.");
+        const { email, code } = await readJsonBody(req);
+        let session;
+        try {
+          session = finishSignup(email, code);
+        } catch (e) {
+          limits.wrongPasswordIp.hit(ip);
+          throw e;
+        }
+        setSessionCookie(req, res, session.token);
+        sendJson(res, 200, { userId: session.userId });
+        return;
+      }
+
+      // A new sign-up code: the same answer whether or not one was waiting
+      if (url.pathname === "/api/auth/signup/resend" && req.method === "POST") {
+        if (!emailConfigured()) { sendJson(res, 503, { error: "Sign-up codes aren't available yet." }); return; }
+        const email = String((await readJsonBody(req)).email ?? "").trim().toLowerCase();
+        const account = `email:${email}`, ip = `ip:${clientIp(req)}`;
+        const wait = Math.max(limits.codeEmail.blockedFor(account), limits.codeIp.blockedFor(ip));
+        if (wait) return tooMany(res, wait, "Too many codes asked for.");
+        limits.codeEmail.hit(account);
+        limits.codeIp.hit(ip);
+        const code = resendSignupCode(email);
+        if (code) sendEmail({ to: email, ...signupCodeEmail(code) }).catch(e => console.error(`[email] sign-up code: ${e.message}`));
+        sendJson(res, 200, { ok: true });
         return;
       }
 

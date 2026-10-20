@@ -1,6 +1,6 @@
 // scrypt (built into node:crypto) instead of adding bcrypt/argon2 as a
 // dependency — it's a standard, memory-hard KDF, not a homegrown scheme.
-import { randomBytes, scryptSync, timingSafeEqual, createHash } from "node:crypto";
+import { randomBytes, randomInt, scryptSync, timingSafeEqual, createHash } from "node:crypto";
 import { db } from "./db.js";
 import { badRequest, conflict, unauthorized, notFound } from "./http-errors.js";
 
@@ -38,6 +38,76 @@ export function signup(email, password) {
   ).run(email, hash, salt, new Date().toISOString());
 
   return createSession(Number(result.lastInsertRowid));
+}
+
+// Sign-up with a code (when email can be sent): the email and password are
+// held, a 6-digit code goes to the email, and the account is made only when
+// that code comes back — so nobody can open an account on someone else's
+// address. A code lasts 15 minutes, five wrong tries end the attempt, and a
+// new code (or a new sign-up) replaces the last.
+const CODE_TTL_MS = 15 * 60_000, CODE_TRIES = 5;
+const codeHash = (email, code) => createHash("sha256").update(`${email}:${code}`).digest("hex");
+const newCode = () => String(randomInt(0, 1_000_000)).padStart(6, "0");
+const cleanEmail = email => (typeof email === "string" ? email.trim().toLowerCase() : "");
+
+// Returns the code to email
+export function startSignup(email, password) {
+  email = cleanEmail(email);
+  if (!email || !email.includes("@")) throw badRequest("Valid email required");
+  if (typeof password !== "string" || password.length < 8) throw badRequest("Password must be at least 8 characters");
+  if (db.prepare("SELECT id FROM users WHERE email = ?").get(email)) throw conflict("An account with this email already exists");
+  const { hash, salt } = hashPassword(password);
+  const code = newCode(), now = Date.now();
+  db.prepare("DELETE FROM pending_signups WHERE expires_at < ?").run(new Date(now).toISOString());
+  db.prepare(`INSERT INTO pending_signups (email, password_hash, password_salt, code_hash, expires_at, attempts, created_at) VALUES (?, ?, ?, ?, ?, 0, ?)
+    ON CONFLICT(email) DO UPDATE SET password_hash = excluded.password_hash, password_salt = excluded.password_salt, code_hash = excluded.code_hash, expires_at = excluded.expires_at, attempts = 0, created_at = excluded.created_at`)
+    .run(email, hash, salt, codeHash(email, code), new Date(now + CODE_TTL_MS).toISOString(), new Date(now).toISOString());
+  return code;
+}
+
+// A new code for a sign-up still waiting; null when there's none (the caller
+// answers the same either way)
+export function resendSignupCode(email) {
+  email = cleanEmail(email);
+  const row = db.prepare("SELECT email FROM pending_signups WHERE email = ?").get(email);
+  if (!row) return null;
+  const code = newCode();
+  db.prepare("UPDATE pending_signups SET code_hash = ?, expires_at = ?, attempts = 0 WHERE email = ?")
+    .run(codeHash(email, code), new Date(Date.now() + CODE_TTL_MS).toISOString(), email);
+  return code;
+}
+
+export function finishSignup(email, code) {
+  email = cleanEmail(email);
+  code = String(code ?? "").replace(/\s/g, "");
+  const row = db.prepare("SELECT * FROM pending_signups WHERE email = ?").get(email);
+  if (!row) throw badRequest("That code isn't right, or has already been used. Start again if you need a new one.");
+  if (row.expires_at < new Date().toISOString()) throw badRequest("That code has expired. Ask for a new one.");
+  const given = Buffer.from(codeHash(email, code), "hex"), expected = Buffer.from(row.code_hash, "hex");
+  if (!timingSafeEqual(given, expected)) {
+    if (row.attempts + 1 >= CODE_TRIES) {
+      db.prepare("DELETE FROM pending_signups WHERE email = ?").run(email);
+      throw badRequest("Too many wrong codes. Please sign up again for a new one.");
+    }
+    db.prepare("UPDATE pending_signups SET attempts = attempts + 1 WHERE email = ?").run(email);
+    throw badRequest("That code isn't right. Check the email and try again.");
+  }
+  if (db.prepare("SELECT id FROM users WHERE email = ?").get(email)) {
+    db.prepare("DELETE FROM pending_signups WHERE email = ?").run(email);
+    throw conflict("An account with this email already exists");
+  }
+  const now = new Date().toISOString();
+  db.exec("BEGIN");
+  try {
+    const result = db.prepare("INSERT INTO users (email, password_hash, password_salt, created_at, email_verified_at) VALUES (?, ?, ?, ?, ?)")
+      .run(email, row.password_hash, row.password_salt, now, now);
+    db.prepare("DELETE FROM pending_signups WHERE email = ?").run(email);
+    db.exec("COMMIT");
+    return createSession(Number(result.lastInsertRowid));
+  } catch (e) {
+    db.exec("ROLLBACK");
+    throw e;
+  }
 }
 
 export function login(email, password) {
@@ -155,7 +225,8 @@ export function resetPassword(token, password) {
   const { hash, salt } = hashPassword(password);
   db.exec("BEGIN");
   try {
-    db.prepare("UPDATE users SET password_hash = ?, password_salt = ? WHERE id = ?").run(hash, salt, row.user_id);
+    // the link reached the inbox, so the email is the owner's
+    db.prepare("UPDATE users SET password_hash = ?, password_salt = ?, email_verified_at = COALESCE(email_verified_at, ?) WHERE id = ?").run(hash, salt, new Date().toISOString(), row.user_id);
     db.prepare("UPDATE password_resets SET used_at = ? WHERE token_hash = ?").run(new Date().toISOString(), tokenHash(token));
     db.prepare("DELETE FROM sessions WHERE user_id = ?").run(row.user_id);
     db.exec("COMMIT");

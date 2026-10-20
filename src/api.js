@@ -55,6 +55,9 @@ export const api = {
   me: () => request("/api/auth/me"),
   signup: (email, password) => request("/api/auth/signup", { method: "POST", body: JSON.stringify({ email, password }) }),
   login: (email, password) => request("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
+  // Sign-up's emailed code (when the server can send email)
+  signupVerify: (email, code) => request("/api/auth/signup/verify", { method: "POST", body: JSON.stringify({ email, code }) }),
+  signupResend: (email) => request("/api/auth/signup/resend", { method: "POST", body: JSON.stringify({ email }) }),
   logout: () => request("/api/auth/logout", { method: "POST" }),
   // password, or for an account without one (Google, Apple, phone) confirm: "DELETE"
   deleteAccount: (password, confirm) => request("/api/auth/delete-account", { method: "POST", body: JSON.stringify({ password, confirm }) }),

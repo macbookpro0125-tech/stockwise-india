@@ -90,8 +90,9 @@ export function PrivacyPage({ signedIn }) {
 
       <H>Emails</H>
       <P>
-        We email you only when you ask to reset your password. The email, with a link that works once for an hour, is
-        delivered by our email service provider on our behalf.
+        We email you only to check your address when you sign up (a 6-digit code that works for 15 minutes) and when you
+        ask to reset your password (a link that works once for an hour). These emails are delivered by our email service
+        provider on our behalf.
       </P>
 
       <H>Alerts on Telegram</H>

@@ -200,3 +200,16 @@ rebuildUsersForSocialSignIn();
 // When an account's email was proven its owner's (a verified Google or Apple
 // sign-in with it); a typed email at sign-up isn't proof (auth.js)
 addColumn("users", "email_verified_at", "TEXT");
+// A sign-up waiting for the code emailed to it (auth.js startSignup): no
+// account exists until the code matches. Only hashes are kept.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS pending_signups (
+    email TEXT PRIMARY KEY,
+    password_hash TEXT NOT NULL,
+    password_salt TEXT NOT NULL,
+    code_hash TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    attempts INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL
+  );
+`);

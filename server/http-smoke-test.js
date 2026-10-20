@@ -343,13 +343,46 @@ async function main() {
   const outbox = [];
   emailMod.setEmailSender(async m => { outbox.push(m); });
   assert((await (await fetch(`${BASE}/api/auth/options`)).json()).passwordReset === true, "with email set up, password reset is offered");
-  const erinSignup = await json("POST", "/api/auth/signup", "", { email: "erin@example.com", password: "erinsoldpassword" });
+  // Sign-up proves the email with a 6-digit code once email is set up: no
+  // account exists until the code typed matches the one sent
+  const settle = () => new Promise(r => setTimeout(r, 50));
+  const codeOf = m => m?.text.match(/\b(\d{6})\b/)?.[1];
+  const erinStart = await json("POST", "/api/auth/signup", "", { email: "erin@example.com", password: "erinsoldpassword" });
+  await settle();
+  assert(erinStart.status === 202 && (await erinStart.json()).verify === true && !(erinStart.headers.get("set-cookie") ?? "").includes("stockwise_session="), "with email set up, sign-up sends a code instead of opening the account");
+  const erinMail = outbox.at(-1);
+  assert(erinMail?.to === "erin@example.com" && codeOf(erinMail) && /code/i.test(erinMail.subject), "the code goes to the email typed");
+  assert((await json("POST", "/api/auth/login", "", { email: "erin@example.com", password: "erinsoldpassword" })).status === 401, "there's no account until the code is typed");
+  const notIt = codeOf(erinMail) === "000000" ? "111111" : "000000";
+  assert((await json("POST", "/api/auth/signup/verify", "", { email: "erin@example.com", code: notIt })).status === 400, "a wrong code doesn't open it");
+  const erinSignup = await json("POST", "/api/auth/signup/verify", "", { email: "Erin@Example.com", code: ` ${codeOf(erinMail)} ` });
   const erinOldCookie = extractCookie(erinSignup);
+  assert(erinSignup.status === 200 && erinOldCookie.startsWith("stockwise_session="), "the right code opens the account and signs in");
+  assert((await json("POST", "/api/auth/signup/verify", "", { email: "erin@example.com", code: codeOf(erinMail) })).status === 400, "a code works once");
+  assert((await json("POST", "/api/auth/signup", "", { email: "erin@example.com", password: "someoneelse123" })).status === 409, "a proven email can't be signed up again");
+  // A new code replaces the last; five wrong codes end the attempt; codes expire
+  await json("POST", "/api/auth/signup", "", { email: "fay@example.com", password: "fayspassword1" });
+  await settle();
+  const fayFirst = codeOf(outbox.at(-1));
+  assert((await json("POST", "/api/auth/signup/resend", "", { email: "fay@example.com" })).status === 200, "a new code can be asked for");
+  await settle();
+  const faySecond = codeOf(outbox.at(-1));
+  assert(outbox.at(-1).to === "fay@example.com" && faySecond, "and is sent");
+  if (fayFirst !== faySecond) assert((await json("POST", "/api/auth/signup/verify", "", { email: "fay@example.com", code: fayFirst })).status === 400, "the earlier code stops working");
+  for (let i = 0; i < 4; i++) await json("POST", "/api/auth/signup/verify", "", { email: "fay@example.com", code: faySecond === "000000" ? "111111" : "000000" });
+  assert((await json("POST", "/api/auth/signup/verify", "", { email: "fay@example.com", code: faySecond })).status === 400, "after five wrong codes even the right one doesn't work — start again");
+  await json("POST", "/api/auth/signup", "", { email: "gus@example.com", password: "gusspassword1" });
+  await settle();
+  const gusCode = codeOf(outbox.at(-1));
+  (await import("./db.js")).db.prepare("UPDATE pending_signups SET expires_at = ? WHERE email = ?").run("2000-01-01T00:00:00.000Z", "gus@example.com");
+  assert(/expired/i.test((await (await json("POST", "/api/auth/signup/verify", "", { email: "gus@example.com", code: gusCode })).json()).error), "an old code has expired");
+  const sentBefore = outbox.length;
   const known = await json("POST", "/api/auth/forgot", "", { email: "Erin@Example.com" });
   const unknown = await json("POST", "/api/auth/forgot", "", { email: "nobody@example.com" });
-  await new Promise(r => setTimeout(r, 50));
+  await settle();
   assert(known.status === 200 && unknown.status === 200 && JSON.stringify(await known.json()) === JSON.stringify(await unknown.json()), "the reply is the same whether or not the email has an account");
-  const link = outbox.length === 1 && outbox[0].to === "erin@example.com" ? outbox[0].text.match(/https:\/\/stockwise\.test\/reset-password\?token=([\w-]+)/) : null;
+  const resets = outbox.slice(sentBefore);
+  const link = resets.length === 1 && resets[0].to === "erin@example.com" ? resets[0].text.match(/https:\/\/stockwise\.test\/reset-password\?token=([\w-]+)/) : null;
   assert(link, "only the real account gets an email, with a link on the app's own address");
   const resetRes = await json("POST", "/api/auth/reset", "", { token: link[1], password: "erinsnewpassword" });
   assert(resetRes.status === 200 && extractCookie(resetRes).startsWith("stockwise_session="), "the link sets a new password and signs in");
@@ -403,6 +436,10 @@ async function main() {
   const aliceMe = await (await fetch(`${BASE}/api/auth/me`, { headers: { Cookie: aliceGoogleCookie } })).json();
   assert(aliceMe.userId === aliceId && aliceMe.hasPassword === false, "the Google sign-in keeps the account, its data, and no password");
   assert((await (await fbSignIn(google("uid-alice-google", "alice@example.com"))).json()).userId === aliceId, "the next Google sign-in opens it again");
+  // Erin proved her email with the sign-up code (and the reset link), so a
+  // Google sign-in with it joins her account and keeps her password
+  assert((await fbSignIn(google("uid-erin-google", "erin@example.com"))).status === 200 &&
+    (await json("POST", "/api/auth/login", "", { email: "erin@example.com", password: "erinsnewpassword" })).status === 200, "a Google sign-in with a proven email keeps its password");
   const unverified = await fbSignIn(google("uid-mallory", "alice@example.com", { email_verified: false }));
   assert(unverified.status === 401, "an unverified email never opens someone else's account");
   const phoneRes = await fbSignIn(idToken({ sub: "uid-phone", phone_number: "+919876543210", firebase: { sign_in_provider: "phone" } }));
