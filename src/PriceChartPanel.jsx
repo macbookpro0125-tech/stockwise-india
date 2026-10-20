@@ -341,7 +341,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
       main.setData(bars.map(b => ({ time: b.date, value: b.close })));
     }
     mainRef.current = main;
-    main.priceScale().applyOptions({ scaleMargins: { top: 0.08, bottom: withVolume ? (narrow ? 0.15 : 0.24) : 0.06 } });
+    main.priceScale().applyOptions({ scaleMargins: { top: narrow ? 0.13 : 0.08, bottom: withVolume ? (narrow ? 0.15 : 0.24) : 0.06 } });
 
     // Warm-up bars stay as whitespace, so every series shares the same time axis
     const toLine = vals => bars.map((b, i) => (vals[i] == null ? { time: b.date } : { time: b.date, value: vals[i] }));
@@ -352,10 +352,13 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
     };
     const legendSeries = [];
     const ind = id => INDICATORS.find(x => x.id === id);
-    if (prefs.ind.ma20) legendSeries.push({ label: "MA 20", color: ind("ma20").color, values: sma(closes, 20), series: overlay(sma(closes, 20), ind("ma20").color) });
-    if (prefs.ind.ma50) legendSeries.push({ label: "MA 50", color: ind("ma50").color, values: sma(closes, 50), series: overlay(sma(closes, 50), ind("ma50").color) });
-    if (prefs.ind.ma200) legendSeries.push({ label: "MA 200", color: ind("ma200").color, values: sma(closes, 200), series: overlay(sma(closes, 200), ind("ma200").color) });
-    if (prefs.ind.ema20) legendSeries.push({ label: "EMA 20", color: ind("ema20").color, values: ema(closes, 20), series: overlay(ema(closes, 20), ind("ema20").color) });
+    // On a phone a moving average's value sits on the price scale in its
+    // colour, rather than in a line of text over the chart
+    const maOpts = narrow ? { lastValueVisible: true, priceFormat } : {};
+    if (prefs.ind.ma20) legendSeries.push({ label: "MA 20", color: ind("ma20").color, values: sma(closes, 20), series: overlay(sma(closes, 20), ind("ma20").color, maOpts) });
+    if (prefs.ind.ma50) legendSeries.push({ label: "MA 50", color: ind("ma50").color, values: sma(closes, 50), series: overlay(sma(closes, 50), ind("ma50").color, maOpts) });
+    if (prefs.ind.ma200) legendSeries.push({ label: "MA 200", color: ind("ma200").color, values: sma(closes, 200), series: overlay(sma(closes, 200), ind("ma200").color, maOpts) });
+    if (prefs.ind.ema20) legendSeries.push({ label: "EMA 20", color: ind("ema20").color, values: ema(closes, 20), series: overlay(ema(closes, 20), ind("ema20").color, maOpts) });
     if (prefs.ind.bb) {
       const b = bollinger(closes, 20, 2), col = ind("bb").color;
       overlay(b.upper, col, { lineStyle: LineStyle.Dashed, lineWidth: 1 });
@@ -363,8 +366,8 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
       overlay(b.lower, col, { lineStyle: LineStyle.Dashed, lineWidth: 1 });
       legendSeries.push({ label: "BB", color: col, values: b.mid, fmt: i => `${fmtNum(b.upper[i])} / ${fmtNum(b.lower[i])}` });
     }
-    if (prefs.ind.ema50) legendSeries.push({ label: "EMA 50", color: ind("ema50").color, values: ema(closes, 50), series: overlay(ema(closes, 50), ind("ema50").color) });
-    if (prefs.ind.ema200) legendSeries.push({ label: "EMA 200", color: ind("ema200").color, values: ema(closes, 200), series: overlay(ema(closes, 200), ind("ema200").color) });
+    if (prefs.ind.ema50) legendSeries.push({ label: "EMA 50", color: ind("ema50").color, values: ema(closes, 50), series: overlay(ema(closes, 50), ind("ema50").color, maOpts) });
+    if (prefs.ind.ema200) legendSeries.push({ label: "EMA 200", color: ind("ema200").color, values: ema(closes, 200), series: overlay(ema(closes, 200), ind("ema200").color, maOpts) });
     if (prefs.ind.donchian) {
       const d = donchian(bars, 20), col = ind("donchian").color;
       overlay(d.upper, col, { lineWidth: 1 });
@@ -503,7 +506,9 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
     setLegend(legendAt(bars.length - 1));
     chart.subscribeCrosshairMove(param => {
       const i = param.logical != null && param.point ? Math.round(param.logical) : null;
-      setLegend(legendAt(i == null ? bars.length - 1 : Math.min(i, bars.length - 1)));
+      const at = legendAt(i == null ? bars.length - 1 : Math.min(i, bars.length - 1));
+      // active: a bar is pointed at or touched (a phone then shows its values)
+      setLegend(at && { ...at, active: i != null });
     });
     chart.subscribeClick(param => {
       if (!drawingRef.current || !param.point) return;
@@ -612,6 +617,12 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
     color: active ? "var(--accent)" : "var(--t2)", ...extra,
   });
   const group = { display: "inline-flex", gap: 4, flexWrap: narrow ? "nowrap" : "wrap" };
+  // A phone's icon row: square-ish buttons, a segmented D/W/M
+  const iconBtn = (active, extra = {}) => btn(active, { width: 40, height: 36, padding: 0, gap: 2, justifyContent: "center", ...extra });
+  const seg = active => ({
+    minWidth: 30, height: 30, padding: "0 6px", border: 0, borderRadius: 7, fontFamily: "inherit", fontSize: 12, fontWeight: 650, cursor: "pointer",
+    background: active ? "color-mix(in srgb, var(--accent) 18%, transparent)" : "transparent", color: active ? "var(--accent)" : "var(--t2)",
+  });
   const sheetLabel = { margin: "0 0 6px 2px", fontSize: 11, fontWeight: 650, letterSpacing: "0.02em", textTransform: "uppercase", color: "var(--t3)" };
   const basisWord = (PIVOT_BASES[prefs.interval] ?? PIVOT_BASES.D).find(([id]) => id === pivotBasis)?.[1] ?? "month";
   // Every indicator, in its group; pivot points open their own settings
@@ -651,13 +662,47 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
     </div>
   );
 
+  // The model's levels and the pivots, listed: above the chart on a wide
+  // screen, under the range buttons on a phone, where the top stays clean
+  const levelLists = (
+    <>
+        {levelLines.length > 0 && last && (
+          <ul aria-label="Model price levels" style={{ ...(narrow ? { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "2px 12px" } : { display: "flex", flexWrap: "wrap", gap: "4px 14px" }), listStyle: "none", margin: "0 0 8px", padding: 0, fontSize: 12, color: "var(--t2)", ...MONO }}>
+            {levelLines.map(l => {
+              const d = (l.price - last.close) / last.close * 100;
+              return (
+                <li key={l.title} style={{ display: "inline-flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", minWidth: 0 }}>
+                  <span aria-hidden="true" style={{ width: 14, flexShrink: 0, borderTop: `2px ${l.style === LineStyle.Solid ? "solid" : l.style === LineStyle.Dotted ? "dotted" : "dashed"} ${l.color}` }} />
+                  {/* Phones: short names, whole rupees and percents, so each fits one line */}
+                  <span style={{ color: "var(--t1)" }}>{narrow ? l.short : l.title}</span> {narrow ? `₹${Math.round(l.price).toLocaleString("en-IN")}` : fmtRs(l.price)}
+                  <span style={{ color: "var(--t3)" }}>{d >= 0 ? "+" : "−"}{Math.abs(d).toFixed(narrow ? 0 : 1)}%</span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+
+        {pivotNow && (
+          <div aria-label="Pivot points" style={{ display: "flex", flexWrap: "wrap", gap: "2px 12px", alignItems: "baseline", margin: "0 0 8px", fontSize: 12, color: "var(--t2)", ...MONO }}>
+            <span style={{ color: "var(--t3)", fontFamily: "inherit" }}>{PIVOT_KINDS.find(([id]) => id === prefs.pivotKind)?.[1] ?? "Classic"} pivots, from the last {basisWord}:</span>
+            {PIVOT_LEVELS.map(L => (
+              <span key={L} style={{ whiteSpace: "nowrap" }}><b style={{ color: PIVOT_COLORS[L[0]], fontWeight: 650 }}>{L}</b> {narrow && Math.abs(pivotNow[L]) >= 100 ? Math.round(pivotNow[L]).toLocaleString("en-IN") : fmtNum(pivotNow[L])}</span>
+            ))}
+          </div>
+        )}
+    </>
+  );
+
   return (
     <div ref={cardRef} className={page ? "chart-page-card" : undefined} style={page
       // The chart page is a column the height of the screen: every control
       // keeps its size and the chart takes what's left (className below)
       ? { background: "var(--s2)", padding: narrow ? "10px 10px 12px" : 16, flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }
       : { border: "1px solid var(--bdr2)", borderRadius: fullscreen ? 0 : 14, background: "var(--s2)", padding: narrow ? 12 : 16, marginBottom: 16, ...(fullscreen ? { overflow: "auto" } : {}) }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: narrow ? 8 : 12, flexWrap: narrow ? "nowrap" : "wrap", marginBottom: 10 }}>
+      {/* A phone keeps the top clean: no heading row — the change sits in
+          the chart's corner and Expand in the icon row below */}
+      {!narrow && (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 10 }}>
         <div style={{ fontSize: 14, fontWeight: 700, color: "var(--t1)", letterSpacing: "-0.01em" }}>
           Share price
           {data?.symbol && !narrow && <span style={{ fontSize: 11, fontWeight: 500, color: "var(--t3)", marginLeft: 8 }}>{data.symbol}</span>}
@@ -670,14 +715,9 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
               <span style={{ fontSize: 11, fontWeight: 500, color: "var(--t3)", marginLeft: 6 }}>{narrow ? (range === "All" ? "all" : range) : `over ${range === "All" ? "all history" : range}`}</span>
             </div>
           )}
-          {/* A phone expands the chart over the whole screen (see openExpanded) */}
-          {narrow && !page && (
-            <a href={chartPageUrl(symbol, name, levels)} onClick={openExpanded} aria-label="Expand the chart to full screen" style={{ ...btn(false), textDecoration: "none", gap: 6 }}>
-              <Maximize2 size={14} aria-hidden="true" />Expand
-            </a>
-          )}
         </div>
       </div>
+      )}
 
       {/* Toolbar. A phone has one row — the bar interval and "Chart options",
           which opens everything else below it; the row of every control
@@ -726,15 +766,22 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
         </div>
       </div>
       ) : (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-          <div role="group" aria-label="Bar interval" style={group}>
+        <div role="toolbar" aria-label="Chart settings" style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+          <div role="group" aria-label="Bar interval" style={{ display: "inline-flex", gap: 2, padding: 2, borderRadius: 9, background: "var(--s3)", border: "1px solid var(--bdr2)" }}>
             {INTERVALS.map(iv => (
-              <button key={iv.id} type="button" onClick={() => pickInterval(iv.id)} aria-pressed={prefs.interval === iv.id} title={iv.title} aria-label={iv.title} style={btn(prefs.interval === iv.id, { minWidth: 40, justifyContent: "center" })}>{iv.label}</button>
+              <button key={iv.id} type="button" onClick={() => pickInterval(iv.id)} aria-pressed={prefs.interval === iv.id} title={iv.title} aria-label={iv.title} style={seg(prefs.interval === iv.id)}>{iv.label}</button>
             ))}
           </div>
-          <button type="button" onClick={() => setMenuOpen(o => !o)} aria-expanded={menuOpen} aria-controls={`chart-options-${symbol}${page ? "-page" : ""}`} style={btn(menuOpen, { marginLeft: "auto" })}>
-            <SlidersHorizontal size={14} aria-hidden="true" />Chart options{activeInd > 0 && <span style={MONO}> · {activeInd}</span>}
+          <button type="button" onClick={() => setMenuOpen(o => !o)} aria-expanded={menuOpen} aria-controls={`chart-options-${symbol}${page ? "-page" : ""}`} aria-label={`Indicators and chart type${activeInd > 0 ? `, ${activeInd} on` : ""}`} style={iconBtn(menuOpen || activeInd > 0)}>
+            <span aria-hidden="true" style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontStyle: "italic", fontSize: 15, fontWeight: 600 }}>ƒx</span>
+            {activeInd > 0 && <span aria-hidden="true" style={{ fontSize: 10, fontWeight: 700, ...MONO }}>{activeInd}</span>}
           </button>
+          <button type="button" onClick={() => setPref({ levels: !prefs.levels })} aria-pressed={prefs.levels && !!levels} disabled={!levels} aria-label="The model's price levels" style={iconBtn(prefs.levels && !!levels, !levels ? { opacity: 0.45, cursor: "not-allowed" } : {})}><Layers size={16} aria-hidden="true" /></button>
+          <button type="button" onClick={() => setDrawing(d => !d)} aria-pressed={drawing} aria-label="Draw a horizontal line" style={iconBtn(drawing)}><Minus size={16} aria-hidden="true" /></button>
+          <button type="button" onClick={snapshot} aria-label="Save the chart as an image" style={iconBtn(false)}><Camera size={16} aria-hidden="true" /></button>
+          {!page && (
+            <a href={chartPageUrl(symbol, name, levels)} onClick={openExpanded} aria-label="Expand the chart to full screen" style={iconBtn(false, { marginLeft: "auto", textDecoration: "none" })}><Maximize2 size={16} aria-hidden="true" /></a>
+          )}
         </div>
       )}
       {menuOpen && narrow && (
@@ -750,45 +797,11 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
             </div>
           </div>
           <div role="group" aria-label="Indicators">{picker(true)}</div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 4 }}>
-            <button type="button" onClick={() => setPref({ levels: !prefs.levels })} aria-pressed={prefs.levels} disabled={!levels} style={btn(prefs.levels && !!levels, { justifyContent: "center", ...(!levels ? { opacity: 0.5, cursor: "not-allowed" } : {}) })}>
-              <Layers size={14} aria-hidden="true" />Levels
-            </button>
-            <button type="button" onClick={() => { setDrawing(d => !d); setMenuOpen(false); }} aria-pressed={drawing} style={btn(drawing, { justifyContent: "center" })}>
-              <Minus size={14} aria-hidden="true" />Line
-            </button>
-            <button type="button" onClick={snapshot} style={btn(false, { justifyContent: "center" })}>
-              <Camera size={14} aria-hidden="true" />Image
-            </button>
-          </div>
         </div>
       )}
       </div>
 
-      {levelLines.length > 0 && last && (
-        <ul aria-label="Model price levels" style={{ ...(narrow ? { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "2px 12px" } : { display: "flex", flexWrap: "wrap", gap: "4px 14px" }), listStyle: "none", margin: "0 0 8px", padding: 0, fontSize: 12, color: "var(--t2)", ...MONO }}>
-          {levelLines.map(l => {
-            const d = (l.price - last.close) / last.close * 100;
-            return (
-              <li key={l.title} style={{ display: "inline-flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", minWidth: 0 }}>
-                <span aria-hidden="true" style={{ width: 14, flexShrink: 0, borderTop: `2px ${l.style === LineStyle.Solid ? "solid" : l.style === LineStyle.Dotted ? "dotted" : "dashed"} ${l.color}` }} />
-                {/* Phones: short names, whole rupees and percents, so each fits one line */}
-                <span style={{ color: "var(--t1)" }}>{narrow ? l.short : l.title}</span> {narrow ? `₹${Math.round(l.price).toLocaleString("en-IN")}` : fmtRs(l.price)}
-                <span style={{ color: "var(--t3)" }}>{d >= 0 ? "+" : "−"}{Math.abs(d).toFixed(narrow ? 0 : 1)}%</span>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-
-      {pivotNow && (
-        <div aria-label="Pivot points" style={{ display: "flex", flexWrap: "wrap", gap: "2px 12px", alignItems: "baseline", margin: "0 0 8px", fontSize: 12, color: "var(--t2)", ...MONO }}>
-          <span style={{ color: "var(--t3)", fontFamily: "inherit" }}>{PIVOT_KINDS.find(([id]) => id === prefs.pivotKind)?.[1] ?? "Classic"} pivots, from the last {basisWord}:</span>
-          {PIVOT_LEVELS.map(L => (
-            <span key={L} style={{ whiteSpace: "nowrap" }}><b style={{ color: PIVOT_COLORS[L[0]], fontWeight: 650 }}>{L}</b> {narrow && Math.abs(pivotNow[L]) >= 100 ? Math.round(pivotNow[L]).toLocaleString("en-IN") : fmtNum(pivotNow[L])}</span>
-          ))}
-        </div>
-      )}
+      {!narrow && levelLists}
 
       {(drawing || lines.length > 0) && (
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginBottom: 8, fontSize: 12, color: "var(--t2)" }}>
@@ -822,12 +835,42 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
 
         {bars.length >= 2 && (
           <>
-            {/* Legend: over the chart as on TradingView; above it on a phone,
-                where over it would cover a third of the candles */}
-            {legend && (
-              <div aria-hidden="true" style={narrow
-                ? { minHeight: 40, marginBottom: 4, fontSize: 11.5, lineHeight: 1.7, color: "var(--t2)", ...MONO }
-                : { position: "absolute", top: 6, left: 8, zIndex: 3, pointerEvents: "none", fontSize: 12, lineHeight: 1.6, color: "var(--t2)", ...MONO, textShadow: "0 0 4px var(--s2), 0 0 4px var(--s2)" }}>
+            {/* Legend, over the chart. On a phone one quiet line in the corner —
+                the symbol, close and change — and a touched bar's values while
+                a finger is on the chart; the price pane leaves room for it */}
+            {legend && narrow && (
+              <div aria-hidden="true" style={{ position: "absolute", top: 4, left: 6, right: 62, zIndex: 3, pointerEvents: "none", fontSize: 11, lineHeight: 1.55, color: "var(--t2)", ...MONO, textShadow: "0 0 4px var(--s2), 0 0 4px var(--s2)" }}>
+                {(() => {
+                  const b = legend.bar, ohlc = prefs.type === "candles" || prefs.type === "bars";
+                  const n = x => (Math.abs(x) >= 100 ? Math.round(x).toLocaleString("en-IN") : fmtNum(x));
+                  const pct = legend.changePct != null && (
+                    <span style={{ color: legend.change >= 0 ? "var(--green)" : "var(--red)", fontWeight: 600 }}>{legend.change >= 0 ? "+" : "−"}{Math.abs(legend.changePct).toFixed(2)}%</span>
+                  );
+                  const extras = legend.extra;
+                  return legend.active ? (
+                    <>
+                      <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        <span style={{ color: "var(--t1)", fontWeight: 600 }}>{new Date(`${b.date}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "2-digit", timeZone: "UTC" })}</span>{" "}
+                        {ohlc && <>O {n(b.open)} H {n(b.high)} L {n(b.low)} </>}C <b style={{ color: "var(--t1)", fontWeight: 650 }}>{fmtNum(b.close)}</b> {pct}
+                      </div>
+                      {extras.length > 0 && (
+                        <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          {extras.map((x, k) => <span key={x.label}>{k > 0 && " "}<span style={{ color: x.color }}>{x.label}</span> {x.text}</span>)}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      <b style={{ color: "var(--t1)", fontWeight: 700 }}>{symbol}</b> {fmtNum(b.close)} {pct}
+                      {b.partial && <span style={{ color: "var(--yellow)" }}> · today</span>}
+                      {rangeChange != null && <span style={{ color: "var(--t3)" }}> · {range === "All" ? "all" : range} <span style={{ color: rangeChange >= 0 ? "var(--green)" : "var(--red)" }}>{rangeChange >= 0 ? "+" : "−"}{Math.abs(rangeChange).toFixed(1)}%</span></span>}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+            {legend && !narrow && (
+              <div aria-hidden="true" style={{ position: "absolute", top: 6, left: 8, zIndex: 3, pointerEvents: "none", fontSize: 12, lineHeight: 1.6, color: "var(--t2)", ...MONO, textShadow: "0 0 4px var(--s2), 0 0 4px var(--s2)" }}>
                 {(() => {
                   const b = legend.bar, ohlc = prefs.type === "candles" || prefs.type === "bars";
                   const v = n => <b style={{ color: "var(--t1)", fontWeight: 600 }}>{fmtNum(n)}</b>;
@@ -890,10 +933,11 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
           ))}
         </div>
         <span style={{ marginLeft: narrow ? 0 : "auto", fontSize: 10, color: "var(--t3)" }}>
-          {data?.stale ? `${data.staleReason} · ` : ""}{INTERVALS.find(i => i.id === prefs.interval)?.title} bars · Yahoo Finance · {narrow ? "drag sideways to pan, pinch to zoom" : "drag to pan, scroll to zoom"}
+          {data?.stale ? `${data.staleReason} · ` : ""}{INTERVALS.find(i => i.id === prefs.interval)?.title} bars · Yahoo Finance · {narrow ? "drag sideways to pan, pinch to zoom, press and hold for a day's values" : "drag to pan, scroll to zoom"}
           {" · "}<a href="https://www.tradingview.com/" target="_blank" rel="noopener" style={{ color: "inherit" }}>Chart by TradingView</a>
         </span>
       </div>
+      {narrow && (levelLines.length > 0 || pivotNow) && <div style={{ marginTop: 10 }}>{levelLists}</div>}
 
       {expanded && createPortal(
         <div className="chart-overlay" role="dialog" aria-modal="true" aria-label={`${name || symbol} price chart`}>
