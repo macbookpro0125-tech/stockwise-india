@@ -80,7 +80,7 @@ function RowHeader({ def, onRemove, move, onMove, children }) {
   return (
     <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
       <div style={{ minWidth: 0 }}>
-        <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--t1)", lineHeight: 1.35 }} title={def.about || undefined}>
+        <div style={{ fontSize: 12.5, fontWeight: 400, color: "var(--t1)", lineHeight: 1.35 }} title={def.about || undefined}>
           {def.label}{unitLabel(def) && <span style={{ color: "var(--t3)", fontWeight: 500 }}> · {unitLabel(def)}</span>}
         </div>
         {children}
@@ -160,7 +160,7 @@ function SectorPick({ def, filter, companies, onChange }) {
   if (values.length > 1) return <SectorFilter def={def} filter={filter} companies={companies} onChange={f => onChange(f.values)} onRemove={() => onChange([])} />;
   return (
     <div className="filter-row">
-      <label htmlFor={id} style={{ display: "block", fontSize: 12.5, fontWeight: 600, color: "var(--t1)", marginBottom: 8 }}>Sector</label>
+      <label htmlFor={id} style={{ display: "block", fontSize: 12.5, fontWeight: 400, color: "var(--t1)", marginBottom: 8 }}>Sector</label>
       <select id={id} className="input-base" value={values[0] ?? ""} onChange={e => onChange(e.target.value ? [e.target.value] : [])}
         style={{ width: "100%", height: 36, fontSize: 13, cursor: "pointer" }}>
         <option value="">All sectors</option>
@@ -184,13 +184,13 @@ function CapSize({ def, filter, onChange }) {
   };
   return (
     <div className="filter-row">
-      <div style={{ fontSize: 12.5, fontWeight: 600, color: "var(--t1)", marginBottom: 8 }} title={def.about}>{def.label}</div>
+      <div style={{ fontSize: 12.5, fontWeight: 400, color: "var(--t1)", marginBottom: 8 }} title={def.about}>{def.label}</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 6 }}>
         {def.options.map(o => {
           const on = chosen.has(o);
           return (
             <button key={o} type="button" onClick={() => toggle(o)} aria-pressed={on}
-              style={{ height: 32, borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", border: `1px solid ${on ? "var(--accent)" : "var(--bdr2)"}`, background: on ? "color-mix(in srgb, var(--accent) 10%, transparent)" : "transparent", color: on ? "var(--accent)" : "var(--t2)" }}>
+              style={{ height: 32, borderRadius: 8, fontSize: 12, fontWeight: 400, cursor: "pointer", border: `1px solid ${on ? "var(--accent)" : "var(--bdr2)"}`, background: on ? "color-mix(in srgb, var(--accent) 10%, transparent)" : "transparent", color: on ? "var(--accent)" : "var(--t2)" }}>
               {o.replace(" cap", "")}
             </button>
           );
@@ -221,8 +221,8 @@ export default function FilterPanel({ meta, filters, onChange, onAddFilter, onRe
     <div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "2px 0 12px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: "var(--t1)" }}>Filters</span>
-          {active > 0 && <span style={{ fontSize: 10.5, padding: "1px 8px", borderRadius: 999, fontWeight: 700, background: "var(--accent)", color: "var(--on-accent)" }}>{active}</span>}
+          <span style={{ fontSize: 14, fontWeight: 500, color: "var(--t1)" }}>Filters</span>
+          {active > 0 && <span style={{ fontSize: 10.5, padding: "1px 8px", borderRadius: 999, fontWeight: 500, background: "var(--accent)", color: "var(--on-accent)" }}>{active}</span>}
         </div>
         {filters.length > 0 && (
           <button type="button" className="btn-ghost" onClick={onReset} style={{ height: 28, fontSize: 11.5, padding: "0 10px" }}>Reset all</button>
@@ -239,7 +239,7 @@ export default function FilterPanel({ meta, filters, onChange, onAddFilter, onRe
         return <NumericFilter {...props} />;
       })}
 
-      <button type="button" className="btn-ghost" onClick={onAddFilter} style={{ width: "100%", height: 40, marginTop: 12, borderStyle: "dashed", color: "var(--accent)", fontWeight: 600 }}>
+      <button type="button" className="btn-ghost" onClick={onAddFilter} style={{ width: "100%", height: 40, marginTop: 12, borderStyle: "dashed", color: "var(--accent)", fontWeight: 400 }}>
         + Add filter
       </button>
       <p style={{ fontSize: 11, color: "var(--t3)", lineHeight: 1.5, margin: "10px 2px 0" }}>

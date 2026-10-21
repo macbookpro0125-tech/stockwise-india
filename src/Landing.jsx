@@ -59,7 +59,7 @@ const STEPS = [
 ];
 
 const card = { background: "var(--s1)", border: "1px solid var(--bdr)", borderRadius: 16 };
-const sectionTitle = { fontSize: 26, fontWeight: 700, letterSpacing: "-0.03em", color: "var(--t1)", margin: "0 0 8px" };
+const sectionTitle = { fontSize: 26, fontWeight: 500, letterSpacing: "-0.03em", color: "var(--t1)", margin: "0 0 8px" };
 const sectionLead = { fontSize: 15, color: "var(--t2)", margin: "0 0 24px", lineHeight: 1.6 };
 
 function fmtDate(iso) {
@@ -122,7 +122,7 @@ export default function Landing({ onAuthed, notice }) {
             [fmtDate(stats?.pricesDate), "latest prices"],
           ].map(([value, label]) => (
             <div key={label} style={{ ...card, padding: "18px 20px" }}>
-              <div style={{ fontSize: 26, fontWeight: 750, color: "var(--accent)", letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>{value}</div>
+              <div style={{ fontSize: 26, fontWeight: 550, color: "var(--accent)", letterSpacing: "-0.03em", fontVariantNumeric: "tabular-nums" }}>{value}</div>
               <div style={{ fontSize: 13, color: "var(--t3)", marginTop: 2 }}>{label}</div>
             </div>
           ))}
@@ -138,7 +138,7 @@ export default function Landing({ onAuthed, notice }) {
                 <div style={{ width: 40, height: 40, borderRadius: 11, background: "color-mix(in srgb, var(--accent) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 20%, transparent)", color: "var(--accent)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 14 }}>
                   {f.icon}
                 </div>
-                <h3 style={{ fontSize: 15.5, fontWeight: 650, color: "var(--t1)", margin: "0 0 6px", letterSpacing: "-0.01em" }}>{f.title}</h3>
+                <h3 style={{ fontSize: 15.5, fontWeight: 450, color: "var(--t1)", margin: "0 0 6px", letterSpacing: "-0.01em" }}>{f.title}</h3>
                 <p style={{ fontSize: 13.5, lineHeight: 1.6, color: "var(--t2)", margin: 0 }}>{f.text}</p>
                 {f.note && <p style={{ fontSize: 12, lineHeight: 1.5, color: "var(--t3)", margin: "8px 0 0" }}>{f.note}</p>}
               </div>
@@ -153,8 +153,8 @@ export default function Landing({ onAuthed, notice }) {
           <div className="landing-steps">
             {STEPS.map(([title, text], i) => (
               <div key={title} style={{ ...card, padding: 22 }}>
-                <div style={{ width: 30, height: 30, borderRadius: 15, background: "var(--accent)", color: "var(--on-accent)", fontWeight: 800, fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>{i + 1}</div>
-                <h3 style={{ fontSize: 15.5, fontWeight: 650, color: "var(--t1)", margin: "0 0 6px" }}>{title}</h3>
+                <div style={{ width: 30, height: 30, borderRadius: 15, background: "var(--accent)", color: "var(--on-accent)", fontWeight: 600, fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 12 }}>{i + 1}</div>
+                <h3 style={{ fontSize: 15.5, fontWeight: 450, color: "var(--t1)", margin: "0 0 6px" }}>{title}</h3>
                 <p style={{ fontSize: 13.5, lineHeight: 1.6, color: "var(--t2)", margin: 0 }}>{text}</p>
               </div>
             ))}
@@ -166,7 +166,7 @@ export default function Landing({ onAuthed, notice }) {
 
         {/* ── Disclaimer ── */}
         <section style={{ ...card, padding: "20px 22px", borderColor: "var(--yellow-bdr)", background: "var(--yellow-dim)" }}>
-          <h2 style={{ fontSize: 15, fontWeight: 650, color: "var(--t1)", margin: "0 0 6px" }}>An educational tool, not investment advice</h2>
+          <h2 style={{ fontSize: 15, fontWeight: 450, color: "var(--t1)", margin: "0 0 6px" }}>An educational tool, not investment advice</h2>
           <p style={{ fontSize: 13.5, lineHeight: 1.65, color: "var(--t2)", margin: 0 }}>
             Jocular Insights isn't registered with SEBI as an investment adviser or research analyst. Scores, fair values and
             price levels are worked out automatically from public data, can be wrong, and aren't recommendations to buy or

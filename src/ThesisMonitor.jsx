@@ -82,16 +82,16 @@ export default function ThesisMonitor({ metrics: m, account }) {
   const editStyle = { width: "100%", minHeight: 62, resize: "vertical", boxSizing: "border-box", border: "1px solid var(--bdr2)", borderRadius: 8, background: "var(--s1)", color: "var(--t1)", padding: "8px 10px", font: "inherit", fontSize: 12, lineHeight: 1.5 };
   return (
     <section style={card} aria-labelledby="thesis-monitor-title">
-      <h3 id="thesis-monitor-title" style={{ fontSize: 15, fontWeight: 650, margin: "0 0 4px", color: "var(--t1)" }}>Investment case &amp; what to monitor</h3>
+      <h3 id="thesis-monitor-title" style={{ fontSize: 15, fontWeight: 450, margin: "0 0 4px", color: "var(--t1)" }}>Investment case &amp; what to monitor</h3>
       <div style={{ fontSize: 11, color: "var(--t3)", marginBottom: 13, lineHeight: 1.5 }}>Questions to take to each new filing; the figures are in the sections linked. These are not forecasts or automatic thesis-break signals.</div>
       {/* The strengths and things to watch are At a glance's, at the top of
           the page (StockGlance.jsx); a second list here disagreed with it */}
       <div>
-        <div style={{ fontSize: 12, fontWeight: 650, color: "var(--t1)", marginBottom: 7 }}>What to review in the next filing</div>
+        <div style={{ fontSize: 12, fontWeight: 450, color: "var(--t1)", marginBottom: 7 }}>What to review in the next filing</div>
         {monitors.length ? <ul style={{ margin: 0, paddingLeft: 17, display: "grid", gap: 8 }}>{monitors.map((x, i) => <li key={i} style={{ fontSize: 12, lineHeight: 1.5, color: "var(--t2)" }}><strong style={{ color: "var(--t1)" }}>{x.label}:</strong> {x.detail} <button type="button" onClick={() => openCheck(x.go)} style={{ padding: 0, border: 0, background: "none", font: "inherit", color: "var(--accent)", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2 }}>See {x.where}</button></li>)}</ul> : <div style={{ fontSize: 12, color: "var(--t3)" }}>Too few current observations to build company-specific monitoring prompts.</div>}
       </div>
       <div style={{ marginTop: 16, paddingTop: 13, borderTop: "1px solid var(--bdr)" }}>
-        <div style={{ fontSize: 12, fontWeight: 650, color: "var(--t1)", marginBottom: 8 }}>Your investment thesis</div>
+        <div style={{ fontSize: 12, fontWeight: 450, color: "var(--t1)", marginBottom: 8 }}>Your investment thesis</div>
         <div className="ss-grid-3">
           {[
             ["case", "Why could this business compound?", "Your view on business quality, returns, and reinvestment."],

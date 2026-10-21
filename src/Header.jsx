@@ -87,8 +87,8 @@ export default function Header({ tab, onTab, account, onLogout, onDeleted, onSea
           <a href="/" aria-label="Jocular Insights home" onClick={e => { e.preventDefault(); onTab("discover"); }} style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0, cursor: "pointer", color: "inherit", textDecoration: "none" }}>
             <BrandMark size={null} className="hdr-mark" />
             <div className="hide-phone" style={{ minWidth: 0 }}>
-              <h1 style={{ fontSize: 17, fontWeight: 700, margin: 0, color: "var(--t1)", letterSpacing: "-0.03em", lineHeight: 1.2, whiteSpace: "nowrap" }}>
-                Jocular <span style={{ color: "var(--brand-wise)", fontWeight: 600 }}>Insights</span>
+              <h1 style={{ fontSize: 17, fontWeight: 500, margin: 0, color: "var(--t1)", letterSpacing: "-0.03em", lineHeight: 1.2, whiteSpace: "nowrap" }}>
+                Jocular <span style={{ color: "var(--brand-wise)", fontWeight: 400 }}>Insights</span>
               </h1>
               <p className="hide-phone" style={{ fontSize: 11, color: "var(--t3)", margin: 0, letterSpacing: "-0.01em", whiteSpace: "nowrap" }}>NSE stock research</p>
             </div>
@@ -121,10 +121,10 @@ export default function Header({ tab, onTab, account, onLogout, onDeleted, onSea
                 <t.Icon size={15} strokeWidth={2} style={{ color: active ? "var(--accent)" : "var(--t3)" }} />
                 {t.label}
                 {b.count > 0 && (
-                  <span style={{ fontSize: 10, fontWeight: 700, lineHeight: "15px", padding: "0 6px", borderRadius: 999, background: "var(--s3)", border: "1px solid var(--bdr2)", color: active ? "var(--t1)" : "var(--t2)", fontVariantNumeric: "tabular-nums" }}>{b.count}</span>
+                  <span style={{ fontSize: 10, fontWeight: 500, lineHeight: "15px", padding: "0 6px", borderRadius: 999, background: "var(--s3)", border: "1px solid var(--bdr2)", color: active ? "var(--t1)" : "var(--t2)", fontVariantNumeric: "tabular-nums" }}>{b.count}</span>
                 )}
                 {b.badge != null && (
-                  <span style={{ fontSize: 9, fontWeight: 700, padding: "1px 5px", borderRadius: 999, lineHeight: "14px", background: b.badgeColor, color: "var(--on-accent)" }}>{b.badge}</span>
+                  <span style={{ fontSize: 9, fontWeight: 500, padding: "1px 5px", borderRadius: 999, lineHeight: "14px", background: b.badgeColor, color: "var(--on-accent)" }}>{b.badge}</span>
                 )}
               </button>
             );

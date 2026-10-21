@@ -57,7 +57,7 @@ export function Definition({ def, meta }) {
   const known = def.range?.known ?? def.known;
   return (
     <>
-      <div style={{ fontSize: 12.5, fontWeight: 650, color: "var(--t1)", marginBottom: 4 }}>{def.label}</div>
+      <div style={{ fontSize: 12.5, fontWeight: 450, color: "var(--t1)", marginBottom: 4 }}>{def.label}</div>
       {def.about && <div style={{ fontSize: 12, color: "var(--t2)", lineHeight: 1.5 }}>{def.about}</div>}
       {basis && <div style={{ fontSize: 11.5, color: "var(--t2)", lineHeight: 1.5, marginTop: 6 }}><span style={{ color: "var(--t3)" }}>Period: </span>{basis}.</div>}
       {known != null && meta?.companies > 0 && known < meta.companies && (
@@ -125,7 +125,7 @@ export function ColumnGuide({ defs, meta, extra = [], onClose }) {
       style={{ position: "fixed", inset: 0, zIndex: 350, background: "rgba(0,0,0,0.55)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "6vh 16px", overflowY: "auto" }}>
       <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 560, background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 14, padding: "16px 18px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: "var(--t1)" }}>What these columns mean</div>
+          <div style={{ fontSize: 15, fontWeight: 500, color: "var(--t1)" }}>What these columns mean</div>
           <button type="button" onClick={onClose} aria-label="Close" className="btn-ghost" style={{ height: 30, width: 30, padding: 0, justifyContent: "center" }}><X size={15} /></button>
         </div>
         <div style={{ fontSize: 11.5, color: "var(--t3)", marginBottom: 6, lineHeight: 1.5 }}>Every figure comes from the companies' own NSE filings and NSE's daily prices. Where one is unknown it's left blank, never guessed.</div>

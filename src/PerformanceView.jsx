@@ -27,7 +27,7 @@ function daysSince(dateStr) {
 function RetBadge({ pct }) {
   if (pct == null) return <span style={{ fontSize: 11, color: "var(--t3)", ...MONO }}>—</span>;
   const color = pct > 0 ? "var(--green)" : pct < 0 ? "var(--red)" : "var(--t2)";
-  return <span style={{ fontSize: 12, fontWeight: 700, color, ...MONO }}>{pct > 0 ? "+" : ""}{pct.toFixed(1)}%</span>;
+  return <span style={{ fontSize: 12, fontWeight: 500, color, ...MONO }}>{pct > 0 ? "+" : ""}{pct.toFixed(1)}%</span>;
 }
 
 function fmtPct(pct) {
@@ -91,7 +91,7 @@ export default function PerformanceView({ onOpenStock }) {
     <div style={{ padding: "8px var(--page-x) 16px", animation: "fadeUp 280ms cubic-bezier(0,0,0.2,1) backwards" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, gap: 10, flexWrap: "wrap" }}>
         <div>
-          <div className="hide-phone" style={{ fontSize: 18, fontWeight: 700, color: "var(--t1)", letterSpacing: "-0.02em" }}>Strategy performance</div>
+          <div className="hide-phone" style={{ fontSize: 18, fontWeight: 500, color: "var(--t1)", letterSpacing: "-0.02em" }}>Strategy performance</div>
           <div style={{ fontSize: 12, color: "var(--t2)", marginTop: 3, maxWidth: 560, lineHeight: 1.5 }}>
             How each strategy's top 10 has moved since it was recorded — a record of past screen results, not a forecast or advice.
           </div>
@@ -130,7 +130,7 @@ export default function PerformanceView({ onOpenStock }) {
         <section style={{ border: "1px solid var(--bdr2)", borderRadius: 14, background: "var(--s2)", padding: 15, marginBottom: 18 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 8 }}>
             <div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "var(--t1)" }}>Prospective research-score study</div>
+              <div style={{ fontSize: 15, fontWeight: 500, color: "var(--t1)" }}>Prospective research-score study</div>
               <div style={{ fontSize: 11.5, color: "var(--t2)", marginTop: 4, lineHeight: 1.5 }}>
                 Frozen monthly score cohorts compared with the NIFTY 500. {study.cohortCount} cohort{study.cohortCount === 1 ? "" : "s"} recorded · latest prices {fmtDate(study.asOf)}.
               </div>
@@ -144,7 +144,7 @@ export default function PerformanceView({ onOpenStock }) {
             return (
               <div key={cohort.date} style={{ borderTop: "1px solid var(--bdr)", paddingTop: 8, marginTop: 8 }}>
                 <button onClick={() => setStudyOpen(expanded ? null : cohort.date)} style={{ display: "flex", width: "100%", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "7px 0", color: "var(--t1)", background: "none", border: 0, cursor: "pointer", textAlign: "left" }}>
-                  <span style={{ fontSize: 12, fontWeight: 600 }}>{fmtDate(cohort.date)} · {cohort.companies.toLocaleString("en-IN")} scored · v{cohort.scoreVersion}</span>
+                  <span style={{ fontSize: 12, fontWeight: 400 }}>{fmtDate(cohort.date)} · {cohort.companies.toLocaleString("en-IN")} scored · v{cohort.scoreVersion}</span>
                   <span style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--t2)", fontSize: 11, ...MONO }}>
                     {early ? <TooEarly days={daysHeld} /> : cohort.benchmarkReturnPct == null ? "Benchmark unavailable" : `NIFTY 500 ${fmtPct(cohort.benchmarkReturnPct)}`}
                     <ChevronDown size={14} style={{ color: "var(--t3)", transform: expanded ? "rotate(180deg)" : "none" }} />
@@ -162,8 +162,8 @@ export default function PerformanceView({ onOpenStock }) {
                           <td style={{ padding: "8px 5px", color: "var(--t1)", borderBottom: "1px solid var(--bdr)" }}>{bucket.label}</td>
                           <td style={{ padding: "8px 5px", color: "var(--t2)", textAlign: "right", ...MONO }}>{bucket.scoreMin == null ? "—" : `${bucket.scoreMin}–${bucket.scoreMax}`}</td>
                           <td style={{ padding: "8px 5px", color: "var(--t2)", textAlign: "right", ...MONO }}>{bucket.priced}/{bucket.companies}</td>
-                          {!early && <td style={{ padding: "8px 5px", color, textAlign: "right", fontWeight: 700, ...MONO }}>{fmtPct(bucket.meanPriceReturnPct)}</td>}
-                          {!early && <td style={{ padding: "8px 5px", color, textAlign: "right", fontWeight: 700, ...MONO }}>{fmtPct(bucket.excessVsBenchmarkPct)}</td>}
+                          {!early && <td style={{ padding: "8px 5px", color, textAlign: "right", fontWeight: 500, ...MONO }}>{fmtPct(bucket.meanPriceReturnPct)}</td>}
+                          {!early && <td style={{ padding: "8px 5px", color, textAlign: "right", fontWeight: 500, ...MONO }}>{fmtPct(bucket.excessVsBenchmarkPct)}</td>}
                         </tr>;
                       })}</tbody>
                     </table>
@@ -197,7 +197,7 @@ export default function PerformanceView({ onOpenStock }) {
           <div key={p.presetId} style={{ border: "1px solid var(--bdr2)", borderRadius: 14, background: "var(--s2)", marginBottom: 10, overflow: "hidden" }}>
             <button onClick={() => setOpen(isOpen ? null : p.presetId)} style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "13px 16px", background: "none", border: "none", cursor: "pointer" }}>
               <div style={{ textAlign: "left" }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--t1)", letterSpacing: "-0.01em" }}>{p.presetName}</div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: "var(--t1)", letterSpacing: "-0.01em" }}>{p.presetName}</div>
                 <div style={{ fontSize: 10, color: "var(--t3)", marginTop: 2 }}>
                   {/* The headline % is the oldest cohort's return, not a blend of all snapshots */}
                   {p.snapshots.length} snapshot{p.snapshots.length === 1 ? "" : "s"} · figure tracks the {fmtDate(p.sinceDate)} picks

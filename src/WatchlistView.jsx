@@ -67,7 +67,7 @@ function levelStatus(cmp, r) {
   return { label: short[pos.zone] ?? pos.label, color: TONE[pos.tone] ?? "var(--t3)" };
 }
 
-const label = { fontSize: 11.5, color: "var(--t3)", fontWeight: 600 };
+const label = { fontSize: 11.5, color: "var(--t3)", fontWeight: 400 };
 const iconBtn = { width: 30, height: 30, borderRadius: 8, border: "1px solid var(--bdr2)", background: "transparent", color: "var(--t3)", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 120ms" };
 
 export default function WatchlistView({ onOpenStock }) {
@@ -118,7 +118,7 @@ export default function WatchlistView({ onOpenStock }) {
     const active = sortBy === id;
     return (
       <button onClick={() => { if (active) setSortDir(d => (d === "desc" ? "asc" : "desc")); else { setSortBy(id); setSortDir("desc"); } }}
-        style={{ padding: "4px 12px", borderRadius: 20, fontSize: 11, fontWeight: 600, cursor: "pointer", border: `1px solid ${active ? "var(--accent)" : "var(--bdr2)"}`, background: active ? "color-mix(in srgb, var(--accent) 8%, transparent)" : "transparent", color: active ? "var(--accent)" : "var(--t3)", transition: "all 120ms" }}>
+        style={{ padding: "4px 12px", borderRadius: 20, fontSize: 11, fontWeight: 400, cursor: "pointer", border: `1px solid ${active ? "var(--accent)" : "var(--bdr2)"}`, background: active ? "color-mix(in srgb, var(--accent) 8%, transparent)" : "transparent", color: active ? "var(--accent)" : "var(--t3)", transition: "all 120ms" }}>
         {text} {active && (sortDir === "desc" ? "↓" : "↑")}
       </button>
     );
@@ -141,7 +141,7 @@ export default function WatchlistView({ onOpenStock }) {
   return wrap(
     <>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
-        <div style={{ fontSize: 12, color: "var(--t3)", fontWeight: 600 }}>{items.length} saved</div>
+        <div style={{ fontSize: 12, color: "var(--t3)", fontWeight: 400 }}>{items.length} saved</div>
         <div style={{ display: "flex", gap: 6 }}>
           <SortPill id="addedAt" label="Date" />
           <SortPill id="name" label="Name" />
@@ -160,7 +160,7 @@ export default function WatchlistView({ onOpenStock }) {
             <div key={item.ticker} className={`wl-row${leaving.has(item.ticker) ? " leaving" : ""}`}>
               <div className="glow" style={{ padding: "14px 16px", borderRadius: 12, border: "1px solid var(--bdr2)", background: "var(--s2)", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
                 <div style={{ flex: "1 1 140px", minWidth: 120 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 7, fontWeight: 600, fontSize: 14, color: "var(--t1)", letterSpacing: "-0.01em" }}><CompanyLogo symbol={item.ticker} size={18} />{name}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 7, fontWeight: 400, fontSize: 14, color: "var(--t1)", letterSpacing: "-0.01em" }}><CompanyLogo symbol={item.ticker} size={18} />{name}</div>
                   <div style={{ fontSize: 10, color: "var(--t3)", marginTop: 2 }}>
                     {item.ticker}
                     {item.addedAt && <span style={{ marginLeft: 8 }}>Added {fmtDate(item.addedAt)}</span>}
@@ -182,7 +182,7 @@ export default function WatchlistView({ onOpenStock }) {
                       <input autoFocus aria-label="Note" maxLength={500} value={noteText} onChange={e => setNoteText(e.target.value)}
                         onKeyDown={e => { if (e.key === "Enter") saveNote(item.ticker); if (e.key === "Escape") setEditingNote(null); }}
                         placeholder="e.g. Wait for Q3 results…" className="input-base" style={{ flex: 1, height: 32, fontSize: 12, borderRadius: 8 }} />
-                      <button onClick={() => saveNote(item.ticker)} style={{ height: 32, padding: "0 12px", borderRadius: 8, border: "none", background: "var(--accent)", color: "var(--on-accent)", fontSize: 11, fontWeight: 600, cursor: "pointer" }}>Save</button>
+                      <button onClick={() => saveNote(item.ticker)} style={{ height: 32, padding: "0 12px", borderRadius: 8, border: "none", background: "var(--accent)", color: "var(--on-accent)", fontSize: 11, fontWeight: 400, cursor: "pointer" }}>Save</button>
                       <button onClick={() => setEditingNote(null)} style={{ height: 32, padding: "0 10px", borderRadius: 8, border: "1px solid var(--bdr2)", background: "transparent", color: "var(--t3)", fontSize: 11, cursor: "pointer", display: "flex", alignItems: "center" }} aria-label="Cancel"><X size={14} /></button>
                     </div>
                   ) : item.note ? (
@@ -199,11 +199,11 @@ export default function WatchlistView({ onOpenStock }) {
 
                 <div style={{ textAlign: "center", minWidth: 70 }}>
                   <div style={label}>CMP</div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: "var(--t1)", ...MONO }}>{cmp ? fmtRs(cmp) : <span style={{ opacity: 0.3 }}>…</span>}</div>
+                  <div style={{ fontSize: 14, fontWeight: 400, color: "var(--t1)", ...MONO }}>{cmp ? fmtRs(cmp) : <span style={{ opacity: 0.3 }}>…</span>}</div>
                   {cmp && <div style={{ fontSize: 10, color: quote?.stale ? "var(--yellow)" : "var(--t3)", marginTop: 3, whiteSpace: "nowrap" }}>{priceBasis(quote?.source)}{quote?.asOf ? ` · ${fmtDate(quote.asOf)}` : ""}</div>}
                   {cmp && item.addedPrice > 0 && (() => {
                     const chg = ((cmp - item.addedPrice) / item.addedPrice) * 100;
-                    return <div style={{ fontSize: 10, fontWeight: 600, color: chg >= 0 ? "var(--green)" : "var(--red)", marginTop: 2, ...MONO }}>{chg >= 0 ? "+" : ""}{chg.toFixed(1)}%</div>;
+                    return <div style={{ fontSize: 10, fontWeight: 400, color: chg >= 0 ? "var(--green)" : "var(--red)", marginTop: 2, ...MONO }}>{chg >= 0 ? "+" : ""}{chg.toFixed(1)}%</div>;
                   })()}
                 </div>
 
@@ -214,7 +214,7 @@ export default function WatchlistView({ onOpenStock }) {
 
                 <div style={{ textAlign: "center", minWidth: 80 }}>
                   <div style={label}>Price level</div>
-                  {level ? <span style={{ fontSize: 11, fontWeight: 600, color: level.color }}>{level.label}</span> : <span style={{ fontSize: 11, color: "var(--t3)" }} title={r?.valuation?.reason ?? (r?.valuation?.as ? `No price levels (${r.valuation.as})` : undefined)}>—</span>}
+                  {level ? <span style={{ fontSize: 11, fontWeight: 400, color: level.color }}>{level.label}</span> : <span style={{ fontSize: 11, color: "var(--t3)" }} title={r?.valuation?.reason ?? (r?.valuation?.as ? `No price levels (${r.valuation.as})` : undefined)}>—</span>}
                 </div>
 
                 <div style={{ textAlign: "center", minWidth: 72 }}>

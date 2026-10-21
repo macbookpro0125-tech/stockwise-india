@@ -614,7 +614,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
 
   const btn = (active, extra = {}) => ({
     display: "inline-flex", alignItems: "center", gap: 5, height: narrow ? 34 : 30, padding: narrow ? "0 10px" : "0 9px",
-    borderRadius: 7, fontSize: 12, fontWeight: 600, fontFamily: "inherit", cursor: "pointer", whiteSpace: "nowrap",
+    borderRadius: 7, fontSize: 12, fontWeight: 400, fontFamily: "inherit", cursor: "pointer", whiteSpace: "nowrap",
     border: `1px solid ${active ? "var(--accent)" : "var(--bdr2)"}`,
     background: active ? "color-mix(in srgb, var(--accent) 10%, transparent)" : "var(--s3)",
     color: active ? "var(--accent)" : "var(--t2)", ...extra,
@@ -623,10 +623,10 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
   // A phone's icon row: square-ish buttons, a segmented D/W/M
   const iconBtn = (active, extra = {}) => btn(active, { width: 40, height: 36, padding: 0, gap: 2, justifyContent: "center", ...extra });
   const seg = active => ({
-    minWidth: 30, height: 30, padding: "0 6px", border: 0, borderRadius: 7, fontFamily: "inherit", fontSize: 12, fontWeight: 650, cursor: "pointer",
+    minWidth: 30, height: 30, padding: "0 6px", border: 0, borderRadius: 7, fontFamily: "inherit", fontSize: 12, fontWeight: 450, cursor: "pointer",
     background: active ? "color-mix(in srgb, var(--accent) 18%, transparent)" : "transparent", color: active ? "var(--accent)" : "var(--t2)",
   });
-  const sheetLabel = { margin: "0 0 6px 2px", fontSize: 11, fontWeight: 650, letterSpacing: "0.02em", textTransform: "uppercase", color: "var(--t3)" };
+  const sheetLabel = { margin: "0 0 6px 2px", fontSize: 11, fontWeight: 450, letterSpacing: "0.02em", textTransform: "uppercase", color: "var(--t3)" };
   const basisWord = (PIVOT_BASES[prefs.interval] ?? PIVOT_BASES.D).find(([id]) => id === pivotBasis)?.[1] ?? "month";
   // Every indicator, in its group; pivot points open their own settings
   const picker = compact => (
@@ -675,7 +675,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
           <div aria-label="Pivot points" style={{ display: "flex", flexWrap: "wrap", gap: "2px 12px", alignItems: "baseline", margin: "0 0 8px", fontSize: 12, color: "var(--t2)", ...MONO }}>
             <span style={{ color: "var(--t3)", fontFamily: "inherit" }}>{PIVOT_KINDS.find(([id]) => id === prefs.pivotKind)?.[1] ?? "Classic"} pivots, from the last {basisWord}:</span>
             {PIVOT_LEVELS.map(L => (
-              <span key={L} style={{ whiteSpace: "nowrap" }}><b style={{ color: PIVOT_COLORS[L[0]], fontWeight: 650 }}>{L}</b> {narrow && Math.abs(pivotNow[L]) >= 100 ? Math.round(pivotNow[L]).toLocaleString("en-IN") : fmtNum(pivotNow[L])}</span>
+              <span key={L} style={{ whiteSpace: "nowrap" }}><b style={{ color: PIVOT_COLORS[L[0]], fontWeight: 450 }}>{L}</b> {narrow && Math.abs(pivotNow[L]) >= 100 ? Math.round(pivotNow[L]).toLocaleString("en-IN") : fmtNum(pivotNow[L])}</span>
             ))}
           </div>
         )}
@@ -692,14 +692,14 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
           the chart's corner and Expand in the icon row below */}
       {!narrow && (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 10 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: "var(--t1)", letterSpacing: "-0.01em" }}>
+        <div style={{ fontSize: 14, fontWeight: 500, color: "var(--t1)", letterSpacing: "-0.01em" }}>
           Share price
           {data?.symbol && !narrow && <span style={{ fontSize: 11, fontWeight: 500, color: "var(--t3)", marginLeft: 8 }}>{data.symbol}</span>}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginLeft: "auto" }}>
           {rangeChange != null && (
             // The sign carries the direction too, so it's never colour alone
-            <div style={{ fontSize: 13, fontWeight: 700, color: rangeChange >= 0 ? "var(--green)" : "var(--red)", ...MONO }}>
+            <div style={{ fontSize: 13, fontWeight: 500, color: rangeChange >= 0 ? "var(--green)" : "var(--red)", ...MONO }}>
               {rangeChange >= 0 ? "+" : "−"}{Math.abs(rangeChange).toFixed(1)}%
               <span style={{ fontSize: 11, fontWeight: 500, color: "var(--t3)", marginLeft: 6 }}>{narrow ? (range === "All" ? "all" : range) : `over ${range === "All" ? "all history" : range}`}</span>
             </div>
@@ -762,8 +762,8 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
             ))}
           </div>
           <button type="button" onClick={() => setMenuOpen(o => !o)} aria-expanded={menuOpen} aria-controls={`chart-options-${symbol}${page ? "-page" : ""}`} aria-label={`Indicators and chart type${activeInd > 0 ? `, ${activeInd} on` : ""}`} style={iconBtn(menuOpen || activeInd > 0)}>
-            <span aria-hidden="true" style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontStyle: "italic", fontSize: 15, fontWeight: 600 }}>ƒx</span>
-            {activeInd > 0 && <span aria-hidden="true" style={{ fontSize: 10, fontWeight: 700, ...MONO }}>{activeInd}</span>}
+            <span aria-hidden="true" style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontStyle: "italic", fontSize: 15, fontWeight: 400 }}>ƒx</span>
+            {activeInd > 0 && <span aria-hidden="true" style={{ fontSize: 10, fontWeight: 500, ...MONO }}>{activeInd}</span>}
           </button>
           <button type="button" onClick={() => setPref({ levels: !prefs.levels })} aria-pressed={prefs.levels && !!levels} disabled={!levels} aria-label="The model's price levels" style={iconBtn(prefs.levels && !!levels, !levels ? { opacity: 0.45, cursor: "not-allowed" } : {})}><Layers size={16} aria-hidden="true" /></button>
           <button type="button" onClick={() => setDrawing(d => !d)} aria-pressed={drawing} aria-label="Draw a horizontal line" style={iconBtn(drawing)}><Minus size={16} aria-hidden="true" /></button>
@@ -833,14 +833,14 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
                   const b = legend.bar, ohlc = prefs.type === "candles" || prefs.type === "bars";
                   const n = x => (Math.abs(x) >= 100 ? Math.round(x).toLocaleString("en-IN") : fmtNum(x));
                   const pct = legend.changePct != null && (
-                    <span style={{ color: legend.change >= 0 ? "var(--green)" : "var(--red)", fontWeight: 600 }}>{legend.change >= 0 ? "+" : "−"}{Math.abs(legend.changePct).toFixed(2)}%</span>
+                    <span style={{ color: legend.change >= 0 ? "var(--green)" : "var(--red)", fontWeight: 400 }}>{legend.change >= 0 ? "+" : "−"}{Math.abs(legend.changePct).toFixed(2)}%</span>
                   );
                   const extras = legend.extra;
                   return legend.active ? (
                     <>
                       <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                        <span style={{ color: "var(--t1)", fontWeight: 600 }}>{new Date(`${b.date}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "2-digit", timeZone: "UTC" })}</span>{" "}
-                        {ohlc && <>O {n(b.open)} H {n(b.high)} L {n(b.low)} </>}C <b style={{ color: "var(--t1)", fontWeight: 650 }}>{fmtNum(b.close)}</b> {pct}
+                        <span style={{ color: "var(--t1)", fontWeight: 400 }}>{new Date(`${b.date}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "2-digit", timeZone: "UTC" })}</span>{" "}
+                        {ohlc && <>O {n(b.open)} H {n(b.high)} L {n(b.low)} </>}C <b style={{ color: "var(--t1)", fontWeight: 450 }}>{fmtNum(b.close)}</b> {pct}
                       </div>
                       {extras.length > 0 && (
                         <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
@@ -850,7 +850,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
                     </>
                   ) : (
                     <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      <b style={{ color: "var(--t1)", fontWeight: 700 }}>{symbol}</b> {fmtNum(b.close)} {pct}
+                      <b style={{ color: "var(--t1)", fontWeight: 500 }}>{symbol}</b> {fmtNum(b.close)} {pct}
                       {b.partial && <span style={{ color: "var(--yellow)" }}> · today</span>}
                       {rangeChange != null && <span style={{ color: "var(--t3)" }}> · {range === "All" ? "all" : range} <span style={{ color: rangeChange >= 0 ? "var(--green)" : "var(--red)" }}>{rangeChange >= 0 ? "+" : "−"}{Math.abs(rangeChange).toFixed(1)}%</span></span>}
                     </div>
@@ -862,25 +862,25 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
               <div aria-hidden="true" style={{ position: "absolute", top: 6, left: 8, zIndex: 3, pointerEvents: "none", fontSize: 12, lineHeight: 1.6, color: "var(--t2)", ...MONO, textShadow: "0 0 4px var(--s2), 0 0 4px var(--s2)" }}>
                 {(() => {
                   const b = legend.bar, ohlc = prefs.type === "candles" || prefs.type === "bars";
-                  const v = n => <b style={{ color: "var(--t1)", fontWeight: 600 }}>{fmtNum(n)}</b>;
+                  const v = n => <b style={{ color: "var(--t1)", fontWeight: 400 }}>{fmtNum(n)}</b>;
                   const change = legend.change != null && (
-                    <span style={{ color: legend.change >= 0 ? "var(--green)" : "var(--red)", fontWeight: 600 }}>
+                    <span style={{ color: legend.change >= 0 ? "var(--green)" : "var(--red)", fontWeight: 400 }}>
                       {legend.change >= 0 ? "+" : "−"}{fmtNum(Math.abs(legend.change))} ({legend.change >= 0 ? "+" : "−"}{Math.abs(legend.changePct).toFixed(2)}%)
                     </span>
                   );
-                  const vol = prefs.ind.volume && b.volume != null && <span>Vol <b style={{ color: "var(--t1)", fontWeight: 600 }}>{fmtVol(b.volume)}</b></span>;
+                  const vol = prefs.ind.volume && b.volume != null && <span>Vol <b style={{ color: "var(--t1)", fontWeight: 400 }}>{fmtVol(b.volume)}</b></span>;
                   // A phone puts the close and change first, open/high/low under them
                   return narrow ? (
                     <>
                       <div className="chart-row" style={{ gap: 8 }}>
-                        <span style={{ color: "var(--t1)", fontWeight: 600 }}>{b.date}{b.partial && <span style={{ color: "var(--yellow)", fontWeight: 500 }}> · in progress</span>}</span>
+                        <span style={{ color: "var(--t1)", fontWeight: 400 }}>{b.date}{b.partial && <span style={{ color: "var(--yellow)", fontWeight: 500 }}> · in progress</span>}</span>
                         <span>C {v(b.close)}</span>{change}
                       </div>
                       {ohlc && <div className="chart-row" style={{ gap: 8 }}><span>O {v(b.open)} H {v(b.high)} L {v(b.low)}</span>{vol}</div>}
                     </>
                   ) : (
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                      <span style={{ color: "var(--t1)", fontWeight: 600 }}>{b.date}{b.partial && <span style={{ color: "var(--yellow)", fontWeight: 500 }}> · in progress</span>}</span>
+                      <span style={{ color: "var(--t1)", fontWeight: 400 }}>{b.date}{b.partial && <span style={{ color: "var(--yellow)", fontWeight: 500 }}> · in progress</span>}</span>
                       {ohlc ? <span>O {v(b.open)} H {v(b.high)} L {v(b.low)} C {v(b.close)}</span> : <span>C {v(b.close)}</span>}
                       {change}{vol}
                     </div>

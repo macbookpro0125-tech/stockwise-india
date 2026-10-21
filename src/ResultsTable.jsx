@@ -165,7 +165,7 @@ function NcavBadge({ stock }) {
     <span
       title={`NCAV ₹${fmtCr(ncav)} Cr vs Mkt Cap ₹${fmtCr(mcap)} Cr — buying at ${pct}% of net current asset value${graham ? " · ≥33% Graham margin of safety" : ""}`}
       style={{
-        fontSize: 10, padding: "1px 7px", borderRadius: 5, fontWeight: 700, ...MONO,
+        fontSize: 10, padding: "1px 7px", borderRadius: 5, fontWeight: 500, ...MONO,
         border: `1px solid ${graham ? "var(--green-bdr)" : "var(--yellow-bdr)"}`,
         background: graham ? "var(--green-dim)" : "var(--yellow-dim)",
         color: graham ? "var(--green)" : "var(--yellow)",
@@ -218,7 +218,7 @@ function FvCell({ stock }) {
           {[["P1", p1], ["P2", p2], ["P3", p3]].map(([label, price]) => {
             const hit = cmp != null && price != null && cmp <= price;
             return (
-              <span key={label} style={{ display: "inline-flex", alignItems: "center", gap: 2, color: hit ? "var(--accent)" : "var(--t3)", fontWeight: hit ? 650 : 500 }}>
+              <span key={label} style={{ display: "inline-flex", alignItems: "center", gap: 2, color: hit ? "var(--accent)" : "var(--t3)", fontWeight: hit ? 600 : 500 }}>
                 <span style={{ fontWeight: 500 }}>{label}</span>&nbsp;{price ? price.toLocaleString("en-IN") : "—"}{hit && <Check size={11} strokeWidth={3} style={{ color: "var(--green)" }} />}
               </span>
             );
@@ -599,7 +599,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                 background: value > 0 ? "var(--green-dim)" : "var(--s2)",
                 color: value > 0 ? "var(--green)" : "var(--t1)",
                 cursor: "pointer", outline: "none", fontFamily: "inherit",
-                fontWeight: value > 0 ? 650 : 500,
+                fontWeight: value > 0 ? 600 : 500,
               }}>
               <option value="0">{any}</option>
               {options.map(([n, text]) => <option key={n} value={n}>{text}</option>)}
@@ -610,7 +610,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
             <button type="button" aria-pressed={watchOnly} onClick={() => setWatchOnly(v => !v)} className="score-watch"
               title="Run these filters on your watchlist only"
               style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 40, padding: "0 12px", borderRadius: 8, fontSize: 12.5, fontFamily: "inherit", cursor: "pointer",
-                border: `1px solid ${watchOnly ? "var(--accent)" : "var(--bdr2)"}`, background: watchOnly ? "var(--accent-glow)" : "var(--s2)", color: watchOnly ? "var(--accent)" : "var(--t2)", fontWeight: watchOnly ? 650 : 500 }}>
+                border: `1px solid ${watchOnly ? "var(--accent)" : "var(--bdr2)"}`, background: watchOnly ? "var(--accent-glow)" : "var(--s2)", color: watchOnly ? "var(--accent)" : "var(--t2)", fontWeight: watchOnly ? 600 : 500 }}>
               <Star size={13} fill={watchOnly ? "currentColor" : "none"} /> Watchlist only <span style={{ ...MONO, opacity: 0.8 }}>({watchedMatches})</span>
             </button>
           )}
@@ -755,7 +755,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                   {columns.map(def => (
                     <SortTh key={def.id} label={def.short} unit={unitLabel(def)} title={def.label} col={def.id} sortBy={sortBy} sortDir={sortDir} onSort={handleSort} menu={menuFor(def.id, def.id)} info={<MetricInfo def={def} meta={meta} />} />
                   ))}
-                  <th style={{ ...thStyle, color: "var(--accent)", fontWeight: 600, background: "color-mix(in srgb, var(--accent) 4%, var(--s1))", verticalAlign: "bottom" }}>
+                  <th style={{ ...thStyle, color: "var(--accent)", fontWeight: 400, background: "color-mix(in srgb, var(--accent) 4%, var(--s1))", verticalAlign: "bottom" }}>
                     Price levels
                     <span className="th-unit">₹ · P1 P2 P3 · FV</span>
                   </th>
@@ -800,7 +800,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                     </td>
 
                     <td style={{ ...cell, minWidth: 200, position: "sticky", left: RANK_W, background: rowBg, zIndex: 1, boxShadow: "inset -1px 0 0 var(--bdr)" }}>
-                      <button type="button" title={stock.name} aria-label={stock.name} onClick={() => onAnalyze(stock.symbol)} className="stock-link" style={{ display: "block", maxWidth: 184, padding: 0, border: 0, background: "none", fontFamily: "inherit", textAlign: "left", fontWeight: 600, fontSize: 13.5, letterSpacing: "-0.01em", marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shortName(stock.name)}</button>
+                      <button type="button" title={stock.name} aria-label={stock.name} onClick={() => onAnalyze(stock.symbol)} className="stock-link" style={{ display: "block", maxWidth: 184, padding: 0, border: 0, background: "none", fontFamily: "inherit", textAlign: "left", fontWeight: 400, fontSize: 13.5, letterSpacing: "-0.01em", marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shortName(stock.name)}</button>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, maxWidth: 184, minWidth: 0 }}>
                         <span className="ticker-chip">{stock.symbol}</span>
                         <NcavBadge stock={stock} />

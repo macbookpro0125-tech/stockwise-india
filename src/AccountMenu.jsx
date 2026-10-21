@@ -44,7 +44,7 @@ export default function AccountMenu({ account, onLogout, onDeleted, onTour }) {
           {who && (
             <div style={{ padding: "8px 12px 10px", borderBottom: "1px solid var(--bdr)", marginBottom: 4 }}>
               <div style={{ fontSize: 11, color: "var(--t3)" }}>Signed in as</div>
-              {account.name && <div style={{ fontSize: 13, fontWeight: 600, color: "var(--t1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{account.name}</div>}
+              {account.name && <div style={{ fontSize: 13, fontWeight: 400, color: "var(--t1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{account.name}</div>}
               <div style={{ fontSize: 13, color: account.name ? "var(--t2)" : "var(--t1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={who}>{who}</div>
             </div>
           )}
@@ -56,7 +56,7 @@ export default function AccountMenu({ account, onLogout, onDeleted, onTour }) {
           )}
           <button role="menuitemcheckbox" aria-checked={logos} style={{ ...item, display: "flex", justifyContent: "space-between", alignItems: "center" }} onClick={() => setLogosShown(!logos)}
             onMouseEnter={e => { e.currentTarget.style.background = "var(--s3)"; }} onMouseLeave={e => { e.currentTarget.style.background = "none"; }}>
-            Company logos <span style={{ fontSize: 12, color: logos ? "var(--accent)" : "var(--t3)", fontWeight: 600 }}>{logos ? "On" : "Off"}</span>
+            Company logos <span style={{ fontSize: 12, color: logos ? "var(--accent)" : "var(--t3)", fontWeight: 400 }}>{logos ? "On" : "Off"}</span>
           </button>
           {(install === "prompt" || install === "ios") && (
             <button role="menuitem" style={item} onClick={() => { if (install === "prompt") { setOpen(false); promptInstall(); } else setIosHint(h => !h); }}
@@ -122,7 +122,7 @@ export function DeleteAccountModal({ who, hasPassword, onClose, onDeleted }) {
     <div onClick={e => { if (e.target === e.currentTarget && !busy) onClose(); }}
       style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>
       <form onSubmit={submit} style={{ background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 18, padding: 26, width: 420, maxWidth: "100%", boxShadow: "var(--sh-lg)" }}>
-        <h3 style={{ fontSize: 18, fontWeight: 700, color: "var(--t1)", margin: "0 0 10px", letterSpacing: "-0.02em" }}>Delete your account?</h3>
+        <h3 style={{ fontSize: 18, fontWeight: 500, color: "var(--t1)", margin: "0 0 10px", letterSpacing: "-0.02em" }}>Delete your account?</h3>
         <p style={{ fontSize: 13.5, lineHeight: 1.6, color: "var(--t2)", margin: "0 0 10px" }}>
           This permanently deletes <strong style={{ color: "var(--t1)" }}>{who || "your account"}</strong> and everything saved with it:
           your watchlist and its notes, your price alerts and your portfolio. It can't be undone.
@@ -146,7 +146,7 @@ export function DeleteAccountModal({ who, hasPassword, onClose, onDeleted }) {
         )}
         <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
           <button type="submit" disabled={busy || !password}
-            style={{ flex: 1, height: 44, borderRadius: 12, border: "none", background: busy || !password ? "var(--s4)" : "var(--red)", color: busy || !password ? "var(--t3)" : "#fff", fontSize: 14, fontWeight: 600, cursor: busy || !password ? "not-allowed" : "pointer" }}>
+            style={{ flex: 1, height: 44, borderRadius: 12, border: "none", background: busy || !password ? "var(--s4)" : "var(--red)", color: busy || !password ? "var(--t3)" : "#fff", fontSize: 14, fontWeight: 400, cursor: busy || !password ? "not-allowed" : "pointer" }}>
             {busy ? "Deleting…" : "Delete my account"}
           </button>
           <button type="button" className="btn-ghost" onClick={onClose} disabled={busy} style={{ flex: 1, height: 44 }}>Cancel</button>

@@ -86,7 +86,7 @@ export default function CompareView({ stocks, pricesDate, onClose }) {
   }, [stocks]);
 
   const cols = `180px repeat(${stocks.length}, minmax(140px, 1fr))`;
-  const section = { padding: "8px 16px 4px", fontSize: 11.5, fontWeight: 600, color: "var(--accent)", background: "color-mix(in srgb, var(--accent) 5%, transparent)", borderBottom: "1px solid var(--bdr)" };
+  const section = { padding: "8px 16px 4px", fontSize: 11.5, fontWeight: 400, color: "var(--accent)", background: "color-mix(in srgb, var(--accent) 5%, transparent)", borderBottom: "1px solid var(--bdr)" };
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 300, background: "color-mix(in srgb, var(--bg) 96%, transparent)", WebkitBackdropFilter: "blur(6px)", backdropFilter: "blur(6px)", overflowY: "auto", padding: "20px var(--page-x)", animation: "fadeIn 200ms cubic-bezier(0.23, 1, 0.32, 1) backwards" }}>
@@ -98,7 +98,7 @@ export default function CompareView({ stocks, pricesDate, onClose }) {
       <div>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
           <div>
-            <h2 style={{ fontSize: 20, fontWeight: 700, color: "var(--t1)", margin: 0 }}>Compare stocks ({stocks.length})</h2>
+            <h2 style={{ fontSize: 20, fontWeight: 500, color: "var(--t1)", margin: 0 }}>Compare stocks ({stocks.length})</h2>
             <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 4 }}>
               Discover prices are NSE closes{pricesDate ? ` as of ${new Date(`${pricesDate}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })}` : "; date unavailable"}.
             </div>
@@ -112,10 +112,10 @@ export default function CompareView({ stocks, pricesDate, onClose }) {
         <div style={{ background: "var(--card)", borderRadius: 12, border: "1px solid var(--bdr2)", overflowX: "auto", boxShadow: "var(--sh-md)" }}>
           <div style={{ minWidth: 180 + stocks.length * 140 }}>
             <div style={{ display: "grid", gridTemplateColumns: cols, borderBottom: "1px solid var(--bdr)" }}>
-              <div style={{ padding: "12px 16px", fontSize: 12, color: "var(--t3)", fontWeight: 600 }}>Metric</div>
+              <div style={{ padding: "12px 16px", fontSize: 12, color: "var(--t3)", fontWeight: 400 }}>Metric</div>
               {stocks.map(s => (
                 <div key={s.symbol} style={{ padding: "12px 14px", borderLeft: "1px solid var(--bdr)", background: "var(--surf)" }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "var(--t1)" }}>{s.name}</div>
+                  <div style={{ fontSize: 14, fontWeight: 500, color: "var(--t1)" }}>{s.name}</div>
                   <div style={{ fontSize: 11, color: "var(--accent)", marginTop: 2 }}>{s.symbol}</div>
                 </div>
               ))}
@@ -126,7 +126,7 @@ export default function CompareView({ stocks, pricesDate, onClose }) {
               <div key={row.key} style={{ display: "grid", gridTemplateColumns: cols, borderBottom: "1px solid var(--bdr)" }}>
                 <div style={{ padding: "10px 16px", fontSize: 12, color: "var(--t2)", display: "flex", alignItems: "center" }}>{row.label}</div>
                 {stocks.map(s => (
-                  <div key={s.symbol} style={{ padding: "10px 14px", borderLeft: "1px solid var(--bdr)", fontSize: 13, fontWeight: 600, color: "var(--t1)", display: "flex", alignItems: "center" }}>{row.fmt(s)}</div>
+                  <div key={s.symbol} style={{ padding: "10px 14px", borderLeft: "1px solid var(--bdr)", fontSize: 13, fontWeight: 400, color: "var(--t1)", display: "flex", alignItems: "center" }}>{row.fmt(s)}</div>
                 ))}
               </div>
             ))}
@@ -136,7 +136,7 @@ export default function CompareView({ stocks, pricesDate, onClose }) {
               <div key={row.key} style={{ display: "grid", gridTemplateColumns: cols, borderBottom: "1px solid var(--bdr)" }}>
                 <div style={{ padding: "10px 16px", fontSize: 12, color: "var(--t2)", display: "flex", alignItems: "center" }}>{row.label}</div>
                 {stocks.map(s => (
-                  <div key={s.symbol} style={{ padding: "10px 14px", borderLeft: "1px solid var(--bdr)", fontSize: 13, fontWeight: 600, color: "var(--t1)", display: "flex", alignItems: "center" }}>{row.fmt(s)}</div>
+                  <div key={s.symbol} style={{ padding: "10px 14px", borderLeft: "1px solid var(--bdr)", fontSize: 13, fontWeight: 400, color: "var(--t1)", display: "flex", alignItems: "center" }}>{row.fmt(s)}</div>
                 ))}
               </div>
             ))}
@@ -160,7 +160,7 @@ export default function CompareView({ stocks, pricesDate, onClose }) {
                             : "var(--t1)";
                     content = <span style={{ color }}>{val}</span>;
                   }
-                  return <div key={s.symbol} style={{ padding: "10px 14px", borderLeft: "1px solid var(--bdr)", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center" }}>{content}</div>;
+                  return <div key={s.symbol} style={{ padding: "10px 14px", borderLeft: "1px solid var(--bdr)", fontSize: 13, fontWeight: 400, display: "flex", alignItems: "center" }}>{content}</div>;
                 })}
               </div>
             ))}

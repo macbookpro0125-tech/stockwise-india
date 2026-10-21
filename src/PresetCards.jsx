@@ -505,7 +505,7 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
 
                 <span style={{
                   display: "block",
-                  fontSize: 13, fontWeight: 600,
+                  fontSize: 13, fontWeight: 400,
                   color: "var(--t1)",
                   marginBottom: 4, letterSpacing: "-0.01em",
                   lineHeight: 1.3,

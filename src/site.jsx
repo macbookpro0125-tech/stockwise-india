@@ -95,8 +95,8 @@ export function Logo({ size = 17 }) {
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
       <BrandMark size={Math.round(size * 1.9)} />
-      <span style={{ fontSize: size, fontWeight: 700, color: "var(--t1)", letterSpacing: "-0.03em" }}>
-        Jocular <span style={{ color: "var(--brand-wise)", fontWeight: 600 }}>Insights</span>
+      <span style={{ fontSize: size, fontWeight: 500, color: "var(--t1)", letterSpacing: "-0.03em" }}>
+        Jocular <span style={{ color: "var(--brand-wise)", fontWeight: 400 }}>Insights</span>
       </span>
     </span>
   );

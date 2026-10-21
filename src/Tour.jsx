@@ -172,7 +172,7 @@ export default function Tour({ steps: allSteps, onFinish }) {
       }}>
         <div key={i} style={{ animation: reduced ? "none" : "fadeUp 260ms cubic-bezier(0,0,0.2,1) backwards" }}>
           <div style={{ fontSize: 11, color: "var(--t3)", marginBottom: 6, fontVariantNumeric: "tabular-nums" }}>{i + 1} of {steps.length}</div>
-          <div id="tour-title" style={{ fontSize: 15, fontWeight: 650, color: "var(--t1)", letterSpacing: "-0.01em", marginBottom: 6 }}>{step.title}</div>
+          <div id="tour-title" style={{ fontSize: 15, fontWeight: 450, color: "var(--t1)", letterSpacing: "-0.01em", marginBottom: 6 }}>{step.title}</div>
           <p style={{ fontSize: 13, lineHeight: 1.55, color: "var(--t2)", margin: 0 }}>{step.body}</p>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 14 }}>

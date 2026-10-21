@@ -47,9 +47,9 @@ function Headline({ label, value, unit = "/100", word, sub, tone, title, details
     <div title={title} {...clickable(details)} style={{ minWidth: 0, padding: "14px 16px", borderRadius: 10, background: "var(--s1)", border: `1px solid ${tone.border}` }}>
       <div style={{ ...cardLabel, fontSize: 12, color: "var(--t2)", fontWeight: 500, marginBottom: 6 }}>{label}<More /></div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 30, fontWeight: 700, color: value == null ? "var(--t3)" : "var(--t1)", letterSpacing: "-0.03em", lineHeight: 1, ...MONO }}>{n(value)}</span>
+        <span style={{ fontSize: 30, fontWeight: 500, color: value == null ? "var(--t3)" : "var(--t1)", letterSpacing: "-0.03em", lineHeight: 1, ...MONO }}>{n(value)}</span>
         {value != null && <span style={{ fontSize: 13, color: "var(--t3)", ...MONO }}>{unit}</span>}
-        {word && <span style={{ fontSize: 12.5, fontWeight: 650, color: tone.color, marginLeft: 2 }}>{word}</span>}
+        {word && <span style={{ fontSize: 12.5, fontWeight: 450, color: tone.color, marginLeft: 2 }}>{word}</span>}
       </div>
       {sub && <div style={{ fontSize: 11.5, color: "var(--t3)", marginTop: 6, lineHeight: 1.45 }}>{sub}</div>}
     </div>
@@ -67,9 +67,9 @@ function GroupCard({ g, word }) {
       ) : (
         <>
           <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 7, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 20, fontWeight: 700, color: g.score == null ? "var(--t3)" : tone.color, ...MONO }}>{n(g.score)}</span>
+            <span style={{ fontSize: 20, fontWeight: 500, color: g.score == null ? "var(--t3)" : tone.color, ...MONO }}>{n(g.score)}</span>
             {g.score != null && <span style={{ fontSize: 11.5, color: "var(--t3)", ...MONO }}>/100</span>}
-            {word && g.score != null && <span style={{ fontSize: 12, fontWeight: 650, color: tone.color, marginLeft: 4 }}>{word}</span>}
+            {word && g.score != null && <span style={{ fontSize: 12, fontWeight: 450, color: tone.color, marginLeft: 4 }}>{word}</span>}
           </div>
           <Bar value={g.score} color={tone.color} />
           <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "2px 8px", fontSize: 11, color: "var(--t3)", marginTop: 7, ...MONO }}>
@@ -87,9 +87,9 @@ function LensCard({ title, score, word, note, tone, details }) {
     <div {...clickable(details)} title={`See the ${title.toLowerCase()} breakdown below`} style={{ flex: "1 1 200px", minWidth: 0, padding: "12px 14px", borderRadius: 10, background: "var(--s1)", border: "1px solid var(--bdr)" }}>
       <div style={{ ...cardLabel, fontSize: 12, color: "var(--t2)", fontWeight: 500, marginBottom: 6 }}>{title}<More /></div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 20, fontWeight: 700, color: score == null ? "var(--t3)" : "var(--t1)", ...MONO }}>{n(score)}</span>
+        <span style={{ fontSize: 20, fontWeight: 500, color: score == null ? "var(--t3)" : "var(--t1)", ...MONO }}>{n(score)}</span>
         {score != null && <span style={{ fontSize: 11.5, color: "var(--t3)", ...MONO }}>/100</span>}
-        <span style={{ fontSize: 12.5, fontWeight: 650, color: tone }}>{word}</span>
+        <span style={{ fontSize: 12.5, fontWeight: 450, color: tone }}>{word}</span>
       </div>
       <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 5, lineHeight: 1.45 }}>{note}</div>
     </div>
@@ -103,7 +103,7 @@ function ItemRow({ item, weight }) {
   return (
     <div className="research-item" style={{ padding: "9px 0", borderTop: "1px solid var(--bdr)" }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-        <span style={{ flex: "1 1 220px", fontSize: 12.5, fontWeight: 600, color: state === "checked" ? "var(--t1)" : "var(--t3)", minWidth: 0 }}>
+        <span style={{ flex: "1 1 220px", fontSize: 12.5, fontWeight: 400, color: state === "checked" ? "var(--t1)" : "var(--t3)", minWidth: 0 }}>
           {item.label}
           <span style={{ fontWeight: 400, color: "var(--t3)", marginLeft: 6, fontSize: 11, ...MONO }}>{Math.round(weight * 100)}% of the group</span>
         </span>
@@ -157,7 +157,7 @@ function ScoreMath({ math }) {
 function Expand({ id, title, right, children, open = false }) {
   return (
     <details id={id} open={open} className="research-expand" style={{ borderTop: "1px solid var(--bdr)", padding: "2px 0" }}>
-      <summary style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 0", cursor: "pointer", listStyle: "none", fontSize: 13, fontWeight: 600, color: "var(--t1)" }}>
+      <summary style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 0", cursor: "pointer", listStyle: "none", fontSize: 13, fontWeight: 400, color: "var(--t1)" }}>
         <ChevronDown size={15} className="research-chevron" style={{ color: "var(--t3)", flexShrink: 0, transition: "transform 150ms" }} />
         <span style={{ flex: 1, minWidth: 0 }}>{title}</span>
         {right && <span style={{ fontSize: 12, color: "var(--t3)", fontWeight: 500, ...MONO }}>{right}</span>}
@@ -181,8 +181,8 @@ export default function ResearchPanel({ research: r }) {
     <div style={card}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
         <ScanSearch size={17} strokeWidth={2} style={{ color: "var(--t3)" }} />
-        <h3 style={{ fontSize: 15, fontWeight: 600, margin: 0, color: "var(--t1)", letterSpacing: "-0.01em" }}>Research dashboard</h3>
-        <span style={{ fontSize: 10.5, fontWeight: 600, color: "var(--yellow)", background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", borderRadius: 999, padding: "3px 8px" }}>Experimental model</span>
+        <h3 style={{ fontSize: 15, fontWeight: 400, margin: 0, color: "var(--t1)", letterSpacing: "-0.01em" }}>Research dashboard</h3>
+        <span style={{ fontSize: 10.5, fontWeight: 400, color: "var(--yellow)", background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", borderRadius: 999, padding: "3px 8px" }}>Experimental model</span>
         <span style={{ fontSize: 11.5, color: "var(--t3)", marginLeft: "auto" }}>
           From NSE filings{r.valuation.asOf ? ` · valued at the ${day(r.valuation.asOf)} close` : ""}
         </span>
@@ -200,7 +200,7 @@ export default function ResearchPanel({ research: r }) {
             <TriangleAlert size={15} style={{ color: `var(--${c})`, flexShrink: 0, marginTop: 1 }} />
             <span>
               <strong style={{ color: `var(--${c})` }}>{f.severity === "critical" ? "Red flag." : f.severity === "info" ? "Unverified notice." : "Caution."}</strong> {f.text}
-              {f.url && <> <a href={f.url} target="_blank" rel="noreferrer" style={{ color: "var(--accent)", fontWeight: 600, whiteSpace: "nowrap" }}>Open NSE filing</a></>}
+              {f.url && <> <a href={f.url} target="_blank" rel="noreferrer" style={{ color: "var(--accent)", fontWeight: 400, whiteSpace: "nowrap" }}>Open NSE filing</a></>}
             </span>
           </div>
         );
@@ -241,7 +241,7 @@ export default function ResearchPanel({ research: r }) {
       </div>
 
       <div style={{ marginTop: 12 }}>
-        <div id="why-this-score" className="research-expand" style={{ fontSize: 13, fontWeight: 600, color: "var(--t1)", margin: "6px 0 2px" }}>Why this score?</div>
+        <div id="why-this-score" className="research-expand" style={{ fontSize: 13, fontWeight: 400, color: "var(--t1)", margin: "6px 0 2px" }}>Why this score?</div>
         {r.groups.map(g => (
           <Expand key={g.id} id={`why-${g.id}`} title={g.label}
             right={!g.applicable ? "doesn't apply" : g.score == null ? `not enough data · ${g.checked} of ${g.total} checked` : `${n(g.score)}/100 · ${g.checked} of ${g.total} checked`}>
@@ -260,7 +260,7 @@ export default function ResearchPanel({ research: r }) {
           {r.risk.parts.map(p => (
             <div key={p.id} style={{ padding: "9px 0", borderTop: "1px solid var(--bdr)" }}>
               <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-                <span style={{ flex: "1 1 220px", fontSize: 12.5, fontWeight: 600, color: "var(--t1)" }}>
+                <span style={{ flex: "1 1 220px", fontSize: 12.5, fontWeight: 400, color: "var(--t1)" }}>
                   {p.label}<span style={{ fontWeight: 400, color: "var(--t3)", marginLeft: 6, fontSize: 11, ...MONO }}>{p.weight}% of risk</span>
                 </span>
                 <strong style={{ fontSize: 12, color: p.score >= 50 ? "var(--red)" : p.score >= 25 ? "var(--yellow)" : "var(--green)", ...MONO }}>{n(p.score)}/100</strong>

@@ -48,7 +48,7 @@ export default function PeersPanel({ symbol, onAnalyze }) {
 
   return (
     <div style={{ border: "1px solid var(--bdr2)", borderRadius: 14, background: "var(--s2)", padding: 16, marginBottom: 16 }}>
-      <div style={{ fontSize: 14, fontWeight: 700, color: "var(--t1)", letterSpacing: "-0.01em" }}>
+      <div style={{ fontSize: 14, fontWeight: 500, color: "var(--t1)", letterSpacing: "-0.01em" }}>
         Peers
         {data?.peerLabel && <span style={{ fontSize: 11, fontWeight: 500, color: "var(--t3)", marginLeft: 8 }}>{data.peerLabel}</span>}
       </div>
@@ -65,7 +65,7 @@ export default function PeersPanel({ symbol, onAnalyze }) {
         {[
           ["Peer median EV/EBITDA", data.benchmark.evToEbitda != null ? `${num(data.benchmark.evToEbitda)}× · ${data.benchmark.evToEbitdaN} peers` : `Not enough peers (${data.benchmark.evToEbitdaN}/5)`],
           ["Peer median FCF yield", data.benchmark.fcfYieldPct != null ? `${pct(data.benchmark.fcfYieldPct)} · ${data.benchmark.fcfYieldN} peers` : `Not enough peers (${data.benchmark.fcfYieldN}/5)`],
-        ].map(([label, value]) => <div key={label} style={{ minWidth: 150, padding: "8px 10px", borderRadius: 8, border: "1px solid var(--bdr)", background: "var(--s1)" }}><div style={{ fontSize: 10.5, color: "var(--t3)" }}>{label}</div><div style={{ fontSize: 12, color: "var(--t1)", fontWeight: 650, marginTop: 3 }}>{value}</div></div>)}
+        ].map(([label, value]) => <div key={label} style={{ minWidth: 150, padding: "8px 10px", borderRadius: 8, border: "1px solid var(--bdr)", background: "var(--s1)" }}><div style={{ fontSize: 10.5, color: "var(--t3)" }}>{label}</div><div style={{ fontSize: 12, color: "var(--t1)", fontWeight: 450, marginTop: 3 }}>{value}</div></div>)}
       </div>}
 
 
@@ -89,7 +89,7 @@ export default function PeersPanel({ symbol, onAnalyze }) {
                     <tr key={r.symbol} style={{ background: isThis ? "color-mix(in srgb, var(--accent) 6%, transparent)" : undefined }}>
                       <td style={{ padding: "7px 10px", whiteSpace: "nowrap", position: "sticky", left: 0, background: isThis ? "var(--s3)" : "var(--s2)", borderBottom: "1px solid var(--bdr)" }}>
                         {isThis
-                          ? <span style={{ color: "var(--accent)", fontWeight: 700 }}>{r.name}</span>
+                          ? <span style={{ color: "var(--accent)", fontWeight: 500 }}>{r.name}</span>
                           : <button type="button" className="stock-link" onClick={() => onAnalyze?.(r.symbol)} style={{ padding: 0, border: 0, background: "none", fontFamily: "inherit", color: "var(--t2)", fontWeight: 500, cursor: "pointer" }}>{r.name}</button>}
                         {isThis && <span style={{ fontSize: 10, color: "var(--accent)", marginLeft: 6 }}>THIS STOCK</span>}
                       </td>

@@ -61,7 +61,7 @@ export default function PhasePositionPlanner({ levels }) {
       <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 12 }}>
         <Calculator size={18} style={{ color: "var(--accent)", marginTop: 2, flexShrink: 0 }} />
         <div>
-          <h3 id="phase-position-title" style={{ fontSize: 14.5, fontWeight: 650, color: "var(--t1)", margin: 0 }}>Position sizing worksheet</h3>
+          <h3 id="phase-position-title" style={{ fontSize: 14.5, fontWeight: 450, color: "var(--t1)", margin: 0 }}>Position sizing worksheet</h3>
           <p style={{ fontSize: 11.5, lineHeight: 1.5, color: "var(--t3)", margin: "3px 0 0" }}>Illustrates an equal cash split across the three model levels (their prices are in the model price levels below). Enter your own capital and, optionally, the maximum loss you choose.</p>
         </div>
       </div>
@@ -75,7 +75,7 @@ export default function PhasePositionPlanner({ levels }) {
         <>
           <div style={{ overflowX: "auto", marginTop: 12 }}>
             <table style={{ width: "100%", minWidth: 360, borderCollapse: "collapse", fontSize: 11.5 }}>
-              <thead><tr>{["Model level", "Cash budget", "Illustrative shares", "Amount used"].map((label, index) => <th key={label} style={{ textAlign: index === 0 ? "left" : "right", padding: "7px 6px", color: "var(--t3)", fontWeight: 550, borderBottom: "1px solid var(--bdr2)", whiteSpace: "nowrap" }}>{label}</th>)}</tr></thead>
+              <thead><tr>{["Model level", "Cash budget", "Illustrative shares", "Amount used"].map((label, index) => <th key={label} style={{ textAlign: index === 0 ? "left" : "right", padding: "7px 6px", color: "var(--t3)", fontWeight: 400, borderBottom: "1px solid var(--bdr2)", whiteSpace: "nowrap" }}>{label}</th>)}</tr></thead>
               <tbody>{result.tranches.map((row, index) => (
                 <tr key={index}>
                   <td style={{ padding: "8px 6px", color: "var(--t1)", borderBottom: "1px solid var(--bdr)" }}>Level {index + 1}</td>
@@ -91,7 +91,7 @@ export default function PhasePositionPlanner({ levels }) {
               ["Total modeled amount", money(result.invested), "var(--t1)"],
               ["Cash left unallocated", money(result.reserve), "var(--t1)"],
               ["Estimated loss at displayed stop", result.lossAtStop == null ? "—" : `−${money(result.lossAtStop)}`, "var(--red)"],
-            ].map(([label, value, color]) => <div key={label} style={{ padding: "9px 10px", border: "1px solid var(--bdr)", borderRadius: 8, background: "var(--s1)" }}><div style={{ fontSize: 10.5, color: "var(--t3)" }}>{label}</div><div style={{ fontSize: 13.5, fontWeight: 650, color, marginTop: 3, ...mono }}>{value}</div></div>)}
+            ].map(([label, value, color]) => <div key={label} style={{ padding: "9px 10px", border: "1px solid var(--bdr)", borderRadius: 8, background: "var(--s1)" }}><div style={{ fontSize: 10.5, color: "var(--t3)" }}>{label}</div><div style={{ fontSize: 13.5, fontWeight: 450, color, marginTop: 3, ...mono }}>{value}</div></div>)}
           </div>
           {result.scaled && <p style={{ fontSize: 11, color: "var(--yellow)", margin: "8px 0 0", lineHeight: 1.5 }}>The equal-split share counts were reduced to fit your chosen loss limit.</p>}
           {maxLoss > 0 && result.lossAtStop != null && result.lossAtStop > maxLoss && <p style={{ fontSize: 11, color: "var(--yellow)", margin: "8px 0 0", lineHeight: 1.5 }}>Rounding leaves the estimate slightly above your chosen limit; lower the limit or review the share counts.</p>}

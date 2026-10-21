@@ -79,7 +79,7 @@ export default function ColumnMenu({ anchor, label, text = false, def, about = n
 
       {def && (
         <form onSubmit={apply} style={{ borderTop: "1px solid var(--bdr2)", marginTop: 6, padding: "10px 6px 4px" }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: "var(--t2)", marginBottom: 8 }}>
+          <div style={{ fontSize: 12, fontWeight: 400, color: "var(--t2)", marginBottom: 8 }}>
             Filter {label}{unit ? <span style={{ fontWeight: 400, color: "var(--t3)" }}> ({unit})</span> : null}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 6 }}>

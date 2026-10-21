@@ -52,7 +52,7 @@ export function QualityBadge({ research, size = 11.5 }) {
   return (
     <span title={researchTitle(research)} style={{
       display: "inline-flex", alignItems: "center", gap: 5, padding: "2px 8px", borderRadius: 999,
-      border: `1px solid ${t.border}`, background: t.bg, color: t.color, fontSize: size, fontWeight: 650, whiteSpace: "nowrap", ...MONO,
+      border: `1px solid ${t.border}`, background: t.bg, color: t.color, fontSize: size, fontWeight: 450, whiteSpace: "nowrap", ...MONO,
     }}>
       <span style={{ width: 5, height: 5, borderRadius: "50%", background: t.dot, flexShrink: 0 }} />
       {v == null ? "—" : Math.round(v)}
@@ -68,7 +68,7 @@ export function OverallScore({ research }) {
   const t = overallTone(v);
   return (
     <span title={researchTitle(research)} style={{ display: "inline-flex", flexDirection: "column", lineHeight: 1.25 }}>
-      <span style={{ fontSize: 13, fontWeight: 650, color: v == null ? "var(--t3)" : "var(--t1)", ...MONO }}>{v == null ? "—" : Math.round(v)}</span>
+      <span style={{ fontSize: 13, fontWeight: 450, color: v == null ? "var(--t3)" : "var(--t1)", ...MONO }}>{v == null ? "—" : Math.round(v)}</span>
       <span style={{ fontSize: 10.5, color: research?.stance === "Review required" ? "var(--red)" : v == null ? "var(--t3)" : t.color, fontWeight: 500 }}>{research?.stance ?? "Not rated"}</span>
     </span>
   );

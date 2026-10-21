@@ -26,7 +26,7 @@ export default function ChartPage({ symbol }) {
     setTimeout(() => { if (!window.closed) navigate(stockPath(symbol)); }, 150);
   };
 
-  const barBtn = { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, height: 40, minWidth: 40, padding: "0 12px", borderRadius: 8, border: "1px solid var(--bdr2)", background: "var(--s3)", color: "var(--t1)", fontSize: 13, fontWeight: 600, fontFamily: "inherit", cursor: "pointer", textDecoration: "none" };
+  const barBtn = { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, height: 40, minWidth: 40, padding: "0 12px", borderRadius: 8, border: "1px solid var(--bdr2)", background: "var(--s3)", color: "var(--t1)", fontSize: 13, fontWeight: 400, fontFamily: "inherit", cursor: "pointer", textDecoration: "none" };
 
   return (
     // Exactly one screen tall (dvh: a phone's address bar comes and goes)
@@ -35,7 +35,7 @@ export default function ChartPage({ symbol }) {
         <a href={stockPath(symbol)} onClick={e => { e.preventDefault(); navigate(stockPath(symbol)); }} aria-label={`Back to ${symbol}'s stock page`} style={barBtn}>
           <ArrowLeft size={16} aria-hidden="true" />
         </a>
-        <h1 style={{ flex: 1, minWidth: 0, margin: 0, fontSize: 15, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <h1 style={{ flex: 1, minWidth: 0, margin: 0, fontSize: 15, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {symbol}{name && <span style={{ fontWeight: 500, color: "var(--t3)", fontSize: 13 }}> · {name}</span>}
         </h1>
         <button type="button" onClick={close} aria-label="Close the chart" style={barBtn}>

@@ -15,7 +15,7 @@ function Item({ label, value, changePct, onClick }) {
   const color = up ? "var(--green)" : down ? "var(--red)" : "var(--t3)";
   const content = (
     <>
-      <span style={{ color: "var(--t2)", fontWeight: 600 }}>{label}</span>
+      <span style={{ color: "var(--t2)", fontWeight: 400 }}>{label}</span>
       <span style={{ color: "var(--t1)", fontVariantNumeric: "tabular-nums" }}>{value.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
       {changePct != null && (
         <span style={{ color, fontVariantNumeric: "tabular-nums" }}>{up ? "▲" : down ? "▼" : ""}{Math.abs(changePct).toFixed(2)}%</span>

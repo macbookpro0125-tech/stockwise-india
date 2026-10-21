@@ -28,7 +28,7 @@ export default function MetricPicker({ meta, mode, chosen, onToggle, onClose }) 
       <div role="dialog" aria-label={mode === "filter" ? "Add filters" : "Choose columns"}
         style={{ width: "min(760px, 100%)", height: "min(620px, 100%)", display: "flex", flexDirection: "column", background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 18, boxShadow: "var(--sh-lg)", overflow: "hidden", animation: "fadeUp 200ms cubic-bezier(0,0,0.2,1) backwards" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "16px 18px", borderBottom: "1px solid var(--bdr)" }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, color: "var(--t1)", margin: 0, whiteSpace: "nowrap" }}>{mode === "filter" ? "Add filters" : "Columns"}</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 500, color: "var(--t1)", margin: 0, whiteSpace: "nowrap" }}>{mode === "filter" ? "Add filters" : "Columns"}</h3>
           <input className="input-base" autoFocus placeholder={`Search ${all.length} metrics — e.g. ROCE, dividend, return`} value={q} onChange={e => setQ(e.target.value)} style={{ height: 36, fontSize: 13, flex: 1, minWidth: 0 }} />
           <button type="button" className="btn-primary" onClick={onClose} style={{ height: 36, padding: "0 16px", fontSize: 13, boxShadow: "none" }}>Done</button>
         </div>
@@ -51,14 +51,14 @@ export default function MetricPicker({ meta, mode, chosen, onToggle, onClose }) 
               return (
                 <div key={x.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 10px", borderRadius: 10, borderBottom: "1px solid var(--bdr)" }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--t1)" }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 400, color: "var(--t1)" }}>
                       {x.label}
                       {(text || cat === "All") && <span style={{ fontSize: 11, fontWeight: 500, color: "var(--t3)", marginLeft: 8 }}>{x.category}</span>}
                     </div>
                     {x.about && <div style={{ fontSize: 12, color: "var(--t3)", lineHeight: 1.45, marginTop: 2 }}>{x.about}</div>}
                   </div>
                   <button type="button" onClick={() => onToggle(x.id)} aria-pressed={on}
-                    style={{ flexShrink: 0, height: 30, minWidth: 84, borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", border: `1px solid ${on ? "var(--accent)" : "var(--bdr2)"}`, background: on ? "color-mix(in srgb, var(--accent) 10%, transparent)" : "transparent", color: on ? "var(--accent)" : "var(--t2)" }}>
+                    style={{ flexShrink: 0, height: 30, minWidth: 84, borderRadius: 8, fontSize: 12, fontWeight: 400, cursor: "pointer", border: `1px solid ${on ? "var(--accent)" : "var(--bdr2)"}`, background: on ? "color-mix(in srgb, var(--accent) 10%, transparent)" : "transparent", color: on ? "var(--accent)" : "var(--t2)" }}>
                     {on ? "✓ Added" : "+ Add"}
                   </button>
                 </div>

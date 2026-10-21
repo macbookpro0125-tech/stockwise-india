@@ -58,7 +58,7 @@ const inputStyle = { width: "100%", height: 40, padding: "0 14px", border: "1px 
 const labelStyle = { fontSize: 12, color: "var(--t2)", marginBottom: 6, display: "block", fontWeight: 500 };
 // A section's heading inside a card, with its icon
 const SectionTitle = ({ icon: Icon, children, color = "var(--t1)", style }) => (
-  <h3 style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15, fontWeight: 600, margin: "0 0 14px", color, letterSpacing: "-0.01em", ...style }}>
+  <h3 style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15, fontWeight: 400, margin: "0 0 14px", color, letterSpacing: "-0.01em", ...style }}>
     {Icon && <Icon size={17} strokeWidth={2} style={{ color: "var(--t3)", flexShrink: 0 }} />}{children}
   </h3>
 );
@@ -77,7 +77,7 @@ function PeHistoryTable({ m }) {
   const fy = iso => new Date(`${iso}T00:00:00Z`).toLocaleString("en-IN", { month: "short", year: "numeric", timeZone: "UTC" });
   return (
     <div style={{ marginTop: 16, borderTop: "1px solid var(--bdr)", paddingTop: 14 }}>
-      <div style={{ fontSize: 12, fontWeight: 600, color: "var(--accent)", marginBottom: 6 }}>Historical annual P/E — the company's own record, last {m.peHistory.length} fiscal years</div>
+      <div style={{ fontSize: 12, fontWeight: 400, color: "var(--accent)", marginBottom: 6 }}>Historical annual P/E — the company's own record, last {m.peHistory.length} fiscal years</div>
       <div style={{ overflowX: "auto" }}>
         <table>
           <thead>
@@ -95,7 +95,7 @@ function PeHistoryTable({ m }) {
                 <td style={{ ...cell, textAlign: "left" }}>{fy(y.fyEnd)}</td>
                 <td style={{ ...cell, ...MONO }}>{y.eps != null ? `₹${y.eps.toFixed(2)}` : "—"}</td>
                 <td style={{ ...cell, ...MONO }}>{y.price != null ? fmtRs(y.price) : "—"}</td>
-                <td style={{ ...cell, ...MONO, fontWeight: 600 }}>{y.pe != null ? y.pe.toFixed(1) : "—"}</td>
+                <td style={{ ...cell, ...MONO, fontWeight: 400 }}>{y.pe != null ? y.pe.toFixed(1) : "—"}</td>
                 <td style={{ ...cell, textAlign: "left", color: "var(--t3)" }}>
                   {y.excluded ?? (y.splitFactor > 1 ? `Reported ₹${y.reportedEps}; ÷${y.splitFactor} for a later split/bonus` : "")}
                 </td>
@@ -168,7 +168,7 @@ function CompanyProfile({ symbol, m }) {
   return (
     <div style={{ border: "1px solid var(--bdr2)", borderRadius: 12, padding: "16px 18px", marginBottom: 14, background: "var(--s2)" }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
-        <h3 style={{ fontSize: 15, fontWeight: 650, margin: 0, color: "var(--t1)" }}>About the company</h3>
+        <h3 style={{ fontSize: 15, fontWeight: 450, margin: 0, color: "var(--t1)" }}>About the company</h3>
         {p?.report?.fy && <span style={{ fontSize: 11.5, color: "var(--t3)" }}>From its {p.report.fy} business responsibility report{p.report.filed ? `, filed ${longDate(p.report.filed)}` : ""}</span>}
       </div>
       {d == null ? (
@@ -191,7 +191,7 @@ function CompanyProfile({ symbol, m }) {
             {facts.map(([label, value]) => (
               <div key={label} style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 11.5, color: "var(--t3)", marginBottom: 2 }}>{label}</div>
-                <div style={{ fontSize: 13, color: "var(--t1)", fontWeight: 550, overflowWrap: "anywhere" }}>{value}</div>
+                <div style={{ fontSize: 13, color: "var(--t1)", fontWeight: 400, overflowWrap: "anywhere" }}>{value}</div>
               </div>
             ))}
           </div>
@@ -254,7 +254,7 @@ function ShareholdingPanel({ symbol }) {
 
   return (
     <div style={{ border: "1px solid var(--bdr2)", borderRadius: 10, padding: "16px 20px", marginBottom: 12, background: "var(--s2)" }}>
-      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--t1)", marginBottom: 10 }}>Shareholding as of {period(latest)}</div>
+      <div style={{ fontSize: 13, fontWeight: 400, color: "var(--t1)", marginBottom: 10 }}>Shareholding as of {period(latest)}</div>
       <div style={{ display: "flex", height: 12, borderRadius: 6, overflow: "hidden", marginBottom: 10, gap: 1 }}>
         {segments.map(({ key, color }) => <div key={key} style={{ flex: latest[key], background: color, minWidth: latest[key] > 1 ? 2 : 0 }} />)}
       </div>
@@ -272,9 +272,9 @@ function ShareholdingPanel({ symbol }) {
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
             <thead>
               <tr>
-                <th style={{ textAlign: "left", padding: "6px 8px", color: "var(--t3)", fontWeight: 600, borderBottom: "1px solid var(--bdr2)", position: "sticky", left: 0, background: "var(--s2)" }}></th>
+                <th style={{ textAlign: "left", padding: "6px 8px", color: "var(--t3)", fontWeight: 400, borderBottom: "1px solid var(--bdr2)", position: "sticky", left: 0, background: "var(--s2)" }}></th>
                 {quarters.map(q => <th key={q.period} style={{ textAlign: "right", padding: "6px 8px", color: "var(--t3)", fontWeight: 500, borderBottom: "1px solid var(--bdr2)", whiteSpace: "nowrap" }}>{period(q)}</th>)}
-                <th style={{ textAlign: "right", padding: "6px 8px", color: "var(--t3)", fontWeight: 600, borderBottom: "1px solid var(--bdr2)" }}>Change</th>
+                <th style={{ textAlign: "right", padding: "6px 8px", color: "var(--t3)", fontWeight: 400, borderBottom: "1px solid var(--bdr2)" }}>Change</th>
               </tr>
             </thead>
             <tbody>
@@ -291,7 +291,7 @@ function ShareholdingPanel({ symbol }) {
                         {q[key] != null ? `${q[key]}%` : "—"}
                       </td>
                     ))}
-                    <td style={{ textAlign: "right", padding: "6px 8px", fontWeight: 600, borderBottom: "1px solid var(--bdr2)", color: chg == null || chg === 0 ? "var(--t3)" : chg > 0 ? "var(--green)" : "var(--red)" }}>
+                    <td style={{ textAlign: "right", padding: "6px 8px", fontWeight: 400, borderBottom: "1px solid var(--bdr2)", color: chg == null || chg === 0 ? "var(--t3)" : chg > 0 ? "var(--green)" : "var(--red)" }}>
                       {chg != null && chg !== 0 ? `${chg > 0 ? "+" : ""}${chg}%` : "—"}
                     </td>
                   </tr>
@@ -338,7 +338,7 @@ function MyNotes({ symbol }) {
   return (
     <div style={{ border: "1px solid var(--bdr2)", borderRadius: 10, padding: 16, marginBottom: 16, background: "var(--s2)" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-        <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15, fontWeight: 600, color: "var(--t1)" }}><NotebookPen size={17} style={{ color: "var(--t3)" }} /> My Notes</span>
+        <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15, fontWeight: 400, color: "var(--t1)" }}><NotebookPen size={17} style={{ color: "var(--t3)" }} /> My Notes</span>
         {saved && !editing && (
           <div style={{ display: "flex", gap: 8 }}>
             <button className="tap" onClick={() => setEditing(true)} style={{ fontSize: 12, padding: "3px 10px", borderRadius: 6, border: "1px solid var(--accent)", background: "color-mix(in srgb, var(--accent) 8%, transparent)", color: "var(--accent)", cursor: "pointer" }}>Edit</button>
@@ -348,7 +348,7 @@ function MyNotes({ symbol }) {
       </div>
       {saved && !editing ? (
         <div>
-          <div style={{ display: "inline-block", fontSize: 12, fontWeight: 650, padding: "4px 12px", borderRadius: 20, background: VERDICT_META[saved.verdict]?.bg, color: VERDICT_META[saved.verdict]?.color, border: `1px solid ${VERDICT_META[saved.verdict]?.border}` }}>
+          <div style={{ display: "inline-block", fontSize: 12, fontWeight: 450, padding: "4px 12px", borderRadius: 20, background: VERDICT_META[saved.verdict]?.bg, color: VERDICT_META[saved.verdict]?.color, border: `1px solid ${VERDICT_META[saved.verdict]?.border}` }}>
             <Dot color={VERDICT_META[saved.verdict]?.color} />{VERDICT_META[saved.verdict]?.label}
           </div>
           {saved.text && <p style={{ fontSize: 13, color: "var(--t2)", margin: "8px 0 4px", lineHeight: 1.5 }}>{saved.text}</p>}
@@ -359,7 +359,7 @@ function MyNotes({ symbol }) {
           <p style={{ fontSize: 12, color: "var(--t2)", margin: "0 0 10px" }}>Set your verdict and add a note for this stock.</p>
           <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
             {Object.entries(VERDICT_META).map(([key, meta]) => (
-              <button key={key} className="tap" onClick={() => setVerdict(key)} style={{ fontSize: 12, fontWeight: 600, padding: "5px 14px", borderRadius: 20, border: `1.5px solid ${verdict === key ? meta.border : "var(--bdr2)"}`, background: verdict === key ? meta.bg : "var(--surf)", color: verdict === key ? meta.color : "var(--t2)", cursor: "pointer", transition: "all 0.15s" }}>
+              <button key={key} className="tap" onClick={() => setVerdict(key)} style={{ fontSize: 12, fontWeight: 400, padding: "5px 14px", borderRadius: 20, border: `1.5px solid ${verdict === key ? meta.border : "var(--bdr2)"}`, background: verdict === key ? meta.bg : "var(--surf)", color: verdict === key ? meta.color : "var(--t2)", cursor: "pointer", transition: "all 0.15s" }}>
                 <Dot color={meta.color} />{meta.label}
               </button>
             ))}
@@ -367,7 +367,7 @@ function MyNotes({ symbol }) {
           <textarea aria-label="Your note on this company" maxLength={2000} value={text} onChange={e => setText(e.target.value)} rows={2} placeholder="Add a note... e.g. Wait for P2 entry. Watch working-capital days."
             style={{ width: "100%", fontSize: 13, padding: "8px 12px", borderRadius: 8, border: "1px solid var(--bdr2)", resize: "vertical", fontFamily: "inherit", outline: "none", boxSizing: "border-box", background: "var(--s1)", color: "var(--t1)" }} />
           <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-            <button className="tap" onClick={save} disabled={!verdict} style={{ fontSize: 13, fontWeight: 600, padding: "7px 18px", borderRadius: 8, border: "none", background: verdict ? "var(--accent)" : "var(--card2)", color: verdict ? "var(--on-accent)" : "var(--t3)", cursor: verdict ? "pointer" : "not-allowed" }}>Save Note</button>
+            <button className="tap" onClick={save} disabled={!verdict} style={{ fontSize: 13, fontWeight: 400, padding: "7px 18px", borderRadius: 8, border: "none", background: verdict ? "var(--accent)" : "var(--card2)", color: verdict ? "var(--on-accent)" : "var(--t3)", cursor: verdict ? "pointer" : "not-allowed" }}>Save Note</button>
             {saved && <button onClick={() => { setVerdict(saved.verdict); setText(saved.text); setEditing(false); }} style={{ fontSize: 13, padding: "7px 14px", borderRadius: 8, border: "1px solid var(--bdr2)", background: "var(--s1)", color: "var(--t2)", cursor: "pointer" }}>Cancel</button>}
           </div>
         </div>
@@ -382,8 +382,8 @@ function PiotroskiCard({ m }) {
   return (
     <div style={card}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
-        <h3 style={{ fontSize: 15, fontWeight: 600, margin: 0, color: "var(--t1)" }}>Piotroski Score</h3>
-        <span style={{ fontSize: 13, fontWeight: 700, color, ...MONO }}>{m.piotroski}/9</span>
+        <h3 style={{ fontSize: 15, fontWeight: 400, margin: 0, color: "var(--t1)" }}>Piotroski Score</h3>
+        <span style={{ fontSize: 13, fontWeight: 500, color, ...MONO }}>{m.piotroski}/9</span>
         <span style={{ fontSize: 11, color: "var(--t3)" }}>this year against last · 7+ = strong and improving</span>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: "6px 20px" }}>
@@ -413,12 +413,12 @@ function KeyNumbers({ data, m }) {
   ];
   return (
     <div style={card}>
-      <h3 style={{ fontSize: 15, fontWeight: 600, margin: "0 0 12px", color: "var(--t1)" }}>More figures</h3>
+      <h3 style={{ fontSize: 15, fontWeight: 400, margin: "0 0 12px", color: "var(--t1)" }}>More figures</h3>
       <div className="ss-grid-4">
         {stats.map(([label, value]) => (
           <div key={label} style={{ background: "var(--s1)", borderRadius: 8, padding: "10px 12px", border: "1px solid var(--bdr)" }}>
             <div style={{ fontSize: 11, color: "var(--t3)", marginBottom: 3 }}>{label}</div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: "var(--t1)", ...MONO }}>{value}</div>
+            <div style={{ fontSize: 14, fontWeight: 400, color: "var(--t1)", ...MONO }}>{value}</div>
           </div>
         ))}
       </div>
@@ -688,7 +688,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
   const belowFv = v => (levels?.fv25 > 0 && v > 0 ? `${Math.round((1 - v / levels.fv25) * 100)}% below today's FV` : "");
 
   const hint = (ok, good, neutral, color = "var(--green)") => (
-    <div style={{ fontSize: 10, color: ok ? color : "var(--t2)", marginTop: 3, fontWeight: ok ? 600 : 400 }}>{ok ? good : neutral}</div>
+    <div style={{ fontSize: 10, color: ok ? color : "var(--t2)", marginTop: 3, fontWeight: ok ? 500 : 400 }}>{ok ? good : neutral}</div>
   );
 
   return (
@@ -763,9 +763,9 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
           {m.lender && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--s3)", color: "var(--t2)", fontWeight: 500 }}>Lender</span>}
           {m.governmentOwned && <span title={`${m.governmentPct > 0 ? `The government holds ${m.governmentPct}% as promoter. ` : "A government company (NSE's PSU lists). "}Government-owned companies usually trade on lower multiples; its own P/E history already reflects that${m.valuation?.psu ? ", and a bank's cost of equity is a point higher here" : ""}.`} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--s3)", color: "var(--t2)", fontWeight: 500 }}>Government-owned</span>}
           {m.utility && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--s3)", color: "var(--t2)", fontWeight: 500 }}>Regulated utility</span>}
-          {(m.cyclical || onCycle || m.valuation?.partialCycle) && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--yellow-dim)", color: "var(--yellow)", fontWeight: 600 }}>Cyclical{m.valuation?.partialCycle ? " · partial cycle" : ""}</span>}
+          {(m.cyclical || onCycle || m.valuation?.partialCycle) && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--yellow-dim)", color: "var(--yellow)", fontWeight: 400 }}>Cyclical{m.valuation?.partialCycle ? " · partial cycle" : ""}</span>}
           {/* The cycle-position gauge's reading, beside the price */}
-          {onCycle && m.valuation.positionLabel && <span title={`This year's net margin ${m.valuation.latestMargin}% against a through-cycle ${m.valuation.medianMargin}%`} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--s3)", color: CYCLE_TONE[m.valuation.positionLabel], fontWeight: 600 }}>Profits {m.valuation.positionLabel}</span>}
+          {onCycle && m.valuation.positionLabel && <span title={`This year's net margin ${m.valuation.latestMargin}% against a through-cycle ${m.valuation.medianMargin}%`} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--s3)", color: CYCLE_TONE[m.valuation.positionLabel], fontWeight: 400 }}>Profits {m.valuation.positionLabel}</span>}
         </div>
           )}
 
@@ -809,10 +809,10 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
               <>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "var(--t1)", marginBottom: 2, letterSpacing: "-0.01em" }}>Verify & Override</div>
+                    <div style={{ fontSize: 13, fontWeight: 400, color: "var(--t1)", marginBottom: 2, letterSpacing: "-0.01em" }}>Verify & Override</div>
                     <div style={{ fontSize: 11, color: "var(--t3)" }}>
                       Auto-filled from NSE filings — edit any value to move the price levels; the research score always uses the filings
-                      {usingCustomInputs ? <span style={{ marginLeft: 6, color: "var(--accent)", fontWeight: 600 }}>· custom</span> : <span style={{ marginLeft: 6 }}>· filings baseline</span>}
+                      {usingCustomInputs ? <span style={{ marginLeft: 6, color: "var(--accent)", fontWeight: 400 }}>· custom</span> : <span style={{ marginLeft: 6 }}>· filings baseline</span>}
                     </div>
                   </div>
                   {baseline && usingCustomInputs && (
@@ -828,7 +828,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
                     {onBook ? hint(parseFloat(eps) > 0, "✓ From the filings", "Owners' equity − net NPA, per share")
                       : onCycle ? hint(parseFloat(eps) > 0, "✓ Revenue a share × through-cycle margin", "")
                       : usualEpsShown
-                        ? <div style={{ fontSize: 10, color: "var(--yellow)", marginTop: 3, fontWeight: 600 }}>{fyLabel(m.fyEnd)} was ₹{m.epsJump.eps.toFixed(2)} — see note above</div>
+                        ? <div style={{ fontSize: 10, color: "var(--yellow)", marginTop: 3, fontWeight: 400 }}>{fyLabel(m.fyEnd)} was ₹{m.epsJump.eps.toFixed(2)} — see note above</div>
                         : hint(parseFloat(eps) > 0, "✓ EPS loaded", "From the annual results")}
                   </div>
                   <div>
@@ -928,7 +928,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
                 </span>
                 <div>
                   <div style={{ fontSize: 12, color: "var(--t3)", fontWeight: 500 }}>Where the price sits</div>
-                  <div style={{ fontSize: 19, fontWeight: 700, color: positionTone, letterSpacing: "-0.02em" }}>{position.label}</div>
+                  <div style={{ fontSize: 19, fontWeight: 500, color: positionTone, letterSpacing: "-0.02em" }}>{position.label}</div>
                 </div>
               </div>
               <p style={{ fontSize: 13, color: "var(--t1)", margin: 0, lineHeight: 1.6 }}>{position.gist || position.detail}</p>
@@ -960,11 +960,11 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
                     {/* On the amber "you are here" tint, plain red is 4.1:1 in dark;
                         blending toward --t1 keeps it red and clears 4.5:1 in both themes */}
                     <span style={{ color: isHere && rung.color === "var(--red)" ? "color-mix(in srgb, var(--red) 80%, var(--t1))" : rung.color, fontWeight: 500 }}>{rung.label}</span>
-                    <span style={{ fontWeight: 600, color: "var(--t1)" }}>{fmtRs(rung.price)}</span>
+                    <span style={{ fontWeight: 400, color: "var(--t1)" }}>{fmtRs(rung.price)}</span>
                   </div>
                 );
               })}
-              <div style={{ borderTop: "2px solid var(--accent)", margin: "10px 0", paddingTop: 10, display: "flex", justifyContent: "space-between", fontSize: 14, fontWeight: 600 }}>
+              <div style={{ borderTop: "2px solid var(--accent)", margin: "10px 0", paddingTop: 10, display: "flex", justifyContent: "space-between", fontSize: 14, fontWeight: 400 }}>
                 <span style={{ color: "var(--accent)", display: "flex", alignItems: "center", gap: 6 }}><ArrowRight size={16} strokeWidth={2.2} /> {priceLabel || "Your price"}</span>
                 <span style={{ color: "var(--accent)" }}>{fmtRs(price)}</span>
               </div>
@@ -975,7 +975,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
               leave this detailed EPS bridge collapsed to reduce repetition. */}
           {levels && (
             <details style={{ ...card, padding: 0 }}>
-              <summary style={{ cursor: "pointer", padding: "16px 18px", color: "var(--t1)", fontSize: 13, fontWeight: 600, listStyle: "none" }}>
+              <summary style={{ cursor: "pointer", padding: "16px 18px", color: "var(--t1)", fontSize: 13, fontWeight: 400, listStyle: "none" }}>
                 {onBook ? "Book" : onCycle ? "Mid-cycle EPS" : "EPS"} and fair value, year by year
                 {usingCustomInputs && <span style={{ fontSize: 11, marginLeft: 8, color: "var(--accent)", fontWeight: 500 }}>(custom inputs)</span>}
               </summary>
@@ -987,7 +987,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
                 ].map(fc => (
                   <div key={fc.label} style={{ background: "var(--s1)", borderRadius: 8, padding: 12, border: fc.hi ? "1px solid var(--green)" : "1px solid var(--bdr)" }}>
                     <div style={{ fontSize: 11, color: "var(--t3)", marginBottom: 4 }}>{fc.label}</div>
-                    <div style={{ fontSize: 17, fontWeight: 600, color: fc.hi ? "var(--accent)" : "var(--t1)" }}>{fc.val}</div>
+                    <div style={{ fontSize: 17, fontWeight: 400, color: fc.hi ? "var(--accent)" : "var(--t1)" }}>{fc.val}</div>
                     <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 2 }}>{fc.sub}</div>
                   </div>
                 ))}
@@ -1019,7 +1019,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       </p>
 
       {isPhone ? <NextTab ready={!!m} current={phoneTab} onGo={showPhoneTab} /> : <div className="ss-back-bottom">
-        <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "var(--accent)", background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 12, cursor: "pointer", padding: "12px 24px", fontWeight: 600, margin: "8px auto 0" }}>
+        <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "var(--accent)", background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 12, cursor: "pointer", padding: "12px 24px", fontWeight: 400, margin: "8px auto 0" }}>
           <ArrowLeft size={16} /> Back to {backTo}
         </button>
       </div>}

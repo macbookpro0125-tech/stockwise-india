@@ -33,7 +33,7 @@ const plColor = n => (n == null ? "var(--t3)" : n >= 0 ? "var(--green)" : "var(-
 const fmtDate = iso => (iso ? new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : null);
 const priceBasis = p => p?.source === "live" ? "Yahoo daily close" : p?.source === "cached" ? "Cached Yahoo daily close" : p?.source === "close" ? "NSE daily close" : "Price unavailable";
 
-const label = { fontSize: 11.5, color: "var(--t3)", fontWeight: 600 };
+const label = { fontSize: 11.5, color: "var(--t3)", fontWeight: 400 };
 
 export default function PortfolioView({ onOpenStock }) {
   const data = portfolioStore.use();
@@ -133,7 +133,7 @@ export default function PortfolioView({ onOpenStock }) {
     return (
       <button
         onClick={() => { if (active) setSortDir(d => (d === "desc" ? "asc" : "desc")); else { setSortBy(id); setSortDir("desc"); } }}
-        style={{ padding: "4px 12px", borderRadius: 20, fontSize: 11, fontWeight: 600, cursor: "pointer", border: `1px solid ${active ? "var(--accent)" : "var(--bdr2)"}`, background: active ? "color-mix(in srgb, var(--accent) 8%, transparent)" : "transparent", color: active ? "var(--accent)" : "var(--t3)", transition: "all 120ms" }}
+        style={{ padding: "4px 12px", borderRadius: 20, fontSize: 11, fontWeight: 400, cursor: "pointer", border: `1px solid ${active ? "var(--accent)" : "var(--bdr2)"}`, background: active ? "color-mix(in srgb, var(--accent) 8%, transparent)" : "transparent", color: active ? "var(--accent)" : "var(--t3)", transition: "all 120ms" }}
       >
         {text} {active && (sortDir === "desc" ? "↓" : "↑")}
       </button>
@@ -146,19 +146,19 @@ export default function PortfolioView({ onOpenStock }) {
         <div style={{ display: "flex", flexWrap: "wrap", gap: 20, padding: "16px 20px", borderRadius: 12, border: "1px solid var(--bdr2)", background: "var(--s2)", marginBottom: 20, alignItems: "center" }}>
           <div>
             <div style={label}>Invested</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "var(--t1)", ...MONO }}>{fmtRs(totalInvested)}</div>
+            <div style={{ fontSize: 18, fontWeight: 500, color: "var(--t1)", ...MONO }}>{fmtRs(totalInvested)}</div>
           </div>
           <div>
             <div style={label}>Current Value</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "var(--t1)", ...MONO }}>{allPricesLoaded ? fmtRs(totalCurrent) : <span style={{ color: "var(--t3)" }}>—</span>}</div>
+            <div style={{ fontSize: 18, fontWeight: 500, color: "var(--t1)", ...MONO }}>{allPricesLoaded ? fmtRs(totalCurrent) : <span style={{ color: "var(--t3)" }}>—</span>}</div>
           </div>
           <div>
             <div style={label}>P&L</div>
             {allPricesLoaded ? (
-              <div style={{ fontSize: 18, fontWeight: 700, color: plColor(totalPL), ...MONO }}>
+              <div style={{ fontSize: 18, fontWeight: 500, color: plColor(totalPL), ...MONO }}>
                 {fmtRs(totalPL)} <span style={{ fontSize: 12 }}>({fmtPct(totalPLPct)})</span>
               </div>
-            ) : <div style={{ fontSize: 18, fontWeight: 700, color: "var(--t3)", ...MONO }}>—</div>}
+            ) : <div style={{ fontSize: 18, fontWeight: 500, color: "var(--t3)", ...MONO }}>—</div>}
           </div>
           {unpriced.length > 0 && (
             <div style={{ fontSize: 11.5, color: "var(--yellow)", flexBasis: "100%", order: 9 }}>
@@ -170,7 +170,7 @@ export default function PortfolioView({ onOpenStock }) {
           </div>
           <div style={{ marginLeft: "auto" }}>
             <div style={label}>Holdings</div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: "var(--t1)", ...MONO }}>{holdings.length}</div>
+            <div style={{ fontSize: 18, fontWeight: 500, color: "var(--t1)", ...MONO }}>{holdings.length}</div>
           </div>
         </div>
       )}
@@ -179,7 +179,7 @@ export default function PortfolioView({ onOpenStock }) {
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
           {[["overview", "Overview"], ["quality", "Quality"], ["income", "Income"], ["value", "Value"], ["growth", "Growth"]].map(([id, text]) => (
             <button key={id} type="button" aria-pressed={portfolioView === id} onClick={() => setPortfolioView(id)}
-              style={{ padding: "5px 11px", borderRadius: 20, fontSize: 11, fontWeight: 600, cursor: "pointer", border: `1px solid ${portfolioView === id ? "var(--accent)" : "var(--bdr2)"}`, background: portfolioView === id ? "color-mix(in srgb, var(--accent) 8%, transparent)" : "transparent", color: portfolioView === id ? "var(--accent)" : "var(--t3)" }}>
+              style={{ padding: "5px 11px", borderRadius: 20, fontSize: 11, fontWeight: 400, cursor: "pointer", border: `1px solid ${portfolioView === id ? "var(--accent)" : "var(--bdr2)"}`, background: portfolioView === id ? "color-mix(in srgb, var(--accent) 8%, transparent)" : "transparent", color: portfolioView === id ? "var(--accent)" : "var(--t3)" }}>
               {text}
             </button>
           ))}
@@ -220,7 +220,7 @@ export default function PortfolioView({ onOpenStock }) {
             return (
               <div key={h.id} className="glow" style={{ padding: "14px 16px", borderRadius: 12, border: "1px solid var(--bdr2)", background: "var(--s2)", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
                 <div style={{ flex: "1 1 160px", minWidth: 130 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 7, fontWeight: 600, fontSize: 14, color: "var(--t1)", letterSpacing: "-0.01em" }}><CompanyLogo symbol={h.ticker} size={18} />{h.name}</div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 7, fontWeight: 400, fontSize: 14, color: "var(--t1)", letterSpacing: "-0.01em" }}><CompanyLogo symbol={h.ticker} size={18} />{h.name}</div>
                   <div style={{ fontSize: 10, color: "var(--t3)", marginTop: 2 }}>
                     {h.ticker} · {Number(h.qty.toFixed(4))} @ {fmtRs(h.buyPrice)}
                     {h.splitAdjusted && <span title={`Quantity and price adjusted for a split or bonus issue after ${h.splitAdjusted.since} (×${h.splitAdjusted.ratio} shares)`}> · adjusted for a split</span>}
@@ -232,7 +232,7 @@ export default function PortfolioView({ onOpenStock }) {
 
                 <div style={{ textAlign: "center", minWidth: 65 }}>
                   <div style={label}>CMP</div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: "var(--t1)", ...MONO }}>{h.cmp ? fmtRs(h.cmp) : <span style={{ color: "var(--t3)" }} title="No price found for this symbol">—</span>}</div>
+                  <div style={{ fontSize: 14, fontWeight: 400, color: "var(--t1)", ...MONO }}>{h.cmp ? fmtRs(h.cmp) : <span style={{ color: "var(--t3)" }} title="No price found for this symbol">—</span>}</div>
                   <div style={{ fontSize: 10, color: prices[h.ticker]?.stale ? "var(--yellow)" : "var(--t3)", marginTop: 3, whiteSpace: "nowrap" }}>
                     {priceBasis(prices[h.ticker])}{prices[h.ticker]?.asOf ? ` · ${fmtDate(prices[h.ticker].asOf)}` : ""}
                   </div>
@@ -240,13 +240,13 @@ export default function PortfolioView({ onOpenStock }) {
 
                 <div style={{ textAlign: "center", minWidth: 70 }}>
                   <div style={label}>Value</div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: "var(--t1)", ...MONO }}>{h.currentVal != null ? fmtRs(h.currentVal) : <span style={{ color: "var(--t3)" }}>—</span>}</div>
+                  <div style={{ fontSize: 14, fontWeight: 400, color: "var(--t1)", ...MONO }}>{h.currentVal != null ? fmtRs(h.currentVal) : <span style={{ color: "var(--t3)" }}>—</span>}</div>
                 </div>
 
                 <div style={{ textAlign: "center", minWidth: 80 }}>
                   <div style={label}>P&L</div>
                   {h.pl != null ? (
-                    <div style={{ fontSize: 13, fontWeight: 700, color: plColor(h.pl), ...MONO }}>
+                    <div style={{ fontSize: 13, fontWeight: 500, color: plColor(h.pl), ...MONO }}>
                       {fmtRs(h.pl)} <span style={{ fontSize: 10 }}>({fmtPct(h.plPct)})</span>
                     </div>
                   ) : <span style={{ fontSize: 13, color: "var(--t3)" }}>—</span>}
@@ -254,13 +254,13 @@ export default function PortfolioView({ onOpenStock }) {
 
                 <div style={{ textAlign: "center", minWidth: 50 }}>
                   <div style={label}>Alloc</div>
-                  {alloc != null ? <div style={{ fontSize: 12, fontWeight: 600, color: "var(--t2)", ...MONO }}>{alloc.toFixed(1)}%</div> : <span style={{ fontSize: 12, color: "var(--t3)" }}>—</span>}
+                  {alloc != null ? <div style={{ fontSize: 12, fontWeight: 400, color: "var(--t2)", ...MONO }}>{alloc.toFixed(1)}%</div> : <span style={{ fontSize: 12, color: "var(--t3)" }}>—</span>}
                 </div>
 
                 <div style={{ textAlign: "center", minWidth: 110 }}>
                   <div style={label}>Price level</div>
                   {st?.position
-                    ? <div style={{ fontSize: 11, fontWeight: 700, color: POSITION_TONE[st.position.tone] ?? "var(--t2)" }} title={st.position.detail}>{st.position.label}</div>
+                    ? <div style={{ fontSize: 11, fontWeight: 500, color: POSITION_TONE[st.position.tone] ?? "var(--t2)" }} title={st.position.detail}>{st.position.label}</div>
                     : <div style={{ fontSize: 11, color: "var(--t3)" }} title={st?.valuation?.reason ?? (st?.valuation?.as ? `No price levels (${st.valuation.as})` : undefined)}>—</div>}
                 </div>
 

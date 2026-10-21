@@ -461,7 +461,7 @@ export default function DiscoverView({ onOpenStock, theme }) {
     <div className="screener-page" style={{ padding: "var(--page-top, 24px) var(--page-x) 16px" }}>
       {showSaveModal && (
         <Modal onClose={() => setShowSaveModal(false)}>
-          <div style={{ fontSize: 17, fontWeight: 700, color: "var(--t1)", marginBottom: 6, letterSpacing: "-0.02em" }}>Save as a strategy</div>
+          <div style={{ fontSize: 17, fontWeight: 500, color: "var(--t1)", marginBottom: 6, letterSpacing: "-0.02em" }}>Save as a strategy</div>
           <div style={{ fontSize: 13, color: "var(--t3)", marginBottom: 20 }}>{activeCount} filter{activeCount === 1 ? "" : "s"} will be saved to your account</div>
           <input
             autoFocus type="text" placeholder="e.g. My pharma screen"
@@ -478,7 +478,7 @@ export default function DiscoverView({ onOpenStock, theme }) {
 
       {showImportModal && (
         <Modal onClose={() => { setShowImportModal(false); setImportError(""); }} width={440}>
-          <div style={{ fontSize: 17, fontWeight: 700, color: "var(--t1)", marginBottom: 6, letterSpacing: "-0.02em" }}>Import filters</div>
+          <div style={{ fontSize: 17, fontWeight: 500, color: "var(--t1)", marginBottom: 6, letterSpacing: "-0.02em" }}>Import filters</div>
           <div style={{ fontSize: 13, color: "var(--t3)", marginBottom: 16 }}>Paste a share link, or filters exported from this app</div>
           <textarea
             autoFocus value={importText}
@@ -520,7 +520,7 @@ export default function DiscoverView({ onOpenStock, theme }) {
           const continueCard = activeCount > 0 && (
             <button type="button" onClick={showStocks} className="phone-continue glow" style={{ margin: isPhone ? "12px 0 0" : "28px 0 0" }}>
               <span>
-                <span style={{ display: "block", fontSize: 14, fontWeight: 650, color: "var(--t1)" }}>Continue with your filters</span>
+                <span style={{ display: "block", fontSize: 14, fontWeight: 450, color: "var(--t1)" }}>Continue with your filters</span>
                 <span style={{ display: "block", fontSize: 12.5, color: "var(--t3)", marginTop: 2 }}>
                   {`${activeCount} filter${activeCount === 1 ? "" : "s"}${matched != null ? ` · ${matched.toLocaleString("en-IN")} stocks` : ""}`}
                 </span>
@@ -684,7 +684,7 @@ export default function DiscoverView({ onOpenStock, theme }) {
               ) : null}
               phoneFilters={isPhone ? (
                 <button data-tour="filters" className="btn-ghost" onClick={() => setSheetOpen(true)} style={{ height: 36, fontSize: 13 }}>
-                  <SlidersHorizontal size={14} /> Filters{activeCount > 0 && <span style={{ marginLeft: 2, fontSize: 10.5, padding: "0 7px", borderRadius: 999, fontWeight: 700, background: "var(--accent)", color: "var(--on-accent)" }}>{activeCount}</span>}
+                  <SlidersHorizontal size={14} /> Filters{activeCount > 0 && <span style={{ marginLeft: 2, fontSize: 10.5, padding: "0 7px", borderRadius: 999, fontWeight: 500, background: "var(--accent)", color: "var(--on-accent)" }}>{activeCount}</span>}
                 </button>
               ) : null}
               meta={meta}

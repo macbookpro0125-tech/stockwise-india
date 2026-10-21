@@ -219,7 +219,7 @@ export default function InvestmentBriefView({ stocks, onClose }) {
         </div>
 
         <header style={{ marginBottom: 18 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--accent)", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em" }}><FileText size={14} /> StockWise research brief</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, color: "var(--accent)", fontSize: 11, fontWeight: 500, textTransform: "uppercase", letterSpacing: ".08em" }}><FileText size={14} /> StockWise research brief</div>
           <h1 style={{ fontSize: "clamp(23px, 4vw, 34px)", color: "var(--t1)", margin: "7px 0 5px", letterSpacing: "-.03em" }}>A sourced view of your selected stocks</h1>
           <p style={{ margin: 0, fontSize: 12, color: "var(--t3)" }}>{ranked.length || stocks.length} stocks · generated {new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })} · research scores are comparisons, not buy or sell signals.</p>
         </header>
@@ -227,7 +227,7 @@ export default function InvestmentBriefView({ stocks, onClose }) {
         <section style={{ ...panel, marginBottom: 14 }}>
           <div style={{ display: "flex", gap: 12, alignItems: "end", flexWrap: "wrap", justifyContent: "space-between" }}>
             <div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "var(--t1)" }}>Illustrative portfolio scenarios</div>
+              <div style={{ fontSize: 14, fontWeight: 500, color: "var(--t1)" }}>Illustrative portfolio scenarios</div>
               <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 3 }}>Equal-weight allocation: {money(capital / Math.max(1, stocks.length))} per stock. Change the capital and horizon.</div>
             </div>
             <div style={{ display: "flex", gap: 10, alignItems: "end", flexWrap: "wrap" }}>
@@ -240,7 +240,7 @@ export default function InvestmentBriefView({ stocks, onClose }) {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8, marginTop: 14 }}>
             {portfolioCases.map(test => <div key={test.name} style={{ padding: 12, borderRadius: 9, background: "var(--s1)", border: "1px solid var(--bdr)" }}>
               <div style={{ fontSize: 11, color: "var(--t3)" }}>{test.name} case · {years} {years === 1 ? "year" : "years"}</div>
-              <div style={{ fontSize: 20, fontWeight: 750, color: test.name === "Bull" ? "var(--green)" : test.name === "Bear" ? "var(--red)" : "var(--t1)", marginTop: 3, ...MONO }}>{test.value == null ? "—" : money(test.value)}</div>
+              <div style={{ fontSize: 20, fontWeight: 550, color: test.name === "Bull" ? "var(--green)" : test.name === "Bear" ? "var(--red)" : "var(--t1)", marginTop: 3, ...MONO }}>{test.value == null ? "—" : money(test.value)}</div>
               <div style={{ fontSize: 11, color: "var(--t2)", marginTop: 2 }}>{test.value == null ? (test.missing?.length ? "Combined estimate unavailable; see the reason below." : "Waiting for stock data.") : `Illustrative ${test.changePct < 0 ? "loss" : "gain"}: ${money(Math.abs(test.value - capital))} (${pct(test.changePct)})`}</div>
             </div>)}
           </div>
@@ -274,7 +274,7 @@ export default function InvestmentBriefView({ stocks, onClose }) {
                     <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 3 }}>{metrics?.sector ?? item.stock.sector ?? "NSE listed company"}{metrics?.lender ? " · Lender" : ""}{metrics?.cyclical ? " · Cyclical" : ""}</div>
                   </div>
                   <div style={{ textAlign: "right", minWidth: 90 }}>
-                    <div style={{ fontSize: 22, lineHeight: 1.1, fontWeight: 750, color: overall?.score != null ? (overall.score >= 65 ? "var(--green)" : overall.score >= 45 ? "var(--yellow)" : "var(--red)") : "var(--t3)", ...MONO }}>{score == null ? "—" : `${Math.round(score)}/100`}</div>
+                    <div style={{ fontSize: 22, lineHeight: 1.1, fontWeight: 550, color: overall?.score != null ? (overall.score >= 65 ? "var(--green)" : overall.score >= 45 ? "var(--yellow)" : "var(--red)") : "var(--t3)", ...MONO }}>{score == null ? "—" : `${Math.round(score)}/100`}</div>
                     <div style={{ fontSize: 9.5, color: "var(--t3)" }}>{overall?.stance ?? "Not rated"}</div>
                   </div>
                 </div>
@@ -290,21 +290,21 @@ export default function InvestmentBriefView({ stocks, onClose }) {
                     ["Valuation", metrics?.research?.valuation?.label ?? item.stock.research?.valuationLabel ?? "Not rated"],
                     ["Risk", metrics?.research?.risk?.label ?? item.stock.research?.riskLabel ?? "Unavailable"],
                     ["Dividend yield", metrics?.divYield == null ? "Not reported" : `${metrics.divYield.toFixed(2)}%`],
-                  ].map(([label, value]) => <div key={label} style={{ padding: "8px 9px", borderRadius: 8, background: "var(--s1)" }}><div style={{ fontSize: 9.5, color: "var(--t3)" }}>{label}</div><div style={{ fontSize: 11.5, fontWeight: 650, color: "var(--t1)", marginTop: 3, ...MONO }}>{value}</div></div>)}
+                  ].map(([label, value]) => <div key={label} style={{ padding: "8px 9px", borderRadius: 8, background: "var(--s1)" }}><div style={{ fontSize: 9.5, color: "var(--t3)" }}>{label}</div><div style={{ fontSize: 11.5, fontWeight: 450, color: "var(--t1)", marginTop: 3, ...MONO }}>{value}</div></div>)}
                 </div>
 
                 <details style={{ marginTop: 12 }}>
-                  <summary style={{ cursor: "pointer", fontSize: 12, fontWeight: 650, color: "var(--accent)" }}>Illustrative {years}-year price scenarios</summary>
+                  <summary style={{ cursor: "pointer", fontSize: 12, fontWeight: 450, color: "var(--accent)" }}>Illustrative {years}-year price scenarios</summary>
                   {cases ? <>
                     <div className="brief-case-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 7, marginTop: 9 }}>
                       {cases.map(test => <div key={test.name} className="brief-case" style={{ padding: 9, borderRadius: 8, background: "var(--s1)", border: "1px solid var(--bdr)" }}>
-                        <div style={{ fontSize: 10, color: "var(--t3)" }}>{test.name}</div><div style={{ fontSize: 15, fontWeight: 700, color: "var(--t1)", marginTop: 2, ...MONO }}>{money(test.target)}</div><div style={{ fontSize: 10.5, color: test.returnPct >= 0 ? "var(--green)" : "var(--red)" }}>{pct(test.returnPct)} price return</div><div style={{ fontSize: 9.5, color: "var(--t3)", marginTop: 3 }}>EPS growth {pct(test.growth)} · exit P/E {test.multiple}×</div>
+                        <div style={{ fontSize: 10, color: "var(--t3)" }}>{test.name}</div><div style={{ fontSize: 15, fontWeight: 500, color: "var(--t1)", marginTop: 2, ...MONO }}>{money(test.target)}</div><div style={{ fontSize: 10.5, color: test.returnPct >= 0 ? "var(--green)" : "var(--red)" }}>{pct(test.returnPct)} price return</div><div style={{ fontSize: 9.5, color: "var(--t3)", marginTop: 3 }}>EPS growth {pct(test.growth)} · exit P/E {test.multiple}×</div>
                       </div>)}
                     </div>
                     <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 8 }}>Edit EPS growth and exit P/E. {assumptionBasis(metrics, price)}</div>
                     <div style={{ overflowX: "auto", marginTop: 6 }}>
                       <table className="brief-assumptions-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: 10.5, minWidth: 410 }}>
-                        <thead><tr>{["Case", "Annual EPS growth %", "Exit P/E"].map((label, i) => <th key={label} style={{ textAlign: i ? "right" : "left", padding: "5px 4px", color: "var(--t3)", fontWeight: 550 }}>{label}</th>)}</tr></thead>
+                        <thead><tr>{["Case", "Annual EPS growth %", "Exit P/E"].map((label, i) => <th key={label} style={{ textAlign: i ? "right" : "left", padding: "5px 4px", color: "var(--t3)", fontWeight: 400 }}>{label}</th>)}</tr></thead>
                         <tbody>{[["Bear", "bearGrowth", "bearPe"], ["Base", "baseGrowth", "basePe"], ["Bull", "bullGrowth", "bullPe"]].map(([label, growthKey, peKey]) => <tr key={label}>
                           <td style={{ padding: "5px 4px", color: "var(--t2)" }}>{label}</td>
                           {[growthKey, peKey].map((key, i) => <td key={key} style={{ padding: "4px", textAlign: "right" }}><input aria-label={`${item.stock.name} ${label} ${i ? "exit P/E" : "EPS growth"}`} type="number" step="1" value={currentAssumptions[key]} onChange={event => updateAssumption(item.stock.symbol, key, bound(finite(event.target.value) ?? 0, i ? 1 : -50, i ? 200 : 100))} style={{ width: 88, height: 29, borderRadius: 6, border: "1px solid var(--bdr2)", padding: "0 7px", background: "var(--bg)", color: "var(--t1)", textAlign: "right", ...MONO }} /></td>)}
@@ -316,20 +316,20 @@ export default function InvestmentBriefView({ stocks, onClose }) {
 
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginTop: 13 }}>
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "var(--t1)" }}>Annual financials · ₹ crore</div>
+                    <div style={{ fontSize: 11, fontWeight: 500, color: "var(--t1)" }}>Annual financials · ₹ crore</div>
                     <FinancialBars history={metrics?.history} />
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 4, marginTop: 7, fontSize: 9.5, color: "var(--t3)" }}>
-                      {[["Revenue", latest?.revenueCr], ["Operating profit", latest?.operatingProfitCr], ["Net profit", latest?.profitCr]].map(([label, value]) => <div key={label}><span>{label}</span><div style={{ fontSize: 10, color: "var(--t2)", fontWeight: 650, ...MONO }}>{cr(value)}</div></div>)}
+                      {[["Revenue", latest?.revenueCr], ["Operating profit", latest?.operatingProfitCr], ["Net profit", latest?.profitCr]].map(([label, value]) => <div key={label}><span>{label}</span><div style={{ fontSize: 10, color: "var(--t2)", fontWeight: 450, ...MONO }}>{cr(value)}</div></div>)}
                     </div>
                     <div style={{ fontSize: 9.5, color: "var(--t3)", marginTop: 4 }}>{latest?.fyEnd ? `Latest filed year ended ${dateLabel(latest.fyEnd)} · ${latest.scope ?? "scope not stated"}` : "Annual filing data unavailable."}</div>
                   </div>
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "var(--t1)" }}>Latest quarter</div>
+                    <div style={{ fontSize: 11, fontWeight: 500, color: "var(--t1)" }}>Latest quarter</div>
                     {quarter ? <div style={{ marginTop: 8, fontSize: 11, lineHeight: 1.7, color: "var(--t2)" }}>
                       <div>{dateLabel(quarter.fyEnd)} · Revenue {cr(quarter.revenueCr)} {quarter.salesYoY != null && <strong style={{ color: quarter.salesYoY >= 0 ? "var(--green)" : "var(--red)" }}>{pct(quarter.salesYoY)} YoY</strong>}</div>
                       <div>Net profit {cr(quarter.profitCr)} {quarter.profitYoY != null && <strong style={{ color: quarter.profitYoY >= 0 ? "var(--green)" : "var(--red)" }}>{pct(quarter.profitYoY)} YoY</strong>}</div>
                     </div> : <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 8 }}>Quarterly results unavailable.</div>}
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "var(--t1)", marginTop: 12 }}>Technical snapshot</div>
+                    <div style={{ fontSize: 11, fontWeight: 500, color: "var(--t1)", marginTop: 12 }}>Technical snapshot</div>
                     <div style={{ fontSize: 10.5, lineHeight: 1.5, marginTop: 5 }}><TechnicalNote technical={item.technical} /></div>
                     <div style={{ fontSize: 9.5, color: "var(--t3)", marginTop: 6 }}>Short-term price signals describe momentum and can reverse; they are not forecasts.</div>
                   </div>

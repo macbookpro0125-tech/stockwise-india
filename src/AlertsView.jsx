@@ -56,10 +56,10 @@ function EditAlertModal({ alert, onSave, onClose }) {
   return (
     <div onClick={e => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>
       <div style={{ background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 18, padding: 28, width: 380, maxWidth: "90vw", boxShadow: "var(--sh-lg)", animation: "fadeUp 200ms cubic-bezier(0,0,0.2,1) backwards" }}>
-        <div style={{ fontSize: 17, fontWeight: 700, color: "var(--t1)", marginBottom: 4, letterSpacing: "-0.02em" }}>Edit Alert</div>
+        <div style={{ fontSize: 17, fontWeight: 500, color: "var(--t1)", marginBottom: 4, letterSpacing: "-0.02em" }}>Edit Alert</div>
         <div style={{ fontSize: 13, color: "var(--t3)", marginBottom: 20 }}>{alert.name || alert.ticker}</div>
         <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: "var(--t3)", marginBottom: 8 }}>Condition</div>
+          <div style={{ fontSize: 12, fontWeight: 400, color: "var(--t3)", marginBottom: 8 }}>Condition</div>
           <div style={{ display: "flex", gap: 8 }}>
             {["below", "above"].map(v => (
               <button key={v} onClick={() => setCondition(v)} style={{ flex: 1, padding: "10px 12px", borderRadius: 10, cursor: "pointer", border: condition === v ? "1.5px solid var(--accent)" : "1px solid var(--bdr2)", background: condition === v ? "color-mix(in srgb, var(--accent) 8%, transparent)" : "var(--s3)", color: condition === v ? "var(--accent)" : "var(--t2)", fontSize: 13, fontWeight: 500, transition: "all 150ms" }}>
@@ -69,10 +69,10 @@ function EditAlertModal({ alert, onSave, onClose }) {
           </div>
         </div>
         <div style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: "var(--t3)", marginBottom: 8 }}>Target Price (₹)</div>
+          <div style={{ fontSize: 12, fontWeight: 400, color: "var(--t3)", marginBottom: 8 }}>Target Price (₹)</div>
           <input autoFocus type="number" value={threshold} onChange={e => setThreshold(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter") save(); if (e.key === "Escape") onClose(); }}
-            className="input-base" style={{ fontSize: 18, fontWeight: 600, textAlign: "center" }} />
+            className="input-base" style={{ fontSize: 18, fontWeight: 400, textAlign: "center" }} />
         </div>
         {error && <div style={{ fontSize: 12, color: "var(--red)", background: "var(--red-dim)", border: "1px solid var(--red-bdr)", borderRadius: 8, padding: "8px 12px", marginBottom: 14 }}>{error}</div>}
         <div style={{ display: "flex", gap: 10 }}>
@@ -93,11 +93,11 @@ function AlertCard({ a, onView, onEdit, onDelete, onToggle }) {
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
-            <span style={{ fontWeight: 600, fontSize: 14, color: "var(--t1)", letterSpacing: "-0.01em" }}>{a.name || a.ticker}</span>
-            <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 7px", borderRadius: 999, background: "var(--accent-glow)", color: "var(--accent)" }}>Price</span>
+            <span style={{ fontWeight: 400, fontSize: 14, color: "var(--t1)", letterSpacing: "-0.01em" }}>{a.name || a.ticker}</span>
+            <span style={{ fontSize: 11, fontWeight: 400, padding: "2px 7px", borderRadius: 999, background: "var(--accent-glow)", color: "var(--accent)" }}>Price</span>
           </div>
           <div style={{ fontSize: 13, color: "var(--t2)", ...MONO, marginBottom: 6 }}>
-            <span style={{ color: a.condition === "below" ? "var(--red)" : "var(--green)", fontWeight: 600 }}>{a.condition === "above" ? "▲" : "▼"}</span>
+            <span style={{ color: a.condition === "below" ? "var(--red)" : "var(--green)", fontWeight: 400 }}>{a.condition === "above" ? "▲" : "▼"}</span>
             {" "}Price {a.condition} <strong style={{ color: "var(--t1)" }}>{fmtRs(a.threshold)}</strong>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", fontSize: 10, color: "var(--t3)" }}>
@@ -177,7 +177,7 @@ function TelegramCard({ onStatus }) {
       <div style={box}>
         {icon}
         <div style={{ flex: "1 1 220px", minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 600, color: "var(--t1)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 400, color: "var(--t1)" }}>
             <CircleCheck size={15} style={{ color: "var(--green)" }} /> Telegram connected
           </div>
           <div style={{ fontSize: 12, color: "var(--t3)", marginTop: 2 }}>
@@ -196,7 +196,7 @@ function TelegramCard({ onStatus }) {
     <div style={box}>
       {icon}
       <div style={{ flex: "1 1 220px", minWidth: 0 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, color: "var(--t1)" }}>Get your alerts on Telegram</div>
+        <div style={{ fontSize: 14, fontWeight: 400, color: "var(--t1)" }}>Get your alerts on Telegram</div>
         <div style={{ fontSize: 12, color: "var(--t3)", marginTop: 2, lineHeight: 1.5 }}>
           {waiting ? "Tap Start in Telegram — this page updates once you're connected." : "A Telegram message when the latest daily close crosses an alert level. Free, no phone number shared with us."}
           {note && <span style={{ color: "var(--red)", marginLeft: 8 }}>{note.text}</span>}
@@ -247,7 +247,7 @@ export default function AlertsView({ onOpenStock }) {
     <div style={{ padding: "8px var(--page-x) 16px", animation: "fadeUp 280ms cubic-bezier(0,0,0.2,1) backwards" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 10 }}>
         <div>
-          <div className="hide-phone" style={{ fontSize: 18, fontWeight: 700, color: "var(--t1)", letterSpacing: "-0.02em" }}>Alerts</div>
+          <div className="hide-phone" style={{ fontSize: 18, fontWeight: 500, color: "var(--t1)", letterSpacing: "-0.02em" }}>Alerts</div>
           <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 2 }}>
             {alerts.length === 0 ? "No alerts configured" : `${activeCount} active of ${alerts.length}`}
             {checkedAt && <span> · checked {timeAgo(checkedAt)}</span>}
@@ -264,7 +264,7 @@ export default function AlertsView({ onOpenStock }) {
 
       {triggered.length > 0 && (
         <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: "var(--yellow)", display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+          <div style={{ fontSize: 12, fontWeight: 400, color: "var(--yellow)", display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
             <span style={{ width: 6, height: 6, borderRadius: 3, background: "var(--yellow)", display: "inline-block" }} />
             Triggered ({triggered.length})
           </div>
@@ -272,12 +272,12 @@ export default function AlertsView({ onOpenStock }) {
             {triggered.map(t => (
               <div key={t.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, padding: "12px 16px", borderRadius: 12, background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)" }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ fontWeight: 600, fontSize: 14, color: "var(--t1)" }}>{t.name || t.ticker}</span>
+                  <span style={{ fontWeight: 400, fontSize: 14, color: "var(--t1)" }}>{t.name || t.ticker}</span>
                   <div style={{ fontSize: 12, color: "var(--t2)", marginTop: 4, ...MONO }}>
                     Price: <strong style={{ color: "var(--yellow)" }}>{fmtRs(t.cmp)}</strong> · {priceBasis(t.priceSource)}{t.priceDate ? ` · ${fmtDate(t.priceDate)}` : ""} ({t.condition === "above" ? "▲" : "▼"} {fmtRs(t.threshold)})
                   </div>
                 </div>
-                <button onClick={() => onOpenStock(t.ticker)} style={{ height: 28, padding: "0 12px", fontSize: 11, fontWeight: 600, borderRadius: 7, cursor: "pointer", border: "1px solid var(--yellow-bdr)", background: "transparent", color: "var(--yellow)" }}>View</button>
+                <button onClick={() => onOpenStock(t.ticker)} style={{ height: 28, padding: "0 12px", fontSize: 11, fontWeight: 400, borderRadius: 7, cursor: "pointer", border: "1px solid var(--yellow-bdr)", background: "transparent", color: "var(--yellow)" }}>View</button>
               </div>
             ))}
           </div>
@@ -289,7 +289,7 @@ export default function AlertsView({ onOpenStock }) {
       ) : alerts.length === 0 ? (
         <div style={{ textAlign: "center", padding: "48px 20px", color: "var(--t3)", border: "1px dashed var(--bdr2)", borderRadius: 14, background: "var(--s1)" }}>
           <Bell size={38} strokeWidth={1.5} style={{ marginBottom: 12, opacity: 0.3 }} />
-          <p style={{ fontSize: 15, color: "var(--t2)", fontWeight: 600, marginBottom: 6 }}>No alerts yet</p>
+          <p style={{ fontSize: 15, color: "var(--t2)", fontWeight: 400, marginBottom: 6 }}>No alerts yet</p>
           <p style={{ fontSize: 12, maxWidth: 300, margin: "0 auto", lineHeight: 1.6 }}>
             Use the <Bell size={13} style={{ verticalAlign: "-2px" }} /> button on any stock in results, your watchlist, or its page to set a price alert.
           </p>
@@ -298,9 +298,9 @@ export default function AlertsView({ onOpenStock }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {groups.map(group => (
             <div key={group.key} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6, fontSize: 11.5, fontWeight: 600, color: group.color }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6, fontSize: 11.5, fontWeight: 400, color: group.color }}>
                 <span>{group.label}</span>
-                <span style={{ color: "var(--t3)", fontWeight: 600 }}>{group.items.length}</span>
+                <span style={{ color: "var(--t3)", fontWeight: 400 }}>{group.items.length}</span>
                 <span style={{ flex: 1, height: 1, background: "var(--bdr)" }} />
               </div>
               {group.hint && <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: -4, lineHeight: 1.5 }}>{group.hint}</div>}

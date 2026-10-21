@@ -42,12 +42,12 @@ export default function AddHoldingModal({ onSave, onClose, initial = null }) {
     border: "1px solid var(--bdr2)", background: "var(--s3)",
     color: "var(--t1)", fontSize: 14, outline: "none", boxSizing: "border-box",
   };
-  const labelStyle = { fontSize: 11.5, color: "var(--t3)", fontWeight: 600, marginBottom: 6, display: "block" };
+  const labelStyle = { fontSize: 11.5, color: "var(--t3)", fontWeight: 400, marginBottom: 6, display: "block" };
 
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", animation: "fadeUp 180ms ease backwards" }}>
       <form onClick={e => e.stopPropagation()} onSubmit={handleSubmit} style={{ width: "min(440px, 92vw)", padding: 28, borderRadius: 16, border: "1px solid var(--bdr2)", background: "var(--s1)", boxShadow: "0 20px 60px rgba(0,0,0,0.4)" }}>
-        <h3 style={{ margin: "0 0 20px", fontSize: 17, fontWeight: 700, color: "var(--t1)" }}>{initial ? "Edit Holding" : "Add Holding"}</h3>
+        <h3 style={{ margin: "0 0 20px", fontSize: 17, fontWeight: 500, color: "var(--t1)" }}>{initial ? "Edit Holding" : "Add Holding"}</h3>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
           <div>

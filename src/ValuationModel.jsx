@@ -28,7 +28,7 @@ export function ValuedAs({ valuation }) {
     : VALUED_AS[valuation.model] ?? (valuation.model === "needs-data" ? `${valuation.as} — valuation needs more data` : `no fair value (${valuation.as})`);
   return (
     <div style={{ fontSize: 12, color: "var(--t2)", marginBottom: 12 }}>
-      <span style={{ color: "var(--t3)" }}>Valued as: </span><strong style={{ color: "var(--t1)", fontWeight: 600 }}>{text}</strong>
+      <span style={{ color: "var(--t3)" }}>Valued as: </span><strong style={{ color: "var(--t1)", fontWeight: 400 }}>{text}</strong>
     </div>
   );
 }
@@ -50,7 +50,7 @@ export function BankValuation({ m, growthInput, costOfEquity, onCostOfEquity }) 
   const row = (label, children, sub) => (
     <div style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "7px 0", borderTop: "1px solid var(--bdr)", fontSize: 12.5 }}>
       <span style={{ color: "var(--t2)" }}>{label}{sub && <span style={{ display: "block", fontSize: 10.5, color: "var(--t3)", marginTop: 2 }}>{sub}</span>}</span>
-      <span style={{ color: "var(--t1)", fontWeight: 600, textAlign: "right", ...MONO }}>{children}</span>
+      <span style={{ color: "var(--t1)", fontWeight: 400, textAlign: "right", ...MONO }}>{children}</span>
     </div>
   );
   return (
@@ -75,7 +75,7 @@ export function BankValuation({ m, growthInput, costOfEquity, onCostOfEquity }) 
       {v.throughCycle?.value != null && row(`On ${v.throughCycle.years} years' return on equity`, rs(v.throughCycle.value), `${pct(v.throughCycle.roe)}, the median with the bad years included (P/B ${v.throughCycle.pb.toFixed(2)}×) — ${v.throughCycle.value < v.fairValue ? "what it's worth if they come back" : "higher than it has earned lately"}`)}
       {v.crossCheck != null && row("Cross-check: its usual P/B", rs(v.crossCheck), `Median P/B at the last ${v.usualPbYears} year-ends (${v.usualPb.toFixed(2)}×) × the same book — what the market has usually paid`)}
 
-      <div style={{ fontSize: 12, fontWeight: 600, color: "var(--t1)", margin: "16px 0 6px" }}>How fragile the multiple is</div>
+      <div style={{ fontSize: 12, fontWeight: 400, color: "var(--t1)", margin: "16px 0 6px" }}>How fragile the multiple is</div>
       <div style={{ fontSize: 11, color: "var(--t3)", marginBottom: 8, lineHeight: 1.5 }}>A point on the cost of equity, or two on growth, moves the value a lot — the formula explodes as growth nears the cost of equity, and has no finite value once growth reaches it.</div>
       <div style={{ overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
@@ -94,7 +94,7 @@ export function BankValuation({ m, growthInput, costOfEquity, onCostOfEquity }) 
 
       {trend.length > 0 && (
         <>
-          <div style={{ fontSize: 12, fontWeight: 600, color: "var(--t1)", margin: "16px 0 6px" }}>Asset quality, last {trend.length} quarters</div>
+          <div style={{ fontSize: 12, fontWeight: 400, color: "var(--t1)", margin: "16px 0 6px" }}>Asset quality, last {trend.length} quarters</div>
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", minWidth: 380, borderCollapse: "collapse", fontSize: 12 }}>
               <thead><tr>
@@ -152,7 +152,7 @@ export function CyclicalValuation({ m, epsInput, multipleInput }) {
   const row = (label, children, sub) => (
     <div style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "7px 0", borderTop: "1px solid var(--bdr)", fontSize: 12.5 }}>
       <span style={{ color: "var(--t2)" }}>{label}{sub && <span style={{ display: "block", fontSize: 10.5, color: "var(--t3)", marginTop: 2 }}>{sub}</span>}</span>
-      <span style={{ color: "var(--t1)", fontWeight: 600, textAlign: "right", ...MONO }}>{children}</span>
+      <span style={{ color: "var(--t1)", fontWeight: 400, textAlign: "right", ...MONO }}>{children}</span>
     </div>
   );
   return (
@@ -179,7 +179,7 @@ export function NoFairValue({ m }) {
   const ctx = m.evToSalesSector;
   return (
     <div>
-      <div style={{ fontSize: 13, color: "var(--t1)", fontWeight: 600, marginBottom: 4 }}>{v.model === "needs-data" ? "Valuation needs more data" : "No fair value"}</div>
+      <div style={{ fontSize: 13, color: "var(--t1)", fontWeight: 400, marginBottom: 4 }}>{v.model === "needs-data" ? "Valuation needs more data" : "No fair value"}</div>
       <p style={{ fontSize: 12, color: "var(--t2)", margin: 0, lineHeight: 1.6 }}>{v.reason} So there are no price levels for it — the research score still rates its quality.</p>
       {v.model === "none" && m.evToSales != null && (
         <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 8, background: "var(--s1)", border: "1px solid var(--bdr)", fontSize: 12, color: "var(--t2)", lineHeight: 1.55 }}>
