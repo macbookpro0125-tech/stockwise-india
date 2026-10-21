@@ -2419,7 +2419,7 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 .sd-guide-chev { flex: none; color: var(--t3); }
 
 /* The app's logo (site.jsx BrandMark): the dark glass tile, or in the light
-   theme the owner's own design — silver rings, charcoal letters, no tile */
+   theme the owner's own artwork as they drew it, no tile */
 .brand-mark { position: relative; display: inline-block; flex-shrink: 0; border-radius: 22.5%; }
 .brand-mark img { display: block; width: 100%; height: 100%; }
 .brand-mark .bm-light { display: none; }
