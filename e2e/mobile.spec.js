@@ -341,6 +341,8 @@ test("M-H17 the header logo is sharp, with a light one for the light theme @phon
     const { natural, drawn } = await img.evaluate(el => ({ natural: el.naturalWidth, drawn: el.getBoundingClientRect().width }));
     expect(natural, "drawn from a picture at least 3× its size").toBeGreaterThanOrEqual(drawn * 3);
   };
+  // and big enough to read on a phone (32 px left the letters 8 px tall)
+  expect((await shown().boundingBox()).width, "the header's logo on a phone").toBeGreaterThanOrEqual(44);
   await page.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
   await check("dark");
   await page.evaluate(() => document.documentElement.setAttribute("data-theme", "light"));

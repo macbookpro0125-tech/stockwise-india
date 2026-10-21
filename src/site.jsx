@@ -80,11 +80,13 @@ export function SiteFooter() {
 // 64 px, where Safari blurred the SVG's lighting — dark, or the light one in
 // the light theme (index.css .brand-mark). theme="dark" pins the dark one
 // (the front page's story is always dark).
-export function BrandMark({ size = 32, theme }) {
+// size null: the size comes from className (the header's: bigger on a phone)
+export function BrandMark({ size = 32, theme, className = "" }) {
+  const box = size ? { width: size, height: size } : undefined;
   return (
-    <span className={`brand-mark${theme === "dark" ? " brand-mark-dark-only" : ""}`} style={{ width: size, height: size }}>
-      <img className="bm-dark" src="/jocular-insights-dark.png" alt="" width={size} height={size} />
-      <img className="bm-light" src="/jocular-insights-light.png" alt="" width={size} height={size} />
+    <span className={`brand-mark${theme === "dark" ? " brand-mark-dark-only" : ""} ${className}`.trim()} style={box}>
+      <img className="bm-dark" src="/jocular-insights-dark.png" alt="" />
+      <img className="bm-light" src="/jocular-insights-light.png" alt="" />
     </span>
   );
 }

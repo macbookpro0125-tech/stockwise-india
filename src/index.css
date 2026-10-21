@@ -2425,3 +2425,8 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 .brand-mark .bm-light { display: none; }
 [data-theme="light"] .brand-mark:not(.brand-mark-dark-only) .bm-dark { display: none; }
 [data-theme="light"] .brand-mark:not(.brand-mark-dark-only) .bm-light { display: block; }
+/* the header's: 32 px beside the name on a computer; 44 px on a phone, where
+   it stands alone and at 32 the letters inside the rings were 8 px tall
+   (21 Oct 2026) */
+.hdr-mark { width: 32px; height: 32px; }
+@media (max-width: 640px) { .hdr-mark { width: 44px; height: 44px; } }

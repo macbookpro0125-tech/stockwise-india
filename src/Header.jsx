@@ -85,7 +85,7 @@ export default function Header({ tab, onTab, account, onLogout, onDeleted, onSea
             its own row under the name (index.css .app-header-row). */}
         <div className="app-header-row" style={{ display: "flex", alignItems: "center", gap: 20, padding: "10px 0" }}>
           <a href="/" aria-label="Jocular Insights home" onClick={e => { e.preventDefault(); onTab("discover"); }} style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0, cursor: "pointer", color: "inherit", textDecoration: "none" }}>
-            <BrandMark size={32} />
+            <BrandMark size={null} className="hdr-mark" />
             <div className="hide-phone" style={{ minWidth: 0 }}>
               <h1 style={{ fontSize: 17, fontWeight: 700, margin: 0, color: "var(--t1)", letterSpacing: "-0.03em", lineHeight: 1.2, whiteSpace: "nowrap" }}>
                 Jocular <span style={{ color: "var(--brand-wise)", fontWeight: 600 }}>Insights</span>
