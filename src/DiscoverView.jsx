@@ -92,7 +92,6 @@ export default function DiscoverView({ onOpenStock, theme }) {
   const [activePresetId, setActivePresetId] = useState(null);
   const [activePresetName, setActivePresetName] = useState(null);
   const [activePresetAbout, setActivePresetAbout] = useState(null);
-  const [strategyCount, setStrategyCount] = useState(null);
   useEffect(() => {
     let lastCheck = 0;
     const check = () => {
@@ -540,7 +539,6 @@ export default function DiscoverView({ onOpenStock, theme }) {
                 onUpdatePreset={handleUpdatePreset}
                 onRenamePreset={handleRenamePreset}
                 onDuplicatePreset={handleDuplicatePreset}
-                onCount={setStrategyCount}
               />
             </div>
           );
@@ -554,8 +552,6 @@ export default function DiscoverView({ onOpenStock, theme }) {
               compact={isPhone}
               meta={meta}
               total={results?.total}
-              strategies={strategyCount}
-              pricesDate={results?.snapshot?.pricesDate}
               onStart={newScreen}
               onCreate={newScreen}
               onBrowseFilters={() => { newScreen(); setPicker("filter"); }}

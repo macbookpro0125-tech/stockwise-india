@@ -2,7 +2,7 @@ import { ChevronRight, Plus } from "lucide-react";
 import LiveScreen from "./LiveScreen.jsx";
 import HowItWorks from "./HowItWorks.jsx";
 import Reveal from "./Reveal.jsx";
-import { useCountUp, useInView, useScrollScrub } from "./motion.js";
+import { useScrollScrub } from "./motion.js";
 import CurvedRow from "./CurvedRow.jsx";
 import StrategyMark, { markColor } from "./StrategyMarks.jsx";
 import "./curved-row.css";
@@ -10,26 +10,7 @@ import "./curved-row.css";
 // Discover's first page, set like a product page (asked for 15 Oct 2026: "like
 // the Apple website, wording and motion"): a centred headline over a large
 // picture of the product working — one real strategy narrowing the market —
-// that grows into place as you scroll; the figures in large type; three ways
-// in; then the strategies (`children`). Every figure is the app's own:
-// companies screened, filters, strategies and the price date.
-
-function fmtDate(iso) {
-  if (!iso) return null;
-  return new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" });
-}
-
-// A large figure that counts up once it scrolls into view
-function Figure({ value, label, delay }) {
-  const [ref, inView] = useInView();
-  const n = useCountUp(typeof value === "number" ? value : null, inView, 1200);
-  return (
-    <div ref={ref} className={`ap-figure ap-reveal${inView ? " in" : ""}`} style={{ "--d": delay }}>
-      <span className="ap-figure-value">{typeof value === "number" ? n.toLocaleString("en-IN") : value ?? "—"}</span>
-      <span className="ap-figure-label">{label}</span>
-    </div>
-  );
-}
+// that grows into place as you scroll; three ways in; then the strategies.
 
 // A strategy on the curved row through the hero: its mark, name and line,
 // in its own colour (no figures)
@@ -50,7 +31,7 @@ const growIn = (el, p) => {
 // compact: a phone — the headline, its buttons, then the strategies
 // ribbon: the strategies for the curved row through the hero (16 Oct 2026,
 // "Scroll Tilted Grid"); onPickStrategy opens one, as its card in the grid does
-export default function ScreensHome({ meta, total, strategies, pricesDate, onStart, onCreate, onBrowseFilters, children, continueCard, compact = false, ribbon = [], onPickStrategy }) {
+export default function ScreensHome({ meta, total, onStart, onCreate, onBrowseFilters, children, continueCard, compact = false, ribbon = [], onPickStrategy }) {
   const filters = meta?.metrics?.length ?? null;
   const shotRef = useScrollScrub(growIn, 0.8);
   const scrollToStrategies = () => document.getElementById("popular-strategies")?.scrollIntoView({ behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
@@ -114,16 +95,6 @@ export default function ScreensHome({ meta, total, strategies, pricesDate, onSta
       <div className="ap-shot-wrap">
         <div ref={shotRef} className="ap-shot"><LiveScreen meta={meta} total={total} /></div>
       </div>
-
-      <section className="ap-band" aria-labelledby="ap-band-title">
-        <Reveal as="h2" id="ap-band-title" className="ap-h2">Built on the filings. <span>Not on the noise.</span></Reveal>
-        <div className="ap-figures">
-          <Figure value={total} label="NSE companies, each with a quality score" delay={0} />
-          <Figure value={filters} label="filters, from return on capital to promoter pledges" delay={1} />
-          <Figure value={strategies} label="ready-made strategies to start from" delay={2} />
-          <Figure value={fmtDate(pricesDate)} label="latest closing prices, refreshed every trading evening" delay={3} />
-        </div>
-      </section>
 
       <section className="ap-tiles" aria-label="Ways to start">
         <Reveal as="button" type="button" className="ap-tile ap-tile-dark glow" onClick={scrollToStrategies}>
