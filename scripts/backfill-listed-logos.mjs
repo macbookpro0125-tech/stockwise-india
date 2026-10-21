@@ -4,13 +4,14 @@
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { DATA_DIR, MARKET_DIR } from "../server/paths.js";
-import { imageType, listedCompanyLogo } from "../server/logos.js";
+import { imageType, listedCompanyLogo, readLogo } from "../server/logos.js";
 
 const LOGO_DIR = join(DATA_DIR, "logos");
 const API = "https://api.dharun.dev/v1/companies";
 const LIST_LIMIT = 100;
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 const normalName = value => String(value ?? "").toLowerCase().replace(/&/g, "and").replace(/\b(ltd|limited|co|company|the)\b/g, " ").replace(/[^a-z0-9]/g, "");
+const MAX_LOGO_BYTES = 200 * 1024;
 
 function mapLimit(items, limit, fn) {
   let next = 0;
@@ -36,6 +37,39 @@ async function listPage(offset) {
   if (!response.ok) throw new Error(`NSE logo index: HTTP ${response.status} at offset ${offset}`);
   const body = await response.json();
   if (!Array.isArray(body?.data) || !Number.isFinite(body?.meta?.total)) throw new Error(`NSE logo index returned an invalid page at offset ${offset}`);
+  return body;
+}
+
+async function readKnownPng(source, host) {
+  const url = new URL(source);
+  if (url.protocol !== "https:" || url.hostname !== host) throw new Error("logo URL is not from the expected host");
+  const response = await fetch(url, {
+    headers: { "user-agent": "JocularInsights-logo/1.0", accept: "image/png" },
+    signal: AbortSignal.timeout(12_000),
+    redirect: "error",
+  });
+  if (!response.ok) throw new Error(`logo image: HTTP ${response.status}`);
+  if (new URL(response.url).origin !== `https://${host}` || !/^image\/png\b/i.test(response.headers.get("content-type") ?? "")) {
+    throw new Error("logo source did not return a PNG from its expected host");
+  }
+  const declared = Number(response.headers.get("content-length"));
+  if (Number.isFinite(declared) && declared > MAX_LOGO_BYTES) throw new Error("TradingView logo is too large");
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error("TradingView returned an empty logo");
+  const chunks = [];
+  let size = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > MAX_LOGO_BYTES) {
+      await reader.cancel().catch(() => {});
+      throw new Error("TradingView logo is too large");
+    }
+    chunks.push(Buffer.from(value));
+  }
+  const body = Buffer.concat(chunks, size);
+  if (body.length < 64 || imageType(body) !== "image/png") throw new Error("logo source returned an invalid PNG");
   return body;
 }
 
@@ -169,5 +203,55 @@ for (const [symbol, parent] of rightsParents) {
   inherited++;
 }
 
+// A few freshly listed or unindexed companies have no ISIN match yet. Use
+// images from their verified official websites, or a stock-logo asset linked
+// from TradingView's exact BSE:IIRM company page when the issuer site exposes
+// only broken icon links.
+const officialLogoSites = new Map([
+  ["HDFIRE", "https://www.hdfire.com/"],
+]);
+let officialLogos = 0;
+for (const [symbol, website] of officialLogoSites) {
+  const target = join(LOGO_DIR, `${symbol}.img`);
+  if (existsSync(target)) continue;
+  const logo = await readLogo(website).catch(() => null);
+  if (!logo) continue;
+  writeFileSync(target, logo.body);
+  writeFileSync(join(LOGO_DIR, `${symbol}.json`), JSON.stringify({
+    at: new Date().toISOString(), type: logo.type, source: logo.source,
+    sourceProvider: "Official company website", website,
+  }));
+  officialLogos++;
+}
+
+const knownPngLogos = [
+  {
+    symbol: "RAJVIR", source: "https://www.rajvirindustrieslimited.com/img/logo/logo.png",
+    host: "www.rajvirindustrieslimited.com", sourceProvider: "Official company website",
+    website: "https://www.rajvirindustrieslimited.com/",
+  },
+  {
+    symbol: "IIRM", source: "https://s3-symbol-logo.tradingview.com/iirm-india-limited--600.png",
+    host: "s3-symbol-logo.tradingview.com", sourceProvider: "TradingView company logo",
+    sourcePage: "https://www.tradingview.com/symbols/BSE-IIRM/",
+  },
+];
+for (const item of knownPngLogos) {
+  const target = join(LOGO_DIR, `${item.symbol}.img`);
+  if (existsSync(target)) continue;
+  try {
+    const body = await readKnownPng(item.source, item.host);
+    writeFileSync(target, body);
+    writeFileSync(join(LOGO_DIR, `${item.symbol}.json`), JSON.stringify({
+      at: new Date().toISOString(), type: "image/png", source: item.source,
+      sourcePage: item.sourcePage ?? null, sourceProvider: item.sourceProvider,
+      website: item.website ?? null,
+    }));
+    officialLogos++;
+  } catch (error) {
+    console.warn(`[logo] ${item.symbol} image: ${error.message}`);
+  }
+}
+
 const finalCount = stocks.filter(stock => existsSync(join(LOGO_DIR, `${stock.symbol}.img`)) && imageType(readFileSync(join(LOGO_DIR, `${stock.symbol}.img`)))).length;
-console.log(`Finished: ${finalCount}/${stocks.length} stocks now have validated image files; added ${downloaded} PNGs from the alternate company-logo source and ${inherited} parent marks for rights-entitlement listings.`);
+console.log(`Finished: ${finalCount}/${stocks.length} stocks now have validated image files; added ${downloaded} PNGs from the listed-company source, ${inherited} parent marks for rights entitlements and ${officialLogos} official/company-source logos.`);
