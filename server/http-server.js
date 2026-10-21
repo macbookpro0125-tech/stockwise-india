@@ -598,7 +598,11 @@ export function createApp() {
         if (userId == null) return;
         const symbol = decodePathSegment(logoRoute[1]).toUpperCase();
         if (!isValidSymbol(symbol) || !getStock(symbol)) { sendJson(res, 404, { error: "Unknown symbol" }); return; }
-        const logo = await logoFor(symbol, async sym => (await companyProfile(sym))?.profile?.website ?? null).catch(() => null);
+        const logo = await logoFor(
+          symbol,
+          async sym => (await companyProfile(sym))?.profile?.website ?? null,
+          async sym => (await companyProfile(sym))?.listing?.isin ?? getStock(sym)?.isin ?? null,
+        ).catch(() => null);
         if (!logo) { res.writeHead(404, { "Cache-Control": "private, no-store" }); res.end(); return; }
         res.writeHead(200, {
           "Content-Type": logo.type, "Content-Length": logo.body.length,

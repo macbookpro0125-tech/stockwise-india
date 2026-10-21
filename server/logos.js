@@ -19,6 +19,7 @@ import { DATA_DIR } from "./paths.js";
 const LOGO_DIR = join(DATA_DIR, "logos");
 const KEEP_DAYS = 30, MISS_DAYS = 7;
 const PAGE_BYTES = 512 * 1024, IMAGE_BYTES = 200 * 1024, TIMEOUT_MS = 8000, MAX_REDIRECTS = 4;
+const LISTED_LOGO_ORIGIN = "https://api.dharun.dev";
 // Says plainly what it is. A browser's name without a browser's other headers
 // is what bot filters (TCS', Infosys') turn away, and so is a crawler-style
 // "+https://…" contact link
@@ -128,20 +129,88 @@ export async function readLogo(website) {
   return null;
 }
 
+// A second, symbol-independent source for stocks whose company website has no
+// compatible icon. Match the source record to NSE's ISIN first, request PNG
+// only (never its SVG), and reject its generated monogram fallback.
+async function limitedBody(response, maxBytes) {
+  const declared = Number(response.headers.get("content-length"));
+  if (Number.isFinite(declared) && declared > maxBytes) throw new Error("logo response too large");
+  if (!response.body) return Buffer.alloc(0);
+  const reader = response.body.getReader();
+  const chunks = [];
+  let size = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > maxBytes) {
+      await reader.cancel().catch(() => {});
+      throw new Error("logo response too large");
+    }
+    chunks.push(Buffer.from(value));
+  }
+  return Buffer.concat(chunks, size);
+}
+
+const validIsin = isin => /^[A-Z]{2}[A-Z0-9]{9}[0-9]$/.test(String(isin ?? "").toUpperCase());
+
+export async function listedCompanyLogo(company, expectedIsin) {
+  const isin = String(expectedIsin ?? "").toUpperCase();
+  if (!validIsin(isin) || String(company?.isin ?? "").toUpperCase() !== isin || typeof company?.hasLogo !== "boolean") {
+    return { checked: false, logo: null };
+  }
+  if (!company.hasLogo) return { checked: true, logo: null };
+
+  const source = `${LISTED_LOGO_ORIGIN}/v1/logos/${encodeURIComponent(isin)}?format=png&size=128`;
+  const response = await fetch(source, {
+    headers: { "user-agent": UA, accept: "image/png" },
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+    redirect: "error",
+  });
+  if (response.status === 404) return { checked: true, logo: null };
+  if (!response.ok) throw new Error(`listed-logo source: HTTP ${response.status}`);
+  if (new URL(response.url).origin !== LISTED_LOGO_ORIGIN) throw new Error("listed-logo source redirected outside its host");
+  if (response.headers.has("x-logo-fallback")) return { checked: false, logo: null };
+  if (!/^image\/png\b/i.test(response.headers.get("content-type") ?? "")) throw new Error("listed-logo source did not return PNG");
+  const body = await limitedBody(response, IMAGE_BYTES);
+  if (body.length < 64 || imageType(body) !== "image/png") throw new Error("listed-logo source returned an invalid PNG");
+  return { checked: true, logo: { type: "image/png", body, source } };
+}
+
+export async function listedLogoForIsin(value) {
+  const isin = String(value ?? "").toUpperCase();
+  if (!validIsin(isin)) return { checked: false, logo: null };
+  const response = await fetch(`${LISTED_LOGO_ORIGIN}/v1/companies/${encodeURIComponent(isin)}`, {
+    headers: { "user-agent": UA, accept: "application/json" },
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+    redirect: "error",
+  });
+  if (response.status === 404) return { checked: true, logo: null };
+  if (!response.ok) throw new Error(`listed-logo metadata: HTTP ${response.status}`);
+  if (new URL(response.url).origin !== LISTED_LOGO_ORIGIN) throw new Error("listed-logo metadata redirected outside its host");
+  const body = await limitedBody(response, 64 * 1024);
+  let metadata;
+  try { metadata = JSON.parse(body.toString("utf8"))?.data; } catch { throw new Error("listed-logo metadata was not valid JSON"); }
+  return listedCompanyLogo(metadata, isin);
+}
+
 // ── Disk cache and a one-at-a-time queue ────────────────────────────────────
 const metaPath = sym => join(LOGO_DIR, `${sym}.json`);
 const imgPath = sym => join(LOGO_DIR, `${sym}.img`);
 function readMeta(sym) {
   try { return JSON.parse(readFileSync(metaPath(sym), "utf8")); } catch { return null; }
 }
-const fresh = meta => meta && Date.now() - Date.parse(meta.at) < (meta.miss ? MISS_DAYS : KEEP_DAYS) * 86400000;
+const fresh = meta => meta && Date.now() - Date.parse(meta.at) < (meta.miss ? MISS_DAYS : KEEP_DAYS) * 86400000
+  && (!meta.miss || meta.providerChecked === true || Date.now() < Date.parse(meta.retryAt ?? ""));
 
 const inFlight = new Map();
 let chain = Promise.resolve();
 const queued = fn => (chain = chain.then(fn, fn));
 
-// { type, body } or null. `websiteOf(sym)` gives the company's site (or null).
-export function logoFor(sym, websiteOf) {
+// { type, body } or null. `websiteOf(sym)` gives the company's site and
+// `isinOf(sym)` its NSE identity, so the alternate logo source cannot match a
+// similarly named company by ticker alone.
+export function logoFor(sym, websiteOf, isinOf) {
   const meta = readMeta(sym);
   if (fresh(meta)) return Promise.resolve(meta.miss ? null : cachedImage(sym, meta));
   if (inFlight.has(sym)) return inFlight.get(sym);
@@ -157,11 +226,26 @@ export function logoFor(sym, websiteOf) {
       writeFileSync(metaPath(sym), JSON.stringify({ at: new Date().toISOString(), type: logo.type, source: logo.source, website }));
       return { type: logo.type, body: logo.body };
     }
+    let providerResult = { checked: false, logo: null };
+    const isin = typeof isinOf === "function" ? await Promise.resolve(isinOf(sym)).catch(() => null) : isinOf;
+    try {
+      providerResult = await listedLogoForIsin(isin);
+    } catch (e) { if (process.env.LOGO_DEBUG) console.error(`listed-logo ${sym}:`, e.message); }
+    if (providerResult.logo) {
+      writeFileSync(imgPath(sym), providerResult.logo.body);
+      writeFileSync(metaPath(sym), JSON.stringify({ at: new Date().toISOString(), type: providerResult.logo.type, source: providerResult.logo.source, sourceProvider: "Indian listed company logos API", isin, website }));
+      return { type: providerResult.logo.type, body: providerResult.logo.body };
+    }
     // Kept a while so a company without one isn't asked again on every view;
     // an older good logo stays in use meanwhile
     if (meta && !meta.miss && existsSync(imgPath(sym))) return cachedImage(sym, meta);
     try { unlinkSync(imgPath(sym)); } catch {}
-    writeFileSync(metaPath(sym), JSON.stringify({ at: new Date().toISOString(), miss: true, website }));
+    const at = Date.now();
+    writeFileSync(metaPath(sym), JSON.stringify({
+      at: new Date(at).toISOString(), miss: true, website,
+      providerChecked: providerResult.checked,
+      ...(!providerResult.checked ? { retryAt: new Date(at + 60 * 60 * 1000).toISOString() } : {}),
+    }));
     return null;
   }).finally(() => inFlight.delete(sym));
   inFlight.set(sym, job);
