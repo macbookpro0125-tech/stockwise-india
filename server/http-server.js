@@ -599,7 +599,7 @@ export function createApp() {
         const symbol = decodePathSegment(logoRoute[1]).toUpperCase();
         if (!isValidSymbol(symbol) || !getStock(symbol)) { sendJson(res, 404, { error: "Unknown symbol" }); return; }
         const logo = await logoFor(symbol, async sym => (await companyProfile(sym))?.profile?.website ?? null).catch(() => null);
-        if (!logo) { res.writeHead(404, { "Cache-Control": "private, max-age=86400" }); res.end(); return; }
+        if (!logo) { res.writeHead(404, { "Cache-Control": "private, no-store" }); res.end(); return; }
         res.writeHead(200, {
           "Content-Type": logo.type, "Content-Length": logo.body.length,
           "Cache-Control": "private, max-age=604800",

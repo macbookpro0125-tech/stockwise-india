@@ -58,6 +58,7 @@ function replaceContents(from, to) {
 // from the data pack without deleting logos fetched on this Render disk.
 export function mergeLogoCache(from, to) {
   mkdirSync(to, { recursive: true });
+  let added = 0;
   for (const name of readdirSync(from).filter(file => file.endsWith(".json"))) {
     const symbol = name.slice(0, -5);
     const sourceMeta = join(from, name), sourceImage = join(from, `${symbol}.img`);
@@ -69,7 +70,9 @@ export function mergeLogoCache(from, to) {
     if (current?.type && existsSync(join(to, `${symbol}.img`))) continue;
     copyFileSync(sourceImage, join(to, `${symbol}.img`));
     copyFileSync(sourceMeta, join(to, name));
+    added++;
   }
+  return added;
 }
 
 export const pullStatus = { enabled: false, lastCheckAt: null, lastPulledAt: null, pulledBuiltAt: null, lastError: null };

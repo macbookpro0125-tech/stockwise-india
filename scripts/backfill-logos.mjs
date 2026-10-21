@@ -1,5 +1,5 @@
-// Fill the on-disk logo cache from the latest public NSE BRSR filings.
-// Company URLs come from the companies' own filings; logos are fetched and
+// Fill the on-disk logo cache from NSE BRSR filings and the public company directory.
+// Company URLs come from their own filings or NSE's directory; logos are fetched and
 // validated by the same bounded, public-address-only reader as the API.
 import { existsSync, mkdirSync, readFileSync, readdirSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -38,6 +38,15 @@ function latestBySymbol(rows) {
     if (!prior || date > priorDate) latest.set(row.symbol, row);
   }
   return latest;
+}
+
+function officialWebsite(value) {
+  const text = String(value ?? "").replace(/<[^>]*>/g, " ").trim();
+  if (!text || text === "-" || /^n\/?a$/i.test(text)) return null;
+  try {
+    const url = new URL(/^https?:\/\//i.test(text) ? text : `https://${text}`);
+    return /^https?:$/.test(url.protocol) && url.hostname.includes(".") ? url.href : null;
+  } catch { return null; }
 }
 
 mkdirSync(LOGO_DIR, { recursive: true });
@@ -80,6 +89,31 @@ for (const symbol of candidates) {
   if (website) websites.set(symbol, website);
 }
 
+// BRSR is absent for many listed companies. NSE's public company directory
+// keeps their registered/corporate website, so use it before giving up.
+const needDirectory = candidates.filter(symbol => !websites.has(symbol));
+let directoryDone = 0, directoryFound = 0, directoryFailed = 0;
+console.log(`NSE company directory: looking up official websites for ${needDirectory.length} more symbols (2 at a time).`);
+await mapLimit(needDirectory, 2, async symbol => {
+  try {
+    const response = await fetchJson(`${NSE_BASE}/api/company-directory?index=equities&symbol=${encodeURIComponent(symbol)}`);
+    const rows = Array.isArray(response?.data) ? response.data : [];
+    const offices = rows.filter(row => !/transfer agent/i.test(row.office ?? ""));
+    const website = offices.map(row => officialWebsite(row.webAddress)).find(Boolean)
+      || rows.map(row => officialWebsite(row.webAddress)).find(Boolean);
+    if (website) { websites.set(symbol, website); directoryFound++; }
+  } catch (error) {
+    directoryFailed++;
+    if (directoryFailed <= 8) console.warn(`[directory] ${symbol}: ${error.message}`);
+  } finally {
+    directoryDone++;
+    if (directoryDone % 100 === 0 || directoryDone === needDirectory.length) {
+      console.log(`NSE directory: ${directoryDone}/${needDirectory.length}; websites found ${directoryFound}; failures ${directoryFailed}.`);
+    }
+    await pause(150);
+  }
+});
+
 const targets = [...websites.entries()];
 let done = 0, saved = 0, missed = 0;
 console.log(`Checking ${targets.length} official company websites for compatible icons (at most three sites at once).`);
@@ -109,4 +143,4 @@ await mapLimit(targets, 3, async ([symbol, website]) => {
 });
 
 const noWebsite = candidates.filter(symbol => !websites.has(symbol)).length;
-console.log(`Finished. Downloaded ${saved} logos; ${missed} company sites had no compatible icon; ${noWebsite} stocks had no website in the available BRSR filings.`);
+console.log(`Finished. Downloaded ${saved} logos; ${missed} company sites had no compatible icon; ${noWebsite} stocks had no website in NSE's BRSR filings or company directory.`);

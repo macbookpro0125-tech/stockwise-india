@@ -22,6 +22,7 @@ on:
       - .github/workflows/data-refresh.yml
       - scripts/refresh-data.mjs
       - package.json
+      - seed/market-data.tar.gz
 
 permissions:
   contents: write # to update the data-latest release
@@ -70,8 +71,9 @@ jobs:
           cp -R /tmp/$from/. data/
           # A newer release may predate the logo cache in the seed. Add its
           # validated company icons without replacing logos from the release.
+          logos_added=0
           if [ -d /tmp/seed/logos ]; then
-            node --input-type=module -e 'import { mergeLogoCache } from "./server/data-pull.js"; mergeLogoCache("/tmp/seed/logos", "data/logos")'
+            logos_added=$(node --input-type=module -e 'import { mergeLogoCache } from "./server/data-pull.js"; console.log(mergeLogoCache("/tmp/seed/logos", "data/logos"))')
           fi
           # Older release packs don't have the frozen score study. Keep it
           # from the seed until the next pack is published with this entry.
@@ -79,6 +81,10 @@ jobs:
             cp /tmp/seed/research-score-cohorts.json data/research-score-cohorts.json
           fi
           if [ -f /tmp/release/research-score-cohorts.json ] && [ -d /tmp/release/logos ]; then force_pack=false; else force_pack=true; fi
+          if [ "$logos_added" -gt 0 ]; then
+            force_pack=true
+            echo "The seed adds $logos_added validated company logos to the release."
+          fi
           echo "force_pack=$force_pack" >> "$GITHUB_OUTPUT"
           prices_date=$(node -e 'const fs = require("fs"); try { console.log(JSON.parse(fs.readFileSync("data/market-snapshot.json", "utf8")).pricesDate || ""); } catch { console.log(""); }')
           echo "prices_date=$prices_date" >> "$GITHUB_OUTPUT"

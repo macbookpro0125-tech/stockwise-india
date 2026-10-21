@@ -1,5 +1,5 @@
-// Company logos: each company's own site icon, read from the website it gives
-// in its BRSR filing (company-extras.js), kept on disk and served from this
+// Company logos: each company's own site icon, read from a website listed in
+// its BRSR filing or NSE company directory, kept on disk and served from this
 // server — the reader's browser never asks a third party, so the privacy
 // page's "no outside requests" stays true.
 //
@@ -146,7 +146,10 @@ export function logoFor(sym, websiteOf) {
   if (fresh(meta)) return Promise.resolve(meta.miss ? null : cachedImage(sym, meta));
   if (inFlight.has(sym)) return inFlight.get(sym);
   const job = queued(async () => {
-    const website = await websiteOf(sym).catch(() => null);
+    // Backfilled entries may include a website from NSE's company directory
+    // for issuers without a BRSR profile. Keep using that verified source when
+    // the cached icon expires instead of dropping back to a BRSR-only lookup.
+    const website = await websiteOf(sym).catch(() => null) || meta?.website || null;
     const logo = website ? await readLogo(website).catch(() => null) : null;
     mkdirSync(LOGO_DIR, { recursive: true });
     if (logo) {

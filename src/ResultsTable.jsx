@@ -800,18 +800,23 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                     </td>
 
                     <td style={{ ...cell, minWidth: 200, position: "sticky", left: RANK_W, background: rowBg, zIndex: 1, boxShadow: "inset -1px 0 0 var(--bdr)" }}>
-                      <button type="button" title={stock.name} aria-label={stock.name} onClick={() => onAnalyze(stock.symbol)} className="stock-link" style={{ display: "block", maxWidth: 184, padding: 0, border: 0, background: "none", fontFamily: "inherit", textAlign: "left", fontWeight: 400, fontSize: 13.5, letterSpacing: "-0.01em", marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shortName(stock.name)}</button>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6, maxWidth: 184, minWidth: 0 }}>
-                        <span className="ticker-chip">{stock.symbol}</span>
-                        <NcavBadge stock={stock} />
-                        {stock.sector && <span title={stock.sector} style={{ fontSize: 10.5, color: "var(--t3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{stock.sector}</span>}
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                        <CompanyLogo symbol={stock.symbol} size={28} fallback={stock.name} />
+                        <div style={{ minWidth: 0, flex: "1 1 auto" }}>
+                          <button type="button" title={stock.name} aria-label={stock.name} onClick={() => onAnalyze(stock.symbol)} className="stock-link" style={{ display: "block", maxWidth: "100%", padding: 0, border: 0, background: "none", fontFamily: "inherit", textAlign: "left", fontWeight: 400, fontSize: 13.5, letterSpacing: "-0.01em", marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shortName(stock.name)}</button>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+                            <span className="ticker-chip">{stock.symbol}</span>
+                            <NcavBadge stock={stock} />
+                            {stock.sector && <span title={stock.sector} style={{ fontSize: 10.5, color: "var(--t3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{stock.sector}</span>}
+                          </div>
+                          <ResearchProfile
+                            research={stock.research}
+                            expanded={profileOpen}
+                            triggerOnly
+                            onToggle={() => setOpenResearchProfile(current => current === stock.symbol ? null : stock.symbol)}
+                          />
+                        </div>
                       </div>
-                      <ResearchProfile
-                        research={stock.research}
-                        expanded={profileOpen}
-                        triggerOnly
-                        onToggle={() => setOpenResearchProfile(current => current === stock.symbol ? null : stock.symbol)}
-                      />
                     </td>
 
                     <td style={cell}><QualityBadge research={stock.research} /></td>

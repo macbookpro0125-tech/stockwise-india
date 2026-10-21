@@ -8,6 +8,10 @@ import { initials } from "./stockName.js";
 // `fallback` (the company's name), a tile with its letters, so a list card
 // always has its company's mark (the phone's stock cards).
 const KEY = "stockwise-india-logos";
+// Logo files are backfilled while the app is running; version the image URL
+// with this build date so a previous cached 404 cannot hide a newly added logo.
+const LOGO_VERSION = typeof __BUILD_DATE__ === "undefined" ? "dev" : __BUILD_DATE__;
+const logoSrc = symbol => `/api/logo/${encodeURIComponent(symbol)}?v=${encodeURIComponent(LOGO_VERSION)}`;
 const listeners = new Set();
 let shown = (() => { try { return localStorage.getItem(KEY) !== "off"; } catch { return true; } })();
 
@@ -39,7 +43,7 @@ export default function CompanyLogo({ symbol, size = 20, slot = false, fallback 
       <span aria-hidden="true" style={{ ...box, position: "relative", display: "inline-block" }}>
         <span className="logo-tile" style={{ ...box, fontSize: Math.round(size * 0.36) }}>{initials(fallback)}</span>
         {on && symbol && !failed && (
-          <img src={`/api/logo/${encodeURIComponent(symbol)}`} alt="" width={size} height={size} loading="lazy" decoding="async"
+          <img src={logoSrc(symbol)} alt="" width={size} height={size} loading="lazy" decoding="async"
             onLoad={() => setLoaded(true)} onError={() => { missing.add(symbol); setFailed(true); }}
             style={{ ...box, position: "absolute", inset: 0, objectFit: "contain", background: "#fff", border: "1px solid var(--bdr)", opacity: loaded ? 1 : 0, transition: "opacity 160ms ease" }} />
         )}
@@ -49,7 +53,7 @@ export default function CompanyLogo({ symbol, size = 20, slot = false, fallback 
   if (!on || !symbol) return null;
   if (failed) return slot ? <span aria-hidden="true" style={{ ...box, display: "inline-block" }} /> : null;
   return (
-    <img src={`/api/logo/${encodeURIComponent(symbol)}`} alt="" width={size} height={size} loading="lazy" decoding="async"
+    <img src={logoSrc(symbol)} alt="" width={size} height={size} loading="lazy" decoding="async"
       onError={() => { missing.add(symbol); setFailed(true); }}
       style={{ ...box, objectFit: "contain", background: "#fff", border: "1px solid var(--bdr)", display: "inline-block" }} />
   );
