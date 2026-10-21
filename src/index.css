@@ -2418,12 +2418,10 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 .sd-guide-text span { font-size: 13px; font-weight: 600; color: var(--accent); }
 .sd-guide-chev { flex: none; color: var(--t3); }
 
-/* The app's logo (site.jsx BrandMark): the dark picture, or the light one in
-   the light theme, with a hairline and a soft shadow so the white tile holds
-   on a light page */
+/* The app's logo (site.jsx BrandMark): the dark glass tile, or in the light
+   theme the owner's own design — silver rings, charcoal letters, no tile */
 .brand-mark { position: relative; display: inline-block; flex-shrink: 0; border-radius: 22.5%; }
 .brand-mark img { display: block; width: 100%; height: 100%; }
 .brand-mark .bm-light { display: none; }
 [data-theme="light"] .brand-mark:not(.brand-mark-dark-only) .bm-dark { display: none; }
 [data-theme="light"] .brand-mark:not(.brand-mark-dark-only) .bm-light { display: block; }
-[data-theme="light"] .brand-mark:not(.brand-mark-dark-only) { box-shadow: 0 0 0 1px rgba(16, 24, 40, 0.07), 0 1px 3px rgba(16, 24, 40, 0.1); }

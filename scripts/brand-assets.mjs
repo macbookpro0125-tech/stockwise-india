@@ -107,9 +107,36 @@ const files = {
 // stretches them, so the header's logo was blurry on an iPhone (21 Oct 2026).
 // Drawn at 192 px: sharp up to 64 px on a 3× screen. Heavier letters, the
 // mark a little larger in its tile.
+// The light theme's: the owner's own design (21 Oct 2026: a white glass tile
+// in the app's colours "doesn't look good"; "it should be silver — the
+// lines") — no tile, the rings polished silver, the letters charcoal
+const METAL = `<filter id="metal" x="-20%" y="-20%" width="140%" height="150%" color-interpolation-filters="sRGB">
+  <feGaussianBlur in="SourceAlpha" stdDeviation="9" result="sblur"/><feOffset in="sblur" dy="10" result="soff"/>
+  <feFlood flood-color="#1a2030" flood-opacity="0.28"/><feComposite in2="soff" operator="in" result="shadow"/>
+  <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="bump"/>
+  <feSpecularLighting in="bump" surfaceScale="6" specularConstant="1.4" specularExponent="30" lighting-color="#ffffff" result="spec"><feDistantLight azimuth="235" elevation="50"/></feSpecularLighting>
+  <feComposite in="spec" in2="SourceAlpha" operator="in" result="hi"/>
+  <feOffset in="SourceAlpha" dx="-2" dy="-4" result="up"/><feComposite in="SourceAlpha" in2="up" operator="out" result="lowEdge"/>
+  <feFlood flood-color="#2a3142" flood-opacity="0.45"/><feComposite in2="lowEdge" operator="in" result="dark"/>
+  <feMerge><feMergeNode in="shadow"/><feMergeNode in="SourceGraphic"/><feMergeNode in="dark"/></feMerge>
+  <feComposite in2="hi" operator="arithmetic" k2="1" k3="0.9"/>
+</filter>`;
+const silverMark = () => `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+<!-- Jocular Insights: the header's logo in the light theme — polished silver rings, charcoal letters, no tile (scripts/brand-assets.mjs) -->
+<defs>
+  <linearGradient id="silver" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F4F6FA"/><stop offset="0.16" stop-color="#B9C0CC"/><stop offset="0.32" stop-color="#7F889A"/><stop offset="0.48" stop-color="#DDE2EA"/><stop offset="0.62" stop-color="#9AA2B2"/><stop offset="0.8" stop-color="#6A7385"/><stop offset="1" stop-color="#B3BAC6"/></linearGradient>
+  <linearGradient id="charcoal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4A5058"/><stop offset="0.5" stop-color="#2B3036"/><stop offset="1" stop-color="#1A1D22"/></linearGradient>
+  ${METAL}
+</defs>
+<g transform="${place(0.94)}" fill-rule="evenodd">
+${rings.map(d => `<path d="${d}" fill="url(#silver)" stroke="url(#silver)" stroke-width="11" filter="url(#metal)"/>`).join("\n")}
+<path d="${letters}" fill="url(#charcoal)" stroke="url(#charcoal)" stroke-width="18" stroke-linejoin="round" filter="url(#metal)"/>
+</g>
+</svg>
+`;
 const UI = {
   "brand-dark.svg": glassTile({ scale: 0.86, radius: 230, bold: 18, note: "the header's logo, dark theme" }),
-  "brand-light.svg": glassTile({ scale: 0.86, radius: 230, bold: 18, palette: "light", note: "the header's logo, light theme" }),
+  "brand-light.svg": silverMark(),
 };
 for (const [name, svg] of Object.entries(files)) writeFileSync(join(PUB, name), svg);
 
