@@ -59,7 +59,7 @@ Research
 
 | File | Use | Size |
 |---|---|---|
-| `icon-512.png` | App icon | 512 × 512 |
+| `icon-512.png` | App icon (the glass JI, 21 Oct 2026; scripts/brand-assets.mjs) | 512 × 512 |
 | `feature-graphic.png` | Feature graphic | 1024 × 500 |
 | `1-strategies.png` … `6-settings.png` | Phone screenshots (2–8 allowed) | 1080 × 1920 |
 
@@ -124,3 +124,5 @@ Studio.app/Contents/jbr/Contents/Home"`.
 3. Play Console: create the app, upload `app-release.aab` to **Closed
    testing**, add 12+ testers, run it 14 days (new personal accounts must),
    then apply for production.
+
+**21 Oct 2026:** the new logo (the owner's glass JI) is in the app's icons, the Play icon and feature graphic and the pictures; the `.aab` was rebuilt with it (19.3 MB) and copied to `replica/launch/release/jocular-insights-1.0.aab`. Upload that one.

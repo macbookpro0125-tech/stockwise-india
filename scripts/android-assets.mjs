@@ -37,7 +37,9 @@ const browser = await chromium.launch({ channel: "chrome" });
 // One large window, each picture clipped from its top-left corner (Chrome
 // stalls on a window as small as a 48 px icon)
 const page = await browser.newPage({ deviceScaleFactor: 1, viewport: { width: 1920, height: 1920 } });
-async function draw(file, w, h, body, bg) {
+// (bg defaults to see-through here too: it was undefined for the icons, so
+// their corners came out white — 21 Oct 2026)
+async function draw(file, w, h, body, bg = "transparent") {
   await page.goto(html(w, h, body, bg));
   await page.waitForFunction(() => [...document.images].every(i => i.complete && i.naturalWidth > 0));
   await page.screenshot({ path: file, omitBackground: bg === "transparent", clip: { x: 0, y: 0, width: w, height: h } });

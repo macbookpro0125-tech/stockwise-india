@@ -68,7 +68,7 @@ const art = join(tmpdir(), `play-feature-${Date.now()}.html`);
 writeFileSync(art, `<!doctype html><html><body style="margin:0;width:1024px;height:500px;overflow:hidden;font-family:-apple-system,'Inter',Segoe UI,Roboto,sans-serif;background:radial-gradient(120% 120% at 70% 20%, #1b2550 0%, #0b0d1c 55%, #080810 100%);color:#F4F4FF;display:flex;align-items:center;gap:44px;padding:0 84px;box-sizing:border-box">
 <img src="file://${join(ROOT, "public/jocular-insights-icon.svg")}" style="width:168px;height:168px;border-radius:38px;box-shadow:0 18px 50px rgba(0,0,0,.45)">
 <div><div style="font-size:66px;font-weight:750;letter-spacing:-2px;line-height:1">Jocular <span style="color:#6FA0FF">Insights</span></div>
-<div style="margin-top:18px;font-size:30px;color:#A8A8C0;line-height:1.3">NSE stock research from each company's own filings</div>
+<div style="margin-top:18px;font-size:27px;color:#A8A8C0;line-height:1.3;white-space:nowrap">NSE stock research from each company's own filings</div>
 <div style="margin-top:22px;font-size:22px;color:#00E0BE;font-weight:600">Strategies · Quality scores · Fair values</div></div></body></html>`);
 const fg = await browser.newPage({ viewport: { width: 1024, height: 500 }, deviceScaleFactor: 1 });
 await fg.goto(`file://${art}`); await fg.waitForTimeout(800);
