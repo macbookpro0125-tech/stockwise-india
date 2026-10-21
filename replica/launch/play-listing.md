@@ -120,7 +120,7 @@ Studio.app/Contents/jbr/Contents/Home"`.
 1. AdMob: the app ID and the Native and Rewarded ad unit IDs (deploy.md).
 2. Build: `npm run build`, `npx cap sync android`, then
    `cd android && ./gradlew bundleRelease -PADMOB_APP_ID=<your app ID>` —
-   signed with the upload key in `~/.jocular` (back that folder up).
+   signed with the upload key in `~/.jocular` (backed up 21 Oct 2026: the .jks is in the jocularinsights@gmail.com Google Drive; its two passwords are in the owner's password manager, not in Drive).
 3. Play Console: create the app, upload `app-release.aab` to **Closed
    testing**, add 12+ testers, run it 14 days (new personal accounts must),
    then apply for production.
