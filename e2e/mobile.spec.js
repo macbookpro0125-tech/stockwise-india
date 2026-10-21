@@ -37,8 +37,9 @@ plain("M-E1/E2 offline: the app's frame opens, market data is never served from 
   await context.setOffline(true);
   await page.reload();
   await expect(page.getByRole("heading", { level: 1, name: "Jocular Insights" }).first()).toBeVisible();
-  // the logo comes from the copy made at install, not a broken image
-  expect(await page.locator("img[src='/jocular-insights-mark.svg']").first().evaluate(img => img.complete && img.naturalWidth > 0)).toBe(true);
+  // the logo comes from the copy made at install, not a broken image (the
+  // header's is a picture since 21 Oct 2026: site.jsx BrandMark)
+  expect(await page.locator(".brand-mark img").filter({ visible: true }).first().evaluate(img => img.complete && img.naturalWidth > 0)).toBe(true);
   // the API is never answered from a copy: offline it fails, it doesn't go stale
   const api = await page.evaluate(() => fetch("/api/presets").then(r => `answered ${r.status}`, () => "failed"));
   expect(api).toBe("failed");
