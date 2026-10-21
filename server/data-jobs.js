@@ -19,8 +19,8 @@ import { takeSnapshots, takeResearchCohort, loadResearchCohorts, daysSinceNewest
 const STATE_PATH = join(DATA_DIR, "jobs-state.json");
 const HOUR = 3600 * 1000, DAY = 24 * HOUR;
 const SNAPSHOT_EVERY = 12 * HOUR;
-// A little under a day: the evening refresh (scripts/refresh-data.mjs) runs
-// once a day, and at exactly 24 h a run starting a minute early would skip it
+// A little under a day: the scheduled after-close refresh (with an evening
+// retry) runs daily, and at exactly 24 h a run starting a minute early would skip it
 const FILINGS_EVERY = 20 * HOUR;
 const FILINGS_RETRY_AFTER = 6 * HOUR;
 const HOLDING_RETRY_AFTER = 7 * DAY;

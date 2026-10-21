@@ -1,19 +1,18 @@
 name: Evening data refresh
 
-# Each weekday evening, after NSE publishes the day's prices: run the data
-# jobs (scripts/refresh-data.mjs) on top of the last published data, then
-# publish the result as the `data-latest` release — two files replaced in
-# place, so the repository doesn't grow by a pack a day. The free copy on
-# Render pulls it in within half an hour (server/data-pull.js).
+# First run at 16:30 IST on weekdays, after the market closes. NSE's final
+# price file can arrive later, so retry at 20:00 IST; publish the result as
+# the `data-latest` release. Render checks for it every five minutes
+# (server/data-pull.js).
 #
 # The release has to be downloadable without signing in, so this relies on
 # the repository being public; a private one needs the server to send a token.
 on:
   schedule:
-    - cron: "30 14 * * 1-5" # 20:00 IST, Monday to Friday
-    # A second try at 07:00 IST next morning, for an evening run that failed
-    # or that GitHub started hours late (9 Oct: 5 h late, then NSE refused
-    # it); does nothing when the evening's data is already out
+    - cron: "0 11 * * 1-5" # 16:30 IST, Monday to Friday
+    # Retry at 20:00 IST only if the 16:30 run still has an older price date.
+    - cron: "30 14 * * 1-5"
+    # A second-chance retry at 07:00 IST next morning, for failures or delays.
     - cron: "30 1 * * 2-6"
   workflow_dispatch:
   # A change to how the refresh runs is tried straight away
@@ -69,19 +68,43 @@ jobs:
           fi
           from=$(node -e 'const fs = require("fs"); const built = d => { try { return Date.parse(JSON.parse(fs.readFileSync(`/tmp/${d}/market-snapshot.json`, "utf8")).builtAt) || 0; } catch { return 0; } }; console.log(built("release") >= built("seed") ? "release" : "seed")')
           cp -R /tmp/$from/. data/
+          # A newer release may predate the logo cache in the seed. Add its
+          # validated company icons without replacing logos from the release.
+          if [ -d /tmp/seed/logos ]; then
+            node --input-type=module -e 'import { mergeLogoCache } from "./server/data-pull.js"; mergeLogoCache("/tmp/seed/logos", "data/logos")'
+          fi
           # Older release packs don't have the frozen score study. Keep it
           # from the seed until the next pack is published with this entry.
           if [ ! -f data/research-score-cohorts.json ] && [ -f /tmp/seed/research-score-cohorts.json ]; then
             cp /tmp/seed/research-score-cohorts.json data/research-score-cohorts.json
           fi
-          if [ -f /tmp/release/research-score-cohorts.json ]; then force_pack=false; else force_pack=true; fi
+          if [ -f /tmp/release/research-score-cohorts.json ] && [ -d /tmp/release/logos ]; then force_pack=false; else force_pack=true; fi
           echo "force_pack=$force_pack" >> "$GITHUB_OUTPUT"
+          prices_date=$(node -e 'const fs = require("fs"); try { console.log(JSON.parse(fs.readFileSync("data/market-snapshot.json", "utf8")).pricesDate || ""); } catch { console.log(""); }')
+          echo "prices_date=$prices_date" >> "$GITHUB_OUTPUT"
           echo "Started from the $from data"
+
+      - name: Decide whether the 20:00 retry is needed
+        id: retry
+        env:
+          SCHEDULE: ${{ github.event.schedule }}
+          PRICES_DATE: ${{ steps.start_data.outputs.prices_date }}
+        run: |
+          today_ist=$(node -e 'console.log(new Date(Date.now() + 330 * 60 * 1000).toISOString().slice(0, 10))')
+          force=false
+          if [ "$SCHEDULE" = "30 14 * * 1-5" ] && [ "$PRICES_DATE" != "$today_ist" ]; then
+            force=true
+            echo "Today's NSE close is not in the published snapshot; retrying."
+          else
+            echo "The 20:00 retry is not needed."
+          fi
+          echo "force_data_refresh=$force" >> "$GITHUB_OUTPUT"
 
       - name: Refresh from NSE
         id: refresh
         env:
           FORCE_DATA_PACK: ${{ steps.start_data.outputs.force_pack }}
+          FORCE_DATA_REFRESH: ${{ steps.retry.outputs.force_data_refresh }}
         run: node --no-warnings scripts/refresh-data.mjs
 
       - uses: actions/cache/save@v4
@@ -95,7 +118,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tar -czf market-data.tar.gz -C data market market-snapshot.json performance-snapshots.json research-score-cohorts.json shareholding
+          tar -czf market-data.tar.gz -C data market logos market-snapshot.json performance-snapshots.json research-score-cohorts.json shareholding
           node -e 'const fs = require("fs"); const s = JSON.parse(fs.readFileSync("data/market-snapshot.json", "utf8")); console.log(JSON.stringify({ builtAt: s.builtAt, pricesDate: s.pricesDate, companies: fs.readdirSync("data/market").length, packedAt: new Date().toISOString() }))' > manifest.json
           cat manifest.json
           cp data/jobs-state.json jobs-state.json 2>/dev/null || echo '{}' > jobs-state.json

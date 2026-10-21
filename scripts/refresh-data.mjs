@@ -2,7 +2,7 @@
 // (server/data-jobs.js): the market snapshot (prices, dividends, splits,
 // 52-week range), companies that filed results since the last check,
 // shareholding a quarter behind, new listings, the strategy picks when due.
-// Run each evening by .github/workflows/data-refresh.yml, which then
+// Run after the market close by .github/workflows/data-refresh.yml, which then
 // publishes data/ for the free copy to pull in (server/data-pull.js). Without
 // Telegram, alert checks or backups — this isn't a server.
 //
@@ -17,8 +17,8 @@ import { startDataJobs, jobStatus } from "../server/data-jobs.js";
 import { buildMarketSnapshot, loadMarketSnapshot, clearSnapshotCache } from "../server/market-data.js";
 import { fiscalYearEnds } from "../server/build-snapshot.js";
 
-// The morning run is a second try for an evening that failed: when the
-// snapshot it starts from is this fresh, the evening's data is already out
+// Don't repeat a successful 16:30 refresh at 07:00 the next morning. The
+// morning run takes over only if the published snapshot is older than this.
 const FRESH_HOURS = 18;
 
 const output = (key, value) => { if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `${key}=${value}\n`); };
@@ -42,7 +42,7 @@ console.error = (...args) => {
 const start = loadMarketSnapshot();
 const before = start?.builtAt ?? null;
 const ageHours = before ? (Date.now() - Date.parse(before)) / 3600000 : Infinity;
-if (ageHours < FRESH_HOURS) {
+if (ageHours < FRESH_HOURS && process.env.FORCE_DATA_REFRESH !== "true") {
   if (process.env.FORCE_DATA_PACK === "true") {
     console.log(`The snapshot is ${ageHours.toFixed(1)} h old (prices ${start.pricesDate}) — republishing the current data with the updated pack format.`);
     output("publish", "true");

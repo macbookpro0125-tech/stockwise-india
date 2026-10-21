@@ -3,7 +3,7 @@
 // GitHub Actions now runs the data jobs each evening
 // (.github/workflows/data-refresh.yml) and publishes the result as a release
 // asset, `data-latest`: market-data.tar.gz (the same files as the build's
-// seed) and a small manifest.json. This checks the manifest every half hour
+// seed) and a small manifest.json. This checks the manifest every five minutes
 // and, when its snapshot is newer than the one being served, downloads the
 // pack and swaps it in — no redeploy, no commit per day.
 //
@@ -18,15 +18,14 @@ import { DATA_DIR } from "./paths.js";
 import { loadMarketSnapshot, clearSnapshotCache } from "./market-data.js";
 
 const run = promisify(execFile);
-const HOUR = 3600 * 1000;
 // A few hundred bytes a look; the pack itself only when it's newer
-const CHECK_EVERY = HOUR / 2;
+const CHECK_EVERY = 5 * 60 * 1000;
 const MAX_PACK_BYTES = 60 * 1024 * 1024;
 const PACK_STATE_PATH = join(DATA_DIR, "data-pack-state.json");
 // Market files sent by the release and included in the seed. Keep score
 // cohorts here so the free host's study survives each data update. The
 // snapshot goes last: it's what tells the screen the data changed.
-const PACK_ENTRIES = ["market", "shareholding", "performance-snapshots.json", "research-score-cohorts.json", "market-snapshot.json"];
+const PACK_ENTRIES = ["market", "shareholding", "logos", "performance-snapshots.json", "research-score-cohorts.json", "market-snapshot.json"];
 
 // A file moved into place, copied if a move can't cross over
 function moveFile(from, to) {
@@ -53,6 +52,24 @@ function replaceContents(from, to) {
     else moveFile(src, dest);
   }
   for (const name of readdirSync(to)) if (!keep.has(name)) rmSync(join(to, name), { recursive: true, force: true });
+}
+
+// Company logos are a persistent cache. Merge validated positive entries
+// from the data pack without deleting logos fetched on this Render disk.
+export function mergeLogoCache(from, to) {
+  mkdirSync(to, { recursive: true });
+  for (const name of readdirSync(from).filter(file => file.endsWith(".json"))) {
+    const symbol = name.slice(0, -5);
+    const sourceMeta = join(from, name), sourceImage = join(from, `${symbol}.img`);
+    if (!existsSync(sourceImage)) continue;
+    let incoming, current;
+    try { incoming = JSON.parse(readFileSync(sourceMeta, "utf8")); } catch { continue; }
+    if (!incoming?.type) continue; // don't publish negative cache entries
+    try { current = JSON.parse(readFileSync(join(to, name), "utf8")); } catch {}
+    if (current?.type && existsSync(join(to, `${symbol}.img`))) continue;
+    copyFileSync(sourceImage, join(to, `${symbol}.img`));
+    copyFileSync(sourceMeta, join(to, name));
+  }
 }
 
 export const pullStatus = { enabled: false, lastCheckAt: null, lastPulledAt: null, pulledBuiltAt: null, lastError: null };
@@ -88,7 +105,8 @@ export async function installPack(tgzPath, dataDir = DATA_DIR) {
     for (const name of PACK_ENTRIES) {
       const from = join(incoming, name);
       if (!existsSync(from)) continue;
-      if (statSync(from).isDirectory()) replaceContents(from, join(dataDir, name));
+      if (name === "logos") mergeLogoCache(from, join(dataDir, name));
+      else if (statSync(from).isDirectory()) replaceContents(from, join(dataDir, name));
       else moveFile(from, join(dataDir, name));
     }
     return { builtAt: snap.builtAt, pricesDate: snap.pricesDate, companies };

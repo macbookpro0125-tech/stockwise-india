@@ -34,11 +34,17 @@ function makePack(name, { companies, builtAt, cohortMonth = "2026-10" }) {
   mkdirSync(join(dir, "market"), { recursive: true });
   for (let i = 0; i < companies; i++) writeFileSync(join(dir, "market", `C${i}.json`), "{}");
   mkdirSync(join(dir, "shareholding"));
+  mkdirSync(join(dir, "logos"));
+  writeFileSync(join(dir, "logos", "TCS.img"), "pack logo");
+  writeFileSync(join(dir, "logos", "TCS.json"), JSON.stringify({ at: builtAt, type: "image/png", source: "https://example.com/tcs.png" }));
+  writeFileSync(join(dir, "logos", "MISSED.img"), "recovered logo");
+  writeFileSync(join(dir, "logos", "MISSED.json"), JSON.stringify({ at: builtAt, type: "image/png", source: "https://example.com/missed.png" }));
+  writeFileSync(join(dir, "logos", "NOICON.json"), JSON.stringify({ at: builtAt, miss: true }));
   writeFileSync(join(dir, "market-snapshot.json"), JSON.stringify({ builtAt, pricesDate: builtAt.slice(0, 10), prices: { C0: 2 } }));
   writeFileSync(join(dir, "performance-snapshots.json"), "[]");
   writeFileSync(join(dir, "research-score-cohorts.json"), JSON.stringify([{ month: cohortMonth, records: [{ ticker: "C0", overall: 70 }] }]));
   const tgz = join(root, `${name}.tar.gz`);
-  execFileSync("tar", ["-czf", tgz, "-C", dir, "market", "market-snapshot.json", "performance-snapshots.json", "research-score-cohorts.json", "shareholding"]);
+  execFileSync("tar", ["-czf", tgz, "-C", dir, "market", "logos", "market-snapshot.json", "performance-snapshots.json", "research-score-cohorts.json", "shareholding"]);
   return tgz;
 }
 
@@ -69,11 +75,19 @@ let warmed = 0;
 // Render's file system refuses to rename a folder that came with the build,
 // so the folder stays and its files are replaced
 const marketInode = statSync(join(dataDir, "market")).ino;
+mkdirSync(join(dataDir, "logos"), { recursive: true });
+writeFileSync(join(dataDir, "logos", "KEEP.img"), "local logo");
+writeFileSync(join(dataDir, "logos", "KEEP.json"), JSON.stringify({ type: "image/png" }));
+writeFileSync(join(dataDir, "logos", "MISSED.json"), JSON.stringify({ miss: true }));
 assert.equal(await pullOnce(base, { onInstalled: () => warmed++ }), "installed", "a newer pack is installed");
 assert.equal(statSync(join(dataDir, "market")).ino, marketInode, "the market folder itself is never moved");
 assert.equal(warmed, 1, "the screen is worked out again after a pull");
 assert.equal(readdirSync(join(dataDir, "market")).length, 1200, "the pack's companies replace the old ones");
 assert.ok(!existsSync(join(dataDir, "market", "OLD.json")));
+assert.equal(readFileSync(join(dataDir, "logos", "TCS.img"), "utf8"), "pack logo", "a logo from the pack is added");
+assert.equal(readFileSync(join(dataDir, "logos", "KEEP.img"), "utf8"), "local logo", "a logo already on the persistent disk is kept");
+assert.equal(readFileSync(join(dataDir, "logos", "MISSED.img"), "utf8"), "recovered logo", "a positive pack logo replaces a local negative-cache entry");
+assert.ok(!existsSync(join(dataDir, "logos", "NOICON.json")), "negative logo entries from the pack are ignored");
 assert.equal(loadMarketSnapshot().pricesDate, "2026-10-09", "the snapshot served is the pack's, not a cached old one");
 assert.ok(existsSync(join(dataDir, "performance-snapshots.json")));
 assert.deepEqual(JSON.parse(readFileSync(join(dataDir, "research-score-cohorts.json"), "utf8")), [{ month: "2026-10", records: [{ ticker: "C0", overall: 70 }] }], "monthly score-validation cohorts arrive with the market data");

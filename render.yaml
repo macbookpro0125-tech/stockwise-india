@@ -16,7 +16,7 @@
 # daily. Disks need a paid instance (Starter: 512 MB of memory; the app peaks
 # near 250 MB with the whole market loaded). The market data comes from the
 # evening refresh workflow's data-latest release (DATA_JOBS=pull): installed
-# within a minute of a start, checked every half hour after, and only the
+# within a minute of a start, checked every five minutes after, and only the
 # workflow ever fetches from NSE. Price alerts, Telegram and the daily backups
 # run on this server. Singapore is Render's region nearest India.
 #
