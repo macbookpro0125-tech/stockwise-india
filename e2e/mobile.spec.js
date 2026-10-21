@@ -349,3 +349,20 @@ test("M-H17 the header logo is sharp, with a light one for the light theme @phon
   await page.evaluate(() => document.documentElement.setAttribute("data-theme", "light"));
   await check("light");
 });
+
+// 21 Oct 2026: "when we change in between it gives a small vibration" — a
+// light tick when the tab changes (Chrome on Android: vibrate()); none for a
+// tap on the tab already open
+test("M-H18 switching tabs gives a small tick @phone", async ({ page, account, isMobile }) => {
+  test.skip(!isMobile, "the phone's tab bar");
+  await page.addInitScript(() => { window.__ticks = []; navigator.vibrate = ms => { window.__ticks.push(ms); return true; }; });
+  await page.goto("/");
+  const bar = page.getByRole("navigation", { name: "Pages" });
+  await bar.getByRole("button", { name: "Discover" }).click();
+  expect(await page.evaluate(() => window.__ticks.length), "the tab already open").toBe(0);
+  await bar.getByRole("button", { name: "Watchlist" }).click();
+  await expect(bar.getByRole("button", { name: "Watchlist" })).toHaveAttribute("aria-current", "page");
+  const ticks = await page.evaluate(() => window.__ticks);
+  expect(ticks).toHaveLength(1);
+  expect(ticks[0]).toBeLessThanOrEqual(15);
+});

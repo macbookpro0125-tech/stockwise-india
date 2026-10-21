@@ -4,6 +4,7 @@ import { useWatchlist } from "./watchlist.js";
 import { portfolioStore, alertsStore } from "./stores.js";
 import StockSearchBar from "./StockSearchBar.jsx";
 import { BrandMark } from "./site.jsx";
+import { tick } from "./haptics.js";
 import { scrollStep } from "./tabBarScroll.js";
 import AccountMenu from "./AccountMenu.jsx";
 
@@ -199,9 +200,9 @@ export function BottomTabBar({ tab, onTab }) {
             onPointerDown={e => { if (!collapsed && e.isPrimary) setPressed(i); }}
             onPointerCancel={() => setPressed(null)}
             onPointerUp={() => { clearTimeout(release.current); release.current = setTimeout(() => setPressed(null), 350); }}
-            onClick={() => { setPressed(null); folded ? open() : onTab(t.id); }}>
+            onClick={() => { setPressed(null); if (folded) return open(); if (!on) tick(); onTab(t.id); }}>
             <span className="btb-icon">
-              <t.Icon size={22} strokeWidth={i === at ? 2.3 : 1.9} aria-hidden="true" />
+              <t.Icon size={22} strokeWidth={i === at ? 2.3 : 2} aria-hidden="true" />
               {t.id === "alerts" && reached && <span className="btb-dot" aria-label="An alert's price was reached" />}
             </span>
             <span className="btb-label">{t.short}</span>
