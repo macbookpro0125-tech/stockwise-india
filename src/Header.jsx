@@ -3,6 +3,7 @@ import { Compass, Star, BriefcaseBusiness, ChartLine, Bell, Sun, Moon, Zap, Sett
 import { useWatchlist } from "./watchlist.js";
 import { portfolioStore, alertsStore } from "./stores.js";
 import StockSearchBar from "./StockSearchBar.jsx";
+import { BrandMark } from "./site.jsx";
 import { scrollStep } from "./tabBarScroll.js";
 import AccountMenu from "./AccountMenu.jsx";
 
@@ -84,7 +85,7 @@ export default function Header({ tab, onTab, account, onLogout, onDeleted, onSea
             its own row under the name (index.css .app-header-row). */}
         <div className="app-header-row" style={{ display: "flex", alignItems: "center", gap: 20, padding: "10px 0" }}>
           <a href="/" aria-label="Jocular Insights home" onClick={e => { e.preventDefault(); onTab("discover"); }} style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0, cursor: "pointer", color: "inherit", textDecoration: "none" }}>
-            <img src="/jocular-insights-mark.svg" alt="" style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0 }} />
+            <BrandMark size={32} />
             <div className="hide-phone" style={{ minWidth: 0 }}>
               <h1 style={{ fontSize: 17, fontWeight: 700, margin: 0, color: "var(--t1)", letterSpacing: "-0.03em", lineHeight: 1.2, whiteSpace: "nowrap" }}>
                 Jocular <span style={{ color: "var(--brand-wise)", fontWeight: 600 }}>Insights</span>

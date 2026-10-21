@@ -325,3 +325,24 @@ test("M-H16 the tab bar's glass slides to the tab tapped @phone", async ({ page,
   await expect.poll(async () => Math.abs(await centre(glass) - await centre(watchlist))).toBeLessThan(3);
   expect(await glass.getAttribute("aria-hidden")).toBe("true");
 });
+
+// 21 Oct 2026, on an iPhone: the header's logo was blurry (Safari draws an
+// SVG's lighting effects at low resolution and stretches them) and a dark
+// tile in the light theme. It's a sharp picture now, drawn at several times
+// its size, and the light theme has a light one.
+test("M-H17 the header logo is sharp, with a light one for the light theme @phone", async ({ page, account, isMobile }) => {
+  test.skip(!isMobile, "the phone's header");
+  await page.goto("/");
+  const shown = () => page.locator(".brand-mark img").filter({ visible: true }).first();
+  await expect(shown()).toBeVisible();
+  const check = async name => {
+    const img = shown();
+    await expect(img).toHaveAttribute("src", new RegExp(`jocular-insights-${name}\\.png$`));
+    const { natural, drawn } = await img.evaluate(el => ({ natural: el.naturalWidth, drawn: el.getBoundingClientRect().width }));
+    expect(natural, "drawn from a picture at least 3× its size").toBeGreaterThanOrEqual(drawn * 3);
+  };
+  await page.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
+  await check("dark");
+  await page.evaluate(() => document.documentElement.setAttribute("data-theme", "light"));
+  await check("light");
+});

@@ -7,13 +7,13 @@
 // offline; the built files carry a hash in their names and never change, so
 // they come from the copy first. Bump VERSION to drop every copy. A page
 // that gets the host's 502 during a deploy opens from the copy too.
-const VERSION = "v3"; // v3: the glass JI logo (21 Oct 2026)
+const VERSION = "v4"; // v3: the glass JI logo; v4: its header pictures (21 Oct 2026)
 const SHELL = `jocular-shell-${VERSION}`, ASSETS = `jocular-assets-${VERSION}`;
 const KEEP_ASSETS = 80; // a few deploys' worth; the oldest go first
 
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(SHELL)
-    .then(cache => cache.addAll(["/", "/manifest.webmanifest", "/jocular-insights-mark.svg", "/jocular-insights-favicon.svg", "/icons/icon-192.png"]))
+    .then(cache => cache.addAll(["/", "/manifest.webmanifest", "/jocular-insights-dark.png", "/jocular-insights-light.png", "/jocular-insights-favicon.svg", "/icons/icon-192.png"]))
     .then(() => self.skipWaiting()));
 });
 

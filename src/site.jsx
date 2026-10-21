@@ -75,11 +75,24 @@ export function SiteFooter() {
   );
 }
 
+// The app's logo inside the app (21 Oct 2026): the glass JI as a picture
+// drawn at 192 px (scripts/brand-assets.mjs) — sharp on a 3× phone up to
+// 64 px, where Safari blurred the SVG's lighting — dark, or the light one in
+// the light theme (index.css .brand-mark). theme="dark" pins the dark one
+// (the front page's story is always dark).
+export function BrandMark({ size = 32, theme }) {
+  return (
+    <span className={`brand-mark${theme === "dark" ? " brand-mark-dark-only" : ""}`} style={{ width: size, height: size }}>
+      <img className="bm-dark" src="/jocular-insights-dark.png" alt="" width={size} height={size} />
+      <img className="bm-light" src="/jocular-insights-light.png" alt="" width={size} height={size} />
+    </span>
+  );
+}
+
 export function Logo({ size = 17 }) {
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-      {/* the bold small mark up to 48 px, the J drawn as stars above that */}
-      <img src={size * 1.9 > 48 ? "/jocular-insights-icon.svg" : "/jocular-insights-mark.svg"} alt="" style={{ width: size * 1.9, height: size * 1.9, borderRadius: size * 1.9 > 48 ? 12 : 8 }} />
+      <BrandMark size={Math.round(size * 1.9)} />
       <span style={{ fontSize: size, fontWeight: 700, color: "var(--t1)", letterSpacing: "-0.03em" }}>
         Jocular <span style={{ color: "var(--brand-wise)", fontWeight: 600 }}>Insights</span>
       </span>

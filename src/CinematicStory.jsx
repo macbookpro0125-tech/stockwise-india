@@ -3,6 +3,7 @@ import {
   ArrowDown, ArrowRight, Bookmark, BriefcaseBusiness, Check, GitCompare,
   LineChart, ScanSearch, ShieldCheck, SlidersHorizontal, Bell,
 } from "lucide-react";
+import { BrandMark } from "./site.jsx";
 
 const SCENES = [
   {
@@ -212,7 +213,7 @@ export default function CinematicStory({ onJoin, onLogin, onDiscover, stats }) {
     <div className="cinematic-sticky">
       <div className="story-atmosphere" aria-hidden="true"><i/><i/><i/></div>
       <header className="story-topline">
-        <a className="story-brand" href="#top" aria-label="Jocular Insights, home"><img src="/jocular-insights-mark.svg" alt=""/><span>Jocular <i>Insights</i></span></a>
+        <a className="story-brand" href="#top" aria-label="Jocular Insights, home"><BrandMark size={31} theme="dark" /><span>Jocular <i>Insights</i></span></a>
         <nav className="story-nav" aria-label="Landing page">
           <a href="#product-preview">The platform</a><a href="#research-features">Research</a>
           <button type="button" onClick={onLogin}>Sign in <ArrowRight size={14}/></button>

@@ -13,6 +13,7 @@
 //   jocular-insights-favicon.svg   a browser tab: one thicker ring, heavier letters, flat — glass
 //                                  and a double ring are lost at 16 px
 //   icons/icon-192.png, icons/icon-512.png, icons/icon-maskable-512.png, apple-touch-icon.png
+//   jocular-insights-dark.png, jocular-insights-light.png  the app's own logo (site.jsx BrandMark)
 // Then: node scripts/android-assets.mjs (the Android icons) and
 // node scripts/play-assets.mjs (the Play icon, feature graphic and pictures).
 import { chromium } from "playwright";
@@ -32,37 +33,51 @@ const place = s => `translate(512 512) scale(${s}) translate(${-cx} ${-cy})`;
 // Glass: a soft shadow under each piece, a bright bevel where light from the
 // top left catches its edge (a lighting filter over its blurred outline), a
 // darker lower edge
-const GLASS = `<filter id="glass" x="-20%" y="-20%" width="140%" height="150%" color-interpolation-filters="sRGB">
+const glassFilter = ({ shadow = 0.55, edge = 0.55 } = {}) => `<filter id="glass" x="-20%" y="-20%" width="140%" height="150%" color-interpolation-filters="sRGB">
   <feGaussianBlur in="SourceAlpha" stdDeviation="14" result="sblur"/><feOffset in="sblur" dy="18" result="soff"/>
-  <feFlood flood-color="#000" flood-opacity="0.55"/><feComposite in2="soff" operator="in" result="shadow"/>
+  <feFlood flood-color="#000" flood-opacity="${shadow}"/><feComposite in2="soff" operator="in" result="shadow"/>
   <feGaussianBlur in="SourceAlpha" stdDeviation="5" result="bump"/>
   <feSpecularLighting in="bump" surfaceScale="7" specularConstant="1.25" specularExponent="26" lighting-color="#ffffff" result="spec"><feDistantLight azimuth="235" elevation="52"/></feSpecularLighting>
   <feComposite in="spec" in2="SourceAlpha" operator="in" result="hi"/>
   <feOffset in="SourceAlpha" dx="-3" dy="-5" result="up"/><feComposite in="SourceAlpha" in2="up" operator="out" result="lowEdge"/>
-  <feFlood flood-color="#02040c" flood-opacity="0.55"/><feComposite in2="lowEdge" operator="in" result="dark"/>
+  <feFlood flood-color="#02040c" flood-opacity="${edge}"/><feComposite in2="lowEdge" operator="in" result="dark"/>
   <feMerge><feMergeNode in="shadow"/><feMergeNode in="SourceGraphic"/><feMergeNode in="dark"/></feMerge>
   <feComposite in2="hi" operator="arithmetic" k2="1" k3="0.85"/>
 </filter>`;
-const DEFS = `<defs>
-  <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#17204A"/><stop offset="0.55" stop-color="#0B1028"/><stop offset="1" stop-color="#060814"/></linearGradient>
-  <radialGradient id="glow" cx="0.5" cy="0.46" r="0.42"><stop offset="0" stop-color="#00E0BE" stop-opacity="0.22"/><stop offset="0.6" stop-color="#3E79FF" stop-opacity="0.08"/><stop offset="1" stop-color="#3E79FF" stop-opacity="0"/></radialGradient>
-  <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.08"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
-  <linearGradient id="teal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7DFFEA" stop-opacity="0.96"/><stop offset="0.5" stop-color="#00E0BE" stop-opacity="0.82"/><stop offset="1" stop-color="#00A88F" stop-opacity="0.78"/></linearGradient>
-  <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#C3D5FF" stop-opacity="0.95"/><stop offset="0.5" stop-color="#7FA6FF" stop-opacity="0.8"/><stop offset="1" stop-color="#4F7BE8" stop-opacity="0.76"/></linearGradient>
-  <linearGradient id="white" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.98"/><stop offset="1" stop-color="#DCE4FF" stop-opacity="0.86"/></linearGradient>
-  ${GLASS}
+// Two palettes: the dark one (the app icon, the dark theme) and a light one
+// for the light theme's header — a white glass tile, navy letters, the same
+// rings a shade deeper so they hold on white (21 Oct 2026)
+const PALETTE = {
+  dark: { bg: ["#17204A", "#0B1028", "#060814"], glow: 0.22, glowEdge: 0.08, gloss: 0.08, teal: ["#7DFFEA", "#00E0BE", "#00A88F"], tealOp: [0.96, 0.82, 0.78], blue: ["#C3D5FF", "#7FA6FF", "#4F7BE8"], blueOp: [0.95, 0.8, 0.76], letters: ["#FFFFFF", "#DCE4FF"], lettersOp: [0.98, 0.86], shadow: 0.55, edge: 0.55 },
+  light: { bg: ["#FFFFFF", "#F2F5FB", "#E4E9F4"], glow: 0.14, glowEdge: 0.05, gloss: 0, teal: ["#3BF0D3", "#00C7A8", "#00977F"], tealOp: [0.96, 0.9, 0.88], blue: ["#93B2FF", "#4F7FF0", "#2F5FD8"], blueOp: [0.96, 0.9, 0.88], letters: ["#1C2756", "#0B1028"], lettersOp: [1, 1], shadow: 0.2, edge: 0.18 },
+};
+const defs = (k = "dark") => {
+  const c = PALETTE[k];
+  const ramp = (id, [a, b, d], [oa, ob, od]) => `<linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}" stop-opacity="${oa}"/><stop offset="0.5" stop-color="${b}" stop-opacity="${ob}"/><stop offset="1" stop-color="${d}" stop-opacity="${od}"/></linearGradient>`;
+  return `<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c.bg[0]}"/><stop offset="0.55" stop-color="${c.bg[1]}"/><stop offset="1" stop-color="${c.bg[2]}"/></linearGradient>
+  <radialGradient id="glow" cx="0.5" cy="0.46" r="0.42"><stop offset="0" stop-color="#00E0BE" stop-opacity="${c.glow}"/><stop offset="0.6" stop-color="#3E79FF" stop-opacity="${c.glowEdge}"/><stop offset="1" stop-color="#3E79FF" stop-opacity="0"/></radialGradient>
+  <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="${c.gloss}"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+  ${ramp("teal", c.teal, c.tealOp)}
+  ${ramp("blue", c.blue, c.blueOp)}
+  <linearGradient id="white" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c.letters[0]}" stop-opacity="${c.lettersOp[0]}"/><stop offset="1" stop-color="${c.letters[1]}" stop-opacity="${c.lettersOp[1]}"/></linearGradient>
+  ${glassFilter(c)}
 </defs>`;
+};
 
-function glassTile({ scale, radius = 0, note }) {
+// bold: an outline of each piece's own glass, so the letters and rings hold
+// at header size (32–40 px)
+function glassTile({ scale, radius = 0, note, palette = "dark", bold = 0 }) {
   const tile = `width="1024" height="1024"${radius ? ` rx="${radius}"` : ""}`;
+  const heavy = (fill, w) => (bold ? ` stroke="${fill}" stroke-width="${w}" stroke-linejoin="round"` : "");
   return `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
 <!-- Jocular Insights: ${note} (scripts/brand-assets.mjs) -->
-${DEFS}
+${defs(palette)}
 <rect ${tile} fill="url(#bg)"/><rect ${tile} fill="url(#glow)"/><rect width="1024" height="520" fill="url(#gloss)"${radius ? ` rx="${radius}"` : ""}/>
 <g transform="${place(scale)}" fill-rule="evenodd">
-<path d="${rings[0]}" fill="url(#teal)" filter="url(#glass)"/>
-${rings.slice(1).map(d => `<path d="${d}" fill="url(#blue)" filter="url(#glass)"/>`).join("\n")}
-<path d="${letters}" fill="url(#white)" filter="url(#glass)"/>
+<path d="${rings[0]}" fill="url(#teal)"${heavy("url(#teal)", bold * 0.6)} filter="url(#glass)"/>
+${rings.slice(1).map(d => `<path d="${d}" fill="url(#blue)"${heavy("url(#blue)", bold * 0.6)} filter="url(#glass)"/>`).join("\n")}
+<path d="${letters}" fill="url(#white)"${heavy("url(#white)", bold)} filter="url(#glass)"/>
 </g>
 </svg>
 `;
@@ -87,6 +102,15 @@ const files = {
   "jocular-insights-maskable.svg": glassTile({ scale: 0.62, note: "the mark inside the circle Android's icon shapes never cut" }),
   "jocular-insights-favicon.svg": favicon,
 };
+// Inside the app (the header, the sign-in box, the front page): pictures, not
+// the SVG — Safari draws an SVG's lighting effects at low resolution and
+// stretches them, so the header's logo was blurry on an iPhone (21 Oct 2026).
+// Drawn at 192 px: sharp up to 64 px on a 3× screen. Heavier letters, the
+// mark a little larger in its tile.
+const UI = {
+  "brand-dark.svg": glassTile({ scale: 0.86, radius: 230, bold: 18, note: "the header's logo, dark theme" }),
+  "brand-light.svg": glassTile({ scale: 0.86, radius: 230, bold: 18, palette: "light", note: "the header's logo, light theme" }),
+};
 for (const [name, svg] of Object.entries(files)) writeFileSync(join(PUB, name), svg);
 
 // The PNGs, drawn in Chrome from those
@@ -106,5 +130,16 @@ await png("jocular-insights-square.svg", 512, "icons/icon-512.png", { opaque: tr
 await png("jocular-insights-maskable.svg", 512, "icons/icon-maskable-512.png", { opaque: true });
 // iPhone: no transparency, it rounds the corners itself
 await png("jocular-insights-square.svg", 180, "apple-touch-icon.png", { opaque: true });
+// the app's own logo pictures, from SVGs kept out of public/
+for (const [name, svg] of Object.entries(UI)) writeFileSync(join(dir, name), svg);
+async function uiPng(svgPath, size, out) {
+  const f = join(dir, `ui-${size}-${out.replace(/\W/g, "")}.html`);
+  writeFileSync(f, `<!doctype html><body style="margin:0;background:transparent"><img src="file://${svgPath}" style="display:block;width:${size}px;height:${size}px">`);
+  await page.goto(`file://${f}`);
+  await page.waitForFunction(() => [...document.images].every(i => i.complete && i.naturalWidth > 0));
+  await page.screenshot({ path: join(PUB, out), omitBackground: true, clip: { x: 0, y: 0, width: size, height: size } });
+}
+await uiPng(join(dir, "brand-dark.svg"), 192, "jocular-insights-dark.png");
+await uiPng(join(dir, "brand-light.svg"), 192, "jocular-insights-light.png");
 await browser.close();
 console.log("Logo files written to public/ — next: node scripts/android-assets.mjs, node scripts/play-assets.mjs");
