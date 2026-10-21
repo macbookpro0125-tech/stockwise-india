@@ -38,13 +38,13 @@ Price and financial charts, ten years of results, quarterly figures, shareholdin
 YOUR WATCHLIST, ALERTS AND PORTFOLIO
 Save companies, set price alerts on the daily close, and record what you own to see your gain or loss and where each price sits against its levels.
 
-Prices are NSE's daily closing prices; company figures update as new results are filed.
+Prices are daily closing prices; company figures update as new results are filed.
 
 IMPORTANT
 Jocular Insights is an educational research tool. It is not investment advice, and it is not registered with SEBI as an investment adviser or research analyst. Scores, fair values and levels come from rules applied to public filings and can be wrong. Do your own research and consult a SEBI-registered adviser before investing.
 
 FREE, WITH NOTHING TO CANCEL
-There is no subscription and no paid tier, so there is nothing to renew or cancel, and nothing is sold to you: no loans, no credit offers. The app shows a few ads among lists, never pop-ups or full-screen ads, and nothing is locked behind one.
+There is no subscription and no paid tier, so there is nothing to renew or cancel, and nothing is sold to you: no loans, no credit offers. The app shows a few ads among lists. If you'd like to support it, you can choose to watch a video ad from Settings. There are no pop-ups or ads between screens, and nothing is locked behind an ad.
 ```
 
 **App category** — Finance · **Tags** — Finance, Investing, Stock market,
