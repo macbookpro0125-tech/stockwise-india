@@ -468,6 +468,29 @@ test("F08-H1 theme and logo switches persist across a reload", async ({ page, ac
   expect(await page.evaluate(() => document.documentElement.dataset.theme || document.documentElement.className)).toBe(theme);
 });
 
+// 22 Oct 2026: "before there was a percentage showing the gain or loss, why
+// is it not showing now" — under three months every pick's return was a
+// dash. Each pick's and each snapshot's return shows again, marked early;
+// strategies are still not ranked against each other until three months.
+test("F08-H3 strategy performance: an early pick shows its return, marked early", async ({ page, account }) => {
+  const daysAgo = n => new Date(Date.now() - n * 864e5).toISOString().slice(0, 10);
+  const pick = (ticker, name, cmp, now) => ({ ticker, name, cmp, currentPrice: now, returnPct: (now / cmp - 1) * 100 });
+  const snap = { date: daysAgo(25), avgReturnPct: 4.5, priced: 2, picks: [pick("TCS", "Tata Consultancy Services", 2000, 2200), pick("ABB", "ABB India", 7000, 6650)] };
+  await page.route("**/api/performance", route => route.fulfill({ json: {
+    presets: [{ presetId: "bluechips", presetName: "Defensive Bluechips", sinceDate: snap.date, overallAvgReturnPct: 2.5, snapshots: [snap] }],
+    snapshotCount: 1, pricedTickers: 2, totalTickers: 2, pricesDate: daysAgo(0), researchStudy: null,
+  } }));
+  await page.goto("/");
+  await openPage(page, "Performance");
+  const strategy = page.getByRole("button", { name: /Defensive Bluechips/ });
+  await expect(strategy).toContainText("+2.5%");
+  await expect(strategy).toContainText(/early/i);
+  await strategy.click();
+  await expect(page.getByText("+10.0%")).toBeVisible();
+  await expect(page.getByText("-5.0%")).toBeVisible();
+  await expect(page.getByText(/held 25 days/)).toContainText("+4.5%");
+});
+
 // ── F09 delete account ──────────────────────────────────────────────────────
 test("F09-H1 delete account removes it", async ({ page, account, baseURL }) => {
   await page.goto("/");

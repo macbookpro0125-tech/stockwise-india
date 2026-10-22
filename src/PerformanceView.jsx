@@ -35,8 +35,12 @@ function fmtPct(pct) {
   return `${pct > 0 ? "+" : ""}${pct.toFixed(1)}%`;
 }
 
-// A forward return under three months old is noise that reads as a claim
-// (two weeks' +5.2% looked like a result), so it's held back until then
+// A forward return under three months old is mostly noise that can read as a
+// claim (two weeks' +5.2% looked like a result). Each pick's and snapshot's
+// return shows anyway, marked early — hiding it left a column of dashes that
+// looked broken ("before there was a percentage, why not now", 22 Oct 2026);
+// strategies are ranked, and the score study compared with the NIFTY 500,
+// only from three months
 const MIN_TRACK_DAYS = 91;
 const tooEarly = days => days != null && days < MIN_TRACK_DAYS;
 const readyOn = date => {
@@ -45,6 +49,9 @@ const readyOn = date => {
 };
 function TooEarly({ days }) {
   return <span style={{ fontSize: 11, color: "var(--t3)", whiteSpace: "nowrap" }}>Too early — {days} day{days === 1 ? "" : "s"} tracked</span>;
+}
+function EarlyTag({ days }) {
+  return <span title="Under three months: mostly day-to-day noise, not a result yet" style={{ fontSize: 10, color: "var(--t3)", border: "1px solid var(--bdr2)", borderRadius: 999, padding: "1px 6px", whiteSpace: "nowrap" }}>early · {days} day{days === 1 ? "" : "s"}</span>;
 }
 
 // Name · entry · current · return, shared by the header and every pick row
@@ -185,8 +192,8 @@ export default function PerformanceView({ onOpenStock }) {
         <p style={{ fontSize: 11, color: "var(--t3)", margin: "0 0 14px" }}>No strategy snapshots yet. The score study above is tracked separately.</p>
       )}
 
-      {/* Ranked by return only once returns are shown; the rest by name, so
-          the order doesn't hint at figures held back as too early */}
+      {/* Ranked by return only from three months; the early ones by name,
+          so a few weeks' luck doesn't put a strategy on top */}
       {!loading && [...(data?.presets ?? [])].sort((a, b) => {
         const ea = tooEarly(daysSince(a.sinceDate)), eb = tooEarly(daysSince(b.sinceDate));
         if (ea !== eb) return ea ? 1 : -1;
@@ -195,16 +202,17 @@ export default function PerformanceView({ onOpenStock }) {
         const isOpen = open === p.presetId;
         return (
           <div key={p.presetId} style={{ border: "1px solid var(--bdr2)", borderRadius: 14, background: "var(--s2)", marginBottom: 10, overflow: "hidden" }}>
-            <button onClick={() => setOpen(isOpen ? null : p.presetId)} style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "13px 16px", background: "none", border: "none", cursor: "pointer" }}>
-              <div style={{ textAlign: "left" }}>
+            <button onClick={() => setOpen(isOpen ? null : p.presetId)} style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "13px 16px", background: "none", border: "none", cursor: "pointer" }}>
+              <div style={{ textAlign: "left", minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 500, color: "var(--t1)", letterSpacing: "-0.01em" }}>{p.presetName}</div>
                 <div style={{ fontSize: 10, color: "var(--t3)", marginTop: 2 }}>
                   {/* The headline % is the oldest cohort's return, not a blend of all snapshots */}
                   {p.snapshots.length} snapshot{p.snapshots.length === 1 ? "" : "s"} · figure tracks the {fmtDate(p.sinceDate)} picks
                 </div>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                {tooEarly(daysSince(p.sinceDate)) ? <TooEarly days={daysSince(p.sinceDate)} /> : <RetBadge pct={p.overallAvgReturnPct} />}
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                <RetBadge pct={p.overallAvgReturnPct} />
+                {tooEarly(daysSince(p.sinceDate)) && <EarlyTag days={daysSince(p.sinceDate)} />}
                 <ChevronDown size={16} style={{ color: "var(--t3)", transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 200ms", flexShrink: 0 }} />
               </div>
             </button>
@@ -219,7 +227,7 @@ export default function PerformanceView({ onOpenStock }) {
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, fontSize: 11.5, color: "var(--t3)", marginBottom: 8 }}>
                     <span>
                       Picked {fmtDate(snap.date)}
-                      {isBaseline ? " · baseline, no return yet" : early ? ` · held ${held} day${held === 1 ? "" : "s"} · returns from ${readyOn(snap.date)}` : <> · held {held} day{held === 1 ? "" : "s"} · avg <RetBadge pct={snap.avgReturnPct} /></>}
+                      {isBaseline ? " · baseline, no return yet" : <> · held {held} day{held === 1 ? "" : "s"} · avg <RetBadge pct={snap.avgReturnPct} />{early && " · early"}</>}
                     </span>
                     <span style={{ flexShrink: 0 }}>{snap.priced}/{snap.picks.length} priced</span>
                   </div>
@@ -234,7 +242,7 @@ export default function PerformanceView({ onOpenStock }) {
                       <button type="button" className="stock-link" onClick={() => onOpenStock(pick.ticker)} style={{ color: "var(--accent)", cursor: "pointer", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", padding: 0, border: 0, background: "none", fontFamily: "inherit", textAlign: "left", minWidth: 0 }}>{pick.name}</button>
                       <span style={{ color: "var(--t2)", fontSize: 11, textAlign: "right", ...MONO }}>₹{pick.cmp?.toLocaleString("en-IN")}</span>
                       <span style={{ color: "var(--t2)", fontSize: 11, textAlign: "right", ...MONO }}>{pick.currentPrice != null ? `₹${pick.currentPrice.toLocaleString("en-IN")}` : "—"}</span>
-                      <span style={{ textAlign: "right" }}>{isBaseline || early ? <span style={{ fontSize: 11, color: "var(--t3)", ...MONO }}>—</span> : <RetBadge pct={pick.returnPct} />}</span>
+                      <span style={{ textAlign: "right" }}>{isBaseline ? <span style={{ fontSize: 11, color: "var(--t3)", ...MONO }}>—</span> : <RetBadge pct={pick.returnPct} />}</span>
                     </div>
                   ))}
                 </div>
@@ -247,7 +255,7 @@ export default function PerformanceView({ onOpenStock }) {
       {!empty && !loading && (
         <p style={{ fontSize: 10, color: "var(--t3)", lineHeight: 1.6, marginTop: 14 }}>
           Returns compare each pick's close on the snapshot day with NSE's latest close{data?.pricesDate ? ` (${fmtDate(data.pricesDate)})` : ""}, adjusted for splits and bonuses since.
-          A new snapshot is taken automatically every 3 days. Returns appear once picks are three months old — shorter moves are mostly noise. Past picks, not advice.
+          A new snapshot is taken automatically every 3 days. Returns under three months old are marked early — shorter moves are mostly noise — and strategies are ranked only from three months. Past picks, not advice.
         </p>
       )}
     </div>
