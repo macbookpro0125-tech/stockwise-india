@@ -5,6 +5,7 @@ import { calculateLevels, roundPrice } from "./levels.js";
 import { computeResearch } from "./research.js";
 import { fixUnitSlips } from "./unit-slips.js";
 import { sectorFromName } from "./name-sectors.js";
+import { sectorFromBusiness, cleanBusiness } from "./business-sectors.js";
 import { bankValuation, PSU_BANKS } from "./bank-valuation.js";
 import { SECTOR_INDEX } from "./sector-indices.js";
 
@@ -509,9 +510,16 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
   const cyclical = indexSector ? CYCLICAL_SECTORS.has(indexSector)
     : (peerSector != null && CYCLICAL_SECTORS.has(peerSector)) || CYCLICAL_NAME_WORDS.some(w => nameLower.includes(w));
   // For finding companies by sector, the smaller ones NSE doesn't classify
-  // get one from their name (name-sectors.js); peers stay on NSE's sectors
-  const sector = peerSector ?? nameSector;
-  const sectorSource = peerSector ? (indexSector ? "NSE sector" : "NSE industry mapped to sector") : nameSector ? "company name" : null;
+  // get one from how their results filing describes their business
+  // (business-sectors.js, 22 Oct 2026), else from their name
+  // (name-sectors.js). The filing first: it's today's business, where a name
+  // can be decades old ("Steel" wheels for cars, "Food" airport lounges) —
+  // where both give one they agreed 109 times in 112, and of the three
+  // disagreements the filing had two right. The research score's peers stay
+  // on NSE's sectors.
+  const businessSector = peerSector ? null : sectorFromBusiness(stock.business);
+  const sector = peerSector ?? businessSector ?? nameSector;
+  const sectorSource = peerSector ? (indexSector ? "NSE sector" : "NSE industry mapped to sector") : businessSector ? "company's filings" : nameSector ? "company name" : null;
 
   // Interest cover = EBIT / interest, the original's definition
   const interestCoverage = !lender && latest.financeCosts > 0 && latest.pbt != null
@@ -659,7 +667,10 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     symbol: sym,
     name: stock.name,
     template: stock.template,
-    sector, sectorSource, peerSector, sectorByName: nameSector != null && peerSector == null, lender, utility, cyclical,
+    sector, sectorSource, peerSector, sectorByName: nameSector != null && peerSector == null && businessSector == null, sectorByBusiness: businessSector != null,
+    // the company's own words, shown beside a sector read from them
+    businessLines: businessSector ? cleanBusiness(stock.business).slice(0, 3) : null,
+    lender, utility, cyclical,
     bank: stock.template === "BANKING" ? bankHealth(stock.bank) : null,
     // The government's stake as promoter, from the shareholding filing; owned
     // at a majority, or one of NSE's PSU index members (held through another

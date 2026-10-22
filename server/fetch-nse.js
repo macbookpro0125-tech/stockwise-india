@@ -262,6 +262,22 @@ function textFact(xml, tag) {
   const m = xml.match(new RegExp(`<[a-z-]+:${tag}\\b[^>]*>([^<]+)<`));
   return m ? m[1].trim().replace(/&(amp|lt|gt|quot|apos);/g, (_, e) => XML_ENTITIES[e]) : null;
 }
+// How the company describes its own business in a results filing — its
+// segment lines ("Milk and Milk Products"; "Pellet Plant; Pig Iron Plant"),
+// in the order it lists them, each once. A sector for the companies NSE's
+// lists don't classify comes from these (business-sectors.js, 22 Oct 2026).
+const SEGMENT_TAGS = /<[a-z-]+:(?:DescriptionOfSingleSegment|DescriptionOfReportableSegment|NameOfReportableSegment|DescriptionOfSegment)\b[^>]*>([^<]+)</g;
+export function businessOf(xml) {
+  const lines = [...xml.matchAll(SEGMENT_TAGS)].map(m => m[1].replace(/&(amp|lt|gt|quot|apos);/g, (_, e) => XML_ENTITIES[e]).replace(/\s+/g, " ").trim());
+  return [...new Set(lines.filter(Boolean))].slice(0, 12);
+}
+
+// The same, for a company already on disk: its newest filing only
+export async function fetchBusiness(symbol) {
+  const [newest] = await integratedFilings(symbol);
+  return newest ? businessOf(await fetchXbrl(newest.xbrl)) : [];
+}
+
 function auditOpinionOf(xml) {
   const t = textFact(xml, "DeclarationOfUnmodifiedOpinionOrStatementOnImpactOfAuditQualification");
   if (!t) return null;
@@ -617,8 +633,10 @@ async function fetchFinancials(symbol) {
   let quarter = null;
   let latestYear = null;
   let latestRow = null;
+  let business = null;
   for (const filing of periods.slice(0, MAX_FILINGS_TO_SCAN)) {
     const xml = await getXml(filing.xbrl);
+    business ??= businessOf(xml); // from the newest filing
     const ctx = parseContexts(xml);
     const profit = firstFacts(xml, ctx, TAGS.profit);
 
@@ -693,7 +711,7 @@ async function fetchFinancials(symbol) {
     }
   }
 
-  return { quarter, years: [latestYear, ...earlierYears], quarters, bank };
+  return { quarter, years: [latestYear, ...earlierYears], quarters, bank, business: business ?? [] };
 }
 
 // A distressed company can have negative net worth (accumulated losses
@@ -702,7 +720,7 @@ async function fetchFinancials(symbol) {
 // the same for Debt-to-Equity. Both are undefined when equity isn't positive,
 // so null them rather than let a loss-making company read as a compounder.
 export async function fetchStockSummary(symbol) {
-  const [{ quarter, years, quarters, bank }, holding] = await Promise.all([
+  const [{ quarter, years, quarters, bank, business }, holding] = await Promise.all([
     fetchFinancials(symbol),
     fetchShareholding(symbol),
   ]);
@@ -730,6 +748,7 @@ export async function fetchStockSummary(symbol) {
     years,
     quarters,
     ...(bank && { bank }),
+    business,
     holding,
     roe,
     debtToEquity,

@@ -21,6 +21,8 @@ const rows = [
   co("BIGSTEEL", 50000, { peerSector: "Metals & Mining", sector: "Metals & Mining" }),
   co("TINYSTEEL", 120, { sector: "Metals & Mining", sectorByName: true }),
   co("OTHERSTEEL", 90, { sector: "Metals & Mining", sectorByName: true }),
+  co("DAIRYCO", 400, { sector: "Fast Moving Consumer Goods", sectorByBusiness: true, businessLines: ["Milk and Milk Products"] }),
+  co("BIGFOODS", 60000, { peerSector: "Fast Moving Consumer Goods", sector: "Fast Moving Consumer Goods" }),
   co("MYSTERY", 200, {}),
 ];
 
@@ -33,6 +35,11 @@ const tiny = sectorPeers("TINYSTEEL", 30, rows);
 assert(tiny.peerBasis === "name" && tiny.peerLabel === "Metals & Mining", "a company NSE doesn't classify: the sector its name gives, said as such");
 assert(tiny.rows.map(r => r.symbol).join() === "BIGSTEEL,TINYSTEEL,OTHERSTEEL", "compared with the sector's companies, NSE-classified ones too");
 assert(tiny.peerCount === 2, "the count leaves the company itself out");
+
+const dairy = sectorPeers("DAIRYCO", 30, rows);
+assert(dairy.peerBasis === "business" && dairy.peerLabel === "Fast Moving Consumer Goods", "neither NSE nor the name: the sector its results filing's business lines give");
+assert(dairy.business?.join() === "Milk and Milk Products", "with the company's own words, to show beside it");
+assert(dairy.rows.map(r => r.symbol).join() === "BIGFOODS,DAIRYCO", "compared with the sector's companies");
 
 const none = sectorPeers("MYSTERY", 30, rows);
 assert(none.peerBasis === null && none.rows.length === 0, "no sector from NSE or the name: no peers rather than wrong ones");

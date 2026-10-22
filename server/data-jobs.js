@@ -11,7 +11,7 @@ import { join } from "node:path";
 import { DATA_DIR, MARKET_DIR } from "./paths.js";
 import { NSE_BASE, fetchJson, parseQeDate } from "./fetch-nse.js";
 import { fetchEquityList } from "./equity-list.js";
-import { fetchCompanies, needsSummary, readStored, withRetry } from "./fetch-market.js";
+import { fetchCompanies, needsSummary, needsBusiness, readStored, withRetry } from "./fetch-market.js";
 import { buildMarketSnapshot, loadMarketSnapshot, clearSnapshotCache } from "./market-data.js";
 import { fiscalYearEnds } from "./build-snapshot.js";
 import { takeSnapshots, takeResearchCohort, loadResearchCohorts, daysSinceNewestSnapshot, SNAPSHOT_INTERVAL_DAYS } from "./performance.js";
@@ -177,6 +177,22 @@ async function refreshStaleHoldings() {
   await fetchCompanies(stale, "holdings", { onProgress });
 }
 
+// How each company describes its business (fetch-nse.js businessOf) is read
+// with every new results filing; for the companies on disk from before
+// that, BUSINESS_BATCH a run — those NSE's lists don't classify first, since
+// their sector and peers come from it (business-sectors.js, 22 Oct 2026)
+const BUSINESS_BATCH = 600;
+async function refreshBusinessLines() {
+  const snap = loadMarketSnapshot();
+  const classified = s => (snap?.sectors?.[s] ?? snap?.industrySectors?.[s] ? 1 : 0);
+  const todo = companyFiles().map(f => f.slice(0, -5)).filter(needsBusiness)
+    .sort((a, b) => classified(a) - classified(b))
+    .map(symbol => { const s = readStored(symbol); return { symbol, name: s.name, isin: s.isin }; });
+  if (!todo.length) return;
+  console.error(`[jobs] reading how ${Math.min(todo.length, BUSINESS_BATCH)} of ${todo.length} companies describe their business`);
+  await fetchCompanies(todo.slice(0, BUSINESS_BATCH), "business", { onProgress });
+}
+
 function tick() {
   const snap = loadMarketSnapshot();
   if (!snap || Date.now() - Date.parse(snap.builtAt) > SNAPSHOT_EVERY) enqueue("prices", refreshSnapshot);
@@ -205,6 +221,7 @@ function tick() {
     enqueue("new results", refreshNewFilings);
     enqueue("shareholding", refreshStaleHoldings);
   }
+  if (companyFiles().length >= 100 && companyFiles().some(f => needsBusiness(f.slice(0, -5)))) enqueue("business lines", refreshBusinessLines);
   const catchupFailed = ["first load", "catch-up"].includes(status.lastErrorJob);
   if (catchupFailed && Date.now() - Date.parse(status.lastErrorAt || "") > FILINGS_RETRY_AFTER) {
     enqueue("catch-up", fetchWhatNeedsIt);

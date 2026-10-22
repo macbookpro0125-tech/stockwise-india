@@ -66,14 +66,16 @@ export default function PeersPanel({ symbol, onAnalyze }) {
         {data?.peerLabel && <span style={{ fontSize: 11, fontWeight: 500, color: "var(--t3)", marginLeft: 8 }}>{data.peerLabel}</span>}
       </div>
       <p style={{ fontSize: 11, color: "var(--t3)", margin: "4px 0 12px", lineHeight: 1.5 }}>
-        {data?.peerBasis === "name"
+        {data?.peerBasis === "business"
+          ? <>Companies in the {data.peerLabel} sector, largest first{data.total > top30 ? ` (top ${top30} of ${data.total})` : ""}. NSE doesn't classify this company, so its sector here comes from how its results filing describes its business{data.business?.length ? <>: “{data.business.join("; ")}”</> : ""} — a match that's right for about 9 companies in 10. Peer medians exclude this company.</>
+          : data?.peerBasis === "name"
           ? <>Companies in the {data.peerLabel} sector, largest first{data.total > top30 ? ` (top ${top30} of ${data.total})` : ""}. NSE doesn't classify this company, so its sector here comes from its name — right for about 19 companies in 20. Peer medians exclude this company.</>
           : <>Companies in the same NSE {data?.peerBasis ?? "sector or industry"}, largest first{data?.total > top30 ? ` (top ${top30} of ${data.total})` : ""}. Peer medians exclude this company. NSE sectors can combine different industries, so this is a broad comparison group rather than a set of exact product competitors.</>}
       </p>
 
       {error && <div style={{ fontSize: 12, color: "var(--t3)", padding: "16px 0" }}>Could not load peers — {error}</div>}
       {data && !data.peerBasis && (
-        <div style={{ fontSize: 12, color: "var(--t3)", padding: "8px 0" }}>NSE hasn't put this company in a sector or industry, and its name doesn't say which it's in, so there's no fair group to compare it with. Most companies outside NSE's top 750 aren't classified by NSE.</div>
+        <div style={{ fontSize: 12, color: "var(--t3)", padding: "8px 0" }}>NSE hasn't put this company in a sector or industry, and neither its name nor how its results filing describes its business says which it's in, so there's no fair group to compare it with. Most companies outside NSE's top 750 aren't classified by NSE.</div>
       )}
 
       {data?.benchmark && <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "8px 0 12px" }}>

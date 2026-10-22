@@ -10,7 +10,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fetchEquityList } from "./equity-list.js";
-import { fetchStockSummary, SCHEMA, BANK_VERSION } from "./fetch-nse.js";
+import { fetchStockSummary, fetchBusiness, SCHEMA, BANK_VERSION } from "./fetch-nse.js";
 import { fetchShareholding } from "./fetch-shareholding.js";
 import { saveStock } from "./screen.js";
 import { MARKET_DIR } from "./paths.js";
@@ -38,6 +38,13 @@ export function needsSummary(symbol) {
   // about forty companies, not a whole-market re-read
   if (stored.template === "BANKING" && !stored.error && stored.bank?.v !== BANK_VERSION) return true;
   return !!(stored.error && stored.retryable && Date.now() >= Date.parse(stored.retryAfter || ""));
+}
+
+// Financials fetched before the business lines were read with them
+// (fetch-nse.js businessOf, 22 Oct 2026)
+export function needsBusiness(symbol) {
+  const stored = readStored(symbol);
+  return stored?.schema === SCHEMA && !stored.error && !Array.isArray(stored.business);
 }
 
 // Financials fetched, shareholding never read from its filing (older files
@@ -71,6 +78,11 @@ async function fetchOne(stock, kind) {
     return;
   }
   const stored = readStored(stock.symbol);
+  if (kind === "business") {
+    const business = await withRetry(() => fetchBusiness(stock.symbol));
+    saveStock(stock.symbol, { ...stored, business });
+    return;
+  }
   let holding;
   try {
     holding = await withRetry(() => fetchShareholding(stock.symbol));
@@ -82,7 +94,8 @@ async function fetchOne(stock, kind) {
   saveStock(stock.symbol, { ...stored, holding: { ...holding, fetchedAt: new Date().toISOString() } });
 }
 
-// kind "summary": results + shareholding; "holdings": shareholding only.
+// kind "summary": results + shareholding; "holdings": shareholding only;
+// "business": the business lines of the newest results filing only.
 // stocks: [{ symbol, name, isin }] from NSE's equity list.
 export async function fetchCompanies(stocks, kind, { onProgress = () => {}, log = console.error } = {}) {
   // notYet: failures that are an answer, not a fault — a new listing with
@@ -112,7 +125,7 @@ export async function fetchCompanies(stocks, kind, { onProgress = () => {}, log 
         // (on their old schema, so the next run tries again); a failure is
         // recorded only where there was nothing to lose.
         const stored = kind === "summary" ? readStored(stock.symbol) : null;
-        if (kind === "holdings") log(`${stock.symbol}: ${e.message}`);
+        if (kind !== "summary") log(`${stock.symbol}: ${e.message}`);
         else if (stored && !stored.error && stored.years?.length) log(`${stock.symbol}: kept the stored figures — ${e.message}`);
         else {
           const retryable = !!(e.retryable || e instanceof TypeError || e.cause?.code === "ETIMEDOUT");

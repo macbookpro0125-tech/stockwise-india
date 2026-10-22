@@ -299,20 +299,23 @@ export function companyNews(name, limit = 8) {
 // first. Peer medians use the full cohort and exclude the subject company.
 // NSE classifies only about 1,300 of the 2,260 companies (its index lists and
 // its announcements' industry); for the rest, mostly small ones, the sector
-// their name gives (name-sectors.js, right for 19 in 20) stands in, said as
-// such: 210 more companies with peers (22 Oct 2026, "most of the small
-// companies don't have peers, why"). The research score's peer P/E stays on
-// NSE's own sectors.
+// their results filing's business lines give (business-sectors.js, right for
+// 9 in 10) stands in, else the one their name gives (name-sectors.js), each
+// said as such (22 Oct 2026, "most of the small companies don't have peers,
+// why"; metrics.js says why the filing comes first). The research score's
+// peer P/E stays on NSE's own sectors.
 export function sectorPeers(symbol, limit = 30, rows = allMetrics().rows) {
   const me = rows.find(r => r.symbol === symbol);
   if (!me) return { sector: null, industry: null, peerBasis: null, peerCount: 0, benchmark: null, rows: [] };
   // Sector first, then NSE's industry label — the same order as the research
   // score's peer P/E, so the two never quote different cohorts — then the
-  // sector from the company's name
-  const peerBasis = me.peerSector ? "sector" : isPeerIndustry(me.industry) ? "industry" : me.sectorByName && me.sector ? "name" : null;
-  const peerLabel = { sector: me.peerSector, industry: me.industry, name: me.sector }[peerBasis] ?? null;
+  // sector from the company's filing, then from its name
+  const peerBasis = me.peerSector ? "sector" : isPeerIndustry(me.industry) ? "industry"
+    : me.sectorByBusiness && me.sector ? "business" : me.sectorByName && me.sector ? "name" : null;
+  const peerLabel = { sector: me.peerSector, industry: me.industry, name: me.sector, business: me.sector }[peerBasis] ?? null;
   if (!peerBasis) return { sector: null, industry: me.industry, peerBasis: null, peerLabel: null, peerCount: 0, benchmark: null, rows: [] };
-  const alike = { sector: r => r.peerSector === me.peerSector, industry: r => r.industry === me.industry, name: r => r.sector === me.sector }[peerBasis];
+  const sameSector = r => r.sector === me.sector;
+  const alike = { sector: r => r.peerSector === me.peerSector, industry: r => r.industry === me.industry, name: sameSector, business: sameSector }[peerBasis];
   const cohort = rows.filter(r => r.symbol !== symbol && alike(r));
   const median = values => {
     const sorted = values.filter(v => Number.isFinite(v) && v > 0).sort((a, b) => a - b);
@@ -332,6 +335,7 @@ export function sectorPeers(symbol, limit = 30, rows = allMetrics().rows) {
     industry: me.industry ?? null,
     peerBasis,
     peerLabel,
+    ...(peerBasis === "business" && { business: me.businessLines ?? [] }),
     peerCount: cohort.length,
     benchmark: {
       pe: pe.value, peN: pe.n,
