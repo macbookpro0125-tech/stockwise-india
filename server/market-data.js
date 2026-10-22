@@ -4,6 +4,7 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { UA, NSE_BASE, fetchJson, parseQeDate } from "./fetch-nse.js";
+import { rebaseTracker, suspendedAfter } from "./share-changes.js";
 import { PRICE_DIR, SNAPSHOT_PATH } from "./paths.js";
 import { fetchText as requestText } from "./upstream.js";
 import { momentumStats } from "./momentum.js";
@@ -47,7 +48,7 @@ function parseBhavcopy(csv) {
   const cols = header.split(",").map(c => c.trim());
   const iSym = cols.indexOf("SYMBOL"), iSeries = cols.indexOf("SERIES"), iClose = cols.indexOf("CLOSE_PRICE"), iDate = cols.indexOf("DATE1");
   const iHigh = cols.indexOf("HIGH_PRICE"), iLow = cols.indexOf("LOW_PRICE");
-  const iQty = cols.indexOf("TTL_TRD_QNTY"), iDeliv = cols.indexOf("DELIV_PER");
+  const iQty = cols.indexOf("TTL_TRD_QNTY"), iDeliv = cols.indexOf("DELIV_PER"), iPrev = cols.indexOf("PREV_CLOSE");
   const best = new Map(); // symbol -> { close, high, low, volume, delivery, rank }
   let tradingDate = null;
   for (const line of lines) {
@@ -59,7 +60,8 @@ function parseBhavcopy(csv) {
     const prev = best.get(f[iSym]);
     if (!prev || rank < prev.rank) {
       const delivery = iDeliv === -1 ? NaN : Number(f[iDeliv]); // "-" when there's no delivery data
-      best.set(f[iSym], { close, high: Number(f[iHigh]), low: Number(f[iLow]), volume: iQty === -1 ? null : Number(f[iQty]), delivery: Number.isFinite(delivery) ? delivery : null, rank });
+      // prevClose and series: NSE's rebase after a share change (share-changes.js)
+      best.set(f[iSym], { close, high: Number(f[iHigh]), low: Number(f[iLow]), volume: iQty === -1 ? null : Number(f[iQty]), delivery: Number.isFinite(delivery) ? delivery : null, rank, prevClose: iPrev === -1 ? null : Number(f[iPrev]), series: f[iSeries] });
     }
   }
   return {
@@ -133,7 +135,11 @@ export function splitRatio(subject) {
 // don't move a year's figures. The first build downloads ~250 bhavcopies and
 // ~250 index files (a few minutes); after that only new days are fetched.
 async function yearOfDays(toIso, splits) {
-  const factorAfter = (sym, iso) => (splits[sym] ?? []).filter(s => s.exDate > iso).reduce((f, s) => f * s.ratio, 1);
+  // The feed's splits and bonuses, and the share changes NSE's own previous
+  // closes show that the feed missed (share-changes.js), found as the walk
+  // goes back: a rebase is seen on the older session, before it's adjusted
+  const rebases = rebaseTracker(splits);
+  const factorAfter = (sym, iso) => [...(splits[sym] ?? []), ...(rebases.found[sym] ?? [])].filter(s => s.exDate > iso).reduce((f, s) => f * s.ratio, 1);
   const to = new Date(`${toIso}T00:00:00Z`);
   const fromIso = isoDay(new Date(to.getTime() - 365 * 86400000));
   const ranges = {};
@@ -161,6 +167,7 @@ async function yearOfDays(toIso, splits) {
     seen.add(day.date);
     const niftyClose = (await indexFile(day.date))?.get("Nifty 50")?.close;
     if (niftyClose > 0) nifty.set(day.date, niftyClose);
+    rebases.see(day.date, day.days);
     for (const [sym, v] of day.days) {
       const f = factorAfter(sym, day.date);
       const [low, high] = day.ranges[sym];
@@ -183,7 +190,7 @@ async function yearOfDays(toIso, splits) {
     if (t) tech[sym] = t;
     momentum[sym] = momentumStats(days);
   }
-  return { from: fromIso, tradingDays: seen.size, ranges, tech, momentum };
+  return { from: fromIso, tradingDays: seen.size, ranges, tech, momentum, rebases: rebases.found };
 }
 
 // A stock's technical and volume figures from a year of daily closes
@@ -277,6 +284,19 @@ async function periodReturns(latest, splits) {
     .filter(s => s.exDate > fromIso && s.exDate <= latest.date)
     .reduce((f, s) => f * s.ratio, 1);
   const out = {}, byIndex = {};
+  // Every quarter-end of the last five years: who traded then. A company
+  // missing from two running had no 3- or 5-year return (share-changes.js
+  // suspendedAfter: a suspension, often a relisting on a new base)
+  const checkpoints = [];
+  const end = new Date(`${latest.date}T00:00:00Z`);
+  for (let back = 60; back >= 0; back -= 3) {
+    const d = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth() - (end.getUTCMonth() % 3) - back, 0));
+    if (isoDay(d) >= latest.date) continue;
+    const day = await pricesOnOrBefore(d).catch(() => null); // a quarter-end that can't be read isn't held against anyone
+    if (day) checkpoints.push({ date: day.date, present: new Set(Object.keys(day.prices)) });
+  }
+  const symbols = Object.keys(latest.prices);
+  const brokenSince = fromIso => suspendedAfter(checkpoints, fromIso, symbols);
   for (const [key, { days = 0, months = 0 }] of RETURN_PERIODS) {
     const base = new Date(`${latest.date}T00:00:00Z`);
     base.setUTCDate(base.getUTCDate() - days);
@@ -294,9 +314,10 @@ async function periodReturns(latest, splits) {
       const a = then0?.get(name)?.close, b = now0?.get(name)?.close;
       if (a > 0 && b > 0) (byIndex[name] ||= {})[key] = Math.round((b / a - 1) * 10000) / 100;
     }
+    const broken = months >= 36 ? brokenSince(past.date) : null;
     for (const [sym, close] of Object.entries(latest.prices)) {
       const then = past.prices[sym];
-      if (!(then > 0)) continue;
+      if (!(then > 0) || broken?.has(sym)) continue;
       const ret = (close / (then / factorBetween(sym, past.date)) - 1) * 100;
       const row = (out[sym] ||= {});
       row[key] = Math.round(ret * 100) / 100;
@@ -310,9 +331,10 @@ async function periodReturns(latest, splits) {
   const past5 = await pricesOnOrBefore(base5).catch(() => null);
   if (past5) {
     const years = (new Date(`${latest.date}T00:00:00Z`) - new Date(`${past5.date}T00:00:00Z`)) / (365.25 * 86400000);
+    const broken = brokenSince(past5.date);
     for (const [sym, close] of Object.entries(latest.prices)) {
       const then = past5.prices[sym];
-      if (then > 0 && years > 4.5) (out[sym] ||= {}).cagr5y = Math.round((Math.pow(close / (then / factorBetween(sym, past5.date)), 1 / years) - 1) * 10000) / 100;
+      if (then > 0 && years > 4.5 && !broken.has(sym)) (out[sym] ||= {}).cagr5y = Math.round((Math.pow(close / (then / factorBetween(sym, past5.date)), 1 / years) - 1) * 10000) / 100;
     }
   }
   return { bySymbol: out, byIndex };
@@ -593,6 +615,9 @@ export async function buildMarketSnapshot(fyEndDates, { yearsOfActions = 6 } = {
   const ahead = await corporateActions(now, new Date(now.getTime() + EVENT_WINDOW_DAYS * 86400000)).catch(() => null);
 
   const year = await yearOfDays(latest.date, splits);
+  // with the share changes only NSE's prices showed (CCAVENUE's ten-into-one,
+  // Oct 2026): every return and per-share figure on today's share basis
+  for (const [sym, list] of Object.entries(year.rebases)) splits[sym] = [...(splits[sym] ?? []), ...list];
   const { sectors, industrySectors, industries } = await sectorsBySymbol();
 
   const snapshot = {
