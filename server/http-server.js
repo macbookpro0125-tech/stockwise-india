@@ -41,7 +41,7 @@ import { startBackups } from "./backup.js";
 import { fetchTechnicals } from "./technicals.js";
 import { shareholdingHistory, companyFilings, companyNews, sectorPeers, companyProfile, insiderTrades } from "./company-extras.js";
 import { stockMoves } from "./moves.js";
-import { marketNews, topNews, newsItem, KINDS as NEWS_KINDS } from "./market-news.js";
+import { marketNews, topNews, newsItem, newsItemFiling, KINDS as NEWS_KINDS } from "./market-news.js";
 import { summarizeMove, aiClient } from "./ai-moves.js";
 import { summarizeFiling } from "./filing-summary.js";
 import { logoFor } from "./logos.js";
@@ -649,13 +649,27 @@ export function createApp() {
         if (userId == null) return;
         const kind = url.searchParams.get("kind") ?? "all";
         if (!["all", "watchlist", "headlines"].includes(kind) && !NEWS_KINDS[kind]) { sendJson(res, 400, { error: "Unknown kind of news" }); return; }
-        const symbols = kind === "watchlist" ? new Set(listWatchlist(userId).map(w => w.ticker)) : null;
-        sendJson(res, 200, await marketNews({ kind, symbols, before: url.searchParams.get("before")?.slice(0, 80) ?? null }));
+        const symbols = new Set(listWatchlist(userId).map(w => w.ticker));
+        const size = url.searchParams.get("size") === "all" ? "all" : "large";
+        sendJson(res, 200, await marketNews({ kind, symbols, size, before: url.searchParams.get("before")?.slice(0, 80) ?? null }));
         return;
       }
       if (url.pathname === "/api/news/top" && req.method === "GET") {
         if (requireAuth(req, res) == null) return;
         sendJson(res, 200, await topNews());
+        return;
+      }
+      // An announcement's attachment, read for its key lines (filing-summary.js)
+      const newsReadRoute = url.pathname.match(/^\/api\/news\/item\/(nse-[0-9]{1,24})\/read$/);
+      if (newsReadRoute && req.method === "GET") {
+        if (requireAuth(req, res) == null) return;
+        try {
+          const filing = await newsItemFiling(newsReadRoute[1]);
+          if (!filing?.url) { sendJson(res, 404, { error: "This announcement has no NSE attachment to read." }); return; }
+          sendJson(res, 200, await summarizeFiling({ url: filing.url, title: filing.title, date: filing.time }));
+        } catch (e) {
+          reportUpstreamFailure(res, requestId, e, "Couldn't read this NSE attachment. Try again later.");
+        }
         return;
       }
       const newsRoute = url.pathname.match(/^\/api\/news\/item\/((?:nse|h)-[a-z0-9]{1,24})$/);

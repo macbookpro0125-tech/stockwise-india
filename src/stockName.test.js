@@ -1,6 +1,6 @@
 // A company's name as a list card shows it (stockName.js): node src/stockName.test.js
 import assert from "node:assert/strict";
-import { cardName, initials, splitUnit } from "./stockName.js";
+import { cardName, niceName, initials, splitUnit } from "./stockName.js";
 
 assert.equal(cardName("Indiamart Intermesh Limited"), "Indiamart Intermesh", "'Limited' is the same for every company");
 assert.equal(cardName("Tata Consultancy Services Ltd."), "Tata Consultancy Services");
@@ -10,6 +10,15 @@ assert.equal(cardName("Limited Brands India"), "Limited Brands India", "only at 
 assert.equal(cardName("Infosys"), "Infosys");
 assert.equal(cardName(""), "");
 assert.equal(cardName(null), "");
+
+// Names NSE has in capitals read as words; initials stay
+assert.equal(niceName("SAGILITY LIMITED"), "Sagility");
+assert.equal(niceName("BOSCH HOME COMFORT INDIA LIMITED"), "Bosch Home Comfort India");
+assert.equal(niceName("ITC HOTELS LIMITED"), "ITC Hotels", "three letters: initials");
+assert.equal(niceName("HDFC BANK LIMITED"), "HDFC Bank", "no vowel: initials");
+assert.equal(niceName("HFCL Limited"), "HFCL", "no vowel: initials");
+assert.equal(niceName("Pitti Engineering Limited"), "Pitti Engineering");
+assert.equal(niceName("ITC Limited"), "ITC");
 console.log("ok: names without the 'Limited' every company shares");
 
 assert.equal(initials("Indiamart Intermesh Limited"), "II");

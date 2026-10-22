@@ -8,7 +8,7 @@ test("N-H1 Discover's Market news card leads to the News page and an item; Back 
   await expect(card.locator(".nw-row").first()).toBeVisible();
   await card.getByRole("button", { name: /See all/ }).click();
   const kinds = page.getByRole("group", { name: "Kinds of news" });
-  await expect(kinds.getByRole("button", { name: "All", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(kinds.getByRole("button", { name: /^All/ })).toHaveAttribute("aria-pressed", "true");
   const row = page.locator(".nw-day .nw-row").first();
   await expect(row).toBeVisible();
   await row.click();
@@ -43,4 +43,38 @@ test("N-H2 the News tab on a computer; a headline opens with its link out; an em
   await item.getByRole("button", { name: "News" }).click();
   await kinds.getByRole("button", { name: "My watchlist" }).click();
   await expect(page.getByText(/Star companies to follow their news here/)).toBeVisible();
+
+  // larger companies by default; the switch brings in the rest, and the counts grow
+  const size = page.getByRole("switch", { name: /Only companies over/ });
+  await expect(size).toHaveAttribute("aria-checked", "true");
+  const all = kinds.getByRole("button", { name: /^All/ });
+  await all.click();
+  const count = async () => Number((await all.locator(".nw-count").textContent()).replace(/\D/g, ""));
+  await expect.poll(count).toBeGreaterThan(0);
+  const large = await count();
+  await size.click();
+  await expect(size).toHaveAttribute("aria-checked", "false");
+  await expect.poll(count).toBeGreaterThan(large);
+});
+
+// 23 Oct 2026, "are we getting any useful news?": a result shows its figures
+// (or says when they come), and an announcement can be read for its key lines
+test("N-H3 results show their figures; an announcement's filing is read for its key lines", async ({ page, account }) => {
+  await page.goto("/");
+  await openPage(page, "News");
+  const kinds = page.getByRole("group", { name: "Kinds of news" });
+  await kinds.getByRole("button", { name: /^Results/ }).click();
+  const rows = page.locator(".nw-day .nw-row");
+  await expect(rows.first().or(page.getByText("Nothing of this kind in the last few days."))).toBeVisible();
+  if (!(await rows.count())) return;
+  const withFigures = page.locator(".nw-day .nw-row:has(.nw-figs)").first();
+  await expect(withFigures, "most results have their figures").toBeVisible();
+  await expect(withFigures).toContainText(/Sales ₹|Profit ₹|Loss ₹/);
+  await expect(withFigures).toContainText(/Q\d FY\d\d results/);
+  await withFigures.click();
+  const item = page.getByRole("article");
+  await expect(item.getByText("The numbers, against the same quarter a year earlier")).toBeVisible();
+  const lines = item.getByRole("region", { name: "From the filing" });
+  await lines.getByRole("button", { name: /Read its key lines/ }).click();
+  await expect(lines.locator(".nw-lines li").first().or(lines.getByText(/No lines stood out|Couldn't read|no readable text|no NSE attachment/))).toBeVisible({ timeout: 45_000 });
 });

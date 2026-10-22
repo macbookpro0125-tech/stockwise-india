@@ -1,6 +1,6 @@
 // The News page's sorting and filtering (market-news.js): node --no-warnings server/market-news-test.js
 import assert from "node:assert/strict";
-import { newsKind, announcementsFrom, headlinesFrom, companyIndex, namedCompanies, tidy } from "./market-news.js";
+import { newsKind, announcementsFrom, headlinesFrom, companyIndex, namedCompanies, tidy, sameDayTogether, resultNumbers, pickTop } from "./market-news.js";
 
 // Announcements: the kinds, and paperwork left out
 const kinds = [
@@ -21,6 +21,7 @@ const kinds = [
   ["Allotment of Securities", "Allotment of shares on a preferential basis to the promoters", "deals"],
   ["Disclosure under SEBI Takeover Regulations", "Disclosure under Regulation 10(6) in respect of an acquisition", null],
   ["Record Date", "Record date for the AGM", null],
+  ["General Updates", "Update on the Rights Issue Committee Meeting scheduled to be held on Thursday - Meeting Cancelled", null],
   ["General Updates", "Investors' Presentation on Unaudited Financial Results for the quarter ended September 30, 2026", null],
 ];
 for (const [subject, summary, want] of kinds) assert.equal(newsKind(subject, summary), want, `${subject}: ${summary}`);
@@ -42,6 +43,32 @@ assert.equal(items[2].summary, "Interim Dividend of Rs. 5 per share.", "in the c
 assert.equal(items[1].summary, null, "a summary that only repeats the subject is none");
 assert.equal(items[0].time, "2026-10-22T10:00:00.000Z", "NSE's times are India time");
 assert.equal(items[0].url, null, "only NSE's own archive is linked");
+
+// One piece of news filed twice in a day is one row
+const together = sameDayTogether(announcementsFrom([
+  row(10, "PITTI", "Record Date", "Record date for the purpose of Dividend is 02-Nov-2026.", "2026-10-22 19:05:00"),
+  row(11, "PITTI", "Dividend", "Board declared Interim Dividend of Rs. 2.00 per equity share.", "2026-10-22 18:40:00"),
+  row(12, "PITTI", "Dividend", "Board declared Interim Dividend of Rs. 1.00 per equity share.", "2026-10-21 18:40:00"),
+  row(13, "OTHER", "Dividend", "Board declared Interim Dividend of Rs. 3.00 per equity share.", "2026-10-22 18:00:00"),
+]));
+assert.deepEqual(together.map(i => [i.id, i.also.map(a => a.id).join()]), [["nse-11", "nse-10"], ["nse-13", ""], ["nse-12", ""]], "the dividend and its record date together, the dividend first; another day, another company apart");
+
+// A bare "Outcome of Board Meeting held on …" says nothing
+assert.equal(announcementsFrom([row(20, "ZZZ", "Updates", "'Outcome of Board Meeting held on October 22, 2026.'.")]).length, 0, "a board meeting's date alone is left out");
+
+// A result's figures: only the quarter filed with it, never the one before
+const company = { quarters: [{ fyEnd: "2026-09-30", filed: "2026-10-22", revenueCr: 2032, salesYoY: 22.5, profitCr: 284, profitYoY: 13.3 }] };
+assert.deepEqual(resultNumbers(company, "2026-10-22T13:23:00.000Z"), { quarter: "2026-09-30", salesCr: 2032, salesYoY: 22.5, profitCr: 284, profitYoY: 13.3 }, "filed the same day: its figures");
+assert.equal(resultNumbers({ quarters: [{ fyEnd: "2026-06-30", filed: "2026-07-24", revenueCr: 1900, profitCr: 250 }] }, "2026-10-22T13:23:00.000Z"), null, "the data still has last quarter: no figures, not the old ones");
+assert.equal(resultNumbers(null, "2026-10-22T13:23:00.000Z"), null);
+
+// Discover's card: results with figures first, small companies and older days out
+const f = (id, kind, hoursAgo, cap = 50000, numbers = null) => ({ id, type: "filing", kind, time: new Date(Date.parse("2026-10-22T14:00:00Z") - hoursAgo * 3600_000).toISOString(), quote: { marketCapCr: cap }, numbers });
+const top = pickTop([
+  f("people", "people", 0), f("deal", "deals", 1), f("small", "results", 1, 500, {}), f("res", "results", 2, 50000, {}),
+  f("res2", "results", 3, 50000, {}), f("res3", "results", 4, 50000, {}), f("old", "results", 60, 50000, {}),
+]);
+assert.deepEqual(top.map(i => i.id), ["deal", "res", "res2"], "results with figures, at most two, then a deal; not the small company, nor two days back");
 
 // Headlines: no tips or quote pages, one of each story, six wraps at most
 const rss = list => list.map(([title, source, pub, link]) => `<item><title>${title} - ${source}</title><link>${link}</link><pubDate>${pub}</pubDate><source url="x">${source}</source></item>`).join("");

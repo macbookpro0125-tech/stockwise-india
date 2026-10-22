@@ -86,9 +86,10 @@ export const api = {
   filingSummary: (symbol, index) => request(`/api/stock/${encodeURIComponent(symbol)}/filings/${index}/summary`),
   search: (q) => request(`/api/search?q=${encodeURIComponent(q)}`),
   // The News page (NewsView.jsx): companies' announcements to NSE and the day's headlines
-  news: ({ kind = "all", before = null } = {}) => request(`/api/news?kind=${encodeURIComponent(kind)}${before ? `&before=${encodeURIComponent(before)}` : ""}`),
+  news: ({ kind = "all", before = null, size = "large" } = {}) => request(`/api/news?kind=${encodeURIComponent(kind)}&size=${size}${before ? `&before=${encodeURIComponent(before)}` : ""}`),
   newsTop: () => request("/api/news/top"),
   newsItem: id => request(`/api/news/item/${encodeURIComponent(id)}`),
+  newsFilingLines: id => request(`/api/news/item/${encodeURIComponent(id)}/read`),
   currentPrices: (symbols) => request(`/api/prices?symbols=${symbols.map(encodeURIComponent).join(",")}`),
   watchlist: () => request("/api/watchlist"),
   thesis: symbol => request(`/api/thesis/${encodeURIComponent(symbol)}`),

@@ -35,7 +35,7 @@ export const KINDS = {
 // certificates, insider-trading windows, staff share plans
 const PAPERWORK = /analysts?\/institutional|investor meet|con\. call|newspaper|certificate|investor presentation|trading window|esop|esos|esps|structural digital database|monitoring agency|shareholders meeting|loss of share|statement of deviation|utilisation of funds|related party|scrutini[sz]er|voting results|e-voting|annual general meeting|book closure|investor complaints|reg(ulation)?\.? ?74|registrar|change in rta|disclosure of .*pledge|encumbrance|sast|substantial acquisition|takeover regulations|insider trading|closure of trading|listing approval|trading approval|committee meeting|corrigendum|addendum|guarantee|amendment to aoa|compliance report|alteration/i;
 // …and summaries that are only a staff share plan or a call's slides
-const NOT_NEWS = /employee stock|stock option|restricted stock|\brsu\b|\besop|\besos|investors?['’]? presentation|earnings presentation|analysts?['’]? presentation/i;
+const NOT_NEWS = /employee stock|stock option|restricted stock|\brsu\b|\besop|\besos|investors?['’]? presentation|earnings presentation|analysts?['’]? presentation|meeting\b.{0,40}\bcancell?ed|scheduled to be held/i;
 
 export function newsKind(subject = "", summary = "") {
   const s = String(subject), text = `${s} ${summary}`;
@@ -86,8 +86,10 @@ export function announcementsFrom(rows) {
     const kind = newsKind(r.desc, summary ?? "");
     const time = nseTime(r.sort_date) ?? null;
     if (!kind || !r.symbol || !time || !r.seq_id) continue;
-    // "General Updates" with nothing said but a PDF tells a reader nothing
+    // "General Updates" with nothing said but a PDF tells a reader nothing,
+    // nor "Outcome of Board Meeting held on 22 October" with no outcome in it
     if (kind === "updates" && !summary && /general updates|^updates$|others/i.test(r.desc)) continue;
+    if (kind === "updates" && summary && /^outcome of (the )?board meeting held on\b[^.]*\.?$/i.test(summary)) continue;
     const key = `${r.symbol}|${r.desc}|${summary}`;
     if (seen.has(key)) continue;
     seen.add(key);
@@ -165,7 +167,7 @@ const QUERIES = ["Sensex Nifty when:1d", "stock market India when:1d"];
 function headlines() {
   return cached("market-news:headlines", 20 * MINUTE, async () => {
     const xmls = await Promise.all(QUERIES.map(q => requestText(`https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=en-IN&gl=IN&ceid=IN:en`, { headers: { "User-Agent": NEWS_UA }, service: "Google News", timeoutMs: 10_000, maxBytes: 4 * 1024 * 1024 })));
-    const index = companyIndex(allMetrics().rows);
+    const index = indexNow();
     return headlinesFrom(xmls, Date.now(), t => namedCompanies(t, index).length > 0).slice(0, 40);
   });
 }
@@ -196,31 +198,88 @@ export function companyIndex(rows) {
     if (plain.length >= 4) res.push(wordRe(plain, plain.includes(" ") ? "i" : ""));
     if (/^[A-Z&]{3,}$/.test(r.symbol) && !NOT_A_COMPANY.has(r.symbol)) res.push(wordRe(r.symbol, ""));
     for (const alias of KNOWN_AS[r.symbol] ?? []) res.push(wordRe(alias, ""));
-    return { symbol: r.symbol, res, cap: r.marketCapCr };
+    // lower-case pieces a headline must contain before the patterns are tried
+    const keys = [plain.length >= 4 ? plain : null, r.symbol, ...(KNOWN_AS[r.symbol] ?? [])].filter(Boolean).map(k => k.toLowerCase());
+    return { symbol: r.symbol, res, keys, cap: r.marketCapCr };
   }).filter(c => c.res.length);
 }
 
 export function namedCompanies(title, index, max = 3) {
-  return index.filter(c => c.res.some(re => re.test(title))).sort((a, b) => b.cap - a.cap).slice(0, max).map(c => c.symbol);
+  const lower = String(title).toLowerCase();
+  return index.filter(c => c.keys.some(k => lower.includes(k)) && c.res.some(re => re.test(title))).sort((a, b) => b.cap - a.cap).slice(0, max).map(c => c.symbol);
+}
+
+// A result's own figures, as the app reads them from the company's results
+// filing (metrics.js quarters) — the quarter on file must have been filed
+// within three days of the announcement; until the evening data update
+// brings a new one, there are none (never last quarter's in its place)
+export function resultNumbers(row, time) {
+  const q = row?.quarters?.[0];
+  if (!q?.filed || !q.fyEnd || Math.abs(Date.parse(istDay(time)) - Date.parse(q.filed)) > 3 * DAY) return null;
+  if (q.revenueCr == null && q.profitCr == null) return null;
+  return { quarter: q.fyEnd, salesCr: q.revenueCr ?? null, salesYoY: q.salesYoY ?? null, profitCr: q.profitCr ?? null, profitYoY: q.profitYoY ?? null };
+}
+
+// One index per version of the market data, not one per request
+let indexCache = null;
+function indexNow() {
+  const m = allMetrics();
+  if (indexCache?.version !== m.version) indexCache = { version: m.version, index: companyIndex(m.rows ?? []) };
+  return indexCache.index;
 }
 
 // ---- The page ---------------------------------------------------------------
+
+// A company often files one piece of news twice in a day — a dividend, then
+// its record date; results, then their press release. One row: the notice
+// that says most leads (the dividend, not its record date; the results, not
+// the press release), the others go with it (`also`).
+const istDay = iso => new Date(Date.parse(iso) + 5.5 * 3600_000).toISOString().slice(0, 10);
+const GENERIC_SUBJECT = /^(record date|press release.*|general updates|updates|others|outcome of board meeting)$/i;
+export function sameDayTogether(filings) {
+  const groups = new Map();
+  for (const f of filings) {
+    const key = `${f.symbol}|${f.kind}|${istDay(f.time)}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(f);
+  }
+  const out = [];
+  for (const group of groups.values()) {
+    const lead = group.find(f => !GENERIC_SUBJECT.test(f.title) && f.summary) ?? group.find(f => f.summary) ?? group[0];
+    out.push({ ...lead, also: group.filter(f => f !== lead).map(f => ({ id: f.id, title: f.title, summary: f.summary, time: f.time })) });
+  }
+  return out.sort((a, b) => b.time.localeCompare(a.time));
+}
 
 function quoteOf(row) {
   return row ? { symbol: row.symbol, name: row.name, price: row.cmp ?? null, change1d: row.ret1d ?? null, change1w: row.ret1w ?? null, marketCapCr: row.marketCapCr ?? null } : null;
 }
 
+// Built once per refresh of either source (or of the market data), then
+// shared by every request until the next
+let built = null;
 async function feed() {
   const [nse, heads] = await Promise.allSettled([announcements(), headlines()]);
-  const rows = allMetrics().rows ?? [];
+  const metrics = allMetrics();
+  const sources = [nse.status === "fulfilled" ? nse.value : nse.reason, heads.status === "fulfilled" ? heads.value : heads.reason, metrics.version];
+  if (built && built.sources.every((v, i) => v === sources[i])) return built.value;
+  const value = buildFeed(nse, heads, metrics.rows ?? []);
+  built = { sources, value };
+  return value;
+}
+
+function buildFeed(nse, heads, rows) {
   // the day the prices beside each item are from
   const asOf = loadMarketSnapshot()?.pricesDate ?? null;
   const bySymbol = new Map(rows.map(r => [r.symbol, r]));
-  const index = companyIndex(rows);
-  const filings = nse.status === "fulfilled" ? nse.value : [];
+  const index = indexNow();
+  const filings = (nse.status === "fulfilled" ? nse.value : []).map(f => {
+    const row = bySymbol.get(f.symbol);
+    return { ...f, quote: quoteOf(row), numbers: f.kind === "results" ? resultNumbers(row, f.time) : null };
+  });
   const news = heads.status === "fulfilled" ? heads.value : [];
   const items = [
-    ...filings.map(f => ({ ...f, quote: quoteOf(bySymbol.get(f.symbol)) })),
+    ...sameDayTogether(filings),
     ...news.map(h => ({ ...h, companies: namedCompanies(h.title, index).map(s => quoteOf(bySymbol.get(s))).filter(Boolean) })),
   ].sort((a, b) => b.time.localeCompare(a.time));
   const unread = [nse.status === "rejected" ? "NSE's announcements" : null, heads.status === "rejected" ? "the headlines" : null].filter(Boolean);
@@ -231,33 +290,54 @@ const listed = ({ quote, ...item }) => ({ ...item, summary: item.summary && item
 
 // A page of the feed: one kind, or the watchlist's companies, newest first;
 // `before` is the last item's time and id
-export async function marketNews({ kind = "all", symbols = null, before = null } = {}) {
-  const { items, unread, asOf } = await feed();
-  let list = kind === "all" ? items : kind === "watchlist" ? items.filter(i => (i.symbol && symbols?.has(i.symbol)) || i.companies?.some(c => symbols?.has(c.symbol))) : items.filter(i => i.kind === kind);
+// Companies under ₹1,000 crore are a quarter of the announcements and seldom
+// news to most readers: left out unless asked for (`size: "all"`); a
+// watchlist's companies are always in
+export const LARGE_CR = 1000;
+export async function marketNews({ kind = "all", symbols = null, before = null, size = "large" } = {}) {
+  const { items: everything, unread, asOf } = await feed();
+  const items = size === "all" || kind === "watchlist" ? everything : everything.filter(i => i.type !== "filing" || (i.quote?.marketCapCr ?? 0) >= LARGE_CR || symbols?.has(i.symbol));
+  const watched = i => (i.symbol && symbols?.has(i.symbol)) || i.companies?.some(c => symbols?.has(c.symbol));
+  // how many of each, for the filters
+  const counts = { all: items.length, watchlist: symbols ? items.filter(watched).length : null };
+  for (const i of items) counts[i.kind] = (counts[i.kind] ?? 0) + 1;
+  let list = kind === "all" ? items : kind === "watchlist" ? items.filter(watched) : items.filter(i => i.kind === kind);
   if (before) {
     const at = list.findIndex(i => `${i.time}|${i.id}` === before);
     list = at >= 0 ? list.slice(at + 1) : list.filter(i => i.time < before.split("|")[0]);
   }
   const page = list.slice(0, PAGE).map(listed);
   const last = page[page.length - 1];
-  return { items: page, next: list.length > PAGE && last ? `${last.time}|${last.id}` : null, unread, kinds: KINDS, asOf };
+  return { items: page, next: list.length > PAGE && last ? `${last.time}|${last.id}` : null, unread, kinds: KINDS, counts, asOf, size };
 }
 
-// Discover's card: three of the latest from companies over ₹10,000 crore —
-// results, deals, dividends and ratings before management changes, no more
-// than two of a kind — then headlines if there aren't three
-export async function topNews() {
-  const { items, unread, asOf } = await feed();
+// Discover's card: three from companies over ₹10,000 crore, from the last day
+// and a half of announcements — results with their figures first, then
+// deals, dividends and ratings, then the rest, no more than two of a kind —
+// then headlines if there aren't three
+const WEIGHT = item => (item.kind === "results" && item.numbers ? 3 : ["deals", "dividends", "legal"].includes(item.kind) ? 2 : item.kind === "results" ? 1 : 0);
+export function pickTop(items, n = 3) {
   const big = items.filter(i => i.type === "filing" && i.kind !== "updates" && (i.quote?.marketCapCr ?? 0) >= 10000);
-  const order = [...big.filter(i => i.kind !== "people"), ...big.filter(i => i.kind === "people"), ...items.filter(i => i.type === "headline")];
+  const newest = big.length ? Date.parse(big[0].time) : 0;
+  const recent = big.filter(i => newest - Date.parse(i.time) <= 36 * 3600_000).sort((a, b) => WEIGHT(b) - WEIGHT(a) || b.time.localeCompare(a.time));
   const pick = [], count = {};
-  for (const i of order) {
-    if (pick.length === 3) break;
+  for (const i of [...recent, ...items.filter(i => i.type === "headline")]) {
+    if (pick.length === n) break;
     if ((count[i.kind] ?? 0) >= 2) continue;
     count[i.kind] = (count[i.kind] ?? 0) + 1;
     pick.push(i);
   }
-  return { items: pick.sort((a, b) => b.time.localeCompare(a.time)).map(listed), unread, asOf };
+  return pick.sort((a, b) => b.time.localeCompare(a.time));
+}
+export async function topNews() {
+  const { items, unread, asOf } = await feed();
+  return { items: pickTop(items).map(listed), unread, asOf };
+}
+
+// An announcement, for reading its attachment
+export async function newsItemFiling(id) {
+  const { filings } = await feed();
+  return filings.find(f => f.id === id) ?? null;
 }
 
 // One item in full, with what's around it: the company's price and other
@@ -265,9 +345,11 @@ export async function topNews() {
 // it names and their latest announcements
 export async function newsItem(id) {
   const { items, filings, bySymbol, asOf } = await feed();
-  const item = items.find(i => i.id === id);
+  // a row of the list, or one of the notices that went with another
+  const item = items.find(i => i.id === id) ?? filings.find(f => f.id === id);
   if (!item) return null;
-  const announced = symbol => filings.filter(f => f.symbol === symbol && f.id !== id).slice(0, 4).map(f => listed({ ...f, quote: null }));
+  const shown = new Set([id, ...(item.also ?? []).map(a => a.id)]);
+  const announced = symbol => sameDayTogether(filings.filter(f => f.symbol === symbol && !shown.has(f.id))).slice(0, 4).map(f => listed({ ...f, quote: null }));
   if (item.type === "filing") {
     const row = bySymbol.get(item.symbol);
     // its headlines from the last two weeks — older ones aren't news about this

@@ -4,6 +4,16 @@
 // a logo it doesn't have.
 export const cardName = name => String(name ?? "").replace(/\s+(limited|ltd\.?)\s*$/i, "").trim();
 
+// NSE registers some companies in capitals ("SAGILITY LIMITED"): shown as
+// words ("Sagility"), keeping words of three letters or fewer and words
+// without a vowel as they are — those are initials ("ITC Hotels", "BIL
+// Vyapar", "HDFC"). A name already in mixed case is left alone.
+export function niceName(name) {
+  const n = cardName(name);
+  if (n !== n.toUpperCase() || !/[A-Z]{4,}/.test(n)) return n;
+  return n.replace(/[A-Z][A-Z'.]*/g, w => (w.length <= 3 || !/[AEIOU]/.test(w) ? w : w[0] + w.slice(1).toLowerCase()));
+}
+
 export function initials(name) {
   const words = cardName(name).split(/[\s&-]+/).filter(w => w && !/^(the|of|and)$/i.test(w));
   return words.slice(0, 2).map(w => w[0].toUpperCase()).join("") || "?";
