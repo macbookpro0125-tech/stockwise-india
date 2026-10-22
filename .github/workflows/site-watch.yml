@@ -1,0 +1,34 @@
+name: Site watch
+
+# Every 30 minutes: is jocularinsights.in up, its app loading, and its market
+# data fresh? (scripts/site-watch.mjs, 22 Oct 2026). A failed run is the
+# alarm: GitHub emails the owner when a scheduled workflow fails. The script
+# looks three times, two minutes apart, before failing, so a deploy's
+# half-minute gap isn't an alarm. The repository is public, so the runs cost
+# nothing.
+on:
+  schedule:
+    - cron: "7,37 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: site-watch
+  cancel-in-progress: false
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # only the script, not the market data in the repository
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts/site-watch.mjs
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/site-watch.mjs https://jocularinsights.in
