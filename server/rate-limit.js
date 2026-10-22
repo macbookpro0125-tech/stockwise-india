@@ -41,6 +41,9 @@ export const limits = {
   // Sign-up codes: per email and per address, sending and resending
   codeEmail: limiter({ max: 5, windowMs: 60 * MIN }),
   codeIp: limiter({ max: 15, windowMs: 60 * MIN }),
+  // AI summaries of a move (ai-moves.js): per account, so one account opening
+  // every company can't run up the bill; a company page an hour is far below
+  aiSummary: limiter({ max: 60, windowMs: 60 * MIN }),
 };
 
 // The visitor's address. Behind a host's proxy (TRUST_PROXY=1) the socket is

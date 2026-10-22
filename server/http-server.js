@@ -41,6 +41,7 @@ import { startBackups } from "./backup.js";
 import { fetchTechnicals } from "./technicals.js";
 import { shareholdingHistory, companyFilings, companyNews, sectorPeers, companyProfile, insiderTrades } from "./company-extras.js";
 import { stockMoves } from "./moves.js";
+import { summarizeMove, aiClient } from "./ai-moves.js";
 import { summarizeFiling } from "./filing-summary.js";
 import { logoFor } from "./logos.js";
 import { PRESETS } from "./presets.js";
@@ -640,7 +641,7 @@ export function createApp() {
         return;
       }
 
-      const panelRoute = url.pathname.match(/^\/api\/stock\/([^/]+)\/(prices|technicals|shareholding|profile|filings|news|peers|insiders|moves)$/);
+      const panelRoute = url.pathname.match(/^\/api\/stock\/([^/]+)\/(prices|technicals|shareholding|profile|filings|news|peers|insiders|moves|moves-summary)$/);
       if (panelRoute && req.method === "GET") {
         const userId = requireAuth(req, res);
         if (userId == null) return;
@@ -665,6 +666,14 @@ export function createApp() {
             case "peers": sendJson(res, 200, sectorPeers(symbol)); return;
             case "insiders": sendJson(res, 200, await insiderTrades(symbol)); return;
             case "moves": sendJson(res, 200, await stockMoves(symbol)); return;
+            case "moves-summary": {
+              // Past the hourly limit the card shows its facts without the summary
+              const key = `user:${userId}`;
+              if (limits.aiSummary.blockedFor(key)) { sendJson(res, 200, { summary: null, reason: "limit" }); return; }
+              limits.aiSummary.hit(key);
+              sendJson(res, 200, await summarizeMove(symbol, getStock(symbol)?.name ?? symbol, await stockMoves(symbol), { client: await aiClient() }));
+              return;
+            }
           }
         } catch (e) {
           reportUpstreamFailure(res, requestId, e, "This company data is temporarily unavailable. Try again shortly.");

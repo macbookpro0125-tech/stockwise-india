@@ -1105,6 +1105,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .sd-moves-text a { color: inherit; text-decoration: underline; text-decoration-color: var(--bdr3); text-underline-offset: 3px; }
 .sd-moves-text b { display: block; font-size: var(--fs-2xs); font-weight: 450; color: var(--t3); }
 .sd-moves-foot { margin: var(--sp-3) 0 0; font-size: var(--fs-2xs); line-height: 1.5; color: var(--t3); }
+.sd-moves-ai { margin: 0 0 var(--sp-3); padding: var(--sp-3); border-radius: var(--r-sm); background: color-mix(in srgb, var(--accent) 7%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent); }
+.sd-moves-ai-label { display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-2xs); color: var(--accent); }
+.sd-moves-ai p { margin: var(--sp-1) 0 0; font-size: var(--fs-md); line-height: 1.55; color: var(--t1); }
 
 /* When the figures are from (StockDataDates.jsx) */
 .sd-datanote { margin: calc(-1 * var(--sp-2)) 0 var(--sp-4); font-size: var(--fs-xs); line-height: 1.5; color: var(--t3); }

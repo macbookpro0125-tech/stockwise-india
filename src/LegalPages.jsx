@@ -111,6 +111,11 @@ export function PrivacyPage({ signedIn }) {
         your account. When
         you follow a link to another site, such as NSE, that site's own privacy policy applies.
       </P>
+      <P>
+        A company page can show a short AI summary of its latest price move, written by Anthropic's Claude. Our server
+        sends Anthropic only that company's public facts — its price moves, results, filings with NSE and news headlines —
+        never your email or anything about your account.
+      </P>
 
       <H>Where it's kept, and how it's protected</H>
       <P>
@@ -173,7 +178,8 @@ export function DisclaimerPage({ signedIn }) {
       <P>
         Filings can be misread, restated or filed late, corporate actions such as splits and bonuses can be missed, and
         prices can be delayed or unavailable. Check any figure that matters against the company's own filings on NSE or
-        BSE.
+        BSE. The AI summary on a company page is written by an AI from the facts shown beside it and can still get
+        something wrong; the facts themselves are the record.
       </P>
 
       <H>Past results</H>

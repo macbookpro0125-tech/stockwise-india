@@ -24,6 +24,7 @@ pending.
 | Monitoring | **On (22 Oct 2026):** `.github/workflows/site-watch.yml` runs `scripts/site-watch.mjs` every 30 minutes — the home page, its app script, /api/health (data under 100 hours old, no failed data pull or job), three looks two minutes apart. A failed run makes GitHub email the account that last changed the workflow's schedule. Render restarts a crashed server on its own |
 | Password-reset email | **Live (22 Oct 2026):** Resend (jocularinsights@gmail.com), domain jocularinsights.in verified (region Tokyo; DNS at Domain India: TXT `resend._domainkey`, CNAME `send` → send.forge.rmta.net, CNAME `rsend` → rsend-apne1.forge.rmta.net, TXT `_dmarc` `v=DMARC1; p=none;`; no MX). Render has `RESEND_API_KEY`, `EMAIL_FROM` = `Jocular Insights <no-reply@jocularinsights.in>`, `APP_URL`. Checked on the live site: a sign-up returns 202 and its code email is delivered; a password reset is delivered with its link to jocularinsights.in/reset-password |
 | Telegram alerts | Not set up on the server: `TELEGRAM_BOT_TOKEN` |
+| AI summary of a move | **Off** until `ANTHROPIC_API_KEY` is set in Render (the owner creates the key at console.anthropic.com; never in the repository). Optional `AI_MODEL` (default `claude-opus-5-5`). Cost: one request per company per trading day, about ₹1 each on Opus 5.5 at low effort; at most 60 an hour per account |
 
 ## Mobile
 

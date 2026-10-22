@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Activity, FileText, CalendarDays, Megaphone, Newspaper, Mountain, CalendarClock, CircleHelp } from "lucide-react";
+import { Activity, FileText, CalendarDays, Megaphone, Newspaper, Mountain, CalendarClock, CircleHelp, Sparkles } from "lucide-react";
 import { api } from "./api.js";
 
 // "Why is it moving?" (22 Oct 2026, "a description of why this stock is
@@ -7,7 +7,9 @@ import { api } from "./api.js";
 // market and its sector, trading, results, dividends, filings and news —
 // put together by the server from the record (server/moves.js). The title
 // stays a question: the card shows what happened around the move, and says
-// so when nothing on record goes with it.
+// so when nothing on record goes with it. Above them, when the server has
+// an AI key: Claude's two or three sentences on those same facts, checked
+// before they're sent (server/ai-moves.js) and labelled as AI.
 
 const ICONS = { results: FileText, action: CalendarDays, filing: Megaphone, volume: Activity, range: Mountain, news: Newspaper, ahead: CalendarClock, quiet: CircleHelp };
 const shortDay = iso => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" });
@@ -15,10 +17,16 @@ const shortDay = iso => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN",
 export default function WhyMoving({ symbol }) {
   const [data, setData] = useState(null);
   const [failed, setFailed] = useState(false);
+  const [ai, setAi] = useState(null);
   useEffect(() => {
     let off = false;
-    setData(null); setFailed(false);
-    api.panel(symbol, "moves").then(d => { if (!off) setData(d); }).catch(() => { if (!off) setFailed(true); });
+    setData(null); setFailed(false); setAi(null);
+    api.panel(symbol, "moves").then(d => {
+      if (off) return;
+      setData(d);
+      // the summary after the facts, so they never wait on it; nothing shows when it's off or unavailable
+      if (d?.moves?.length) api.panel(symbol, "moves-summary").then(s => { if (!off && s?.summary) setAi(s); }).catch(() => {});
+    }).catch(() => { if (!off) setFailed(true); });
     return () => { off = true; };
   }, [symbol]);
   if (failed || (data && !data.moves?.length)) return null;
@@ -30,6 +38,12 @@ export default function WhyMoving({ symbol }) {
         <div aria-hidden="true"><span className="sc-skel" style={{ display: "block", width: "80%", height: 14, margin: "6px 0" }} /><span className="sc-skel" style={{ display: "block", width: "55%", height: 14 }} /></div>
       ) : (
         <>
+          {ai && (
+            <div className="sd-moves-ai">
+              <span className="sd-moves-ai-label"><Sparkles size={13} strokeWidth={2.2} aria-hidden="true" /> AI summary of the points below · it can make mistakes</span>
+              <p>{ai.summary}</p>
+            </div>
+          )}
           {data.moves.map(m => <p key={m.period} className="sd-moves-line" data-dir={Math.abs(m.ret) < 0.5 ? "flat" : m.ret > 0 ? "up" : "down"}>{m.text}</p>)}
           {data.points.length > 0 && (
             <ul className="sd-moves-list">
