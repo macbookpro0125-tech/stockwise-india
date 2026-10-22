@@ -21,6 +21,10 @@ const RULES = [
   [/\b(telecom\w*|data networking|voice solutions|broadband|telecommunication\w*)\b/, "Telecommunication"],
   [/\b(electrical equipments?|heavy electrical\w*|transformers?|switch ?gears?|cables?|wires?|pumps?|valves?|compressors?|bearings?|machinery|machine tools|engineering products|industrial products|solar modules?|power products|defen[cs]e|aerospace|ship ?building|ship construction|rail(way)? systems|electronics? manufacturing|boilers?|heaters?|combustion|turbines?|motors?|castings?|forgings?|pipes?|tubes?|fasteners?|cranes?|material handling|construction equipment|earth ?moving|abrasives?)\b/, "Capital Goods"],
   [/\b(retail (trade|stores?|chains?|outlets?|of)|value retail|retailing)\b/, "Consumer Services"],
+  // a delivery app or a restaurant chain isn't a food maker (Swiggy, Eternal)
+  [/\b(food (?:ordering|delivery|services?)|quick commerce|restaurants?|qsr)\b/, "Consumer Services"],
+  // testing a product isn't making it: diamond certification is a service
+  [/\b(certification|testing and inspection|inspection services|testing services)\b/, "Services"],
   [/\b(textiles?|garments?|apparels?|yarns?|fabrics?(?! care)|denims?|spinning|weaving|towels?|bed ?sheets?|cotton|knit\w*|hosiery|home textiles?)\b/, "Textiles"],
   [/\b(food|foods|dairy|milk|edible oils?|sugar|distiller\w*|alcohol\w*|liquor|beers?|brewer\w*|beverages?|tea|coffee|personal care|beauty|cosmetics?|tobacco|cigarettes?|biscuits?|snacks?|spices?|rice|flour|shrimps?|aqua ?feed|poultry|fmcg|agro based|fabric care|home care|maize|starch|agro processing)\b/, "Fast Moving Consumer Goods"],
   [/\b(chemicals?|agro ?chem\w*|crop protection|fertili[sz]ers?|pesticides?|insecticides?|dyes?|dyestuffs?|pigments?|surfactants?|polymers?|resins?|printing inks?|specialty|speciality)\b/, "Chemicals"],
@@ -30,7 +34,8 @@ const RULES = [
   [/\b(real estate|realty|properties|property development|development of buildings?|residential projects?|commercial projects?)\b/, "Realty"],
   [/\b(construction|epc|infrastructure|infra|civil works?|turnkey|bot|annuity|engineering projects?|roads?|highways?)\b/, "Construction"],
   [/\b(hotels?|hospitality|resorts?|restaurants?|qsr|lounges?|retail\w*|e-?commerce|travel|tourism|education\w*|training)\b/, "Consumer Services"],
-  [/\b(broadcast\w*|television|tv|films?|movies?|media|entertainment|publishing|publications?|newspapers?|theatr\w*|cinemas?)\b/, "Media Entertainment & Publication"],
+  // "films" as cinema only: "POLYESTER FILM" is a plastic
+  [/\b(broadcast\w*|television|tv|films? (?:production|distribution|exhibition)|motion pictures?|movies?|media|entertainment|publishing|publications?|newspapers?|theatr\w*|cinemas?)\b/, "Media Entertainment & Publication"],
   [/\b(logistics|supply chain|containers?|shipping|ports?|airports?|freight|cargo|transport\w*|fleet|chartering|warehous\w*|courier|consultancy|staffing|manpower|marketing services|advertising|waste management|e-?waste|facility management|security services|workspaces?)\b/, "Services"],
   [/\b(paper|pulp|wood|timber)\b/, "Forest Materials"],
 ];

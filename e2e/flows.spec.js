@@ -88,7 +88,8 @@ test("F02-H1 a strategy, sector and name filter narrow the list; sort works", as
   await openFilters(page);
   await page.getByRole("combobox").filter({ has: page.getByRole("option", { name: "All sectors" }) }).selectOption("Information Technology");
   await expect(page.getByRole("button", { name: "Tata Consultancy Services Limited" })).toBeVisible();
-  await page.getByPlaceholder("Filter by name or ticker…").fill("infosys");
+  // "Infosys Limited": HCL Infosystems, also IT (by its own filings since 22 Oct 2026), shares "infosys"
+  await page.getByPlaceholder("Filter by name or ticker…").fill("infosys limited");
   await expect(rows).toHaveCount(1);
   await page.getByPlaceholder("Filter by name or ticker…").fill("zzzz-nothing");
   await expect(rows).toHaveCount(0);

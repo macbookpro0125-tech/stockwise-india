@@ -31,6 +31,10 @@ is(["Retail Trade of Apparel & Non Apparel"], "Consumer Services", "a clothes re
 is(["Fabric Care", "Home Care", "Personal Care"], "Fast Moving Consumer Goods", "fabric care is a detergent, not a fabric");
 is(["Manufacture and marketing of lead acid & other storage batteries"], "Automobile and Auto Components", "batteries, as NSE files them");
 is(["Infra &amp; Energy"], "Construction", "XML's &amp; is read as &");
+is(["Food Delivery", "Out of home consumption", "Quick commerce"], "Consumer Services", "a delivery app isn't a food maker (Swiggy)");
+is(["India food ordering and delivery", "Hyperpure supplies (B2B business)"], "Consumer Services", "nor is Eternal");
+is(["POLYESTER FILM"], null, "a plastic film isn't cinema");
+is(["Certification of Diamonds, gemstones, jewellery and related education"], "Services", "certifying diamonds is a service, not jewellery");
 
 is(["SINGLE SEGMENT"], null, "\"single segment\" says nothing");
 is(["The company operates in a single segment and in line with Ind AS 108 Operating Segments the"], null, "a sentence about segment reporting says nothing");
