@@ -24,6 +24,7 @@
 .am-line { fill: none; stroke: #00E0BE; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; }
 .am-glow { stroke-width: 10; opacity: .2; }
 .am-s { stroke-dashoffset: calc(1 - var(--s)); }
+.am-line.am-s { stroke: #DCE4FF; } /* the letters white-blue and the ring teal, as in the logo */
 .am-c { stroke-dashoffset: calc(1 - var(--c)); }
 .am-core { fill: #fff; }
 .am-s-star { opacity: clamp(.22, calc((var(--s) - var(--at)) * 40 + .22), 1); }
