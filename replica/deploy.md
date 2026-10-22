@@ -21,7 +21,7 @@ pending.
 | `APP_URL` | https://jocularinsights.in (set 19 Oct) |
 | Blueprint Auto Sync | **Off** (19 Oct): `render.yaml` said free plan and no disk while the dashboard ran paid with a disk; a sync could have undone that |
 | Google sign-in on the domain | **Not yet**: Firebase's authorized domains lack jocularinsights.in, and the Firebase console needs 2-step verification on the owner's Google account before anyone can add it |
-| Password-reset email | **In progress (21 Oct 2026):** the Resend account (jocularinsights@gmail.com) and the domain jocularinsights.in are added, region Tokyo; its records are live at Domain India (TXT `resend._domainkey`, CNAME `send` → send.forge.rmta.net, CNAME `rsend` → rsend-apne1.forge.rmta.net, TXT `_dmarc` `v=DMARC1; p=none;`; no MX — no receiving). Left: once Resend says Verified, an API key and `RESEND_API_KEY`, `EMAIL_FROM`, `APP_URL` in Render — not before: an unverified domain makes every email sign-up fail (502, "couldn't send the code") |
+| Password-reset email | **Live (22 Oct 2026):** Resend (jocularinsights@gmail.com), domain jocularinsights.in verified (region Tokyo; DNS at Domain India: TXT `resend._domainkey`, CNAME `send` → send.forge.rmta.net, CNAME `rsend` → rsend-apne1.forge.rmta.net, TXT `_dmarc` `v=DMARC1; p=none;`; no MX). Render has `RESEND_API_KEY`, `EMAIL_FROM` = `Jocular Insights <no-reply@jocularinsights.in>`, `APP_URL`. Checked on the live site: a sign-up returns 202 and its code email is delivered; a password reset is delivered with its link to jocularinsights.in/reset-password |
 | Telegram alerts | Not set up on the server: `TELEGRAM_BOT_TOKEN` |
 
 ## Mobile
