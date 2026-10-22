@@ -51,6 +51,9 @@ const PALETTE = {
   dark: { bg: ["#17204A", "#0B1028", "#060814"], glow: 0.22, glowEdge: 0.08, gloss: 0.08, teal: ["#7DFFEA", "#00E0BE", "#00A88F"], tealOp: [0.96, 0.82, 0.78], blue: ["#C3D5FF", "#7FA6FF", "#4F7BE8"], blueOp: [0.95, 0.8, 0.76], letters: ["#FFFFFF", "#DCE4FF"], lettersOp: [0.98, 0.86], shadow: 0.55, edge: 0.55 },
   light: { bg: ["#FFFFFF", "#F2F5FB", "#E4E9F4"], glow: 0.14, glowEdge: 0.05, gloss: 0, teal: ["#3BF0D3", "#00C7A8", "#00977F"], tealOp: [0.96, 0.9, 0.88], blue: ["#93B2FF", "#4F7FF0", "#2F5FD8"], blueOp: [0.96, 0.9, 0.88], letters: ["#1C2756", "#0B1028"], lettersOp: [1, 1], shadow: 0.2, edge: 0.18 },
 };
+// The mark alone in the app (no tile): the dark palette with a lighter drop
+// shadow, which with no tile under it falls on the page
+PALETTE.header = { ...PALETTE.dark, shadow: 0.25 };
 const defs = (k = "dark") => {
   const c = PALETTE[k];
   const ramp = (id, [a, b, d], [oa, ob, od]) => `<linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}" stop-opacity="${oa}"/><stop offset="0.5" stop-color="${b}" stop-opacity="${ob}"/><stop offset="1" stop-color="${d}" stop-opacity="${od}"/></linearGradient>`;
@@ -66,14 +69,14 @@ const defs = (k = "dark") => {
 };
 
 // bold: an outline of each piece's own glass, so the letters and rings hold
-// at header size (32–40 px)
-function glassTile({ scale, radius = 0, note, palette = "dark", bold = 0 }) {
+// at header size (32–48 px). bare: the mark alone, no tile behind it
+function glassTile({ scale, radius = 0, note, palette = "dark", bold = 0, bare = false }) {
   const tile = `width="1024" height="1024"${radius ? ` rx="${radius}"` : ""}`;
   const heavy = (fill, w) => (bold ? ` stroke="${fill}" stroke-width="${w}" stroke-linejoin="round"` : "");
   return `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
 <!-- Jocular Insights: ${note} (scripts/brand-assets.mjs) -->
 ${defs(palette)}
-<rect ${tile} fill="url(#bg)"/><rect ${tile} fill="url(#glow)"/><rect width="1024" height="520" fill="url(#gloss)"${radius ? ` rx="${radius}"` : ""}/>
+${bare ? "" : `<rect ${tile} fill="url(#bg)"/><rect ${tile} fill="url(#glow)"/><rect width="1024" height="520" fill="url(#gloss)"${radius ? ` rx="${radius}"` : ""}/>`}
 <g transform="${place(scale)}" fill-rule="evenodd">
 <path d="${rings[0]}" fill="url(#teal)"${heavy("url(#teal)", bold * 0.6)} filter="url(#glass)"/>
 ${rings.slice(1).map(d => `<path d="${d}" fill="url(#blue)"${heavy("url(#blue)", bold * 0.6)} filter="url(#glass)"/>`).join("\n")}
@@ -105,15 +108,18 @@ const files = {
 // Inside the app (the header, the sign-in box, the front page): pictures, not
 // the SVG — Safari draws an SVG's lighting effects at low resolution and
 // stretches them, so the header's logo was blurry on an iPhone (21 Oct 2026).
-// Drawn at 192 px: sharp up to 64 px on a 3× screen. Heavier letters, the
-// mark a little larger in its tile.
+// Drawn at 256 px: sharp up to 85 px on a 3× screen. Heavier letters.
+// The dark theme's is the mark alone, no tile, filling its square: inside the
+// tile the letters were 11 px tall in a 44 px header logo — "not visible,
+// very small" on a phone and a computer (22 Oct 2026). Like the light
+// theme's, which never had a tile.
 // The light theme's: the owner's own artwork as they drew it, no tile —
 // grey-silver rings, charcoal letters (scripts/brand/ji-original.png, their
 // picture with its see-through background). A white glass tile in the app's
 // colours "doesn't look good"; a polished-silver redraw wasn't it either:
 // "this one was good" — the original (21 Oct 2026)
 const UI = {
-  "brand-dark.svg": glassTile({ scale: 0.86, radius: 230, bold: 18, note: "the header's logo, dark theme" }),
+  "brand-dark.svg": glassTile({ scale: 1.04, bold: 18, bare: true, palette: "header", note: "the app's logo, dark theme: the mark alone" }),
 };
 for (const [name, svg] of Object.entries(files)) writeFileSync(join(PUB, name), svg);
 
@@ -143,7 +149,7 @@ async function uiPng(srcPath, size, out) {
   await page.waitForFunction(() => [...document.images].every(i => i.complete && i.naturalWidth > 0));
   await page.screenshot({ path: join(PUB, out), omitBackground: true, clip: { x: 0, y: 0, width: size, height: size } });
 }
-await uiPng(join(dir, "brand-dark.svg"), 192, "jocular-insights-dark.png");
-await uiPng(join(ROOT, "scripts/brand/ji-original.png"), 192, "jocular-insights-light.png");
+await uiPng(join(dir, "brand-dark.svg"), 256, "jocular-insights-dark.png");
+await uiPng(join(ROOT, "scripts/brand/ji-original.png"), 256, "jocular-insights-light.png");
 await browser.close();
 console.log("Logo files written to public/ — next: node scripts/android-assets.mjs, node scripts/play-assets.mjs");
