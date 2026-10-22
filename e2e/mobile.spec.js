@@ -294,6 +294,30 @@ test("M-H14 each company tab ends with the next one, and no empty band below @ph
   expect(gap, "no wide empty band").toBeLessThanOrEqual(48);
 });
 
+// 22 Oct 2026: "I can't see the details of the peer companies on the phone,
+// and when I expand them they're totally gone" — full names on one line
+// pushed every figure off the screen. The name column is narrow, the
+// comparing figures come first, and the company itself is always listed.
+test("M-H19 the peers table keeps its figures on a phone's screen @phone", async ({ page, account, isMobile }) => {
+  test.skip(!isMobile, "the phone layout");
+  await page.goto("/stock/TCS");
+  await page.getByRole("navigation", { name: "Parts of this page" }).getByRole("button", { name: "Peers" }).click();
+  const table = page.locator(".peers-table");
+  await expect(table).toBeVisible();
+  expect((await table.locator("thead th").allTextContents()).slice(0, 4)).toEqual(["Company", "Mkt Cap", "P/E", "ROCE"]);
+  const figuresOnScreen = () => page.evaluate(() => [...document.querySelectorAll(".peers-table tbody tr")].every(tr => {
+    const name = tr.children[0].getBoundingClientRect(), first = tr.children[1].getBoundingClientRect();
+    return name.width <= window.innerWidth * 0.5 && first.right <= window.innerWidth;
+  }));
+  expect(await figuresOnScreen()).toBe(true);
+  await expect(table.locator(".peers-this")).toHaveCount(1);
+  const all = page.getByRole("button", { name: /^Show all/ });
+  if (await all.count()) {
+    await all.click();
+    expect(await figuresOnScreen(), "after Show all too").toBe(true);
+  }
+});
+
 // 21 Oct 2026: "how will people know they need the scorecard or valuation
 // or the others?" — the Overview says which tab answers which question, in
 // plain words, and each row opens its tab. The Next cards ask the same.

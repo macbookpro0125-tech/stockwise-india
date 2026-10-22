@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { api } from "./api.js";
 import { QualityBadge } from "./ResearchBadges.jsx";
+import { usePhone } from "./phoneTabs.js";
+import { cardName } from "./stockName.js";
 
 // The original's Peers panel (stock-screener PeersPanel.jsx), from this app's
 // own data: companies in the same NSE sector, largest first. The original used
@@ -29,12 +31,18 @@ const COLUMNS = [
   ["ROCE", r => pct(r.roce)],
   ["EV / EBITDA", r => num(r.evToEbitda)],
   ["FCF yield", r => pct(r.fcfYieldPct)],
+  ["Quality", r => <QualityBadge research={r.research} />],
 ];
+// A phone shows a few columns at a time, so the ones that compare companies
+// come first and the price, which doesn't, last
+const PHONE_ORDER = ["Mkt Cap", "P/E", "ROCE", "Sales Gr 3Y", "Quality", "Div Yld", "Net Profit", "Sales", "EV / EBITDA", "FCF yield", "CMP"];
+const PHONE_COLUMNS = PHONE_ORDER.map(name => COLUMNS.find(([c]) => c === name));
 
 export default function PeersPanel({ symbol, onAnalyze }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [showAll, setShowAll] = useState(false);
+  const phone = usePhone();
 
   useEffect(() => {
     let cancelled = false;
@@ -44,7 +52,12 @@ export default function PeersPanel({ symbol, onAnalyze }) {
 
   if (!data && !error) return null;
   const rows = data?.rows ?? [];
-  const shown = showAll ? rows : rows.slice(0, 10);
+  // the top 10, and this company wherever it ranks
+  const top = rows.slice(0, 10);
+  const me = rows.find(r => r.symbol === symbol);
+  const shown = showAll ? rows : me && !top.includes(me) ? [...top, me] : top;
+  const columns = phone ? PHONE_COLUMNS : COLUMNS;
+  const top30 = data?.topCount ?? rows.length;
 
   return (
     <div style={{ border: "1px solid var(--bdr2)", borderRadius: 14, background: "var(--s2)", padding: 16, marginBottom: 16 }}>
@@ -53,12 +66,14 @@ export default function PeersPanel({ symbol, onAnalyze }) {
         {data?.peerLabel && <span style={{ fontSize: 11, fontWeight: 500, color: "var(--t3)", marginLeft: 8 }}>{data.peerLabel}</span>}
       </div>
       <p style={{ fontSize: 11, color: "var(--t3)", margin: "4px 0 12px", lineHeight: 1.5 }}>
-        Companies in the same NSE {data?.peerBasis ?? "sector or industry"}, largest first{data?.total > rows.length ? ` (top ${rows.length} of ${data.total})` : ""}. Peer medians exclude this company. NSE sectors can combine different industries, so this is a broad comparison group rather than a set of exact product competitors.
+        {data?.peerBasis === "name"
+          ? <>Companies in the {data.peerLabel} sector, largest first{data.total > top30 ? ` (top ${top30} of ${data.total})` : ""}. NSE doesn't classify this company, so its sector here comes from its name — right for about 19 companies in 20. Peer medians exclude this company.</>
+          : <>Companies in the same NSE {data?.peerBasis ?? "sector or industry"}, largest first{data?.total > top30 ? ` (top ${top30} of ${data.total})` : ""}. Peer medians exclude this company. NSE sectors can combine different industries, so this is a broad comparison group rather than a set of exact product competitors.</>}
       </p>
 
       {error && <div style={{ fontSize: 12, color: "var(--t3)", padding: "16px 0" }}>Could not load peers — {error}</div>}
       {data && !data.peerBasis && (
-        <div style={{ fontSize: 12, color: "var(--t3)", padding: "8px 0" }}>NSE doesn't publish a sector or industry for this company, so there are no comparable peers here.</div>
+        <div style={{ fontSize: 12, color: "var(--t3)", padding: "8px 0" }}>NSE hasn't put this company in a sector or industry, and its name doesn't say which it's in, so there's no fair group to compare it with. Most companies outside NSE's top 750 aren't classified by NSE.</div>
       )}
 
       {data?.benchmark && <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "8px 0 12px" }}>
@@ -71,32 +86,28 @@ export default function PeersPanel({ symbol, onAnalyze }) {
 
       {rows.length > 0 && (
         <>
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, minWidth: 920 }}>
+          {phone && <p className="peers-swipe">Swipe the table sideways for more →</p>}
+          <div className="peers-scroll">
+            <table className="peers-table">
               <thead>
                 <tr>
-                  <th style={{ textAlign: "left", padding: "8px 10px", fontSize: 11.5, color: "var(--t3)", borderBottom: "1px solid var(--bdr2)", position: "sticky", left: 0, background: "var(--s2)" }}>Company</th>
-                  {COLUMNS.map(([c]) => (
-                    <th key={c} style={{ textAlign: "right", padding: "8px 10px", fontSize: 11.5, color: "var(--t3)", whiteSpace: "nowrap", borderBottom: "1px solid var(--bdr2)" }}>{c}</th>
-                  ))}
-                  <th style={{ textAlign: "right", padding: "8px 10px", fontSize: 11.5, color: "var(--t3)", borderBottom: "1px solid var(--bdr2)" }}>Quality</th>
+                  <th className="peers-name">Company</th>
+                  {columns.map(([c]) => <th key={c}>{c}</th>)}
                 </tr>
               </thead>
               <tbody>
                 {shown.map(r => {
                   const isThis = r.symbol === symbol;
+                  const name = phone ? cardName(r.name) : r.name;
                   return (
-                    <tr key={r.symbol} style={{ background: isThis ? "color-mix(in srgb, var(--accent) 6%, transparent)" : undefined }}>
-                      <td style={{ padding: "7px 10px", whiteSpace: "nowrap", position: "sticky", left: 0, background: isThis ? "var(--s3)" : "var(--s2)", borderBottom: "1px solid var(--bdr)" }}>
+                    <tr key={r.symbol} className={isThis ? "peers-this" : undefined}>
+                      <td className="peers-name" title={r.name}>
                         {isThis
-                          ? <span style={{ color: "var(--accent)", fontWeight: 500 }}>{r.name}</span>
-                          : <button type="button" className="stock-link" onClick={() => onAnalyze?.(r.symbol)} style={{ padding: 0, border: 0, background: "none", fontFamily: "inherit", color: "var(--t2)", fontWeight: 500, cursor: "pointer" }}>{r.name}</button>}
-                        {isThis && <span style={{ fontSize: 10, color: "var(--accent)", marginLeft: 6 }}>THIS STOCK</span>}
+                          ? <span className="peers-co" style={{ color: "var(--accent)", fontWeight: 500 }}>{name}</span>
+                          : <button type="button" className="stock-link peers-co" onClick={() => onAnalyze?.(r.symbol)}>{name}</button>}
+                        {isThis && <span className="peers-this-tag">THIS STOCK</span>}
                       </td>
-                      {COLUMNS.map(([c, fmt]) => (
-                        <td key={c} style={{ padding: "7px 10px", textAlign: "right", whiteSpace: "nowrap", color: "var(--t1)", borderBottom: "1px solid var(--bdr)", ...MONO }}>{fmt(r)}</td>
-                      ))}
-                      <td style={{ padding: "7px 10px", textAlign: "right", borderBottom: "1px solid var(--bdr)" }}><QualityBadge research={r.research} /></td>
+                      {columns.map(([c, fmt]) => <td key={c} style={MONO}>{fmt(r)}</td>)}
                     </tr>
                   );
                 })}

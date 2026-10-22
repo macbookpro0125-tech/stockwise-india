@@ -1190,6 +1190,30 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .sd-insiders-split b { font-variant-numeric: tabular-nums; }
 .sd-insiders-split .buy b { color: var(--green); }
 .sd-insiders-split .sell b { color: var(--red); }
+/* Peers (PeersPanel.jsx): the company's name stays put while the figures
+   scroll across. On a phone the name column is narrow — the short name, on
+   two lines at most — and the comparing figures come first: with the full
+   names on one line, "Indian Railway Catering And Tourism Corporation
+   Limited" pushed every figure off a phone's screen (22 Oct 2026) */
+.peers-scroll { overflow-x: auto; overscroll-behavior-x: contain; }
+.peers-table { width: 100%; min-width: 920px; border-collapse: collapse; font-size: 12px; }
+.peers-table th { text-align: right; padding: 8px 10px; font-size: 11.5px; font-weight: 500; color: var(--t3); white-space: nowrap; border-bottom: 1px solid var(--bdr2); }
+.peers-table td { text-align: right; padding: 7px 10px; white-space: nowrap; color: var(--t1); border-bottom: 1px solid var(--bdr); }
+.peers-table .peers-name { text-align: left; position: sticky; left: 0; z-index: 1; background: var(--s2); }
+.peers-table .peers-this { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.peers-table .peers-this .peers-name { background: var(--s3); }
+.peers-co { padding: 0; border: 0; background: none; font: inherit; font-weight: 500; color: var(--t2); text-align: left; cursor: pointer; }
+.peers-this-tag { font-size: 10px; color: var(--accent); margin-left: 6px; }
+.peers-swipe { margin: 0 0 6px; font-size: 12px; color: var(--t3); }
+@media (max-width: 640px) {
+  .peers-table { width: max-content; min-width: 100%; font-size: 13px; }
+  .peers-table th { font-size: 12px; }
+  .peers-table td, .peers-table th { padding: 9px 9px; }
+  .peers-table .peers-name { white-space: normal; width: 38vw; min-width: 120px; max-width: 170px; padding-left: 0; box-shadow: inset -1px 0 0 var(--bdr); }
+  .peers-co { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3; overflow-wrap: anywhere; }
+  .peers-this-tag { display: block; margin: 2px 0 0; }
+}
+
 .sd-insiders-table { display: grid; margin: 0 0 var(--sp-3); font-size: var(--fs-sm); }
 .sd-insiders-table [role=row] { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr) minmax(0, 9rem) 6rem; gap: var(--sp-3); padding: var(--sp-2) 0; border-bottom: 1px solid var(--bdr); align-items: baseline; }
 .sd-insiders-table [role=row].head { font-size: var(--fs-2xs); font-weight: 450; text-transform: uppercase; letter-spacing: 0.02em; color: var(--t3); }

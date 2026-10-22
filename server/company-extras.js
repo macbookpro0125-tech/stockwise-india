@@ -297,17 +297,23 @@ export function companyNews(name, limit = 8) {
 
 // Companies in the same NSE sector (or, when absent, NSE industry), largest
 // first. Peer medians use the full cohort and exclude the subject company.
-export function sectorPeers(symbol, limit = 30) {
-  const { rows } = allMetrics();
+// NSE classifies only about 1,300 of the 2,260 companies (its index lists and
+// its announcements' industry); for the rest, mostly small ones, the sector
+// their name gives (name-sectors.js, right for 19 in 20) stands in, said as
+// such: 210 more companies with peers (22 Oct 2026, "most of the small
+// companies don't have peers, why"). The research score's peer P/E stays on
+// NSE's own sectors.
+export function sectorPeers(symbol, limit = 30, rows = allMetrics().rows) {
   const me = rows.find(r => r.symbol === symbol);
   if (!me) return { sector: null, industry: null, peerBasis: null, peerCount: 0, benchmark: null, rows: [] };
   // Sector first, then NSE's industry label — the same order as the research
-  // score's peer P/E, so the two never quote different cohorts
-  // (NSE's sector — not one read from the company's name)
-  const peerBasis = me.peerSector ? "sector" : isPeerIndustry(me.industry) ? "industry" : null;
-  const peerLabel = peerBasis === "sector" ? me.peerSector : peerBasis === "industry" ? me.industry : null;
+  // score's peer P/E, so the two never quote different cohorts — then the
+  // sector from the company's name
+  const peerBasis = me.peerSector ? "sector" : isPeerIndustry(me.industry) ? "industry" : me.sectorByName && me.sector ? "name" : null;
+  const peerLabel = { sector: me.peerSector, industry: me.industry, name: me.sector }[peerBasis] ?? null;
   if (!peerBasis) return { sector: null, industry: me.industry, peerBasis: null, peerLabel: null, peerCount: 0, benchmark: null, rows: [] };
-  const cohort = rows.filter(r => r.symbol !== symbol && (peerBasis === "sector" ? r.peerSector === me.peerSector : r.industry === me.industry));
+  const alike = { sector: r => r.peerSector === me.peerSector, industry: r => r.industry === me.industry, name: r => r.sector === me.sector }[peerBasis];
+  const cohort = rows.filter(r => r.symbol !== symbol && alike(r));
   const median = values => {
     const sorted = values.filter(v => Number.isFinite(v) && v > 0).sort((a, b) => a - b);
     if (sorted.length < 5) return { value: null, n: sorted.length };
@@ -317,9 +323,9 @@ export function sectorPeers(symbol, limit = 30) {
   const pe = median(cohort.map(r => r.pe));
   const evEbitda = median(cohort.filter(r => !r.lender).map(r => r.evToEbitda));
   const fcfYield = median(cohort.filter(r => !r.lender).map(r => r.fcfYieldPct));
-  const ordered = [me, ...rows.filter(r => r.symbol !== symbol && (peerBasis === "sector" ? r.peerSector === me.peerSector : r.industry === me.industry))]
-    .sort((a, b) => (b.marketCapCr ?? 0) - (a.marketCapCr ?? 0));
+  const ordered = [me, ...cohort].sort((a, b) => (b.marketCapCr ?? 0) - (a.marketCapCr ?? 0));
   const top = ordered.slice(0, limit);
+  const topCount = top.length; // before the company itself joins the end
   if (!top.includes(me)) top.push(me);
   return {
     sector: me.peerSector ?? null,
@@ -333,6 +339,7 @@ export function sectorPeers(symbol, limit = 30) {
       fcfYieldPct: fcfYield.value, fcfYieldN: fcfYield.n,
     },
     total: ordered.length,
+    topCount,
     rows: top.map(r => ({
       symbol: r.symbol, name: r.name, cmp: r.cmp, pe: r.pe, marketCapCr: r.marketCapCr, divYield: r.divYield,
       profitCr: r.profitCr, revenueCr: r.revenueCr, salesGrowth3y: r.salesGrowth3y, roce: r.roce, roe: r.roe,
