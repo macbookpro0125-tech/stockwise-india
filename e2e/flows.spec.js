@@ -212,6 +212,17 @@ test("F02-H12 Top Gainers ranks by the gain over the period picked", async ({ pa
   }
 });
 
+// 22 Oct 2026: "a description like why this stock is going up or down" —
+// the move against the market and its sector, and what happened around it,
+// never a reason of our own
+test("F03-H8 the company page says what happened around its latest move", async ({ page, account }) => {
+  await page.goto("/stock/TCS");
+  const card = page.getByRole("region", { name: "Why is it moving?" });
+  await expect(card).toBeVisible();
+  await expect(card.locator(".sd-moves-line").first()).toHaveText(/^(Up|Down) [\d.]+% on \d{1,2} \w+|^Little changed on \d{1,2} \w+/);
+  await expect(card).toContainText("not a forecast or advice");
+});
+
 // On the wheel's pill (computer): every strategy as a list (also a
 // double-click), and what this one looks for, rule by rule
 test("F02-H9 the strategy list and what a strategy looks for", async ({ page, account }) => {

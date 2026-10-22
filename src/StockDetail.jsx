@@ -20,6 +20,7 @@ import PhasePositionPlanner from "./PhasePositionPlanner.jsx";
 import ThesisMonitor from "./ThesisMonitor.jsx";
 import StockSide, { Scorecard } from "./StockSide.jsx";
 import StockGlance from "./StockGlance.jsx";
+import WhyMoving from "./WhyMoving.jsx";
 import StockPerformance from "./StockPerformance.jsx";
 import StockDataDates from "./StockDataDates.jsx";
 import StockDividends from "./StockDividends.jsx";
@@ -735,6 +736,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
 
       <section id="sec-overview" className="ss-section sd-section" data-tab="overview">
         <PriceChartPanel symbol={data.symbol} name={data.name} levels={valued ? levels : null} />
+        <WhyMoving symbol={data.symbol} />
         {m && <StockGlance r={m.research} />}
         <StockSnapshot m={m} price={price} dates={data.dataDates} />
         <StockPerformance m={m} />

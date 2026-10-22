@@ -262,6 +262,12 @@ const JUNK = [
   /prediction for (tomorrow|today|next week)/i,
   /\b(astrology|numerology)\b/i,
   /multibagger.*(buy now|will make you)/i,
+  // generated from the day's prices, not reporting ("Share Price Rise Streak: 2 Sessions")
+  /\b(rise|fall|gain|loss|losing|winning)\s+streak\b/i,
+  // quote pages: "HDFC Bank (HDFCBANK) Share Price Today, Live Chart & News",
+  // "Laser Power & Infra Ltd (LASERPOWER) Share Price"
+  /\blive chart\b/i,
+  /\bshare price\s*$/i,
 ];
 
 // Google News, not Yahoo: Yahoo's news search isn't ticker-specific for Indian
