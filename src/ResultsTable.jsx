@@ -250,7 +250,7 @@ function StarButton({ symbol, price, watched, size = 30 }) {
   );
 }
 
-export default function ResultsTable({ matches, loading, onAnalyze, totalMatches, hideCountOnPhone = false, universe = null, filters = null, onFiltersChange = null, phoneFilters = null, filtersButton = null, updating = false, queryUsed, unsupported = [], notes = [], executionTime, snapshot, netNet = false, noun = "stocks", emptyTitle = "No stocks matched your criteria", emptyHint = "Try relaxing some filters", columns = [], onEditColumns = null, filteredIds = [], meta = null, theme = "dark" }) {
+export default function ResultsTable({ matches, loading, onAnalyze, totalMatches, hideCountOnPhone = false, universe = null, filters = null, onFiltersChange = null, phoneFilters = null, filtersButton = null, updating = false, queryUsed, unsupported = [], notes = [], executionTime, snapshot, netNet = false, noun = "stocks", emptyTitle = "No stocks matched your criteria", emptyHint = "Try relaxing some filters", columns = [], onEditColumns = null, filteredIds = [], meta = null, theme = "dark", sortTo = null }) {
   const watchlist = useWatchlist();
   const [alertFor, setAlertFor] = useState(null);
   const [showNotes, setShowNotes] = useState(false);
@@ -344,6 +344,15 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
   // Sorted by a column that has since been taken off: back to Quality
   const sortKnown = sortOptions.some(([id]) => id === sortBy);
   useEffect(() => { if (!sortKnown) { setSortBy("quality"); setSortDir("desc"); } }, [sortKnown]);
+  // A strategy that ranks by a measure lists by it, highest first (Top
+  // Gainers by its gain); opening any other strategy goes back to quality.
+  // After the line above: a new period takes the old period's column away,
+  // and that reset mustn't win (1 week → 1 day fell back to Quality)
+  useEffect(() => {
+    if (!sortTo?.n) return;
+    setSortBy(sortTo.sort ?? "quality");
+    setSortDir("desc");
+  }, [sortTo?.n]); // eslint-disable-line react-hooks/exhaustive-deps
   const dirLabel = sortBy === "name" ? (sortDir === "asc" ? "A to Z" : "Z to A") : (sortDir === "desc" ? "Highest first" : "Lowest first");
 
   const handleSort = col => {
@@ -673,13 +682,16 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
               ["Research", <span key="r" title={researchTitle(stock.research)} aria-label={missingResearch ?? `Research score ${Math.round(overall)} — ${stock.research?.stance ?? "rated"}`} style={{ color: overallTone(overall).color }}>{overall == null ? "—" : Math.round(overall)}</span>, overall == null ? null : "/100"],
               // (an unrated one is a dash: the note under the card says why —
               // a word there was cut off on a small phone, "qual…")
-              // What's being filtered on first: one of the screen's measures,
-              // so the line fits a phone (the company page has the rest)
-              ...[...columns.filter(def => filteredIds.includes(def.id)), ...columns.filter(def => !filteredIds.includes(def.id))].slice(0, 1).map(def => {
+              // What the list is sorted by, else what's being filtered on: one
+              // of the screen's measures, so the line fits a phone (the
+              // company page has the rest). Top Gainers sorted by its gain
+              // showed market cap instead (22 Oct 2026)
+              ...[...columns.filter(def => def.id === sortBy), ...columns.filter(def => def.id !== sortBy && filteredIds.includes(def.id)), ...columns.filter(def => def.id !== sortBy && !filteredIds.includes(def.id))].slice(0, 1).map(def => {
                 const v = colValue(stock, def.id);
-                // One decimal, and the unit set small as "/100" is, so it fits
-                // a third of a small phone ("71.23%" showed as "71.…")
-                const [figure, unit] = splitUnit(formatValue({ ...def, decimals: Math.min(def.decimals ?? 1, 1) }, v));
+                // One decimal (none from 100 on: "+622.5%" showed as "+622.…"),
+                // and the unit set small as "/100" is, so it fits a third of a
+                // small phone ("71.23%" showed as "71.…")
+                const [figure, unit] = splitUnit(formatValue({ ...def, decimals: Math.abs(v ?? 0) >= 100 ? 0 : Math.min(def.decimals ?? 1, 1) }, v));
                 // Coloured as the table's cells are (strong ROCE, Piotroski 7+ green)
                 // a short name for a phone's column ("P/E TTM/FY" → "P/E")
                 return [def.short.replace(/\s+TTM\/FY$/, ""), <span key={def.id} style={{ color: valueColor(def, v) }}>{figure}</span>, unit];

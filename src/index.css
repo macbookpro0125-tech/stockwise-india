@@ -2249,6 +2249,11 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 .ph-chip { flex-shrink: 0; display: inline-flex; align-items: center; gap: 5px; height: 38px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--bdr3); background: transparent; color: var(--t1); font: inherit; font-size: 14px; font-weight: 400; white-space: nowrap; cursor: pointer; transition: background 160ms, color 160ms, border-color 160ms, transform 120ms; }
 .ph-chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 450; }
 .ph-chip:active { transform: scale(0.95); }
+/* A ranked strategy's periods (Top Gainers: gain over a day … a year) */
+.period-switch { display: flex; align-items: center; gap: 8px; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; margin: 0 0 14px; padding-bottom: 2px; }
+.period-switch::-webkit-scrollbar { display: none; }
+.period-switch-label { flex-shrink: 0; font-size: 13px; color: var(--t3); margin-right: 2px; }
+.period-switch .ph-chip { height: 34px; padding: 0 14px; font-size: 13.5px; }
 .ph-chip:focus-visible, .ph-card-select:focus-visible, .ph-rule-more:focus-visible, .st-row:focus-visible, .ph-round:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .ph-count { margin: 16px 0 10px; font-size: 13.5px; color: var(--t3); }
 .ph-empty { margin: 8px 0 24px; font-size: 14px; color: var(--t2); }

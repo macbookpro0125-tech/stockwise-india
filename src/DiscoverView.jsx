@@ -76,6 +76,9 @@ function Modal({ onClose, width = 340, children }) {
   );
 }
 
+
+// The periods a ranked strategy's switch offers (Top Gainers)
+const PERIOD_WORDS = { ret1d: "1 day", ret1w: "1 week", ret1m: "1 month", ret3m: "3 months", ret6m: "6 months", ret1y: "1 year", ret3y: "3 years", ret5y: "5 years" };
 export default function DiscoverView({ onOpenStock, theme }) {
   const { meta, error: metaError, retry: retryMeta } = useScreenerMeta();
   // A shared link wins; else the last screen. null until the first screen
@@ -92,6 +95,10 @@ export default function DiscoverView({ onOpenStock, theme }) {
   const [activePresetId, setActivePresetId] = useState(null);
   const [activePresetName, setActivePresetName] = useState(null);
   const [activePresetAbout, setActivePresetAbout] = useState(null);
+  // A strategy that ranks by a measure (Top Gainers, 22 Oct 2026): what the
+  // list is sorted by, the periods its switch offers, and n — bumped on each
+  // pick, so the table re-sorts even when the same measure comes again
+  const [ranking, setRanking] = useState({ sort: null, periods: null, n: 0 });
   useEffect(() => {
     let lastCheck = 0;
     const check = () => {
@@ -307,13 +314,22 @@ export default function DiscoverView({ onOpenStock, theme }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [requestKey]);
 
-  const changeFilters = useCallback(next => { setFilters(next); setActivePresetId(null); setActivePresetName(null); setActivePresetAbout(null); }, []);
+  const changeFilters = useCallback(next => {
+    setFilters(next); setActivePresetId(null); setActivePresetName(null); setActivePresetAbout(null);
+    setRanking(r => (r.periods ? { ...r, periods: null } : r)); // your own filters now: the list keeps its order
+  }, []);
+  // Gain over another period: the return filter and the order both move to it
+  const pickPeriod = id => {
+    setFilters(fs => fs.map(f => (ranking.periods?.includes(f.id) ? { ...f, id } : f)));
+    setRanking(r => ({ ...r, sort: id, n: r.n + 1 }));
+  };
 
   const applyPreset = useCallback(async preset => {
     if (preset.custom) strategiesStore.acknowledge(preset.id);
     setActivePresetId(preset.id);
     setActivePresetName(preset.name ?? null);
     setActivePresetAbout(preset.description ?? null);
+    setRanking(r => ({ sort: preset.sort ?? null, periods: preset.periods ?? null, n: r.n + 1 }));
     if (Array.isArray(preset.filters)) { setFilters(preset.filters.map(f => ({ ...f }))); return; }
     // Saved before filters existed: the server turns its criteria into filters
     const res = await run({ ...preset.criteria, columns: shownColumnIds });
@@ -648,8 +664,20 @@ export default function DiscoverView({ onOpenStock, theme }) {
               </div>
             )}
 
+            {ranking.periods && (
+              <div className="period-switch" role="group" aria-label="Biggest gain over">
+                <span className="period-switch-label">Gain over</span>
+                {ranking.periods.map(id => (
+                  // the one picked kept in view on a phone, where the row scrolls
+                  <button key={id} type="button" className="ph-chip" aria-pressed={ranking.sort === id} onClick={() => pickPeriod(id)}
+                    ref={el => { if (el && ranking.sort === id) el.scrollIntoView({ block: "nearest", inline: "nearest" }); }}>{PERIOD_WORDS[id] ?? id}</button>
+                ))}
+              </div>
+            )}
+
             <ResultsTable
               theme={theme}
+              sortTo={ranking}
               matches={results?.results}
               loading={!results && !error}
               onAnalyze={onOpenStock}

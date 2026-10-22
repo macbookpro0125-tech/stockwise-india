@@ -68,10 +68,14 @@ async function main() {
   assert(headHealth.status === 200 && (await headHealth.text()) === "", "HEAD /api/health is 200 with no body (uptime monitors check with HEAD)");
 
   const presets = await (await fetch(`${BASE}/api/presets`)).json();
-  assert(Array.isArray(presets) && presets.length === 19 && presets.every(p => p.criteria || p.filters) && presets.every(p => Array.isArray(p.filters)), "GET /api/presets returns the 19 strategies, each with its filters");
+  assert(Array.isArray(presets) && presets.length === 20 && presets.every(p => p.criteria || p.filters) && presets.every(p => Array.isArray(p.filters)), "GET /api/presets returns the 20 strategies, each with its filters");
   const upEvery = presets.find(p => p.id === "up_every_timeframe");
   assert(upEvery && ["ret1m", "ret6m", "ret1y", "priceCagr5y"].every(id => upEvery.filters.some(f => f.id === id && f.min === 0)), "Up on Every Timeframe asks for a rise over 1M, 6M, 1Y and 5Y");
   assert(presets.every(p => Array.isArray(p.filters) && p.filters.length > 0 && p.filters.every(f => f.id)), "each strategy also comes as the screener's filters");
+  // 22 Oct 2026: "the highest gained stock — 1 year, 6 months, 1 week or 1 day"
+  const gainers = presets.find(p => p.id === "top_gainers");
+  assert(gainers && gainers.sort === "ret1y" && ["ret1d", "ret1w", "ret6m", "ret1y", "ret3y", "ret5y"].every(id => gainers.periods?.includes(id)), "Top Gainers ranks by return, over a day, a week, six months, a year, three or five years");
+  assert(gainers && gainers.filters.some(f => f.id === "ret1y" && f.min === 0) && gainers.filters.some(f => f.id === "marketCapCr" && f.min >= 500), "only risers, and none of the thinly traded smallest companies");
 
   const metrics = await (await fetch(`${BASE}/api/metrics`)).json();
   // Sound Banks screens on the banks' own figures, so a bank-filter request
@@ -237,7 +241,7 @@ async function main() {
   const found = await (await fetch(`${BASE}/api/search?q=tcs`, { headers: { Cookie: aliceCookie } })).json();
   assert(found[0]?.ticker === "TCS", "searching 'tcs' puts TCS first");
   const stats = await (await fetch(`${BASE}/api/stats`, { headers: { Cookie: aliceCookie } })).json();
-  assert(stats.strategies === 19 && stats.companies > 0 && stats.filters >= 40, "the header's counts come back");
+  assert(stats.strategies === 20 && stats.companies > 0 && stats.filters >= 40, "the header's counts come back");
 
   // The screener: filters on any metric, the columns asked for, and the strategies' criteria still working
   // The whole market as the app asks for it: a GET the browser can keep
@@ -256,6 +260,14 @@ async function main() {
   assert(screenRes.status === 200 && screened.matched > 0 && screened.results.every(r => r.values.roce >= 25 && r.capSize === "Large cap"), "a screen keeps only companies inside every filter");
   assert(screened.results.every(r => "ret1m" in r.values), "a screen returns the columns asked for");
   assert(/ROCE.*≥ 25%/.test(screened.queryUsed), "a screen describes its filters in words");
+  // A strategy that ranks by a measure: its list and its card's best five, highest first
+  const byGain = await (await json("POST", "/api/screen", aliceCookie, { filters: [{ id: "ret1w", min: 0, max: null }, { id: "marketCapCr", min: 500, max: null }], columns: ["ret1w"], sort: "ret1w" })).json();
+  const gains = byGain.results.map(r => r.values?.ret1w);
+  assert(gains.length > 1 && gains.every((v, i) => i === 0 || v <= gains[i - 1]), `sort: "ret1w" lists the biggest one-week gain first (${gains.slice(0, 3).join(", ")}…)`);
+  const gainTop = await (await json("POST", "/api/screen", aliceCookie, { filters: [{ id: "ret1w", min: 0, max: null }], countOnly: true, top: 5, sort: "ret1w" })).json();
+  assert(gainTop.top?.length && gainTop.top.every((t, i) => t.value != null && (i === 0 || t.value <= gainTop.top[i - 1].value)) && gainTop.top[0].value === Math.max(...gainTop.top.map(t => t.value)), "and a card's best five are the five biggest gains, each with its gain");
+  const unsorted = await (await json("POST", "/api/screen", aliceCookie, { filters: [{ id: "ret1w", min: 0, max: null }], countOnly: true, top: 3, sort: "../nope" })).json();
+  assert(unsorted.top?.every(t => t.value === undefined), "an unknown measure to sort by is ignored: best by quality, as before");
   const technical = await (await json("POST", "/api/screen", aliceCookie, { filters: [{ id: "rsi14", min: null, max: 30 }, { id: "delivery1m", min: 50, max: null }], columns: ["rsi14", "delivery1m", "beta1y"] })).json();
   assert(technical.matched > 0 && technical.results.every(r => r.values.rsi14 <= 30 && r.values.delivery1m >= 50), "technical filters from the daily prices (RSI, delivery %) work like any other");
   const junk = await (await json("POST", "/api/screen", aliceCookie, { filters: [{ id: "nope", min: 1 }, { id: "roce" }], columns: ["../x"] })).json();
@@ -273,7 +285,7 @@ async function main() {
 
   // The front page's figures need no sign-in; who's signed in comes with /me
   const publicStats = await fetch(`${BASE}/api/stats`);
-  assert(publicStats.status === 200 && (await publicStats.json()).strategies === 19, "the front page's figures load without signing in");
+  assert(publicStats.status === 200 && (await publicStats.json()).strategies === 20, "the front page's figures load without signing in");
   assert((await (await fetch(`${BASE}/api/auth/me`, { headers: { Cookie: aliceCookie } })).json()).email === "alice@example.com", "/me says which email is signed in");
 
   // The Momentum tab: on for a copy off Render, behind sign-in, an answer

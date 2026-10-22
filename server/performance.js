@@ -154,7 +154,8 @@ export async function takeSnapshots({ keepToday = false } = {}) {
       continue;
     }
     // A strategy defined by filters (Up on Every Timeframe) or old criteria
-    const res = screen(preset.filters ? { filters: preset.filters } : preset.criteria);
+    // ranked as the strategy ranks (Top Gainers: by its gain), else by quality
+    const res = screen(preset.filters ? { filters: preset.filters, sort: preset.sort } : preset.criteria);
     const picks = res.results
       .filter(s => s.cmp > 0)
       .slice(0, PICKS_PER_PRESET)

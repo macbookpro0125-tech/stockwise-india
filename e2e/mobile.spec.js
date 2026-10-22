@@ -130,6 +130,24 @@ test.describe("the phone layout", () => {
     await expect.poll(async () => { const p = await prices(); return p.length > 2 && p.every((v, i) => !i || p[i - 1] <= v); }).toBe(true);
   });
 
+  // 22 Oct 2026: "a strategy where I can see the highest gained stock — 1
+  // year, 6 months, 1 week or 1 day" (and 3 and 5 years). Biggest gain first, the gain on each
+  // card, and the period switch keeping its order (1 week → 1 day fell back
+  // to Quality once: the old period's column went away)
+  test("M-H20 Top Gainers: biggest gain first, over the period picked @phone", async ({ page, account }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "View matching stocks for Top Gainers" }).click();
+    await expect(page.getByRole("heading", { level: 2, name: "Top Gainers" })).toBeVisible();
+    const periods = page.getByRole("group", { name: "Biggest gain over" });
+    const gains = label => page.locator(".ph-row-group").evaluateAll((rows, label) => rows.map(r => [...r.querySelectorAll(".ph-stat")].find(st => st.querySelector(".ph-stat-k")?.textContent === label)?.querySelector(".ph-stat-v")?.textContent).filter(Boolean).map(t => Number(t.replace(/[+%,]/g, ""))), label);
+    for (const [name, short] of [["1 year", "1Y"], ["5 years", "5Y"], ["1 week", "1W"], ["1 day", "1D"]]) {
+      if (name !== "1 year") await periods.getByRole("button", { name }).click();
+      await expect(periods.getByRole("button", { name })).toHaveAttribute("aria-pressed", "true");
+      await expect(page.getByRole("group", { name: "Sort by" }).getByRole("button", { name: new RegExp(`Sorted by ${short}`) })).toBeVisible();
+      await expect.poll(async () => { const g = await gains(short); return g.length > 2 && g.every((v, i) => v >= 0 && (!i || g[i - 1] >= v)); }, { message: `${name}: each card shows its gain, biggest first` }).toBe(true);
+    }
+  });
+
   test("M-E4 ads: none on the website; ?ads=preview shows where they go @phone", async ({ page, account, baseURL }) => {
     // The server's switch is off unless ADS is set, and there's no app-ads.txt without a publisher ID
     const config = await (await page.request.get(`${baseURL}/api/app-config`)).json();

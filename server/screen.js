@@ -427,16 +427,24 @@ export function screen(request = {}) {
   const columns = (Array.isArray(request.columns) ? request.columns : [])
     .filter(id => metricById(id) && !metricById(id).options && id !== "sector").slice(0, 40);
   const matches = rows.filter(m => matchesFilters(m, filters, sizes));
+  // Quality score first (unscored companies last), then ROCE — or, for a
+  // strategy that ranks by a measure (sort: "ret1y", Top Gainers), that
+  // measure, highest first, companies without it last
+  const by = request.sort && metricById(request.sort) && !metricById(request.sort).options ? metricById(request.sort) : null;
+  const value = m => (by ? valueOf(by, m) : null);
+  matches.sort(by
+    ? (a, b) => (value(b) ?? -Infinity) - (value(a) ?? -Infinity)
+    : (a, b) => (b.research?.quality ?? -1) - (a.research?.quality ?? -1) || (b.roce ?? -Infinity) - (a.roce ?? -Infinity));
   // countOnly: how many match, for the strategy cards on Discover's first page;
-  // with top: N, also the N best by quality score (symbol, name, score)
+  // with top: N, also the N best (symbol, name, score, and the measure ranked by)
   if (request.countOnly) {
     const top = Math.max(0, Math.min(10, Number(request.top) || 0));
-    const best = top ? [...matches].sort((a, b) => (b.research?.quality ?? -1) - (a.research?.quality ?? -1)).slice(0, top)
-      .map(m => ({ symbol: m.symbol, name: m.name, quality: m.research?.quality == null ? null : Math.round(m.research.quality) })) : undefined;
+    const best = top ? matches.slice(0, top).map(m => ({
+      symbol: m.symbol, name: m.name, quality: m.research?.quality == null ? null : Math.round(m.research.quality),
+      ...(by && { value: value(m) }),
+    })) : undefined;
     return { total: rows.length, matched: matches.length, snapshot, ...(best && { top: best }) };
   }
-  // Quality score first (unscored companies last), then ROCE
-  matches.sort((a, b) => (b.research?.quality ?? -1) - (a.research?.quality ?? -1) || (b.roce ?? -Infinity) - (a.roce ?? -Infinity));
   return {
     total: rows.length,
     fetched,

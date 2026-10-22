@@ -81,6 +81,24 @@ export const PRESETS = [
       debt_to_equity_max: 0.2,
     },
   },
+  // Asked for 22 Oct 2026: "a strategy where I can see the highest gained
+  // stock — 1 year, 6 months, 1 week or 1 day", then "3 and 5 years". Ranked by the return over
+  // the period picked (sort; the list's period switch offers the others),
+  // risers only, from ₹500 crore up so the thinly traded smallest companies,
+  // where a few trades move the price 20%, don't fill the top.
+  {
+    id: "top_gainers",
+    name: "Top Gainers",
+    icon: "🏆",
+    description: "The shares that rose most over the last day, week, month, six months, year, three years or five years",
+    filters: [
+      { id: "ret1y", min: 0, max: null },
+      { id: "marketCapCr", min: 500, max: null },
+    ],
+    sort: "ret1y",
+    // as asked, longest first; a year is the one it opens on
+    periods: ["ret5y", "ret3y", "ret1y", "ret6m", "ret1m", "ret1w", "ret1d"],
+  },
   {
     id: "momentum_growth",
     name: "Momentum Growth",

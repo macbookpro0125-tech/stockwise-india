@@ -1,7 +1,7 @@
 import {
   TrendingUp, Coins, Gem, Shield, Rocket, Star, Zap, RefreshCw, Landmark, Sprout, Globe, Building2,
   Calculator, Bookmark, ChartLine, TriangleAlert, ArrowDownToLine, ArrowUpToLine, ArrowUpFromLine, Minus, ChevronsUp,
-  Mountain, Scale, CircleArrowDown, Layers2, Vault } from "lucide-react";
+  Mountain, Scale, CircleArrowDown, Layers2, Vault, Trophy } from "lucide-react";
 
 // Ported from stock-screener's src/components/icons.jsx — line icons rather
 // than ★/🔔 glyphs, which render in whatever font the platform supplies and
@@ -62,6 +62,7 @@ const PRESET_ICONS = {
   debt_paydown: Scale,
   fallen_quality: CircleArrowDown,
   doubled_in_year: Layers2,
+  top_gainers: Trophy,
 };
 
 export function PresetIcon({ preset, ...props }) {

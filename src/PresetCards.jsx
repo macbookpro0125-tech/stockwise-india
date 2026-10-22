@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Plus, Ellipsis, Search, ChevronRight, TrendingUp, CircleDollarSign, Coins, Activity, Landmark, Sparkles, ArrowRight } from "lucide-react";
 import { api } from "./api.js";
 import { PresetIcon } from "./icons.jsx";
-import { KINDS, kindOf } from "./strategyAbout.js";
+import { KINDS, kindOf, bestBy } from "./strategyAbout.js";
 import { cardName } from "./stockName.js";
 import { reducedMotion } from "./motion.js";
 import StrategyMark, { markColor } from "./StrategyMarks.jsx";
@@ -61,7 +61,7 @@ export function presetRules(p, meta) {
 // theirs: each slides up in turn, every 2.6 s, the cards a beat apart so they
 // don't all change at once. Only while the card is on screen; still for
 // anyone who asked their system for less motion.
-function TopRoller({ top, offset = 0 }) {
+function TopRoller({ top, offset = 0, by }) {
   const ref = useRef(null);
   const [i, setI] = useState(0);
   const [onScreen, setOnScreen] = useState(false);
@@ -85,7 +85,7 @@ function TopRoller({ top, offset = 0 }) {
   return (
     <span ref={ref} className="ph-stat-v ph-tray-top ph-roll" aria-live="off">
       <span className="ph-roll-item" key={c.symbol}>
-        <span className="ph-tray-name">{cardName(c.name)}</span>{c.quality != null && <small>{c.quality}</small>}
+        <span className="ph-tray-name">{cardName(c.name)}</span>{by.figure(c) != null && <small>{by.figure(c)}</small>}
       </span>
     </span>
   );
@@ -189,8 +189,8 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
     const worker = async () => {
       for (let p = queue.shift(); p && !stop; p = queue.shift()) {
         try {
-          // the five best by quality, which the cards roll through
-          const res = await api.screen({ filters: p.filters, countOnly: true, top: 5 });
+          // the five best — by quality, or as the strategy ranks — which the cards roll through
+          const res = await api.screen({ filters: p.filters, countOnly: true, top: 5, ...(p.sort && { sort: p.sort }) });
           if (!stop) { setCounts(c => ({ ...c, [p.id]: res.matched })); if (res.top) setTops(t => ({ ...t, [p.id]: res.top })); }
         } catch {
           if (!stop) setFailed(f => ({ ...f, [p.id]: true }));
@@ -406,9 +406,9 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
                         </span>
                       </span>
                       <span className="ph-tray-cell ph-tray-wide">
-                        <span className="ph-stat-k">Best by quality</span>
+                        <span className="ph-stat-k">{bestBy(p).label}</span>
                         {tops[p.id]?.length
-                          ? <TopRoller top={tops[p.id]} offset={i} />
+                          ? <TopRoller top={tops[p.id]} offset={i} by={bestBy(p)} />
                           : <span className="ph-stat-v ph-tray-top">{count === 0 || failed[p.id] ? "—" : <span className="sc-skel" style={{ width: 96 }} aria-hidden="true" />}</span>}
                       </span>
                     </span>

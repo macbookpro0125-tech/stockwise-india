@@ -193,6 +193,25 @@ test("F02-H8 back from a stock list is always in reach and lands on the strategi
   await expect(page.locator("button.sc2").filter({ hasText: "Doubled in a Year" })).toBeInViewport();
 });
 
+// 22 Oct 2026: Top Gainers on a computer — its card names the biggest gain,
+// its table is in order of the gain, and the period switch moves both
+test("F02-H12 Top Gainers ranks by the gain over the period picked", async ({ page, account }) => {
+  await page.goto("/");
+  const card = page.locator("button.sc2").filter({ hasText: "Top Gainers" });
+  await expect(card).toContainText(/Biggest gain/);
+  await card.click();
+  await expect(page.locator(".screen-title")).toHaveText("Top Gainers");
+  const column = async short => page.locator("table").first().evaluate((t, short) => {
+    const i = [...t.querySelectorAll("thead th")].findIndex(th => th.textContent.trim().startsWith(short));
+    return i < 0 ? [] : [...t.querySelectorAll("tbody tr")].map(tr => tr.children[i]?.textContent).filter(v => v && /\d/.test(v)).map(v => Number(v.replace(/[+%,]/g, "")));
+  }, short);
+  for (const [name, short] of [["1 year", "1Y"], ["3 years", "3Y"], ["6 months", "6M"], ["1 day", "1D"]]) {
+    if (name !== "1 year") await page.getByRole("group", { name: "Biggest gain over" }).getByRole("button", { name }).click();
+    await expect(page.getByRole("combobox", { name: "Sort by" })).toHaveValue(`ret${short.toLowerCase()}`);
+    await expect.poll(async () => { const g = await column(short); return g.length > 2 && g.every((v, i) => v >= 0 && (!i || g[i - 1] >= v)); }, { message: `${name}: the table in order of the gain` }).toBe(true);
+  }
+});
+
 // On the wheel's pill (computer): every strategy as a list (also a
 // double-click), and what this one looks for, rule by rule
 test("F02-H9 the strategy list and what a strategy looks for", async ({ page, account }) => {

@@ -99,6 +99,13 @@ const MARKS = {
     <rect x="29" y="15" width="5" height="15" rx="1" />
     <rect x="3" y="32" width="34" height="5" rx="1.5" />
   </>],
+  // a podium, an arrow rising from its top step
+  top_gainers: ["#E8590C", <>
+    <rect x="3" y="26" width="11" height="11" rx="1.5" opacity=".55" />
+    <rect x="14.5" y="18" width="11" height="19" rx="1.5" />
+    <rect x="26" y="30" width="11" height="7" rx="1.5" opacity=".55" />
+    <path d="M20 13V3M15 8l5-5 5 5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+  </>],
   // a bar, and one twice its height
   doubled_in_year: ["#5C940D", <>
     <rect x="5" y="22" width="12" height="14" rx="2" opacity=".55" />
