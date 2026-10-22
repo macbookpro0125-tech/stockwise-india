@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { ChevronRight, Heart, Bookmark, ChartLine, Zap, Moon, Image, Compass, Download, ShieldCheck, FileText, LogOut, Trash2, BookOpen, Mail } from "lucide-react";
+import { ChevronRight, Heart, Bookmark, ChartLine, Zap, Moon, Image, Compass, Download, ShieldCheck, FileText, LogOut, Trash2, BookOpen, Mail, Star } from "lucide-react";
 import { navigate } from "./site.jsx";
 import { problemMailto } from "./help.js";
 import { useLogosShown, setLogosShown } from "./CompanyLogo.jsx";
@@ -9,6 +9,7 @@ import { strategiesStore } from "./accountData.js";
 import { DeleteAccountModal } from "./AccountMenu.jsx";
 import { supportAdsAvailable, useAdsOn, watchSupportAd } from "./ads.jsx";
 import { showStrategiesOfKind } from "./PresetCards.jsx";
+import { canRate, openStorePage } from "./rateApp.js";
 
 // A phone's Settings tab (17 Oct 2026): the account, the theme and the pages
 // that don't fit the five-tab bar, as grouped lists — the Account menu's
@@ -116,6 +117,7 @@ export default function SettingsView({ account, theme, onToggleTheme, onTab, onL
       </Group>
 
       <Group title="About">
+        {canRate() && <Row icon={Star} tint="#F5B800" label="Rate the app" detail="On Google Play. It helps others find it" onClick={openStorePage} />}
         <Row icon={ShieldCheck} tint="#10B981" label="Privacy policy" href="/privacy" />
         <Row icon={FileText} tint="#64748B" label="Disclaimer" detail="An educational tool, not investment advice" href="/disclaimer" />
       </Group>

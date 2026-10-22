@@ -14,6 +14,7 @@ import { resetWatchlist } from "./watchlist.js";
 import { portfolioStore, alertsStore } from "./stores.js";
 import { strategiesStore, notesStore } from "./accountData.js";
 import { useAdPause } from "./ads.jsx";
+import { noteAppOpened, companyPageClosed } from "./rateApp.js";
 
 // Keep the first Discover screen small; load account tabs and full stock
 // research only when the user opens them.
@@ -88,6 +89,15 @@ export default function App() {
   const tabHistory = useRef([]);
   const tabRef = useRef(tab);
   tabRef.current = tab;
+
+  // Ratings on Play, in the Android app (rateApp.js): each day it's used,
+  // and each company page left — the pause when Play's card may come
+  useEffect(() => { if (account?.userId) noteAppOpened(); }, [account?.userId]);
+  const hadOpen = useRef(false);
+  useEffect(() => {
+    if (hadOpen.current && !open && account?.userId) companyPageClosed();
+    hadOpen.current = !!open;
+  }, [open, account?.userId]);
 
   const goTab = (t) => {
     if (t !== tabRef.current) tabHistory.current.push(tabRef.current);
