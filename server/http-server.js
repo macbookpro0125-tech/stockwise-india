@@ -41,6 +41,7 @@ import { startBackups } from "./backup.js";
 import { fetchTechnicals } from "./technicals.js";
 import { shareholdingHistory, companyFilings, companyNews, sectorPeers, companyProfile, insiderTrades } from "./company-extras.js";
 import { stockMoves } from "./moves.js";
+import { marketNews, topNews, newsItem, KINDS as NEWS_KINDS } from "./market-news.js";
 import { summarizeMove, aiClient } from "./ai-moves.js";
 import { summarizeFiling } from "./filing-summary.js";
 import { logoFor } from "./logos.js";
@@ -638,6 +639,31 @@ export function createApp() {
             })),
           })),
         });
+        return;
+      }
+
+      // The News page (market-news.js): what listed companies told NSE over the
+      // last few days, and the day's market headlines — nobody posts them
+      if (url.pathname === "/api/news" && req.method === "GET") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        const kind = url.searchParams.get("kind") ?? "all";
+        if (!["all", "watchlist", "headlines"].includes(kind) && !NEWS_KINDS[kind]) { sendJson(res, 400, { error: "Unknown kind of news" }); return; }
+        const symbols = kind === "watchlist" ? new Set(listWatchlist(userId).map(w => w.ticker)) : null;
+        sendJson(res, 200, await marketNews({ kind, symbols, before: url.searchParams.get("before")?.slice(0, 80) ?? null }));
+        return;
+      }
+      if (url.pathname === "/api/news/top" && req.method === "GET") {
+        if (requireAuth(req, res) == null) return;
+        sendJson(res, 200, await topNews());
+        return;
+      }
+      const newsRoute = url.pathname.match(/^\/api\/news\/item\/((?:nse|h)-[a-z0-9]{1,24})$/);
+      if (newsRoute && req.method === "GET") {
+        if (requireAuth(req, res) == null) return;
+        const found = await newsItem(newsRoute[1]);
+        if (!found) { sendJson(res, 404, { error: "This item has left the news feed — it keeps the last few days." }); return; }
+        sendJson(res, 200, found);
         return;
       }
 

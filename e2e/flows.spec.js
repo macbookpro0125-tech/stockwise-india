@@ -504,7 +504,8 @@ test("F08-H1 theme and logo switches persist across a reload", async ({ page, ac
 // dash. Each pick's and each snapshot's return shows again, marked early;
 // strategies are still not ranked against each other until three months.
 test("F08-H3 strategy performance: an early pick shows its return, marked early", async ({ page, account }) => {
-  const daysAgo = n => new Date(Date.now() - n * 864e5).toISOString().slice(0, 10);
+  // India's date, as the page counts days held (UTC's is a day behind until 5:30 am)
+  const daysAgo = n => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date(Date.now() - n * 864e5));
   const pick = (ticker, name, cmp, now) => ({ ticker, name, cmp, currentPrice: now, returnPct: (now / cmp - 1) * 100 });
   const snap = { date: daysAgo(25), avgReturnPct: 4.5, priced: 2, picks: [pick("TCS", "Tata Consultancy Services", 2000, 2200), pick("ABB", "ABB India", 7000, 6650)] };
   await page.route("**/api/performance", route => route.fulfill({ json: {

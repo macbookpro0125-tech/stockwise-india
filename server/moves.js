@@ -23,11 +23,11 @@ function nseDay(s) {
 
 // Notices that are only housekeeping — no news in them: certificates,
 // newspaper copies, a results call's recording or slides, an office move
-const ROUTINE = /trading window|loss of share certificate|duplicate share|share certificate|newspaper (publication|advertisement)|compliance certificate|regulation 74|registrar|change in (rta|address)|investor complaints|statement of investor|link of recording|audio recording|transcript|investor presentation|analysts?\/?(institutional )?(investors? )?(meet|call)|earnings call|registered office|allotment of [\d,]+ (equity )?shares|grant of [\d,]+ (stock )?options|\besops?\b|\besos\b|postal ballot/i;
+export const ROUTINE = /trading window|loss of share certificate|duplicate share|share certificate|newspaper (publication|advertisement)|compliance certificate|regulation 74|registrar|change in (rta|address)|investor complaints|statement of investor|link of recording|audio recording|transcript|investor presentation|analysts?\/?(institutional )?(investors? )?(meet|call)|earnings call|registered office|allotment of [\d,]+ (equity )?shares|grant of [\d,]+ (stock )?options|\besops?\b|\besos\b|postal ballot/i;
 // A summary that is only the rule it's filed under says nothing
-const ONLY_THE_RULE = /^disclosure under regulation 30 and other applicable regulations of the sebi \(listing obligations and disclosure requirements\) regulations,? 2015\.?$/i;
+export const ONLY_THE_RULE = /^disclosure under regulation 30 and other applicable regulations of the sebi \(listing obligations and disclosure requirements\) regulations,? 2015\.?$/i;
 // NSE's summaries open "XYZ Limited has informed the Exchange about …"
-const inOwnWords = text => {
+export const inOwnWords = text => {
   const t = String(text).replace(/^.*?\bhas (?:informed|intimated|submitted to) the Exchange,?\s*(?:about|regarding|that)?\s*/i, "").trim();
   return t ? t[0].toUpperCase() + t.slice(1) : String(text);
 };

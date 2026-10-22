@@ -17,7 +17,7 @@ import { summarizeInsiders } from "./insiders.js";
 const HOUR = 3600 * 1000;
 const memo = new Map();
 
-async function cached(key, ttlMs, fn) {
+export async function cached(key, ttlMs, fn) {
   const hit = memo.get(key);
   if (hit?.retryAt > Date.now()) return staleValue(hit.data);
   if (hit && Date.now() - hit.at < ttlMs) return hit.data;
@@ -241,7 +241,7 @@ export function classifyAnnouncement(title = "", body = "") {
 
 const NEWS_UA = "Mozilla/5.0 (compatible; JocularInsights/1.0; educational)";
 
-function decode(s) {
+export function decodeRss(s) {
   return String(s ?? "")
     .replace(/<!\[CDATA\[(.*?)\]\]>/gs, "$1")
     .replace(/&lt;/g, "<").replace(/&gt;/g, ">")
@@ -270,6 +270,8 @@ const JUNK = [
   /\bshare price\s*$/i,
 ];
 
+export const isJunkHeadline = title => JUNK.some(re => re.test(title));
+
 // Google News, not Yahoo: Yahoo's news search isn't ticker-specific for Indian
 // symbols. Returns an empty list rather than throwing — news is the least
 // important thing on the page and must never take it down.
@@ -281,14 +283,14 @@ export function companyNews(name, limit = 8) {
       const seen = new Set();
       const news = [];
       for (const b of xml.split("<item>").slice(1)) {
-        const title = decode((b.match(/<title>([\s\S]*?)<\/title>/) || [])[1]);
-        const link = decode((b.match(/<link>([\s\S]*?)<\/link>/) || [])[1]);
-        const pub = decode((b.match(/<pubDate>([\s\S]*?)<\/pubDate>/) || [])[1]);
-        const source = decode((b.match(/<source[^>]*>([\s\S]*?)<\/source>/) || [])[1]);
+        const title = decodeRss((b.match(/<title>([\s\S]*?)<\/title>/) || [])[1]);
+        const link = decodeRss((b.match(/<link>([\s\S]*?)<\/link>/) || [])[1]);
+        const pub = decodeRss((b.match(/<pubDate>([\s\S]*?)<\/pubDate>/) || [])[1]);
+        const source = decodeRss((b.match(/<source[^>]*>([\s\S]*?)<\/source>/) || [])[1]);
         if (!title || !link) continue;
         // Google appends " - Publisher" to headlines; the publisher is shown separately
         const clean = source && title.endsWith(` - ${source}`) ? title.slice(0, -(source.length + 3)).trim() : title;
-        if (!clean || JUNK.some(re => re.test(clean))) continue;
+        if (!clean || isJunkHeadline(clean)) continue;
         if (seen.has(clean.toLowerCase())) continue;
         seen.add(clean.toLowerCase());
         const d = pub ? new Date(pub) : null;

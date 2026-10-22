@@ -1,6 +1,8 @@
 import { Suspense, useState, useEffect, useRef, useCallback } from "react";
 import { flushSync } from "react-dom";
 import { lazyPage } from "./lazyPage.js";
+// Not split off: Discover draws its Market news card
+import NewsView from "./NewsView.jsx";
 import { api } from "./api.js";
 import Landing from "./Landing.jsx";
 import { PrivacyPage, DisclaimerPage, HelpPage } from "./LegalPages.jsx";
@@ -82,6 +84,8 @@ export default function App() {
   // (e.g. retrying after an error) must re-fetch, and an unchanged string
   // wouldn't re-render at all.
   const [open, setOpen] = useState(null);
+  // An item to open on the News page, from Discover's card
+  const [newsOpen, setNewsOpen] = useState(null);
   // Where the Discover list was scrolled to, so Back lands on the same row
   const discoverScroll = useRef(0);
   // Native Android Back walks the app's tab history after leaving a stock or
@@ -128,6 +132,11 @@ export default function App() {
         }
         // So is a strategy's ⓘ page on a phone (StrategyPicker.jsx)
         if (window.history.state?.strategyInfo) {
+          window.history.back();
+          return;
+        }
+        // And an item open on the News page (NewsView.jsx)
+        if (window.history.state?.newsItem) {
           window.history.back();
           return;
         }
@@ -319,11 +328,12 @@ export default function App() {
         {open && <StockDetail key={open.at} symbol={open.symbol} account={account} onBack={closeStock} backTo={TABS.find(t => t.id === tab)?.label} onOpenStock={openSymbol} />}
         {/* Kept mounted (hidden) while a stock is open, so its filters and
             results are still there on Back. */}
-        {tab === "discover" && <div hidden={!!open}><DiscoverView onOpenStock={openSymbol} theme={theme} /></div>}
+        {tab === "discover" && <div hidden={!!open}><DiscoverView onOpenStock={openSymbol} theme={theme} onOpenNews={id => { setNewsOpen(id ?? null); goTab("news"); }} /></div>}
         {!open && tab === "watchlist" && <WatchlistView onOpenStock={openSymbol} />}
         {!open && tab === "portfolio" && <PortfolioView onOpenStock={openSymbol} />}
         {!open && tab === "performance" && <PerformanceView onOpenStock={openSymbol} />}
         {!open && tab === "alerts" && <AlertsView onOpenStock={openSymbol} />}
+        {!open && tab === "news" && <NewsView onOpenStock={openSymbol} openId={newsOpen} onOpened={() => setNewsOpen(null)} />}
         {!open && tab === "momentum" && account?.features?.momentum && <MomentumView onOpenStock={openSymbol} />}
         {!open && tab === "settings" && <SettingsView account={account} theme={theme} onToggleTheme={toggleTheme} onTab={goTab} onLogout={logout} onDeleted={accountDeleted} onTour={askForTour} />}
       </Suspense>

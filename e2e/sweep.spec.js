@@ -20,7 +20,7 @@ test("every tab opens", async ({ page, account }) => {
   await expect(page.locator("table, [role=table]").first()).toBeVisible();
   await expect(page.locator(".discovery-tabs"), "a stock list has the tab row").toBeVisible();
   axeLog(await axeCheck(page, "Discover"));
-  for (const tab of ["Momentum", "Watchlist", "Portfolio", "Performance", "Alerts"]) {
+  for (const tab of ["News", "Momentum", "Watchlist", "Portfolio", "Performance", "Alerts"]) {
     await openPage(page, tab);
     await page.waitForLoadState("networkidle");
     await expect(page.locator(".discovery-tabs"), "the other pages keep the tab row").toBeVisible();

@@ -31,7 +31,7 @@ const growIn = (el, p) => {
 // compact: a phone — the headline, its buttons, then the strategies
 // ribbon: the strategies for the curved row through the hero (16 Oct 2026,
 // "Scroll Tilted Grid"); onPickStrategy opens one, as its card in the grid does
-export default function ScreensHome({ meta, total, onStart, onCreate, onBrowseFilters, children, continueCard, compact = false, ribbon = [], onPickStrategy }) {
+export default function ScreensHome({ meta, total, onStart, onCreate, onBrowseFilters, children, continueCard, newsCard = null, compact = false, ribbon = [], onPickStrategy }) {
   const filters = meta?.metrics?.length ?? null;
   const shotRef = useScrollScrub(growIn, 0.8);
   const scrollToStrategies = () => document.getElementById("popular-strategies")?.scrollIntoView({ behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
@@ -74,6 +74,8 @@ export default function ScreensHome({ meta, total, onStart, onCreate, onBrowseFi
         <button type="button" className="ph-round" onClick={onCreate} aria-label="New screen: start from the whole market"><Plus size={22} aria-hidden="true" /></button>
       </div>
       <p className="ph-lede">Each strategy is a ready-made screen. Pick one to see which companies fit it today.</p>
+      {/* The market's news near the top, three items and See all (22 Oct 2026) */}
+      {newsCard}
       {children}
       {/* The screen you set yourself, at the end with "Build your own" (20 Oct 2026) */}
       {continueCard}
@@ -116,6 +118,8 @@ export default function ScreensHome({ meta, total, onStart, onCreate, onBrowseFi
           <span className="ap-tile-link">See the filters<ChevronRight size={17} aria-hidden="true" /></span>
         </Reveal>
       </section>
+
+      {newsCard && <div className="ap-news">{newsCard}</div>}
 
       <section id="popular-strategies" className="sh-section" aria-labelledby="sh-popular">
         <div className="ap-section-head">

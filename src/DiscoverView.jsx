@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { SlidersHorizontal, ChevronLeft, ChevronRight, Bookmark, Share } from "lucide-react";
 import { api } from "./api.js";
 import PresetCards, { presetRules } from "./PresetCards.jsx";
+import { MarketNewsCard } from "./NewsView.jsx";
 import { useAdPause } from "./ads.jsx";
 import { strategiesStore, browserLeftovers, moveLeftovers, discardLeftovers } from "./accountData.js";
 import ResultsTable from "./ResultsTable.jsx";
@@ -79,7 +80,7 @@ function Modal({ onClose, width = 340, children }) {
 
 // The periods a ranked strategy's switch offers (Top Gainers)
 const PERIOD_WORDS = { ret1d: "1 day", ret1w: "1 week", ret1m: "1 month", ret3m: "3 months", ret6m: "6 months", ret1y: "1 year", ret3y: "3 years", ret5y: "5 years" };
-export default function DiscoverView({ onOpenStock, theme }) {
+export default function DiscoverView({ onOpenStock, theme, onOpenNews }) {
   const { meta, error: metaError, retry: retryMeta } = useScreenerMeta();
   // A shared link wins; else the last screen. null until the first screen
   // says what the old saved criteria became.
@@ -572,6 +573,7 @@ export default function DiscoverView({ onOpenStock, theme }) {
               onCreate={newScreen}
               onBrowseFilters={() => { newScreen(); setPicker("filter"); }}
               continueCard={continueCard || null}
+              newsCard={onOpenNews ? <MarketNewsCard onOpen={id => onOpenNews(id)} onSeeAll={() => onOpenNews(null)} /> : null}
             >{cards}</ScreensHome>
           );
         })()}
