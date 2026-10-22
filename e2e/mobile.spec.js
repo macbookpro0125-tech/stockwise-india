@@ -274,12 +274,16 @@ test("M-H14 each company tab ends with the next one, and no empty band below @ph
   await page.goto("/stock/TCS");
   const tabs = page.getByRole("navigation", { name: "Parts of this page" });
   await expect(page.getByRole("button", { name: /Back to Discover/ })).toHaveCount(0);
-  const next = page.getByRole("button", { name: /^Next: Scorecard/ });
+  // the Overview ends with its Go deeper list instead (M-H15)
+  await expect(page.getByRole("region", { name: "Go deeper" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Next:/ })).toHaveCount(0);
+  await tabs.getByRole("button", { name: "Scorecard" }).click();
+  const next = page.getByRole("button", { name: /^Next: Valuation/ });
   await expect(next).toBeVisible();
   await next.click();
-  await expect(tabs.getByRole("button", { name: "Scorecard" })).toHaveAttribute("aria-current", "true");
-  await expect(page.locator("#sec-scores")).toBeInViewport();
-  await expect(page.getByRole("button", { name: /^Next: Valuation/ })).toBeAttached();
+  await expect(tabs.getByRole("button", { name: "Valuation" })).toHaveAttribute("aria-current", "true");
+  await expect(page.locator("#sec-valuation")).toBeInViewport();
+  await expect(page.getByRole("button", { name: /^Next: Financials/ })).toBeAttached();
   await tabs.getByRole("button", { name: "News & filings" }).click();
   await expect(page.getByRole("button", { name: /^Next:/ })).toHaveCount(0);
 
@@ -298,6 +302,10 @@ test("M-H15 the Overview says what each tab answers @phone", async ({ page, acco
   await page.goto("/stock/TCS");
   const guide = page.getByRole("region", { name: "Go deeper" });
   await expect(guide).toBeVisible();
+  // 22 Oct 2026: "this should be at the bottom" — after the company's own
+  // overview (the chart, At a glance, its numbers, what changed), not before
+  const below = async sel => page.evaluate(([a, b]) => document.querySelector(a).getBoundingClientRect().top > document.querySelector(b).getBoundingClientRect().bottom, [".sd-guide", sel]);
+  for (const part of ["#sec-overview", "#sec-about"]) expect(await below(part), `Go deeper comes after ${part}`).toBe(true);
   for (const [question, tab] of [["Is it a good business?", "Scorecard"], ["Is the price fair for what it earns?", "Valuation"], ["What has it told NSE lately?", "News & filings"]]) {
     await expect(guide.getByRole("button", { name: `${question} ${tab}` })).toBeVisible();
   }

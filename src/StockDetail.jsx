@@ -467,8 +467,8 @@ function usePresentTabs(ready) {
   return present;
 }
 
-// On a phone's Overview, under At a glance: the gist first, then where to
-// look for each question — the question leads, the tab it opens under it
+// At the end of a phone's Overview (in the Next card's place): where to look
+// for each question — the question leads, the tab it opens under it
 function TabGuide({ ready, onGo }) {
   const present = usePresentTabs(ready).filter(([id]) => id !== "overview");
   if (!present.length) return null;
@@ -736,7 +736,6 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       <section id="sec-overview" className="ss-section sd-section" data-tab="overview">
         <PriceChartPanel symbol={data.symbol} name={data.name} levels={valued ? levels : null} />
         {m && <StockGlance r={m.research} />}
-        {isPhone && <TabGuide ready={!!m} onGo={showPhoneTab} />}
         <StockSnapshot m={m} price={price} dates={data.dataDates} />
         <StockPerformance m={m} />
       </section>
@@ -1018,7 +1017,10 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         <TriangleAlert size={12} style={{ verticalAlign: "-1px", marginRight: 4 }} />Always cross-check figures on NSE or BSE before investing.
       </p>
 
-      {isPhone ? <NextTab ready={!!m} current={phoneTab} onGo={showPhoneTab} /> : <div className="ss-back-bottom">
+      {/* A phone's tab ends by pointing on: the Overview with the list of
+          every tab and the question it answers (at the bottom, after the
+          company's own overview — 22 Oct 2026), the others with the next tab */}
+      {isPhone ? (phoneTab === "overview" ? <TabGuide ready={!!m} onGo={showPhoneTab} /> : <NextTab ready={!!m} current={phoneTab} onGo={showPhoneTab} />) : <div className="ss-back-bottom">
         <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "var(--accent)", background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 12, cursor: "pointer", padding: "12px 24px", fontWeight: 400, margin: "8px auto 0" }}>
           <ArrowLeft size={16} /> Back to {backTo}
         </button>

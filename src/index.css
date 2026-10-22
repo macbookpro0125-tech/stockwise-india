@@ -2400,7 +2400,7 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 
 /* A phone's Overview: which tab answers which question (StockDetail.jsx
    TabGuide, 21 Oct 2026) — rows as the Scorecard's, the question leading */
-.sd-guide { margin-top: var(--sp-4); }
+.sd-guide { margin-top: var(--sp-6); }
 .sd-guide-lede { margin: 0 0 var(--sp-2); font-size: 14px; color: var(--t2); }
 .sd-guide-list { display: flex; flex-direction: column; }
 .sd-guide-row { display: flex; align-items: center; gap: 14px; width: 100%; min-height: 60px; padding: 10px 0; border: 0; border-top: 1px solid var(--bdr); background: none; color: var(--t1); font: inherit; text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; transition: opacity 120ms; }
