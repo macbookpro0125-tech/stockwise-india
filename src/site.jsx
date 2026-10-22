@@ -64,7 +64,10 @@ export function SiteFooter() {
   return (
     <footer style={{ borderTop: "1px solid var(--bdr)", marginTop: 32, padding: "22px var(--page-x) 30px" }}>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "10px 24px", alignItems: "center", justifyContent: "space-between", fontSize: 12, color: "var(--t3)" }}>
-        <span>Jocular Insights · Data from NSE filings and daily prices · An educational tool, not investment advice — consult a SEBI-registered adviser</span>
+        <span>
+          Jocular Insights · Data from NSE filings and daily prices · An educational tool, not investment advice — consult a SEBI-registered adviser
+          <br />Company names and logos are trademarks of their owners, shown only to identify each company; no affiliation or endorsement is implied.
+        </span>
         <nav style={{ display: "flex", gap: 18 }}>
           <SiteLink to="/help">Help</SiteLink>
           <SiteLink to="/disclaimer">Disclaimer</SiteLink>

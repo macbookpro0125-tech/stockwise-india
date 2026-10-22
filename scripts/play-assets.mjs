@@ -33,7 +33,9 @@ for (let i = 0; i < 200; i++) { try { if ((await fetch(`${base}/api/health`)).ok
 const browser = await chromium.launch({ channel: "chrome" });
 // 360 × 640 CSS pixels at 3× = 1080 × 1920
 const ctx = await browser.newContext({ viewport: { width: 360, height: 640 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true, colorScheme: "dark", extraHTTPHeaders: { "x-forwarded-for": "10.77.1.1" } });
-await ctx.addInitScript(() => { try { localStorage.setItem("stockwise-india-theme", "dark"); } catch {} });
+// Company logos off (the app's own setting): each company shows its letters,
+// so the store listing carries no other company's logo (22 Oct 2026)
+await ctx.addInitScript(() => { try { localStorage.setItem("stockwise-india-theme", "dark"); localStorage.setItem("stockwise-india-logos", "off"); } catch {} });
 // a throwaway database each run, so a plain address (it shows on Settings)
 const email = "you@example.com";
 const signup = await ctx.request.post(`${base}/api/auth/signup`, { data: { email, password: randomUUID() } });

@@ -189,7 +189,10 @@ export function DisclaimerPage({ signedIn }) {
       <H>Not affiliated</H>
       <P>
         Jocular Insights is independent and is not affiliated with NSE, BSE, SEBI, Yahoo, Google or any company shown.
-        Company names and trademarks belong to their owners.
+        Company names, logos and trademarks belong to their owners. They are shown only to identify each company, and
+        showing them doesn't mean a company endorses Jocular Insights. A company can ask us to remove its logo by
+        writing to <a href="mailto:jocularinsights@gmail.com" style={{ color: "var(--accent)" }}>jocularinsights@gmail.com</a>;
+        we take it down promptly.
       </P>
       <P>
         See also our <SiteLink to="/privacy">privacy policy</SiteLink>.

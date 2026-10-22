@@ -59,6 +59,16 @@ test("legal pages @phone", async ({ page }) => {
   }
 });
 
+// 22 Oct 2026: company logos are shown to identify each company; the footer
+// says whose they are, and the Disclaimer how a company asks for one to go
+test("company names and logos are credited to their owners", async ({ page }) => {
+  await page.goto("/disclaimer");
+  const footer = page.getByRole("contentinfo");
+  await expect(footer.getByText(/names and logos are trademarks of their owners/i)).toBeVisible();
+  await expect(page.getByText(/doesn.t mean a company endorses/i)).toBeVisible();
+  await expect(page.getByText(/ask us to remove its logo/i)).toBeVisible();
+});
+
 test("phone: tabs and a company page fit the screen @phone", async ({ page, account }) => {
   await page.goto("/");
   // The account: the Settings tab on a phone (17 Oct 2026), the Account menu on a computer
