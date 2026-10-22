@@ -457,7 +457,7 @@ test("F07-N1 a second account sees none of the first's data", async ({ page, acc
 // ── F08 settings ────────────────────────────────────────────────────────────
 test("F08-H1 theme and logo switches persist across a reload", async ({ page, account }) => {
   await page.goto("/stock/TCS");
-  await expect(page.locator('img[src="/api/logo/TCS"]')).toBeVisible();
+  await expect(page.locator('img[src^="/api/logo/TCS"]')).toBeVisible();
   await page.getByRole("button", { name: "Account", exact: true }).click();
   await page.getByRole("menuitemcheckbox", { name: /Company logos/ }).click();
   await expect(page.locator('img[src^="/api/logo/"]')).toHaveCount(0);
