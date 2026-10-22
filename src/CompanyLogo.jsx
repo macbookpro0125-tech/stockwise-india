@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { initials } from "./stockName.js";
+import { imageLooksVisible } from "./logoInk.js";
 
 // A company's logo, small, from this server (/api/logo, server/logos.js).
 // Logos can be switched off from the Account menu; the choice is kept in this
@@ -35,6 +36,9 @@ export default function CompanyLogo({ symbol, size = 20, slot = false, fallback 
   const [failed, setFailed] = useState(() => missing.has(symbol));
   const [loaded, setLoaded] = useState(false);
   useEffect(() => { setFailed(missing.has(symbol)); setLoaded(false); }, [symbol]);
+  // a logo that failed, or loaded but wouldn't show on the white tile
+  // (logoInk.js: blank or banner-shaped) — the letters instead
+  const drop = () => { missing.add(symbol); setFailed(true); };
   const box = { width: size, height: size, flex: "0 0 auto", borderRadius: Math.round(size / 4) };
   // With a fallback: the letters first, the logo over them only once it has
   // loaded — no blank white square while it comes, or if it never does
@@ -44,7 +48,7 @@ export default function CompanyLogo({ symbol, size = 20, slot = false, fallback 
         <span className="logo-tile" style={{ ...box, fontSize: Math.round(size * 0.36) }}>{initials(fallback)}</span>
         {on && symbol && !failed && (
           <img src={logoSrc(symbol)} alt="" width={size} height={size} loading="lazy" decoding="async"
-            onLoad={() => setLoaded(true)} onError={() => { missing.add(symbol); setFailed(true); }}
+            onLoad={e => (imageLooksVisible(e.currentTarget) ? setLoaded(true) : drop())} onError={drop}
             style={{ ...box, position: "absolute", inset: 0, objectFit: "contain", background: "#fff", border: "1px solid var(--bdr)", opacity: loaded ? 1 : 0, transition: "opacity 160ms ease" }} />
         )}
       </span>
@@ -54,7 +58,7 @@ export default function CompanyLogo({ symbol, size = 20, slot = false, fallback 
   if (failed) return slot ? <span aria-hidden="true" style={{ ...box, display: "inline-block" }} /> : null;
   return (
     <img src={logoSrc(symbol)} alt="" width={size} height={size} loading="lazy" decoding="async"
-      onError={() => { missing.add(symbol); setFailed(true); }}
+      onLoad={e => { if (!imageLooksVisible(e.currentTarget)) drop(); }} onError={drop}
       style={{ ...box, objectFit: "contain", background: "#fff", border: "1px solid var(--bdr)", display: "inline-block" }} />
   );
 }

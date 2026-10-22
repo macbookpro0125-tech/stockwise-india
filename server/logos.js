@@ -129,6 +129,62 @@ export async function readLogo(website) {
   return null;
 }
 
+// ── Good enough to show? ────────────────────────────────────────────────────
+// A logo sits in a 28–42 px tile on a white background, drawn at up to 3× on
+// a phone (22 Oct 2026, from a scan of every cached logo: 630 favicons under
+// 64 px were blurry, about 30 wide banners shrank to a strip, 12 white logos
+// vanished on the white, and one file came from TradingView).
+//
+// { w, h } from the header, or null. An ICO gives its largest picture.
+export function imageSize(buf) {
+  const type = imageType(buf);
+  try {
+    if (type === "image/png") return { w: buf.readUInt32BE(16), h: buf.readUInt32BE(20) };
+    if (type === "image/gif") return { w: buf.readUInt16LE(6), h: buf.readUInt16LE(8) };
+    if (type === "image/x-icon") {
+      let best = 0;
+      for (let i = 0, n = buf.readUInt16LE(4); i < n && 6 + i * 16 < buf.length; i++) best = Math.max(best, buf[6 + i * 16] || 256);
+      return best ? { w: best, h: best } : null;
+    }
+    if (type === "image/webp") {
+      const kind = buf.toString("ascii", 12, 16);
+      if (kind === "VP8X") return { w: 1 + buf.readUIntLE(24, 3), h: 1 + buf.readUIntLE(27, 3) };
+      if (kind === "VP8 ") return { w: buf.readUInt16LE(26) & 0x3fff, h: buf.readUInt16LE(28) & 0x3fff };
+      if (kind === "VP8L") { const v = buf.readUInt32LE(21); return { w: (v & 0x3fff) + 1, h: ((v >> 14) & 0x3fff) + 1 }; }
+      return null;
+    }
+    if (type === "image/jpeg") {
+      for (let i = 2; i + 9 < buf.length;) {
+        if (buf[i] !== 0xff) { i++; continue; }
+        const marker = buf[i + 1];
+        if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker)) return { w: buf.readUInt16BE(i + 7), h: buf.readUInt16BE(i + 5) };
+        i += 2 + buf.readUInt16BE(i + 2);
+      }
+    }
+  } catch {}
+  return null;
+}
+
+// White logos on a clear background, which vanish on the app's white tile —
+// found by drawing every cached logo (22 Oct 2026). Only their company-site
+// files: a replacement from the logo directory is judged on its own
+const INVISIBLE = new Set(["ALPA", "ANTHEM", "CAMPUS", "GROBTEA", "NECLIFE", "PCBL", "PFOCUS", "STYRENIX", "TITAGARH", "VSSL", "WINDMACHIN", "ZENITHEXPO"]);
+const DIRECTORY = "Indian listed company logos API";
+
+// null when fine; else why not: "small" (32–63 px: shown, but replaced when a
+// sharper one exists) or "tiny" (under 32 px), "banner", "invisible" or
+// "source" (taken from TradingView, whose terms don't allow reuse) — not shown
+export function logoFlaw(body, meta, sym) {
+  if (/tradingview/i.test(`${meta?.sourceProvider ?? ""} ${meta?.source ?? ""}`)) return "source";
+  if (INVISIBLE.has(sym) && !meta?.sourceProvider) return "invisible";
+  const size = imageSize(body);
+  if (!size?.w || !size?.h) return null;
+  const aspect = size.w / size.h;
+  if (aspect > 2.5 || aspect < 0.4) return "banner";
+  const side = Math.min(size.w, size.h);
+  return side < 32 ? "tiny" : side < 64 ? "small" : null;
+}
+
 // A second, symbol-independent source for stocks whose company website has no
 // compatible icon. Match the source record to NSE's ISIN first, request PNG
 // only (never its SVG), and reject its generated monogram fallback.
@@ -207,12 +263,54 @@ const inFlight = new Map();
 let chain = Promise.resolve();
 const queued = fn => (chain = chain.then(fn, fn));
 
-// { type, body } or null. `websiteOf(sym)` gives the company's site and
-// `isinOf(sym)` its NSE identity, so the alternate logo source cannot match a
-// similarly named company by ticker alone.
+// The cached logo as it should be served: { type, body } (with `noStore` while
+// a sharper one is still being looked for), or null for the letters tile.
+// A flawed one sends for a better one from the logo directory, once.
+function shown(sym, meta, isinOf) {
+  const img = cachedImage(sym, meta);
+  if (!img) return null;
+  const flaw = logoFlaw(img.body, meta, sym);
+  if (!flaw) return img;
+  if (!meta.betterChecked) betterLogo(sym, meta, flaw, isinOf);
+  return flaw === "small" ? { ...img, noStore: !meta.betterChecked } : null;
+}
+
+async function isinFor(sym, isinOf) {
+  return typeof isinOf === "function" ? Promise.resolve(isinOf(sym)).catch(() => null) : isinOf;
+}
+
+// A sharper or usable logo from the directory, in the background. Only a
+// definite answer is recorded: when the directory can't be reached, the next
+// view tries again
+function betterLogo(sym, meta, flaw, isinOf) {
+  const key = `better:${sym}`;
+  if (inFlight.has(key)) return;
+  const job = queued(async () => {
+    const isin = await isinFor(sym, isinOf);
+    let result;
+    try { result = await listedLogoForIsin(isin); }
+    catch (e) { if (process.env.LOGO_DEBUG) console.error(`better logo ${sym}:`, e.message); return; }
+    const logo = result.logo && !logoFlaw(result.logo.body, { sourceProvider: DIRECTORY }, sym) ? result.logo : null;
+    mkdirSync(LOGO_DIR, { recursive: true });
+    if (logo) {
+      writeFileSync(imgPath(sym), logo.body);
+      writeFileSync(metaPath(sym), JSON.stringify({ at: new Date().toISOString(), type: logo.type, source: logo.source, sourceProvider: DIRECTORY, isin, website: meta.website ?? null, upgradedFrom: flaw, betterChecked: true }));
+    } else if (result.checked) {
+      writeFileSync(metaPath(sym), JSON.stringify({ ...meta, betterChecked: true, betterCheckedAt: new Date().toISOString() }));
+    }
+  }).finally(() => inFlight.delete(key));
+  inFlight.set(key, job);
+}
+
+// For tests: resolves once the queued logo jobs are done
+export const logoJobsSettled = () => chain.then(() => {}, () => {});
+
+// { type, body[, noStore] } or null. `websiteOf(sym)` gives the company's site
+// and `isinOf(sym)` its NSE identity, so the alternate logo source cannot match
+// a similarly named company by ticker alone.
 export function logoFor(sym, websiteOf, isinOf) {
   const meta = readMeta(sym);
-  if (fresh(meta)) return Promise.resolve(meta.miss ? null : cachedImage(sym, meta));
+  if (fresh(meta)) return Promise.resolve(meta.miss ? null : shown(sym, meta, isinOf));
   if (inFlight.has(sym)) return inFlight.get(sym);
   const job = queued(async () => {
     // Backfilled entries may include a website from NSE's company directory
@@ -220,25 +318,32 @@ export function logoFor(sym, websiteOf, isinOf) {
     // the cached icon expires instead of dropping back to a BRSR-only lookup.
     const website = await websiteOf(sym).catch(() => null) || meta?.website || null;
     const logo = website ? await readLogo(website).catch(() => null) : null;
+    const siteFlaw = logo ? logoFlaw(logo.body, {}, sym) : null;
     mkdirSync(LOGO_DIR, { recursive: true });
-    if (logo) {
+    if (logo && !siteFlaw) {
       writeFileSync(imgPath(sym), logo.body);
       writeFileSync(metaPath(sym), JSON.stringify({ at: new Date().toISOString(), type: logo.type, source: logo.source, website }));
       return { type: logo.type, body: logo.body };
     }
     let providerResult = { checked: false, logo: null };
-    const isin = typeof isinOf === "function" ? await Promise.resolve(isinOf(sym)).catch(() => null) : isinOf;
+    const isin = await isinFor(sym, isinOf);
     try {
       providerResult = await listedLogoForIsin(isin);
     } catch (e) { if (process.env.LOGO_DEBUG) console.error(`listed-logo ${sym}:`, e.message); }
-    if (providerResult.logo) {
+    if (providerResult.logo && !logoFlaw(providerResult.logo.body, { sourceProvider: DIRECTORY }, sym)) {
       writeFileSync(imgPath(sym), providerResult.logo.body);
-      writeFileSync(metaPath(sym), JSON.stringify({ at: new Date().toISOString(), type: providerResult.logo.type, source: providerResult.logo.source, sourceProvider: "Indian listed company logos API", isin, website }));
+      writeFileSync(metaPath(sym), JSON.stringify({ at: new Date().toISOString(), type: providerResult.logo.type, source: providerResult.logo.source, sourceProvider: DIRECTORY, isin, website, ...(siteFlaw ? { upgradedFrom: siteFlaw, betterChecked: true } : {}) }));
       return { type: providerResult.logo.type, body: providerResult.logo.body };
+    }
+    // The site's small icon, when the directory has nothing sharper
+    if (logo && siteFlaw === "small") {
+      writeFileSync(imgPath(sym), logo.body);
+      writeFileSync(metaPath(sym), JSON.stringify({ at: new Date().toISOString(), type: logo.type, source: logo.source, website, ...(providerResult.checked ? { betterChecked: true } : {}) }));
+      return { type: logo.type, body: logo.body, ...(providerResult.checked ? {} : { noStore: true }) };
     }
     // Kept a while so a company without one isn't asked again on every view;
     // an older good logo stays in use meanwhile
-    if (meta && !meta.miss && existsSync(imgPath(sym))) return cachedImage(sym, meta);
+    if (meta && !meta.miss && existsSync(imgPath(sym))) return shown(sym, meta, isinOf);
     try { unlinkSync(imgPath(sym)); } catch {}
     const at = Date.now();
     writeFileSync(metaPath(sym), JSON.stringify({

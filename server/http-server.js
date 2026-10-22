@@ -606,7 +606,8 @@ export function createApp() {
         if (!logo) { res.writeHead(404, { "Cache-Control": "private, no-store" }); res.end(); return; }
         res.writeHead(200, {
           "Content-Type": logo.type, "Content-Length": logo.body.length,
-          "Cache-Control": "private, max-age=604800",
+          // a small logo being swapped for a sharper one isn't kept (logos.js)
+          "Cache-Control": logo.noStore ? "private, no-store" : "private, max-age=604800",
           "X-Content-Type-Options": "nosniff", "Content-Security-Policy": "default-src 'none'",
         });
         res.end(req.method === "HEAD" ? undefined : logo.body);

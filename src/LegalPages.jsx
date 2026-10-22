@@ -105,7 +105,10 @@ export function PrivacyPage({ signedIn }) {
       <H>Market data from other services</H>
       <P>
         To show prices, results and news, our server fetches public market data from NSE, Yahoo Finance and Google News.
-        Those requests contain only the company being looked up — never your email or anything about your account. When
+        For company logos it fetches each company's icon from the company's own website or, where that has none we can
+        use, from a public directory of Indian listed-company logos (api.dharun.dev); your browser only ever loads them
+        from our server. Those requests contain only the company being looked up — never your email or anything about
+        your account. When
         you follow a link to another site, such as NSE, that site's own privacy policy applies.
       </P>
 

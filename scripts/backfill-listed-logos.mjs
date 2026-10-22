@@ -53,9 +53,9 @@ async function readKnownPng(source, host) {
     throw new Error("logo source did not return a PNG from its expected host");
   }
   const declared = Number(response.headers.get("content-length"));
-  if (Number.isFinite(declared) && declared > MAX_LOGO_BYTES) throw new Error("TradingView logo is too large");
+  if (Number.isFinite(declared) && declared > MAX_LOGO_BYTES) throw new Error("logo is too large");
   const reader = response.body?.getReader();
-  if (!reader) throw new Error("TradingView returned an empty logo");
+  if (!reader) throw new Error("empty logo");
   const chunks = [];
   let size = 0;
   while (true) {
@@ -64,7 +64,7 @@ async function readKnownPng(source, host) {
     size += value.byteLength;
     if (size > MAX_LOGO_BYTES) {
       await reader.cancel().catch(() => {});
-      throw new Error("TradingView logo is too large");
+      throw new Error("logo is too large");
     }
     chunks.push(Buffer.from(value));
   }
@@ -204,9 +204,9 @@ for (const [symbol, parent] of rightsParents) {
 }
 
 // A few freshly listed or unindexed companies have no ISIN match yet. Use
-// images from their verified official websites, or a stock-logo asset linked
-// from TradingView's exact BSE:IIRM company page when the issuer site exposes
-// only broken icon links.
+// images from their verified official websites. (Not TradingView's logo files:
+// its terms don't allow reuse — IIRM shows its letters until its own site or
+// the directory has a usable logo; server/logos.js won't serve the old file.)
 const officialLogoSites = new Map([
   ["HDFIRE", "https://www.hdfire.com/"],
 ]);
@@ -229,11 +229,6 @@ const knownPngLogos = [
     symbol: "RAJVIR", source: "https://www.rajvirindustrieslimited.com/img/logo/logo.png",
     host: "www.rajvirindustrieslimited.com", sourceProvider: "Official company website",
     website: "https://www.rajvirindustrieslimited.com/",
-  },
-  {
-    symbol: "IIRM", source: "https://s3-symbol-logo.tradingview.com/iirm-india-limited--600.png",
-    host: "s3-symbol-logo.tradingview.com", sourceProvider: "TradingView company logo",
-    sourcePage: "https://www.tradingview.com/symbols/BSE-IIRM/",
   },
 ];
 for (const item of knownPngLogos) {
