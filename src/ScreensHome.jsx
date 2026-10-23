@@ -31,7 +31,7 @@ const growIn = (el, p) => {
 // compact: a phone — the headline, its buttons, then the strategies
 // ribbon: the strategies for the curved row through the hero (16 Oct 2026,
 // "Scroll Tilted Grid"); onPickStrategy opens one, as its card in the grid does
-export default function ScreensHome({ meta, total, onStart, onCreate, onBrowseFilters, children, continueCard, newsCard = null, compact = false, ribbon = [], onPickStrategy }) {
+export default function ScreensHome({ meta, total, onStart, onCreate, onBrowseFilters, onNews = null, children, continueCard, newsCard = null, compact = false, ribbon = [], onPickStrategy }) {
   const filters = meta?.metrics?.length ?? null;
   const shotRef = useScrollScrub(growIn, 0.8);
   const scrollToStrategies = () => document.getElementById("popular-strategies")?.scrollIntoView({ behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
@@ -117,6 +117,15 @@ export default function ScreensHome({ meta, total, onStart, onCreate, onBrowseFi
           <span className="ap-tile-sub">Growth, value, quality, ownership, momentum. All in one place.</span>
           <span className="ap-tile-link">See the filters<ChevronRight size={17} aria-hidden="true" /></span>
         </Reveal>
+        {/* The fourth way in (23 Oct 2026): what's new, from the News page */}
+        {onNews && (
+          <Reveal as="button" type="button" delay={3} className="ap-tile glow" onClick={onNews}>
+            <span className="ap-tile-eyebrow">News</span>
+            <span className="ap-tile-title">What's new today.</span>
+            <span className="ap-tile-sub">Results, dividends and deals filed with NSE, and the market's headlines.</span>
+            <span className="ap-tile-link">Read the news<ChevronRight size={17} aria-hidden="true" /></span>
+          </Reveal>
+        )}
       </section>
 
       {newsCard && <div className="ap-news">{newsCard}</div>}

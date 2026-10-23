@@ -1473,8 +1473,15 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
    a smudge (22 Oct 2026) */
 @media (max-width: 640px) { .app-header { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--bg) !important; } }
 
+/* Four ways in (with News, 23 Oct 2026): one row on a wide screen, the
+   titles a size down to fit; two by two below that; one column from 1100 */
+.ap-tiles:has(> :nth-child(4)) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.ap-tiles:has(> :nth-child(4)) .ap-tile { padding: 48px 26px 36px; }
+.ap-tiles:has(> :nth-child(4)) .ap-tile-title { font-size: clamp(26px, 2.1vw, 36px); }
+.ap-tiles:has(> :nth-child(4)) .ap-tile-sub { max-width: 24ch; }
+@media (max-width: 1400px) { .ap-tiles:has(> :nth-child(4)) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 1100px) {
-  .ap-tiles { grid-template-columns: minmax(0, 1fr); }
+  .ap-tiles, .ap-tiles:has(> :nth-child(4)) { grid-template-columns: minmax(0, 1fr); }
   .ap-tile { min-height: 0; padding: 44px 28px 32px; }
 }
 /* A phone: the headline and buttons, then the list */

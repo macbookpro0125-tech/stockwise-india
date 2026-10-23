@@ -29,8 +29,12 @@ test("N-H1 Discover's Market news card leads to the News page and an item; Back 
   expect(overflow).toBeLessThanOrEqual(1);
 });
 
-test("N-H2 the News tab on a computer; a headline opens with its link out; an empty watchlist says so", async ({ page, account }) => {
+test("N-H2 Discover's News tile and the News tab on a computer; a headline opens with its link out; an empty watchlist says so", async ({ page, account }) => {
   await page.goto("/");
+  // the fourth of Discover's ways in (23 Oct 2026)
+  await page.getByRole("button", { name: /What's new today/ }).click();
+  await expect(page.getByRole("group", { name: "Kinds of news" })).toBeVisible();
+  await page.goto("/stock/TCS");
   await openPage(page, "News");
   const kinds = page.getByRole("group", { name: "Kinds of news" });
   await kinds.getByRole("button", { name: "Headlines" }).click();

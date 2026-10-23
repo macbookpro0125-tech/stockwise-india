@@ -574,6 +574,7 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews }) {
               onBrowseFilters={() => { newScreen(); setPicker("filter"); }}
               continueCard={continueCard || null}
               newsCard={onOpenNews ? <MarketNewsCard onOpen={id => onOpenNews(id)} onSeeAll={() => onOpenNews(null)} /> : null}
+              onNews={onOpenNews ? () => onOpenNews(null) : null}
             >{cards}</ScreensHome>
           );
         })()}
