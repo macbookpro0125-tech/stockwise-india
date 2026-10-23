@@ -2867,6 +2867,13 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 .ps-analysis-ratios dd { margin: 2px 0 0; font-variant-numeric: tabular-nums; }
 /* The Watchlist's news, and the dot on its tab when there's something new */
 .wl-news { margin: 0 0 22px; }
+/* A card's latest news: one line, tapped to open it */
+.wl-card-news { display: flex; align-items: center; gap: 7px; width: 100%; min-height: 36px; margin-top: 4px; padding: 6px 10px; border: 1px solid var(--bdr); border-radius: 9px; background: var(--s1); color: var(--t2); font: inherit; font-size: 12px; text-align: left; cursor: pointer; touch-action: manipulation; }
+.wl-card-news > svg { flex: none; color: var(--t3); }
+.wl-card-news-when { flex: none; color: var(--t3); font-variant-numeric: tabular-nums; }
+.wl-card-news .nw-kind { flex: none; }
+.wl-card-news-text { flex: 1; min-width: 0; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-height: 1.4; color: var(--t1); }
+@media (hover: hover) and (pointer: fine) { .wl-card-news:hover { border-color: var(--bdr2); background: var(--s2); } }
 .wl-news-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .wl-news-head h3 { margin: 0; font-size: var(--fs-lg); font-weight: 500; color: var(--t1); }
 .tab-news-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent); }

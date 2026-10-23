@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import CompanyLogo from "./CompanyLogo.jsx";
-import { Star, X, NotebookPen, CalendarDays } from "lucide-react";
+import { Star, X, NotebookPen, CalendarDays, Newspaper, ChevronRight } from "lucide-react";
 import { BellIcon } from "./icons.jsx";
 import { api } from "./api.js";
 import { useWatchlist, toggleWatch, watchSaved } from "./watchlist.js";
@@ -8,7 +8,7 @@ import CreateAlertModal from "./CreateAlertModal.jsx";
 import { QualityBadge } from "./ResearchBadges.jsx";
 import { pricePosition } from "../server/levels.js";
 import { nextEvent, todayIst } from "./watchEvents.js";
-import { NewsRow } from "./NewsView.jsx";
+import { NewsRow, KIND_LABEL, dayLabel, clock, fyQuarter } from "./NewsView.jsx";
 import { markWatchNewsSeen } from "./watchNews.js";
 
 // Ported from stock-screener's src/components/WatchlistPanel.jsx — one card
@@ -75,13 +75,8 @@ const iconBtn = { width: 30, height: 30, borderRadius: 8, border: "1px solid var
 // What the starred companies told NSE, and headlines naming them, newest
 // first (23 Oct 2026): five here, the rest on Explore's My watchlist. Opening
 // the page clears the tab's dot (watchNews.js).
-function WatchNews({ onOpenNews }) {
-  const [data, setData] = useState(null);
+function WatchNews({ data, onOpenNews }) {
   const [all, setAll] = useState(false);
-  const watched = useWatchlist();
-  const watchKey = [...watched].sort().join(",");
-  // again when a company is starred or unstarred, once that's saved
-  useEffect(() => { watchSaved().then(() => api.news({ kind: "watchlist" })).then(setData).catch(() => setData({ items: [] })); markWatchNewsSeen(); }, [watchKey]);
   if (!data?.items?.length) return null;
   const shown = all ? data.items.slice(0, 20) : data.items.slice(0, 5);
   return (
@@ -92,6 +87,46 @@ function WatchNews({ onOpenNews }) {
       </div>
       <div className="nw-list">{shown.map(item => <NewsRow key={item.id} item={item} onOpen={onOpenNews} asOf={data.asOf} />)}</div>
     </section>
+  );
+}
+
+// The news about the starred companies, loaded once for the page (the section
+// above the cards, and each card's latest line); again when a company is
+// starred or unstarred, once that's saved
+function useWatchNews() {
+  const [data, setData] = useState(null);
+  const watched = useWatchlist();
+  const watchKey = [...watched].sort().join(",");
+  useEffect(() => { watchSaved().then(() => api.news({ kind: "watchlist" })).then(setData).catch(() => setData({ items: [] })); markWatchNewsSeen(); }, [watchKey]);
+  return data;
+}
+
+// Each company's newest item: its own announcement, or a headline naming it
+function latestBySymbol(items = []) {
+  const m = new Map();
+  for (const i of items) for (const s of [i.symbol, ...(i.companies ?? []).map(c => c.symbol)]) if (s && !m.has(s)) m.set(s, i);
+  return m;
+}
+
+// A card's latest news, one line to tap (23 Oct 2026: "show each starred
+// company's latest news on its card")
+function CardNews({ item, onOpen }) {
+  const day = dayLabel(item.time);
+  const when = day === "Today" ? clock(item.time) : day;
+  // results: the figures themselves, not the filing's "financial results for the period ended…"
+  const n = item.numbers;
+  const fig = (label, v, yoy) => (v == null ? null : `${v < 0 ? "Loss" : label} ₹${Math.round(Math.abs(v)).toLocaleString("en-IN")} cr${yoy != null && v >= 0 ? ` ${yoy >= 0 ? "▲" : "▼"}${Math.abs(yoy).toFixed(1)}%` : ""}`);
+  const what = n
+    ? [`${fyQuarter(n.quarter)} results`, fig("Sales", n.salesCr, n.salesYoY), fig("Profit", n.profitCr, n.profitYoY)].filter(Boolean).join(" · ")
+    : item.type === "filing" ? (item.summary || item.title) : item.title;
+  return (
+    <button type="button" className="wl-card-news" onClick={() => onOpen(item.id)} aria-label={`Latest news, ${when}: ${what}`}>
+      <Newspaper size={13} aria-hidden="true" />
+      <span className="wl-card-news-when">{when}</span>
+      {item.kind && item.kind !== "headlines" && !n && <span className={`nw-kind k-${item.kind}`}>{KIND_LABEL[item.kind]}</span>}
+      <span className="wl-card-news-text">{what}</span>
+      <ChevronRight size={14} aria-hidden="true" />
+    </button>
   );
 }
 
@@ -107,6 +142,8 @@ export default function WatchlistView({ onOpenStock, onOpenNews }) {
   const [editingNote, setEditingNote] = useState(null);
   const [noteText, setNoteText] = useState("");
   const [leaving, setLeaving] = useState(() => new Set());
+  const news = useWatchNews();
+  const latest = latestBySymbol(news?.items);
   // Folds the card away, then removes it (index.css .wl-row.leaving)
   const removeCard = ticker => {
     setLeaving(s => new Set(s).add(ticker));
@@ -165,7 +202,7 @@ export default function WatchlistView({ onOpenStock, onOpenNews }) {
 
   return wrap(
     <>
-      {onOpenNews && <WatchNews onOpenNews={onOpenNews} />}
+      {onOpenNews && <WatchNews data={news} onOpenNews={onOpenNews} />}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
         <div style={{ fontSize: 12, color: "var(--t3)", fontWeight: 400 }}>{items.length} saved</div>
         <div style={{ display: "flex", gap: 6 }}>
@@ -202,6 +239,9 @@ export default function WatchlistView({ onOpenStock, onOpenNews }) {
                   })()}
                 </div>
 
+                {onOpenNews && latest.has(item.ticker) && (
+                  <div style={{ flex: "0 0 100%", minWidth: 0, order: 9 }}><CardNews item={latest.get(item.ticker)} onOpen={onOpenNews} /></div>
+                )}
                 <div style={{ flex: "0 0 100%", order: 10 }}>
                   {editingNote === item.ticker ? (
                     <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
