@@ -3,6 +3,7 @@ import { ArrowLeft, ExternalLink, FileText, Newspaper, ChevronRight } from "luci
 import { api } from "./api.js";
 import CompanyLogo from "./CompanyLogo.jsx";
 import { niceName } from "./stockName.js";
+import Reveal from "./Reveal.jsx";
 
 // The News page (22 Oct 2026: "a news page — do I need to post it daily?").
 // It fills itself (server/market-news.js): what listed companies told NSE over
@@ -255,6 +256,44 @@ function Detail({ id, onBack, onOpen, onOpenStock }) {
         </section>
       ) : <p className="nw-note">It doesn't name a company over ₹5,000 crore by name.</p>}
     </article>
+  );
+}
+
+// Discover's fourth way in on a computer (23 Oct 2026: "news should be
+// somewhat different, it is mixed in"): not a slogan like the other three
+// but the news itself — the latest three, live — set apart by its look
+function tileLine(item) {
+  if (item.type === "headline") return item.title;
+  if (item.numbers) {
+    const n = item.numbers;
+    return <>{fyQuarter(n.quarter)} results · {n.profitCr < 0 ? "Loss" : "Profit"} {crore(n.profitCr ?? 0)} <Change value={n.profitYoY} /></>;
+  }
+  return `${KIND_LABEL[item.kind]}: ${item.summary ?? item.title}`;
+}
+export function NewsTile({ onOpen, onSeeAll }) {
+  const [data, setData] = useState(null);
+  useEffect(() => { api.newsTop().then(setData).catch(() => setData({ items: [] })); }, []);
+  return (
+    <Reveal as="section" delay={3} className="ap-tile ap-tile-news" aria-labelledby="ap-news-title">
+      <span className="ap-news-eyebrow"><span className="ap-live" aria-hidden="true" />Live from NSE</span>
+      <h3 id="ap-news-title" className="ap-news-title">What's new today</h3>
+      <div className="ap-news-items">
+        {data == null
+          ? [0, 1, 2].map(i => <span key={i} className="ap-news-skel" />)
+          : data.items.length
+            ? data.items.map(item => (
+              <button key={item.id} type="button" className="ap-news-item" onClick={() => onOpen(item.id)}>
+                <span className="ap-news-top">
+                  <span className="ap-news-who">{item.type === "filing" ? niceName(item.company) : item.publisher ?? "News"}</span>
+                  <span className="ap-news-when">{when(item.time, true, true)}</span>
+                </span>
+                <span className="ap-news-what">{tileLine(item)}</span>
+              </button>
+            ))
+            : <p className="ap-news-empty">Nothing new from NSE just now.</p>}
+      </div>
+      <button type="button" className="ap-tile-link ap-news-link" onClick={onSeeAll}>Read the news<ChevronRight size={17} aria-hidden="true" /></button>
+    </Reveal>
   );
 }
 
