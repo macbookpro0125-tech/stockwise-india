@@ -83,6 +83,7 @@ export default function PublicStock({ symbol, onSignIn, initial = null }) {
             <section className="ps-more">
               <h2>See the full analysis</h2>
               <p>{niceName(s.name)}'s fair value, the scorecard's checks one by one, price charts, results year by year, shareholding and its filings to NSE — free with an account.</p>
+              <p><a href="/methodology">How the scores and fair values are calculated</a> · <a href="/disclaimer">Important limitations</a></p>
               <button type="button" className="btn-primary ps-cta" onClick={onSignIn}>Sign in or create a free account</button>
             </section>
             <p className="nw-note">Figures from NSE filings and prices at the last close. An educational tool, not investment advice.</p>

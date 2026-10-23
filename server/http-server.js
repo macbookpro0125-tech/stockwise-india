@@ -48,7 +48,7 @@ import { summarizeFiling } from "./filing-summary.js";
 import { logoFor } from "./logos.js";
 import { PRESETS } from "./presets.js";
 import { DIST_DIR } from "./paths.js";
-import { robotsTxt, sitemapXml, publicStock, stockPageHtml } from "./seo.js";
+import { robotsTxt, sitemapXml, publicStock, stockPageHtml, methodologyPageHtml } from "./seo.js";
 import { HttpError, badRequest, payloadTooLarge } from "./http-errors.js";
 import { UpstreamError, upstreamStatus } from "./upstream.js";
 
@@ -1243,6 +1243,12 @@ export function createApp() {
       if (url.pathname === "/sitemap.xml" && (req.method === "GET" || req.method === "HEAD")) {
         res.writeHead(200, { "Content-Type": "application/xml; charset=utf-8", "Cache-Control": "public, max-age=3600" });
         res.end(req.method === "HEAD" ? undefined : sitemapXml());
+        return;
+      }
+      if (url.pathname === "/methodology" && (req.method === "GET" || req.method === "HEAD") && existsSync(join(DIST_DIR, "index.html"))) {
+        const html = methodologyPageHtml(readFileSync(join(DIST_DIR, "index.html"), "utf-8"));
+        res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache" });
+        res.end(req.method === "HEAD" ? undefined : html);
         return;
       }
       const stockPage = url.pathname.match(/^\/stock\/([^/]+)\/?$/);

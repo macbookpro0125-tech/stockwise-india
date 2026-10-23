@@ -9,7 +9,7 @@ const UPDATED = "18 October 2026";
 // Shown once set: a privacy policy needs a way to reach you
 const CONTACT_EMAIL = "jocularinsights@gmail.com";
 
-function PublicPage({ title, signedIn, updated = UPDATED, children }) {
+export function PublicPage({ title, signedIn, updated = UPDATED, children }) {
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
       <header style={{ borderBottom: "1px solid var(--bdr)" }}>
@@ -250,7 +250,7 @@ export function HelpPage({ signedIn }) {
         The quality score is out of 100, across six groups: business quality, earnings quality, balance sheet,
         governance, growth and valuation. Every check shows its reason on the company's Scorecard. A fair value is an
         estimate from each company's normalized earnings and its own usual P/E, capped at twice its sector's (banks on book
-        value). These are estimates to help you think, not targets or advice; see the <SiteLink to="/disclaimer">disclaimer</SiteLink>.
+        value). For the exact group weights, missing-data rules, bank model and limitations, see the <SiteLink to="/methodology">full scoring and valuation methodology</SiteLink>. These are estimates to help you think, not targets or advice; see the <SiteLink to="/disclaimer">disclaimer</SiteLink>.
       </P>
 
       <H>What it costs</H>

@@ -70,6 +70,7 @@ export function SiteFooter() {
         </span>
         <nav style={{ display: "flex", gap: 18 }}>
           <SiteLink to="/help">Help</SiteLink>
+          <SiteLink to="/methodology">Methodology</SiteLink>
           <SiteLink to="/disclaimer">Disclaimer</SiteLink>
           <SiteLink to="/privacy">Privacy</SiteLink>
         </nav>

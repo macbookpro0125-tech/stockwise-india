@@ -8,7 +8,7 @@ assert.match(robotsTxt(), /Sitemap: https:\/\/jocularinsights\.in\/sitemap\.xml/
 
 const sm = sitemapXml();
 const companies = allMetrics().rows.filter(r => r.name).length;
-assert.equal((sm.match(/<loc>/g) ?? []).length, companies + 4, "the public pages and every company");
+assert.equal((sm.match(/<loc>/g) ?? []).length, companies + 5, "the public pages and every company");
 assert.match(sm, /<loc>https:\/\/jocularinsights\.in\/stock\/[A-Z0-9&%-]+<\/loc>/);
 
 const sym = allMetrics().rows.find(r => r.name && r.close && r.marketCapCr > 10000)?.symbol;
@@ -28,4 +28,4 @@ assert.match(html, /<div id="root"><main class="seo-stock">[\s\S]*<h1>/, "the su
 assert.equal(stockPageHtml(template, "NOT-A-COMPANY"), null);
 // a company name can't break out of the page
 assert.doesNotMatch(html.replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>/, ""), /<script>(?!)/);
-console.log(`ok: robots.txt, a sitemap of ${companies + 4} pages, and ${sym}'s page with its own title, description, canonical, structured data and figures`);
+console.log(`ok: robots.txt, a sitemap of ${companies + 5} pages, and ${sym}'s page with its own title, description, canonical, structured data and figures`);

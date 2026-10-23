@@ -14,9 +14,10 @@
 
 import { allMetrics } from "./screen.js";
 import { loadMarketSnapshot } from "./market-data.js";
+import { METHODOLOGY_DESCRIPTION, METHODOLOGY_SECTIONS, METHODOLOGY_TITLE } from "../src/methodology-content.js";
 
 export const SITE = "https://jocularinsights.in";
-const PUBLIC_PATHS = ["/", "/help", "/privacy", "/disclaimer"];
+const PUBLIC_PATHS = ["/", "/help", "/methodology", "/privacy", "/disclaimer"];
 
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const plain = name => String(name ?? "").replace(/\s+(limited|ltd\.?)\s*$/i, "").trim();
@@ -94,8 +95,40 @@ ${q ? row(`${q.label} sales`, q.salesCr != null ? `₹${Math.round(q.salesCr).to
 ${q ? row(`${q.label} profit`, q.profitCr != null ? `₹${Math.round(q.profitCr).toLocaleString("en-IN")} crore${q.profitYoY != null ? ` (${pct(q.profitYoY)} on a year earlier)` : ""}` : null) : ""}
 ${row("Next results", s.nextResults ? day(s.nextResults) : null)}
 </table>
-<p>Figures from NSE filings and prices at the last close. <a href="/">Sign in for ${esc(n)}'s fair value, scorecard, charts and filings</a>. Not investment advice.</p>
+<p>Figures from NSE filings and prices at the last close. <a href="/">Sign in for ${esc(n)}'s fair value, scorecard, charts and filings</a>.</p>
+<p><a href="/methodology">How the scores and fair values are calculated</a> · <a href="/disclaimer">Important limitations</a>. Not investment advice.</p>
 </main>`;
+}
+
+// A public, server-rendered explanation so people and search crawlers can
+// read the scoring and valuation methodology without waiting for app JS.
+export function methodologyPageHtml(template) {
+  const sections = METHODOLOGY_SECTIONS.map(section => `<section><h2>${esc(section.title)}</h2>${section.paragraphs.map(p => `<p>${esc(p)}</p>`).join("")}${section.bullets ? `<ul>${section.bullets.map(item => `<li>${esc(item)}</li>`).join("")}</ul>` : ""}</section>`).join("\n");
+  const canonical = `${SITE}/methodology`;
+  const ld = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: METHODOLOGY_TITLE,
+    description: METHODOLOGY_DESCRIPTION,
+    url: canonical,
+    publisher: { "@type": "Organization", name: "Jocular Insights", url: SITE },
+  };
+  const head = `<title>${esc(METHODOLOGY_TITLE)} | Jocular Insights</title>
+<meta name="description" content="${esc(METHODOLOGY_DESCRIPTION)}" />
+<link rel="canonical" href="${esc(canonical)}" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="${esc(METHODOLOGY_TITLE)} | Jocular Insights" />
+<meta property="og:description" content="${esc(METHODOLOGY_DESCRIPTION)}" />
+<meta property="og:url" content="${esc(canonical)}" />
+<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\\u003c")}</script>`;
+  const body = `<main class="seo-stock seo-methodology"><p><a href="/">Jocular Insights</a> › Methodology</p><h1>${esc(METHODOLOGY_TITLE)}</h1><p>${esc(METHODOLOGY_DESCRIPTION)}</p>${sections}<p><a href="/disclaimer">Read the full disclaimer</a> · <a href="/help">How figures are updated</a> · Contact <a href="mailto:jocularinsights@gmail.com">jocularinsights@gmail.com</a>.</p></main>`;
+  return template
+    .replace(/<title>[\s\S]*?<\/title>/, "")
+    .replace(/<meta name="description"[^>]*>/, "")
+    .replace(/<link rel="canonical"[^>]*>/, "")
+    .replace(/<meta property="og:(title|description|url|type)"[^>]*>/g, "")
+    .replace("</head>", `${head}\n</head>`)
+    .replace(/<div id="root">\s*<\/div>/, `<div id="root">${body}</div>`);
 }
 
 // The app's page, made the company's own: title, description, canonical,
