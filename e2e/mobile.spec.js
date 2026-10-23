@@ -416,3 +416,25 @@ test("M-H18 switching tabs gives a small tick @phone", async ({ page, account, i
   expect(ticks).toHaveLength(1);
   expect(ticks[0]).toBeLessThanOrEqual(15);
 });
+
+// 23 Oct 2026, from another app: "when I press and move" — the tab bar's glass
+// can be held and slid; letting go opens the tab under it
+test("M-H21 the tab bar's glass slides under a finger and opens the tab it's let go on @phone", async ({ page, account, isMobile }) => {
+  test.skip(!isMobile, "the phone's tab bar");
+  await page.goto("/");
+  const bar = page.getByRole("navigation", { name: "Pages" });
+  await expect(bar.getByRole("button", { name: "Discover" })).toHaveAttribute("aria-current", "page");
+  const box = await bar.boundingBox();
+  const y = box.y + box.height / 2;
+  await page.mouse.move(box.x + 40, y);
+  await page.mouse.down();
+  for (let x = box.x + 40; x <= box.x + box.width * 0.55; x += 12) await page.mouse.move(x, y);
+  await expect(page.locator(".btb-glass.held")).toHaveCount(1);
+  await expect(bar.locator(".btb-tab.lit")).toHaveText(/Portfolio/);
+  await page.mouse.up();
+  await expect(bar.getByRole("button", { name: "Portfolio" })).toHaveAttribute("aria-current", "page");
+  await expect(page.locator(".btb-glass.held")).toHaveCount(0);
+  // a tap still opens its tab
+  await bar.getByRole("button", { name: "Watchlist" }).click();
+  await expect(bar.getByRole("button", { name: "Watchlist" })).toHaveAttribute("aria-current", "page");
+});

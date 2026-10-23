@@ -173,24 +173,78 @@ export function BottomTabBar({ tab, onTab }) {
   // One glass lens under the tabs (asked for 21 Oct 2026: "glass movement
   // when I click on another"): it slides to the tab pressed — on the press,
   // not the release — stretching the way it goes and settling, as iOS's tab
-  // bar does. A press that turns into a scroll puts it back.
+  // bar does.
+  //
+  // And it can be held and slid (23 Oct 2026, from another app: "when I
+  // press and move"): a finger on the bar lifts the lens into a larger,
+  // clearer glass that follows the finger exactly; each tab it crosses lights
+  // and ticks (haptics.js — the Android app ticks as it goes; Safari only
+  // lets a page tick on a tap, so an iPhone ticks once, on letting go), and
+  // letting go opens the tab under it, the lens springing into place. A tap
+  // is a slide that didn't go anywhere.
   const [pressed, setPressed] = useState(null);
-  // (let go after the tap has opened its tab — a touch's pointerleave comes
-  // before its click, and clearing then flicked the lens back for a frame)
-  const release = useRef(0);
-  useEffect(() => () => clearTimeout(release.current), []);
+  const [drag, setDrag] = useState(null); // { x } — the lens's centre, px from the bar's left
+  const navRef = useRef(null);
+  const gesture = useRef(null);
   const at = pressed ?? phoneTabs.findIndex(isOn);
   const from = useRef(at);
   const moves = useRef(0);
   if (from.current !== at) { moves.current += 1; }
   const distance = Math.abs(at - from.current);
   useEffect(() => { from.current = at; });
+  // which tab is under a point, and where the lens may go
+  const geometry = () => {
+    const r = navRef.current.getBoundingClientRect();
+    const pad = 6, inner = r.width - 2 * pad, each = inner / phoneTabs.length;
+    return { r, pad, each };
+  };
+  const tabAt = (clientX, g = geometry()) => Math.min(phoneTabs.length - 1, Math.max(0, Math.floor((clientX - g.r.left - g.pad) / g.each)));
+  const onDown = e => {
+    if (collapsed || !e.isPrimary || e.button > 0) return;
+    const g = geometry(), i = tabAt(e.clientX, g);
+    gesture.current = { id: e.pointerId, startX: e.clientX, moved: false, i, g };
+    setPressed(i);
+  };
+  const onMove = e => {
+    const st = gesture.current;
+    if (!st || e.pointerId !== st.id) return;
+    if (!st.moved && Math.abs(e.clientX - st.startX) < 8) return; // a tap's wobble, not a slide
+    if (!st.moved) { st.moved = true; navRef.current.setPointerCapture?.(e.pointerId); }
+    const { r, pad, each } = st.g;
+    const x = Math.min(r.width - pad - each / 2, Math.max(pad + each / 2, e.clientX - r.left));
+    setDrag({ x });
+    const i = tabAt(e.clientX, st.g);
+    if (i !== st.i) { st.i = i; setPressed(i); tick(); }
+  };
+  const finish = (e, cancelled) => {
+    const st = gesture.current;
+    if (!st || e.pointerId !== st.id) return;
+    gesture.current = null;
+    setDrag(null);
+    if (cancelled) { setPressed(null); return; }
+    // let go: the tab under the finger opens; a tap is left to its click
+    if (st.moved) {
+      const t = phoneTabs[st.i];
+      // (the click a release can send ignored; gone by the next tap, which
+      // after a captured slide may never come to a tab at all)
+      slid.current = true;
+      setTimeout(() => { slid.current = false; }, 0);
+      setPressed(null);
+      if (!isOn(t)) { tick(); onTab(t.id); }
+    } else {
+      setTimeout(() => setPressed(null), 350);
+    }
+  };
+  // the click that follows a slide's release isn't a tap of its own
+  const slid = useRef(false);
+  const lensStyle = { "--i": at, "--n": phoneTabs.length, "--d": Math.min(distance || 1, 4) };
+  if (drag) lensStyle.transform = `translateX(calc(${drag.x}px - 6px - 50%))`;
   return (
-    <nav className={`bottom-tab-bar${collapsed ? " collapsed" : ""}`} data-tour="tabs" aria-label="Pages">
+    <nav ref={navRef} className={`bottom-tab-bar${collapsed ? " collapsed" : ""}${drag ? " sliding" : ""}`} data-tour="tabs" aria-label="Pages"
+      onPointerDown={onDown} onPointerMove={onMove} onPointerUp={e => finish(e, false)} onPointerCancel={e => finish(e, true)}>
       {at >= 0 && (
-        <span className={`btb-glass${moves.current ? " go" : ""}${pressed != null ? " pressing" : ""}`} aria-hidden="true"
-          style={{ "--i": at, "--n": phoneTabs.length, "--d": Math.min(distance || 1, 4) }}>
-          <span key={moves.current} className="btb-glass-body" />
+        <span className={`btb-glass${moves.current ? " go" : ""}${pressed != null ? " pressing" : ""}${drag ? " held" : ""}`} aria-hidden="true" style={lensStyle}>
+          <span key={drag ? "held" : moves.current} className="btb-glass-body" />
         </span>
       )}
       {phoneTabs.map((t, i) => {
@@ -200,10 +254,10 @@ export function BottomTabBar({ tab, onTab }) {
         return (
           <button key={t.id} type="button" className={`btb-tab${t.id === kept ? " btb-kept" : ""}${i === at ? " lit" : ""}`} aria-current={on ? "page" : undefined}
             tabIndex={hidden ? -1 : undefined} aria-hidden={hidden || undefined} aria-label={folded ? `${t.short}: show all tabs` : undefined}
-            onPointerDown={e => { if (!collapsed && e.isPrimary) setPressed(i); }}
-            onPointerCancel={() => setPressed(null)}
-            onPointerUp={() => { clearTimeout(release.current); release.current = setTimeout(() => setPressed(null), 350); }}
-            onClick={() => { setPressed(null); if (folded) return open(); if (!on) tick(); onTab(t.id); }}>
+            onClick={() => {
+              if (slid.current) { slid.current = false; return; }
+              setPressed(null); if (folded) return open(); if (!on) tick(); onTab(t.id);
+            }}>
             <span className="btb-icon">
               <t.Icon size={22} strokeWidth={i === at ? 2.3 : 2} aria-hidden="true" />
               {t.id === "alerts" && reached && <span className="btb-dot" aria-label="An alert's price was reached" />}
