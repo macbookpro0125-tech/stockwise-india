@@ -25,16 +25,39 @@ import {
 } from "../src/screener-page-content.js";
 
 export const SITE = "https://jocularinsights.in";
+// (a function, read when the sitemap is made: seo-lists.js imports from here)
+import { LIST_PATHS } from "./seo-lists.js";
 const PUBLIC_PATHS = ["/", "/help", "/methodology", SCREENER_PAGE_PATH, "/privacy", "/disclaimer"];
 
-const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+export const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const plain = name => String(name ?? "").replace(/\s+(limited|ltd\.?)\s*$/i, "").trim();
-const num = (v, d = 1) => (v == null || !isFinite(v) ? null : Number(v).toLocaleString("en-IN", { maximumFractionDigits: d, minimumFractionDigits: d }));
+export const num = (v, d = 1) => (v == null || !isFinite(v) ? null : Number(v).toLocaleString("en-IN", { maximumFractionDigits: d, minimumFractionDigits: d }));
 const pct = (v, d = 1) => (v == null || !isFinite(v) ? null : `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v).toFixed(d)}%`);
-const crore = v => (v == null ? null : v >= 100000 ? `₹${num(v / 100000, 2)} lakh crore` : `₹${Math.round(v).toLocaleString("en-IN")} crore`);
-const day = iso => (iso ? new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : null);
+export const crore = v => (v == null ? null : v >= 100000 ? `₹${num(v / 100000, 2)} lakh crore` : `₹${Math.round(v).toLocaleString("en-IN")} crore`);
+export const day = iso => (iso ? new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : null);
 // A quarter ending in September 2026 is Q2 of FY27
 const fyQuarter = iso => { const [y, m] = String(iso).split("-").map(Number); return y && m ? `Q${m >= 4 ? Math.ceil((m - 3) / 3) : 4} FY${String(m >= 4 ? y + 1 : y).slice(2)}` : null; };
+
+// The app's page with a page's own head (title, description, canonical, social
+// cards, structured data) and its content written into the root for search
+// engines; the app replaces the content when it starts
+export function pageHtml(template, { title, desc, canonical, ld, body }) {
+  const head = `<title>${esc(title)}</title>
+<meta name="description" content="${esc(desc)}" />
+<link rel="canonical" href="${esc(canonical)}" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="${esc(title)}" />
+<meta property="og:description" content="${esc(desc)}" />
+<meta property="og:url" content="${esc(canonical)}" />
+<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\\u003c")}</script>`;
+  return template
+    .replace(/<title>[\s\S]*?<\/title>/, "")
+    .replace(/<meta name="description"[^>]*>/, "")
+    .replace(/<link rel="canonical"[^>]*>/, "")
+    .replace(/<meta property="og:(title|description|url|type)"[^>]*>/g, "")
+    .replace("</head>", `${head}\n</head>`)
+    .replace(/<div id="root">\s*<\/div>/, `<div id="root">${body}</div>`);
+}
 
 export function robotsTxt() {
   return `User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: ${SITE}/sitemap.xml\n`;
@@ -46,6 +69,8 @@ export function sitemapXml() {
   const url = (path, freq, prio) => `<url><loc>${SITE}${path}</loc>${lastmod && path.startsWith("/stock/") ? `<lastmod>${lastmod}</lastmod>` : ""}<changefreq>${freq}</changefreq><priority>${prio}</priority></url>`;
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${[
     ...PUBLIC_PATHS.map(p => url(p, p === "/" ? "daily" : "monthly", p === "/" ? "1.0" : "0.4")),
+    // the strategies' and the results calendar's pages change with each close (seo-lists.js)
+    ...LIST_PATHS().map(p => url(p, "daily", p === "/screens" || p === "/results-calendar" ? "0.8" : "0.7")),
     ...rows.filter(r => r.name).sort((a, b) => (b.marketCapCr ?? 0) - (a.marketCapCr ?? 0)).map(r => url(`/stock/${encodeURIComponent(r.symbol)}`, "daily", (r.marketCapCr ?? 0) >= 10000 ? "0.8" : "0.6")),
   ].join("\n")}\n</urlset>\n`;
 }

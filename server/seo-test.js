@@ -10,7 +10,11 @@ const sm = sitemapXml();
 const companies = allMetrics().rows.filter(r => r.name).length;
 // every company, and the public pages — counted by name, so a new guide page
 // is a line here rather than a total to recount
-const pages = ["/", "/help", "/methodology", "/stock-screener-india", "/privacy", "/disclaimer"];
+const { PRESETS } = await import("./presets.js");
+const { screenPageHtml, screensIndexHtml, resultsCalendarHtml, publicScreen, screenSlug } = await import("./seo-lists.js");
+const pages = ["/", "/help", "/methodology", "/stock-screener-india", "/privacy", "/disclaimer",
+  // the strategies' pages and the results calendar (seo-lists.js)
+  "/screens", "/results-calendar", ...PRESETS.map(p => `/screens/${screenSlug(p.id)}`)];
 for (const p of pages) assert.ok(sm.includes(`<loc>https://jocularinsights.in${p}</loc>`), `the sitemap lists ${p}`);
 assert.equal((sm.match(/<loc>/g) ?? []).length, companies + pages.length, "the public pages and every company, nothing else");
 assert.match(sm, /<loc>https:\/\/jocularinsights\.in\/stock\/[A-Z0-9&%-]+<\/loc>/);
@@ -32,4 +36,18 @@ assert.match(html, /<div id="root"><main class="seo-stock">[\s\S]*<h1>/, "the su
 assert.equal(stockPageHtml(template, "NOT-A-COMPANY"), null);
 // a company name can't break out of the page
 assert.doesNotMatch(html.replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>/, ""), /<script>(?!)/);
-console.log(`ok: robots.txt, a sitemap of ${companies + 5} pages, and ${sym}'s page with its own title, description, canonical, structured data and figures`);
+// a strategy's page: its own title (short enough for a search result), canonical, rules, and its companies linked
+const hqc = publicScreen("high-quality-compounders");
+assert.ok(hqc && hqc.rules.length >= 3 && hqc.matched === hqc.companies.length + Math.max(0, hqc.matched - 50), "a strategy: its rules and its companies");
+assert.ok(hqc.companies.every((c, i, a) => i === 0 || (a[i - 1].quality ?? -1) >= (c.quality ?? -1)), "the best quality first");
+const sp = screenPageHtml(template, "high-quality-compounders");
+assert.equal((sp.match(/<title>/g) ?? []).length, 1);
+assert.match(sp, /<title>High Quality Compounders: \d+ NSE stocks that match today \| Jocular Insights<\/title>/);
+assert.match(sp, /<link rel="canonical" href="https:\/\/jocularinsights\.in\/screens\/high-quality-compounders"/);
+assert.match(sp, /"@type":"ItemList"/);
+assert.ok((sp.match(/href="\/stock\//g) ?? []).length === Math.min(hqc.matched, 50), "every company shown links to its page");
+assert.match(sp, /not a recommendation/, "says it isn't advice");
+assert.equal(screenPageHtml(template, "no-such-strategy"), null);
+assert.equal((screensIndexHtml(template).match(/href="\/screens\//g) ?? []).length, PRESETS.length, "the index links every strategy");
+assert.match(resultsCalendarHtml(template), /<h1>Quarterly results calendar<\/h1>/);
+console.log(`ok: robots.txt, a sitemap of ${companies + pages.length} pages, and ${sym}'s page with its own title, description, canonical, structured data and figures`);

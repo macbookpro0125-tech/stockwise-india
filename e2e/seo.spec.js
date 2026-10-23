@@ -25,3 +25,28 @@ test("S-H2 robots.txt and the sitemap", async ({ request }) => {
   expect((xml.match(/<loc>/g) ?? []).length).toBeGreaterThan(2000);
   expect(xml).toContain("<loc>https://jocularinsights.in/stock/TCS</loc>");
 });
+
+// 24 Oct 2026: pages people search for — each strategy's companies, the strategies, the results calendar
+test("S-H3 a strategy's page and the results calendar are open to everyone; a company opens its page @phone", async ({ page, request }) => {
+  const html = await (await request.get("/screens/high-quality-compounders")).text();
+  expect(html).toMatch(/<title>High Quality Compounders: \d+ NSE stocks that match today \| Jocular Insights<\/title>/);
+  expect(html).toMatch(/<link rel="canonical" href="https:\/\/jocularinsights\.in\/screens\/high-quality-compounders"/);
+  expect(html).toMatch(/href="\/stock\/[A-Z0-9&%-]+"/);
+  expect((await request.get("/screens/no-such-strategy")).status()).toBe(404);
+
+  await page.goto("/screens");
+  await expect(page.getByRole("heading", { level: 1, name: "Indian stock screens" })).toBeVisible();
+  await page.getByRole("link", { name: /High Quality Compounders/ }).click();
+  await expect(page.getByRole("heading", { level: 1, name: /High Quality Compounders: NSE companies that match today/ })).toBeVisible();
+  await expect(page.getByText("The filters")).toBeVisible();
+  const first = page.locator(".pl-co").first();
+  const name = (await first.locator(".pl-co-name").innerText()).trim();
+  await first.click();
+  await expect(page).toHaveURL(/\/stock\/[A-Z0-9&%-]+$/);
+  await expect(page.getByRole("heading", { level: 1 })).toContainText(name.split(" ")[0]);
+
+  await page.goto("/results-calendar");
+  await expect(page.getByRole("heading", { level: 1, name: "Quarterly results calendar" })).toBeVisible();
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  expect(overflow).toBeLessThanOrEqual(1);
+});

@@ -70,6 +70,8 @@ export function SiteFooter() {
         </span>
         <nav style={{ display: "flex", gap: 18 }}>
           <SiteLink to="/stock-screener-india">Stock screener</SiteLink>
+          <SiteLink to="/screens">Screens</SiteLink>
+          <SiteLink to="/results-calendar">Results calendar</SiteLink>
           <SiteLink to="/help">Help</SiteLink>
           <SiteLink to="/methodology">Methodology</SiteLink>
           <SiteLink to="/disclaimer">Disclaimer</SiteLink>

@@ -8,6 +8,7 @@ import Landing from "./Landing.jsx";
 import { PrivacyPage, DisclaimerPage, HelpPage } from "./LegalPages.jsx";
 import MethodologyPage from "./MethodologyPage.jsx";
 import StockScreenerPage from "./StockScreenerPage.jsx";
+import { ScreensIndexPage, ScreenPage, ResultsCalendarPage } from "./PublicLists.jsx";
 import ResetPassword from "./ResetPassword.jsx";
 import { usePath, navigate, stockFromPath, stockPath, chartFromPath, SiteFooter } from "./site.jsx";
 import Header, { BottomTabBar, TABS } from "./Header.jsx";
@@ -175,7 +176,7 @@ export default function App() {
           return;
         }
 
-        if (["/privacy", "/disclaimer", "/help", "/methodology", "/reset-password"].includes(currentPath)) {
+        if (["/privacy", "/disclaimer", "/help", "/methodology", "/reset-password", "/stock-screener-india", "/screens", "/results-calendar"].includes(currentPath) || /^\/screens\//.test(currentPath)) {
           if (canGoBack) window.history.back();
           else navigate("/", { replace: true });
           return;
@@ -284,6 +285,10 @@ export default function App() {
   if (path === "/help") return <HelpPage signedIn={!!account} />;
   if (path === "/methodology") return <MethodologyPage signedIn={!!account} />;
   if (path === "/stock-screener-india") return <StockScreenerPage signedIn={!!account} />;
+  // The strategies' pages and the results calendar, for everyone (PublicLists.jsx)
+  if (path === "/screens") return <ScreensIndexPage signedIn={!!account} />;
+  if (path === "/results-calendar") return <ResultsCalendarPage signedIn={!!account} />;
+  if (/^\/screens\/[a-z0-9-]+\/?$/.test(path)) return <ScreenPage slug={path.split("/")[2]} signedIn={!!account} />;
   // The page a reset email links to: saving signs in, then into the app
   if (path === "/reset-password") return <ResetPassword onDone={() => { tabHistory.current = []; tabRef.current = "discover"; setTab("discover"); navigate("/"); loadAccount(); }} />;
 

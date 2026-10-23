@@ -39,6 +39,7 @@ import { startAlertChecks } from "./alert-notifier.js";
 import { savePushToken, removePushToken } from "./push.js";
 import { startNewsPush } from "./news-push.js";
 import { countPageLoad, countActive, visitStats, isOwner } from "./visits.js";
+import { publicScreen, publicScreens, publicResultsCalendar, screenPageHtml, screensIndexHtml, resultsCalendarHtml } from "./seo-lists.js";
 import { limits, clientIp, waitText } from "./rate-limit.js";
 import { startBackups } from "./backup.js";
 import { fetchTechnicals } from "./technicals.js";
@@ -657,6 +658,17 @@ export function createApp() {
             })),
           })),
         });
+        return;
+      }
+
+      // The strategies' and the results calendar's pages, no sign-in needed (seo-lists.js, PublicLists.jsx)
+      if (url.pathname === "/api/public/screens" && req.method === "GET") { sendJson(res, 200, publicScreens()); return; }
+      if (url.pathname === "/api/public/results-calendar" && req.method === "GET") { sendJson(res, 200, publicResultsCalendar()); return; }
+      const publicScreenRoute = url.pathname.match(/^\/api\/public\/screens\/([a-z0-9-]+)$/);
+      if (publicScreenRoute && req.method === "GET") {
+        const found = publicScreen(publicScreenRoute[1]);
+        if (!found) { sendJson(res, 404, { error: "No strategy by that name." }); return; }
+        sendJson(res, 200, found);
         return;
       }
 
@@ -1285,6 +1297,21 @@ export function createApp() {
         const html = methodologyPageHtml(readFileSync(join(DIST_DIR, "index.html"), "utf-8"));
         res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache" });
         res.end(req.method === "HEAD" ? undefined : html);
+        return;
+      }
+      // The strategies' pages and the results calendar (seo-lists.js), for
+      // search engines and anyone signed out; after the first market is in, so
+      // they're never written empty
+      const listPage = (req.method === "GET" || req.method === "HEAD") && existsSync(join(DIST_DIR, "index.html"))
+        && (url.pathname === "/screens" || url.pathname === "/results-calendar" || /^\/screens\/[a-z0-9-]+\/?$/.test(url.pathname));
+      if (listPage) {
+        await marketReady();
+        const template = readFileSync(join(DIST_DIR, "index.html"), "utf-8");
+        const slug = url.pathname.match(/^\/screens\/([a-z0-9-]+)\/?$/)?.[1];
+        const html = url.pathname === "/screens" ? screensIndexHtml(template) : url.pathname === "/results-calendar" ? resultsCalendarHtml(template) : screenPageHtml(template, slug);
+        // a strategy that doesn't exist: the app (which says so), as not found
+        res.writeHead(html ? 200 : 404, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache" });
+        res.end(req.method === "HEAD" ? undefined : html ?? template);
         return;
       }
       if (url.pathname === "/stock-screener-india" && (req.method === "GET" || req.method === "HEAD") && existsSync(join(DIST_DIR, "index.html"))) {
