@@ -10,7 +10,7 @@
 import { chromium } from "playwright";
 import { spawn } from "node:child_process";
 import { createServer } from "node:net";
-import { mkdirSync, copyFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -75,7 +75,13 @@ writeFileSync(art, `<!doctype html><html><body style="margin:0;width:1024px;heig
 const fg = await browser.newPage({ viewport: { width: 1024, height: 500 }, deviceScaleFactor: 1 });
 await fg.goto(`file://${art}`); await fg.waitForTimeout(800);
 await fg.screenshot({ path: join(OUT, "feature-graphic.png") }); console.log("  feature-graphic.png");
-copyFileSync(join(ROOT, "public/icons/icon-512.png"), join(OUT, "icon-512.png")); console.log("  icon-512.png");
+// The store icon: the white logo, as the app's own icon (scripts/android-
+// assets.mjs, 23 Oct 2026) — the owner's artwork on white, edge to edge
+// (Play rounds the corners itself)
+await fg.setViewportSize({ width: 512, height: 512 });
+await fg.setContent(`<body style="margin:0;width:512px;height:512px;background:#fff;display:grid;place-items:center"><img src="data:image/png;base64,${readFileSync(join(ROOT, "scripts/brand/ji-original.png")).toString("base64")}" style="width:410px;height:410px"></body>`);
+await fg.waitForFunction(() => [...document.images].every(i => i.complete && i.naturalWidth > 0));
+await fg.screenshot({ path: join(OUT, "icon-512.png") }); console.log("  icon-512.png");
 
 await browser.close();
 process.exit(0);
