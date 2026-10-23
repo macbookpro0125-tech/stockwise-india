@@ -65,7 +65,8 @@ const ddmmyyyy = ms => { const d = new Date(ms + 5.5 * 3600_000); return `${Stri
 // held on …'."), and a press release's is "A press release dated …, titled
 // "…"" — its title is what it says
 export function tidy(text) {
-  let t = String(text ?? "").replace(/\s+/g, " ").trim();
+  // NSE leaves some characters as HTML codes ("&#8377;3,16,00,452" for ₹)
+  let t = String(text ?? "").replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n))).replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/\s+/g, " ").trim();
   const titled = t.match(/^a (?:revised )?press release dated .+?, titled\s*["“'](.+?)["”']\.?$/i);
   if (titled) t = titled[1].trim();
   t = t.replace(/^['"“‘]+/, "").replace(/['"”’]+\.?$/, "").trim();
@@ -252,7 +253,9 @@ export function sameDayTogether(filings) {
   const out = [];
   for (const group of groups.values()) {
     const lead = group.find(f => !GENERIC_SUBJECT.test(f.title) && f.summary) ?? group.find(f => f.summary) ?? group[0];
-    out.push({ ...lead, also: group.filter(f => f !== lead).map(f => ({ id: f.id, title: f.title, summary: f.summary, time: f.time })) });
+    // (a notice filed twice in the same words goes with it unsaid)
+    const same = f => f.summary && lead.summary && (lead.summary.startsWith(f.summary.replace(/…$/, "").slice(0, 120)) || f.summary.startsWith(lead.summary.slice(0, 120)));
+    out.push({ ...lead, also: group.filter(f => f !== lead && !same(f)).map(f => ({ id: f.id, title: f.title, summary: f.summary, time: f.time })) });
   }
   return out.sort((a, b) => b.time.localeCompare(a.time));
 }
@@ -338,6 +341,12 @@ export function pickTop(items, n = 3) {
 export async function topNews() {
   const { items, unread, asOf } = await feed();
   return { items: pickTop(items).map(listed), unread, asOf };
+}
+
+// The news about a set of companies (an index's, on the Explore page)
+export async function newsForSymbols(symbols, max = 8) {
+  const { items } = await feed();
+  return items.filter(i => (i.symbol && symbols.has(i.symbol)) || i.companies?.some(c => symbols.has(c.symbol))).slice(0, max).map(listed);
 }
 
 // An announcement, for reading its attachment

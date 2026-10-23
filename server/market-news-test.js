@@ -28,6 +28,7 @@ const kinds = [
 ];
 for (const [subject, summary, want] of kinds) assert.equal(newsKind(subject, summary), want, `${subject}: ${summary}`);
 
+assert.equal(tidy("Letter of Acceptance worth &#8377;3,16,00,452.60 from DFCCIL"), "Letter of Acceptance worth ₹3,16,00,452.60 from DFCCIL", "NSE's HTML codes read as characters");
 assert.equal(tidy("'Outcome of Board Meeting held on October 22, 2026.'."), "Outcome of Board Meeting held on October 22, 2026.", "NSE's quotes taken off");
 assert.equal(tidy('A press release dated October 21, 2026, titled "IHCL announces financial results for Q2 FY2027".'), "IHCL announces financial results for Q2 FY2027", "a press release: its own title");
 
@@ -57,6 +58,14 @@ assert.deepEqual(together.map(i => [i.id, i.also.map(a => a.id).join()]), [["nse
 
 // A summary that is only the rule it's filed under is none
 assert.equal(announcementsFrom([row(21, "NAUKRI", "Updates", "Info Edge (India) Limited has informed the Exchange about Disclosure under Regulation 30 of the Securities and Exchange Board of India (Listing Obligations and Disclosure Requirements) Regulations, 2015")]).length, 0, "the rule alone, in NSE's long wording: left out");
+
+// The same words filed twice in a day: one row, no repeat under it
+const twice = sameDayTogether(announcementsFrom([
+  row(30, "MAGEL", "General Updates", "Subsidiary receives Letter of Acceptance worth Rs 3.16 crore from DFCCIL for CCTV", "2026-10-23 09:49:00"),
+  row(31, "MAGEL", "General Updates", "Subsidiary receives Letter of Acceptance worth Rs 3.16 crore from DFCCIL for CCTV Surveillance Solutions", "2026-10-23 09:48:00"),
+]));
+assert.equal(twice.length, 1);
+assert.equal(twice[0].also.length, 0, "the repeat isn't shown again under it");
 
 // A bare "Outcome of Board Meeting held on …" says nothing
 assert.equal(announcementsFrom([row(20, "ZZZ", "Updates", "'Outcome of Board Meeting held on October 22, 2026.'.")]).length, 0, "a board meeting's date alone is left out");

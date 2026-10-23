@@ -277,7 +277,12 @@ function technicals(days, nifty) {
 const RETURN_PERIODS = [["d1", { days: 1 }], ["w1", { days: 7 }], ["m1", { months: 1 }], ["m3", { months: 3 }], ["m6", { months: 6 }], ["y1", { months: 12 }], ["y3", { months: 36 }], ["y5", { months: 60 }]];
 
 // The market and each sector's index, over the same periods (sector-indices.js)
-const BENCHMARKS = ["Nifty 50", ...new Set(Object.values(SECTOR_INDEX))];
+// The Explore page's indices (explore.js): the broad market, then sectors
+export const BOARD = {
+  market: ["Nifty 50", "Nifty Bank", "Nifty Next 50", "Nifty 500", "NIFTY Midcap 100", "NIFTY Smallcap 100", "Nifty Smallcap 250", "Nifty Microcap 250", "India VIX"],
+  sectors: ["Nifty IT", "Nifty Auto", "Nifty FMCG", "Nifty Pharma", "Nifty Metal", "Nifty Realty", "Nifty Energy", "Nifty Financial Services", "Nifty PSU Bank", "Nifty Private Bank", "Nifty Oil & Gas", "Nifty Healthcare Index", "Nifty Consumer Durables", "Nifty Media", "Nifty Infrastructure", "Nifty India Defence", "Nifty Capital Markets", "Nifty Power", "Nifty Cement", "Nifty Chemicals"],
+};
+const BENCHMARKS = [...new Set(["Nifty 50", ...Object.values(SECTOR_INDEX), ...BOARD.market, ...BOARD.sectors])].filter(n => n !== "India VIX");
 
 async function periodReturns(latest, splits) {
   const factorBetween = (sym, fromIso) => (splits[sym] ?? [])
@@ -364,11 +369,52 @@ async function indexFile(isoDate) {
     byName = new Map();
     for (const f of lines.map(l => l.split(",").map(c => c.trim()))) {
       const close = Number(f[at("Closing Index Value")]);
-      if (close > 0) byName.set(f[at("Index Name")], { close, change: Number(f[at("Points Change")]), changePct: Number(f[at("Change(%)")]) });
+      // NSE's own valuation of the index, where it gives one ("-" otherwise)
+      const num = col => { const v = Number(f[at(col)]); return at(col) >= 0 && f[at(col)] !== "-" && isFinite(v) && v > 0 ? v : null; };
+      if (close > 0) byName.set(f[at("Index Name")], { close, change: Number(f[at("Points Change")]), changePct: Number(f[at("Change(%)")]), pe: num("P/E"), pb: num("P/B"), divYield: num("Div Yield") });
     }
   }
   indexDays.set(isoDate, byName);
   return byName;
+}
+
+// The members of the indices the Explore page's heat map shows, from
+// niftyindices.com's lists (as the sectors are); an index whose list can't be
+// read is left out, not guessed
+export const HEATMAP_LISTS = { "Nifty 50": "ind_nifty50list", "Nifty Bank": "ind_niftybanklist", "Nifty Next 50": "ind_niftynext50list", "NIFTY Midcap 100": "ind_niftymidcap100list", "NIFTY Smallcap 100": "ind_niftysmallcap100list" };
+export async function indexMembers() {
+  const out = {};
+  for (const [name, list] of Object.entries(HEATMAP_LISTS)) {
+    const csv = await fetchText(`https://www.niftyindices.com/IndexConstituent/${list}.csv`).catch(() => null);
+    if (!csv) continue;
+    const [header, ...lines] = csv.trim().split("\n");
+    const iSym = header.split(",").map(c => c.trim()).indexOf("Symbol");
+    const symbols = lines.map(l => l.split(",")[iSym]?.trim()).filter(Boolean);
+    if (symbols.length >= 10) out[name] = symbols;
+  }
+  return out;
+}
+
+// Each of them with its year of daily closes from NSE's daily index file (the
+// year walk has already read every day's) and NSE's valuation on the last day
+export async function indexBoard(fromIso, toIso) {
+  const names = [...BOARD.market, ...BOARD.sectors];
+  const days = [], closes = Object.fromEntries(names.map(n => [n, []]));
+  for (let d = new Date(`${fromIso}T00:00:00Z`); isoDay(d) <= toIso; d.setUTCDate(d.getUTCDate() + 1)) {
+    if (d.getUTCDay() === 0 || d.getUTCDay() === 6) continue;
+    const file = await indexFile(isoDay(d));
+    if (!file?.get("Nifty 50")) continue;
+    days.push(isoDay(d));
+    for (const n of names) closes[n].push(file.get(n)?.close ?? null);
+  }
+  const last = days.length ? await indexFile(days[days.length - 1]) : null;
+  return {
+    days,
+    indices: names.map(name => {
+      const x = last?.get(name);
+      return { name, group: BOARD.market.includes(name) ? "market" : "sector", close: x?.close ?? null, change: x?.change ?? null, changePct: x?.changePct ?? null, pe: x?.pe ?? null, pb: x?.pb ?? null, divYield: x?.divYield ?? null, closes: closes[name] };
+    }).filter(i => i.close != null),
+  };
 }
 
 async function indexCloses(isoDate) {
@@ -646,6 +692,8 @@ export async function buildMarketSnapshot(fyEndDates, { yearsOfActions = 6 } = {
     ...await periodReturns(latest, splits).then(r => ({ returns: r.bySymbol, indexReturns: r.byIndex })),
     tech: year.tech,
     indices: await indexCloses(latest.date),
+    indexBoard: await indexBoard(year.from, latest.date).catch(() => null),
+    indexMembers: await indexMembers().catch(() => null),
   };
   writeFileSync(SNAPSHOT_PATH, JSON.stringify(snapshot));
   return snapshot;

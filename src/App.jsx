@@ -1,8 +1,7 @@
 import { Suspense, useState, useEffect, useRef, useCallback } from "react";
 import { flushSync } from "react-dom";
 import { lazyPage } from "./lazyPage.js";
-// Not split off: Discover draws its Market news card
-import NewsView from "./NewsView.jsx";
+import ExploreView from "./ExploreView.jsx";
 import { api } from "./api.js";
 import Landing from "./Landing.jsx";
 import { PrivacyPage, DisclaimerPage, HelpPage } from "./LegalPages.jsx";
@@ -135,8 +134,8 @@ export default function App() {
           window.history.back();
           return;
         }
-        // And an item open on the News page (NewsView.jsx)
-        if (window.history.state?.newsItem) {
+        // And a news item or an index open on the Explore page (ExploreView.jsx)
+        if (window.history.state?.newsItem || window.history.state?.exploreIndex) {
           window.history.back();
           return;
         }
@@ -328,12 +327,12 @@ export default function App() {
         {open && <StockDetail key={open.at} symbol={open.symbol} account={account} onBack={closeStock} backTo={TABS.find(t => t.id === tab)?.label} onOpenStock={openSymbol} />}
         {/* Kept mounted (hidden) while a stock is open, so its filters and
             results are still there on Back. */}
-        {tab === "discover" && <div hidden={!!open}><DiscoverView onOpenStock={openSymbol} theme={theme} onOpenNews={id => { setNewsOpen(id ?? null); goTab("news"); }} /></div>}
+        {tab === "discover" && <div hidden={!!open}><DiscoverView onOpenStock={openSymbol} theme={theme} onOpenNews={id => { setNewsOpen(id ?? null); goTab("explore"); }} /></div>}
         {!open && tab === "watchlist" && <WatchlistView onOpenStock={openSymbol} />}
         {!open && tab === "portfolio" && <PortfolioView onOpenStock={openSymbol} />}
         {!open && tab === "performance" && <PerformanceView onOpenStock={openSymbol} />}
         {!open && tab === "alerts" && <AlertsView onOpenStock={openSymbol} />}
-        {!open && tab === "news" && <NewsView onOpenStock={openSymbol} openId={newsOpen} onOpened={() => setNewsOpen(null)} />}
+        {!open && tab === "explore" && <ExploreView onOpenStock={openSymbol} openId={newsOpen} onOpened={() => setNewsOpen(null)} />}
         {!open && tab === "momentum" && account?.features?.momentum && <MomentumView onOpenStock={openSymbol} />}
         {!open && tab === "settings" && <SettingsView account={account} theme={theme} onToggleTheme={toggleTheme} onTab={goTab} onLogout={logout} onDeleted={accountDeleted} onTour={askForTour} />}
       </Suspense>

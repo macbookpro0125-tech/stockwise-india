@@ -88,6 +88,10 @@ export const api = {
   // The News page (NewsView.jsx): companies' announcements to NSE and the day's headlines
   news: ({ kind = "all", before = null, size = "large" } = {}) => request(`/api/news?kind=${encodeURIComponent(kind)}&size=${size}${before ? `&before=${encodeURIComponent(before)}` : ""}`),
   newsTop: () => request("/api/news/top"),
+  // The Explore page (ExploreView.jsx): the indices, and one in full
+  explore: () => request("/api/explore"),
+  exploreIndex: name => request(`/api/explore/index?name=${encodeURIComponent(name)}`),
+  heatmap: (set, period) => request(`/api/explore/heatmap?set=${encodeURIComponent(set)}&period=${period}`),
   newsItem: id => request(`/api/news/item/${encodeURIComponent(id)}`),
   newsFilingLines: id => request(`/api/news/item/${encodeURIComponent(id)}/read`),
   currentPrices: (symbols) => request(`/api/prices?symbols=${symbols.map(encodeURIComponent).join(",")}`),

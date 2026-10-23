@@ -38,7 +38,7 @@ test("N-H2 Discover's News tile and the News tab on a computer; a headline opens
   await tile.getByRole("button", { name: /Read the news/ }).click();
   await expect(page.getByRole("group", { name: "Kinds of news" })).toBeVisible();
   await page.goto("/stock/TCS");
-  await openPage(page, "News");
+  await openPage(page, "Explore");
   const kinds = page.getByRole("group", { name: "Kinds of news" });
   await kinds.getByRole("button", { name: "Headlines" }).click();
   const headline = page.locator(".nw-day .nw-row").first();
@@ -68,7 +68,7 @@ test("N-H2 Discover's News tile and the News tab on a computer; a headline opens
 // (or says when they come), and an announcement can be read for its key lines
 test("N-H3 results show their figures; an announcement's filing is read for its key lines", async ({ page, account }) => {
   await page.goto("/");
-  await openPage(page, "News");
+  await openPage(page, "Explore");
   const kinds = page.getByRole("group", { name: "Kinds of news" });
   await kinds.getByRole("button", { name: /^Results/ }).click();
   const rows = page.locator(".nw-day .nw-row");

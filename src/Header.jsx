@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Compass, Star, BriefcaseBusiness, ChartLine, Bell, Sun, Moon, Zap, Settings, Newspaper } from "lucide-react";
+import { Compass, Star, BriefcaseBusiness, ChartLine, Bell, Sun, Moon, Zap, Settings, Telescope } from "lucide-react";
 import { useWatchlist } from "./watchlist.js";
 import { portfolioStore, alertsStore } from "./stores.js";
 import StockSearchBar from "./StockSearchBar.jsx";
@@ -17,8 +17,9 @@ import AccountMenu from "./AccountMenu.jsx";
 
 export const TABS = [
   { id: "discover", label: "Discover", short: "Discover", Icon: Compass },
-  // The market's news (NewsView.jsx, 22 Oct 2026); on a phone, from Discover's card
-  { id: "news", label: "News", short: "News", Icon: Newspaper },
+  // The indices and the news (ExploreView.jsx, 23 Oct 2026); on a phone,
+  // from Discover's Market news card
+  { id: "explore", label: "Explore", short: "Explore", Icon: Telescope },
   // Short-term and speculative, so only for accounts the server allows
   // (http-server.js momentumAllowed) — /api/auth/me says which
   { id: "momentum", label: "Momentum", short: "Momentum", Icon: Zap, gated: "momentum" },
@@ -166,7 +167,7 @@ export function BottomTabBar({ tab, onTab }) {
   }, []);
   // A new tab opens with the bar open
   useEffect(open, [tab]);
-  const isOn = t => tab === t.id || (t.id === "settings" && ["performance", "momentum"].includes(tab)) || (t.id === "discover" && tab === "news");
+  const isOn = t => tab === t.id || (t.id === "settings" && ["performance", "momentum"].includes(tab)) || (t.id === "discover" && tab === "explore");
   // The one left showing when folded (Discover on a page that isn't a tab's)
   const kept = (phoneTabs.find(isOn) ?? phoneTabs[0]).id;
   // One glass lens under the tabs (asked for 21 Oct 2026: "glass movement

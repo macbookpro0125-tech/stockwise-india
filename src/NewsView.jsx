@@ -315,7 +315,7 @@ export function MarketNewsCard({ onOpen, onSeeAll }) {
   );
 }
 
-export default function NewsView({ onOpenStock, openId = null, onOpened }) {
+export default function NewsView({ onOpenStock, openId = null, onOpened, embedded = false, onItemChange }) {
   const [kind, setKind] = useState("all");
   const [counts, setCounts] = useState(null);
   // Companies over ₹1,000 crore only, unless switched off; kept for the visit
@@ -339,16 +339,19 @@ export default function NewsView({ onOpenStock, openId = null, onOpened }) {
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
+  // The Explore page shows its indices only while no item is open
+  useEffect(() => { onItemChange?.(item); }, [item]); // eslint-disable-line react-hooks/exhaustive-deps
   // From Discover's card: straight to its item
   useEffect(() => { if (openId) { open(openId); onOpened?.(); } }, [openId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="nw-page">
+    <div className={`nw-page${embedded ? " embedded" : ""}`}>
       {item
         ? <Detail id={item} onBack={() => window.history.back()} onOpen={open} onOpenStock={onOpenStock} />
         : <>
           <div className="nw-head">
-            <h2 className="nw-page-title hide-phone">News</h2>
+            {/* on the Explore page, a section under the indices */}
+            {embedded ? <h3 className="ex-h" id="ex-news">News</h3> : <h2 className="nw-page-title hide-phone">News</h2>}
             <p className="nw-lede">What listed companies told NSE over the last few days, and the market's headlines. Updated through the day.</p>
             <button type="button" role="switch" aria-checked={size === "large"} className="nw-size" onClick={() => pickSize(size === "large" ? "all" : "large")}>
               <span className="st-switch nw-switch" data-on={size === "large"} aria-hidden="true"><span /></span>

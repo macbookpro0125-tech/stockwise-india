@@ -41,7 +41,8 @@ import { startBackups } from "./backup.js";
 import { fetchTechnicals } from "./technicals.js";
 import { shareholdingHistory, companyFilings, companyNews, sectorPeers, companyProfile, insiderTrades } from "./company-extras.js";
 import { stockMoves } from "./moves.js";
-import { marketNews, topNews, newsItem, newsItemFiling, KINDS as NEWS_KINDS } from "./market-news.js";
+import { marketNews, topNews, newsItem, newsItemFiling, newsForSymbols, KINDS as NEWS_KINDS } from "./market-news.js";
+import { exploreBoard, exploreIndex, heatmap, HEAT_SETS } from "./explore.js";
 import { summarizeMove, aiClient } from "./ai-moves.js";
 import { summarizeFiling } from "./filing-summary.js";
 import { logoFor } from "./logos.js";
@@ -639,6 +640,28 @@ export function createApp() {
             })),
           })),
         });
+        return;
+      }
+
+      // The Explore page (explore.js): the indices at their last close, and one in full
+      if (url.pathname === "/api/explore" && req.method === "GET") {
+        if (requireAuth(req, res) == null) return;
+        sendJson(res, 200, await exploreBoard());
+        return;
+      }
+      if (url.pathname === "/api/explore/heatmap" && req.method === "GET") {
+        if (requireAuth(req, res) == null) return;
+        const set = url.searchParams.get("set") ?? "Nifty 50";
+        if (!HEAT_SETS.includes(set)) { sendJson(res, 400, { error: "Unknown heat map" }); return; }
+        sendJson(res, 200, await heatmap(set, url.searchParams.get("period") ?? "1d"));
+        return;
+      }
+      if (url.pathname === "/api/explore/index" && req.method === "GET") {
+        if (requireAuth(req, res) == null) return;
+        const found = await exploreIndex(String(url.searchParams.get("name") ?? "").slice(0, 80));
+        if (!found) { sendJson(res, 404, { error: "That index isn't on the Explore page." }); return; }
+        const { symbols, ...index } = found;
+        sendJson(res, 200, { ...index, news: symbols.length ? await newsForSymbols(new Set(symbols)) : [] });
         return;
       }
 

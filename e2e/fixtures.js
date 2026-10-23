@@ -85,7 +85,14 @@ export async function openPage(page, name) {
   if (await bar.isVisible().catch(() => false)) {
     const folded = bar.getByRole("button", { name: /: show all tabs$/ });
     if (await folded.isVisible().catch(() => false)) await folded.click();
-    return bar.getByRole("button", { name: re }).click();
+    const tab = bar.getByRole("button", { name: re });
+    if (await tab.count()) return tab.click();
+    // Explore has no tab on a phone (23 Oct 2026): it opens from Discover's Market news card
+    if (name === "Explore") {
+      await bar.getByRole("button", { name: /^Discover/ }).click();
+      return page.getByRole("region", { name: "Market news" }).getByRole("button", { name: /See all/ }).click();
+    }
+    return tab.click();
   }
   await page.goto("/stock/TCS");
   await row.waitFor();
