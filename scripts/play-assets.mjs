@@ -76,10 +76,11 @@ const fg = await browser.newPage({ viewport: { width: 1024, height: 500 }, devic
 await fg.goto(`file://${art}`); await fg.waitForTimeout(800);
 await fg.screenshot({ path: join(OUT, "feature-graphic.png") }); console.log("  feature-graphic.png");
 // The store icon: the white logo, as the app's own icon (scripts/android-
-// assets.mjs, 23 Oct 2026) — the owner's artwork on white, edge to edge
+// assets.mjs, 23 Oct 2026) — the owner's artwork in the app's colours on
+// white, edge to edge
 // (Play rounds the corners itself)
 await fg.setViewportSize({ width: 512, height: 512 });
-await fg.setContent(`<body style="margin:0;width:512px;height:512px;background:#fff;display:grid;place-items:center"><img src="data:image/png;base64,${readFileSync(join(ROOT, "scripts/brand/ji-original.png")).toString("base64")}" style="width:410px;height:410px"></body>`);
+await fg.setContent(`<body style="margin:0;width:512px;height:512px;background:#fff;display:grid;place-items:center"><img src="data:image/png;base64,${readFileSync(join(ROOT, "scripts/brand/ji-app-colours.png")).toString("base64")}" style="width:410px;height:410px"></body>`);
 await fg.waitForFunction(() => [...document.images].every(i => i.complete && i.naturalWidth > 0));
 await fg.screenshot({ path: join(OUT, "icon-512.png") }); console.log("  icon-512.png");
 
