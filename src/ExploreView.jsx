@@ -222,29 +222,37 @@ function Heatmap({ onOpenStock, onOpenIndex }) {
   // "write something in the tiles itself", 23 Oct 2026). The move only where there's room too.
   const laid = tiles.map(t => {
     const name = t.symbol ?? label(t.index);
-    const best = [];
+    const move = `${t.change > 0 ? "+" : ""}${t.change.toFixed(2)}%`;
+    // Every way to set it out: on 1–3 lines, the right way up or running up a tall thin tile,
+    // with the move under the name (at 0.8 of its size; a figure is about 0.6 of it wide) or not
+    const ways = [];
     for (const up of t.h > t.w * 1.4 ? [false, true] : [false]) {
       const along = up ? t.h : t.w, across = up ? t.w : t.h;
       for (const n of [1, 2, 3]) {
         if (n > 1 && name.length < n * 2) continue;
         const per = Math.ceil(name.length / n);
-        const size = Math.min(n === 1 ? 22 : 16, Math.max(9, Math.sqrt(t.w * t.h) / 4.6), (along - 6) / (per * 0.76), (across - 4) / (n * 1.15));
-        best.push({ up, n, per, size });
+        for (const withMove of [true, false]) {
+          const size = Math.min(n === 1 ? 22 : 16, Math.max(9, Math.sqrt(t.w * t.h) / 4.6), (along - 6) / (per * 0.76),
+            (across - 4) / (n * 1.15 + (withMove ? 0.8 * 1.2 : 0)), withMove ? (along - 6) / (move.length * 0.6 * 0.8) : Infinity);
+          ways.push({ up, n, withMove, size });
+        }
       }
     }
-    // The first that reads well: one line at 8.5 px or more, two lines, running up the tile,
-    // two lines up it, three lines (7.5 px); failing all, the largest
-    const rank = o => (o.up ? [2, 3, 5][o.n - 1] : [0, 1, 4][o.n - 1]);
-    const order = [...best].sort((a, b) => rank(a) - rank(b));
-    const pick = order.find(o => o.size >= (o.n === 1 && !o.up ? 8.5 : 7.5)) ?? best.reduce((a, b) => (b.size > a.size ? b : a));
+    // The first that reads well, the move kept wherever it fits: one line at 8.5 px or more, two
+    // lines, running up the tile, two lines up it, three lines (7.5 px); then the same, smaller
+    // (5 px); the name alone only where even that leaves no room for the move
+    const rank = o => (o.withMove ? 0 : 10) + (o.up ? [2, 3, 5][o.n - 1] : [0, 1, 4][o.n - 1]);
+    const order = [...ways].sort((a, b) => rank(a) - rank(b));
+    const pick = order.find(o => o.withMove && o.size >= (o.n === 1 && !o.up ? 8.5 : 7.5))
+      ?? order.find(o => o.withMove && o.size >= 5)
+      ?? order.find(o => o.size >= 5.5)
+      ?? ways.reduce((a, b) => (b.size > a.size ? b : a));
     // split evenly (DRREDDY: DRR / ED / DY, not DRR / EDD / Y)
     const lines = [];
     for (let i = 0, at = 0; i < pick.n; i++) { const len = Math.ceil((name.length - at) / (pick.n - i)); lines.push(name.slice(at, at + len)); at += len; }
-    const named = pick.size >= 5.5;
-    const room = (pick.up ? t.w : t.h) - pick.n * pick.size * 1.15;
-    const moved = named && !pick.up && pick.size >= 8 && room >= pick.size * 1.1 + 6;
+    const named = pick.size >= 5;
     // a small move is a pale tile: dark letters on it in the light theme
-    return { t, name, lines, up: pick.up, size: pick.size, named, moved, pale: Math.abs(t.change) / limit < 0.5 };
+    return { t, name, move, lines, up: pick.up, size: pick.size, named, moved: named && pick.withMove, pale: Math.abs(t.change) / limit < 0.5 };
   });
   return (
     <section className="ex-section" aria-labelledby="ex-heat">
@@ -260,13 +268,17 @@ function Heatmap({ onOpenStock, onOpenIndex }) {
       <div ref={box} className="ex-heat" style={{ height }}>
         {data == null && <div className="ex-heat-wait" role="status">Drawing the heat map…</div>}
         {data?.pending && <div className="ex-heat-wait">The heat map arrives with the evening data update.</div>}
-        {laid.map(({ t, name, lines, up, named, moved, size, pale }) => (
+        {laid.map(({ t, name, move, lines, up, named, moved, size, pale }) => (
           <button key={t.symbol ?? t.index} type="button" className={`ex-tile${pale ? " pale" : ""}`} title={`${t.name ? niceName(t.name) : name}: ${t.change > 0 ? "+" : ""}${t.change.toFixed(2)}%`}
             aria-label={`${t.name ? niceName(t.name) : name}, ${t.change >= 0 ? "up" : "down"} ${Math.abs(t.change).toFixed(2)}% over ${words}`}
             onClick={() => (t.symbol ? onOpenStock(t.symbol) : onOpenIndex(t.index))}
             style={{ left: t.x, top: t.y, width: t.w, height: t.h, background: heatColor(t.change, limit) }}>
-            {named && <span className={`ex-tile-name${up ? " up" : ""}`} style={{ fontSize: size }}>{lines.map((l, i) => <Fragment key={i}>{i > 0 && <br />}{l}</Fragment>)}</span>}
-            {moved && <span className="ex-tile-chg" style={{ fontSize: Math.max(8, Math.min(size * 0.8, 15)) }}>{t.change > 0 ? "+" : ""}{t.change.toFixed(2)}%</span>}
+            {named && (
+              <span className={`ex-tile-in${up ? " up" : ""}`}>
+                <span className="ex-tile-name" style={{ fontSize: size }}>{lines.map((l, i) => <Fragment key={i}>{i > 0 && <br />}{l}</Fragment>)}</span>
+                {moved && <span className="ex-tile-chg" style={{ fontSize: Math.min(15, Math.max(size * 0.8, size >= 10 ? 8 : 0)) }}>{move}</span>}
+              </span>
+            )}
           </button>
         ))}
       </div>
