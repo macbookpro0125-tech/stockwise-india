@@ -520,7 +520,9 @@ test("F08-H3 strategy performance: an early pick shows its return, marked early"
   await strategy.click();
   await expect(page.getByText("+10.0%")).toBeVisible();
   await expect(page.getByText("-5.0%")).toBeVisible();
-  await expect(page.getByText(/held 25 days/)).toContainText("+4.5%");
+  // each company once, with the day it was first picked (24 Oct 2026)
+  await expect(page.locator(".pf-picked").first()).toContainText(/^Picked \d{1,2} \w+ \d{4}/);
+  await expect(strategy).toContainText(/early · 25 days/);
 });
 
 // ── F09 delete account ──────────────────────────────────────────────────────

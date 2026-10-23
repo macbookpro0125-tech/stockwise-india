@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Camera, ChevronDown } from "lucide-react";
 import { api } from "./api.js";
+import { mergePicks } from "./performanceMerge.js";
 
 // Ported from stock-screener's src/components/PerformancePanel.jsx: each
 // strategy's recorded picks against today's prices. Snapshots are taken
@@ -57,12 +58,53 @@ function EarlyTag({ days }) {
 // Name · entry · current · return, shared by the header and every pick row
 const ROW_GRID = { display: "grid", gridTemplateColumns: "minmax(0,1fr) 78px 78px 62px", gap: 8, alignItems: "center" };
 
+// A strategy's companies, each once (performanceMerge.js): when it was first
+// picked and the return since; those no longer picked after, with when they left
+function Merged({ p, onOpenStock }) {
+  const rows = mergePicks(p.snapshots);
+  const held = d => daysSince(d);
+  return (
+    <div style={{ borderTop: "1px solid var(--bdr)", padding: "10px 16px" }}>
+      <div className="pf-row pf-head">
+        <span className="pf-name">Stock · first picked</span>
+        <span className="pf-num pf-wide">Picked at</span>
+        <span className="pf-num pf-wide">Now</span>
+        <span className="pf-num pf-ret">Return</span>
+      </div>
+      {rows.map((r, i) => {
+        const baseline = held(r.firstDate) != null && held(r.firstDate) < 1;
+        return (
+          <div key={r.ticker}>
+            {!r.current && (i === 0 || rows[i - 1].current) && <div style={{ fontSize: 11, color: "var(--t3)", padding: "12px 0 4px" }}>No longer among the picks</div>}
+            <div className="pf-row" style={{ opacity: r.current ? 1 : 0.75 }}>
+              <span className="pf-name">
+                <button type="button" className="stock-link pf-link" onClick={() => onOpenStock(r.ticker)}>{r.name}</button>
+                <span className="pf-picked">
+                  Picked {fmtDate(r.firstDate)}{r.leftOn ? ` · left ${fmtDate(r.leftOn)}` : ""}
+                  {/* a phone: the prices here, under the name, not in columns */}
+                  <span className="pf-narrow"> · ₹{r.entry?.toLocaleString("en-IN")} → {r.now != null ? `₹${r.now.toLocaleString("en-IN")}` : "—"}</span>
+                </span>
+              </span>
+              <span className="pf-num pf-wide">₹{r.entry?.toLocaleString("en-IN")}</span>
+              <span className="pf-num pf-wide">{r.now != null ? `₹${r.now.toLocaleString("en-IN")}` : "—"}</span>
+              <span className="pf-num pf-ret">{baseline ? <span style={{ fontSize: 11, color: "var(--t3)", ...MONO }}>—</span> : <RetBadge pct={r.returnPct} />}</span>
+            </div>
+          </div>
+        );
+      })}
+      <p style={{ fontSize: 10.5, color: "var(--t3)", margin: "8px 0 0", lineHeight: 1.5 }}>Each company once, from the first snapshot it was in: its close that day, NSE's latest close, and the return since.</p>
+    </div>
+  );
+}
+
 export default function PerformanceView({ onOpenStock }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [snapping, setSnapping] = useState(false);
   const [error, setError] = useState(null);
   const [open, setOpen] = useState(null);
+  // which strategies show their snapshots one by one, under the list
+  const [snapsOpen, setSnapsOpen] = useState({});
   const [studyOpen, setStudyOpen] = useState(null);
 
   const load = async () => {
@@ -207,7 +249,7 @@ export default function PerformanceView({ onOpenStock }) {
                 <div style={{ fontSize: 13, fontWeight: 500, color: "var(--t1)", letterSpacing: "-0.01em" }}>{p.presetName}</div>
                 <div style={{ fontSize: 10, color: "var(--t3)", marginTop: 2 }}>
                   {/* The headline % is the oldest cohort's return, not a blend of all snapshots */}
-                  {p.snapshots.length} snapshot{p.snapshots.length === 1 ? "" : "s"} · figure tracks the {fmtDate(p.sinceDate)} picks
+                  {p.snapshots.length} snapshot{p.snapshots.length === 1 ? "" : "s"} · first picks {fmtDate(p.sinceDate)} · the figure tracks those
                 </div>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
@@ -216,7 +258,14 @@ export default function PerformanceView({ onOpenStock }) {
                 <ChevronDown size={16} style={{ color: "var(--t3)", transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 200ms", flexShrink: 0 }} />
               </div>
             </button>
-            {isOpen && p.snapshots.map(snap => {
+            {isOpen && <Merged p={p} onOpenStock={onOpenStock} />}
+            {isOpen && p.snapshots.length > 1 && (
+              <button type="button" className="pf-snaps-toggle" onClick={() => setSnapsOpen(o => ({ ...o, [p.presetId]: !o[p.presetId] }))} aria-expanded={!!snapsOpen[p.presetId]}>
+                {snapsOpen[p.presetId] ? "Hide the snapshots" : `See each snapshot (${p.snapshots.length})`}
+                <ChevronDown size={14} aria-hidden="true" style={{ transform: snapsOpen[p.presetId] ? "rotate(180deg)" : "none", transition: "transform 200ms" }} />
+              </button>
+            )}
+            {isOpen && snapsOpen[p.presetId] && [...p.snapshots].reverse().map(snap => {
               const held = daysSince(snap.date);
               // A snapshot taken today has no elapsed time: its "0%" isn't a
               // reading, so it's labelled a baseline instead
