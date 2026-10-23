@@ -196,6 +196,13 @@ const heatColor = (c, limit) => {
   return `color-mix(in srgb, ${c > 0 ? "#1f9d55" : "#d64545"} ${Math.round(28 + 62 * t)}%, var(--s2))`;
 };
 
+// A name in n lines, split evenly (DRREDDY: DRR / ED / DY, not DRR / EDD / Y)
+function evenly(name, n) {
+  const lines = [];
+  for (let i = 0, at = 0; i < n; i++) { const len = Math.ceil((name.length - at) / (n - i)); lines.push(name.slice(at, at + len)); at += len; }
+  return lines;
+}
+
 function Heatmap({ onOpenStock, onOpenIndex }) {
   const [set, setSet] = useState("Nifty 50");
   const [period, setPeriod] = useState("1d");
@@ -220,6 +227,8 @@ function Heatmap({ onOpenStock, onOpenIndex }) {
   // up a tall thin tile. Down to 5.5 px, so even a phone's
   // smallest tiles say whose they are, in the tile ("I can't see the names of the companies",
   // "write something in the tiles itself", 23 Oct 2026). The move only where there's room too.
+  // how wide a run of bold capitals is, in ems: W and M wider, I and punctuation narrower
+  const ems = str => [...str].reduce((w, c) => w + (/[WM]/.test(c) ? 0.98 : /[I1.,'\-&]/.test(c) ? 0.42 : /\d/.test(c) ? 0.66 : 0.76), 0);
   const laid = tiles.map(t => {
     const name = t.symbol ?? label(t.index);
     const move = `${t.change > 0 ? "+" : ""}${t.change.toFixed(2)}%`;
@@ -230,9 +239,10 @@ function Heatmap({ onOpenStock, onOpenIndex }) {
       const along = up ? t.h : t.w, across = up ? t.w : t.h;
       for (const n of [1, 2, 3]) {
         if (n > 1 && name.length < n * 2) continue;
-        const per = Math.ceil(name.length / n);
+        // the widest line when split evenly
+        const per = Math.max(...evenly(name, n).map(ems));
         for (const withMove of [true, false]) {
-          const size = Math.min(n === 1 ? 22 : 16, Math.max(9, Math.sqrt(t.w * t.h) / 4.6), (along - 6) / (per * 0.76),
+          const size = Math.min(n === 1 ? 22 : 16, Math.max(9, Math.sqrt(t.w * t.h) / 4.6), (along - 6) / per,
             (across - 4) / (n * 1.15 + (withMove ? 0.8 * 1.2 : 0)), withMove ? (along - 6) / (move.length * 0.6 * 0.8) : Infinity);
           ways.push({ up, n, withMove, size });
         }
@@ -247,9 +257,7 @@ function Heatmap({ onOpenStock, onOpenIndex }) {
       ?? order.find(o => o.withMove && o.size >= 5)
       ?? order.find(o => o.size >= 5.5)
       ?? ways.reduce((a, b) => (b.size > a.size ? b : a));
-    // split evenly (DRREDDY: DRR / ED / DY, not DRR / EDD / Y)
-    const lines = [];
-    for (let i = 0, at = 0; i < pick.n; i++) { const len = Math.ceil((name.length - at) / (pick.n - i)); lines.push(name.slice(at, at + len)); at += len; }
+    const lines = evenly(name, pick.n);
     const named = pick.size >= 5;
     // a small move is a pale tile: dark letters on it in the light theme
     return { t, name, move, lines, up: pick.up, size: pick.size, named, moved: named && pick.withMove, pale: Math.abs(t.change) / limit < 0.5 };
