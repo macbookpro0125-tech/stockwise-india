@@ -36,6 +36,8 @@ export function useWatchlist() {
 let saving = Promise.resolve();
 export const watchSaved = () => saving;
 
+export const WATCH_ADDED = "watch-added";
+
 export async function toggleWatch(symbol, price) {
   const had = symbols?.has(symbol);
   symbols = new Set(symbols ?? []);
@@ -45,6 +47,8 @@ export async function toggleWatch(symbol, price) {
   saving = Promise.all([saving, request.catch(() => {})]);
   try {
     await request;
+    // a company starred: the Android app may offer its notifications (PushAsk.jsx)
+    if (!had && typeof window !== "undefined") window.dispatchEvent(new CustomEvent(WATCH_ADDED, { detail: { symbol } }));
   } catch {
     symbols = new Set(symbols);
     if (had) symbols.add(symbol); else symbols.delete(symbol);
