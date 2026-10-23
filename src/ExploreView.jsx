@@ -251,6 +251,86 @@ function Heatmap({ onOpenStock, onOpenIndex }) {
   );
 }
 
+// ---- Top movers and the week's results ------------------------------------------
+
+const crShort = v => (v >= 100000 ? `₹${(v / 100000).toLocaleString("en-IN", { maximumFractionDigits: 1 })} lakh cr` : `₹${Math.round(v).toLocaleString("en-IN")} cr`);
+
+function TopMovers({ onOpenStock }) {
+  const [period, setPeriod] = useState("1d");
+  const [side, setSide] = useState("gainers");
+  const [data, setData] = useState(null);
+  useEffect(() => { setData(null); api.movers(period).then(setData).catch(() => setData({ gainers: [], losers: [] })); }, [period]);
+  const list = data?.[side] ?? [];
+  const [, , , words] = HEAT_PERIODS.find(([p]) => p === period);
+  return (
+    <section className="ex-section" aria-labelledby="ex-movers">
+      <h3 className="ex-h" id="ex-movers">Top movers</h3>
+      <div className="ex-heat-bar">
+        <div className="ex-ranges ex-heat-periods" role="group" aria-label="Rises or falls">
+          {[["gainers", "Gainers"], ["losers", "Losers"]].map(([id, l]) => <button key={id} type="button" className="ex-range" aria-pressed={side === id} onClick={() => setSide(id)}>{l}</button>)}
+        </div>
+        <div className="ex-ranges ex-heat-periods" role="group" aria-label="Movers over">
+          {HEAT_PERIODS.map(([p, l]) => <button key={p} type="button" className="ex-range" aria-pressed={period === p} onClick={() => setPeriod(p)}>{l}</button>)}
+        </div>
+      </div>
+      {data == null
+        ? <div className="nw-skel" role="status" aria-label="Loading the movers">{[0, 1, 2].map(i => <span key={i} />)}</div>
+        : list.length
+          ? <ol className="nw-list ex-movers-list">
+            {list.map((m, k) => (
+              <li key={m.symbol}>
+                <button type="button" className="nw-row compact" onClick={() => onOpenStock(m.symbol)}>
+                  <span className="ex-rank">{k + 1}</span>
+                  <span className="nw-mark"><CompanyLogo symbol={m.symbol} size={36} fallback={m.name} /></span>
+                  <span className="nw-main">
+                    <span className="nw-top"><span className="nw-who">{niceName(m.name)}</span><span className="nw-spacer" /><span className={`ex-pill ${m.change >= 0 ? "up" : "down"}`}>{m.change > 0 ? "+" : "−"}{Math.abs(m.change).toFixed(2)}%</span></span>
+                    <span className="nw-subject">₹{m.close.toLocaleString("en-IN", { maximumFractionDigits: 2 })} · {crShort(m.marketCapCr)}</span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ol>
+          : <p className="nw-empty">No {side === "gainers" ? "rises" : "falls"} over {words}.</p>}
+      <p className="nw-note">Companies over ₹{(data?.floorCr ?? 1000).toLocaleString("en-IN")} crore, over {words}{data?.asOf ? ` to the close on ${shortDate(data.asOf)}` : ""}.</p>
+    </section>
+  );
+}
+
+const weekday = d => new Intl.DateTimeFormat("en-IN", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${d}T00:00:00Z`));
+function ResultsWeek({ onOpenStock }) {
+  const [data, setData] = useState(null);
+  const [open, setOpen] = useState({});
+  useEffect(() => { api.resultsWeek().then(setData).catch(() => setData({ days: [] })); }, []);
+  if (!data?.days?.length) return null;
+  const SHOWN = 6;
+  return (
+    <section className="ex-section" aria-labelledby="ex-results">
+      <h3 className="ex-h" id="ex-results">Results this week</h3>
+      <div className="ex-days">
+        {data.days.map(day => {
+          const all = open[day.date], list = all ? day.companies : day.companies.slice(0, SHOWN);
+          const tomorrow = new Date(Date.parse(`${data.today}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
+          return (
+            <div key={day.date} className="ex-day">
+              <div className="ex-day-head"><b>{day.date === data.today ? "Today" : day.date === tomorrow ? "Tomorrow" : weekday(day.date)}</b><span>{day.count} {day.count === 1 ? "company" : "companies"}</span></div>
+              <div className="ex-day-list">
+                {list.map(c => (
+                  <button key={c.symbol} type="button" className="ex-co" onClick={() => onOpenStock(c.symbol)} title={niceName(c.name)}>
+                    <CompanyLogo symbol={c.symbol} size={22} fallback={c.name} />
+                    <span>{niceName(c.name)}</span>
+                  </button>
+                ))}
+                {day.count > SHOWN && <button type="button" className="ex-more" onClick={() => setOpen(o => ({ ...o, [day.date]: !all }))}>{all ? "Fewer" : `+${day.count - SHOWN} more`}</button>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <p className="nw-note">Board meetings for results on NSE's calendar, the largest companies first.</p>
+    </section>
+  );
+}
+
 export default function ExploreView({ onOpenStock, openId = null, onOpened }) {
   const [board, setBoard] = useState(null);
   const [index, setIndex] = useState(() => window.history.state?.newsItem ? null : window.history.state?.exploreIndex ?? null);
@@ -299,6 +379,9 @@ export default function ExploreView({ onOpenStock, openId = null, onOpened }) {
                   <Row id="ex-sectors" title="Sectors" items={board.sectors} asOf={board.asOf} onOpen={openIndex} />
                   <Heatmap onOpenStock={onOpenStock} onOpenIndex={openIndex} />
                 </>}
+            {/* from the companies' own figures: there even before the indices are */}
+            <TopMovers onOpenStock={onOpenStock} />
+            <ResultsWeek onOpenStock={onOpenStock} />
           </>
         )}
         <NewsView embedded onOpenStock={onOpenStock} openId={newsOpen ?? openId} onOpened={() => { setNewsOpen(null); onOpened?.(); }} onItemChange={setNewsItem} />

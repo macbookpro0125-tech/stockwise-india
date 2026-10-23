@@ -42,7 +42,7 @@ import { fetchTechnicals } from "./technicals.js";
 import { shareholdingHistory, companyFilings, companyNews, sectorPeers, companyProfile, insiderTrades } from "./company-extras.js";
 import { stockMoves } from "./moves.js";
 import { marketNews, topNews, newsItem, newsItemFiling, newsForSymbols, KINDS as NEWS_KINDS } from "./market-news.js";
-import { exploreBoard, exploreIndex, heatmap, HEAT_SETS } from "./explore.js";
+import { exploreBoard, exploreIndex, heatmap, HEAT_SETS, topMovers, resultsWeek } from "./explore.js";
 import { summarizeMove, aiClient } from "./ai-moves.js";
 import { summarizeFiling } from "./filing-summary.js";
 import { logoFor } from "./logos.js";
@@ -647,6 +647,16 @@ export function createApp() {
       if (url.pathname === "/api/explore" && req.method === "GET") {
         if (requireAuth(req, res) == null) return;
         sendJson(res, 200, await exploreBoard());
+        return;
+      }
+      if (url.pathname === "/api/explore/movers" && req.method === "GET") {
+        if (requireAuth(req, res) == null) return;
+        sendJson(res, 200, topMovers(url.searchParams.get("period") ?? "1d"));
+        return;
+      }
+      if (url.pathname === "/api/explore/results" && req.method === "GET") {
+        if (requireAuth(req, res) == null) return;
+        sendJson(res, 200, resultsWeek());
         return;
       }
       if (url.pathname === "/api/explore/heatmap" && req.method === "GET") {

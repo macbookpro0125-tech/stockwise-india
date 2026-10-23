@@ -91,6 +91,8 @@ export const api = {
   // The Explore page (ExploreView.jsx): the indices, and one in full
   explore: () => request("/api/explore"),
   exploreIndex: name => request(`/api/explore/index?name=${encodeURIComponent(name)}`),
+  movers: period => request(`/api/explore/movers?period=${period}`),
+  resultsWeek: () => request("/api/explore/results"),
   heatmap: (set, period) => request(`/api/explore/heatmap?set=${encodeURIComponent(set)}&period=${period}`),
   newsItem: id => request(`/api/news/item/${encodeURIComponent(id)}`),
   newsFilingLines: id => request(`/api/news/item/${encodeURIComponent(id)}/read`),

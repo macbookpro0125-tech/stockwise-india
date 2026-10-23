@@ -112,3 +112,38 @@ export async function heatmap(set = "Nifty 50", period = "1d") {
     .sort((a, b2) => b2.weight - a.weight);
   return { asOf, set, period, items, members: list.length };
 }
+
+// Top movers: the biggest rises and falls over a day, a week or a month among
+// companies over ₹1,000 crore (smaller ones, thinly traded, would fill both
+// lists with 20% days)
+const MOVER_FLOOR_CR = 1000;
+export function topMovers(period = "1d", n = 10) {
+  const [key] = PERIOD[period] ?? PERIOD["1d"];
+  const rows = allMetrics().rows.filter(r => r.marketCapCr >= MOVER_FLOOR_CR && r[key] != null && r.cmp != null);
+  const row = r => ({ symbol: r.symbol, name: r.name, close: r.cmp, change: r[key], marketCapCr: r.marketCapCr, sector: r.sector ?? null });
+  const sorted = [...rows].sort((a, b) => b[key] - a[key]);
+  return {
+    asOf: loadMarketSnapshot()?.pricesDate ?? null, period, floorCr: MOVER_FLOOR_CR,
+    gainers: sorted.filter(r => r[key] > 0).slice(0, n).map(row),
+    losers: sorted.filter(r => r[key] < 0).reverse().slice(0, n).map(row),
+  };
+}
+
+// The week's results: the companies whose results board meeting NSE's
+// calendar lists for the next seven days, by day, the largest first
+export function resultsWeek(days = 7) {
+  const today = new Date(Date.now() + 5.5 * 3600_000).toISOString().slice(0, 10);
+  const end = new Date(Date.parse(`${today}T00:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10);
+  const byDay = new Map();
+  for (const r of allMetrics().rows) {
+    const d = r.nextResults;
+    if (!d || d < today || d > end) continue;
+    if (!byDay.has(d)) byDay.set(d, []);
+    byDay.get(d).push({ symbol: r.symbol, name: r.name, marketCapCr: r.marketCapCr ?? null, sector: r.sector ?? null, lastProfitYoY: r.qProfitGrowthYoY ?? null });
+  }
+  return {
+    today,
+    days: [...byDay.entries()].sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, list]) => ({ date, count: list.length, companies: list.sort((a, b) => (b.marketCapCr ?? 0) - (a.marketCapCr ?? 0)) })),
+  };
+}

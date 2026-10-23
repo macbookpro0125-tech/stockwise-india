@@ -105,3 +105,24 @@ test("X-H5 a computer's company page names where Back goes, and Esc goes back", 
   await expect(page).not.toHaveURL(/\/stock\//);
   await expect(heat).toBeInViewport();
 });
+
+test("X-H6 top movers by day, week or month, and the week's results by day @phone", async ({ page, account }) => {
+  await page.goto("/");
+  await openPage(page, "Explore");
+  const movers = page.getByRole("region", { name: "Top movers" });
+  const rows = movers.locator(".ex-movers-list li");
+  await expect(rows.first()).toBeVisible({ timeout: 45_000 });
+  const changes = async () => (await movers.locator(".ex-pill").allTextContents()).map(t => Number(t.replace("−", "-").replace(/[+%]/g, "")));
+  const up = await changes();
+  expect(up.every(v => v > 0) && up.every((v, i) => i === 0 || v <= up[i - 1]), "gainers, largest first").toBe(true);
+  await movers.getByRole("button", { name: "Losers" }).click();
+  await expect.poll(async () => (await changes()).every(v => v < 0)).toBe(true);
+  await movers.getByRole("button", { name: "1W" }).click();
+  await expect(movers).toContainText("over the week");
+  await rows.first().getByRole("button").click();
+  await expect(page).toHaveURL(/\/stock\//);
+  await page.goBack();
+  const results = page.getByRole("region", { name: "Results this week" });
+  await expect(results.or(page.getByText("never shown")).first()).toBeAttached();
+  if (await results.count()) await expect(results.locator(".ex-day").first()).toContainText(/compan/);
+});
