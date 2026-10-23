@@ -3,6 +3,7 @@ import { api } from "./api.js";
 import { BrandMark } from "./site.jsx";
 import CompanyLogo from "./CompanyLogo.jsx";
 import { niceName } from "./stockName.js";
+import { ANALYSIS_EXAMPLES, companyAnalysisFor } from "./company-analysis.js";
 
 // A company's page for someone not signed in (23 Oct 2026, so search engines
 // and shared links show something real): the figures at the last close, the
@@ -19,7 +20,7 @@ export default function PublicStock({ symbol, onSignIn, initial = null }) {
   const [error, setError] = useState("");
   useEffect(() => {
     let active = true;
-    const title = x => `${niceName(x.name)} share price, P/E, fair value & quality score | ${x.symbol} | Jocular Insights`;
+    const title = x => `${niceName(x.name)} share price${companyAnalysisFor(x) ? ", results analysis" : ""}, P/E, fair value & quality score | ${x.symbol} | Jocular Insights`;
     if (initial?.symbol === symbol) {
       setS(initial);
       document.title = title(initial);
@@ -46,6 +47,11 @@ export default function PublicStock({ symbol, onSignIn, initial = null }) {
     ["Dividend yield", s.divYield != null ? `${num(s.divYield, 2)}%` : null],
     ["Next results", s.nextResults ? day(s.nextResults) : null],
   ].filter(([, v]) => v != null) : [];
+  const analysis = s ? companyAnalysisFor(s) : null;
+  const analysisAmount = v => v == null ? "—" : `₹${Math.round(v).toLocaleString("en-IN")}`;
+  const analysisPct = v => v == null ? "—" : `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v).toFixed(1)}%`;
+  const analysisRatio = (v, d = 1) => v == null ? "—" : Number(v).toFixed(d);
+  const analysisRevenueLabel = s?.symbol === "HDFCBANK" ? "reported revenue line" : "reported revenue";
   return (
     <div className="ps-page">
       <header className="ps-head">
@@ -80,6 +86,45 @@ export default function PublicStock({ symbol, onSignIn, initial = null }) {
               )}
             </div>
             <dl className="ps-facts">{facts.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
+            {analysis && (
+              <section className="ps-analysis" aria-labelledby="company-analysis-title">
+                <h2 id="company-analysis-title">{analysis.title}</h2>
+                <p>{analysis.lens}</p>
+                {analysis.latest && <>
+                  <h3>Latest reported figures · {analysis.latest.label}{analysis.latest.filed ? ` · filed ${day(analysis.latest.filed)}` : ""}</h3>
+                  <p>{[
+                    analysis.latest.salesCr != null && `${analysisRevenueLabel} ${analysisAmount(analysis.latest.salesCr)} crore${analysis.latest.salesYoY != null ? ` (${analysisPct(analysis.latest.salesYoY)} year on year)` : ""}`,
+                    analysis.latest.profitCr != null && `net profit ${analysisAmount(analysis.latest.profitCr)} crore${analysis.latest.profitYoY != null ? ` (${analysisPct(analysis.latest.profitYoY)} year on year)` : ""}`,
+                    analysis.latest.opm != null && `operating margin ${analysisRatio(analysis.latest.opm)}%`,
+                  ].filter(Boolean).join("; ")}.</p>
+                </>}
+                {!!s.recentQuarters?.length && <div className="ps-table-wrap">
+                  <table><caption>Recent quarterly figures, as reported (₹ crore unless stated)</caption>
+                    <thead><tr><th>Period</th><th>Revenue line</th><th>Net profit</th><th>Operating margin</th><th>EPS</th></tr></thead>
+                    <tbody>{s.recentQuarters.slice(0, 4).map(q => <tr key={q.end}>
+                      <th>{q.label ?? day(q.end)}</th><td>{q.salesCr == null ? "—" : `${analysisAmount(q.salesCr)} cr`}</td>
+                      <td>{q.profitCr == null ? "—" : `${analysisAmount(q.profitCr)} cr`}</td>
+                      <td>{q.opm == null ? "—" : `${analysisRatio(q.opm)}%`}</td>
+                      <td>{q.eps == null ? "—" : `₹${analysisRatio(q.eps, 2)}`}</td>
+                    </tr>)}</tbody>
+                  </table>
+                </div>}
+                <p>Quarterly figures are shown as reported in the available company results. Revenue lines can differ by business type and should not be compared across companies without checking each filing&apos;s definitions, especially for banks. Missing figures are omitted rather than treated as zero.</p>
+                <h3>Market ratios at the {day(s.closeDate) ?? "latest available"} close</h3>
+                <dl className="ps-analysis-ratios">{[
+                  ["P/E", analysis.marketRatios.pe == null ? null : analysisRatio(analysis.marketRatios.pe)],
+                  ["Price-to-book", analysis.marketRatios.pb == null ? null : analysisRatio(analysis.marketRatios.pb, 2)],
+                  ["ROE", analysis.marketRatios.roe == null ? null : `${analysisRatio(analysis.marketRatios.roe)}%`],
+                  ["ROCE", analysis.marketRatios.roce == null ? null : `${analysisRatio(analysis.marketRatios.roce)}%`],
+                  ["Debt-to-equity", analysis.marketRatios.debtToEquity == null ? null : analysisRatio(analysis.marketRatios.debtToEquity, 2)],
+                  ["Dividend yield", analysis.marketRatios.divYield == null ? null : `${analysisRatio(analysis.marketRatios.divYield, 2)}%`],
+                ].filter(([, value]) => value != null).map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
+                <h3>How to read these numbers</h3><ul>{analysis.checks.map(item => <li key={item}>{item}</li>)}</ul>
+                <h3>What the summary cannot answer</h3><p>{analysis.watch}</p>
+                <h3>More company examples</h3><ul>{ANALYSIS_EXAMPLES.filter(item => item.symbol !== s.symbol).map(item => <li key={item.symbol}><a href={`/stock/${encodeURIComponent(item.symbol)}`}>{item.name}</a></li>)}</ul>
+                <p>Quarterly data is based on company results filed with NSE; market ratios are from the latest Jocular Insights data snapshot. Figures can be revised or restated. Check the original filings before relying on them. This page is educational information, not investment advice. <a href="/methodology">How Jocular calculates scores and reference fair values</a>.</p>
+              </section>
+            )}
             <section className="ps-more">
               <h2>See the full analysis</h2>
               <p>{niceName(s.name)}'s fair value, the scorecard's checks one by one, price charts, results year by year, shareholding and its filings to NSE — free with an account.</p>

@@ -15,6 +15,7 @@
 import { allMetrics } from "./screen.js";
 import { loadMarketSnapshot } from "./market-data.js";
 import { METHODOLOGY_DESCRIPTION, METHODOLOGY_SECTIONS, METHODOLOGY_TITLE } from "../src/methodology-content.js";
+import { ANALYSIS_EXAMPLES, companyAnalysisFor } from "../src/company-analysis.js";
 
 export const SITE = "https://jocularinsights.in";
 const PUBLIC_PATHS = ["/", "/help", "/methodology", "/privacy", "/disclaimer"];
@@ -53,9 +54,48 @@ export function publicStock(symbol) {
     low52w: r.low52w ?? null, high52w: r.high52w ?? null, marketCapCr: r.marketCapCr ?? null,
     pe: r.pe ?? null, pb: r.priceToBook ?? null, roe: r.roe ?? null, roce: r.roce ?? null, debtToEquity: r.debtToEquity ?? null, divYield: r.divYield ?? null,
     quality: r.research?.quality ?? null,
-    quarter: q ? { end: q.fyEnd, label: fyQuarter(q.fyEnd), salesCr: q.revenueCr ?? null, salesYoY: q.salesYoY ?? null, profitCr: q.profitCr ?? null, profitYoY: q.profitYoY ?? null } : null,
+    quarter: q ? { end: q.fyEnd, filed: q.filed ?? null, label: fyQuarter(q.fyEnd), salesCr: q.revenueCr ?? null, salesYoY: q.salesYoY ?? null, profitCr: q.profitCr ?? null, profitYoY: q.profitYoY ?? null, opm: q.opm ?? null, eps: q.eps ?? null } : null,
+    recentQuarters: (r.quarters ?? []).slice(0, 8).map(x => ({ end: x.fyEnd, filed: x.filed ?? null, label: fyQuarter(x.fyEnd), salesCr: x.revenueCr ?? null, salesYoY: x.salesYoY ?? null, profitCr: x.profitCr ?? null, profitYoY: x.profitYoY ?? null, opm: x.opm ?? null, eps: x.eps ?? null })),
     nextResults: r.nextResults ?? null,
   };
+}
+
+function analysisHtml(s) {
+  const a = companyAnalysisFor(s);
+  if (!a) return "";
+  const amount = v => v == null ? "—" : `₹${Math.round(v).toLocaleString("en-IN")} crore`;
+  const percent = v => v == null ? "—" : `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v).toFixed(1)}%`;
+  const ratio = (v, d = 1) => v == null ? "—" : Number(v).toFixed(d);
+  const rows = (s.recentQuarters ?? []).slice(0, 4).map(q => `<tr><th>${esc(q.label ?? day(q.end) ?? "Quarter")}</th><td>${esc(amount(q.salesCr))}</td><td>${esc(amount(q.profitCr))}</td><td>${esc(q.opm == null ? "—" : `${ratio(q.opm)}%`)}</td><td>${esc(q.eps == null ? "—" : `₹${ratio(q.eps, 2)}`)}</td></tr>`).join("");
+  const q = a.latest;
+  const revenueLabel = s.symbol === "HDFCBANK" ? "reported revenue line" : "reported revenue";
+  const period = q ? `${q.label ?? day(q.end)}${q.filed ? ` · filed ${day(q.filed)}` : ""}` : "Latest reported quarter";
+  const introFacts = q ? [
+    q.salesCr != null && `${revenueLabel} ${amount(q.salesCr)}${q.salesYoY != null ? ` (${percent(q.salesYoY)} year on year)` : ""}`,
+    q.profitCr != null && `net profit ${amount(q.profitCr)}${q.profitYoY != null ? ` (${percent(q.profitYoY)} year on year)` : ""}`,
+    q.opm != null && `operating margin ${ratio(q.opm)}%`,
+  ].filter(Boolean).join("; ") : "Quarterly figures are not available in the latest snapshot.";
+  const ratios = [
+    ["P/E", a.marketRatios.pe == null ? null : ratio(a.marketRatios.pe)],
+    ["Price-to-book", a.marketRatios.pb == null ? null : ratio(a.marketRatios.pb, 2)],
+    ["ROE", a.marketRatios.roe == null ? null : `${ratio(a.marketRatios.roe)}%`],
+    ["ROCE", a.marketRatios.roce == null ? null : `${ratio(a.marketRatios.roce)}%`],
+    ["Debt-to-equity", a.marketRatios.debtToEquity == null ? null : ratio(a.marketRatios.debtToEquity, 2)],
+    ["Dividend yield", a.marketRatios.divYield == null ? null : `${ratio(a.marketRatios.divYield, 2)}%`],
+  ].filter(([, value]) => value != null).map(([label, value]) => `<tr><th>${esc(label)}</th><td>${esc(value)}</td></tr>`).join("");
+  const related = ANALYSIS_EXAMPLES.filter(item => item.symbol !== s.symbol).map(item => `<li><a href="/stock/${encodeURIComponent(item.symbol)}">${esc(item.name)}</a></li>`).join("");
+  return `<section class="ps-analysis" aria-labelledby="company-analysis-title">
+<h2 id="company-analysis-title">${esc(a.title)}</h2>
+<p>${esc(a.lens)}</p>
+<h3>Latest reported figures · ${esc(period)}</h3><p>${esc(introFacts)}.</p>
+${rows ? `<div class="ps-table-wrap"><table><caption>Recent quarterly figures, as reported (₹ crore unless stated)</caption><thead><tr><th>Period</th><th>Revenue line</th><th>Net profit</th><th>Operating margin</th><th>EPS</th></tr></thead><tbody>${rows}</tbody></table></div>` : ""}
+<p>Quarterly figures are shown as reported in the available company results. Revenue lines can differ by business type and should not be compared across companies without checking each filing's definitions, especially for banks. Missing ratios or figures are omitted rather than treated as zero.</p>
+<h3>Market ratios at the ${esc(day(s.closeDate) ?? "latest available")} close</h3><table><tbody>${ratios}</tbody></table>
+<h3>How to read these numbers</h3><ul>${a.checks.map(item => `<li>${esc(item)}</li>`).join("")}</ul>
+<h3>What the summary cannot answer</h3><p>${esc(a.watch)}</p>
+<h3>More company examples</h3><ul>${related}</ul>
+<p>Quarterly data is based on company results filed with NSE; market ratios are from the latest Jocular Insights data snapshot. Figures can be revised or restated. Check the original filings before relying on them. This page is educational information, not investment advice. <a href="/methodology">How Jocular calculates scores and reference fair values</a>.</p>
+</section>`;
 }
 
 function describe(s) {
@@ -67,7 +107,13 @@ function describe(s) {
     s.roce != null && `ROCE ${num(s.roce)}%`,
     s.quality != null && `quality score ${Math.round(s.quality)}/100`,
   ].filter(Boolean);
-  return `${parts[0] ?? `${n} on NSE.`} ${parts.slice(1).join(", ")}${parts.length > 1 ? "." : ""} Fair value, results and filings on Jocular Insights.`.slice(0, 300);
+  const analysis = companyAnalysisFor(s);
+  const result = analysis?.latest;
+  const analysisFact = result && [
+    result.salesYoY != null && `revenue ${pct(result.salesYoY)} year on year`,
+    result.profitYoY != null && `profit ${pct(result.profitYoY)} year on year`,
+  ].filter(Boolean).join(", ");
+  return `${parts[0] ?? `${n} on NSE.`} ${parts.slice(1).join(", ")}${parts.length > 1 ? "." : ""}${analysisFact ? ` Latest results: ${analysisFact}.` : ""} Results analysis, fair value and filings on Jocular Insights.`.slice(0, 300);
 }
 
 // The summary as plain HTML, for the page itself (what a crawler reads)
@@ -95,6 +141,7 @@ ${q ? row(`${q.label} sales`, q.salesCr != null ? `₹${Math.round(q.salesCr).to
 ${q ? row(`${q.label} profit`, q.profitCr != null ? `₹${Math.round(q.profitCr).toLocaleString("en-IN")} crore${q.profitYoY != null ? ` (${pct(q.profitYoY)} on a year earlier)` : ""}` : null) : ""}
 ${row("Next results", s.nextResults ? day(s.nextResults) : null)}
 </table>
+${analysisHtml(s)}
 <p>Figures from NSE filings and prices at the last close. <a href="/">Sign in for ${esc(n)}'s fair value, scorecard, charts and filings</a>.</p>
 <p><a href="/methodology">How the scores and fair values are calculated</a> · <a href="/disclaimer">Important limitations</a>. Not investment advice.</p>
 </main>`;
@@ -121,7 +168,8 @@ export function methodologyPageHtml(template) {
 <meta property="og:description" content="${esc(METHODOLOGY_DESCRIPTION)}" />
 <meta property="og:url" content="${esc(canonical)}" />
 <script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\\u003c")}</script>`;
-  const body = `<main class="seo-stock seo-methodology"><p><a href="/">Jocular Insights</a> › Methodology</p><h1>${esc(METHODOLOGY_TITLE)}</h1><p>${esc(METHODOLOGY_DESCRIPTION)}</p>${sections}<p><a href="/disclaimer">Read the full disclaimer</a> · <a href="/help">How figures are updated</a> · Contact <a href="mailto:jocularinsights@gmail.com">jocularinsights@gmail.com</a>.</p></main>`;
+  const examples = `<section><h2>Worked company examples</h2><p>See how to read recent reported figures in context:</p><ul>${ANALYSIS_EXAMPLES.map(item => `<li><a href="/stock/${encodeURIComponent(item.symbol)}">${esc(item.name)}</a></li>`).join("")}</ul></section>`;
+  const body = `<main class="seo-stock seo-methodology"><p><a href="/">Jocular Insights</a> › Methodology</p><h1>${esc(METHODOLOGY_TITLE)}</h1><p>${esc(METHODOLOGY_DESCRIPTION)}</p>${sections}${examples}<p><a href="/disclaimer">Read the full disclaimer</a> · <a href="/help">How figures are updated</a> · Contact <a href="mailto:jocularinsights@gmail.com">jocularinsights@gmail.com</a>.</p></main>`;
   return template
     .replace(/<title>[\s\S]*?<\/title>/, "")
     .replace(/<meta name="description"[^>]*>/, "")
@@ -137,7 +185,7 @@ export function stockPageHtml(template, symbol) {
   const s = publicStock(symbol);
   if (!s) return null;
   const n = plain(s.name);
-  const title = `${n} share price, P/E, fair value & quality score | ${s.symbol} | Jocular Insights`;
+  const title = `${n} share price${companyAnalysisFor(s) ? ", results analysis" : ""}, P/E, fair value & quality score | ${s.symbol} | Jocular Insights`;
   const desc = describe(s);
   const canonical = `${SITE}/stock/${encodeURIComponent(s.symbol)}`;
   const ld = {
