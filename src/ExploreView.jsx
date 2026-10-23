@@ -254,16 +254,20 @@ function Heatmap({ onOpenStock, onOpenIndex }) {
 export default function ExploreView({ onOpenStock, openId = null, onOpened }) {
   const [board, setBoard] = useState(null);
   const [index, setIndex] = useState(() => window.history.state?.newsItem ? null : window.history.state?.exploreIndex ?? null);
+  const indexRef = useRef(null);
+  indexRef.current = index;
   const [newsItem, setNewsItem] = useState(null);
   const [newsOpen, setNewsOpen] = useState(null);
   const listScroll = useRef(0);
   useEffect(() => { api.explore().then(setBoard).catch(() => setBoard({ market: [], sectors: [] })); }, []);
   useEffect(() => {
+    // (only when an index was open: Back from a company page is the app's to place)
     const onPop = () => {
       const s = window.history.state ?? {};
       const next = s.newsItem ? null : s.exploreIndex ?? null;
+      const wasOpen = indexRef.current;
       setIndex(next);
-      if (!next && !s.newsItem) requestAnimationFrame(() => window.scrollTo(0, listScroll.current));
+      if (!next && !s.newsItem && wasOpen) requestAnimationFrame(() => window.scrollTo(0, listScroll.current));
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);

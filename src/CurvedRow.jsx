@@ -75,7 +75,11 @@ export default function CurvedRow({
     const ro = new ResizeObserver(([entry]) => {
       const { width, height } = entry.contentRect;
       const next = measure(width, height, tileHeight, aspectRatio, gap, bend);
-      setLayout(prev => (prev?.columns === next.columns && prev.sweep === next.sweep && prev.unit === next.unit ? prev : next));
+      setLayout(prev => {
+        if (prev?.columns === next.columns && prev.sweep === next.sweep && prev.unit === next.unit) return prev;
+        setShown({}); // the restarted tiles take their first items again
+        return next;
+      });
     });
     ro.observe(el);
     return () => ro.disconnect();
@@ -112,7 +116,10 @@ export default function CurvedRow({
   return (
     <div ref={ref} className={`cr-root ${className}`} style={{ "--cr-u": `min(${tileHeight}cqh, ${+(MAX_WIDTH / aspectRatio).toFixed(4)}cqw)` }}>
       <style>{css}</style>
-      <div className="cr-band" aria-hidden="true" style={{
+      {/* A new layout (the window resized) starts every tile together:
+          tiles added to a running row would start late, out of step with the
+          rest, and open a gap in it (23 Oct 2026) */}
+      <div key={`${columns}|${sweep}|${unit}`} className="cr-band" aria-hidden="true" style={{
         opacity: layout && items.length ? 1 : 0,
         perspective: `${+(r * CAMERA).toFixed(3)}cqw`, // one vanishing point on the row's centre line
         perspectiveOrigin: `50% ${axis}%`,

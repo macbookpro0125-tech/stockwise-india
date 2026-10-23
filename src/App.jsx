@@ -332,7 +332,9 @@ export default function App() {
         {!open && tab === "portfolio" && <PortfolioView onOpenStock={openSymbol} />}
         {!open && tab === "performance" && <PerformanceView onOpenStock={openSymbol} />}
         {!open && tab === "alerts" && <AlertsView onOpenStock={openSymbol} />}
-        {!open && tab === "explore" && <ExploreView onOpenStock={openSymbol} openId={newsOpen} onOpened={() => setNewsOpen(null)} />}
+        {/* Kept mounted (hidden) under a company page too, as Discover is: Back
+            returns to the heat map or the news where they were */}
+        {tab === "explore" && <div hidden={!!open}><ExploreView onOpenStock={openSymbol} openId={newsOpen} onOpened={() => setNewsOpen(null)} /></div>}
         {!open && tab === "momentum" && account?.features?.momentum && <MomentumView onOpenStock={openSymbol} />}
         {!open && tab === "settings" && <SettingsView account={account} theme={theme} onToggleTheme={toggleTheme} onTab={goTab} onLogout={logout} onDeleted={accountDeleted} onTour={askForTour} />}
       </Suspense>

@@ -591,6 +591,18 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
     });
   };
   const [showAlertModal, setShowAlertModal] = useState(false);
+  // Esc goes back on a computer, as the Back button says — not while typing,
+  // nor while a dialog or the expanded chart is open (they close on Esc first)
+  useEffect(() => {
+    const onKey = e => {
+      if (e.key !== "Escape" || e.defaultPrevented || showAlertModal) return;
+      if (e.target.closest?.("input, textarea, select, [contenteditable=true]")) return;
+      if (document.querySelector("[role=dialog], .cm-scrim") || window.history.state?.chartOverlay) return;
+      onBack();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onBack, showAlertModal]);
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
 
@@ -711,7 +723,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
           once the summary above has scrolled away) */}
       <div data-sticky-top className="sd-bar">
         <div className="sd-bar-row">
-          <button type="button" onClick={onBack} title={`Back to ${backTo}`} className="sd-back"><ArrowLeft size={15} aria-hidden="true" /> Back</button>
+          <button type="button" onClick={onBack} title={`Back to ${backTo}`} className="sd-back"><ArrowLeft size={17} aria-hidden="true" /> Back<span className="sd-back-to"> to {backTo}</span><kbd className="sd-back-key" aria-hidden="true">Esc</kbd></button>
           <span className="sd-bar-name"><span className="sd-bar-title">{cardName(data.name)}</span>{price > 0 && <b>{fmtRs(price)}</b>}</span>
           <SectionNav ready={!!m} phone={isPhone} phoneTab={phoneTab} onPhoneTab={showPhoneTab} />
         </div>

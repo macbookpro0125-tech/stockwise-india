@@ -345,6 +345,8 @@ export default function NewsView({ onOpenStock, openId = null, onOpened, embedde
   const [size, setSize] = useState(() => { try { return sessionStorage.getItem("news-size") === "all" ? "all" : "large"; } catch { return "large"; } });
   const pickSize = next => { setSize(next); try { sessionStorage.setItem("news-size", next); } catch {} };
   const [item, setItem] = useState(null);
+  const itemRef = useRef(null);
+  itemRef.current = item;
   const listScroll = useRef(0);
   // An item is a history entry of its own: Back (the browser's, Android's,
   // or the page's) returns to the list where it was
@@ -354,10 +356,12 @@ export default function NewsView({ onOpenStock, openId = null, onOpened, embedde
     setItem(id);
   };
   useEffect(() => {
+    // (only when an item was open: Back from a company page is the app's to place)
     const onPop = () => {
       const id = window.history.state?.newsItem ?? null;
+      const wasOpen = itemRef.current;
       setItem(id);
-      if (!id) requestAnimationFrame(() => window.scrollTo(0, listScroll.current));
+      if (!id && wasOpen) requestAnimationFrame(() => window.scrollTo(0, listScroll.current));
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);

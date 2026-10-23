@@ -62,3 +62,46 @@ test("X-H3 the heat map: an index's companies by size and move; another index, p
   await tiles.first().click();
   await expect(page).toHaveURL(/\/stock\//);
 });
+
+// 23 Oct 2026: "when I click a stock in the heat map and press Back, it goes
+// to the main page, not back to the heat map"
+test("X-H4 Back from a company opened in the heat map returns to the heat map as it was @phone", async ({ page, account }) => {
+  await page.goto("/");
+  await openPage(page, "Explore");
+  const heat = page.getByRole("region", { name: "Heat map" });
+  await expect(heat.locator(".ex-tile").first()).toBeVisible({ timeout: 45_000 });
+  await heat.getByRole("group", { name: "Which companies" }).getByRole("button", { name: "Bank Nifty" }).click();
+  await heat.getByRole("group", { name: "Over" }).getByRole("button", { name: "1W" }).click();
+  await expect(heat).toContainText("over the week");
+  for (const how of ["the page's Back", "the browser's Back"]) {
+    const tile = heat.locator(".ex-tile").first();
+    await tile.scrollIntoViewIfNeeded();
+    const before = await page.evaluate(() => window.scrollY);
+    await tile.click();
+    await expect(page).toHaveURL(/\/stock\//);
+    if (how === "the page's Back") await page.getByRole("button", { name: /^Back/ }).first().click();
+    else await page.goBack();
+    await expect(page).not.toHaveURL(/\/stock\//);
+    await expect(heat, how).toBeInViewport();
+    await expect(heat.getByRole("button", { name: "Bank Nifty" }), how).toHaveAttribute("aria-pressed", "true");
+    await expect(heat.getByRole("button", { name: "1W" }), how).toHaveAttribute("aria-pressed", "true");
+    expect(Math.abs((await page.evaluate(() => window.scrollY)) - before), how).toBeLessThan(40);
+  }
+});
+
+// 23 Oct 2026: "the back button is hard to find on the desktop"
+test("X-H5 a computer's company page names where Back goes, and Esc goes back", async ({ page, account, isMobile }) => {
+  test.skip(isMobile, "a computer's Back");
+  await page.goto("/");
+  await openPage(page, "Explore");
+  const heat = page.getByRole("region", { name: "Heat map" });
+  await expect(heat.locator(".ex-tile").first()).toBeVisible({ timeout: 45_000 });
+  await heat.locator(".ex-tile").first().click();
+  const back = page.getByRole("button", { name: /^Back to Explore/ }).first();
+  await expect(back).toBeVisible();
+  const box = await back.boundingBox();
+  expect(box.height, "a button, not a line of text").toBeGreaterThanOrEqual(40);
+  await page.keyboard.press("Escape");
+  await expect(page).not.toHaveURL(/\/stock\//);
+  await expect(heat).toBeInViewport();
+});
