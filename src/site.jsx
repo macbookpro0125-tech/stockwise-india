@@ -68,7 +68,9 @@ export function SiteFooter() {
           Jocular Insights · Data from NSE filings and daily prices · An educational tool, not investment advice — consult a SEBI-registered adviser
           <br />Company names and logos are trademarks of their owners, shown only to identify each company; no affiliation or endorsement is implied.
         </span>
-        <nav style={{ display: "flex", gap: 18 }}>
+        {/* wraps: seven links don't fit one line on a phone, and a row that can't
+            wrap widens the whole page (24 Oct 2026) */}
+        <nav style={{ display: "flex", flexWrap: "wrap", gap: "8px 18px" }}>
           <SiteLink to="/stock-screener-india">Stock screener</SiteLink>
           <SiteLink to="/screens">Screens</SiteLink>
           <SiteLink to="/results-calendar">Results calendar</SiteLink>
