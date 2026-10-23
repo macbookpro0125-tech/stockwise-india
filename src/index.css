@@ -1473,15 +1473,14 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
    a smudge (22 Oct 2026) */
 @media (max-width: 640px) { .app-header { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--bg) !important; } }
 
-/* Four ways in (with News, 23 Oct 2026): one row on a wide screen, the
-   titles a size down to fit; two by two below that; one column from 1100 */
-.ap-tiles:has(> :nth-child(4)) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.ap-tiles:has(> :nth-child(4)) .ap-tile { padding: 48px 26px 36px; }
-.ap-tiles:has(> :nth-child(4)) .ap-tile-title { font-size: clamp(26px, 2.1vw, 36px); }
-.ap-tiles:has(> :nth-child(4)) .ap-tile-sub { max-width: 24ch; }
-@media (max-width: 1400px) { .ap-tiles:has(> :nth-child(4)) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* With News (23 Oct 2026): the two ways in side by side, the news the whole
+   width below them, its items side by side */
+.ap-tiles:has(> .ap-tile-news) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ap-tiles > .ap-tile-news { grid-column: 1 / -1; min-height: 0; }
+.ap-tiles > .ap-tile-news .ap-news-items { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 @media (max-width: 1100px) {
-  .ap-tiles, .ap-tiles:has(> :nth-child(4)) { grid-template-columns: minmax(0, 1fr); }
+  .ap-tiles, .ap-tiles:has(> .ap-tile-news) { grid-template-columns: minmax(0, 1fr); }
+  .ap-tiles > .ap-tile-news .ap-news-items { grid-template-columns: minmax(0, 1fr); gap: 2px; }
   .ap-tile { min-height: 0; padding: 44px 28px 32px; }
 }
 /* A phone: the headline and buttons, then the list */
@@ -2610,7 +2609,7 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 /* Discover's News tile (NewsView.jsx NewsTile): the news itself, set apart
    from the three ways in beside it — left-aligned like a feed, a darker panel
    with an edge, and a live dot */
-.ap-tiles > .ap-tile.ap-tile-news { align-items: stretch; justify-content: flex-start; gap: 8px; padding: 32px 18px 26px; text-align: left; cursor: default; background: var(--s1); box-shadow: inset 0 0 0 1px var(--bdr2); }
+.ap-tiles > .ap-tile.ap-tile-news { align-items: stretch; justify-content: flex-start; gap: 8px; padding: 32px 26px 26px; text-align: left; cursor: default; background: var(--s1); box-shadow: inset 0 0 0 1px var(--bdr2); }
 .ap-tiles > .ap-tile.ap-tile-news.in:hover { transform: none; box-shadow: inset 0 0 0 1px var(--bdr3, var(--bdr2)); }
 .ap-tiles > .ap-tile.ap-tile-news:active { transform: none; }
 .ap-news-eyebrow { display: inline-flex; align-items: center; gap: 8px; padding: 0 4px; font-size: 13px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--t2); }

@@ -571,7 +571,6 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews }) {
               total={results?.total}
               onStart={newScreen}
               onCreate={newScreen}
-              onBrowseFilters={() => { newScreen(); setPicker("filter"); }}
               continueCard={continueCard || null}
               newsCard={onOpenNews && isPhone ? <MarketNewsCard onOpen={id => onOpenNews(id)} onSeeAll={() => onOpenNews(null)} /> : null}
               newsTile={onOpenNews && !isPhone ? <NewsTile onOpen={id => onOpenNews(id)} onSeeAll={() => onOpenNews(null)} /> : null}

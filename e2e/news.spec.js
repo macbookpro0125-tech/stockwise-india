@@ -15,7 +15,7 @@ test("N-H1 Discover's Market news card (a phone) or News tile (a computer) leads
   await row.click();
   const item = page.getByRole("article");
   await expect(item).toBeVisible();
-  await expect(item.getByRole("link", { name: /Open the filing|Read the story/ }).or(item.getByText(/no summary/))).toBeVisible();
+  await expect(item.getByRole("link", { name: /Open the filing|Read the story/ }).or(item.getByText(/no summary/)).first()).toBeVisible();
   await page.goBack();
   await expect(kinds).toBeVisible();
   await expect(item).toHaveCount(0);
