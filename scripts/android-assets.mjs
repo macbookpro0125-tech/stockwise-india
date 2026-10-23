@@ -16,11 +16,10 @@ const RES = join(ROOT, "android/app/src/main/res");
 const svg = readFileSync(join(ROOT, "public/jocular-insights-maskable.svg"), "utf8");
 const PAGE_BG = "#080810"; // the dark theme's page colour (index.css --bg)
 // The launcher icon is the white logo (23 Oct 2026, "when we install it, it
-// should show the white logo, not the dark one"): the owner's own artwork
-// on white, in the app's colours ("make that shade of JI same as our app":
-// scripts/brand-app-colours.mjs). The launch screen keeps the dark glass mark
-// on the dark page.
-const ICON = readFileSync(join(ROOT, "scripts/brand/ji-app-colours.png"));
+// should show the white logo, not the dark one"): the owner's own artwork,
+// as the light theme's header shows it (scripts/brand/ji-original.png), on
+// white. The launch screen keeps the dark glass mark on the dark page.
+const ICON = readFileSync(join(ROOT, "scripts/brand/ji-original.png"));
 const ICON_BG = "#FFFFFF";
 
 // dp → px at each density
@@ -60,7 +59,8 @@ for (const [d, k] of Object.entries(DENSITY)) {
   // square and a circle
   // the logo at 60% of the adaptive layer (inside the circle no icon shape
   // cuts; the phone shows the middle two-thirds), 84% of an older phone's
-  // whole icon
+  // whole icon. In its own colours, as drawn: a darkened version was tried
+  // and the owner chose the artwork itself ("use this", 23 Oct 2026)
   const white = (size, share, radius, fill) => `<div style="width:${size}px;height:${size}px;border-radius:${radius};background:${fill};display:grid;place-items:center"><img src="white.png" style="width:${Math.round(size * share)}px;height:${Math.round(size * share)}px"></div>`;
   await draw(join(RES, `mipmap-${d}/ic_launcher_foreground.png`), fg, fg, white(fg, 0.6, "0", "transparent"));
   await draw(join(RES, `mipmap-${d}/ic_launcher.png`), legacy, legacy, white(legacy, 0.84, "22%", ICON_BG));
