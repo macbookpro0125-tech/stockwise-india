@@ -270,18 +270,32 @@ function tileLine(item) {
   }
   return `${KIND_LABEL[item.kind]}: ${item.summary ?? item.title}`;
 }
+// It moves, as the price strip does: nine items, three at a time, the next
+// three every 6 s; still while a pointer or focus is on it, or with reduced
+// motion; the dots choose a set
+const TILE_SHOWN = 3, TILE_EVERY = 6000;
 export function NewsTile({ onOpen, onSeeAll }) {
   const [data, setData] = useState(null);
-  useEffect(() => { api.newsTop().then(setData).catch(() => setData({ items: [] })); }, []);
+  const [page, setPage] = useState(0);
+  const [held, setHeld] = useState(false);
+  useEffect(() => { api.newsTop(9).then(setData).catch(() => setData({ items: [] })); }, []);
+  const pages = Math.max(1, Math.ceil((data?.items?.length ?? 0) / TILE_SHOWN));
+  useEffect(() => {
+    if (pages < 2 || held || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const t = setInterval(() => setPage(p => (p + 1) % pages), TILE_EVERY);
+    return () => clearInterval(t);
+  }, [pages, held]);
+  const shown = data?.items?.slice(page * TILE_SHOWN, page * TILE_SHOWN + TILE_SHOWN) ?? [];
   return (
-    <Reveal as="section" delay={3} className="ap-tile ap-tile-news" aria-labelledby="ap-news-title">
+    <Reveal as="section" delay={3} className="ap-tile ap-tile-news" aria-labelledby="ap-news-title"
+      onPointerEnter={() => setHeld(true)} onPointerLeave={() => setHeld(false)} onFocus={() => setHeld(true)} onBlur={() => setHeld(false)}>
       <span className="ap-news-eyebrow"><span className="ap-live" aria-hidden="true" />Live from NSE</span>
       <h3 id="ap-news-title" className="ap-news-title">What's new today</h3>
-      <div className="ap-news-items">
+      <div className="ap-news-items" key={page} aria-live="off">
         {data == null
           ? [0, 1, 2].map(i => <span key={i} className="ap-news-skel" />)
-          : data.items.length
-            ? data.items.map(item => (
+          : shown.length
+            ? shown.map(item => (
               <button key={item.id} type="button" className="ap-news-item" onClick={() => onOpen(item.id)}>
                 <span className="ap-news-top">
                   <span className="ap-news-who">{item.type === "filing" ? niceName(item.company) : item.publisher ?? "News"}</span>
@@ -292,7 +306,14 @@ export function NewsTile({ onOpen, onSeeAll }) {
             ))
             : <p className="ap-news-empty">Nothing new from NSE just now.</p>}
       </div>
-      <button type="button" className="ap-tile-link ap-news-link" onClick={onSeeAll}>Read the news<ChevronRight size={17} aria-hidden="true" /></button>
+      <div className="ap-news-foot">
+        <button type="button" className="ap-tile-link ap-news-link" onClick={onSeeAll}>Read the news<ChevronRight size={17} aria-hidden="true" /></button>
+        {pages > 1 && (
+          <span className="ap-news-dots" role="group" aria-label="More news">
+            {Array.from({ length: pages }, (_, i) => <button key={i} type="button" aria-label={`News ${i * TILE_SHOWN + 1} to ${Math.min((i + 1) * TILE_SHOWN, data.items.length)}`} aria-pressed={page === i} onClick={() => setPage(i)} />)}
+          </span>
+        )}
+      </div>
     </Reveal>
   );
 }

@@ -332,15 +332,15 @@ export function pickTop(items, n = 3) {
   const pick = [], count = {};
   for (const i of [...recent, ...items.filter(i => i.type === "headline")]) {
     if (pick.length === n) break;
-    if ((count[i.kind] ?? 0) >= 2) continue;
+    if ((count[i.kind] ?? 0) >= Math.max(2, Math.ceil(n / 2))) continue;
     count[i.kind] = (count[i.kind] ?? 0) + 1;
     pick.push(i);
   }
   return pick.sort((a, b) => b.time.localeCompare(a.time));
 }
-export async function topNews() {
+export async function topNews(n = 3) {
   const { items, unread, asOf } = await feed();
-  return { items: pickTop(items).map(listed), unread, asOf };
+  return { items: pickTop(items, n).map(listed), unread, asOf };
 }
 
 // The news about a set of companies (an index's, on the Explore page)

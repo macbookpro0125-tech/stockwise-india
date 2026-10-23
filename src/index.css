@@ -2694,3 +2694,12 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 .ex-heat-key { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 14px; margin-top: 8px; font-size: var(--fs-xs); color: var(--t3); }
 .ex-heat-scale { display: inline-flex; align-items: center; gap: 5px; font-variant-numeric: tabular-nums; }
 .ex-heat-scale i { display: inline-block; width: 14px; height: 10px; border-radius: 3px; }
+/* The tile's news moves: each set of three fades and rises in */
+.ap-news-items { animation: ap-news-in 520ms cubic-bezier(0.2, 0.7, 0.2, 1); }
+@keyframes ap-news-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .ap-news-items { animation: none; } }
+.ap-news-foot { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-top: auto; }
+.ap-news-dots { display: inline-flex; gap: 6px; padding-bottom: 4px; }
+.ap-news-dots button { width: 8px; height: 8px; padding: 0; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--t1) 25%, transparent); cursor: pointer; transition: width 200ms, background 200ms; }
+.ap-news-dots button[aria-pressed="true"] { width: 22px; background: var(--accent); }
+.ap-news-dots button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
