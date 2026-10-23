@@ -16,9 +16,16 @@ import { allMetrics } from "./screen.js";
 import { loadMarketSnapshot } from "./market-data.js";
 import { METHODOLOGY_DESCRIPTION, METHODOLOGY_SECTIONS, METHODOLOGY_TITLE } from "../src/methodology-content.js";
 import { ANALYSIS_EXAMPLES, companyAnalysisFor } from "../src/company-analysis.js";
+import {
+  SCREENER_PAGE_DESCRIPTION,
+  SCREENER_PAGE_FAQS,
+  SCREENER_PAGE_PATH,
+  SCREENER_PAGE_SECTIONS,
+  SCREENER_PAGE_TITLE,
+} from "../src/screener-page-content.js";
 
 export const SITE = "https://jocularinsights.in";
-const PUBLIC_PATHS = ["/", "/help", "/methodology", "/privacy", "/disclaimer"];
+const PUBLIC_PATHS = ["/", "/help", "/methodology", SCREENER_PAGE_PATH, "/privacy", "/disclaimer"];
 
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const plain = name => String(name ?? "").replace(/\s+(limited|ltd\.?)\s*$/i, "").trim();
@@ -170,6 +177,41 @@ export function methodologyPageHtml(template) {
 <script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\\u003c")}</script>`;
   const examples = `<section><h2>Worked company examples</h2><p>See how to read recent reported figures in context:</p><ul>${ANALYSIS_EXAMPLES.map(item => `<li><a href="/stock/${encodeURIComponent(item.symbol)}">${esc(item.name)}</a></li>`).join("")}</ul></section>`;
   const body = `<main class="seo-stock seo-methodology"><p><a href="/">Jocular Insights</a> › Methodology</p><h1>${esc(METHODOLOGY_TITLE)}</h1><p>${esc(METHODOLOGY_DESCRIPTION)}</p>${sections}${examples}<p><a href="/disclaimer">Read the full disclaimer</a> · <a href="/help">How figures are updated</a> · Contact <a href="mailto:jocularinsights@gmail.com">jocularinsights@gmail.com</a>.</p></main>`;
+  return template
+    .replace(/<title>[\s\S]*?<\/title>/, "")
+    .replace(/<meta name="description"[^>]*>/, "")
+    .replace(/<link rel="canonical"[^>]*>/, "")
+    .replace(/<meta property="og:(title|description|url|type)"[^>]*>/g, "")
+    .replace("</head>", `${head}\n</head>`)
+    .replace(/<div id="root">\s*<\/div>/, `<div id="root">${body}</div>`);
+}
+
+// A crawlable answer to the category question "which stock screener for
+// Indian shares?" — factual fit and limitations, not an unsupported claim
+// that Jocular is objectively the best tool for everyone.
+export function stockScreenerPageHtml(template) {
+  const canonical = `${SITE}${SCREENER_PAGE_PATH}`;
+  const sections = SCREENER_PAGE_SECTIONS.map(section => `<section><h2>${esc(section.title)}</h2>${section.paragraphs.map(p => `<p>${esc(p)}</p>`).join("")}${section.bullets ? `<ul>${section.bullets.map(item => `<li>${esc(item)}</li>`).join("")}</ul>` : ""}</section>`).join("\n");
+  const faqs = `<section><h2>Frequently asked questions</h2>${SCREENER_PAGE_FAQS.map(item => `<div><h3>${esc(item.question)}</h3><p>${esc(item.answer)}</p></div>`).join("")}</section>`;
+  const examples = `<section><h2>See worked examples</h2><p><a href="/stock/TCS">TCS results analysis</a> · <a href="/stock/RELIANCE">Reliance Industries results analysis</a> · <a href="/stock/HDFCBANK">HDFC Bank results analysis</a> · <a href="/methodology">Scoring and valuation methodology</a>.</p></section>`;
+  const ld = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: SCREENER_PAGE_TITLE,
+    description: SCREENER_PAGE_DESCRIPTION,
+    url: canonical,
+    about: { "@type": "SoftwareApplication", name: "Jocular Insights", applicationCategory: "FinanceApplication", operatingSystem: "Web" },
+    publisher: { "@type": "Organization", name: "Jocular Insights", url: SITE },
+  };
+  const head = `<title>${esc(SCREENER_PAGE_TITLE)} | Jocular Insights</title>
+<meta name="description" content="${esc(SCREENER_PAGE_DESCRIPTION)}" />
+<link rel="canonical" href="${esc(canonical)}" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="${esc(SCREENER_PAGE_TITLE)} | Jocular Insights" />
+<meta property="og:description" content="${esc(SCREENER_PAGE_DESCRIPTION)}" />
+<meta property="og:url" content="${esc(canonical)}" />
+<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\\u003c")}</script>`;
+  const body = `<main class="seo-stock seo-methodology"><p><a href="/">Jocular Insights</a> › Indian stock screener</p><h1>${esc(SCREENER_PAGE_TITLE)}</h1><p>${esc(SCREENER_PAGE_DESCRIPTION)}</p>${sections}${faqs}${examples}<p><a href="/disclaimer">Read the full disclaimer</a> · <a href="/help">How figures are updated</a>.</p></main>`;
   return template
     .replace(/<title>[\s\S]*?<\/title>/, "")
     .replace(/<meta name="description"[^>]*>/, "")

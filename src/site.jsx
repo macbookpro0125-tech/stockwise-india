@@ -69,6 +69,7 @@ export function SiteFooter() {
           <br />Company names and logos are trademarks of their owners, shown only to identify each company; no affiliation or endorsement is implied.
         </span>
         <nav style={{ display: "flex", gap: 18 }}>
+          <SiteLink to="/stock-screener-india">Stock screener</SiteLink>
           <SiteLink to="/help">Help</SiteLink>
           <SiteLink to="/methodology">Methodology</SiteLink>
           <SiteLink to="/disclaimer">Disclaimer</SiteLink>

@@ -7,6 +7,7 @@ import { api } from "./api.js";
 import Landing from "./Landing.jsx";
 import { PrivacyPage, DisclaimerPage, HelpPage } from "./LegalPages.jsx";
 import MethodologyPage from "./MethodologyPage.jsx";
+import StockScreenerPage from "./StockScreenerPage.jsx";
 import ResetPassword from "./ResetPassword.jsx";
 import { usePath, navigate, stockFromPath, stockPath, chartFromPath, SiteFooter } from "./site.jsx";
 import Header, { BottomTabBar, TABS } from "./Header.jsx";
@@ -265,6 +266,7 @@ export default function App() {
   if (path === "/disclaimer") return <DisclaimerPage signedIn={!!account} />;
   if (path === "/help") return <HelpPage signedIn={!!account} />;
   if (path === "/methodology") return <MethodologyPage signedIn={!!account} />;
+  if (path === "/stock-screener-india") return <StockScreenerPage signedIn={!!account} />;
   // The page a reset email links to: saving signs in, then into the app
   if (path === "/reset-password") return <ResetPassword onDone={() => { tabHistory.current = []; tabRef.current = "discover"; setTab("discover"); navigate("/"); loadAccount(); }} />;
 
