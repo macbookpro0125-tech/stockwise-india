@@ -211,7 +211,8 @@ function Heatmap({ onOpenStock, onOpenIndex }) {
     setWidth(el.clientWidth);
     return () => ro.disconnect();
   }, []);
-  const height = width < 640 ? Math.round(width * 1.15) : Math.round(Math.min(520, width * 0.5));
+  // a phone's is taller than wide, so its smaller tiles have room for a name
+  const height = width < 640 ? Math.round(width * 1.4) : Math.round(Math.min(520, width * 0.5));
   const [, , limit, words] = HEAT_PERIODS.find(([p]) => p === period);
   const tiles = useMemo(() => (data?.items?.length ? squarify(data.items, width, height) : []), [data, width, height]);
   return (
@@ -230,15 +231,27 @@ function Heatmap({ onOpenStock, onOpenIndex }) {
         {data?.pending && <div className="ex-heat-wait">The heat map arrives with the evening data update.</div>}
         {tiles.map(t => {
           const name = t.symbol ?? label(t.index);
-          // the name as large as the box allows, whole (a bold capital is about 0.7 of its size wide)
-          const size = Math.min(22, Math.sqrt(t.w * t.h) / 5.2, (t.w - 10) / (name.length * 0.72));
-          const big = size >= 8.5 && t.h > 30;
+          // the name as large as the box allows, whole (a bold capital is about 0.7 of its size wide);
+          // down to 7 px, so a phone's smaller tiles still say whose they are ("I can't see the names
+          // of the companies", 23 Oct 2026), and the move only where there's room for it too
+          // A long name in a narrow tile goes on two lines (APOLLO / HOSP) when that's larger
+          const fit = chars => (t.w - 8) / (chars * 0.76);
+          const one = Math.min(22, Math.sqrt(t.w * t.h) / 4.6, fit(name.length));
+          const half = Math.ceil(name.length / 2);
+          const two = name.length >= 6 ? Math.min(16, Math.sqrt(t.w * t.h) / 4.6, fit(half), (t.h - 6) / 2.5) : 0;
+          const split = one < 9.5 && two > one * 1.15 && two >= 7;
+          const size = split ? two : one;
+          const named = size >= 7 && t.h >= size * (split ? 2.3 : 1.2) + 4;
+          const moved = named && size >= 8 && t.h >= size * (split ? 3.4 : 2.3) + 6;
+          // a small move is a pale tile: dark letters on it in the light theme
+          const pale = Math.abs(t.change) / limit < 0.5;
           return (
-            <button key={t.symbol ?? t.index} type="button" className="ex-tile" title={`${t.name ? niceName(t.name) : name}: ${t.change > 0 ? "+" : ""}${t.change.toFixed(2)}%`}
+            <button key={t.symbol ?? t.index} type="button" className={`ex-tile${pale ? " pale" : ""}`} title={`${t.name ? niceName(t.name) : name}: ${t.change > 0 ? "+" : ""}${t.change.toFixed(2)}%`}
               aria-label={`${t.name ? niceName(t.name) : name}, ${t.change >= 0 ? "up" : "down"} ${Math.abs(t.change).toFixed(2)}% over ${words}`}
               onClick={() => (t.symbol ? onOpenStock(t.symbol) : onOpenIndex(t.index))}
               style={{ left: t.x, top: t.y, width: t.w, height: t.h, background: heatColor(t.change, limit) }}>
-              {big && <><span className="ex-tile-name" style={{ fontSize: size }}>{name}</span><span className="ex-tile-chg" style={{ fontSize: Math.max(8.5, Math.min(size * 0.8, 15)) }}>{t.change > 0 ? "+" : ""}{t.change.toFixed(2)}%</span></>}
+              {named && <span className="ex-tile-name" style={{ fontSize: size }}>{split ? <>{name.slice(0, half)}<br />{name.slice(half)}</> : name}</span>}
+              {moved && <span className="ex-tile-chg" style={{ fontSize: Math.max(8, Math.min(size * 0.8, 15)) }}>{t.change > 0 ? "+" : ""}{t.change.toFixed(2)}%</span>}
             </button>
           );
         })}
