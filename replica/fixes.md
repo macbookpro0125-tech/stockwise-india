@@ -1,6 +1,6 @@
 # What the original app's users dislike, and what Jocular Insights does about it (20 Oct 2026)
 
-the original app is the reference for our company page and strategies (recon.md).
+The original app is the reference for our company page and strategies (recon.md).
 This reads its users' own reviews. The reviews are research only; none of
 their words go on our pages, and the original app's name goes in nothing we publish.
 
