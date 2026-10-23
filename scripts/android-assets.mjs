@@ -15,6 +15,12 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const RES = join(ROOT, "android/app/src/main/res");
 const svg = readFileSync(join(ROOT, "public/jocular-insights-maskable.svg"), "utf8");
 const PAGE_BG = "#080810"; // the dark theme's page colour (index.css --bg)
+// The launcher icon is the white logo (23 Oct 2026, "when we install it, it
+// should show the white logo, not the dark one"): the owner's own artwork,
+// as the light theme's header shows it (scripts/brand/ji-original.png), on
+// white. The launch screen keeps the dark glass mark on the dark page.
+const ICON = readFileSync(join(ROOT, "scripts/brand/ji-original.png"));
+const ICON_BG = "#FFFFFF";
 
 // dp → px at each density
 const DENSITY = { mdpi: 1, hdpi: 1.5, xhdpi: 2, xxhdpi: 3, xxxhdpi: 4 };
@@ -27,6 +33,7 @@ const SPLASH = {
 // file:// page: Chrome won't draw a data: SVG into setContent reliably
 const dir = mkdtempSync(join(tmpdir(), "android-assets-"));
 writeFileSync(join(dir, "icon.svg"), svg);
+writeFileSync(join(dir, "white.png"), ICON);
 const html = (w, h, body, bg = "transparent") => {
   const f = join(dir, `p-${w}x${h}-${Math.random().toString(36).slice(2)}.html`);
   writeFileSync(f, `<!doctype html><html><body style="margin:0;width:${w}px;height:${h}px;background:${bg};display:grid;place-items:center;overflow:hidden">${body}</body></html>`);
@@ -47,13 +54,14 @@ async function draw(file, w, h, body, bg = "transparent") {
 
 for (const [d, k] of Object.entries(DENSITY)) {
   const legacy = Math.round(48 * k), fg = Math.round(108 * k);
-  const img = (size, radius) => `<img src="icon.svg" style="width:${size}px;height:${size}px;border-radius:${radius}">`;
   // Android 8+: the whole artwork as the adaptive icon's front layer (its
   // own background fills the shape the phone cuts); older phones: a rounded
   // square and a circle
-  await draw(join(RES, `mipmap-${d}/ic_launcher_foreground.png`), fg, fg, img(fg, "0"));
-  await draw(join(RES, `mipmap-${d}/ic_launcher.png`), legacy, legacy, img(legacy, "22%"));
-  await draw(join(RES, `mipmap-${d}/ic_launcher_round.png`), legacy, legacy, img(legacy, "50%"));
+  // the logo at 60% of the layer: inside the circle no icon shape cuts
+  const white = (size, radius, fill) => `<div style="width:${size}px;height:${size}px;border-radius:${radius};background:${fill};display:grid;place-items:center"><img src="white.png" style="width:${Math.round(size * 0.6)}px;height:${Math.round(size * 0.6)}px"></div>`;
+  await draw(join(RES, `mipmap-${d}/ic_launcher_foreground.png`), fg, fg, white(fg, "0", "transparent"));
+  await draw(join(RES, `mipmap-${d}/ic_launcher.png`), legacy, legacy, white(legacy, "22%", ICON_BG));
+  await draw(join(RES, `mipmap-${d}/ic_launcher_round.png`), legacy, legacy, white(legacy, "50%", ICON_BG));
 }
 // Launch screens before Android 12: the icon on the dark page colour
 for (const [folder, [w, h]] of Object.entries(SPLASH)) {
