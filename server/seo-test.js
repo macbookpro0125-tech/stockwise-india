@@ -8,7 +8,11 @@ assert.match(robotsTxt(), /Sitemap: https:\/\/jocularinsights\.in\/sitemap\.xml/
 
 const sm = sitemapXml();
 const companies = allMetrics().rows.filter(r => r.name).length;
-assert.equal((sm.match(/<loc>/g) ?? []).length, companies + 5, "the public pages and every company");
+// every company, and the public pages — counted by name, so a new guide page
+// is a line here rather than a total to recount
+const pages = ["/", "/help", "/methodology", "/stock-screener-india", "/privacy", "/disclaimer"];
+for (const p of pages) assert.ok(sm.includes(`<loc>https://jocularinsights.in${p}</loc>`), `the sitemap lists ${p}`);
+assert.equal((sm.match(/<loc>/g) ?? []).length, companies + pages.length, "the public pages and every company, nothing else");
 assert.match(sm, /<loc>https:\/\/jocularinsights\.in\/stock\/[A-Z0-9&%-]+<\/loc>/);
 
 const sym = allMetrics().rows.find(r => r.name && r.close && r.marketCapCr > 10000)?.symbol;
