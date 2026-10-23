@@ -2698,6 +2698,13 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 [data-theme="light"] .ex-tile.pale { color: #1B2236; }
 [data-theme="light"] .ex-tile.pale .ex-tile-name, [data-theme="light"] .ex-tile.pale .ex-tile-chg { text-shadow: none; }
 /* A phone's Explore: each section's first few, and the way to the rest */
+/* A news item's "What this means": the kind of announcement and its terms, in plain words */
+.nw-plain { margin: 14px 0; padding: 14px 16px; border-radius: 14px; background: color-mix(in srgb, var(--accent) 8%, var(--s1)); border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent); }
+.nw-plain-kind { margin: 6px 0 0; font-size: var(--fs-md); line-height: 1.5; color: var(--t1); }
+.nw-terms { display: grid; gap: 10px; margin: 12px 0 0; }
+.nw-terms dt { font-weight: 600; color: var(--t1); font-size: var(--fs-md); }
+.nw-terms dd { margin: 2px 0 0; color: var(--t2); font-size: var(--fs-sm); line-height: 1.55; }
+.nw-plain-note { margin: 12px 0 0; font-size: var(--fs-xs); color: var(--t3); }
 .ex-h-row { display: flex; align-items: center; gap: 6px; margin: 26px 0 10px; }
 .ex-h-row .ex-h { margin: 0; }
 .ex-h-more { display: inline-grid; place-items: center; width: 36px; height: 36px; margin: -6px 0; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); cursor: pointer; touch-action: manipulation; }

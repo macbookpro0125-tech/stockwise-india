@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, ExternalLink, FileText, Newspaper, ChevronRight } from "lucide-react";
 import { api } from "./api.js";
+import { explainFiling } from "./filingTerms.js";
 import CompanyLogo from "./CompanyLogo.jsx";
 import { niceName } from "./stockName.js";
 import { useWatchlist, watchSaved } from "./watchlist.js";
@@ -192,6 +193,25 @@ function FilingLines({ id, auto }) {
   );
 }
 
+// What the announcement is, in plain words: its kind, and the market terms it
+// uses (filingTerms.js) — what the words mean, not a view on the company
+function Plain({ item }) {
+  const { kind, terms } = explainFiling({ title: [item.title, ...(item.also ?? []).map(a => a.title)].join(" "), summary: [item.summary, ...(item.also ?? []).map(a => a.summary)].filter(Boolean).join(" "), kind: item.kind });
+  if (!kind && !terms.length) return null;
+  return (
+    <section className="nw-plain" aria-label="What this means">
+      <span className="nw-said-label">What this means</span>
+      {kind && <p className="nw-plain-kind">{kind}</p>}
+      {terms.length > 0 && (
+        <dl className="nw-terms">
+          {terms.map(t => <div key={t.term}><dt>{t.term}</dt><dd>{t.means}</dd></div>)}
+        </dl>
+      )}
+      <p className="nw-plain-note">What these words mean in general, not a view on this company.</p>
+    </section>
+  );
+}
+
 function Detail({ id, onBack, onOpen, onOpenStock }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
@@ -213,6 +233,7 @@ function Detail({ id, onBack, onOpen, onOpenStock }) {
       {item.summary
         ? <blockquote className="nw-said"><span className="nw-said-label">In the company's words</span>{item.summary}</blockquote>
         : <p className="nw-note">NSE's notice has no summary; the details are in the filing.</p>}
+      <Plain item={item} />
       {item.also?.length > 0 && item.also.map(a => (
         <blockquote key={a.id} className="nw-said nw-said-also"><span className="nw-said-label">Also that day · {a.title} · {clock(a.time)}</span>{a.summary ?? a.title}</blockquote>
       ))}
