@@ -89,7 +89,7 @@ test.describe("the phone layout", () => {
   test("M-H4 the bar has five tabs; Settings switches the theme and opens Performance @phone", async ({ page, account }) => {
     await page.goto("/");
     const bar = page.getByRole("navigation", { name: "Pages" });
-    await expect(bar.getByRole("button")).toHaveText(["Discover", "Watchlist", "Portfolio", "Alerts", "Settings"]);
+    await expect(bar.getByRole("button")).toHaveText(["Discover", "Watchlist", "Explore", "Portfolio", "Settings"]);
     await settings(page);
     await expect(page.getByRole("heading", { level: 2, name: "Settings" })).toBeVisible();
     const dark = page.getByRole("switch", { name: "Dark mode" });
@@ -430,11 +430,24 @@ test("M-H21 the tab bar's glass slides under a finger and opens the tab it's let
   await page.mouse.down();
   for (let x = box.x + 40; x <= box.x + box.width * 0.55; x += 12) await page.mouse.move(x, y);
   await expect(page.locator(".btb-glass.held")).toHaveCount(1);
-  await expect(bar.locator(".btb-tab.lit")).toHaveText(/Portfolio/);
+  await expect(bar.locator(".btb-tab.lit")).toHaveText(/Explore/);
   await page.mouse.up();
-  await expect(bar.getByRole("button", { name: "Portfolio" })).toHaveAttribute("aria-current", "page");
+  await expect(bar.getByRole("button", { name: "Explore" })).toHaveAttribute("aria-current", "page");
   await expect(page.locator(".btb-glass.held")).toHaveCount(0);
   // a tap still opens its tab
   await bar.getByRole("button", { name: "Watchlist" }).click();
   await expect(bar.getByRole("button", { name: "Watchlist" })).toHaveAttribute("aria-current", "page");
+});
+
+// 23 Oct 2026: "the cards' movement is not smooth" — the strategy collections
+// scroll natively (momentum, snapping), not by a scroll set on each touchmove
+test("M-H22 the strategy collections swipe natively and snap @phone", async ({ page, account, isMobile }) => {
+  test.skip(!isMobile, "a phone's rail");
+  await page.goto("/");
+  const rail = page.locator(".strategy-rail");
+  await expect(rail).toBeVisible();
+  expect(await rail.evaluate(r => getComputedStyle(r).touchAction)).toMatch(/pan-x/);
+  expect(await rail.evaluate(r => getComputedStyle(r).scrollSnapType)).toMatch(/x mandatory/);
+  await rail.evaluate(r => r.scrollBy({ left: 200 }));
+  await expect.poll(() => rail.evaluate(r => r.scrollLeft)).toBeGreaterThan(0);
 });

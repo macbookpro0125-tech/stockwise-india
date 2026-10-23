@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { ChevronRight, Heart, Bookmark, ChartLine, Zap, Moon, Image, Compass, Download, ShieldCheck, FileText, LogOut, Trash2, BookOpen, Mail, Star } from "lucide-react";
+import { ChevronRight, Heart, Bookmark, ChartLine, Zap, Moon, Image, Compass, Download, ShieldCheck, FileText, LogOut, Trash2, BookOpen, Mail, Star, Bell } from "lucide-react";
 import { navigate } from "./site.jsx";
 import { problemMailto } from "./help.js";
 import { useLogosShown, setLogosShown } from "./CompanyLogo.jsx";
 import { installState, onInstallChange, promptInstall } from "./installApp.js";
 import { strategiesStore } from "./accountData.js";
+import { alertsStore } from "./stores.js";
 import { DeleteAccountModal } from "./AccountMenu.jsx";
 import { supportAdsAvailable, useAdsOn, watchSupportAd } from "./ads.jsx";
 import { showStrategiesOfKind } from "./PresetCards.jsx";
@@ -60,6 +61,9 @@ export default function SettingsView({ account, theme, onToggleTheme, onTab, onL
     window.addEventListener("customPresetsUpdated", on);
     return () => window.removeEventListener("customPresetsUpdated", on);
   }, []);
+  const alerts = alertsStore.use();
+  const triggered = (alerts ?? []).filter(x => x.enabled && x.triggered).length;
+  const alertsDetail = triggered ? `${triggered} price${triggered === 1 ? "" : "s"} reached` : alerts?.length ? `${alerts.length} set` : "Get told when a price is reached";
   const [confirming, setConfirming] = useState(false);
   const adsOn = useAdsOn();
   const [support, setSupport] = useState(null); // null | "loading" | "thanks" | "closed" | error text
@@ -96,6 +100,8 @@ export default function SettingsView({ account, theme, onToggleTheme, onTab, onL
       <Group title="Library">
         <Row icon={Bookmark} tint="#14B892" label="Your strategies" detail={saved ? `${saved} saved` : "Save a screen to keep it here"}
           onClick={() => { showStrategiesOfKind(saved ? "yours" : "all"); onTab("discover"); }} />
+        {/* Alerts gave its tab to Explore on a phone (23 Oct 2026) */}
+        <Row icon={Bell} tint="#F59E0B" label="Alerts" detail={alertsDetail} onClick={() => onTab("alerts")} />
         <Row icon={ChartLine} tint="#3B82F6" label="Strategy performance" detail="How past picks have moved" onClick={() => onTab("performance")} />
         {account?.features?.momentum && <Row icon={Zap} tint="#F59E0B" label="Momentum" onClick={() => onTab("momentum")} />}
       </Group>

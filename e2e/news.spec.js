@@ -2,12 +2,17 @@
 // the day's headlines, so these tests check its shape, not its items.
 import { test, expect, openPage } from "./fixtures.js";
 
-test("N-H1 Discover's Market news card (a phone) or News tile (a computer) leads to the News page and an item; Back returns @phone", async ({ page, account }) => {
+test("N-H1 the News tile (a computer) or the Explore tab (a phone) leads to the News page and an item; Back returns @phone", async ({ page, account }) => {
   await page.goto("/");
-  // a phone's Market news card, or a computer's News tile among the ways in
-  const card = page.getByRole("region", { name: /^(Market news|What's new today)$/ });
-  await expect(card.locator(".nw-row, .ap-news-item").first()).toBeVisible();
-  await card.getByRole("button", { name: /See all|Read the news/ }).click();
+  // a computer: Discover's News tile; a phone: the Explore tab (23 Oct 2026)
+  const tile = page.getByRole("region", { name: "What's new today" });
+  if (await tile.isVisible().catch(() => false)) {
+    await expect(tile.locator(".ap-news-item").first()).toBeVisible();
+    await tile.getByRole("button", { name: /Read the news/ }).click();
+  } else {
+    await expect(page.getByRole("region", { name: "Market news" }), "the phone's Discover has no news card").toHaveCount(0);
+    await openPage(page, "Explore");
+  }
   const kinds = page.getByRole("group", { name: "Kinds of news" });
   await expect(kinds.getByRole("button", { name: /^All/ })).toHaveAttribute("aria-pressed", "true");
   const row = page.locator(".nw-day .nw-row").first();

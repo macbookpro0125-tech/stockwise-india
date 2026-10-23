@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Plus, Ellipsis, Search, ChevronRight, TrendingUp, CircleDollarSign, Coins, Activity, Landmark, Sparkles, ArrowRight } from "lucide-react";
+import { tick } from "./haptics.js";
 import { api } from "./api.js";
 import { PresetIcon } from "./icons.jsx";
 import { KINDS, kindOf, bestBy } from "./strategyAbout.js";
@@ -136,6 +137,7 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
   const [renameValue, setRenameValue] = useState("");
   const strategyRailDrag = useRef(null);
   const suppressStrategyClick = useRef(false);
+  const railCard = useRef(null);
 
   useEffect(() => {
     api.presets().then(setPresets).catch(() => {});
@@ -250,30 +252,18 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
         if (e.cancelable) e.preventDefault();
       }
     };
-    const beginStrategyRailTouch = e => {
-      if (e.touches.length !== 1) return;
-      const touch = e.touches[0];
-      strategyRailDrag.current = {
-        pointerId: null,
-        startX: touch.clientX,
-        lastX: touch.clientX,
-        startY: touch.clientY,
-        scrollLeft: e.currentTarget.scrollLeft,
-        dragging: false,
-      };
-    };
-    const moveStrategyRailTouch = e => {
-      const drag = strategyRailDrag.current;
-      if (!drag || drag.pointerId !== null || e.touches.length !== 1) return;
-      const touch = e.touches[0];
-      const dx = touch.clientX - drag.startX;
-      const dy = touch.clientY - drag.startY;
-      drag.lastX = touch.clientX;
-      if (!drag.dragging && Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy)) {
-        drag.dragging = true;
-        e.currentTarget.classList.add("is-dragging");
-      }
-      if (drag.dragging) e.currentTarget.scrollLeft = drag.scrollLeft - dx;
+    // A finger swipes the rail natively (23 Oct 2026: "the cards' movement is
+    // not smooth"): the browser's own scrolling, with its momentum and the
+    // snap to each card, not a scroll set by hand on every touchmove; and
+    // each card that settles into place ticks (haptics.js — the Android app
+    // as it goes; an iPhone's Safari lets a page tick only on a tap)
+    const tickOnSnap = e => {
+      const rail = e.currentTarget, first = rail.firstElementChild;
+      if (!first) return;
+      const stride = first.getBoundingClientRect().width + (parseFloat(getComputedStyle(rail).columnGap) || 0);
+      const at = Math.round(rail.scrollLeft / stride);
+      if (railCard.current !== null && at !== railCard.current) tick();
+      railCard.current = at;
     };
     const scrollStrategyRailFromWheel = e => {
       const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
@@ -325,10 +315,7 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
             onPointerMove={moveStrategyRailDrag}
             onPointerUp={e => endStrategyRailDrag(e.currentTarget, e.pointerId)}
             onPointerCancel={e => endStrategyRailDrag(e.currentTarget, e.pointerId)}
-            onTouchStart={beginStrategyRailTouch}
-            onTouchMove={moveStrategyRailTouch}
-            onTouchEnd={e => endStrategyRailDrag(e.currentTarget, null)}
-            onTouchCancel={e => endStrategyRailDrag(e.currentTarget, null)}
+            onScroll={tickOnSnap}
             onWheel={scrollStrategyRailFromWheel}
             onClickCapture={e => {
               if (!suppressStrategyClick.current) return;

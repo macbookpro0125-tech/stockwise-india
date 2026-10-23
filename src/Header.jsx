@@ -17,8 +17,7 @@ import AccountMenu from "./AccountMenu.jsx";
 
 export const TABS = [
   { id: "discover", label: "Discover", short: "Discover", Icon: Compass },
-  // The indices and the news (ExploreView.jsx, 23 Oct 2026); on a phone,
-  // from Discover's Market news card
+  // The indices and the news (ExploreView.jsx, 23 Oct 2026)
   { id: "explore", label: "Explore", short: "Explore", Icon: Telescope },
   // Short-term and speculative, so only for accounts the server allows
   // (http-server.js momentumAllowed) — /api/auth/me says which
@@ -31,7 +30,9 @@ export const TABS = [
   // Momentum, so the bar keeps five tabs
   { id: "settings", label: "Settings", short: "Settings", Icon: Settings, phone: true },
 ];
-const PHONE_TABS = ["discover", "watchlist", "portfolio", "alerts", "settings"];
+// Explore took Alerts' place (23 Oct 2026); Alerts is in Settings, whose tab
+// shows the dot when an alert's price is reached
+const PHONE_TABS = ["discover", "watchlist", "explore", "portfolio", "settings"];
 
 const HEADER_BG = { light: "rgba(255,255,255,0.82)", dark: "rgba(7,7,14,0.85)" };
 
@@ -167,7 +168,7 @@ export function BottomTabBar({ tab, onTab }) {
   }, []);
   // A new tab opens with the bar open
   useEffect(open, [tab]);
-  const isOn = t => tab === t.id || (t.id === "settings" && ["performance", "momentum"].includes(tab)) || (t.id === "discover" && tab === "explore");
+  const isOn = t => tab === t.id || (t.id === "settings" && ["performance", "momentum", "alerts"].includes(tab));
   // The one left showing when folded (Discover on a page that isn't a tab's)
   const kept = (phoneTabs.find(isOn) ?? phoneTabs[0]).id;
   // One glass lens under the tabs (asked for 21 Oct 2026: "glass movement
@@ -260,7 +261,7 @@ export function BottomTabBar({ tab, onTab }) {
             }}>
             <span className="btb-icon">
               <t.Icon size={22} strokeWidth={i === at ? 2.3 : 2} aria-hidden="true" />
-              {t.id === "alerts" && reached && <span className="btb-dot" aria-label="An alert's price was reached" />}
+              {(t.id === "alerts" || t.id === "settings") && reached && <span className="btb-dot" aria-label="An alert's price was reached" />}
             </span>
             <span className="btb-label">{t.short}</span>
           </button>

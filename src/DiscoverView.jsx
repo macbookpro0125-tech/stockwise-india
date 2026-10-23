@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { SlidersHorizontal, ChevronLeft, ChevronRight, Bookmark, Share } from "lucide-react";
 import { api } from "./api.js";
 import PresetCards, { presetRules } from "./PresetCards.jsx";
-import { MarketNewsCard, NewsTile } from "./NewsView.jsx";
+import { NewsTile } from "./NewsView.jsx";
 import { useAdPause } from "./ads.jsx";
 import { strategiesStore, browserLeftovers, moveLeftovers, discardLeftovers } from "./accountData.js";
 import ResultsTable from "./ResultsTable.jsx";
@@ -572,7 +572,6 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews }) {
               onStart={newScreen}
               onCreate={newScreen}
               continueCard={continueCard || null}
-              newsCard={onOpenNews && isPhone ? <MarketNewsCard onOpen={id => onOpenNews(id)} onSeeAll={() => onOpenNews(null)} /> : null}
               newsTile={onOpenNews && !isPhone ? <NewsTile onOpen={id => onOpenNews(id)} onSeeAll={() => onOpenNews(null)} /> : null}
             >{cards}</ScreensHome>
           );
