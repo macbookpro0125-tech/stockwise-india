@@ -2691,17 +2691,11 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 .ex-tile:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; z-index: 2; }
 .ex-tile-name { font-weight: 600; letter-spacing: -0.01em; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-shadow: 0 1px 2px rgba(0,0,0,0.35); }
 .ex-tile-chg { font-variant-numeric: tabular-nums; opacity: 0.92; text-shadow: 0 1px 2px rgba(0,0,0,0.35); }
+/* A tall thin tile's name runs up it */
+.ex-tile-name.up { writing-mode: vertical-rl; transform: rotate(180deg); max-width: none; max-height: 100%; }
 /* Light theme: a small move's tile is pale, and white letters vanish on it */
 [data-theme="light"] .ex-tile.pale { color: #1B2236; }
 [data-theme="light"] .ex-tile.pale .ex-tile-name, [data-theme="light"] .ex-tile.pale .ex-tile-chg { text-shadow: none; }
-.ex-heat-small { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; }
-.ex-heat-small-h { font-size: var(--fs-xs); color: var(--t3); margin-right: 2px; }
-.ex-heat-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 4px 10px; border: 1px solid var(--bdr2); border-radius: 999px; background: var(--s1); color: var(--t1); font: inherit; font-size: var(--fs-xs); font-weight: 600; cursor: pointer; touch-action: manipulation; }
-.ex-heat-chip i { width: 10px; height: 10px; border-radius: 3px; flex: none; }
-.ex-heat-chip span { font-weight: 500; font-variant-numeric: tabular-nums; color: var(--t2); }
-.ex-heat-chip span.up { color: var(--green); }
-.ex-heat-chip span.down { color: var(--red); }
-@media (hover: hover) and (pointer: fine) { .ex-heat-chip:hover { background: var(--s2); } }
 .ex-heat-wait { display: grid; place-items: center; height: 100%; padding: 16px; text-align: center; font-size: var(--fs-sm); color: var(--t3); }
 .ex-heat-key { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 14px; margin-top: 8px; font-size: var(--fs-xs); color: var(--t3); }
 .ex-heat-scale { display: inline-flex; align-items: center; gap: 5px; font-variant-numeric: tabular-nums; }

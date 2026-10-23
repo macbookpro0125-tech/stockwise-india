@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { api } from "./api.js";
 import CompanyLogo from "./CompanyLogo.jsx";
@@ -215,25 +215,37 @@ function Heatmap({ onOpenStock, onOpenIndex }) {
   const height = width < 640 ? Math.round(width * 1.4) : Math.round(Math.min(520, width * 0.5));
   const [, , limit, words] = HEAT_PERIODS.find(([p]) => p === period);
   const tiles = useMemo(() => (data?.items?.length ? squarify(data.items, width, height) : []), [data, width, height]);
-  // Each tile's label: the name as large as the box allows, whole (a bold capital is about 0.7
-  // of its size wide); down to 7 px, so a phone's smaller tiles still say whose they are ("I
-  // can't see the names of the companies", 23 Oct 2026), and the move only where there's room
-  // for it too. A long name in a narrow tile goes on two lines (ADANI / PORTS) when one line
-  // would be too small.
+  // Each tile's label: the name as large as the box allows, whole (a bold capital is about 0.76
+  // of its size wide), on one line where it reads well, else on two or three lines, or running
+  // up a tall thin tile. Down to 5.5 px, so even a phone's
+  // smallest tiles say whose they are, in the tile ("I can't see the names of the companies",
+  // "write something in the tiles itself", 23 Oct 2026). The move only where there's room too.
   const laid = tiles.map(t => {
     const name = t.symbol ?? label(t.index);
-    const fit = chars => (t.w - 8) / (chars * 0.76);
-    const one = Math.min(22, Math.sqrt(t.w * t.h) / 4.6, fit(name.length));
-    const half = Math.ceil(name.length / 2);
-    const two = name.length >= 6 ? Math.min(16, Math.sqrt(t.w * t.h) / 4.6, fit(half), (t.h - 6) / 2.5) : 0;
-    const split = one < 9.5 && two > one * 1.15 && two >= 7;
-    const size = split ? two : one;
-    const named = size >= 7 && t.h >= size * (split ? 2.3 : 1.2) + 4;
-    const moved = named && size >= 8 && t.h >= size * (split ? 3.4 : 2.3) + 6;
+    const best = [];
+    for (const up of t.h > t.w * 1.4 ? [false, true] : [false]) {
+      const along = up ? t.h : t.w, across = up ? t.w : t.h;
+      for (const n of [1, 2, 3]) {
+        if (n > 1 && name.length < n * 2) continue;
+        const per = Math.ceil(name.length / n);
+        const size = Math.min(n === 1 ? 22 : 16, Math.max(9, Math.sqrt(t.w * t.h) / 4.6), (along - 6) / (per * 0.76), (across - 4) / (n * 1.15));
+        best.push({ up, n, per, size });
+      }
+    }
+    // The first that reads well: one line at 8.5 px or more, two lines, running up the tile,
+    // two lines up it, three lines (7.5 px); failing all, the largest
+    const rank = o => (o.up ? [2, 3, 5][o.n - 1] : [0, 1, 4][o.n - 1]);
+    const order = [...best].sort((a, b) => rank(a) - rank(b));
+    const pick = order.find(o => o.size >= (o.n === 1 && !o.up ? 8.5 : 7.5)) ?? best.reduce((a, b) => (b.size > a.size ? b : a));
+    // split evenly (DRREDDY: DRR / ED / DY, not DRR / EDD / Y)
+    const lines = [];
+    for (let i = 0, at = 0; i < pick.n; i++) { const len = Math.ceil((name.length - at) / (pick.n - i)); lines.push(name.slice(at, at + len)); at += len; }
+    const named = pick.size >= 5.5;
+    const room = (pick.up ? t.w : t.h) - pick.n * pick.size * 1.15;
+    const moved = named && !pick.up && pick.size >= 8 && room >= pick.size * 1.1 + 6;
     // a small move is a pale tile: dark letters on it in the light theme
-    return { t, name, half, split, size, named, moved, pale: Math.abs(t.change) / limit < 0.5 };
+    return { t, name, lines, up: pick.up, size: pick.size, named, moved, pale: Math.abs(t.change) / limit < 0.5 };
   });
-  const unnamed = laid.filter(l => !l.named);
   return (
     <section className="ex-section" aria-labelledby="ex-heat">
       <h3 className="ex-h" id="ex-heat">Heat map</h3>
@@ -248,30 +260,16 @@ function Heatmap({ onOpenStock, onOpenIndex }) {
       <div ref={box} className="ex-heat" style={{ height }}>
         {data == null && <div className="ex-heat-wait" role="status">Drawing the heat map…</div>}
         {data?.pending && <div className="ex-heat-wait">The heat map arrives with the evening data update.</div>}
-        {laid.map(({ t, name, named, moved, split, half, size, pale }) => (
+        {laid.map(({ t, name, lines, up, named, moved, size, pale }) => (
           <button key={t.symbol ?? t.index} type="button" className={`ex-tile${pale ? " pale" : ""}`} title={`${t.name ? niceName(t.name) : name}: ${t.change > 0 ? "+" : ""}${t.change.toFixed(2)}%`}
             aria-label={`${t.name ? niceName(t.name) : name}, ${t.change >= 0 ? "up" : "down"} ${Math.abs(t.change).toFixed(2)}% over ${words}`}
             onClick={() => (t.symbol ? onOpenStock(t.symbol) : onOpenIndex(t.index))}
             style={{ left: t.x, top: t.y, width: t.w, height: t.h, background: heatColor(t.change, limit) }}>
-            {named && <span className="ex-tile-name" style={{ fontSize: size }}>{split ? <>{name.slice(0, half)}<br />{name.slice(half)}</> : name}</span>}
+            {named && <span className={`ex-tile-name${up ? " up" : ""}`} style={{ fontSize: size }}>{lines.map((l, i) => <Fragment key={i}>{i > 0 && <br />}{l}</Fragment>)}</span>}
             {moved && <span className="ex-tile-chg" style={{ fontSize: Math.max(8, Math.min(size * 0.8, 15)) }}>{t.change > 0 ? "+" : ""}{t.change.toFixed(2)}%</span>}
           </button>
         ))}
       </div>
-      {/* The tiles too small for a readable name, named here: a phone's corner of
-          small companies was blank ("what about the down ones", 23 Oct 2026) */}
-      {unnamed.length > 0 && (
-        <div className="ex-heat-small" role="group" aria-label="The smaller tiles">
-          <span className="ex-heat-small-h">Smaller tiles</span>
-          {unnamed.map(({ t, name }) => (
-            <button key={t.symbol ?? t.index} type="button" className="ex-heat-chip" onClick={() => (t.symbol ? onOpenStock(t.symbol) : onOpenIndex(t.index))}
-              aria-label={`${t.name ? niceName(t.name) : name}, ${t.change >= 0 ? "up" : "down"} ${Math.abs(t.change).toFixed(2)}% over ${words}`}>
-              <i style={{ background: heatColor(t.change, limit) }} aria-hidden="true" />{name}
-              <span className={t.change > 0 ? "up" : t.change < 0 ? "down" : ""}>{t.change > 0 ? "+" : ""}{t.change.toFixed(2)}%</span>
-            </button>
-          ))}
-        </div>
-      )}
       <div className="ex-heat-key">
         <span>{set === "sectors" ? "Each sector's index" : `Size: market value${data?.members && data.items.length < data.members ? ` · ${data.items.length} of ${data.members} companies` : ""}`} · colour: the move over {words}{data?.asOf ? ` to the close on ${shortDate(data.asOf)}` : ""}</span>
         <span className="ex-heat-scale" aria-hidden="true"><i style={{ background: heatColor(-limit, limit) }} />−{limit}%<i style={{ background: "var(--s3)" }} />0<i style={{ background: heatColor(limit, limit) }} />+{limit}%</span>
