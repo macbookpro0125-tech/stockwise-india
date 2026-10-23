@@ -92,6 +92,10 @@ jobs:
           # snapshot built before them has none
           has_board=$(node -e 'const fs = require("fs"); try { console.log(JSON.parse(fs.readFileSync("data/market-snapshot.json", "utf8")).indexBoard ? "true" : "false"); } catch { console.log("false"); }')
           echo "has_board=$has_board" >> "$GITHUB_OUTPUT"
+          # NSE posts its daily index file a little after the price file: a
+          # run in between builds the day's prices with no index closes
+          indices_current=$(node -e 'const fs = require("fs"); try { const s = JSON.parse(fs.readFileSync("data/market-snapshot.json", "utf8")); const days = s.indexBoard?.days ?? []; console.log(s.indices?.length && days[days.length - 1] === s.pricesDate ? "true" : "false"); } catch { console.log("false"); }')
+          echo "indices_current=$indices_current" >> "$GITHUB_OUTPUT"
           echo "Started from the $from data"
 
       - name: Decide whether to rebuild though the snapshot is recent
@@ -100,6 +104,7 @@ jobs:
           SCHEDULE: ${{ github.event.schedule }}
           PRICES_DATE: ${{ steps.start_data.outputs.prices_date }}
           HAS_BOARD: ${{ steps.start_data.outputs.has_board }}
+          INDICES_CURRENT: ${{ steps.start_data.outputs.indices_current }}
         run: |
           today_ist=$(node -e 'console.log(new Date(Date.now() + 330 * 60 * 1000).toISOString().slice(0, 10))')
           force=false
@@ -112,6 +117,9 @@ jobs:
           elif [ "$HAS_BOARD" != "true" ]; then
             force=true
             echo "The published snapshot predates the Explore page's indices; rebuilding."
+          elif [ "$INDICES_CURRENT" != "true" ]; then
+            force=true
+            echo "The snapshot's index closes are behind its prices (NSE's index file came later); rebuilding."
           else
             echo "The published snapshot is current; no rebuild needed."
           fi
