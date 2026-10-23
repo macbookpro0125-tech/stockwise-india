@@ -307,7 +307,14 @@ const crShort = v => (v >= 100000 ? `₹${(v / 100000).toLocaleString("en-IN", {
 // whole of it as a page of its own (23 Oct 2026: "on the phone show only three
 // or four; open it to show the details on another page")
 const PREVIEW = 4;
-const SeeAll = ({ label, onClick }) => <button type="button" className="ex-see-all" onClick={onClick}>{label} <ChevronRight size={16} aria-hidden="true" /></button>;
+// the title, and in a preview an arrow beside it to the rest ("give the arrow beside the
+// title itself, so we save the space below")
+export const SectionHead = ({ id, title, more, onMore }) => (
+  <div className="ex-h-row">
+    <h3 className="ex-h" id={id}>{title}</h3>
+    {onMore && <button type="button" className="ex-h-more" aria-label={more} title={more} onClick={onMore}><ChevronRight size={20} aria-hidden="true" /></button>}
+  </div>
+);
 
 function TopMovers({ onOpenStock, preview = false, onSeeAll, start = {} }) {
   const [period, setPeriod] = useState(start.period ?? "1d");
@@ -319,7 +326,7 @@ function TopMovers({ onOpenStock, preview = false, onSeeAll, start = {} }) {
   const [, , , words] = HEAT_PERIODS.find(([p]) => p === period);
   return (
     <section className="ex-section" aria-labelledby="ex-movers">
-      <h3 className="ex-h" id="ex-movers">Top movers</h3>
+      <SectionHead id="ex-movers" title="Top movers" more={`See all ${all.length} ${side}`} onMore={preview && all.length > PREVIEW ? () => onSeeAll({ side, period }) : null} />
       <div className="ex-heat-bar">
         <div className="ex-ranges ex-heat-periods" role="group" aria-label="Rises or falls">
           {[["gainers", "Gainers"], ["losers", "Losers"]].map(([id, l]) => <button key={id} type="button" className="ex-range" aria-pressed={side === id} onClick={() => setSide(id)}>{l}</button>)}
@@ -346,7 +353,6 @@ function TopMovers({ onOpenStock, preview = false, onSeeAll, start = {} }) {
             ))}
           </ol>
           : <p className="nw-empty">No {side === "gainers" ? "rises" : "falls"} over {words}.</p>}
-      {preview && all.length > PREVIEW && <SeeAll label={`See all ${all.length} ${side}`} onClick={() => onSeeAll({ side, period })} />}
       <p className="nw-note">Companies over ₹{(data?.floorCr ?? 1000).toLocaleString("en-IN")} crore, over {words}{data?.asOf ? ` to the close on ${shortDate(data.asOf)}` : ""}.</p>
     </section>
   );
@@ -363,7 +369,7 @@ function ResultsWeek({ onOpenStock, preview = false, onSeeAll }) {
   const days = preview ? data.days.slice(0, 3) : data.days;
   return (
     <section className="ex-section" aria-labelledby="ex-results">
-      <h3 className="ex-h" id="ex-results">Results this week</h3>
+      <SectionHead id="ex-results" title="Results this week" more={`See all ${data.days.reduce((n, d) => n + d.count, 0)} companies`} onMore={preview ? () => onSeeAll() : null} />
       <div className="ex-days">
         {days.map(day => {
           const all = open[day.date], list = all ? day.companies : day.companies.slice(0, SHOWN);
@@ -384,7 +390,6 @@ function ResultsWeek({ onOpenStock, preview = false, onSeeAll }) {
           );
         })}
       </div>
-      {preview && <SeeAll label={`See all ${data.days.reduce((n, d) => n + d.count, 0)} companies`} onClick={() => onSeeAll()} />}
       <p className="nw-note">Board meetings for results on NSE's calendar, the largest companies first.</p>
     </section>
   );
