@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Compass, Star, BriefcaseBusiness, ChartLine, Bell, Sun, Moon, Zap, Settings, Telescope } from "lucide-react";
+import { Compass, Star, BriefcaseBusiness, ChartLine, Bell, Sun, Moon, Zap, Settings, Telescope, Users } from "lucide-react";
 import { useWatchlist } from "./watchlist.js";
 import { portfolioStore, alertsStore } from "./stores.js";
 import StockSearchBar from "./StockSearchBar.jsx";
@@ -27,6 +27,8 @@ export const TABS = [
   { id: "portfolio", label: "Portfolio", short: "Portfolio", Icon: BriefcaseBusiness },
   { id: "performance", label: "Performance", short: "Perf", Icon: ChartLine },
   { id: "alerts", label: "Alerts", short: "Alerts", Icon: Bell },
+  // The owner's visitor numbers (VisitorsView.jsx): only accounts in OWNER_EMAILS
+  { id: "visitors", label: "Visitors", short: "Visitors", Icon: Users, gated: "owner" },
   // A phone's bar: Settings holds the account, the theme, Performance and
   // Momentum, so the bar keeps five tabs
   { id: "settings", label: "Settings", short: "Settings", Icon: Settings, phone: true },
@@ -171,7 +173,7 @@ export function BottomTabBar({ tab, onTab }) {
   }, []);
   // A new tab opens with the bar open
   useEffect(open, [tab]);
-  const isOn = t => tab === t.id || (t.id === "settings" && ["performance", "momentum", "alerts"].includes(tab));
+  const isOn = t => tab === t.id || (t.id === "settings" && ["performance", "momentum", "alerts", "visitors"].includes(tab));
   // The one left showing when folded (Discover on a page that isn't a tab's)
   const kept = (phoneTabs.find(isOn) ?? phoneTabs[0]).id;
   // One glass lens under the tabs (asked for 21 Oct 2026: "glass movement

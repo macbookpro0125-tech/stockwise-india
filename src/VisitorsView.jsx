@@ -1,0 +1,55 @@
+// The owner's visitor numbers (24 Oct 2026, server/visits.js): people a day
+// and a week, page loads, signed-in people active and sign-ups — counted
+// anonymously, totals only. Only the accounts in OWNER_EMAILS see the tab.
+import { useEffect, useState } from "react";
+import { api } from "./api.js";
+
+const fmt = n => Number(n ?? 0).toLocaleString("en-IN");
+const dayName = d => new Intl.DateTimeFormat("en-IN", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${d}T00:00:00Z`));
+const weekName = d => `Week of ${new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${d}T00:00:00Z`))}`;
+
+export default function VisitorsView() {
+  const [s, setS] = useState(null);
+  const [error, setError] = useState("");
+  useEffect(() => { api.ownerStats().then(setS).catch(e => setError(e.message)); }, []);
+  if (error) return <div className="vs-page"><p className="nw-empty">{error}</p></div>;
+  if (!s) return <div className="vs-page"><div className="nw-skel" role="status" aria-label="Loading">{[0, 1, 2].map(i => <span key={i} />)}</div></div>;
+  const thisWeek = s.weeks.find(w => w.week === s.week)?.visitors ?? 0;
+  const today = s.days.find(d => d.day === s.today);
+  const max = Math.max(1, ...s.days.map(d => d.visitors));
+  return (
+    <div className="vs-page">
+      <div className="vs-tiles">
+        <div className="vs-tile"><span>Visitors this week</span><b>{fmt(thisWeek)}</b><em>Since Monday, each person once</em></div>
+        <div className="vs-tile"><span>Visitors today</span><b>{fmt(today?.visitors)}</b><em>{fmt(today?.pageLoads)} page loads</em></div>
+        <div className="vs-tile"><span>Signed in today</span><b>{fmt(today?.activeUsers)}</b><em>Accounts that opened the app</em></div>
+        <div className="vs-tile"><span>Sign-ups this week</span><b>{fmt(s.signupsThisWeek)}</b><em>{fmt(s.accounts)} {s.accounts === 1 ? "account" : "accounts"} in all</em></div>
+      </div>
+
+      <section className="vs-section" aria-labelledby="vs-days">
+        <h3 className="ex-h" id="vs-days">By day</h3>
+        {s.days.length ? (
+          <table className="vs-table">
+            <thead><tr><th>Day</th><th>Visitors</th><th>Page loads</th><th>Signed in</th><th>Sign-ups</th></tr></thead>
+            <tbody>{s.days.map(d => (
+              <tr key={d.day}>
+                <th>{d.day === s.today ? "Today" : dayName(d.day)}</th>
+                <td><span className="vs-bar" style={{ width: `${(d.visitors / max) * 100}%` }} aria-hidden="true" />{fmt(d.visitors)}</td>
+                <td>{fmt(d.pageLoads)}</td><td>{fmt(d.activeUsers)}</td><td>{fmt(d.signups)}</td>
+              </tr>
+            ))}</tbody>
+          </table>
+        ) : <p className="nw-empty">Nothing counted yet. The first visit after this went live starts it.</p>}
+      </section>
+
+      {s.weeks.length > 0 && (
+        <section className="vs-section" aria-labelledby="vs-weeks">
+          <h3 className="ex-h" id="vs-weeks">By week</h3>
+          <ul className="vs-weeks">{s.weeks.map(w => <li key={w.week}><span>{w.week === s.week ? "This week" : weekName(w.week)}</span><b>{fmt(w.visitors)}</b></li>)}</ul>
+        </section>
+      )}
+
+      <p className="nw-note">Counted on our own server since {s.since ? dayName(s.since) : "today"}, without cookies: each visitor is a code made with a secret that's deleted at the end of the day (and the week), so nobody can be identified or followed. Robots and link previews aren't counted. One person on a phone and a computer counts twice.</p>
+    </div>
+  );
+}

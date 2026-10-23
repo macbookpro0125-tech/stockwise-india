@@ -38,6 +38,7 @@ import { botInfo, linkCode, telegramChat, unlinkTelegram, sendTelegram, startTel
 import { startAlertChecks } from "./alert-notifier.js";
 import { savePushToken, removePushToken } from "./push.js";
 import { startNewsPush } from "./news-push.js";
+import { countPageLoad, countActive, visitStats, isOwner } from "./visits.js";
 import { limits, clientIp, waitText } from "./rate-limit.js";
 import { startBackups } from "./backup.js";
 import { fetchTechnicals } from "./technicals.js";
@@ -325,6 +326,8 @@ export function createApp() {
     res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
     if (req.headers["x-forwarded-proto"] === "https") res.setHeader("Strict-Transport-Security", "max-age=15552000");
     if (url.pathname.startsWith("/api/")) res.setHeader("X-Request-Id", requestId);
+    // a person loading a page, counted anonymously (visits.js)
+    if (!url.pathname.startsWith("/api/")) countPageLoad(req, url.pathname);
     try {
       // Anything that reads the market waits for one to exist (built in
       // slices, screen.js) — never sign-in, and never the health check, which
@@ -520,7 +523,18 @@ export function createApp() {
         const cookies = parseCookies(req.headers.cookie);
         const userId = verifySession(cookies[COOKIE_NAME]);
         const info = userId ? accountInfo(userId) : null;
-        sendJson(res, userId ? 200 : 401, userId ? { userId, ...info, features: { momentum: momentumAllowed(info) } } : { error: "Not signed in" });
+        if (userId) countActive(userId);
+        sendJson(res, userId ? 200 : 401, userId ? { userId, ...info, features: { momentum: momentumAllowed(info), owner: isOwner(info?.email) } } : { error: "Not signed in" });
+        return;
+      }
+
+      // The owner's visitor numbers (visits.js): only the emails in
+      // OWNER_EMAILS; anyone else is told there's nothing here
+      if (url.pathname === "/api/owner/stats" && req.method === "GET") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        if (!isOwner(accountInfo(userId)?.email)) { sendJson(res, 404, { error: "Not found" }); return; }
+        sendJson(res, 200, visitStats());
         return;
       }
 

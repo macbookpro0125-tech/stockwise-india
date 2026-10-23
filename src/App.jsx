@@ -29,6 +29,7 @@ const PortfolioView = lazyPage(() => import("./PortfolioView.jsx"));
 const PerformanceView = lazyPage(() => import("./PerformanceView.jsx"));
 const AlertsView = lazyPage(() => import("./AlertsView.jsx"));
 const MomentumView = lazyPage(() => import("./MomentumView.jsx"));
+const VisitorsView = lazyPage(() => import("./VisitorsView.jsx"));
 const SettingsView = lazyPage(() => import("./SettingsView.jsx"));
 const StockDetail = lazyPage(() => import("./StockDetail.jsx"));
 const ChartPage = lazyPage(() => import("./ChartPage.jsx"));
@@ -374,6 +375,7 @@ export default function App() {
             returns to the heat map or the news where they were */}
         {tab === "explore" && <div hidden={!!open}><ExploreView onOpenStock={openSymbol} openId={newsOpen} onOpened={() => setNewsOpen(null)} openIndexName={indexOpen} onIndexOpened={() => setIndexOpen(null)} /></div>}
         {!open && tab === "momentum" && account?.features?.momentum && <MomentumView onOpenStock={openSymbol} />}
+        {!open && tab === "visitors" && account?.features?.owner && <VisitorsView />}
         {!open && tab === "settings" && <SettingsView account={account} theme={theme} onToggleTheme={toggleTheme} onTab={goTab} onLogout={logout} onDeleted={accountDeleted} onTour={askForTour} />}
       </Suspense>
       <SiteFooter />

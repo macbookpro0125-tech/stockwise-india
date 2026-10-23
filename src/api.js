@@ -76,6 +76,8 @@ export const api = {
   metrics: () => request("/api/metrics"),
   marketStrip: () => request("/api/market-strip"),
   stats: () => request("/api/stats"),
+  // The owner's visitor numbers (VisitorsView.jsx)
+  ownerStats: () => request("/api/owner/stats"),
   // As a GET the browser keeps the reply and re-checks it on the next visit
   // (an unchanged market is a 304, not ~600 KB again); a very long request
   // still goes as a POST

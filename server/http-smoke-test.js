@@ -382,6 +382,21 @@ async function main() {
   await notifyAlerts({ prices: at(880), send, push });
   assert(pushed.length === 1, "no phone, nothing pushed");
 
+  // The owner's visitor numbers (visits.js): anonymous counts, only for OWNER_EMAILS
+  assert((await fetch(`${BASE}/api/owner/stats`)).status === 401, "visitor numbers need an account");
+  process.env.OWNER_EMAILS = "dave@example.com";
+  assert((await fetch(`${BASE}/api/owner/stats`, { headers: { Cookie: aliceCookie } })).status === 404, "anyone but the owner is told there's nothing there");
+  const statsBefore = await (await fetch(`${BASE}/api/owner/stats`, { headers: { Cookie: daveCookie } })).json();
+  const loadsBefore = statsBefore.days[0]?.pageLoads ?? 0;
+  await fetch(`${BASE}/`, { headers: { Accept: "text/html", "User-Agent": "Mozilla/5.0 Chrome/130" } });
+  await fetch(`${BASE}/`, { headers: { Accept: "text/html", "User-Agent": "Googlebot/2.1" } });
+  await fetch(`${BASE}/api/stats`, { headers: { Accept: "text/html", "User-Agent": "Mozilla/5.0 Chrome/130" } });
+  const statsAfter = await (await fetch(`${BASE}/api/owner/stats`, { headers: { Cookie: daveCookie } })).json();
+  assert(statsAfter.days[0].pageLoads === loadsBefore + 1 && statsAfter.accounts >= 2, "a person's page load is counted, a robot's and a data request aren't");
+  const ownerMe = await (await fetch(`${BASE}/api/auth/me`, { headers: { Cookie: daveCookie } })).json();
+  assert(ownerMe.features.owner === true, "the owner's account knows it may see them");
+  delete process.env.OWNER_EMAILS;
+
   // Password guessing and mass sign-ups are limited
   const { limits } = await import("./rate-limit.js");
   for (let i = 0; i < 5; i++) await json("POST", "/api/auth/login", "", { email: "alice@example.com", password: `wrong-guess-${i}` });

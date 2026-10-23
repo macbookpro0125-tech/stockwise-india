@@ -38,11 +38,11 @@ const B = ({ children }) => <strong style={{ color: "var(--t1)", fontWeight: 400
 
 export function PrivacyPage({ signedIn }) {
   return (
-    <PublicPage title="Privacy policy" signedIn={signedIn}>
+    <PublicPage title="Privacy policy" signedIn={signedIn} updated="24 October 2026">
       <P>
         This page explains what Jocular Insights keeps about you, why, and how to delete it. In short: we use your
-        account and saved data to provide the service, and we don't sell your personal data. The website has no analytics;
-        the mobile apps use Google AdMob, which processes ad-related device information as explained below. We don't
+        account and saved data to provide the service, and we don't sell your personal data. The website uses no analytics
+        services — we only count visits anonymously on our own server, without cookies; the mobile apps use Google AdMob, which processes ad-related device information as explained below. We don't
         send AdMob your account or saved investing data.
       </P>
 
@@ -51,6 +51,8 @@ export function PrivacyPage({ signedIn }) {
         <LI><B>Your account:</B> your email address and your password. The password is stored only as a salted, one-way hash (scrypt), so nobody — including us — can read it. If you sign in with Google, Apple or your phone instead, there's no password: we keep the email or phone number they confirm, your name if they share it, and the account ID their sign-in gives us.</LI>
         <LI><B>A sign-in cookie:</B> one cookie that keeps you signed in for up to 30 days. It's used for nothing else, scripts on the page can't read it, and it's removed when you sign out.</LI>
         <LI><B>What you save:</B> your watchlist (with the price when you added each stock and your notes on it), your price alerts, your portfolio holdings (buy price, quantity, date and notes), the investment thesis and the notes you write on a company's page, and the strategies you save on Discover.</LI>
+        <LI><B>Phone notifications, only if you turn them on</B> (in the Android app): a token from Google's Firebase Cloud Messaging that lets us send notifications to that phone — your watchlist companies' news and your price alerts. The notification goes through Google; its text is the company's news or your alert. Turning notifications off, or signing out, deletes the token.</LI>
+        <LI><B>Visit counts, anonymous:</B> how many people loaded our pages each day and week, how many signed-in accounts opened the app each day, and the number of page loads — totals only. To count each visitor once, your connection's address and browser are turned into a code with a secret that is deleted at the end of each day (and week), so the code can't identify you or follow you across days. No cookie is used, and no address is stored.</LI>
         <LI><B>Telegram, only if you connect it:</B> your Telegram chat ID and the name on your Telegram account, so your alerts reach you, and when each alert was last sent. Not your phone number — Telegram doesn't give it to us. Disconnecting (on the Alerts tab, or sending /stop to the bot) removes them.</LI>
       </UL>
 
@@ -64,7 +66,7 @@ export function PrivacyPage({ signedIn }) {
 
       <H>What we don't do</H>
       <UL>
-        <LI>On the website (and the web app installed from it): no ads, no advertising or tracking cookies, no analytics, and no third-party scripts on our pages — apart from the sign-in services below, and only when you choose them. The Android and iPhone apps show ads; see "Ads in the Android and iPhone apps" below.</LI>
+        <LI>On the website (and the web app installed from it): no ads, no advertising or tracking cookies, no analytics services (only the anonymous visit counts above, on our own server), and no third-party scripts on our pages — apart from the sign-in services below, and only when you choose them. The Android and iPhone apps show ads; see "Ads in the Android and iPhone apps" below.</LI>
         <LI>We don't sell your personal data or share your saved account information for advertising. Service providers process only the information needed for features you use, as described below.</LI>
       </UL>
 
