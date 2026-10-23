@@ -3,11 +3,13 @@ import CompanyLogo from "./CompanyLogo.jsx";
 import { Star, X, NotebookPen, CalendarDays } from "lucide-react";
 import { BellIcon } from "./icons.jsx";
 import { api } from "./api.js";
-import { useWatchlist, toggleWatch } from "./watchlist.js";
+import { useWatchlist, toggleWatch, watchSaved } from "./watchlist.js";
 import CreateAlertModal from "./CreateAlertModal.jsx";
 import { QualityBadge } from "./ResearchBadges.jsx";
 import { pricePosition } from "../server/levels.js";
 import { nextEvent, todayIst } from "./watchEvents.js";
+import { NewsRow } from "./NewsView.jsx";
+import { markWatchNewsSeen } from "./watchNews.js";
 
 // Ported from stock-screener's src/components/WatchlistPanel.jsx — one card
 // per starred stock: price when starred and the move since, quality score,
@@ -70,7 +72,30 @@ function levelStatus(cmp, r) {
 const label = { fontSize: 11.5, color: "var(--t3)", fontWeight: 400 };
 const iconBtn = { width: 30, height: 30, borderRadius: 8, border: "1px solid var(--bdr2)", background: "transparent", color: "var(--t3)", fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 120ms" };
 
-export default function WatchlistView({ onOpenStock }) {
+// What the starred companies told NSE, and headlines naming them, newest
+// first (23 Oct 2026): five here, the rest on Explore's My watchlist. Opening
+// the page clears the tab's dot (watchNews.js).
+function WatchNews({ onOpenNews }) {
+  const [data, setData] = useState(null);
+  const [all, setAll] = useState(false);
+  const watched = useWatchlist();
+  const watchKey = [...watched].sort().join(",");
+  // again when a company is starred or unstarred, once that's saved
+  useEffect(() => { watchSaved().then(() => api.news({ kind: "watchlist" })).then(setData).catch(() => setData({ items: [] })); markWatchNewsSeen(); }, [watchKey]);
+  if (!data?.items?.length) return null;
+  const shown = all ? data.items.slice(0, 20) : data.items.slice(0, 5);
+  return (
+    <section className="wl-news" aria-labelledby="wl-news-h">
+      <div className="wl-news-head">
+        <h3 id="wl-news-h">News from your companies</h3>
+        {data.items.length > 5 && <button type="button" className="nw-see-all" onClick={() => setAll(a => !a)}>{all ? "Fewer" : `All ${Math.min(20, data.items.length)}`}</button>}
+      </div>
+      <div className="nw-list">{shown.map(item => <NewsRow key={item.id} item={item} onOpen={onOpenNews} asOf={data.asOf} />)}</div>
+    </section>
+  );
+}
+
+export default function WatchlistView({ onOpenStock, onOpenNews }) {
   const today = todayIst();
   const watched = useWatchlist();
   const [data, setData] = useState(null);
@@ -140,6 +165,7 @@ export default function WatchlistView({ onOpenStock }) {
 
   return wrap(
     <>
+      {onOpenNews && <WatchNews onOpenNews={onOpenNews} />}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
         <div style={{ fontSize: 12, color: "var(--t3)", fontWeight: 400 }}>{items.length} saved</div>
         <div style={{ display: "flex", gap: 6 }}>

@@ -272,7 +272,7 @@ function technicals(days, nifty) {
 // the ratios since. 1D is against the previous trading day; the others
 // against the last close on or before the same date a week, a month, three
 // and six months, and one, three and five years back (calendar months —
-// the original app doesn't say which base it uses; theirs differ from these by
+// Other apps don't say which base they use; theirs differ from these by
 // under a point). All the days come from cached bhavcopies.
 const RETURN_PERIODS = [["d1", { days: 1 }], ["w1", { days: 7 }], ["m1", { months: 1 }], ["m3", { months: 3 }], ["m6", { months: 6 }], ["y1", { months: 12 }], ["y3", { months: 36 }], ["y5", { months: 60 }]];
 

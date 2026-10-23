@@ -788,7 +788,7 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     vsPhase1: pct(cmp, m.safeBuyPrice),
   });
 
-  // More of the figures the original app screens on, from the same filings: growth
+  // More of the figures other screeners screen on, from the same filings: growth
   // year on year and over 3 and 5 years (a gap in the filings counts as
   // unknown, as cagr() does), 5-year averages (3 years at least), ratios and
   // the statements' own lines. Cash-flow figures are left out for lenders,

@@ -2,7 +2,7 @@
 // Upstox, Angel One… as CSV or Excel). The browser reads the file and sends
 // only each row's symbol, ISIN or name, quantity and average price; this
 // matches them to NSE's list of listed companies. Linking a broker account
-// was the original app users' most common complaint (~40 of 240 low ratings, Oct
+// was other apps' users' most common complaint (~40 of 240 low ratings, Oct
 // 2026: links that fail, brokers missing, one demat at a time) — a file
 // works with any broker and can't break.
 

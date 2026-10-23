@@ -90,6 +90,8 @@ export default function App() {
   const [open, setOpen] = useState(null);
   // An item to open on the News page, from Discover's card
   const [newsOpen, setNewsOpen] = useState(null);
+  // …and an index, from the price strip
+  const [indexOpen, setIndexOpen] = useState(null);
   // Where the Discover list was scrolled to, so Back lands on the same row
   const discoverScroll = useRef(0);
   // Native Android Back walks the app's tab history after leaving a stock or
@@ -340,7 +342,7 @@ export default function App() {
   const accountDeleted = () => signedOut("Your account and everything saved with it have been deleted.");
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
-      <PriceStrip onOpenStock={openSymbol} />
+      <PriceStrip onOpenStock={openSymbol} onOpenIndex={name => { setIndexOpen(name); goTab("explore"); }} />
       <Header tab={open ? null : tab} onTab={goTab} account={account} onLogout={logout} onDeleted={accountDeleted} onSearch={openSymbol} theme={theme} onToggleTheme={toggleTheme} onTour={askForTour} />
       <div style={{ height: 16 }} />
       {/* A phone: the page's name in large type, as a native app's (index.css .phone-title) */}
@@ -350,13 +352,13 @@ export default function App() {
         {/* Kept mounted (hidden) while a stock is open, so its filters and
             results are still there on Back. */}
         {tab === "discover" && <div hidden={!!open}><DiscoverView onOpenStock={openSymbol} theme={theme} onOpenNews={id => { setNewsOpen(id ?? null); goTab("explore"); }} /></div>}
-        {!open && tab === "watchlist" && <WatchlistView onOpenStock={openSymbol} />}
+        {!open && tab === "watchlist" && <WatchlistView onOpenStock={openSymbol} onOpenNews={id => { setNewsOpen(id); goTab("explore"); }} />}
         {!open && tab === "portfolio" && <PortfolioView onOpenStock={openSymbol} />}
         {!open && tab === "performance" && <PerformanceView onOpenStock={openSymbol} />}
         {!open && tab === "alerts" && <AlertsView onOpenStock={openSymbol} />}
         {/* Kept mounted (hidden) under a company page too, as Discover is: Back
             returns to the heat map or the news where they were */}
-        {tab === "explore" && <div hidden={!!open}><ExploreView onOpenStock={openSymbol} openId={newsOpen} onOpened={() => setNewsOpen(null)} /></div>}
+        {tab === "explore" && <div hidden={!!open}><ExploreView onOpenStock={openSymbol} openId={newsOpen} onOpened={() => setNewsOpen(null)} openIndexName={indexOpen} onIndexOpened={() => setIndexOpen(null)} /></div>}
         {!open && tab === "momentum" && account?.features?.momentum && <MomentumView onOpenStock={openSymbol} />}
         {!open && tab === "settings" && <SettingsView account={account} theme={theme} onToggleTheme={toggleTheme} onTab={goTab} onLogout={logout} onDeleted={accountDeleted} onTour={askForTour} />}
       </Suspense>

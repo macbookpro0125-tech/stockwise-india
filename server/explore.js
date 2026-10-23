@@ -50,8 +50,10 @@ export async function exploreBoard() {
 // One index in full; null when it isn't on the board
 export async function exploreIndex(name) {
   const { board: b, snap } = await board();
-  const i = b?.indices.find(x => x.name === name);
+  // the price strip's "NIFTY Bank" is the board's "Nifty Bank"
+  const i = b?.indices.find(x => x.name === name) ?? b?.indices.find(x => x.name.toLowerCase() === String(name).toLowerCase());
   if (!i) return null;
+  name = i.name;
   const pairs = b.days.map((d, k) => [d, i.closes[k]]).filter(([, c]) => c != null);
   const closes = pairs.map(([, c]) => c);
   // 3 and 5 years from the period returns (quarter-end files); the rest from the year

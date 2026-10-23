@@ -41,7 +41,7 @@ import { startBackups } from "./backup.js";
 import { fetchTechnicals } from "./technicals.js";
 import { shareholdingHistory, companyFilings, companyNews, sectorPeers, companyProfile, insiderTrades } from "./company-extras.js";
 import { stockMoves } from "./moves.js";
-import { marketNews, topNews, newsItem, newsItemFiling, newsForSymbols, KINDS as NEWS_KINDS } from "./market-news.js";
+import { marketNews, topNews, newsItem, newsItemFiling, newsForSymbols, watchlistLatest, KINDS as NEWS_KINDS } from "./market-news.js";
 import { exploreBoard, exploreIndex, heatmap, HEAT_SETS, topMovers, resultsWeek } from "./explore.js";
 import { summarizeMove, aiClient } from "./ai-moves.js";
 import { summarizeFiling } from "./filing-summary.js";
@@ -694,6 +694,14 @@ export function createApp() {
         const symbols = new Set(listWatchlist(userId).map(w => w.ticker));
         const size = url.searchParams.get("size") === "all" ? "all" : "large";
         sendJson(res, 200, await marketNews({ kind, symbols, size, before: url.searchParams.get("before")?.slice(0, 80) ?? null }));
+        return;
+      }
+      if (url.pathname === "/api/news/watchlist-latest" && req.method === "GET") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        const since = url.searchParams.get("since");
+        const ok = since && !isNaN(Date.parse(since)) ? new Date(since).toISOString() : null;
+        sendJson(res, 200, await watchlistLatest(new Set(listWatchlist(userId).map(w => w.ticker)), ok));
         return;
       }
       if (url.pathname === "/api/news/top" && req.method === "GET") {

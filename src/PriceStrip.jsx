@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { api } from "./api.js";
 
-// The strip across the top, as on the original app: the main indices and the
+// The strip across the top, as market apps have: the main indices and the
 // largest companies with their day's change. These are closing prices, not
 // live ones, and the strip says so. It scrolls slowly, stops while hovered,
 // and stays still for anyone whose device asks for less motion.
@@ -26,13 +26,14 @@ function Item({ label, value, changePct, onClick }) {
   return onClick ? <button type="button" onClick={onClick} style={style}>{content}</button> : <span style={style}>{content}</span>;
 }
 
-export default function PriceStrip({ onOpenStock }) {
+export default function PriceStrip({ onOpenStock, onOpenIndex }) {
   const [data, setData] = useState(null);
   useEffect(() => { api.marketStrip().then(setData).catch(() => {}); }, []);
   if (!data || (!data.indices.length && !data.stocks.length)) return null;
 
   const items = [
-    ...data.indices.map(i => <Item key={i.name} label={i.name} value={i.close} changePct={i.changePct} />),
+    // an index opens on the Explore page (23 Oct 2026)
+    ...data.indices.map(i => <Item key={i.name} label={i.name} value={i.close} changePct={i.changePct} onClick={onOpenIndex ? () => onOpenIndex(i.name) : undefined} />),
     ...data.stocks.map(s => <Item key={s.symbol} label={s.symbol} value={s.cmp} changePct={s.changePct} onClick={onOpenStock ? () => onOpenStock(s.symbol) : undefined} />),
   ];
   return (

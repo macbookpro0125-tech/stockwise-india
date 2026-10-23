@@ -37,7 +37,7 @@ export default function StockSearchBar({ onAnalyze, placeholder = "Search any st
   const containerRef = useRef(null);
   const inputRef = useRef(null);
 
-  // "/" jumps to the search box from anywhere, as on the original app — unless
+  // "/" jumps to the search box from anywhere, as on other market sites — unless
   // you're already typing somewhere
   useEffect(() => {
     const onKey = e => {

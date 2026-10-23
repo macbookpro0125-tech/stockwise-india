@@ -126,3 +126,15 @@ test("X-H6 top movers by day, week or month, and the week's results by day @phon
   await expect(results.or(page.getByText("never shown")).first()).toBeAttached();
   if (await results.count()) await expect(results.locator(".ex-day").first()).toContainText(/compan/);
 });
+
+// 23 Oct 2026: "when I press on NIFTY 50 or another Nifty, it should open that"
+test("X-H7 an index in the price strip opens it on Explore (a computer; a phone has no strip)", async ({ page, account }) => {
+  await page.goto("/");
+  const strip = page.getByRole("region", { name: /^Closing prices/ });
+  const bank = strip.getByRole("button", { name: /^NIFTY Bank/ }).first();
+  await expect(bank).toBeAttached({ timeout: 30_000 });
+  await bank.dispatchEvent("click"); // the strip scrolls; the press itself is what's tested
+  const index = page.getByRole("article", { name: "Bank Nifty" });
+  await expect(index.getByRole("heading", { name: "NIFTY Bank" })).toBeVisible({ timeout: 45_000 });
+  await expect(index.getByRole("region", { name: "Returns" })).toBeVisible();
+});

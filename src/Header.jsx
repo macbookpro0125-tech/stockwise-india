@@ -7,6 +7,7 @@ import { BrandMark } from "./site.jsx";
 import { tick } from "./haptics.js";
 import { scrollStep } from "./tabBarScroll.js";
 import AccountMenu from "./AccountMenu.jsx";
+import { useWatchNewsDot } from "./watchNews.js";
 
 // The original's sticky header (stock-screener src/Discovery.jsx): logo,
 // search, theme switch and account in one row, then the tabs with counts. On
@@ -42,11 +43,12 @@ const phoneTabs = PHONE_TABS.map(id => TABS.find(t => t.id === id));
 // Counts and badges for the tabs, shared by the header and the bottom bar
 export function useTabBadges() {
   const watchCount = useWatchlist().size;
+  const watchNews = useWatchNewsDot();
   const portfolio = portfolioStore.use();
   const alerts = alertsStore.use();
   const triggered = (alerts ?? []).filter(a => a.enabled && a.triggered).length;
   return {
-    watchlist: { count: watchCount },
+    watchlist: { count: watchCount, news: watchNews },
     portfolio: { count: portfolio?.holdings.length ?? 0 },
     alerts: {
       badge: triggered > 0 ? triggered : alerts?.length ? alerts.length : null,
@@ -125,6 +127,7 @@ export default function Header({ tab, onTab, account, onLogout, onDeleted, onSea
               }}>
                 <t.Icon size={15} strokeWidth={2} style={{ color: active ? "var(--accent)" : "var(--t3)" }} />
                 {t.label}
+                {b.news && <><span className="tab-news-dot" aria-hidden="true" /><span className="sr-only">, new from your companies</span></>}
                 {b.count > 0 && (
                   <span style={{ fontSize: 10, fontWeight: 500, lineHeight: "15px", padding: "0 6px", borderRadius: 999, background: "var(--s3)", border: "1px solid var(--bdr2)", color: active ? "var(--t1)" : "var(--t2)", fontVariantNumeric: "tabular-nums" }}>{b.count}</span>
                 )}
@@ -261,9 +264,13 @@ export function BottomTabBar({ tab, onTab }) {
             }}>
             <span className="btb-icon">
               <t.Icon size={22} strokeWidth={i === at ? 2.3 : 2} aria-hidden="true" />
-              {(t.id === "alerts" || t.id === "settings") && reached && <span className="btb-dot" aria-label="An alert's price was reached" />}
+              {(t.id === "alerts" || t.id === "settings") && reached && <span className="btb-dot" aria-hidden="true" />}
+              {t.id === "watchlist" && badges.watchlist.news && <span className="btb-dot btb-dot-news" aria-hidden="true" />}
             </span>
             <span className="btb-label">{t.short}</span>
+            {/* the dots' meaning, after the tab's name so the name still leads */}
+            {(t.id === "alerts" || t.id === "settings") && reached && <span className="sr-only">, an alert's price was reached</span>}
+            {t.id === "watchlist" && badges.watchlist.news && <span className="sr-only">, new from your companies</span>}
           </button>
         );
       })}

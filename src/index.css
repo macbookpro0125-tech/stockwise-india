@@ -1036,7 +1036,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .sd-tab.on { color: var(--accent); font-weight: 500; }
 .sd-tab.on::after { background: var(--accent); }
 
-/* Section headings, the original app-sized */
+/* Section headings, large */
 .sd-h2 { margin: var(--sp-10) 0 var(--sp-4); font-size: var(--fs-2xl); font-weight: 750; letter-spacing: -0.03em; color: var(--t1); }
 .sd-section { margin-bottom: var(--sp-4); }
 
@@ -2635,7 +2635,7 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 
 /* The Explore page (ExploreView.jsx): rows of index cards — name, value, the
    day's change, a month's line — then the news; an index opens in full */
-.ex-page { padding: 8px var(--page-x) 24px; max-width: 1180px; }
+.ex-page { padding: 8px var(--page-x) 24px; }
 .ex-page .nw-page.embedded { padding: 0; max-width: none; }
 .ex-page .nw-head { max-width: 720px; }
 .ex-h { margin: 26px 0 10px; font-size: var(--fs-lg); font-weight: 500; color: var(--t1); }
@@ -2829,3 +2829,19 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 .ps-analysis-ratios > div { border: 1px solid var(--bdr); border-radius: 9px; padding: 9px 11px; }
 .ps-analysis-ratios dt { font-size: 11px; color: var(--t3); }
 .ps-analysis-ratios dd { margin: 2px 0 0; font-variant-numeric: tabular-nums; }
+/* The Watchlist's news, and the dot on its tab when there's something new */
+.wl-news { margin: 0 0 22px; }
+.wl-news-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.wl-news-head h3 { margin: 0; font-size: var(--fs-lg); font-weight: 500; color: var(--t1); }
+.tab-news-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent); }
+.btb-dot.btb-dot-news { background: var(--accent); }
+/* A wide screen (23 Oct 2026: "why is there a lot of space on the right"):
+   Explore uses the whole width as the header does — the movers in three
+   columns, the news list beside its kinds as wide as the page */
+@media (min-width: 1500px) {
+  .ex-movers-list { grid-template-columns: repeat(3, 1fr); }
+  .ex-movers-list li:nth-child(odd) { border-right: 0; }
+  .ex-movers-list li:not(:nth-child(3n)) { border-right: 1px solid var(--bdr); }
+  .ex-movers-list li:nth-child(-n+3) { border-top: 0; }
+  .ex-days { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

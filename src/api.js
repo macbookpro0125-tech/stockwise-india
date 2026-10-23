@@ -89,6 +89,7 @@ export const api = {
   search: (q) => request(`/api/search?q=${encodeURIComponent(q)}`),
   // The News page (NewsView.jsx): companies' announcements to NSE and the day's headlines
   news: ({ kind = "all", before = null, size = "large" } = {}) => request(`/api/news?kind=${encodeURIComponent(kind)}&size=${size}${before ? `&before=${encodeURIComponent(before)}` : ""}`),
+  newsWatchLatest: since => request(`/api/news/watchlist-latest${since ? `?since=${encodeURIComponent(since)}` : ""}`),
   newsTop: (n = 3) => request(`/api/news/top?n=${n}`),
   // The Explore page (ExploreView.jsx): the indices, and one in full
   explore: () => request("/api/explore"),

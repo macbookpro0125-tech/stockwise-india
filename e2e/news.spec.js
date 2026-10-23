@@ -90,3 +90,48 @@ test("N-H3 results show their figures; an announcement's filing is read for its 
   await lines.getByRole("button", { name: /Read its key lines/ }).click();
   await expect(lines.locator(".nw-lines li").first().or(lines.getByText(/No lines stood out|Couldn't read|no readable text|no NSE attachment/))).toBeVisible({ timeout: 45_000 });
 });
+
+// 23 Oct 2026: news from the watchlist's companies, and a dot on the Watchlist
+// tab when there's something new since the page was last opened
+test("N-H4 a starred company's news shows on the Watchlist, with a dot on its tab until opened @phone", async ({ page, account, baseURL, isMobile }) => {
+  const ctx = page.context().request;
+  const feed = await (await ctx.get(`${baseURL}/api/news?kind=all&size=all`)).json();
+  const filing = feed.items.find(i => i.type === "filing");
+  test.skip(!filing, "no announcements in the feed just now");
+  expect((await ctx.post(`${baseURL}/api/watchlist`, { data: { ticker: filing.symbol } })).ok()).toBeTruthy();
+  // last looked a week ago: anything since is new
+  await page.addInitScript(() => { if (!sessionStorage.getItem("set")) { localStorage.setItem("watch-news-seen", new Date(Date.now() - 7 * 864e5).toISOString()); sessionStorage.setItem("set", "1"); } });
+  // a computer's tab row isn't on Discover's start page; a company's page has it
+  await page.goto(isMobile ? "/" : "/stock/TCS");
+  await expect(page.locator(".tab-news-dot:visible, .btb-dot-news:visible").first()).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Watchlist.*new from your companies/ }).first(), "the tab's name still leads").toBeVisible();
+  const { openPage } = await import("./fixtures.js");
+  await openPage(page, "Watchlist");
+  const news = page.getByRole("region", { name: "News from your companies" });
+  await expect(news.locator(".nw-row").first()).toBeVisible();
+  await expect(page.locator(".tab-news-dot:visible, .btb-dot-news:visible")).toHaveCount(0);
+  await news.locator(".nw-row").first().click();
+  await expect(page.getByRole("article")).toBeVisible();
+});
+
+// 23 Oct 2026: "if I add a new stock from the news, My watchlist isn't updating"
+test("N-H5 starring a company from the news brings its news into My watchlist straight away", async ({ page, account, baseURL }) => {
+  const { openPage } = await import("./fixtures.js");
+  await page.goto("/");
+  await openPage(page, "Explore");
+  const kinds = page.getByRole("group", { name: "Kinds of news" });
+  await kinds.getByRole("button", { name: /^My watchlist/ }).click();
+  await expect(page.getByText(/Star companies to follow their news here/)).toBeVisible();
+  await kinds.getByRole("button", { name: /^All/ }).click();
+  const filing = page.locator(".nw-day .nw-row").filter({ has: page.locator(".nw-kind") }).first();
+  await filing.click();
+  await page.locator(".nw-quote").first().click();
+  await expect(page).toHaveURL(/\/stock\//);
+  await page.getByRole("button", { name: /^Add to watchlist/ }).first().click();
+  await page.getByRole("button", { name: /^Back/ }).first().click();
+  await page.getByRole("button", { name: /^News/ }).first().click().catch(() => {});
+  await expect(kinds).toBeVisible();
+  await kinds.getByRole("button", { name: /^My watchlist/ }).click();
+  await expect(page.locator(".nw-day .nw-row").first()).toBeVisible();
+  await expect(page.getByText(/Star companies to follow their news here/)).toHaveCount(0);
+});

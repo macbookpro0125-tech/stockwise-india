@@ -331,7 +331,7 @@ function ResultsWeek({ onOpenStock }) {
   );
 }
 
-export default function ExploreView({ onOpenStock, openId = null, onOpened }) {
+export default function ExploreView({ onOpenStock, openId = null, onOpened, openIndexName = null, onIndexOpened }) {
   const [board, setBoard] = useState(null);
   const [index, setIndex] = useState(() => window.history.state?.newsItem ? null : window.history.state?.exploreIndex ?? null);
   const indexRef = useRef(null);
@@ -357,6 +357,16 @@ export default function ExploreView({ onOpenStock, openId = null, onOpened }) {
     window.history.pushState({ ...(window.history.state ?? {}), exploreIndex: name, newsItem: undefined }, "");
     setIndex(name);
   };
+  // From the price strip: straight to its index, by the board's own name
+  // ("NIFTY Bank" there is "Nifty Bank" here) once the board is in
+  useEffect(() => {
+    if (!openIndexName || !board) return;
+    const all = [...(board.market ?? []), ...(board.sectors ?? [])];
+    const hit = all.find(i => i.name.toLowerCase() === openIndexName.toLowerCase());
+    openIndex(hit?.name ?? openIndexName);
+    onIndexOpened?.();
+  }, [openIndexName, board]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // A news item from an index's page: the item over it, Back returns to the index
   const openNewsFromIndex = id => { setIndex(null); setNewsOpen(id); };
 

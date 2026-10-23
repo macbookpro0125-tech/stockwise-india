@@ -31,13 +31,20 @@ export function useWatchlist() {
 
 // price: what the page showed when starred (the card shows the move since);
 // the server uses the day's close when none is given
+// Resolves once every star or unstar sent so far has reached the server, so a
+// list fetched after a star includes it (NewsView's My watchlist)
+let saving = Promise.resolve();
+export const watchSaved = () => saving;
+
 export async function toggleWatch(symbol, price) {
   const had = symbols?.has(symbol);
   symbols = new Set(symbols ?? []);
   if (had) symbols.delete(symbol); else symbols.add(symbol);
   notify();
+  const request = had ? api.removeWatch(symbol) : api.addWatch(symbol, price);
+  saving = Promise.all([saving, request.catch(() => {})]);
   try {
-    if (had) await api.removeWatch(symbol); else await api.addWatch(symbol, price);
+    await request;
   } catch {
     symbols = new Set(symbols);
     if (had) symbols.add(symbol); else symbols.delete(symbol);

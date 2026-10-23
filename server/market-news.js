@@ -349,6 +349,16 @@ export async function newsForSymbols(symbols, max = 8) {
   return items.filter(i => (i.symbol && symbols.has(i.symbol)) || i.companies?.some(c => symbols.has(c.symbol))).slice(0, max).map(listed);
 }
 
+// What's new about a watchlist since a moment (the Watchlist tab's dot,
+// Header.jsx): how many items about its companies came after `since`, and
+// the newest one's time. Headlines count only when they name a company.
+export async function watchlistLatest(symbols, since = null) {
+  const { items } = await feed();
+  const about = items.filter(i => (i.symbol && symbols.has(i.symbol)) || i.companies?.some(c => symbols.has(c.symbol)));
+  const after = since ? about.filter(i => i.time > since) : about;
+  return { latest: about[0]?.time ?? null, newCount: since ? after.length : 0 };
+}
+
 // An announcement, for reading its attachment
 export async function newsItemFiling(id) {
   const { filings } = await feed();

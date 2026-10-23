@@ -3,6 +3,7 @@ import { ArrowLeft, ExternalLink, FileText, Newspaper, ChevronRight } from "luci
 import { api } from "./api.js";
 import CompanyLogo from "./CompanyLogo.jsx";
 import { niceName } from "./stockName.js";
+import { useWatchlist, watchSaved } from "./watchlist.js";
 import Reveal from "./Reveal.jsx";
 
 // The News page (22 Oct 2026: "a news page — do I need to post it daily?").
@@ -96,13 +97,18 @@ export function NewsRow({ item, onOpen, asOf, compact = false, dated = true }) {
   );
 }
 
-function List({ kind, size, onOpen, onCounts }) {
+function List({ kind, size, onOpen, onCounts, refresh = 0 }) {
+  // the starred companies: a star or unstar anywhere reloads the list (its
+  // My watchlist, and every kind's count of it), once the change is saved
+  const watched = useWatchlist();
+  const watchKey = [...watched].sort().join(",");
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const load = useCallback(async before => {
     setBusy(true);
     try {
+      await watchSaved();
       const r = await api.news({ kind, before, size });
       setData(d => (before && d ? { ...r, items: [...d.items, ...r.items] } : r));
       if (r.counts) onCounts?.(r.counts);
@@ -111,6 +117,8 @@ function List({ kind, size, onOpen, onCounts }) {
     finally { setBusy(false); }
   }, [kind, size]);
   useEffect(() => { setData(null); load(null); }, [load]);
+  const first = useRef(true);
+  useEffect(() => { if (first.current) { first.current = false; return; } load(null); }, [watchKey, refresh]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!data) return <div className="nw-skel" role="status" aria-label="Loading the news">{[0, 1, 2, 3, 4].map(i => <span key={i} />)}</div>;
   const groups = [];
@@ -341,6 +349,9 @@ export function MarketNewsCard({ onOpen, onSeeAll }) {
 export default function NewsView({ onOpenStock, openId = null, onOpened, embedded = false, onItemChange }) {
   const [kind, setKind] = useState("all");
   const [counts, setCounts] = useState(null);
+  // pressing the kind already shown loads it again
+  const [refresh, setRefresh] = useState(0);
+  const pickKind = id => { if (id === kind) setRefresh(n => n + 1); else setKind(id); };
   // Companies over ₹1,000 crore only, unless switched off; kept for the visit
   const [size, setSize] = useState(() => { try { return sessionStorage.getItem("news-size") === "all" ? "all" : "large"; } catch { return "large"; } });
   const pickSize = next => { setSize(next); try { sessionStorage.setItem("news-size", next); } catch {} };
@@ -390,16 +401,16 @@ export default function NewsView({ onOpenStock, openId = null, onOpened, embedde
                 phone: one row of chips to swipe */}
             <div className="nw-rail" role="group" aria-label="Kinds of news">
               {FILTERS.map(([id, label]) => (
-                <button key={id} type="button" className="nw-rail-item" aria-pressed={kind === id} onClick={() => setKind(id)}>
+                <button key={id} type="button" className="nw-rail-item" aria-pressed={kind === id} onClick={() => pickKind(id)}>
                   <span>{label}</span>{counts?.[id] != null && <span className="nw-count">{counts[id]}</span>}
                 </button>
               ))}
             </div>
             <div className="nw-feed">
               <div className="ph-chips nw-filters" role="group" aria-label="Kinds of news">
-                {FILTERS.map(([id, label]) => <button key={id} type="button" className="ph-chip" aria-pressed={kind === id} onClick={() => setKind(id)}>{label}</button>)}
+                {FILTERS.map(([id, label]) => <button key={id} type="button" className="ph-chip" aria-pressed={kind === id} onClick={() => pickKind(id)}>{label}</button>)}
               </div>
-              <List kind={kind} size={size} onOpen={open} onCounts={setCounts} />
+              <List kind={kind} size={size} onOpen={open} onCounts={setCounts} refresh={refresh} />
             </div>
           </div>
         </>}

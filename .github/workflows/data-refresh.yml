@@ -88,21 +88,32 @@ jobs:
           echo "force_pack=$force_pack" >> "$GITHUB_OUTPUT"
           prices_date=$(node -e 'const fs = require("fs"); try { console.log(JSON.parse(fs.readFileSync("data/market-snapshot.json", "utf8")).pricesDate || ""); } catch { console.log(""); }')
           echo "prices_date=$prices_date" >> "$GITHUB_OUTPUT"
+          # The Explore page's indices (23 Oct 2026) come with a rebuild; a
+          # snapshot built before them has none
+          has_board=$(node -e 'const fs = require("fs"); try { console.log(JSON.parse(fs.readFileSync("data/market-snapshot.json", "utf8")).indexBoard ? "true" : "false"); } catch { console.log("false"); }')
+          echo "has_board=$has_board" >> "$GITHUB_OUTPUT"
           echo "Started from the $from data"
 
-      - name: Decide whether the 20:00 retry is needed
+      - name: Decide whether to rebuild though the snapshot is recent
         id: retry
         env:
           SCHEDULE: ${{ github.event.schedule }}
           PRICES_DATE: ${{ steps.start_data.outputs.prices_date }}
+          HAS_BOARD: ${{ steps.start_data.outputs.has_board }}
         run: |
           today_ist=$(node -e 'console.log(new Date(Date.now() + 330 * 60 * 1000).toISOString().slice(0, 10))')
           force=false
-          if [ "$SCHEDULE" = "30 14 * * 1-5" ] && [ "$PRICES_DATE" != "$today_ist" ]; then
+          # The evening runs (16:30 and 20:00) rebuild whenever today's close
+          # isn't in yet — not only when the last build is 18 hours old: a
+          # build that finished after midnight made the 16:30 run skip
+          if { [ "$SCHEDULE" = "0 11 * * 1-5" ] || [ "$SCHEDULE" = "30 14 * * 1-5" ]; } && [ "$PRICES_DATE" != "$today_ist" ]; then
             force=true
-            echo "Today's NSE close is not in the published snapshot; retrying."
+            echo "Today's NSE close is not in the published snapshot; refreshing."
+          elif [ "$HAS_BOARD" != "true" ]; then
+            force=true
+            echo "The published snapshot predates the Explore page's indices; rebuilding."
           else
-            echo "The 20:00 retry is not needed."
+            echo "The published snapshot is current; no rebuild needed."
           fi
           echo "force_data_refresh=$force" >> "$GITHUB_OUTPUT"
 
