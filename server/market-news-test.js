@@ -22,6 +22,8 @@ const kinds = [
   ["Disclosure under SEBI Takeover Regulations", "Disclosure under Regulation 10(6) in respect of an acquisition", null],
   ["Record Date", "Record date for the AGM", null],
   ["General Updates", "Update on the Rights Issue Committee Meeting scheduled to be held on Thursday - Meeting Cancelled", null],
+  ["Updates", "Intimation of Record Date for redemption of Commercial Paper (CP) issued by the Company", null],
+  ["General Updates", "Payment of interest on Non-Convertible Debentures due on October 23, 2026", null],
   ["General Updates", "Investors' Presentation on Unaudited Financial Results for the quarter ended September 30, 2026", null],
 ];
 for (const [subject, summary, want] of kinds) assert.equal(newsKind(subject, summary), want, `${subject}: ${summary}`);
@@ -52,6 +54,9 @@ const together = sameDayTogether(announcementsFrom([
   row(13, "OTHER", "Dividend", "Board declared Interim Dividend of Rs. 3.00 per equity share.", "2026-10-22 18:00:00"),
 ]));
 assert.deepEqual(together.map(i => [i.id, i.also.map(a => a.id).join()]), [["nse-11", "nse-10"], ["nse-13", ""], ["nse-12", ""]], "the dividend and its record date together, the dividend first; another day, another company apart");
+
+// A summary that is only the rule it's filed under is none
+assert.equal(announcementsFrom([row(21, "NAUKRI", "Updates", "Info Edge (India) Limited has informed the Exchange about Disclosure under Regulation 30 of the Securities and Exchange Board of India (Listing Obligations and Disclosure Requirements) Regulations, 2015")]).length, 0, "the rule alone, in NSE's long wording: left out");
 
 // A bare "Outcome of Board Meeting held on …" says nothing
 assert.equal(announcementsFrom([row(20, "ZZZ", "Updates", "'Outcome of Board Meeting held on October 22, 2026.'.")]).length, 0, "a board meeting's date alone is left out");
@@ -84,6 +89,7 @@ const heads = headlinesFrom([rss([
   ["Old story about results", "Paper D", at(80), "https://g.example/1"],
   ["Coal India Q2 results date announced", "Paper E", at(3), "https://h.example/1"],
   ["Prediction site Polymarket's account withheld", "Paper F", at(2), "https://i.example/1"],
+  ["Defence Stocks: Astra Microwave, Data Patterns Get 'Buy' Initiation From Systematix; Up To 68% Upside Seen", "Paper G", at(2), "https://j.example/1"],
 ])], now);
 assert.deepEqual(heads.map(h => h.title), ["Sensex falls 460 points as crude surges past $110", "Phone maker's first-week stock sold out ahead of launch", "Coal India Q2 results date announced"], "tips, quote pages, trade setups, a repeat and an old story left out");
 assert.equal(heads[0].publisher, "Paper A");

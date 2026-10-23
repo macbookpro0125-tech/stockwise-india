@@ -34,8 +34,9 @@ export const KINDS = {
 // Subjects that are never news: meeting and call notices, newspaper copies,
 // certificates, insider-trading windows, staff share plans
 const PAPERWORK = /analysts?\/institutional|investor meet|con\. call|newspaper|certificate|investor presentation|trading window|esop|esos|esps|structural digital database|monitoring agency|shareholders meeting|loss of share|statement of deviation|utilisation of funds|related party|scrutini[sz]er|voting results|e-voting|annual general meeting|book closure|investor complaints|reg(ulation)?\.? ?74|registrar|change in rta|disclosure of .*pledge|encumbrance|sast|substantial acquisition|takeover regulations|insider trading|closure of trading|listing approval|trading approval|committee meeting|corrigendum|addendum|guarantee|amendment to aoa|compliance report|alteration/i;
-// …and summaries that are only a staff share plan or a call's slides
-const NOT_NEWS = /employee stock|stock option|restricted stock|\brsu\b|\besop|\besos|investors?['’]? presentation|earnings presentation|analysts?['’]? presentation|meeting\b.{0,40}\bcancell?ed|scheduled to be held/i;
+// …and summaries that are only a staff share plan, a call's slides, a
+// meeting's date or a debt's routine payments
+const NOT_NEWS = /employee stock|stock option|restricted stock|\brsu\b|\besop|\besos|investors?['’]? presentation|earnings presentation|analysts?['’]? presentation|meeting\b.{0,40}\bcancell?ed|scheduled to be held|commercial paper|redemption of (ncds?|non-convertible|debentures)|(payment|servicing) of interest|interest (payment|servicing)/i;
 
 export function newsKind(subject = "", summary = "") {
   const s = String(subject), text = `${s} ${summary}`;
@@ -71,6 +72,11 @@ export function tidy(text) {
   return t ? t[0].toUpperCase() + t.slice(1) : t;
 }
 
+// A summary that is only the rule it's filed under, in any of NSE's wordings
+// ("Disclosure under Regulation 30 of the Securities and Exchange Board of
+// India (Listing Obligations and Disclosure Requirements) Regulations, 2015")
+const onlyTheRule = text => /^['"]?(disclosure|intimation)s? (under|pursuant to) regulation \d+[^.]*?(listing obligations|lodr)[^.]*?regulations?,? ?(\d{4})?['"]?\.?['"]?$/i.test(String(text).trim());
+
 // NSE's rows → the page's announcements: news only, newest first, one of
 // each (a company files the same notice twice now and then)
 export function announcementsFrom(rows) {
@@ -79,7 +85,7 @@ export function announcementsFrom(rows) {
   // oldest first, so a notice filed twice keeps its first filing
   const ordered = [...(rows ?? [])].sort((a, b) => String(a.sort_date).localeCompare(String(b.sort_date)));
   for (const r of ordered) {
-    const said = r.attchmntText && !ONLY_THE_RULE.test(String(r.attchmntText).trim()) ? tidy(inOwnWords(r.attchmntText)) : null;
+    const said = r.attchmntText && !ONLY_THE_RULE.test(String(r.attchmntText).trim()) && !onlyTheRule(inOwnWords(r.attchmntText)) ? tidy(inOwnWords(r.attchmntText)) : null;
     // a summary that only repeats the subject ("Acquisition", "General Updates") is none
     const bare = t => String(t ?? "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
     const summary = said && bare(said) !== bare(r.desc) ? said : null;
@@ -118,7 +124,7 @@ function announcements() {
 
 // Market headlines that are calls rather than reporting ("Top 15 stocks to
 // buy"), and quote pages, are left out, as on a company's News tab
-const TIPS = /trade setup|\bto buy\b|stocks? to (buy|watch|pick)|buy or sell|target price|top picks|should you buy|technical picks|intraday|trading ideas|stock recommendations?|stocks? under ₹|share price (today|live)|stock price live|\blive (updates|blog)\b/i;
+const TIPS = /trade setup|['‘’"]?\bbuy['‘’"]? (rating|call|initiation)|initiates? (coverage|with a buy)|\bupside\b|\bto buy\b|stocks? to (buy|watch|pick)|buy or sell|target price|top picks|should you buy|technical picks|intraday|trading ideas|stock recommendations?|stocks? under ₹|share price (today|live)|stock price live|\blive (updates|blog)\b/i;
 const STOP_WORDS = new Set("the a an and or of in on for to as at by with from is are its it this that over amid after says say".split(" "));
 const words = t => new Set(String(t).toLowerCase().replace(/[^a-z0-9₹%.\s]/g, " ").split(/\s+/).filter(w => w.length > 2 && !STOP_WORDS.has(w)));
 // Six sites report the same close in nearly the same words; the first is kept
