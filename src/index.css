@@ -2703,3 +2703,14 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 .ap-news-dots button { width: 8px; height: 8px; padding: 0; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--t1) 25%, transparent); cursor: pointer; transition: width 200ms, background 200ms; }
 .ap-news-dots button[aria-pressed="true"] { width: 22px; background: var(--accent); }
 .ap-news-dots button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+/* A taller News tile (23 Oct 2026): each item a panel of its own, its logo,
+   its kind, room for two lines */
+.ap-tiles > .ap-tile.ap-tile-news { min-height: 460px; padding: 40px 32px 32px; }
+.ap-tiles > .ap-tile-news .ap-news-items { gap: 16px; margin-top: 18px; }
+.ap-tile-news .ap-news-item { gap: 8px; min-height: 168px; padding: 18px; border-radius: 18px; background: color-mix(in srgb, var(--bg) 45%, transparent); box-shadow: inset 0 0 0 1px var(--bdr); justify-content: flex-start; align-items: flex-start; }
+.ap-tile-news .ap-news-top { width: 100%; }
+.ap-tile-news .ap-news-who { font-size: 17px; }
+.ap-tile-news .ap-news-what { font-size: 15px; -webkit-line-clamp: 3; }
+.ap-tile-news .ap-news-mark { margin-bottom: 4px; }
+.ap-tile-news .ap-news-skel { height: 168px; border-radius: 18px; }
+@media (hover: hover) and (pointer: fine) { .ap-tile-news .ap-news-item:hover { background: color-mix(in srgb, var(--s3) 70%, transparent); } }

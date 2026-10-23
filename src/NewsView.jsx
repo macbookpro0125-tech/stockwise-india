@@ -268,7 +268,7 @@ function tileLine(item) {
     const n = item.numbers;
     return <>{fyQuarter(n.quarter)} results · {n.profitCr < 0 ? "Loss" : "Profit"} {crore(n.profitCr ?? 0)} <Change value={n.profitYoY} /></>;
   }
-  return `${KIND_LABEL[item.kind]}: ${item.summary ?? item.title}`;
+  return item.summary ?? item.title;
 }
 // It moves, as the price strip does: nine items, three at a time, the next
 // three every 6 s; still while a pointer or focus is on it, or with reduced
@@ -297,10 +297,12 @@ export function NewsTile({ onOpen, onSeeAll }) {
           : shown.length
             ? shown.map(item => (
               <button key={item.id} type="button" className="ap-news-item" onClick={() => onOpen(item.id)}>
+                <span className="ap-news-mark" aria-hidden="true">{item.type === "filing" ? <CompanyLogo symbol={item.symbol} size={40} fallback={item.company} /> : <span className="nw-paper"><Newspaper size={18} /></span>}</span>
                 <span className="ap-news-top">
                   <span className="ap-news-who">{item.type === "filing" ? niceName(item.company) : item.publisher ?? "News"}</span>
                   <span className="ap-news-when">{when(item.time, true, true)}</span>
                 </span>
+                {item.type === "filing" && <span className={`nw-kind k-${item.kind}`}>{KIND_LABEL[item.kind]}</span>}
                 <span className="ap-news-what">{tileLine(item)}</span>
               </button>
             ))
