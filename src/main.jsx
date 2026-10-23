@@ -11,6 +11,14 @@ import "./installApp.js"; // early: the browser offers installing soon after loa
 
 installGlow();
 
+// A company page includes the same public figures as JSON beside its
+// crawlable HTML. Read them before React replaces #root so the first client
+// render can keep the page visible while the session check runs.
+try {
+  const data = document.getElementById("public-stock-data");
+  if (data) window.__PUBLIC_STOCK__ = JSON.parse(data.textContent);
+} catch {}
+
 // The installed app's frame (public/sw.js) — built copies only: the dev server
 // serves source files that change on every save
 if (import.meta.env.PROD && "serviceWorker" in navigator) {

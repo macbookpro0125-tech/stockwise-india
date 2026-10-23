@@ -2,6 +2,7 @@ import { Suspense, useState, useEffect, useRef, useCallback } from "react";
 import { flushSync } from "react-dom";
 import { lazyPage } from "./lazyPage.js";
 import ExploreView from "./ExploreView.jsx";
+import PublicStock from "./PublicStock.jsx";
 import { api } from "./api.js";
 import Landing from "./Landing.jsx";
 import { PrivacyPage, DisclaimerPage, HelpPage } from "./LegalPages.jsx";
@@ -78,6 +79,8 @@ export default function App() {
   // A one-off message for the front page (e.g. after deleting an account)
   const [notice, setNotice] = useState(null);
   const [tab, setTab] = useState("discover");
+  // someone not signed in, on a company's public page, asked to sign in
+  const [wantsSignIn, setWantsSignIn] = useState(false);
   const [theme, toggleTheme] = useTheme();
   // { symbol, at } rather than a bare symbol: searching the same symbol again
   // (e.g. retrying after an error) must re-fetch, and an unchanged string
@@ -212,8 +215,11 @@ export default function App() {
     }
   }, [pathStock]);
   useEffect(() => {
+    // Keep a company's server-written title while its public page is shown;
+    // the page's own title is more useful than the app's generic one.
+    if (account === undefined || (account === null && pathStock)) return;
     document.title = open ? `${open.symbol} · Jocular Insights` : TITLE;
-  }, [open?.symbol]);
+  }, [open?.symbol, account, pathStock]);
 
   // The store app's ad cards sit over the page: hidden while a company page
   // covers the kept Discover list (ads.jsx)
@@ -260,9 +266,21 @@ export default function App() {
   // The page a reset email links to: saving signs in, then into the app
   if (path === "/reset-password") return <ResetPassword onDone={() => { tabHistory.current = []; tabRef.current = "discover"; setTab("discover"); navigate("/"); loadAccount(); }} />;
 
-  if (account === undefined) return null; // avoid a front-page flash while the session check is in flight
+  if (account === undefined) {
+    // Keep a crawlable company's summary visible while the session check is in
+    // flight. main.jsx reads the JSON beside the server-written HTML before
+    // React replaces the root; a signed-in visitor moves into the full app.
+    if (wantsSignIn) return <Landing notice={notice} onAuthed={() => { setNotice(null); tabHistory.current = []; tabRef.current = "discover"; setTab("discover"); if (!stockFromPath(window.location.pathname) && !chartFromPath(window.location.pathname)) navigate("/"); loadAccount(); }} />;
+    const publicSymbol = stockFromPath(path);
+    const initialPublicStock = window.__PUBLIC_STOCK__;
+    if (publicSymbol && initialPublicStock?.symbol === publicSymbol) return <PublicStock symbol={publicSymbol} initial={initialPublicStock} onSignIn={() => setWantsSignIn(true)} />;
+    return null; // avoid a front-page flash while the session check is in flight
+  }
 
   if (account === null) {
+    // A company's page shows its public summary first (PublicStock.jsx, 23 Oct
+    // 2026); its Sign in button opens the front page, the link kept
+    if (stockFromPath(path) && !wantsSignIn) return <PublicStock symbol={stockFromPath(path)} initial={window.__PUBLIC_STOCK__} onSignIn={() => setWantsSignIn(true)} />;
     // A shared stock or chart link stays where it points once the visitor signs in
     return <Landing notice={notice} onAuthed={() => { setNotice(null); tabHistory.current = []; tabRef.current = "discover"; setTab("discover"); if (!stockFromPath(window.location.pathname) && !chartFromPath(window.location.pathname)) navigate("/"); loadAccount(); }} />;
   }

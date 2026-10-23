@@ -8,7 +8,7 @@ import "./env.js"; // first, so the rest see .env's settings
 import { createServer } from "node:http";
 import { randomUUID, createHash } from "node:crypto";
 import { gzipSync } from "node:zlib";
-import { existsSync, statSync, createReadStream } from "node:fs";
+import { existsSync, statSync, createReadStream, readFileSync } from "node:fs";
 import { join, normalize, extname, sep } from "node:path";
 import { signup, startSignup, resendSignupCode, finishSignup, login, logout, verifySession, accountInfo, deleteAccount, createPasswordReset, resetPassword, signInWithFirebase } from "./auth.js";
 import { firebaseConfig, verifyFirebaseIdToken } from "./firebase-auth.js";
@@ -48,6 +48,7 @@ import { summarizeFiling } from "./filing-summary.js";
 import { logoFor } from "./logos.js";
 import { PRESETS } from "./presets.js";
 import { DIST_DIR } from "./paths.js";
+import { robotsTxt, sitemapXml, publicStock, stockPageHtml } from "./seo.js";
 import { HttpError, badRequest, payloadTooLarge } from "./http-errors.js";
 import { UpstreamError, upstreamStatus } from "./upstream.js";
 
@@ -643,6 +644,14 @@ export function createApp() {
         return;
       }
 
+      // A company's public summary, no sign-in needed (seo.js, PublicStock.jsx)
+      const publicStockRoute = url.pathname.match(/^\/api\/public\/stock\/([^/]+)$/);
+      if (publicStockRoute && req.method === "GET") {
+        const found = publicStock(decodePathSegment(publicStockRoute[1]).toUpperCase());
+        if (!found) { sendJson(res, 404, { error: "No NSE company by that symbol." }); return; }
+        sendJson(res, 200, found);
+        return;
+      }
       // The Explore page (explore.js): the indices at their last close, and one in full
       if (url.pathname === "/api/explore" && req.method === "GET") {
         if (requireAuth(req, res) == null) return;
@@ -1223,6 +1232,29 @@ export function createApp() {
         if (!pub) { sendJson(res, 404, { error: "Not found" }); return; }
         res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=3600" });
         res.end(`google.com, ${pub}, DIRECT, f08c47fec0942fa0\n`);
+        return;
+      }
+      // What a search engine reads, and a company's page for anyone (seo.js)
+      if (url.pathname === "/robots.txt" && (req.method === "GET" || req.method === "HEAD")) {
+        res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=3600" });
+        res.end(req.method === "HEAD" ? undefined : robotsTxt());
+        return;
+      }
+      if (url.pathname === "/sitemap.xml" && (req.method === "GET" || req.method === "HEAD")) {
+        res.writeHead(200, { "Content-Type": "application/xml; charset=utf-8", "Cache-Control": "public, max-age=3600" });
+        res.end(req.method === "HEAD" ? undefined : sitemapXml());
+        return;
+      }
+      const stockPage = url.pathname.match(/^\/stock\/([^/]+)\/?$/);
+      if (stockPage && (req.method === "GET" || req.method === "HEAD") && existsSync(join(DIST_DIR, "index.html"))) {
+        const html = stockPageHtml(readFileSync(join(DIST_DIR, "index.html"), "utf-8"), decodePathSegment(stockPage[1]).toUpperCase());
+        if (html) {
+          res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache" });
+          res.end(req.method === "HEAD" ? undefined : html);
+          return;
+        }
+        res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" });
+        res.end(req.method === "HEAD" ? undefined : "Not found");
         return;
       }
       if ((req.method === "GET" || req.method === "HEAD") && serveStatic(req, url.pathname, res)) return;

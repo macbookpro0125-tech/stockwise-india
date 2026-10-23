@@ -53,6 +53,8 @@ export async function request(path, options = {}) {
 
 export const api = {
   me: () => request("/api/auth/me"),
+  // A company's public summary, for someone not signed in (PublicStock.jsx)
+  publicStock: symbol => request(`/api/public/stock/${encodeURIComponent(symbol)}`),
   signup: (email, password) => request("/api/auth/signup", { method: "POST", body: JSON.stringify({ email, password }) }),
   login: (email, password) => request("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
   // Sign-up's emailed code (when the server can send email)

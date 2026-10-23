@@ -35,7 +35,9 @@ self.addEventListener("fetch", event => {
 
   if (req.mode === "navigate") {
     event.respondWith(fetch(req).then(async res => {
-      if (res.ok && (res.headers.get("content-type") ?? "").includes("text/html")) {
+      // A stock address has its own title and crawlable summary; never save
+      // that HTML as the offline home shell.
+      if (url.pathname === "/" && res.ok && (res.headers.get("content-type") ?? "").includes("text/html")) {
         const copy = res.clone();
         caches.open(SHELL).then(cache => cache.put("/", copy));
       }

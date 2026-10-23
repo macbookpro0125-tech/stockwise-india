@@ -2777,3 +2777,41 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 @media (hover: hover) and (pointer: fine) { .ex-co:hover { background: var(--s2); } }
 .ex-more { height: 34px; padding: 0 12px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); font: inherit; font-size: var(--fs-sm); cursor: pointer; }
 .ex-co:focus-visible, .ex-more:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* A company's public page (PublicStock.jsx) */
+.ps-page { min-height: 100vh; background: var(--bg); color: var(--t1); }
+.ps-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px var(--page-x); border-bottom: 1px solid var(--bdr); }
+.ps-brand { display: inline-flex; align-items: center; gap: 10px; color: var(--t1); text-decoration: none; font-size: 18px; }
+.ps-brand b { font-weight: 500; color: var(--accent2); }
+.ps-signin { height: 40px; padding: 0 18px; }
+.ps-main { max-width: 760px; margin: 0 auto; padding: 20px var(--page-x) 48px; }
+.ps-crumb { margin: 0 0 10px; font-size: var(--fs-xs); color: var(--t3); }
+.ps-title { display: flex; align-items: center; gap: 14px; }
+.ps-title h1 { margin: 0; font-size: 26px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.15; }
+.ps-title p { margin: 4px 0 0; font-size: var(--fs-sm); color: var(--t3); }
+.ps-price { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; margin: 18px 0 6px; font-size: 34px; font-variant-numeric: tabular-nums; }
+.ps-price span { font-size: var(--fs-lg); }
+.ps-price .up { color: var(--green); } .ps-price .down { color: var(--red); }
+.ps-price small { width: 100%; font-size: var(--fs-xs); color: var(--t3); }
+.ps-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 16px 0; }
+.ps-score { display: flex; flex-direction: column; gap: 4px; padding: 16px; border: 1px solid var(--bdr); border-radius: 16px; background: var(--s1); }
+.ps-score span { font-size: var(--fs-xs); color: var(--t3); }
+.ps-score b { font-size: 32px; font-weight: 600; }
+.ps-score b small { font-size: var(--fs-md); color: var(--t3); font-weight: 400; }
+.ps-score em { font-style: normal; font-size: var(--fs-sm); color: var(--t2); }
+.ps-facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin: 0; }
+.ps-facts > div { padding: 12px; border: 1px solid var(--bdr); border-radius: 12px; background: var(--s1); }
+.ps-facts dt { font-size: var(--fs-xs); color: var(--t3); }
+.ps-facts dd { margin: 4px 0 0; font-size: var(--fs-md); font-variant-numeric: tabular-nums; }
+.ps-more { margin: 24px 0 12px; padding: 20px; border-radius: 18px; background: radial-gradient(90% 140% at 0% 0%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 60%), var(--s2); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent); }
+.ps-more h2 { margin: 0 0 6px; font-size: var(--fs-xl); font-weight: 500; }
+.ps-more p { margin: 0 0 14px; color: var(--t2); line-height: 1.5; }
+.ps-cta { height: 46px; padding: 0 22px; }
+/* The summary the server writes into a company's page (server/seo.js), seen
+   for a moment before the app starts, and by search engines */
+.seo-stock { max-width: 760px; margin: 0 auto; padding: 24px var(--page-x, 16px); color: var(--t1); font-size: 15px; line-height: 1.5; }
+.seo-stock a { color: var(--accent); }
+.seo-stock h1 { font-size: 24px; font-weight: 600; margin: 8px 0; }
+.seo-stock table { border-collapse: collapse; margin: 12px 0; }
+.seo-stock th, .seo-stock td { padding: 4px 16px 4px 0; text-align: left; font-weight: 400; }
+.seo-stock th { color: var(--t3); }

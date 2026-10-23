@@ -52,6 +52,8 @@ test("F01-E3 a session that ends mid-use returns to sign-in, not a broken page",
   // something that asks the server, once the session has gone
   await page.getByRole("button", { name: /Create new screen|Start screening/ }).first().click();
   await page.goto("/stock/TCS");
+  // a company's public summary (23 Oct 2026), and its Sign in to the front page
+  await page.getByRole("button", { name: "Sign in", exact: true }).first().click();
   await expect(page.getByRole("button", { name: "Create free account" }).first()).toBeVisible();
 });
 
