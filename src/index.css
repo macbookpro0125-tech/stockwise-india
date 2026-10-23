@@ -2698,6 +2698,21 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 [data-theme="light"] .ex-tile.pale { color: #1B2236; }
 [data-theme="light"] .ex-tile.pale .ex-tile-name, [data-theme="light"] .ex-tile.pale .ex-tile-chg { text-shadow: none; }
 /* A phone's Explore: each section's first few, and the way to the rest */
+/* A results item: the quarter in sentences, and its last eight quarters as bars */
+.nw-compare { margin: 8px 0 0; padding: 0 0 0 18px; display: grid; gap: 6px; font-size: var(--fs-md); line-height: 1.5; color: var(--t1); }
+.nw-qbars { margin-top: 14px; display: grid; gap: 10px; }
+.nw-qbar-row { display: grid; grid-template-columns: 52px 1fr; align-items: end; gap: 8px; }
+.nw-qbar-label { font-size: var(--fs-xs); color: var(--t3); padding-bottom: 2px; }
+.nw-qbar-plot { display: flex; gap: 4px; height: 56px; }
+.nw-qcol { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: flex-end; }
+.nw-qhalf { flex: 1; display: flex; flex-direction: column; }
+.nw-qhalf.up { justify-content: flex-end; }
+.nw-qhalf.down { justify-content: flex-start; border-top: 1px solid var(--bdr2); }
+.nw-qbar { display: block; width: 100%; border-radius: 3px 3px 0 0; background: color-mix(in srgb, var(--t3) 45%, transparent); }
+.nw-qbar.now { background: var(--accent); }
+.nw-qbar.loss { border-radius: 0 0 3px 3px; background: color-mix(in srgb, var(--red) 55%, transparent); }
+.nw-qbar.loss.now { background: var(--red); }
+.nw-qbar-ends { display: flex; justify-content: space-between; margin-left: 60px; font-size: var(--fs-xs); color: var(--t3); }
 /* A news item's "What this means": the kind of announcement and its terms, in plain words */
 .nw-plain { margin: 14px 0; padding: 14px 16px; border-radius: 14px; background: color-mix(in srgb, var(--accent) 8%, var(--s1)); border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent); }
 .nw-plain-kind { margin: 6px 0 0; font-size: var(--fs-md); line-height: 1.5; color: var(--t1); }

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, ExternalLink, FileText, Newspaper, ChevronRight } from "lucide-react";
 import { api } from "./api.js";
 import { explainFiling } from "./filingTerms.js";
+import { compareResults } from "./resultsCompare.js";
 import CompanyLogo from "./CompanyLogo.jsx";
 import { niceName } from "./stockName.js";
 import { useWatchlist, watchSaved } from "./watchlist.js";
@@ -193,6 +194,56 @@ function FilingLines({ id, auto }) {
   );
 }
 
+// A results announcement: the quarter's figures in sentences, against a year
+// earlier and the quarter before, and the last eight quarters as bars
+// (resultsCompare.js)
+function ResultsCompare({ numbers, quarters }) {
+  const c = quarters?.[0]?.end === numbers.quarter ? compareResults(quarters) : null;
+  return (
+    <section className="nw-numbers" aria-label="How the results compare">
+      <span className="nw-said-label">How the {fyQuarter(numbers.quarter)} results compare</span>
+      {c
+        ? <ul className="nw-compare">{c.lines.map(l => <li key={l}>{l}</li>)}</ul>
+        : <Figures n={numbers} wide />}
+      {c?.bars.length > 1 && <QuarterBars bars={c.bars} />}
+      <span className="nw-numbers-note">As the app reads them from the company's results filings; the filing has the full statement. Figures, not a view on the shares.</span>
+    </section>
+  );
+}
+
+// Sales and profit, quarter by quarter, oldest on the left; the latest marked
+function QuarterBars({ bars }) {
+  const rows = [["Sales", "salesCr"], ["Profit", "profitCr"]].filter(([, k]) => bars.some(b => b[k] != null));
+  return (
+    <div className="nw-qbars">
+      {rows.map(([label, k]) => {
+        const max = Math.max(...bars.map(b => Math.abs(b[k] ?? 0)), 1);
+        const neg = bars.some(b => (b[k] ?? 0) < 0);
+        return (
+          <div key={k} className="nw-qbar-row">
+            <span className="nw-qbar-label">{label}</span>
+            <div className={`nw-qbar-plot${neg ? " neg" : ""}`} role="img"
+              aria-label={`${label} by quarter: ${bars.map(b => `${fyQuarter(b.end)} ${b[k] == null ? "not reported" : `₹${Math.round(b[k]).toLocaleString("en-IN")} crore`}`).join(", ")}`}>
+              {bars.map((b, i) => {
+                const v = b[k];
+                const h = v == null ? 0 : Math.max(3, (Math.abs(v) / max) * 100);
+                const bar = <span className={`nw-qbar${i === bars.length - 1 ? " now" : ""}${v < 0 ? " loss" : ""}`} style={{ height: `${h}%` }} />;
+                // with a loss among them: profits above a middle line, losses below it
+                return (
+                  <span key={b.end} className="nw-qcol" title={`${fyQuarter(b.end)}: ${v == null ? "—" : `₹${Math.round(v).toLocaleString("en-IN")} cr`}`}>
+                    {neg ? <><span className="nw-qhalf up">{v > 0 && bar}</span><span className="nw-qhalf down">{v < 0 && bar}</span></> : bar}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+      <div className="nw-qbar-ends" aria-hidden="true"><span>{fyQuarter(bars[0].end)}</span><span>{fyQuarter(bars[bars.length - 1].end)}</span></div>
+    </div>
+  );
+}
+
 // What the announcement is, in plain words: its kind, and the market terms it
 // uses (filingTerms.js) — what the words mean, not a view on the company
 function Plain({ item }) {
@@ -238,7 +289,7 @@ function Detail({ id, onBack, onOpen, onOpenStock }) {
         <blockquote key={a.id} className="nw-said nw-said-also"><span className="nw-said-label">Also that day · {a.title} · {clock(a.time)}</span>{a.summary ?? a.title}</blockquote>
       ))}
       {item.kind === "results" && (item.numbers
-        ? <div className="nw-numbers"><span className="nw-said-label">The numbers, against the same quarter a year earlier</span><Figures n={item.numbers} wide /><span className="nw-numbers-note">As the app reads them from the company's results filing; the filing has the full statement.</span></div>
+        ? <ResultsCompare numbers={item.numbers} quarters={data.quarters} />
         : <p className="nw-note">The figures reach the app with the evening data update.</p>)}
       <div className="nw-actions">
         {item.url && <a className="btn-primary nw-btn" href={item.url} target="_blank" rel="noopener noreferrer"><FileText size={16} aria-hidden="true" /> Open the filing{item.fileSize ? ` · ${item.fileSize}` : ""}</a>}

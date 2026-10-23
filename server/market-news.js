@@ -390,7 +390,11 @@ export async function newsItem(id) {
     // its headlines from the last two weeks — older ones aren't news about this
     const news = row ? await companyNews(row.name, 10).then(r => r.news ?? []).catch(() => []) : [];
     const recent = news.filter(n => n.date && Date.now() - Date.parse(n.date) <= 14 * DAY && !TIPS.test(n.title) && !PRICE_PAGE.test(n.title)).slice(0, 4);
-    return { item: { ...item, quote: quoteOf(row) }, more: announced(item.symbol), news: recent, asOf };
+    // results: the company's last eight quarters, for how this one compares (src/resultsCompare.js)
+    const quarters = item.kind === "results" && row?.quarters?.length
+      ? row.quarters.slice(0, 8).map(q => ({ end: q.fyEnd, salesCr: q.revenueCr ?? null, profitCr: q.profitCr ?? null, opm: q.opm ?? null, salesYoY: q.salesYoY ?? null, profitYoY: q.profitYoY ?? null }))
+      : null;
+    return { item: { ...item, quote: quoteOf(row) }, more: announced(item.symbol), news: recent, quarters, asOf };
   }
   return { item, companies: (item.companies ?? []).map(q => ({ ...q, announced: announced(q.symbol).slice(0, 2) })), asOf };
 }

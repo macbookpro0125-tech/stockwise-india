@@ -85,7 +85,10 @@ test("N-H3 results show their figures; an announcement's filing is read for its 
   await expect(withFigures).toContainText(/Q\d FY\d\d results/);
   await withFigures.click();
   const item = page.getByRole("article");
-  await expect(item.getByText("The numbers, against the same quarter a year earlier")).toBeVisible();
+  // how the quarter compares: in sentences, against a year earlier
+  const compare = item.getByRole("region", { name: "How the results compare" });
+  await expect(compare).toContainText(/How the Q\d FY\d\d results compare/i);
+  await expect(compare).toContainText(/(Sales|Profit) ₹[\d,.]+ crore|A loss of ₹/);
   const lines = item.getByRole("region", { name: "From the filing" });
   await lines.getByRole("button", { name: /Read its key lines/ }).click();
   await expect(lines.locator(".nw-lines li").first().or(lines.getByText(/No lines stood out|Couldn't read|no readable text|no NSE attachment/))).toBeVisible({ timeout: 45_000 });
