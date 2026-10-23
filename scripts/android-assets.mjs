@@ -59,9 +59,9 @@ for (const [d, k] of Object.entries(DENSITY)) {
   // square and a circle
   // the logo at 60% of the adaptive layer (inside the circle no icon shape
   // cuts; the phone shows the middle two-thirds), 84% of an older phone's
-  // whole icon. Its silver greys darkened and with more contrast: at icon
-  // size the originals looked "dull" (23 Oct 2026)
-  const white = (size, share, radius, fill) => `<div style="width:${size}px;height:${size}px;border-radius:${radius};background:${fill};display:grid;place-items:center"><img src="white.png" style="width:${Math.round(size * share)}px;height:${Math.round(size * share)}px;filter:contrast(1.5) brightness(0.8)"></div>`;
+  // whole icon. In its own colours, as drawn: a darkened version was tried
+  // and the owner chose the artwork itself ("use this", 23 Oct 2026)
+  const white = (size, share, radius, fill) => `<div style="width:${size}px;height:${size}px;border-radius:${radius};background:${fill};display:grid;place-items:center"><img src="white.png" style="width:${Math.round(size * share)}px;height:${Math.round(size * share)}px"></div>`;
   await draw(join(RES, `mipmap-${d}/ic_launcher_foreground.png`), fg, fg, white(fg, 0.6, "0", "transparent"));
   await draw(join(RES, `mipmap-${d}/ic_launcher.png`), legacy, legacy, white(legacy, 0.84, "22%", ICON_BG));
   await draw(join(RES, `mipmap-${d}/ic_launcher_round.png`), legacy, legacy, white(legacy, 0.84, "50%", ICON_BG));
