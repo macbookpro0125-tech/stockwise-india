@@ -98,7 +98,7 @@ export default function ScreensHome({ meta, total, onStart, onCreate, newsTile =
       </div>
 
       <section className="ap-tiles" aria-label="Ways to start">
-        <Reveal as="button" type="button" className="ap-tile ap-tile-dark glow" onClick={scrollToStrategies}>
+        <Reveal as="button" type="button" className={`ap-tile${newsTile ? "" : " ap-tile-dark"} glow`} onClick={scrollToStrategies}>
           <span className="ap-tile-eyebrow">Strategies</span>
           <span className="ap-tile-title">Start from a classic.</span>
           <span className="ap-tile-sub">Quality compounders, dividend payers, deep value. Ready to run.</span>
