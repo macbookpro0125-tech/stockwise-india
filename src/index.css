@@ -2697,6 +2697,11 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 /* Light theme: a small move's tile is pale, and white letters vanish on it */
 [data-theme="light"] .ex-tile.pale { color: #1B2236; }
 [data-theme="light"] .ex-tile.pale .ex-tile-name, [data-theme="light"] .ex-tile.pale .ex-tile-chg { text-shadow: none; }
+/* A phone's Explore: each section's first few, and the way to the rest */
+.ex-see-all { display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%; min-height: 44px; margin-top: 10px; border: 1px solid var(--bdr2); border-radius: 12px; background: var(--s1); color: var(--accent); font: inherit; font-size: var(--fs-sm); font-weight: 600; cursor: pointer; touch-action: manipulation; }
+.ex-see-all:active { background: var(--s2); }
+.ex-full > .nw-back { margin-bottom: 8px; }
+.ex-full > .ex-section:first-of-type, .ex-full > .nw-page { margin-top: 4px; }
 .ex-heat-wait { display: grid; place-items: center; height: 100%; padding: 16px; text-align: center; font-size: var(--fs-sm); color: var(--t3); }
 .ex-heat-key { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 14px; margin-top: 8px; font-size: var(--fs-xs); color: var(--t3); }
 .ex-heat-scale { display: inline-flex; align-items: center; gap: 5px; font-variant-numeric: tabular-nums; }

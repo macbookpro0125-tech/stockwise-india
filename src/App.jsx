@@ -154,8 +154,8 @@ export default function App() {
           window.history.back();
           return;
         }
-        // And a news item or an index open on the Explore page (ExploreView.jsx)
-        if (window.history.state?.newsItem || window.history.state?.exploreIndex) {
+        // And a news item, an index or a section's page of its own open on the Explore page (ExploreView.jsx)
+        if (window.history.state?.newsItem || window.history.state?.exploreIndex || window.history.state?.exploreFull) {
           window.history.back();
           return;
         }

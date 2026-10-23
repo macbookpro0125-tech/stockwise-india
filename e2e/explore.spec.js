@@ -138,3 +138,30 @@ test("X-H7 an index in the price strip opens it on Explore (a computer; a phone 
   await expect(index.getByRole("heading", { name: "NIFTY Bank" })).toBeVisible({ timeout: 45_000 });
   await expect(index.getByRole("region", { name: "Returns" })).toBeVisible();
 });
+
+test("X-H8 a phone shows each section's first few, and See all opens the rest as a page; Back returns @phone", async ({ page, account, isMobile }) => {
+  test.skip(!isMobile, "a computer shows each section whole");
+  await page.goto("/");
+  await openPage(page, "Explore");
+  const movers = page.getByRole("region", { name: "Top movers" });
+  await expect(movers.locator(".ex-movers-list li").first()).toBeVisible({ timeout: 45_000 });
+  expect(await movers.locator(".ex-movers-list li").count()).toBeLessThanOrEqual(4);
+  await movers.getByRole("button", { name: "Losers" }).click();
+  await movers.getByRole("button", { name: /^See all \d+ losers/ }).click();
+  // the whole list, as a page of its own, still the losers
+  const page2 = page.locator(".ex-full");
+  await expect(page2.getByRole("button", { name: "Losers" })).toHaveAttribute("aria-pressed", "true");
+  expect(await page2.locator(".ex-movers-list li").count()).toBeGreaterThan(4);
+  await expect(page.getByRole("heading", { name: "Heat map" })).toBeHidden();
+  await page.goBack();
+  await expect(page.getByRole("heading", { name: "Heat map" })).toBeVisible();
+
+  // the news: four, then all of it
+  const news = page.locator(".nw-page");
+  await expect(news.locator(".nw-row").first()).toBeVisible({ timeout: 45_000 });
+  expect(await news.locator(".nw-row").count()).toBeLessThanOrEqual(4);
+  await page.getByRole("button", { name: "See all the news" }).click();
+  await expect(page.locator(".ex-full .nw-row").nth(4)).toBeVisible();
+  await page.locator(".ex-full").getByRole("button", { name: "Explore", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Heat map" })).toBeVisible();
+});

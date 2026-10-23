@@ -1,9 +1,10 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronRight } from "lucide-react";
 import { api } from "./api.js";
 import CompanyLogo from "./CompanyLogo.jsx";
 import { niceName } from "./stockName.js";
 import NewsView, { Change, NewsRow } from "./NewsView.jsx";
+import { usePhone } from "./phoneTabs.js";
 
 // The Explore page (23 Oct 2026: "the Nifty 50, bank, small, large and all
 // the others on this page, and we also have news in it"): the indices at
@@ -302,12 +303,19 @@ function Heatmap({ onOpenStock, onOpenIndex }) {
 
 const crShort = v => (v >= 100000 ? `₹${(v / 100000).toLocaleString("en-IN", { maximumFractionDigits: 1 })} lakh cr` : `₹${Math.round(v).toLocaleString("en-IN")} cr`);
 
-function TopMovers({ onOpenStock }) {
-  const [period, setPeriod] = useState("1d");
-  const [side, setSide] = useState("gainers");
+// A phone shows each section's first few (preview), and "See all" opens the
+// whole of it as a page of its own (23 Oct 2026: "on the phone show only three
+// or four; open it to show the details on another page")
+const PREVIEW = 4;
+const SeeAll = ({ label, onClick }) => <button type="button" className="ex-see-all" onClick={onClick}>{label} <ChevronRight size={16} aria-hidden="true" /></button>;
+
+function TopMovers({ onOpenStock, preview = false, onSeeAll, start = {} }) {
+  const [period, setPeriod] = useState(start.period ?? "1d");
+  const [side, setSide] = useState(start.side ?? "gainers");
   const [data, setData] = useState(null);
   useEffect(() => { setData(null); api.movers(period).then(setData).catch(() => setData({ gainers: [], losers: [] })); }, [period]);
-  const list = data?.[side] ?? [];
+  const all = data?.[side] ?? [];
+  const list = preview ? all.slice(0, PREVIEW) : all;
   const [, , , words] = HEAT_PERIODS.find(([p]) => p === period);
   return (
     <section className="ex-section" aria-labelledby="ex-movers">
@@ -338,23 +346,26 @@ function TopMovers({ onOpenStock }) {
             ))}
           </ol>
           : <p className="nw-empty">No {side === "gainers" ? "rises" : "falls"} over {words}.</p>}
+      {preview && all.length > PREVIEW && <SeeAll label={`See all ${all.length} ${side}`} onClick={() => onSeeAll({ side, period })} />}
       <p className="nw-note">Companies over ₹{(data?.floorCr ?? 1000).toLocaleString("en-IN")} crore, over {words}{data?.asOf ? ` to the close on ${shortDate(data.asOf)}` : ""}.</p>
     </section>
   );
 }
 
 const weekday = d => new Intl.DateTimeFormat("en-IN", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${d}T00:00:00Z`));
-function ResultsWeek({ onOpenStock }) {
+function ResultsWeek({ onOpenStock, preview = false, onSeeAll }) {
   const [data, setData] = useState(null);
   const [open, setOpen] = useState({});
   useEffect(() => { api.resultsWeek().then(setData).catch(() => setData({ days: [] })); }, []);
   if (!data?.days?.length) return null;
-  const SHOWN = 6;
+  // a phone's preview: the next three days, three companies each; the page of its own: every one
+  const SHOWN = preview ? 3 : onSeeAll ? 6 : Infinity;
+  const days = preview ? data.days.slice(0, 3) : data.days;
   return (
     <section className="ex-section" aria-labelledby="ex-results">
       <h3 className="ex-h" id="ex-results">Results this week</h3>
       <div className="ex-days">
-        {data.days.map(day => {
+        {days.map(day => {
           const all = open[day.date], list = all ? day.companies : day.companies.slice(0, SHOWN);
           const tomorrow = new Date(Date.parse(`${data.today}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
           return (
@@ -367,12 +378,13 @@ function ResultsWeek({ onOpenStock }) {
                     <span>{niceName(c.name)}</span>
                   </button>
                 ))}
-                {day.count > SHOWN && <button type="button" className="ex-more" onClick={() => setOpen(o => ({ ...o, [day.date]: !all }))}>{all ? "Fewer" : `+${day.count - SHOWN} more`}</button>}
+                {day.count > SHOWN && <button type="button" className="ex-more" onClick={() => (preview ? onSeeAll() : setOpen(o => ({ ...o, [day.date]: !all })))}>{all ? "Fewer" : `+${day.count - SHOWN} more`}</button>}
               </div>
             </div>
           );
         })}
       </div>
+      {preview && <SeeAll label={`See all ${data.days.reduce((n, d) => n + d.count, 0)} companies`} onClick={() => onSeeAll()} />}
       <p className="nw-note">Board meetings for results on NSE's calendar, the largest companies first.</p>
     </section>
   );
@@ -383,18 +395,31 @@ export default function ExploreView({ onOpenStock, openId = null, onOpened, open
   const [index, setIndex] = useState(() => window.history.state?.newsItem ? null : window.history.state?.exploreIndex ?? null);
   const indexRef = useRef(null);
   indexRef.current = index;
+  const fullRef = useRef(null);
   const [newsItem, setNewsItem] = useState(null);
   const [newsOpen, setNewsOpen] = useState(null);
   const listScroll = useRef(0);
+  const phone = usePhone();
+  // A section as a page of its own ({ kind: "movers" | "results" | "news", … }): a history
+  // entry, so Back (the page's, the browser's, Android's) returns to Explore where it was
+  const [full, setFull] = useState(() => window.history.state?.exploreFull ?? null);
+  fullRef.current = full;
+  const openFull = f => {
+    listScroll.current = window.scrollY;
+    window.history.pushState({ ...(window.history.state ?? {}), exploreFull: f }, "");
+    setFull(f);
+    window.scrollTo(0, 0);
+  };
   useEffect(() => { api.explore().then(setBoard).catch(() => setBoard({ market: [], sectors: [] })); }, []);
   useEffect(() => {
     // (only when an index was open: Back from a company page is the app's to place)
     const onPop = () => {
       const s = window.history.state ?? {};
       const next = s.newsItem ? null : s.exploreIndex ?? null;
-      const wasOpen = indexRef.current;
+      const wasOpen = indexRef.current || fullRef.current;
       setIndex(next);
-      if (!next && !s.newsItem && wasOpen) requestAnimationFrame(() => window.scrollTo(0, listScroll.current));
+      setFull(s.exploreFull ?? null);
+      if (!next && !s.newsItem && !s.exploreFull && wasOpen) requestAnimationFrame(() => window.scrollTo(0, listScroll.current));
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
@@ -420,7 +445,15 @@ export default function ExploreView({ onOpenStock, openId = null, onOpened, open
   return (
     <div className="ex-page">
       {index && <IndexDetail name={index} onBack={() => window.history.back()} onOpenStock={onOpenStock} onOpenNews={openNewsFromIndex} />}
-      <div hidden={!!index}>
+      {full && !index && (
+        <div className="ex-full">
+          {!newsItem && <button type="button" className="nw-back" onClick={() => window.history.back()}><ArrowLeft size={17} aria-hidden="true" /> Explore</button>}
+          {full.kind === "movers" && <TopMovers onOpenStock={onOpenStock} start={full} />}
+          {full.kind === "results" && <ResultsWeek onOpenStock={onOpenStock} />}
+          {full.kind === "news" && <NewsView embedded onOpenStock={onOpenStock} onItemChange={setNewsItem} />}
+        </div>
+      )}
+      <div hidden={!!index || !!full}>
         {!newsItem && (
           <>
             <div className="nw-head">
@@ -437,11 +470,11 @@ export default function ExploreView({ onOpenStock, openId = null, onOpened, open
                   <Heatmap onOpenStock={onOpenStock} onOpenIndex={openIndex} />
                 </>}
             {/* from the companies' own figures: there even before the indices are */}
-            <TopMovers onOpenStock={onOpenStock} />
-            <ResultsWeek onOpenStock={onOpenStock} />
+            <TopMovers onOpenStock={onOpenStock} preview={phone} onSeeAll={f => openFull({ kind: "movers", ...f })} />
+            <ResultsWeek onOpenStock={onOpenStock} preview={phone} onSeeAll={() => openFull({ kind: "results" })} />
           </>
         )}
-        <NewsView embedded onOpenStock={onOpenStock} openId={newsOpen ?? openId} onOpened={() => { setNewsOpen(null); onOpened?.(); }} onItemChange={setNewsItem} />
+        {!full && <NewsView embedded preview={phone} onSeeAll={() => openFull({ kind: "news" })} onOpenStock={onOpenStock} openId={newsOpen ?? openId} onOpened={() => { setNewsOpen(null); onOpened?.(); }} onItemChange={setNewsItem} />}
       </div>
     </div>
   );

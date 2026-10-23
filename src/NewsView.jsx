@@ -97,7 +97,8 @@ export function NewsRow({ item, onOpen, asOf, compact = false, dated = true }) {
   );
 }
 
-function List({ kind, size, onOpen, onCounts, refresh = 0 }) {
+// limit: the first few only, with "See all" (a phone's Explore page, ExploreView.jsx)
+function List({ kind, size, onOpen, onCounts, refresh = 0, limit = 0, onSeeAll }) {
   // the starred companies: a star or unstar anywhere reloads the list (its
   // My watchlist, and every kind's count of it), once the change is saved
   const watched = useWatchlist();
@@ -122,7 +123,7 @@ function List({ kind, size, onOpen, onCounts, refresh = 0 }) {
 
   if (!data) return <div className="nw-skel" role="status" aria-label="Loading the news">{[0, 1, 2, 3, 4].map(i => <span key={i} />)}</div>;
   const groups = [];
-  for (const item of data.items) {
+  for (const item of limit ? data.items.slice(0, limit) : data.items) {
     const label = dayLabel(item.time);
     if (groups[groups.length - 1]?.label !== label) groups.push({ label, items: [] });
     groups[groups.length - 1].items.push(item);
@@ -140,7 +141,9 @@ function List({ kind, size, onOpen, onCounts, refresh = 0 }) {
           <div className="nw-list">{g.items.map(item => <NewsRow key={item.id} item={item} onOpen={onOpen} asOf={data.asOf} dated={false} />)}</div>
         </section>
       ))}
-      {data.next && <button type="button" className="btn-ghost nw-more" disabled={busy} onClick={() => load(data.next)}>{busy ? "Loading…" : "Show more"}</button>}
+      {limit
+        ? (data.items.length > limit || data.next) && <button type="button" className="ex-see-all" onClick={onSeeAll}>See all the news <ChevronRight size={16} aria-hidden="true" /></button>
+        : data.next && <button type="button" className="btn-ghost nw-more" disabled={busy} onClick={() => load(data.next)}>{busy ? "Loading…" : "Show more"}</button>}
     </>
   );
 }
@@ -346,7 +349,7 @@ export function MarketNewsCard({ onOpen, onSeeAll }) {
   );
 }
 
-export default function NewsView({ onOpenStock, openId = null, onOpened, embedded = false, onItemChange }) {
+export default function NewsView({ onOpenStock, openId = null, onOpened, embedded = false, onItemChange, preview = false, onSeeAll }) {
   const [kind, setKind] = useState("all");
   const [counts, setCounts] = useState(null);
   // pressing the kind already shown loads it again
@@ -390,11 +393,11 @@ export default function NewsView({ onOpenStock, openId = null, onOpened, embedde
           <div className="nw-head">
             {/* on the Explore page, a section under the indices */}
             {embedded ? <h3 className="ex-h" id="ex-news">News</h3> : <h2 className="nw-page-title hide-phone">News</h2>}
-            <p className="nw-lede">What listed companies told NSE over the last few days, and the market's headlines. Updated through the day.</p>
-            <button type="button" role="switch" aria-checked={size === "large"} className="nw-size" onClick={() => pickSize(size === "large" ? "all" : "large")}>
+            <p className="nw-lede">{preview ? "The latest from listed companies and the market's headlines." : "What listed companies told NSE over the last few days, and the market's headlines. Updated through the day."}</p>
+            {!preview && <button type="button" role="switch" aria-checked={size === "large"} className="nw-size" onClick={() => pickSize(size === "large" ? "all" : "large")}>
               <span className="st-switch nw-switch" data-on={size === "large"} aria-hidden="true"><span /></span>
               Only companies over ₹1,000 crore
-            </button>
+            </button>}
           </div>
           <div className="nw-layout">
             {/* a computer: the kinds down the side with how many of each; a
@@ -410,7 +413,7 @@ export default function NewsView({ onOpenStock, openId = null, onOpened, embedde
               <div className="ph-chips nw-filters" role="group" aria-label="Kinds of news">
                 {FILTERS.map(([id, label]) => <button key={id} type="button" className="ph-chip" aria-pressed={kind === id} onClick={() => pickKind(id)}>{label}</button>)}
               </div>
-              <List kind={kind} size={size} onOpen={open} onCounts={setCounts} refresh={refresh} />
+              <List kind={kind} size={size} onOpen={open} onCounts={setCounts} refresh={refresh} limit={preview ? 4 : 0} onSeeAll={onSeeAll} />
             </div>
           </div>
         </>}
