@@ -127,6 +127,18 @@ addColumn("watchlist", "note", "TEXT");
 addColumn("users", "telegram_chat_id", "INTEGER");
 addColumn("users", "telegram_name", "TEXT");
 addColumn("alerts", "notified_at", "TEXT");
+// Phone notifications (push.js): each phone's Firebase token, and the time
+// of the newest watchlist news an account has been sent, so each item goes
+// once
+db.exec(`
+  CREATE TABLE IF NOT EXISTS push_tokens (
+    token TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    platform TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS push_tokens_user ON push_tokens(user_id);
+`);
 db.exec(`
   -- One-time codes behind the "Connect Telegram" link (t.me/<bot>?start=<code>)
   CREATE TABLE IF NOT EXISTS telegram_links (
@@ -200,6 +212,9 @@ rebuildUsersForSocialSignIn();
 // When an account's email was proven its owner's (a verified Google or Apple
 // sign-in with it); a typed email at sign-up isn't proof (auth.js)
 addColumn("users", "email_verified_at", "TEXT");
+// The newest watchlist news an account's phones were sent (news-push.js);
+// after the accounts table's rebuild above, which keeps only its own columns
+addColumn("users", "push_news_at", "TEXT");
 // A sign-up waiting for the code emailed to it (auth.js startSignup): no
 // account exists until the code matches. Only hashes are kept.
 db.exec(`

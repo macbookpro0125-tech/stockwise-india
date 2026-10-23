@@ -29,6 +29,18 @@
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="${admobAppId}" />
 
+        <!-- Phone notifications (src/push.js, server/push.js): their icon
+             and colour in the status bar -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_notify" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/notification_teal" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="updates" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -43,4 +55,6 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Android 13 and later ask before an app may show notifications -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 </manifest>

@@ -36,6 +36,8 @@ import { sectorComparison } from "./sector-compare.js";
 import { startDataJobs, jobStatus } from "./data-jobs.js";
 import { botInfo, linkCode, telegramChat, unlinkTelegram, sendTelegram, startTelegramPolling } from "./telegram.js";
 import { startAlertChecks } from "./alert-notifier.js";
+import { savePushToken, removePushToken } from "./push.js";
+import { startNewsPush } from "./news-push.js";
 import { limits, clientIp, waitText } from "./rate-limit.js";
 import { startBackups } from "./backup.js";
 import { fetchTechnicals } from "./technicals.js";
@@ -696,6 +698,18 @@ export function createApp() {
         sendJson(res, 200, await marketNews({ kind, symbols, size, before: url.searchParams.get("before")?.slice(0, 80) ?? null }));
         return;
       }
+      // The Android app's Firebase token, for phone notifications (push.js):
+      // given when they're turned on, taken back when turned off or on signing out
+      if (url.pathname === "/api/push/token" && (req.method === "POST" || req.method === "DELETE")) {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        const { token, platform } = await readJsonBody(req);
+        if (typeof token !== "string" || !/^[\w:.-]{20,4096}$/.test(token)) { sendJson(res, 400, { error: "That isn't a notification token" }); return; }
+        if (req.method === "POST") savePushToken(userId, token, platform === "ios" ? "ios" : "android");
+        else removePushToken(userId, token);
+        sendJson(res, 200, { ok: true });
+        return;
+      }
       if (url.pathname === "/api/news/watchlist-latest" && req.method === "GET") {
         const userId = requireAuth(req, res);
         if (userId == null) return;
@@ -1316,6 +1330,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   if (mode !== "off") {
     startTelegramPolling();
     startAlertChecks();
+    startNewsPush();
     startBackups();
   }
 }

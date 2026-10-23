@@ -11,6 +11,7 @@ import { DeleteAccountModal } from "./AccountMenu.jsx";
 import { supportAdsAvailable, useAdsOn, watchSupportAd } from "./ads.jsx";
 import { showStrategiesOfKind } from "./PresetCards.jsx";
 import { canRate, openStorePage } from "./rateApp.js";
+import { canPush, pushOn, turnPushOn, turnPushOff } from "./push.js";
 
 // A phone's Settings tab (17 Oct 2026): the account, the theme and the pages
 // that don't fit the five-tab bar, as grouped lists — the Account menu's
@@ -32,11 +33,11 @@ function Row({ icon: Icon, tint, label, detail, onClick, href, danger, children 
   return <button type="button" className={`st-row${danger ? " danger" : ""}`} onClick={onClick}>{inner}</button>;
 }
 
-function Switch({ on, label, onChange, icon, tint }) {
+function Switch({ on, label, detail, onChange, icon, tint }) {
   return (
     <button type="button" role="switch" aria-checked={on} className="st-row" onClick={() => onChange(!on)}>
       <span className="st-icon" style={{ "--tint": tint }} aria-hidden="true">{icon}</span>
-      <span className="st-text"><span className="st-label">{label}</span></span>
+      <span className="st-text"><span className="st-label">{label}</span>{detail && <span className="st-detail">{detail}</span>}</span>
       <span className="st-switch" data-on={on} aria-hidden="true"><span /></span>
     </button>
   );
@@ -65,6 +66,19 @@ export default function SettingsView({ account, theme, onToggleTheme, onTab, onL
   const triggered = (alerts ?? []).filter(x => x.enabled && x.triggered).length;
   const alertsDetail = triggered ? `${triggered} price${triggered === 1 ? "" : "s"} reached` : alerts?.length ? `${alerts.length} set` : "Get told when a price is reached";
   const [confirming, setConfirming] = useState(false);
+  // Phone notifications, in the Android app (push.js)
+  const [push, setPush] = useState(pushOn);
+  const [pushNote, setPushNote] = useState(null);
+  const switchPush = async want => {
+    setPushNote(null);
+    try {
+      if (!want) { await turnPushOff(); setPush(false); return; }
+      if (await turnPushOn()) setPush(true);
+      else setPushNote("Notifications are off for this app in Android's settings");
+    } catch (e) {
+      setPushNote(e.message || "Couldn't turn them on. Try again in a moment");
+    }
+  };
   const adsOn = useAdsOn();
   const [support, setSupport] = useState(null); // null | "loading" | "thanks" | "closed" | error text
 
@@ -105,6 +119,13 @@ export default function SettingsView({ account, theme, onToggleTheme, onTab, onL
         <Row icon={ChartLine} tint="#3B82F6" label="Strategy performance" detail="How past picks have moved" onClick={() => onTab("performance")} />
         {account?.features?.momentum && <Row icon={Zap} tint="#F59E0B" label="Momentum" onClick={() => onTab("momentum")} />}
       </Group>
+
+      {canPush() && (
+        <Group title="Notifications">
+          <Switch on={push} label="Phone notifications" onChange={switchPush} icon={<Bell size={17} strokeWidth={2.2} />} tint="#14B892"
+            detail={pushNote ?? "News from your watchlist's companies, and alerts when a price is reached"} />
+        </Group>
+      )}
 
       <Group title="Display">
         <Switch on={theme === "dark"} label="Dark mode" onChange={onToggleTheme} icon={<Moon size={17} strokeWidth={2.2} />} tint="#6366F1" />

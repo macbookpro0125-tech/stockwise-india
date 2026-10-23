@@ -61,6 +61,9 @@ export const api = {
   signupVerify: (email, code) => request("/api/auth/signup/verify", { method: "POST", body: JSON.stringify({ email, code }) }),
   signupResend: (email) => request("/api/auth/signup/resend", { method: "POST", body: JSON.stringify({ email }) }),
   logout: () => request("/api/auth/logout", { method: "POST" }),
+  // The Android app's notification token (src/push.js)
+  pushToken: (token, platform) => request("/api/push/token", { method: "POST", body: JSON.stringify({ token, platform }) }),
+  pushTokenRemove: (token) => request("/api/push/token", { method: "DELETE", body: JSON.stringify({ token }) }),
   // password, or for an account without one (Google, Apple, phone) confirm: "DELETE"
   deleteAccount: (password, confirm) => request("/api/auth/delete-account", { method: "POST", body: JSON.stringify({ password, confirm }) }),
   // Password reset: offered only when the server can send email

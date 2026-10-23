@@ -359,6 +359,13 @@ export async function watchlistLatest(symbols, since = null) {
   return { latest: about[0]?.time ?? null, newCount: since ? after.length : 0 };
 }
 
+// The items themselves, newest first, for the phone notifications
+// (news-push.js)
+export async function watchlistNews(symbols, since) {
+  const { items } = await feed();
+  return items.filter(i => i.time > since && ((i.symbol && symbols.has(i.symbol)) || i.companies?.some(c => symbols.has(c.symbol))));
+}
+
 // An announcement, for reading its attachment
 export async function newsItemFiling(id) {
   const { filings } = await feed();

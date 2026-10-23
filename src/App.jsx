@@ -19,6 +19,7 @@ import { portfolioStore, alertsStore } from "./stores.js";
 import { strategiesStore, notesStore } from "./accountData.js";
 import { useAdPause } from "./ads.jsx";
 import { noteAppOpened, companyPageClosed } from "./rateApp.js";
+import { onPushTap, refreshPush, forgetPush } from "./push.js";
 
 // Keep the first Discover screen small; load account tabs and full stock
 // research only when the user opens them.
@@ -117,6 +118,18 @@ export default function App() {
     setTab(t);
     window.scrollTo(0, 0);
   };
+
+  // A tapped phone notification (push.js) opens what it's about: an alert's
+  // company, a news item, or the Watchlist for several
+  const pushTap = useRef(null);
+  pushTap.current = d => {
+    // by its address, which also works while the account is still loading
+    if (d.stock) navigate(stockPath(String(d.stock)), { state: { fromApp: true, depth: 1 } });
+    else if (d.news) { setNewsOpen(String(d.news)); goTab("explore"); }
+    else if (d.tab === "watchlist") goTab("watchlist");
+  };
+  useEffect(() => onPushTap(d => pushTap.current(d)), []);
+  useEffect(() => { if (account?.userId) refreshPush(); }, [account?.userId]);
 
   // Capacitor's listener lets us handle system Back consistently with the
   // app's own stock routes and tab navigation, then exit from the root.
@@ -338,7 +351,7 @@ export default function App() {
     setAccount(null);
     navigate("/");
   };
-  const logout = () => api.logout().then(() => signedOut());
+  const logout = () => forgetPush().finally(() => api.logout().then(() => signedOut()));
   const accountDeleted = () => signedOut("Your account and everything saved with it have been deleted.");
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)" }}>

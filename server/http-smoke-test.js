@@ -331,6 +331,57 @@ async function main() {
   await notifyAlerts({ prices: at(800), send });
   assert(sent.length === 3, "nothing is sent once disconnected");
 
+  // Phone notifications (push.js), with Firebase stubbed out: the app's
+  // token, alerts to the phone, and news from the watchlist
+  assert((await json("POST", "/api/push/token", "", { token: "x".repeat(40) })).status === 401, "a notification token needs an account");
+  assert((await json("POST", "/api/push/token", daveCookie, { token: "not a token" })).status === 400, "something that isn't a token is refused");
+  const phoneToken = `fcm-${"a".repeat(60)}`;
+  assert((await json("POST", "/api/push/token", daveCookie, { token: phoneToken, platform: "android" })).status === 200, "the app's token is kept for the account");
+  const { pushTokens, sendPush } = await import("./push.js");
+  assert(pushTokens(daveId).length === 1 && pushTokens(daveId)[0] === phoneToken, "one phone, once");
+  const pushed = [];
+  const push = async (userId, message) => { pushed.push({ userId, message }); return true; };
+  await notifyAlerts({ prices: at(950), send, push });
+  await notifyAlerts({ prices: at(880), send, push });
+  assert(pushed.length === 1 && pushed[0].userId === daveId && /Infosys is ₹880/.test(pushed[0].message.title) && /At or below your alert price of ₹895/.test(pushed[0].message.body) && pushed[0].message.data.stock === "INFY" && sent.length === 3,
+    "an alert crossing goes to the phone, without Telegram, and opens the company");
+  await notifyAlerts({ prices: at(870), send, push });
+  assert(pushed.length === 1, "no repeat on the phone while the price stays across");
+  const { newsPush } = await import("./news-push.js");
+  const watched = new Set(["INFY"]);
+  const one = newsPush([{ id: "nse-1", type: "filing", symbol: "INFY", company: "INFOSYS LIMITED", title: "Outcome of Board Meeting", time: "2026-10-23T10:00:00.000Z" }], watched);
+  assert(one.title === "Infosys" && one.body === "Outcome of Board Meeting" && one.data.news === "nse-1", "one news item: the company, the item, and it opens the item");
+  const many = newsPush([
+    { id: "h-1", type: "headline", title: "Infosys wins a deal", companies: [{ symbol: "TCS", name: "Tata Consultancy Services Limited" }, { symbol: "INFY", name: "Infosys Limited" }], time: "2026-10-23T11:00:00.000Z" },
+    { id: "nse-2", type: "filing", symbol: "INFY", company: "INFOSYS LIMITED", title: "Press release", time: "2026-10-23T10:00:00.000Z" },
+  ], watched);
+  assert(many.title === "2 updates from your watchlist" && many.body.startsWith("Infosys: Infosys wins a deal") && many.data.tab === "watchlist", "several: one message naming the watched company, opening the Watchlist");
+  assert(newsPush([], watched) === null, "nothing new, no message");
+  // the FCM request itself, against a stubbed Google
+  const { generateKeyPairSync: pushKeys } = await import("node:crypto");
+  const { privateKey: pushKey } = pushKeys("rsa", { modulusLength: 2048 });
+  process.env.FIREBASE_SERVICE_ACCOUNT = JSON.stringify({ project_id: "demo-project", client_email: "push@demo-project.iam.gserviceaccount.com", private_key: pushKey.export({ type: "pkcs8", format: "pem" }) });
+  const calls = [];
+  const fakeGoogle = async (url, init) => {
+    calls.push({ url, init });
+    if (url.includes("oauth2")) return new Response(JSON.stringify({ access_token: "ya29.test", expires_in: 3600 }));
+    if (JSON.parse(init.body).message.token === "gone-token") return new Response(JSON.stringify({ error: { message: "Requested entity was not found.", details: [{ errorCode: "UNREGISTERED" }] } }), { status: 404 });
+    return new Response("{}");
+  };
+  assert(await sendPush(phoneToken, { title: "T", body: "B", data: { stock: "INFY" } }, { fetchImpl: fakeGoogle }) === "sent", "a message to FCM is sent");
+  const fcm = calls.find(c => c.url.includes("fcm.googleapis.com"));
+  const msg = JSON.parse(fcm.init.body).message;
+  assert(fcm.url === "https://fcm.googleapis.com/v1/projects/demo-project/messages:send" && fcm.init.headers.authorization === "Bearer ya29.test" && msg.token === phoneToken && msg.notification.title === "T" && msg.data.stock === "INFY" && msg.android.notification.channel_id === "updates",
+    "to the project's FCM endpoint, signed in, to that phone, on the app's channel");
+  const jwt = new URLSearchParams(calls[0].init.body).get("assertion").split(".");
+  assert(jwt.length === 3 && JSON.parse(Buffer.from(jwt[1], "base64url")).scope === "https://www.googleapis.com/auth/firebase.messaging", "Google's sign-in is a signed JWT for FCM only");
+  assert(await sendPush("gone-token", { title: "T", body: "B" }, { fetchImpl: fakeGoogle }) === "gone", "an uninstalled app's token is reported gone");
+  delete process.env.FIREBASE_SERVICE_ACCOUNT;
+  assert((await json("DELETE", "/api/push/token", daveCookie, { token: phoneToken })).status === 200 && pushTokens(daveId).length === 0, "turning them off, or signing out, takes the phone's token back");
+  await notifyAlerts({ prices: at(950), send, push });
+  await notifyAlerts({ prices: at(880), send, push });
+  assert(pushed.length === 1, "no phone, nothing pushed");
+
   // Password guessing and mass sign-ups are limited
   const { limits } = await import("./rate-limit.js");
   for (let i = 0; i < 5; i++) await json("POST", "/api/auth/login", "", { email: "alice@example.com", password: `wrong-guess-${i}` });
