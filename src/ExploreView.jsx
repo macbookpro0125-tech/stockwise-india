@@ -383,6 +383,17 @@ export const SectionHead = ({ id, title, more, onMore }) => (
   </div>
 );
 
+// A segmented control: one track, its thumb sliding under the chosen option
+function Segmented({ label: groupLabel, value, onChange, options, tint = "" }) {
+  const i = Math.max(0, options.findIndex(([v]) => v === value));
+  return (
+    <div className={`ex-seg ${tint}`} role="group" aria-label={groupLabel} style={{ "--i": i, "--n": options.length }}>
+      <span className="ex-seg-thumb" aria-hidden="true" />
+      {options.map(([v, l]) => <button key={v} type="button" className="ex-range" aria-pressed={value === v} onClick={() => onChange(v)}>{l}</button>)}
+    </div>
+  );
+}
+
 function TopMovers({ onOpenStock, preview = false, onSeeAll, start = {} }) {
   const [period, setPeriod] = useState(start.period ?? "1d");
   const [side, setSide] = useState(start.side ?? "gainers");
@@ -393,19 +404,17 @@ function TopMovers({ onOpenStock, preview = false, onSeeAll, start = {} }) {
   const [, , , words] = HEAT_PERIODS.find(([p]) => p === period);
   return (
     <section className="ex-section" aria-labelledby="ex-movers">
-      <SectionHead id="ex-movers" title="Top movers" more={`See all ${all.length} ${side}`} onMore={preview && all.length > PREVIEW ? () => onSeeAll({ side, period }) : null} />
-      <div className="ex-heat-bar">
-        <div className="ex-ranges ex-heat-periods" role="group" aria-label="Rises or falls">
-          {[["gainers", "Gainers"], ["losers", "Losers"]].map(([id, l]) => <button key={id} type="button" className="ex-range" aria-pressed={side === id} onClick={() => setSide(id)}>{l}</button>)}
-        </div>
-        <div className="ex-ranges ex-heat-periods" role="group" aria-label="Movers over">
-          {HEAT_PERIODS.map(([p, l]) => <button key={p} type="button" className="ex-range" aria-pressed={period === p} onClick={() => setPeriod(p)}>{l}</button>)}
+      <div className="ex-sec-bar">
+        <SectionHead id="ex-movers" title="Top movers" more={`See all ${all.length} ${side}`} onMore={preview && all.length > PREVIEW ? () => onSeeAll({ side, period }) : null} />
+        <div className="ex-sec-controls">
+          <Segmented label="Rises or falls" value={side} onChange={setSide} tint={side === "gainers" ? "up" : "down"} options={[["gainers", "Gainers"], ["losers", "Losers"]]} />
+          <Segmented label="Movers over" value={period} onChange={setPeriod} options={HEAT_PERIODS.map(([p, l]) => [p, l])} />
         </div>
       </div>
       {data == null
         ? <div className="nw-skel" role="status" aria-label="Loading the movers">{[0, 1, 2].map(i => <span key={i} />)}</div>
         : list.length
-          ? <ol className="nw-list ex-movers-list">
+          ? <ol className="nw-list ex-movers-list" style={{ "--rows": Math.ceil(list.length / 2) }}>
             {list.map((m, k) => (
               <li key={m.symbol}>
                 <button type="button" className="nw-row compact" onClick={() => onOpenStock(m.symbol)}>
@@ -413,7 +422,7 @@ function TopMovers({ onOpenStock, preview = false, onSeeAll, start = {} }) {
                   <span className="nw-mark"><CompanyLogo symbol={m.symbol} size={36} fallback={m.name} /></span>
                   <span className="nw-main">
                     <span className="nw-top"><span className="nw-who">{niceName(m.name)}</span><span className="nw-spacer" /><span className={`ex-pill ${m.change >= 0 ? "up" : "down"}`}>{m.change > 0 ? "+" : "−"}{Math.abs(m.change).toFixed(2)}%</span></span>
-                    <span className="nw-subject">₹{m.close.toLocaleString("en-IN", { maximumFractionDigits: 2 })} · {crShort(m.marketCapCr)}</span>
+                    <span className="nw-subject">₹{m.close.toLocaleString("en-IN", { maximumFractionDigits: 2 })}<span className="ex-mcap"> · {crShort(m.marketCapCr)} m-cap</span></span>
                   </span>
                 </button>
               </li>
@@ -425,14 +434,18 @@ function TopMovers({ onOpenStock, preview = false, onSeeAll, start = {} }) {
   );
 }
 
-const weekday = d => new Intl.DateTimeFormat("en-IN", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${d}T00:00:00Z`));
+const dateBit = (d, o) => new Intl.DateTimeFormat("en-IN", { ...o, timeZone: "UTC" }).format(new Date(`${d}T00:00:00Z`));
+const dayName = d => dateBit(d, { weekday: "long" });
+const dayNum = d => dateBit(d, { day: "numeric" });
+const monthName = d => dateBit(d, { month: "short" });
 function ResultsWeek({ onOpenStock, preview = false, onSeeAll }) {
   const [data, setData] = useState(null);
   const [open, setOpen] = useState({});
   useEffect(() => { api.resultsWeek().then(setData).catch(() => setData({ days: [] })); }, []);
   if (!data?.days?.length) return null;
   // a phone's preview: the next three days, three companies each; the page of its own: every one
-  const SHOWN = preview ? 3 : onSeeAll ? 6 : Infinity;
+  // (5 and "more" fill a wide screen's row of 6)
+  const SHOWN = preview ? 3 : onSeeAll ? 5 : Infinity;
   const days = preview ? data.days.slice(0, 3) : data.days;
   return (
     <section className="ex-section" aria-labelledby="ex-results">
@@ -443,15 +456,19 @@ function ResultsWeek({ onOpenStock, preview = false, onSeeAll }) {
           const tomorrow = new Date(Date.parse(`${data.today}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
           return (
             <div key={day.date} className="ex-day">
-              <div className="ex-day-head"><b>{day.date === data.today ? "Today" : day.date === tomorrow ? "Tomorrow" : weekday(day.date)}</b><span>{day.count} {day.count === 1 ? "company" : "companies"}</span></div>
+              <div className="ex-date">
+                <span className={`ex-date-wd${day.date === data.today || day.date === tomorrow ? " soon" : ""}`}>{day.date === data.today ? "Today" : day.date === tomorrow ? "Tomorrow" : dayName(day.date)}</span>
+                <span className="ex-date-d">{dayNum(day.date)}<small>{monthName(day.date)}</small></span>
+                <span className="ex-date-n">{day.count} {day.count === 1 ? "company" : "companies"}</span>
+              </div>
               <div className="ex-day-list">
                 {list.map(c => (
                   <button key={c.symbol} type="button" className="ex-co" onClick={() => onOpenStock(c.symbol)} title={niceName(c.name)}>
-                    <CompanyLogo symbol={c.symbol} size={22} fallback={c.name} />
+                    <CompanyLogo symbol={c.symbol} size={24} fallback={c.name} />
                     <span>{niceName(c.name)}</span>
                   </button>
                 ))}
-                {day.count > SHOWN && <button type="button" className="ex-more" onClick={() => (preview ? onSeeAll() : setOpen(o => ({ ...o, [day.date]: !all })))}>{all ? "Fewer" : `+${day.count - SHOWN} more`}</button>}
+                {day.count > SHOWN && <button type="button" className="ex-more" onClick={() => (preview ? onSeeAll() : setOpen(o => ({ ...o, [day.date]: !all })))}>{all ? "Show fewer" : `+${day.count - SHOWN} more`}</button>}
               </div>
             </div>
           );
