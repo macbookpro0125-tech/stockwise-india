@@ -1,9 +1,11 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { cardName } from "./stockName.js";
 import { SHOW_TAB, usePhone } from "./phoneTabs.js";
-import { NotebookPen, Check, X, TriangleAlert, LoaderCircle, ArrowLeft, ArrowUpRight, CalendarDays, CircleCheck, Layers, ArrowRight, ChevronRight, Gauge, ClipboardCheck, Scale, ChartColumn, Coins, ChartPie, Activity, Users, Newspaper, Globe } from "lucide-react";
+import { NotebookPen, Check, X, TriangleAlert, LoaderCircle, ArrowLeft, ArrowUpRight, CalendarDays, CircleCheck, ArrowRight, ChevronRight, Gauge, ClipboardCheck, Scale, ChartColumn, Coins, ChartPie, Activity, Users, Newspaper, Globe } from "lucide-react";
 import { api } from "./api.js";
-import { calculateLevels, pricePosition, fmtRs } from "../server/levels.js";
+import { fairValues, userLevels, pricePosition, fmtRs } from "../server/levels.js";
+import { useMyLevels } from "./myLevels.js";
+import MyLevelsCard from "./MyLevelsCard.jsx";
 import { PositionIcon } from "./icons.jsx";
 import ResearchPanel from "./ResearchPanel.jsx";
 import { useWatchlist, toggleWatch } from "./watchlist.js";
@@ -108,7 +110,7 @@ function PeHistoryTable({ m }) {
       </div>
       <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 8, lineHeight: 1.5 }}>
         {m.medianPe != null
-          ? <>The price levels use the median of these {m.peYears} years (in the Overview's key figures), capped at twice the sector's median P/E if it runs higher.</>
+          ? <>The fair value uses the median of these {m.peYears} years (in the Overview's key figures), capped at twice the sector's median P/E if it runs higher.</>
           : <>Only {m.peYears} usable annual observations — there is not enough history for a median.</>}
         {m.epsJump && <> Median EPS of the same years: <strong style={{ color: "var(--t1)" }}>₹{m.epsJump.usualEps.toFixed(2)}</strong> — the usual level, used instead of {fyLabel(m.fyEnd)}'s ₹{m.epsJump.eps.toFixed(2)}.</>}
       </div>
@@ -611,7 +613,6 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
   const [eps, setEps] = useState("");
   const [pe, setPe] = useState("");
   const [growthPct, setGrowthPct] = useState("");
-  const [mosPct, setMosPct] = useState("10");
   // A bank's cost of equity (bank-valuation.js), which sets its P/B input
   const [costOfEquity, setCostOfEquity] = useState(12);
   const [actionPrice, setActionPrice] = useState("");
@@ -619,7 +620,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
   const [baseline, setBaseline] = useState(null);
 
   const applyBaseline = b => {
-    setEps(b.eps); setPe(b.pe); setGrowthPct(b.growthPct); setMosPct(b.mosPct);
+    setEps(b.eps); setPe(b.pe); setGrowthPct(b.growthPct);
     if (b.costOfEquity != null) setCostOfEquity(b.costOfEquity);
   };
 
@@ -641,7 +642,6 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         eps: String(round(v.adjustedBvps, 2)),
         pe: String(round(v.justifiedPb, 2)),
         growthPct: String(round(v.growth, 1)),
-        mosPct: "10",
         costOfEquity: v.costOfEquity,
       } : v?.model === "cyclical" ? {
         // A cyclical's are mid-cycle EPS, its usual multiple of that, and
@@ -649,12 +649,10 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         eps: String(round(v.normalizedEps, 2)),
         pe: String(round(v.multiple, 1)),
         growthPct: String(round(v.growth, 1)),
-        mosPct: "10",
       } : {
         eps: m.valuationEps != null ? String(round(m.valuationEps, 2)) : "",
         pe: m.valuationPe ? String(round(m.valuationPe, 1)) : "",
         growthPct: String(round(m.growthForValuation, 1)),
-        mosPct: "10",
       };
       setBaseline(b);
       applyBaseline(b);
@@ -668,15 +666,20 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
   const onCycle = model === "cyclical";
   // No inputs to move without a model that values the company
   const valued = model === "earnings" || onBook || onCycle;
-  const usingCustomInputs = !!baseline && (eps !== baseline.eps || pe !== baseline.pe || growthPct !== baseline.growthPct || mosPct !== baseline.mosPct);
+  const usingCustomInputs = !!baseline && (eps !== baseline.eps || pe !== baseline.pe || growthPct !== baseline.growthPct);
   // A one-off profit jump: the EPS box holds the usual level until you change it
   const usualEpsShown = !!m?.epsJump && m.valuation?.model === "earnings" && !!baseline && eps === baseline.eps;
-  // The table's own levels until an input changes — the inputs hold rounded
-  // values, which could move a price level by a rupee against the Discover table
-  const levels = useMemo(() => {
+  // The fair values: the table's own until an input changes — the inputs hold
+  // rounded values, which could move a fair value by a rupee against the
+  // Discover table
+  const fv = useMemo(() => {
     if (!m) return null;
-    return usingCustomInputs && valued ? calculateLevels(eps, pe, growthPct, mosPct) : m.levels;
-  }, [m, usingCustomInputs, valued, eps, pe, growthPct, mosPct]);
+    return usingCustomInputs && valued ? fairValues(eps, pe, growthPct) : m.levels;
+  }, [m, usingCustomInputs, valued, eps, pe, growthPct]);
+  // The price levels are the user's own — from their settings, or typed for
+  // this stock — and none while they're off (MyLevelsCard.jsx)
+  const mine = useMyLevels();
+  const levels = useMemo(() => userLevels(valued ? fv : null, mine, symbol), [fv, valued, mine, symbol]);
   const price = Number(actionPrice) || null;
 
   if (error) {
@@ -698,8 +701,6 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
 
   const position = pricePosition(price, levels);
   const positionTone = { red: "var(--red)", yellow: "var(--yellow)", green: "var(--green)", neutral: "var(--accent)" }[position?.tone] ?? "var(--accent)";
-  // How far a level sits under today's fair value, for the ladder's labels
-  const belowFv = v => (levels?.fv25 > 0 && v > 0 ? `${Math.round((1 - v / levels.fv25) * 100)}% below today's FV` : "");
 
   const hint = (ok, good, neutral, color = "var(--green)") => (
     <div style={{ fontSize: 10, color: ok ? color : "var(--t2)", marginTop: 3, fontWeight: ok ? 500 : 400 }}>{ok ? good : neutral}</div>
@@ -748,7 +749,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       )}
 
       <section id="sec-overview" className="ss-section sd-section" data-tab="overview">
-        <PriceChartPanel symbol={data.symbol} name={data.name} levels={valued ? levels : null} />
+        <PriceChartPanel symbol={data.symbol} name={data.name} levels={valued || levels ? { ...(valued ? fv : {}), ...(levels ?? {}) } : null} />
         <WhyMoving symbol={data.symbol} />
         {m && <StockGlance r={m.research} />}
         <StockSnapshot m={m} price={price} dates={data.dataDates} />
@@ -799,7 +800,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
           )}
           {m.epsCorrection && (
             <div style={{ marginTop: 4, color: "var(--yellow)" }}>
-              The filing's annual EPS was ₹{m.epsCorrection.reportedEps.toFixed(2)}, inconsistent with profit and paid-up shares. EPS-based ratios and price levels use ₹{m.epsCorrection.correctedEps.toFixed(2)} instead.
+              The filing's annual EPS was ₹{m.epsCorrection.reportedEps.toFixed(2)}, inconsistent with profit and paid-up shares. EPS-based ratios and the fair value use ₹{m.epsCorrection.correctedEps.toFixed(2)} instead.
             </div>
           )}
           {m.unitFixes?.length > 0 && (
@@ -812,7 +813,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
 
       {m?.epsJump && model === "earnings" && (
         <div style={{ padding: "10px 14px", borderRadius: 8, background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", fontSize: 12, color: "var(--t2)", lineHeight: 1.5, marginBottom: 14 }}>
-          <strong style={{ color: "var(--yellow)" }}>Profit jumped this year — the price levels use the usual level.</strong>{" "}
+          <strong style={{ color: "var(--yellow)" }}>Profit jumped this year — the fair value uses the usual level.</strong>{" "}
           {fyLabel(m.fyEnd)} EPS is ₹{m.epsJump.eps.toFixed(2)}, more than 3× the usual ₹{m.epsJump.usualEps.toFixed(2)}, but the share price hasn't followed (P/E {m.epsJump.pe.toFixed(1)} on the last close, against a usual {m.medianPe.toFixed(1)}). That is how a one-off gain looks. If you expect this profit to last, type {round(m.epsJump.eps, 2)} into EPS below.
         </div>
       )}
@@ -825,7 +826,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
                   <div>
                     <div style={{ fontSize: 13, fontWeight: 400, color: "var(--t1)", marginBottom: 2, letterSpacing: "-0.01em" }}>Verify & Override</div>
                     <div style={{ fontSize: 11, color: "var(--t3)" }}>
-                      Auto-filled from NSE filings — edit any value to move the price levels; the research score always uses the filings
+                      Auto-filled from NSE filings — edit any value to move the fair value (and your price levels, if on); the research score always uses the filings
                       {usingCustomInputs ? <span style={{ marginLeft: 6, color: "var(--accent)", fontWeight: 400 }}>· custom</span> : <span style={{ marginLeft: 6 }}>· filings baseline</span>}
                     </div>
                   </div>
@@ -835,7 +836,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
                 </div>
                 <ValuedAs valuation={m.valuation} />
 
-                <div className="ss-grid-4">
+                <div className="ss-grid-3">
                   <div>
                     <label style={labelStyle}>{onBook ? "Book/share less net NPA (₹)" : onCycle ? "Mid-cycle EPS (₹)" : usualEpsShown ? "Usual EPS (₹)" : `EPS ${fyLabel(m.fyEnd)} (₹)`}</label>
                     <input type="number" aria-label={onBook ? "Book per share less net NPA" : onCycle ? "Mid-cycle EPS" : "EPS"} value={eps} onChange={e => setEps(e.target.value)} style={inputStyle} />
@@ -867,11 +868,6 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
                       return hint(parseFloat(growthPct) >= 15, basis ? `✓ Strong growth · ${basis}` : "✓ Strong growth", basis ?? "Expected annual growth");
                     })()}
                   </div>
-                  <div>
-                    <label style={labelStyle}>Margin of Safety %</label>
-                    <input type="number" aria-label="Margin of safety %" value={mosPct} onChange={e => setMosPct(e.target.value)} style={inputStyle} />
-                    {hint(parseFloat(mosPct) >= 10, "✓ Good margin", "Discount to fair value")}
-                  </div>
                 </div>
 
                 {onBook
@@ -891,7 +887,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
             )}
           </div>
 
-          {model === "earnings" && <div data-tour="valuation"><ValuationExplorer key={`valuation-${symbol}`} metrics={m} price={price} levels={levels} epsInput={eps} peInput={pe} /></div>}
+          {model === "earnings" && <div data-tour="valuation"><ValuationExplorer key={`valuation-${symbol}`} metrics={m} price={price} levels={fv} epsInput={eps} peInput={pe} /></div>}
           {onBook && (
             <div data-tour="valuation" style={{ ...card, fontSize: 12, color: "var(--t2)", lineHeight: 1.55 }}>
               <strong style={{ color: "var(--t1)" }}>Cash-flow (DCF) value and free-cash-flow yield: not meaningful for lenders.</strong> A bank's operating cash flow is deposits and loans moving, not cash the business generates.
@@ -952,42 +948,16 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
                   Today's P/E (in the key figures) is well under the multiple the levels use. Check whether the historical multiple still applies.
                 </p>
               )}
-              <p style={{ fontSize: 11, color: "var(--t3)", margin: "8px 0 0" }}>These model reference levels come from the {onBook ? "book, P/B" : onCycle ? "mid-cycle EPS, multiple" : "EPS, P/E"}, growth and margin-of-safety inputs above. They describe price location; they are not trade instructions.</p>
+              <p style={{ fontSize: 11, color: "var(--t3)", margin: "8px 0 0" }}>{levels?.own ? "Against the levels you typed for this stock." : `Against your levels: your settings applied to the fair value from the ${onBook ? "book, P/B" : onCycle ? "mid-cycle EPS, multiple" : "EPS, P/E"} and growth above.`} A description of where the price is, not advice.</p>
             </div>
           )}
 
-          {/* Price ladder */}
-          {price > 0 && levels && (
-            <div style={card}>
-              <SectionTitle icon={Layers}>Model price levels</SectionTitle>
-              <p style={{ fontSize: 11.5, color: "var(--t3)", margin: "-6px 0 10px", lineHeight: 1.5 }}>Calculated from your displayed valuation inputs. Level 1, 2 and 3 are reference points, not suggested buy amounts.</p>
-              {[
-                { label: `Upper level · ${fyLabel(m.fyEnd, 2)} FV +10%`, price: levels.target, color: "var(--red)" },
-                { label: `Reference level 1 · ${belowFv(levels.p1)}`, price: levels.p1, color: "var(--accent)" },
-                { label: `Reference level 2 · ${belowFv(levels.p2)}`, price: levels.p2, color: "var(--accent)" },
-                { label: `Reference level 3 · ${belowFv(levels.p3)}`, price: levels.p3, color: "var(--accent)" },
-                { label: `Stop-loss level · ${belowFv(levels.stopLoss)}`, price: levels.stopLoss, color: "var(--red)" },
-              ].filter(r => r.price > 0).sort((a, b) => b.price - a.price).map(rung => {
-                const isHere = Math.abs(price - rung.price) / rung.price < 0.03;
-                return (
-                  <div key={rung.label} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "8px 12px", borderRadius: 6, marginBottom: 4, fontSize: 13, background: isHere ? "var(--yellow-dim)" : "transparent", border: isHere ? "1px dashed var(--yellow)" : "1px solid var(--bdr)" }}>
-                    {/* On the amber "you are here" tint, plain red is 4.1:1 in dark;
-                        blending toward --t1 keeps it red and clears 4.5:1 in both themes */}
-                    <span style={{ color: isHere && rung.color === "var(--red)" ? "color-mix(in srgb, var(--red) 80%, var(--t1))" : rung.color, fontWeight: 500 }}>{rung.label}</span>
-                    <span style={{ fontWeight: 400, color: "var(--t1)" }}>{fmtRs(rung.price)}</span>
-                  </div>
-                );
-              })}
-              <div style={{ borderTop: "2px solid var(--accent)", margin: "10px 0", paddingTop: 10, display: "flex", justifyContent: "space-between", fontSize: 14, fontWeight: 400 }}>
-                <span style={{ color: "var(--accent)", display: "flex", alignItems: "center", gap: 6 }}><ArrowRight size={16} strokeWidth={2.2} /> {priceLabel || "Your price"}</span>
-                <span style={{ color: "var(--accent)" }}>{fmtRs(price)}</span>
-              </div>
-            </div>
-          )}
+          {/* The price ladder: the user's own levels, or how to set them */}
+          {(valued || levels) && <MyLevelsCard symbol={symbol} fv={valued ? fv : null} levels={levels} price={price} priceLabel={priceLabel} fv2Label={fyLabel(m.fyEnd, 2)} />}
 
           {/* The valuation explorer above is the main valuation summary;
               leave this detailed EPS bridge collapsed to reduce repetition. */}
-          {levels && (
+          {valued && fv && (
             <details style={{ ...card, padding: 0 }}>
               <summary style={{ cursor: "pointer", padding: "16px 18px", color: "var(--t1)", fontSize: 13, fontWeight: 400, listStyle: "none" }}>
                 {onBook ? "Book" : onCycle ? "Mid-cycle EPS" : "EPS"} and fair value, year by year
@@ -995,9 +965,9 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
               </summary>
               <div className="ss-grid-fv" style={{ padding: "0 18px 18px" }}>
                 {[
-                  { label: onBook ? "Book/share less net NPA" : onCycle ? "Mid-cycle EPS" : usualEpsShown ? "Usual EPS" : `${fyLabel(m.fyEnd)} EPS`, val: eps ? `₹${Math.round(Number(eps))}` : "—", sub: `FV: ${fmtRs(levels.fv25)}` },
-                  { label: `${fyLabel(m.fyEnd, 1)} ${onBook ? "book" : onCycle ? "mid-cycle EPS" : "EPS"} (est.)`, val: levels.e26 ? `₹${levels.e26}` : "—", sub: `FV: ${fmtRs(levels.fv26)}` },
-                  { label: `${fyLabel(m.fyEnd, 2)} ${onBook ? "book" : onCycle ? "mid-cycle EPS" : "EPS"} (est.)`, val: levels.e27 ? `₹${levels.e27}` : "—", sub: `FV: ${fmtRs(levels.fv27)}` },
+                  { label: onBook ? "Book/share less net NPA" : onCycle ? "Mid-cycle EPS" : usualEpsShown ? "Usual EPS" : `${fyLabel(m.fyEnd)} EPS`, val: eps ? `₹${Math.round(Number(eps))}` : "—", sub: `FV: ${fmtRs(fv.fv25)}` },
+                  { label: `${fyLabel(m.fyEnd, 1)} ${onBook ? "book" : onCycle ? "mid-cycle EPS" : "EPS"} (est.)`, val: fv.e26 ? `₹${fv.e26}` : "—", sub: `FV: ${fmtRs(fv.fv26)}` },
+                  { label: `${fyLabel(m.fyEnd, 2)} ${onBook ? "book" : onCycle ? "mid-cycle EPS" : "EPS"} (est.)`, val: fv.e27 ? `₹${fv.e27}` : "—", sub: `FV: ${fmtRs(fv.fv27)}` },
                 ].map(fc => (
                   <div key={fc.label} style={{ background: "var(--s1)", borderRadius: 8, padding: 12, border: fc.hi ? "1px solid var(--green)" : "1px solid var(--bdr)" }}>
                     <div style={{ fontSize: 11, color: "var(--t3)", marginBottom: 4 }}>{fc.label}</div>

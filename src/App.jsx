@@ -16,6 +16,7 @@ import PriceStrip from "./PriceStrip.jsx";
 import DiscoverView from "./DiscoverView.jsx";
 import Tour, { APP_TOUR, STOCK_TOUR } from "./Tour.jsx";
 import { resetWatchlist } from "./watchlist.js";
+import { resetMyLevels } from "./myLevels.js";
 import { portfolioStore, alertsStore } from "./stores.js";
 import { strategiesStore, notesStore } from "./accountData.js";
 import { useAdPause } from "./ads.jsx";
@@ -346,6 +347,7 @@ export default function App() {
   // The next person to sign in on this browser must not see this one's data
   const signedOut = (message = null) => {
     resetWatchlist();
+    resetMyLevels();
     portfolioStore.reset();
     alertsStore.reset();
     strategiesStore.reset();

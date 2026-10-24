@@ -128,6 +128,10 @@ export const api = {
   setWatchNote: (ticker, note) => request(`/api/watchlist/${encodeURIComponent(ticker)}`, { method: "PUT", body: JSON.stringify({ note }) }),
   removeWatch: (ticker) => request(`/api/watchlist/${encodeURIComponent(ticker)}`, { method: "DELETE" }),
   // The watchlist's named lists (its tabs)
+  myLevels: () => request("/api/levels"),
+  saveLevelSettings: settings => request("/api/levels/settings", { method: "PUT", body: JSON.stringify(settings) }),
+  setStockLevels: (symbol, levels) => request(`/api/levels/stocks/${encodeURIComponent(symbol)}`, { method: "PUT", body: JSON.stringify(levels) }),
+  clearStockLevels: symbol => request(`/api/levels/stocks/${encodeURIComponent(symbol)}`, { method: "DELETE" }),
   createWatchList: (name, tickers = []) => request("/api/watchlist/lists", { method: "POST", body: JSON.stringify({ name, tickers }) }),
   renameWatchList: (id, name) => request(`/api/watchlist/lists/${id}`, { method: "PATCH", body: JSON.stringify({ name }) }),
   deleteWatchList: id => request(`/api/watchlist/lists/${id}`, { method: "DELETE" }),

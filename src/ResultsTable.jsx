@@ -1,10 +1,11 @@
-import { Fragment, Suspense, useState, useEffect, useRef } from "react";
+import { Fragment, Suspense, useState, useEffect, useRef, useMemo } from "react";
 import { lazyPage } from "./lazyPage.js";
 import CompanyLogo from "./CompanyLogo.jsx";
 import { cardName, splitUnit } from "./stockName.js";
 import { ArrowDown, ArrowUp, Check, Info, Columns3, Search, ArrowUpRight, SearchX, Star, ChevronDown, Funnel, Download } from "lucide-react";
 import { StarIcon, BellIcon, actionButtonStyle } from "./icons.jsx";
 import { useWatchlist, toggleWatch } from "./watchlist.js";
+import { useMyLevels, withMyLevels } from "./myLevels.js";
 import CreateAlertModal from "./CreateAlertModal.jsx";
 import { AdCard, useAdFeed } from "./ads.jsx";
 import { formatValue, valueColor, unitLabel } from "./screener/meta.js";
@@ -192,8 +193,9 @@ function MiniRange({ low, high, cmp }) {
   );
 }
 
-// Price levels in two lines: the three phase levels (✓ once today's price
-// reaches one), then the 52-week bar and the fair value. Notes about how the fair
+// Price levels in two lines: the user's own three levels (✓ once today's
+// price reaches one; "off" until they turn them on), then the 52-week bar and
+// the fair value. Notes about how the fair
 // value was made sit behind a flag's tooltip.
 function FvCell({ stock }) {
   const { cmp, safeBuyPrice: p1, p2, p3, fairValue } = stock;
@@ -215,7 +217,7 @@ function FvCell({ stock }) {
     <div style={{ fontSize: 11, lineHeight: 1.5, minWidth: 158, ...MONO }}>
       {p1 ? (
         <div style={{ display: "flex", gap: 6, whiteSpace: "nowrap" }}>
-          {[["P1", p1], ["P2", p2], ["P3", p3]].map(([label, price]) => {
+          {[["L1", p1], ["L2", p2], ["L3", p3]].map(([label, price]) => {
             const hit = cmp != null && price != null && cmp <= price;
             return (
               <span key={label} style={{ display: "inline-flex", alignItems: "center", gap: 2, color: hit ? "var(--accent)" : "var(--t3)", fontWeight: hit ? 600 : 500 }}>
@@ -224,8 +226,10 @@ function FvCell({ stock }) {
             );
           })}
         </div>
+      ) : fairValue ? (
+        <div style={{ color: "var(--t3)" }} title="Your price levels are off — turn them on from any stock's Valuation tab">Your levels: off</div>
       ) : (
-        <div style={{ color: "var(--t3)" }} title={[v?.as && `No fair value: ${v.as}.`, v?.reason].filter(Boolean).join(" ") || undefined}>{v?.model === "needs-data" ? "Needs more data" : v?.as ? "No fair value" : "No price levels"}</div>
+        <div style={{ color: "var(--t3)" }} title={[v?.as && `No fair value: ${v.as}.`, v?.reason].filter(Boolean).join(" ") || undefined}>{v?.model === "needs-data" ? "Needs more data" : "No fair value"}</div>
       )}
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 3, color: "var(--t3)", fontSize: 10, whiteSpace: "nowrap" }}>
         <MiniRange low={stock.low52w} high={stock.high52w} cmp={cmp} />
@@ -250,8 +254,11 @@ function StarButton({ symbol, price, watched, size = 30 }) {
   );
 }
 
-export default function ResultsTable({ matches, loading, onAnalyze, totalMatches, hideCountOnPhone = false, universe = null, filters = null, onFiltersChange = null, phoneFilters = null, filtersButton = null, updating = false, queryUsed, unsupported = [], notes = [], executionTime, snapshot, netNet = false, noun = "stocks", emptyTitle = "No stocks matched your criteria", emptyHint = "Try relaxing some filters", columns = [], onEditColumns = null, filteredIds = [], meta = null, theme = "dark", sortTo = null }) {
+export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, totalMatches, hideCountOnPhone = false, universe = null, filters = null, onFiltersChange = null, phoneFilters = null, filtersButton = null, updating = false, queryUsed, unsupported = [], notes = [], executionTime, snapshot, netNet = false, noun = "stocks", emptyTitle = "No stocks matched your criteria", emptyHint = "Try relaxing some filters", columns = [], onEditColumns = null, filteredIds = [], meta = null, theme = "dark", sortTo = null }) {
   const watchlist = useWatchlist();
+  // Each row with the user's own levels (myLevels.js) — none while they're off
+  const myLevels = useMyLevels();
+  const matches = useMemo(() => matchesIn?.map(m => withMyLevels(m, myLevels)) ?? matchesIn, [matchesIn, myLevels]);
   const [alertFor, setAlertFor] = useState(null);
   const [showNotes, setShowNotes] = useState(false);
   const bell = (stock, size = 30) => (
@@ -421,7 +428,7 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
 
   const exportCsv = () => {
     const quote = v => `"${String(v).replace(/"/g, '""')}"`;
-    const cols = ["Rank", "Name", "Symbol", "Sector / industry", "Quality/100", "Research/100", "Research stance", "Valuation/100", "Risk/100", "CMP", "PE TTM", "PE FY", "ROCE", "ROE", "OPM", "Promoter%", "FII%", "DII%", "MarketCap(Cr)", "DivYield", "EPS FY", "EPS TTM", "P1", "P2", "P3", "FairValue2Y", "52WLow", "52WHigh", ...extraColumns.map(def => quote(def.label))];
+    const cols = ["Rank", "Name", "Symbol", "Sector / industry", "Quality/100", "Research/100", "Research stance", "Valuation/100", "Risk/100", "CMP", "PE TTM", "PE FY", "ROCE", "ROE", "OPM", "Promoter%", "FII%", "DII%", "MarketCap(Cr)", "DivYield", "EPS FY", "EPS TTM", "Your L1", "Your L2", "Your L3", "FairValue2Y", "52WLow", "52WHigh", ...extraColumns.map(def => quote(def.label))];
     const r1 = v => (v == null ? "" : Math.round(v * 10) / 10);
     const rows = sorted.map((s, i) => [
       i + 1, quote(s.name), s.symbol, s.sector ? quote(s.sector) : "", r1(s.research?.quality), r1(s.research?.overall), quote(s.research?.stance ?? ""), r1(s.research?.valuation), r1(s.research?.risk),
@@ -631,8 +638,8 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
         <ColumnGuide meta={meta} onClose={() => setShowGuide(false)}
           extra={[meta?.byId.get("quality"), meta?.byId.get("researchScore"), meta?.byId.get("cmp")].filter(Boolean)}
           defs={[...columns, {
-            id: "priceLevels", label: "Price levels (P1 · P2 · P3 · FV)", basis: "levels",
-            about: "Reference levels from each company's valuation model: P1 is 10% under today's fair value, P2 and P3 are 10% and 20% under P1, and FV is the fair value two years on, grown at the company's own rate. Banks are valued on book and cyclicals on mid-cycle earnings; NBFC lenders, holding companies, loss-makers and companies with under five years of filings have none.",
+            id: "priceLevels", label: "Your levels (L1 · L2 · L3) and fair value", basis: "levels",
+            about: "Your own price levels, from the settings you chose on a stock's Valuation tab (or typed for a stock by hand) — off until you turn them on. FV is the fair value two years on, grown at the company's own rate. Banks are valued on book and cyclicals on mid-cycle earnings; NBFC lenders, holding companies, loss-makers and companies with under five years of filings have no fair value.",
           }]} />
       )}
 
@@ -768,8 +775,8 @@ export default function ResultsTable({ matches, loading, onAnalyze, totalMatches
                     <SortTh key={def.id} label={def.short} unit={unitLabel(def)} title={def.label} col={def.id} sortBy={sortBy} sortDir={sortDir} onSort={handleSort} menu={menuFor(def.id, def.id)} info={<MetricInfo def={def} meta={meta} />} />
                   ))}
                   <th style={{ ...thStyle, color: "var(--accent)", fontWeight: 400, background: "color-mix(in srgb, var(--accent) 4%, var(--s1))", verticalAlign: "bottom" }}>
-                    Price levels
-                    <span className="th-unit">₹ · P1 P2 P3 · FV</span>
+                    Your levels
+                    <span className="th-unit">₹ · L1 L2 L3 · FV</span>
                   </th>
                   <th style={{ ...thStyle, right: 0, zIndex: 4, boxShadow: "inset 1px 0 0 var(--bdr)", verticalAlign: "bottom" }}>Actions<span className="th-unit" aria-hidden="true">{"\u00a0"}</span></th>
                 </tr>

@@ -50,10 +50,11 @@ const ROW_METRICS = [
   { key: "roce", label: "ROCE %", fmt: s => (s.roce != null ? `${s.roce.toFixed(1)}%` : "—") },
   { key: "mcap", label: "Mkt Cap (Cr)", fmt: s => (s.marketCapCr ? (s.marketCapCr >= 1000 ? `${(s.marketCapCr / 1000).toFixed(1)}K` : Math.round(s.marketCapCr)) : "—") },
   { key: "divYield", label: "Div Yield", fmt: s => (s.divYield ? `${s.divYield.toFixed(1)}%` : "—") },
-  { key: "p1", label: "Phase 1 level", fmt: s => rs(s.safeBuyPrice) },
-  { key: "p3", label: "Phase 3 level", fmt: s => rs(s.p3) },
-  { key: "stopLoss", label: "Stop-loss level", fmt: s => rs(s.stopLoss) },
-  { key: "target", label: "Upper level (FV+10%)", fmt: s => rs(s.target) },
+  // the user's own levels (myLevels.js) — dashes while they're off
+  { key: "p1", label: "Your level 1", fmt: s => rs(s.safeBuyPrice) },
+  { key: "p3", label: "Your level 3", fmt: s => rs(s.p3) },
+  { key: "stopLoss", label: "Your stop", fmt: s => rs(s.stopLoss) },
+  { key: "target", label: "Your upper level", fmt: s => rs(s.target) },
 ];
 
 const TECH_METRICS = [

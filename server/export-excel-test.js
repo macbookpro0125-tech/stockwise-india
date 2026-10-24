@@ -1,6 +1,6 @@
 // Discover's Excel download (src/exportExcel.js): the categorized sheet's
 // buckets and risk tiers, the four sheets in order, frozen headers, and the
-// app's wording ("% vs P1" and "Price position", never "buy").
+// app's wording ("% vs your L1" and "Price position", never "buy").
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
 import { bucketOf, riskTier, writeDiscoverWorkbook } from "../src/exportExcel.js";
@@ -21,7 +21,7 @@ assert.equal(bucketOf(row("D", { salesGrowth3y: 140 })), "speculative", "growth 
 assert.equal(bucketOf(row("E", { research: { quality: 45, risk: 20 } })), "weak", "low quality isn't a growth or value pick");
 assert.equal(bucketOf(row("F", { salesGrowth3y: 25 })), "growth");
 assert.equal(bucketOf(row("G", { pe: 11 })), "value");
-assert.equal(bucketOf(row("H", { cmp: 90, research: { quality: 80, valuation: 85, risk: 20 } })), "value", "valuation 80+ and 15%+ under P1");
+assert.equal(bucketOf(row("H", { cmp: 90, research: { quality: 80, valuation: 85, risk: 20 } })), "value", "valuation 80+ and 23.5%+ under today's fair value");
 assert.equal(bucketOf(row("I", { research: { quality: 60, risk: 20 } })), "steady");
 // The company page's own risk bands
 assert.deepEqual([10, 25, 49.9, 50, 74.9, 75].map(riskTier), ["Low", "Moderate", "Moderate", "Elevated", "Elevated", "High"]);
@@ -34,7 +34,7 @@ const cat = XLSX.utils.sheet_to_json(wb.Sheets.Categorized, { header: 1, defval:
 assert.match(cat[0][0], /4 COMPANIES, CATEGORIZED/);
 assert.match(cat[1][0], /Quality score ≥ 70/, "the note names the screen");
 assert.equal(cat[3][14], "P/E FY");
-assert.equal(cat[3][15], "% vs P1");
+assert.equal(cat[3][15], "% vs your L1");
 assert.equal(cat[3][16], "Price position");
 assert.ok(!cat.flat().some(v => typeof v === "string" && /\bbuy status\b|\baccumulate\b/i.test(v)), "no buy wording");
 const buckets = cat.filter(r => r[0] && typeof r[0] === "string" && /\(\d+ stocks?\)/.test(r[0])).map(r => r[0].trim());
@@ -43,8 +43,8 @@ assert.deepEqual(buckets, ["CORE COMPOUNDER   (2 stocks)", "HIGH-GROWTH   (1 sto
 const ranks = cat.filter(r => typeof r[0] === "number").map(r => [r[0], r[2]]);
 assert.deepEqual(ranks, [[1, "CORE1"], [3, "CORE2"], [2, "GROW1"], [4, "NEW1"]]);
 const core2 = cat.find(r => r[2] === "CORE2");
-assert.equal(core2[16], "At or below reference level 3", "the app's own price position");
-assert.equal(core2[15], -27.27, "% vs P1");
+assert.equal(core2[16], "At or below your level 3", "the app's own price position");
+assert.equal(core2[15], -27.27, "% vs your L1");
 
 // Frozen headers: the library writes no panes, so they're added to the file
 const zip = XLSX.CFB.read(new Uint8Array(bytes), { type: "array" });

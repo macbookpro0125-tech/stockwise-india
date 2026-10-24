@@ -7,7 +7,7 @@
 import { computeMetrics } from "./metrics.js";
 import { band, GROUPS, computeResearch } from "./research.js";
 import { justifiedPb, sustainableGrowth, bankValuation, costOfEquity } from "./bank-valuation.js";
-import { pricePosition } from "./levels.js";
+import { pricePosition, calculateLevels, fairValues, levelsFromFairValue, userLevels, fairValueOnly, cleanLevelSettings, DEFAULT_LEVEL_SETTINGS, LEVEL_KEYS } from "./levels.js";
 import { classifyAnnouncement } from "./company-extras.js";
 import { capHistoricalMultiples, PEER_CAP_TIMES } from "./screen.js";
 
@@ -353,9 +353,27 @@ assert(zones.every(([p]) => !/\b(BUY|SELL|buy|sell|deploy|exit)/i.test(JSON.stri
 // The company page lists the price and every level just below the zone, so
 // its line (gist) repeats none of them — only how far off they are
 assert(pricePosition(650, levels).gist === "35% below today's fair value.", "the stop-loss zone's gist is the fair-value gap");
-assert(pricePosition(950, levels).gist === "6% above reference level 1 and 37% under the upper level — 5% below today's fair value.", "above level 1, the gist keeps the distances");
+assert(pricePosition(950, levels).gist === "6% above your level 1 and 37% under your upper level — 5% below today's fair value.", "above level 1, the gist keeps the distances");
 assert(zones.every(([p]) => !/₹/.test(pricePosition(p, levels).gist)), "the gist names no price or level");
-assert(pricePosition(650, levels).detail === "₹650 is under the stop-loss level of ₹670 — 35% below today's fair value of ₹1,000.", "the full line stays for the watchlist, portfolio and export");
+// ── The levels are the user's own (24 Oct 2026) ──
+{
+  const fv = fairValues(100, 20, 10); // fv25 2,000, fv27 2,420
+  const old = calculateLevels(100, 20, 10, 10);
+  assert(old.p1 === 1800 && old.p2 === 1620 && old.p3 === 1440 && old.stopLoss === 1339 && old.target === 2662, "the defaults are the formula the app used before");
+  const same = levelsFromFairValue(fv, DEFAULT_LEVEL_SETTINGS);
+  assert(LEVEL_KEYS.every(k => same[k] === old[k]), "default settings give the old levels");
+  const mine = levelsFromFairValue(fv, { mos: 20, step: 5, stop: 10, upper: 0 });
+  assert(mine.p1 === 1600 && mine.p2 === 1520 && mine.p3 === 1440 && mine.stopLoss === 1296 && mine.target === 2420, "a user's settings move every level");
+  assert(userLevels(fv, { settings: { enabled: false, ...DEFAULT_LEVEL_SETTINGS }, stocks: {} }, "TCS") === null, "levels are off until turned on");
+  assert(userLevels(fv, { settings: { enabled: true, ...DEFAULT_LEVEL_SETTINGS }, stocks: {} }, "TCS").p1 === 1800, "turned on, the settings apply");
+  const typed = { p1: 1500, p2: 1400, p3: 1300, stopLoss: 1200, target: 2500 };
+  const own = userLevels(fv, { settings: { enabled: false }, stocks: { TCS: typed } }, "TCS");
+  assert(own.own && own.p1 === 1500 && own.target === 2500 && own.fv25 === 2000, "a stock typed by hand shows, even with the settings off");
+  assert(userLevels(null, { settings: { enabled: true }, stocks: {} }, "X") === null, "no fair value, no levels from settings");
+  assert(cleanLevelSettings({ mos: 500, step: "", stop: -3 }).mos === 60 && cleanLevelSettings({ step: "" }).step === 10 && cleanLevelSettings({ stop: -3 }).stop === 1, "settings kept in range");
+  assert(fairValueOnly(old).p1 === undefined && fairValueOnly(old).fv25 === 2000, "a response's levels carry the fair values only");
+}
+assert(pricePosition(650, levels).detail === "₹650 is under your stop level of ₹670 — 35% below today's fair value of ₹1,000.", "the full line stays for the watchlist, portfolio and export");
 
 // ── Valuation inputs (17–19 Oct 2026: ChatGPT's changes, narrowed) ──
 // P/E is the last four quarters' where all four are filed, else the year's

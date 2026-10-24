@@ -7,6 +7,7 @@ import { useWatchlist, toggleWatch, watchSaved, useWatchLists, primeWatchLists, 
 import CreateAlertModal from "./CreateAlertModal.jsx";
 import { QualityBadge } from "./ResearchBadges.jsx";
 import { pricePosition } from "../server/levels.js";
+import { useMyLevels, withMyLevels } from "./myLevels.js";
 import { nextEvent, todayIst } from "./watchEvents.js";
 import { NewsRow, KIND_LABEL, dayLabel, clock, fyQuarter } from "./NewsView.jsx";
 import { markWatchNewsSeen } from "./watchNews.js";
@@ -61,8 +62,9 @@ function resultsStatus(r) {
 
 const priceBasis = source => (source ? "NSE daily close" : "Price");
 
-// Where the price sits against the stock's levels, in a few words — the
-// zone from pricePosition (server/levels.js), which never says buy or sell
+// Where the price sits against the user's own levels (myLevels.js), in a few
+// words — the zone from pricePosition (server/levels.js), which never says
+// buy or sell; none while their levels are off
 const TONE = { red: "var(--red)", yellow: "var(--yellow)", green: "var(--green)" };
 function levelStatus(cmp, r) {
   if (!cmp || !r?.safeBuyPrice) return null;
@@ -70,9 +72,9 @@ function levelStatus(cmp, r) {
   if (!pos) return null;
   if (pos.zone === "above-phase1") {
     const prem = ((cmp - r.safeBuyPrice) / r.safeBuyPrice) * 100;
-    return { label: `${prem.toFixed(0)}% above P1`, color: prem <= 10 ? "var(--yellow)" : "var(--t3)" };
+    return { label: `${prem.toFixed(0)}% above your L1`, color: prem <= 10 ? "var(--yellow)" : "var(--t3)" };
   }
-  const short = { "below-stop": "Below stop-loss level", phase3: "At/below reference level 3", phase2: "At/below reference level 2", phase1: "At/below reference level 1", "above-upper": "Above upper level", "far-above": "Far above upper level" };
+  const short = { "below-stop": "Below your stop", phase3: "At/below your L3", phase2: "At/below your L2", phase1: "At/below your L1", "above-upper": "Above your upper", "far-above": "Far above your upper" };
   return { label: short[pos.zone] ?? pos.label, color: TONE[pos.tone] ?? "var(--t3)" };
 }
 
@@ -151,6 +153,7 @@ export default function WatchlistView({ onOpenStock, onOpenNews }) {
   const [leaving, setLeaving] = useState(() => new Set());
   // the named lists (tabs); null is All
   const lists = useWatchLists();
+  const myLevels = useMyLevels();
   const [activeList, setActiveList] = useState(savedList);
   const [dialog, setDialog] = useState(null); // { kind: "new", ticker? } | { kind: "rename", list }
   const pickList = id => { setActiveList(id); saveList(id); };
@@ -194,7 +197,7 @@ export default function WatchlistView({ onOpenStock, onOpenNews }) {
   };
 
   // Unstarring anywhere removes the card straight away
-  const rows = new Map((data?.results ?? []).map(r => [r.symbol, r]));
+  const rows = new Map((data?.results ?? []).map(r => [r.symbol, withMyLevels(r, myLevels)]));
   const starredItems = (data?.items ?? []).filter(i => watched.has(i.ticker));
   // a list holds only starred stocks (unstarring anywhere takes it out of all)
   const shownLists = lists.map(l => ({ ...l, tickers: l.tickers.filter(t => watched.has(t)), count: l.tickers.filter(t => watched.has(t)).length }));
@@ -315,8 +318,8 @@ export default function WatchlistView({ onOpenStock, onOpenNews }) {
                 </div>
 
                 <div style={{ textAlign: "center", minWidth: 80 }}>
-                  <div style={label}>Price level</div>
-                  {level ? <span style={{ fontSize: 11, fontWeight: 400, color: level.color }}>{level.label}</span> : <span style={{ fontSize: 11, color: "var(--t3)" }} title={r?.valuation?.reason ?? (r?.valuation?.as ? `No price levels (${r.valuation.as})` : undefined)}>—</span>}
+                  <div style={label}>Your levels</div>
+                  {level ? <span style={{ fontSize: 11, fontWeight: 400, color: level.color }}>{level.label}</span> : <span style={{ fontSize: 11, color: "var(--t3)" }} title={!myLevels.settings.enabled ? "Your price levels are off — turn them on from any stock's Valuation tab" : r?.valuation?.reason ?? (r?.valuation?.as ? `No fair value (${r.valuation.as})` : undefined)}>—</span>}
                 </div>
 
                 <div style={{ textAlign: "center", minWidth: 72 }}>

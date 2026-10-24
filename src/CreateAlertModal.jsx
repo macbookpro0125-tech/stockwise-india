@@ -4,7 +4,7 @@ import { alertsStore } from "./stores.js";
 
 // The original's Set Alert modal (stock-screener CreateAlertModal), price
 // alerts only: same default of 10% under the current price, plus one-tap
-// picks for the stock's buy phases. Duplicates are refused by the server and
+// picks for the user's own levels (myLevels.js), when they have them. Duplicates are refused by the server and
 // the reason is shown instead of closing as if a new alert had been made.
 export default function CreateAlertModal({ stock, onClose }) {
   const { symbol, name, cmp } = stock;
@@ -14,7 +14,7 @@ export default function CreateAlertModal({ stock, onClose }) {
   const [busy, setBusy] = useState(false);
 
   const picks = [
-    ["Reference level 1", stock.p1], ["Reference level 2", stock.p2], ["Reference level 3", stock.p3],
+    ["Your level 1", stock.p1], ["Your level 2", stock.p2], ["Your level 3", stock.p3],
   ].filter(([, v]) => v > 0);
 
   const create = async () => {

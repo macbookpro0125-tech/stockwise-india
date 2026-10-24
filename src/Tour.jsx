@@ -21,10 +21,10 @@ export const APP_TOUR = [
 export const STOCK_TOUR = [
   { target: "stock-actions", title: "The company's page", body: "Everything about one company. Watch adds it to your Watchlist; Alert tells you when the price reaches a level you set." },
   { target: "research", title: "Research scores", body: "Quality: how strong the business is, out of 100. Overall research score: quality and valuation together. Open \"Why this score?\" to see every check and its reason." },
-  { target: "override", title: "Check or change the numbers", body: "EPS, P/E and growth come from the company's NSE filings. Type your own to test a view — the price levels on this page follow. The research score always uses the filings." },
+  { target: "override", title: "Check or change the numbers", body: "EPS, P/E and growth come from the company's NSE filings. Type your own to test a view — the fair value on this page follows. The research score always uses the filings." },
   { target: "valuation", title: "Ways to value it", body: "Valuation methods worked out from reported figures. Show assumptions lets you change each one. These are estimates, not price targets." },
   { target: "thesis", title: "What to watch", body: "Strengths and cautions from the filings, what to check in the next results, and your own notes — saved to your account." },
-  { target: "position", title: "Where the price sits", body: "Today's price against model reference levels calculated from the valuation inputs. They describe price location; they don't tell you to buy or sell." },
+  { target: "position", title: "Where the price sits", body: "Today's price against your own price levels, from the settings you chose. They describe where the price is; they don't tell you to buy or sell." },
   { target: "filings", title: "News and NSE filings", body: "The company's own announcements to NSE, newest first. Read full filing opens the document and quotes the key lines." },
   { title: "That's the company page", body: "Back (top left) returns to your list. Your browser's back button works too." },
 ];

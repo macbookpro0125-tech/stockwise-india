@@ -1,13 +1,14 @@
 // Excel export for the Discover results. Four sheets:
 //  - Categorized: the screen's companies grouped into buckets by data rules
 //    (core compounder, high-growth, value play, steady, speculative, not
-//    rated), each row with its scores, risk tier, distance from Phase 1,
-//    price levels and flags — the layout of the categorized workbook Salman
-//    brought (9 Oct 2026), in the app's own wording: "Price position", never
+//    rated), each row with its scores, risk tier, distance from the
+//    user's own level 1, their levels (myLevels.js, blank while off) and
+//    flags — the layout of the categorized workbook Salman brought
+//    (9 Oct 2026), in the app's own wording: "Price position", never
 //    "buy status";
 //  - How to read: the bucket rules and what each column means;
 //  - Dashboard: summary formulas over the Stocks sheet, the ten closest to
-//    their Phase 1 level, the quality spread (ported from stock-screener);
+//    the user's level 1, the quality spread (ported from stock-screener);
 //  - Stocks: every row, with filter dropdowns.
 // The library is about 1 MB, so it loads on the first click, not with the page.
 import { pricePosition } from "../server/levels.js";
@@ -51,9 +52,9 @@ const COLUMNS = [
   { h: "EPS FY", w: 9, get: s => s.eps, z: "0.00" },
   { h: "EPS TTM", w: 9, get: s => s.ttmEps, z: "0.00" },
   { h: "Fair Value (2Y)", w: 13, get: s => s.fairValue, z: "#,##0" },
-  { h: "P1", w: 9, get: s => s.safeBuyPrice, z: "#,##0" },
-  { h: "P2", w: 9, get: s => s.p2, z: "#,##0" },
-  { h: "P3", w: 9, get: s => s.p3, z: "#,##0" },
+  { h: "Your L1", w: 9, get: s => s.safeBuyPrice, z: "#,##0" },
+  { h: "Your L2", w: 9, get: s => s.p2, z: "#,##0" },
+  { h: "Your L3", w: 9, get: s => s.p3, z: "#,##0" },
   { h: "52W Low", w: 9, get: s => s.low52w, z: "#,##0.00" },
   { h: "52W High", w: 9, get: s => s.high52w, z: "#,##0.00" },
   { h: "NSE", w: 46, get: s => nseUrl(s.symbol), link: true },
@@ -92,11 +93,11 @@ export function buildDiscoverWorkbook(XLSX, stocks, { pricesDate, extraColumns =
       if (col.link) { cell.l = { Target: cell.v }; cell.s = sLink; }
     }
   });
-  const QUALITY = colIndex("Quality"), CMP = colIndex("CMP"), P1 = colIndex("P1");
+  const QUALITY = colIndex("Quality"), CMP = colIndex("CMP"), P1 = colIndex("Your L1");
   rows.forEach((row, i) => {
     const q = cellAt(i + 1, QUALITY);
     if (q) q.s = { fill: fill(qualityFill(row[QUALITY])), alignment: { horizontal: "center" } };
-    // At or under the Phase 1 level
+    // At or under the user's level 1
     if (row[CMP] != null && row[P1] != null && row[CMP] <= row[P1]) {
       const cmp = cellAt(i + 1, CMP);
       if (cmp) cmp.s = { fill: fill(GREEN), font: { bold: true } };
@@ -145,19 +146,19 @@ export function buildDiscoverWorkbook(XLSX, stocks, { pricesDate, extraColumns =
   ];
   spread.forEach(([label, rgb, f], i) => { put(12 + i, 0, C(label, { ...sLabel, fill: fill(rgb) })); put(12 + i, 1, F(f, sValue, "0")); });
 
-  put(18, 0, C("PRICE LEVELS", sSection)); put(18, 1, C("", sSection));
-  put(19, 0, C("At or under Phase 1 (CMP ≤ P1)", sLabel)); put(19, 1, C(inZone, { ...sValue, fill: fill(inZone > 0 ? GREEN : LIGHT) }));
-  put(20, 0, C("Within 10% above P1", sLabel)); put(20, 1, C(near, sValue));
-  put(21, 0, C("Stocks with price levels", sLabel)); put(21, 1, C(withP1.length, sValue));
+  put(18, 0, C("YOUR LEVELS", sSection)); put(18, 1, C("", sSection));
+  put(19, 0, C("At or under your L1 (CMP ≤ L1)", sLabel)); put(19, 1, C(inZone, { ...sValue, fill: fill(inZone > 0 ? GREEN : LIGHT) }));
+  put(20, 0, C("Within 10% above your L1", sLabel)); put(20, 1, C(near, sValue));
+  put(21, 0, C("Stocks with your levels", sLabel)); put(21, 1, C(withP1.length, sValue));
 
-  put(23, 0, C("P1 uses normalized EPS × the stock's 5-year median annual P/E — capped at twice its sector's (or industry's) median P/E when 5+ peers are available — less a 10% margin of safety. Cyclicals use mid-cycle EPS; banks use book.", sSub));
-  put(24, 0, C("P2 = P1 × 0.9 · P3 = P1 × 0.8 · Fair value (2Y) = normalized EPS × (1 + growth)² × the valuation multiple; growth uses profit CAGR held to 0–25%. Large one-off EPS jumps are valued at the usual EPS.", sSub));
+  put(23, 0, C("Your levels are your own: your margin of safety, gap between levels, stop and upper level applied to each fair value (set on a stock's Valuation tab), or typed by hand for a stock. Blank while they're off.", sSub));
+  put(24, 0, C("Fair value = normalized EPS × the stock's 5-year median annual P/E, capped at twice its sector's (or industry's) median when 5+ peers are available; cyclicals use mid-cycle EPS, banks book · Fair value (2Y) = normalized EPS × (1 + growth)² × the valuation multiple; growth uses profit CAGR held to 0–25%. Large one-off EPS jumps are valued at the usual EPS.", sSub));
   put(25, 0, C("Quality = research score out of 100 over six groups, checks the filings can't show left out · Research = quality and valuation blended, trimmed for price swings and data gaps · Educational use only — not financial advice or a buy/sell recommendation", sSub));
 
-  // Right: the ten closest to (or furthest under) their Phase 1 level
-  put(3, 3, C("TOP 10 — CLOSEST TO PHASE 1", sSection));
+  // Right: the ten closest to (or furthest under) the user's level 1
+  put(3, 3, C("TOP 10 — CLOSEST TO YOUR L1", sSection));
   for (let c = 4; c <= 7; c++) put(3, c, C("", sSection));
-  ["Name", "CMP", "P1", "% vs P1", "Quality"].forEach((h, i) => put(4, 3 + i, C(h, sHeader)));
+  ["Name", "CMP", "Your L1", "% vs L1", "Quality"].forEach((h, i) => put(4, 3 + i, C(h, sHeader)));
   top10.forEach((t, i) => {
     const r = 5 + i;
     put(r, 3, C(t.name));
@@ -206,8 +207,12 @@ export const BUCKETS = [
   { id: "unrated", title: "NOT RATED — TOO FEW FILINGS", rgb: "7F7F7F" },
 ];
 const vsP1 = s => (s.cmp > 0 && s.safeBuyPrice > 0 ? ((s.cmp - s.safeBuyPrice) / s.safeBuyPrice) * 100 : null);
+const vsFv = s => (s.cmp > 0 && s.fv25 > 0 ? ((s.cmp - s.fv25) / s.fv25) * 100 : null);
 export function bucketOf(s) {
-  const q = quality(s), r = s.research ?? {}, growth = s.salesGrowth3y, gap = vsP1(s);
+  // gap: against today's fair value, not the user's levels, so a bucket
+  // doesn't move with their settings (23.5% under fair value is the 15% under
+  // fair value less 10% the rule was first written as)
+  const q = quality(s), r = s.research ?? {}, growth = s.salesGrowth3y, gap = vsFv(s);
   if (q == null) return "unrated";
   // Elevated or High risk on the app's own bands (research.js riskLabel).
   // The workbook this copies drew the line at 33, fine for a hand-picked top
@@ -217,7 +222,7 @@ export function bucketOf(s) {
   // A weak business isn't a growth or value pick, however it screens
   if (q < 50) return "weak";
   if ((growth ?? 0) >= 20) return "growth";
-  if ((s.pe > 0 && s.pe <= 13) || ((r.valuation ?? 0) >= 80 && gap != null && gap <= -15)) return "value";
+  if ((s.pe > 0 && s.pe <= 13) || ((r.valuation ?? 0) >= 80 && gap != null && gap <= -23.5)) return "value";
   return q >= 70 ? "core" : "steady";
 }
 // The research score's own risk bands, as the company page shows them
@@ -254,12 +259,12 @@ const CAT_COLUMNS = [
   { h: "D/E¹", w: 8, get: s => s.debtToEquity, z: "0.00", center: true },
   { h: "P/E TTM", w: 8, get: s => s.peTtm, z: "0.0", center: true },
   { h: "P/E FY", w: 7, get: s => s.peFy, z: "0.0", center: true },
-  { h: "% vs P1", w: 9, get: vsP1, z: "0.0", center: true, fill: v => (v == null ? null : v <= 0 ? "C8E6C9" : "FCE4E4") },
+  { h: "% vs your L1", w: 9, get: vsP1, z: "0.0", center: true, fill: v => (v == null ? null : v <= 0 ? "C8E6C9" : "FCE4E4") },
   { h: "Price position", w: 24, get: s => pricePosition(s.cmp, { p1: s.safeBuyPrice, p2: s.p2, p3: s.p3, stopLoss: s.stopLoss, target: s.target, fv25: s.fv25 }), position: true },
   { h: "CMP", w: 9, get: s => s.cmp, z: "#,##0.00", center: true },
-  { h: "P1", w: 9, get: s => s.safeBuyPrice, z: "#,##0", center: true },
-  { h: "P2", w: 9, get: s => s.p2, z: "#,##0", center: true },
-  { h: "P3", w: 9, get: s => s.p3, z: "#,##0", center: true },
+  { h: "Your L1", w: 9, get: s => s.safeBuyPrice, z: "#,##0", center: true },
+  { h: "Your L2", w: 9, get: s => s.p2, z: "#,##0", center: true },
+  { h: "Your L3", w: 9, get: s => s.p3, z: "#,##0", center: true },
   { h: "FairVal 2Y", w: 10, get: s => s.fairValue, z: "#,##0", center: true },
   { h: "MktCap Cr", w: 11, get: s => s.marketCapCr, z: "#,##0", center: true },
   { h: "Piotr.", w: 7, get: s => s.values?.piotroski ?? s.piotroski ?? null, z: "0", center: true },
@@ -282,7 +287,7 @@ export function buildCategorizedSheet(XLSX, stocks, { asOf, screen, sortLabel } 
 
   fullRow(`STOCKWISE INDIA — ${stocks.length.toLocaleString("en-IN")} ${stocks.length === 1 ? "COMPANY" : "COMPANIES"}, CATEGORIZED`,
     { font: { bold: true, sz: 14, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: NAVY } }, alignment: { vertical: "center", indent: 1 } }, 26);
-  fullRow(`Your Discover screen${screen ? ` (${screen})` : " (the whole market)"} · ${asOf} · grouped by bucket, then in the order you sorted${sortLabel ? ` (${sortLabel})` : ""}. "% vs P1" under 0 = below the Phase 1 level. Educational use only — not investment advice.`,
+  fullRow(`Your Discover screen${screen ? ` (${screen})` : " (the whole market)"} · ${asOf} · grouped by bucket, then in the order you sorted${sortLabel ? ` (${sortLabel})` : ""}. "% vs your L1" under 0 = below your level 1 (blank while your levels are off). Educational use only — not investment advice.`,
     { font: { sz: 9, color: { rgb: "555555" } }, alignment: { vertical: "center", wrapText: true } }, 28);
   aoa.push([]); styles.push([]);
   const headerRow = aoa.length;
@@ -351,20 +356,20 @@ export function buildGuideSheet(XLSX, { n, asOf, screen, sortLabel } = {}) {
     ["   • Speculative / high-risk", "Risk score 50 or more (Elevated or High), or 3-year sales growth over 100% (often a small base or a one-off). Size positions small."],
     ["   • Low quality", "Quality under 50 — a weak business on its filings, whatever its growth or price."],
     ["   • High-growth", "3-year sales growth of 20% a year or more."],
-    ["   • Value play", "P/E of 13 or under, or a valuation score of 80+ with the price 15% or more under the Phase 1 level."],
+    ["   • Value play", "P/E of 13 or under, or a valuation score of 80+ with the price 23.5% or more under today's fair value."],
     ["   • Core compounder", "Quality 70 or more and none of the above — steady, established businesses."],
     ["   • Steady / mid-quality", "Quality 50–69 and none of the above."],
-    ["4. Flags", "Microcap = market cap under ₹1,500 Cr (thin trading, higher risk whatever the score). Audit qualified / Auditor resigned = from the company's NSE filings. One-off profit = a profit jump the price levels value at the usual level."],
+    ["4. Flags", "Microcap = market cap under ₹1,500 Cr (thin trading, higher risk whatever the score). Audit qualified / Auditor resigned = from the company's NSE filings. One-off profit = a profit jump the fair value uses the usual level for."],
     [],
     ["COLUMN NOTES"],
     ["Research", "Overall research score out of 100: quality and valuation blended, trimmed for price swings and data gaps."],
     ["Quality", "Out of 100 across business, earnings, balance sheet, governance, growth and valuation, from NSE filings."],
     ["Val", "Valuation score out of 100 — higher means cheaper against the company's own history, sector peers and cash flow."],
     ["Risk / Risk tier", "Risk score out of 100, higher = riskier — price swings, thin trading and gaps in the data. Tier, as on the company page: Low under 25, Moderate 25–49, Elevated 50–74, High 75+."],
-    ["% vs P1", "Price against the Phase 1 level. Under 0 (green) = already below it."],
-    ["Price position", "Where the price sits against the levels: the Phase 1, 2 or 3 zone, above Phase 1, the stop-loss or the upper level. It describes the price — it is not a buy or sell instruction."],
+    ["% vs your L1", "Price against your level 1. Under 0 (green) = already below it. Blank while your levels are off."],
+    ["Price position", "Where the price sits against your levels: at or under your level 1, 2 or 3, above level 1, under your stop or over your upper level. It describes the price — it is not a buy or sell instruction."],
     ["P/E TTM / FY", "P/E TTM uses the last four consecutive quarters. P/E FY uses the latest audited full-year EPS; the columns stay separate."],
-    ["P1 / P2 / P3", "P1 uses normalized EPS × the stock's 5-year median annual P/E — capped at twice its sector's (or industry's) median P/E when at least five peers are available — less a 10% margin of safety. Cyclicals use mid-cycle EPS; banks use book."],
+    ["Your L1 / L2 / L3", "Your own levels: your settings (margin of safety under today's fair value, gap between levels) on a stock's Valuation tab, or typed for a stock by hand. Today's fair value uses normalized EPS × the stock's 5-year median annual P/E, capped at twice its sector's (or industry's) median P/E when at least five peers are available; cyclicals use mid-cycle EPS, banks book."],
     ["FairVal 2Y", "Normalized EPS grown for two years × the valuation multiple. An estimate from reported figures, not a price target."],
     ["D/E¹", "Debt/equity is blank for banks because deposits are part of their operating funding and the ratio is not comparable."],
     ["Piotr.", "Piotroski score out of 9 — 7 or more is strong. Not scored for banks and other lenders."],

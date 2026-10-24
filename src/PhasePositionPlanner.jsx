@@ -12,9 +12,13 @@ const readCapital = () => {
   }
 };
 
+// Arithmetic on the user's own levels (myLevels.js): their capital, split
+// across their three levels as they choose (equal to start), and the loss if
+// their stop were reached. Shown only while they have levels.
 export default function PhasePositionPlanner({ levels }) {
   const [capital, setCapital] = useState(() => String(readCapital()));
   const [lossLimit, setLossLimit] = useState("");
+  const [split, setSplit] = useState(["34", "33", "33"]);
   const cap = Number(capital);
   const maxLoss = Number(lossLimit);
   const entries = [levels?.p1, levels?.p2, levels?.p3].map(Number).filter(value => value > 0);
@@ -25,13 +29,13 @@ export default function PhasePositionPlanner({ levels }) {
   }, [capital]);
 
   let result = null;
-  if (cap > 0 && entries.length) {
-    const perLevelBudget = cap / entries.length;
-    const raw = entries.map(entry => ({
-      entry,
-      budget: perLevelBudget,
-      shares: Math.floor(perLevelBudget / entry),
-    }));
+  const shares = entries.map((_, i) => Math.max(0, Number(split[i]) || 0));
+  const shareTotal = shares.reduce((a, b) => a + b, 0);
+  if (cap > 0 && entries.length && shareTotal > 0) {
+    const raw = entries.map((entry, i) => {
+      const budget = (cap * shares[i]) / shareTotal;
+      return { entry, budget, shares: Math.floor(budget / entry) };
+    });
     const rawLoss = stop > 0
       ? raw.reduce((sum, row) => sum + row.shares * Math.max(0, row.entry - stop), 0)
       : null;
@@ -62,20 +66,28 @@ export default function PhasePositionPlanner({ levels }) {
         <Calculator size={18} style={{ color: "var(--accent)", marginTop: 2, flexShrink: 0 }} />
         <div>
           <h3 id="phase-position-title" style={{ fontSize: 14.5, fontWeight: 450, color: "var(--t1)", margin: 0 }}>Position sizing worksheet</h3>
-          <p style={{ fontSize: 11.5, lineHeight: 1.5, color: "var(--t3)", margin: "3px 0 0" }}>Illustrates an equal cash split across the three model levels (their prices are in the model price levels below). Enter your own capital and, optionally, the maximum loss you choose.</p>
+          <p style={{ fontSize: 11.5, lineHeight: 1.5, color: "var(--t3)", margin: "3px 0 0" }}>Arithmetic on your own levels (set in Your price levels below): your capital, split across your three levels the way you choose, and the loss if your stop were reached.</p>
         </div>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(185px, 1fr))", gap: 10 }}>
         {field("Capital to model (₹)", capital, setCapital)}
-        {field("Your maximum planned loss (₹)", lossLimit, setLossLimit, "Optional. Share counts shrink if the modeled stop loss exceeds this amount.")}
+        {field("Your maximum planned loss (₹)", lossLimit, setLossLimit, "Optional. Share counts shrink if the loss at your stop exceeds this amount.")}
+      </div>
+      <div style={{ marginTop: 10 }}>
+        <span style={{ display: "block", fontSize: 11.5, color: "var(--t3)", marginBottom: 4 }}>Your split across levels 1, 2 and 3 (parts)</span>
+        <div style={{ display: "flex", gap: 8 }}>
+          {entries.map((_, i) => (
+            <input key={i} type="number" inputMode="decimal" min="0" step="1" aria-label={`Part at level ${i + 1}`} value={split[i]} onChange={event => setSplit(prev => prev.map((v, j) => (j === i ? event.target.value : v)))} className="input-base" style={{ height: 34, fontSize: 13, width: 72, boxSizing: "border-box", ...mono }} />
+          ))}
+        </div>
       </div>
 
       {result && (
         <>
           <div style={{ overflowX: "auto", marginTop: 12 }}>
             <table style={{ width: "100%", minWidth: 360, borderCollapse: "collapse", fontSize: 11.5 }}>
-              <thead><tr>{["Model level", "Cash budget", "Illustrative shares", "Amount used"].map((label, index) => <th key={label} style={{ textAlign: index === 0 ? "left" : "right", padding: "7px 6px", color: "var(--t3)", fontWeight: 400, borderBottom: "1px solid var(--bdr2)", whiteSpace: "nowrap" }}>{label}</th>)}</tr></thead>
+              <thead><tr>{["Your level", "Cash budget", "Illustrative shares", "Amount used"].map((label, index) => <th key={label} style={{ textAlign: index === 0 ? "left" : "right", padding: "7px 6px", color: "var(--t3)", fontWeight: 400, borderBottom: "1px solid var(--bdr2)", whiteSpace: "nowrap" }}>{label}</th>)}</tr></thead>
               <tbody>{result.tranches.map((row, index) => (
                 <tr key={index}>
                   <td style={{ padding: "8px 6px", color: "var(--t1)", borderBottom: "1px solid var(--bdr)" }}>Level {index + 1}</td>
@@ -90,15 +102,15 @@ export default function PhasePositionPlanner({ levels }) {
             {[
               ["Total modeled amount", money(result.invested), "var(--t1)"],
               ["Cash left unallocated", money(result.reserve), "var(--t1)"],
-              ["Estimated loss at displayed stop", result.lossAtStop == null ? "—" : `−${money(result.lossAtStop)}`, "var(--red)"],
+              ["Estimated loss at your stop", result.lossAtStop == null ? "—" : `−${money(result.lossAtStop)}`, "var(--red)"],
             ].map(([label, value, color]) => <div key={label} style={{ padding: "9px 10px", border: "1px solid var(--bdr)", borderRadius: 8, background: "var(--s1)" }}><div style={{ fontSize: 10.5, color: "var(--t3)" }}>{label}</div><div style={{ fontSize: 13.5, fontWeight: 450, color, marginTop: 3, ...mono }}>{value}</div></div>)}
           </div>
-          {result.scaled && <p style={{ fontSize: 11, color: "var(--yellow)", margin: "8px 0 0", lineHeight: 1.5 }}>The equal-split share counts were reduced to fit your chosen loss limit.</p>}
+          {result.scaled && <p style={{ fontSize: 11, color: "var(--yellow)", margin: "8px 0 0", lineHeight: 1.5 }}>The share counts were reduced to fit your chosen loss limit.</p>}
           {maxLoss > 0 && result.lossAtStop != null && result.lossAtStop > maxLoss && <p style={{ fontSize: 11, color: "var(--yellow)", margin: "8px 0 0", lineHeight: 1.5 }}>Rounding leaves the estimate slightly above your chosen limit; lower the limit or review the share counts.</p>}
         </>
       )}
 
-      <p style={{ fontSize: 10.5, color: "var(--t3)", lineHeight: 1.5, margin: "10px 0 0" }}>Hypothetical arithmetic from the values above, not a recommendation. Assumes all three levels fill and the displayed stop is executed exactly; gaps, slippage, fees and taxes can change the result. It does not account for your existing holdings or portfolio exposure.</p>
+      <p style={{ fontSize: 10.5, color: "var(--t3)", lineHeight: 1.5, margin: "10px 0 0" }}>Hypothetical arithmetic on the numbers you entered, not a recommendation. Assumes all three levels fill and your stop is executed exactly; gaps, slippage, fees and taxes can change the result. It does not account for your existing holdings or portfolio exposure.</p>
     </section>
   );
 }

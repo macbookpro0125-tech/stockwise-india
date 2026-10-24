@@ -9,8 +9,9 @@ import { portfolioSummary } from "./portfolioMath.js";
 
 // Ported from stock-screener's src/components/PortfolioPanel.jsx — summary
 // bar, sort pills, one row per lot, allocation bar. Holdings are saved to the
-// account instead of the browser; prices are NSE's latest close. Each row says where the price sits against
-// the stock's levels (server/levels.js pricePosition) — described, never advised.
+// account instead of the browser; prices are NSE's latest close. Each row says
+// where the price sits against the user's own levels (server/levels.js
+// pricePosition, from their settings; none while off) — described, never advised.
 
 const MONO = { fontVariantNumeric: "tabular-nums" };
 const COLORS = ["var(--accent)", "var(--green)", "var(--yellow)", "#A78BFA", "#F472B6", "#FB923C", "#38BDF8"];
@@ -257,7 +258,7 @@ export default function PortfolioView({ onOpenStock }) {
                 </div>
 
                 <div style={{ textAlign: "center", minWidth: 110 }}>
-                  <div style={label}>Price level</div>
+                  <div style={label}>Your levels</div>
                   {st?.position
                     ? <div style={{ fontSize: 11, fontWeight: 500, color: POSITION_TONE[st.position.tone] ?? "var(--t2)" }} title={st.position.detail}>{st.position.label}</div>
                     : <div style={{ fontSize: 11, color: "var(--t3)" }} title={st?.valuation?.reason ?? (st?.valuation?.as ? `No price levels (${st.valuation.as})` : undefined)}>—</div>}
@@ -296,7 +297,7 @@ export default function PortfolioView({ onOpenStock }) {
 
       {holdings.length > 0 && (
         <p style={{ fontSize: 10, color: "var(--t3)", marginTop: 14, lineHeight: 1.6 }}>
-          These are daily closing prices, not live intraday quotes; each CMP shows its source and date. "Price level" is where the price sits against each stock's levels — a description, not advice (the stock page has the levels). Saved to your account.
+          These are daily closing prices, not live intraday quotes; each CMP shows its source and date. "Your levels" is where the price sits against your own price levels — a description, not advice. They're off until you turn them on from a stock's Valuation tab. Saved to your account.
         </p>
       )}
 

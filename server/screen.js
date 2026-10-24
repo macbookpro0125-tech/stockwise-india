@@ -387,9 +387,10 @@ function tableRow(m, columns = [], sizes = null) {
     opm: m.opm, promoterPct: m.promoterPct, fiiPct: m.fiiPct, diiPct: m.diiPct, pledgedPct: m.pledgedPct,
     marketCapCr: m.marketCapCr, divYield: m.divYield,
     debtToEquity: m.debtToEquity, salesGrowth3y: m.salesGrowth3y, profitGrowth5y: m.profitGrowth5y,
-    ncavCr: m.ncavCr, fairValue: m.fairValue, safeBuyPrice: m.safeBuyPrice,
-    fv25: m.levels?.fv25 ?? null, p2: m.levels?.p2 ?? null, p3: m.levels?.p3 ?? null,
-    stopLoss: m.levels?.stopLoss ?? null, target: m.levels?.target ?? null,
+    // The fair values only: price levels are each user's own, from their
+    // settings (levels.js userLevels), worked out where they're shown
+    ncavCr: m.ncavCr, fairValue: m.fairValue,
+    fv25: m.levels?.fv25 ?? null, fvExact: m.levels?.exact ?? null,
     low52w: m.low52w, high52w: m.high52w, ret1d: m.ret1d ?? null, piotroski: m.piotroski ?? null,
     valuationPeBasis: m.valuationPeBasis, valuationMultipleBasis: m.valuationMultipleBasis,
     epsCorrection: m.epsCorrection, epsMismatch: m.epsMismatch,

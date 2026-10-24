@@ -30,7 +30,7 @@ const Gauge = () => (
 );
 const POINTS = [
   { icon: <ScoreRing />, title: "A quality score for every company", line: "Every NSE company, scored on its own filings." },
-  { icon: <Gauge />, title: "A fair value from its own history", line: "Its usual P/E on this year's earnings, with price levels." },
+  { icon: <Gauge />, title: "A fair value from its own history", line: "Its usual P/E on this year's earnings — and your own price levels, if you want them." },
   { icon: <StrategyMark preset={{ id: "dividend_aristocrats" }} size={26} />, title: "Strategies ready to run", line: "Start from a classic screen, or build your own." },
 ];
 

@@ -69,6 +69,24 @@ db.exec(`
     PRIMARY KEY (list_id, ticker)
   );
 
+  -- Each user's own price levels (24 Oct 2026): off until they turn them on,
+  -- from their margin of safety, gap between levels, stop under level 3 and
+  -- upper level over the two-year value (levels.js levelsFromFairValue)...
+  CREATE TABLE IF NOT EXISTS user_level_settings (
+    user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    enabled INTEGER NOT NULL DEFAULT 0,
+    mos REAL NOT NULL, step REAL NOT NULL, stop REAL NOT NULL, upper REAL NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  -- ...or, for any one stock, the five they typed for it
+  CREATE TABLE IF NOT EXISTS user_stock_levels (
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    ticker TEXT NOT NULL,
+    p1 REAL NOT NULL, p2 REAL NOT NULL, p3 REAL NOT NULL, stop_loss REAL NOT NULL, target REAL NOT NULL,
+    updated_at TEXT NOT NULL,
+    PRIMARY KEY (user_id, ticker)
+  );
+
   -- The original's portfolio (localStorage there), per account here. Several
   -- lots of the same stock are separate rows, as in the original.
   CREATE TABLE IF NOT EXISTS holdings (
@@ -180,7 +198,7 @@ db.exec(`
 // dropping the old table with them on would cascade-delete every account's
 // alerts, watchlist and portfolio — and every table's row count must come out
 // unchanged, or the whole rebuild is undone.
-const CHILD_TABLES = ["sessions", "alerts", "watchlist", "watchlist_lists", "watchlist_list_items", "holdings", "thesis_notes", "stock_notes", "saved_strategies", "strategy_match_state", "telegram_links", "password_resets"];
+const CHILD_TABLES = ["sessions", "alerts", "watchlist", "watchlist_lists", "watchlist_list_items", "user_level_settings", "user_stock_levels", "holdings", "thesis_notes", "stock_notes", "saved_strategies", "strategy_match_state", "telegram_links", "password_resets"];
 function rebuildUsersForSocialSignIn() {
   const columns = db.prepare("PRAGMA table_info(users)").all().map(c => c.name);
   if (columns.includes("firebase_uid")) return;

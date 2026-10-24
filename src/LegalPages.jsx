@@ -168,13 +168,14 @@ export function DisclaimerPage({ signedIn }) {
 
       <H>How the numbers are made</H>
       <P>
-        Quality scores, research scores, fair values, price levels (the three phase levels, the stop-loss level and the
-        upper level) and the other figures are calculated automatically, by fixed formulas, from public data: companies'
+        Quality scores, research scores, fair values and the other figures are calculated automatically, by fixed
+        formulas, from public data: companies'
         filings on NSE and market prices. They know nothing the formulas don't — news, management quality, or what a
         company will do next — and checks the filings can't show, such as related-party deals or competitive position, are left
         out rather than guessed. The weights behind the scores are a stated starting point, not a model proven to predict
-        returns. Labels describe the displayed figures and model reference levels; they do not tell you to buy or sell.
-        They are not advice about what you should do.
+        returns. Labels describe the displayed figures; they do not tell you to buy or sell. Price levels are yours: the
+        app shows none until you turn them on and choose your own margin of safety, gaps, stop and upper level (or type a
+        stock's levels by hand), and then only does the arithmetic. They are not advice about what you should do.
       </P>
 
       <H>The data can be wrong or late</H>

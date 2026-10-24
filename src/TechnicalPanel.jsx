@@ -157,44 +157,46 @@ function BreakoutLevels({ data }) {
   const longReady = sma50 != null && sma200 != null && sma50 > sma200;
   const rsiConfirm = rsi14 != null && rsi14 > 50 && rsi14 < 70;
 
+  // Four facts about the price and its averages, each met or not — counted
+  // and listed, never turned into a verdict on what to do (24 Oct 2026: it
+  // said "Breakout zone — strength confirmed" / "Not ready — wait")
   const checks = [
-    { label: "Price > SMA 20", met: sma20 != null && price > sma20 },
-    { label: "Price > R1", met: pivots && price > pivots.r1 },
-    { label: "RSI 50–70", met: rsiConfirm },
-    { label: "SMA 50 > 200", met: longReady },
+    { label: "Price > SMA 20", met: sma20 != null && price > sma20, says: "the price is over its 20-day average" },
+    { label: "Price > R1", met: pivots && price > pivots.r1, says: "it's over the first pivot resistance (R1)" },
+    { label: "RSI 50–70", met: rsiConfirm, says: "RSI is between 50 and 70" },
+    { label: "SMA 50 > 200", met: longReady, says: "the 50-day average is over the 200-day" },
   ];
   const metCount = checks.filter(c => c.met).length;
-
-  let verdict, verdictColor, verdictBg;
-  if (metCount >= 3) { verdict = "Breakout zone — strength confirmed"; verdictColor = "var(--green)"; verdictBg = "var(--green-dim)"; }
-  else if (metCount >= 2) { verdict = "Building — watch for more confirmations"; verdictColor = "var(--yellow)"; verdictBg = "var(--yellow-dim)"; }
-  else { verdict = "Not ready — wait for levels to clear"; verdictColor = "var(--red)"; verdictBg = "var(--red-dim)"; }
+  const listed = list => list.map(c => c.says).join("; ");
+  const met = checks.filter(c => c.met), unmet = checks.filter(c => !c.met);
+  const verdict = `${metCount} of 4 met${met.length ? `: ${listed(met)}` : ""}.${unmet.length && met.length ? ` Not met: ${listed(unmet)}.` : ""}`;
+  const verdictColor = "var(--t2)", verdictBg = "color-mix(in srgb, var(--accent) 12%, transparent)";
 
   return (
     <div style={{ padding: "12px 14px", borderRadius: 8, background: "var(--surf)", marginBottom: 14 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-        <span style={{ fontSize: 12, fontWeight: 400, color: "var(--t1)" }}>Breakout Levels</span>
-        <span style={{ fontSize: 10, fontWeight: 500, padding: "3px 10px", borderRadius: 20, background: verdictBg, color: verdictColor }}>
-          {metCount}/4 confirmed
+        <span style={{ fontSize: 12, fontWeight: 400, color: "var(--t1)" }}>Price against its averages and pivots</span>
+        <span style={{ fontSize: 10, fontWeight: 500, padding: "3px 10px", borderRadius: 20, background: verdictBg, color: "var(--accent)" }}>
+          {metCount}/4 met
         </span>
       </div>
 
-      {/* Verdict */}
-      <div style={{ fontSize: 11, color: verdictColor, marginBottom: 10, fontWeight: 400 }}>{verdict}</div>
+      {/* What's met, in words — a description, not a signal */}
+      <div style={{ fontSize: 11, color: verdictColor, marginBottom: 10, fontWeight: 400, lineHeight: 1.5 }}>{verdict}</div>
 
       {/* Key levels */}
-      <div style={{ fontSize: 11.5, fontWeight: 400, color: "var(--t3)", marginBottom: 4 }}>Short-Term Watch</div>
+      <div style={{ fontSize: 11.5, fontWeight: 400, color: "var(--t3)", marginBottom: 4 }}>Short-term averages and pivots</div>
       <BreakoutLevel label="SMA 20 (trend)" price={sma20} cmp={price} type="short" />
       {pivots && <BreakoutLevel label="R1 (first resistance)" price={pivots.r1} cmp={price} type="short" />}
       {pivots && <BreakoutLevel label="R2 (strong resistance)" price={pivots.r2} cmp={price} type="short" />}
 
-      <div style={{ fontSize: 11.5, fontWeight: 400, color: "var(--t3)", marginTop: 10, marginBottom: 4 }}>Long-Term Watch</div>
+      <div style={{ fontSize: 11.5, fontWeight: 400, color: "var(--t3)", marginTop: 10, marginBottom: 4 }}>Long-term averages</div>
       <BreakoutLevel label="SMA 50 (medium trend)" price={sma50} cmp={price} type="long" />
       <BreakoutLevel label="SMA 200 (major trend)" price={sma200} cmp={price} type="long" />
 
       {/* Checklist */}
       <div style={{ marginTop: 12, padding: "8px 10px", borderRadius: 6, background: "var(--card)" }}>
-        <div style={{ fontSize: 11.5, fontWeight: 400, color: "var(--t3)", marginBottom: 6 }}>Trend checklist</div>
+        <div style={{ fontSize: 11.5, fontWeight: 400, color: "var(--t3)", marginBottom: 6 }}>Trend checks</div>
         {checks.map((c, i) => (
           <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: c.met ? "var(--green)" : "var(--t3)", marginBottom: 3 }}>
             <span style={{ fontSize: 13 }}>{c.met ? "✓" : "✗"}</span>

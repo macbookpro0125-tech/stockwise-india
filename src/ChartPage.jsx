@@ -5,7 +5,7 @@ import { navigate, stockPath } from "./site.jsx";
 
 // A stock's price chart as a page of its own (/chart/TCS). On a phone the
 // chart's expand button opens this in a new tab: the whole screen for the
-// chart, without the stock page around it. The company name and the model's
+// chart, without the stock page around it. The company name, fair value and the user's
 // levels come in the address (chartPageUrl in PriceChartPanel.jsx), so the
 // page draws the same levels the stock page showed, custom inputs included.
 export default function ChartPage({ symbol }) {

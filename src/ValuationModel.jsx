@@ -165,7 +165,7 @@ export function CyclicalValuation({ m, epsInput, multipleInput }) {
       {row("Through-cycle net margin", pct(v.medianMargin), `Median of ${v.years} years, loss years included`)}
       {row("Mid-cycle EPS", `₹${v.normalizedEps.toFixed(2)}`, "Revenue a share × the through-cycle margin")}
       {row("Its usual multiple of mid-cycle EPS", `${v.multiple.toFixed(1)}×`, `Median at ${v.multipleYears} year-ends, each on that year's mid-cycle EPS`)}
-      {row("Fair value on mid-cycle earnings", <span style={{ color: "var(--accent)" }}>{rs(fair)}</span>, "Used for the price levels")}
+      {row("Fair value on mid-cycle earnings", <span style={{ color: "var(--accent)" }}>{rs(fair)}</span>, "Used for the fair value")}
       {v.latestEpsFairValue != null && row("Fair value on this year's EPS", rs(v.latestEpsFairValue), "This year's EPS × its usual P/E — shown for comparison")}
       {v.ev && row("On the whole business (EV/EBITDA)", rs(v.ev.perShare),
         `Debt is heavy (net debt over twice EBITDA), so also: mid-cycle EBITDA ₹${v.ev.midEbitdaCr.toLocaleString("en-IN")} Cr × its usual ${v.ev.multiple.toFixed(1)}× EV/EBITDA (${v.ev.years} year-ends), less ₹${v.ev.netDebtCr.toLocaleString("en-IN")} Cr net debt`)}
@@ -180,7 +180,7 @@ export function NoFairValue({ m }) {
   return (
     <div>
       <div style={{ fontSize: 13, color: "var(--t1)", fontWeight: 400, marginBottom: 4 }}>{v.model === "needs-data" ? "Valuation needs more data" : "No fair value"}</div>
-      <p style={{ fontSize: 12, color: "var(--t2)", margin: 0, lineHeight: 1.6 }}>{v.reason} So there are no price levels for it — the research score still rates its quality.</p>
+      <p style={{ fontSize: 12, color: "var(--t2)", margin: 0, lineHeight: 1.6 }}>{v.reason} So there's no fair value for it — the research score still rates its quality.</p>
       {v.model === "none" && m.evToSales != null && (
         <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 8, background: "var(--s1)", border: "1px solid var(--bdr)", fontSize: 12, color: "var(--t2)", lineHeight: 1.55 }}>
           <strong style={{ color: "var(--t1)", ...MONO }}>EV/Sales {m.evToSales.toFixed(2)}×</strong>

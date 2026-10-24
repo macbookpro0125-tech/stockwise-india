@@ -25,7 +25,8 @@ import { getThesis, saveThesis } from "./user-thesis.js";
 import { listNotes, saveNote, deleteNote, listStrategies, saveStrategies, checkStrategyMatches, acknowledgeStrategyMatches } from "./user-notes.js";
 import { currentPrices } from "./prices.js";
 import { getPerformance, takeSnapshots } from "./performance.js";
-import { pricePosition } from "./levels.js";
+import { pricePosition, userLevels, fairValueOnly } from "./levels.js";
+import { getUserLevels, saveLevelSettings, setStockLevels, clearStockLevels } from "./user-levels.js";
 import { fetchDailyBars, PRICE_RANGES } from "./quote.js";
 import { fetchStockSummary, SCHEMA } from "./fetch-nse.js";
 import { fetchEquityList } from "./equity-list.js";
@@ -906,6 +907,10 @@ export function createApp() {
         const metrics = computeMetrics(fundamentals, snap, {});
         if (metrics) {
           capHistoricalMultiples([metrics]);
+          // The fair values, not the app's own levels: the page draws the
+          // user's (levels.js userLevels)
+          metrics.levels = fairValueOnly(metrics.levels);
+          delete metrics.safeBuyPrice;
           metrics.evToSalesSector = market.evSales?.get(metrics.peerSector) ?? null;
           // The price against its sector's index and the market, and its
           // swings against theirs (StockPerformance.jsx)
@@ -1053,6 +1058,31 @@ export function createApp() {
         return;
       }
 
+      // The user's own price levels: their settings (off until turned on)
+      // and any stock's five typed by hand (user-levels.js)
+      if (url.pathname === "/api/levels" && req.method === "GET") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        sendJson(res, 200, getUserLevels(userId));
+        return;
+      }
+      if (url.pathname === "/api/levels/settings" && req.method === "PUT") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        sendJson(res, 200, { settings: saveLevelSettings(userId, await readJsonBody(req)) });
+        return;
+      }
+      const stockLevelsRoute = url.pathname.match(/^\/api\/levels\/stocks\/([^/]+)$/);
+      if (stockLevelsRoute && ["PUT", "DELETE"].includes(req.method)) {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        const symbol = decodePathSegment(stockLevelsRoute[1]).toUpperCase();
+        if (req.method === "PUT") { sendJson(res, 200, { levels: setStockLevels(userId, symbol, await readJsonBody(req)) }); return; }
+        clearStockLevels(userId, symbol);
+        sendJson(res, 200, { ok: true });
+        return;
+      }
+
       // The watchlist's named lists (its tabs): create, rename, delete, and a
       // stock in or out of one (in stars it; out keeps it starred)
       if (url.pathname === "/api/watchlist/lists" && req.method === "POST") {
@@ -1125,11 +1155,13 @@ export function createApp() {
         const holdings = listHoldings(userId);
         const tickers = [...new Set(holdings.map(h => h.ticker))];
         const prices = await currentPrices(tickers);
-        // Where each holding's price sits against its levels, at the current price
+        // Where each holding's price sits against the user's own levels, at
+        // the current price — none while their levels are off
         const status = {};
+        const mine = getUserLevels(userId);
         for (const r of rowsFor(tickers)) {
           const price = prices[r.symbol]?.price;
-          const levels = r.safeBuyPrice ? { fv25: r.fv25, p1: r.safeBuyPrice, p2: r.p2, p3: r.p3, stopLoss: r.stopLoss, target: r.target } : null;
+          const levels = r.fv25 > 0 ? userLevels({ fv25: r.fv25, fv27: r.fairValue, exact: r.fvExact }, mine, r.symbol) : userLevels(null, mine, r.symbol);
           const position = price && levels ? pricePosition(price, levels) : null;
           status[r.symbol] = {
             position, levels, research: r.research ?? null, valuation: r.valuation ?? null,

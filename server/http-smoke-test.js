@@ -203,6 +203,19 @@ async function main() {
   assert(wl.lists.length === 0 && wl.items.some(i => i.ticker === "TCS"), "its stocks stay starred");
   await json("DELETE", "/api/watchlist/TCS", aliceCookie);
 
+  // The user's own price levels: off until turned on, kept per account
+  let lv = await (await fetch(`${BASE}/api/levels`, { headers: { Cookie: aliceCookie } })).json();
+  assert(lv.settings.enabled === false && lv.settings.mos === 10, "levels start off, at the old formula's numbers");
+  assert((await json("PUT", "/api/levels/settings", aliceCookie, { enabled: true, mos: 90 })).status === 400, "a margin of safety out of range is refused");
+  assert((await json("PUT", "/api/levels/settings", aliceCookie, { enabled: true, mos: 15, step: 8, stop: 5, upper: 0 })).status === 200, "settings are saved");
+  assert((await json("PUT", "/api/levels/stocks/TCS", aliceCookie, { p1: 100, p2: 120, p3: 80, stopLoss: 70, target: 150 })).status === 400, "levels out of order are refused");
+  assert((await json("PUT", "/api/levels/stocks/TCS", aliceCookie, { p1: 3000, p2: 2800, p3: 2600, stopLoss: 2400, target: 4000 })).status === 200, "a stock's levels typed by hand are saved");
+  lv = await (await fetch(`${BASE}/api/levels`, { headers: { Cookie: aliceCookie } })).json();
+  assert(lv.settings.enabled && lv.settings.mos === 15 && lv.stocks.TCS?.p1 === 3000, "they come back");
+  const bobLevels = await (await fetch(`${BASE}/api/levels`, { headers: { Cookie: bobCookie } })).json();
+  assert(!bobLevels.settings.enabled && !bobLevels.stocks.TCS, "another account doesn't see them");
+  assert((await json("DELETE", "/api/levels/stocks/TCS", aliceCookie)).status === 200, "a stock's own levels are cleared");
+
   // Portfolio
   assert((await json("POST", "/api/portfolio", aliceCookie, { ticker: "TCS", buyPrice: 3000, qty: 0 })).status === 400, "a holding with 0 shares is refused");
   assert((await json("POST", "/api/portfolio", aliceCookie, { ticker: "../x", buyPrice: 3000, qty: 1 })).status === 400, "a holding with a bad symbol is refused");

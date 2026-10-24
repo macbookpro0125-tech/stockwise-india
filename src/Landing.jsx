@@ -31,8 +31,8 @@ const FEATURES = [
   },
   {
     icon: <Icon><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1.5" /></Icon>,
-    title: "Fair value and price levels",
-    text: "Fair value uses normalized earnings and the company's own 5-year median P/E, capped at twice its sector's median when it runs far above its peers. Banks use book value. Model price levels are reference points, not trade instructions.",
+    title: "Fair value, and your own levels",
+    text: "Fair value uses normalized earnings and the company's own 5-year median P/E, capped at twice its sector's median when it runs far above its peers. Banks use book value. Price levels are off until you set your own margin of safety and gaps.",
   },
   {
     icon: <Icon><path d="M7 3h7l5 5v13H7z" /><path d="M14 3v5h5M10 13h6M10 17h6" /></Icon>,
@@ -42,7 +42,7 @@ const FEATURES = [
   {
     icon: <Icon><path d="M6 16v-5a6 6 0 1112 0v5l1.5 2h-15z" /><path d="M10 20.5a2 2 0 004 0" /></Icon>,
     title: "Watchlist, alerts and portfolio",
-    text: "Star stocks, set price alerts and record what you own — each holding shows its profit and where its price sits against its levels.",
+    text: "Star stocks, set price alerts and record what you own — each holding shows its profit and, if you've set them, where its price sits against your levels.",
     note: "Price alerts use the latest daily close. Telegram delivery requires server setup; SMS and email alerts aren't available yet.",
   },
   {
@@ -109,7 +109,7 @@ export default function Landing({ onAuthed, notice }) {
             />
           </div>
           <p style={{ fontSize: 12.5, color: "var(--t3)", textAlign: "center", margin: "12px 0 0" }}>
-            A strategy's results: every company scored, with its price levels and where today's price sits against them.
+            A strategy's results: every company scored, with its fair value — and your own price levels, if you set them.
           </p>
         </section>
 
@@ -168,8 +168,8 @@ export default function Landing({ onAuthed, notice }) {
         <section style={{ ...card, padding: "20px 22px", borderColor: "var(--yellow-bdr)", background: "var(--yellow-dim)" }}>
           <h2 style={{ fontSize: 15, fontWeight: 450, color: "var(--t1)", margin: "0 0 6px" }}>An educational tool, not investment advice</h2>
           <p style={{ fontSize: 13.5, lineHeight: 1.65, color: "var(--t2)", margin: 0 }}>
-            Jocular Insights isn't registered with SEBI as an investment adviser or research analyst. Scores, fair values and
-            price levels are worked out automatically from public data, can be wrong, and aren't recommendations to buy or
+            Jocular Insights isn't registered with SEBI as an investment adviser or research analyst. Scores and fair
+            values are worked out automatically from public data, price levels only from numbers you choose, can be wrong, and aren't recommendations to buy or
             sell. <SiteLink to="/disclaimer">Read the full disclaimer</SiteLink>.
           </p>
         </section>

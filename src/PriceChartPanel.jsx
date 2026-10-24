@@ -15,7 +15,8 @@ import { pivotPoints, PIVOT_LEVELS, atr, supertrend, psar, stochastic, adx, obv,
 // the link the licence asks for.
 //
 // The stock page's price chart: TradingView's open-source Lightweight Charts
-// on our own daily bars, with the model's price levels drawn on the candles.
+// on our own daily bars, with the fair value and the user's own price levels
+// (myLevels.js, when they've turned them on) drawn on the candles.
 // Indicators are computed here (chartMath.js); horizontal lines are kept per
 // symbol in this browser.
 
@@ -240,12 +241,12 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
   const levelLines = useMemo(() => {
     if (!prefs.levels || !levels) return [];
     return [
-      { price: levels.target, title: "Upper level", short: "Upper", color: "var(--red)", style: LineStyle.Dashed },
+      { price: levels.target, title: "Your upper", short: "Upper", color: "var(--red)", style: LineStyle.Dashed },
       { price: levels.fv25, title: "Fair value", short: "FV", color: "var(--accent)", style: LineStyle.Solid },
-      { price: levels.p1, title: "Ref 1", short: "Ref 1", color: "var(--green)", style: LineStyle.Dotted },
-      { price: levels.p2, title: "Ref 2", short: "Ref 2", color: "var(--green)", style: LineStyle.Dotted },
-      { price: levels.p3, title: "Ref 3", short: "Ref 3", color: "var(--green)", style: LineStyle.Dotted },
-      { price: levels.stopLoss, title: "Stop-loss", short: "Stop", color: "var(--red)", style: LineStyle.Dashed },
+      { price: levels.p1, title: "Your L1", short: "L1", color: "var(--green)", style: LineStyle.Dotted },
+      { price: levels.p2, title: "Your L2", short: "L2", color: "var(--green)", style: LineStyle.Dotted },
+      { price: levels.p3, title: "Your L3", short: "L3", color: "var(--green)", style: LineStyle.Dotted },
+      { price: levels.stopLoss, title: "Your stop", short: "Stop", color: "var(--red)", style: LineStyle.Dashed },
     ].filter(l => l.price > 0);
   }, [prefs.levels, levels]);
 
@@ -666,7 +667,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
   );
 
   // The pivots, listed: above the chart on a wide screen, under the range
-  // buttons on a phone, where the top stays clean. The model's levels aren't
+  // buttons on a phone, where the top stays clean. The user's levels aren't
   // listed here — the Levels section does, and the lines carry their values
   // (on the price scale, or on a phone in the tags)
   const levelLists = (
@@ -738,7 +739,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
           )}
         </div>
 
-        <button type="button" onClick={() => setPref({ levels: !prefs.levels })} aria-pressed={prefs.levels} disabled={!levels} title="Fair value, reference levels and stop-loss from the valuation model" style={btn(prefs.levels && !!levels, !levels ? { opacity: 0.5, cursor: "not-allowed" } : {})}>
+        <button type="button" onClick={() => setPref({ levels: !prefs.levels })} aria-pressed={prefs.levels} disabled={!levels} title="Fair value, and your own price levels if you've turned them on" style={btn(prefs.levels && !!levels, !levels ? { opacity: 0.5, cursor: "not-allowed" } : {})}>
           <Layers size={14} aria-hidden="true" />Levels
         </button>
         <button type="button" onClick={() => setDrawing(d => !d)} aria-pressed={drawing} title="Horizontal line: click the chart, or type a price" style={btn(drawing)}>
@@ -765,7 +766,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
             <span aria-hidden="true" style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontStyle: "italic", fontSize: 15, fontWeight: 400 }}>ƒx</span>
             {activeInd > 0 && <span aria-hidden="true" style={{ fontSize: 10, fontWeight: 500, ...MONO }}>{activeInd}</span>}
           </button>
-          <button type="button" onClick={() => setPref({ levels: !prefs.levels })} aria-pressed={prefs.levels && !!levels} disabled={!levels} aria-label="The model's price levels" style={iconBtn(prefs.levels && !!levels, !levels ? { opacity: 0.45, cursor: "not-allowed" } : {})}><Layers size={16} aria-hidden="true" /></button>
+          <button type="button" onClick={() => setPref({ levels: !prefs.levels })} aria-pressed={prefs.levels && !!levels} disabled={!levels} aria-label="Fair value and your price levels" style={iconBtn(prefs.levels && !!levels, !levels ? { opacity: 0.45, cursor: "not-allowed" } : {})}><Layers size={16} aria-hidden="true" /></button>
           <button type="button" onClick={() => setDrawing(d => !d)} aria-pressed={drawing} aria-label="Draw a horizontal line" style={iconBtn(drawing)}><Minus size={16} aria-hidden="true" /></button>
           <button type="button" onClick={snapshot} aria-label="Save the chart as an image" style={iconBtn(false)}><Camera size={16} aria-hidden="true" /></button>
           {!page && (
