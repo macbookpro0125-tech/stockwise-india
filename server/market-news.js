@@ -188,6 +188,83 @@ function headlines() {
   });
 }
 
+// ---- RBI and SEBI ------------------------------------------------------------
+
+// What the market's regulators announced (24 Oct 2026, "add official
+// sources"): the RBI's press releases and notifications, SEBI's press
+// releases, circulars and orders, from their own RSS feeds. As with a
+// headline, the title, date and link only: SEBI's website policy asks for
+// permission before its material is reproduced, so the text stays on its site.
+const OFFICIAL_FEEDS = [
+  ["RBI", "https://www.rbi.org.in/pressreleases_rss.xml"],
+  ["RBI", "https://www.rbi.org.in/notifications_rss.xml"],
+  ["SEBI", "https://www.sebi.gov.in/sebirss.xml"],
+];
+// SEBI's orders against small traders and brokers are most of its feed and seldom news
+const MINOR_ORDER = /adjudication order|settlement order|recovery (certificate|proceedings)|order in (the matter|respect) of|summons|attachment|exemption order|prohibitive order|ex-?parte|confirmatory order|revocation order|order under section/i;
+const MONTHS = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 };
+// RFC dates ("Fri, 24 Oct 2026 17:30:00 +0530") and the "24 Oct, 2026" kind
+export function officialTime(text) {
+  const t = String(text ?? "").trim();
+  const d = Date.parse(t);
+  if (!isNaN(d)) return new Date(d);
+  const m = t.match(/(\d{1,2})[\s-]+([A-Za-z]{3})[a-z]*[\s,-]+(\d{4})/);
+  return m && MONTHS[m[2].toLowerCase()] != null ? new Date(Date.UTC(+m[3], MONTHS[m[2].toLowerCase()], +m[1], 6, 30)) : null;
+}
+export function officialFrom(feeds, now = Date.now(), named = null) {
+  const out = [], seen = new Set();
+  for (const [publisher, xml] of feeds) {
+    for (const b of String(xml ?? "").split(/<item[\s>]/).slice(1)) {
+      const title = decodeRss((b.match(/<title>([\s\S]*?)<\/title>/) || [])[1]).replace(/\s+/g, " ").trim();
+      const link = decodeRss((b.match(/<link>([\s\S]*?)<\/link>/) || [])[1]).trim();
+      const time = officialTime(decodeRss((b.match(/<pubDate>([\s\S]*?)<\/pubDate>/) || [])[1]));
+      if (!title || !/^https?:\/\//.test(link) || !time || now - time > 7 * DAY || time - now > DAY) continue;
+      if (MINOR_ORDER.test(title) && !named?.(title)) continue;
+      const key = `${publisher}|${title.toLowerCase()}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push({ id: `r-${hash(link)}`, type: "official", kind: "regulators", title, publisher, url: link.replace(/^http:/, "https:"), time: time.toISOString() });
+    }
+  }
+  return out.sort((a, b) => b.time.localeCompare(a.time)).slice(0, 30);
+}
+function officials() {
+  return cached("market-news:officials", 30 * MINUTE, async () => {
+    const got = await Promise.allSettled(OFFICIAL_FEEDS.map(([, url]) => requestText(url, { headers: { "User-Agent": NEWS_UA }, service: "RBI and SEBI", timeoutMs: 10_000, maxBytes: 4 * 1024 * 1024 })));
+    if (got.every(g => g.status === "rejected")) throw got[0].reason;
+    const index = indexNow();
+    return officialFrom(OFFICIAL_FEEDS.map(([who], i) => [who, got[i].status === "fulfilled" ? got[i].value : ""]), Date.now(), t => namedCompanies(t, index).length > 0);
+  });
+}
+
+// ---- What a headline is about -------------------------------------------------
+
+// Its topic, for its picture in the list and the page's "Talked about" row: a
+// sector by its words (TOPICS, below) or a named company's, else a theme
+const THEMES = [
+  ["rates", "RBI & rates", /\brbi\b|repo rate|rate (cut|hike)|monetary policy|\bmpc\b|inflation|\bcpi\b/i],
+  ["crude", "Crude oil", /\bcrude\b|oil prices?|brent/i],
+  ["fii", "Foreign investors", /\bfiis?\b|\bfpis?\b|foreign (portfolio )?investors?|foreign funds?|foreign outflows?|foreign inflows?/i],
+  ["ipo", "IPOs", /\bipos?\b|\blisting\b|\bgmp\b|grey market|public issue/i],
+  ["results", "Results", /\bq[1-4]\b|quarterly|\bresults?\b|\bearnings\b|net profit/i],
+  ["rupee", "Rupee", /\brupee\b|\bforex\b/i],
+  ["gold", "Gold & silver", /\bgold\b|\bsilver\b/i],
+  ["global", "Global markets", /\bfed\b|wall street|\bus (markets?|stocks|tariffs?)\b|\btariffs?\b|\bchina\b|global cues|\bdow\b|nasdaq/i],
+  ["sebi", "SEBI & rules", /\bsebi\b|regulator|circular/i],
+  ["market", "Sensex & Nifty", /\bsensex\b|\bnifty\b|\bmarkets?\b|\bmidcaps?\b|\bsmallcaps?\b/i],
+];
+export function headlineTopic(item, sectorIndices = []) {
+  const title = item.title ?? "";
+  // a regulator's own announcement is about the regulator
+  if (item.type === "official") return item.publisher === "RBI" ? { key: "rates", label: "RBI & rates" } : { key: "sebi", label: "SEBI & rules" };
+  const sector = headlineTopics(title, sectorIndices)[0];
+  // (a sector named in words wins over a theme: "IT stocks rally on Q2 results" is IT)
+  if (sector && TOPICS.some(([re, name]) => name === sector && re.test(title))) return { key: `idx:${sector}`, label: sectorLabel(sector), index: sector };
+  for (const [key, label, re] of THEMES) if (re.test(title)) return { key, label };
+  return sector ? { key: `idx:${sector}`, label: sectorLabel(sector), index: sector } : { key: "market", label: "Sensex & Nifty" };
+}
+const sectorLabel = name => name.replace(/^nifty\s+/i, "").replace(/ index$/i, "").replace(/^India /, "");
+
 // ---- Which companies a headline names ---------------------------------------
 
 // Larger companies only (₹5,000 crore up), by their whole name without
@@ -277,16 +354,16 @@ function quoteOf(row) {
 // shared by every request until the next
 let built = null;
 async function feed() {
-  const [nse, heads] = await Promise.allSettled([announcements(), headlines()]);
+  const [nse, heads, official] = await Promise.allSettled([announcements(), headlines(), officials()]);
   const metrics = allMetrics();
-  const sources = [nse.status === "fulfilled" ? nse.value : nse.reason, heads.status === "fulfilled" ? heads.value : heads.reason, metrics.version];
+  const sources = [nse.status === "fulfilled" ? nse.value : nse.reason, heads.status === "fulfilled" ? heads.value : heads.reason, official.status === "fulfilled" ? official.value : official.reason, metrics.version];
   if (built && built.sources.every((v, i) => v === sources[i])) return built.value;
-  const value = buildFeed(nse, heads, metrics.rows ?? []);
+  const value = buildFeed(nse, heads, metrics.rows ?? [], official);
   built = { sources, value };
   return value;
 }
 
-function buildFeed(nse, heads, rows) {
+function buildFeed(nse, heads, rows, official = { status: "fulfilled", value: [] }) {
   // the day the prices beside each item are from
   const asOf = loadMarketSnapshot()?.pricesDate ?? null;
   const bySymbol = new Map(rows.map(r => [r.symbol, r]));
@@ -295,12 +372,15 @@ function buildFeed(nse, heads, rows) {
     const row = bySymbol.get(f.symbol);
     return { ...f, quote: quoteOf(row), numbers: f.kind === "results" ? resultNumbers(row, f.time) : null };
   });
-  const news = heads.status === "fulfilled" ? heads.value : [];
+  const news = [...(heads.status === "fulfilled" ? heads.value : []), ...(official.status === "fulfilled" ? official.value : [])];
   const items = [
     ...sameDayTogether(filings),
-    ...news.map(h => ({ ...h, companies: namedCompanies(h.title, index).map(s => quoteOf(bySymbol.get(s))).filter(Boolean) })),
+    ...news.map(h => {
+      const companies = namedCompanies(h.title, index).map(s => quoteOf(bySymbol.get(s))).filter(Boolean);
+      return { ...h, companies, topic: headlineTopic(h, companies.map(c => bySymbol.get(c.symbol)?.sectorIndex)) };
+    }),
   ].sort((a, b) => b.time.localeCompare(a.time));
-  const unread = [nse.status === "rejected" ? "NSE's announcements" : null, heads.status === "rejected" ? "the headlines" : null].filter(Boolean);
+  const unread = [nse.status === "rejected" ? "NSE's announcements" : null, heads.status === "rejected" ? "the headlines" : null, official.status === "rejected" ? "RBI and SEBI" : null].filter(Boolean);
   return { items, unread, asOf, filings, bySymbol };
 }
 
@@ -312,9 +392,11 @@ const listed = ({ quote, others: _, ...item }) => ({ ...item, summary: item.summ
 // news to most readers: left out unless asked for (`size: "all"`); a
 // watchlist's companies are always in
 export const LARGE_CR = 1000;
-export async function marketNews({ kind = "all", symbols = null, before = null, size = "large" } = {}) {
+export async function marketNews({ kind = "all", symbols = null, before = null, size = "large", topic = null } = {}) {
   const { items: everything, unread, asOf } = await feed();
-  const items = size === "all" || kind === "watchlist" ? everything : everything.filter(i => i.type !== "filing" || (i.quote?.marketCapCr ?? 0) >= LARGE_CR || symbols?.has(i.symbol));
+  const sized = size === "all" || kind === "watchlist" ? everything : everything.filter(i => i.type !== "filing" || (i.quote?.marketCapCr ?? 0) >= LARGE_CR || symbols?.has(i.symbol));
+  const topics = await talkedAbout(sized);
+  const items = topic ? sized.filter(i => i.topic?.key === topic) : sized;
   const watched = i => (i.symbol && symbols?.has(i.symbol)) || i.companies?.some(c => symbols?.has(c.symbol));
   // how many of each, for the filters
   const counts = { all: items.length, watchlist: symbols ? items.filter(watched).length : null };
@@ -326,7 +408,32 @@ export async function marketNews({ kind = "all", symbols = null, before = null, 
   }
   const page = list.slice(0, PAGE).map(listed);
   const last = page[page.length - 1];
-  return { items: page, next: list.length > PAGE && last ? `${last.time}|${last.id}` : null, unread, kinds: KINDS, counts, asOf, size };
+  return { items: page, next: list.length > PAGE && last ? `${last.time}|${last.id}` : null, unread, kinds: KINDS, counts, asOf, size, topics, topic };
+}
+
+// The "Talked about" row: the topics with most headlines in the last day,
+// each with its market move — the sector's index, or the NIFTY 50
+const TALK_MOVE = { market: "Nifty 50", rates: "Nifty Bank", fii: "Nifty 50", crude: "Nifty Oil & Gas", results: "Nifty 50", ipo: "Nifty 50", global: "Nifty 50" };
+export function topicCounts(items, now = Date.now()) {
+  const by = new Map();
+  for (const i of items) {
+    if (!i.topic || now - Date.parse(i.time) > DAY) continue;
+    const t = by.get(i.topic.key) ?? { ...i.topic, count: 0 };
+    t.count++;
+    by.set(i.topic.key, t);
+  }
+  return [...by.values()].filter(t => t.count >= 2).sort((a, b) => b.count - a.count).slice(0, 8);
+}
+async function talkedAbout(items) {
+  const counts = topicCounts(items);
+  if (!counts.length) return [];
+  const board = await exploreBoard().catch(() => null);
+  const all = [...(board?.market ?? []), ...(board?.sectors ?? [])];
+  const move = name => all.find(i => i.name.toLowerCase() === String(name).toLowerCase());
+  return counts.map(t => {
+    const idx = move(t.index ?? TALK_MOVE[t.key] ?? "");
+    return { ...t, move: idx ? { name: idx.name, changePct: idx.changePct } : null };
+  });
 }
 
 // Discover's card: three from companies over ₹10,000 crore, from the last day
@@ -425,7 +532,7 @@ const TOPICS = [
   [/\bmetals?\b|\bsteel\b|\balumin(i)?um\b|\bcopper\b|\bmining\b/i, "Nifty Metal"],
   [/\bfmcg\b|consumer goods/i, "Nifty FMCG"],
   [/\brealty\b|real estate|\bhousing\b|\bdevelopers?\b/i, "Nifty Realty"],
-  [/\boil\b|\bcrude\b|\bgas\b|\brefiners?\b/i, "Nifty Oil & Gas"],
+  [/\boil (& |and )?gas\b|\bomcs?\b|oil marketing|\brefiners?\b|\boil (stocks|companies|majors?)\b/i, "Nifty Oil & Gas"],
   [/\bpower\b|\belectricity\b|\butilit(y|ies)\b/i, "Nifty Power"],
   [/\benergy\b|\brenewables?\b|\bsolar\b/i, "Nifty Energy"],
   [/\bdefen[cs]e\b/i, "Nifty India Defence"],

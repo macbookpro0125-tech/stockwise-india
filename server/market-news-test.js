@@ -1,6 +1,6 @@
 // The News page's sorting and filtering (market-news.js): node --no-warnings server/market-news-test.js
 import assert from "node:assert/strict";
-import { newsKind, announcementsFrom, headlinesFrom, companyIndex, namedCompanies, tidy, sameDayTogether, resultNumbers, pickTop, headlineTopics, relatedHeadlines } from "./market-news.js";
+import { newsKind, announcementsFrom, headlinesFrom, companyIndex, namedCompanies, tidy, sameDayTogether, resultNumbers, pickTop, headlineTopics, relatedHeadlines, officialFrom, officialTime, headlineTopic, topicCounts } from "./market-news.js";
 
 // Announcements: the kinds, and paperwork left out
 const kinds = [
@@ -87,6 +87,7 @@ assert.deepEqual(top.map(i => i.id), ["deal", "res", "res2"], "results with figu
 // Headlines: no tips or quote pages, one of each story, six wraps at most
 const rss = list => list.map(([title, source, pub, link]) => `<item><title>${title} - ${source}</title><link>${link}</link><pubDate>${pub}</pubDate><source url="x">${source}</source></item>`).join("");
 const now = Date.parse("2026-10-22T18:00:00Z");
+const DAY_MS = 86_400_000;
 const at = h => new Date(now - h * 3600_000).toUTCString();
 const heads = headlinesFrom([rss([
   ["Sensex falls 460 points as crude surges past $110", "Paper A", at(1), "https://a.example/1"],
@@ -138,5 +139,30 @@ assert.deepEqual(headlineTopics("Equity market valuations reset as earnings mome
 assert.deepEqual(headlineTopics("Coal India Q2 results", ["Nifty Metal"]), ["Nifty Metal"], "a named company's sector");
 const h = (id, title) => ({ id, title, time: "2026-10-22T10:00:00Z" });
 assert.deepEqual(relatedHeadlines(h("a", "Crude oil prices surge, Sensex falls"), [h("a", "x"), h("b", "Crude oil prices ease"), h("c", "Gold prices rise"), h("d", "Phone launch")]).map(r => r.id), ["b"], "two words in common, not itself");
+
+// RBI and SEBI: title, date and link; minor orders out; a week at most
+assert.equal(officialTime("Fri, 24 Oct 2026 17:30:00 +0530").toISOString(), "2026-10-24T12:00:00.000Z");
+assert.equal(officialTime("24 Oct, 2026").toISOString().slice(0, 10), "2026-10-24");
+assert.equal(officialTime("someday"), null);
+const ritem = (title, link, pub) => `<item><title>${title}</title><link>${link}</link><pubDate>${pub}</pubDate><description>x</description></item>`;
+const official = officialFrom([
+  ["RBI", ritem("Monetary Policy Statement, 2026-27", "https://www.rbi.org.in/a", "Fri, 22 Oct 2026 10:00:00 +0530") + ritem("Old release", "https://www.rbi.org.in/b", "Fri, 01 Oct 2026 10:00:00 +0530")],
+  ["SEBI", ritem("Adjudication order in respect of Mr. X", "https://www.sebi.gov.in/c", "22 Oct, 2026") + ritem("Framework for research analysts", "http://www.sebi.gov.in/d", "21 Oct, 2026") + ritem("Framework for research analysts", "http://www.sebi.gov.in/d2", "21 Oct, 2026")],
+], now);
+assert.deepEqual(official.map(o => [o.publisher, o.title]), [["RBI", "Monetary Policy Statement, 2026-27"], ["SEBI", "Framework for research analysts"]], "a minor order, an old release and a repeat left out");
+assert.ok(official.every(o => o.type === "official" && o.kind === "regulators" && /^r-/.test(o.id) && o.url.startsWith("https://")));
+assert.equal(officialFrom([["SEBI", ritem("Adjudication order in the matter of Coal India Ltd", "https://www.sebi.gov.in/e", "22 Oct, 2026")]], now, t => /Coal India/.test(t)).length, 1, "an order about a listed company is news");
+
+// Topics: a sector named in words, else a theme, else the market
+const topic = (title, extra = {}) => headlineTopic({ title, ...extra }).key;
+assert.equal(topic("IT stocks rally on Q2 results"), "idx:Nifty IT");
+assert.equal(topic("FIIs sell for the 10th straight week"), "fii");
+assert.equal(topic("Sensex falls as crude surges past $110"), "crude", "crude before the market");
+assert.equal(topic("Sensex ends flat in choppy trade"), "market");
+assert.equal(topic("Coal India Q2 profit rises", {}), "results");
+assert.equal(topic("Something else", { type: "official", publisher: "RBI" }), "rates");
+assert.equal(headlineTopic({ title: "PSU banks rally" }).label, "PSU Bank");
+const tc = topicCounts([{ topic: { key: "fii", label: "F" }, time: new Date(now - 3600_000).toISOString() }, { topic: { key: "fii", label: "F" }, time: new Date(now - 7200_000).toISOString() }, { topic: { key: "gold", label: "G" }, time: new Date(now - 3600_000).toISOString() }, { topic: { key: "fii", label: "F" }, time: new Date(now - 3 * DAY_MS).toISOString() }], now);
+assert.deepEqual(tc.map(t => [t.key, t.count]), [["fii", 2]], "the last day's, two or more");
 
 console.log("ok: announcements sorted into kinds, paperwork out; headlines without tips or repeats; companies named only when named");

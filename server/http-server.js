@@ -741,10 +741,11 @@ export function createApp() {
         const userId = requireAuth(req, res);
         if (userId == null) return;
         const kind = url.searchParams.get("kind") ?? "all";
-        if (!["all", "watchlist", "headlines"].includes(kind) && !NEWS_KINDS[kind]) { sendJson(res, 400, { error: "Unknown kind of news" }); return; }
+        if (!["all", "watchlist", "headlines", "regulators"].includes(kind) && !NEWS_KINDS[kind]) { sendJson(res, 400, { error: "Unknown kind of news" }); return; }
         const symbols = new Set(listWatchlist(userId).map(w => w.ticker));
         const size = url.searchParams.get("size") === "all" ? "all" : "large";
-        sendJson(res, 200, await marketNews({ kind, symbols, size, before: url.searchParams.get("before")?.slice(0, 80) ?? null }));
+        const topic = url.searchParams.get("topic")?.slice(0, 60) || null;
+        sendJson(res, 200, await marketNews({ kind, symbols, size, topic, before: url.searchParams.get("before")?.slice(0, 80) ?? null }));
         return;
       }
       // The Android app's Firebase token, for phone notifications (push.js):

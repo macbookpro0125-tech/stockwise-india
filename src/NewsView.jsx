@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, ExternalLink, FileText, Newspaper, ChevronRight } from "lucide-react";
+import { ArrowLeft, ExternalLink, FileText, Newspaper, ChevronRight, Fuel, Globe, Landmark, ChartColumn, Rocket, IndianRupee, Gem, Scale, ChartLine, Cpu, Building2, Car, Pill, Pickaxe, ShoppingBasket, House, Zap, Shield, Building, Tv, FlaskConical, ChartCandlestick, Construction, WashingMachine, HeartPulse, X } from "lucide-react";
 import { api } from "./api.js";
 import { explainFiling, explainHeadline } from "./filingTerms.js";
 import { compareResults } from "./resultsCompare.js";
@@ -19,9 +19,27 @@ import Reveal from "./Reveal.jsx";
 
 const FILTERS = [
   ["all", "All"], ["watchlist", "My watchlist"], ["results", "Results"], ["dividends", "Dividends & splits"],
-  ["deals", "Orders & deals"], ["people", "Management"], ["legal", "Ratings & legal"], ["updates", "Company updates"], ["headlines", "Headlines"],
+  ["deals", "Orders & deals"], ["people", "Management"], ["legal", "Ratings & legal"], ["updates", "Company updates"], ["headlines", "Headlines"], ["regulators", "RBI & SEBI"],
 ];
 export const KIND_LABEL = Object.fromEntries(FILTERS.filter(([id]) => id !== "all" && id !== "watchlist").map(([id, label]) => [id, id === "headlines" ? "Headline" : label]));
+
+// A headline's picture (24 Oct 2026, "like others show"): never the
+// publisher's photo — the company it names, or an icon for its topic
+// (server/market-news.js headlineTopic), tinted by kind
+const TOPIC_ICON = {
+  rates: Landmark, crude: Fuel, fii: Globe, ipo: Rocket, results: ChartColumn, rupee: IndianRupee, gold: Gem, global: Globe, sebi: Scale, market: ChartLine,
+  "Nifty IT": Cpu, "Nifty Bank": Building2, "Nifty PSU Bank": Building2, "Nifty Private Bank": Building2, "Nifty Financial Services": Building2,
+  "Nifty Auto": Car, "Nifty Pharma": Pill, "Nifty Healthcare Index": HeartPulse, "Nifty Metal": Pickaxe, "Nifty FMCG": ShoppingBasket,
+  "Nifty Realty": House, "Nifty Oil & Gas": Fuel, "Nifty Power": Zap, "Nifty Energy": Zap, "Nifty India Defence": Shield, "Nifty Cement": Building,
+  "Nifty Media": Tv, "Nifty Chemicals": FlaskConical, "Nifty Capital Markets": ChartCandlestick, "Nifty Infrastructure": Construction, "Nifty Consumer Durables": WashingMachine,
+};
+const topicTone = t => (!t ? "" : t.index ? "sector" : t.key);
+export function HeadlineThumb({ item, size = 36 }) {
+  if (item.companies?.length) return <CompanyLogo symbol={item.companies[0].symbol} size={size} fallback={item.companies[0].name} />;
+  if (item.type === "official") return <span className={`nw-thumb official`} style={{ width: size, height: size }}>{item.publisher}</span>;
+  const Icon = TOPIC_ICON[item.topic?.index ?? item.topic?.key] ?? Newspaper;
+  return <span className={`nw-thumb t-${topicTone(item.topic)}`} style={{ width: size, height: size }}><Icon size={Math.round(size * 0.5)} /></span>;
+}
 
 const IST = "Asia/Kolkata";
 const istDay = iso => new Intl.DateTimeFormat("en-CA", { timeZone: IST }).format(new Date(iso));
@@ -72,7 +90,7 @@ export function NewsRow({ item, onOpen, asOf, compact = false, dated = true }) {
   return (
     <button type="button" className={`nw-row${compact ? " compact" : ""}`} onClick={() => onOpen(item.id)} aria-label={filing ? `${niceName(item.company)}: ${item.title}` : `${item.publisher ?? "Headline"}: ${item.title}`}>
       <span className="nw-mark" aria-hidden="true">
-        {filing ? <CompanyLogo symbol={item.symbol} size={36} fallback={item.company} /> : <span className="nw-paper"><Newspaper size={18} /></span>}
+        {filing ? <CompanyLogo symbol={item.symbol} size={36} fallback={item.company} /> : <HeadlineThumb item={item} />}
       </span>
       <span className="nw-main">
         <span className="nw-top">
@@ -90,12 +108,38 @@ export function NewsRow({ item, onOpen, asOf, compact = false, dated = true }) {
           </>
           : <>
             <span className="nw-headline">{item.title}</span>
+            {item.topic && !compact && !item.companies?.length && <span className="nw-topic">{item.topic.label}</span>}
             {item.companies?.length > 0 && !compact && (
               <span className="nw-tags">{item.companies.map(c => <span key={c.symbol} className="nw-tag">{c.symbol}<Change value={c.change1d} /></span>)}</span>
             )}
           </>}
       </span>
     </button>
+  );
+}
+
+// What the headlines are about today, with how many and the market's move
+// for it ("6 stories · IT ▲0.3%"); one narrows the list, again shows all
+function TalkedAbout({ topics, topic, onPick }) {
+  return (
+    <div className="nw-talk" role="group" aria-label="Talked about today">
+      <span className="nw-talk-h">Talked about today</span>
+      <div className="nw-talk-row">
+        {topics.map(t => {
+          const Icon = TOPIC_ICON[t.index ?? t.key] ?? Newspaper;
+          return (
+            <button key={t.key} type="button" className={`nw-talk-chip t-${topicTone(t)}`} aria-pressed={topic === t.key} onClick={() => onPick(topic === t.key ? null : t.key)}>
+              <span className="nw-talk-icon" aria-hidden="true"><Icon size={15} /></span>
+              <span className="nw-talk-main">
+                <span className="nw-talk-label">{t.label}</span>
+                <span className="nw-talk-sub">{t.count} {t.count === 1 ? "story" : "stories"}{t.move && <> · <Change value={t.move.changePct} /></>}</span>
+              </span>
+              {topic === t.key && <X size={14} aria-label="Show all" />}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -108,18 +152,21 @@ function List({ kind, size, onOpen, onCounts, refresh = 0, limit = 0 }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  // a topic from the "Talked about" row narrows the list to it
+  const [topic, setTopic] = useState(null);
   const load = useCallback(async before => {
     setBusy(true);
     try {
       await watchSaved();
-      const r = await api.news({ kind, before, size });
+      const r = await api.news({ kind, before, size, topic });
       setData(d => (before && d ? { ...r, items: [...d.items, ...r.items] } : r));
       if (r.counts) onCounts?.(r.counts);
       setError("");
     } catch (e) { setError(e.message); setData(d => d ?? { items: [], unread: [] }); }
     finally { setBusy(false); }
-  }, [kind, size]);
+  }, [kind, size, topic]);
   useEffect(() => { setData(null); load(null); }, [load]);
+  useEffect(() => { setTopic(null); }, [kind]);
   const first = useRef(true);
   useEffect(() => { if (first.current) { first.current = false; return; } load(null); }, [watchKey, refresh]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -134,6 +181,7 @@ function List({ kind, size, onOpen, onCounts, refresh = 0, limit = 0 }) {
     <>
       {error && <p className="nw-note nw-error">{error}</p>}
       {data.unread?.length > 0 && <p className="nw-note">{`Couldn't reach ${data.unread.join(" or ")} just now; showing the rest.`}</p>}
+      {!limit && data.topics?.length > 0 && <TalkedAbout topics={data.topics} topic={topic} onPick={setTopic} />}
       {!data.items.length && !error && (
         <p className="nw-empty">{kind === "watchlist" ? "Nothing from your watchlist's companies in the last few days. Star companies to follow their news here." : "Nothing of this kind in the last few days."}</p>
       )}
@@ -323,19 +371,25 @@ function Detail({ id, onBack, onOpen, onOpenStock }) {
     </article>
   );
   const terms = explainHeadline(item.title);
+  const official = item.type === "official";
   return (
     <article className="nw-detail" aria-label={item.title}>
       {back}
-      <p className="nw-eyebrow"><span className="nw-kind k-headlines">Headline</span><span>{fullTime(item.time)}</span></p>
-      <h2 className="nw-title">{item.title}</h2>
-      <p className="nw-byline">{item.publisher ?? "A news site"}{data.others?.length > 0 ? ` and ${data.others.length} more` : ""}</p>
+      <p className="nw-eyebrow"><span className={`nw-kind k-${item.kind}`}>{official ? `${item.publisher} announcement` : "Headline"}</span><span>{fullTime(item.time)}</span>{item.topic && <span className="nw-topic">{item.topic.label}</span>}</p>
+      <div className="nw-head-row">
+        <HeadlineThumb item={item} size={52} />
+        <div>
+          <h2 className="nw-title">{item.title}</h2>
+          <p className="nw-byline">{official ? (item.publisher === "RBI" ? "Reserve Bank of India" : "Securities and Exchange Board of India") : item.publisher ?? "A news site"}{data.others?.length > 0 ? ` and ${data.others.length} more` : ""}</p>
+        </div>
+      </div>
       {/* a wide screen: the story's context on the left, the market and related headlines beside it */}
       <div className="dt-cols">
       <div className="dt-main">
       <div className="nw-actions">
-        <a className="btn-primary nw-btn" href={item.url} target="_blank" rel="noopener noreferrer"><ExternalLink size={16} aria-hidden="true" /> Read the story{item.publisher ? ` on ${item.publisher}` : ""}</a>
+        <a className="btn-primary nw-btn" href={item.url} target="_blank" rel="noopener noreferrer"><ExternalLink size={16} aria-hidden="true" /> {official ? `Read it on ${item.publisher}'s website` : `Read the story${item.publisher ? ` on ${item.publisher}` : ""}`}</a>
       </div>
-      <p className="nw-note">The story is on the publisher's site. Around it here: the app's own figures for what it's about.</p>
+      <p className="nw-note">{official ? `The full text is on ${item.publisher}'s website.` : "The story is on the publisher's site."} Around it here: the app's own figures for what it's about.</p>
       {data.others?.length > 0 && (
         <section className="nw-section" aria-label="Also reported by">
           <h3 className="nw-section-head">Also reported by</h3>
@@ -471,7 +525,7 @@ export function NewsTile({ onOpen, onSeeAll }) {
           : shown.length
             ? shown.map(item => (
               <button key={item.id} type="button" className="ap-news-item" onClick={() => onOpen(item.id)}>
-                <span className="ap-news-mark" aria-hidden="true">{item.type === "filing" ? <CompanyLogo symbol={item.symbol} size={40} fallback={item.company} /> : <span className="nw-paper"><Newspaper size={18} /></span>}</span>
+                <span className="ap-news-mark" aria-hidden="true">{item.type === "filing" ? <CompanyLogo symbol={item.symbol} size={40} fallback={item.company} /> : <HeadlineThumb item={item} size={40} />}</span>
                 <span className="ap-news-top">
                   <span className="ap-news-who">{item.type === "filing" ? niceName(item.company) : item.publisher ?? "News"}</span>
                   <span className="ap-news-when">{when(item.time, true, true)}</span>
