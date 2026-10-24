@@ -49,6 +49,7 @@ import { stockMoves } from "./moves.js";
 import { marketNews, topNews, newsItem, newsItemFiling, newsForSymbols, watchlistLatest, KINDS as NEWS_KINDS } from "./market-news.js";
 import { exploreBoard, exploreIndex, heatmap, HEAT_SETS, topMovers, resultsWeek } from "./explore.js";
 import { summarizeMove, aiClient } from "./ai-moves.js";
+import { summarizeCall } from "./call-summary.js";
 import { summarizeFiling } from "./filing-summary.js";
 import { logoFor } from "./logos.js";
 import { PRESETS } from "./presets.js";
@@ -634,6 +635,27 @@ export function createApp() {
           sendJson(res, 200, await summarizeFiling(filing));
         } catch (e) {
           reportUpstreamFailure(res, requestId, e, "Couldn't read this NSE attachment. Try again later.");
+        }
+        return;
+      }
+      // An earnings call's transcript in a few points (call-summary.js): the
+      // announcement must be a transcript; the same hourly limit as the move summary
+      const callSummaryRoute = url.pathname.match(/^\/api\/stock\/([^/]+)\/filings\/(\d+)\/call-summary$/);
+      if (callSummaryRoute && req.method === "GET") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        const symbol = decodePathSegment(callSummaryRoute[1]).toUpperCase();
+        const index = Number(callSummaryRoute[2]);
+        if (!isValidSymbol(symbol) || index > 39) { sendJson(res, 400, { error: "Unknown filing." }); return; }
+        try {
+          const filing = (await companyFilings(symbol)).announcements[index];
+          if (!filing?.url || !/transcript/i.test(`${filing.title ?? ""} ${filing.summary ?? ""}`)) { sendJson(res, 404, { error: "That notice isn't a call transcript." }); return; }
+          const key = `user:${userId}`;
+          if (limits.aiSummary.blockedFor(key)) { sendJson(res, 200, { points: null, reason: "limit" }); return; }
+          limits.aiSummary.hit(key);
+          sendJson(res, 200, await summarizeCall(symbol, getStock(symbol)?.name ?? symbol, filing, { client: await aiClient() }));
+        } catch (e) {
+          reportUpstreamFailure(res, requestId, e, "Couldn't read the call's transcript from NSE. Try again later.");
         }
         return;
       }

@@ -98,6 +98,7 @@ export const api = {
   // The stock page's other panels: technicals, shareholding, filings, news, peers
   panel: (symbol, name) => request(`/api/stock/${encodeURIComponent(symbol)}/${name}`),
   filingSummary: (symbol, index) => request(`/api/stock/${encodeURIComponent(symbol)}/filings/${index}/summary`),
+  callSummary: (symbol, index) => request(`/api/stock/${encodeURIComponent(symbol)}/filings/${index}/call-summary`),
   search: (q) => request(`/api/search?q=${encodeURIComponent(q)}`),
   // The News page (NewsView.jsx): companies' announcements to NSE and the day's headlines
   news: ({ kind = "all", before = null, size = "large", topic = null } = {}) => request(`/api/news?kind=${encodeURIComponent(kind)}&size=${size}${topic ? `&topic=${encodeURIComponent(topic)}` : ""}${before ? `&before=${encodeURIComponent(before)}` : ""}`),

@@ -3302,3 +3302,24 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 .wl-pop .wl-pop-link svg { color: var(--t3); }
 @media (hover: hover) and (pointer: fine) { .wl-pop .wl-pop-link:hover { background: var(--s3); } }
 .atw { margin-bottom: 28px; }
+
+/* Earnings calls (StockEarningsCall.jsx, 24 Oct 2026): a call announced, the
+   latest with its links and what management said, then earlier calls and
+   the investor presentations */
+.sd-call-next { display: flex; align-items: flex-start; gap: 8px; margin: 0 0 12px; padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--accent) 9%, transparent); font-size: var(--fs-sm); line-height: 1.5; color: var(--t1); }
+.sd-call-next svg { flex-shrink: 0; margin-top: 2px; color: var(--accent); }
+.sd-call-links { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 12px; }
+.sd-call-links a { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border: 1px solid var(--bdr2); border-radius: 999px; font-size: var(--fs-sm); text-decoration: none; }
+@media (hover: hover) and (pointer: fine) { .sd-call-links a:hover { border-color: var(--accent); } }
+.sd-call-ai { display: inline-flex; align-items: center; gap: 7px; margin: 0 8px 8px 0; border-color: color-mix(in srgb, var(--accent) 45%, transparent); color: var(--accent); }
+.sd-call-summary { margin: 4px 0 14px; padding: 14px 16px; border-radius: 14px; background: color-mix(in srgb, var(--accent) 7%, var(--s1)); border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent); }
+.sd-call-label { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--accent); }
+.sd-call-summary ul { display: grid; gap: 10px; margin: 10px 0 0; padding: 0 0 0 18px; }
+.sd-call-summary li { font-size: var(--fs-sm); line-height: 1.55; color: var(--t1); }
+.sd-call-page { margin-left: 8px; padding: 1px 6px; border-radius: 6px; background: var(--s3); font-size: var(--fs-2xs); color: var(--t3); white-space: nowrap; }
+.sd-call-more { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--bdr); }
+.sd-call-more h4 { display: flex; align-items: center; gap: 6px; margin: 0 0 8px; font-size: var(--fs-sm); font-weight: 600; color: var(--t1); }
+.sd-call-more h4 svg { color: var(--t3); }
+.sd-call-more ul { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.sd-call-more li { display: flex; align-items: center; gap: 14px; font-size: var(--fs-sm); }
+.sd-call-more li span { min-width: 96px; color: var(--t3); font-variant-numeric: tabular-nums; }

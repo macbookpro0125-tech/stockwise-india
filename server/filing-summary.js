@@ -122,15 +122,21 @@ function evidenceFrom(pages) {
   return chosen;
 }
 
-export async function summarizeFiling({ url, title, date }) {
-  const key = `${url}|${date || ""}`;
-  const cached = summaryCache.get(key);
-  if (cached && Date.now() - cached.at < 6 * 60 * 60 * 1000) return cached.value;
+// An NSE attachment's text, page by page (also the earnings-call summary's, call-summary.js)
+export async function readAttachment(url) {
   const { bytes, url: sourceUrl, contentType } = await fetchAttachment(url);
   const pdf = new TextDecoder().decode(bytes.subarray(0, 5)) === "%PDF-";
   const extracted = pdf
     ? await extractPdf(bytes)
     : { pages: extractText(bytes, contentType), pageCount: null, truncated: bytes.byteLength >= MAX_TEXT, kind: /html/i.test(contentType) ? "HTML" : "text" };
+  return { ...extracted, sourceUrl };
+}
+
+export async function summarizeFiling({ url, title, date }) {
+  const key = `${url}|${date || ""}`;
+  const cached = summaryCache.get(key);
+  if (cached && Date.now() - cached.at < 6 * 60 * 60 * 1000) return cached.value;
+  const { sourceUrl, ...extracted } = await readAttachment(url);
   const allText = extracted.pages.map(p => p.text).join(" ").slice(0, MAX_TEXT);
   if (allText.replace(/\s/g, "").length < 80) {
     const result = { title, date, sourceUrl, kind: extracted.kind, pageCount: extracted.pageCount, error: "The attachment opened, but it has no readable text. It may be a scanned document; open the original filing on NSE." };

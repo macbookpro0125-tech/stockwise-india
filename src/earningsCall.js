@@ -19,3 +19,29 @@ export function latestCall(announcements) {
   };
   return { transcript: find(/transcript/i), recording: find(/recording/i) };
 }
+
+// Every call among the announcements (24 Oct 2026: "show past calls,
+// presentations, upcoming calls"): each transcript, newest first, with the
+// recording filed nearest it; the investor presentations; and a call
+// announced since the latest transcript (a "schedule of meet" with nothing
+// after it), as NSE's notice rarely says the date itself.
+const PRESENTATION = /investor presentation|earnings presentation|analysts? presentation|presentation (made|to (the )?analysts|for investors)|corporate presentation/i;
+const SCHEDULE = /schedule of (analyst|investor|the )?meet|intimation of (analysts?|investors?) (meet|call)|earnings call (on|scheduled)|conference call (on|scheduled)/i;
+const DAY = 86_400_000;
+
+export function callHistory(announcements) {
+  const list = (announcements ?? []).map((a, index) => ({ a, index, text: `${a?.title ?? ""} ${a?.summary ?? ""}`, date: isoOf(a?.date) }));
+  const item = ({ a, index, date }) => ({ index, date, url: a.url, summary: a.summary ?? a.title });
+  const transcripts = list.filter(x => x.a?.url && /transcript/i.test(x.text));
+  const recordings = list.filter(x => x.a?.url && /recording/i.test(x.text));
+  const calls = transcripts.map(t => {
+    // a recording is filed on the call's day, so before the transcript, within three weeks
+    const rec = recordings.find(r => r.date && t.date && r.date <= t.date && Date.parse(t.date) - Date.parse(r.date) <= 21 * DAY);
+    return { transcript: item(t), recording: rec ? item(rec) : null };
+  });
+  const presentations = list.filter(x => x.a?.url && PRESENTATION.test(x.text)).map(item);
+  // a call announced after the newest transcript (or with none on file)
+  const latest = transcripts[0]?.date ?? "";
+  const scheduled = list.find(x => SCHEDULE.test(x.text) && x.date && x.date > latest);
+  return { calls, presentations, scheduled: scheduled ? item(scheduled) : null };
+}
