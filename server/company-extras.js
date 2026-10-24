@@ -85,6 +85,42 @@ export function brsrProfile(xml) {
     phone: one("TelephoneOfCompany"),
     employees: headcount("EmployeesMember"),
     workers: headcount("WorkersMember"),
+    ...brsrMarkets(xml),
+  };
+}
+
+// What it sells and where, from the same report (24 Oct 2026, for the company
+// page's revenue mix): its products or services and its business activities,
+// each with its share of turnover; exports as a share of turnover; how many
+// states and countries it sells in; and its types of customers. Each row's
+// name and share sit in the same context; the share is filed either as a
+// percentage or as a fraction (0.27), so a list of fractions is scaled up.
+// Matched on what the tags say (…Percentage…Turnover…, …Exports…) rather than
+// on one exact name, as filers' taxonomies vary. Missing pieces are null.
+export function brsrMarkets(xml) {
+  const facts = [...xml.matchAll(/<([a-z-]+):([A-Za-z]+)\b[^>]*?contextRef="([^"]+)"[^>]*>([^<]+)</g)].map(m => ({ tag: m[2], ctx: m[3], text: decodeXml(m[4]) }));
+  const isShare = tag => /percent/i.test(tag) && /turnover/i.test(tag) && !/export/i.test(tag);
+  const rows = nameTag => {
+    const shares = new Map(facts.filter(f => isShare(f.tag) && Number.isFinite(Number(f.text))).map(f => [f.ctx, Number(f.text)]));
+    const seen = new Set();
+    const list = facts.filter(f => f.tag === nameTag && !seen.has(f.text.toLowerCase()) && seen.add(f.text.toLowerCase()))
+      .map(f => ({ name: f.text.replace(/\.$/, ""), pct: shares.get(f.ctx) ?? null }));
+    const fractions = list.length && list.every(r => r.pct == null || r.pct <= 1.0001);
+    const out = list.map(r => ({ ...r, pct: r.pct == null ? null : Math.round((fractions ? r.pct * 100 : r.pct) * 10) / 10 }))
+      .filter(r => r.pct == null || (r.pct > 0 && r.pct <= 100));
+    return out.slice(0, 10);
+  };
+  const number = test => { const f = facts.find(x => test(x.tag) && Number.isFinite(Number(x.text))); return f ? Number(f.text) : null; };
+  const exports = number(t => /contributionofexports|exports?.*percent|percent.*exports?/i.test(t));
+  const states = number(t => /numberofstates/i.test(t) && /market|served/i.test(t));
+  const countries = number(t => /numberofcountr/i.test(t) && /market|served/i.test(t));
+  const customers = facts.find(f => /typesofcustomers/i.test(f.tag))?.text ?? null;
+  return {
+    products: rows("NameOfProductOrService"),
+    activities: rows("DescriptionOfBusinessActivity"),
+    exportsPct: exports == null ? null : Math.round((exports <= 1 && exports > 0 ? exports * 100 : exports) * 10) / 10,
+    marketsServed: states != null || countries != null ? { states, countries } : null,
+    customers: customers && customers.length > 3 ? customers.slice(0, 600) : null,
   };
 }
 

@@ -758,7 +758,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       </section>
 
       <div id="sec-about" className="ss-section" data-tab="overview"><CompanyProfile symbol={data.symbol} m={m} /></div>
-      {m && (m.sectorShare || m.history?.some(h => h.segments?.length >= 2)) && <div id="sec-business" className="ss-section" data-tab="overview"><h2 className="sd-h2">Where the money comes from. <span>Its sales by business, and its share of the sector.</span></h2><StockBusiness m={m} name={data.name} /></div>}
+      {m && <StockBusiness m={m} symbol={data.symbol} name={data.name} />}
 
       {m && <div id="sec-events" className="ss-section" data-tab="overview"><StockRecent m={m} holding={data.holding} /></div>}
 
