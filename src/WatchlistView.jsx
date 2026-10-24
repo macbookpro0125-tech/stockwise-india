@@ -10,6 +10,12 @@ import { pricePosition } from "../server/levels.js";
 import { nextEvent, todayIst } from "./watchEvents.js";
 import { NewsRow, KIND_LABEL, dayLabel, clock, fyQuarter } from "./NewsView.jsx";
 import { markWatchNewsSeen } from "./watchNews.js";
+import { ListTabs, ListNameDialog, ListPicker, EmptyList } from "./WatchLists.jsx";
+
+// The open list (its tab) is remembered on this device
+const LIST_KEY = "wl-list";
+const savedList = () => { try { const v = Number(localStorage.getItem(LIST_KEY)); return v > 0 ? v : null; } catch { return null; } };
+const saveList = id => { try { if (id) localStorage.setItem(LIST_KEY, String(id)); else localStorage.removeItem(LIST_KEY); } catch { /* private mode */ } };
 
 // Ported from stock-screener's src/components/WatchlistPanel.jsx — one card
 // per starred stock: price when starred and the move since, quality score,
@@ -142,18 +148,50 @@ export default function WatchlistView({ onOpenStock, onOpenNews }) {
   const [editingNote, setEditingNote] = useState(null);
   const [noteText, setNoteText] = useState("");
   const [leaving, setLeaving] = useState(() => new Set());
+  // the named lists (tabs); null is All
+  const [lists, setLists] = useState([]);
+  const [activeList, setActiveList] = useState(savedList);
+  const [dialog, setDialog] = useState(null); // { kind: "new", ticker? } | { kind: "rename", list }
+  const pickList = id => { setActiveList(id); saveList(id); };
   const news = useWatchNews();
   const latest = latestBySymbol(news?.items);
   // Folds the card away, then removes it (index.css .wl-row.leaving)
+  // (in a list's tab, out of that list only; in All, unstarred)
   const removeCard = ticker => {
     setLeaving(s => new Set(s).add(ticker));
     const ms = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? 150 : 200;
-    setTimeout(() => { toggleWatch(ticker); setLeaving(s => { const n = new Set(s); n.delete(ticker); return n; }); }, ms);
+    const fromList = activeList;
+    setTimeout(() => { if (fromList) toggleInList(fromList, ticker, false); else toggleWatch(ticker); setLeaving(s => { const n = new Set(s); n.delete(ticker); return n; }); }, ms);
+  };
+
+  // A list's stocks change at once; the server follows, a failure puts it back
+  const toggleInList = async (id, ticker, on) => {
+    const flip = add => setLists(ls => ls.map(l => (l.id !== id ? l : { ...l, tickers: add ? [ticker, ...l.tickers.filter(t => t !== ticker)] : l.tickers.filter(t => t !== ticker) })));
+    flip(on);
+    try { await (on ? api.addToWatchList(id, ticker) : api.removeFromWatchList(id, ticker)); } catch { flip(!on); }
+  };
+  const createList = async (name, tickers) => {
+    const { list } = await api.createWatchList(name, tickers);
+    setLists(ls => [...ls, list]);
+    // from a card's "New list…": that stock goes in it too
+    if (dialog?.ticker && !list.tickers.includes(dialog.ticker)) await toggleInList(list.id, dialog.ticker, true);
+    pickList(list.id);
+  };
+  const renameList = async (list, name) => {
+    await api.renameWatchList(list.id, name);
+    setLists(ls => ls.map(l => (l.id === list.id ? { ...l, name } : l)));
+  };
+  const deleteList = async list => {
+    if (!window.confirm(`Delete the list "${list.name}"? Its stocks stay in your watchlist.`)) return;
+    await api.deleteWatchList(list.id);
+    setLists(ls => ls.filter(l => l.id !== list.id));
+    pickList(null);
   };
 
   useEffect(() => {
     api.watchlist().then(d => {
       setData(d);
+      setLists(d.lists ?? []);
       if (d.items.length) api.currentPrices(d.items.map(i => i.ticker)).then(setLive).catch(() => {});
     }).catch(e => setError(e.message));
   }, []);
@@ -166,7 +204,11 @@ export default function WatchlistView({ onOpenStock, onOpenNews }) {
 
   // Unstarring anywhere removes the card straight away
   const rows = new Map((data?.results ?? []).map(r => [r.symbol, r]));
-  const items = (data?.items ?? []).filter(i => watched.has(i.ticker));
+  const starredItems = (data?.items ?? []).filter(i => watched.has(i.ticker));
+  // a list holds only starred stocks (unstarring anywhere takes it out of all)
+  const shownLists = lists.map(l => ({ ...l, tickers: l.tickers.filter(t => watched.has(t)), count: l.tickers.filter(t => watched.has(t)).length }));
+  const current = shownLists.find(l => l.id === activeList) ?? null;
+  const items = current ? starredItems.filter(i => current.tickers.includes(i.ticker)) : starredItems;
   const quality = t => rows.get(t)?.research?.quality ?? -1;
   const sorted = [...items].sort((a, b) => {
     let c = 0;
@@ -190,7 +232,7 @@ export default function WatchlistView({ onOpenStock, onOpenNews }) {
 
   if (error) return wrap(<div style={{ padding: "14px 18px", borderRadius: 12, background: "var(--red-dim)", border: "1px solid var(--red-bdr)", color: "var(--red)", fontSize: 13 }}>Couldn't load your watchlist: {error}</div>);
   if (!data) return wrap(<div style={{ textAlign: "center", padding: "32px 0", fontSize: 12, color: "var(--t3)" }}>Loading watchlist…</div>);
-  if (items.length === 0) {
+  if (starredItems.length === 0) {
     return wrap(
       <div style={{ textAlign: "center", padding: "56px 0", color: "var(--t3)", border: "1px dashed var(--bdr2)", borderRadius: 14, background: "var(--s1)" }}>
         <Star size={36} strokeWidth={1.5} style={{ marginBottom: 12, opacity: 0.3 }} />
@@ -203,14 +245,17 @@ export default function WatchlistView({ onOpenStock, onOpenNews }) {
   return wrap(
     <>
       {onOpenNews && <WatchNews data={news} onOpenNews={onOpenNews} />}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
-        <div style={{ fontSize: 12, color: "var(--t3)", fontWeight: 400 }}>{items.length} saved</div>
+      <ListTabs lists={shownLists} active={current?.id ?? null} onPick={pickList} allCount={starredItems.length}
+        onNew={() => setDialog({ kind: "new" })} onRename={list => setDialog({ kind: "rename", list })} onDelete={deleteList} />
+      {current && items.length === 0 && <EmptyList list={current} starred={starredItems.map(i => ({ ticker: i.ticker, name: rows.get(i.ticker)?.name ?? i.ticker }))} onAdd={(id, t) => toggleInList(id, t, true)} />}
+      {items.length > 0 && <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
+        <div style={{ fontSize: 12, color: "var(--t3)", fontWeight: 400 }}>{items.length} {current ? `in ${current.name}` : "saved"}</div>
         <div style={{ display: "flex", gap: 6 }}>
           <SortPill id="addedAt" label="Date" />
           <SortPill id="name" label="Name" />
           <SortPill id="quality" label="Quality" />
         </div>
-      </div>
+      </div>}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         {sorted.map(item => {
@@ -289,9 +334,10 @@ export default function WatchlistView({ onOpenStock, onOpenNews }) {
                 </div>
 
                 <div style={{ display: "flex", gap: 8, marginLeft: "auto" }}>
+                  <ListPicker ticker={item.ticker} name={name} lists={shownLists} onToggle={toggleInList} onNew={ticker => setDialog({ kind: "new", ticker })} />
                   <button onClick={() => setAlertTarget({ symbol: item.ticker, name, cmp, p1: r?.safeBuyPrice, p2: r?.p2, p3: r?.p3 })} title="Set alert" aria-label="Set alert" style={iconBtn}><BellIcon /></button>
                   <button onClick={() => onOpenStock(item.ticker)} className="btn-primary" style={{ height: 30, padding: "0 14px", fontSize: 11, borderRadius: 8, boxShadow: "none" }}>Analyze →</button>
-                  <button onClick={() => removeCard(item.ticker)} title="Remove from watchlist" aria-label="Remove from watchlist" style={iconBtn}><X size={15} /></button>
+                  <button onClick={() => removeCard(item.ticker)} title={current ? `Remove from ${current.name}` : "Remove from watchlist"} aria-label={current ? `Remove from ${current.name}` : "Remove from watchlist"} style={iconBtn}><X size={15} /></button>
                 </div>
               </div>
             </div>
@@ -300,6 +346,13 @@ export default function WatchlistView({ onOpenStock, onOpenNews }) {
       </div>
 
       {alertTarget && <CreateAlertModal stock={alertTarget} onClose={() => setAlertTarget(null)} />}
+      {dialog && (
+        <ListNameDialog title={dialog.kind === "rename" ? "Rename list" : "New list"} initial={dialog.kind === "rename" ? dialog.list.name : ""} suggest={dialog.kind === "new"}
+          lists={dialog.kind === "rename" ? shownLists.filter(l => l.id !== dialog.list.id) : shownLists}
+          starred={starredItems.map(i => ({ ticker: i.ticker, sector: rows.get(i.ticker)?.sector ?? null }))}
+          onSave={(n, tickers) => (dialog.kind === "rename" ? renameList(dialog.list, n) : createList(n, tickers))}
+          onClose={() => setDialog(null)} />
+      )}
     </>
   );
 }

@@ -180,6 +180,29 @@ async function main() {
   assert(noted.addedPrice === 3000 && noted.note === "wait for results", "the watchlist keeps the price when starred and a note");
   await json("DELETE", "/api/watchlist/TCS", aliceCookie);
 
+  // Watchlist lists (its tabs): a named subset; in a list stars it, out keeps it starred, unstarred leaves every list
+  const created = await (await json("POST", "/api/watchlist/lists", aliceCookie, { name: "  Long   term ", tickers: ["INFY", "../x"] })).json();
+  assert(created.list?.name === "Long term" && created.list.tickers.join() === "INFY", "a list is made with its name tidied and only real symbols in it");
+  const listId = created.list.id;
+  assert((await json("POST", "/api/watchlist/lists", aliceCookie, { name: "long TERM" })).status === 400, "two lists can't share a name");
+  assert((await json("POST", "/api/watchlist/lists", aliceCookie, { name: "All" })).status === 400, "nor be called All");
+  assert((await json("POST", "/api/watchlist/lists", aliceCookie, { name: "   " })).status === 400, "a list needs a name");
+  assert((await json("PUT", `/api/watchlist/lists/${listId}/items/TCS`, aliceCookie, {})).status === 200, "a stock goes into a list");
+  let wl = await (await fetch(`${BASE}/api/watchlist`, { headers: { Cookie: aliceCookie } })).json();
+  assert(wl.items.some(i => i.ticker === "TCS") && wl.lists[0].tickers.includes("TCS"), "putting it in a list stars it");
+  assert((await json("PUT", `/api/watchlist/lists/${listId}/items/TCS`, bobCookie, {})).status === 404, "bob can't use alice's list");
+  await json("DELETE", `/api/watchlist/lists/${listId}/items/TCS`, aliceCookie);
+  wl = await (await fetch(`${BASE}/api/watchlist`, { headers: { Cookie: aliceCookie } })).json();
+  assert(wl.items.some(i => i.ticker === "TCS") && !wl.lists[0].tickers.includes("TCS"), "out of the list, still starred");
+  await json("DELETE", "/api/watchlist/INFY", aliceCookie);
+  wl = await (await fetch(`${BASE}/api/watchlist`, { headers: { Cookie: aliceCookie } })).json();
+  assert(!wl.lists[0].tickers.includes("INFY"), "unstarred, out of every list");
+  assert((await json("PATCH", `/api/watchlist/lists/${listId}`, aliceCookie, { name: "Core" })).status === 200, "a list is renamed");
+  assert((await json("DELETE", `/api/watchlist/lists/${listId}`, aliceCookie)).status === 200, "a list is deleted");
+  wl = await (await fetch(`${BASE}/api/watchlist`, { headers: { Cookie: aliceCookie } })).json();
+  assert(wl.lists.length === 0 && wl.items.some(i => i.ticker === "TCS"), "its stocks stay starred");
+  await json("DELETE", "/api/watchlist/TCS", aliceCookie);
+
   // Portfolio
   assert((await json("POST", "/api/portfolio", aliceCookie, { ticker: "TCS", buyPrice: 3000, qty: 0 })).status === 400, "a holding with 0 shares is refused");
   assert((await json("POST", "/api/portfolio", aliceCookie, { ticker: "../x", buyPrice: 3000, qty: 1 })).status === 400, "a holding with a bad symbol is refused");

@@ -18,7 +18,7 @@ import { screen, matchingSymbols, screenerMeta, getStock, saveStock, rowsFor, is
 import { startDataPull, pullStatus } from "./data-pull.js";
 import { screenMomentum, momentumAllowed, momentumAudience } from "./momentum.js";
 import { criteriaToFilters, METRICS, CATEGORY_METRICS } from "./metric-catalog.js";
-import { listWatchlist, addToWatchlist, setWatchlistNote, removeFromWatchlist } from "./user-watchlist.js";
+import { listWatchlist, addToWatchlist, setWatchlistNote, removeFromWatchlist, listWatchLists, createWatchList, renameWatchList, deleteWatchList, addToWatchList, removeFromWatchList } from "./user-watchlist.js";
 import { listHoldings, addHolding, addHoldings, updateHolding, removeHolding } from "./user-portfolio.js";
 import { resolveImportRows, MAX_IMPORT_ROWS } from "./portfolio-import.js";
 import { getThesis, saveThesis } from "./user-thesis.js";
@@ -960,7 +960,7 @@ export function createApp() {
         if (userId == null) return;
         const items = listWatchlist(userId);
         const snap = loadMarketSnapshot();
-        sendJson(res, 200, { items, results: rowsFor(items.map(i => i.ticker)), snapshot: snap ? { pricesDate: snap.pricesDate, builtAt: snap.builtAt } : null });
+        sendJson(res, 200, { items, lists: listWatchLists(userId), results: rowsFor(items.map(i => i.ticker)), snapshot: snap ? { pricesDate: snap.pricesDate, builtAt: snap.builtAt } : null });
         return;
       }
 
@@ -1031,6 +1031,38 @@ export function createApp() {
         // The price when starred, for the card's "since added": the one the
         // page showed if it sent it, else the day's close
         addToWatchlist(userId, symbol, Number(price) > 0 ? price : loadMarketSnapshot()?.prices?.[symbol]);
+        sendJson(res, 200, { ok: true });
+        return;
+      }
+
+      // The watchlist's named lists (its tabs): create, rename, delete, and a
+      // stock in or out of one (in stars it; out keeps it starred)
+      if (url.pathname === "/api/watchlist/lists" && req.method === "POST") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        const { name, tickers } = await readJsonBody(req);
+        const valid = (Array.isArray(tickers) ? tickers : []).map(t => String(t || "").trim().toUpperCase()).filter(isValidSymbol);
+        const prices = loadMarketSnapshot()?.prices ?? {};
+        sendJson(res, 200, { list: createWatchList(userId, name, valid, t => prices[t] ?? null) });
+        return;
+      }
+      const listRoute = url.pathname.match(/^\/api\/watchlist\/lists\/(\d+)$/);
+      if (listRoute && ["PATCH", "DELETE"].includes(req.method)) {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        if (req.method === "PATCH") renameWatchList(userId, listRoute[1], (await readJsonBody(req)).name);
+        else deleteWatchList(userId, listRoute[1]);
+        sendJson(res, 200, { ok: true });
+        return;
+      }
+      const listItemRoute = url.pathname.match(/^\/api\/watchlist\/lists\/(\d+)\/items\/([^/]+)$/);
+      if (listItemRoute && ["PUT", "DELETE"].includes(req.method)) {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        const symbol = decodePathSegment(listItemRoute[2]).toUpperCase();
+        if (!isValidSymbol(symbol)) { sendJson(res, 400, { error: "Not an NSE symbol" }); return; }
+        if (req.method === "PUT") addToWatchList(userId, listItemRoute[1], symbol, loadMarketSnapshot()?.prices?.[symbol]);
+        else removeFromWatchList(userId, listItemRoute[1], symbol);
         sendJson(res, 200, { ok: true });
         return;
       }

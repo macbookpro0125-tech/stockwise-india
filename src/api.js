@@ -126,6 +126,12 @@ export const api = {
   addWatch: (ticker, price) => request("/api/watchlist", { method: "POST", body: JSON.stringify({ ticker, price }) }),
   setWatchNote: (ticker, note) => request(`/api/watchlist/${encodeURIComponent(ticker)}`, { method: "PUT", body: JSON.stringify({ note }) }),
   removeWatch: (ticker) => request(`/api/watchlist/${encodeURIComponent(ticker)}`, { method: "DELETE" }),
+  // The watchlist's named lists (its tabs)
+  createWatchList: (name, tickers = []) => request("/api/watchlist/lists", { method: "POST", body: JSON.stringify({ name, tickers }) }),
+  renameWatchList: (id, name) => request(`/api/watchlist/lists/${id}`, { method: "PATCH", body: JSON.stringify({ name }) }),
+  deleteWatchList: id => request(`/api/watchlist/lists/${id}`, { method: "DELETE" }),
+  addToWatchList: (id, ticker) => request(`/api/watchlist/lists/${id}/items/${encodeURIComponent(ticker)}`, { method: "PUT", body: "{}" }),
+  removeFromWatchList: (id, ticker) => request(`/api/watchlist/lists/${id}/items/${encodeURIComponent(ticker)}`, { method: "DELETE" }),
   portfolio: () => request("/api/portfolio"),
   addHolding: (h) => request("/api/portfolio", { method: "POST", body: JSON.stringify(h) }),
   importHoldings: (rows, commit) => request("/api/portfolio/import", { method: "POST", body: JSON.stringify({ rows, commit }) }),

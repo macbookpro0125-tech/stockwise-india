@@ -53,6 +53,22 @@ db.exec(`
     PRIMARY KEY (user_id, ticker)
   );
 
+  -- Named lists within the watchlist (24 Oct 2026, "watchlist tabs"): the
+  -- watchlist itself stays every starred stock (its "All" tab, what news,
+  -- alerts and phone notifications follow); a list is a named subset of it
+  CREATE TABLE IF NOT EXISTS watchlist_lists (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS watchlist_list_items (
+    list_id INTEGER NOT NULL REFERENCES watchlist_lists(id) ON DELETE CASCADE,
+    ticker TEXT NOT NULL,
+    added_at TEXT NOT NULL,
+    PRIMARY KEY (list_id, ticker)
+  );
+
   -- The original's portfolio (localStorage there), per account here. Several
   -- lots of the same stock are separate rows, as in the original.
   CREATE TABLE IF NOT EXISTS holdings (
@@ -164,7 +180,7 @@ db.exec(`
 // dropping the old table with them on would cascade-delete every account's
 // alerts, watchlist and portfolio — and every table's row count must come out
 // unchanged, or the whole rebuild is undone.
-const CHILD_TABLES = ["sessions", "alerts", "watchlist", "holdings", "thesis_notes", "stock_notes", "saved_strategies", "strategy_match_state", "telegram_links", "password_resets"];
+const CHILD_TABLES = ["sessions", "alerts", "watchlist", "watchlist_lists", "watchlist_list_items", "holdings", "thesis_notes", "stock_notes", "saved_strategies", "strategy_match_state", "telegram_links", "password_resets"];
 function rebuildUsersForSocialSignIn() {
   const columns = db.prepare("PRAGMA table_info(users)").all().map(c => c.name);
   if (columns.includes("firebase_uid")) return;
