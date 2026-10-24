@@ -20,6 +20,10 @@ on:
         description: "Rebuild even though today's data is in (to run a batch of company re-reads now)"
         type: boolean
         default: false
+      history_days:
+        description: "Trading days of price history to fetch further back this run (default 120; 1100 fills five years at once)"
+        type: string
+        default: ""
   # A change to how the refresh runs is tried straight away
   push:
     branches: [main]
@@ -142,7 +146,7 @@ jobs:
           # The price history back five years, 120 more trading days a run
           # (server/history-backfill.js), gently, until it's there
           HISTORY_YEARS: "5"
-          HISTORY_BACKFILL_DAYS: "120"
+          HISTORY_BACKFILL_DAYS: ${{ github.event.inputs.history_days || '120' }}
           # The statements in detail and sales by segment (fetch-nse.js
           # DETAIL_VERSION): 300 companies re-read a run, biggest first
           DETAIL_BATCH: "300"
