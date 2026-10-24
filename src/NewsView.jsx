@@ -3,6 +3,7 @@ import { ArrowLeft, ExternalLink, FileText, Newspaper, ChevronRight, Fuel, Globe
 import { api } from "./api.js";
 import { explainFiling, explainHeadline } from "./filingTerms.js";
 import { compareResults } from "./resultsCompare.js";
+import { resultsTable } from "./resultsTable.js";
 import CompanyLogo from "./CompanyLogo.jsx";
 import { niceName } from "./stockName.js";
 import { useWatchlist, watchSaved } from "./watchlist.js";
@@ -245,7 +246,106 @@ function FilingLines({ id, auto }) {
 // A results announcement: the quarter's figures in sentences, against a year
 // earlier and the quarter before, and the last eight quarters as bars
 // (resultsCompare.js)
-function ResultsCompare({ numbers, quarters }) {
+
+// ---- The results table (24 Oct 2026, after Tijori's, improved) ---------------
+// The latest quarter leads, highlighted, with its change on a year earlier and
+// on the quarter before beside it; then the two quarters it's measured
+// against; and each figure's last eight quarters as a small trend. A phone
+// has a card a figure instead of the columns.
+const monthYear = end => new Intl.DateTimeFormat("en-IN", { month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(`${end}T00:00:00Z`));
+const fig = (v, unit) => {
+  if (v == null) return "—";
+  if (unit === "pct") return `${v.toFixed(1)}%`;
+  if (unit === "eps") return `${v < 0 ? "−" : ""}${Math.abs(v).toFixed(2)}`;
+  return `${v < 0 ? "−" : ""}${Math.abs(v).toLocaleString("en-IN", { maximumFractionDigits: Math.abs(v) >= 100 ? 0 : 1 })}`;
+};
+const capText = v => (v == null ? null : v >= 100000 ? `₹${(v / 100000).toLocaleString("en-IN", { maximumFractionDigits: 2 })} lakh cr` : `₹${Math.round(v).toLocaleString("en-IN")} cr`);
+function Delta({ value, words, unit }) {
+  if (words) return <span className={`rt-delta ${words === "to profit" || words === "smaller loss" ? "up" : "down"}`}>{words === "to profit" ? "Turned to profit" : words === "to loss" ? "Turned to loss" : words === "smaller loss" ? "Smaller loss" : "Larger loss"}</span>;
+  if (value == null || !isFinite(value)) return <span className="rt-delta">—</span>;
+  const dir = Math.abs(value) < (unit === "pct" ? 1 : 0.05) ? "" : value > 0 ? "up" : "down";
+  return <span className={`rt-delta ${dir}`}>{value > 0 ? "+" : value < 0 ? "−" : ""}{unit === "pct" ? `${Math.round(Math.abs(value))} bps` : `${Math.abs(value).toFixed(1)}%`}</span>;
+}
+function Trend({ points, label }) {
+  const vals = points.map(p => p.value);
+  if (vals.filter(v => v != null).length < 2) return <span className="rt-trend" />;
+  const max = Math.max(...vals.map(v => Math.abs(v ?? 0)), 1e-9), neg = vals.some(v => v < 0);
+  // all positive: between the lowest and highest quarter, so the shape shows (the lowest a quarter high)
+  const lo = Math.min(...vals.filter(v => v != null)), hi = Math.max(...vals.filter(v => v != null));
+  const h = v => (neg ? Math.max(6, (Math.abs(v) / max) * 50) : hi === lo ? 60 : 25 + ((v - lo) / (hi - lo)) * 75);
+  return (
+    <span className={`rt-trend${neg ? " neg" : ""}`} role="img" aria-label={`${label}, last ${points.length} quarters: ${points.map(p => `${fyQuarter(p.end)} ${p.value == null ? "not reported" : p.value.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`).join(", ")}`}>
+      {points.map((p, i) => (
+        <span key={p.end} className={`rt-bar${i === points.length - 1 ? " now" : ""}${p.value < 0 ? " loss" : ""}`} title={`${fyQuarter(p.end)}: ${p.value == null ? "—" : p.value.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`}
+          style={{ height: `${p.value == null ? 0 : h(p.value)}%` }} />
+      ))}
+    </span>
+  );
+}
+function ResultsTable({ quarters, valuation }) {
+  const t = resultsTable(quarters);
+  if (!t?.rows.length) return null;
+  const v = valuation ?? {};
+  const stats = [["Market cap", capText(v.marketCapCr)], ["P/E", v.pe > 0 ? v.pe.toFixed(1) : null], ["PEG", v.peg != null ? v.peg.toFixed(2) : null]].filter(([, x]) => x);
+  return (
+    <section className="rt" aria-label="Results table">
+      <div className="rt-head">
+        <div>
+          <span className="nw-said-label">{fyQuarter(t.latest)} results</span>
+          <p className="rt-sub">Quarter ended {monthYear(t.latest)} · ₹ crore, EPS in ₹</p>
+        </div>
+        {stats.length > 0 && (
+          <dl className="rt-stats">
+            {stats.map(([k, x]) => <div key={k} title={k === "PEG" ? "The P/E divided by three years' yearly profit growth" : undefined}><dt>{k}</dt><dd>{x}</dd></div>)}
+          </dl>
+        )}
+      </div>
+      <div className="rt-wide">
+        <table className="rt-table">
+          <thead>
+            <tr>
+              <th scope="col" className="rt-name">Figure</th>
+              <th scope="col" className="rt-now">{monthYear(t.latest)}</th>
+              <th scope="col">YoY</th>
+              <th scope="col">QoQ</th>
+              <th scope="col" className="rt-then">{t.prev ? monthYear(t.prev) : "Quarter before"}</th>
+              <th scope="col" className="rt-then">{t.yago ? monthYear(t.yago) : "Year earlier"}</th>
+              <th scope="col" className="rt-tr">Last 8 quarters</th>
+            </tr>
+          </thead>
+          <tbody>
+            {t.rows.map(r => (
+              <tr key={r.key}>
+                <th scope="row" className="rt-name">{r.label}</th>
+                <td className="rt-now">{fig(r.latest, r.unit)}</td>
+                <td><Delta value={r.yoy} words={r.yoyTurn} unit={r.unit} /></td>
+                <td><Delta value={r.qoq} words={r.qoqTurn} unit={r.unit} /></td>
+                <td className="rt-then">{fig(r.prev, r.unit)}</td>
+                <td className="rt-then">{fig(r.yago, r.unit)}</td>
+                <td className="rt-tr"><Trend points={r.trend} label={r.label} /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="rt-cards">
+        {t.rows.map(r => (
+          <div key={r.key} className="rt-card">
+            <div className="rt-card-top">
+              <span className="rt-card-name">{r.label}</span>
+              <Trend points={r.trend} label={r.label} />
+            </div>
+            <div className="rt-card-val">{fig(r.latest, r.unit)}</div>
+            <div className="rt-card-ch"><span>YoY <Delta value={r.yoy} words={r.yoyTurn} unit={r.unit} /></span><span>QoQ <Delta value={r.qoq} words={r.qoqTurn} unit={r.unit} /></span></div>
+            <div className="rt-card-then">{t.prev && <span>{monthYear(t.prev)} {fig(r.prev, r.unit)}</span>}{t.yago && <span>{monthYear(t.yago)} {fig(r.yago, r.unit)}</span>}</div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ResultsCompare({ numbers, quarters, bars = true }) {
   const c = quarters?.[0]?.end === numbers.quarter ? compareResults(quarters) : null;
   return (
     <section className="nw-numbers" aria-label="How the results compare">
@@ -253,7 +353,7 @@ function ResultsCompare({ numbers, quarters }) {
       {c
         ? <ul className="nw-compare">{c.lines.map(l => <li key={l}>{l}</li>)}</ul>
         : <Figures n={numbers} wide />}
-      {c?.bars.length > 1 && <QuarterBars bars={c.bars} />}
+      {bars && c?.bars.length > 1 && <QuarterBars bars={c.bars} />}
       <span className="nw-numbers-note">As the app reads them from the company's results filings; the filing has the full statement. Figures, not a view on the shares.</span>
     </section>
   );
@@ -329,6 +429,8 @@ function Detail({ id, onBack, onOpen, onOpenStock }) {
       <p className="nw-eyebrow"><span className={`nw-kind k-${item.kind}`}>{KIND_LABEL[item.kind]}</span><span>{fullTime(item.time)}</span></p>
       <h2 className="nw-title">{niceName(item.company)}</h2>
       <p className="nw-byline">{item.title} · announced to NSE</p>
+      {/* results: the table across the page when the quarter on file is this one */}
+      {item.kind === "results" && item.numbers && data.quarters?.[0]?.end === item.numbers.quarter && <ResultsTable quarters={data.quarters} valuation={data.valuation} />}
       {/* a wide screen: the announcement on the left, the company and more beside it */}
       <div className="dt-cols">
       <div className="dt-main">
@@ -340,7 +442,9 @@ function Detail({ id, onBack, onOpen, onOpenStock }) {
         <blockquote key={a.id} className="nw-said nw-said-also"><span className="nw-said-label">Also that day · {a.title} · {clock(a.time)}</span>{a.summary ?? a.title}</blockquote>
       ))}
       {item.kind === "results" && (item.numbers
-        ? <ResultsCompare numbers={item.numbers} quarters={data.quarters} />
+        ? <>
+          <ResultsCompare numbers={item.numbers} quarters={data.quarters} bars={data.quarters?.[0]?.end !== item.numbers.quarter} />
+        </>
         : <p className="nw-note">The figures reach the app with the evening data update.</p>)}
       <div className="nw-actions">
         {item.url && <a className="btn-primary nw-btn" href={item.url} target="_blank" rel="noopener noreferrer"><FileText size={16} aria-hidden="true" /> Open the filing{item.fileSize ? ` · ${item.fileSize}` : ""}</a>}

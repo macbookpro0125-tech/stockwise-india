@@ -505,9 +505,12 @@ export async function newsItem(id) {
     const recent = news.filter(n => n.date && Date.now() - Date.parse(n.date) <= 14 * DAY && !TIPS.test(n.title) && !PRICE_PAGE.test(n.title)).slice(0, 4);
     // results: the company's last eight quarters, for how this one compares (src/resultsCompare.js)
     const quarters = item.kind === "results" && row?.quarters?.length
-      ? row.quarters.slice(0, 8).map(q => ({ end: q.fyEnd, salesCr: q.revenueCr ?? null, profitCr: q.profitCr ?? null, opm: q.opm ?? null, salesYoY: q.salesYoY ?? null, profitYoY: q.profitYoY ?? null }))
+      ? row.quarters.slice(0, 9).map(q => ({ end: q.fyEnd, salesCr: q.revenueCr ?? null, opCr: q.operatingProfitCr ?? null, profitCr: q.profitCr ?? null, opm: q.opm ?? null, eps: q.eps ?? null, salesYoY: q.salesYoY ?? null, profitYoY: q.profitYoY ?? null }))
       : null;
-    return { item: { ...item, quote: quoteOf(row) }, more: announced(item.symbol), news: recent, quarters, asOf };
+    // the results table's header: what the market pays for these earnings
+    // (PEG: the P/E over three years' yearly profit growth, both positive)
+    const valuation = quarters && row ? { marketCapCr: row.marketCapCr ?? null, pe: row.pe ?? null, peg: row.pe > 0 && row.profitGrowth3y > 0 ? row.pe / row.profitGrowth3y : null } : null;
+    return { item: { ...item, quote: quoteOf(row) }, more: announced(item.symbol), news: recent, quarters, valuation, asOf };
   }
   return { item, companies: (item.companies ?? []).map(q => ({ ...q, announced: announced(q.symbol).slice(0, 2) })), asOf, ...(await headlineContext(item, items, bySymbol)) };
 }

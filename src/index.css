@@ -3109,3 +3109,52 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 .nw-talk-label { font-size: var(--fs-sm); font-weight: 600; white-space: nowrap; }
 .nw-talk-sub { font-size: var(--fs-xs); color: var(--t3); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .nw-talk-sub .nw-chg { font-size: var(--fs-xs); }
+
+/* The results table (24 Oct 2026): the latest quarter's column lit, its
+   changes as tinted figures, the two quarters it's measured against quieter,
+   and a trend of eight quarters; a card a figure on a phone */
+.rt { margin: 18px 0 8px; padding: 18px 18px 8px; border: 1px solid var(--bdr); border-radius: 20px; background: var(--s1); }
+.rt-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px 24px; margin-bottom: 14px; }
+.rt-sub { margin: 4px 0 0; font-size: var(--fs-xs); color: var(--t3); }
+.rt-stats { display: flex; gap: 6px; margin: 0; }
+.rt-stats > div { min-width: 84px; padding: 8px 12px; border-radius: 12px; background: var(--s2); }
+.rt-stats dt { font-size: var(--fs-2xs); color: var(--t3); }
+.rt-stats dd { margin: 2px 0 0; font-size: var(--fs-md); font-weight: 600; font-variant-numeric: tabular-nums; color: var(--t1); white-space: nowrap; }
+.rt-table { width: 100%; border-collapse: separate; border-spacing: 0; font-variant-numeric: tabular-nums; }
+.rt-table th, .rt-table td { padding: 12px 14px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--bdr); }
+.rt-table tbody tr:last-child > * { border-bottom: 0; }
+.rt-table thead th { padding-top: 6px; font-size: var(--fs-xs); font-weight: 500; color: var(--t3); }
+.rt-table .rt-name { text-align: left; font-size: var(--fs-sm); font-weight: 500; color: var(--t1); }
+.rt-table thead .rt-name { color: var(--t3); font-weight: 500; }
+.rt-table td { font-size: var(--fs-sm); color: var(--t2); }
+.rt-table .rt-now { font-size: var(--fs-md); font-weight: 600; color: var(--t1); background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.rt-table thead .rt-now { color: var(--accent); font-size: var(--fs-xs); border-radius: 10px 10px 0 0; }
+.rt-table tbody tr:last-child .rt-now { border-radius: 0 0 10px 10px; }
+.rt-table .rt-then { color: var(--t3); }
+.rt-table .rt-tr { width: 120px; }
+@media (hover: hover) and (pointer: fine) { .rt-table tbody tr:hover > * { background-color: color-mix(in srgb, var(--t1) 3%, transparent); } .rt-table tbody tr:hover .rt-now { background: color-mix(in srgb, var(--accent) 11%, transparent); } }
+.rt-delta { font-weight: 600; color: var(--t3); }
+.rt-delta.up { color: var(--green); }
+.rt-delta.down { color: var(--red); }
+.rt-trend { display: inline-flex; align-items: flex-end; justify-content: flex-end; gap: 3px; width: 100px; height: 26px; vertical-align: middle; }
+.rt-trend.neg { align-items: center; }
+.rt-bar { flex: 1; min-width: 4px; max-width: 10px; border-radius: 2px; background: color-mix(in srgb, var(--t3) 55%, transparent); }
+.rt-bar.now { background: var(--accent); }
+.rt-bar.loss { background: color-mix(in srgb, var(--red) 70%, transparent); }
+.rt-trend.neg .rt-bar { align-self: flex-end; transform-origin: bottom; }
+.rt-trend.neg .rt-bar.loss { align-self: flex-start; }
+.rt-cards { display: none; }
+@media (max-width: 720px) {
+  .rt { padding: 14px 14px 6px; border-radius: 16px; }
+  .rt-wide { display: none; }
+  .rt-stats { width: 100%; }
+  .rt-stats > div { flex: 1; min-width: 0; }
+  .rt-cards { display: grid; }
+  .rt-card { padding: 12px 0; border-top: 1px solid var(--bdr); }
+  .rt-card-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .rt-card-name { font-size: var(--fs-sm); color: var(--t2); }
+  .rt-card .rt-trend { width: 80px; height: 22px; }
+  .rt-card-val { margin-top: 2px; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; color: var(--t1); }
+  .rt-card-ch { display: flex; gap: 14px; margin-top: 4px; font-size: var(--fs-xs); color: var(--t3); }
+  .rt-card-then { display: flex; gap: 14px; margin-top: 4px; font-size: var(--fs-xs); color: var(--t3); font-variant-numeric: tabular-nums; }
+}
