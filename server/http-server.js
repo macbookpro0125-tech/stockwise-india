@@ -26,11 +26,11 @@ import { listNotes, saveNote, deleteNote, listStrategies, saveStrategies, checkS
 import { currentPrices } from "./prices.js";
 import { getPerformance, takeSnapshots } from "./performance.js";
 import { pricePosition } from "./levels.js";
-import { fetchCmp, fetchDailyBars, PRICE_RANGES } from "./quote.js";
+import { fetchDailyBars, PRICE_RANGES } from "./quote.js";
 import { fetchStockSummary, SCHEMA } from "./fetch-nse.js";
 import { fetchEquityList } from "./equity-list.js";
 import { computeMetrics } from "./metrics.js";
-import { loadMarketSnapshot, dividendAmount } from "./market-data.js";
+import { loadMarketSnapshot, dividendAmount, seedHistoryFromCache } from "./market-data.js";
 import { dividendRecord } from "./dividends.js";
 import { sectorComparison } from "./sector-compare.js";
 import { startDataJobs, jobStatus } from "./data-jobs.js";
@@ -895,23 +895,15 @@ export function createApp() {
           }
         }
 
-        // Freshly fetched Yahoo daily close (fresher than the daily snapshot) — the metrics are the
-        // same function the Discover table uses, just with this price.
-        let quote = null, quoteError = null;
-        try {
-          quote = await fetchCmp(symbol);
-        } catch (e) {
-          quoteError = e.message;
-        }
+        // The price is NSE's close from the evening snapshot, as on the
+        // Discover table (Yahoo's daily close, compared with it until 24 Oct
+        // 2026, is no longer used: its terms don't allow an app to)
+        const quote = null, quoteError = null;
         const snap = loadMarketSnapshot();
         // The research score's peer comparison needs the market's sector
         // medians, which the screen sets — cached, so this is cheap
         const market = allMetrics();
-        // Yahoo's is the last finished day's close; after NSE's close for a
-        // later day is in the snapshot, that one is newer and the metrics
-        // keep it (the page showed 6 Oct's price beside 7 Oct's NSE close)
-        const quoteNewer = quote && (!snap?.pricesDate || quote.asOf >= snap.pricesDate);
-        const metrics = computeMetrics(fundamentals, snap, quoteNewer ? { cmp: quote.cmp, cmpDate: quote.asOf } : {});
+        const metrics = computeMetrics(fundamentals, snap, {});
         if (metrics) {
           capHistoricalMultiples([metrics]);
           metrics.evToSalesSector = market.evSales?.get(metrics.peerSector) ?? null;
@@ -1110,8 +1102,8 @@ export function createApp() {
         return;
       }
 
-      // Current prices for up to 50 symbols — Yahoo's latest daily close where available, else
-      // the day's close, each labelled with which it is
+      // Current prices for up to 50 symbols: NSE's close from the evening
+      // snapshot, each with its date
       if (url.pathname === "/api/prices" && req.method === "GET") {
         const userId = requireAuth(req, res);
         if (userId == null) return;
@@ -1220,8 +1212,8 @@ export function createApp() {
         const userId = requireAuth(req, res);
         if (userId == null) return;
         // Each alert against the latest price: the day's close, or with
-        // ?live=1 (the Alerts tab's Check Now) refreshes Yahoo and uses the
-        // newest dated close from Yahoo or the NSE snapshot.
+        // ?live=1 (the Alerts tab's Check Now) reads the prices afresh; both
+        // are NSE's close from the evening snapshot.
         // Sending them is alert-notifier.js's, to accounts that connected
         // Telegram; notified_at says when one was last sent.
         const alerts = listAlerts(userId);
@@ -1340,7 +1332,7 @@ export function createApp() {
           ...(pullStatus.enabled && { dataPull: pullStatus }),
           // Who sees the Momentum tab (set in Render: MOMENTUM, MOMENTUM_USERS)
           momentum: momentumAudience(),
-          // Outside sources answering this host: NSE, Yahoo, Google News …
+          // Outside sources answering this host: NSE, Google News …
           upstream: upstreamStatus(),
           pricesDate: snap?.pricesDate ?? null,
           snapshotBuiltAt: snap?.builtAt ?? null,
@@ -1446,7 +1438,12 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   //   off         the evening's data only, no account jobs, and no Telegram
   //               polling (one poller per bot): a test copy
   const mode = process.env.DATA_JOBS ?? "on";
-  if (mode !== "off" && mode !== "pull") startDataJobs();
+  if (mode !== "off" && mode !== "pull") {
+    startDataJobs();
+    // the chart's price history from the bhavcopies already on disk, the
+    // first time (price-history.js); the evening build keeps it after
+    setTimeout(() => seedHistoryFromCache().catch(e => console.error(`[history] ${e.message}`)), 5000);
+  }
   // on Render only (data-pull.js pullBaseUrl); the market is rebuilt in
   // slices at once, so the next visitor doesn't wait for it
   if (mode === "off" || mode === "pull") startDataPull({ onInstalled: () => marketReady().catch(e => console.error(`[market] rebuild failed: ${e.message}`)) });

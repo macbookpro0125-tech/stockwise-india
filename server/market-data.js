@@ -1,11 +1,12 @@
 // Market-wide inputs that come in one download for everyone instead of one
 // request per company: closing prices (NSE's daily bhavcopy), corporate
 // actions (dividends, bonuses, splits) and sectors (NSE index constituents).
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { UA, NSE_BASE, fetchJson, parseQeDate } from "./fetch-nse.js";
 import { rebaseTracker, suspendedAfter } from "./share-changes.js";
-import { PRICE_DIR, SNAPSHOT_PATH } from "./paths.js";
+import { PRICE_DIR, SNAPSHOT_PATH, HISTORY_DIR } from "./paths.js";
+import { historyWriter } from "./price-history.js";
 import { fetchText as requestText } from "./upstream.js";
 import { momentumStats } from "./momentum.js";
 import { SECTOR_INDEX } from "./sector-indices.js";
@@ -43,11 +44,11 @@ async function bhavcopyCsv(date) {
 
 // The trading date comes from the file's own DATE1 column, not the URL: NSE
 // served 28-Mar-2025's prices when asked for 30-Mar-2025 (a Sunday).
-function parseBhavcopy(csv) {
+export function parseBhavcopy(csv) {
   const [header, ...lines] = csv.trim().split("\n");
   const cols = header.split(",").map(c => c.trim());
   const iSym = cols.indexOf("SYMBOL"), iSeries = cols.indexOf("SERIES"), iClose = cols.indexOf("CLOSE_PRICE"), iDate = cols.indexOf("DATE1");
-  const iHigh = cols.indexOf("HIGH_PRICE"), iLow = cols.indexOf("LOW_PRICE");
+  const iHigh = cols.indexOf("HIGH_PRICE"), iLow = cols.indexOf("LOW_PRICE"), iOpen = cols.indexOf("OPEN_PRICE");
   const iQty = cols.indexOf("TTL_TRD_QNTY"), iDeliv = cols.indexOf("DELIV_PER"), iPrev = cols.indexOf("PREV_CLOSE");
   const best = new Map(); // symbol -> { close, high, low, volume, delivery, rank }
   let tradingDate = null;
@@ -61,7 +62,7 @@ function parseBhavcopy(csv) {
     if (!prev || rank < prev.rank) {
       const delivery = iDeliv === -1 ? NaN : Number(f[iDeliv]); // "-" when there's no delivery data
       // prevClose and series: NSE's rebase after a share change (share-changes.js)
-      best.set(f[iSym], { close, high: Number(f[iHigh]), low: Number(f[iLow]), volume: iQty === -1 ? null : Number(f[iQty]), delivery: Number.isFinite(delivery) ? delivery : null, rank, prevClose: iPrev === -1 ? null : Number(f[iPrev]), series: f[iSeries] });
+      best.set(f[iSym], { close, open: iOpen === -1 ? null : Number(f[iOpen]), high: Number(f[iHigh]), low: Number(f[iLow]), volume: iQty === -1 ? null : Number(f[iQty]), delivery: Number.isFinite(delivery) ? delivery : null, rank, prevClose: iPrev === -1 ? null : Number(f[iPrev]), series: f[iSeries] });
     }
   }
   return {
@@ -70,6 +71,24 @@ function parseBhavcopy(csv) {
     ranges: Object.fromEntries([...best].map(([s, v]) => [s, [v.low > 0 ? v.low : v.close, v.high > 0 ? v.high : v.close]])),
     days: best,
   };
+}
+
+// The price history (price-history.js) from the bhavcopies already on disk,
+// with no downloads: on the first start after it was added, before the
+// evening build has kept anything, so the charts aren't empty until then
+export async function seedHistoryFromCache({ log = console.log } = {}) {
+  if (existsSync(HISTORY_DIR) && readdirSync(HISTORY_DIR).some(f => f.endsWith(".json"))) return 0;
+  const files = existsSync(PRICE_DIR) ? readdirSync(PRICE_DIR).filter(f => /^bhav-\d{4}-\d{2}-\d{2}\.csv$/.test(f)) : [];
+  if (!files.length) return 0;
+  const history = historyWriter();
+  for (const f of files) {
+    const day = parseBhavcopy(readFileSync(join(PRICE_DIR, f), "utf-8"));
+    if (day.date) history.add(day.date, day.days);
+    await new Promise(r => setImmediate(r)); // a file at a time, so requests aren't held up
+  }
+  const n = history.save();
+  log(JSON.stringify({ event: "price_history_seeded", files: files.length, companies: n }));
+  return n;
 }
 
 // Closing prices on `date`, or the last trading day before it
@@ -139,6 +158,8 @@ async function yearOfDays(toIso, splits) {
   // closes show that the feed missed (share-changes.js), found as the walk
   // goes back: a rebase is seen on the older session, before it's adjusted
   const rebases = rebaseTracker(splits);
+  // each day's prices kept for the chart and technicals (price-history.js)
+  const history = historyWriter();
   const factorAfter = (sym, iso) => [...(splits[sym] ?? []), ...(rebases.found[sym] ?? [])].filter(s => s.exDate > iso).reduce((f, s) => f * s.ratio, 1);
   const to = new Date(`${toIso}T00:00:00Z`);
   const fromIso = isoDay(new Date(to.getTime() - 365 * 86400000));
@@ -165,6 +186,7 @@ async function yearOfDays(toIso, splits) {
     // A holiday can be answered with the previous day's file — count each day once
     if (!day.date || seen.has(day.date) || day.date <= fromIso) continue;
     seen.add(day.date);
+    history.add(day.date, day.days);
     const niftyClose = (await indexFile(day.date))?.get("Nifty 50")?.close;
     if (niftyClose > 0) nifty.set(day.date, niftyClose);
     rebases.see(day.date, day.days);
@@ -190,6 +212,7 @@ async function yearOfDays(toIso, splits) {
     if (t) tech[sym] = t;
     momentum[sym] = momentumStats(days);
   }
+  try { history.save(); } catch (e) { console.error(JSON.stringify({ event: "price_history_save_failed", message: e.message })); }
   return { from: fromIso, tradingDays: seen.size, ranges, tech, momentum, rebases: rebases.found };
 }
 

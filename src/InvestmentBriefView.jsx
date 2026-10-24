@@ -11,8 +11,8 @@ const pct = value => value == null || !Number.isFinite(value) ? "—" : `${value
 const cr = value => value == null || !Number.isFinite(value) ? "—" : `₹${value.toLocaleString("en-IN", { maximumFractionDigits: 0 })} cr`;
 const dateLabel = value => value ? new Date(`${value.slice(0, 10)}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : "date unavailable";
 
-// Yahoo's figure is the last finished day's close, so once NSE's close for a
-// later day is in, NSE's is the newer price (as on the company page)
+// A quote passed with the page (none since 24 Oct 2026: the price is NSE's
+// close) counts only when it's newer than NSE's, as on the company page
 const quoteIsNewer = data => !!data?.quote && (!data.close?.date || data.quote.asOf >= data.close.date);
 function referencePrice(item) {
   const data = item?.data;

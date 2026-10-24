@@ -50,7 +50,7 @@ export const METHODOLOGY_SECTIONS = [
   {
     title: "Sources, dates and limitations",
     paragraphs: [
-      "Company results, announcements and shareholding information come from filings with NSE. Returns and model calculations use NSE closing prices. The chart and the latest displayed quote may use Yahoo Finance. Prices and newly filed results are normally refreshed on weekday evenings; each company page shows the dates used for its figures.",
+      "Company results, announcements and shareholding information come from filings with NSE. Returns and model calculations use NSE closing prices. The chart and the latest displayed price use the same NSE daily closes. Prices and newly filed results are normally refreshed on weekday evenings; each company page shows the dates used for its figures.",
       "Public filings may be late, restated or misread, and market data can be delayed or unavailable. Check important figures against the original filings. The model is not proven to predict returns, and past performance does not predict future results.",
       "Jocular Insights is not registered with SEBI as an investment adviser or research analyst. It is independent of NSE, BSE and the companies shown. Questions or corrections can be sent to jocularinsights@gmail.com."
     ]

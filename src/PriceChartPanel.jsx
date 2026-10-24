@@ -922,7 +922,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
           ))}
         </div>
         <span style={{ marginLeft: narrow ? 0 : "auto", fontSize: 10, color: "var(--t3)" }}>
-          {data?.stale ? `${data.staleReason} · ` : ""}{INTERVALS.find(i => i.id === prefs.interval)?.title} bars · Yahoo Finance · {narrow ? "drag sideways to pan, pinch to zoom, press and hold for a day's values" : "drag to pan, scroll to zoom"}
+          {data?.stale ? `${data.staleReason} · ` : ""}{INTERVALS.find(i => i.id === prefs.interval)?.title} bars · NSE closes{data?.keptFrom ? ` from ${new Date(`${data.keptFrom}T00:00:00Z`).toLocaleDateString("en-IN", { month: "short", year: "numeric", timeZone: "UTC" })}` : ""} · {narrow ? "drag sideways to pan, pinch to zoom, press and hold for a day's values" : "drag to pan, scroll to zoom"}
           {" · "}<a href="https://www.tradingview.com/" target="_blank" rel="noopener" style={{ color: "inherit" }}>Chart by TradingView</a>
         </span>
       </div>

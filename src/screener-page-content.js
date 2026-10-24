@@ -33,7 +33,7 @@ export const SCREENER_PAGE_SECTIONS = [
   {
     title: "Data timing, access and limitations",
     paragraphs: [
-      "Company results, announcements and shareholding information are based on public NSE filings. Closing-price calculations use NSE prices; the latest displayed quote may use Yahoo Finance. Prices and new filings are normally refreshed on weekday evenings, and company pages show the dates used.",
+      "Company results, announcements and shareholding information are based on public NSE filings. Prices, charts and closing-price calculations use NSE's daily closes. Prices and new filings are normally refreshed on weekday evenings, and company pages show the dates used.",
       "Jocular Insights is in early access; creating an account currently requires no card. It is an educational tool and is not registered with SEBI as an investment adviser or research analyst. Public data can be delayed, restated or incomplete. Check original filings and consult a SEBI-registered adviser for personal financial advice."
     ]
   }

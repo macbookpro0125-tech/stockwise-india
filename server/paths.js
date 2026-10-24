@@ -9,6 +9,8 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 export const DATA_DIR = process.env.DATA_DIR ?? join(ROOT, "data");
 export const MARKET_DIR = join(DATA_DIR, "market");
 export const PRICE_DIR = join(DATA_DIR, "prices");
+// Each company's daily prices from NSE's bhavcopies, kept as published (price-history.js)
+export const HISTORY_DIR = join(DATA_DIR, "history");
 export const SNAPSHOT_PATH = join(DATA_DIR, "market-snapshot.json");
 export const DB_PATH = process.env.STOCKWISE_DB ?? join(DATA_DIR, "app.db");
 

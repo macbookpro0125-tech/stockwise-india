@@ -434,9 +434,8 @@ function KeyNumbers({ data, m }) {
 // backTo: the tab Back returns to
 // "2026-10-07" -> "7 Oct"
 const dayLabel = iso => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
-// Yahoo's figure is the last finished day's close (quote.js leaves out a day
-// still trading), so once NSE's close for a later day is in, NSE's is the
-// newer price — it was showing 6 Oct's ₹2,100 beside NSE's 7 Oct ₹2,080
+// A quote passed with the page (Yahoo's daily close until 24 Oct 2026; none
+// now, as the price is NSE's close) counts only when it's newer than NSE's
 const quoteIsNewer = d => !!d.quote && (!d.close || d.quote.asOf >= d.close.date);
 const quoteLabel = q => `${q.stale ? "Cached close" : "Latest close"} (${dayLabel(q.asOf)})`;
 const closeLabel = c => `NSE close (${dayLabel(c.date)})`;
@@ -735,12 +734,12 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
 
       {data.quoteError && (
         <div style={{ fontSize: 12, color: "var(--yellow)", background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", borderRadius: 8, padding: "8px 12px", marginBottom: 12 }}>
-          Couldn't refresh Yahoo's latest daily close ({data.quoteError}){data.close ? " — using NSE's last close." : "."}
+          Couldn't refresh the latest close ({data.quoteError}){data.close ? " — using NSE's last close." : "."}
         </div>
       )}
       {data.quote?.stale && (
         <div style={{ fontSize: 12, color: "var(--yellow)", background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", borderRadius: 8, padding: "8px 12px", marginBottom: 12 }}>
-          <strong>Showing a cached quote</strong> — Yahoo Finance could not refresh it. Quote date: {data.quote.asOf}.
+          <strong>Showing a cached quote</strong> — it couldn't be refreshed. Quote date: {data.quote.asOf}.
         </div>
       )}
 
@@ -915,7 +914,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
               {data.quote && String(data.quote.cmp) !== actionPrice && (
                 <button type="button" onClick={() => { setActionPrice(String(data.quote.cmp)); setPriceLabel(quoteLabel(data.quote)); }}
                   style={{ height: 42, padding: "0 12px", borderRadius: 8, border: "1px solid var(--accent)", background: "var(--s1)", fontSize: 12, cursor: "pointer", color: "var(--accent)" }}>
-                  Use Yahoo close
+                  Use latest close
                 </button>
               )}
               {data.close && String(data.close.price) !== actionPrice && (

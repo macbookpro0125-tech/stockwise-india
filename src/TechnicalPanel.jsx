@@ -258,7 +258,7 @@ export default function TechnicalPanel({ ticker }) {
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
         <div style={{ fontSize: 13, fontWeight: 400, color: "var(--t1)" }}>
-          Technical Analysis <span style={{ fontSize: 11, color: "var(--t3)", fontWeight: 400 }}>· {data.yahooSymbol}</span>
+          Technical Analysis <span style={{ fontSize: 11, color: "var(--t3)", fontWeight: 400 }}>· NSE daily prices</span>
         </div>
       </div>
       {data.stale && <div style={{ fontSize: 11, color: "var(--yellow)", background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", borderRadius: 7, padding: "7px 10px", marginBottom: 10 }}>{data.staleReason} Verify the date before relying on these signals.</div>}

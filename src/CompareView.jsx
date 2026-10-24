@@ -168,7 +168,7 @@ export default function CompareView({ stocks, pricesDate, onClose }) {
         </div>
 
         <p style={{ fontSize: 11, color: "var(--t3)", textAlign: "center", marginTop: 16 }}>
-          Technical data from Yahoo Finance. Fundamentals from NSE filings. Educational purposes only.
+          Technical data from NSE's daily prices. Fundamentals from NSE filings. Educational purposes only.
         </p>
       </div>
     </div>

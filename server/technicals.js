@@ -1,10 +1,12 @@
 // Ported verbatim from stock-screener's server/technicals.js — moving averages,
 // RSI, pivot levels, crossovers and the summary gauge behind the Technical
-// Analysis panel, from a year of Yahoo daily candles.
-import { fetchJson as requestJson } from "./upstream.js";
+// Analysis panel, from a year of daily candles — NSE's own, from its
+// bhavcopies (price-history.js; Yahoo's until 24 Oct 2026).
 import { HttpError } from "./http-errors.js";
+import { historyBars } from "./price-history.js";
+import { loadMarketSnapshot } from "./market-data.js";
 const CACHE = new Map();
-const CACHE_MS = 20 * 60 * 1000; // 20 min
+const CACHE_MS = 6 * 60 * 60 * 1000; // the prices change once an evening
 
 function cacheGet(key) {
   const hit = CACHE.get(key);
@@ -57,34 +59,13 @@ function calcPivotPoints(high, low, close) {
   };
 }
 
-/** Fetch 1 year of daily OHLCV from Yahoo Finance */
-async function fetchYahooHistory(ticker) {
-  const symbols = [`${ticker}.NS`, `${ticker}-SM.NS`, `${ticker}.BO`];
-  let foundButInsufficient = null;
-  for (const sym of symbols) {
-    try {
-      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?range=1y&interval=1d`;
-      const json = await requestJson(url, {
-        headers: { "User-Agent": "Mozilla/5.0", Accept: "application/json" },
-        service: "Yahoo technical data", timeoutMs: 9_000, retries: 0, maxBytes: 8 * 1024 * 1024,
-      });
-      const result = json.chart?.result?.[0];
-      if (!result) continue;
-      const closes = result.indicators?.quote?.[0]?.close || [];
-      const highs  = result.indicators?.quote?.[0]?.high  || [];
-      const lows   = result.indicators?.quote?.[0]?.low   || [];
-      const volumes= result.indicators?.quote?.[0]?.volume|| [];
-      const timestamps = result.timestamp || [];
-      const valid = closes.map((c, i) => ({ c, h: highs[i], l: lows[i], v: volumes[i], t: timestamps[i] }))
-        .filter(x => x.c != null);
-      if (valid.length < 20) { foundButInsufficient = { sym, days: valid.length }; continue; }
-      return { sym, candles: valid };
-    } catch { continue; }
-  }
-  if (foundButInsufficient) {
-    throw new HttpError(`${ticker} was recently listed — only ${foundButInsufficient.days} day(s) of price data available. Technical analysis requires at least 20 trading days.`, 422);
-  }
-  throw new Error(`No price history found for ${ticker} on Yahoo Finance`);
+// A year of the company's daily candles, from NSE's bhavcopies
+// (price-history.js), on today's share basis
+function nseHistory(ticker, snapshot) {
+  const bars = historyBars(ticker, snapshot).slice(-260);
+  if (!bars.length) throw new HttpError(`No NSE price history is kept for ${ticker} yet; it arrives with the evening data update.`, 404);
+  if (bars.length < 20) throw new HttpError(`${ticker} was recently listed — only ${bars.length} day(s) of price data available. Technical analysis requires at least 20 trading days.`, 422);
+  return { sym: ticker, candles: bars.map(b => ({ c: b.close, h: b.high, l: b.low, v: b.volume, t: b.date })) };
 }
 
 /** Determine setup state label */
@@ -156,22 +137,13 @@ function buildSummary(price, smas, emas, rsi, pivots) {
   return { bearish, neutral, bullish, total, overall, signals };
 }
 
-export async function fetchTechnicals(ticker) {
+export async function fetchTechnicals(ticker, snapshot = loadMarketSnapshot()) {
+  // kept until the next evening's prices
   const cacheKey = ticker.toUpperCase();
-  const cachedEntry = CACHE.get(cacheKey);
-  const cached = cacheGet(cacheKey);
+  const cached = cacheGet(`${cacheKey}|${snapshot?.pricesDate ?? ""}`);
   if (cached) return { ...cached, cached: true };
-  if (cachedEntry?.retryAt > Date.now()) return { ...cachedEntry.data, cached: true, stale: true, staleReason: "Yahoo refresh failed; showing the last successful technical data." };
-
-  let history;
-  try {
-    history = await fetchYahooHistory(ticker);
-  } catch (error) {
-    if (!cachedEntry) throw error;
-    CACHE.set(cacheKey, { ...cachedEntry, retryAt: Date.now() + 60_000 });
-    return { ...cachedEntry.data, cached: true, stale: true, staleReason: "Yahoo refresh failed; showing the last successful technical data." };
-  }
-  const { sym, candles } = history;
+  const history = nseHistory(cacheKey, snapshot);
+  const { candles } = history;
   const closes = candles.map(c => c.c);
 
   const price = closes[closes.length - 1];
@@ -266,7 +238,7 @@ export async function fetchTechnicals(ticker) {
 
   const data = {
     ticker: cacheKey,
-    yahooSymbol: sym,
+    source: "NSE",
     price,
     // EMAs
     ema9, ema20,
@@ -292,6 +264,6 @@ export async function fetchTechnicals(ticker) {
     sparkline,
   };
 
-  CACHE.set(cacheKey, { at: Date.now(), data });
+  CACHE.set(`${cacheKey}|${snapshot?.pricesDate ?? ""}`, { at: Date.now(), data });
   return data;
 }

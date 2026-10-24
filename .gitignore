@@ -18,6 +18,8 @@ data/*.db*
 # build-snapshot.js
 data/prices/
 data/market-snapshot.json
+# Each company's daily prices kept from those files (server/price-history.js)
+data/history/
 
 # Background jobs' bookkeeping (last check for new results)
 data/jobs-state.json

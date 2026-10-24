@@ -18,7 +18,7 @@ function fmtRs(n) {
 }
 
 const fmtDate = iso => (iso ? new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : null);
-const priceBasis = source => source === "live" ? "Yahoo daily close" : source === "cached" ? "Cached Yahoo daily close" : source === "close" ? "NSE daily close" : "Price";
+const priceBasis = source => (source ? "NSE daily close" : "Price");
 
 function timeAgo(ts) {
   if (!ts) return "";

@@ -9,8 +9,7 @@ import { portfolioSummary } from "./portfolioMath.js";
 
 // Ported from stock-screener's src/components/PortfolioPanel.jsx — summary
 // bar, sort pills, one row per lot, allocation bar. Holdings are saved to the
-// account instead of the browser; prices use Yahoo's latest completed daily
-// close where available, else NSE's last close. Each row says where the price sits against
+// account instead of the browser; prices are NSE's latest close. Each row says where the price sits against
 // the stock's levels (server/levels.js pricePosition) — described, never advised.
 
 const MONO = { fontVariantNumeric: "tabular-nums" };
@@ -31,7 +30,7 @@ function fmtPct(n) {
 const POSITION_TONE = { red: "var(--red)", yellow: "var(--yellow)", green: "var(--green)" };
 const plColor = n => (n == null ? "var(--t3)" : n >= 0 ? "var(--green)" : "var(--red)");
 const fmtDate = iso => (iso ? new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : null);
-const priceBasis = p => p?.source === "live" ? "Yahoo daily close" : p?.source === "cached" ? "Cached Yahoo daily close" : p?.source === "close" ? "NSE daily close" : "Price unavailable";
+const priceBasis = p => (p?.source ? "NSE daily close" : "Price unavailable");
 
 const label = { fontSize: 11.5, color: "var(--t3)", fontWeight: 400 };
 

@@ -130,6 +130,10 @@ jobs:
         env:
           FORCE_DATA_PACK: ${{ steps.start_data.outputs.force_pack }}
           FORCE_DATA_REFRESH: ${{ steps.retry.outputs.force_data_refresh }}
+          # The price history back five years, 120 more trading days a run
+          # (server/history-backfill.js), gently, until it's there
+          HISTORY_YEARS: "5"
+          HISTORY_BACKFILL_DAYS: "120"
         run: node --no-warnings scripts/refresh-data.mjs
 
       - uses: actions/cache/save@v4
@@ -143,7 +147,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tar -czf market-data.tar.gz -C data market logos market-snapshot.json performance-snapshots.json research-score-cohorts.json shareholding
+          # history: each company's daily prices from NSE (price-history.js), once there are any
+          tar -czf market-data.tar.gz -C data market logos market-snapshot.json performance-snapshots.json research-score-cohorts.json shareholding $( [ -d data/history ] && echo history )
           node -e 'const fs = require("fs"); const s = JSON.parse(fs.readFileSync("data/market-snapshot.json", "utf8")); console.log(JSON.stringify({ builtAt: s.builtAt, pricesDate: s.pricesDate, companies: fs.readdirSync("data/market").length, packedAt: new Date().toISOString() }))' > manifest.json
           cat manifest.json
           cp data/jobs-state.json jobs-state.json 2>/dev/null || echo '{}' > jobs-state.json

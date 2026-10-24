@@ -6,8 +6,9 @@
 // (user-alerts.js).
 //
 // Checked every 15 minutes while NSE trades (9:15–15:30 IST, Monday to
-// Friday) against the latest completed Yahoo daily close, falling back to
-// the last NSE close where Yahoo fails — the message says which.
+// Friday) against NSE's latest close, from the evening snapshot — the last
+// finished day's, as Yahoo's daily close was until 24 Oct 2026 (Yahoo's terms
+// don't allow an app to use its data). The message says the close's date.
 import { db } from "./db.js";
 import { currentPrices } from "./prices.js";
 import { sendTelegram, escapeHtml, telegramToken } from "./telegram.js";
@@ -17,16 +18,14 @@ const rs = n => `₹${Number(n).toLocaleString("en-IN", { maximumFractionDigits:
 
 export function alertMessage(a, p) {
   const where = a.condition === "below" ? "at or below" : "at or above";
-  const basis = p.source === "live" ? `Yahoo daily close${p.asOf ? ` on ${p.asOf}` : ""}`
-    : p.source === "cached" ? `Cached Yahoo daily close${p.asOf ? ` on ${p.asOf}` : ""}`
-      : `NSE daily close${p.asOf ? ` on ${p.asOf}` : ""}`;
+  const basis = `NSE daily close${p.asOf ? ` on ${p.asOf}` : ""}`;
   return `<b>${escapeHtml(a.name || a.ticker)}</b> (${escapeHtml(a.ticker)}) is ${rs(p.price)} — ${where} your alert price of ${rs(a.threshold)}.\n<i>${basis}</i>`;
 }
 
 // The same, as a phone notification; tapping it opens the company
 export function alertPush(a, p) {
   const where = a.condition === "below" ? "At or below" : "At or above";
-  const basis = p.source === "live" || p.source === "cached" ? "Yahoo daily close" : "NSE daily close";
+  const basis = "NSE daily close";
   return {
     title: `${a.name || a.ticker} is ${rs(p.price)}`,
     body: `${where} your alert price of ${rs(a.threshold)}. ${basis}${p.asOf ? ` on ${p.asOf}` : ""}.`,

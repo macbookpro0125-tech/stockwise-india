@@ -49,25 +49,3 @@ await assert.rejects(fetchJson("https://example.test/bad-json", {
 }), error => error instanceof UpstreamError && error.code === "UPSTREAM_INVALID_JSON");
 console.log("ok: invalid upstream JSON becomes a typed dependency error");
 
-const originalFetch = globalThis.fetch;
-const originalNow = Date.now;
-let now = Date.UTC(2026, 9, 2, 12);
-Date.now = () => now;
-globalThis.fetch = async () => new Response(JSON.stringify({ chart: { result: [{
-  timestamp: [Date.UTC(2026, 9, 1, 12) / 1000],
-  indicators: { quote: [{ close: [123.45] }] },
-}] } }), { headers: { "content-type": "application/json" } });
-try {
-  const { fetchCmp } = await import("./quote.js");
-  const live = await fetchCmp("UPSTREAMFIXTURE");
-  assert.equal(live.cmp, 123.45);
-  now += 16 * 60 * 1000;
-  globalThis.fetch = async () => { throw new TypeError("simulated network outage"); };
-  const fallback = await fetchCmp("UPSTREAMFIXTURE");
-  assert.equal(fallback.cmp, 123.45);
-  assert.equal(fallback.stale, true);
-  console.log("ok: quote refresh failure serves the last quote marked stale");
-} finally {
-  globalThis.fetch = originalFetch;
-  Date.now = originalNow;
-}

@@ -42,7 +42,7 @@ export default function StockDataDates({ dates, quote, research }) {
   const quoteNewer = quote?.asOf && dates.prices && quote.asOf > dates.prices;
   if (dates.prices || quote?.asOf) {
     rows.push(["Share price", quoteNewer
-      ? `Yahoo Finance's daily close of ${day(quote.asOf)} at the top of the page; returns, scores and levels use NSE's close of ${day(dates.prices)}`
+      ? `The close of ${day(quote.asOf)} at the top of the page; returns, scores and levels use NSE's close of ${day(dates.prices)}`
       : `NSE's closing price of ${day(dates.prices ?? quote.asOf)}`]);
   }
   if (dates.quarter) rows.push(["Latest quarter", `The quarter to ${day(dates.quarter.end)}${dates.quarter.filed ? `, filed with NSE on ${day(dates.quarter.filed)}` : ""}. P/E and EPS over the last four quarters end here`]);
@@ -57,7 +57,7 @@ export default function StockDataDates({ dates, quote, research }) {
         {rows.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}.</dd></div>)}
       </dl>
       <p className="sd-foot">
-        Company figures are the results companies file with NSE, and returns use NSE's daily closes; the chart and the latest close at the top come from Yahoo Finance. NSE's prices and new filings are read each weekday evening after the close.{" "}
+        Company figures are the results companies file with NSE, and returns, the chart and the latest close at the top use NSE's daily closes. NSE's prices and new filings are read each weekday evening after the close.{" "}
         <a href="/help" onClick={e => { e.preventDefault(); navigate("/help"); window.scrollTo(0, 0); }}>How the figures work</a>
       </p>
     </section>

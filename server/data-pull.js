@@ -25,7 +25,7 @@ const PACK_STATE_PATH = join(DATA_DIR, "data-pack-state.json");
 // Market files sent by the release and included in the seed. Keep score
 // cohorts here so the free host's study survives each data update. The
 // snapshot goes last: it's what tells the screen the data changed.
-const PACK_ENTRIES = ["market", "shareholding", "logos", "performance-snapshots.json", "research-score-cohorts.json", "market-snapshot.json"];
+const PACK_ENTRIES = ["market", "shareholding", "logos", "history", "performance-snapshots.json", "research-score-cohorts.json", "market-snapshot.json"];
 
 // A file moved into place, copied if a move can't cross over
 function moveFile(from, to) {

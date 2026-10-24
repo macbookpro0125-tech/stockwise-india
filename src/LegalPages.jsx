@@ -107,7 +107,7 @@ export function PrivacyPage({ signedIn }) {
 
       <H>Market data from other services</H>
       <P>
-        To show prices, results and news, our server fetches public market data from NSE, Yahoo Finance and Google News.
+        To show prices, results and news, our server fetches public market data from NSE and headlines from Google News.
         For company logos it fetches each company's icon from the company's own website or, where that has none we can
         use, from a public directory of Indian listed-company logos (api.dharun.dev); your browser only ever loads them
         from our server. Those requests contain only the company being looked up — never your email or anything about
@@ -197,7 +197,7 @@ export function DisclaimerPage({ signedIn }) {
 
       <H>Not affiliated</H>
       <P>
-        Jocular Insights is independent and is not affiliated with NSE, BSE, SEBI, Yahoo, Google or any company shown.
+        Jocular Insights is independent and is not affiliated with NSE, BSE, SEBI, Google or any company shown.
         Company names, logos and trademarks belong to their owners. They are shown only to identify each company, and
         showing them doesn't mean a company endorses Jocular Insights. A company can ask us to remove its logo by
         writing to <a href="mailto:jocularinsights@gmail.com" style={{ color: "var(--accent)" }}>jocularinsights@gmail.com</a>;
@@ -225,7 +225,7 @@ export function HelpPage({ signedIn }) {
       <H>Where the figures come from</H>
       <UL>
         <LI><B>Company results:</B> the quarterly and annual results each company files with NSE. Ratios such as P/E, ROE and debt to equity are calculated from them.</LI>
-        <LI><B>Prices and returns:</B> NSE's daily closing prices, and NSE's index closes for comparisons with the NIFTY 50 and sector indices. The price chart and the latest close at the top of a company page come from Yahoo Finance.</LI>
+        <LI><B>Prices and returns:</B> NSE's daily closing prices, and NSE's index closes for comparisons with the NIFTY 50 and sector indices. The price chart, its technicals and the latest close at the top of a company page use the same NSE daily prices.</LI>
         <LI><B>Shareholding and announcements:</B> the shareholding patterns and announcements companies file with NSE.</LI>
       </UL>
 

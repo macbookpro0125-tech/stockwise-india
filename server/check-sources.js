@@ -8,7 +8,6 @@
 import { fetchEquityList } from "./equity-list.js";
 import { NSE_BASE, fetchJson, fetchXbrl, integratedFilings } from "./fetch-nse.js";
 import { fetchShareholding } from "./fetch-shareholding.js";
-import { fetchCmp } from "./quote.js";
 
 const SYMBOL = "TCS";
 const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36";
@@ -45,7 +44,6 @@ const checks = [
   }],
   ["NSE bhavcopy (nsearchives)", bhavcopy],
   ["Nifty index lists (niftyindices)", () => status("https://www.niftyindices.com/IndexConstituent/ind_niftytotalmarket_list.csv")],
-  ["Yahoo daily close", async () => { const q = await fetchCmp(SYMBOL); return `${SYMBOL} ₹${q.cmp} on ${q.asOf}`; }],
 ];
 
 let failed = 0;

@@ -59,7 +59,7 @@ function resultsStatus(r) {
   return { text: `${qName} results awaited`, color: "var(--t3)" };
 }
 
-const priceBasis = source => source === "live" ? "Yahoo daily close" : source === "cached" ? "Cached Yahoo daily close" : source === "close" ? "NSE daily close" : "Price";
+const priceBasis = source => (source ? "NSE daily close" : "Price");
 
 // Where the price sits against the stock's levels, in a few words — the
 // zone from pricePosition (server/levels.js), which never says buy or sell

@@ -14,6 +14,7 @@
 // mean it refuses all of it. Failures are printed as workflow annotations.
 import { appendFileSync } from "node:fs";
 import { startDataJobs, jobStatus } from "../server/data-jobs.js";
+import { backfillHistory } from "../server/history-backfill.js";
 import { buildMarketSnapshot, loadMarketSnapshot, clearSnapshotCache } from "../server/market-data.js";
 import { fiscalYearEnds } from "../server/build-snapshot.js";
 
@@ -82,6 +83,12 @@ const timer = setInterval(async () => {
     }
   }
   const rebuilt = !!after && after !== before;
+  // and the price history a batch further back (server/history-backfill.js);
+  // a failure only means fewer years on the charts until the next run
+  if (rebuilt && Number(process.env.HISTORY_BACKFILL_DAYS) > 0) {
+    try { await backfillHistory({ years: Number(process.env.HISTORY_YEARS) || 5, maxDays: Number(process.env.HISTORY_BACKFILL_DAYS), log: m => console.log(m) }); }
+    catch (e) { annotate("warning", "Price history backfill failed", e.message); }
+  }
   console.log(rebuilt ? `Snapshot rebuilt: ${after} (prices ${loadMarketSnapshot()?.pricesDate})` : "The snapshot wasn't rebuilt — nothing to publish.");
   output("publish", String(rebuilt));
   process.exit(rebuilt ? 0 : 1);
