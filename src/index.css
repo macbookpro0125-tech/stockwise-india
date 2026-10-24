@@ -3055,3 +3055,19 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 .wl-news-head h3 { margin: 0; font-size: var(--fs-lg); font-weight: 500; color: var(--t1); }
 .tab-news-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 25%, transparent); }
 .btb-dot.btb-dot-news { background: var(--accent); }
+
+/* A headline's page (24 Oct 2026): the market and the sectors it's about, as
+   lines of an index — name, a month's line, the close and the day's move */
+.nw-idx { display: grid; grid-template-columns: minmax(0, 1fr) 72px auto; align-items: center; gap: 14px; min-height: 52px; padding: 8px 14px; }
+.nw-idx + .nw-idx { border-top: 1px solid var(--bdr); }
+.nw-idx-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-sm); font-weight: 500; color: var(--t1); }
+.nw-idx-val { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; font-size: var(--fs-sm); font-variant-numeric: tabular-nums; color: var(--t1); }
+.nw-idx-val .nw-chg { font-size: var(--fs-xs); }
+.nw-mini { display: block; width: 72px; height: 24px; color: var(--t3); }
+.nw-mini.up { color: var(--green); }
+.nw-mini.down { color: var(--red); }
+.nw-sec-movers { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px 16px; margin-top: 12px; }
+.nw-sec-h { margin: 0 0 6px; font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+.nw-sec-h.up { color: var(--green); }
+.nw-sec-h.down { color: var(--red); }
+@media (hover: hover) and (pointer: fine) { .nw-links a:hover { background: var(--s2); } }

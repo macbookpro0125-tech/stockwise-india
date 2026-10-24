@@ -1,6 +1,6 @@
 // The plain-English notes on an announcement (filingTerms.js)
 import assert from "node:assert/strict";
-import { explainFiling } from "./filingTerms.js";
+import { explainFiling, explainHeadline } from "./filingTerms.js";
 
 const names = r => r.terms.map(t => t.term);
 
@@ -23,4 +23,8 @@ assert.deepEqual(names(explainFiling({ summary: "This is to define the scope." }
 // at most five, and nothing for an unknown kind
 assert.ok(explainFiling({ summary: "preferential issue warrants private placement QIP rights issue bonus buyback record date dividend" }).terms.length <= 5);
 assert.equal(explainFiling({ kind: "nope" }).kind, null);
+// a headline's market words
+assert.deepEqual(explainHeadline("Equity market valuations reset as earnings momentum builds: Report").map(t => t.term), ["Valuation", "Earnings"]);
+assert.deepEqual(explainHeadline("Sensex falls as FIIs sell and crude surges").map(t => t.term), ["FIIs / FPIs", "Sensex and Nifty", "Crude oil"]);
+assert.deepEqual(explainHeadline("Phone launch next week"), []);
 console.log("filingTerms tests passed");

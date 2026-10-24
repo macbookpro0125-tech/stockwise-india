@@ -81,3 +81,34 @@ export function explainFiling({ title = "", summary = "", kind } = {}) {
   }
   return { kind: KIND_MEANS[kind] ?? null, terms };
 }
+
+// The market's words in a headline (24 Oct 2026: a headline's page in the app
+// itself) — what each means in general, never what the story says
+const MARKET_TERMS = [
+  [/valuations?|\bp\/e\b|price[- ]to[- ]earnings/i, "Valuation", "How expensive shares are next to what the companies earn. The usual measure is the P/E ratio: the price divided by a year's profit per share. A valuation \"reset\" means that ratio has come down."],
+  [/\bearnings\b|\bprofits?\b/i, "Earnings", "A company's profit. \"Earnings season\" is the few weeks each quarter when companies report their results; \"earnings momentum\" means profits are growing faster than before."],
+  [/\bfiis?\b|\bfpis?\b|foreign (portfolio )?investors?|foreign funds?/i, "FIIs / FPIs", "Foreign institutional (or portfolio) investors: funds from abroad that buy Indian shares and bonds. Their buying or selling often moves the whole market."],
+  [/\bdiis?\b|domestic institution/i, "DIIs", "Domestic institutional investors: Indian mutual funds, insurers and pension funds. They often buy when foreign funds sell."],
+  [/repo rate|rate cut|rate hike|\bmpc\b|monetary policy/i, "Repo rate", "The rate at which the RBI lends to banks. A cut makes loans cheaper and usually helps shares; the RBI's Monetary Policy Committee (MPC) sets it."],
+  [/\brbi\b/i, "RBI", "The Reserve Bank of India, the central bank: it sets interest rates, manages the rupee and regulates banks."],
+  [/\bsebi\b/i, "SEBI", "The Securities and Exchange Board of India, the market regulator: it makes the rules for listed companies, brokers and funds."],
+  [/inflation|\bcpi\b|\bwpi\b/i, "Inflation", "How fast prices are rising, measured by the consumer price index (CPI). High inflation makes rate cuts less likely."],
+  [/\bgdp\b/i, "GDP", "Gross domestic product: the value of everything the country produces in a period. Its growth is the broadest measure of the economy."],
+  [/\bipos?\b|initial public offer/i, "IPO", "Initial public offering: a company selling shares to the public for the first time, before they list on the exchange."],
+  [/\bgmp\b|grey market/i, "Grey market premium", "An unofficial price people trade IPO shares at before listing. It isn't regulated and is often wrong."],
+  [/\bsensex\b|\bnifty\b/i, "Sensex and Nifty", "The market's two main indices: the Sensex is 30 large companies on BSE, the NIFTY 50 is 50 large companies on NSE. They show how the market as a whole moved."],
+  [/bond yields?|\byields?\b/i, "Bond yield", "The return on government bonds. When it rises, safer bonds compete harder with shares for investors' money."],
+  [/\brupee\b/i, "Rupee", "Its value against the dollar. A weaker rupee helps exporters such as IT companies and hurts importers such as oil companies."],
+  [/\bcrude\b|oil prices?/i, "Crude oil", "India imports most of its oil, so higher prices raise costs and inflation and weigh on the rupee and the market."],
+  [/profit[- ]booking|profit[- ]taking/i, "Profit booking", "Investors selling shares that have risen, to lock in the gain. It often follows a sharp rally."],
+  [/\bcorrection\b/i, "Correction", "A fall of about 10% or more from a recent high. A fall of 20% or more is usually called a bear market."],
+  [/\brall(y|ies|ied)\b/i, "Rally", "A sustained rise in prices over days or weeks."],
+  [/market cap|m-?cap/i, "Market cap", "What a company is worth on the market: its share price times the number of shares."],
+  [/\bsips?\b|systematic investment/i, "SIP", "Systematic investment plan: a fixed amount put into a mutual fund every month."],
+  [/\bq[1-4]\b|quarter/i, "Quarter", "Indian companies' year runs April to March: Q1 is April–June, Q2 July–September, Q3 October–December, Q4 January–March."],
+];
+
+// Up to four terms a headline uses, in the order of the list above
+export function explainHeadline(title = "") {
+  return MARKET_TERMS.filter(([re]) => re.test(title)).slice(0, 4).map(([, term, means]) => ({ term, means }));
+}

@@ -1,6 +1,6 @@
 // The News page's sorting and filtering (market-news.js): node --no-warnings server/market-news-test.js
 import assert from "node:assert/strict";
-import { newsKind, announcementsFrom, headlinesFrom, companyIndex, namedCompanies, tidy, sameDayTogether, resultNumbers, pickTop } from "./market-news.js";
+import { newsKind, announcementsFrom, headlinesFrom, companyIndex, namedCompanies, tidy, sameDayTogether, resultNumbers, pickTop, headlineTopics, relatedHeadlines } from "./market-news.js";
 
 // Announcements: the kinds, and paperwork left out
 const kinds = [
@@ -102,6 +102,7 @@ const heads = headlinesFrom([rss([
 ])], now);
 assert.deepEqual(heads.map(h => h.title), ["Sensex falls 460 points as crude surges past $110", "Phone maker's first-week stock sold out ahead of launch", "Coal India Q2 results date announced"], "tips, quote pages, trade setups, a repeat and an old story left out");
 assert.equal(heads[0].publisher, "Paper A");
+assert.deepEqual(heads[0].others.map(o => o.publisher), ["Paper B"], "the repeat is kept with the first, for its page");
 assert.ok(heads.every(h => /^h-[a-z0-9]+$/.test(h.id)));
 const wraps = headlinesFrom([rss(Array.from({ length: 9 }, (_, n) => [`Sensex ${["rises", "slips", "jumps", "dips", "gains", "drops", "climbs", "sinks", "edges"][n]} in ${["early", "noon", "late", "morning", "midday", "closing", "opening", "afternoon", "evening"][n]} deals on ${["banks", "metals", "autos", "pharma", "IT", "FMCG", "realty", "power", "media"][n]}`, `P${n}`, at(n + 1), `https://p${n}.example/`]))], now);
 assert.equal(wraps.length, 6, "the day's close: the six latest stories");
@@ -128,5 +129,14 @@ assert.deepEqual(names("BSE Sensex falls 400 points"), [], "the Sensex isn't BSE
 assert.deepEqual(names("Listed on NSE and BSE from Monday"), [], "nor is the exchange — BSE is never tagged");
 assert.deepEqual(names("Coal India Q2 results"), ["COALINDIA"]);
 assert.deepEqual(names("Tiny Company wins an order"), [], "small companies aren't tagged");
+
+// A headline's page: the sectors it's about, and related headlines
+assert.deepEqual(headlineTopics("PSU banks rally as RBI cuts repo rate"), ["Nifty PSU Bank", "Nifty Bank"], "narrower first, two at most");
+assert.deepEqual(headlineTopics("IT stocks slip after Accenture's outlook"), ["Nifty IT"], "IT in capitals");
+assert.deepEqual(headlineTopics("Is it time to buy?"), [], "not the word it");
+assert.deepEqual(headlineTopics("Equity market valuations reset as earnings momentum builds"), []);
+assert.deepEqual(headlineTopics("Coal India Q2 results", ["Nifty Metal"]), ["Nifty Metal"], "a named company's sector");
+const h = (id, title) => ({ id, title, time: "2026-10-22T10:00:00Z" });
+assert.deepEqual(relatedHeadlines(h("a", "Crude oil prices surge, Sensex falls"), [h("a", "x"), h("b", "Crude oil prices ease"), h("c", "Gold prices rise"), h("d", "Phone launch")]).map(r => r.id), ["b"], "two words in common, not itself");
 
 console.log("ok: announcements sorted into kinds, paperwork out; headlines without tips or repeats; companies named only when named");

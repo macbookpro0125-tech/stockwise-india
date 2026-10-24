@@ -13,6 +13,7 @@ import { allMetrics } from "./screen.js";
 import { loadMarketSnapshot } from "./market-data.js";
 import { cached, decodeRss, isJunkHeadline, companyNews } from "./company-extras.js";
 import { ROUTINE, ONLY_THE_RULE, inOwnWords } from "./moves.js";
+import { exploreBoard } from "./explore.js";
 
 const MINUTE = 60_000;
 const DAY = 86_400_000;
@@ -43,7 +44,7 @@ export function newsKind(subject = "", summary = "") {
   if (PAPERWORK.test(s) || ROUTINE.test(text) || NOT_NEWS.test(text)) return null;
   if (/financial results?|integrated filing.{0,20}financ/i.test(s) || (/outcome of board meeting/i.test(s) && /financial results|unaudited|audited results|quarter (and half year )?ended/i.test(summary))) return "results";
   // a results press release ("IHCL announces financial results for Q2 FY2027")
-  if (/press release/i.test(s) && /financial results|quarterly (net )?profit|q[1-4] ?fy|quarter (and half year )?ended|half year ended/i.test(summary)) return "results";
+  if (/press release/i.test(s) && /financial results|quarterly (net )?profit|\bq[1-4] ?fy|quarter (and half year )?ended|half year ended/i.test(summary)) return "results";
   if (/dividend|bonus|split|sub-?division|buy-?back|rights issue/i.test(text) || (/record date/i.test(s) && /dividend|bonus|split|rights/i.test(summary))) return "dividends";
   if (/record date/i.test(s)) return null;
   if (/allotment of securities/i.test(s)) return /preferential|qualified institutions|\bqip\b|rights/i.test(summary) ? "deals" : null;
@@ -155,8 +156,13 @@ export function headlinesFrom(xmls, now = Date.now(), named = null) {
       if (!clean || !time || isNaN(time) || now - time > 2 * DAY || isJunkHeadline(clean) || TIPS.test(clean)) continue;
       if (!MARKET.test(clean) && !named?.(clean)) continue;
       const w = words(clean);
-      if (kept.some(k => sameStory(k.words, w))) continue;
-      kept.push({ words: w, title: clean, publisher: source || null, url: link, time: time.toISOString() });
+      // the same story from another site: kept with the first, for its page ("Also reported by")
+      const first = kept.find(k => sameStory(k.words, w));
+      if (first) {
+        if (source && source !== first.publisher && first.others.length < 6 && !first.others.some(o => o.publisher === source)) first.others.push({ title: clean, publisher: source, url: link, time: time.toISOString() });
+        continue;
+      }
+      kept.push({ words: w, title: clean, publisher: source || null, url: link, time: time.toISOString(), others: [] });
     }
   }
   // the day's close is reported by every site in its own words: the six latest
@@ -298,7 +304,7 @@ function buildFeed(nse, heads, rows) {
   return { items, unread, asOf, filings, bySymbol };
 }
 
-const listed = ({ quote, ...item }) => ({ ...item, summary: item.summary && item.summary.length > 240 ? `${item.summary.slice(0, 239).trimEnd()}…` : item.summary ?? null, quote });
+const listed = ({ quote, others: _, ...item }) => ({ ...item, summary: item.summary && item.summary.length > 240 ? `${item.summary.slice(0, 239).trimEnd()}…` : item.summary ?? null, quote });
 
 // A page of the feed: one kind, or the watchlist's companies, newest first;
 // `before` is the last item's time and id
@@ -396,5 +402,82 @@ export async function newsItem(id) {
       : null;
     return { item: { ...item, quote: quoteOf(row) }, more: announced(item.symbol), news: recent, quarters, asOf };
   }
-  return { item, companies: (item.companies ?? []).map(q => ({ ...q, announced: announced(q.symbol).slice(0, 2) })), asOf };
+  return { item, companies: (item.companies ?? []).map(q => ({ ...q, announced: announced(q.symbol).slice(0, 2) })), asOf, ...(await headlineContext(item, items, bySymbol)) };
+}
+
+// ---- Around a headline --------------------------------------------------------
+
+// A headline's page shows only the app's own figures beside it (24 Oct 2026,
+// "I should be able to see something here in the app itself"; the story stays
+// on the publisher's site): the market that day, the sectors it's about and
+// their biggest moves, the same story elsewhere, and related headlines.
+
+// What a headline is about, by its words: [pattern, the board's index]
+const TOPICS = [
+  [/\bpsu banks?\b|public sector banks?/i, "Nifty PSU Bank"],
+  [/\bprivate banks?\b/i, "Nifty Private Bank"],
+  [/\bbank(s|ing)?\b|\blenders?\b/i, "Nifty Bank"],
+  [/\bnbfcs?\b|financial services|\binsurers?\b|\binsurance\b/i, "Nifty Financial Services"],
+  [/\bIT\b|\btech (stocks|sector|companies|shares|majors?)\b|\bsoftware\b|\bit services\b/, "Nifty IT"],
+  [/\bauto(mobile|makers?|s)?\b|\bcars?\b|two-wheelers?|\bev\b|electric vehicles?/i, "Nifty Auto"],
+  [/\bpharma(ceutical)?s?\b|\bdrug(maker)?s?\b/i, "Nifty Pharma"],
+  [/\bhealthcare\b|\bhospitals?\b/i, "Nifty Healthcare Index"],
+  [/\bmetals?\b|\bsteel\b|\balumin(i)?um\b|\bcopper\b|\bmining\b/i, "Nifty Metal"],
+  [/\bfmcg\b|consumer goods/i, "Nifty FMCG"],
+  [/\brealty\b|real estate|\bhousing\b|\bdevelopers?\b/i, "Nifty Realty"],
+  [/\boil\b|\bcrude\b|\bgas\b|\brefiners?\b/i, "Nifty Oil & Gas"],
+  [/\bpower\b|\belectricity\b|\butilit(y|ies)\b/i, "Nifty Power"],
+  [/\benergy\b|\brenewables?\b|\bsolar\b/i, "Nifty Energy"],
+  [/\bdefen[cs]e\b/i, "Nifty India Defence"],
+  [/\bcement\b/i, "Nifty Cement"],
+  [/\bmedia\b|\bentertainment\b/i, "Nifty Media"],
+  [/\bchemicals?\b/i, "Nifty Chemicals"],
+  [/\bcapital markets?\b|\bbrokers?\b|\bamcs?\b|\bexchanges?\b/i, "Nifty Capital Markets"],
+  [/\binfra(structure)?\b/i, "Nifty Infrastructure"],
+  [/consumer durables?/i, "Nifty Consumer Durables"],
+];
+export function headlineTopics(title, namedSectorIndices = []) {
+  const out = [];
+  for (const [re, name] of TOPICS) if (re.test(title) && !out.includes(name)) out.push(name);
+  for (const name of namedSectorIndices) if (name && !out.includes(name)) out.push(name);
+  return out.slice(0, 2);
+}
+
+// The other headlines that share most of its words (not the same story)
+export function relatedHeadlines(item, headlines, max = 5) {
+  const mine = words(item.title);
+  return headlines
+    .filter(h => h.id !== item.id)
+    .map(h => { let n = 0; for (const w of words(h.title)) if (mine.has(w)) n++; return [n, h]; })
+    .filter(([n]) => n >= 2)
+    .sort((a, b) => b[0] - a[0] || b[1].time.localeCompare(a[1].time))
+    .slice(0, max).map(([, h]) => h);
+}
+
+// A sector's companies over ₹1,000 crore that moved most on the day
+function sectorMovers(indexName, rows) {
+  const members = rows.filter(r => r.sectorIndex === indexName && r.ret1d != null && r.marketCapCr >= LARGE_CR);
+  const by = [...members].sort((a, b) => b.ret1d - a.ret1d);
+  const q = r => quoteOf(r);
+  return { companies: members.length, gainers: by.filter(r => r.ret1d > 0).slice(0, 3).map(q), losers: by.filter(r => r.ret1d < 0).reverse().slice(0, 3).map(q) };
+}
+
+const MARKET_SHOWN = ["Nifty 50", "Nifty Bank", "NIFTY Midcap 100", "NIFTY Smallcap 100"];
+async function headlineContext(item, items, bySymbol) {
+  const board = await exploreBoard().catch(() => null);
+  const all = [...(board?.market ?? []), ...(board?.sectors ?? [])];
+  const card = name => all.find(i => i.name.toLowerCase() === name.toLowerCase()) ?? null;
+  const market = MARKET_SHOWN.map(card).filter(Boolean);
+  const named = (item.companies ?? []).map(c => bySymbol.get(c.symbol)?.sectorIndex);
+  const rows = [...bySymbol.values()];
+  const sectors = headlineTopics(item.title, named).map(name => ({ name, index: card(name), ...sectorMovers(name, rows) }))
+    .filter(s => s.index || s.companies);
+  const headlines = items.filter(i => i.type === "headline");
+  return {
+    boardAsOf: board?.asOf ?? null,
+    market,
+    sectors,
+    others: item.others ?? [],
+    related: relatedHeadlines(item, headlines).map(listed),
+  };
 }

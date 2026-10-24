@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, ExternalLink, FileText, Newspaper, ChevronRight } from "lucide-react";
 import { api } from "./api.js";
-import { explainFiling } from "./filingTerms.js";
+import { explainFiling, explainHeadline } from "./filingTerms.js";
 import { compareResults } from "./resultsCompare.js";
 import CompanyLogo from "./CompanyLogo.jsx";
 import { niceName } from "./stockName.js";
@@ -322,17 +322,37 @@ function Detail({ id, onBack, onOpen, onOpenStock }) {
       <p className="nw-foot">From NSE's announcements, as the company filed them. Not investment advice.</p>
     </article>
   );
+  const terms = explainHeadline(item.title);
   return (
     <article className="nw-detail" aria-label={item.title}>
       {back}
       <p className="nw-eyebrow"><span className="nw-kind k-headlines">Headline</span><span>{fullTime(item.time)}</span></p>
       <h2 className="nw-title">{item.title}</h2>
-      <p className="nw-byline">{item.publisher ?? "A news site"}</p>
+      <p className="nw-byline">{item.publisher ?? "A news site"}{data.others?.length > 0 ? ` and ${data.others.length} more` : ""}</p>
+      {/* a wide screen: the story's context on the left, the market and related headlines beside it */}
+      <div className="dt-cols">
+      <div className="dt-main">
       <div className="nw-actions">
         <a className="btn-primary nw-btn" href={item.url} target="_blank" rel="noopener noreferrer"><ExternalLink size={16} aria-hidden="true" /> Read the story{item.publisher ? ` on ${item.publisher}` : ""}</a>
       </div>
-      <p className="nw-note">The story is on the publisher's site; this page shows its headline only.</p>
-      {data.companies?.length > 0 ? (
+      <p className="nw-note">The story is on the publisher's site. Around it here: the app's own figures for what it's about.</p>
+      {data.others?.length > 0 && (
+        <section className="nw-section" aria-label="Also reported by">
+          <h3 className="nw-section-head">Also reported by</h3>
+          <ul className="nw-links">
+            {data.others.map(o => <li key={o.url}><a href={o.url} target="_blank" rel="noopener noreferrer">{o.title}<span>{o.publisher} · {clock(o.time)}</span></a></li>)}
+          </ul>
+        </section>
+      )}
+      {terms.length > 0 && (
+        <section className="nw-plain" aria-label="What the words mean">
+          <span className="nw-said-label">What the words mean</span>
+          <dl className="nw-terms">{terms.map(t => <div key={t.term}><dt>{t.term}</dt><dd>{t.means}</dd></div>)}</dl>
+          <p className="nw-plain-note">What these words mean in general, not what this story says.</p>
+        </section>
+      )}
+      {data.sectors?.map(sec => <SectorPanel key={sec.name} sector={sec} asOf={data.boardAsOf ?? data.asOf} onOpenStock={onOpenStock} />)}
+      {data.companies?.length > 0 && (
         <section className="nw-section" aria-label="Companies it names">
           <h3 className="nw-section-head">Companies it names</h3>
           {data.companies.map(c => (
@@ -342,8 +362,74 @@ function Detail({ id, onBack, onOpen, onOpenStock }) {
             </div>
           ))}
         </section>
-      ) : <p className="nw-note">It doesn't name a company over ₹5,000 crore by name.</p>}
+      )}
+      </div>
+      <div className="dt-side">
+      {data.market?.length > 0 && (
+        <section className="nw-section" aria-label="The market">
+          <h3 className="nw-section-head">The market{data.boardAsOf ? ` at the close on ${shortDate(data.boardAsOf)}` : ""}</h3>
+          <div className="nw-list nw-idx-list">{data.market.map(i => <IndexLine key={i.name} index={i} />)}</div>
+        </section>
+      )}
+      {data.related?.length > 0 && (
+        <section className="nw-section" aria-label="Related headlines">
+          <h3 className="nw-section-head">Related headlines</h3>
+          <div className="nw-list">{data.related.map(r => <NewsRow key={r.id} item={r} onOpen={onOpen} compact />)}</div>
+        </section>
+      )}
+      </div>
+      </div>
+      <p className="nw-foot">The headline as published; the figures are the app's own, from NSE. Not investment advice.</p>
     </article>
+  );
+}
+
+// An index in a line: its name, a month of closes, the close and the day's move
+const idxName = n => n.replace(/^nifty/i, "NIFTY").replace(/ index$/i, "");
+function MiniSpark({ closes, up }) {
+  const v = (closes ?? []).filter(c => c != null);
+  if (v.length < 2) return <span className="nw-mini" />;
+  const min = Math.min(...v), max = Math.max(...v);
+  const pts = v.map((c, i) => `${((i / (v.length - 1)) * 100).toFixed(1)},${(max === min ? 12 : 22 - ((c - min) / (max - min)) * 20).toFixed(1)}`).join(" ");
+  return <svg className={`nw-mini ${up ? "up" : "down"}`} viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true"><polyline points={pts} fill="none" stroke="currentColor" strokeWidth="1.6" vectorEffect="non-scaling-stroke" strokeLinejoin="round" /></svg>;
+}
+function IndexLine({ index: i }) {
+  return (
+    <div className="nw-idx">
+      <span className="nw-idx-name">{idxName(i.name)}</span>
+      <MiniSpark closes={i.spark} up={i.changePct >= 0} />
+      <span className="nw-idx-val">{i.close.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}<Change value={i.changePct} /></span>
+    </div>
+  );
+}
+
+// A sector the headline is about: its index, and its companies that moved most that day
+function SectorPanel({ sector: s, asOf, onOpenStock }) {
+  const lists = [["Rose most", "up", s.gainers], ["Fell most", "down", s.losers]].filter(([, , l]) => l?.length);
+  return (
+    <section className="nw-section" aria-label={idxName(s.name)}>
+      <h3 className="nw-section-head">The sector it's about{asOf ? `, on ${shortDate(asOf)}` : ""}</h3>
+      {s.index && <div className="nw-list nw-idx-list"><IndexLine index={s.index} /></div>}
+      {lists.length > 0 && (
+        <div className="nw-sec-movers">
+          {lists.map(([t, cls, list]) => (
+            <div key={t}>
+              <p className={`nw-sec-h ${cls}`}>{t}</p>
+              <div className="nw-list">
+                {list.map(q => (
+                  <button key={q.symbol} type="button" className="nw-row compact" onClick={() => onOpenStock(q.symbol)}>
+                    <span className="nw-mark"><CompanyLogo symbol={q.symbol} size={32} fallback={q.name} /></span>
+                    <span className="nw-main"><span className="nw-top"><span className="nw-who">{niceName(q.name)}</span><span className="nw-spacer" /><Change value={q.change1d} /></span>
+                      {q.price != null && <span className="nw-subject">₹{q.price.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</span>}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {s.companies > 0 && <p className="nw-note">Its companies over ₹1,000 crore ({s.companies}), by their move on the day.</p>}
+    </section>
   );
 }
 
