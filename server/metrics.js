@@ -463,6 +463,9 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
       // The statements in detail (fetch-nse.js DETAIL_TAGS), in ₹ Cr; null
       // where the filing doesn't have the line
       ...Object.fromEntries(DETAIL_KEYS.map(k => [`${k}Cr`, cr(y[k])])),
+      // cash and bank apart from short-term investments, for the table
+      cashBankCr: y.cash == null ? null : cr(y.cash + (y.bankBalances ?? 0)),
+      currentInvestmentsCr: y.cash == null ? null : cr(y.currentInvestments),
       segments: (y.segments ?? []).map(sg => ({ name: sg.name, revenueCr: cr(sg.revenue), resultCr: cr(sg.result) })),
       // a segment list made of places ("India", "Outside India") is where the
       // sales come from; otherwise it's what the company sells
@@ -484,6 +487,9 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
       opm: op != null && q.revenue > 0 ? (op / q.revenue) * 100 : null,
       otherIncomeCr: cr(q.otherIncome), depreciationCr: cr(q.depreciation), financeCostsCr: cr(q.financeCosts),
       pbtCr: cr(q.pbt), profitCr: cr(q.profit), taxCr: cr(taxOf(q)),
+      // the quarter's expense lines (fetch-nse.js DETAIL_VERSION 2)
+      materialsCr: cr(q.materials), purchasesCr: cr(q.purchases), inventoryChangeCr: cr(q.inventoryChange),
+      employeesCr: cr(q.employees), otherExpensesCr: cr(q.otherExpenses), exceptionalCr: cr(q.exceptional),
       eps: q.eps != null ? q.eps / factorAfter(q.filed ?? isoPlusDays(q.qEnd, 45)) : null,
       salesYoY: yearAgo ? change(q.revenue, yearAgo.revenue) : null,
       profitYoY: yearAgo ? change(ownersProfit(q), ownersProfit(yearAgo)) : null,

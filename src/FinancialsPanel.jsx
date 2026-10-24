@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef, useMemo } from "react";
-import { profitSteps, cashSteps, cashLines, balanceParts, materialsOf } from "./statements.js";
+import { Fragment, useState, useEffect, useRef, useMemo } from "react";
+import { profitSteps, cashSteps, cashLines, balanceParts, materialsOf, ttmOf } from "./statements.js";
+import { ChartColumn } from "lucide-react";
 import { Bridge, BalanceMap, FundFlow, YearChips, fmtCrShort } from "./StatementCharts.jsx";
 
 // The original's Financials panel (stock-screener FinancialsPanel.jsx and
@@ -28,11 +29,14 @@ const STATEMENTS = {
   // filing has it; "  " indents a line that's part of the one above
   profitLoss: [
     ["Sales", "revenueCr", "cr"],
-    ["  Materials & goods bought", "materialsAllCr", "cr"], ["  Employee costs", "employeesCr", "cr"], ["  Other expenses", "otherExpensesCr", "cr"],
-    ["Operating costs", "opCostsCr", "cr"], ["Operating Profit", "operatingProfitCr", "cr"],
-    ["OPM %", "opm", "pct"], ["Other Income", "otherIncomeCr", "cr"], ["Depreciation", "depreciationCr", "cr"],
-    ["Interest", "financeCostsCr", "cr"], ["Exceptional items", "exceptionalCr", "cr"], ["Profit before tax", "pbtCr", "cr"], ["Tax", "taxCr", "cr"], ["Tax rate %", "taxRate", "pct"], ["Net Profit", "profitCr", "cr"],
+    ["  Raw materials & goods bought", "materialsBoughtCr", "cr"], ["  Change in stock", "inventoryChangeCr", "cr"],
+    ["  Employee costs", "employeesCr", "cr"], ["  Other expenses", "otherExpensesCr", "cr"],
+    ["Operating costs", "opCostsCr", "cr"], ["Material cost %", "materialCostPct", "pct"], ["Operating Profit", "operatingProfitCr", "cr"],
+    ["OPM %", "opm", "pct"], ["Other Income", "otherIncomeCr", "cr"], ["Interest", "financeCostsCr", "cr"],
+    ["Profit before depreciation & tax", "pbdtCr", "cr"], ["Depreciation", "depreciationCr", "cr"],
+    ["Exceptional items", "exceptionalCr", "cr"], ["Profit before tax", "pbtCr", "cr"], ["Tax", "taxCr", "cr"], ["Tax rate %", "taxRate", "pct"], ["Net Profit", "profitCr", "cr"],
     ["Net margin %", "netMargin", "pct"], ["EPS in Rs", "eps", "rs"],
+    ["Number of shares (Cr)", "sharesCr", "rs"], ["Dividend payout %", "payoutPct", "pct"],
   ],
   balanceSheet: [
     ["Share capital", "shareCapitalCr", "cr"], ["Reserves", "otherEquityCr", "cr"], ["Net worth (equity)", "equityCr", "cr"],
@@ -43,8 +47,10 @@ const STATEMENTS = {
     ["Current liabilities", "currentLiabilitiesCr", "cr"], ["Non-current liabilities", "nonCurrentLiabilitiesCr", "cr"],
     ["Total liabilities & equity", "totalAssetsCr", "cr"],
     ["Factories & equipment", "ppeCr", "cr"], ["Work in progress (capex)", "cwipCr", "cr"], ["Goodwill & intangibles", "intangiblesAllCr", "cr"],
+    ["Intangibles under development", "intangiblesUnderDevCr", "cr"],
     ["Long-term investments", "investmentsNcCr", "cr"], ["Inventory", "inventoriesCr", "cr"], ["Owed by customers", "receivablesCr", "cr"],
-    ["Cash & liquid investments", "liquidCr", "cr"], ["Current assets", "currentAssetsCr", "cr"], ["Non-current assets", "nonCurrentAssetsCr", "cr"],
+    ["Short-term investments", "currentInvestmentsCr", "cr"], ["Cash & bank", "cashBankCr", "cr"],
+    ["Current assets", "currentAssetsCr", "cr"], ["Non-current assets", "nonCurrentAssetsCr", "cr"],
     ["Total assets", "totalAssetsCr", "cr"],
   ],
   cashFlow: [
@@ -57,10 +63,13 @@ const STATEMENTS = {
   // Same lines as Profit & Loss, quarter by quarter, plus each quarter
   // against the same one a year earlier
   quarterly: [
-    ["Sales", "revenueCr", "cr"], ["Expenses", "expensesCr", "cr"], ["Operating Profit", "operatingProfitCr", "cr"],
-    ["OPM %", "opm", "pct"], ["Other Income", "otherIncomeCr", "cr"], ["Depreciation", "depreciationCr", "cr"],
-    ["Interest", "financeCostsCr", "cr"], ["Profit before tax", "pbtCr", "cr"], ["Tax", "taxCr", "cr"], ["Net Profit", "profitCr", "cr"],
-    ["EPS in Rs", "eps", "rs"], ["Sales vs a year ago", "salesYoY", "pct"], ["Profit vs a year ago", "profitYoY", "pct"],
+    ["Sales", "revenueCr", "cr"], ["Expenses", "expensesCr", "cr"],
+    ["  Raw materials & goods bought", "materialsBoughtCr", "cr"], ["  Change in stock", "inventoryChangeCr", "cr"],
+    ["  Employee costs", "employeesCr", "cr"], ["  Other expenses", "otherExpensesCr", "cr"],
+    ["Operating Profit", "operatingProfitCr", "cr"], ["OPM %", "opm", "pct"], ["Other Income", "otherIncomeCr", "cr"],
+    ["Interest", "financeCostsCr", "cr"], ["Profit before depreciation & tax", "pbdtCr", "cr"], ["Depreciation", "depreciationCr", "cr"],
+    ["Exceptional items", "exceptionalCr", "cr"], ["Profit before tax", "pbtCr", "cr"], ["Tax", "taxCr", "cr"], ["Net Profit", "profitCr", "cr"],
+    ["Net margin %", "netMargin", "pct"], ["EPS in Rs", "eps", "rs"], ["Sales vs a year ago", "salesYoY", "pct"], ["Profit vs a year ago", "profitYoY", "pct"],
   ],
   ratios: [
     ["ROE %", "roe", "pct"], ["ROCE %", "roce", "pct"], ["OPM %", "opm", "pct"], ["Debt / equity", "debtToEquity", "x"],
@@ -75,8 +84,44 @@ function fmtCell(v, kind) {
   return fmtCr(v);
 }
 
-function StatementTable({ history, rows, note }) {
-  const years = [...history].reverse(); // oldest on the left, as Screener lays it out
+// A row's figures as a small bar chart, oldest to newest, opened from the
+// row's chart button; bars grow in, a loss or outflow in red
+function TrendBars({ cols, rowKey, kind }) {
+  const [shown, setShown] = useState(false);
+  useEffect(() => { const id = requestAnimationFrame(() => setShown(true)); return () => cancelAnimationFrame(id); }, []);
+  const pts = cols.map(c => ({ label: c.label ?? shortLabel(c.fyEnd), v: c[rowKey] })).filter(p => p.v != null && isFinite(p.v));
+  if (pts.length < 2) return <div style={{ fontSize: 11.5, color: "var(--t3)", padding: "8px 0" }}>Not enough years to chart.</div>;
+  const hi = Math.max(0, ...pts.map(p => p.v)), lo = Math.min(0, ...pts.map(p => p.v));
+  const span = hi - lo || 1;
+  const first = pts.find(p => !String(p.label).includes("TTM")), last = [...pts].reverse().find(p => !String(p.label).includes("TTM"));
+  const n = pts.filter(p => !String(p.label).includes("TTM")).length - 1;
+  const cagr = kind === "cr" && n >= 2 && first.v > 0 && last.v > 0 ? (Math.pow(last.v / first.v, 1 / n) - 1) * 100 : null;
+  return (
+    <div className="trend-bars">
+      <div className="trend-plot" style={{ "--zero": `${(hi / span) * 100}%` }}>
+        {pts.map((p, i) => (
+          <div key={p.label} className="trend-col" title={`${p.label}: ${fmtCell(p.v, kind)}`}>
+            <span className="trend-val" style={MONO}>{fmtCell(p.v, kind)}</span>
+            <span className="trend-area">
+              <span className="trend-bar" style={{
+                top: p.v >= 0 ? `${((hi - p.v) / span) * 100}%` : `${(hi / span) * 100}%`, height: `${Math.max((Math.abs(p.v) / span) * 100, 0.8)}%`,
+                background: p.v < 0 ? "var(--red)" : String(p.label).includes("TTM") ? "color-mix(in srgb, var(--accent) 55%, transparent)" : "var(--accent)",
+                transform: shown ? "none" : "scaleY(0)", transformOrigin: p.v >= 0 ? "bottom" : "top",
+                transition: `transform 520ms cubic-bezier(0.22, 1, 0.36, 1) ${i * 45}ms`,
+              }} />
+            </span>
+            <span className="trend-x">{p.label}</span>
+          </div>
+        ))}
+      </div>
+      {cagr != null && <div className="trend-note">{cagr >= 0 ? "Grew" : "Shrank"} {Math.abs(cagr).toFixed(1)}% a year over {n} years.</div>}
+    </div>
+  );
+}
+
+function StatementTable({ history, rows, note, extraCols = [] }) {
+  const [open, setOpen] = useState(null);
+  const years = [...[...history].reverse(), ...extraCols]; // oldest on the left, as Screener lays it out; TTM last
   const shown = rows.filter(([, key]) => years.some(y => y[key] != null));
   if (!shown.length) return <div style={{ fontSize: 12, color: "var(--t3)", padding: "20px 0" }}>Not in this company's filings.</div>;
   return (
@@ -86,25 +131,41 @@ function StatementTable({ history, rows, note }) {
           <tr>
             <th style={{ textAlign: "left", padding: "8px 10px", fontSize: 11.5, color: "var(--t3)", borderBottom: "1px solid var(--bdr2)", position: "sticky", left: 0, background: "var(--s2)" }}>Item</th>
             {years.map(y => (
-              <th key={y.fyEnd} style={{ textAlign: "right", padding: "8px 10px", fontSize: 10, color: "var(--t3)", whiteSpace: "nowrap", borderBottom: "1px solid var(--bdr2)" }}>{periodLabel(y.fyEnd)}</th>
+              <th key={y.label ?? y.fyEnd} style={{ textAlign: "right", padding: "8px 10px", fontSize: 10, color: y.ttm ? "var(--accent)" : "var(--t3)", whiteSpace: "nowrap", borderBottom: "1px solid var(--bdr2)", background: y.ttm ? "color-mix(in srgb, var(--accent) 6%, transparent)" : undefined }} title={y.ttm ? `The last four quarters, to ${periodLabel(y.fyEnd)}` : undefined}>{y.label ?? periodLabel(y.fyEnd)}</th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {shown.map(([label, key, kind]) => (
-            <tr key={key + label}>
-              <td style={{ padding: label.startsWith("  ") ? "7px 10px 7px 22px" : "7px 10px", color: label.startsWith("  ") ? "var(--t3)" : "var(--t2)", fontSize: label.startsWith("  ") ? 11.5 : undefined, whiteSpace: "nowrap", position: "sticky", left: 0, background: "var(--s2)", borderBottom: "1px solid var(--bdr)" }}>{label.trim()}</td>
-              {years.map(y => (
-                <td key={y.fyEnd} style={{ padding: "7px 10px", textAlign: "right", color: y[key] == null ? "var(--t3)" : "var(--t1)", whiteSpace: "nowrap", borderBottom: "1px solid var(--bdr)", ...MONO }}>
-                  {fmtCell(y[key], kind)}
-                </td>
-              ))}
-            </tr>
-          ))}
+          {shown.map(([label, key, kind]) => {
+            const id = key + label, isOpen = open === id;
+            return (
+              <Fragment key={id}>
+                <tr className={`fin-row${isOpen ? " open" : ""}`}>
+                  <td style={{ padding: label.startsWith("  ") ? "4px 6px 4px 18px" : "4px 6px", color: label.startsWith("  ") ? "var(--t3)" : "var(--t2)", fontSize: label.startsWith("  ") ? 11.5 : undefined, whiteSpace: "nowrap", position: "sticky", left: 0, background: "var(--s2)", borderBottom: "1px solid var(--bdr)", zIndex: 1 }}>
+                    <button type="button" className="fin-label" onClick={() => setOpen(isOpen ? null : id)} aria-expanded={isOpen} title="Show as a chart">
+                      <span>{label.trim()}</span><ChartColumn size={12} aria-hidden="true" className="fin-chart-icon" />
+                    </button>
+                  </td>
+                  {years.map(y => (
+                    <td key={y.label ?? y.fyEnd} style={{ padding: "7px 10px", textAlign: "right", color: y[key] == null ? "var(--t3)" : "var(--t1)", whiteSpace: "nowrap", borderBottom: "1px solid var(--bdr)", background: y.ttm ? "color-mix(in srgb, var(--accent) 6%, transparent)" : undefined, ...MONO }}>
+                      {fmtCell(y[key], kind)}
+                    </td>
+                  ))}
+                </tr>
+                {isOpen && (
+                  <tr>
+                    <td colSpan={years.length + 1} style={{ padding: 0, borderBottom: "1px solid var(--bdr)" }}>
+                      <div className="fin-trend"><TrendBars cols={years} rowKey={key} kind={kind} /></div>
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
+            );
+          })}
         </tbody>
       </table>
       <p style={{ fontSize: 10, color: "var(--t3)", marginTop: 8 }}>
-        Figures in ₹ Crore unless marked. {years.at(-1)?.scope ? `${years.at(-1).scope} results` : "Results"} from NSE filings; EPS on today's share count.{note ? ` ${note}` : ""}
+        Figures in ₹ Crore unless marked. Tap a line to see it as a chart.{extraCols.some(c => c.ttm) ? " TTM is the last four quarters added up." : ""} {years.at(-1)?.scope ? `${years.at(-1).scope} results` : "Results"} from NSE filings; EPS on today's share count.{note ? ` ${note}` : ""}
       </p>
     </div>
   );
@@ -271,6 +332,11 @@ const neg = v => (v == null ? null : -Math.abs(v));
 const withDerived = h => ({
   ...h,
   materialsAllCr: materialsOf(h),
+  materialsBoughtCr: h.materialsCr != null || h.purchasesCr != null ? (h.materialsCr ?? 0) + (h.purchasesCr ?? 0) : null,
+  materialCostPct: materialsOf(h) != null && h.revenueCr > 0 ? (materialsOf(h) / h.revenueCr) * 100 : null,
+  pbdtCr: h.pbtCr != null && h.depreciationCr != null ? h.pbtCr + h.depreciationCr : null,
+  // dividends paid in the year (the cash-flow line) against its profit
+  payoutPct: h.dividendsPaidCr != null && (h.profitOwnersCr ?? h.profitCr) > 0 ? (Math.abs(h.dividendsPaidCr) / (h.profitOwnersCr ?? h.profitCr)) * 100 : null,
   opCostsCr: h.expensesCr != null ? h.expensesCr - (h.depreciationCr ?? 0) - (h.financeCostsCr ?? 0) : null,
   taxRate: h.taxCr != null && h.pbtCr > 0 ? (h.taxCr / h.pbtCr) * 100 : null,
   netMargin: h.profitCr != null && h.revenueCr > 0 ? (h.profitCr / h.revenueCr) * 100 : null,
@@ -306,9 +372,11 @@ function YearPicture({ history, tab }) {
   );
 }
 
-export default function FinancialsPanel({ history: filed, quarters = [], template }) {
+export default function FinancialsPanel({ history: filed, quarters: filedQuarters = [], template }) {
   const [tab, setTab] = useState("summary");
   const history = useMemo(() => (filed ?? []).map(withDerived), [filed]);
+  const quarters = useMemo(() => (filedQuarters ?? []).map(withDerived), [filedQuarters]);
+  const ttm = useMemo(() => { const t = ttmOf(filedQuarters); return t ? withDerived(t) : null; }, [filedQuarters]);
   if (!history?.length) return null;
 
   const points = [...history].reverse()
@@ -350,6 +418,7 @@ export default function FinancialsPanel({ history: filed, quarters = [], templat
             {tab === "cashFlow" && <FundFlow history={history} />}
             <StatementTable
             history={history}
+            extraCols={tab === "profitLoss" && ttm ? [ttm] : []}
             rows={template === "BANKING" && tab === "ratios" ? STATEMENTS.ratios.filter(([label]) => label !== "Debt / equity") : STATEMENTS[tab]}
             note={template === "BANKING" && tab === "ratios" ? "Debt/equity is not shown for banks because deposits are operating funding, not comparable corporate borrowing." : null}
           />

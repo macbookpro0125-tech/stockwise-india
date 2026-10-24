@@ -53,3 +53,13 @@ assert.ok(su.sources.some(l => l.label === "New borrowing (net)" && l.value === 
 assert.equal(sourcesAndUses([yr, yr, { ...yr, ocfCr: null }], 3), null, "three years need all three");
 assert.equal(sourcesAndUses([yr, yr], 2).total, s("sources") * 2, "years add up");
 console.log("Treemap and sources-and-uses checks passed.");
+
+import { ttmOf } from "./statements.js";
+const q = (fyEnd, revenueCr, extra = {}) => ({ fyEnd, revenueCr, operatingProfitCr: revenueCr / 5, profitCr: revenueCr / 10, eps: 1, employeesCr: 10, ...extra });
+const four = [q("2026-06-30", 400), q("2026-03-31", 300), q("2025-12-31", 200), q("2025-09-30", 100, { employeesCr: null })];
+const t = ttmOf(four);
+assert.ok(t.revenueCr === 1000 && t.profitCr === 100 && t.eps === 4 && t.opm === 20 && t.label === "TTM", "four quarters added");
+assert.equal(t.employeesCr, null, "a line missing in one quarter stays empty");
+assert.equal(ttmOf([four[0], four[1], four[3], q("2025-06-30", 50)]), null, "a gap: no TTM");
+assert.equal(ttmOf(four.slice(0, 3)), null, "three quarters: no TTM");
+console.log("TTM checks passed.");

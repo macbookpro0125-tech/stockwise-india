@@ -74,7 +74,7 @@ const YEARS = 8;
 // companies are re-read for it a batch a night, biggest first
 // (data-jobs.js), not all at once as a SCHEMA change would — the whole market
 // takes about two hours, near the evening job's limit
-export const DETAIL_VERSION = 1;
+export const DETAIL_VERSION = 2; // 2: each quarter's expense lines, intangible assets under development
 export const BANK_VERSION = 2; // 2: five quarters of asset quality, capital and return on assets
 // Three years of quarters: this quarter against the same one a year ago, two
 // years running, and trailing-twelve-month figures
@@ -158,6 +158,7 @@ export const DETAIL_TAGS = {
     ppe: ["PropertyPlantAndEquipment"],
     cwip: ["CapitalWorkInProgress"],
     goodwill: ["Goodwill"],
+    intangiblesUnderDev: ["IntangibleAssetsUnderDevelopment"],
     intangibles: ["OtherIntangibleAssets"],
     investmentsNc: ["NoncurrentInvestments"],
     inventories: ["Inventories"],
@@ -519,6 +520,13 @@ function extractQuarter(xml, row) {
     profit,
     profitOwners,
     eps: pickEps(r, profitOwners ?? profit, r.quarter),
+    // The expense lines (DETAIL_VERSION 2), as the year's are read
+    materials: r.quarter(TAGS.materials),
+    purchases: r.quarter(TAGS.purchases),
+    inventoryChange: r.quarter(TAGS.inventoryChange),
+    employees: r.quarter(DETAIL_TAGS.year.employees),
+    otherExpenses: r.quarter(DETAIL_TAGS.year.otherExpenses),
+    exceptional: r.quarter(DETAIL_TAGS.year.exceptional),
     // For the unit-slip check (unit-slips.js): share capital moves with a slip
     paidUp: r.any(TAGS.paidUp),
     faceValue: r.any(TAGS.faceValue),

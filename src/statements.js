@@ -219,3 +219,19 @@ export function sourcesAndUses(history, years = 1) {
   const total = sources.reduce((s, l) => s + l.value, 0);
   return sources.length && uses.length ? { years: span.length, total, sources, uses } : null;
 }
+
+// The trailing twelve months as one more column for the Profit & Loss table:
+// the last four quarters added line by line — only when they're four in a
+// row, and a line only when all four have it
+const TTM_KEYS = ["revenueCr", "expensesCr", "operatingProfitCr", "otherIncomeCr", "depreciationCr", "financeCostsCr", "pbtCr", "taxCr", "profitCr", "eps",
+  "materialsCr", "purchasesCr", "inventoryChangeCr", "employeesCr", "otherExpensesCr", "exceptionalCr"];
+export function ttmOf(quarters) {
+  const last4 = (quarters ?? []).slice(0, 4);
+  const DAY = 86400000;
+  const inARow = last4.length === 4 && last4.every((q, i) => i === 0 || Math.abs(Date.parse(last4[i - 1].fyEnd) - Date.parse(q.fyEnd) - 91 * DAY) <= 20 * DAY);
+  if (!inARow || last4.some(q => q.revenueCr == null)) return null;
+  const out = { fyEnd: last4[0].fyEnd, label: "TTM", ttm: true, scope: last4[0].scope };
+  for (const k of TTM_KEYS) out[k] = last4.every(q => q[k] != null) ? last4.reduce((t, q) => t + q[k], 0) : null;
+  out.opm = out.operatingProfitCr != null && out.revenueCr > 0 ? (out.operatingProfitCr / out.revenueCr) * 100 : null;
+  return out;
+}
