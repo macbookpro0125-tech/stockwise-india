@@ -39,6 +39,7 @@ import { startAlertChecks } from "./alert-notifier.js";
 import { savePushToken, removePushToken } from "./push.js";
 import { startNewsPush } from "./news-push.js";
 import { countPageLoad, countActive, visitStats, isOwner } from "./visits.js";
+import { startDigestJobs, weeklyEmailOn, setWeeklyEmail, unsubscribe } from "./digest.js";
 import { publicScreen, publicScreens, publicResultsCalendar, screenPageHtml, screensIndexHtml, resultsCalendarHtml } from "./seo-lists.js";
 import { limits, clientIp, waitText } from "./rate-limit.js";
 import { startBackups } from "./backup.js";
@@ -526,6 +527,28 @@ export function createApp() {
         const info = userId ? accountInfo(userId) : null;
         if (userId) countActive(userId);
         sendJson(res, userId ? 200 : 401, userId ? { userId, ...info, features: { momentum: momentumAllowed(info), owner: isOwner(info?.email) } } : { error: "Not signed in" });
+        return;
+      }
+
+      // The weekly email about the starred companies (digest.js): the Settings switch
+      if (url.pathname === "/api/account/weekly-email" && (req.method === "GET" || req.method === "POST")) {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        if (req.method === "POST") {
+          const { on } = await readJsonBody(req);
+          if (!accountInfo(userId)?.email && on) { sendJson(res, 400, { error: "The weekly email needs an email address on the account." }); return; }
+          setWeeklyEmail(userId, !!on);
+        }
+        sendJson(res, 200, { on: weeklyEmailOn(userId), available: emailConfigured() && !!accountInfo(userId)?.email });
+        return;
+      }
+      // Its unsubscribe link, no sign-in needed: GET from the email, POST from
+      // a mail app's own one-click button (List-Unsubscribe-Post)
+      if (url.pathname === "/unsubscribe" && (req.method === "GET" || req.method === "POST")) {
+        const done = unsubscribe(url.searchParams.get("t"));
+        if (req.method === "POST") { res.writeHead(done ? 200 : 404).end(); return; }
+        res.writeHead(done ? 200 : 404, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
+        res.end(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Weekly email</title></head><body style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:480px;margin:60px auto;padding:0 20px;color:#101828;line-height:1.6"><h1 style="font-size:22px">${done ? "You won't get the weekly email any more" : "That link didn't match an account"}</h1><p>${done ? "You can turn it back on any time in Settings." : "It may already have been used. You can turn the weekly email off in Settings."}</p><p><a href="/" style="color:#0b7a68">Open Jocular Insights</a></p></body></html>`);
         return;
       }
 
@@ -1372,6 +1395,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     startTelegramPolling();
     startAlertChecks();
     startNewsPush();
+    startDigestJobs();
     startBackups();
   }
 }

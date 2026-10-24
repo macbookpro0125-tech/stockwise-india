@@ -6,6 +6,7 @@ import { SiteLink, navigate } from "./site.jsx";
 import { problemMailto } from "./help.js";
 import { useLogosShown, setLogosShown } from "./CompanyLogo.jsx";
 import { installState, onInstallChange, promptInstall } from "./installApp.js";
+import { useWeeklyEmail } from "./weeklyEmail.js";
 
 // The header's Account button: who's signed in, Sign out, and Delete account
 // — the way to erase everything that the privacy page points to. An account
@@ -17,6 +18,8 @@ export default function AccountMenu({ account, onLogout, onDeleted, onTour }) {
   const [confirming, setConfirming] = useState(false);
   const ref = useRef(null);
   const logos = useLogosShown();
+  // the weekly email about the starred companies (weeklyEmail.js)
+  const weekly = useWeeklyEmail();
   // Install the app: the browser's own prompt where there is one; on an
   // iPhone, how to add it to the home screen; nothing once it's installed
   const [install, setInstall] = useState(installState);
@@ -58,6 +61,12 @@ export default function AccountMenu({ account, onLogout, onDeleted, onTour }) {
             onMouseEnter={e => { e.currentTarget.style.background = "var(--s3)"; }} onMouseLeave={e => { e.currentTarget.style.background = "none"; }}>
             Company logos <span style={{ fontSize: 12, color: logos ? "var(--accent)" : "var(--t3)", fontWeight: 400 }}>{logos ? "On" : "Off"}</span>
           </button>
+          {weekly.available && (
+            <button role="menuitemcheckbox" aria-checked={weekly.on} title="Sunday mornings: your watchlist's week, its news, and results coming up" style={{ ...item, display: "flex", justifyContent: "space-between", alignItems: "center" }} onClick={() => weekly.set(!weekly.on)}
+              onMouseEnter={e => { e.currentTarget.style.background = "var(--s3)"; }} onMouseLeave={e => { e.currentTarget.style.background = "none"; }}>
+              Weekly email <span style={{ fontSize: 12, color: weekly.on ? "var(--accent)" : "var(--t3)", fontWeight: 400 }}>{weekly.on ? "On" : "Off"}</span>
+            </button>
+          )}
           {(install === "prompt" || install === "ios") && (
             <button role="menuitem" style={item} onClick={() => { if (install === "prompt") { setOpen(false); promptInstall(); } else setIosHint(h => !h); }}
               onMouseEnter={e => { e.currentTarget.style.background = "var(--s3)"; }} onMouseLeave={e => { e.currentTarget.style.background = "none"; }}>

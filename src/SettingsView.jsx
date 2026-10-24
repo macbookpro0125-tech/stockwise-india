@@ -12,6 +12,7 @@ import { supportAdsAvailable, useAdsOn, watchSupportAd } from "./ads.jsx";
 import { showStrategiesOfKind } from "./PresetCards.jsx";
 import { canRate, openStorePage } from "./rateApp.js";
 import { canPush, pushOn, turnPushOn, turnPushOff } from "./push.js";
+import { useWeeklyEmail } from "./weeklyEmail.js";
 
 // A phone's Settings tab (17 Oct 2026): the account, the theme and the pages
 // that don't fit the five-tab bar, as grouped lists — the Account menu's
@@ -79,6 +80,7 @@ export default function SettingsView({ account, theme, onToggleTheme, onTab, onL
       setPushNote(e.message || "Couldn't turn them on. Try again in a moment");
     }
   };
+  const weekly = useWeeklyEmail();
   const adsOn = useAdsOn();
   const [support, setSupport] = useState(null); // null | "loading" | "thanks" | "closed" | error text
 
@@ -121,10 +123,12 @@ export default function SettingsView({ account, theme, onToggleTheme, onTab, onL
         {account?.features?.owner && <Row icon={Users} tint="#6366F1" label="Visitors" detail="Who's using the site, counted anonymously" onClick={() => onTab("visitors")} />}
       </Group>
 
-      {canPush() && (
+      {(canPush() || weekly.available) && (
         <Group title="Notifications">
-          <Switch on={push} label="Phone notifications" onChange={switchPush} icon={<Bell size={17} strokeWidth={2.2} />} tint="#14B892"
-            detail={pushNote ?? "News from your watchlist's companies, and alerts when a price is reached"} />
+          {canPush() && <Switch on={push} label="Phone notifications" onChange={switchPush} icon={<Bell size={17} strokeWidth={2.2} />} tint="#14B892"
+            detail={pushNote ?? "News from your watchlist's companies, results reminders, and alerts when a price is reached"} />}
+          {weekly.available && <Switch on={weekly.on} label="Weekly email" onChange={weekly.set} icon={<Mail size={17} strokeWidth={2.2} />} tint="#6366F1"
+            detail={weekly.note ?? "Sunday mornings: your watchlist's week, its news, and results coming up"} />}
         </Group>
       )}
 

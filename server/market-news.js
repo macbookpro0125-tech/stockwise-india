@@ -127,7 +127,7 @@ function announcements() {
 // buy"), and quote pages, are left out, as on a company's News tab
 // Search results that are a price page or a comparison tool, not a story
 // ("RAYMONDREL Stock Price and Chart", "Compare CHOKHANI BUS with", 23 Oct 2026)
-const PRICE_PAGE = /stock price and chart|^compare\b.*\bwith\b|share price (today|live)|\bstock quote\b|price chart/i;
+const PRICE_PAGE = /stock price and chart|^compare\b.*\bwith\b|share price (today|live)|\bstock quote\b|price chart|\b(ltd|limited)? ?news\s*[—-]\s*(nse|bse):/i;
 const TIPS = /trade setup|['‘’"]?\bbuy['‘’"]? (rating|call|initiation)|initiates? (coverage|with a buy)|\bupside\b|\bto buy\b|stocks? to (buy|watch|pick)|buy or sell|target price|top picks|should you buy|technical picks|intraday|trading ideas|stock recommendations?|stocks? under ₹|share price (today|live)|stock price live|\blive (updates|blog)\b/i;
 const STOP_WORDS = new Set("the a an and or of in on for to as at by with from is are its it this that over amid after says say".split(" "));
 const words = t => new Set(String(t).toLowerCase().replace(/[^a-z0-9₹%.\s]/g, " ").split(/\s+/).filter(w => w.length > 2 && !STOP_WORDS.has(w)));

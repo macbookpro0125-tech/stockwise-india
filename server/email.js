@@ -13,11 +13,12 @@ export const emailConfigured = () => !!(process.env.RESEND_API_KEY && process.en
 export const appUrl = () => String(process.env.APP_URL || "").replace(/\/+$/, "");
 
 // Tests swap this for a stub; nothing else should
-let sender = async ({ to, subject, text, html }) => {
+let sender = async ({ to, subject, text, html, headers }) => {
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: process.env.EMAIL_FROM, to: [to], subject, text, html }),
+    // headers: the weekly email's one-click unsubscribe (digest.js)
+    body: JSON.stringify({ from: process.env.EMAIL_FROM, to: [to], subject, text, html, ...(headers && { headers }) }),
     signal: AbortSignal.timeout(15000),
   });
   if (!res.ok) {

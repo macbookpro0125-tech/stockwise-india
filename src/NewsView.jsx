@@ -281,6 +281,9 @@ function Detail({ id, onBack, onOpen, onOpenStock }) {
       <p className="nw-eyebrow"><span className={`nw-kind k-${item.kind}`}>{KIND_LABEL[item.kind]}</span><span>{fullTime(item.time)}</span></p>
       <h2 className="nw-title">{niceName(item.company)}</h2>
       <p className="nw-byline">{item.title} · announced to NSE</p>
+      {/* a wide screen: the announcement on the left, the company and more beside it */}
+      <div className="dt-cols">
+      <div className="dt-main">
       {item.summary
         ? <blockquote className="nw-said"><span className="nw-said-label">In the company's words</span>{item.summary}</blockquote>
         : <p className="nw-note">NSE's notice has no summary; the details are in the filing.</p>}
@@ -295,6 +298,8 @@ function Detail({ id, onBack, onOpen, onOpenStock }) {
         {item.url && <a className="btn-primary nw-btn" href={item.url} target="_blank" rel="noopener noreferrer"><FileText size={16} aria-hidden="true" /> Open the filing{item.fileSize ? ` · ${item.fileSize}` : ""}</a>}
       </div>
       {item.url && <FilingLines id={item.id} auto={!item.summary} />}
+      </div>
+      <div className="dt-side">
       <Quote quote={item.quote} asOf={data.asOf} onOpenStock={onOpenStock} />
       {data.more?.length > 0 && (
         <section className="nw-section" aria-label={`More from ${niceName(item.company)}`}>
@@ -312,6 +317,8 @@ function Detail({ id, onBack, onOpen, onOpenStock }) {
           </ul>
         </section>
       )}
+      </div>
+      </div>
       <p className="nw-foot">From NSE's announcements, as the company filed them. Not investment advice.</p>
     </article>
   );

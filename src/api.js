@@ -78,6 +78,9 @@ export const api = {
   stats: () => request("/api/stats"),
   // The owner's visitor numbers (VisitorsView.jsx)
   ownerStats: () => request("/api/owner/stats"),
+  // The weekly email about the starred companies (weeklyEmail.js)
+  weeklyEmail: () => request("/api/account/weekly-email"),
+  setWeeklyEmail: (on) => request("/api/account/weekly-email", { method: "POST", body: JSON.stringify({ on }) }),
   // The strategies' and the results calendar's public pages (PublicLists.jsx)
   publicScreens: () => request("/api/public/screens"),
   publicScreen: (slug) => request(`/api/public/screens/${encodeURIComponent(slug)}`),

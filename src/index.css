@@ -2663,6 +2663,17 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 .ex-page > div > .nw-page.embedded { margin-top: 14px; }
 /* An index in full */
 .ex-detail { max-width: 760px; }
+/* An index's or a news item's page on a wide screen (24 Oct 2026, "the gap on the right"):
+   two columns across the page instead of one narrow column on the left */
+@media (min-width: 1100px) {
+  .ex-detail, .nw-detail { max-width: 1320px; }
+  .dt-cols { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(320px, 1fr); gap: 36px; align-items: start; }
+  .dt-below { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 0 36px; align-items: start; }
+  .ex-detail .dt-side .ex-returns { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ex-detail .dt-main .ex-chart svg { height: 300px !important; }
+  .dt-side > :first-child { margin-top: 0; }
+  .dt-side .nw-section:first-child, .dt-side .nw-quote:first-child { margin-top: 0; }
+}
 .ex-big { margin: 6px 0 0; font-size: 28px; font-variant-numeric: tabular-nums; color: var(--t1); }
 .ex-big .ex-chg { margin-left: 8px; font-size: var(--fs-md); }
 .ex-chart { margin-top: 16px; padding: 14px 0 10px; border: 1px solid var(--bdr); border-radius: 16px; background: var(--s1); overflow: hidden; }

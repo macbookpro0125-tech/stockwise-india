@@ -96,6 +96,9 @@ function IndexDetail({ name, onBack, onOpenStock, onOpenNews }) {
       <h2 className="nw-title">{name.replace(/^nifty/i, "NIFTY")}</h2>
       <p className="ex-big">{points(d.close)} <span className={`ex-chg ${tone(d.changePct)}`}>{d.change > 0 ? "+" : d.change < 0 ? "−" : ""}{points(Math.abs(d.change))} ({Math.abs(d.changePct).toFixed(2)}%)</span></p>
       {vix && <p className="nw-note">India VIX is how much the market expects prices to swing over the next 30 days, from NIFTY options: higher means more nervous. It isn't a price.</p>}
+      {/* a wide screen: the chart on the left, its returns and valuation beside it */}
+      <div className="dt-cols">
+      <div className="dt-main">
       <div className="ex-chart">
         <div className="ex-ranges" role="group" aria-label="Chart period">
           {RANGES.map(([r]) => <button key={r} type="button" className="ex-range" aria-pressed={range === r} onClick={() => setRange(r)}>{r}</button>)}
@@ -104,6 +107,8 @@ function IndexDetail({ name, onBack, onOpenStock, onOpenNews }) {
         <Spark closes={closes} dir={dir} height={180} dot={false} />
         <div className="ex-axis"><span>{shortDate(days[0])}</span><span>High {points(Math.max(...closes))} · Low {points(Math.min(...closes))}</span><span>{shortDate(days[days.length - 1])}</span></div>
       </div>
+      </div>
+      <div className="dt-side">
       {!vix && (
         <section className="nw-section" aria-label="Returns">
           <h3 className="nw-section-head">Returns</h3>
@@ -124,6 +129,10 @@ function IndexDetail({ name, onBack, onOpenStock, onOpenNews }) {
           <p className="nw-note">NSE's figures for the index on {shortDate(d.asOf)}.</p>
         </section>
       )}
+      </div>
+      </div>
+      {/* a wide screen: the movers and the news side by side under them */}
+      <div className="dt-below">
       {(d.gainers.length > 0 || d.losers.length > 0) && (
         <section className="nw-section" aria-label="Biggest moves">
           <h3 className="nw-section-head">Biggest moves on {shortDate(d.asOf)}</h3>
@@ -149,6 +158,7 @@ function IndexDetail({ name, onBack, onOpenStock, onOpenNews }) {
           <div className="nw-list">{d.news.map(item => <NewsRow key={item.id} item={item} onOpen={onOpenNews} />)}</div>
         </section>
       )}
+      </div>
     </article>
   );
 }
