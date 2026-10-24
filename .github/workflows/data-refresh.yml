@@ -15,6 +15,11 @@ on:
     # A second-chance retry at 07:00 IST next morning, for failures or delays.
     - cron: "30 1 * * 2-6"
   workflow_dispatch:
+    inputs:
+      force:
+        description: "Rebuild even though today's data is in (to run a batch of company re-reads now)"
+        type: boolean
+        default: false
   # A change to how the refresh runs is tried straight away
   push:
     branches: [main]
@@ -105,13 +110,17 @@ jobs:
           PRICES_DATE: ${{ steps.start_data.outputs.prices_date }}
           HAS_BOARD: ${{ steps.start_data.outputs.has_board }}
           INDICES_CURRENT: ${{ steps.start_data.outputs.indices_current }}
+          FORCE_INPUT: ${{ github.event.inputs.force }}
         run: |
           today_ist=$(node -e 'console.log(new Date(Date.now() + 330 * 60 * 1000).toISOString().slice(0, 10))')
           force=false
           # The evening runs (16:30 and 20:00) rebuild whenever today's close
           # isn't in yet — not only when the last build is 18 hours old: a
           # build that finished after midnight made the 16:30 run skip
-          if { [ "$SCHEDULE" = "0 11 * * 1-5" ] || [ "$SCHEDULE" = "30 14 * * 1-5" ]; } && [ "$PRICES_DATE" != "$today_ist" ]; then
+          if [ "$FORCE_INPUT" = "true" ]; then
+            force=true
+            echo "Started by hand with force; rebuilding."
+          elif { [ "$SCHEDULE" = "0 11 * * 1-5" ] || [ "$SCHEDULE" = "30 14 * * 1-5" ]; } && [ "$PRICES_DATE" != "$today_ist" ]; then
             force=true
             echo "Today's NSE close is not in the published snapshot; refreshing."
           elif [ "$HAS_BOARD" != "true" ]; then
