@@ -3346,7 +3346,7 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 
 /* The statements as pictures (StatementCharts.jsx, 24 Oct 2026): a bridge of
    bars from sales down to profit, and the balance sheet as two bars */
-.stm-row { display: grid; grid-template-columns: minmax(96px, 30%) 1fr minmax(76px, auto); align-items: center; gap: 10px; min-height: 30px; font-size: 12.5px; }
+.stm-row { display: grid; grid-template-columns: minmax(96px, 30%) 1fr minmax(76px, auto); align-items: center; gap: 10px; min-height: 30px; padding: 2px 0; font-size: 12.5px; }
 .stm-row.total .stm-label { color: var(--t1); font-weight: 500; }
 .stm-label { color: var(--t2); line-height: 1.25; }
 .stm-track { position: relative; height: 16px; }
@@ -3391,3 +3391,19 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 .biz-sub { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 5px; font-size: 11px; color: var(--t3); }
 .biz-share { display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: center; }
 @media (max-width: 520px) { .biz-share { grid-template-columns: 1fr; justify-items: center; } .biz-share-list { width: 100%; } }
+
+/* The balance sheet as a map of tiles, and where the cash came from and went
+   (StatementCharts.jsx BalanceMap, FundFlow) */
+.bsm-sides { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 600px) { .bsm-sides { grid-template-columns: 1fr; gap: 18px; } }
+.bsm-map { position: relative; border-radius: 12px; overflow: hidden; }
+.bsm-tile { position: absolute; box-sizing: border-box; padding: 2px; transform-origin: center; }
+.bsm-tile::before { content: ""; position: absolute; inset: 2px; border-radius: 8px; background: linear-gradient(160deg, color-mix(in srgb, var(--tone) 100%, white 8%), var(--tone)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14); }
+.bsm-tile > span { position: relative; display: block; padding: 0 8px; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bsm-label { padding-top: 8px !important; font-size: 12px; font-weight: 600; letter-spacing: -0.005em; }
+.bsm-value { font-size: 12.5px; opacity: 0.95; margin-top: 2px; }
+.bsm-pct { font-size: 11px; opacity: 0.8; margin-top: 1px; }
+.fund-flow { margin: 6px 0 16px; padding-top: 14px; border-top: 1px solid var(--bdr); }
+.fund-flow-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; margin-bottom: 12px; }
+.fund-flow-head h3 { margin: 0; font-size: 13.5px; font-weight: 500; color: var(--t1); }
+.bsm-tile > .bsm-label { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.25; }

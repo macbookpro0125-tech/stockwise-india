@@ -38,3 +38,18 @@ assert.deepEqual(mix.parts.map(p => [p.name, p.sharePct]), [["Outside India", 70
 assert.ok(close(mix.parts[0].growthPct, 25) && mix.parts[0].marginPct === 20 && mix.parts[1].growthPct === null, "growth matched by name; margin where filed");
 assert.equal(segmentMix({ segments: [{ name: "One", revenueCr: 5 }] }), null, "one segment is no mix");
 console.log("All statement-picture checks passed.");
+
+import { squarify, sourcesAndUses } from "./statements.js";
+const tiles = squarify([{ value: 50 }, { value: 30 }, { value: 20 }], 200, 100);
+assert.equal(tiles.length, 3);
+assert.ok(tiles.every(t => close(t.w * t.h, t.value * 200)), "each tile's area is its value");
+assert.ok(tiles.every(t => t.x >= -1e-9 && t.y >= -1e-9 && t.x + t.w <= 200 + 1e-6 && t.y + t.h <= 100 + 1e-6), "inside the box");
+const yr = { ocfCr: 1000, investingCfCr: -500, financingCfCr: -400, netCashChangeCr: 110, capexCr: 300, assetSalesCr: 20, borrowedCr: 200, repaidCr: 100, dividendsPaidCr: 350, interestPaidCr: 50 };
+const su = sourcesAndUses([yr, yr, { ...yr, ocfCr: null }], 1);
+const s = side => su[side].reduce((t, l) => t + l.value, 0);
+assert.ok(close(s("sources"), s("uses")), "where it came from equals where it went");
+assert.deepEqual(su.uses.map(l => l.label), ["Dividends", "Factories & equipment", "Investments & acquisitions", "Added to cash", "Other financing", "Interest"], "biggest first");
+assert.ok(su.sources.some(l => l.label === "New borrowing (net)" && l.value === 100) && su.sources.some(l => l.label === "Other" && close(l.value, 10)) || su.uses.some(l => l.label === "Other" && close(l.value, 10)));
+assert.equal(sourcesAndUses([yr, yr, { ...yr, ocfCr: null }], 3), null, "three years need all three");
+assert.equal(sourcesAndUses([yr, yr], 2).total, s("sources") * 2, "years add up");
+console.log("Treemap and sources-and-uses checks passed.");

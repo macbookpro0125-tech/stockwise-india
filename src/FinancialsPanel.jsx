@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { profitSteps, cashSteps, cashLines, balanceParts, materialsOf } from "./statements.js";
-import { Bridge, BalancePicture, YearChips, fmtCrShort } from "./StatementCharts.jsx";
+import { Bridge, BalanceMap, FundFlow, YearChips, fmtCrShort } from "./StatementCharts.jsx";
 
 // The original's Financials panel (stock-screener FinancialsPanel.jsx and
 // FinancialsChart.jsx): a revenue/profit chart with operating margin on its
@@ -291,7 +291,7 @@ function YearPicture({ history, tab }) {
     <div className="stm-picture">
       <YearChips years={pictured} at={Math.min(at, pictured.length - 1)} onPick={setAt} />
       {tab === "profitLoss" && <Bridge steps={profitSteps(h)} caption={`How ${fy}'s sales of ${fmtCrShort(h.revenueCr)} became a net profit of ${fmtCrShort(h.profitCr)}: green adds, red takes away.`} />}
-      {tab === "balanceSheet" && <BalancePicture parts={balanceParts(h)} />}
+      {tab === "balanceSheet" && <BalanceMap parts={balanceParts(h)} />}
       {tab === "cashFlow" && (
         <>
           <Bridge steps={cashSteps(h)} caption={`Cash that came in (green) or went out (red) in ${fy}, and what that did to the cash it holds.`} />
@@ -347,6 +347,7 @@ export default function FinancialsPanel({ history: filed, quarters = [], templat
           ? <StatementTable history={quarters} rows={STATEMENTS.quarterly} note="Each quarter is its own three months; the last two columns compare with the same quarter a year earlier." />
           : <>
             {["profitLoss", "balanceSheet", "cashFlow"].includes(tab) && <YearPicture key={tab} history={history} tab={tab} />}
+            {tab === "cashFlow" && <FundFlow history={history} />}
             <StatementTable
             history={history}
             rows={template === "BANKING" && tab === "ratios" ? STATEMENTS.ratios.filter(([label]) => label !== "Debt / equity") : STATEMENTS[tab]}

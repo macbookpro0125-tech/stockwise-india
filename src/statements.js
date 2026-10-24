@@ -136,3 +136,86 @@ export function segmentMix(h, prev) {
     }).sort((a, b) => b.revenueCr - a.revenueCr),
   };
 }
+
+// Tiles whose areas are their values, filling a w × h box, as near square as
+// they'll go (the squarified treemap: Bruls, Huizing & van Wijk) — for the
+// balance sheet's map. items: [{ value, … }], biggest first; returns each
+// with x, y, w, h.
+export function squarify(items, w, h) {
+  const total = items.reduce((t, i) => t + i.value, 0);
+  if (!(total > 0) || !(w > 0) || !(h > 0)) return [];
+  const scale = (w * h) / total;
+  const out = [];
+  let rest = items.filter(i => i.value > 0).map(i => ({ ...i, area: i.value * scale }));
+  let box = { x: 0, y: 0, w, h };
+  const worst = (row, side) => {
+    const s = row.reduce((t, r) => t + r.area, 0);
+    return Math.max(...row.map(r => Math.max((side * side * r.area) / (s * s), (s * s) / (side * side * r.area))));
+  };
+  while (rest.length) {
+    const side = Math.min(box.w, box.h);
+    const row = [rest[0]];
+    let i = 1;
+    while (i < rest.length && worst([...row, rest[i]], side) <= worst(row, side)) row.push(rest[i++]);
+    rest = rest.slice(i);
+    const s = row.reduce((t, r) => t + r.area, 0);
+    if (box.w >= box.h) {
+      // a column down the left
+      const cw = s / box.h;
+      let y = box.y;
+      for (const r of row) { const rh = r.area / cw; out.push({ ...r, x: box.x, y, w: cw, h: rh }); y += rh; }
+      box = { x: box.x + cw, y: box.y, w: box.w - cw, h: box.h };
+    } else {
+      // a row along the top
+      const rh = s / box.w;
+      let x = box.x;
+      for (const r of row) { const rw = r.area / rh; out.push({ ...r, x, y: box.y, w: rw, h: rh }); x += rw; }
+      box = { x: box.x, y: box.y + rh, w: box.w, h: box.h - rh };
+    }
+  }
+  return out;
+}
+
+// Where the cash came from and where it went, over the last `years` years
+// added together, from the cash-flow lines: the business's own cash, net new
+// borrowing, assets or investments sold and cash drawn down on one side;
+// spending on assets, investments bought, dividends, interest, loans repaid
+// and cash put by on the other. The two sides are equal by construction —
+// whatever the named lines don't explain goes to "Other". null unless every
+// one of those years has the three cash-flow totals.
+export function sourcesAndUses(history, years = 1) {
+  const span = history.slice(0, years);
+  if (span.length < years || !span.every(h => h.ocfCr != null && h.investingCfCr != null && h.financingCfCr != null)) return null;
+  const t = k => span.reduce((s, h) => s + (h[k] ?? 0), 0);
+  const ocf = t("ocfCr"), inv = t("investingCfCr"), fin = t("financingCfCr");
+  const capex = t("capexCr"), assetSales = t("assetSalesCr");
+  const netBorrow = t("borrowedCr") - Math.abs(t("repaidCr"));
+  const dividends = Math.abs(t("dividendsPaidCr")), interest = Math.abs(t("interestPaidCr"));
+  const change = span.every(h => h.netCashChangeCr != null) ? t("netCashChangeCr") : ocf + inv + fin;
+  const otherInv = inv + capex - assetSales; // investments bought (−) or sold (+), acquisitions
+  const otherFin = fin - netBorrow + dividends + interest; // shares issued, leases paid…
+  const otherCash = change - (ocf + inv + fin); // exchange rates and the like
+  const lines = [
+    ["From the business", ocf, "Lost by the business"],
+    ["New borrowing (net)", netBorrow, "Loans repaid (net)"],
+    ["Assets sold", assetSales, null],
+    ["Investments sold", otherInv, "Investments & acquisitions"],
+    [null, -capex, "Factories & equipment"],
+    [null, -dividends, "Dividends"],
+    [null, -interest, "Interest"],
+    ["Other financing", otherFin, "Other financing"],
+    ["Other", otherCash, "Other"],
+    ["Cash drawn down", -change, "Added to cash"],
+  ];
+  const sources = [], uses = [];
+  for (const [inLabel, v, outLabel] of lines) {
+    if (!v || Math.abs(v) < 0.005 * Math.max(Math.abs(ocf), 1)) continue;
+    if (v > 0) sources.push({ label: inLabel ?? outLabel, value: v });
+    else uses.push({ label: outLabel ?? inLabel, value: -v });
+  }
+  // biggest first on each side
+  sources.sort((a, b) => b.value - a.value);
+  uses.sort((a, b) => b.value - a.value);
+  const total = sources.reduce((s, l) => s + l.value, 0);
+  return sources.length && uses.length ? { years: span.length, total, sources, uses } : null;
+}
