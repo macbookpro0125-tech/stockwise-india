@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { cardName } from "./stockName.js";
 import { SHOW_TAB, usePhone } from "./phoneTabs.js";
-import { NotebookPen, Check, X, TriangleAlert, LoaderCircle, ArrowLeft, ArrowUpRight, CalendarDays, CircleCheck, Layers, ArrowRight, ChevronRight, Gauge, ClipboardCheck, Scale, ChartColumn, Coins, ChartPie, Activity, Users, Newspaper } from "lucide-react";
+import { NotebookPen, Check, X, TriangleAlert, LoaderCircle, ArrowLeft, ArrowUpRight, CalendarDays, CircleCheck, Layers, ArrowRight, ChevronRight, Gauge, ClipboardCheck, Scale, ChartColumn, Coins, ChartPie, Activity, Users, Newspaper, Globe } from "lucide-react";
 import { api } from "./api.js";
 import { calculateLevels, pricePosition, fmtRs } from "../server/levels.js";
 import { PositionIcon } from "./icons.jsx";
@@ -14,6 +14,7 @@ import FinancialsPanel from "./FinancialsPanel.jsx";
 import TechnicalPanel from "./TechnicalPanel.jsx";
 import PeersPanel from "./PeersPanel.jsx";
 import NewsPanel from "./NewsPanel.jsx";
+import AroundTheWeb from "./AroundTheWeb.jsx";
 import ValuationExplorer from "./ValuationExplorer.jsx";
 import { ValuedAs, BankValuation, CyclicalValuation, NoFairValue, pbAt, CYCLE_TONE } from "./ValuationModel.jsx";
 import PhasePositionPlanner from "./PhasePositionPlanner.jsx";
@@ -457,6 +458,7 @@ const TABS = [
   ["technicals", "Technicals", ["technicals"], "Which way is the price trending?", Activity],
   ["peers", "Peers", ["peers"], "How does it compare with similar companies?", Users],
   ["filings", "News & filings", ["filings"], "What has it told NSE lately?", Newspaper],
+  ["web", "Around the web", ["web"], "What are people saying about it elsewhere?", Globe],
 ];
 
 // The tabs this company has a part for (no valuation without filings, …)
@@ -1022,6 +1024,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
 
       <div id="sec-peers" className="ss-section" data-tab="peers"><h2 className="sd-h2">Peers. <span>How it compares with similar companies.</span></h2>{m && <StockSectorCompare m={m} />}<PeersPanel symbol={data.symbol} onAnalyze={onOpenStock} /></div>
       <div id="sec-filings" className="ss-section" data-tour="filings" data-tab="filings"><h2 className="sd-h2">News & filings. <span>Straight from NSE.</span></h2><StockEarningsCall symbol={data.symbol} m={m} /><NewsPanel symbol={data.symbol} /></div>
+      <div id="sec-web" className="ss-section" data-tab="web"><h2 className="sd-h2">Around the web. <span>Videos, posts and news about it elsewhere.</span></h2><AroundTheWeb symbol={data.symbol} name={data.name} /></div>
       <div className="sd-tabpart" data-tab="overview">
         <MyNotes key={data.symbol} symbol={data.symbol} />
         <StockDataDates dates={data.dataDates} quote={data.quote} research={m?.research} />

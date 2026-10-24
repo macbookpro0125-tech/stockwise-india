@@ -11,6 +11,7 @@ import { nextEvent, todayIst } from "./watchEvents.js";
 import { NewsRow, KIND_LABEL, dayLabel, clock, fyQuarter } from "./NewsView.jsx";
 import { markWatchNewsSeen } from "./watchNews.js";
 import { ListTabs, ListNameDialog, ListPicker, EmptyList } from "./WatchLists.jsx";
+import { WebMenu } from "./AroundTheWeb.jsx";
 
 // The open list (its tab) is remembered on this device
 const LIST_KEY = "wl-list";
@@ -324,6 +325,7 @@ export default function WatchlistView({ onOpenStock, onOpenNews }) {
                 </div>
 
                 <div style={{ display: "flex", gap: 8, marginLeft: "auto" }}>
+                  <WebMenu symbol={item.ticker} name={name} />
                   <ListPicker ticker={item.ticker} name={name} lists={shownLists} onToggle={toggleInList} onNew={ticker => setDialog({ kind: "new", ticker })} />
                   <button onClick={() => setAlertTarget({ symbol: item.ticker, name, cmp, p1: r?.safeBuyPrice, p2: r?.p2, p3: r?.p3 })} title="Set alert" aria-label="Set alert" style={iconBtn}><BellIcon /></button>
                   <button onClick={() => onOpenStock(item.ticker)} className="btn-primary" style={{ height: 30, padding: "0 14px", fontSize: 11, borderRadius: 8, boxShadow: "none" }}>Analyze →</button>

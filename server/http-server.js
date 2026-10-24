@@ -55,6 +55,8 @@ import { PRESETS } from "./presets.js";
 import { DIST_DIR } from "./paths.js";
 import { robotsTxt, sitemapXml, publicStock, stockPageHtml, methodologyPageHtml, stockScreenerPageHtml } from "./seo.js";
 import { HttpError, badRequest, payloadTooLarge } from "./http-errors.js";
+import { companyVideos } from "./videos.js";
+import { searchName } from "../src/webLinks.js";
 import { UpstreamError, upstreamStatus } from "./upstream.js";
 
 let equityListPromise = null;
@@ -795,7 +797,7 @@ export function createApp() {
         return;
       }
 
-      const panelRoute = url.pathname.match(/^\/api\/stock\/([^/]+)\/(prices|technicals|shareholding|profile|filings|news|peers|insiders|moves|moves-summary)$/);
+      const panelRoute = url.pathname.match(/^\/api\/stock\/([^/]+)\/(prices|technicals|shareholding|profile|filings|news|peers|insiders|videos|moves|moves-summary)$/);
       if (panelRoute && req.method === "GET") {
         const userId = requireAuth(req, res);
         if (userId == null) return;
@@ -819,6 +821,8 @@ export function createApp() {
             case "news": sendJson(res, 200, await companyNews(getStock(symbol)?.name ?? symbol)); return;
             case "peers": sendJson(res, 200, sectorPeers(symbol)); return;
             case "insiders": sendJson(res, 200, await insiderTrades(symbol)); return;
+            // Around the web: YouTube's recent videos about it (off without YOUTUBE_API_KEY)
+            case "videos": sendJson(res, 200, await companyVideos(symbol, searchName(getStock(symbol)?.name ?? symbol, symbol))); return;
             case "moves": sendJson(res, 200, await stockMoves(symbol)); return;
             case "moves-summary": {
               // Past the hourly limit the card shows its facts without the summary
