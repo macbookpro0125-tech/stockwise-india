@@ -5,6 +5,13 @@ import { Play, X, ChevronRight } from "lucide-react";
 // video (public/how-it-works.webm) is recorded from the real app by
 // scripts/record-demo.mjs — re-run that when the screens change. It only
 // downloads when someone opens it.
+//
+// Hidden for now (24 Oct 2026): the take from 23 Oct says "Buy phases" and
+// picks a "Phase 2 level", wording the app no longer uses, and shows none of
+// that day's changes. The video is kept in media/ (not served); set this back
+// to true once a new one is recorded into public/.
+export const VIDEO_READY = false;
+
 // plain: a text link with a chevron (Discover's first page), not a button
 export default function HowItWorks({ label = "How it works", style, plain = false }) {
   const [open, setOpen] = useState(false);
@@ -16,6 +23,7 @@ export default function HowItWorks({ label = "How it works", style, plain = fals
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
+  if (!VIDEO_READY) return null;
   return (
     <>
       {plain ? (

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { api } from "./api.js";
 import AuthDialog from "./AuthDialog.jsx";
-import HowItWorks from "./HowItWorks.jsx";
+import HowItWorks, { VIDEO_READY } from "./HowItWorks.jsx";
 import PriceStrip from "./PriceStrip.jsx";
 import { SiteLink, SiteFooter } from "./site.jsx";
 import StarFilm from "./StarFilm.jsx";
@@ -159,9 +159,11 @@ export default function Landing({ onAuthed, notice }) {
               </div>
             ))}
           </div>
-          <div style={{ marginTop: 16 }}>
-            <HowItWorks label="Watch the walkthrough · 2 min" style={{ height: 40, fontSize: 13 }} />
-          </div>
+          {VIDEO_READY && (
+            <div style={{ marginTop: 16 }}>
+              <HowItWorks label="Watch the walkthrough · 2 min" style={{ height: 40, fontSize: 13 }} />
+            </div>
+          )}
         </section>
 
         {/* ── Disclaimer ── */}
