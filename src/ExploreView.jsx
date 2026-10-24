@@ -74,6 +74,55 @@ function Row({ title, items, asOf, onOpen, id }) {
 const RANGES = [["1M", 21], ["3M", 63], ["6M", 126], ["1Y", Infinity]];
 const RETURNS = [["w1", "1 week"], ["m1", "1 month"], ["m3", "3 months"], ["m6", "6 months"], ["y1", "1 year"], ["y3", "3 years, yearly"], ["y5", "5 years, yearly"]];
 
+const signed = v => `${v > 0 ? "+" : v < 0 ? "−" : ""}`;
+const longDate = d => (d ? new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(`${d}T00:00:00Z`)) : "");
+
+// The index's chart: its period as a segmented control, and a finger or the
+// pointer on it reads off that day's close (24 Oct 2026 redesign)
+function IndexChart({ days, closes, range, onRange }) {
+  const [at, setAt] = useState(null);
+  const box = useRef(null);
+  const n = closes.length;
+  const first = closes[0], last = closes[n - 1];
+  const min = Math.min(...closes), max = Math.max(...closes);
+  const rangeChange = n > 1 ? (last / first - 1) * 100 : null;
+  const dir = tone(rangeChange);
+  // the line's top and bottom are 3 of the 40 units in, as Spark draws it
+  const yPct = v => (max === min ? 50 : (3 + (1 - (v - min) / (max - min)) * 34) / 40 * 100);
+  const read = e => {
+    const r = box.current?.getBoundingClientRect();
+    if (!r?.width || n < 2) return;
+    setAt(Math.max(0, Math.min(n - 1, Math.round(((e.clientX - r.left) / r.width) * (n - 1)))));
+  };
+  const shown = at ?? n - 1;
+  const since = n > 1 ? (closes[shown] / first - 1) * 100 : null;
+  return (
+    <div className="ex-chart">
+      <div className="ex-chart-head">
+        <div className="ex-readout" aria-live="off">
+          {at == null
+            ? <><span className={`ex-chg ${dir}`}>{rangeChange != null ? `${signed(rangeChange)}${Math.abs(rangeChange).toFixed(2)}%` : "—"}</span><span className="ex-readout-sub">over {range === "1Y" ? "the year" : range.replace("M", range === "1M" ? " month" : " months")}</span></>
+            : <><span className="ex-readout-val">{points(closes[at])}</span><span className={`ex-chg ${tone(since)}`}>{signed(since)}{Math.abs(since).toFixed(2)}%</span><span className="ex-readout-sub">{longDate(days[at])}</span></>}
+        </div>
+        <div className="ex-seg" role="group" aria-label="Chart period" style={{ "--i": RANGES.findIndex(([r]) => r === range), "--n": RANGES.length }}>
+          <span className="ex-seg-thumb" aria-hidden="true" />
+          {RANGES.map(([r]) => <button key={r} type="button" className="ex-range" aria-pressed={range === r} onClick={() => { setAt(null); onRange(r); }}>{r}</button>)}
+        </div>
+      </div>
+      <div ref={box} className="ex-plot" onPointerDown={read} onPointerMove={read} onPointerLeave={() => setAt(null)} onPointerCancel={() => setAt(null)}>
+        <Spark closes={closes} dir={dir} height={220} dot={false} />
+        <span className="ex-base" style={{ top: `${yPct(first)}%` }} aria-hidden="true" />
+        {n > 1 && (
+          <span className={`ex-cursor ${tone(since)}${at == null ? " idle" : ""}`} style={{ left: `${(shown / (n - 1)) * 100}%` }} aria-hidden="true">
+            <span className="ex-cursor-dot" style={{ top: `${yPct(closes[shown])}%` }} />
+          </span>
+        )}
+      </div>
+      <div className="ex-axis"><span>{shortDate(days[0])}</span><span>High {points(max)} · Low {points(min)}</span><span>{shortDate(days[days.length - 1])}</span></div>
+    </div>
+  );
+}
+
 // An index in full
 function IndexDetail({ name, onBack, onOpenStock, onOpenNews }) {
   const [d, setD] = useState(null);
@@ -86,47 +135,52 @@ function IndexDetail({ name, onBack, onOpenStock, onOpenNews }) {
   const n = RANGES.find(([r]) => r === range)[1];
   const closes = n === Infinity ? d.closes : d.closes.slice(-(n + 1));
   const days = n === Infinity ? d.days : d.days.slice(-(n + 1));
-  const rangeChange = closes.length > 1 ? (closes[closes.length - 1] / closes[0] - 1) * 100 : null;
-  const dir = tone(rangeChange);
   const vix = name === "India VIX";
+  const dayDir = tone(d.changePct);
+  // the returns' bars share one scale, so the longest is the biggest move
+  const scale = Math.max(1, ...RETURNS.map(([k]) => Math.abs(d.returns[k] ?? 0)));
   return (
     <article className="ex-detail" aria-label={label(name)}>
       {back}
-      <p className="nw-eyebrow"><span className={`ex-badge ${d.group}`}>{badge(name)}</span><span>{d.group === "sector" ? "Sector index" : "Market index"} · close on {shortDate(d.asOf)}</span></p>
-      <h2 className="nw-title">{name.replace(/^nifty/i, "NIFTY")}</h2>
-      <p className="ex-big">{points(d.close)} <span className={`ex-chg ${tone(d.changePct)}`}>{d.change > 0 ? "+" : d.change < 0 ? "−" : ""}{points(Math.abs(d.change))} ({Math.abs(d.changePct).toFixed(2)}%)</span></p>
+      <header className="ex-hero">
+        <p className="nw-eyebrow"><span className={`ex-badge ${d.group}`}>{badge(name)}</span><span>{d.group === "sector" ? "Sector index" : "Market index"} · close on {shortDate(d.asOf)}</span></p>
+        <h2 className="nw-title ex-title">{name.replace(/^nifty/i, "NIFTY")}</h2>
+        <p className="ex-big">{points(d.close)} <span className={`ex-daychg ${dayDir}`}>{signed(d.change)}{points(Math.abs(d.change))} ({signed(d.changePct)}{Math.abs(d.changePct).toFixed(2)}%)</span><span className="ex-big-on">on the day</span></p>
+      </header>
       {vix && <p className="nw-note">India VIX is how much the market expects prices to swing over the next 30 days, from NIFTY options: higher means more nervous. It isn't a price.</p>}
       {/* a wide screen: the chart on the left, its returns and valuation beside it */}
       <div className="dt-cols">
       <div className="dt-main">
-      <div className="ex-chart">
-        <div className="ex-ranges" role="group" aria-label="Chart period">
-          {RANGES.map(([r]) => <button key={r} type="button" className="ex-range" aria-pressed={range === r} onClick={() => setRange(r)}>{r}</button>)}
-          {rangeChange != null && <span className={`ex-chg ${dir}`}>{rangeChange > 0 ? "+" : rangeChange < 0 ? "−" : ""}{Math.abs(rangeChange).toFixed(2)}%</span>}
-        </div>
-        <Spark closes={closes} dir={dir} height={180} dot={false} />
-        <div className="ex-axis"><span>{shortDate(days[0])}</span><span>High {points(Math.max(...closes))} · Low {points(Math.min(...closes))}</span><span>{shortDate(days[days.length - 1])}</span></div>
-      </div>
+      <IndexChart days={days} closes={closes} range={range} onRange={setRange} />
+      {(d.pe || d.pb || d.divYield) && (
+        <section className="nw-section" aria-label="Valuation">
+          <h3 className="nw-section-head">Valuation</h3>
+          <div className="ex-stats">
+            {d.pe && <div><span>P/E</span><b>{d.pe.toFixed(1)}</b></div>}
+            {d.pb && <div><span>P/B</span><b>{d.pb.toFixed(2)}</b></div>}
+            {d.divYield && <div><span>Dividend yield</span><b>{d.divYield.toFixed(2)}%</b></div>}
+          </div>
+          <p className="nw-note">NSE's figures for the index on {shortDate(d.asOf)}.</p>
+        </section>
+      )}
       </div>
       <div className="dt-side">
       {!vix && (
         <section className="nw-section" aria-label="Returns">
           <h3 className="nw-section-head">Returns</h3>
           <div className="ex-returns">
-            {RETURNS.map(([k, l]) => <div key={k}><span>{l}</span>{d.returns[k] != null ? <Change value={d.returns[k]} /> : <span className="ex-na">—</span>}</div>)}
+            {RETURNS.map(([k, l]) => {
+              const v = d.returns[k];
+              return (
+                <div key={k} className="ex-ret">
+                  <span className="ex-ret-label">{l}</span>
+                  <span className="ex-ret-track" aria-hidden="true">{v != null && <span className={`ex-ret-bar ${tone(v)}`} style={{ "--w": `${(Math.abs(v) / scale) * 50}%` }} />}</span>
+                  {v != null ? <Change value={v} /> : <span className="ex-na">—</span>}
+                </div>
+              );
+            })}
           </div>
           <p className="nw-note">Price returns from NSE's closes, without dividends; 3 and 5 years are a year on average.</p>
-        </section>
-      )}
-      {(d.pe || d.pb || d.divYield) && (
-        <section className="nw-section" aria-label="Valuation">
-          <h3 className="nw-section-head">Valuation</h3>
-          <div className="ex-returns">
-            {d.pe && <div><span>P/E</span><b>{d.pe.toFixed(1)}</b></div>}
-            {d.pb && <div><span>P/B</span><b>{d.pb.toFixed(2)}</b></div>}
-            {d.divYield && <div><span>Dividend yield</span><b>{d.divYield.toFixed(2)}%</b></div>}
-          </div>
-          <p className="nw-note">NSE's figures for the index on {shortDate(d.asOf)}.</p>
         </section>
       )}
       </div>
@@ -139,7 +193,9 @@ function IndexDetail({ name, onBack, onOpenStock, onOpenNews }) {
           <p className="nw-note">{d.sector} companies over ₹1,000 crore ({d.companies}).</p>
           <div className="ex-movers">
             {[["Up", d.gainers], ["Down", d.losers]].map(([t, list]) => list.length > 0 && (
-              <div key={t} className="nw-list">
+              <div key={t} className="ex-movers-col">
+                <p className={`ex-movers-h ${t === "Up" ? "up" : "down"}`}>{t === "Up" ? "Rose most" : "Fell most"}</p>
+                <div className="nw-list">
                 {list.map(m => (
                   <button key={m.symbol} type="button" className="nw-row compact" onClick={() => onOpenStock(m.symbol)}>
                     <span className="nw-mark"><CompanyLogo symbol={m.symbol} size={36} fallback={m.name} /></span>
@@ -147,6 +203,7 @@ function IndexDetail({ name, onBack, onOpenStock, onOpenNews }) {
                       <span className="nw-subject">₹{m.close?.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</span></span>
                   </button>
                 ))}
+                </div>
               </div>
             ))}
           </div>
