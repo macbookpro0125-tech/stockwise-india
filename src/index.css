@@ -3222,3 +3222,36 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
   .wl-tab::after { transition: none; }
 }
 .wl-pop.wl-pop-fixed { position: fixed; top: auto; z-index: 900; }
+
+/* Saved to the watchlist, from anywhere (SaveToList.jsx): a glass panel over
+   the bottom of the page — over the tab bar on a phone — with the user's lists */
+.stl { position: fixed; left: 12px; right: 12px; bottom: 24px; z-index: 65; max-width: 520px; margin: 0 auto; padding: 12px 14px 14px; border: 1px solid var(--bdr2); border-radius: 18px; background: color-mix(in srgb, var(--s2) 88%, transparent); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%); box-shadow: 0 18px 44px rgba(0, 0, 0, 0.38); animation: stlIn 300ms cubic-bezier(0.2, 0.9, 0.3, 1); }
+@keyframes stlIn { from { opacity: 0; transform: translateY(16px) scale(0.98); } }
+@media (max-width: 640px) { .stl { bottom: calc(96px + env(safe-area-inset-bottom, 0px)); } }
+@media (prefers-reduced-transparency: reduce) { .stl { background: var(--s2); backdrop-filter: none; -webkit-backdrop-filter: none; } }
+@media (prefers-reduced-motion: reduce) { .stl { animation: wlFade 160ms ease-out; } }
+.stl-top { display: flex; align-items: center; gap: 10px; }
+.stl-star { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 9px; color: var(--yellow); background: color-mix(in srgb, var(--yellow) 16%, transparent); }
+.stl-text { flex: 1; min-width: 0; font-size: var(--fs-sm); color: var(--t2); }
+.stl-text b { font-weight: 600; color: var(--t1); }
+.stl-x { display: grid; place-items: center; width: 30px; height: 30px; margin: -4px -6px -4px 0; border: 0; border-radius: 9px; background: none; color: var(--t3); cursor: pointer; }
+@media (hover: hover) and (pointer: fine) { .stl-x:hover { background: var(--s3); color: var(--t1); } }
+.stl-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
+.stl-row::-webkit-scrollbar { display: none; }
+.stl-label { flex-shrink: 0; font-size: var(--fs-xs); color: var(--t3); }
+.stl-chip { flex-shrink: 0; display: inline-flex; align-items: center; gap: 5px; height: 34px; padding: 0 13px; border: 1px solid var(--bdr2); border-radius: 999px; background: var(--s1); color: var(--t1); font: inherit; font-size: var(--fs-sm); white-space: nowrap; cursor: pointer; touch-action: manipulation; transition: border-color 120ms, background 120ms, transform 100ms; }
+.stl-chip:active { transform: scale(0.95); }
+.stl-chip[aria-pressed="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--s1)); color: var(--accent); }
+.stl-chip.stl-new { border-style: dashed; color: var(--accent); }
+.stl-chip:focus-visible, .stl-x:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* the company page's Lists button, beside "In watchlist" */
+.sd-actions:has(.wl-picker) { grid-template-columns: 1fr auto auto; }
+.wl-lists-btn { position: relative; }
+.wl-lists-btn.on { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+.wl-lists-n { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--accent); color: var(--on-accent); font-size: 11px; font-weight: 700; line-height: 18px; }
+.sd.ap .sd-id .sd-actions:has(.wl-picker) { grid-template-columns: 1fr 1fr; }
+.sd.ap .sd-id .sd-actions:has(.wl-picker) .wl-picker { grid-column: span 1; }
+.sd.ap .sd-id .sd-actions .wl-lists-btn { width: 100%; height: 46px; border-radius: 14px; font-size: 15px; }
+/* (the first button in its own wrapper: not the row's lead button's look) */
+.sd-actions .wl-picker .wl-lists-btn, .sd.ap .sd-id .sd-actions .wl-picker .wl-lists-btn { background: var(--s2); border: 1px solid var(--bdr2); color: var(--t1); box-shadow: none; }
+.sd-actions .wl-picker .wl-lists-btn.on, .sd.ap .sd-id .sd-actions .wl-picker .wl-lists-btn.on { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }

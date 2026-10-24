@@ -4,6 +4,9 @@ import CompanyLogo from "./CompanyLogo.jsx";
 import { StarIcon } from "./icons.jsx";
 import { fmtRs } from "../server/levels.js";
 import { docTop } from "./motion.js";
+import { useState } from "react";
+import { useWatchLists, setInList, createList } from "./watchlist.js";
+import { ListPicker, ListNameDialog } from "./WatchLists.jsx";
 
 // The stock page's left column (replica/recon.md): who the company is, its
 // price and recent returns, Watch and Alert, then a scorecard — one line per
@@ -102,6 +105,9 @@ export function Scorecard({ r }) {
 }
 
 export default function StockSide({ data, m, price, priceLabel, watched, onWatch, onAlert }) {
+  // the user's watchlist lists: a starred stock goes in or out of them here
+  const lists = useWatchLists();
+  const [naming, setNaming] = useState(false);
   const returns = m ? [["1W", m.ret1w], ["1M", m.ret1m], ["1Y", m.ret1y]].filter(([, v]) => v != null) : [];
   return (
     <aside className="sd-side" aria-label={`${data.name} summary`}>
@@ -135,10 +141,16 @@ export default function StockSide({ data, m, price, priceLabel, watched, onWatch
           <button type="button" className={`sd-action${watched ? " on" : ""}`} onClick={onWatch} aria-pressed={watched} aria-label={watched ? "In watchlist" : "Add to watchlist"}>
             <StarIcon filled={watched} /> <span className="hide-phone">{watched ? "In watchlist" : "Add to watchlist"}</span><span className="phone-only" aria-hidden="true">{watched ? "In watchlist" : "Watchlist"}</span>
           </button>
+          {watched && <ListPicker ticker={data.symbol} name={data.name} lists={lists} label="Lists" onToggle={setInList} onNew={() => setNaming(true)} />}
           <button type="button" className="sd-action sd-action-link" onClick={onAlert}><Bell className="sd-action-bell" size={17} aria-hidden="true" />Set an alert<ChevronRight className="sd-action-chev" size={17} aria-hidden="true" /></button>
         </div>
       </section>
       <div className="sd-side-scores"><Scorecard r={m?.research} /></div>
+      {naming && (
+        <ListNameDialog title={`New list with ${data.name}`} lists={lists} sector={m?.sector ?? null}
+          onSave={async name => { const list = await createList(name); await setInList(list.id, data.symbol, true); }}
+          onClose={() => setNaming(false)} />
+      )}
     </aside>
   );
 }

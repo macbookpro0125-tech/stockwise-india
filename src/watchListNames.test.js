@@ -20,4 +20,7 @@ assert.equal(t[0].name, "Banks & finance");
 
 // nothing starred: the usual names
 assert.deepEqual(suggestListNames().map(x => x.name), COMMON_NAMES.slice(0, 8));
+// a list for one stock: its sector's name first
+assert.equal(suggestListNames({ sector: "Healthcare" })[0].name, "Pharma & healthcare");
+assert.equal(suggestListNames({ sector: "Healthcare", existing: ["pharma & healthcare"] })[0].name, COMMON_NAMES[0]);
 console.log("watchListNames tests passed");

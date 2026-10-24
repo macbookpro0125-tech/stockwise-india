@@ -29,8 +29,9 @@ export const sectorListName = sector => SECTOR_NAME[sector] ?? (sector ? String(
 
 export const COMMON_NAMES = ["Long term", "To research", "High conviction", "Dividend picks", "Results watch", "Buy on dips", "Swing trades", "Small caps"];
 
-// starred: [{ ticker, sector }]; existing: the names already used
-export function suggestListNames({ starred = [], existing = [] } = {}, max = 8) {
+// starred: [{ ticker, sector }]; existing: the names already used; sector: the
+// one stock's a list is being made for (from its page, or just starred), first
+export function suggestListNames({ starred = [], existing = [], sector = null } = {}, max = 8) {
   const used = new Set(existing.map(n => n.trim().toLowerCase()));
   const out = [];
   const bySector = new Map();
@@ -44,6 +45,8 @@ export function suggestListNames({ starred = [], existing = [] } = {}, max = 8) 
   for (const [name, tickers] of [...bySector].filter(([, t]) => t.length >= 2).sort((a, b) => b[1].length - a[1].length).slice(0, 3)) {
     if (!used.has(name.toLowerCase())) out.push({ name, tickers });
   }
+  const own = sectorListName(sector);
+  if (own && !used.has(own.toLowerCase()) && !out.some(o => o.name === own)) out.unshift({ name: own, tickers: [] });
   for (const name of COMMON_NAMES) {
     if (out.length >= max) break;
     if (!used.has(name.toLowerCase())) out.push({ name, tickers: [] });

@@ -3,7 +3,7 @@ import CompanyLogo from "./CompanyLogo.jsx";
 import { Star, X, NotebookPen, CalendarDays, Newspaper, ChevronRight } from "lucide-react";
 import { BellIcon } from "./icons.jsx";
 import { api } from "./api.js";
-import { useWatchlist, toggleWatch, watchSaved } from "./watchlist.js";
+import { useWatchlist, toggleWatch, watchSaved, useWatchLists, primeWatchLists, setInList, createList as createWatchList, renameList as renameWatchList, deleteList as deleteWatchList } from "./watchlist.js";
 import CreateAlertModal from "./CreateAlertModal.jsx";
 import { QualityBadge } from "./ResearchBadges.jsx";
 import { pricePosition } from "../server/levels.js";
@@ -149,7 +149,7 @@ export default function WatchlistView({ onOpenStock, onOpenNews }) {
   const [noteText, setNoteText] = useState("");
   const [leaving, setLeaving] = useState(() => new Set());
   // the named lists (tabs); null is All
-  const [lists, setLists] = useState([]);
+  const lists = useWatchLists();
   const [activeList, setActiveList] = useState(savedList);
   const [dialog, setDialog] = useState(null); // { kind: "new", ticker? } | { kind: "rename", list }
   const pickList = id => { setActiveList(id); saveList(id); };
@@ -164,34 +164,24 @@ export default function WatchlistView({ onOpenStock, onOpenNews }) {
     setTimeout(() => { if (fromList) toggleInList(fromList, ticker, false); else toggleWatch(ticker); setLeaving(s => { const n = new Set(s); n.delete(ticker); return n; }); }, ms);
   };
 
-  // A list's stocks change at once; the server follows, a failure puts it back
-  const toggleInList = async (id, ticker, on) => {
-    const flip = add => setLists(ls => ls.map(l => (l.id !== id ? l : { ...l, tickers: add ? [ticker, ...l.tickers.filter(t => t !== ticker)] : l.tickers.filter(t => t !== ticker) })));
-    flip(on);
-    try { await (on ? api.addToWatchList(id, ticker) : api.removeFromWatchList(id, ticker)); } catch { flip(!on); }
-  };
+  const toggleInList = (id, ticker, on) => setInList(id, ticker, on);
   const createList = async (name, tickers) => {
-    const { list } = await api.createWatchList(name, tickers);
-    setLists(ls => [...ls, list]);
+    const list = await createWatchList(name, tickers);
     // from a card's "New list…": that stock goes in it too
-    if (dialog?.ticker && !list.tickers.includes(dialog.ticker)) await toggleInList(list.id, dialog.ticker, true);
+    if (dialog?.ticker && !list.tickers.includes(dialog.ticker)) await setInList(list.id, dialog.ticker, true);
     pickList(list.id);
   };
-  const renameList = async (list, name) => {
-    await api.renameWatchList(list.id, name);
-    setLists(ls => ls.map(l => (l.id === list.id ? { ...l, name } : l)));
-  };
+  const renameList = (list, name) => renameWatchList(list.id, name);
   const deleteList = async list => {
     if (!window.confirm(`Delete the list "${list.name}"? Its stocks stay in your watchlist.`)) return;
-    await api.deleteWatchList(list.id);
-    setLists(ls => ls.filter(l => l.id !== list.id));
+    await deleteWatchList(list.id);
     pickList(null);
   };
 
   useEffect(() => {
     api.watchlist().then(d => {
       setData(d);
-      setLists(d.lists ?? []);
+      primeWatchLists(d.lists ?? []);
       if (d.items.length) api.currentPrices(d.items.map(i => i.ticker)).then(setLive).catch(() => {});
     }).catch(e => setError(e.message));
   }, []);

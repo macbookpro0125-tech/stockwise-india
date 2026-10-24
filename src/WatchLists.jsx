@@ -44,13 +44,13 @@ export function ListTabs({ lists, active, onPick, allCount, onNew, onRename, onD
 
 // A new list's name (or a list's new name): typed, or one of the suggestions —
 // a sector's comes with its starred stocks in it
-export function ListNameDialog({ title, initial = "", lists, starred, onSave, onClose, suggest = true }) {
+export function ListNameDialog({ title, initial = "", lists, starred = [], sector = null, onSave, onClose, suggest = true }) {
   const [name, setName] = useState(initial);
   const [picked, setPicked] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const input = useRef(null);
-  const ideas = suggest ? suggestListNames({ starred, existing: lists.map(l => l.name) }) : [];
+  const ideas = suggest ? suggestListNames({ starred, sector, existing: lists.map(l => l.name) }) : [];
   useEffect(() => { input.current?.focus(); }, []);
   useEffect(() => {
     const onKey = e => { if (e.key === "Escape") onClose(); };
@@ -62,7 +62,8 @@ export function ListNameDialog({ title, initial = "", lists, starred, onSave, on
     setBusy(true); setError("");
     try { await onSave(n.trim(), tickers); onClose(); } catch (e) { setError(e.message); setBusy(false); }
   };
-  return (
+  // (on the page itself, wherever it's opened from: a panel's effects would clip it)
+  return createPortal(
     <div className="wl-dialog-scrim" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="wl-dialog" role="dialog" aria-modal="true" aria-labelledby="wl-dialog-title">
         <h2 id="wl-dialog-title" className="wl-dialog-title">{title}</h2>
@@ -88,12 +89,13 @@ export function ListNameDialog({ title, initial = "", lists, starred, onSave, on
           <button type="button" className="btn-primary" disabled={!name.trim() || busy} onClick={() => save()}>{busy ? "Saving…" : initial ? "Rename" : "Create list"}</button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
 // A card's Lists button: which lists the stock is in, ticked; a tap puts it in or out
-export function ListPicker({ ticker, name, lists, onToggle, onNew }) {
+export function ListPicker({ ticker, name, lists, onToggle, onNew, label = null }) {
   // open: where the menu goes, under the button against the window (a card clips what overflows it)
   const [open, setOpen] = useState(null);
   const box = useRef(null);
@@ -118,9 +120,13 @@ export function ListPicker({ ticker, name, lists, onToggle, onNew }) {
   const inCount = lists.filter(l => l.tickers.includes(ticker)).length;
   return (
     <div className="wl-picker" ref={box}>
-      <button type="button" className={`wl-icon-btn${inCount ? " on" : ""}`} aria-label={`Lists for ${name}`} title="Add to a list" aria-expanded={!!open} onClick={toggle}>
-        <ListPlus size={15} />{inCount > 0 && <span className="wl-picker-n">{inCount}</span>}
-      </button>
+      {label
+        ? <button type="button" className={`sd-action wl-lists-btn${inCount ? " on" : ""}`} aria-label={`Lists for ${name}`} aria-expanded={!!open} onClick={toggle}>
+          <ListPlus size={17} aria-hidden="true" />{label}{inCount > 0 && <span className="wl-lists-n">{inCount}</span>}
+        </button>
+        : <button type="button" className={`wl-icon-btn${inCount ? " on" : ""}`} aria-label={`Lists for ${name}`} title="Add to a list" aria-expanded={!!open} onClick={toggle}>
+          <ListPlus size={15} />{inCount > 0 && <span className="wl-picker-n">{inCount}</span>}
+        </button>}
       {/* (on the page itself: a card's effects would clip it, even fixed) */}
       {open && createPortal(
         <div ref={pop} className="wl-pop wl-pop-fixed" style={open} role="menu" aria-label={`Lists for ${name}`}>

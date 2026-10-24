@@ -22,6 +22,7 @@ import { useAdPause } from "./ads.jsx";
 import { noteAppOpened, companyPageClosed } from "./rateApp.js";
 import { onPushTap, refreshPush, forgetPush } from "./push.js";
 import PushAsk from "./PushAsk.jsx";
+import SaveToList from "./SaveToList.jsx";
 
 // Keep the first Discover screen small; load account tabs and full stock
 // research only when the user opens them.
@@ -389,6 +390,7 @@ export default function App() {
       {tour && <Tour key={tour} steps={tour === "app" ? APP_TOUR : STOCK_TOUR} onFinish={finishTour} />}
       {/* the Android app: once, after the first star, its notifications offered */}
       <PushAsk />
+      <SaveToList />
     </div>
   );
 }
