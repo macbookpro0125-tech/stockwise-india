@@ -39,3 +39,6 @@ createRoot(document.getElementById("root")).render(
     <ReconnectNotice />
   </StrictMode>
 );
+// started: the page's guard (index.html) shows no "didn't start" message
+window.__appStarted = true;
+document.getElementById("boot-guard")?.remove();

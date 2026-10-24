@@ -27,6 +27,38 @@
        every page; nothing in a browser -->
   <div class="safe-top" aria-hidden="true"></div>
   <div id="root"></div>
+  <!-- A phone whose browser engine is too old for the app (24 Oct 2026: a
+       tester's Xiaomi showed only a black screen — the app's code needs about
+       Chrome 111, and some phones never update Android System WebView). Plain,
+       old JavaScript, so it runs anywhere: if the engine lacks what the app
+       uses, or the app hasn't started 12 seconds on, it says why and how to
+       fix it, instead of a black screen. main.jsx removes it once started. -->
+  <script>
+    (function () {
+      var ua = navigator.userAgent || "";
+      var inApp = /; wv\)/.test(ua) || /Android.*Version\/\d/.test(ua);
+      var old = !(window.CSS && CSS.supports && CSS.supports("color", "color-mix(in srgb, red, blue)")) || !Array.prototype.at || !Object.hasOwn;
+      function show(why) {
+        if (window.__appStarted || document.getElementById("boot-guard")) return;
+        var webview = "https://play.google.com/store/apps/details?id=com.google.android.webview";
+        var box = document.createElement("div");
+        box.id = "boot-guard";
+        box.setAttribute("role", "alert");
+        box.style.cssText = "position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;background:#080810;color:#F4F4FF;font:16px/1.5 -apple-system,Roboto,Segoe UI,Arial,sans-serif;text-align:center";
+        box.innerHTML = '<div style="max-width:420px">'
+          + '<p style="font-size:20px;font-weight:600;margin:0 0 10px">' + (why === "old" ? "This phone's browser engine is out of date" : "Jocular Insights didn't start") + '</p>'
+          + '<p style="color:#A8A8C0;margin:0 0 20px">' + (inApp
+            ? "The app runs on your phone's <b>Android System WebView</b>. Update it (and Google Chrome) from Google Play, then open the app again."
+            : "Please update your browser to its latest version, or open the site in an up-to-date Chrome, Safari, Edge or Firefox.") + '</p>'
+          + (inApp ? '<p style="margin:0 0 12px"><a href="' + webview + '" style="display:inline-block;background:#00E0BE;color:#04201b;font-weight:600;padding:12px 20px;border-radius:12px;text-decoration:none">Update Android System WebView</a></p>' : '')
+          + '<p style="margin:0"><a href="javascript:location.reload()" style="color:#00E0BE">Try again</a></p></div>';
+        document.body.appendChild(box);
+      }
+      // only if the app really hasn't started: sooner on an engine that lacks
+      // what it uses, but never in the way of one that manages anyway
+      setTimeout(function () { show(old ? "old" : "stuck"); }, old ? 3000 : 12000);
+    })();
+  </script>
   <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>
