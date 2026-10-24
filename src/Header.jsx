@@ -201,7 +201,7 @@ export function BottomTabBar({ tab, onTab }) {
   // which tab is under a point, and where the lens may go
   const geometry = () => {
     const r = navRef.current.getBoundingClientRect();
-    const pad = 6, inner = r.width - 2 * pad, each = inner / phoneTabs.length;
+    const pad = 4, inner = r.width - 2 * pad, each = inner / phoneTabs.length;
     return { r, pad, each };
   };
   const tabAt = (clientX, g = geometry()) => Math.min(phoneTabs.length - 1, Math.max(0, Math.floor((clientX - g.r.left - g.pad) / g.each)));
@@ -244,7 +244,7 @@ export function BottomTabBar({ tab, onTab }) {
   // the click that follows a slide's release isn't a tap of its own
   const slid = useRef(false);
   const lensStyle = { "--i": at, "--n": phoneTabs.length, "--d": Math.min(distance || 1, 4) };
-  if (drag) lensStyle.transform = `translateX(calc(${drag.x}px - 6px - 50%))`;
+  if (drag) lensStyle.transform = `translateX(calc(${drag.x}px - 4px - 50%))`;
   return (
     <nav ref={navRef} className={`bottom-tab-bar${collapsed ? " collapsed" : ""}${drag ? " sliding" : ""}`} data-tour="tabs" aria-label="Pages"
       onPointerDown={onDown} onPointerMove={onMove} onPointerUp={e => finish(e, false)} onPointerCancel={e => finish(e, true)}>
@@ -265,7 +265,7 @@ export function BottomTabBar({ tab, onTab }) {
               setPressed(null); if (folded) return open(); if (!on) tick(); onTab(t.id);
             }}>
             <span className="btb-icon">
-              <t.Icon size={22} strokeWidth={i === at ? 2.3 : 2} aria-hidden="true" />
+              <t.Icon size={21} strokeWidth={i === at ? 2.3 : 2} aria-hidden="true" />
               {(t.id === "alerts" || t.id === "settings") && reached && <span className="btb-dot" aria-hidden="true" />}
               {t.id === "watchlist" && badges.watchlist.news && <span className="btb-dot btb-dot-news" aria-hidden="true" />}
             </span>

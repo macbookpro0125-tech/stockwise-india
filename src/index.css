@@ -3323,3 +3323,23 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 .sd-call-more ul { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
 .sd-call-more li { display: flex; align-items: center; gap: 14px; font-size: var(--fs-sm); }
 .sd-call-more li span { min-width: 96px; color: var(--t3); font-variant-numeric: tabular-nums; }
+
+/* The tab bar, lighter (24 Oct 2026, from Reddit's: "it should be like
+   that"): thinner — 4px around tabs 46px tall, the icon and its name closer —
+   and clearer, the page showing through more under a stronger blur. The lens
+   keeps to the new inset. The page's own room for it shrinks to match. */
+@media (max-width: 640px) {
+  .bottom-tab-bar {
+    padding: 4px; gap: 0;
+    bottom: calc(8px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
+    background: color-mix(in srgb, var(--s2) 42%, transparent);
+    -webkit-backdrop-filter: blur(30px) saturate(200%);
+    backdrop-filter: blur(30px) saturate(200%);
+  }
+  [data-theme="light"] .bottom-tab-bar { background: rgba(255, 255, 255, 0.5); }
+  .bottom-tab-bar .btb-tab { min-height: 46px; gap: 2px; }
+  .bottom-tab-bar .btb-label { font-size: 10.5px; }
+  .bottom-tab-bar .btb-glass { top: 4px; bottom: 4px; left: 4px; width: calc((100% - 8px) / var(--n)); transform: translateX(calc(var(--i) * 100%)); }
+  .bottom-tab-bar.collapsed { right: calc(100% - 12px - 56px); }
+  body { padding-bottom: calc(72px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))); }
+}
