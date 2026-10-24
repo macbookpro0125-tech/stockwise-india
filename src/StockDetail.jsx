@@ -29,6 +29,7 @@ import StockDataDates from "./StockDataDates.jsx";
 import StockDividends from "./StockDividends.jsx";
 import StockHealth from "./StockHealth.jsx";
 import StockSectorCompare from "./StockSectorCompare.jsx";
+import StockBusiness from "./StockBusiness.jsx";
 import StockRecent from "./StockRecent.jsx";
 import InsidersPanel from "./InsidersPanel.jsx";
 import StockEarningsCall from "./StockEarningsCall.jsx";
@@ -450,7 +451,7 @@ const closeLabel = c => `NSE close (${dayLabel(c.date)})`;
 // Go deeper list and the Next card at a tab's end ask them; a computer
 // shows them on a tab's hover
 const TABS = [
-  ["overview", "Overview", ["overview", "about", "events"], "What is it, and what's the gist?", Gauge],
+  ["overview", "Overview", ["overview", "about", "business", "events"], "What is it, and what's the gist?", Gauge],
   ["scores", "Scorecard", ["scores", "thesis"], "Is it a good business?", ClipboardCheck],
   ["valuation", "Valuation", ["valuation", "sizing", "levels"], "Is the price fair for what it earns?", Scale],
   ["financials", "Financials", ["financials", "health"], "Is it growing, and can it carry its debt?", ChartColumn],
@@ -757,6 +758,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       </section>
 
       <div id="sec-about" className="ss-section" data-tab="overview"><CompanyProfile symbol={data.symbol} m={m} /></div>
+      {m && (m.sectorShare || m.history?.some(h => h.segments?.length >= 2)) && <div id="sec-business" className="ss-section" data-tab="overview"><h2 className="sd-h2">Where the money comes from. <span>Its sales by business, and its share of the sector.</span></h2><StockBusiness m={m} name={data.name} /></div>}
 
       {m && <div id="sec-events" className="ss-section" data-tab="overview"><StockRecent m={m} holding={data.holding} /></div>}
 

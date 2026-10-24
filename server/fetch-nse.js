@@ -70,6 +70,11 @@ export const SCHEMA = 8; // 3: capex, current liabilities, cost of goods, long-t
 const YEARS = 8;
 // Bumped when the bank figures (bankFigures) change shape: only banks are
 // re-read for it, not the whole market (fetch-market.js needsSummary)
+// Bumped when the statements in detail (DETAIL_TAGS, segmentsOf) change:
+// companies are re-read for it a batch a night, biggest first
+// (data-jobs.js), not all at once as a SCHEMA change would — the whole market
+// takes about two hours, near the evening job's limit
+export const DETAIL_VERSION = 1;
 export const BANK_VERSION = 2; // 2: five quarters of asset quality, capital and return on assets
 // Three years of quarters: this quarter against the same one a year ago, two
 // years running, and trailing-twelve-month figures
@@ -125,6 +130,93 @@ export const TAGS = {
   bankBalances: ["BankBalanceOtherThanCashAndCashEquivalents"],
   currentInvestments: ["CurrentInvestments"],
 };
+
+// The statements in detail (SCHEMA 9, 24 Oct 2026), for the company page's
+// Profit & Loss, Balance Sheet and Cash flow: the Ind AS lines the results
+// filings carry. Each is null where a filing doesn't have it (lenders file
+// other templates), never a guessed 0. Kept flat on the year, so a unit slip
+// (unit-slips.js) is put right on these as on the rest.
+export const DETAIL_TAGS = {
+  year: {
+    totalIncome: ["Income", "TotalIncome"],
+    employees: ["EmployeeBenefitExpense"],
+    otherExpenses: ["OtherExpenses"],
+    exceptional: ["ExceptionalItemsBeforeTax", "ExceptionalItems"],
+    investingCf: ["CashFlowsFromUsedInInvestingActivities"],
+    financingCf: ["CashFlowsFromUsedInFinancingActivities"],
+    netCashChange: ["IncreaseDecreaseInCashAndCashEquivalents", "IncreaseDecreaseInCashAndCashEquivalentsBeforeEffectOfExchangeRateChanges"],
+    taxesPaid: ["IncomeTaxesPaidRefundClassifiedAsOperatingActivities", "IncomeTaxesPaidRefund"],
+    dividendsPaid: ["DividendsPaidClassifiedAsFinancingActivities", "DividendsPaid"],
+    interestPaid: ["InterestPaidClassifiedAsFinancingActivities", "InterestPaid"],
+    borrowed: ["ProceedsFromBorrowingsClassifiedAsFinancingActivities", "ProceedsFromNoncurrentBorrowings"],
+    repaid: ["RepaymentsOfBorrowingsClassifiedAsFinancingActivities", "RepaymentsOfNoncurrentBorrowings"],
+    assetSales: ["ProceedsFromSalesOfPropertyPlantAndEquipmentClassifiedAsInvestingActivities"],
+  },
+  atEnd: {
+    assets: ["Assets"],
+    nonCurrentAssets: ["NoncurrentAssets"],
+    ppe: ["PropertyPlantAndEquipment"],
+    cwip: ["CapitalWorkInProgress"],
+    goodwill: ["Goodwill"],
+    intangibles: ["OtherIntangibleAssets"],
+    investmentsNc: ["NoncurrentInvestments"],
+    inventories: ["Inventories"],
+    receivables: ["TradeReceivablesCurrent", "TradeReceivables"],
+    shareCapital: ["EquityShareCapital"],
+    otherEquity: ["OtherEquity"],
+    minority: ["NonControllingInterest", "EquityAttributableToNonControllingInterests"],
+    nonCurrentLiabilities: ["NoncurrentLiabilities"],
+    borrowingsCurrent: ["BorrowingsCurrent"],
+    payables: ["TradePayablesCurrent", "TradePayables"],
+  },
+};
+
+// Revenue (and profit) by segment, from a results filing's segment note: each
+// segment is a dimension member, named by its Description… fact and carrying
+// its revenue and result in contexts with the same member. Read for the full
+// year ending on end. Lines that only reconcile (inter-segment, unallocable,
+// eliminations, totals) are left out. [] when the filing has no segments.
+const SEG_SKIP = /inter[\s-]?segment|unallocable|unallocated|elimination|reconcil|^total\b|^corporate$/i;
+const SEG_REVENUE = ["SegmentRevenue", "SegmentRevenueFromOperations", "RevenueFromOperations", "Revenue"];
+const SEG_RESULT = ["SegmentResult", "SegmentProfitLossBeforeTaxAndFinanceCosts", "SegmentProfitLoss", "ProfitLossBeforeTaxAndFinanceCosts"];
+// A segment list made of places, not businesses
+const PLACES = /\b(india|domestic|overseas|export|outside india|international|america|usa|u\.s\.|europe|uk|united kingdom|asia|africa|middle east|rest of (the )?world|row|australia|japan|china|gcc)\b/i;
+export function segmentsOf(xml, end) {
+  const memberOf = {};
+  const period = {};
+  for (const m of xml.matchAll(/<xbrli:context id="([^"]+)">([\s\S]*?)<\/xbrli:context>/g)) {
+    const seg = m[2].match(/<xbrli:(?:segment|scenario)>([\s\S]*?)<\/xbrli:(?:segment|scenario)>/)?.[1];
+    if (!seg) continue;
+    memberOf[m[1]] = seg.replace(/\s+/g, "");
+    const start = m[2].match(/<xbrli:startDate>([^<]+)/)?.[1], stop = m[2].match(/<xbrli:endDate>([^<]+)/)?.[1];
+    period[m[1]] = start && stop ? { end: stop, days: (new Date(stop) - new Date(start)) / 86400000 + 1 } : null;
+  }
+  const names = new Map();
+  for (const m of xml.matchAll(/<[a-z-]+:(?:DescriptionOfReportableSegment|NameOfReportableSegment|DescriptionOfSegment)\b[^>]*?contextRef="([^"]+)"[^>]*>([^<]+)</g)) {
+    const key = memberOf[m[1]];
+    const name = m[2].replace(/&(amp|lt|gt|quot|apos);/g, (_, e) => XML_ENTITIES[e]).replace(/\s+/g, " ").trim();
+    if (key && name && !names.has(key)) names.set(key, name);
+  }
+  if (!names.size) return [];
+  const yearly = id => period[id] && period[id].end === end && period[id].days >= 350;
+  const pick = tags => {
+    const out = new Map();
+    for (const tag of tags) {
+      for (const m of xml.matchAll(new RegExp(`<[a-z-]+:${tag}\\b[^>]*?contextRef="([^"]+)"[^>]*>([^<]*)<`, "g"))) {
+        const key = memberOf[m[1]], v = Number(m[2]);
+        if (key && names.has(key) && yearly(m[1]) && Number.isFinite(v) && !out.has(key)) out.set(key, v);
+      }
+      if (out.size) return out;
+    }
+    return out;
+  };
+  const revenue = pick(SEG_REVENUE), result = pick(SEG_RESULT);
+  const list = [...names].filter(([key, name]) => !SEG_SKIP.test(name) && revenue.get(key) > 0)
+    .map(([key, name]) => ({ name, revenue: revenue.get(key), result: result.get(key) ?? null }));
+  // one segment, or one that is nearly all of it, says nothing about the mix
+  return list.length >= 2 ? list.slice(0, 12) : [];
+}
+export const segmentsArePlaces = segs => segs.length >= 2 && segs.filter(s => PLACES.test(s.name)).length >= Math.ceil(segs.length / 2);
 
 export function firstFacts(xml, contexts, tags) {
   for (const tag of tags) {
@@ -375,6 +467,15 @@ function extractYear(xml, row, template = templateOf(row.xbrl)) {
     auditOpinion: auditOpinionOf(xml),
     // The audit firm's name — integrated filings (FY25 on) only
     auditor: textFact(xml, "AuditorsFirmName"),
+    // The statements in detail (DETAIL_TAGS); materials, purchases and the
+    // change in inventories are read for cogs above, kept separately too
+    materials: r.year(TAGS.materials),
+    purchases: r.year(TAGS.purchases),
+    inventoryChange: r.year(TAGS.inventoryChange),
+    ...Object.fromEntries(Object.entries(DETAIL_TAGS.year).map(([k, tags]) => [k, r.year(tags)])),
+    ...(equity != null ? Object.fromEntries(Object.entries(DETAIL_TAGS.atEnd).map(([k, tags]) => [k, r.atEnd(tags)])) : {}),
+    // Revenue by segment, from integrated filings, whose contexts carry dates
+    segments: row.legacy ? [] : segmentsOf(xml, isoDay(row.periodEnd)),
   };
 }
 
@@ -735,6 +836,7 @@ export async function fetchStockSummary(symbol) {
   return {
     symbol,
     schema: SCHEMA,
+    detail: DETAIL_VERSION,
     template: latest.template,
     pnl: quarter,
     annual: { yearEnded: latest.label, scope: latest.scope, revenue: latest.revenue, profit: latest.profit, eps: latest.eps },

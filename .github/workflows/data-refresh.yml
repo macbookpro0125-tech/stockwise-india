@@ -134,6 +134,9 @@ jobs:
           # (server/history-backfill.js), gently, until it's there
           HISTORY_YEARS: "5"
           HISTORY_BACKFILL_DAYS: "120"
+          # The statements in detail and sales by segment (fetch-nse.js
+          # DETAIL_VERSION): 300 companies re-read a run, biggest first
+          DETAIL_BATCH: "300"
         run: node --no-warnings scripts/refresh-data.mjs
 
       - uses: actions/cache/save@v4

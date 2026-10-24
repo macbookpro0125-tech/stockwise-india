@@ -26,6 +26,7 @@ import { listNotes, saveNote, deleteNote, listStrategies, saveStrategies, checkS
 import { currentPrices } from "./prices.js";
 import { getPerformance, takeSnapshots } from "./performance.js";
 import { pricePosition, userLevels, fairValueOnly } from "./levels.js";
+import { sectorShare } from "./sector-share.js";
 import { getUserLevels, saveLevelSettings, setStockLevels, clearStockLevels } from "./user-levels.js";
 import { fetchDailyBars, PRICE_RANGES } from "./quote.js";
 import { fetchStockSummary, SCHEMA } from "./fetch-nse.js";
@@ -925,6 +926,8 @@ export function createApp() {
           };
           metrics.dividendRecord = dividendSummary(metrics, snap, market);
           metrics.sectorCompare = market.sectorStats ? sectorComparison(metrics, market.sectorStats) : [];
+          // its share of the listed sector's sales (sector-share.js)
+          metrics.sectorShare = market.rows ? sectorShare(metrics, market.rows) : null;
         }
 
         sendJson(res, 200, {

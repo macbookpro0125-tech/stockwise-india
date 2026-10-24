@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import { profitSteps, cashSteps, cashLines, balanceParts, materialsOf } from "./statements.js";
+import { Bridge, BalancePicture, YearChips, fmtCrShort } from "./StatementCharts.jsx";
 
 // The original's Financials panel (stock-screener FinancialsPanel.jsx and
 // FinancialsChart.jsx): a revenue/profit chart with operating margin on its
@@ -22,20 +24,35 @@ const shortLabel = iso => new Date(`${iso}T00:00:00Z`).toLocaleString("en-IN", {
 
 // kind: "cr" (₹ Crore), "pct", "rs" (rupees per share), "x" (times)
 const STATEMENTS = {
+  // In detail (24 Oct 2026): the expense lines under sales, each where the
+  // filing has it; "  " indents a line that's part of the one above
   profitLoss: [
-    ["Sales", "revenueCr", "cr"], ["Expenses", "expensesCr", "cr"], ["Operating Profit", "operatingProfitCr", "cr"],
+    ["Sales", "revenueCr", "cr"],
+    ["  Materials & goods bought", "materialsAllCr", "cr"], ["  Employee costs", "employeesCr", "cr"], ["  Other expenses", "otherExpensesCr", "cr"],
+    ["Operating costs", "opCostsCr", "cr"], ["Operating Profit", "operatingProfitCr", "cr"],
     ["OPM %", "opm", "pct"], ["Other Income", "otherIncomeCr", "cr"], ["Depreciation", "depreciationCr", "cr"],
-    ["Interest", "financeCostsCr", "cr"], ["Profit before tax", "pbtCr", "cr"], ["Tax", "taxCr", "cr"], ["Net Profit", "profitCr", "cr"],
-    ["EPS in Rs", "eps", "rs"],
+    ["Interest", "financeCostsCr", "cr"], ["Exceptional items", "exceptionalCr", "cr"], ["Profit before tax", "pbtCr", "cr"], ["Tax", "taxCr", "cr"], ["Tax rate %", "taxRate", "pct"], ["Net Profit", "profitCr", "cr"],
+    ["Net margin %", "netMargin", "pct"], ["EPS in Rs", "eps", "rs"],
   ],
   balanceSheet: [
-    ["Net worth (equity)", "equityCr", "cr"], ["Borrowings", "debtCr", "cr"],
+    ["Share capital", "shareCapitalCr", "cr"], ["Reserves", "otherEquityCr", "cr"], ["Net worth (equity)", "equityCr", "cr"],
+    ["  of which outside shareholders", "minorityCr", "cr"],
+    ["Long-term borrowings", "ltDebtCr", "cr"], ["Short-term borrowings", "borrowingsCurrentCr", "cr"], ["Borrowings", "debtCr", "cr"],
     // Rent owed on shops, offices, aircraft — itemised in filings from FY26
-    ["Lease liabilities", "leasesCr", "cr"], ["Total assets", "totalAssetsCr", "cr"],
-    ["Current assets", "currentAssetsCr", "cr"], ["Current liabilities", "currentLiabilitiesCr", "cr"],
+    ["Lease liabilities", "leasesCr", "cr"], ["Owed to suppliers", "payablesCr", "cr"],
+    ["Current liabilities", "currentLiabilitiesCr", "cr"], ["Non-current liabilities", "nonCurrentLiabilitiesCr", "cr"],
+    ["Total liabilities & equity", "totalAssetsCr", "cr"],
+    ["Factories & equipment", "ppeCr", "cr"], ["Work in progress (capex)", "cwipCr", "cr"], ["Goodwill & intangibles", "intangiblesAllCr", "cr"],
+    ["Long-term investments", "investmentsNcCr", "cr"], ["Inventory", "inventoriesCr", "cr"], ["Owed by customers", "receivablesCr", "cr"],
+    ["Cash & liquid investments", "liquidCr", "cr"], ["Current assets", "currentAssetsCr", "cr"], ["Non-current assets", "nonCurrentAssetsCr", "cr"],
+    ["Total assets", "totalAssetsCr", "cr"],
   ],
   cashFlow: [
-    ["Cash from operations", "ocfCr", "cr"], ["Capital spending", "capexCr", "cr"], ["Free cash flow", "fcfCr", "cr"],
+    ["Cash from operations", "ocfCr", "cr"], ["  Tax paid", "taxesPaidOutCr", "cr"],
+    ["Cash from investing", "investingCfCr", "cr"], ["  Capital spending", "capexOutCr", "cr"], ["  From selling assets", "assetSalesCr", "cr"],
+    ["Cash from financing", "financingCfCr", "cr"], ["  New borrowing", "borrowedCr", "cr"], ["  Loans repaid", "repaidOutCr", "cr"],
+    ["  Dividends paid", "dividendsOutCr", "cr"], ["  Interest paid", "interestOutCr", "cr"],
+    ["Net change in cash", "netCashChangeCr", "cr"], ["Free cash flow", "fcfCr", "cr"],
   ],
   // Same lines as Profit & Loss, quarter by quarter, plus each quarter
   // against the same one a year earlier
@@ -76,7 +93,7 @@ function StatementTable({ history, rows, note }) {
         <tbody>
           {shown.map(([label, key, kind]) => (
             <tr key={key + label}>
-              <td style={{ padding: "7px 10px", color: "var(--t2)", whiteSpace: "nowrap", position: "sticky", left: 0, background: "var(--s2)", borderBottom: "1px solid var(--bdr)" }}>{label}</td>
+              <td style={{ padding: label.startsWith("  ") ? "7px 10px 7px 22px" : "7px 10px", color: label.startsWith("  ") ? "var(--t3)" : "var(--t2)", fontSize: label.startsWith("  ") ? 11.5 : undefined, whiteSpace: "nowrap", position: "sticky", left: 0, background: "var(--s2)", borderBottom: "1px solid var(--bdr)" }}>{label.trim()}</td>
               {years.map(y => (
                 <td key={y.fyEnd} style={{ padding: "7px 10px", textAlign: "right", color: y[key] == null ? "var(--t3)" : "var(--t1)", whiteSpace: "nowrap", borderBottom: "1px solid var(--bdr)", ...MONO }}>
                   {fmtCell(y[key], kind)}
@@ -248,8 +265,50 @@ function MarginChart({ points, width, band }) {
   );
 }
 
-export default function FinancialsPanel({ history, quarters = [], template }) {
+// The few lines worked out from the filed ones, for the tables: payments
+// shown as outflows (filed as positive amounts)
+const neg = v => (v == null ? null : -Math.abs(v));
+const withDerived = h => ({
+  ...h,
+  materialsAllCr: materialsOf(h),
+  opCostsCr: h.expensesCr != null ? h.expensesCr - (h.depreciationCr ?? 0) - (h.financeCostsCr ?? 0) : null,
+  taxRate: h.taxCr != null && h.pbtCr > 0 ? (h.taxCr / h.pbtCr) * 100 : null,
+  netMargin: h.profitCr != null && h.revenueCr > 0 ? (h.profitCr / h.revenueCr) * 100 : null,
+  intangiblesAllCr: h.goodwillCr != null || h.intangiblesCr != null ? (h.goodwillCr ?? 0) + (h.intangiblesCr ?? 0) : null,
+  taxesPaidOutCr: neg(h.taxesPaidCr), capexOutCr: neg(h.capexCr), repaidOutCr: neg(h.repaidCr),
+  dividendsOutCr: neg(h.dividendsPaidCr), interestOutCr: neg(h.interestPaidCr),
+});
+
+// A statement's picture for one year, with the years to pick from (newest
+// first); nothing when no year has enough lines for one
+function YearPicture({ history, tab }) {
+  const pictured = history.filter(h => (tab === "profitLoss" ? profitSteps(h) : tab === "cashFlow" ? cashSteps(h) : balanceParts(h)));
+  const [at, setAt] = useState(0);
+  if (!pictured.length) return null;
+  const h = pictured[Math.min(at, pictured.length - 1)];
+  const fy = `FY${h.fyEnd.slice(2, 4)}`;
+  return (
+    <div className="stm-picture">
+      <YearChips years={pictured} at={Math.min(at, pictured.length - 1)} onPick={setAt} />
+      {tab === "profitLoss" && <Bridge steps={profitSteps(h)} caption={`How ${fy}'s sales of ${fmtCrShort(h.revenueCr)} became a net profit of ${fmtCrShort(h.profitCr)}: green adds, red takes away.`} />}
+      {tab === "balanceSheet" && <BalancePicture parts={balanceParts(h)} />}
+      {tab === "cashFlow" && (
+        <>
+          <Bridge steps={cashSteps(h)} caption={`Cash that came in (green) or went out (red) in ${fy}, and what that did to the cash it holds.`} />
+          {cashLines(h).length > 0 && (
+            <ul className="stm-lines">
+              {cashLines(h).map(l => <li key={l.label}><span>{l.label}</span><span style={{ color: l.value >= 0 ? "var(--green)" : "var(--red)", ...MONO }}>{l.value >= 0 ? "+" : ""}{fmtCrShort(l.value)}</span></li>)}
+            </ul>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+export default function FinancialsPanel({ history: filed, quarters = [], template }) {
   const [tab, setTab] = useState("summary");
+  const history = useMemo(() => (filed ?? []).map(withDerived), [filed]);
   if (!history?.length) return null;
 
   const points = [...history].reverse()
@@ -286,11 +345,14 @@ export default function FinancialsPanel({ history, quarters = [], template }) {
           : <div style={{ fontSize: 12, color: "var(--t3)", padding: "24px 0" }}>Not enough reported years to chart. The tables show everything available.</div>)
         : tab === "quarterly"
           ? <StatementTable history={quarters} rows={STATEMENTS.quarterly} note="Each quarter is its own three months; the last two columns compare with the same quarter a year earlier." />
-          : <StatementTable
+          : <>
+            {["profitLoss", "balanceSheet", "cashFlow"].includes(tab) && <YearPicture key={tab} history={history} tab={tab} />}
+            <StatementTable
             history={history}
             rows={template === "BANKING" && tab === "ratios" ? STATEMENTS.ratios.filter(([label]) => label !== "Debt / equity") : STATEMENTS[tab]}
             note={template === "BANKING" && tab === "ratios" ? "Debt/equity is not shown for banks because deposits are operating funding, not comparable corporate borrowing." : null}
-          />}
+          />
+          </>}
     </div>
   );
 }

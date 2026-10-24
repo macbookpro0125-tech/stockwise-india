@@ -3343,3 +3343,51 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
   .bottom-tab-bar.collapsed { right: calc(100% - 12px - 56px); }
   body { padding-bottom: calc(72px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))); }
 }
+
+/* The statements as pictures (StatementCharts.jsx, 24 Oct 2026): a bridge of
+   bars from sales down to profit, and the balance sheet as two bars */
+.stm-row { display: grid; grid-template-columns: minmax(96px, 30%) 1fr minmax(76px, auto); align-items: center; gap: 10px; min-height: 30px; font-size: 12.5px; }
+.stm-row.total .stm-label { color: var(--t1); font-weight: 500; }
+.stm-label { color: var(--t2); line-height: 1.25; }
+.stm-track { position: relative; height: 16px; }
+.stm-bar { position: absolute; top: 0; bottom: 0; border-radius: 4px; }
+.stm-row.total .stm-bar { top: -2px; bottom: -2px; }
+.stm-zero { position: absolute; top: -4px; bottom: -4px; width: 1px; background: var(--bdr2); }
+.stm-value { text-align: right; font-size: 12px; white-space: nowrap; }
+.stm-caption { margin: 8px 0 0; font-size: 11px; line-height: 1.5; color: var(--t3); }
+.stm-years { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 0 12px; padding-bottom: 2px; }
+.stm-year { flex: none; height: 28px; padding: 0 11px; border-radius: 14px; border: 1px solid var(--bdr2); background: var(--s3); color: var(--t2); font: inherit; font-size: 12px; cursor: pointer; transition: background 160ms, color 160ms, border-color 160ms; }
+.stm-year.on { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.stm-year:active { transform: scale(0.96); }
+.stm-stacks { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+@media (max-width: 640px) { .stm-stacks { grid-template-columns: 1fr; gap: 16px; } .stm-row { grid-template-columns: minmax(88px, 34%) 1fr auto; gap: 8px; } }
+.stm-stack-head { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; color: var(--t1); margin-bottom: 8px; }
+.stm-stack-bar { display: flex; height: 22px; border-radius: 6px; overflow: hidden; gap: 2px; background: var(--s3); }
+.stm-stack-bar > span { display: block; height: 100%; min-width: 2px; }
+.stm-legend { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
+.stm-legend li { display: grid; grid-template-columns: 10px 1fr auto; align-items: center; gap: 8px; font-size: 12px; }
+.stm-dot { width: 10px; height: 10px; border-radius: 3px; }
+.stm-legend-label { color: var(--t2); }
+.stm-legend-value { color: var(--t1); white-space: nowrap; }
+.stm-lines { list-style: none; margin: 4px 0 14px; padding: 0; display: grid; gap: 4px; }
+.stm-lines li > span:last-child { white-space: nowrap; }
+.stm-lines li { display: flex; justify-content: space-between; gap: 10px; font-size: 12px; padding: 5px 0; border-bottom: 1px solid var(--bdr); color: var(--t2); }
+
+/* Where the money comes from (StockBusiness.jsx): sales by segment as bars,
+   and the sector share as a ring beside the biggest companies */
+.biz-card { border: 1px solid var(--bdr2); border-radius: 14px; background: var(--s2); padding: 16px; }
+.biz-gist { margin: 0 0 12px; font-size: 14px; line-height: 1.5; color: var(--t2); }
+.biz-gist strong { color: var(--t1); font-weight: 600; }
+.biz-bars { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.biz-bars.compact { gap: 8px; }
+.biz-bar-head { display: flex; justify-content: space-between; gap: 10px; font-size: 12.5px; color: var(--t2); margin-bottom: 5px; }
+.biz-bar-head strong { color: var(--t1); font-weight: 600; }
+.biz-name { color: var(--t1); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.biz-bars.compact .biz-name { color: var(--t2); }
+.biz-bars li.me .biz-name { color: var(--accent); font-weight: 500; }
+.biz-track { display: block; height: 10px; border-radius: 5px; background: var(--s3); overflow: hidden; }
+.biz-bars.compact .biz-track { height: 6px; }
+.biz-track > span { display: block; height: 100%; border-radius: 5px; transform-origin: left; }
+.biz-sub { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 5px; font-size: 11px; color: var(--t3); }
+.biz-share { display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: center; }
+@media (max-width: 520px) { .biz-share { grid-template-columns: 1fr; justify-items: center; } .biz-share-list { width: 100%; } }

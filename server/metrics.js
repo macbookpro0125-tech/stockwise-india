@@ -2,6 +2,8 @@
 // company's stored filings plus the market-wide snapshot — one place, so the
 // same stock can't show two different P/Es on two screens.
 import { calculateLevels, roundPrice } from "./levels.js";
+import { DETAIL_TAGS, segmentsArePlaces } from "./fetch-nse.js";
+const DETAIL_KEYS = ["materials", "purchases", "inventoryChange", ...Object.keys(DETAIL_TAGS.year), ...Object.keys(DETAIL_TAGS.atEnd)];
 import { computeResearch } from "./research.js";
 import { fixUnitSlips } from "./unit-slips.js";
 import { sectorFromName } from "./name-sectors.js";
@@ -458,6 +460,13 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
       debtToEquity: stock.template === "BANKING" ? null : y.equity > 0 && y.debt != null ? totalDebt(y) / y.equity : null,
       auditOpinion: y.auditOpinion ?? null,
       auditor: y.auditor ?? null,
+      // The statements in detail (fetch-nse.js DETAIL_TAGS), in ₹ Cr; null
+      // where the filing doesn't have the line
+      ...Object.fromEntries(DETAIL_KEYS.map(k => [`${k}Cr`, cr(y[k])])),
+      segments: (y.segments ?? []).map(sg => ({ name: sg.name, revenueCr: cr(sg.revenue), resultCr: cr(sg.result) })),
+      // a segment list made of places ("India", "Outside India") is where the
+      // sales come from; otherwise it's what the company sells
+      segmentsBy: segmentsArePlaces(y.segments ?? []) ? "region" : "business",
     };
   });
 

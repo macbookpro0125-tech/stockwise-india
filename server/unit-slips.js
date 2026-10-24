@@ -46,6 +46,8 @@ export function fixUnitSlips(years) {
     for (const [key, v] of Object.entries(y)) {
       if (typeof v === "number" && !NOT_MONEY.has(key)) fixed[key] = v * factor;
     }
+    // revenue by segment, filed in the same wrong unit
+    if (Array.isArray(y.segments)) fixed.segments = y.segments.map(sg => ({ ...sg, revenue: sg.revenue * factor, result: sg.result == null ? null : sg.result * factor }));
     return fixed;
   });
   return changed ? out : years;

@@ -11,7 +11,7 @@ import { join } from "node:path";
 import { DATA_DIR, MARKET_DIR } from "./paths.js";
 import { NSE_BASE, fetchJson, parseQeDate } from "./fetch-nse.js";
 import { fetchEquityList } from "./equity-list.js";
-import { fetchCompanies, needsSummary, needsBusiness, readStored, withRetry } from "./fetch-market.js";
+import { fetchCompanies, needsSummary, needsBusiness, needsDetail, readStored, withRetry } from "./fetch-market.js";
 import { buildMarketSnapshot, loadMarketSnapshot, clearSnapshotCache } from "./market-data.js";
 import { fiscalYearEnds } from "./build-snapshot.js";
 import { takeSnapshots, takeResearchCohort, loadResearchCohorts, daysSinceNewestSnapshot, SNAPSHOT_INTERVAL_DAYS } from "./performance.js";
@@ -80,6 +80,13 @@ const onProgress = p => { status.progress = p; };
 async function fetchWhatNeedsIt() {
   const list = await withRetry(fetchEquityList);
   const todo = list.filter(s => needsSummary(s.symbol));
+  // and a batch read again for the statements in detail (DETAIL_VERSION),
+  // the biggest by sales first, so the companies most looked at come first
+  const batch = Number(process.env.DETAIL_BATCH ?? 0);
+  if (batch > 0) {
+    const sales = s => readStored(s.symbol)?.years?.[0]?.revenue ?? 0;
+    todo.push(...list.filter(s => needsDetail(s.symbol)).sort((a, b) => sales(b) - sales(a)).slice(0, batch));
+  }
   if (!todo.length) return;
   console.error(`[jobs] fetching ${todo.length} companies`);
   await fetchCompanies(todo, "summary", { onProgress });
