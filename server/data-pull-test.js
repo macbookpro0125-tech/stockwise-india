@@ -11,7 +11,7 @@ import { join } from "node:path";
 const root = mkdtempSync(join(tmpdir(), "stockwise-pull-"));
 const dataDir = join(root, "data");
 process.env.DATA_DIR = dataDir;
-const { pullBaseUrl, pullOnce, installPack } = await import("./data-pull.js");
+const { pullBaseUrl, pullOnce, installPack, pullStatus } = await import("./data-pull.js");
 const { loadMarketSnapshot, clearSnapshotCache } = await import("./market-data.js");
 
 // Never on away from Render (a test copy, the demo recorder), unless asked
@@ -59,10 +59,18 @@ const good = makePack("good", { companies: 1200, builtAt: "2026-10-09T15:00:00Z"
 let published = true;
 let packedAt = "2026-10-09T15:30:00Z";
 let latestPack = good;
+let sendLength = true;
 const server = createServer((req, res) => {
   if (!published) { res.writeHead(404).end(); return; }
   if (req.url === "/manifest.json") res.writeHead(200, { "content-type": "application/json" }).end(JSON.stringify({ builtAt: "2026-10-09T15:00:00Z", packedAt, pricesDate: "2026-10-09" }));
-  else if (req.url === "/market-data.tar.gz") res.writeHead(200).end(readFileSync(latestPack));
+  else if (req.url === "/market-data.tar.gz") {
+    const bytes = readFileSync(latestPack);
+    if (sendLength) { res.writeHead(200, { "content-length": bytes.length }).end(bytes); return; }
+    // chunked: no length up front, so only counting on the way stops it
+    res.writeHead(200);
+    for (let i = 0; i < bytes.length; i += 256) res.write(bytes.subarray(i, i + 256));
+    res.end();
+  }
   else res.writeHead(404).end();
 });
 await new Promise(r => server.listen(0, "127.0.0.1", r));
@@ -71,6 +79,17 @@ const base = `http://127.0.0.1:${server.address().port}`;
 published = false;
 assert.equal(await pullOnce(base), "none", "no pack published yet is not a failure");
 published = true;
+// A pack over the cap is refused, whether its length comes first or only
+// adds up on the way, and leaves nothing behind
+const packSize = statSync(good).size;
+assert.equal(await pullOnce(base, { maxBytes: packSize - 1 }), "failed", "a pack declared over the cap is refused");
+assert.match(pullStatus.lastError, /^pack is \d+ bytes$/);
+sendLength = false;
+assert.equal(await pullOnce(base, { maxBytes: packSize - 1 }), "failed", "a pack with no length is stopped once it passes the cap");
+assert.match(pullStatus.lastError, /^pack is over \d+ bytes$/);
+assert.ok(!existsSync(join(dataDir, ".pull.tar.gz")), "a refused download isn't left on disk");
+assert.equal(loadMarketSnapshot().pricesDate, "2026-10-01", "a refused pack leaves the served data alone");
+// the same pack without a length still installs below
 let warmed = 0;
 // Render's file system refuses to rename a folder that came with the build,
 // so the folder stays and its files are replaced

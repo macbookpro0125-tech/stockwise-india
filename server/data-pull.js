@@ -12,15 +12,20 @@
 // data/ replaced from the internet. DATA_PULL=off turns it off.
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+import { copyFileSync, createWriteStream, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { Readable, Transform } from "node:stream";
+import { pipeline } from "node:stream/promises";
 import { DATA_DIR } from "./paths.js";
 import { loadMarketSnapshot, clearSnapshotCache } from "./market-data.js";
 
 const run = promisify(execFile);
 // A few hundred bytes a look; the pack itself only when it's newer
 const CHECK_EVERY = 5 * 60 * 1000;
-const MAX_PACK_BYTES = 60 * 1024 * 1024;
+// The five years of daily prices (history/, 24 Oct 2026) took the pack past
+// the old 60 MB cap to 66 MB, and every pull after that was refused. The pack
+// goes straight to disk, so the cap guards the disk, not the server's memory.
+const MAX_PACK_BYTES = 200 * 1024 * 1024;
 const PACK_STATE_PATH = join(DATA_DIR, "data-pack-state.json");
 // Market files sent by the release and included in the seed. Keep score
 // cohorts here so the free host's study survives each data update. The
@@ -119,7 +124,7 @@ export async function installPack(tgzPath, dataDir = DATA_DIR) {
 }
 
 let busy = false;
-export async function pullOnce(base, { onInstalled } = {}) {
+export async function pullOnce(base, { onInstalled, maxBytes = MAX_PACK_BYTES } = {}) {
   if (busy) return "busy";
   busy = true;
   pullStatus.lastCheckAt = new Date().toISOString();
@@ -145,13 +150,21 @@ export async function pullOnce(base, { onInstalled } = {}) {
     const servingAt = serving ? Date.parse(serving) : NaN;
     if (serving && (manifestBuiltAt < servingAt || (manifestBuiltAt === servingAt && !repacked))) { pullStatus.lastError = null; return "current"; }
 
-    const pack = await fetch(`${base}/market-data.tar.gz`, { signal: AbortSignal.timeout(120_000) });
+    const pack = await fetch(`${base}/market-data.tar.gz`, { signal: AbortSignal.timeout(180_000) });
     if (!pack.ok) throw new Error(`pack: HTTP ${pack.status}`);
-    const bytes = Buffer.from(await pack.arrayBuffer());
-    if (bytes.length > MAX_PACK_BYTES) throw new Error(`pack is ${bytes.length} bytes`);
+    const declared = Number(pack.headers.get("content-length"));
+    if (declared > maxBytes) { await pack.body?.cancel(); throw new Error(`pack is ${declared} bytes`); }
     const tgz = join(DATA_DIR, ".pull.tar.gz");
-    writeFileSync(tgz, bytes);
     try {
+      // Written as it arrives, counted on the way, in case no length was sent
+      let received = 0;
+      const limit = new Transform({
+        transform(chunk, _enc, done) {
+          received += chunk.length;
+          done(received > maxBytes ? new Error(`pack is over ${maxBytes} bytes`) : null, chunk);
+        },
+      });
+      await pipeline(Readable.fromWeb(pack.body), limit, createWriteStream(tgz));
       const got = await installPack(tgz);
       clearSnapshotCache();
       pullStatus.lastPulledAt = new Date().toISOString();
