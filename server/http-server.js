@@ -23,6 +23,7 @@ import { listHoldings, addHolding, addHoldings, updateHolding, removeHolding } f
 import { resolveImportRows, MAX_IMPORT_ROWS } from "./portfolio-import.js";
 import { getThesis, saveThesis } from "./user-thesis.js";
 import { listNotes, saveNote, deleteNote, listStrategies, saveStrategies, checkStrategyMatches, acknowledgeStrategyMatches } from "./user-notes.js";
+import { listFavourites, saveFavourites, markSeen, seenIds, changesSince } from "./screen-favourites.js";
 import { currentPrices } from "./prices.js";
 import { getPerformance, takeSnapshots } from "./performance.js";
 import { pricePosition, userLevels, fairValueOnly } from "./levels.js";
@@ -218,6 +219,22 @@ function dataDates(fundamentals, snap) {
     quarter: q ? { end: q.qEnd, filed: q.filed ?? null } : null,
     year: y ? { end: y.fyEnd, filed: y.filed ?? null } : null,
     read: fundamentals.fetchedAt ?? null,
+  };
+}
+
+// A screener's companies today, by its id: one of the built-in strategies or
+// one this user saved; null for an id that's neither. Each screener once per
+// request, however often it's asked for.
+function screenSymbolsFor(userId) {
+  const own = new Map(listStrategies(userId).map(p => [p.id, p]));
+  const cache = new Map();
+  return id => {
+    if (cache.has(id)) return cache.get(id);
+    const p = PRESETS.find(x => x.id === id) ?? own.get(id);
+    const filters = p ? (Array.isArray(p.filters) && p.filters.length ? p.filters : criteriaToFilters(p.criteria ?? {})) : null;
+    const symbols = filters ? matchingSymbols({ filters }) : null;
+    cache.set(id, symbols);
+    return symbols;
   };
 }
 
@@ -1058,6 +1075,40 @@ export function createApp() {
         const userId = requireAuth(req, res);
         if (userId == null) return;
         acknowledgeStrategyMatches(userId, decodePathSegment(strategyAck[1]));
+        sendJson(res, 200, { ok: true });
+        return;
+      }
+
+      // The phone's Screeners page (screen-favourites.js): the starred
+      // screeners, and what joined or left each one since it was last opened
+      if (url.pathname === "/api/screens/home" && req.method === "GET") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        const symbolsOf = screenSymbolsFor(userId);
+        const names = new Map(allMetrics().rows.map(m => [m.symbol, m.name]));
+        sendJson(res, 200, { favourites: listFavourites(userId), changes: changesSince(userId, symbolsOf, s => names.get(s) ?? null) });
+        return;
+      }
+      if (url.pathname === "/api/screens/favourites" && req.method === "PUT") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        const before = new Set(listFavourites(userId));
+        const favourites = saveFavourites(userId, (await readJsonBody(req)).favourites);
+        // a newly starred screener starts from today's companies, so its
+        // card has something to compare with from the next close
+        const symbolsOf = screenSymbolsFor(userId), seen = new Set(seenIds(userId));
+        for (const id of favourites) if (!before.has(id) && !seen.has(id)) { const s = symbolsOf(id); if (s) markSeen(userId, id, s); }
+        sendJson(res, 200, { favourites });
+        return;
+      }
+      const screenSeen = url.pathname.match(/^\/api\/screens\/([^/]+)\/seen$/);
+      if (screenSeen && req.method === "POST") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        const id = decodePathSegment(screenSeen[1]);
+        const symbols = screenSymbolsFor(userId)(id);
+        if (!symbols) throw badRequest("Unknown screener");
+        markSeen(userId, id, symbols);
         sendJson(res, 200, { ok: true });
         return;
       }

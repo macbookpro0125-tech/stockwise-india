@@ -25,6 +25,10 @@ import { noteAppOpened, companyPageClosed } from "./rateApp.js";
 import { onPushTap, refreshPush, forgetPush } from "./push.js";
 import PushAsk from "./PushAsk.jsx";
 import SaveToList from "./SaveToList.jsx";
+import { SettingsDrawer, CreateSheet, PhoneFloatingBar } from "./PhoneChrome.jsx";
+import { chrome } from "./phoneChrome.js";
+import { screensHome, forgetRecentScreens } from "./screensHome.js";
+import { useTabBadges } from "./Header.jsx";
 
 // Keep the first Discover screen small; load account tabs and full stock
 // research only when the user opens them.
@@ -152,6 +156,11 @@ export default function App() {
         // A chart expanded over the page (PriceChartPanel.jsx) is its own
         // history entry: Back closes it, and the page stays where it was
         if (window.history.state?.chartOverlay) {
+          window.history.back();
+          return;
+        }
+        // So are Settings and the + sheet (PhoneChrome.jsx), and All screeners (PhoneScreens.jsx)
+        if (window.history.state?.phonePanel || window.history.state?.screensAll) {
           window.history.back();
           return;
         }
@@ -355,6 +364,9 @@ export default function App() {
     resetMyLevels();
     portfolioStore.reset();
     alertsStore.reset();
+    screensHome.reset();
+    forgetRecentScreens();
+    chrome.dismiss();
     strategiesStore.reset();
     notesStore.reset();
     setOpen(null);
@@ -394,10 +406,29 @@ export default function App() {
       <SiteFooter />
       {/* On a company page too: the tab it was opened from stays lit */}
       <BottomTabBar tab={tab} onTab={goTab} />
+      {/* A phone's top bar: the menu and + float once it's scrolled past, the
+          menu opens Settings from the left, + what can be made (PhoneChrome.jsx) */}
+      <PhoneChromeHost account={account} theme={theme} onToggleTheme={toggleTheme} onTab={goTab} onLogout={logout} onDeleted={accountDeleted} onTour={askForTour} stockOpen={!!open} />
       {tour && <Tour key={tour} steps={tour === "app" ? APP_TOUR : STOCK_TOUR} onFinish={finishTour} />}
       {/* the Android app: once, after the first star, its notifications offered */}
       <PushAsk />
       <SaveToList />
     </div>
+  );
+}
+
+// Settings from the left, the + sheet and the floating top buttons, on a phone
+function PhoneChromeHost({ account, theme, onToggleTheme, onTab, onLogout, onDeleted, onTour, stockOpen }) {
+  const badges = useTabBadges();
+  // A row in Settings that opens a page: the panel slides away first
+  const toTab = t => { chrome.close(); setTimeout(() => onTab(t), 60); };
+  return (
+    <>
+      <PhoneFloatingBar dot={badges.alerts.badgeColor === "var(--yellow)"} hidden={stockOpen} />
+      <CreateSheet onTab={onTab} />
+      <SettingsDrawer>
+        <SettingsView account={account} theme={theme} onToggleTheme={onToggleTheme} onTab={toTab} onLogout={onLogout} onDeleted={onDeleted} onTour={onTour && (() => { chrome.close(); setTimeout(onTour, 60); })} />
+      </SettingsDrawer>
+    </>
   );
 }

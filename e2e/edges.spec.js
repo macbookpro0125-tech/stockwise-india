@@ -82,7 +82,7 @@ test("F02-E2 Watchlist only screens just the watched companies", async ({ page, 
 
 test("F02-E3 keyboard only: / focuses search, Enter opens a company", async ({ page, account }) => {
   await page.goto("/");
-  await page.getByRole("heading", { name: "Strategies" }).waitFor();
+  await page.getByRole("heading", { name: /^(Strategies|Screeners)$/ }).first().waitFor();
   await page.keyboard.press("/");
   await expect(page.getByRole("combobox", { name: "Search any stock by name or symbol" })).toBeFocused();
   await page.keyboard.type("Infosys");

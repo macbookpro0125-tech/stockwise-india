@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Compass, Star, BriefcaseBusiness, ChartLine, Bell, Sun, Moon, Zap, Settings, Telescope, Users } from "lucide-react";
+import { Star, BriefcaseBusiness, ChartLine, Bell, Sun, Moon, Zap, Settings, Telescope, Users } from "lucide-react";
 import { useWatchlist } from "./watchlist.js";
 import { portfolioStore, alertsStore } from "./stores.js";
 import StockSearchBar from "./StockSearchBar.jsx";
@@ -8,6 +8,9 @@ import { tick } from "./haptics.js";
 import { scrollStep } from "./tabBarScroll.js";
 import AccountMenu from "./AccountMenu.jsx";
 import { useWatchNewsDot } from "./watchNews.js";
+import { usePhone } from "./phoneTabs.js";
+import { MenuButton, PlusButton } from "./PhoneChrome.jsx";
+import { createLens } from "./liquidLens.js";
 
 // The original's sticky header (stock-screener src/Discovery.jsx): logo,
 // search, theme switch and account in one row, then the tabs with counts. On
@@ -16,8 +19,18 @@ import { useWatchNewsDot } from "./watchNews.js";
 // account move to the Settings tab (asked for 17 Oct 2026: the app on a phone
 // as clean as a native one).
 
+// Discover's mark: four rounded squares, filled while it's the tab you're on
+// (asked for 26 Oct 2026, from a screenshot); on a computer's tab row, outlined
+function GridIcon({ size = 24, strokeWidth = 2, filled = false, ...rest }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinejoin="round" {...rest}>
+      {[[3, 3], [13, 3], [3, 13], [13, 13]].map(([x, y]) => <rect key={`${x}${y}`} x={x} y={y} width="8" height="8" rx="2.4" fill={filled ? "currentColor" : "none"} />)}
+    </svg>
+  );
+}
+
 export const TABS = [
-  { id: "discover", label: "Discover", short: "Discover", Icon: Compass },
+  { id: "discover", label: "Discover", short: "Discover", Icon: GridIcon },
   // The indices and the news (ExploreView.jsx, 23 Oct 2026)
   { id: "explore", label: "Explore", short: "Explore", Icon: Telescope },
   // Short-term and speculative, so only for accounts the server allows
@@ -33,9 +46,10 @@ export const TABS = [
   // Momentum, so the bar keeps five tabs
   { id: "settings", label: "Settings", short: "Settings", Icon: Settings, phone: true },
 ];
-// Explore took Alerts' place (23 Oct 2026); Alerts is in Settings, whose tab
-// shows the dot when an alert's price is reached
-const PHONE_TABS = ["discover", "watchlist", "explore", "portfolio", "settings"];
+// Explore took Alerts' place (23 Oct 2026); Alerts is in Settings, which
+// moved off the bar into the top bar's menu (26 Oct 2026, PhoneChrome.jsx) —
+// its button shows the dot when an alert's price is reached
+const PHONE_TABS = ["discover", "watchlist", "explore", "portfolio"];
 
 const HEADER_BG = { light: "rgba(255,255,255,0.82)", dark: "rgba(7,7,14,0.85)" };
 
@@ -61,6 +75,7 @@ export function useTabBadges() {
 
 export default function Header({ tab, onTab, account, onLogout, onDeleted, onSearch, theme, onToggleTheme, onTour }) {
   const badges = useTabBadges();
+  const phone = usePhone();
   // Discover's start page has a one-row header — no tab row (asked for 20 Oct
   // 2026: "not important there"); its stock lists have the row, as every
   // other page does (asked the same day). Discover says which of its two it's
@@ -93,7 +108,10 @@ export default function Header({ tab, onTab, account, onLogout, onDeleted, onSea
             (presets, filters, stocks) are gone. On a phone the search takes
             its own row under the name (index.css .app-header-row). */}
         <div className="app-header-row" style={{ display: "flex", alignItems: "center", gap: 20, padding: "10px 0" }}>
-          <a href="/" aria-label="Jocular Insights home" onClick={e => { e.preventDefault(); onTab("discover"); }} style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0, cursor: "pointer", color: "inherit", textDecoration: "none" }}>
+          {/* A phone (26 Oct 2026, after Reddit's app): the menu — Settings —
+              on the left, the search with the app's mark in it, + on the right */}
+          {phone && <MenuButton dot={badges.alerts.badgeColor === "var(--yellow)"} />}
+          {!phone && <a href="/" aria-label="Jocular Insights home" onClick={e => { e.preventDefault(); onTab("discover"); }} style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0, cursor: "pointer", color: "inherit", textDecoration: "none" }}>
             <BrandMark size={null} className="hdr-mark" />
             <div className="hide-phone" style={{ minWidth: 0 }}>
               <h1 style={{ fontSize: 17, fontWeight: 500, margin: 0, color: "var(--t1)", letterSpacing: "-0.03em", lineHeight: 1.2, whiteSpace: "nowrap" }}>
@@ -101,11 +119,12 @@ export default function Header({ tab, onTab, account, onLogout, onDeleted, onSea
               </h1>
               <p className="hide-phone" style={{ fontSize: 11, color: "var(--t3)", margin: 0, letterSpacing: "-0.01em", whiteSpace: "nowrap" }}>NSE stock research</p>
             </div>
-          </a>
+          </a>}
 
           <div data-tour="search" className="app-header-search" style={{ flex: "1 1 auto", maxWidth: 560, minWidth: 0 }}>
-            <StockSearchBar onAnalyze={onSearch} placeholder="Search stocks" />
+            <StockSearchBar onAnalyze={onSearch} placeholder="Search stocks" lead={phone ? <BrandMark size={null} className="ssb-mark" /> : null} />
           </div>
+          {phone && <PlusButton />}
 
           <div className="hide-phone" style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0, marginLeft: "auto" }}>
             <button onClick={onToggleTheme} title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"} aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
@@ -192,12 +211,37 @@ export function BottomTabBar({ tab, onTab }) {
   const [drag, setDrag] = useState(null); // { x } — the lens's centre, px from the bar's left
   const navRef = useRef(null);
   const gesture = useRef(null);
-  const at = pressed ?? phoneTabs.findIndex(isOn);
-  const from = useRef(at);
-  const moves = useRef(0);
-  if (from.current !== at) { moves.current += 1; }
-  const distance = Math.abs(at - from.current);
-  useEffect(() => { from.current = at; });
+  const active = phoneTabs.findIndex(isOn);
+  const at = pressed ?? active;
+  // The lens itself is drawn frame by frame (liquidLens.js): it lifts into a
+  // clear drop under a finger, follows a slide, and springs onto the tab
+  const lensRef = useRef(null);
+  const lens = useRef(null);
+  const activeRef = useRef(active);
+  activeRef.current = active;
+  useEffect(() => {
+    lens.current = createLens(navRef.current, lensRef.current);
+    lens.current.place(activeRef.current);
+    const again = () => lens.current?.place(activeRef.current);
+    window.addEventListener("resize", again);
+    return () => { window.removeEventListener("resize", again); lens.current?.destroy(); lens.current = null; };
+  }, []);
+  const wasCollapsed = useRef(collapsed);
+  useEffect(() => {
+    const l = lens.current;
+    if (!l) return;
+    if (collapsed) { l.hide(); wasCollapsed.current = true; return; }
+    if (wasCollapsed.current) {
+      // unfolding: the tabs are still sliding back into place; set it under its tab once they're there
+      wasCollapsed.current = false;
+      const t = setTimeout(() => lens.current?.place(activeRef.current), 320);
+      return () => clearTimeout(t);
+    }
+    // (held, the bar is a touch larger: the finger's place in the bar's own measure)
+    if (drag) l.follow(drag.x * navRef.current.offsetWidth / navRef.current.getBoundingClientRect().width);
+    else if (pressed != null) l.lift(pressed);
+    else l.drop(active);
+  }, [pressed, drag, active, collapsed]);
   // which tab is under a point, and where the lens may go
   const geometry = () => {
     const r = navRef.current.getBoundingClientRect();
@@ -218,7 +262,7 @@ export function BottomTabBar({ tab, onTab }) {
     if (!st.moved) { st.moved = true; navRef.current.setPointerCapture?.(e.pointerId); }
     const { r, pad, each } = st.g;
     const x = Math.min(r.width - pad - each / 2, Math.max(pad + each / 2, e.clientX - r.left));
-    setDrag({ x });
+    setDrag({ x, each });
     const i = tabAt(e.clientX, st.g);
     if (i !== st.i) { st.i = i; setPressed(i); tick(); }
   };
@@ -243,16 +287,23 @@ export function BottomTabBar({ tab, onTab }) {
   };
   // the click that follows a slide's release isn't a tap of its own
   const slid = useRef(false);
-  const lensStyle = { "--i": at, "--n": phoneTabs.length, "--d": Math.min(distance || 1, 4) };
-  if (drag) lensStyle.transform = `translateX(calc(${drag.x}px - 4px - 50%))`;
+  // inside the drop: the tabs again, in colour, which it magnifies
+  const copy = phoneTabs.map(t => (
+    <span key={t.id} className="btb-lens-tab">
+      <span className="btb-icon">{t.Icon === GridIcon ? <GridIcon size={22} strokeWidth={1.9} filled /> : <t.Icon size={21} strokeWidth={2.3} />}</span>
+      <span className="btb-label">{t.short}</span>
+    </span>
+  ));
   return (
     <nav ref={navRef} className={`bottom-tab-bar${collapsed ? " collapsed" : ""}${drag ? " sliding" : ""}`} data-tour="tabs" aria-label="Pages"
       onPointerDown={onDown} onPointerMove={onMove} onPointerUp={e => finish(e, false)} onPointerCancel={e => finish(e, true)}>
-      {at >= 0 && (
-        <span className={`btb-glass${moves.current ? " go" : ""}${pressed != null ? " pressing" : ""}${drag ? " held" : ""}`} aria-hidden="true" style={lensStyle}>
-          <span key={drag ? "held" : moves.current} className="btb-glass-body" />
+      <span ref={lensRef} className="btb-lens" aria-hidden="true">
+        <span className="btb-lens-rest" />
+        <span className="btb-lens-glass">
+          <span className="btb-lens-mag"><span className="btb-lens-row">{copy}</span></span>
+          <span className="btb-lens-rim"><span className="btb-lens-row">{copy}</span></span>
         </span>
-      )}
+      </span>
       {phoneTabs.map((t, i) => {
         const on = isOn(t);
         const hidden = collapsed && t.id !== kept;
@@ -265,7 +316,9 @@ export function BottomTabBar({ tab, onTab }) {
               setPressed(null); if (folded) return open(); if (!on) tick(); onTab(t.id);
             }}>
             <span className="btb-icon">
-              <t.Icon size={21} strokeWidth={i === at ? 2.3 : 2} aria-hidden="true" />
+              {t.Icon === GridIcon
+                ? <GridIcon size={22} strokeWidth={1.9} filled={i === at} aria-hidden="true" />
+                : <t.Icon size={21} strokeWidth={i === at ? 2.3 : 2} aria-hidden="true" />}
               {(t.id === "alerts" || t.id === "settings") && reached && <span className="btb-dot" aria-hidden="true" />}
               {t.id === "watchlist" && badges.watchlist.news && <span className="btb-dot btb-dot-news" aria-hidden="true" />}
             </span>

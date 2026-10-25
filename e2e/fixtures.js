@@ -87,8 +87,9 @@ export async function openPage(page, name) {
     if (await folded.isVisible().catch(() => false)) await folded.click();
     const tab = bar.getByRole("button", { name: re });
     if (await tab.count()) return tab.click();
-    // a page with no tab of its own on a phone (Alerts, 23 Oct 2026): its row in Settings
-    await bar.getByRole("button", { name: /^Settings/ }).click();
+    // a page with no tab of its own on a phone (Alerts, 23 Oct 2026): its row
+    // in Settings, which the top bar's menu button opens (26 Oct 2026)
+    await page.getByRole("button", { name: /^Settings/ }).first().click();
     return page.locator(".st-row").filter({ hasText: re }).first().click();
   }
   await page.goto("/stock/TCS");

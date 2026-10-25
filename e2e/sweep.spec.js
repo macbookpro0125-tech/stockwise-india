@@ -71,8 +71,8 @@ test("company names and logos are credited to their owners", async ({ page }) =>
 
 test("phone: tabs and a company page fit the screen @phone", async ({ page, account }) => {
   await page.goto("/");
-  // The account: the Settings tab on a phone (17 Oct 2026), the Account menu on a computer
-  await expect(page.getByRole("navigation", { name: "Pages" }).getByRole("button", { name: "Settings" }).or(page.getByRole("button", { name: "Account" })).first()).toBeVisible();
+  // The account: Settings from the top bar's menu on a phone (26 Oct 2026), the Account menu on a computer
+  await expect(page.getByRole("button", { name: /^Settings/ }).or(page.getByRole("button", { name: "Account" })).first()).toBeVisible();
   for (const path of ["/", "/stock/HDFCBANK", "/stock/TCS"]) {
     await page.goto(path);
     await page.waitForLoadState("networkidle");

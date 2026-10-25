@@ -45,8 +45,14 @@ plain("M-E1/E2 offline: the app's frame opens, market data is never served from 
   expect(api).toBe("failed");
 });
 
-// On a phone the Account menu's items are in the Settings tab (17 Oct 2026)
-const settings = page => page.getByRole("navigation", { name: "Pages" }).getByRole("button", { name: "Settings" }).click();
+// On a phone the Account menu's items are in Settings (17 Oct 2026), which
+// the top bar's menu button opens from the left (26 Oct 2026)
+const settings = page => page.getByRole("button", { name: /^Settings/ }).first().click();
+// A screener, from Screeners' "All screeners" (PhoneScreens.jsx, 26 Oct 2026)
+const openScreener = async (page, name) => {
+  await page.getByRole("button", { name: "See all" }).click();
+  await page.locator(".ps-row-open", { hasText: name }).first().click();
+};
 
 // The phone layout's tests: the phone project only (a computer has no bottom bar)
 test.describe("the phone layout", () => {
@@ -79,19 +85,19 @@ test.describe("the phone layout", () => {
   // it's the Settings tab now; signing out from there must work.
   test("BUG-005 Settings → Sign out works on a phone @phone", async ({ page, account }) => {
     await page.goto("/");
-    await expect(page.getByRole("heading", { name: "Strategies" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Screeners" })).toBeVisible();
     await settings(page);
     await page.getByRole("button", { name: "Sign out" }).click({ timeout: 5000 });
     await expect(page.getByRole("button", { name: "Sign in", exact: true }).first()).toBeVisible();
   });
 
   // ── The app on a phone (17 Oct 2026, after the Stock Screeners: India app) ──
-  test("M-H4 the bar has five tabs; Settings switches the theme and opens Performance @phone", async ({ page, account }) => {
+  test("M-H4 the bar has four tabs; Settings, from the menu, switches the theme and opens Performance @phone", async ({ page, account }) => {
     await page.goto("/");
     const bar = page.getByRole("navigation", { name: "Pages" });
-    await expect(bar.getByRole("button")).toHaveText(["Discover", "Watchlist", "Explore", "Portfolio", "Settings"]);
+    await expect(bar.getByRole("button")).toHaveText(["Discover", "Watchlist", "Explore", "Portfolio"]);
     await settings(page);
-    await expect(page.getByRole("heading", { level: 2, name: "Settings" })).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible();
     const dark = page.getByRole("switch", { name: "Dark mode" });
     const before = await dark.getAttribute("aria-checked");
     await dark.click();
@@ -99,28 +105,45 @@ test.describe("the phone layout", () => {
     await expect(page.locator("html")).toHaveAttribute("data-theme", before === "true" ? "light" : "dark");
     await page.getByRole("button", { name: /Strategy performance/ }).click();
     await expect(page.getByRole("heading", { level: 2, name: "Strategy performance" })).toBeVisible();
-    await expect(bar.getByRole("button", { name: "Settings" })).toHaveAttribute("aria-current", "page");
+    await expect(page.getByRole("dialog", { name: "Settings" })).toHaveCount(0);
   });
 
-  test("M-H5 strategies: search and the kind chips narrow the cards @phone", async ({ page, account }) => {
+  test("M-H23 Screeners: a star puts a screener in Favourites, and + offers what can be made @phone", async ({ page, account }) => {
     await page.goto("/");
-    const cards = page.locator(".ph-card:not(.ph-card-skel)");
-    await expect(cards.first()).toBeVisible();
-    const all = await cards.count();
-    await page.getByRole("button", { name: "Value", exact: true }).click();
-    await expect.poll(() => cards.count()).toBeLessThan(all);
-    await page.getByRole("button", { name: "All", exact: true }).click();
-    await page.getByRole("searchbox", { name: "Search strategies" }).fill("dividend");
-    await expect(cards.filter({ hasText: /dividend/i }).first()).toBeVisible();
-    expect(await cards.count()).toBe(await cards.filter({ hasText: /dividend/i }).count());
-    await page.getByRole("searchbox", { name: "Search strategies" }).fill("zzzz");
-    await expect(page.getByText(/No strategy matches/)).toBeVisible();
+    await expect(page.getByText("Keep your screeners here")).toBeVisible();
+    await page.getByRole("button", { name: "Add Defensive Bluechips to favourites" }).click();
+    await expect(page.getByRole("group", { name: "Your favourite screeners" }).getByText("Defensive Bluechips")).toBeVisible();
+    await page.reload();
+    await expect(page.getByRole("group", { name: "Your favourite screeners" }).getByText("Defensive Bluechips"), "kept with the account").toBeVisible();
+    await page.getByRole("button", { name: "Create" }).first().click();
+    const sheet = page.getByRole("dialog", { name: "Create" });
+    for (const name of ["New screener", "Price alert", "Add to watchlist", "Add a holding", "Import from your broker"]) await expect(sheet.getByRole("button", { name: new RegExp(name) })).toBeVisible();
+    await page.goBack();
+    await expect(sheet).toHaveCount(0);
+  });
+
+  test("M-H5 All screeners: search and the group tabs narrow the list @phone", async ({ page, account }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: "See all" }).click();
+    const rows = page.locator(".ps-row");
+    await expect(rows.first()).toBeVisible();
+    const all = await rows.count();
+    await page.getByRole("group", { name: "Show one group" }).getByRole("button", { name: "Value", exact: true }).click();
+    await expect.poll(() => rows.count()).toBeLessThan(all);
+    await page.getByRole("group", { name: "Show one group" }).getByRole("button", { name: "All", exact: true }).click();
+    await page.getByRole("searchbox", { name: "Search screeners" }).fill("dividend");
+    await expect(rows.filter({ hasText: /dividend/i }).first()).toBeVisible();
+    // (a screener whose description says dividends is found too)
+    await expect.poll(() => rows.count()).toBeLessThan(all);
+    await page.getByRole("searchbox", { name: "Search screeners" }).fill("zzzz");
+    await expect(page.getByText(/No screener matches/)).toBeVisible();
+    await page.goBack();
+    await expect(page.getByRole("heading", { level: 2, name: "Screeners" }), "Back returns to Screeners").toBeVisible();
   });
 
   test("M-H6 a strategy's stocks: sort chips sort, and tapping again reverses @phone", async ({ page, account }) => {
     await page.goto("/");
-    // the card itself (its "+N rules" button names the strategy too)
-    await page.getByRole("button", { name: "View matching stocks for High Quality Compounders" }).click();
+    await openScreener(page, "High Quality Compounders");
     await expect(page.getByRole("heading", { level: 2, name: "High Quality Compounders" })).toBeVisible();
     const sort = page.getByRole("group", { name: "Sort by" });
     const prices = () => page.locator(".ph-row-price").allTextContents().then(t => t.map(v => Number(v.replace(/[₹,]/g, ""))).filter(Number.isFinite));
@@ -136,7 +159,7 @@ test.describe("the phone layout", () => {
   // to Quality once: the old period's column went away)
   test("M-H20 Top Gainers: biggest gain first, over the period picked @phone", async ({ page, account }) => {
     await page.goto("/");
-    await page.getByRole("button", { name: "View matching stocks for Top Gainers" }).click();
+    await openScreener(page, "Top Gainers");
     await expect(page.getByRole("heading", { level: 2, name: "Top Gainers" })).toBeVisible();
     const periods = page.getByRole("group", { name: "Biggest gain over" });
     const gains = label => page.locator(".ph-row-group").evaluateAll((rows, label) => rows.map(r => [...r.querySelectorAll(".ph-stat")].find(st => st.querySelector(".ph-stat-k")?.textContent === label)?.querySelector(".ph-stat-v")?.textContent).filter(Boolean).map(t => Number(t.replace(/[+%,]/g, ""))), label);
@@ -154,7 +177,7 @@ test.describe("the phone layout", () => {
     expect(config.ads.mode).toBe("off");
     expect((await page.request.get(`${baseURL}/app-ads.txt`)).status()).toBe(404);
     await page.goto("/");
-    await expect(page.locator(".ph-card").nth(3)).toBeVisible();
+    await expect(page.locator(".ps-row").nth(3)).toBeVisible();
     await expect(page.getByRole("note", { name: "Ad space" })).toHaveCount(0);
     await page.goto("/?ads=preview");
     await expect(page.getByRole("note", { name: "Ad space" }).first()).toBeVisible();
@@ -175,6 +198,8 @@ test("BUG-006 the front page's counts aren't written in by hand", async ({ page 
 test("M-H8 the tab bar folds into one button while reading down @phone", async ({ page, account, isMobile }) => {
   test.skip(!isMobile, "the phone's tab bar");
   await page.goto("/");
+  // a page long enough to read down: every screener (Screeners itself is short for a new account)
+  await page.getByRole("button", { name: "See all" }).click();
   const bar = page.getByRole("navigation", { name: "Pages" });
   await expect(bar.getByRole("button", { name: "Watchlist" })).toBeVisible();
   const readDown = async () => { for (let i = 0; i < 6; i++) { await page.evaluate(() => window.scrollBy(0, 120)); await page.waitForTimeout(60); } };
@@ -199,11 +224,7 @@ test("M-H8 the tab bar folds into one button while reading down @phone", async (
 test("M-H9 the stock list's title is the strategy wheel, its detail on an ⓘ page @phone", async ({ page, account, isMobile }) => {
   test.skip(!isMobile, "the phone layout");
   await page.goto("/");
-  await page.locator(".strategy-tile-quality").click();
-  const card = page.getByText("High Quality Compounders", { exact: true }).last();
-  await card.scrollIntoViewIfNeeded();
-  const b = await card.boundingBox();
-  await page.mouse.click(b.x + 20, b.y + 10);
+  await openScreener(page, "High Quality Compounders");
   const wheel = page.getByRole("listbox", { name: "Strategy" });
   await expect(wheel.getByRole("option", { selected: true })).toHaveText("High Quality Compounders");
   await expect(page.getByText(/stocks of [\d,]+/)).toHaveCount(0);
@@ -302,7 +323,8 @@ test("M-H14 each company tab ends with the next one, and no empty band below @ph
   await expect(tabs.getByRole("button", { name: "Valuation" })).toHaveAttribute("aria-current", "true");
   await expect(page.locator("#sec-valuation")).toBeInViewport();
   await expect(page.getByRole("button", { name: /^Next: Financials/ })).toBeAttached();
-  await tabs.getByRole("button", { name: "News & filings" }).click();
+  // the last tab (Around the web, after News & filings since 25 Oct 2026)
+  await tabs.getByRole("button", { name: "Around the web" }).click();
   await expect(page.getByRole("button", { name: /^Next:/ })).toHaveCount(0);
 
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
@@ -392,8 +414,9 @@ test("M-H17 the header logo is sharp, with a light one for the light theme @phon
     const { natural, drawn } = await img.evaluate(el => ({ natural: el.naturalWidth, drawn: el.getBoundingClientRect().width }));
     expect(natural, "drawn from a picture at least 3× its size").toBeGreaterThanOrEqual(drawn * 3);
   };
-  // and big enough to read on a phone (32 px left the letters 8 px tall)
-  expect((await shown().boundingBox()).width, "the header's logo on a phone").toBeGreaterThanOrEqual(44);
+  // and big enough to read on a phone: in the search since 26 Oct 2026, as
+  // Reddit's is, a 30 px circle
+  expect((await shown().boundingBox()).width, "the header's logo on a phone").toBeGreaterThanOrEqual(30);
   await page.evaluate(() => document.documentElement.setAttribute("data-theme", "dark"));
   await check("dark");
   await page.evaluate(() => document.documentElement.setAttribute("data-theme", "light"));
@@ -439,14 +462,18 @@ test("M-H21 the tab bar's glass slides under a finger and opens the tab it's let
   await expect(bar.getByRole("button", { name: "Watchlist" })).toHaveAttribute("aria-current", "page");
 });
 
-// 23 Oct 2026: "the cards' movement is not smooth" — the strategy collections
-// scroll natively (momentum, snapping), not by a scroll set on each touchmove
-test("M-H22 the strategy collections swipe natively and snap @phone", async ({ page, account, isMobile }) => {
+// 23 Oct 2026: "the cards' movement is not smooth" — cards that swipe scroll
+// natively (momentum, snapping); since 26 Oct 2026 they're the favourites
+test("M-H22 the favourite screeners swipe natively and snap @phone", async ({ page, account, isMobile }) => {
   test.skip(!isMobile, "a phone's rail");
   await page.goto("/");
-  const rail = page.locator(".strategy-rail");
-  await expect(rail).toBeVisible();
-  expect(await rail.evaluate(r => getComputedStyle(r).touchAction)).toMatch(/pan-x/);
+  await page.getByRole("button", { name: "Add High Quality Compounders to favourites" }).click();
+  // the next from All screeners: with a favourite, Screeners' own list has no stars
+  await page.getByRole("button", { name: "See all" }).click();
+  await page.getByRole("button", { name: "Add Dividend Aristocrats to favourites" }).click();
+  await page.goBack();
+  const rail = page.getByRole("group", { name: "Your favourite screeners" });
+  await expect(rail.getByRole("button")).toHaveCount(2);
   expect(await rail.evaluate(r => getComputedStyle(r).scrollSnapType)).toMatch(/x mandatory/);
   await rail.evaluate(r => r.scrollBy({ left: 200 }));
   await expect.poll(() => rail.evaluate(r => r.scrollLeft)).toBeGreaterThan(0);

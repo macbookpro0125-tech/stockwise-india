@@ -27,7 +27,9 @@ function removeFromHistory(ticker) {
   return history;
 }
 
-export default function StockSearchBar({ onAnalyze, placeholder = "Search any stock…" }) {
+// lead: something shown at the box's start in place of the magnifier (a
+// phone's top bar puts the app's mark there, as Reddit's does), on a round box
+export default function StockSearchBar({ onAnalyze, placeholder = "Search any stock…", lead = null }) {
   const listId = useId(); // the suggestions, for the box's combobox role
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
@@ -112,7 +114,7 @@ export default function StockSearchBar({ onAnalyze, placeholder = "Search any st
   return (
     <div ref={containerRef} style={{ position: "relative", width: "100%" }}>
       <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
-        <Search size={15} style={{ position: "absolute", left: 12, color: "var(--t3)", pointerEvents: "none" }} />
+        {lead ? <span className="ssb-lead" aria-hidden="true">{lead}</span> : <Search size={15} style={{ position: "absolute", left: 12, color: "var(--t3)", pointerEvents: "none" }} />}
         <input
           ref={inputRef}
           value={query}
@@ -131,8 +133,8 @@ export default function StockSearchBar({ onAnalyze, placeholder = "Search any st
           aria-controls={listId}
           aria-activedescendant={items.length > 0 && highlightIdx >= 0 ? `${listId}-${highlightIdx}` : undefined}
           autoComplete="off"
-          className="input-base"
-          style={{ width: "100%", paddingLeft: 36, paddingRight: 34, height: 38, fontSize: 13.5, borderRadius: 8 }}
+          className={`input-base${lead ? " ssb-round" : ""}`}
+          style={lead ? undefined : { width: "100%", paddingLeft: 36, paddingRight: 34, height: 38, fontSize: 13.5, borderRadius: 8 }}
         />
         {!query && (
           <kbd aria-hidden="true" className="hide-phone" title='Press "/" to search' style={{ position: "absolute", right: 10, fontSize: 11, color: "var(--t3)", border: "1px solid var(--bdr2)", borderRadius: 5, padding: "0 6px", lineHeight: "18px", fontFamily: "inherit", pointerEvents: "none" }}>/</kbd>

@@ -125,6 +125,10 @@ export const api = {
   saveStrategies: strategies => request("/api/strategies", { method: "PUT", body: JSON.stringify({ strategies }) }),
   checkStrategyMatches: () => request("/api/strategies/check", { method: "POST" }),
   acknowledgeStrategyMatches: id => request(`/api/strategies/${encodeURIComponent(id)}/matches/ack`, { method: "POST" }),
+  // The phone's Screeners page: starred screeners, and what changed since each was opened
+  screensHome: () => request("/api/screens/home"),
+  saveFavouriteScreens: favourites => request("/api/screens/favourites", { method: "PUT", body: JSON.stringify({ favourites }) }),
+  markScreenSeen: id => request(`/api/screens/${encodeURIComponent(id)}/seen`, { method: "POST" }),
   researchProfile: symbol => request(`/api/stock/${encodeURIComponent(symbol)}/research`),
   saveThesis: (symbol, thesis) => request(`/api/thesis/${encodeURIComponent(symbol)}`, { method: "PUT", body: JSON.stringify(thesis) }),
   addWatch: (ticker, price) => request("/api/watchlist", { method: "POST", body: JSON.stringify({ ticker, price }) }),

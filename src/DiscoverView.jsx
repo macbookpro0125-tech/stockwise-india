@@ -8,6 +8,8 @@ import { useAdPause } from "./ads.jsx";
 import { strategiesStore, browserLeftovers, moveLeftovers, discardLeftovers } from "./accountData.js";
 import ResultsTable from "./ResultsTable.jsx";
 import ScreensHome from "./ScreensHome.jsx";
+import PhoneScreens from "./PhoneScreens.jsx";
+import { NEW_SCREEN_EVENT } from "./phoneChrome.js";
 import FilterPanel, { isActiveFilter } from "./screener/FilterPanel.jsx";
 import StrategyPicker from "./StrategyPicker.jsx";
 import { returnScroll } from "./returnScroll.js";
@@ -179,6 +181,13 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews }) {
     yours.forEach(e => window.addEventListener(e, stop, { passive: true, once: true }));
     return () => { stop(); yours.forEach(e => window.removeEventListener(e, stop)); };
   }, [phoneStep]);
+  // The phone's + sheet (PhoneTopBar.jsx) asks for a new screen from anywhere
+  const newScreenRef = useRef(null);
+  useEffect(() => {
+    const fn = () => newScreenRef.current?.();
+    window.addEventListener(NEW_SCREEN_EVENT, fn);
+    return () => window.removeEventListener(NEW_SCREEN_EVENT, fn);
+  }, []);
   const showStrategies = () => {
     if (window.history.state?.discoverStep === "stocks") window.history.back();
     else setPhoneStep("strategies");
@@ -532,6 +541,7 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews }) {
         <BrowserLeftovers />
         {phoneStep === "strategies" && (() => {
           const newScreen = () => { changeFilters([]); setActivePresetName("New screen"); setFiltersOpen(false); showStocks(); };
+          newScreenRef.current = newScreen;
           // The screen already set comes first
           const continueCard = activeCount > 0 && (
             <button type="button" onClick={showStocks} className="phone-continue glow" style={{ margin: isPhone ? "12px 0 0" : "28px 0 0" }}>
@@ -559,9 +569,14 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews }) {
               />
             </div>
           );
+          // A phone: Screeners — favourites, recently opened, the rest
+          // (PhoneScreens.jsx, 26 Oct 2026)
+          if (isPhone) return (
+            <PhoneScreens theme={theme} continueCard={continueCard || null} onNewScreen={newScreen}
+              onSelect={preset => { applyPreset(preset); setFiltersOpen(false); showStocks(); }} />
+          );
           // The screener's home: a hero, three ways in, then the strategies as
-          // big cards (ScreensHome.jsx); on a phone the hero in short and the
-          // strategies as a list
+          // big cards (ScreensHome.jsx)
           return (
             <ScreensHome
               ribbon={ribbon}

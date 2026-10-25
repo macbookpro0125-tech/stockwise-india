@@ -151,6 +151,17 @@ async function main() {
   assert((await (await fetch(`${BASE}/api/strategies`, { headers: { Cookie: aliceCookie } })).json()).strategies[0].name === "My pharma screen", "saved strategies come back on the next device");
   assert((await (await fetch(`${BASE}/api/strategies`, { headers: { Cookie: bobCookie } })).json()).strategies.length === 0, "another account has its own (empty) list");
 
+  // The phone's Screeners page: starred screeners and what changed since
+  const favs = await (await json("PUT", "/api/screens/favourites", aliceCookie, { favourites: ["defensive_bluechips", "custom_1", "defensive_bluechips", "../x", 7] })).json();
+  assert(favs.favourites.join() === "defensive_bluechips,custom_1", "favourites keep their order, once each, real ids only");
+  const home = await (await fetch(`${BASE}/api/screens/home`, { headers: { Cookie: aliceCookie } })).json();
+  assert(home.favourites.length === 2 && home.changes.defensive_bluechips?.joinedCount === 0 && home.changes.defensive_bluechips?.leftCount === 0, "a newly starred screener starts from today's companies, so nothing has changed yet");
+  assert("custom_1" in home.changes, "a starred screener of your own is followed too");
+  assert((await (await fetch(`${BASE}/api/screens/home`, { headers: { Cookie: bobCookie } })).json()).favourites.length === 0, "another account has its own favourites");
+  assert((await json("POST", "/api/screens/sound_banks/seen", aliceCookie, {})).status === 200, "opening a screener notes its companies");
+  assert("sound_banks" in (await (await fetch(`${BASE}/api/screens/home`, { headers: { Cookie: aliceCookie } })).json()).changes, "and the page can then say what changed in it");
+  assert((await json("POST", "/api/screens/no_such_screen/seen", aliceCookie, {})).status === 400, "an unknown screener is refused");
+
   const star = () => fetch(`${BASE}/api/watchlist`, {
     method: "POST", headers: { "Content-Type": "application/json", Cookie: aliceCookie },
     body: JSON.stringify({ ticker: "tcs" }),

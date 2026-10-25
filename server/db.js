@@ -262,3 +262,20 @@ db.exec(`
     created_at TEXT NOT NULL
   );
 `);
+// The screeners a user stars for the top of their Screeners page, in their
+// order, and each screener's companies when they last opened it, so the page
+// can say which joined and which left since (screen-favourites.js)
+db.exec(`
+  CREATE TABLE IF NOT EXISTS favourite_screens (
+    user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    list TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS screen_seen (
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    screen_id TEXT NOT NULL,
+    symbols TEXT NOT NULL,
+    seen_at TEXT NOT NULL,
+    PRIMARY KEY (user_id, screen_id)
+  );
+`);
