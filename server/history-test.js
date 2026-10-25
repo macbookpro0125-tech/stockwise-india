@@ -40,7 +40,9 @@ const fetchCsv = async d => {
   const nse = new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }).replace(/ /g, "-");
   return bhav(nse, [["TCS", 3000, 3100, 2950, 3050], ["INFY", 1500, 1520, 1490, 1510]]);
 };
-const r = await backfillHistory({ years: 3, maxDays: 4, pauseMs: 0, saveEvery: 2, log: () => {}, fetchCsv });
+// as run on 24 Oct 2026 (the days read count back from a year before "now")
+const NOW = new Date("2026-10-24T12:00:00Z");
+const r = await backfillHistory({ years: 3, maxDays: 4, pauseMs: 0, saveEvery: 2, log: () => {}, fetchCsv, now: NOW });
 assert.equal(asked, 4);
 assert.equal(r.read, 2, "two trading days read");
 assert.equal(r.holidays, 1);
@@ -51,7 +53,7 @@ const done = JSON.parse(readFileSync(join(process.env.DATA_DIR, "history", ".bac
 assert.ok(done.includes("2025-10-22") && !done.includes("2025-10-20"), "a holiday is done; a failed day is tried again");
 // the next run carries on, the failed day first
 asked = 0;
-await backfillHistory({ years: 3, maxDays: 1, pauseMs: 0, log: () => {}, fetchCsv: async d => { asked++; assert.equal(d.toISOString().slice(0, 10), "2025-10-20"); return null; } });
+await backfillHistory({ years: 3, maxDays: 1, pauseMs: 0, log: () => {}, now: NOW, fetchCsv: async d => { asked++; assert.equal(d.toISOString().slice(0, 10), "2025-10-20"); return null; } });
 assert.equal(asked, 1);
 console.log("ok: older days added a batch at a time, kept as published; holidays noted, a refused day tried again next run");
 

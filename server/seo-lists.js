@@ -117,3 +117,41 @@ export function resultsCalendarHtml(template) {
   const body = `<main class="seo-stock seo-methodology"><p>${link("/", "Jocular Insights")} › Results calendar</p><h1>Quarterly results calendar</h1><p>${esc(desc)}</p>${days || "<p>No results dates in the next two weeks on NSE's calendar.</p>"}<p>Dates are board meetings companies have told NSE about; they can change. ${link("/screens", "Stock screens")} · ${link("/disclaimer", "Disclaimer")}</p></main>`;
   return pageHtml(template, { title, desc, canonical, ld, body });
 }
+
+// The front page as search engines and link previews read it (25 Oct 2026:
+// it was an empty app shell — nine words, no heading). What the site is, every
+// screen with today's count, the largest companies reporting results soon, and
+// the pages that explain the numbers. The app replaces it when it starts.
+export function homePageHtml(template) {
+  const s = publicScreens();
+  const c = publicResultsCalendar();
+  const reporting = c.days.reduce((n, d) => n + d.count, 0);
+  const soon = c.days.flatMap(d => d.companies.map(x => ({ ...x, date: d.date }))).sort((a, b) => (b.marketCapCr ?? 0) - (a.marketCapCr ?? 0)).slice(0, 12);
+  const title = "NSE Stock Screener & Quality Scores | Jocular Insights";
+  const desc = "Screen every NSE-listed company with ready-made strategies, a quality score out of 100 from each company's own filings with every check explained, and results dates as they're announced. Free during early access.";
+  const ld = {
+    "@context": "https://schema.org",
+    "@graph": [
+      { "@type": "WebSite", "@id": `${SITE}/#website`, name: "Jocular Insights", alternateName: "Jocular", url: `${SITE}/`, inLanguage: "en-IN", publisher: { "@id": `${SITE}/#org` } },
+      { "@type": "Organization", "@id": `${SITE}/#org`, name: "Jocular Insights", url: `${SITE}/`, logo: `${SITE}/icons/icon-512.png`, email: "jocularinsights@gmail.com" },
+      { "@type": "WebApplication", name: "Jocular Insights", url: `${SITE}/`, applicationCategory: "FinanceApplication", operatingSystem: "Web, Android", offers: { "@type": "Offer", price: "0", priceCurrency: "INR" }, description: "NSE stock screener with quality scores from company filings." },
+    ],
+  };
+  const body = `<main class="seo-stock seo-methodology seo-home">
+<h1>NSE stock screener with quality scores from company filings</h1>
+<p>Jocular Insights covers every company listed on the National Stock Exchange of India. Each one gets a quality score out of 100, worked out from its own quarterly and annual filings with NSE, with every check shown and explained: return on capital, debt, cash flow, growth, governance and more. Its results are drawn as pictures — how sales became profit, what it owns and owes, where the cash came from and went — beside the full tables.</p>
+<p>Prices are NSE's daily closes, at the ${esc(day(s.pricesDate) ?? "latest")} close. It is a research tool: it shows what the filings say, it doesn't tell anyone what to buy or sell.</p>
+<h2>Ready-made stock screens</h2>
+<p>Each screen is a set of filters on reported figures. These are the NSE companies that pass each one today:</p>
+<ul>${s.screens.map(x => `<li>${link(`/screens/${x.slug}`, x.name)} — ${x.matched} ${x.matched === 1 ? "company" : "companies"}${x.description ? `. ${esc(sentence(x.description))}` : ""}</li>`).join("")}</ul>
+<p>${link("/screens", "See all stock screens")}</p>
+<h2>Results in the next two weeks</h2>
+<p>${reporting} NSE companies have told the exchange they'll meet to approve results in the next two weeks${soon.length ? ", including:" : "."}</p>
+${soon.length ? `<ul>${soon.map(x => `<li>${link(`/stock/${encodeURIComponent(x.symbol)}`, x.name)} — ${esc(day(x.date))}</li>`).join("")}</ul>` : ""}
+<p>${link("/results-calendar", "Open the results calendar")}</p>
+<h2>How the quality score works</h2>
+<p>The score adds up checks in six groups — business quality, earnings quality, balance sheet, governance, growth and valuation — each from the company's own filings, with banks and cyclical businesses judged on their own tests. Every check says what it found and why it passed or failed. ${link("/methodology", "Read the full methodology")}.</p>
+<p>${link("/stock-screener-india", "About this Indian stock screener")} · ${link("/about", "About Jocular Insights")} · ${link("/help", "How the figures work")} · ${link("/disclaimer", "Disclaimer")} · ${link("/privacy", "Privacy")}</p>
+</main>`;
+  return pageHtml(template, { title, desc, canonical: `${SITE}/`, ld, body });
+}

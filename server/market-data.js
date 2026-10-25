@@ -10,6 +10,7 @@ import { historyWriter } from "./price-history.js";
 import { fetchText as requestText } from "./upstream.js";
 import { momentumStats } from "./momentum.js";
 import { SECTOR_INDEX } from "./sector-indices.js";
+import { fileURLToPath } from "node:url";
 const SERIES_PREFERENCE = ["EQ", "BE", "BZ", "SM", "ST"];
 const SECTOR_LISTS = ["ind_niftytotalmarket_list", "ind_niftymicrocap250_list"];
 // NSE's own lists of government companies — the "Government-owned" badge
@@ -405,15 +406,27 @@ async function indexFile(isoDate) {
 // niftyindices.com's lists (as the sectors are); an index whose list can't be
 // read is left out, not guessed
 export const HEATMAP_LISTS = { "Nifty 50": "ind_nifty50list", "Nifty Bank": "ind_niftybanklist", "Nifty Next 50": "ind_niftynext50list", "NIFTY Midcap 100": "ind_niftymidcap100list", "NIFTY Smallcap 100": "ind_niftysmallcap100list" };
+// niftyindices.com doesn't answer the GitHub data job (25 Oct 2026: the live
+// snapshot had no members at all), so NSE's own index page stands in for it,
+// and the last snapshot's members for both
 export async function indexMembers() {
   const out = {};
+  const before = loadMarketSnapshot()?.indexMembers ?? {};
   for (const [name, list] of Object.entries(HEATMAP_LISTS)) {
+    let symbols = [];
     const csv = await fetchText(`https://www.niftyindices.com/IndexConstituent/${list}.csv`).catch(() => null);
-    if (!csv) continue;
-    const [header, ...lines] = csv.trim().split("\n");
-    const iSym = header.split(",").map(c => c.trim()).indexOf("Symbol");
-    const symbols = lines.map(l => l.split(",")[iSym]?.trim()).filter(Boolean);
+    if (csv) {
+      const [header, ...lines] = csv.trim().split("\n");
+      const iSym = header.split(",").map(c => c.trim()).indexOf("Symbol");
+      symbols = lines.map(l => l.split(",")[iSym]?.trim()).filter(Boolean);
+    }
+    if (symbols.length < 10) {
+      const json = await fetchJson(`${NSE_BASE}/api/equity-stockIndices?index=${encodeURIComponent(name.toUpperCase())}`).catch(() => null);
+      // the index's own row comes first, its members after (priority 0)
+      symbols = (json?.data ?? []).filter(r => r?.symbol && r.symbol.toUpperCase() !== name.toUpperCase() && r.priority !== 1).map(r => r.symbol);
+    }
     if (symbols.length >= 10) out[name] = symbols;
+    else if (before[name]?.length >= 10) out[name] = before[name];
   }
   return out;
 }
@@ -467,8 +480,18 @@ export async function indexCloseOn(isoDate, name) {
 // "Construction" splits 11–6 between Realty and Construction and stays
 // unmapped, as do "Trading" and "Steel". Kept apart from the index sectors
 // (industrySectors) so metrics.js can tell them apart.
+// When niftyindices.com doesn't answer — it refuses the GitHub data job (25
+// Oct 2026: the live snapshot had no sectors, so Reliance read "Chemicals"
+// from its O2C segment and TCS "Financial Services" from its BFSI clients) —
+// the last snapshot's sectors stand, and failing those the list saved in
+// sector-seed.json (21 Oct 2026). A company's sector hardly ever changes.
+const SECTOR_SEED = fileURLToPath(new URL("./sector-seed.json", import.meta.url));
+export function fallbackSectors(previous = loadMarketSnapshot()?.sectors) {
+  if (previous && Object.keys(previous).length >= 100) return previous;
+  try { return JSON.parse(readFileSync(SECTOR_SEED, "utf-8")).sectors ?? {}; } catch { return {}; }
+}
 async function sectorsBySymbol() {
-  const fromIndex = {};
+  let fromIndex = {};
   for (const list of SECTOR_LISTS) {
     const csv = await fetchText(`https://www.niftyindices.com/IndexConstituent/${list}.csv`).catch(() => null);
     if (!csv) continue;
@@ -479,6 +502,10 @@ async function sectorsBySymbol() {
       const f = line.split(",").map(c => c.trim());
       if (f[iSym] && f[iInd]) fromIndex[f[iSym]] = f[iInd];
     }
+  }
+  if (Object.keys(fromIndex).length < 100) {
+    fromIndex = fallbackSectors();
+    console.error(`[sectors] niftyindices.com's lists didn't load; using ${Object.keys(fromIndex).length} saved sectors`);
   }
   // A company's industry hardly ever changes: the last snapshot's labels
   // stand for companies that announced nothing in the 90 days (JB Chemicals,

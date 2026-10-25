@@ -5,7 +5,7 @@ import ExploreView from "./ExploreView.jsx";
 import PublicStock from "./PublicStock.jsx";
 import { api } from "./api.js";
 import Landing from "./Landing.jsx";
-import { PrivacyPage, DisclaimerPage, HelpPage } from "./LegalPages.jsx";
+import { PrivacyPage, DisclaimerPage, HelpPage, AboutPage } from "./LegalPages.jsx";
 import MethodologyPage from "./MethodologyPage.jsx";
 import StockScreenerPage from "./StockScreenerPage.jsx";
 import { ScreensIndexPage, ScreenPage, ResultsCalendarPage } from "./PublicLists.jsx";
@@ -178,7 +178,7 @@ export default function App() {
           return;
         }
 
-        if (["/privacy", "/disclaimer", "/help", "/methodology", "/reset-password", "/stock-screener-india", "/screens", "/results-calendar"].includes(currentPath) || /^\/screens\//.test(currentPath)) {
+        if (["/privacy", "/disclaimer", "/help", "/about", "/methodology", "/reset-password", "/stock-screener-india", "/screens", "/results-calendar"].includes(currentPath) || /^\/screens\//.test(currentPath)) {
           if (canGoBack) window.history.back();
           else navigate("/", { replace: true });
           return;
@@ -285,6 +285,7 @@ export default function App() {
   if (path === "/privacy") return <PrivacyPage signedIn={!!account} />;
   if (path === "/disclaimer") return <DisclaimerPage signedIn={!!account} />;
   if (path === "/help") return <HelpPage signedIn={!!account} />;
+  if (path === "/about") return <AboutPage signedIn={!!account} />;
   if (path === "/methodology") return <MethodologyPage signedIn={!!account} />;
   if (path === "/stock-screener-india") return <StockScreenerPage signedIn={!!account} />;
   // The strategies' pages and the results calendar, for everyone (PublicLists.jsx)

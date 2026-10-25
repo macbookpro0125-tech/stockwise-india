@@ -29,12 +29,12 @@ export function daysToRead(years, done, now = new Date()) {
   return out;
 }
 
-export async function backfillHistory({ years = 5, maxDays = Infinity, pauseMs = 800, saveEvery = 40, log = console.log, fetchCsv = null } = {}) {
+export async function backfillHistory({ years = 5, maxDays = Infinity, pauseMs = 800, saveEvery = 40, log = console.log, fetchCsv = null, now = new Date() } = {}) {
   if (years < 2) return { read: 0, holidays: 0, left: 0 };
   mkdirSync(HISTORY_DIR, { recursive: true });
   const DONE = join(HISTORY_DIR, ".backfilled.json");
   const done = new Set(existsSync(DONE) ? JSON.parse(readFileSync(DONE, "utf8")) : []);
-  const all = daysToRead(years, done);
+  const all = daysToRead(years, done, now);
   const days = all.slice(0, maxDays);
   if (!days.length) return { read: 0, holidays: 0, left: 0 };
   log(`price history: reading ${days.length} of ${all.length} weekdays still to go`);

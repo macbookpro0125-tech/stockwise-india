@@ -27,7 +27,7 @@ import {
 export const SITE = "https://jocularinsights.in";
 // (a function, read when the sitemap is made: seo-lists.js imports from here)
 import { LIST_PATHS } from "./seo-lists.js";
-const PUBLIC_PATHS = ["/", "/help", "/methodology", SCREENER_PAGE_PATH, "/privacy", "/disclaimer"];
+const PUBLIC_PATHS = ["/", "/about", "/help", "/methodology", SCREENER_PAGE_PATH, "/privacy", "/disclaimer"];
 
 export const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const plain = name => String(name ?? "").replace(/\s+(limited|ltd\.?)\s*$/i, "").trim();
@@ -63,16 +63,28 @@ export function robotsTxt() {
   return `User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: ${SITE}/sitemap.xml\n`;
 }
 
+// The sitemap is an index of four (25 Oct 2026), so Search Console reports
+// each kind of page apart. Each page carries the day its content last
+// changed — a company's page the day its latest results were filed, the
+// screens and front page the last close — not today's date on everything,
+// which teaches Google to ignore the dates. (changefreq and priority, which
+// Google ignores, are gone.)
+const SITEMAPS = ["pages", "screens", "stocks"];
+const urlset = entries => `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries.map(([path, lastmod]) => `<url><loc>${SITE}${path}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ""}</url>`).join("\n")}\n</urlset>\n`;
 export function sitemapXml() {
-  const rows = allMetrics().rows ?? [];
   const lastmod = loadMarketSnapshot()?.pricesDate ?? null;
-  const url = (path, freq, prio) => `<url><loc>${SITE}${path}</loc>${lastmod && path.startsWith("/stock/") ? `<lastmod>${lastmod}</lastmod>` : ""}<changefreq>${freq}</changefreq><priority>${prio}</priority></url>`;
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${[
-    ...PUBLIC_PATHS.map(p => url(p, p === "/" ? "daily" : "monthly", p === "/" ? "1.0" : "0.4")),
-    // the strategies' and the results calendar's pages change with each close (seo-lists.js)
-    ...LIST_PATHS().map(p => url(p, "daily", p === "/screens" || p === "/results-calendar" ? "0.8" : "0.7")),
-    ...rows.filter(r => r.name).sort((a, b) => (b.marketCapCr ?? 0) - (a.marketCapCr ?? 0)).map(r => url(`/stock/${encodeURIComponent(r.symbol)}`, "daily", (r.marketCapCr ?? 0) >= 10000 ? "0.8" : "0.6")),
-  ].join("\n")}\n</urlset>\n`;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${SITEMAPS.map(n => `<sitemap><loc>${SITE}/sitemap-${n}.xml</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ""}</sitemap>`).join("\n")}\n</sitemapindex>\n`;
+}
+// sitemap-pages.xml, sitemap-screens.xml, sitemap-stocks.xml; null for any other
+export function sitemapPart(name) {
+  const lastmod = loadMarketSnapshot()?.pricesDate ?? null;
+  if (name === "pages") return urlset(PUBLIC_PATHS.map(p => [p, p === "/" ? lastmod : null]));
+  if (name === "screens") return urlset(LIST_PATHS().map(p => [p, lastmod]));
+  if (name === "stocks") {
+    const rows = (allMetrics().rows ?? []).filter(r => r.name).sort((a, b) => (b.marketCapCr ?? 0) - (a.marketCapCr ?? 0));
+    return urlset(rows.map(r => [`/stock/${encodeURIComponent(r.symbol)}`, r.quarters?.[0]?.filed ?? r.history?.[0]?.filed ?? null]));
+  }
+  return null;
 }
 
 // A company's public summary: figures at the last close, from the app's data
@@ -280,4 +292,25 @@ export function stockPageHtml(template, symbol) {
     .replace(/<meta property="og:(title|description|url|type)"[^>]*>/g, "")
     .replace("</head>", `${head}\n</head>`)
     .replace(/<div id="root">\s*<\/div>/, `<div id="root">${summaryHtml(s)}<script id="public-stock-data" type="application/json">${JSON.stringify(s).replace(/</g, "\\u003c")}</script></div>`);
+}
+
+// /about: who runs the site, where the data comes from and how to reach us —
+// what search engines' "who is behind this" guidance asks of a finance site
+export const ABOUT_TITLE = "About Jocular Insights";
+export const ABOUT_DESCRIPTION = "Who runs Jocular Insights, where its data comes from, how the figures are made, and how to reach us.";
+export function aboutPageHtml(template) {
+  const canonical = `${SITE}/about`;
+  const ld = { "@context": "https://schema.org", "@type": "AboutPage", name: ABOUT_TITLE, description: ABOUT_DESCRIPTION, url: canonical, publisher: { "@type": "Organization", name: "Jocular Insights", url: `${SITE}/`, email: "jocularinsights@gmail.com" } };
+  const body = `<main class="seo-stock seo-methodology"><p><a href="/">Jocular Insights</a> › About</p>
+<h1>${esc(ABOUT_TITLE)}</h1>
+<p>Jocular Insights is an independent research tool for India's stock market, built and run in India. It reads every NSE-listed company's own filings and turns them into figures, scores and pictures anyone can check.</p>
+<h2>Where the data comes from</h2>
+<ul><li>Company results, balance sheets, cash flows and segment figures: the quarterly and annual filings each company makes to NSE.</li><li>Products, exports and customers: the Business Responsibility and Sustainability Report the largest companies file each year.</li><li>Prices: NSE's daily closing prices (bhavcopy), updated each trading evening.</li><li>Shareholding, board meetings and corporate actions: NSE's filings and calendar.</li></ul>
+<h2>How the figures are made</h2>
+<p>Every figure is worked out by fixed rules, the same for every company, and each score shows the checks behind it. The <a href="/methodology">methodology</a> explains them in full, and <a href="/help">How the figures work</a> says when each one changes.</p>
+<h2>What it isn't</h2>
+<p>Jocular Insights is not registered with SEBI as an investment adviser or research analyst. Nothing here is a recommendation to buy, sell or hold anything. See the <a href="/disclaimer">disclaimer</a>.</p>
+<h2>Contact</h2>
+<p>Write to <a href="mailto:jocularinsights@gmail.com">jocularinsights@gmail.com</a> — for a figure that looks wrong, a question, or anything else.</p></main>`;
+  return pageHtml(template, { title: `${ABOUT_TITLE} | NSE stock research`, desc: ABOUT_DESCRIPTION, canonical, ld, body });
 }

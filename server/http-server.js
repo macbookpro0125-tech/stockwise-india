@@ -42,7 +42,7 @@ import { savePushToken, removePushToken } from "./push.js";
 import { startNewsPush } from "./news-push.js";
 import { countPageLoad, countActive, visitStats, isOwner } from "./visits.js";
 import { startDigestJobs, weeklyEmailOn, setWeeklyEmail, unsubscribe } from "./digest.js";
-import { publicScreen, publicScreens, publicResultsCalendar, screenPageHtml, screensIndexHtml, resultsCalendarHtml } from "./seo-lists.js";
+import { publicScreen, publicScreens, publicResultsCalendar, screenPageHtml, screensIndexHtml, resultsCalendarHtml, homePageHtml } from "./seo-lists.js";
 import { limits, clientIp, waitText } from "./rate-limit.js";
 import { startBackups } from "./backup.js";
 import { fetchTechnicals } from "./technicals.js";
@@ -56,7 +56,7 @@ import { summarizeFiling } from "./filing-summary.js";
 import { logoFor } from "./logos.js";
 import { PRESETS } from "./presets.js";
 import { DIST_DIR } from "./paths.js";
-import { robotsTxt, sitemapXml, publicStock, stockPageHtml, methodologyPageHtml, stockScreenerPageHtml } from "./seo.js";
+import { robotsTxt, sitemapXml, sitemapPart, publicStock, stockPageHtml, methodologyPageHtml, stockScreenerPageHtml, aboutPageHtml } from "./seo.js";
 import { HttpError, badRequest, payloadTooLarge } from "./http-errors.js";
 import { companyVideos } from "./videos.js";
 import { searchName } from "../src/webLinks.js";
@@ -1400,6 +1400,40 @@ export function createApp() {
       if (url.pathname === "/sitemap.xml" && (req.method === "GET" || req.method === "HEAD")) {
         res.writeHead(200, { "Content-Type": "application/xml; charset=utf-8", "Cache-Control": "public, max-age=3600" });
         res.end(req.method === "HEAD" ? undefined : sitemapXml());
+        return;
+      }
+      const sitemapName = url.pathname.match(/^\/sitemap-([a-z]+)\.xml$/)?.[1];
+      if (sitemapName && (req.method === "GET" || req.method === "HEAD")) {
+        await marketReady();
+        const xml = sitemapPart(sitemapName);
+        res.writeHead(xml ? 200 : 404, { "Content-Type": xml ? "application/xml; charset=utf-8" : "text/plain; charset=utf-8", "Cache-Control": "public, max-age=3600" });
+        res.end(req.method === "HEAD" ? undefined : xml ?? "Not found");
+        return;
+      }
+      // One address per page (25 Oct 2026, the SEO audit): /index.html is the
+      // front page, a company's page is its symbol in capitals, and a page's
+      // address has no trailing slash — each a permanent redirect, the query kept
+      if (req.method === "GET" || req.method === "HEAD") {
+        const p = url.pathname;
+        const lower = p.match(/^\/stock\/([^/]+?)\/?$/);
+        const to = p === "/index.html" ? "/"
+          : lower && (decodePathSegment(lower[1]) !== decodePathSegment(lower[1]).toUpperCase() || p.endsWith("/")) ? `/stock/${encodeURIComponent(decodePathSegment(lower[1]).toUpperCase())}`
+          : /^\/(screens\/[a-z0-9-]+|screens|results-calendar|methodology|about|help|privacy|disclaimer|stock-screener-india)\/$/.test(p) ? p.slice(0, -1)
+          : null;
+        if (to && to !== p) {
+          res.writeHead(301, { Location: `${to}${url.search}`, "Cache-Control": "public, max-age=86400" });
+          res.end();
+          return;
+        }
+      }
+      // The front page and /about, written into the page for search engines
+      // and link previews (seo-lists.js homePageHtml, seo.js aboutPageHtml)
+      if ((url.pathname === "/" || url.pathname === "/about") && (req.method === "GET" || req.method === "HEAD") && existsSync(join(DIST_DIR, "index.html"))) {
+        if (url.pathname === "/") await marketReady();
+        const template = readFileSync(join(DIST_DIR, "index.html"), "utf-8");
+        const html = url.pathname === "/" ? homePageHtml(template) : aboutPageHtml(template);
+        res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache" });
+        res.end(req.method === "HEAD" ? undefined : html);
         return;
       }
       if (url.pathname === "/methodology" && (req.method === "GET" || req.method === "HEAD") && existsSync(join(DIST_DIR, "index.html"))) {

@@ -211,6 +211,38 @@ export function DisclaimerPage({ signedIn }) {
   );
 }
 
+// /about: who runs the site, where its data comes from, how to reach us (the
+// same words the server writes for search engines: seo.js aboutPageHtml)
+export function AboutPage({ signedIn }) {
+  return (
+    <PublicPage title="About Jocular Insights" signedIn={signedIn} updated="25 October 2026">
+      <P>
+        Jocular Insights is an independent research tool for India's stock market, built and run in India. It reads every
+        NSE-listed company's own filings and turns them into figures, scores and pictures anyone can check.
+      </P>
+      <H>Where the data comes from</H>
+      <UL>
+        <LI><B>Company results, balance sheets, cash flows and segment figures:</B> the quarterly and annual filings each company makes to NSE.</LI>
+        <LI><B>Products, exports and customers:</B> the Business Responsibility and Sustainability Report the largest companies file each year.</LI>
+        <LI><B>Prices:</B> NSE's daily closing prices, updated each trading evening.</LI>
+        <LI><B>Shareholding, board meetings and corporate actions:</B> NSE's filings and calendar.</LI>
+      </UL>
+      <H>How the figures are made</H>
+      <P>
+        Every figure is worked out by fixed rules, the same for every company, and each score shows the checks behind it.
+        The <SiteLink to="/methodology">methodology</SiteLink> explains them in full, and <SiteLink to="/help">How the figures work</SiteLink> says when each one changes.
+      </P>
+      <H>What it isn't</H>
+      <P>
+        Jocular Insights is not registered with SEBI as an investment adviser or research analyst. Nothing here is a
+        recommendation to buy, sell or hold anything. See the <SiteLink to="/disclaimer">disclaimer</SiteLink>.
+      </P>
+      <H>Contact</H>
+      <P>Write to <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "var(--accent)" }}>{CONTACT_EMAIL}</a> — for a figure that looks wrong, a question, or anything else.</P>
+    </PublicPage>
+  );
+}
+
 // /help: how the figures work and how to reach us. Users of other Indian
 // screeners complain most about support that never answers and figures that
 // lag without saying so (replica/fixes.md), so this says plainly where each

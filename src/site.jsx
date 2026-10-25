@@ -75,6 +75,7 @@ export function SiteFooter() {
           <SiteLink to="/screens">Screens</SiteLink>
           <SiteLink to="/results-calendar">Results calendar</SiteLink>
           <SiteLink to="/help">Help</SiteLink>
+          <SiteLink to="/about">About</SiteLink>
           <SiteLink to="/methodology">Methodology</SiteLink>
           <SiteLink to="/disclaimer">Disclaimer</SiteLink>
           <SiteLink to="/privacy">Privacy</SiteLink>

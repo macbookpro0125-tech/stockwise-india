@@ -54,7 +54,8 @@ export const PRESETS = [
   },
   {
     id: "small_cap_multibaggers",
-    name: "Small Cap Multibaggers",
+    // 25 Oct 2026: describes what it looks for, not a return it promises
+    name: "Small Caps with Multibagger Traits",
     icon: "🚀",
     description: "High-growth small caps with strong fundamentals",
     criteria: {
