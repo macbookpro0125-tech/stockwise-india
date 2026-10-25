@@ -81,7 +81,10 @@ assert.ok(hqc && hqc.rules.length >= 3 && hqc.matched === hqc.companies.length +
 assert.ok(hqc.companies.every((c, i, a) => i === 0 || (a[i - 1].quality ?? -1) >= (c.quality ?? -1)), "the best quality first");
 const sp = screenPageHtml(template, "high-quality-compounders");
 assert.equal((sp.match(/<title>/g) ?? []).length, 1);
-assert.match(sp, /<title>High Quality Compounders: \d+ NSE stocks that match today \| Jocular Insights<\/title>/);
+// titled in the words people search for it (screen-guides.js), the name in the heading
+assert.match(sp, /<title>High quality stocks India with high ROCE and low debt: \d+ today \| Jocular Insights<\/title>/);
+assert.match(sp, /<h1>[^<]*High Quality Compounders<\/h1>/);
+assert.match(sp, /<h2>Limitations<\/h2>/);
 assert.match(sp, /<link rel="canonical" href="https:\/\/jocularinsights\.in\/screens\/high-quality-compounders"/);
 assert.match(sp, /"@type":"ItemList"/);
 assert.ok((sp.match(/href="\/stock\//g) ?? []).length === Math.min(hqc.matched, 50), "every company shown links to its page");
@@ -90,3 +93,23 @@ assert.equal(screenPageHtml(template, "no-such-strategy"), null);
 assert.equal((screensIndexHtml(template).match(/href="\/screens\//g) ?? []).length, PRESETS.length, "the index links every strategy");
 assert.match(resultsCalendarHtml(template), /<h1>Quarterly results calendar<\/h1>/);
 console.log(`ok: robots.txt, a sitemap of ${companies + pages.length} pages, and ${sym}'s page with its own title, description, canonical, structured data and figures`);
+
+// each screen's guide, and what joined and left since a week ago (seo-lists.js)
+{
+  const { SCREEN_GUIDES } = await import("./screen-guides.js");
+  const { screenChanges, publicScreen } = await import("./seo-lists.js");
+  for (const p of PRESETS) assert.ok(SCREEN_GUIDES[p.id]?.search && SCREEN_GUIDES[p.id]?.limits, `${p.id} has a guide`);
+  assert.ok(!/\b(buy|sell)\b/i.test(JSON.stringify(SCREEN_GUIDES)), "the guides never say buy or sell");
+  const snaps = [
+    { presetId: "x", date: "2026-10-10", members: ["A", "B", "C"] },
+    { presetId: "x", date: "2026-10-14", members: ["A", "B"] },
+    { presetId: "x", date: "2026-10-17", members: ["A", "D"] },
+  ];
+  const ch = screenChanges("x", ["A", "D", "E"], new Map([["D", "Dee"], ["E", "Ee"]]), snaps);
+  assert.equal(ch.since, "2026-10-10", "against the list from six or more days before the latest");
+  assert.deepEqual(ch.joined.map(c => c.symbol), ["D", "E"]);
+  assert.deepEqual(ch.left.map(c => c.symbol), ["B", "C"]);
+  assert.equal(screenChanges("x", ["A"], new Map(), snaps.slice(1)), null, "no list a week old: nothing said");
+  assert.equal(publicScreen("high-quality-compounders").guide.search, SCREEN_GUIDES.high_quality_compounders.search);
+}
+console.log("ok: every screen has its guide; joined and left are worked out against a week ago");

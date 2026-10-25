@@ -60,7 +60,7 @@ export function ScreensIndexPage({ signedIn }) {
 
 export function ScreenPage({ slug, signedIn }) {
   const [s, error] = useLoad(() => api.publicScreen(slug), slug);
-  useEffect(() => { if (s) document.title = `${s.name}: ${s.matched} NSE stocks that match today | Jocular Insights`; }, [s]);
+  useEffect(() => { if (s) document.title = s.guide ? `${s.guide.search}: ${s.matched} today | Jocular Insights` : `${s.name}: ${s.matched} NSE stocks that match today | Jocular Insights`; }, [s]);
   return (
     <PublicPage title={s ? `${s.name}: NSE companies that match today` : "Stock screen"} signedIn={signedIn} updated={s?.pricesDate ? `${day(s.pricesDate)} (the latest NSE close)` : "with each NSE close"}>
       <p className="pl-crumb"><A to="/screens">Stock screens</A> › {s?.name ?? "…"}</p>
@@ -69,8 +69,26 @@ export function ScreenPage({ slug, signedIn }) {
       {s && (
         <>
           <p className="pl-lede">{s.description}{s.description && !/[.!?]$/.test(s.description) ? "." : ""} <b>{s.matched}</b> of {s.total.toLocaleString("en-IN")} companies pass.</p>
+          {s.guide && <>
+            <h2 className="pl-h">What this screen looks for</h2>
+            <p className="pl-lede">{s.guide.lookFor}</p>
+            <h2 className="pl-h">Who it may suit</h2>
+            <p className="pl-lede">{s.guide.suits} It is a starting point for research, not a list of recommendations.</p>
+          </>}
           <h2 className="pl-h">The filters</h2>
           <ul className="pl-rules">{s.rules.map(r => <li key={r}>{r}</li>)}</ul>
+          {s.guide && <>
+            <h2 className="pl-h">Limitations</h2>
+            <p className="pl-lede">{s.guide.limits}</p>
+          </>}
+          {s.changes && <>
+            <h2 className="pl-h">What changed since {day(s.changes.since)}</h2>
+            <p className="pl-lede">
+              {s.changes.joinedCount} {s.changes.joinedCount === 1 ? "company" : "companies"} joined and {s.changes.leftCount} left.
+              {s.changes.joined.length > 0 && <> Joined: {s.changes.joined.map((c, i) => <span key={c.symbol}>{i ? ", " : ""}<A to={stockPath(c.symbol)}>{c.name}</A></span>)}{s.changes.joinedCount > s.changes.joined.length ? " and more" : ""}.</>}
+              {s.changes.left.length > 0 && <> Left: {s.changes.left.map((c, i) => <span key={c.symbol}>{i ? ", " : ""}<A to={stockPath(c.symbol)}>{c.name}</A></span>)}{s.changes.leftCount > s.changes.left.length ? " and more" : ""}.</>}
+            </p>
+          </>}
           <h2 className="pl-h">Companies that match{s.matched > s.companies.length ? ` (the first ${s.companies.length})` : ""}</h2>
           <ol className="pl-cos">
             {s.companies.map(c => (

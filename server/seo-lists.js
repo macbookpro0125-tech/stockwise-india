@@ -11,13 +11,15 @@
 // Each is written into the page for search engines (…Html below) and served
 // as JSON for the app's own copy of the page (/api/public/…, PublicLists.jsx).
 import { PRESETS } from "./presets.js";
-import { screen } from "./screen.js";
+import { screen, allMetrics } from "./screen.js";
 import { resultsWeek } from "./explore.js";
 import { loadMarketSnapshot } from "./market-data.js";
 import { SITE, esc, crore, num, day, pageHtml } from "./seo.js";
 
 import { niceName } from "../src/stockName.js";
 import { publicSectors, publicSector } from "./seo-story.js";
+import { SCREEN_GUIDES } from "./screen-guides.js";
+import { loadSnapshots } from "./performance.js";
 
 // as the app shows names: "Limited" off, capitals as words ("TATA CONSUMER PRODUCTS" → "Tata Consumer Products")
 const plain = name => niceName(name);
@@ -26,9 +28,30 @@ const sentence = t => { const x = String(t ?? "").trim(); return x && !/[.!?]$/.
 export const screenSlug = id => String(id).replace(/_/g, "-");
 const bySlug = slug => PRESETS.find(p => screenSlug(p.id) === slug) ?? null;
 const SHOWN = 50;
+// a company's name, for one that has left a screen (so isn't in its results)
+let nameMap = null, nameMarket = null;
+function nameOf(sym) {
+  const market = allMetrics();
+  if (nameMarket !== market) { nameMap = new Map((market.rows ?? []).map(r => [r.symbol, plain(r.name)])); nameMarket = market; }
+  return nameMap.get(sym) ?? sym;
+}
 
 function run(preset) {
   return screen(preset.filters ? { filters: preset.filters, sort: preset.sort } : preset.criteria);
+}
+
+// Which companies joined and left a screen since about a week ago: today's
+// list against the strategy snapshot (performance.js, every three days) from
+// six or more days back. null until there is one.
+export function screenChanges(presetId, nowSymbols, names, snaps = loadSnapshots()) {
+  const today = snaps.filter(x => x.presetId === presetId && Array.isArray(x.members)).map(x => x.date).sort().at(-1);
+  if (!today) return null;
+  const cutoff = new Date(Date.parse(`${today}T00:00:00Z`) - 6 * 86400000).toISOString().slice(0, 10);
+  const then = snaps.filter(x => x.presetId === presetId && Array.isArray(x.members) && x.date <= cutoff).sort((a, b) => b.date.localeCompare(a.date))[0];
+  if (!then) return null;
+  const before = new Set(then.members), now = new Set(nowSymbols);
+  const named = sym => ({ symbol: sym, name: names.get(sym) ?? nameOf(sym) });
+  return { since: then.date, joined: nowSymbols.filter(x => !before.has(x)).slice(0, 15).map(named), left: then.members.filter(x => !now.has(x)).slice(0, 15).map(named), joinedCount: nowSymbols.filter(x => !before.has(x)).length, leftCount: then.members.filter(x => !now.has(x)).length };
 }
 
 // One strategy: its rules in words and the companies that match, the best
@@ -47,6 +70,9 @@ export function publicScreen(slug) {
       price: r.cmp ?? null, marketCapCr: r.marketCapCr ?? null, pe: r.pe ?? null, roe: r.roe ?? null, roce: r.roce ?? null,
       quality: r.research?.quality == null ? null : Math.round(r.research.quality),
     })),
+    // what people search it by, what it looks for, who it may suit, its limits
+    guide: SCREEN_GUIDES[p.id] ?? null,
+    changes: screenChanges(p.id, (res.results ?? []).map(r => r.symbol), new Map((res.results ?? []).map(r => [r.symbol, plain(r.name)]))),
   };
 }
 
@@ -75,7 +101,8 @@ export function screenPageHtml(template, slug) {
   if (!s) return null;
   const canonical = `${SITE}/screens/${slug}`;
   // short enough for a search result (about 60 characters); the rules are in the description
-  const title = `${s.name}: ${s.matched} NSE stocks that match today | Jocular Insights`;
+  const g = s.guide;
+  const title = g ? `${g.search}: ${s.matched} today | Jocular Insights` : `${s.name}: ${s.matched} NSE stocks that match today | Jocular Insights`;
   const desc = `${s.matched} NSE companies match ${s.name} at the ${day(s.pricesDate) ?? "latest"} close: ${s.rules.join(", ")}. ${sentence(s.description)}`.trim();
   const rows = s.companies.map((c, i) => `<tr><td>${i + 1}</td><td>${link(`/stock/${encodeURIComponent(c.symbol)}`, c.name)} <small>${esc(c.symbol)}</small></td><td>${c.price == null ? "—" : `₹${esc(num(c.price, 2))}`}</td><td>${esc(crore(c.marketCapCr) ?? "—")}</td><td>${c.pe > 0 ? esc(num(c.pe)) : "—"}</td><td>${c.roe == null ? "—" : `${esc(num(c.roe))}%`}</td><td>${c.quality == null ? "—" : `${c.quality}/100`}</td></tr>`).join("");
   const ld = {
@@ -86,9 +113,12 @@ export function screenPageHtml(template, slug) {
     itemListElement: s.companies.map((c, i) => ({ "@type": "ListItem", position: i + 1, name: c.name, url: `${SITE}/stock/${encodeURIComponent(c.symbol)}` })),
   };
   const body = `<main class="seo-stock seo-methodology"><p>${link("/", "Jocular Insights")} › ${link("/screens", "Stock screens")} › ${esc(s.name)}</p>
-<h1>${esc(s.name)}: NSE companies that match today</h1>
+<h1>${g ? `${esc(g.search)} — ${esc(s.name)}` : `${esc(s.name)}: NSE companies that match today`}</h1>
 <p>${esc(sentence(s.description))} ${s.matched} of ${s.total} companies pass at the ${esc(day(s.pricesDate) ?? "latest")} close.</p>
+${g ? `<h2>What this screen looks for</h2><p>${esc(g.lookFor)}</p><h2>Who it may suit</h2><p>${esc(g.suits)} It is a starting point for research, not a list of recommendations.</p>` : ""}
 <h2>The filters</h2><ul>${s.rules.map(r => `<li>${esc(r)}</li>`).join("")}</ul>
+${g ? `<h2>Limitations</h2><p>${esc(g.limits)}</p>` : ""}
+${s.changes ? `<h2>What changed since ${esc(day(s.changes.since))}</h2><p>${s.changes.joinedCount} ${s.changes.joinedCount === 1 ? "company" : "companies"} joined and ${s.changes.leftCount} left.</p>${s.changes.joined.length ? `<p>Joined: ${s.changes.joined.map(c => link(`/stock/${encodeURIComponent(c.symbol)}`, c.name)).join(", ")}${s.changes.joinedCount > s.changes.joined.length ? " and more" : ""}.</p>` : ""}${s.changes.left.length ? `<p>Left: ${s.changes.left.map(c => link(`/stock/${encodeURIComponent(c.symbol)}`, c.name)).join(", ")}${s.changes.leftCount > s.changes.left.length ? " and more" : ""}.</p>` : ""}` : ""}
 <h2>Companies that match${s.matched > s.companies.length ? ` (the first ${s.companies.length})` : ""}</h2>
 <table><thead><tr><th>#</th><th>Company</th><th>Price</th><th>Market cap</th><th>P/E</th><th>ROE</th><th>Quality</th></tr></thead><tbody>${rows}</tbody></table>
 <p>${esc(NOT_ADVICE)}</p>

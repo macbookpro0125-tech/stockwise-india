@@ -164,7 +164,9 @@ export async function takeSnapshots({ keepToday = false } = {}) {
       results.push({ presetId: preset.id, skipped: "no picks" });
       continue;
     }
-    const snap = { presetId: preset.id, presetName: preset.name, date, pricesDate: res.snapshot?.pricesDate ?? null, picks };
+    // members: every company that passed, for the screen page's "joined and
+    // left since last week" (seo-lists.js screenChanges)
+    const snap = { presetId: preset.id, presetName: preset.name, date, pricesDate: res.snapshot?.pricesDate ?? null, picks, members: res.results.slice(0, 600).map(s => s.symbol) };
     const idx = snaps.findIndex(s => s.presetId === preset.id && s.date === date);
     if (idx >= 0) snaps[idx] = snap; else snaps.push(snap);
     results.push({ presetId: preset.id, picks: picks.length });
