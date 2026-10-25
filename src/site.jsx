@@ -73,6 +73,7 @@ export function SiteFooter() {
         <nav style={{ display: "flex", flexWrap: "wrap", gap: "8px 18px" }}>
           <SiteLink to="/stock-screener-india">Stock screener</SiteLink>
           <SiteLink to="/screens">Screens</SiteLink>
+          <SiteLink to="/sectors">Sectors</SiteLink>
           <SiteLink to="/results-calendar">Results calendar</SiteLink>
           <SiteLink to="/help">Help</SiteLink>
           <SiteLink to="/about">About</SiteLink>

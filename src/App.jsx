@@ -8,7 +8,7 @@ import Landing from "./Landing.jsx";
 import { PrivacyPage, DisclaimerPage, HelpPage, AboutPage } from "./LegalPages.jsx";
 import MethodologyPage from "./MethodologyPage.jsx";
 import StockScreenerPage from "./StockScreenerPage.jsx";
-import { ScreensIndexPage, ScreenPage, ResultsCalendarPage } from "./PublicLists.jsx";
+import { ScreensIndexPage, ScreenPage, ResultsCalendarPage, SectorsIndexPage, SectorPage } from "./PublicLists.jsx";
 import ResetPassword from "./ResetPassword.jsx";
 import { usePath, navigate, stockFromPath, stockPath, chartFromPath, SiteFooter } from "./site.jsx";
 import Header, { BottomTabBar, TABS } from "./Header.jsx";
@@ -178,7 +178,7 @@ export default function App() {
           return;
         }
 
-        if (["/privacy", "/disclaimer", "/help", "/about", "/methodology", "/reset-password", "/stock-screener-india", "/screens", "/results-calendar"].includes(currentPath) || /^\/screens\//.test(currentPath)) {
+        if (["/privacy", "/disclaimer", "/help", "/about", "/methodology", "/reset-password", "/stock-screener-india", "/screens", "/results-calendar", "/sectors"].includes(currentPath) || /^\/(screens|sector)\//.test(currentPath)) {
           if (canGoBack) window.history.back();
           else navigate("/", { replace: true });
           return;
@@ -292,6 +292,8 @@ export default function App() {
   if (path === "/screens") return <ScreensIndexPage signedIn={!!account} />;
   if (path === "/results-calendar") return <ResultsCalendarPage signedIn={!!account} />;
   if (/^\/screens\/[a-z0-9-]+\/?$/.test(path)) return <ScreenPage slug={path.split("/")[2]} signedIn={!!account} />;
+  if (path === "/sectors") return <SectorsIndexPage signedIn={!!account} />;
+  if (/^\/sector\/[a-z0-9-]+\/?$/.test(path)) return <SectorPage slug={path.split("/")[2]} signedIn={!!account} />;
   // The page a reset email links to: saving signs in, then into the app
   if (path === "/reset-password") return <ResetPassword onDone={() => { tabHistory.current = []; tabRef.current = "discover"; setTab("discover"); navigate("/"); loadAccount(); }} />;
 

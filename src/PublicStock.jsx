@@ -15,12 +15,50 @@ const pct = (v, d = 1) => (v == null || !isFinite(v) ? null : `${v > 0 ? "+" : v
 const crore = v => (v == null ? null : v >= 100000 ? `₹${num(v / 100000, 2)} lakh cr` : `₹${Math.round(v).toLocaleString("en-IN")} cr`);
 const day = iso => (iso ? new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : null);
 
+// The company in words, its peers, the screens it passes and plain answers —
+// the same words the server writes into the page (server/seo-story.js)
+function Story({ s }) {
+  const t = s.story, n = niceName(s.name);
+  const cell = (v, f) => (v == null ? "—" : f(v));
+  return (
+    <section className="ps-analysis ps-story">
+      {(t.summary.length > 0 || t.trend) && <>
+        <h2>{n} in short</h2>
+        {t.summary.length > 0 && <p>{t.summary.join(" ")}</p>}
+        {t.trend && <p>{t.trend}</p>}
+      </>}
+      {t.peers.length > 0 && <>
+        <h2>{n} against similar companies</h2>
+        <div className="ps-table-wrap">
+          <table>
+            <caption>Listed {t.sector?.name ?? ""} companies closest in size, at the last close</caption>
+            <thead><tr><th>Company</th><th>Price</th><th>P/E</th><th>ROE</th><th>ROCE</th><th>Debt/equity</th><th>Quality</th></tr></thead>
+            <tbody>{t.peers.map(p => (
+              <tr key={p.symbol}>
+                <th><a href={`/stock/${encodeURIComponent(p.symbol)}`}>{p.name}</a></th>
+                <td>{cell(p.price, v => `₹${num(v, 2)}`)}</td><td>{cell(p.pe, v => num(v))}</td><td>{cell(p.roe, v => `${num(v)}%`)}</td>
+                <td>{cell(p.roce, v => `${num(v)}%`)}</td><td>{cell(p.debtToEquity, v => num(v, 2))}</td><td>{cell(p.quality, v => `${Math.round(v)}/100`)}</td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+        {t.sector && <p><a href={`/sector/${t.sector.slug}`}>Every listed {t.sector.name} company</a></p>}
+      </>}
+      <h2>Stock screens {n} passes</h2>
+      {t.screens.length ? <ul>{t.screens.map(x => <li key={x.slug}><a href={`/screens/${x.slug}`}>{x.name}</a></li>)}</ul>
+        : <p>It passes none of the ready-made screens today. <a href="/screens">See every screen</a>.</p>}
+      <h2>Questions about {n}</h2>
+      {t.qa.map(x => <div key={x.q}><h3>{x.q}</h3><p>{x.a}</p></div>)}
+    </section>
+  );
+}
+
 export default function PublicStock({ symbol, onSignIn, initial = null }) {
   const [s, setS] = useState(() => initial?.symbol === symbol ? initial : null);
   const [error, setError] = useState("");
   useEffect(() => {
     let active = true;
-    const title = x => `${niceName(x.name)} share price${companyAnalysisFor(x) ? ", results analysis" : ""}, P/E, fair value & quality score | ${x.symbol} | Jocular Insights`;
+    const title = x => `${niceName(x.name)} share price, P/E, results & quality score | ${x.symbol} | Jocular Insights`;
     if (initial?.symbol === symbol) {
       setS(initial);
       document.title = title(initial);
@@ -63,7 +101,7 @@ export default function PublicStock({ symbol, onSignIn, initial = null }) {
         {!s && !error && <div className="nw-skel" role="status" aria-label="Loading">{[0, 1, 2].map(i => <span key={i} />)}</div>}
         {s && (
           <>
-            <p className="ps-crumb">{s.sector ?? "NSE"} · {s.industry ?? s.symbol}</p>
+            <p className="ps-crumb">{s.story?.sector ? <a href={`/sector/${s.story.sector.slug}`}>{s.story.sector.name}</a> : <a href="/sectors">Sectors</a>} · {s.industry ?? s.symbol}</p>
             <div className="ps-title">
               <CompanyLogo symbol={s.symbol} size={48} fallback={s.name} />
               <div>
@@ -86,6 +124,7 @@ export default function PublicStock({ symbol, onSignIn, initial = null }) {
               )}
             </div>
             <dl className="ps-facts">{facts.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
+            {s.story && <Story s={s} />}
             {analysis && (
               <section className="ps-analysis" aria-labelledby="company-analysis-title">
                 <h2 id="company-analysis-title">{analysis.title}</h2>
@@ -127,7 +166,7 @@ export default function PublicStock({ symbol, onSignIn, initial = null }) {
             )}
             <section className="ps-more">
               <h2>See the full analysis</h2>
-              <p>{niceName(s.name)}'s fair value, the scorecard's checks one by one, price charts, results year by year, shareholding and its filings to NSE — free with an account.</p>
+              <p>The scorecard's checks one by one, price charts, results year by year, what it sells and where, shareholding and its filings to NSE — free with an account.</p>
               <p><a href="/methodology">How the scores and fair values are calculated</a> · <a href="/disclaimer">Important limitations</a></p>
               <button type="button" className="btn-primary ps-cta" onClick={onSignIn}>Sign in or create a free account</button>
             </section>

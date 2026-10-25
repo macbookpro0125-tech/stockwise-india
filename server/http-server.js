@@ -42,7 +42,8 @@ import { savePushToken, removePushToken } from "./push.js";
 import { startNewsPush } from "./news-push.js";
 import { countPageLoad, countActive, visitStats, isOwner } from "./visits.js";
 import { startDigestJobs, weeklyEmailOn, setWeeklyEmail, unsubscribe } from "./digest.js";
-import { publicScreen, publicScreens, publicResultsCalendar, screenPageHtml, screensIndexHtml, resultsCalendarHtml, homePageHtml } from "./seo-lists.js";
+import { publicScreen, publicScreens, publicResultsCalendar, screenPageHtml, screensIndexHtml, resultsCalendarHtml, homePageHtml, sectorsIndexHtml, sectorPageHtml } from "./seo-lists.js";
+import { publicSectors, publicSector } from "./seo-story.js";
 import { limits, clientIp, waitText } from "./rate-limit.js";
 import { startBackups } from "./backup.js";
 import { fetchTechnicals } from "./technicals.js";
@@ -712,6 +713,14 @@ export function createApp() {
 
       // The strategies' and the results calendar's pages, no sign-in needed (seo-lists.js, PublicLists.jsx)
       if (url.pathname === "/api/public/screens" && req.method === "GET") { sendJson(res, 200, publicScreens()); return; }
+      if (url.pathname === "/api/public/sectors" && req.method === "GET") { sendJson(res, 200, publicSectors()); return; }
+      const publicSectorRoute = url.pathname.match(/^\/api\/public\/sectors\/([a-z0-9-]+)$/);
+      if (publicSectorRoute && req.method === "GET") {
+        const found = publicSector(publicSectorRoute[1]);
+        if (!found) { sendJson(res, 404, { error: "No sector by that name." }); return; }
+        sendJson(res, 200, found);
+        return;
+      }
       if (url.pathname === "/api/public/results-calendar" && req.method === "GET") { sendJson(res, 200, publicResultsCalendar()); return; }
       const publicScreenRoute = url.pathname.match(/^\/api\/public\/screens\/([a-z0-9-]+)$/);
       if (publicScreenRoute && req.method === "GET") {
@@ -1418,7 +1427,7 @@ export function createApp() {
         const lower = p.match(/^\/stock\/([^/]+?)\/?$/);
         const to = p === "/index.html" ? "/"
           : lower && (decodePathSegment(lower[1]) !== decodePathSegment(lower[1]).toUpperCase() || p.endsWith("/")) ? `/stock/${encodeURIComponent(decodePathSegment(lower[1]).toUpperCase())}`
-          : /^\/(screens\/[a-z0-9-]+|screens|results-calendar|methodology|about|help|privacy|disclaimer|stock-screener-india)\/$/.test(p) ? p.slice(0, -1)
+          : /^\/(screens\/[a-z0-9-]+|sector\/[a-z0-9-]+|screens|sectors|results-calendar|methodology|about|help|privacy|disclaimer|stock-screener-india)\/$/.test(p) ? p.slice(0, -1)
           : null;
         if (to && to !== p) {
           res.writeHead(301, { Location: `${to}${url.search}`, "Cache-Control": "public, max-age=86400" });
@@ -1446,12 +1455,13 @@ export function createApp() {
       // search engines and anyone signed out; after the first market is in, so
       // they're never written empty
       const listPage = (req.method === "GET" || req.method === "HEAD") && existsSync(join(DIST_DIR, "index.html"))
-        && (url.pathname === "/screens" || url.pathname === "/results-calendar" || /^\/screens\/[a-z0-9-]+\/?$/.test(url.pathname));
+        && (url.pathname === "/screens" || url.pathname === "/results-calendar" || url.pathname === "/sectors" || /^\/(screens|sector)\/[a-z0-9-]+\/?$/.test(url.pathname));
       if (listPage) {
         await marketReady();
         const template = readFileSync(join(DIST_DIR, "index.html"), "utf-8");
-        const slug = url.pathname.match(/^\/screens\/([a-z0-9-]+)\/?$/)?.[1];
-        const html = url.pathname === "/screens" ? screensIndexHtml(template) : url.pathname === "/results-calendar" ? resultsCalendarHtml(template) : screenPageHtml(template, slug);
+        const slug = url.pathname.match(/^\/(?:screens|sector)\/([a-z0-9-]+)\/?$/)?.[1];
+        const html = url.pathname === "/screens" ? screensIndexHtml(template) : url.pathname === "/results-calendar" ? resultsCalendarHtml(template)
+          : url.pathname === "/sectors" ? sectorsIndexHtml(template) : url.pathname.startsWith("/sector/") ? sectorPageHtml(template, slug) : screenPageHtml(template, slug);
         // a strategy that doesn't exist: the app (which says so), as not found
         res.writeHead(html ? 200 : 404, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache" });
         res.end(req.method === "HEAD" ? undefined : html ?? template);

@@ -27,6 +27,7 @@ import {
 export const SITE = "https://jocularinsights.in";
 // (a function, read when the sitemap is made: seo-lists.js imports from here)
 import { LIST_PATHS } from "./seo-lists.js";
+import { stockStory, SECTOR_PATHS } from "./seo-story.js";
 const PUBLIC_PATHS = ["/", "/about", "/help", "/methodology", SCREENER_PAGE_PATH, "/privacy", "/disclaimer"];
 
 export const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -69,7 +70,7 @@ export function robotsTxt() {
 // screens and front page the last close — not today's date on everything,
 // which teaches Google to ignore the dates. (changefreq and priority, which
 // Google ignores, are gone.)
-const SITEMAPS = ["pages", "screens", "stocks"];
+const SITEMAPS = ["pages", "screens", "sectors", "stocks"];
 const urlset = entries => `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries.map(([path, lastmod]) => `<url><loc>${SITE}${path}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ""}</url>`).join("\n")}\n</urlset>\n`;
 export function sitemapXml() {
   const lastmod = loadMarketSnapshot()?.pricesDate ?? null;
@@ -80,8 +81,10 @@ export function sitemapPart(name) {
   const lastmod = loadMarketSnapshot()?.pricesDate ?? null;
   if (name === "pages") return urlset(PUBLIC_PATHS.map(p => [p, p === "/" ? lastmod : null]));
   if (name === "screens") return urlset(LIST_PATHS().map(p => [p, lastmod]));
+  if (name === "sectors") return urlset(SECTOR_PATHS().map(p => [p, lastmod]));
   if (name === "stocks") {
-    const rows = (allMetrics().rows ?? []).filter(r => r.name).sort((a, b) => (b.marketCapCr ?? 0) - (a.marketCapCr ?? 0));
+    // pages with nothing to say are noindexed (seo-story.js), so not listed
+    const rows = (allMetrics().rows ?? []).filter(r => r.name && (r.quarters?.length || r.history?.length || r.research?.quality != null)).sort((a, b) => (b.marketCapCr ?? 0) - (a.marketCapCr ?? 0));
     return urlset(rows.map(r => [`/stock/${encodeURIComponent(r.symbol)}`, r.quarters?.[0]?.filed ?? r.history?.[0]?.filed ?? null]));
   }
   return null;
@@ -101,6 +104,8 @@ export function publicStock(symbol) {
     quarter: q ? { end: q.fyEnd, filed: q.filed ?? null, label: fyQuarter(q.fyEnd), salesCr: q.revenueCr ?? null, salesYoY: q.salesYoY ?? null, profitCr: q.profitCr ?? null, profitYoY: q.profitYoY ?? null, opm: q.opm ?? null, eps: q.eps ?? null } : null,
     recentQuarters: (r.quarters ?? []).slice(0, 8).map(x => ({ end: x.fyEnd, filed: x.filed ?? null, label: fyQuarter(x.fyEnd), salesCr: x.revenueCr ?? null, salesYoY: x.salesYoY ?? null, profitCr: x.profitCr ?? null, profitYoY: x.profitYoY ?? null, opm: x.opm ?? null, eps: x.eps ?? null })),
     nextResults: r.nextResults ?? null,
+    // what the page says in words: summary, trend, peers, screens, Q&A (seo-story.js)
+    story: stockStory(symbol),
   };
 }
 
@@ -157,7 +162,23 @@ function describe(s) {
     result.salesYoY != null && `revenue ${pct(result.salesYoY)} year on year`,
     result.profitYoY != null && `profit ${pct(result.profitYoY)} year on year`,
   ].filter(Boolean).join(", ");
-  return `${parts[0] ?? `${n} on NSE.`} ${parts.slice(1).join(", ")}${parts.length > 1 ? "." : ""}${analysisFact ? ` Latest results: ${analysisFact}.` : ""} Results analysis, fair value and filings on Jocular Insights.`.slice(0, 300);
+  return `${parts[0] ?? `${n} on NSE.`} ${parts.slice(1).join(", ")}${parts.length > 1 ? "." : ""}${analysisFact ? ` Latest results: ${analysisFact}.` : ""} Results, peers and filings on Jocular Insights.`.slice(0, 300);
+}
+
+// The company in words, its peers, the screens it passes and plain answers
+// (seo-story.js) — the same words the app shows (PublicStock.jsx)
+function storyHtml(s) {
+  const t = s.story;
+  if (!t) return "";
+  const n = plain(s.name);
+  const cell = (v, f) => (v == null ? "—" : f(v));
+  const peerRows = t.peers.map(p => `<tr><td><a href="/stock/${encodeURIComponent(p.symbol)}">${esc(p.name)}</a></td><td>${cell(p.price, v => `₹${num(v, 2)}`)}</td><td>${cell(p.pe, v => num(v))}</td><td>${cell(p.roe, v => `${num(v)}%`)}</td><td>${cell(p.roce, v => `${num(v)}%`)}</td><td>${cell(p.debtToEquity, v => num(v, 2))}</td><td>${cell(p.quality, v => `${Math.round(v)}/100`)}</td></tr>`).join("");
+  return `<section class="ps-story">
+${t.summary.length || t.trend ? `<h2>${esc(n)} in short</h2>${t.summary.length ? `<p>${esc(t.summary.join(" "))}</p>` : ""}${t.trend ? `<p>${esc(t.trend)}</p>` : ""}` : ""}
+${t.peers.length ? `<h2>${esc(n)} against similar companies</h2><div class="ps-table-wrap"><table><caption>Listed ${esc(t.sector?.name ?? "")} companies closest in size, at the last close</caption><thead><tr><th>Company</th><th>Price</th><th>P/E</th><th>ROE</th><th>ROCE</th><th>Debt/equity</th><th>Quality</th></tr></thead><tbody>${peerRows}</tbody></table></div>${t.sector ? `<p><a href="/sector/${esc(t.sector.slug)}">Every listed ${esc(t.sector.name)} company</a></p>` : ""}` : ""}
+<h2>Stock screens ${esc(n)} passes</h2>${t.screens.length ? `<ul>${t.screens.map(x => `<li><a href="/screens/${esc(x.slug)}">${esc(x.name)}</a></li>`).join("")}</ul>` : `<p>It passes none of the ready-made screens today. <a href="/screens">See every screen</a>.</p>`}
+<h2>Questions about ${esc(n)}</h2>${t.qa.map(x => `<h3>${esc(x.q)}</h3><p>${esc(x.a)}</p>`).join("")}
+</section>`;
 }
 
 // The summary as plain HTML, for the page itself (what a crawler reads)
@@ -166,7 +187,7 @@ function summaryHtml(s) {
   const row = (label, value) => (value == null ? "" : `<tr><th>${esc(label)}</th><td>${esc(value)}</td></tr>`);
   const q = s.quarter;
   return `<main class="seo-stock">
-<p><a href="/">Jocular Insights</a> › ${esc(s.sector ?? "NSE")} › ${esc(s.symbol)}</p>
+<p><a href="/">Jocular Insights</a> › ${s.story?.sector ? `<a href="/sector/${esc(s.story.sector.slug)}">${esc(s.story.sector.name)}</a>` : `<a href="/sectors">Sectors</a>`} › ${esc(s.symbol)}</p>
 <h1>${esc(n)} share price, P/E and quality score</h1>
 <p>${esc(n)} (NSE: ${esc(s.symbol)})${s.industry ? ` · ${esc(s.industry)}` : ""}</p>
 ${s.close != null ? `<p><strong>₹${esc(num(s.close, 2))}</strong> ${esc(pct(s.change1d, 2) ?? "")} · close on ${esc(day(s.closeDate))}</p>` : ""}
@@ -185,6 +206,7 @@ ${q ? row(`${q.label} sales`, q.salesCr != null ? `₹${Math.round(q.salesCr).to
 ${q ? row(`${q.label} profit`, q.profitCr != null ? `₹${Math.round(q.profitCr).toLocaleString("en-IN")} crore${q.profitYoY != null ? ` (${pct(q.profitYoY)} on a year earlier)` : ""}` : null) : ""}
 ${row("Next results", s.nextResults ? day(s.nextResults) : null)}
 </table>
+${storyHtml(s)}
 ${analysisHtml(s)}
 <p>Figures from NSE filings and prices at the last close. <a href="/">Sign in for ${esc(n)}'s fair value, scorecard, charts and filings</a>.</p>
 <p><a href="/methodology">How the scores and fair values are calculated</a> · <a href="/disclaimer">Important limitations</a>. Not investment advice.</p>
@@ -264,7 +286,7 @@ export function stockPageHtml(template, symbol) {
   const s = publicStock(symbol);
   if (!s) return null;
   const n = plain(s.name);
-  const title = `${n} share price${companyAnalysisFor(s) ? ", results analysis" : ""}, P/E, fair value & quality score | ${s.symbol} | Jocular Insights`;
+  const title = `${n} share price, P/E, results & quality score | ${s.symbol} | Jocular Insights`;
   const desc = describe(s);
   const canonical = `${SITE}/stock/${encodeURIComponent(s.symbol)}`;
   const ld = {
@@ -273,7 +295,8 @@ export function stockPageHtml(template, symbol) {
       { "@type": "Corporation", name: s.name, tickerSymbol: `NSE:${s.symbol}`, ...(s.industry ? { industry: s.industry } : {}) },
       { "@type": "BreadcrumbList", itemListElement: [
         { "@type": "ListItem", position: 1, name: "Jocular Insights", item: `${SITE}/` },
-        { "@type": "ListItem", position: 2, name: n, item: canonical },
+        ...(s.story?.sector ? [{ "@type": "ListItem", position: 2, name: s.story.sector.name, item: `${SITE}/sector/${s.story.sector.slug}` }] : []),
+        { "@type": "ListItem", position: s.story?.sector ? 3 : 2, name: n, item: canonical },
       ] },
     ],
   };
@@ -281,7 +304,8 @@ export function stockPageHtml(template, symbol) {
 <meta name="description" content="${esc(desc)}" />
 <link rel="canonical" href="${esc(canonical)}" />
 <meta property="og:type" content="website" />
-<meta property="og:title" content="${esc(`${n} (${s.symbol}) — Jocular Insights`)}" />
+<meta property="og:title" content="${esc(`${n} (${s.symbol}): ${[s.quality != null && `quality score ${Math.round(s.quality)}/100`, s.pe > 0 && `P/E ${num(s.pe)}`].filter(Boolean).join(", ") || "results and figures"}`)}" />
+${s.story?.sparse ? `<meta name="robots" content="noindex" />\n` : ""}
 <meta property="og:description" content="${esc(desc)}" />
 <meta property="og:url" content="${esc(canonical)}" />
 <script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\\u003c")}</script>`;

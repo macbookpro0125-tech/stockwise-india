@@ -83,6 +83,8 @@ export const api = {
   setWeeklyEmail: (on) => request("/api/account/weekly-email", { method: "POST", body: JSON.stringify({ on }) }),
   // The strategies' and the results calendar's public pages (PublicLists.jsx)
   publicScreens: () => request("/api/public/screens"),
+  publicSectors: () => request("/api/public/sectors"),
+  publicSector: slug => request(`/api/public/sectors/${encodeURIComponent(slug)}`),
   publicScreen: (slug) => request(`/api/public/screens/${encodeURIComponent(slug)}`),
   publicResultsCalendar: () => request("/api/public/results-calendar"),
   // As a GET the browser keeps the reply and re-checks it on the next visit

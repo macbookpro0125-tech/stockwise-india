@@ -36,6 +36,27 @@ assert.match(sitemapPart("stocks"), /<loc>[^<]+<\/loc><lastmod>\d{4}-\d{2}-\d{2}
   assert.ok(home.replace(/<[^>]+>/g, " ").split(/\s+/).length > 300, "the front page has real words in it");
   assert.match(aboutPageHtml(template), /<h1>About Jocular Insights<\/h1>/);
 }
+// the sector pages and each company's page in words (seo-story.js)
+{
+  const template = '<html><head><title>x</title></head><body><div id="root"></div></body></html>';
+  const { sectorsIndexHtml, sectorPageHtml } = await import("./seo-lists.js");
+  const { stockStory, publicSectors } = await import("./seo-story.js");
+  const sectors = publicSectors().sectors;
+  assert.ok(sectors.length >= 10, "a page for each sector");
+  assert.ok(sitemapPart("sectors").includes(`/sector/${sectors[0].slug}</loc>`) && sitemapXml().includes("sitemap-sectors.xml"), "the sector pages are in the sitemap");
+  const page = sectorPageHtml(template, sectors[0].slug);
+  assert.ok((page.match(/href="\/stock\//g) ?? []).length >= sectors[0].count, "a sector page links to every company in it");
+  assert.equal(sectorPageHtml(template, "no-such-sector"), null);
+  assert.match(sectorsIndexHtml(template), /<h1>NSE stocks by sector<\/h1>/);
+  const tcs = stockStory("TCS");
+  if (tcs) {
+    assert.ok(tcs.summary.length >= 2 && tcs.peers.length >= 3 && tcs.qa.length >= 3, "TCS in words, with peers and answers");
+    assert.ok(tcs.peers.every(p => p.symbol !== "TCS"), "not its own peer");
+    assert.ok(!/fair value|buy|sell/i.test(JSON.stringify(tcs)), "facts only: no fair value, nothing about buying or selling");
+    const html = stockPageHtml(template, "TCS");
+    assert.ok(html.includes(`href="/sector/${tcs.sector.slug}"`) && !/fair value &amp;/.test(html), "the breadcrumb links its sector; the title doesn't promise a fair value");
+  }
+}
 
 const sym = allMetrics().rows.find(r => r.name && r.close && r.marketCapCr > 10000)?.symbol;
 const s = publicStock(sym);

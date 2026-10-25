@@ -1,6 +1,6 @@
 // The app's copy of the pages written for search engines (server/seo-lists.js,
-// 24 Oct 2026): every strategy, one strategy's companies, and the results
-// calendar — for anyone, signed in or not. Companies open their own page.
+// 24 Oct 2026): every strategy, one strategy's companies, the results
+// calendar, and the sectors (25 Oct 2026) — for anyone, signed in or not. Companies open their own page.
 import { useEffect, useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { api } from "./api.js";
@@ -27,7 +27,7 @@ function useLoad(load, key) {
 const Wait = () => <div className="nw-skel" role="status" aria-label="Loading">{[0, 1, 2].map(i => <span key={i} />)}</div>;
 const More = () => (
   <p className="pl-more">
-    <A to="/screens">All stock screens</A> · <A to="/results-calendar">Results calendar</A> · <A to="/methodology">How the quality score works</A> · <A to="/disclaimer">Disclaimer</A>
+    <A to="/screens">All stock screens</A> · <A to="/sectors">Sectors</A> · <A to="/results-calendar">Results calendar</A> · <A to="/methodology">How the quality score works</A> · <A to="/disclaimer">Disclaimer</A>
   </p>
 );
 
@@ -120,6 +120,75 @@ export function ResultsCalendarPage({ signedIn }) {
       })}
       {c && !c.days.length && <p className="nw-empty">No results dates in the next two weeks on NSE's calendar.</p>}
       <p className="pl-note">Dates are board meetings companies have told NSE about; they can change.</p>
+      <More />
+    </PublicPage>
+  );
+}
+
+// /sectors and /sector/<slug> (server/seo-story.js): every listed company in a
+// sector, the sector's middle P/E and ROE, its highest quality names
+export function SectorsIndexPage({ signedIn }) {
+  const [d, error] = useLoad(() => api.publicSectors(), "sectors");
+  useEffect(() => { document.title = "NSE stocks by sector: every listed company, sector by sector | Jocular Insights"; }, []);
+  return (
+    <PublicPage title="NSE stocks by sector" signedIn={signedIn} updated={d?.pricesDate ? `${day(d.pricesDate)} (the latest NSE close)` : "with each NSE close"}>
+      <p className="pl-lede">Every NSE-listed company NSE classifies, sector by sector, with each sector's companies and figures.</p>
+      {error && <p className="nw-empty">{error}</p>}
+      {!d && !error && <Wait />}
+      {d && (
+        <ul className="pl-screens">
+          {d.sectors.map(s => (
+            <li key={s.slug}>
+              <A to={`/sector/${s.slug}`} className="pl-screen">
+                <span className="pl-screen-name">{s.name}<ChevronRight size={16} aria-hidden="true" /></span>
+                <span className="pl-screen-count">{s.count} {s.count === 1 ? "company" : "companies"}{s.largest.length ? `: ${s.largest.map(c => c.name).join(", ")}${s.count > 3 ? "…" : ""}` : ""}</span>
+              </A>
+            </li>
+          ))}
+        </ul>
+      )}
+      <More />
+    </PublicPage>
+  );
+}
+
+export function SectorPage({ slug, signedIn }) {
+  const [s, error] = useLoad(() => api.publicSector(slug), slug);
+  useEffect(() => { if (s) document.title = `${s.name} stocks on NSE: ${s.count} companies by P/E, ROE and quality | Jocular Insights`; }, [s]);
+  return (
+    <PublicPage title={s ? `${s.name} stocks on NSE` : "Sector"} signedIn={signedIn} updated={s?.pricesDate ? `${day(s.pricesDate)} (the latest NSE close)` : "with each NSE close"}>
+      <p className="pl-crumb"><A to="/sectors">Sectors</A> › {s?.name ?? "…"}</p>
+      {error && <p className="nw-empty">{error}</p>}
+      {!s && !error && <Wait />}
+      {s && (
+        <>
+          <p className="pl-lede">
+            {s.count} companies listed on NSE are in {s.name}, together worth {crore(s.totalMarketCapCr)}.
+            {s.medianPe ? ` The middle P/E among them is ${num(s.medianPe)}${s.medianRoe != null ? ` and the middle return on equity ${num(s.medianRoe)}%` : ""}.` : ""}
+            {s.best.length ? ` By quality score from their own filings, the highest are ${s.best.map(b => `${b.name} (${Math.round(b.quality)})`).join(", ")}.` : ""}
+          </p>
+          {s.screens.length > 0 && <>
+            <h2 className="pl-h">Screens its companies pass most</h2>
+            <ul className="pl-rules">{s.screens.map(x => <li key={x.slug}><A to={`/screens/${x.slug}`}>{x.name}</A> — {x.count} {x.count === 1 ? "company" : "companies"}</li>)}</ul>
+          </>}
+          <h2 className="pl-h">Every listed {s.name} company</h2>
+          <ol className="pl-cos">
+            {s.companies.map(c => (
+              <li key={c.symbol}>
+                <A to={stockPath(c.symbol)} className="pl-co">
+                  <CompanyLogo symbol={c.symbol} size={32} fallback={c.name} />
+                  <span className="pl-co-main">
+                    <span className="pl-co-name">{c.name}</span>
+                    <span className="pl-co-figs">{[c.price != null && `₹${num(c.price, 2)}`, crore(c.marketCapCr), c.pe > 0 && `P/E ${num(c.pe)}`, c.roe != null && `ROE ${num(c.roe)}%`].filter(Boolean).join(" · ")}</span>
+                  </span>
+                  {c.quality != null && <span className="pl-co-q" title="Quality score, from the company's filings">{Math.round(c.quality)}<small>/100</small></span>}
+                </A>
+              </li>
+            ))}
+          </ol>
+          <p className="pl-note">Sectors are NSE's own, from its index lists; a company NSE doesn't classify is placed by its industry or its filings. {NOT_ADVICE}</p>
+        </>
+      )}
       <More />
     </PublicPage>
   );
