@@ -1,3 +1,6 @@
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { DATA_DIR } from "./paths.js";
 // What management said on an earnings call, in a few plain points (24 Oct
 // 2026, "concall details": a summary of the call). Claude reads the
 // transcript the company filed with NSE (filing-summary.js reads it) and
@@ -62,6 +65,20 @@ export function checkPoints(output, transcript, pageCount) {
 }
 
 const DAY = 86_400_000;
+
+// The last eight calls' summaries for a company, newest first
+function saveSummary(symbol, call) {
+  try {
+    const dir = join(DATA_DIR, "call-summaries");
+    mkdirSync(dir, { recursive: true });
+    const file = join(dir, `${String(symbol).replace(/[^A-Z0-9&-]/g, "")}.json`);
+    const calls = existsSync(file) ? JSON.parse(readFileSync(file, "utf-8")).calls ?? [] : [];
+    const kept = [call, ...calls.filter(c => c.url !== call.url)].sort((a, b) => String(b.date ?? "").localeCompare(String(a.date ?? ""))).slice(0, 8);
+    writeFileSync(file, JSON.stringify({ symbol, calls: kept }));
+  } catch (e) {
+    console.error(JSON.stringify({ event: "call_summary_save_failed", symbol, message: e?.message }));
+  }
+}
 const cache = new Map(); // transcript url → { value, until }
 const pending = new Map();
 
@@ -102,6 +119,9 @@ export async function summarizeCall(symbol, name, filing, { client, read = readA
     }
     cache.set(key, { value, until: Date.now() + keepFor });
     if (cache.size > 2000) cache.delete(cache.keys().next().value);
+    // kept on disk too, for the public earnings-call page (seo-pages.js),
+    // which shows only summaries already written — a crawler never sets one off
+    if (value.points?.length) saveSummary(symbol, { url: filing.url, date: filing.date ?? null, points: value.points, model: value.model ?? null });
     return value;
   })().finally(() => pending.delete(key));
   pending.set(key, job);

@@ -44,6 +44,7 @@ import { countPageLoad, countActive, visitStats, isOwner } from "./visits.js";
 import { startDigestJobs, weeklyEmailOn, setWeeklyEmail, unsubscribe } from "./digest.js";
 import { publicScreen, publicScreens, publicResultsCalendar, screenPageHtml, screensIndexHtml, resultsCalendarHtml, homePageHtml, sectorsIndexHtml, sectorPageHtml } from "./seo-lists.js";
 import { publicSectors, publicSector } from "./seo-story.js";
+import { publicSubPage, isSubPagePath } from "./seo-pages.js";
 import { limits, clientIp, waitText } from "./rate-limit.js";
 import { startBackups } from "./backup.js";
 import { fetchTechnicals } from "./technicals.js";
@@ -57,7 +58,7 @@ import { summarizeFiling } from "./filing-summary.js";
 import { logoFor } from "./logos.js";
 import { PRESETS } from "./presets.js";
 import { DIST_DIR } from "./paths.js";
-import { robotsTxt, sitemapXml, sitemapPart, publicStock, stockPageHtml, methodologyPageHtml, stockScreenerPageHtml, aboutPageHtml } from "./seo.js";
+import { robotsTxt, sitemapXml, sitemapPart, publicStock, stockPageHtml, methodologyPageHtml, stockScreenerPageHtml, aboutPageHtml, pageHtml } from "./seo.js";
 import { HttpError, badRequest, payloadTooLarge } from "./http-errors.js";
 import { companyVideos } from "./videos.js";
 import { searchName } from "../src/webLinks.js";
@@ -714,6 +715,13 @@ export function createApp() {
       // The strategies' and the results calendar's pages, no sign-in needed (seo-lists.js, PublicLists.jsx)
       if (url.pathname === "/api/public/screens" && req.method === "GET") { sendJson(res, 200, publicScreens()); return; }
       if (url.pathname === "/api/public/sectors" && req.method === "GET") { sendJson(res, 200, publicSectors()); return; }
+      if (url.pathname === "/api/public/page" && req.method === "GET") {
+        const path = url.searchParams.get("path") ?? "";
+        const page = isSubPagePath(path) ? await publicSubPage(path) : null;
+        if (!page) { sendJson(res, 404, { error: "No such page." }); return; }
+        sendJson(res, 200, { path, title: page.title, body: page.body });
+        return;
+      }
       const publicSectorRoute = url.pathname.match(/^\/api\/public\/sectors\/([a-z0-9-]+)$/);
       if (publicSectorRoute && req.method === "GET") {
         const found = publicSector(publicSectorRoute[1]);
@@ -1434,6 +1442,25 @@ export function createApp() {
           res.end();
           return;
         }
+      }
+      // Each company's financials, results and earnings-call pages, /explore
+      // and /news (seo-pages.js): written into the page, with the same HTML
+      // beside it for the app to show (PublicHtmlPage.jsx)
+      if (isSubPagePath(url.pathname) && (req.method === "GET" || req.method === "HEAD") && existsSync(join(DIST_DIR, "index.html"))) {
+        await marketReady();
+        const page = await publicSubPage(url.pathname);
+        const template = readFileSync(join(DIST_DIR, "index.html"), "utf-8");
+        if (!page) {
+          res.writeHead(404, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
+          res.end(req.method === "HEAD" ? undefined : template);
+          return;
+        }
+        const data = `<script id="public-page-data" type="application/json">${JSON.stringify({ path: url.pathname, title: page.title, body: page.body }).replace(/</g, "\\u003c")}</script>`;
+        const html = pageHtml(template, { title: page.title, desc: page.desc, canonical: page.canonical, ld: { "@context": "https://schema.org", "@type": "WebPage", name: page.title, description: page.desc, url: page.canonical }, body: page.body + data })
+          .replace("</head>", `${page.noindex ? '<meta name="robots" content="noindex" />\n' : ""}</head>`);
+        res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache" });
+        res.end(req.method === "HEAD" ? undefined : html);
+        return;
       }
       // The front page and /about, written into the page for search engines
       // and link previews (seo-lists.js homePageHtml, seo.js aboutPageHtml)

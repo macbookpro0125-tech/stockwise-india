@@ -94,7 +94,7 @@ export function stockStory(symbol) {
   const screens = c.screens.get(m.symbol) ?? [];
   const latestFiled = m.quarters?.[0]?.filed ?? null;
   const qa = [
-    m.pe > 0 && { q: `What is ${poss(n)} P/E ratio?`, a: `${f1(m.pe)} at the ${dayText(loadMarketSnapshot()?.pricesDate) ?? "latest"} close${sectorPe ? `, against a median of ${f1(sectorPe)} for listed ${sectorName} companies` : ""}.` },
+    m.pe > 0 && { q: `What is ${poss(n)} P/E ratio?`, a: `${f1(m.pe)} at the ${dayText(loadMarketSnapshot()?.pricesDate) ?? "latest"} close${sectorPe && sectorName && group.length >= 5 ? `, against a median of ${f1(sectorPe)} for listed ${sectorName} companies` : ""}.` },
     !m.lender && m.debtToEquity != null && { q: `Is ${n} debt-free?`, a: m.debtToEquity < 0.01 ? `Yes — its latest balance sheet shows no meaningful borrowings.` : m.debtToEquity < 0.05 ? `Almost: its debt is only ${f2(m.debtToEquity)} times its equity in the latest balance sheet.` : `No. Its debt is ${f2(m.debtToEquity)} times its equity in the latest balance sheet.` },
     { q: `When are ${poss(n)} next results?`, a: m.nextResults ? `Its board meets to approve results on ${dayText(m.nextResults)}, as told to NSE.` : `No results date has been announced to NSE yet${latestFiled ? `; its latest results were filed on ${dayText(latestFiled)}` : ""}.` },
     q != null && { q: `What is ${poss(n)} quality score?`, a: `${Math.round(q)} out of 100, from checks on its business, earnings, balance sheet, governance, growth and valuation in its own filings. The methodology explains each check.` },

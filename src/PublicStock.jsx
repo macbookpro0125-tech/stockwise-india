@@ -49,6 +49,10 @@ function Story({ s }) {
         : <p>It passes none of the ready-made screens today. <a href="/screens">See every screen</a>.</p>}
       <h2>Questions about {n}</h2>
       {t.qa.map(x => <div key={x.q}><h3>{x.q}</h3><p>{x.a}</p></div>)}
+      {s.links?.length > 0 && <>
+        <h2>More on {n}</h2>
+        <ul>{s.links.map(l => <li key={l.path}><a href={l.path}>{l.label}</a></li>)}</ul>
+      </>}
     </section>
   );
 }

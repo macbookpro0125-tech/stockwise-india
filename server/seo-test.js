@@ -113,3 +113,30 @@ console.log(`ok: robots.txt, a sitemap of ${companies + pages.length} pages, and
   assert.equal(publicScreen("high-quality-compounders").guide.search, SCREEN_GUIDES.high_quality_compounders.search);
 }
 console.log("ok: every screen has its guide; joined and left are worked out against a week ago");
+
+// a company's financials, results and call pages, /explore (seo-pages.js)
+{
+  const { publicSubPage, isSubPagePath, quarterSlug, fyQuarter, subPagePaths } = await import("./seo-pages.js");
+  assert.equal(fyQuarter("2026-09-30"), "Q2 FY27");
+  assert.equal(quarterSlug("2026-03-31"), "q4-fy26");
+  assert.ok(isSubPagePath("/stock/TCS/financials") && isSubPagePath("/stock/TCS/results/q2-fy27") && isSubPagePath("/news") && !isSubPagePath("/stock/TCS/whatever"));
+  const row = allMetrics().rows.find(r => r.name && r.history?.length >= 3 && r.quarters?.length >= 5);
+  const fin = await publicSubPage(`/stock/${row.symbol}/financials`);
+  assert.ok(fin && /<h1>[^<]+ financial statements<\/h1>/.test(fin.body) && /Profit and loss/.test(fin.body), "a financials page");
+  const res = await publicSubPage(`/stock/${row.symbol}/results/${quarterSlug(row.quarters[0].fyEnd)}`);
+  assert.ok(res && res.body.includes(fyQuarter(row.quarters[0].fyEnd)), "its latest quarter's results page");
+  assert.equal(await publicSubPage(`/stock/${row.symbol}/results/q1-fy01`), null, "a quarter it doesn't have: none");
+  const call = await publicSubPage(`/stock/${row.symbol}/earnings-call`);
+  assert.ok(call && (call.noindex === true || /Earnings call,/.test(call.body)), "no saved summary: left out of search");
+  for (const p of [fin, res, call]) assert.ok(!/\b(null|undefined|NaN)\b/.test(p.body.replace(/<[^>]+>/g, " ")), "no null in the words");
+  assert.ok(sitemapXml().includes("sitemap-details.xml") && subPagePaths().some(([p]) => p.endsWith("/financials")), "in the sitemap");
+}
+// NSE's own classification, only for sector names the index lists use
+{
+  const { nseClassification } = await import("./market-data.js");
+  const known = new Set(["Capital Goods", "Information Technology"]);
+  assert.deepEqual(nseClassification({ industryInfo: { macro: "Industrials", sector: "Capital Goods", industry: "Aerospace & Defense", basicIndustry: "Aerospace & Defense" } }, known), { sector: "Capital Goods", basic: "Aerospace & Defense", macro: "Industrials" });
+  assert.equal(nseClassification({ industryInfo: { sector: "Something New" } }, known), null, "an unknown name isn't taken");
+  assert.equal(nseClassification({}, known), null);
+}
+console.log("ok: financials, results and call pages; NSE's classification");

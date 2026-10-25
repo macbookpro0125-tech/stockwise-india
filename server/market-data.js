@@ -528,6 +528,42 @@ async function sectorsBySymbol() {
   return { sectors: fromIndex, industrySectors, industries };
 }
 
+// NSE's own classification of each company (25 Oct 2026): the index lists
+// cover ~750 companies and NSE's announcement "industry" ~935, which left ~290
+// with no sector and ~900 guessed from their business lines (how TCS once read
+// "Financial Services"). NSE publishes a macro sector, sector, industry and
+// basic industry for every listed company on its quote page, so each company
+// the index lists miss is read from there once and kept; the last snapshot's
+// answers carry forward, so a run reads only companies new to it. Gentle: one
+// request at a time with a pause, stopping after five failures in a row.
+// Only sector names NSE's index lists also use are taken (KNOWN), so a
+// renamed label can't create a stray sector.
+export function nseClassification(json, known) {
+  const info = json?.industryInfo;
+  const sector = typeof info?.sector === "string" ? info.sector.trim() : null;
+  if (!sector || !known.has(sector)) return null;
+  return { sector, ...(info.basicIndustry ? { basic: String(info.basicIndustry).trim() } : {}), ...(info.macro ? { macro: String(info.macro).trim() } : {}) };
+}
+async function nseSectors(symbols, skip, { pauseMs = 300, max = Number(process.env.NSE_SECTOR_BATCH ?? 2500), getJson = fetchJson } = {}) {
+  const out = { ...(loadMarketSnapshot()?.nseSectors ?? {}) };
+  const known = new Set([...Object.values(fallbackSectors({})), ...Object.values(skip)]);
+  const todo = symbols.filter(s => !skip[s] && !(s in out)).slice(0, max);
+  let failed = 0, read = 0;
+  for (const sym of todo) {
+    try {
+      const json = await getJson(`${NSE_BASE}/api/quote-equity?symbol=${encodeURIComponent(sym)}`);
+      out[sym] = nseClassification(json, known); // null: asked, NSE gave none
+      failed = 0; read++;
+    } catch {
+      if (++failed >= 5) break;
+    }
+    if (pauseMs) await new Promise(r => setTimeout(r, pauseMs));
+  }
+  if (todo.length) console.error(`[sectors] NSE classification read for ${read} of ${todo.length} companies${failed >= 5 ? " (NSE stopped answering; the rest next run)" : ""}`);
+  return out;
+}
+export { nseSectors as _nseSectorsForTest };
+
 // The PSU index members, or the last snapshot's when none answer
 async function psuIndexSymbols() {
   const out = new Set();
@@ -715,6 +751,7 @@ export async function buildMarketSnapshot(fyEndDates, { yearsOfActions = 6 } = {
   // Oct 2026): every return and per-share figure on today's share basis
   for (const [sym, list] of Object.entries(year.rebases)) splits[sym] = [...(splits[sym] ?? []), ...list];
   const { sectors, industrySectors, industries } = await sectorsBySymbol();
+  const nseSectorMap = await nseSectors(Object.keys(latest.prices), sectors).catch(() => loadMarketSnapshot()?.nseSectors ?? {});
 
   const snapshot = {
     builtAt: now.toISOString(),
@@ -726,6 +763,8 @@ export async function buildMarketSnapshot(fyEndDates, { yearsOfActions = 6 } = {
     sectors,
     industrySectors,
     industries,
+    // NSE's own classification for the companies the index lists miss
+    nseSectors: nseSectorMap,
     // null when NSE didn't answer — unknown, not "no resignations"
     auditorResignations: await auditorResignations().catch(() => null),
     // The Momentum screen's figures (momentum.js) and next results dates;

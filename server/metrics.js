@@ -516,9 +516,12 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
   // (market-data.js sectorsBySymbol). Cyclical keeps the index sector's word
   // where there is one; otherwise the name test still applies — NSE files sugar
   // under FMCG, and a mapped sector mustn't make a sugar mill non-cyclical.
-  const indexSector = snap?.sectors?.[sym] ?? null;
+  // NSE's own classification (market-data.js nseSectors) counts as an NSE
+  // sector, ahead of the industry mapping and any guess from the filings
+  const nseSector = snap?.nseSectors?.[sym]?.sector ?? null;
+  const indexSector = snap?.sectors?.[sym] ?? nseSector ?? null;
   const peerSector = indexSector ?? snap?.industrySectors?.[sym] ?? null;
-  const industry = snap?.industries?.[sym] ?? null;
+  const industry = snap?.industries?.[sym] ?? snap?.nseSectors?.[sym]?.basic ?? null;
   const nameSector = sectorFromName(stock.name);
   const utility = peerSector ? UTILITY_SECTORS.has(peerSector) : false;
   const nameLower = String(stock.name || "").toLowerCase();

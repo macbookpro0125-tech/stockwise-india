@@ -84,6 +84,7 @@ export const api = {
   // The strategies' and the results calendar's public pages (PublicLists.jsx)
   publicScreens: () => request("/api/public/screens"),
   publicSectors: () => request("/api/public/sectors"),
+  publicPage: path => request(`/api/public/page?path=${encodeURIComponent(path)}`),
   publicSector: slug => request(`/api/public/sectors/${encodeURIComponent(slug)}`),
   publicScreen: (slug) => request(`/api/public/screens/${encodeURIComponent(slug)}`),
   publicResultsCalendar: () => request("/api/public/results-calendar"),

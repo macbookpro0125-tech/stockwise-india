@@ -3442,3 +3442,15 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 .ps-story table th, .ps-story table td { text-align: right; white-space: nowrap; padding: 8px 10px; }
 .ps-story table th:first-child, .ps-story table tbody th { text-align: left; }
 .ps-story table caption { text-align: left; white-space: normal; }
+/* The server-written public pages shown in the app (PublicHtmlPage.jsx) */
+.public-html { flex: 1; width: 100%; }
+.public-html .seo-stock { max-width: 860px; padding-top: 28px; padding-bottom: 8px; }
+.public-html h1 { font-size: clamp(24px, 6vw, 30px); font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; }
+.public-html h2 { font-size: 18px; font-weight: 600; margin: 26px 0 10px; }
+.public-html h3 { font-size: 15px; font-weight: 600; margin: 16px 0 6px; }
+.public-html p, .public-html li { color: var(--t2); line-height: 1.6; }
+.public-html .ps-table-wrap { overflow-x: auto; margin: 10px 0; }
+.public-html table { border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.public-html th, .public-html td { padding: 7px 12px; border-bottom: 1px solid var(--bdr); text-align: right; white-space: nowrap; }
+.public-html tbody th, .public-html thead th:first-child { text-align: left; font-weight: 500; color: var(--t2); position: sticky; left: 0; background: var(--bg); }
+.public-html caption { text-align: left; color: var(--t3); font-size: 12px; padding-bottom: 6px; white-space: normal; }

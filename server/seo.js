@@ -28,6 +28,7 @@ export const SITE = "https://jocularinsights.in";
 // (a function, read when the sitemap is made: seo-lists.js imports from here)
 import { LIST_PATHS } from "./seo-lists.js";
 import { stockStory, SECTOR_PATHS } from "./seo-story.js";
+import { subPagePaths, stockPageLinks } from "./seo-pages.js";
 const PUBLIC_PATHS = ["/", "/about", "/help", "/methodology", SCREENER_PAGE_PATH, "/privacy", "/disclaimer"];
 
 export const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -70,7 +71,7 @@ export function robotsTxt() {
 // screens and front page the last close — not today's date on everything,
 // which teaches Google to ignore the dates. (changefreq and priority, which
 // Google ignores, are gone.)
-const SITEMAPS = ["pages", "screens", "sectors", "stocks"];
+const SITEMAPS = ["pages", "screens", "sectors", "stocks", "details"];
 const urlset = entries => `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries.map(([path, lastmod]) => `<url><loc>${SITE}${path}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ""}</url>`).join("\n")}\n</urlset>\n`;
 export function sitemapXml() {
   const lastmod = loadMarketSnapshot()?.pricesDate ?? null;
@@ -82,6 +83,8 @@ export function sitemapPart(name) {
   if (name === "pages") return urlset(PUBLIC_PATHS.map(p => [p, p === "/" ? lastmod : null]));
   if (name === "screens") return urlset(LIST_PATHS().map(p => [p, lastmod]));
   if (name === "sectors") return urlset(SECTOR_PATHS().map(p => [p, lastmod]));
+  // each company's financials, latest results and earnings calls; /explore and /news
+  if (name === "details") return urlset(subPagePaths());
   if (name === "stocks") {
     // pages with nothing to say are noindexed (seo-story.js), so not listed
     const rows = (allMetrics().rows ?? []).filter(r => r.name && (r.quarters?.length || r.history?.length || r.research?.quality != null)).sort((a, b) => (b.marketCapCr ?? 0) - (a.marketCapCr ?? 0));
@@ -106,6 +109,8 @@ export function publicStock(symbol) {
     nextResults: r.nextResults ?? null,
     // what the page says in words: summary, trend, peers, screens, Q&A (seo-story.js)
     story: stockStory(symbol),
+    // its own other pages: financials, latest results, earnings calls (seo-pages.js)
+    links: stockPageLinks(r).map(([path, label]) => ({ path, label })),
   };
 }
 
@@ -178,6 +183,7 @@ ${t.summary.length || t.trend ? `<h2>${esc(n)} in short</h2>${t.summary.length ?
 ${t.peers.length ? `<h2>${esc(n)} against similar companies</h2><div class="ps-table-wrap"><table><caption>Listed ${esc(t.sector?.name ?? "")} companies closest in size, at the last close</caption><thead><tr><th>Company</th><th>Price</th><th>P/E</th><th>ROE</th><th>ROCE</th><th>Debt/equity</th><th>Quality</th></tr></thead><tbody>${peerRows}</tbody></table></div>${t.sector ? `<p><a href="/sector/${esc(t.sector.slug)}">Every listed ${esc(t.sector.name)} company</a></p>` : ""}` : ""}
 <h2>Stock screens ${esc(n)} passes</h2>${t.screens.length ? `<ul>${t.screens.map(x => `<li><a href="/screens/${esc(x.slug)}">${esc(x.name)}</a></li>`).join("")}</ul>` : `<p>It passes none of the ready-made screens today. <a href="/screens">See every screen</a>.</p>`}
 <h2>Questions about ${esc(n)}</h2>${t.qa.map(x => `<h3>${esc(x.q)}</h3><p>${esc(x.a)}</p>`).join("")}
+${s.links?.length ? `<h2>More on ${esc(n)}</h2><ul>${s.links.map(l => `<li><a href="${esc(l.path)}">${esc(l.label)}</a></li>`).join("")}</ul>` : ""}
 </section>`;
 }
 

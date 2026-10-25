@@ -17,6 +17,9 @@ installGlow();
 try {
   const data = document.getElementById("public-stock-data");
   if (data) window.__PUBLIC_STOCK__ = JSON.parse(data.textContent);
+  // and a company's financials, results or call page, /explore or /news (PublicHtmlPage.jsx)
+  const page = document.getElementById("public-page-data");
+  if (page) window.__PUBLIC_PAGE__ = JSON.parse(page.textContent);
 } catch {}
 
 // The installed app's frame (public/sw.js) — built copies only: the dev server
