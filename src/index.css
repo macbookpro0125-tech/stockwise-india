@@ -2666,7 +2666,7 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 /* An index's or a news item's page on a wide screen (24 Oct 2026, "the gap on the right"):
    two columns across the page instead of one narrow column on the left */
 @media (min-width: 1100px) {
-  .ex-detail, .nw-detail { max-width: 1320px; }
+  .ex-detail, .nw-detail { max-width: 1600px; margin-inline: auto; }
   .dt-cols { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(320px, 1fr); gap: 36px; align-items: start; }
   .dt-below { display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 0 36px; align-items: start; }
   .ex-detail .dt-side .ex-returns { grid-template-columns: repeat(2, minmax(0, 1fr)); }

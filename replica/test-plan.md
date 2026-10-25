@@ -8,7 +8,7 @@ or a 5xx from our server; `e2e/sweep.spec.js` also writes an accessibility scan
 
 There is no recon map for this app (it wasn't built as a clone), so the flows
 below come from the app itself. ✅ = automated and passing, 👁 = checked by hand
-in the browser, ⏳ = needs Salman (real accounts or services).
+in the browser, ⏳ = needs the project owner (real accounts or services).
 
 ## F01 Accounts
 | Case | What | How |
@@ -130,6 +130,6 @@ so not the app.
 
 ## Not covered (and why)
 - Payments: none built yet.
-- Real devices: emulated phone only; a real iPhone/Android pass is still for Salman.
+- Real devices: emulated phone only; a real iPhone/Android pass is still pending.
 - Offline: automated for the installed app (M-E1, M-E2). Slow network: not automated yet.
 - Time zones: the app shows NSE dates as filed; the alert schedule is IST-only by design.

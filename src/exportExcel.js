@@ -2,8 +2,8 @@
 //  - Categorized: the screen's companies grouped into buckets by data rules
 //    (core compounder, high-growth, value play, steady, speculative, not
 //    rated), each row with its scores, risk tier, distance from Phase 1,
-//    price levels and flags — the layout of the categorized workbook Salman
-//    brought (9 Oct 2026), in the app's own wording: "Price position", never
+//    price levels and flags — the layout of the categorized workbook used as a
+//    reference (9 Oct 2026), in the app's own wording: "Price position", never
 //    "buy status";
 //  - How to read: the bucket rules and what each column means;
 //  - Dashboard: summary formulas over the Stocks sheet, the ten closest to
