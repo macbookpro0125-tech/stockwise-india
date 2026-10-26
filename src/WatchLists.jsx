@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { Plus, MoreHorizontal, Check, ListPlus, Sparkles } from "lucide-react";
 import CompanyLogo from "./CompanyLogo.jsx";
 import { suggestListNames } from "./watchListNames.js";
+import { useOnScreen } from "./popPlace.js";
 
 // The Watchlist page's tabs (24 Oct 2026, "add watchlist tabs; suggest names,
 // or we can name it anything"): All — every starred stock — and the user's
@@ -106,6 +107,7 @@ export function ListPicker({ ticker, name, lists, onToggle, onNew, label = null 
     const below = window.innerHeight - r.bottom > 260;
     setOpen({ right: Math.max(8, window.innerWidth - r.right), ...(below ? { top: r.bottom + 6 } : { bottom: window.innerHeight - r.top + 6 }) });
   };
+  useOnScreen(pop, open, setOpen);
   useEffect(() => {
     if (!open) return;
     const away = e => { if (!box.current?.contains(e.target) && !pop.current?.contains(e.target)) setOpen(null); };

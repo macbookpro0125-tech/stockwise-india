@@ -3226,7 +3226,7 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
   .wl-pop, .wl-dialog, .wl-dialog-scrim { animation: none; }
   .wl-tab::after { transition: none; }
 }
-.wl-pop.wl-pop-fixed { position: fixed; top: auto; z-index: 900; }
+.wl-pop.wl-pop-fixed { position: fixed; top: auto; z-index: 900; max-width: min(280px, calc(100vw - 16px)); }
 
 /* Saved to the watchlist, from anywhere (SaveToList.jsx): a glass panel over
    the bottom of the page — over the tab bar on a phone — with the user's lists */

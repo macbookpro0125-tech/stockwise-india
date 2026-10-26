@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { Globe, MessagesSquare, Newspaper, Building2, Wrench, ExternalLink, Play, Search } from "lucide-react";
 import { api } from "./api.js";
 import { webLinks, searchName, SEARCH_ALL } from "./webLinks.js";
+import { useOnScreen } from "./popPlace.js";
 
 // A company page's "Around the web" (24 Oct 2026: "show tweets, Reddit and
 // YouTube videos about the stock in one place; in one click search the whole
@@ -113,6 +114,7 @@ export function WebMenu({ symbol, name }) {
     const below = window.innerHeight - r.bottom > 340;
     setOpen({ right: Math.max(8, window.innerWidth - r.right), ...(below ? { top: r.bottom + 6 } : { bottom: window.innerHeight - r.top + 6 }) });
   };
+  useOnScreen(pop, open, setOpen);
   useEffect(() => {
     if (!open) return;
     const away = e => { if (!box.current?.contains(e.target) && !pop.current?.contains(e.target)) setOpen(null); };
