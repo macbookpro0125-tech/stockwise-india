@@ -29,6 +29,18 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black" />
   <meta name="apple-mobile-web-app-title" content="Jocular" />
+  <!-- In the Android or iPhone app, the page the server writes for search
+       engines (seo.js: a heading and paragraphs) stays unseen until the app
+       has drawn itself: it flashed up for a moment at every start (26 Oct
+       2026). main.jsx adds app-drawn after the first draw. A browser shows
+       it as ever — it's what a search engine and a visitor without script read -->
+  <style>html.in-app:not(.app-drawn) #root { visibility: hidden; }</style>
+  <script>
+    (function () {
+      var ua = navigator.userAgent || "";
+      if (/; wv\)/.test(ua) || window.Capacitor) document.documentElement.classList.add("in-app");
+    })();
+  </script>
 </head>
 <body>
   <!-- Under the status bar in the Android app (index.css .safe-top), on

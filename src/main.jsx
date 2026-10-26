@@ -44,10 +44,18 @@ function ReconnectNotice() {
   return on ? <div role="status" className="reconnect-notice">Jocular Insights is updating — reconnecting…</div> : null;
 }
 
+// Once the app has drawn itself, the root is shown (index.html keeps it
+// unseen in the app till then, so the search engines' page doesn't flash)
+function Drawn() {
+  useEffect(() => { document.documentElement.classList.add("app-drawn"); }, []);
+  return null;
+}
+
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <App />
     <ReconnectNotice />
+    <Drawn />
   </StrictMode>
 );
 // started: the page's guard (index.html) shows no "didn't start" message
