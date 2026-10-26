@@ -3628,3 +3628,47 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
   box-shadow: inset 0 0 0 0.75px rgba(16, 24, 40, 0.12), inset 0 2px 3px #fff, inset 0 -3px 5px rgba(255, 255, 255, 0.8), inset 0 0 12px rgba(16, 24, 40, 0.06), 0 10px 24px rgba(16, 24, 40, 0.18); }
 @media (max-width: 640px) { .bottom-tab-bar.collapsed .btb-lens { opacity: 0 !important; } }
 @media (prefers-reduced-transparency: reduce) { .btb-lens-glass { -webkit-backdrop-filter: none; backdrop-filter: none; } }
+
+/* Screeners on a phone, as the approved design (26 Oct 2026: "this is not
+   exactly the same"): soft glows behind the page so the glass reads as glass,
+   a shine across each glass box's top, round company logos, muted labels on
+   the tabs not open, the "Continue" card in the same glass, and a deeper fade
+   behind the floating buttons */
+@media (max-width: 640px) {
+  html[data-discover-step="strategies"] .app-shell.on-discover {
+    background:
+      radial-gradient(340px 260px at -40px 230px, rgba(0, 224, 190, 0.16), transparent 70%),
+      radial-gradient(320px 260px at calc(100% + 60px) 150px, rgba(91, 75, 255, 0.22), transparent 70%),
+      radial-gradient(420px 320px at 40% 780px, rgba(62, 121, 255, 0.12), transparent 70%),
+      var(--bg) !important;
+  }
+  [data-theme="light"][data-discover-step="strategies"] .app-shell.on-discover {
+    background:
+      radial-gradient(340px 260px at -40px 230px, rgba(0, 180, 150, 0.12), transparent 70%),
+      radial-gradient(320px 260px at calc(100% + 60px) 150px, rgba(91, 75, 255, 0.1), transparent 70%),
+      radial-gradient(420px 320px at 40% 780px, rgba(62, 121, 255, 0.08), transparent 70%),
+      var(--bg) !important;
+  }
+}
+.ps-group, .ps-fav, .ps-recent, .pc-box { position: relative; }
+.ps-group::after, .ps-fav::after, .ps-recent::after, .pc-box::after {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 46%; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0));
+}
+[data-theme="light"] .ps-group::after, [data-theme="light"] .ps-fav::after, [data-theme="light"] .ps-recent::after, [data-theme="light"] .pc-box::after { background: linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0)); }
+.ps-logos img, .ps-logos .logo-tile, .ps-logos > span > span, .ps-change img, .ps-change .logo-tile, .ps-change > span:first-child { border-radius: 50% !important; }
+.ps-logos img, .ps-change img { padding: 2px; box-sizing: border-box; border: 0 !important; }
+.ps-logos > span { box-shadow: 0 0 0 2px #15151F; }
+[data-theme="light"] .ps-logos > span { box-shadow: 0 0 0 2px #fff; }
+@media (max-width: 640px) {
+  .bottom-tab-bar .btb-tab { color: var(--t2); }
+  .bottom-tab-bar .btb-tab.lit { color: var(--accent); }
+}
+.ps .phone-continue, .ps .phone-continue.glow { border: 1px solid var(--pg-edge); background: var(--pg-fill); box-shadow: var(--pg-shine); animation: none; position: relative; border-radius: 16px; }
+.ps .phone-continue::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 46%; border-radius: inherit; pointer-events: none; background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0)); }
+.pc-float { background: linear-gradient(180deg, var(--bg) 0%, color-mix(in srgb, var(--bg) 82%, transparent) 58%, transparent 100%); padding-bottom: 26px; }
+/* the top bar over Screeners is see-through, no line under it: the page's
+   glow runs up behind it, as in the design */
+@media (max-width: 640px) {
+  html[data-discover-step="strategies"] .app-shell.on-discover .app-header { background: transparent !important; border-bottom-color: transparent !important; }
+}

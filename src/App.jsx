@@ -381,7 +381,7 @@ export default function App() {
   const logout = () => forgetPush().finally(() => api.logout().then(() => signedOut()));
   const accountDeleted = () => signedOut("Your account and everything saved with it have been deleted.");
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
+    <div className={`app-shell${!open && tab === "discover" ? " on-discover" : ""}`} style={{ minHeight: "100vh", background: "var(--bg)" }}>
       <PriceStrip onOpenStock={openSymbol} onOpenIndex={name => { setIndexOpen(name); goTab("explore"); }} />
       <Header tab={open ? null : tab} onTab={goTab} account={account} onLogout={logout} onDeleted={accountDeleted} onSearch={openSymbol} theme={theme} onToggleTheme={toggleTheme} onTour={askForTour} />
       <div style={{ height: 16 }} />
