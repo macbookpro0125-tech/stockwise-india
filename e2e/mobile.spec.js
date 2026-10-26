@@ -388,7 +388,7 @@ test("M-H16 the tab bar's glass slides to the tab tapped @phone", async ({ page,
   test.skip(!isMobile, "the phone's tab bar");
   await page.goto("/");
   const bar = page.getByRole("navigation", { name: "Pages" });
-  const glass = bar.locator(".btb-glass");
+  const glass = bar.locator(".btb-lens");
   const centre = async loc => { const b = await loc.boundingBox(); return b.x + b.width / 2; };
   await expect(glass).toBeVisible();
   await expect.poll(async () => Math.abs(await centre(glass) - await centre(bar.getByRole("button", { name: "Discover" })))).toBeLessThan(3);
@@ -452,11 +452,13 @@ test("M-H21 the tab bar's glass slides under a finger and opens the tab it's let
   await page.mouse.move(box.x + 40, y);
   await page.mouse.down();
   for (let x = box.x + 40; x <= box.x + box.width * 0.55; x += 12) await page.mouse.move(x, y);
-  await expect(page.locator(".btb-glass.held")).toHaveCount(1);
+  // held, the lens is a clear drop (liquidLens.js, 26 Oct 2026); let go, the capsule again
+  const clear = () => page.locator(".btb-lens-glass").evaluate(e => Number(getComputedStyle(e).opacity));
+  await expect.poll(clear).toBeGreaterThan(0.9);
   await expect(bar.locator(".btb-tab.lit")).toHaveText(/Explore/);
   await page.mouse.up();
   await expect(bar.getByRole("button", { name: "Explore" })).toHaveAttribute("aria-current", "page");
-  await expect(page.locator(".btb-glass.held")).toHaveCount(0);
+  await expect.poll(clear).toBeLessThan(0.05);
   // a tap still opens its tab
   await bar.getByRole("button", { name: "Watchlist" }).click();
   await expect(bar.getByRole("button", { name: "Watchlist" })).toHaveAttribute("aria-current", "page");

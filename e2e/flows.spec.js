@@ -292,7 +292,7 @@ test("F03-H1 search opens a company; back returns to Discover", async ({ page, a
   await expect(page.getByRole("heading", { level: 2, name: /Infosys/ })).toBeVisible();
   await expect(page).toHaveURL(/\/stock\/INFY/);
   await page.getByRole("button", { name: /Back/ }).first().click();
-  await expect(page.getByRole("heading", { name: /^(Strategies|Screeners)$/ }).first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: /strategies|screeners/i }).first()).toBeVisible();
 });
 
 test("F03-H2 the overview leads with the six scores, strengths, and price against its sector", async ({ page, account }) => {

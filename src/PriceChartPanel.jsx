@@ -521,7 +521,9 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
     });
 
     const kept = keepView.current;
-    if (kept && kept.bars === bars) chart.timeScale().setVisibleLogicalRange(kept.range);
+    // (a chart redrawn while hidden — another tab of a phone's company page —
+    // had no view to keep, and restoring that nothing threw)
+    if (kept && kept.bars === bars && kept.range) chart.timeScale().setVisibleLogicalRange(kept.range);
     else applyRange(range, chart);
 
     // The level tags on a phone, placed where each line is drawn: the price

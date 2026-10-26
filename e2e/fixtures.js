@@ -79,6 +79,10 @@ export async function openStocks(page) {
 // company's page, whose header has the tabs
 export async function openPage(page, name) {
   const re = new RegExp(`^${name}`);
+  // the app drawn first (the header and the tab bar come together): asked
+  // the moment a page starts loading, neither was there yet and a phone was
+  // taken for a computer
+  await page.locator(".app-header").first().waitFor();
   const row = page.locator(".discovery-tabs");
   if (await row.isVisible().catch(() => false)) return row.getByRole("button", { name: re }).click();
   const bar = page.getByRole("navigation", { name: "Pages" });
