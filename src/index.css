@@ -1622,8 +1622,13 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 @media (prefers-reduced-motion: no-preference) {
   .sd.ap .sd-side > * { animation: apRise 900ms var(--ap-ease) both; }
   .sd.ap .sd-side > *:nth-child(2) { animation-delay: 120ms; }
+  /* not on a phone (26 Oct 2026, "the details page only is laggy"): each
+     section rose 56px and grew as it scrolled in, so the page trailed the
+     finger, and every section was redrawn at a new size each frame */
   @supports (animation-timeline: view()) {
-    .sd.ap .sd-main .ss-section { animation: apRiseScroll linear both; animation-timeline: view(); animation-range: entry 0% entry 38%; }
+    @media (min-width: 641px) {
+      .sd.ap .sd-main .ss-section { animation: apRiseScroll linear both; animation-timeline: view(); animation-range: entry 0% entry 38%; }
+    }
   }
 }
 @keyframes apRiseScroll { from { opacity: 0.15; transform: translateY(56px) scale(0.985); } to { opacity: 1; transform: none; } }
