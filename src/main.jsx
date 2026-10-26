@@ -11,6 +11,12 @@ import "./installApp.js"; // early: the browser offers installing soon after loa
 
 installGlow();
 
+// Android draws a frosted blur again for every frame of a scroll: measured in
+// the app on 26 Oct 2026, 61-66% of frames came too late with it, 4% without.
+// There the glass goes clear, with the floating parts a little more solid
+// (index.css html.no-blur); an iPhone keeps the blur, which it draws smoothly
+if (/Android/i.test(navigator.userAgent)) document.documentElement.classList.add("no-blur");
+
 // A company page includes the same public figures as JSON beside its
 // crawlable HTML. Read them before React replaces #root so the first client
 // render can keep the page visible while the session check runs.

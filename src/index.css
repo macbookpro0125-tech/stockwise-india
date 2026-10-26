@@ -3736,3 +3736,15 @@ html.pc-pushed.pc-dragging .app-shell > * { transition: none; }
 }
 [data-theme="light"] .pc-drawer .st-card::after, [data-theme="light"] .pc-drawer .st-account::after { background: linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0)); }
 .pc-drawer .st-row { position: relative; z-index: 1; }
+
+/* Android: no frosted blur (main.jsx sets html.no-blur). The cards stay clear
+   glass over the glows; what floats over the page gets a solid base under
+   its gloss, so text never sits on the page scrolling beneath it */
+html.no-blur *, html.no-blur *::before, html.no-blur *::after { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+html.no-blur { --pg-round: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.03)), linear-gradient(var(--s2), var(--s2)); }
+html.no-blur[data-theme="light"] { --pg-round: linear-gradient(180deg, #fff, #f6f7fa); }
+html.no-blur .bottom-tab-bar { background: color-mix(in srgb, var(--s2) 96%, transparent) !important; }
+html.no-blur .sd.ap .sd-bar, html.no-blur .sip-bar, html.no-blur .discovery-header-sticky, html.no-blur .compare-loading { background: var(--bg); }
+html.no-blur .screen-back-pin, html.no-blur .sp-pop, html.no-blur .stl { background: var(--s2); }
+html.no-blur .pc-sheet { background: var(--s1); }
+html.no-blur .pc-drawer-head { background: var(--s1); }
