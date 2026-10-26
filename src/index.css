@@ -1755,6 +1755,7 @@ html[data-discover-step="strategies"] .discovery-tabs.tabs-on-discover { display
   .sd-main[data-phone-tab="technicals"] > [data-tab]:not([data-tab="technicals"]) { display: none !important; }
   .sd-main[data-phone-tab="peers"] > [data-tab]:not([data-tab="peers"]) { display: none !important; }
   .sd-main[data-phone-tab="filings"] > [data-tab]:not([data-tab="filings"]) { display: none !important; }
+  .sd-main[data-phone-tab="web"] > [data-tab]:not([data-tab="web"]) { display: none !important; }
 }
 
 /* Read by screen readers, not shown */
