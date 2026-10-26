@@ -3813,3 +3813,10 @@ html.no-blur .pc-drawer-head { background: var(--s1); }
   .sd-main[data-phone-tab="overview"] { margin-top: -8px; }
   .sd .sd-side { margin-bottom: 10px; }
 }
+
+/* Android: no drop shadows either (main.jsx html.no-blur). Each is drawn
+   again for every frame of a scroll; in the app with software graphics
+   (26 Oct 2026) they cost a quarter of each frame. Cards keep their borders;
+   the inset top-edge shine stays, being cheap */
+html.no-blur *, html.no-blur *::before, html.no-blur *::after { box-shadow: none !important; text-shadow: none !important; }
+html.no-blur { --pg-shine: none; }
