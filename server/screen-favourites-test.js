@@ -43,7 +43,7 @@ const rowsT = {
 const t = todayFor(["A", "B", "C", "GONE"], s => rowsT[s], new Date("2026-10-26T06:00:00Z"));
 assert.equal(t.avg1d, 0.5, "the average move of its companies");
 assert.equal(t.best.name, "Alpha"); assert.equal(t.worst.name, "Beta");
-assert.deepEqual(t.results, [{ symbol: "A", name: "Alpha", date: "2026-10-29" }], "only results, only within the week ahead");
+assert.deepEqual(t.results, [{ symbol: "A", name: "Alpha", date: "2026-10-29", cmp: null, ret1d: 2 }], "only results, only within the week ahead");
 console.log("ok: a card's day — the move, best and worst, results this week");
 
 // The notification: one company, or several across screeners

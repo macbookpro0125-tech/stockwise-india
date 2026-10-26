@@ -10,6 +10,7 @@ import ResultsTable from "./ResultsTable.jsx";
 import ScreensHome from "./ScreensHome.jsx";
 import PhoneScreens from "./PhoneScreens.jsx";
 import { NEW_SCREEN_EVENT } from "./phoneChrome.js";
+import { noteRecent } from "./screensHome.js";
 import FilterPanel, { isActiveFilter } from "./screener/FilterPanel.jsx";
 import StrategyPicker from "./StrategyPicker.jsx";
 import { returnScroll } from "./returnScroll.js";
@@ -336,6 +337,8 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews }) {
 
   const applyPreset = useCallback(async preset => {
     if (preset.custom) strategiesStore.acknowledge(preset.id);
+    // however it was opened — search, a link, the Continue card — it is recent
+    if (preset.id) noteRecent(preset.id);
     setActivePresetId(preset.id);
     setActivePresetName(preset.name ?? null);
     setActivePresetAbout(preset.description ?? null);

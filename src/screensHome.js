@@ -47,7 +47,12 @@ export function useScreensHome() {
     const fn = () => setN(n => n + 1);
     listeners.add(fn);
     if (favourites == null) load();
-    return () => listeners.delete(fn);
+    // the cards keep up by themselves: on coming back to the app, and every
+    // few minutes while it's open (26 Oct 2026: "these should change automatically")
+    const fresh = () => { if (document.visibilityState === "visible" && favourites != null) load(); };
+    const every = setInterval(fresh, 5 * 60_000);
+    document.addEventListener("visibilitychange", fresh);
+    return () => { listeners.delete(fn); clearInterval(every); document.removeEventListener("visibilitychange", fresh); };
   }, []);
   return { favourites: screensHome.favourites(), changes, today, pricesDate, recents: recents(), loaded: favourites != null };
 }
@@ -58,7 +63,7 @@ const MAX_RECENT = 8;
 function recents() {
   try { return JSON.parse(localStorage.getItem(RECENT_KEY) || "[]").filter(r => r && typeof r.id === "string"); } catch { return []; }
 }
-function noteRecent(id) {
+export function noteRecent(id) {
   try {
     const next = [{ id, at: Date.now() }, ...recents().filter(r => r.id !== id)].slice(0, MAX_RECENT);
     localStorage.setItem(RECENT_KEY, JSON.stringify(next));

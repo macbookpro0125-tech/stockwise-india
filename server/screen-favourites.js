@@ -79,7 +79,8 @@ const isoDay = d => d.toISOString().slice(0, 10);
 export function todayFor(symbols, rowOf, now = new Date()) {
   const rows = symbols.map(rowOf).filter(Boolean);
   const moved = rows.filter(r => Number.isFinite(r.ret1d));
-  const pick = r => r && { symbol: r.symbol, name: r.name ?? r.symbol, ret1d: r.ret1d };
+  const price = r => (Number.isFinite(r.cmp) ? r.cmp : null);
+  const pick = r => r && { symbol: r.symbol, name: r.name ?? r.symbol, ret1d: r.ret1d, cmp: price(r) };
   const sorted = [...moved].sort((a, b) => b.ret1d - a.ret1d);
   // IST, where NSE's dates are
   const today = isoDay(new Date(now.getTime() + 330 * 60_000));
@@ -88,13 +89,13 @@ export function todayFor(symbols, rowOf, now = new Date()) {
     .map(r => ({ r, e: (r.events ?? []).find(e => e.kind === "board" && RESULTS.test(e.title ?? "") && e.date >= today && e.date <= weekOut) }))
     .filter(x => x.e)
     .sort((a, b) => a.e.date.localeCompare(b.e.date))
-    .map(({ r, e }) => ({ symbol: r.symbol, name: r.name ?? r.symbol, date: e.date }));
+    .map(({ r, e }) => ({ symbol: r.symbol, name: r.name ?? r.symbol, date: e.date, cmp: price(r), ret1d: Number.isFinite(r.ret1d) ? r.ret1d : null }));
   return {
     avg1d: moved.length ? Math.round((moved.reduce((s, r) => s + r.ret1d, 0) / moved.length) * 100) / 100 : null,
     best: moved.length > 1 ? pick(sorted[0]) : null,
     worst: moved.length > 1 ? pick(sorted.at(-1)) : null,
     resultsCount: results.length,
-    results: results.slice(0, 6),
+    results: results.slice(0, 12), // the card cycles through them
   };
 }
 

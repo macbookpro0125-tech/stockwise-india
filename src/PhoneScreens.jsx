@@ -117,6 +117,39 @@ const pct = v => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v).toFixed(1)}%`
 const tone = v => (v > 0.05 ? "up" : v < -0.05 ? "down" : "flat");
 const weekday = iso => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
 
+const rupees = v => `₹${v.toLocaleString("en-IN", { maximumFractionDigits: v < 100 ? 2 : 0 })}`;
+
+// Results this week, three at a time, moving on by itself every few seconds
+// (26 Oct 2026: "these should change automatically and the price also")
+const SHOWN = 3;
+function ResultsTicker({ results, total }) {
+  const [at, setAt] = useState(0);
+  const pages = Math.ceil(results.length / SHOWN);
+  useEffect(() => {
+    if (pages < 2 || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const t = setInterval(() => setAt(i => (i + 1) % pages), 4000);
+    return () => clearInterval(t);
+  }, [pages]);
+  const page = results.slice(at * SHOWN, at * SHOWN + SHOWN);
+  return (
+    <span className="ps-fav-results">
+      <span className="ps-fav-since">
+        Results this week{total > 1 ? ` · ${total}` : ""}
+        {pages > 1 && <span className="ps-tick-dots" aria-hidden="true">{Array.from({ length: pages }, (_, i) => <i key={i} className={i === at ? "on" : ""} />)}</span>}
+      </span>
+      <span className="ps-results-list" key={at}>
+        {page.map(r => (
+          <span key={r.symbol} className="ps-result">
+            <span className="ps-change-name">{cardName(r.name || r.symbol)} <small>{weekday(r.date)}</small></span>
+            {r.cmp != null && <span className="ps-price">{rupees(r.cmp)}</span>}
+            {r.ret1d != null && <em className={`ps-move ${tone(r.ret1d)}`}>{pct(r.ret1d)}</em>}
+          </span>
+        ))}
+      </span>
+    </span>
+  );
+}
+
 function FavouriteCard({ p, count, change, day, closeDate, onOpen }) {
   const changed = (change?.joinedCount ?? 0) + (change?.leftCount ?? 0);
   const rows = [...(change?.joined ?? []).slice(0, 2).map(c => ({ ...c, how: "Joined" })), ...(change?.left ?? []).slice(0, 2).map(c => ({ ...c, how: "Left" }))].slice(0, 3);
@@ -156,18 +189,11 @@ function FavouriteCard({ p, count, change, day, closeDate, onOpen }) {
             <span key={m.way} className="ps-change">
               <CompanyLogo symbol={m.symbol} size={22} fallback={m.name} />
               <span className="ps-change-name">{cardName(m.name || m.symbol)}</span>
+              {m.cmp != null && <span className="ps-price">{rupees(m.cmp)}</span>}
               <em className={`ps-move ${tone(m.ret1d)}`}>{pct(m.ret1d)}</em>
             </span>
           ))}
-          {day.resultsCount > 0 && (
-            <span className="ps-fav-results">
-              <span className="ps-fav-since">Results this week</span>
-              <span className="ps-results-list">
-                {day.results.slice(0, 3).map(r => <span key={r.symbol}>{cardName(r.name || r.symbol)} <small>{weekday(r.date)}</small></span>)}
-                {day.resultsCount > 3 && <span className="ps-row-sub">and {day.resultsCount - 3} more</span>}
-              </span>
-            </span>
-          )}
+          {day.resultsCount > 0 && <ResultsTicker results={day.results} total={day.resultsCount} />}
         </span>
       )}
       <span className="ps-fav-go" aria-hidden="true"><ChevronRight size={16} /></span>
@@ -212,7 +238,8 @@ export default function PhoneScreens({ onSelect, onNewScreen, continueCard = nul
   const closeAll = () => { if (window.history.state?.[OPEN_ALL]) window.history.back(); else setAll(false); };
 
   const favs = favourites.map(id => byId.get(id)).filter(Boolean);
-  const recent = recents.filter(r => byId.has(r.id) && !favourites.includes(r.id)).slice(0, 6);
+  const recent = recents.filter(r => byId.has(r.id)).slice(0, 6);
+  // a starred one opened lately shows in both (26 Oct 2026: "Recently opened only shows one")
   const shownIds = new Set([...favs.map(p => p.id), ...recent.map(r => r.id)]);
   const rest = list.filter(p => !shownIds.has(p.id));
   const brandNew = !favs.length && !recent.length;
