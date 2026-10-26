@@ -207,7 +207,7 @@ export function SettingsDrawer({ children, enabled = true }) {
       if (!g?.opening || !g.live) return;
       const dx = (e.changedTouches[0]?.clientX ?? g.x) - g.x;
       setDrag(null);
-      if (dx < width() * 0.3) chrome.close(); else tick();
+      if (dx < width() * 0.3) chrome.close(); else tick(); // settled open: a tick
     };
     window.addEventListener("touchstart", down, { passive: true });
     window.addEventListener("touchmove", move, { passive: false });
@@ -250,6 +250,19 @@ export function SettingsDrawer({ children, enabled = true }) {
     document.body.style.overflow = "hidden";
     return () => { document.removeEventListener("keydown", esc); document.body.style.overflow = overflow; };
   }, [open]);
+
+  // The page moves over to make room, as the Claude app's does (26 Oct 2026:
+  // "it should not overlap, it should move the screen"): everything in the
+  // app shifts right by as much of the panel as shows (index.css .pc-pushed)
+  useEffect(() => {
+    const root = document.documentElement;
+    const w = width();
+    const shift = !shown || closing ? 0 : drag != null ? Math.max(0, w + drag) : w;
+    root.style.setProperty("--pc-shift", `${shift}px`);
+    root.classList.toggle("pc-pushed", shown || drag != null);
+    root.classList.toggle("pc-dragging", drag != null);
+  }, [shown, closing, drag]);
+  useEffect(() => () => { document.documentElement.classList.remove("pc-pushed", "pc-dragging"); document.documentElement.style.removeProperty("--pc-shift"); }, []);
 
   if (!phone || (!shown && drag == null)) return null;
   const pulled = drag != null ? { transform: `translateX(${drag}px)`, transition: "none" } : undefined;
