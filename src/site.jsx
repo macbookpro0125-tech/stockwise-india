@@ -59,29 +59,29 @@ export function SiteLink({ to, newTab = false, style, children }) {
   );
 }
 
-// The one disclaimer line under every page (pages don't repeat it above)
+// The one disclaimer line under every page (pages don't repeat it above).
+// 26 Oct 2026, "can we organise this or reduce it": one short line — the
+// trademark notice is on the Disclaimer page, a tap away — then the links in
+// two quiet rows: the help and legal pages, and the site's public pages (which
+// the app's own tabs cover, so the app leaves that row out: index.css)
+const FOOT_LINK = { color: "var(--t3)", textDecoration: "none" };
 export function SiteFooter() {
   return (
-    <footer style={{ borderTop: "1px solid var(--bdr)", marginTop: 32, padding: "22px var(--page-x) 30px" }}>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "10px 24px", alignItems: "center", justifyContent: "space-between", fontSize: 12, color: "var(--t3)" }}>
-        <span>
-          Jocular Insights · Data from NSE filings and daily prices · An educational tool, not investment advice — consult a SEBI-registered adviser
-          <br />Company names and logos are trademarks of their owners, shown only to identify each company; no affiliation or endorsement is implied.
-        </span>
-        {/* wraps: seven links don't fit one line on a phone, and a row that can't
-            wrap widens the whole page (24 Oct 2026) */}
-        <nav style={{ display: "flex", flexWrap: "wrap", gap: "8px 18px" }}>
-          <SiteLink to="/stock-screener-india">Stock screener</SiteLink>
-          <SiteLink to="/screens">Screens</SiteLink>
-          <SiteLink to="/sectors">Sectors</SiteLink>
-          <SiteLink to="/results-calendar">Results calendar</SiteLink>
-          <SiteLink to="/help">Help</SiteLink>
-          <SiteLink to="/about">About</SiteLink>
-          <SiteLink to="/methodology">Methodology</SiteLink>
-          <SiteLink to="/disclaimer">Disclaimer</SiteLink>
-          <SiteLink to="/privacy">Privacy</SiteLink>
-        </nav>
-      </div>
+    <footer className="site-foot">
+      <p className="site-foot-line">Not investment advice. Consult a SEBI-registered adviser · Data from NSE filings and daily closes</p>
+      <nav className="site-foot-links" aria-label="About Jocular Insights">
+        <SiteLink to="/help" style={FOOT_LINK}>Help</SiteLink>
+        <SiteLink to="/methodology" style={FOOT_LINK}>Methodology</SiteLink>
+        <SiteLink to="/about" style={FOOT_LINK}>About</SiteLink>
+        <SiteLink to="/disclaimer" style={FOOT_LINK}>Disclaimer</SiteLink>
+        <SiteLink to="/privacy" style={FOOT_LINK}>Privacy</SiteLink>
+      </nav>
+      <nav className="site-foot-links site-foot-public" aria-label="On the website">
+        <SiteLink to="/stock-screener-india" style={FOOT_LINK}>Stock screener</SiteLink>
+        <SiteLink to="/screens" style={FOOT_LINK}>Screens</SiteLink>
+        <SiteLink to="/sectors" style={FOOT_LINK}>Sectors</SiteLink>
+        <SiteLink to="/results-calendar" style={FOOT_LINK}>Results calendar</SiteLink>
+      </nav>
     </footer>
   );
 }

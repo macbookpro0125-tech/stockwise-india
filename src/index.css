@@ -3932,3 +3932,12 @@ html.no-blur { --pg-shine: none; }
 .pf-sheet-figs b { font-size: 15px; font-weight: 500; font-variant-numeric: tabular-nums; }
 .pf-sheet-figs b.up { color: var(--green); }
 .pf-sheet-figs b.down { color: var(--red); }
+
+/* The footer (site.jsx SiteFooter): one line, then two quiet rows of links */
+.site-foot { border-top: 1px solid var(--bdr); margin-top: 32px; padding: 18px var(--page-x) 26px; display: flex; flex-direction: column; gap: 10px; font-size: 12px; line-height: 1.5; color: var(--t3); }
+.site-foot-line { margin: 0; }
+.site-foot-links { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.site-foot-links a:hover { color: var(--t1) !important; }
+.site-foot-public { opacity: 0.8; }
+/* the app has tabs for these */
+html.in-app .site-foot-public { display: none; }

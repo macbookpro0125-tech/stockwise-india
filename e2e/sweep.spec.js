@@ -59,12 +59,15 @@ test("legal pages @phone", async ({ page }) => {
   }
 });
 
-// 22 Oct 2026: company logos are shown to identify each company; the footer
-// says whose they are, and the Disclaimer how a company asks for one to go
+// 22 Oct 2026: company logos are shown to identify each company; the
+// Disclaimer says whose they are and how a company asks for one to go, and
+// every page's footer links to it (26 Oct 2026: the footer shortened to one line)
 test("company names and logos are credited to their owners", async ({ page }) => {
   await page.goto("/disclaimer");
   const footer = page.getByRole("contentinfo");
-  await expect(footer.getByText(/names and logos are trademarks of their owners/i)).toBeVisible();
+  await expect(footer.getByRole("link", { name: "Disclaimer" })).toBeVisible();
+  await expect(footer.getByText(/Not investment advice/)).toBeVisible();
+  await expect(page.getByText(/trademarks belong to their owners/i)).toBeVisible();
   await expect(page.getByText(/doesn.t mean a company endorses/i)).toBeVisible();
   await expect(page.getByText(/ask us to remove its logo/i)).toBeVisible();
 });

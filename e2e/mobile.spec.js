@@ -327,7 +327,7 @@ test("M-H14 each company chapter ends with the next one, and no empty band below
 
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
   await page.waitForTimeout(600);
-  const gap = await page.evaluate(() => document.querySelector(".bottom-tab-bar").getBoundingClientRect().top - document.querySelector("footer nav").getBoundingClientRect().bottom);
+  const gap = await page.evaluate(() => document.querySelector(".bottom-tab-bar").getBoundingClientRect().top - [...document.querySelectorAll("footer > *")].filter(e => e.getBoundingClientRect().height > 0).at(-1).getBoundingClientRect().bottom);
   expect(gap, "the footer clears the tab bar").toBeGreaterThanOrEqual(8);
   expect(gap, "no wide empty band").toBeLessThanOrEqual(48);
 });
