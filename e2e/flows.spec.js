@@ -407,15 +407,18 @@ test("F04-H1 watch from the company page, note it, remove it", async ({ page, ac
   await page.goto("/stock/TCS");
   await page.getByRole("button", { name: "Add to watchlist" }).click();
   await openPage(page, "Watchlist");
-  await expect(page.getByText("Tata Consultancy Services Limited").first()).toBeVisible();
-  await page.getByRole("button", { name: "+ Add note" }).first().click();
-  await page.getByPlaceholder("e.g. Wait for Q3 results…").fill("Résumé check ✓ — wait for Q3");
+  await expect(page.getByRole("button", { name: /^Open Tata Consultancy Services/ })).toBeVisible();
+  // the row's ⋯: a note, then removing it (26 Oct 2026)
+  await page.getByRole("button", { name: /^More for Tata Consultancy Services/ }).click();
+  await page.getByRole("button", { name: /^Add a note for/ }).click();
+  await page.getByRole("textbox", { name: "Note" }).fill("Résumé check ✓ — wait for Q3");
   await page.getByRole("button", { name: "Save" }).click();
   await page.reload();
   await openPage(page, "Watchlist");
-  await expect(page.getByText("Résumé check ✓ — wait for Q3")).toBeVisible();
-  await page.getByRole("button", { name: "Remove from watchlist" }).first().click();
-  await expect(page.getByText("Tata Consultancy Services Limited")).toHaveCount(0);
+  await page.getByRole("button", { name: /^More for Tata Consultancy Services/ }).click();
+  await expect(page.getByRole("button", { name: /^Edit note for/ })).toHaveText(/Résumé check ✓ — wait for Q3/);
+  await page.getByRole("button", { name: "Remove from watchlist" }).click();
+  await expect(page.getByRole("button", { name: /^Open Tata Consultancy Services/ })).toHaveCount(0);
 });
 
 // ── F05 portfolio ───────────────────────────────────────────────────────────

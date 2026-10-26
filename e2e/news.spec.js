@@ -115,11 +115,8 @@ test("N-H4 a starred company's news shows on the Watchlist, with a dot on its ta
   const news = page.getByRole("region", { name: "News from your companies" });
   await expect(news.locator(".nw-row").first()).toBeVisible();
   await expect(page.locator(".tab-news-dot:visible, .btb-dot-news:visible")).toHaveCount(0);
-  // its card has its latest news, one line to tap, inside the card
-  const line = page.locator(".wl-row").locator(".wl-card-news").first();
-  await expect(line).toBeVisible();
-  const [card, lineBox] = [await page.locator(".wl-row").first().boundingBox(), await line.boundingBox()];
-  expect(lineBox.x + lineBox.width).toBeLessThanOrEqual(card.x + card.width + 1);
+  // its row is in the list (since 26 Oct 2026 the news is the section's, not a line on each row)
+  await expect(page.locator(".wl-row").first()).toBeVisible();
   await news.locator(".nw-row").first().click();
   await expect(page.getByRole("article")).toBeVisible();
 });

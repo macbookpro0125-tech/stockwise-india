@@ -33,13 +33,16 @@ test("F04-E1 a long note isn't cut off without warning", async ({ page, account 
   await page.goto("/stock/TCS");
   await page.getByRole("button", { name: "Add to watchlist" }).click();
   await openPage(page, "Watchlist");
-  await page.getByRole("button", { name: "+ Add note" }).first().click();
-  const box = page.getByPlaceholder("e.g. Wait for Q3 results…");
+  // a row's ⋯ holds its note (26 Oct 2026)
+  await page.getByRole("button", { name: /^More for / }).first().click();
+  await page.getByRole("button", { name: /^Add a note for/ }).click();
+  const box = page.getByRole("textbox", { name: "Note" });
   await box.fill("x".repeat(700));
   const kept = await box.inputValue();
   await page.getByRole("button", { name: "Save" }).click();
   await page.reload();
   await openPage(page, "Watchlist");
+  await page.getByRole("button", { name: /^More for / }).first().click();
   const shown = (await page.getByRole("button", { name: /^Edit note for/ }).first().innerText()).trim();
   // Either the box stops at the limit, or what was typed is what was saved
   expect(shown.length, "saved note length vs what the box accepted").toBe(kept.length);
