@@ -45,8 +45,8 @@ export default function CreateAlertModal({ stock, onClose }) {
       onClick={e => { if (e.target === e.currentTarget) onClose(false); }}
       style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
     >
-      <div style={{ background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 18, padding: 28, width: 380, maxWidth: "90vw", boxShadow: "var(--sh-lg)", animation: "fadeUp 200ms cubic-bezier(0,0,0.2,1) backwards" }}>
-        <div style={{ fontSize: 17, fontWeight: 500, marginBottom: 4, letterSpacing: "-0.02em" }}>Set Alert</div>
+      <div role="dialog" aria-modal="true" aria-labelledby="alert-dialog-title" style={{ background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 18, padding: 28, width: 380, maxWidth: "90vw", boxShadow: "var(--sh-lg)", animation: "fadeUp 200ms cubic-bezier(0,0,0.2,1) backwards" }}>
+        <div id="alert-dialog-title" style={{ fontSize: 17, fontWeight: 500, marginBottom: 4, letterSpacing: "-0.02em" }}>Set Alert</div>
         <div style={{ fontSize: 13, color: "var(--t3)", marginBottom: 20 }}>
           {name || symbol}{cmp ? ` · now ₹${cmp.toLocaleString("en-IN")}` : ""}
         </div>
@@ -59,7 +59,7 @@ export default function CreateAlertModal({ stock, onClose }) {
 
         <div style={label}>Price (₹)</div>
         <input
-          type="number" value={threshold} autoFocus
+          type="number" aria-label="Alert price (₹)" value={threshold} autoFocus
           onChange={e => setThreshold(e.target.value)}
           onKeyDown={e => { if (e.key === "Enter") create(); if (e.key === "Escape") onClose(false); }}
           className="input-base mono" style={{ marginBottom: 10, fontSize: 15 }}

@@ -479,7 +479,7 @@ test("F06-H1 set an alert from the company page, see it, delete it", async ({ pa
   await page.goto("/stock/TCS");
   await page.getByRole("button", { name: "Set an alert" }).click();
   await page.getByRole("button", { name: "Drops to" }).click();
-  await page.locator("input[type=number]").last().fill("1500");
+  await page.getByRole("dialog", { name: "Set Alert" }).getByLabel("Alert price (₹)").fill("1500");
   await page.getByRole("button", { name: "Create alert" }).click();
   await page.goto("/");
   await openPage(page, "Alerts");

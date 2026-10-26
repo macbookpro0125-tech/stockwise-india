@@ -21,7 +21,7 @@ test("F06-E1 double-clicking Create alert makes one alert", async ({ page, accou
   await page.goto("/stock/INFY");
   await page.getByRole("button", { name: "Set an alert" }).click();
   await page.getByRole("button", { name: "Drops to" }).click();
-  await page.locator("input[type=number]").last().fill("900");
+  await page.getByRole("dialog", { name: "Set Alert" }).getByLabel("Alert price (₹)").fill("900");
   await page.getByRole("button", { name: "Create alert" }).dblclick();
   await page.waitForTimeout(1000);
   const list = await (await page.context().request.get(`${baseURL}/api/alerts`)).json();
