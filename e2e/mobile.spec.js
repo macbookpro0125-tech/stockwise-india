@@ -258,7 +258,7 @@ test("M-H10 a company's chapters are pages of their own on a phone @phone", asyn
   expect(height, "a chapter is a few screens, not the whole page").toBeLessThan(12000);
   // the Summary's Safety line opens the Safety chapter
   await tabs.getByRole("button", { name: "Summary" }).click();
-  await page.getByRole("region", { name: "In one line each" }).getByRole("button", { name: /^Safety/ }).click();
+  await page.getByRole("region", { name: "In short" }).getByRole("button", { name: /^Safety/ }).click();
   await expect(tabs.getByRole("button", { name: "Safety" })).toHaveAttribute("aria-current", "true");
   await expect(page.locator("#sec-health")).toBeVisible();
 });
@@ -364,7 +364,7 @@ test("M-H19 the peers table keeps its figures on a phone's screen @phone", async
 test("M-H15 the Summary answers each chapter in a line, and each line opens it @phone", async ({ page, account, isMobile }) => {
   test.skip(!isMobile, "the phone layout");
   await page.goto("/stock/TCS");
-  const verdict = page.getByRole("region", { name: "In one line each" });
+  const verdict = page.getByRole("region", { name: "In short" });
   await expect(verdict).toBeVisible();
   for (const name of ["Business", "Growth", "Safety", "Owners", "Value", "Price"]) {
     await expect(verdict.getByRole("button", { name: new RegExp(`^${name}`) })).toBeVisible();

@@ -105,7 +105,8 @@ export function chartPageUrl(symbol, name, levels) {
 export const LEVEL_KEYS = ["target", "fv25", "p1", "p2", "p3", "stopLoss"];
 
 // page: drawn as the whole page (ChartPage.jsx) — fills the window, no card
-export default function PriceChartPanel({ symbol, name, levels, page = false }) {
+// compact: shorter, in a phone's Summary — the full height is a tap away (⤢)
+export default function PriceChartPanel({ symbol, name, levels, page = false, compact = false }) {
   const [prefs, setPrefs] = useState(() => {
     const p = readJson(PREFS_KEY, DEFAULT_PREFS);
     return { ...DEFAULT_PREFS, ...p, ind: { ...(p.ind ?? DEFAULT_PREFS.ind) } };
@@ -238,7 +239,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
     ? Math.max(300, vh - (narrow ? 330 : 260))   // pane proportions only; the page lays out by flex
     : fullscreen
       ? Math.max(320, vh - (narrow ? 210 : 150))
-      : (narrow ? 380 : 400) + extraPanes * (narrow ? 90 : 110);
+      : (compact ? 250 : narrow ? 380 : 400) + extraPanes * (narrow ? 90 : 110);
 
   // Kept while the prices stay the same: the company page hands over a new
   // levels object each time it redraws, and a new list rebuilt the whole

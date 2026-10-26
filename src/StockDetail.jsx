@@ -163,7 +163,13 @@ function CompanyProfile({ symbol, m }) {
     ["Auditor", latest?.auditor ?? null],
     ["ISIN", l?.isin],
   ].filter(([, v]) => v);
+  // The three most people want stay out; the registry's (shares, face value,
+  // auditor, ISIN…) go under the button with the contact details
+  const KEY = ["Employees", "Incorporated", "On NSE main board since"];
+  const shown = facts.filter(([label]) => KEY.includes(label));
+  const registry = facts.filter(([label]) => !KEY.includes(label));
   const extra = [
+    ...registry,
     ["Website", p?.website && <a href={p.website} target="_blank" rel="noreferrer" style={{ color: "var(--accent)" }}>{p.website.replace(/^https?:\/\//, "")} ↗</a>],
     ["Registered office", p?.registeredOffice],
     ["Corporate office", p?.corporateOffice !== p?.registeredOffice ? p?.corporateOffice : null],
@@ -194,7 +200,7 @@ function CompanyProfile({ symbol, m }) {
           )}
           {!p && <p style={{ fontSize: 12.5, color: "var(--t3)", lineHeight: 1.55, margin: "0 0 10px" }}>No business description on NSE: the company doesn't file a business responsibility report (only the top ~1,000 listed companies must). The basics below are from its listing and results.</p>}
           <div className="company-facts">
-            {facts.map(([label, value]) => (
+            {shown.map(([label, value]) => (
               <div key={label} style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 11.5, color: "var(--t3)", marginBottom: 2 }}>{label}</div>
                 <div style={{ fontSize: 13, color: "var(--t1)", fontWeight: 400, overflowWrap: "anywhere" }}>{value}</div>
@@ -229,6 +235,7 @@ function CompanyProfile({ symbol, m }) {
 }
 
 function ShareholdingPanel({ symbol }) {
+  const phone = usePhone();
   const [quarters, setQuarters] = useState(null);
   useEffect(() => {
     let cancelled = false;
@@ -253,6 +260,9 @@ function ShareholdingPanel({ symbol }) {
   const latest = quarters.at(-1);
   const segments = defs.filter(s => latest[s.key] != null && latest[s.key] > 0);
   const period = q => { const [, m, y] = q.period.split("-"); return `${m.charAt(0)}${m.slice(1).toLowerCase()} ${y}`; };
+  // A phone shows the two quarters the change is between, so the table fits
+  // its screen (26 Oct 2026: the earlier columns peeked in, cut off)
+  const cols = phone && quarters.length > 2 ? [quarters[0], quarters.at(-1)] : quarters;
   const change = key => {
     const vals = quarters.map(q => q[key]).filter(v => v != null);
     return vals.length >= 2 ? Math.round((vals.at(-1) - vals[0]) * 100) / 100 : null;
@@ -278,8 +288,8 @@ function ShareholdingPanel({ symbol }) {
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11 }}>
             <thead>
               <tr>
-                <th style={{ textAlign: "left", padding: "6px 8px", color: "var(--t3)", fontWeight: 400, borderBottom: "1px solid var(--bdr2)", position: "sticky", left: 0, background: "var(--s2)" }}></th>
-                {quarters.map(q => <th key={q.period} style={{ textAlign: "right", padding: "6px 8px", color: "var(--t3)", fontWeight: 500, borderBottom: "1px solid var(--bdr2)", whiteSpace: "nowrap" }}>{period(q)}</th>)}
+                <th style={{ textAlign: "left", padding: "6px 8px", color: "var(--t3)", fontWeight: 400, borderBottom: "1px solid var(--bdr2)", position: "sticky", left: 0, background: "var(--s2)", boxShadow: "10px 0 10px -10px rgba(0, 0, 0, 0.55)", zIndex: 1 }}></th>
+                {cols.map(q => <th key={q.period} style={{ textAlign: "right", padding: "6px 8px", color: "var(--t3)", fontWeight: 500, borderBottom: "1px solid var(--bdr2)", whiteSpace: "nowrap" }}>{period(q)}</th>)}
                 <th style={{ textAlign: "right", padding: "6px 8px", color: "var(--t3)", fontWeight: 400, borderBottom: "1px solid var(--bdr2)" }}>Change</th>
               </tr>
             </thead>
@@ -289,10 +299,10 @@ function ShareholdingPanel({ symbol }) {
                 const chg = change(key);
                 return (
                   <tr key={key}>
-                    <td style={{ padding: "6px 8px", color: "var(--t1)", fontWeight: 500, borderBottom: "1px solid var(--bdr2)", whiteSpace: "nowrap", position: "sticky", left: 0, background: "var(--s2)" }}>
+                    <td style={{ padding: "6px 8px", color: "var(--t1)", fontWeight: 500, borderBottom: "1px solid var(--bdr2)", whiteSpace: "nowrap", position: "sticky", left: 0, background: "var(--s2)", boxShadow: "10px 0 10px -10px rgba(0, 0, 0, 0.55)", zIndex: 1 }}>
                       <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: color, marginRight: 6, verticalAlign: "middle" }} />{label}
                     </td>
-                    {quarters.map(q => (
+                    {cols.map(q => (
                       <td key={q.period} style={{ textAlign: "right", padding: "6px 8px", color: q[key] != null ? "var(--t2)" : "var(--t3)", borderBottom: "1px solid var(--bdr2)" }}>
                         {q[key] != null ? `${q[key]}%` : "—"}
                       </td>
@@ -688,6 +698,107 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
     <div style={{ fontSize: 10, color: ok ? color : "var(--t2)", marginTop: 3, fontWeight: ok ? 500 : 400 }}>{ok ? good : neutral}</div>
   );
 
+  // Value's inputs: first on a computer; on a phone, folded under the answer
+  // (26 Oct 2026: the answer before the tools)
+  const overrideCard = m && (
+    <div className="ss-section" data-tour="override" style={{ border: "1px solid var(--bdr2)", borderRadius: 14, padding: 20, marginBottom: 16, background: "var(--s2)" }}>
+      {valued ? (
+        <>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 400, color: "var(--t1)", marginBottom: 2, letterSpacing: "-0.01em" }}>Verify & Override</div>
+              <div style={{ fontSize: 11, color: "var(--t3)" }}>
+                Auto-filled from NSE filings — edit any value to move the fair value (and your price levels, if on); the research score always uses the filings
+                {usingCustomInputs ? <span style={{ marginLeft: 6, color: "var(--accent)", fontWeight: 400 }}>· custom</span> : <span style={{ marginLeft: 6 }}>· filings baseline</span>}
+              </div>
+            </div>
+            {baseline && usingCustomInputs && (
+              <button type="button" onClick={() => applyBaseline(baseline)} className="btn-ghost" style={{ height: 30, fontSize: 12 }}>Reset</button>
+            )}
+          </div>
+          <ValuedAs valuation={m.valuation} />
+
+          <div className="ss-grid-3">
+            <div>
+              <label style={labelStyle}>{onBook ? "Book/share less net NPA (₹)" : onCycle ? "Mid-cycle EPS (₹)" : usualEpsShown ? "Usual EPS (₹)" : `EPS ${fyLabel(m.fyEnd)} (₹)`}</label>
+              <input type="number" aria-label={onBook ? "Book per share less net NPA" : onCycle ? "Mid-cycle EPS" : "EPS"} value={eps} onChange={e => setEps(e.target.value)} style={inputStyle} />
+              {onBook ? hint(parseFloat(eps) > 0, "✓ From the filings", "Owners' equity − net NPA, per share")
+                : onCycle ? hint(parseFloat(eps) > 0, "✓ Revenue a share × through-cycle margin", "")
+                : usualEpsShown
+                  ? <div style={{ fontSize: 10, color: "var(--yellow)", marginTop: 3, fontWeight: 400 }}>{fyLabel(m.fyEnd)} was ₹{m.epsJump.eps.toFixed(2)} — see note above</div>
+                  : hint(parseFloat(eps) > 0, "✓ EPS loaded", "From the annual results")}
+            </div>
+            <div>
+              <label style={labelStyle}>{onBook ? "Justified P/B" : onCycle ? "Usual multiple (mid-cycle)" : "Historical P/E"}</label>
+              <input type="number" aria-label={onBook ? "Justified P/B" : onCycle ? "Usual multiple" : "Historical P/E"} value={pe} onChange={e => setPe(e.target.value)} style={inputStyle} />
+              {onBook ? hint(parseFloat(pe) > 0, "✓ From its return on equity", "(ROE − g) ÷ (cost of equity − g)")
+                : onCycle ? hint(parseFloat(pe) > 0, "✓ Median on mid-cycle EPS", "")
+                : hint(parseFloat(pe) > 0 && parseFloat(pe) <= 30, "✓ Reasonable P/E", "Review high P/E assumption")}
+            </div>
+            <div>
+              <label style={labelStyle}>{onBook ? "Book growth % p.a." : onCycle ? "Revenue growth % p.a." : "EPS Growth % p.a."}</label>
+              <input type="number" aria-label="Growth % a year" value={growthPct} onChange={e => {
+                setGrowthPct(e.target.value);
+                // A bank's P/B moves with its growth rate
+                if (onBook) { const pb = pbAt(m.valuation.roe, Number(e.target.value), costOfEquity); if (pb != null) setPe(String(round(pb, 2))); }
+              }} style={inputStyle} />
+              {(() => {
+                if (onBook) return hint(false, "", "Retained earnings, capped at 8%");
+                if (onCycle) return hint(false, "", "Mid-cycle EPS grows with revenue");
+                // Where the default came from, until it's overridden
+                const basis = baseline && growthPct === baseline.growthPct ? m.growthBasis : null;
+                return hint(parseFloat(growthPct) >= 15, basis ? `✓ Strong growth · ${basis}` : "✓ Strong growth", basis ?? "Expected annual growth");
+              })()}
+            </div>
+          </div>
+
+          {onBook
+            ? <BankValuation m={m} growthInput={growthPct} costOfEquity={costOfEquity} onCostOfEquity={ke => {
+                setCostOfEquity(ke);
+                const pb = pbAt(m.valuation.roe, Number(growthPct), ke);
+                if (pb != null) setPe(String(round(pb, 2)));
+              }} />
+            : onCycle ? <CyclicalValuation m={m} epsInput={eps} multipleInput={pe} />
+            : <PeHistoryTable m={m} />}
+        </>
+      ) : (
+        <>
+          <ValuedAs valuation={m.valuation} />
+          <NoFairValue m={m} />
+        </>
+      )}
+    </div>
+  );
+  const priceCard = m && (
+    <>
+    {/* Current price */}
+    <div style={card}>
+      <SectionTitle icon={CalendarDays} style={{ marginBottom: 4 }}>Current Price</SectionTitle>
+      <p style={{ fontSize: 12, color: "var(--t2)", margin: "0 0 12px" }}>
+        Price for <strong>{data.name}</strong>. Override if you want to test a different price.
+      </p>
+      {priceLabel && <p style={{ fontSize: 12, color: "var(--accent)", margin: "0 0 8px", fontWeight: 500 }}>{priceLabel}</p>}
+      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+        <span style={{ fontSize: 14, color: "var(--t2)", fontWeight: 500 }}>₹</span>
+        <input type="number" aria-label="Price to test" value={actionPrice} onChange={e => { setActionPrice(e.target.value); setPriceLabel("Your price"); }} placeholder="Current price"
+          style={{ flex: "1 1 140px", minWidth: 120, maxWidth: 320, height: 42, padding: "0 14px", border: "1px solid var(--accent)", borderRadius: 8, fontSize: 15, fontWeight: 500, outline: "none", background: "var(--s1)", color: "var(--t1)" }} />
+        {data.quote && String(data.quote.cmp) !== actionPrice && (
+          <button type="button" onClick={() => { setActionPrice(String(data.quote.cmp)); setPriceLabel(quoteLabel(data.quote)); }}
+            style={{ height: 42, padding: "0 12px", borderRadius: 8, border: "1px solid var(--accent)", background: "var(--s1)", fontSize: 12, cursor: "pointer", color: "var(--accent)" }}>
+            Use latest close
+          </button>
+        )}
+        {data.close && String(data.close.price) !== actionPrice && (
+          <button type="button" onClick={() => { setActionPrice(String(data.close.price)); setPriceLabel(closeLabel(data.close)); }}
+            style={{ height: 42, padding: "0 12px", borderRadius: 8, border: "1px solid var(--bdr2)", background: "var(--s2)", fontSize: 12, cursor: "pointer", color: "var(--t2)" }}>
+            Use NSE close
+          </button>
+        )}
+      </div>
+    </div>
+    </>
+  );
+
   return (
     <div style={{ padding: "8px var(--page-x) 16px", color: "var(--t1)" }}>
       {showAlertModal && (
@@ -736,11 +847,11 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       )}
 
       <section id="sec-overview" className="ss-section sd-section" data-tab="overview">
-        <PriceChartPanel symbol={data.symbol} name={data.name} levels={valued || levels ? { ...(valued ? fv : {}), ...(levels ?? {}) } : null} />
+        {/* a phone: the gist and a bar per chapter first, then a shorter chart */}
+        {isPhone && m && <VerdictLines m={m} onGo={showPhoneTab} />}
+        <PriceChartPanel symbol={data.symbol} name={data.name} compact={isPhone} levels={valued || levels ? { ...(valued ? fv : {}), ...(levels ?? {}) } : null} />
         <WhyMoving symbol={data.symbol} />
-        {m && (isPhone
-          ? <VerdictLines m={m} fairValue={valued ? fv?.fv25 : null} price={price} onGo={showPhoneTab} />
-          : <StockGlance r={m.research} />)}
+        {m && !isPhone && <StockGlance r={m.research} />}
         <StockSnapshot m={m} price={price} dates={data.dataDates} />
       </section>
       <div id="sec-performance" className="ss-section" data-tab="price">{built("price") && <StockPerformance m={m} />}</div>
@@ -817,73 +928,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       )}
 
           </div>
-          <div className="ss-section" data-tour="override" style={{ border: "1px solid var(--bdr2)", borderRadius: 14, padding: 20, marginBottom: 16, background: "var(--s2)" }}>
-            {valued ? (
-              <>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 400, color: "var(--t1)", marginBottom: 2, letterSpacing: "-0.01em" }}>Verify & Override</div>
-                    <div style={{ fontSize: 11, color: "var(--t3)" }}>
-                      Auto-filled from NSE filings — edit any value to move the fair value (and your price levels, if on); the research score always uses the filings
-                      {usingCustomInputs ? <span style={{ marginLeft: 6, color: "var(--accent)", fontWeight: 400 }}>· custom</span> : <span style={{ marginLeft: 6 }}>· filings baseline</span>}
-                    </div>
-                  </div>
-                  {baseline && usingCustomInputs && (
-                    <button type="button" onClick={() => applyBaseline(baseline)} className="btn-ghost" style={{ height: 30, fontSize: 12 }}>Reset</button>
-                  )}
-                </div>
-                <ValuedAs valuation={m.valuation} />
-
-                <div className="ss-grid-3">
-                  <div>
-                    <label style={labelStyle}>{onBook ? "Book/share less net NPA (₹)" : onCycle ? "Mid-cycle EPS (₹)" : usualEpsShown ? "Usual EPS (₹)" : `EPS ${fyLabel(m.fyEnd)} (₹)`}</label>
-                    <input type="number" aria-label={onBook ? "Book per share less net NPA" : onCycle ? "Mid-cycle EPS" : "EPS"} value={eps} onChange={e => setEps(e.target.value)} style={inputStyle} />
-                    {onBook ? hint(parseFloat(eps) > 0, "✓ From the filings", "Owners' equity − net NPA, per share")
-                      : onCycle ? hint(parseFloat(eps) > 0, "✓ Revenue a share × through-cycle margin", "")
-                      : usualEpsShown
-                        ? <div style={{ fontSize: 10, color: "var(--yellow)", marginTop: 3, fontWeight: 400 }}>{fyLabel(m.fyEnd)} was ₹{m.epsJump.eps.toFixed(2)} — see note above</div>
-                        : hint(parseFloat(eps) > 0, "✓ EPS loaded", "From the annual results")}
-                  </div>
-                  <div>
-                    <label style={labelStyle}>{onBook ? "Justified P/B" : onCycle ? "Usual multiple (mid-cycle)" : "Historical P/E"}</label>
-                    <input type="number" aria-label={onBook ? "Justified P/B" : onCycle ? "Usual multiple" : "Historical P/E"} value={pe} onChange={e => setPe(e.target.value)} style={inputStyle} />
-                    {onBook ? hint(parseFloat(pe) > 0, "✓ From its return on equity", "(ROE − g) ÷ (cost of equity − g)")
-                      : onCycle ? hint(parseFloat(pe) > 0, "✓ Median on mid-cycle EPS", "")
-                      : hint(parseFloat(pe) > 0 && parseFloat(pe) <= 30, "✓ Reasonable P/E", "Review high P/E assumption")}
-                  </div>
-                  <div>
-                    <label style={labelStyle}>{onBook ? "Book growth % p.a." : onCycle ? "Revenue growth % p.a." : "EPS Growth % p.a."}</label>
-                    <input type="number" aria-label="Growth % a year" value={growthPct} onChange={e => {
-                      setGrowthPct(e.target.value);
-                      // A bank's P/B moves with its growth rate
-                      if (onBook) { const pb = pbAt(m.valuation.roe, Number(e.target.value), costOfEquity); if (pb != null) setPe(String(round(pb, 2))); }
-                    }} style={inputStyle} />
-                    {(() => {
-                      if (onBook) return hint(false, "", "Retained earnings, capped at 8%");
-                      if (onCycle) return hint(false, "", "Mid-cycle EPS grows with revenue");
-                      // Where the default came from, until it's overridden
-                      const basis = baseline && growthPct === baseline.growthPct ? m.growthBasis : null;
-                      return hint(parseFloat(growthPct) >= 15, basis ? `✓ Strong growth · ${basis}` : "✓ Strong growth", basis ?? "Expected annual growth");
-                    })()}
-                  </div>
-                </div>
-
-                {onBook
-                  ? <BankValuation m={m} growthInput={growthPct} costOfEquity={costOfEquity} onCostOfEquity={ke => {
-                      setCostOfEquity(ke);
-                      const pb = pbAt(m.valuation.roe, Number(growthPct), ke);
-                      if (pb != null) setPe(String(round(pb, 2)));
-                    }} />
-                  : onCycle ? <CyclicalValuation m={m} epsInput={eps} multipleInput={pe} />
-                  : <PeHistoryTable m={m} />}
-              </>
-            ) : (
-              <>
-                <ValuedAs valuation={m.valuation} />
-                <NoFairValue m={m} />
-              </>
-            )}
-          </div>
+          {!isPhone && overrideCard}
 
           {model === "earnings" && <div data-tour="valuation"><ValuationExplorer key={`valuation-${symbol}`} metrics={m} price={price} levels={fv} epsInput={eps} peInput={pe} /></div>}
           {onBook && (
@@ -894,32 +939,14 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
 
           {levels && <div id="sec-sizing" className="ss-section"><PhasePositionPlanner levels={levels} /></div>}
 
-          {/* Current price */}
-          <div style={card}>
-            <SectionTitle icon={CalendarDays} style={{ marginBottom: 4 }}>Current Price</SectionTitle>
-            <p style={{ fontSize: 12, color: "var(--t2)", margin: "0 0 12px" }}>
-              Price for <strong>{data.name}</strong>. Override if you want to test a different price.
-            </p>
-            {priceLabel && <p style={{ fontSize: 12, color: "var(--accent)", margin: "0 0 8px", fontWeight: 500 }}>{priceLabel}</p>}
-            <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-              <span style={{ fontSize: 14, color: "var(--t2)", fontWeight: 500 }}>₹</span>
-              <input type="number" aria-label="Price to test" value={actionPrice} onChange={e => { setActionPrice(e.target.value); setPriceLabel("Your price"); }} placeholder="Current price"
-                style={{ flex: "1 1 140px", minWidth: 120, maxWidth: 320, height: 42, padding: "0 14px", border: "1px solid var(--accent)", borderRadius: 8, fontSize: 15, fontWeight: 500, outline: "none", background: "var(--s1)", color: "var(--t1)" }} />
-              {data.quote && String(data.quote.cmp) !== actionPrice && (
-                <button type="button" onClick={() => { setActionPrice(String(data.quote.cmp)); setPriceLabel(quoteLabel(data.quote)); }}
-                  style={{ height: 42, padding: "0 12px", borderRadius: 8, border: "1px solid var(--accent)", background: "var(--s1)", fontSize: 12, cursor: "pointer", color: "var(--accent)" }}>
-                  Use latest close
-                </button>
-              )}
-              {data.close && String(data.close.price) !== actionPrice && (
-                <button type="button" onClick={() => { setActionPrice(String(data.close.price)); setPriceLabel(closeLabel(data.close)); }}
-                  style={{ height: 42, padding: "0 12px", borderRadius: 8, border: "1px solid var(--bdr2)", background: "var(--s2)", fontSize: 12, cursor: "pointer", color: "var(--t2)" }}>
-                  Use NSE close
-                </button>
-              )}
-            </div>
-          </div>
-
+          {!isPhone && priceCard}
+          {isPhone && (
+            <details className="sd-card sd-fold">
+              <summary>Check or change the inputs</summary>
+              {overrideCard}
+              {priceCard}
+            </details>
+          )}
         </div>
       )}
 

@@ -1,4 +1,4 @@
-import { Check, Minus, X, ChevronRight, TriangleAlert, Eye } from "lucide-react";
+import { Check, Minus, X, TriangleAlert, Eye, Info } from "lucide-react";
 import { fmtRs } from "../server/levels.js";
 
 // A company page on a phone reads as chapters, in the order a careful
@@ -84,45 +84,155 @@ export function chapterLine(id, m, { fairValue, price } = {}) {
   }
 }
 
-// The Summary's verdict: one line per chapter, each opening it
-export function VerdictLines({ m, fairValue, price, onGo }) {
+// What a chapter's score means, in plain words — for someone who doesn't
+// know what a return on capital is (26 Oct 2026: "still not up to the mark")
+const JUDGE = {
+  business: { good: "Earns far more on its money than most companies", mid: "Earns middling returns on its money", bad: "Earns little on the money it uses" },
+  growth: { good: "Growing faster than most companies", mid: "Growing, but slowly", bad: "Barely growing" },
+  safety: { good: "Could get through bad years comfortably", mid: "Carries some debt worth watching", bad: "Debt could hurt it in bad years" },
+  owners: { good: "Steady owners, nothing pledged, clean audits", mid: "A few ownership points to check", bad: "Ownership needs a close look" },
+  value: { good: "Priced below what its earnings suggest", mid: "Priced about where its earnings suggest", bad: "Priced above what its earnings suggest" },
+  price: { good: "The price is trending up", mid: "The price trend is mixed", bad: "The price is trending down" },
+};
+export function chapterJudgement(id, m) {
+  const s = chapterScore(id, m?.research);
+  if (!s || s.tone === "none") return null;
+  if (id === "safety" && s.tone === "good" && num(m.netDebtCr) && m.netDebtCr <= 0) return "Has more cash than debt";
+  if (id === "growth" && num(m.epsGrowth3y) && m.epsGrowth3y < 0 && s.tone !== "good") return "Its earnings have been shrinking";
+  if (id === "owners" && s.tone === "good" && m.promoterPct === 0) return "No promoter group, clean audits";
+  return JUDGE[id]?.[s.tone] ?? null;
+}
+
+// Two figures that back the answer, each against something: the sector's
+// middle company, its own usual, or the index
+const sector = (m, id) => m.sectorCompare?.find(x => x.id === id && num(x.value) && num(x.median));
+const middle = v => `sector middle ${v}`;
+export function chapterFigures(id, m, { fairValue, price } = {}) {
+  if (!m) return [];
+  const out = [];
+  const vsSector = (sid, label, fmt) => { const x = sector(m, sid); if (x) out.push({ label, value: fmt(x.value), against: middle(fmt(x.median)) }); return !!x; };
+  switch (id) {
+    case "business":
+      if (m.lender) { vsSector("roe", "Return on equity", p1); break; }
+      vsSector("roce5y", "Return on capital", p1) || (num(m.roce5y) && out.push({ label: "Return on capital", value: p1(m.roce5y), against: "5-year average" }));
+      vsSector("opm5y", "Operating margin", p1);
+      break;
+    case "growth":
+      vsSector("salesGrowth5y", "Sales growth, 5 yrs", v => `${p1(v)} a yr`) || (num(m.salesGrowth3y) && out.push({ label: "Sales growth, 3 yrs", value: `${p1(m.salesGrowth3y)} a yr`, against: "" }));
+      vsSector("epsGrowth5y", "EPS growth, 5 yrs", v => `${p1(v)} a yr`) || (num(m.epsGrowth3y) && out.push({ label: "EPS growth, 3 yrs", value: `${p1(m.epsGrowth3y)} a yr`, against: "" }));
+      break;
+    case "safety":
+      if (m.lender) {
+        if (m.bank?.gnpaPct != null) out.push({ label: "Bad loans", value: p1(m.bank.gnpaPct), against: "of its loans" });
+        if (m.bank?.cet1Pct != null) out.push({ label: "Core capital", value: p1(m.bank.cet1Pct), against: "of risk-weighted loans" });
+        break;
+      }
+      if (num(m.netDebtCr)) out.push({ label: m.netDebtCr <= 0 ? "Net cash" : "Net debt", value: `₹${Math.round(Math.abs(m.netDebtCr)).toLocaleString("en-IN")} Cr`, against: m.netDebtCr <= 0 ? "more cash than debt" : "debt less cash" });
+      if (num(m.interestCoverage)) out.push({ label: "Interest cover", value: x1(m.interestCoverage), against: "profit over interest" });
+      else vsSector("debtToEquity", "Debt to equity", v => `${Number(v).toFixed(2)}×`);
+      break;
+    case "owners": {
+      if (num(m.promoterPct) && m.promoterPct > 0) {
+        const old = (m.promoterHistory ?? []).at(-1);
+        const ch = old && num(old.pct) ? m.promoterPct - old.pct : null;
+        out.push({ label: "Promoters hold", value: p1(m.promoterPct), against: ch == null ? "" : Math.abs(ch) < 0.5 ? `same as ${new Date(old.asOfIso).getFullYear()}` : `${ch > 0 ? "up" : "down"} ${Math.abs(ch).toFixed(1)} pts since ${new Date(old.asOfIso).getFullYear()}` });
+      }
+      if (num(m.divYield) && m.divYield > 0) out.push({ label: "Dividend yield", value: p1(m.divYield), against: num(m.payoutPct) ? `pays out ${p1(m.payoutPct)} of profit` : "" });
+      break;
+    }
+    case "value":
+      if (num(fairValue) && num(price)) out.push({ label: "Fair value", value: fmtRs(fairValue), against: `price ${fmtRs(price)}` });
+      if (num(m.pe) && num(m.medianPe)) out.push({ label: "P/E", value: `${Math.round(m.pe)}`, against: `its usual ${Math.round(m.medianPe)}` });
+      else vsSector("peTtm", "P/E", v => `${Math.round(v)}`);
+      break;
+    case "price": {
+      const nifty = m.benchmarks?.market?.returns?.y1;
+      if (num(m.ret1y)) out.push({ label: "1 year", value: `${m.ret1y >= 0 ? "+" : "−"}${p1(Math.abs(m.ret1y))}`, against: num(nifty) ? `${m.benchmarks.market.name} ${nifty >= 0 ? "+" : "−"}${p1(Math.abs(nifty))}` : "" });
+      const vol = m.volatilityPeers?.sector?.median;
+      if (num(m.volatility1y)) out.push({ label: "Price swings", value: `${Math.round(m.volatility1y)}% a yr`, against: num(vol) ? middle(`${Math.round(vol)}%`) : "" });
+      break;
+    }
+  }
+  return out.slice(0, 2);
+}
+
+// The company in one sentence, from its chapters' scores — the gist before
+// any figure (e.g. "A strong, cash-rich business growing slowly, priced
+// below what its earnings suggest")
+export function gistLine(m) {
+  const r = m?.research;
+  const t = id => chapterScore(id, r)?.tone;
+  const biz = t("business"), grow = t("growth"), safe = t("safety"), val = t("value");
+  if (!biz || biz === "none") return null;
+  const quality = { good: "A strong", mid: "A middling", bad: "A weak" }[biz];
+  const cash = safe === "good" && num(m.netDebtCr) && m.netDebtCr <= 0 ? ", cash-rich" : safe === "bad" ? ", indebted" : "";
+  const who = m.sectorShare?.rank && m.sectorShare.rank <= 3 && m.sectorShare.companies >= 10 ? "leader" : "business";
+  const growth = { good: " that's growing fast", mid: " that's growing slowly", bad: " that's barely growing" }[grow] ?? "";
+  const price = { good: ", priced below what its earnings suggest", mid: ", priced about where its earnings suggest", bad: ", priced above what its earnings suggest" }[val] ?? "";
+  return `${quality}${cash} ${who}${growth}${price}.`;
+}
+
+// The Summary's top: the gist, then a bar per chapter, each opening it
+export function VerdictLines({ m, onGo }) {
   const r = m?.research;
   const rows = CHAPTERS.filter(c => !["overview", "news"].includes(c.id))
-    .map(c => ({ c, s: chapterScore(c.id, r), line: chapterLine(c.id, m, { fairValue, price }) }))
-    .filter(x => x.s || x.line);
-  if (!rows.length) return null;
+    .map(c => ({ c, s: chapterScore(c.id, r) }))
+    .filter(x => x.s);
+  const gist = gistLine(m);
+  if (!rows.length && !gist) return null;
   return (
     <section className="sd-card sd-verdict" aria-labelledby="verdict-title">
-      <h3 id="verdict-title" className="sd-card-title">In one line each</h3>
+      <div className="sd-chapter-qrow"><h3 id="verdict-title" className="sd-verdict-h">In short</h3><NotesToggle /></div>
+      {gist && <p className="sd-gist">{gist}</p>}
       <ul className="sd-verdict-list">
-        {rows.map(({ c, s, line }) => (
+        {rows.map(({ c, s }) => (
           <li key={c.id}>
-            <button type="button" className={`sd-verdict-row sd-tone-${s?.tone ?? "none"}`} onClick={() => onGo(c.id)}>
+            <button type="button" className={`sd-verdict-row sd-tone-${s.tone}`} onClick={() => onGo(c.id)} aria-label={`${c.label}: ${Math.round(s.score)} of 100, ${s.word}`}>
               <span className="sd-verdict-name">{c.label}</span>
-              <span className="sd-verdict-line">{line ?? c.question}</span>
-              {s && <span className="sd-verdict-word">{s.word}</span>}
-              <ChevronRight size={16} className="sd-score-go" aria-hidden="true" />
+              <span className="sd-verdict-bar" aria-hidden="true"><i style={{ width: `${Math.max(3, Math.min(100, s.score))}%` }} /></span>
+              <span className="sd-verdict-num">{Math.round(s.score)}</span>
             </button>
           </li>
         ))}
       </ul>
-      <p className="sd-foot">From NSE filings and closes, scored by the research model. Observations, not advice.</p>
+      <p className="sd-verdict-hint">Tap a line for its chapter · scored from NSE filings, not advice</p>
     </section>
   );
 }
 
-// A chapter's opening: the question, and its answer with the score
+// The page's small print (sources, how a figure was worked out) is hidden on
+// a phone until asked for, here (index.css html.sd-notes)
+export function NotesToggle() {
+  return (
+    <button type="button" className="sd-notes-btn" aria-label="Show sources and notes"
+      onClick={e => { const on = document.documentElement.classList.toggle("sd-notes"); e.currentTarget.setAttribute("aria-pressed", String(on)); }}>
+      <Info size={16} aria-hidden="true" />
+    </button>
+  );
+}
+
+// A chapter's opening: the question; the answer in plain words with its
+// score; two figures that back it, each against something
 export function ChapterTop({ id, m, fairValue, price }) {
   const c = byId[id];
   const s = chapterScore(id, m?.research);
+  const judge = chapterJudgement(id, m);
   const line = chapterLine(id, m, { fairValue, price });
+  const figures = chapterFigures(id, m, { fairValue, price });
   return (
     <header className="sd-chapter-top">
-      <p className="sd-chapter-q">{c.question}</p>
-      {(line || s) && (
+      <div className="sd-chapter-qrow"><p className="sd-chapter-q">{c.question}</p><NotesToggle /></div>
+      {(judge || line || s) && (
         <div className={`sd-chapter-answer sd-tone-${s?.tone ?? "none"}`}>
-          {line && <span className="sd-chapter-line">{line}</span>}
-          {s && <span className="sd-chapter-score"><b>{Math.round(s.score)}</b> {s.word}</span>}
+          <div className="sd-chapter-head">
+            <span className="sd-chapter-line">{judge ?? line}</span>
+            {s && <span className="sd-chapter-score"><b>{Math.round(s.score)}</b> {s.word}</span>}
+          </div>
+          {figures.length > 0 && (
+            <div className="sd-chapter-figs">
+              {figures.map(f => <div key={f.label}><small>{f.label}</small><b>{f.value}</b>{f.against && <small>{f.against}</small>}</div>)}
+            </div>
+          )}
         </div>
       )}
     </header>

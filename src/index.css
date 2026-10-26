@@ -3755,18 +3755,37 @@ html.no-blur .pc-drawer-head { background: var(--s1); }
    score reads — strong, fair or weak */
 .sd-verdict-list, .sd-check-list, .sd-watch-list { list-style: none; margin: 0; padding: 0; }
 .sd-verdict-list li + li, .sd-check-list li + li, .sd-watch-list li + li { border-top: 1px solid var(--bdr); }
-/* the name and its word on one line, the sentence under them, full width */
-.sd-verdict-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "name word go" "line line go"; align-items: center; column-gap: 10px; row-gap: 3px; width: 100%; padding: 12px 0; border: 0; background: none; text-align: left; font: inherit; color: var(--t1); cursor: pointer; }
-.sd-verdict-name { grid-area: name; font-size: 15px; font-weight: 500; }
-.sd-verdict-line { grid-area: line; font-size: 13.5px; line-height: 1.4; color: var(--t2); }
-.sd-verdict-word { grid-area: word; }
-.sd-verdict-row .sd-score-go { grid-area: go; }
-.sd-verdict-word { font-size: 12px; font-weight: 500; padding: 3px 9px; border-radius: 999px; white-space: nowrap; color: var(--tone); background: color-mix(in srgb, var(--tone) 13%, transparent); }
+/* the gist, then a bar per chapter: the whole company in two seconds */
+.sd-verdict-h { margin: 0; font-size: 13px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--t3); }
+.sd-gist { margin: 6px 0 10px; font-size: 17px; font-weight: 500; line-height: 1.4; letter-spacing: -0.01em; color: var(--t1); text-wrap: pretty; }
+.sd-verdict-row { display: grid; grid-template-columns: 74px minmax(0, 1fr) 30px; align-items: center; gap: 12px; width: 100%; padding: 9px 0; border: 0; background: none; text-align: left; font: inherit; color: var(--t1); cursor: pointer; }
+.sd-verdict-name { font-size: 14.5px; }
+.sd-verdict-bar { height: 7px; border-radius: 4px; background: color-mix(in srgb, var(--t1) 8%, transparent); overflow: hidden; }
+.sd-verdict-bar i { display: block; height: 100%; border-radius: 4px; background: var(--tone); transition: width 500ms var(--ease-out, ease-out); }
+.sd-verdict-num { text-align: right; font-size: 14px; font-variant-numeric: tabular-nums; color: var(--t2); }
+.sd-verdict-list li + li { border-top: 0; }
+.sd-verdict-hint { margin: 6px 0 0; font-size: 12px; color: var(--t3); }
 .sd-verdict-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
 .sd-chapter-top { margin: 6px 0 14px; }
 .sd-chapter-q { margin: 0 0 10px; font-size: 26px; font-weight: 700; line-height: 1.15; letter-spacing: -0.03em; color: var(--t1); text-wrap: balance; }
-.sd-chapter-answer { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 16px; border: 1px solid color-mix(in srgb, var(--tone) 35%, var(--bdr)); background: color-mix(in srgb, var(--tone) 8%, var(--s2)); }
-.sd-chapter-line { flex: 1; min-width: 0; font-size: 15px; line-height: 1.4; color: var(--t1); }
+.sd-chapter-qrow { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.sd-chapter-answer { padding: 14px 16px; border-radius: 16px; border: 1px solid color-mix(in srgb, var(--tone) 30%, var(--bdr)); background: color-mix(in srgb, var(--tone) 7%, var(--s2)); }
+.sd-chapter-head { display: flex; align-items: center; gap: 12px; }
+.sd-chapter-line { flex: 1; min-width: 0; font-size: 16.5px; font-weight: 500; line-height: 1.35; color: var(--t1); text-wrap: pretty; }
+.sd-chapter-figs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+.sd-chapter-figs > div { display: flex; flex-direction: column; gap: 1px; min-width: 0; padding: 9px 11px; border-radius: 10px; background: color-mix(in srgb, var(--t1) 5%, transparent); }
+.sd-chapter-figs small { font-size: 11.5px; line-height: 1.3; color: var(--t3); }
+.sd-chapter-figs b { font-size: 18px; font-weight: 600; line-height: 1.25; font-variant-numeric: tabular-nums; color: var(--t1); }
+.sd-notes-btn { flex: none; width: 32px; height: 32px; margin-top: 2px; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--bdr); background: none; color: var(--t3); cursor: pointer; }
+.sd-notes-btn[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
+/* One card system on a phone's company page: one title size, one padding;
+   the small print (sources, how a figure was worked out) behind the ⓘ */
+@media (max-width: 640px) {
+  .sd.ap .sd-main .sd-card, .sd.ap .sd-main section[class*="card"] { padding: 16px; }
+  .sd.ap .sd-main .sd-card .sd-fold, .sd .sd-card.sd-fold { padding: 0; }
+  .sd.ap .sd-main h3:not(.sd-verdict-h) { font-size: 17px !important; font-weight: 600 !important; letter-spacing: -0.01em !important; line-height: 1.3 !important; }
+  html:not(.sd-notes) .sd.ap .sd-main .sd-foot, html:not(.sd-notes) .sd.ap .sd-main .sd-note { display: none; }
+}
 .sd-chapter-score { flex: none; display: flex; flex-direction: column; align-items: center; font-size: 11px; font-weight: 500; color: var(--tone); }
 .sd-chapter-score b { font-size: 22px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
 .sd-check { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 10px; padding: 10px 0; }
@@ -3786,3 +3805,11 @@ html.no-blur .pc-drawer-head { background: var(--s1); }
 .sd-fold[open] > summary::after { transform: rotate(-135deg); }
 .sd-fold > :not(summary) { margin: 0 12px 12px; }
 .sd-verdict, .sd-checks, .sd-watch, .sd-fold { margin-bottom: 12px; }
+
+/* A chapter with one section needs no heading over it: the chapter's
+   question is its heading ("Financials." over a card titled Financials) */
+@media (max-width: 640px) {
+  .sd-main[data-phone-tab="growth"] .sd-h2, .sd-main[data-phone-tab="safety"] .sd-h2, .sd-main[data-phone-tab="value"] .sd-h2 { display: none; }
+  .sd-main[data-phone-tab="overview"] { margin-top: -8px; }
+  .sd .sd-side { margin-bottom: 10px; }
+}
