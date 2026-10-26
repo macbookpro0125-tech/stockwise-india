@@ -115,7 +115,7 @@ const changeBadge = ch => (ch?.joinedCount > 0
 // the best and the worst, and which report results in the coming week
 const pct = v => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v).toFixed(1)}%`;
 const tone = v => (v > 0.05 ? "up" : v < -0.05 ? "down" : "flat");
-const weekday = iso => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
+const weekday = iso => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", timeZone: "UTC" });
 
 const rupees = v => `₹${v.toLocaleString("en-IN", { maximumFractionDigits: v < 100 ? 2 : 0 })}`;
 
@@ -158,12 +158,14 @@ function FavouriteCard({ p, count, change, day, closeDate, onOpen }) {
   const movers = day ? [day.best && { ...day.best, way: "best" }, day.worst && { ...day.worst, way: "worst" }].filter(Boolean) : [];
   return (
     <button type="button" className="ps-fav" onClick={() => onOpen(p)} aria-label={`Open ${p.name}`}>
+      {/* one line: the name, two of its companies' logos and how many
+          (26 Oct 2026: "can't we make all this in one line, to save space") */}
       <span className="ps-fav-head">
-        <span>
-          <span className="ps-fav-name">{p.name}</span>
-          <span className="ps-row-sub">{companies(count) ?? "\u00a0"}</span>
+        <span className="ps-fav-name">{p.name}</span>
+        <span className="ps-fav-count" title={companies(count) ?? undefined}>
+          <Logos top={count?.top?.slice(0, 2)} size={22} />
+          {count?.matched != null && <span>{n(count.matched)}</span>}
         </span>
-        <Logos top={count?.top} />
       </span>
       {changed > 0 && (
         <span className="ps-fav-changes">
@@ -196,7 +198,6 @@ function FavouriteCard({ p, count, change, day, closeDate, onOpen }) {
           {day.resultsCount > 0 && <ResultsTicker results={day.results} total={day.resultsCount} />}
         </span>
       )}
-      <span className="ps-fav-go" aria-hidden="true"><ChevronRight size={16} /></span>
     </button>
   );
 }
