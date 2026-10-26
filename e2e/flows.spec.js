@@ -425,25 +425,27 @@ test("F04-H1 watch from the company page, note it, remove it", async ({ page, ac
 test("F05-H1 add, edit and remove a holding", async ({ page, account }) => {
   await page.goto("/");
   await openPage(page, "Portfolio");
-  await page.getByRole("button", { name: "+ Add Holding" }).click();
+  await page.getByRole("button", { name: "Add holding", exact: true }).click();
   await page.getByPlaceholder("e.g. TCS").fill("INFY");
   await page.getByPlaceholder("0.00").fill("1400");
   await page.getByPlaceholder("0", { exact: true }).fill("10");
   await page.getByRole("button", { name: "Add to Portfolio" }).click();
   await expect(page.getByText(/Infosys/).first()).toBeVisible();
-  await page.getByRole("button", { name: "Edit holding" }).first().click();
+  // a holding's ⋯ holds edit and remove (26 Oct 2026)
+  await page.getByRole("button", { name: /^More for Infosys/ }).click();
+  await page.getByRole("button", { name: "Edit holding" }).click();
   await page.getByPlaceholder("0", { exact: true }).fill("12");
   await page.getByRole("button", { name: "Save Changes" }).click();
-  await expect(page.getByText(/12 @ ₹1,400/).first()).toBeVisible();
-  page.once("dialog", d => d.accept());
-  await page.getByRole("button", { name: "Remove holding" }).first().click();
-  await expect(page.getByText(/12 @ ₹1,400/)).toHaveCount(0);
+  await expect(page.getByText(/12 at ₹1,400/).first()).toBeVisible();
+  await page.getByRole("button", { name: /^More for Infosys/ }).click();
+  await page.getByRole("button", { name: "Remove holding" }).click();
+  await expect(page.getByText(/12 at ₹1,400/)).toHaveCount(0);
 });
 
 test("F05-N1 a made-up ticker is refused", async ({ page, account }) => {
   await page.goto("/");
   await openPage(page, "Portfolio");
-  await page.getByRole("button", { name: "+ Add Holding" }).click();
+  await page.getByRole("button", { name: "Add holding", exact: true }).click();
   await page.getByPlaceholder("e.g. TCS").fill("FAKECO123");
   await page.getByPlaceholder("0.00").fill("100");
   await page.getByPlaceholder("0", { exact: true }).fill("1");

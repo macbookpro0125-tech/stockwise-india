@@ -1252,6 +1252,9 @@ export function createApp() {
             divYield: r.divYield ?? null, salesGrowth3y: r.salesGrowth3y ?? null,
             // today's fair value, as Discover's "vs FV" uses (not the 2-year one)
             roce: r.roce ?? null, fv25: r.fv25 ?? null,
+            // the day's move, and its results and corporate-action calendar
+            // (PortfolioView's "Needs a look", 26 Oct 2026)
+            ret1d: r.ret1d ?? null, nextResults: r.nextResults ?? null, latestQuarterFiled: r.latestQuarterFiled ?? null, events: r.events ?? [],
           };
         }
         sendJson(res, 200, { holdings, prices, status });

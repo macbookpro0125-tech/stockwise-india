@@ -5,12 +5,12 @@ import { test, expect, openStocks, openFilters, openPage } from "./fixtures.js";
 test("F05-E1 double-clicking Add to Portfolio adds one holding", async ({ page, account, baseURL }) => {
   await page.goto("/");
   await openPage(page, "Portfolio");
-  await page.getByRole("button", { name: "+ Add Holding" }).click();
+  await page.getByRole("button", { name: "Add holding", exact: true }).click();
   await page.getByPlaceholder("e.g. TCS").fill("ITC");
   await page.getByPlaceholder("0.00").fill("400");
   await page.getByPlaceholder("0", { exact: true }).fill("3");
   await page.getByRole("button", { name: "Add to Portfolio" }).dblclick();
-  await expect(page.getByText(/^ITC · 3 @/).first()).toBeVisible();
+  await expect(page.getByText(/^3 at ₹400/).first()).toBeVisible();
   await page.waitForTimeout(800);
   const list = await (await page.context().request.get(`${baseURL}/api/portfolio`)).json();
   const holdings = Array.isArray(list) ? list : list.holdings ?? [];
@@ -99,7 +99,7 @@ test("F02-E3 keyboard only: / focuses search, Enter opens a company", async ({ p
 test("phone: add a holding and open Alerts @phone", async ({ page, account }) => {
   await page.goto("/");
   await openPage(page, "Portfolio");
-  await page.getByRole("button", { name: "+ Add Holding" }).click();
+  await page.getByRole("button", { name: "Add holding", exact: true }).click();
   await page.getByPlaceholder("e.g. TCS").fill("TCS");
   await page.getByPlaceholder("0.00").fill("3000");
   await page.getByPlaceholder("0", { exact: true }).fill("2");
