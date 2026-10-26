@@ -20,7 +20,8 @@ test("N-H1 the News tile (a computer) or the Explore tab (a phone) leads to the 
   await row.click();
   const item = page.getByRole("article");
   await expect(item).toBeVisible();
-  await expect(item.getByRole("link", { name: /Open the filing|Read the story/ }).or(item.getByText(/no summary/)).first()).toBeVisible();
+  // a filing, a headline, or an RBI or SEBI notice (the newest are often these)
+  await expect(item.getByRole("link", { name: /Open the filing|Read the story|Read it on (RBI|SEBI)'s website/ }).or(item.getByText(/no summary/)).first()).toBeVisible();
   await page.goBack();
   await expect(kinds).toBeVisible();
   await expect(item).toHaveCount(0);
@@ -53,7 +54,7 @@ test("N-H2 Discover's News tile and the News tab on a computer; a headline opens
   await expect(item.getByRole("link", { name: /^Read the story/ })).toHaveAttribute("target", "_blank");
   // the headline as published, the figures around it the app's own (25 Oct 2026)
   await expect(item.getByText("The headline as published", { exact: false })).toBeVisible();
-  await item.getByRole("button", { name: "News" }).click();
+  await item.getByRole("button", { name: "News", exact: true }).click();
   await kinds.getByRole("button", { name: "My watchlist" }).click();
   await expect(page.getByText(/Star companies to follow their news here/)).toBeVisible();
 
