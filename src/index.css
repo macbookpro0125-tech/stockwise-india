@@ -4067,3 +4067,63 @@ html.in-app .site-foot-public { display: none; }
   .dk-more { margin-left: 0; }
   .dk-yourview-grid { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* A computer's pages in a slim bar down the left (SideRail.jsx, 26 Oct
+   2026): the mark at the top, the pages grouped in a rounded bar in the
+   middle, light and dark at the bottom. Watchlist, Portfolio and Alerts
+   open a peek beside it. */
+:root { --rail-w: 76px; }
+html.has-rail .app-shell { padding-left: var(--rail-w); }
+.side-rail { position: fixed; top: 0; bottom: 0; left: 0; width: var(--rail-w); z-index: 120; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 14px 0 18px; border-right: 1px solid var(--bdr); background: var(--bg); }
+.sr-home { display: grid; place-items: center; border-radius: 50%; }
+.sr-home:focus-visible, .sr-tab:focus-visible, .rp-row:focus-visible, .rp-open:focus-visible, .rp-x:focus-visible, .rp-look button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sr-mark { width: 40px; height: 40px; }
+.sr-group { display: flex; flex-direction: column; gap: 6px; padding: 8px; border-radius: 24px; border: 1px solid var(--bdr2); background: var(--s2); box-shadow: var(--sh-xs); }
+.sr-end { display: flex; flex-direction: column; gap: 6px; }
+.sr-tab { position: relative; width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 14px; background: transparent; color: var(--t3); cursor: pointer; transition: background 150ms, color 150ms; }
+.sr-tab:hover { color: var(--t1); background: var(--s3); }
+.sr-tab.open { color: var(--t1); background: var(--s3); }
+.sr-tab.on { color: var(--on-accent); background: var(--accent); }
+.sr-dot { position: absolute; top: 9px; right: 9px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); border: 2px solid var(--s2); }
+.sr-dot.warn { background: var(--yellow); }
+.sr-tab.on .sr-dot { border-color: var(--accent); background: var(--on-accent); }
+.sr-tip { position: absolute; left: calc(100% + 12px); top: 50%; transform: translate(-4px, -50%); padding: 6px 10px; border-radius: 8px; background: var(--t1); color: var(--bg); font: 500 12px/1 var(--font); white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity 120ms, transform 120ms; }
+.sr-tab:hover .sr-tip, .sr-tab:focus-visible .sr-tip { opacity: 1; transform: translate(0, -50%); }
+.sr-tab.open .sr-tip { opacity: 0; }
+
+/* A peek: beside the bar, over a lightly dimmed page */
+.rp-scrim { position: fixed; inset: 0 0 0 var(--rail-w); z-index: 115; background: color-mix(in srgb, var(--bg) 35%, transparent); animation: fadeIn 140ms ease-out; }
+.rp-peek { position: fixed; z-index: 125; left: calc(var(--rail-w) + 10px); top: 50%; transform: translateY(-50%); width: 360px; max-height: min(720px, calc(100vh - 40px)); display: flex; flex-direction: column; border-radius: 20px; border: 1px solid var(--bdr2); background: var(--s2); box-shadow: var(--sh-lg); outline: none; animation: rpIn 180ms cubic-bezier(0.16, 1, 0.3, 1); }
+@keyframes rpIn { from { opacity: 0; transform: translate(-8px, -50%); } to { opacity: 1; transform: translate(0, -50%); } }
+@media (prefers-reduced-motion: reduce) { .rp-peek, .rp-scrim { animation: none; } }
+.rp-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px 4px; }
+.rp-head h3 { margin: 0; font-size: 16px; font-weight: 600; letter-spacing: -0.01em; color: var(--t1); }
+.rp-x { width: 30px; height: 30px; display: grid; place-items: center; border: 0; border-radius: 8px; background: none; color: var(--t3); cursor: pointer; }
+.rp-x:hover { background: var(--s3); color: var(--t1); }
+.rp-body { overflow-y: auto; padding: 0 8px 8px; scrollbar-width: thin; }
+.rp-sum { margin: 0; padding: 0 10px 10px; font-size: var(--fs-xs); color: var(--t3); }
+.rp-sum b { color: var(--t1); font-weight: 600; }
+.rp-sum em, .rp-num { font-style: normal; font-variant-numeric: tabular-nums; }
+.rp-sum .up, .rp-num.up { color: var(--green); }
+.rp-sum .down, .rp-num.down { color: var(--red); }
+.rp-sum .warn, .rp-num.reached { color: var(--yellow); }
+.rp-look { margin: 0 4px 8px; padding: 10px 12px; border-radius: 14px; border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--bdr)); background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.rp-look h4, .rp-h { margin: 0 0 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
+.rp-h { margin: 8px 10px 2px; color: var(--t3); }
+.rp-look ul, .rp-list { list-style: none; margin: 0; padding: 0; }
+.rp-look button { display: flex; gap: 9px; align-items: flex-start; width: 100%; padding: 5px 0; border: 0; background: none; text-align: left; font: 400 13px/1.4 var(--font); color: var(--t2); cursor: pointer; }
+.rp-look button svg { flex: none; margin-top: 2px; color: var(--t3); }
+.rp-look b { color: var(--t1); font-weight: 500; }
+.rp-row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 8px 10px; border: 0; border-radius: 12px; background: none; text-align: left; font: inherit; color: var(--t1); cursor: pointer; }
+.rp-row:hover { background: var(--s3); }
+.rp-name { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.rp-name b { font-size: 13.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rp-name small { font-size: 12px; color: var(--t3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rp-name em { align-self: flex-start; font-style: normal; font-size: 11.5px; font-weight: 500; padding: 1px 7px; border-radius: 6px; color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.rp-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-size: 12px; }
+.rp-right b { font-size: 13.5px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.rp-more, .rp-empty { margin: 4px 10px 6px; font-size: var(--fs-xs); color: var(--t3); }
+.rp-empty { padding: 14px 0; }
+.rp-foot { padding: 12px 14px; border-top: 1px solid var(--bdr); }
+.rp-open { width: 100%; height: 40px; border: 0; border-radius: 12px; background: var(--accent); color: var(--on-accent); font: 600 13.5px/1 var(--font); cursor: pointer; }
+html.no-blur .sr-group { box-shadow: none; }

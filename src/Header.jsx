@@ -21,7 +21,7 @@ import { createLens } from "./liquidLens.js";
 
 // Discover's mark: four rounded squares, filled while it's the tab you're on
 // (asked for 26 Oct 2026, from a screenshot); on a computer's tab row, outlined
-function GridIcon({ size = 24, strokeWidth = 2, filled = false, ...rest }) {
+export function GridIcon({ size = 24, strokeWidth = 2, filled = false, ...rest }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinejoin="round" {...rest}>
       {[[3, 3], [13, 3], [3, 13], [13, 13]].map(([x, y]) => <rect key={`${x}${y}`} x={x} y={y} width="8" height="8" rx="2.4" fill={filled ? "currentColor" : "none"} />)}
@@ -127,15 +127,16 @@ export default function Header({ tab, onTab, account, onLogout, onDeleted, onSea
           {phone && <PlusButton />}
 
           <div className="hide-phone" style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0, marginLeft: "auto" }}>
-            <button onClick={onToggleTheme} title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"} aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            {phone && <button onClick={onToggleTheme} title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"} aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
               style={{ width: 32, height: 32, borderRadius: 8, background: "var(--s2)", border: "1px solid var(--bdr)", color: "var(--t2)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: 0 }}>
               {theme === "dark" ? <Sun size={16} strokeWidth={2} /> : <Moon size={16} strokeWidth={2} />}
-            </button>
+            </button>}
             <AccountMenu account={account} onLogout={onLogout} onDeleted={onDeleted} onTour={onTour} />
           </div>
         </div>
 
-        <div className={`discovery-tabs${onDiscover ? " tabs-on-discover" : ""}`} data-tour="tabs" style={{ display: "flex", gap: 0 }}>
+        {/* a computer's pages are in the bar down the left (SideRail.jsx, 26 Oct 2026) */}
+        {phone && <div className={`discovery-tabs${onDiscover ? " tabs-on-discover" : ""}`} data-tour="tabs" style={{ display: "flex", gap: 0 }}>
           {tabsFor(account).map(t => {
             const b = badges[t.id] ?? {};
             const active = tab === t.id;
@@ -158,7 +159,7 @@ export default function Header({ tab, onTab, account, onLogout, onDeleted, onSea
               </button>
             );
           })}
-        </div>
+        </div>}
       </div>
     </div>
   );

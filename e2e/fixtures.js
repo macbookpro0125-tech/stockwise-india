@@ -83,6 +83,17 @@ export async function openPage(page, name) {
   // the moment a page starts loading, neither was there yet and a phone was
   // taken for a computer
   await page.locator(".app-header").first().waitFor();
+  // a computer: the pages are in the bar down the left (26 Oct 2026);
+  // Watchlist, Portfolio and Alerts open a peek first, whose Open goes there
+  const rail = page.locator("nav.side-rail");
+  if (await rail.isVisible().catch(() => false)) {
+    await rail.getByRole("button", { name: re }).click();
+    if (/^(Watchlist|Portfolio|Alerts)/.test(name)) {
+      const peek = page.getByRole("dialog", { name: re });
+      if (await peek.waitFor({ timeout: 2000 }).then(() => true, () => false)) await peek.getByRole("button", { name: /^Open / }).click();
+    }
+    return;
+  }
   const row = page.locator(".discovery-tabs");
   if (await row.isVisible().catch(() => false)) return row.getByRole("button", { name: re }).click();
   const bar = page.getByRole("navigation", { name: "Pages" });

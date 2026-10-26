@@ -398,6 +398,34 @@ test("F03-H8 what changed recently: dated lines above the filings", async ({ pag
   await expect(card.locator("li time").first().or(card.getByText(/^Nothing new in the last six weeks/))).toBeVisible();
 });
 
+test("R-H1 a computer's left bar: Watchlist peeks over a company page; Esc closes it; Open, or a second click, goes to the page", async ({ page, account, isMobile }) => {
+  test.skip(isMobile, "a phone has its bottom bar");
+  await page.goto("/stock/TCS");
+  await page.getByRole("button", { name: "Add to watchlist" }).click();
+  const rail = page.getByRole("navigation", { name: "Pages" });
+  const star = rail.getByRole("button", { name: /^Watchlist/ });
+  await star.click();
+  const peek = page.getByRole("dialog", { name: "Watchlist" });
+  await expect(peek.getByText(/^1 company/)).toBeVisible();
+  // (its row; it can be under Needs a look too)
+  await expect(peek.getByRole("listitem").filter({ hasText: "Tata Consultancy" }).last()).toBeVisible();
+  await expect(star).toHaveAttribute("aria-expanded", "true");
+  await page.keyboard.press("Escape");
+  await expect(peek).toBeHidden();
+  // Esc closed the peek, not the company page
+  await expect(page).toHaveURL(/\/stock\/TCS/);
+  await star.click();
+  await peek.getByRole("button", { name: "Open Watchlist →" }).click();
+  await expect(star).toHaveAttribute("aria-current", "page");
+  // a second click on a peek's icon goes straight to its page
+  const alerts = rail.getByRole("button", { name: /^Alerts/ });
+  await alerts.click();
+  await expect(page.getByRole("dialog", { name: "Alerts" })).toBeVisible();
+  await alerts.click();
+  await expect(alerts).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("dialog", { name: "Alerts" })).toBeHidden();
+});
+
 test("F03-H9 what to review in the next filing: questions without figures, each linking to its section", async ({ page, account }) => {
   await page.goto("/stock/TCS");
   const list = page.getByText("What to review in the next filing").locator("xpath=following-sibling::ul[1]");

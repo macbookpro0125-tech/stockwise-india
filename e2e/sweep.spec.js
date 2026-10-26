@@ -10,20 +10,23 @@ const nav = page => page.getByRole("navigation").first();
 test("every tab opens", async ({ page, account }) => {
   await page.goto("/");
   await expect(page.getByRole("button", { name: "Account" })).toBeVisible();
-  // Discover's start page has no tab row, and the pages aren't in the
-  // Account menu; its stock lists have the row (20 Oct 2026)
+  // a computer's pages are in the bar down the left on every page (26 Oct
+  // 2026), not the Account menu; the header has no tab row
+  const rail = page.locator("nav.side-rail");
+  await expect(rail).toBeVisible();
   await expect(page.locator(".discovery-tabs")).toBeHidden();
   await page.getByRole("button", { name: "Account", exact: true }).click();
   await expect(page.getByRole("menuitem", { name: /^Watchlist/ })).toHaveCount(0);
   await page.keyboard.press("Escape");
   await openStocks(page);
   await expect(page.locator("table, [role=table]").first()).toBeVisible();
-  await expect(page.locator(".discovery-tabs"), "a stock list has the tab row").toBeVisible();
+  await expect(rail, "a stock list has the bar").toBeVisible();
   axeLog(await axeCheck(page, "Discover"));
   for (const tab of ["Explore", "Momentum", "Watchlist", "Portfolio", "Performance", "Alerts"]) {
     await openPage(page, tab);
     await page.waitForLoadState("networkidle");
-    await expect(page.locator(".discovery-tabs"), "the other pages keep the tab row").toBeVisible();
+    await expect(rail, "the other pages keep the bar").toBeVisible();
+    await expect(rail.getByRole("button", { name: new RegExp(`^${tab}`) })).toHaveAttribute("aria-current", "page");
     await expect(page.getByRole("heading").first()).toBeVisible();
     axeLog(await axeCheck(page, tab));
   }

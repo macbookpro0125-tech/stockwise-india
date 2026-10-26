@@ -13,6 +13,7 @@ import PublicHtmlPage, { isPublicHtmlPath } from "./PublicHtmlPage.jsx";
 import ResetPassword from "./ResetPassword.jsx";
 import { usePath, navigate, stockFromPath, stockPath, chartFromPath, SiteFooter } from "./site.jsx";
 import Header, { BottomTabBar, TABS } from "./Header.jsx";
+import SideRail from "./SideRail.jsx";
 import PriceStrip from "./PriceStrip.jsx";
 import DiscoverView from "./DiscoverView.jsx";
 import Tour, { APP_TOUR, STOCK_TOUR } from "./Tour.jsx";
@@ -407,6 +408,8 @@ export default function App() {
       <SiteFooter />
       {/* On a company page too: the tab it was opened from stays lit */}
       <BottomTabBar tab={tab} onTab={goTab} />
+      {/* A computer: the pages in a slim bar down the left, with peeks */}
+      <SideRail tab={tab} onTab={goTab} account={account} theme={theme} onToggleTheme={toggleTheme} onOpenStock={openSymbol} />
       {/* A phone's top bar: the menu and + float once it's scrolled past, the
           menu opens Settings from the left, + what can be made (PhoneChrome.jsx) */}
       <PhoneChromeHost account={account} theme={theme} onToggleTheme={toggleTheme} onTab={goTab} onLogout={logout} onDeleted={accountDeleted} onTour={askForTour} stockOpen={!!open} />
