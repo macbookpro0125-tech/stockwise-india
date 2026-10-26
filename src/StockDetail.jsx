@@ -861,7 +861,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
 
       <section id="sec-overview" className="ss-section sd-section" data-tab="overview">
         {/* a phone: the gist and a bar per chapter first, then a shorter chart */}
-        {isPhone && m && <VerdictLines m={m} onGo={showPhoneTab} />}
+        {isPhone && m && <VerdictLines m={m} fairValue={valued ? fv?.fv25 : null} price={price} onGo={showPhoneTab} />}
         <PriceChartPanel symbol={data.symbol} name={data.name} compact={isPhone} levels={valued || levels ? { ...(valued ? fv : {}), ...(levels ?? {}) } : null} />
         <WhyMoving symbol={data.symbol} />
         {m && !isPhone && <StockGlance r={m.research} />}
