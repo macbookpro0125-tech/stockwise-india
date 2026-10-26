@@ -45,10 +45,12 @@ function DeBars({ points }) {
   );
 }
 
-export default function StockHealth({ m }) {
+// scoreLink: the line pointing to the scorecard's checks — a phone's
+// Safety chapter lists them right under this card (StockChapters.jsx)
+export default function StockHealth({ m, scoreLink = true }) {
   if (!m) return null;
   const balance = m.research?.groups?.find(g => g.id === "balance");
-  const verdict = balance?.applicable && balance.score != null && (
+  const verdict = scoreLink && balance?.applicable && balance.score != null && (
     <button type="button" className="sd-health-verdict" onClick={() => openCheck("why-balance")}>
       The Scorecard rates its balance sheet <b>{balance.score >= 70 ? "strong" : balance.score >= 50 ? "fair" : "weak"}</b> — see the checks
     </button>
@@ -99,7 +101,11 @@ export default function StockHealth({ m }) {
         </div>
       </div>
 
-      {f.deHistory.length > 1 && (
+      {/* a row of zeros says less than a sentence (26 Oct 2026, TCS) */}
+      {f.deHistory.length > 1 && !f.deHistory.some(p => p.de >= 0.005) && (
+        <p className="sd-foot sd-health-note">No borrowings in any of the last {f.deHistory.length} years.</p>
+      )}
+      {f.deHistory.length > 1 && f.deHistory.some(p => p.de >= 0.005) && (
         <>
           <h4 className="sd-glance-h sd-div-h">Borrowings to equity, by year</h4>
           <DeBars points={f.deHistory} />

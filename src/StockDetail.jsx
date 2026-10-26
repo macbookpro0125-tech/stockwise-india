@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { cardName } from "./stockName.js";
 import { SHOW_TAB, usePhone } from "./phoneTabs.js";
-import { NotebookPen, Check, X, TriangleAlert, LoaderCircle, ArrowLeft, ArrowUpRight, CalendarDays, CircleCheck, ArrowRight, ChevronRight, Gauge, ClipboardCheck, Scale, ChartColumn, Coins, ChartPie, Activity, Users, Newspaper, Globe } from "lucide-react";
+import { NotebookPen, Check, X, TriangleAlert, LoaderCircle, ArrowLeft, ArrowUpRight, CalendarDays, CircleCheck, ArrowRight } from "lucide-react";
 import { api } from "./api.js";
 import { fairValues, userLevels, pricePosition, fmtRs } from "../server/levels.js";
 import { useMyLevels } from "./myLevels.js";
@@ -21,7 +21,7 @@ import ValuationExplorer from "./ValuationExplorer.jsx";
 import { ValuedAs, BankValuation, CyclicalValuation, NoFairValue, pbAt, CYCLE_TONE } from "./ValuationModel.jsx";
 import PhasePositionPlanner from "./PhasePositionPlanner.jsx";
 import ThesisMonitor from "./ThesisMonitor.jsx";
-import StockSide, { Scorecard } from "./StockSide.jsx";
+import StockSide from "./StockSide.jsx";
 import StockGlance from "./StockGlance.jsx";
 import WhyMoving from "./WhyMoving.jsx";
 import StockPerformance from "./StockPerformance.jsx";
@@ -34,6 +34,7 @@ import StockRecent from "./StockRecent.jsx";
 import InsidersPanel from "./InsidersPanel.jsx";
 import StockEarningsCall from "./StockEarningsCall.jsx";
 import StockSnapshot from "./StockSnapshot.jsx";
+import { CHAPTERS, VerdictLines, ChapterTop, ChapterEnd } from "./StockChapters.jsx";
 import { docTop } from "./motion.js";
 
 // The original Stockwise stock page (stock-screener src/StockScreener.jsx),
@@ -450,18 +451,8 @@ const closeLabel = c => `NSE close (${dayLabel(c.date)})`;
 // they need the scorecard or valuation or the others?") — the Overview's
 // Go deeper list and the Next card at a tab's end ask them; a computer
 // shows them on a tab's hover
-const TABS = [
-  ["overview", "Overview", ["overview", "about", "business", "events"], "What is it, and what's the gist?", Gauge],
-  ["scores", "Scorecard", ["scores", "thesis"], "Is it a good business?", ClipboardCheck],
-  ["valuation", "Valuation", ["valuation", "sizing", "levels"], "Is the price fair for what it earns?", Scale],
-  ["financials", "Financials", ["financials", "health"], "Is it growing, and can it carry its debt?", ChartColumn],
-  ["dividends", "Dividends", ["dividends"], "What does it pay its shareholders?", Coins],
-  ["holding", "Holdings", ["holding"], "Who owns it, and are they buying or selling?", ChartPie],
-  ["technicals", "Technicals", ["technicals"], "Which way is the price trending?", Activity],
-  ["peers", "Peers", ["peers"], "How does it compare with similar companies?", Users],
-  ["filings", "News & filings", ["filings"], "What has it told NSE lately?", Newspaper],
-  ["web", "Around the web", ["web"], "What are people saying about it elsewhere?", Globe],
-];
+// The tabs are the chapters (StockChapters.jsx): [id, label, parts, question]
+const TABS = CHAPTERS.map(c => [c.id, c.label, c.parts, c.question]);
 
 // A tab not built yet (a phone builds one when it's first shown): its mark
 // alone, so the Go deeper list and the Next card still know it's there
@@ -474,28 +465,6 @@ function usePresentTabs(ready) {
     setPresent(TABS.filter(([, , parts]) => parts.some(p => document.getElementById(`sec-${p}`))));
   }, [ready]);
   return present;
-}
-
-// At the end of a phone's Overview (in the Next card's place): where to look
-// for each question — the question leads, the tab it opens under it
-function TabGuide({ ready, onGo }) {
-  const present = usePresentTabs(ready).filter(([id]) => id !== "overview");
-  if (!present.length) return null;
-  return (
-    <section className="sd-card sd-guide" aria-labelledby="sd-guide-title">
-      <h3 id="sd-guide-title" className="sd-card-title">Go deeper</h3>
-      <p className="sd-guide-lede">Each tab answers one question.</p>
-      <div className="sd-guide-list">
-        {present.map(([id, label, , question, Icon]) => (
-          <button key={id} type="button" className="sd-guide-row" onClick={() => onGo(id)}>
-            <span className="sd-guide-icon"><Icon size={18} strokeWidth={2.2} aria-hidden="true" /></span>
-            <span className="sd-guide-text"><b>{question}</b> <span>{label}</span></span>
-            <ChevronRight size={18} className="sd-guide-chev" aria-hidden="true" />
-          </button>
-        ))}
-      </div>
-    </section>
-  );
 }
 
 // A phone's tab ends by pointing on to the next one (asked for 21 Oct 2026,
@@ -746,6 +715,11 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
 
       <div className="sd-main" data-phone-tab={phoneTab}>
 
+      {/* A phone's chapters open with their answer and end with their checks */}
+      {isPhone && m && CHAPTERS.filter(c => c.id !== "overview" && c.id !== "news").map(c => (
+        <div key={c.id} className="sd-tabpart" data-tab={c.id}>{built(c.id) && <ChapterTop id={c.id} m={m} fairValue={valued ? fv?.fv25 : null} price={price} />}</div>
+      ))}
+
       {data.quoteError && (
         <div style={{ fontSize: 12, color: "var(--yellow)", background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", borderRadius: 8, padding: "8px 12px", marginBottom: 12 }}>
           Couldn't refresh the latest close ({data.quoteError}){data.close ? " — using NSE's last close." : "."}
@@ -764,27 +738,35 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       <section id="sec-overview" className="ss-section sd-section" data-tab="overview">
         <PriceChartPanel symbol={data.symbol} name={data.name} levels={valued || levels ? { ...(valued ? fv : {}), ...(levels ?? {}) } : null} />
         <WhyMoving symbol={data.symbol} />
-        {m && <StockGlance r={m.research} />}
+        {m && (isPhone
+          ? <VerdictLines m={m} fairValue={valued ? fv?.fv25 : null} price={price} onGo={showPhoneTab} />
+          : <StockGlance r={m.research} />)}
         <StockSnapshot m={m} price={price} dates={data.dataDates} />
-        <StockPerformance m={m} />
       </section>
+      <div id="sec-performance" className="ss-section" data-tab="price">{built("price") && <StockPerformance m={m} />}</div>
 
-      <div id="sec-about" className="ss-section" data-tab="overview"><CompanyProfile symbol={data.symbol} m={m} /></div>
-      {m && <StockBusiness m={m} symbol={data.symbol} name={data.name} />}
+      <div id="sec-about" className="ss-section" data-tab="business"><CompanyProfile symbol={data.symbol} m={m} /></div>
+      {m && built("business") && <StockBusiness m={m} symbol={data.symbol} name={data.name} />}
 
       {m && <div id="sec-events" className="ss-section" data-tab="overview"><StockRecent m={m} holding={data.holding} /></div>}
 
-      {m && !built("scores") && <TabStub tab="scores" part="scores" />}
-      {m && built("scores") && (
-        <div className="sd-tabpart" data-tab="scores">
-          <div id="sec-scores" className="ss-section" data-tour="research"><h2 className="sd-h2">Scorecard. <span>How the business scores on its own filings.</span></h2><div className="sd-phone-only"><Scorecard r={m.research} /></div><ResearchPanel research={m.research} /></div>
-          <div id="sec-thesis" className="ss-section" data-tour="thesis"><ThesisMonitor metrics={m} account={account} /></div>
+      {m && (
+        <div className="sd-tabpart" data-tab="overview">
+          {isPhone ? (
+            <details id="sec-scores" className="sd-card sd-fold">
+              <summary>How the scores are worked out</summary>
+              <ResearchPanel research={m.research} />
+            </details>
+          ) : (
+            <div id="sec-scores" className="ss-section" data-tour="research"><h2 className="sd-h2">Scorecard. <span>How the business scores on its own filings.</span></h2><ResearchPanel research={m.research} /></div>
+          )}
+          <div id="sec-thesis" className="ss-section" data-tour="thesis"><ThesisMonitor metrics={m} account={account} review={!isPhone} /></div>
         </div>
       )}
 
-      {m && !built("valuation") && <TabStub tab="valuation" part="valuation" />}
-      {m && built("valuation") && (
-        <div className="sd-tabpart" data-tab="valuation">
+      {m && !built("value") && <TabStub tab="value" part="valuation" />}
+      {m && built("value") && (
+        <div className="sd-tabpart" data-tab="value">
           {/* Verify & Override — or, without a model that values the
               company, why there's no fair value */}
           <div id="sec-valuation" className="ss-section">
@@ -941,8 +923,8 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         </div>
       )}
 
-      {m && built("valuation") && (
-        <div className="sd-tabpart" data-tab="valuation">
+      {m && built("value") && (
+        <div className="sd-tabpart" data-tab="value">
           <div id="sec-levels" className="ss-section">
 
           {/* Where the price sits — described against the levels, never an instruction */}
@@ -995,25 +977,39 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
             </details>
           )}
 
-          <PiotroskiCard m={m} />
+          {!isPhone && <PiotroskiCard m={m} />}
           <KeyNumbers data={data} m={m} />
           </div>
         </div>
       )}
 
-      {m && <div id="sec-financials" className="ss-section" data-tab="financials">{built("financials") && <><h2 className="sd-h2">Financials. <span>Its results, year by year.</span></h2><FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} /></>}</div>}
-      {m && <div id="sec-health" className="ss-section" data-tab="financials">{built("financials") && <><h2 className="sd-h2">Financial health. <span>What it owns, what it owes, and how its debt is covered.</span></h2><StockHealth m={m} /></>}</div>}
-      {m?.dividendRecord && <div id="sec-dividends" className="ss-section" data-tab="dividends">{built("dividends") && <><h2 className="sd-h2">Dividends. <span>What it pays, and what that takes.</span></h2><StockDividends m={m} /></>}</div>}
-      <div id="sec-holding" className="ss-section" data-tab="holding">{built("holding") && <><h2 className="sd-h2">Holdings. <span>Who owns it, and how that is changing.</span></h2><ShareholdingPanel symbol={data.symbol} /><InsidersPanel symbol={data.symbol} /></>}</div>
-      <div id="sec-technicals" className="ss-section" data-tab="technicals">{built("technicals") && <><h2 className="sd-h2">Technicals. <span>The trend in the price.</span></h2><TechnicalPanel ticker={data.symbol} /></>}</div>
+      {m && <div id="sec-financials" className="ss-section" data-tab="growth">{built("growth") && <><h2 className="sd-h2">Financials. <span>Its results, year by year.</span></h2><FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} /></>}</div>}
+      {m && <div id="sec-health" className="ss-section" data-tab="safety">{built("safety") && <><h2 className="sd-h2">Financial health. <span>What it owns, what it owes, and how its debt is covered.</span></h2><StockHealth m={m} scoreLink={!isPhone} /></>}</div>}
+      <div id="sec-holding" className="ss-section" data-tab="owners">{built("owners") && <><h2 className="sd-h2">Holdings. <span>Who owns it, and how that is changing.</span></h2><ShareholdingPanel symbol={data.symbol} /><InsidersPanel symbol={data.symbol} /></>}</div>
+      {m?.dividendRecord && <div id="sec-dividends" className="ss-section" data-tab="owners">{built("owners") && <><h2 className="sd-h2">Dividends. <span>What it pays, and what that takes.</span></h2><StockDividends m={m} /></>}</div>}
+      <div id="sec-technicals" className="ss-section" data-tab="price">{built("price") && <><h2 className="sd-h2">Technicals. <span>The trend in the price.</span></h2><TechnicalPanel ticker={data.symbol} /></>}</div>
 
-      <div id="sec-peers" className="ss-section" data-tab="peers">{built("peers") && <><h2 className="sd-h2">Peers. <span>How it compares with similar companies.</span></h2>{m && <StockSectorCompare m={m} />}<PeersPanel symbol={data.symbol} onAnalyze={onOpenStock} /></>}</div>
-      <div id="sec-filings" className="ss-section" data-tour="filings" data-tab="filings">{built("filings") && <><h2 className="sd-h2">News & filings. <span>Straight from NSE.</span></h2><StockEarningsCall symbol={data.symbol} m={m} /><NewsPanel symbol={data.symbol} /></>}</div>
-      <div id="sec-web" className="ss-section" data-tab="web">{built("web") && <><h2 className="sd-h2">Around the web. <span>Videos, posts and news about it elsewhere.</span></h2><AroundTheWeb symbol={data.symbol} name={data.name} /></>}</div>
+      <div id="sec-peers" className="ss-section" data-tab="business">{built("business") && <><h2 className="sd-h2">Peers. <span>How it compares with similar companies.</span></h2>{m && <StockSectorCompare m={m} />}<PeersPanel symbol={data.symbol} onAnalyze={onOpenStock} /></>}</div>
+      <div id="sec-filings" className="ss-section" data-tour="filings" data-tab="news">{built("news") && <><h2 className="sd-h2">News & filings. <span>Straight from NSE.</span></h2><StockEarningsCall symbol={data.symbol} m={m} /><NewsPanel symbol={data.symbol} /></>}</div>
+      <div id="sec-web" className="ss-section" data-tab="news">{built("news") && <><h2 className="sd-h2">Around the web. <span>Videos, posts and news about it elsewhere.</span></h2><AroundTheWeb symbol={data.symbol} name={data.name} /></>}</div>
       <div className="sd-tabpart" data-tab="overview">
         <MyNotes key={data.symbol} symbol={data.symbol} />
-        <StockDataDates dates={data.dataDates} quote={data.quote} research={m?.research} />
+        {isPhone ? (
+          <details className="sd-card sd-fold">
+            <summary>Where these figures come from</summary>
+            <StockDataDates dates={data.dataDates} quote={data.quote} research={m?.research} />
+          </details>
+        ) : <StockDataDates dates={data.dataDates} quote={data.quote} research={m?.research} />}
       </div>
+
+      {isPhone && m && CHAPTERS.filter(c => c.id !== "overview" && c.id !== "news").map(c => (
+        <div key={c.id} className="sd-tabpart" data-tab={c.id}>
+          {built(c.id) && <>
+            {c.id === "safety" && <PiotroskiCard m={m} />}
+            <ChapterEnd id={c.id} m={m} />
+          </>}
+        </div>
+      ))}
 
       <p style={{ fontSize: 11, color: "var(--t3)", textAlign: "center", lineHeight: 1.6 }}>
         <TriangleAlert size={12} style={{ verticalAlign: "-1px", marginRight: 4 }} />Always cross-check figures on NSE or BSE before investing.
@@ -1022,7 +1018,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       {/* A phone's tab ends by pointing on: the Overview with the list of
           every tab and the question it answers (at the bottom, after the
           company's own overview — 22 Oct 2026), the others with the next tab */}
-      {isPhone ? (phoneTab === "overview" ? <TabGuide ready={!!m} onGo={showPhoneTab} /> : <NextTab ready={!!m} current={phoneTab} onGo={showPhoneTab} />) : <div className="ss-back-bottom">
+      {isPhone ? <NextTab ready={!!m} current={phoneTab} onGo={showPhoneTab} /> : <div className="ss-back-bottom">
         <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, color: "var(--accent)", background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 12, cursor: "pointer", padding: "12px 24px", fontWeight: 400, margin: "8px auto 0" }}>
           <ArrowLeft size={16} /> Back to {backTo}
         </button>

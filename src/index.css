@@ -1745,17 +1745,16 @@ html[data-discover-step="strategies"] .discovery-tabs.tabs-on-discover { display
 .sd-tabpart { display: contents; }
 @media (max-width: 640px) {
   /* in a tab of a few screens, headings need no long-page spacing */
-  .sd.ap .sd-main .sd-h2 { max-width: none; margin: 14px 0 14px; font-size: 25px; line-height: 1.15; }
+  .sd.ap .sd-main .sd-h2 { max-width: none; margin: 22px 0 10px; font-size: 19px; font-weight: 600; line-height: 1.25; letter-spacing: -0.02em; }
+  .sd.ap .sd-main .sd-h2 span { display: none; }
   .sd-main[data-phone-tab="overview"] > [data-tab]:not([data-tab="overview"]) { display: none !important; }
-  .sd-main[data-phone-tab="scores"] > [data-tab]:not([data-tab="scores"]) { display: none !important; }
-  .sd-main[data-phone-tab="valuation"] > [data-tab]:not([data-tab="valuation"]) { display: none !important; }
-  .sd-main[data-phone-tab="financials"] > [data-tab]:not([data-tab="financials"]) { display: none !important; }
-  .sd-main[data-phone-tab="dividends"] > [data-tab]:not([data-tab="dividends"]) { display: none !important; }
-  .sd-main[data-phone-tab="holding"] > [data-tab]:not([data-tab="holding"]) { display: none !important; }
-  .sd-main[data-phone-tab="technicals"] > [data-tab]:not([data-tab="technicals"]) { display: none !important; }
-  .sd-main[data-phone-tab="peers"] > [data-tab]:not([data-tab="peers"]) { display: none !important; }
-  .sd-main[data-phone-tab="filings"] > [data-tab]:not([data-tab="filings"]) { display: none !important; }
-  .sd-main[data-phone-tab="web"] > [data-tab]:not([data-tab="web"]) { display: none !important; }
+  .sd-main[data-phone-tab="business"] > [data-tab]:not([data-tab="business"]) { display: none !important; }
+  .sd-main[data-phone-tab="growth"] > [data-tab]:not([data-tab="growth"]) { display: none !important; }
+  .sd-main[data-phone-tab="safety"] > [data-tab]:not([data-tab="safety"]) { display: none !important; }
+  .sd-main[data-phone-tab="owners"] > [data-tab]:not([data-tab="owners"]) { display: none !important; }
+  .sd-main[data-phone-tab="value"] > [data-tab]:not([data-tab="value"]) { display: none !important; }
+  .sd-main[data-phone-tab="price"] > [data-tab]:not([data-tab="price"]) { display: none !important; }
+  .sd-main[data-phone-tab="news"] > [data-tab]:not([data-tab="news"]) { display: none !important; }
 }
 
 /* Read by screen readers, not shown */
@@ -3749,3 +3748,41 @@ html.no-blur .sd.ap .sd-bar, html.no-blur .sip-bar, html.no-blur .discovery-head
 html.no-blur .screen-back-pin, html.no-blur .sp-pop, html.no-blur .stl { background: var(--s2); }
 html.no-blur .pc-sheet { background: var(--s1); }
 html.no-blur .pc-drawer-head { background: var(--s1); }
+
+/* A company page's chapters (StockChapters.jsx, 26 Oct 2026): the Summary's
+   verdict, one line per chapter; each chapter opens with its question and
+   answer and ends with its checks and what to watch. Colour only says how a
+   score reads — strong, fair or weak */
+.sd-verdict-list, .sd-check-list, .sd-watch-list { list-style: none; margin: 0; padding: 0; }
+.sd-verdict-list li + li, .sd-check-list li + li, .sd-watch-list li + li { border-top: 1px solid var(--bdr); }
+/* the name and its word on one line, the sentence under them, full width */
+.sd-verdict-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "name word go" "line line go"; align-items: center; column-gap: 10px; row-gap: 3px; width: 100%; padding: 12px 0; border: 0; background: none; text-align: left; font: inherit; color: var(--t1); cursor: pointer; }
+.sd-verdict-name { grid-area: name; font-size: 15px; font-weight: 500; }
+.sd-verdict-line { grid-area: line; font-size: 13.5px; line-height: 1.4; color: var(--t2); }
+.sd-verdict-word { grid-area: word; }
+.sd-verdict-row .sd-score-go { grid-area: go; }
+.sd-verdict-word { font-size: 12px; font-weight: 500; padding: 3px 9px; border-radius: 999px; white-space: nowrap; color: var(--tone); background: color-mix(in srgb, var(--tone) 13%, transparent); }
+.sd-verdict-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+.sd-chapter-top { margin: 6px 0 14px; }
+.sd-chapter-q { margin: 0 0 10px; font-size: 26px; font-weight: 700; line-height: 1.15; letter-spacing: -0.03em; color: var(--t1); text-wrap: balance; }
+.sd-chapter-answer { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 16px; border: 1px solid color-mix(in srgb, var(--tone) 35%, var(--bdr)); background: color-mix(in srgb, var(--tone) 8%, var(--s2)); }
+.sd-chapter-line { flex: 1; min-width: 0; font-size: 15px; line-height: 1.4; color: var(--t1); }
+.sd-chapter-score { flex: none; display: flex; flex-direction: column; align-items: center; font-size: 11px; font-weight: 500; color: var(--tone); }
+.sd-chapter-score b { font-size: 22px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
+.sd-check { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 10px; padding: 10px 0; }
+.sd-check-mark { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; color: var(--tone); background: color-mix(in srgb, var(--tone) 14%, transparent); }
+.sd-check-text { font-size: 14px; line-height: 1.45; color: var(--t1); }
+.sd-check-text small { display: block; margin-bottom: 2px; font-size: 11.5px; color: var(--t3); }
+.sd-flag { display: flex; gap: 8px; align-items: flex-start; margin: 0 0 10px; padding: 10px 12px; border-radius: 10px; font-size: 13px; line-height: 1.45; color: var(--t1); background: color-mix(in srgb, var(--tone) 10%, transparent); }
+.sd-flag svg { flex: none; margin-top: 1px; color: var(--tone); }
+.sd-watch .sd-card-title { display: flex; align-items: center; gap: 8px; }
+.sd-watch .sd-card-title svg { color: var(--t3); }
+.sd-watch-list li { padding: 9px 0; font-size: 14px; line-height: 1.45; color: var(--t2); }
+.sd-watch-list b { display: block; font-weight: 500; color: var(--t1); }
+.sd .sd-card.sd-fold { padding: 0; }
+.sd-fold > summary { cursor: pointer; list-style: none; padding: 16px 18px; font-size: 14px; color: var(--t1); display: flex; align-items: center; justify-content: space-between; }
+.sd-fold > summary::-webkit-details-marker { display: none; }
+.sd-fold > summary::after { content: ""; width: 7px; height: 7px; border-right: 1.5px solid var(--t3); border-bottom: 1.5px solid var(--t3); transform: rotate(45deg); margin-right: 4px; transition: transform 150ms; }
+.sd-fold[open] > summary::after { transform: rotate(-135deg); }
+.sd-fold > :not(summary) { margin: 0 12px 12px; }
+.sd-verdict, .sd-checks, .sd-watch, .sd-fold { margin-bottom: 12px; }

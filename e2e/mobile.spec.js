@@ -239,26 +239,28 @@ test("M-H9 the stock list's title is the strategy wheel, its detail on an ⓘ pa
 });
 
 // A phone's company page (20 Oct 2026, "congested and not understandable" —
-// 25 screens in one scroll): its tabs are pages, one tab's parts at a time,
-// and a jump to a part on another tab switches to that tab
-test("M-H10 a company's tabs are pages of their own on a phone @phone", async ({ page, account, isMobile }) => {
+// 25 screens in one scroll): its chapters are pages, one chapter's parts at a
+// time (26 Oct 2026: the chapters an investor reads in order), and a jump
+// to a part in another chapter switches to it
+test("M-H10 a company's chapters are pages of their own on a phone @phone", async ({ page, account, isMobile }) => {
   test.skip(!isMobile, "the phone layout");
   await page.goto("/stock/TCS");
   await expect(page.locator("#sec-overview")).toBeVisible();
-  await expect(page.locator("#sec-scores")).toBeHidden();
+  await expect(page.locator("#sec-health")).toBeHidden();
   await expect(page.locator("#sec-levels")).toBeHidden();
   const tabs = page.getByRole("navigation", { name: "Parts of this page" });
-  await tabs.getByRole("button", { name: "Valuation" }).click();
+  expect(await tabs.getByRole("button").allTextContents()).toEqual(["Summary", "Business", "Growth", "Safety", "Owners", "Value", "Price", "News"]);
+  await tabs.getByRole("button", { name: "Value" }).click();
   await expect(page.locator("#sec-levels")).toBeVisible();
   await expect(page.locator("#sec-overview")).toBeHidden();
-  await expect(tabs.getByRole("button", { name: "Valuation" })).toHaveAttribute("aria-current", "true");
+  await expect(tabs.getByRole("button", { name: "Value" })).toHaveAttribute("aria-current", "true");
   const height = await page.evaluate(() => document.documentElement.scrollHeight);
-  expect(height, "a tab is a few screens, not the whole page").toBeLessThan(12000);
-  // the investment case's "See Financial health" opens the Financials tab
-  await tabs.getByRole("button", { name: "Scorecard" }).click();
-  await page.getByRole("button", { name: "See Financial health" }).first().click();
-  await expect(page.locator("#sec-health")).toBeInViewport();
-  await expect(tabs.getByRole("button", { name: "Financials" })).toHaveAttribute("aria-current", "true");
+  expect(height, "a chapter is a few screens, not the whole page").toBeLessThan(12000);
+  // the Summary's Safety line opens the Safety chapter
+  await tabs.getByRole("button", { name: "Summary" }).click();
+  await page.getByRole("region", { name: "In one line each" }).getByRole("button", { name: /^Safety/ }).click();
+  await expect(tabs.getByRole("button", { name: "Safety" })).toHaveAttribute("aria-current", "true");
+  await expect(page.locator("#sec-health")).toBeVisible();
 });
 
 // 21 Oct 2026, seen in the Play Store pictures: a card's figures were cut
@@ -304,27 +306,23 @@ test("M-H13 the company page's tab row only scrolls across @phone", async ({ pag
   expect(scrollHeight).toBeLessThanOrEqual(clientHeight);
 });
 
-// 21 Oct 2026: each tab ends by pointing on to the next one ("go forward and
-// check all other things"), not Back to Discover; the last tab ends plainly.
+// 21 Oct 2026: each chapter ends by pointing on to the next one ("go forward
+// and check all other things"), not Back to Discover; the last ends plainly.
 // And no wide empty band under the footer: the page keeps only the tab bar's
 // room below it.
-test("M-H14 each company tab ends with the next one, and no empty band below @phone", async ({ page, account, isMobile }) => {
+test("M-H14 each company chapter ends with the next one, and no empty band below @phone", async ({ page, account, isMobile }) => {
   test.skip(!isMobile, "the phone layout");
   await page.goto("/stock/TCS");
   const tabs = page.getByRole("navigation", { name: "Parts of this page" });
   await expect(page.getByRole("button", { name: /Back to Discover/ })).toHaveCount(0);
-  // the Overview ends with its Go deeper list instead (M-H15)
-  await expect(page.getByRole("region", { name: "Go deeper" })).toBeVisible();
-  await expect(page.getByRole("button", { name: /^Next:/ })).toHaveCount(0);
-  await tabs.getByRole("button", { name: "Scorecard" }).click();
-  const next = page.getByRole("button", { name: /^Next: Valuation/ });
+  const next = page.getByRole("button", { name: /^Next: Business/ });
   await expect(next).toBeVisible();
   await next.click();
-  await expect(tabs.getByRole("button", { name: "Valuation" })).toHaveAttribute("aria-current", "true");
-  await expect(page.locator("#sec-valuation")).toBeInViewport();
-  await expect(page.getByRole("button", { name: /^Next: Financials/ })).toBeAttached();
-  // the last tab (Around the web, after News & filings since 25 Oct 2026)
-  await tabs.getByRole("button", { name: "Around the web" }).click();
+  await expect(tabs.getByRole("button", { name: "Business" })).toHaveAttribute("aria-current", "true");
+  await expect(page.getByText("What does it do, and how well?", { exact: true })).toBeInViewport();
+  await expect(page.getByRole("button", { name: /^Next: Growth/ })).toBeAttached();
+  // the last chapter
+  await tabs.getByRole("button", { name: "News" }).click();
   await expect(page.getByRole("button", { name: /^Next:/ })).toHaveCount(0);
 
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
@@ -341,7 +339,8 @@ test("M-H14 each company tab ends with the next one, and no empty band below @ph
 test("M-H19 the peers table keeps its figures on a phone's screen @phone", async ({ page, account, isMobile }) => {
   test.skip(!isMobile, "the phone layout");
   await page.goto("/stock/TCS");
-  await page.getByRole("navigation", { name: "Parts of this page" }).getByRole("button", { name: "Peers" }).click();
+  // the peers are in the Business chapter since 26 Oct 2026
+  await page.getByRole("navigation", { name: "Parts of this page" }).getByRole("button", { name: "Business" }).click();
   const table = page.locator(".peers-table");
   await expect(table).toBeVisible();
   expect((await table.locator("thead th").allTextContents()).slice(0, 4)).toEqual(["Company", "Mkt Cap", "P/E", "ROCE"]);
@@ -359,26 +358,26 @@ test("M-H19 the peers table keeps its figures on a phone's screen @phone", async
 });
 
 // 21 Oct 2026: "how will people know they need the scorecard or valuation
-// or the others?" — the Overview says which tab answers which question, in
-// plain words, and each row opens its tab. The Next cards ask the same.
-test("M-H15 the Overview says what each tab answers @phone", async ({ page, account, isMobile }) => {
+// or the others?" — since 26 Oct 2026 the Summary gives each chapter's
+// answer in a line, and each line opens its chapter; a chapter opens with its
+// question and answer, and ends with the checks behind its score
+test("M-H15 the Summary answers each chapter in a line, and each line opens it @phone", async ({ page, account, isMobile }) => {
   test.skip(!isMobile, "the phone layout");
   await page.goto("/stock/TCS");
-  const guide = page.getByRole("region", { name: "Go deeper" });
-  await expect(guide).toBeVisible();
-  // 22 Oct 2026: "this should be at the bottom" — after the company's own
-  // overview (the chart, At a glance, its numbers, what changed), not before
-  const below = async sel => page.evaluate(([a, b]) => document.querySelector(a).getBoundingClientRect().top > document.querySelector(b).getBoundingClientRect().bottom, [".sd-guide", sel]);
-  for (const part of ["#sec-overview", "#sec-about"]) expect(await below(part), `Go deeper comes after ${part}`).toBe(true);
-  for (const [question, tab] of [["Is it a good business?", "Scorecard"], ["Is the price fair for what it earns?", "Valuation"], ["What has it told NSE lately?", "News & filings"]]) {
-    await expect(guide.getByRole("button", { name: `${question} ${tab}` })).toBeVisible();
+  const verdict = page.getByRole("region", { name: "In one line each" });
+  await expect(verdict).toBeVisible();
+  for (const name of ["Business", "Growth", "Safety", "Owners", "Value", "Price"]) {
+    await expect(verdict.getByRole("button", { name: new RegExp(`^${name}`) })).toBeVisible();
   }
-  await expect(guide.getByRole("button", { name: /Overview$/ })).toHaveCount(0);
-  await guide.getByRole("button", { name: "Is the price fair for what it earns? Valuation" }).click();
+  // the scores are said once: no At a glance or scorecard beside the lines
+  await expect(page.getByRole("region", { name: "At a glance" })).toHaveCount(0);
+  await expect(page.locator(".sd-glance")).toHaveCount(0);
+  await verdict.getByRole("button", { name: /^Value/ }).click();
   const tabs = page.getByRole("navigation", { name: "Parts of this page" });
-  await expect(tabs.getByRole("button", { name: "Valuation" })).toHaveAttribute("aria-current", "true");
-  await expect(page.locator("#sec-valuation")).toBeInViewport();
-  await expect(page.getByRole("button", { name: "Next: Financials. Is it growing, and can it carry its debt?" })).toBeAttached();
+  await expect(tabs.getByRole("button", { name: "Value" })).toHaveAttribute("aria-current", "true");
+  await expect(page.getByText("Is the price fair for what it earns?", { exact: true })).toBeInViewport();
+  await expect(page.getByRole("region", { name: "The checks" })).toBeAttached();
+  await expect(page.getByRole("button", { name: "Next: Price. How is the market treating it?" })).toBeAttached();
 });
 
 // 21 Oct 2026: "glass movement when I click on another" — one glass lens

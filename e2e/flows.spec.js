@@ -355,8 +355,9 @@ test("F03-H5 the dividends section: yield against other payers, payout, the year
   for (const label of ["Yield", "Other payers", "Payout"]) await expect(div.getByText(label, { exact: true })).toBeVisible();
   await expect(div.getByRole("img", { name: /Dividends a share by financial year: FY\d\d/ })).toBeVisible();
   await expect(div.getByText(/^Paid in \d of the last \d financial years/)).toBeVisible();
-  await page.getByRole("button", { name: "Dividends" }).first().click();
-  await expect(div).toBeInViewport();
+  // the section bar's Owners (26 Oct 2026) starts at who owns it, dividends next
+  await page.getByRole("navigation", { name: "Parts of this page" }).getByRole("button", { name: "Owners" }).click();
+  await expect(page.locator("#sec-holding")).toBeInViewport();
 });
 
 test("F03-H6 financial health: cover, debt and cash, the yearly chart, the Scorecard's verdict", async ({ page, account }) => {

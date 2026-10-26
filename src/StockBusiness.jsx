@@ -160,7 +160,7 @@ export default function StockBusiness({ m, symbol, name }) {
 
   if (!years.length && !productParts && !homeParts && !shareParts) return null;
   return (
-    <div id="sec-business" className="ss-section" data-tab="overview">
+    <div id="sec-business" className="ss-section" data-tab="business">
     <h2 className="sd-h2">Where the money comes from. <span>What it sells, where, and its share of the sector.</span></h2>
     <div className="mix-grid">
       {years.length > 0 && <BusinessCard years={years} />}
