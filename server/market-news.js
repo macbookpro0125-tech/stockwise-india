@@ -206,7 +206,9 @@ const MONTHS = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7,
 // RFC dates ("Fri, 24 Oct 2026 17:30:00 +0530") and the "24 Oct, 2026" kind
 export function officialTime(text) {
   const t = String(text ?? "").trim();
-  const d = Date.parse(t);
+  // a date alone ("24 Oct, 2026", SEBI's) isn't Date.parse's: it would read
+  // it as midnight wherever the server runs, a day early east of London
+  const d = /\d:\d\d/.test(t) ? Date.parse(t) : NaN;
   if (!isNaN(d)) return new Date(d);
   const m = t.match(/(\d{1,2})[\s-]+([A-Za-z]{3})[a-z]*[\s,-]+(\d{4})/);
   return m && MONTHS[m[2].toLowerCase()] != null ? new Date(Date.UTC(+m[3], MONTHS[m[2].toLowerCase()], +m[1], 6, 30)) : null;
