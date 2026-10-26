@@ -11,6 +11,7 @@ import StockSearchBar from "./StockSearchBar.jsx";
 import AddHoldingModal from "./AddHoldingModal.jsx";
 import ImportHoldingsModal from "./ImportHoldingsModal.jsx";
 import CreateAlertModal from "./CreateAlertModal.jsx";
+import { BrandMark } from "./site.jsx";
 
 // A phone's top bar and what it opens (asked for 26 Oct 2026, after Reddit's
 // app): a round menu button on the left — Settings, from the left, also by a
@@ -58,6 +59,8 @@ export function PhoneFloatingBar({ dot, hidden = false }) {
 }
 
 // Slides a panel away before it goes, as the filters sheet does
+const SLIDE_MS = 340;
+
 function useClosing(open) {
   const [shown, setShown] = useState(open);
   const [closing, setClosing] = useState(false);
@@ -159,17 +162,53 @@ export function SettingsDrawer({ children, enabled = true }) {
   const phone = usePhone();
   const panel = usePanel();
   const open = panel === "settings";
-  const [shown, closing] = useClosing(open);
-  const [drag, setDrag] = useState(null); // px the drawer is pulled from its rest
+  // One position for the panel and the page beside it, in px open (0 to its
+  // width): a finger sets it while dragging, and both glide to the end it's
+  // let go towards on the same curve (26 Oct 2026: "the closing and opening
+  // is not smooth, it can't close when I move it left")
+  const [shown, setShown] = useState(open);
+  const [entered, setEntered] = useState(false);
+  const [drag, setDrag] = useState(null);
   const ref = useRef(null);
+  const wrap = useRef(null);
   const gesture = useRef(null);
   const width = () => ref.current?.offsetWidth ?? Math.min(340, window.innerWidth * 0.86);
 
+  // in: drawn closed for a frame, then glides open; out: glides shut, then goes
+  useEffect(() => {
+    if (open) {
+      setShown(true);
+      let b; const a = requestAnimationFrame(() => { b = requestAnimationFrame(() => setEntered(true)); });
+      return () => { cancelAnimationFrame(a); cancelAnimationFrame(b); };
+    }
+    setEntered(false);
+    const t = setTimeout(() => setShown(false), SLIDE_MS + 40);
+    return () => clearTimeout(t);
+  }, [open]);
+
+  // Where a let-go finger sends it: past a third of the way, or a flick
+  const settle = (g, x) => {
+    const dt = Math.max(1, performance.now() - g.t);
+    const speed = (x - g.lx) / dt; // px per ms, + is towards open
+    const at = g.at;
+    setDrag(null);
+    const toOpen = Math.abs(speed) > 0.35 ? speed > 0 : at > width() * (g.opening ? 0.3 : 0.7);
+    if (toOpen) { if (g.opening) chrome.open("settings"); tick(); setEntered(true); }
+    else if (g.opening) { setEntered(false); setTimeout(() => setShown(false), SLIDE_MS + 40); } // never opened: nothing to close
+    else chrome.close();
+  };
+  const follow = (g, x) => {
+    if (performance.now() - g.t > 16) { g.lx = g.x2 ?? g.x; g.t = performance.now(); }
+    g.x2 = x;
+    g.at = Math.max(0, Math.min(width(), (g.opening ? 0 : width()) + (x - g.x)));
+    setDrag(g.at);
+  };
+
   // A swipe to the right that starts on the left side of the screen, on any
-  // page (26 Oct 2026: on an iPhone the very edge is Safari's own Back swipe,
-  // which a page can't take over, so it needn't start at the edge). Not on
-  // anything that moves sideways itself — the card rows, a chart, the tab
-  // bar, a field — and an up-and-down scroll stays a scroll.
+  // page (on an iPhone the very edge is Safari's own Back swipe, which a page
+  // can't take over, so it needn't start at the edge). Not on anything that
+  // moves sideways itself — the card rows, a chart, the tab bar, a field —
+  // and an up-and-down scroll stays a scroll.
   useEffect(() => {
     if (!phone || !enabled) return;
     const sideways = el => {
@@ -185,7 +224,7 @@ export function SettingsDrawer({ children, enabled = true }) {
       if (document.querySelector("[role='dialog'][aria-modal='true']")) return;
       const t = e.touches[0];
       if (t.clientX > window.innerWidth * 0.45 || sideways(e.target)) return;
-      gesture.current = { x: t.clientX, y: t.clientY, opening: true, live: false };
+      gesture.current = { x: t.clientX, y: t.clientY, lx: t.clientX, t: performance.now(), at: 0, opening: true, live: false };
     };
     const move = e => {
       const g = gesture.current;
@@ -194,20 +233,18 @@ export function SettingsDrawer({ children, enabled = true }) {
       if (!g.live) {
         if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { gesture.current = null; return; }
         if (dx < 14 || dx < Math.abs(dy) * 1.4) return;
-        g.live = true;
-        chrome.open("settings");
+        g.live = true; g.x = t.clientX; // from here, so it doesn't jump
+        setShown(true); setEntered(true);
       }
       // it's the panel's now: the page doesn't scroll under the finger
       if (e.cancelable) e.preventDefault();
-      setDrag(Math.min(0, dx - width()));
+      follow(g, t.clientX);
     };
     const up = e => {
       const g = gesture.current;
+      if (!g?.opening) return;
       gesture.current = null;
-      if (!g?.opening || !g.live) return;
-      const dx = (e.changedTouches[0]?.clientX ?? g.x) - g.x;
-      setDrag(null);
-      if (dx < width() * 0.3) chrome.close(); else tick(); // settled open: a tick
+      if (g.live) settle(g, e.changedTouches[0]?.clientX ?? g.x2 ?? g.x);
     };
     window.addEventListener("touchstart", down, { passive: true });
     window.addEventListener("touchmove", move, { passive: false });
@@ -219,29 +256,48 @@ export function SettingsDrawer({ children, enabled = true }) {
       window.removeEventListener("touchend", up);
       window.removeEventListener("touchcancel", up);
     };
-  }, [phone, enabled]);
+  }, [phone, enabled]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // While open: a swipe left on it closes it, following the finger
-  const onTouchStart = e => { const t = e.touches[0]; gesture.current = { x: t.clientX, y: t.clientY, opening: false, live: false }; };
-  const onTouchMove = e => {
-    const g = gesture.current;
-    if (!g || g.opening) return;
-    const t = e.touches[0], dx = t.clientX - g.x, dy = t.clientY - g.y;
-    if (!g.live) {
-      if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { gesture.current = null; return; }
-      if (dx > -12) return;
-      g.live = true;
-    }
-    setDrag(Math.min(0, dx));
-  };
-  const onTouchEnd = e => {
-    const g = gesture.current;
-    gesture.current = null;
-    if (!g || g.opening || !g.live) return;
-    const dx = (e.changedTouches[0]?.clientX ?? g.x) - g.x;
-    setDrag(null);
-    if (-dx > width() * 0.3) chrome.close();
-  };
+  // While open: a swipe left anywhere — on the panel or the page beside it —
+  // closes it, following the finger; a scroll up and down stays a scroll
+  useEffect(() => {
+    const el = wrap.current;
+    if (!el) return;
+    const down = e => {
+      if (e.touches.length !== 1) return;
+      const t = e.touches[0];
+      gesture.current = { x: t.clientX, y: t.clientY, lx: t.clientX, t: performance.now(), at: width(), opening: false, live: false };
+    };
+    const move = e => {
+      const g = gesture.current;
+      if (!g || g.opening) return;
+      const t = e.touches[0], dx = t.clientX - g.x, dy = t.clientY - g.y;
+      if (!g.live) {
+        if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { gesture.current = null; return; }
+        if (dx > -10 || -dx < Math.abs(dy) * 1.2) return;
+        g.live = true; g.x = t.clientX;
+      }
+      if (e.cancelable) e.preventDefault();
+      follow(g, t.clientX);
+    };
+    const up = e => {
+      const g = gesture.current;
+      if (!g || g.opening) return;
+      gesture.current = null;
+      if (g.live) settle(g, e.changedTouches[0]?.clientX ?? g.x2 ?? g.x);
+    };
+    el.addEventListener("touchstart", down, { passive: true });
+    el.addEventListener("touchmove", move, { passive: false });
+    el.addEventListener("touchend", up);
+    el.addEventListener("touchcancel", up);
+    return () => {
+      el.removeEventListener("touchstart", down);
+      el.removeEventListener("touchmove", move);
+      el.removeEventListener("touchend", up);
+      el.removeEventListener("touchcancel", up);
+    };
+  }, [shown]); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (!open) return;
     const esc = e => { if (e.key === "Escape") chrome.close(); };
@@ -251,28 +307,29 @@ export function SettingsDrawer({ children, enabled = true }) {
     return () => { document.removeEventListener("keydown", esc); document.body.style.overflow = overflow; };
   }, [open]);
 
-  // The page moves over to make room, as the Claude app's does (26 Oct 2026:
-  // "it should not overlap, it should move the screen"): everything in the
-  // app shifts right by as much of the panel as shows (index.css .pc-pushed)
+  // How far open it is now, and the page moved over by as much, as the Claude
+  // app's does (index.css .pc-pushed)
+  const at = drag ?? (shown && entered && open ? width() : 0);
   useEffect(() => {
     const root = document.documentElement;
-    const w = width();
-    const shift = !shown || closing ? 0 : drag != null ? Math.max(0, w + drag) : w;
-    root.style.setProperty("--pc-shift", `${shift}px`);
-    root.classList.toggle("pc-pushed", shown || drag != null);
+    root.style.setProperty("--pc-shift", `${at}px`);
+    root.classList.toggle("pc-pushed", shown);
     root.classList.toggle("pc-dragging", drag != null);
-  }, [shown, closing, drag]);
+  }, [at, shown, drag]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => () => { document.documentElement.classList.remove("pc-pushed", "pc-dragging"); document.documentElement.style.removeProperty("--pc-shift"); }, []);
 
-  if (!phone || (!shown && drag == null)) return null;
-  const pulled = drag != null ? { transform: `translateX(${drag}px)`, transition: "none" } : undefined;
-  const fade = drag != null ? { opacity: Math.max(0, 1 + drag / width()), transition: "none" } : undefined;
+  if (!phone || !shown) return null;
+  const w = ref.current?.offsetWidth ?? Math.min(340, window.innerWidth * 0.86);
+  const still = drag != null ? " dragging" : "";
   return createPortal(
-    <div className={`pc-drawer-wrap${closing ? " closing" : ""}`}>
-      <div className="pc-scrim" style={fade} onClick={() => chrome.close()} />
-      <aside ref={ref} className="pc-drawer" style={pulled} role="dialog" aria-modal="true" aria-label="Settings"
-        onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
-        <button type="button" className="pc-round pc-small pc-drawer-close" onClick={() => chrome.close()} aria-label="Close settings"><X size={17} aria-hidden="true" /></button>
+    <div ref={wrap} className={`pc-drawer-wrap${still}`}>
+      <div className="pc-scrim" style={{ opacity: at / w }} onClick={() => chrome.close()} />
+      <aside ref={ref} className="pc-drawer" style={{ transform: `translate3d(${at - w}px, 0, 0)` }} role="dialog" aria-modal="true" aria-label="Settings">
+        <div className="pc-drawer-head">
+          <BrandMark size={null} className="pc-drawer-mark" />
+          <span className="pc-drawer-brand">Jocular Insights</span>
+          <button type="button" className="pc-round pc-small pc-drawer-close" onClick={() => chrome.close()} aria-label="Close settings"><X size={17} aria-hidden="true" /></button>
+        </div>
         <Suspense fallback={<div role="status" className="pc-loading">Loading settings…</div>}>{children}</Suspense>
       </aside>
     </div>,

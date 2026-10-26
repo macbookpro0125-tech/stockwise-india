@@ -2420,7 +2420,7 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 .st-row { position: relative; display: flex; align-items: center; gap: 14px; width: 100%; min-height: 58px; padding: 10px 14px 10px 16px; border: 0; background: transparent; color: var(--t1); font: inherit; text-align: left; text-decoration: none; cursor: pointer; transition: background 120ms; }
 .st-row + .st-row::before { content: ""; position: absolute; top: 0; left: 62px; right: 0; border-top: 1px solid var(--bdr); }
 .st-row:active { background: var(--s3); }
-.st-icon { flex-shrink: 0; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 9px; background: var(--tint); color: #fff; }
+.st-icon { flex-shrink: 0; width: 32px; height: 32px; display: grid; place-items: center; color: var(--t2); } /* plain line icons, no colour tiles (26 Oct 2026) */
 .st-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .st-label { font-size: 16px; font-weight: 500; }
 .st-detail { margin-top: 2px; font-size: 13px; line-height: 1.35; color: var(--t3); }
@@ -3700,8 +3700,17 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
    each one itself, so the fixed bars keep to the screen — and the page
    dims a little under a scrim that's lighter than a dialog's */
 html.pc-pushed { overflow-x: hidden; }
-html.pc-pushed .app-shell > * { transform: translateX(var(--pc-shift, 0px)); transition: transform 300ms cubic-bezier(0.2, 0.9, 0.25, 1); }
+html.pc-pushed .app-shell > * { transform: translate3d(var(--pc-shift, 0px), 0, 0); transition: transform 340ms cubic-bezier(0.32, 0.72, 0, 1); will-change: transform; }
 html.pc-pushed.pc-dragging .app-shell > * { transition: none; }
 .pc-drawer-wrap .pc-scrim { background: rgba(0, 0, 0, 0.28); }
-.pc-drawer { box-shadow: 1px 0 0 rgba(255, 255, 255, 0.08); }
+/* The drawer and the page glide on one curve, the drawer opaque (a blur on a
+   moving panel stutters on a phone); while a finger holds it, no glide */
+.pc-drawer { box-shadow: 1px 0 0 rgba(255, 255, 255, 0.08); animation: none; transition: transform 340ms cubic-bezier(0.32, 0.72, 0, 1); will-change: transform; -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--s1); touch-action: pan-y; }
+.pc-drawer-wrap .pc-scrim { animation: none; transition: opacity 340ms cubic-bezier(0.32, 0.72, 0, 1); touch-action: pan-y; }
+.pc-drawer-wrap.dragging .pc-drawer, .pc-drawer-wrap.dragging .pc-scrim { transition: none; }
+.pc-drawer-head { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 10px; margin: 0 -2px 6px; padding: 4px 2px 8px; background: var(--s1); }
+.pc-drawer-mark { width: 30px; height: 30px; flex: none; }
+.pc-drawer-mark img { width: 100%; height: 100%; }
+.pc-drawer-brand { flex: 1; min-width: 0; font-size: 18px; font-weight: 600; letter-spacing: -0.01em; color: var(--t1); }
+.pc-drawer-head .pc-drawer-close { position: static; margin-left: 0; }
 @media (prefers-reduced-motion: reduce) { html.pc-pushed .app-shell > * { transition: none; } }

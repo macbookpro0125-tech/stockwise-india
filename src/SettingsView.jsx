@@ -22,7 +22,7 @@ import { useWeeklyEmail } from "./weeklyEmail.js";
 function Row({ icon: Icon, tint, label, detail, onClick, href, danger, children }) {
   const inner = (
     <>
-      <span className="st-icon" style={{ "--tint": tint }} aria-hidden="true"><Icon size={17} strokeWidth={2.2} /></span>
+      <span className="st-icon" style={{ "--tint": tint }} aria-hidden="true"><Icon size={19} strokeWidth={1.75} /></span>
       <span className="st-text">
         <span className="st-label">{label}</span>
         {detail && <span className="st-detail">{detail}</span>}
@@ -125,16 +125,16 @@ export default function SettingsView({ account, theme, onToggleTheme, onTab, onL
 
       {(canPush() || weekly.available) && (
         <Group title="Notifications">
-          {canPush() && <Switch on={push} label="Phone notifications" onChange={switchPush} icon={<Bell size={17} strokeWidth={2.2} />} tint="#14B892"
+          {canPush() && <Switch on={push} label="Phone notifications" onChange={switchPush} icon={<Bell size={19} strokeWidth={1.75} />} tint="#14B892"
             detail={pushNote ?? "News from your watchlist's companies, results reminders, and alerts when a price is reached"} />}
-          {weekly.available && <Switch on={weekly.on} label="Weekly email" onChange={weekly.set} icon={<Mail size={17} strokeWidth={2.2} />} tint="#6366F1"
+          {weekly.available && <Switch on={weekly.on} label="Weekly email" onChange={weekly.set} icon={<Mail size={19} strokeWidth={1.75} />} tint="#6366F1"
             detail={weekly.note ?? "Sunday mornings: your watchlist's week, its news, and results coming up"} />}
         </Group>
       )}
 
       <Group title="Display">
-        <Switch on={theme === "dark"} label="Dark mode" onChange={onToggleTheme} icon={<Moon size={17} strokeWidth={2.2} />} tint="#6366F1" />
-        <Switch on={logos} label="Company logos" onChange={setLogosShown} icon={<Image size={17} strokeWidth={2.2} />} tint="#0EA5E9" />
+        <Switch on={theme === "dark"} label="Dark mode" onChange={onToggleTheme} icon={<Moon size={19} strokeWidth={1.75} />} tint="#6366F1" />
+        <Switch on={logos} label="Company logos" onChange={setLogosShown} icon={<Image size={19} strokeWidth={1.75} />} tint="#0EA5E9" />
       </Group>
 
       <Group title="Help">
