@@ -3949,3 +3949,7 @@ html.in-app .site-foot-public { display: none; }
 .ad-card.ad-web .ad-tag { display: none; }
 .ad-card.ad-web:has(ins[data-ad-status="filled"]) { height: auto; margin: 12px 0 0 !important; padding: 10px !important; border: 1px solid var(--bdr2) !important; border-radius: 20px; background: var(--s2); overflow: visible; }
 .ad-card.ad-web:has(ins[data-ad-status="filled"]) .ad-tag { display: inline-block; position: static; margin: 0 0 6px; }
+
+/* Ad cards on the public pages (PublicLists.jsx, PublicStock.jsx) */
+.pl-ad-item { list-style: none; }
+.pl-ad, .ps-ad { margin: 18px 0; }

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "./api.js";
 import { BrandMark } from "./site.jsx";
 import CompanyLogo from "./CompanyLogo.jsx";
+import { AdCard } from "./ads.jsx";
 import { niceName } from "./stockName.js";
 import { ANALYSIS_EXAMPLES, companyAnalysisFor } from "./company-analysis.js";
 
@@ -128,6 +129,9 @@ export default function PublicStock({ symbol, onSignIn, initial = null }) {
               )}
             </div>
             <dl className="ps-facts">{facts.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
+            {/* a company's page, where a search lands: a card after its key
+                figures and one before the way into the full analysis (ads.jsx) */}
+            <AdCard feed="public" slot="company-top" size="medium" className="ps-ad" />
             {s.story && <Story s={s} />}
             {analysis && (
               <section className="ps-analysis" aria-labelledby="company-analysis-title">
@@ -168,6 +172,7 @@ export default function PublicStock({ symbol, onSignIn, initial = null }) {
                 <p>Quarterly data is based on company results filed with NSE; market ratios are from the latest Jocular Insights data snapshot. Figures can be revised or restated. Check the original filings before relying on them. This page is educational information, not investment advice. <a href="/methodology">How Jocular calculates scores and reference fair values</a>.</p>
               </section>
             )}
+            <AdCard feed="public" slot="company-end" size="medium" className="ps-ad" />
             <section className="ps-more">
               <h2>See the full analysis</h2>
               <p>The scorecard's checks one by one, price charts, results year by year, what it sells and where, shareholding and its filings to NSE — free with an account.</p>

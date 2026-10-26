@@ -7,6 +7,13 @@ import { api } from "./api.js";
 import { PublicPage } from "./LegalPages.jsx";
 import { navigate, stockPath } from "./site.jsx";
 import CompanyLogo from "./CompanyLogo.jsx";
+import { AdCard } from "./ads.jsx";
+
+// One ad card partway down each public page (26 Oct 2026): the pages people
+// arrive at from a search, signed out. Marked "Ad", never a banner (ads.jsx);
+// a list's card is a list item of its own
+const PageAd = ({ slot }) => <AdCard feed="public" slot={slot} size="medium" className="pl-ad" />;
+const ListAd = ({ slot }) => <li className="pl-ad-item"><PageAd slot={slot} /></li>;
 
 const num = (v, d = 1) => (v == null || !isFinite(v) ? null : Number(v).toLocaleString("en-IN", { maximumFractionDigits: d, minimumFractionDigits: d }));
 const crore = v => (v == null ? null : v >= 100000 ? `₹${num(v / 100000, 2)} lakh cr` : `₹${Math.round(v).toLocaleString("en-IN")} cr`);
@@ -41,15 +48,15 @@ export function ScreensIndexPage({ signedIn }) {
       {!d && !error && <Wait />}
       {d && (
         <ul className="pl-screens">
-          {d.screens.map(s => (
+          {d.screens.map((s, i) => [i === 3 && <ListAd key="ad" slot="screens" />,
             <li key={s.slug}>
               <A to={`/screens/${s.slug}`} className="pl-screen">
                 <span className="pl-screen-name">{s.name}<ChevronRight size={16} aria-hidden="true" /></span>
                 {s.description && <span className="pl-screen-desc">{s.description}</span>}
                 <span className="pl-screen-count">{s.matched} {s.matched === 1 ? "company matches" : "companies match"}{s.first.length ? `: ${s.first.slice(0, 3).map(c => c.name).join(", ")}…` : ""}</span>
               </A>
-            </li>
-          ))}
+            </li>]
+          )}
         </ul>
       )}
       <p className="pl-note">{NOT_ADVICE}</p>
@@ -89,6 +96,7 @@ export function ScreenPage({ slug, signedIn }) {
               {s.changes.left.length > 0 && <> Left: {s.changes.left.map((c, i) => <span key={c.symbol}>{i ? ", " : ""}<A to={stockPath(c.symbol)}>{c.name}</A></span>)}{s.changes.leftCount > s.changes.left.length ? " and more" : ""}.</>}
             </p>
           </>}
+          <PageAd slot="screen" />
           <h2 className="pl-h">Companies that match{s.matched > s.companies.length ? ` (the first ${s.companies.length})` : ""}</h2>
           <ol className="pl-cos">
             {s.companies.map(c => (
@@ -122,9 +130,9 @@ export function ResultsCalendarPage({ signedIn }) {
       <p className="pl-lede">{c ? `${total} NSE companies have board meetings for results in the next two weeks, the largest companies first.` : "NSE companies' board meetings for results, the next two weeks."}</p>
       {error && <p className="nw-empty">{error}</p>}
       {!c && !error && <Wait />}
-      {c?.days.map(d => {
+      {c?.days.map((d, i) => {
         const all = open[d.date], list = all ? d.companies : d.companies.slice(0, 12);
-        return (
+        return [i === 1 && <PageAd key="ad" slot="calendar" />,
           <section key={d.date} className="pl-day" aria-label={weekday(d.date)}>
             <h2 className="pl-h">{d.date === c.today ? "Today" : weekday(d.date)} <span>{d.count} {d.count === 1 ? "company" : "companies"}</span></h2>
             <div className="ex-day-list">
@@ -133,8 +141,7 @@ export function ResultsCalendarPage({ signedIn }) {
               ))}
               {d.count > 12 && <button type="button" className="ex-more" onClick={() => setOpen(o => ({ ...o, [d.date]: !all }))}>{all ? "Fewer" : `+${d.count - 12} more`}</button>}
             </div>
-          </section>
-        );
+          </section>];
       })}
       {c && !c.days.length && <p className="nw-empty">No results dates in the next two weeks on NSE's calendar.</p>}
       <p className="pl-note">Dates are board meetings companies have told NSE about; they can change.</p>
@@ -155,14 +162,14 @@ export function SectorsIndexPage({ signedIn }) {
       {!d && !error && <Wait />}
       {d && (
         <ul className="pl-screens">
-          {d.sectors.map(s => (
+          {d.sectors.map((s, i) => [i === 4 && <ListAd key="ad" slot="sectors" />,
             <li key={s.slug}>
               <A to={`/sector/${s.slug}`} className="pl-screen">
                 <span className="pl-screen-name">{s.name}<ChevronRight size={16} aria-hidden="true" /></span>
                 <span className="pl-screen-count">{s.count} {s.count === 1 ? "company" : "companies"}{s.largest.length ? `: ${s.largest.map(c => c.name).join(", ")}${s.count > 3 ? "…" : ""}` : ""}</span>
               </A>
-            </li>
-          ))}
+            </li>]
+          )}
         </ul>
       )}
       <More />
@@ -189,6 +196,7 @@ export function SectorPage({ slug, signedIn }) {
             <h2 className="pl-h">Screens its companies pass most</h2>
             <ul className="pl-rules">{s.screens.map(x => <li key={x.slug}><A to={`/screens/${x.slug}`}>{x.name}</A> — {x.count} {x.count === 1 ? "company" : "companies"}</li>)}</ul>
           </>}
+          <PageAd slot="sector" />
           <h2 className="pl-h">Every listed {s.name} company</h2>
           <ol className="pl-cos">
             {s.companies.map(c => (
