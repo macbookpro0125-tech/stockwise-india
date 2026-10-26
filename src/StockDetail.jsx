@@ -323,7 +323,8 @@ function ShareholdingPanel({ symbol }) {
 }
 
 // My Notes — saved to the account (the original kept them in the browser)
-function MyNotes({ symbol }) {
+// bare: inside the phone's "Your view" card, which gives the frame and title
+function MyNotes({ symbol, bare = false }) {
   const [saved, setSaved] = useState(() => notesStore.get(symbol));
   const [editing, setEditing] = useState(!saved);
   const [verdict, setVerdict] = useState(saved?.verdict ?? null);
@@ -352,9 +353,9 @@ function MyNotes({ symbol }) {
   };
 
   return (
-    <div style={{ border: "1px solid var(--bdr2)", borderRadius: 10, padding: 16, marginBottom: 16, background: "var(--s2)" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-        <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15, fontWeight: 400, color: "var(--t1)" }}><NotebookPen size={17} style={{ color: "var(--t3)" }} /> My Notes</span>
+    <div style={bare ? undefined : { border: "1px solid var(--bdr2)", borderRadius: 10, padding: 16, marginBottom: 16, background: "var(--s2)" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: bare && !(saved && !editing) ? 0 : 12 }}>
+        {!bare && <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15, fontWeight: 400, color: "var(--t1)" }}><NotebookPen size={17} style={{ color: "var(--t3)" }} /> My Notes</span>}
         {saved && !editing && (
           <div style={{ display: "flex", gap: 8 }}>
             <button className="tap" onClick={() => setEditing(true)} style={{ fontSize: 12, padding: "3px 10px", borderRadius: 6, border: "1px solid var(--accent)", background: "color-mix(in srgb, var(--accent) 8%, transparent)", color: "var(--accent)", cursor: "pointer" }}>Edit</button>
@@ -840,7 +841,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       <div className="sd-main" data-phone-tab={phoneTab}>
 
       {/* A phone's chapters open with their answer and end with their checks */}
-      {isPhone && m && CHAPTERS.filter(c => c.id !== "overview" && c.id !== "news").map(c => (
+      {isPhone && m && CHAPTERS.filter(c => c.id !== "overview").map(c => (
         <div key={c.id} className="sd-tabpart" data-tab={c.id}>{built(c.id) && <ChapterTop id={c.id} m={m} fairValue={valued ? fv?.fv25 : null} price={price} />}</div>
       ))}
 
@@ -881,7 +882,18 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
           ) : (
             <div id="sec-scores" className="ss-section" data-tour="research"><h2 className="sd-h2">Scorecard. <span>How the business scores on its own filings.</span></h2><ResearchPanel research={m.research} /></div>
           )}
-          <div id="sec-thesis" className="ss-section" data-tour="thesis"><ThesisMonitor metrics={m} account={account} review={!isPhone} /></div>
+          {isPhone ? (
+            // one place for what the user thinks (26 Oct 2026: My Notes and the
+            // thesis were two cards): the verdict and a note, the thesis folded
+            <section id="sec-thesis" className="ss-section sd-card sd-yourview" aria-labelledby="yourview-title">
+              <h3 id="yourview-title" className="sd-card-title">Your view</h3>
+              <MyNotes key={data.symbol} symbol={data.symbol} bare />
+              <details className="sd-yv-thesis">
+                <summary>Your investment thesis</summary>
+                <ThesisMonitor metrics={m} account={account} review={false} bare />
+              </details>
+            </section>
+          ) : <div id="sec-thesis" className="ss-section" data-tour="thesis"><ThesisMonitor metrics={m} account={account} /></div>}
         </div>
       )}
 
@@ -1026,7 +1038,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       <div id="sec-filings" className="ss-section" data-tour="filings" data-tab="news">{built("news") && <><h2 className="sd-h2">News & filings. <span>Straight from NSE.</span></h2><StockEarningsCall symbol={data.symbol} m={m} /><NewsPanel symbol={data.symbol} /></>}</div>
       <div id="sec-web" className="ss-section" data-tab="news">{built("news") && <><h2 className="sd-h2">Around the web. <span>Videos, posts and news about it elsewhere.</span></h2><AroundTheWeb symbol={data.symbol} name={data.name} /></>}</div>
       <div className="sd-tabpart" data-tab="overview">
-        <MyNotes key={data.symbol} symbol={data.symbol} />
+        {!isPhone && <MyNotes key={data.symbol} symbol={data.symbol} />}
         {isPhone ? (
           <Fold title="Where these figures come from"><StockDataDates dates={data.dataDates} quote={data.quote} research={m?.research} /></Fold>
         ) : <StockDataDates dates={data.dataDates} quote={data.quote} research={m?.research} />}

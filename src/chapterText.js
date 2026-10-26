@@ -71,6 +71,17 @@ export function chapterLine(id, m, { fairValue, price } = {}) {
         return `Fair value ${fmtRs(fairValue)}, ${Math.abs(gap) < 2 ? "about today's price" : `${p1(Math.abs(gap))} ${gap > 0 ? "above" : "below"} the price`}`;
       }
       return num(m.pe) && num(m.medianPe) ? `P/E ${Math.round(m.pe)} against its usual ${Math.round(m.medianPe)}` : null;
+    case "news": {
+      // its calendar: results filed or due, and the next corporate action
+      const day = iso => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" });
+      const today = new Date(Date.now() + 330 * 60_000).toISOString().slice(0, 10);
+      const parts = [];
+      if (m.nextResults && m.nextResults >= today) parts.push(`Results due ${day(m.nextResults)}`);
+      else if (m.latestQuarterFiled) parts.push(`Latest results filed ${day(m.latestQuarterFiled)}`);
+      const next = (m.events ?? []).filter(e => e?.date >= today && e.kind === "action").sort((a, b) => a.date.localeCompare(b.date))[0];
+      if (next) parts.push(`${/dividend/i.test(next.title ?? "") ? "Ex-dividend" : next.title?.split(" - ")[0] ?? "Corporate action"} ${day(next.date)}`);
+      return parts.length ? parts.join(" · ") : null;
+    }
     case "price":
       if (!num(m.ret1y)) return null;
       return `${m.ret1y >= 0 ? "Up" : "Down"} ${p1(Math.abs(m.ret1y))} in a year${num(m.vsSma200) ? `, ${m.vsSma200 >= 0 ? "above" : "below"} its 200-day average` : ""}`;

@@ -52,8 +52,10 @@ export default function PeersPanel({ symbol, onAnalyze }) {
 
   if (!data && !error) return null;
   const rows = data?.rows ?? [];
-  // the top 10, and this company wherever it ranks
-  const top = rows.slice(0, 10);
+  // the top 10 (5 on a phone, where the Business chapter ran 6 screens), and
+  // this company wherever it ranks
+  const TOP = phone ? 5 : 10;
+  const top = rows.slice(0, TOP);
   const me = rows.find(r => r.symbol === symbol);
   const shown = showAll ? rows : me && !top.includes(me) ? [...top, me] : top;
   const columns = phone ? PHONE_COLUMNS : COLUMNS;
@@ -118,7 +120,7 @@ export default function PeersPanel({ symbol, onAnalyze }) {
           </div>
           {rows.length > 10 && (
             <button onClick={() => setShowAll(s => !s)} className="btn-ghost" style={{ height: 30, padding: "0 14px", fontSize: 11, borderRadius: 8, marginTop: 10 }}>
-              {showAll ? "Show top 10" : `Show all ${rows.length}`}
+              {showAll ? `Show top ${TOP}` : `Show all ${rows.length}`}
             </button>
           )}
           <p style={{ fontSize: 10, color: "var(--t3)", marginTop: 8 }}>Profit and sales for the latest full year. Amounts in ₹ Crore.</p>
