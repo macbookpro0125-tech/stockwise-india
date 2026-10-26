@@ -81,7 +81,14 @@ services:
       - key: FIREBASE_PROVIDERS
         value: google
       # The Android and iPhone apps' ads (src/ads.jsx): off until the AdMob
-      # account's ad units are set (ADS=live and the ADMOB_* settings)
+      # account's ad units are set (ADS=live and the ADMOB_* settings).
+      # The live server runs ADS=test (set in Render's dashboard) until the
+      # app is public on Google Play and AdMob has approved the account
+      # (resubmitted 26 Oct 2026) — taps on one's own live ads get an AdMob
+      # account banned. Then, in the dashboard: ADS=live,
+      # ADMOB_ANDROID_NATIVE=ca-app-pub-4001463380481442/5035552798 (List cards)
+      # ADMOB_ANDROID_REWARDED=ca-app-pub-4001463380481442/4217295148 (Support the app)
+      # and link the Play listing in AdMob ("Add store") to lift limited serving
       - key: ADS
         value: "off"
     disk:
