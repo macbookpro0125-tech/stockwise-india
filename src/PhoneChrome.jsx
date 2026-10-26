@@ -152,9 +152,9 @@ export function CreateSheet({ onTab }) {
   );
 }
 
-// Settings from the left: the menu button, or a swipe in from the screen's
-// left edge; it follows the finger, and a swipe back (or a tap beside it)
-// closes it
+// Settings from the left: the menu button, or a swipe to the right from the
+// left side of the screen; it slides over the page following the finger, and
+// a swipe back (or a tap beside it) closes it
 export function SettingsDrawer({ children, enabled = true }) {
   const phone = usePhone();
   const panel = usePanel();
@@ -165,13 +165,26 @@ export function SettingsDrawer({ children, enabled = true }) {
   const gesture = useRef(null);
   const width = () => ref.current?.offsetWidth ?? Math.min(340, window.innerWidth * 0.86);
 
-  // A swipe in from the left edge, on any page
+  // A swipe to the right that starts on the left side of the screen, on any
+  // page (26 Oct 2026: on an iPhone the very edge is Safari's own Back swipe,
+  // which a page can't take over, so it needn't start at the edge). Not on
+  // anything that moves sideways itself — the card rows, a chart, the tab
+  // bar, a field — and an up-and-down scroll stays a scroll.
   useEffect(() => {
     if (!phone || !enabled) return;
+    const sideways = el => {
+      for (let n = el; n && n !== document.body; n = n.parentElement) {
+        if (n.matches?.("input, textarea, select, [contenteditable], canvas, .bottom-tab-bar, [role='slider'], [role='listbox']")) return true;
+        const ox = getComputedStyle(n).overflowX;
+        if ((ox === "auto" || ox === "scroll") && n.scrollWidth > n.clientWidth + 1) return true;
+      }
+      return false;
+    };
     const down = e => {
       if (chrome.current() || e.touches.length !== 1) return;
+      if (document.querySelector("[role='dialog'][aria-modal='true']")) return;
       const t = e.touches[0];
-      if (t.clientX > 22) return;
+      if (t.clientX > window.innerWidth * 0.45 || sideways(e.target)) return;
       gesture.current = { x: t.clientX, y: t.clientY, opening: true, live: false };
     };
     const move = e => {
@@ -179,11 +192,13 @@ export function SettingsDrawer({ children, enabled = true }) {
       if (!g?.opening) return;
       const t = e.touches[0], dx = t.clientX - g.x, dy = t.clientY - g.y;
       if (!g.live) {
-        if (Math.abs(dy) > 14 && Math.abs(dy) > Math.abs(dx)) { gesture.current = null; return; }
-        if (dx < 12) return;
+        if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { gesture.current = null; return; }
+        if (dx < 14 || dx < Math.abs(dy) * 1.4) return;
         g.live = true;
         chrome.open("settings");
       }
+      // it's the panel's now: the page doesn't scroll under the finger
+      if (e.cancelable) e.preventDefault();
       setDrag(Math.min(0, dx - width()));
     };
     const up = e => {
@@ -192,10 +207,10 @@ export function SettingsDrawer({ children, enabled = true }) {
       if (!g?.opening || !g.live) return;
       const dx = (e.changedTouches[0]?.clientX ?? g.x) - g.x;
       setDrag(null);
-      if (dx < width() * 0.35) chrome.close(); else tick();
+      if (dx < width() * 0.3) chrome.close(); else tick();
     };
     window.addEventListener("touchstart", down, { passive: true });
-    window.addEventListener("touchmove", move, { passive: true });
+    window.addEventListener("touchmove", move, { passive: false });
     window.addEventListener("touchend", up);
     window.addEventListener("touchcancel", up);
     return () => {
