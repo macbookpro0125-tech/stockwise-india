@@ -49,7 +49,12 @@ async function fetchAttachment(raw) {
 
 async function extractPdf(bytes) {
   const task = getDocument({ data: bytes, useSystemFonts: true, disableFontFace: true, verbosity: 0 });
-  const pdf = await task.promise;
+  // A file NSE serves damaged ("Invalid Root reference", 26 Oct 2026) won't
+  // read however often it's tried: said so, not reported as our failure
+  const pdf = await task.promise.catch(e => {
+    task.destroy().catch(() => {});
+    throw /PDF|password/i.test(e?.name ?? "") ? unreadable("Couldn't read this attachment: NSE's file is damaged or locked. Open the original on NSE.") : e;
+  });
   const pages = [];
   let size = 0;
   const totalPages = pdf.numPages;
