@@ -51,7 +51,8 @@ test("N-H2 Discover's News tile and the News tab on a computer; a headline opens
   await headline.click();
   const item = page.getByRole("article");
   await expect(item.getByRole("link", { name: /^Read the story/ })).toHaveAttribute("target", "_blank");
-  await expect(item.getByText("this page shows its headline only", { exact: false })).toBeVisible();
+  // the headline as published, the figures around it the app's own (25 Oct 2026)
+  await expect(item.getByText("The headline as published", { exact: false })).toBeVisible();
   await item.getByRole("button", { name: "News" }).click();
   await kinds.getByRole("button", { name: "My watchlist" }).click();
   await expect(page.getByText(/Star companies to follow their news here/)).toBeVisible();

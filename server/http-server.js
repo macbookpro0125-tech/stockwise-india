@@ -846,7 +846,9 @@ export function createApp() {
         }
         return;
       }
-      const newsRoute = url.pathname.match(/^\/api\/news\/item\/((?:nse|h)-[a-z0-9]{1,24})$/);
+      // nse- an announcement, h- a headline, r- an RBI or SEBI notice (the
+      // last were left out, so the top of the list answered "Not found")
+      const newsRoute = url.pathname.match(/^\/api\/news\/item\/((?:nse|h|r)-[a-z0-9]{1,24})$/);
       if (newsRoute && req.method === "GET") {
         if (requireAuth(req, res) == null) return;
         const found = await newsItem(newsRoute[1]);

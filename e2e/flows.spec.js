@@ -46,7 +46,9 @@ test("F01-H1/H2/N1/N2 sign up, out, wrong password, back in", async ({ page }) =
 test("F01-H3 Open screen on the front page signs up into that strategy", async ({ page }) => {
   await page.setExtraHTTPHeaders({ "x-forwarded-for": uniqueIp() });
   await page.goto("/");
-  // scroll the film to the strategy cards and let them settle
+  // scroll the film to the strategy cards and let them settle (once it's drawn:
+  // asked the moment the page loaded, it wasn't there yet)
+  await page.locator(".sf-track").waitFor({ state: "attached" });
   await page.evaluate(() => { const t = document.querySelector(".sf-track"), s = document.querySelector(".sf-stage"); window.scrollTo(0, t.offsetTop + (t.offsetHeight - s.clientHeight) * 0.84); });
   const open = page.getByRole("button", { name: /^Open (Dividend Aristocrats|High Quality Compounders|Undervalued Growth)$/ });
   await expect(open).toBeVisible();

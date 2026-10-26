@@ -9,8 +9,10 @@ test("S-H1 a company's page is readable without signing in, with its own title; 
   expect(html).toMatch(/<main class="seo-stock">[\s\S]*Quality score/);
   await page.goto("/stock/TCS");
   await expect(page.getByRole("heading", { level: 1, name: "Tata Consultancy Services" })).toBeVisible();
-  await expect(page.getByText("Quality score")).toBeVisible();
-  await expect(page.getByText(/fair value, the scorecard/)).toBeVisible();
+  // (the label, exactly: the page also asks and answers "What is its quality score?")
+  await expect(page.getByText("Quality score", { exact: true })).toBeVisible();
+  // what an account adds, in its own words (25 Oct 2026)
+  await expect(page.getByText(/scorecard's checks one by one/)).toBeVisible();
   await expect(page).toHaveTitle(/Tata Consultancy Services share price/);
   await page.getByRole("button", { name: /Sign in or create a free account/ }).click();
   await expect(page.getByRole("button", { name: "Create free account" }).first()).toBeVisible();
@@ -21,15 +23,21 @@ test("S-H2 robots.txt and the sitemap", async ({ request }) => {
   expect(await (await request.get("/robots.txt")).text()).toContain("Sitemap: https://jocularinsights.in/sitemap.xml");
   const sm = await request.get("/sitemap.xml");
   expect(sm.headers()["content-type"]).toContain("xml");
-  const xml = await sm.text();
-  expect((xml.match(/<loc>/g) ?? []).length).toBeGreaterThan(2000);
-  expect(xml).toContain("<loc>https://jocularinsights.in/stock/TCS</loc>");
+  // an index of sitemaps since 25 Oct 2026 (pages, screens, sectors, stocks, details)
+  const index = await sm.text();
+  expect(index).toContain("<sitemapindex");
+  for (const part of ["pages", "screens", "sectors", "stocks", "details"]) expect(index).toContain(`<loc>https://jocularinsights.in/sitemap-${part}.xml</loc>`);
+  const stocks = await (await request.get("/sitemap-stocks.xml")).text();
+  expect((stocks.match(/<loc>/g) ?? []).length).toBeGreaterThan(2000);
+  expect(stocks).toContain("<loc>https://jocularinsights.in/stock/TCS</loc>");
 });
 
 // 24 Oct 2026: pages people search for — each strategy's companies, the strategies, the results calendar
 test("S-H3 a strategy's page and the results calendar are open to everyone; a company opens its page @phone", async ({ page, request }) => {
   const html = await (await request.get("/screens/high-quality-compounders")).text();
-  expect(html).toMatch(/<title>High Quality Compounders: \d+ NSE stocks that match today \| Jocular Insights<\/title>/);
+  // the title in the words people search for (25 Oct 2026), with today's count
+  expect(html).toMatch(/<title>[^<]+: \d+ today \| Jocular Insights<\/title>/);
+  expect(html).toMatch(/<h1>[^<]*High Quality Compounders<\/h1>/);
   expect(html).toMatch(/<link rel="canonical" href="https:\/\/jocularinsights\.in\/screens\/high-quality-compounders"/);
   expect(html).toMatch(/href="\/stock\/[A-Z0-9&%-]+"/);
   expect((await request.get("/screens/no-such-strategy")).status()).toBe(404);
