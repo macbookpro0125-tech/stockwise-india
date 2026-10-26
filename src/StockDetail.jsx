@@ -466,6 +466,19 @@ const TABS = CHAPTERS.map(c => [c.id, c.label, c.parts, c.question]);
 
 // A tab not built yet (a phone builds one when it's first shown): its mark
 // alone, so the Go deeper list and the Next card still know it's there
+// A folded card on a phone that builds what's inside only once opened: a
+// closed <details> still builds it all, and the scores dashboard folded in
+// the Summary made each company open slower (measured 26 Oct 2026)
+function Fold({ id, title, children }) {
+  const [opened, setOpened] = useState(false);
+  return (
+    <details id={id} className="sd-card sd-fold" onToggle={e => { if (e.currentTarget.open) setOpened(true); }}>
+      <summary>{title}</summary>
+      {opened && children}
+    </details>
+  );
+}
+
 const TabStub = ({ tab, part }) => <div className="sd-tabpart" data-tab={tab}><div id={`sec-${part}`} /></div>;
 
 // The tabs this company has a part for (no valuation without filings, …)
@@ -864,10 +877,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       {m && (
         <div className="sd-tabpart" data-tab="overview">
           {isPhone ? (
-            <details id="sec-scores" className="sd-card sd-fold">
-              <summary>How the scores are worked out</summary>
-              <ResearchPanel research={m.research} />
-            </details>
+            <Fold id="sec-scores" title="How the scores are worked out"><ResearchPanel research={m.research} /></Fold>
           ) : (
             <div id="sec-scores" className="ss-section" data-tour="research"><h2 className="sd-h2">Scorecard. <span>How the business scores on its own filings.</span></h2><ResearchPanel research={m.research} /></div>
           )}
@@ -941,11 +951,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
 
           {!isPhone && priceCard}
           {isPhone && (
-            <details className="sd-card sd-fold">
-              <summary>Check or change the inputs</summary>
-              {overrideCard}
-              {priceCard}
-            </details>
+            <Fold title="Check or change the inputs">{overrideCard}{priceCard}</Fold>
           )}
         </div>
       )}
@@ -1022,10 +1028,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       <div className="sd-tabpart" data-tab="overview">
         <MyNotes key={data.symbol} symbol={data.symbol} />
         {isPhone ? (
-          <details className="sd-card sd-fold">
-            <summary>Where these figures come from</summary>
-            <StockDataDates dates={data.dataDates} quote={data.quote} research={m?.research} />
-          </details>
+          <Fold title="Where these figures come from"><StockDataDates dates={data.dataDates} quote={data.quote} research={m?.research} /></Fold>
         ) : <StockDataDates dates={data.dataDates} quote={data.quote} research={m?.research} />}
       </div>
 
