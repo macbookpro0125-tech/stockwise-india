@@ -121,7 +121,9 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
   const [legend, setLegend] = useState(null);
   const [themeTick, setThemeTick] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
-  const [boxW, setBoxW] = useState(720);
+  // the card's width from the start (a phone's is the window less its
+  // margins), so the chart isn't built wide and then again narrow
+  const [boxW, setBoxW] = useState(() => (typeof window !== "undefined" ? Math.min(720, window.innerWidth - 32) : 720));
   const [menuOpen, setMenuOpen] = useState(false);
   const [vh, setVh] = useState(() => (typeof window !== "undefined" ? window.innerHeight : 800));
   const [expanded, setExpanded] = useState(false);
@@ -238,6 +240,10 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
       ? Math.max(320, vh - (narrow ? 210 : 150))
       : (narrow ? 380 : 400) + extraPanes * (narrow ? 90 : 110);
 
+  // Kept while the prices stay the same: the company page hands over a new
+  // levels object each time it redraws, and a new list rebuilt the whole
+  // chart with it (26 Oct 2026, a phone froze for it as the page scrolled)
+  const levelsKey = LEVEL_KEYS.map(k => levels?.[k] ?? "").join("|");
   const levelLines = useMemo(() => {
     if (!prefs.levels || !levels) return [];
     return [
@@ -248,7 +254,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false }) 
       { price: levels.p3, title: "Your L3", short: "L3", color: "var(--green)", style: LineStyle.Dotted },
       { price: levels.stopLoss, title: "Your stop", short: "Stop", color: "var(--red)", style: LineStyle.Dashed },
     ].filter(l => l.price > 0);
-  }, [prefs.levels, levels]);
+  }, [prefs.levels, levelsKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const applyRange = (id, chart = chartRef.current) => {
     if (!chart || bars.length < 2) return;

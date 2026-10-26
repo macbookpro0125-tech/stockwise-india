@@ -6,9 +6,11 @@ import App from "./App.jsx";
 import "@fontsource-variable/inter/opsz.css";
 import "./index.css";
 import { installGlow } from "./glow.js";
+import { installFastNumbers } from "./fastNumbers.js";
 import { onReconnecting } from "./api.js";
 import "./installApp.js"; // early: the browser offers installing soon after load
 
+installFastNumbers();
 installGlow();
 
 // Android draws a frosted blur again for every frame of a scroll: measured in
