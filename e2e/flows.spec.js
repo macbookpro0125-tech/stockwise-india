@@ -297,8 +297,18 @@ test("F03-H1 search opens a company; back returns to Discover", async ({ page, a
   await expect(page.getByRole("heading", { name: /strategies|screeners/i }).first()).toBeVisible();
 });
 
-test("F03-H2 the overview leads with the six scores, strengths, and price against its sector", async ({ page, account }) => {
+test("F03-H2 the top answers each chapter in a tile and says what to watch; the six scores and strengths sit under Business", async ({ page, account }) => {
   await page.goto("/stock/TCS");
+  // a computer's page (26 Oct 2026): the gist, a tile per chapter, what to watch
+  await expect(page.getByText(/^In short\.$/)).toBeVisible();
+  const watch = page.getByRole("region", { name: "What to watch" });
+  await expect(watch.getByText(/^Results (for|on|today|tomorrow)/)).toBeVisible();
+  await expect(watch.getByText(/price alerts? set|alerts? set/i)).toBeVisible();
+  const tile = page.getByRole("button", { name: /^Growth: .+\. Go to the chapter$/ });
+  await expect(tile).toBeVisible();
+  await tile.click();
+  await expect(page.locator("#sec-financials")).toBeInViewport();
+  await page.locator("#sec-about summary", { hasText: "At a glance, the scorecard" }).click();
   const glance = page.getByRole("region", { name: "At a glance" });
   await expect(glance.getByRole("img", { name: /Scores out of 100: Business \d+, Earnings \d+/ })).toBeVisible();
   await expect(glance.getByRole("heading", { name: "What stands out" })).toBeVisible();

@@ -38,6 +38,8 @@ export function openCheck(id) {
   // on a phone it may be on another tab: show that, then come back here
   if (revealPart(el)) { requestAnimationFrame(() => requestAnimationFrame(() => openCheck(id))); return; }
   if (el.tagName === "DETAILS") el.open = true;
+  // a computer's page folds the scorecard under its Business chapter
+  for (let fold = el.parentElement?.closest("details"); fold; fold = fold.parentElement?.closest("details")) fold.open = true;
   const header = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--header-h")) || 0;
   const bar = document.querySelector("[data-sticky-top]")?.offsetHeight ?? 0;
   const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -104,13 +106,16 @@ export function Scorecard({ r }) {
   );
 }
 
-export default function StockSide({ data, m, price, priceLabel, watched, onWatch, onAlert }) {
+// variant "head": the same card laid out across the top of a computer's page
+// (StockDesk.jsx, 26 Oct 2026), with the company in a sentence under it and
+// no scorecard — the chapter tiles below carry the scores
+export default function StockSide({ data, m, price, priceLabel, watched, onWatch, onAlert, variant, gist }) {
   // the user's watchlist lists: a starred stock goes in or out of them here
   const lists = useWatchLists();
   const [naming, setNaming] = useState(false);
   const returns = m ? [["1W", m.ret1w], ["1M", m.ret1m], ["1Y", m.ret1y]].filter(([, v]) => v != null) : [];
   return (
-    <aside className="sd-side" aria-label={`${data.name} summary`}>
+    <aside className={variant === "head" ? "sd-side sd-head" : "sd-side"} aria-label={`${data.name} summary`}>
       <section className="sd-card sd-id">
         <div className="sd-id-top">
           <CompanyLogo symbol={data.symbol} size={44} />
@@ -144,8 +149,9 @@ export default function StockSide({ data, m, price, priceLabel, watched, onWatch
           {watched && <ListPicker ticker={data.symbol} name={data.name} lists={lists} label="Lists" onToggle={setInList} onNew={() => setNaming(true)} />}
           <button type="button" className="sd-action sd-action-link" onClick={onAlert}><Bell className="sd-action-bell" size={17} aria-hidden="true" />Set an alert<ChevronRight className="sd-action-chev" size={17} aria-hidden="true" /></button>
         </div>
+        {variant === "head" && gist && <p className="sd-head-gist"><b>In short.</b> {gist}</p>}
       </section>
-      <div className="sd-side-scores"><Scorecard r={m?.research} /></div>
+      {variant !== "head" && <div className="sd-side-scores"><Scorecard r={m?.research} /></div>}
       {naming && (
         <ListNameDialog title={`New list with ${data.name}`} lists={lists} sector={m?.sector ?? null}
           onSave={async name => { const list = await createList(name); await setInList(list.id, data.symbol, true); }}

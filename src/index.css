@@ -3953,3 +3953,117 @@ html.in-app .site-foot-public { display: none; }
 /* Ad cards on the public pages (PublicLists.jsx, PublicStock.jsx) */
 .pl-ad-item { list-style: none; }
 .pl-ad, .ps-ad { margin: 18px 0; }
+
+/* A company's page on a computer, laid out like a dashboard (StockDesk.jsx,
+   26 Oct 2026): the company across the top, four chapter tiles, the chart
+   beside what to watch, then a section per chapter — its answer pinned on the
+   left while its panels scroll on the right. Calm: one surface per card,
+   colour only where a score or a move means something. */
+.dk { display: flex; flex-direction: column; gap: var(--sp-4); }
+.dk-crumb { display: flex; align-items: center; gap: var(--sp-3); font-size: var(--fs-sm); color: var(--t3); }
+.dk-crumb > span + span::before { content: "/"; margin-right: var(--sp-3); color: var(--bdr3); }
+.dk-back { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 12px 0 16px; border-radius: 999px; border: 0; background: var(--accent); color: var(--on-accent); font: 600 var(--fs-md)/1 var(--font); cursor: pointer; transition: transform 120ms; }
+.dk-back:active { transform: scale(0.97); }
+.dk-back kbd { font: 600 10px/1 var(--font); padding: 3px 5px; border-radius: 5px; background: color-mix(in srgb, var(--on-accent) 14%, transparent); color: var(--on-accent); }
+.dk-back:focus-visible, .dk-tile:focus-visible, .dk-more summary:focus-visible, .dk-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.dk-warn { font-size: var(--fs-xs); color: var(--yellow); background: var(--yellow-dim); border: 1px solid var(--yellow-bdr); border-radius: 8px; padding: 8px 12px; }
+
+/* The company across the top: name, price, returns, actions; the gist under */
+.sd-side.sd-head { position: static; max-height: none; overflow: visible; padding: 0; }
+.sd-head .sd-id { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; grid-template-areas: "id price rets acts" "gist gist gist gist"; align-items: center; column-gap: var(--sp-8); padding: var(--sp-5) var(--sp-6); }
+.sd-head .sd-id-top { grid-area: id; }
+.sd-head .sd-id-name h2 { font-size: 22px; font-weight: 600; }
+.sd-head .sd-price { grid-area: price; margin: 0; }
+.sd-head .sd-returns { grid-area: rets; margin: 0; }
+.sd-head .sd-actions { grid-area: acts; margin: 0; display: flex; }
+.sd-head .sd-action-bell { display: inline; }
+.sd-head-gist { grid-area: gist; margin: var(--sp-4) 0 0; padding-top: var(--sp-4); border-top: 1px solid var(--bdr); font-size: 15.5px; line-height: 1.55; color: var(--t2); text-wrap: pretty; }
+.sd-head-gist b { color: var(--t1); font-weight: 600; }
+
+/* Four chapter tiles: answer, score, one figure; a click goes to the chapter */
+.dk-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--sp-4); }
+.dk-tile { position: relative; display: flex; flex-direction: column; gap: var(--sp-2); text-align: left; font: inherit; color: var(--t1); cursor: pointer; transition: border-color 150ms, transform 150ms; }
+.dk-tile:hover { border-color: color-mix(in srgb, var(--tone, var(--accent)) 45%, var(--bdr2)); }
+.dk-tile-top { display: flex; justify-content: space-between; align-items: center; font-size: var(--fs-sm); color: var(--t3); }
+.dk-tile-top em { font-style: normal; font-size: var(--fs-xs); font-weight: 500; padding: 2px 8px; border-radius: 999px; color: var(--tone); background: color-mix(in srgb, var(--tone) 13%, transparent); }
+.dk-tile-judge { font-size: 15px; font-weight: 500; line-height: 1.4; min-height: 2.8em; text-wrap: balance; }
+.dk-tile-fig { display: flex; align-items: baseline; gap: var(--sp-2); padding-right: 18px; }
+.dk-tile-fig b { font-size: 21px; font-weight: 600; letter-spacing: -0.02em; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.dk-tile-fig small { font-size: var(--fs-xs); color: var(--t3); line-height: 1.35; }
+.dk-tile-go { position: absolute; right: 14px; bottom: 14px; color: var(--t3); }
+
+/* The chart beside what to watch */
+.dk-top { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: var(--sp-4); align-items: start; margin: 0; }
+.dk-top-main { min-width: 0; display: flex; flex-direction: column; gap: var(--sp-4); }
+.dk-top-main > * { margin-bottom: 0 !important; }
+.dk-keyfigs { display: grid; grid-template-columns: repeat(5, auto) minmax(160px, 1.4fr); gap: var(--sp-5); padding: var(--sp-4) var(--sp-5); border-radius: var(--r-lg); border: 1px solid var(--bdr); background: var(--s2); }
+.dk-keyfigs small { display: block; font-size: var(--fs-xs); color: var(--t3); margin-bottom: 3px; }
+.dk-keyfigs b { font-size: 15px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.dk-range-bar { position: relative; display: block; height: 6px; margin-top: 10px; border-radius: 3px; background: linear-gradient(90deg, color-mix(in srgb, var(--red) 45%, transparent), color-mix(in srgb, var(--green) 45%, transparent)); }
+.dk-range-bar i { position: absolute; top: -4px; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; background: var(--t1); border: 3px solid var(--s2); }
+.dk-card-h { margin: 0 0 var(--sp-2); font-size: var(--fs-lg); font-weight: 600; letter-spacing: -0.01em; color: var(--t1); }
+.dk-watch-list { list-style: none; margin: 0; padding: 0; }
+.dk-watch-list li { display: flex; gap: var(--sp-3); padding: var(--sp-3) 0; border-top: 1px solid var(--bdr); }
+.dk-watch-list li:first-child { border-top: 0; }
+.dk-watch-list svg { flex: none; margin-top: 2px; color: var(--accent); }
+.dk-watch-list b { display: block; font-size: var(--fs-sm); font-weight: 500; color: var(--t1); }
+.dk-watch-list span { display: block; font-size: var(--fs-xs); color: var(--t3); line-height: 1.45; margin-top: 2px; }
+.dk-careful svg { color: var(--yellow); }
+.dk-watch-sub { margin: var(--sp-3) 0 0; padding-top: var(--sp-3); border-top: 1px solid var(--bdr); font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--t3); }
+.dk-link { margin-top: 3px; padding: 0; border: 0; background: none; color: var(--accent); font: 400 var(--fs-xs)/1.4 var(--font); cursor: pointer; text-align: left; }
+.dk-link:hover { text-decoration: underline; }
+
+/* The chapter bar: in the flow under the top, pinned once that scrolls by
+   (not first, as the narrow one-column page puts it) */
+.dk > .dk-bar { order: 0; margin: var(--sp-2) 0 0; }
+.dk-bar .sd-bar-row { gap: var(--sp-5); }
+.dk-bar-name { display: inline-flex; align-items: baseline; gap: var(--sp-2); font-size: var(--fs-md); font-weight: 600; color: var(--t1); white-space: nowrap; }
+.dk-bar-name b { font-weight: 500; color: var(--t2); font-variant-numeric: tabular-nums; }
+
+/* A chapter: its answer pinned on the left, its panels on the right */
+.dk-chapter { padding: var(--sp-6) 0 var(--sp-2); border-top: 1px solid var(--bdr2); margin: 0; }
+.dk-chapter-grid { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: var(--sp-8); align-items: start; }
+.dk-chapter-left { position: sticky; top: calc(var(--header-h, 0px) + var(--tab-h) + var(--sp-6)); display: flex; flex-direction: column; gap: var(--sp-3); }
+.dk-chapter-q { display: flex; align-items: center; justify-content: space-between; }
+.dk-chapter-q h2 { margin: 0; font-size: var(--fs-2xl); font-weight: 650; letter-spacing: -0.025em; color: var(--t1); }
+.dk-chapter-question { margin: -6px 0 0; font-size: var(--fs-sm); color: var(--t3); }
+.dk-score { display: flex; align-items: center; gap: var(--sp-3); }
+.dk-score-bar { flex: 1; height: 6px; border-radius: 3px; background: var(--s3); overflow: hidden; }
+.dk-score-bar i { display: block; height: 100%; border-radius: 3px; background: var(--tone); }
+.dk-score-num { font-size: var(--fs-sm); color: var(--tone); white-space: nowrap; }
+.dk-score-num b { font-weight: 600; }
+.dk-chapter-judge { margin: 0; font-size: 19px; font-weight: 600; line-height: 1.35; letter-spacing: -0.015em; color: var(--t1); text-wrap: balance; }
+.dk-figs { margin: 0; display: flex; flex-direction: column; }
+.dk-figs > div { display: grid; grid-template-columns: 1fr auto; padding: var(--sp-3) 0; border-top: 1px solid var(--bdr); }
+.dk-figs dt { font-size: var(--fs-sm); color: var(--t2); }
+.dk-figs dd { margin: 0; font-size: 16px; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+.dk-figs small { grid-column: 1 / -1; font-size: var(--fs-xs); color: var(--t3); }
+.dk-note { margin: 0; padding: var(--sp-3) var(--sp-4); border-radius: var(--r-md); background: var(--s2); border: 1px solid var(--bdr); font-size: var(--fs-sm); line-height: 1.55; color: var(--t2); }
+.dk-note b { color: var(--t1); font-weight: 600; }
+.dk-chapter-right { min-width: 0; display: flex; flex-direction: column; gap: var(--sp-4); }
+.dk-chapter-right > *, .dk-more-body > * { margin-bottom: 0 !important; }
+.dk-chapter-right .sd-h2 { display: none; }
+.dk-more { margin: var(--sp-4) 0 0 calc(300px + var(--sp-8)); border-radius: var(--r-md); border: 1px solid var(--bdr); background: var(--s1); }
+.dk-more summary { display: flex; align-items: center; gap: var(--sp-2); padding: var(--sp-3) var(--sp-4); list-style: none; cursor: pointer; font-size: var(--fs-sm); color: var(--t2); }
+.dk-more summary::-webkit-details-marker { display: none; }
+.dk-more summary svg { transition: transform 160ms; color: var(--t3); }
+.dk-more[open] summary svg { transform: rotate(180deg); }
+.dk-more summary:hover { color: var(--t1); }
+.dk-more-body { display: flex; flex-direction: column; gap: var(--sp-4); padding: 0 var(--sp-4) var(--sp-4); }
+
+.dk-yourview { margin: 0; padding-top: var(--sp-6); border-top: 1px solid var(--bdr2); }
+.dk-yourview-h { margin: 0 0 var(--sp-4); font-size: var(--fs-2xl); font-weight: 650; letter-spacing: -0.025em; color: var(--t1); }
+.dk-yourview-grid > * { margin-bottom: 0 !important; }
+.sd-datanote { margin: 0; }
+.dk-yourview-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: var(--sp-6); align-items: start; }
+
+@media (max-width: 1100px) {
+  .sd-head .sd-id { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "id acts" "price rets" "gist gist"; row-gap: var(--sp-3); }
+  .dk-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dk-top { grid-template-columns: minmax(0, 1fr); }
+  .dk-keyfigs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .dk-chapter-grid { grid-template-columns: minmax(0, 1fr); gap: var(--sp-5); }
+  .dk-chapter-left { position: static; }
+  .dk-more { margin-left: 0; }
+  .dk-yourview-grid { grid-template-columns: minmax(0, 1fr); }
+}

@@ -25,7 +25,7 @@ import StockSide from "./StockSide.jsx";
 import StockGlance from "./StockGlance.jsx";
 import WhyMoving from "./WhyMoving.jsx";
 import StockPerformance from "./StockPerformance.jsx";
-import StockDataDates from "./StockDataDates.jsx";
+import StockDataDates, { DataNote } from "./StockDataDates.jsx";
 import StockDividends from "./StockDividends.jsx";
 import StockHealth from "./StockHealth.jsx";
 import StockSectorCompare from "./StockSectorCompare.jsx";
@@ -35,6 +35,9 @@ import InsidersPanel from "./InsidersPanel.jsx";
 import StockEarningsCall from "./StockEarningsCall.jsx";
 import StockSnapshot from "./StockSnapshot.jsx";
 import { CHAPTERS, VerdictLines, ChapterTop, ChapterEnd } from "./StockChapters.jsx";
+import { DeskTiles, WhatToWatch, KeyFiguresRow, DeskChapter } from "./StockDesk.jsx";
+import { gistLine } from "./chapterText.js";
+import { growthNote } from "./deskText.js";
 import { docTop } from "./motion.js";
 
 // The original Stockwise stock page (stock-screener src/StockScreener.jsx),
@@ -730,7 +733,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
               <button type="button" onClick={() => applyBaseline(baseline)} className="btn-ghost" style={{ height: 30, fontSize: 12 }}>Reset</button>
             )}
           </div>
-          <ValuedAs valuation={m.valuation} />
+          {isPhone && <ValuedAs valuation={m.valuation} />}
 
           <div className="ss-grid-3">
             <div>
@@ -813,12 +816,234 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
     </>
   );
 
+  // The valuation's parts: the phone stacks them in its Value tab; a
+  // computer lays them out in its Value chapter (StockDesk.jsx)
+  const valueChips = m && (m.cyclical || onCycle || m.valuation?.partialCycle || m.lender || m.utility || m.governmentOwned) && (
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
+          {m.lender && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--s3)", color: "var(--t2)", fontWeight: 500 }}>Lender</span>}
+          {m.governmentOwned && <span title={`${m.governmentPct > 0 ? `The government holds ${m.governmentPct}% as promoter. ` : "A government company (NSE's PSU lists). "}Government-owned companies usually trade on lower multiples; its own P/E history already reflects that${m.valuation?.psu ? ", and a bank's cost of equity is a point higher here" : ""}.`} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--s3)", color: "var(--t2)", fontWeight: 500 }}>Government-owned</span>}
+          {m.utility && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--s3)", color: "var(--t2)", fontWeight: 500 }}>Regulated utility</span>}
+          {(m.cyclical || onCycle || m.valuation?.partialCycle) && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--yellow-dim)", color: "var(--yellow)", fontWeight: 400 }}>Cyclical{m.valuation?.partialCycle ? " · partial cycle" : ""}</span>}
+          {/* The cycle-position gauge's reading, beside the price */}
+          {onCycle && m.valuation.positionLabel && <span title={`This year's net margin ${m.valuation.latestMargin}% against a through-cycle ${m.valuation.medianMargin}%`} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--s3)", color: CYCLE_TONE[m.valuation.positionLabel], fontWeight: 400 }}>Profits {m.valuation.positionLabel}</span>}
+        </div>
+          );
+  const filingsNote = m && (
+        <div className="sd-note">
+          <CircleCheck size={14} strokeWidth={2.2} style={{ verticalAlign: "-2px", marginRight: 6, color: "var(--green)" }} /><strong>Financials from NSE filings</strong> — EPS and valuation inputs use {data.annual?.scope?.toLowerCase() ?? "reported"} results for the year ended {longDate(m.fyEnd)}{m.provenance?.financials?.filedAt ? `, filed ${longDate(m.provenance.financials.filedAt)}` : ""}. The price's source and date are shown under it.{" "}
+          <a href={`https://www.nseindia.com/get-quotes/equity?symbol=${encodeURIComponent(data.symbol)}`} target="_blank" rel="noreferrer" style={{ color: "var(--accent)", fontWeight: 500, whiteSpace: "nowrap" }}>Open on NSE <ArrowUpRight size={13} style={{ verticalAlign: "-2px" }} /></a>
+          {onBook && (
+            <div className="hide-phone" style={{ marginTop: 4, color: "var(--t2)" }}>
+              P/B is what its <em>{m.valuation.roeBasis === "recent" ? "recent return on equity" : "through-cycle return on equity"}</em> supports ({m.valuation.justifiedPb.toFixed(2)}×; today's is in the key figures) — override with your own view if needed.
+            </div>
+          )}
+          {m.epsRebased && (
+            <div style={{ marginTop: 4, color: "var(--t2)" }}>
+              EPS here is FY{m.fyEnd.slice(2, 4)} profit over today's {m.epsRebased.sharesCr.toLocaleString("en-IN", { maximumFractionDigits: 1 })} Cr shares (₹{m.eps.toFixed(2)}). The filing's ₹{m.epsRebased.reportedEps.toFixed(2)} is on about {m.epsRebased.epsSharesCr.toLocaleString("en-IN", { maximumFractionDigits: 1 })} Cr, before the company issued more shares — today's count is what the share price is for.
+            </div>
+          )}
+          {m.epsCorrection && (
+            <div style={{ marginTop: 4, color: "var(--yellow)" }}>
+              The filing's annual EPS was ₹{m.epsCorrection.reportedEps.toFixed(2)}, inconsistent with profit and paid-up shares. EPS-based ratios and the fair value use ₹{m.epsCorrection.correctedEps.toFixed(2)} instead.
+            </div>
+          )}
+          {m.unitFixes?.length > 0 && (
+            <div style={{ marginTop: 4, color: "var(--t2)" }}>
+              {m.unitFixes.map(f => `FY${f.fyEnd.slice(2, 4)}`).join(" and ")} {m.unitFixes.length > 1 ? "filings were" : "filing was"} in the wrong unit on NSE (figures {m.unitFixes[0].factor > 1 ? `${m.unitFixes[0].factor.toLocaleString("en-IN")}× too small` : `${(1 / m.unitFixes[0].factor).toLocaleString("en-IN")}× too large`}, share capital included) — corrected here so growth rates aren't distorted.
+            </div>
+          )}
+        </div>
+      );
+  const epsJumpNote = m && m?.epsJump && model === "earnings" && (
+        <div style={{ padding: "10px 14px", borderRadius: 8, background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", fontSize: 12, color: "var(--t2)", lineHeight: 1.5, marginBottom: 14 }}>
+          <strong style={{ color: "var(--yellow)" }}>Profit jumped this year — the fair value uses the usual level.</strong>{" "}
+          {fyLabel(m.fyEnd)} EPS is ₹{m.epsJump.eps.toFixed(2)}, more than 3× the usual ₹{m.epsJump.usualEps.toFixed(2)}, but the share price hasn't followed (P/E {m.epsJump.pe.toFixed(1)} on the last close, against a usual {m.medianPe.toFixed(1)}). That is how a one-off gain looks. If you expect this profit to last, type {round(m.epsJump.eps, 2)} into EPS below.
+        </div>
+      );
+  const explorer = m && (<>
+{model === "earnings" && <div data-tour="valuation"><ValuationExplorer key={`valuation-${symbol}`} metrics={m} price={price} levels={fv} epsInput={eps} peInput={pe} /></div>}
+          {onBook && (
+            <div data-tour="valuation" style={{ ...card, fontSize: 12, color: "var(--t2)", lineHeight: 1.55 }}>
+              <strong style={{ color: "var(--t1)" }}>Cash-flow (DCF) value and free-cash-flow yield: not meaningful for lenders.</strong> A bank's operating cash flow is deposits and loans moving, not cash the business generates.
+            </div>
+          )}
+  </>);
+  const positionCard = m && position && (
+            <div data-tour="position" style={{ borderRadius: 12, padding: 18, marginBottom: 16, background: "var(--s2)", border: `1px solid color-mix(in srgb, ${positionTone} 45%, var(--bdr2))` }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8, flexWrap: "wrap" }}>
+                <span style={{ width: 40, height: 40, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: positionTone, background: `color-mix(in srgb, ${positionTone} 12%, transparent)` }}>
+                  <PositionIcon zone={position.zone} size={20} strokeWidth={2} />
+                </span>
+                <div>
+                  <div style={{ fontSize: 12, color: "var(--t3)", fontWeight: 500 }}>Where the price sits</div>
+                  <div style={{ fontSize: 19, fontWeight: 500, color: positionTone, letterSpacing: "-0.02em" }}>{position.label}</div>
+                </div>
+              </div>
+              <p style={{ fontSize: 13, color: "var(--t1)", margin: 0, lineHeight: 1.6 }}>{position.gist || position.detail}</p>
+              {/* Valuing at a historical P/E makes this common for de-rated stocks */}
+              {model === "earnings" && (position.zone === "below-stop" || position.zone === "phase3") && m.peFy && Number(pe) > m.peFy * 1.3 && (
+                <p style={{ fontSize: 12, color: "var(--t2)", margin: "8px 0 0", lineHeight: 1.6 }}>
+                  Today's P/E (in the key figures) is well under the multiple the levels use. Check whether the historical multiple still applies.
+                </p>
+              )}
+              <p style={{ fontSize: 11, color: "var(--t3)", margin: "8px 0 0" }}>{levels?.own ? "Against the levels you typed for this stock." : `Against your levels: your settings applied to the fair value from the ${onBook ? "book, P/B" : onCycle ? "mid-cycle EPS, multiple" : "EPS, P/E"} and growth above.`} A description of where the price is, not advice.</p>
+            </div>
+          );
+  const epsByYear = m && valued && fv && (
+            <details style={{ ...card, padding: 0 }}>
+              <summary style={{ cursor: "pointer", padding: "16px 18px", color: "var(--t1)", fontSize: 13, fontWeight: 400, listStyle: "none" }}>
+                {onBook ? "Book" : onCycle ? "Mid-cycle EPS" : "EPS"} and fair value, year by year
+                {usingCustomInputs && <span style={{ fontSize: 11, marginLeft: 8, color: "var(--accent)", fontWeight: 500 }}>(custom inputs)</span>}
+              </summary>
+              <div className="ss-grid-fv" style={{ padding: "0 18px 18px" }}>
+                {[
+                  { label: onBook ? "Book/share less net NPA" : onCycle ? "Mid-cycle EPS" : usualEpsShown ? "Usual EPS" : `${fyLabel(m.fyEnd)} EPS`, val: eps ? `₹${Math.round(Number(eps))}` : "—", sub: `FV: ${fmtRs(fv.fv25)}` },
+                  { label: `${fyLabel(m.fyEnd, 1)} ${onBook ? "book" : onCycle ? "mid-cycle EPS" : "EPS"} (est.)`, val: fv.e26 ? `₹${fv.e26}` : "—", sub: `FV: ${fmtRs(fv.fv26)}` },
+                  { label: `${fyLabel(m.fyEnd, 2)} ${onBook ? "book" : onCycle ? "mid-cycle EPS" : "EPS"} (est.)`, val: fv.e27 ? `₹${fv.e27}` : "—", sub: `FV: ${fmtRs(fv.fv27)}` },
+                ].map(fc => (
+                  <div key={fc.label} style={{ background: "var(--s1)", borderRadius: 8, padding: 12, border: fc.hi ? "1px solid var(--green)" : "1px solid var(--bdr)" }}>
+                    <div style={{ fontSize: 11, color: "var(--t3)", marginBottom: 4 }}>{fc.label}</div>
+                    <div style={{ fontSize: 17, fontWeight: 400, color: fc.hi ? "var(--accent)" : "var(--t1)" }}>{fc.val}</div>
+                    <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 2 }}>{fc.sub}</div>
+                  </div>
+                ))}
+              </div>
+            </details>
+          );
+
+  // A computer's page (StockDesk.jsx, 26 Oct 2026): the company and its gist
+  // across the top, the four chapter tiles, the chart beside what to watch,
+  // the chapter bar once those have scrolled by, then a card per chapter
+  // with its deeper tools folded under "More"
+  const fairValue = valued ? fv?.fv25 : null;
+  const goChapter = id => {
+    const c = CHAPTERS.find(x => x.id === id);
+    const el = c?.parts.map(part => document.getElementById(`sec-${part}`)).find(Boolean);
+    if (!el) return;
+    const header = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--header-h")) || 0;
+    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: docTop(el) - header - 70, behavior: reduced ? "auto" : "smooth" });
+  };
+  const desk = (
+    <div className="dk">
+      <nav className="dk-crumb" aria-label="Where you are">
+        <button type="button" onClick={onBack} className="dk-back"><ArrowLeft size={15} aria-hidden="true" /> Back to {backTo}<kbd aria-hidden="true">Esc</kbd></button>
+        {m?.sector && <span>{m.sector}</span>}
+        <span>{cardName(data.name)}</span>
+      </nav>
+      <StockSide variant="head" gist={m ? gistLine(m, { fairValue, price }) : null} data={data} m={m} price={price} priceLabel={priceLabel} watched={watched}
+        onWatch={() => toggleWatch(data.symbol, price)} onAlert={() => setShowAlertModal(true)} />
+
+      {data.quoteError && (
+        <div className="dk-warn">Couldn't refresh the latest close ({data.quoteError}){data.close ? " — using NSE's last close." : "."}</div>
+      )}
+      {data.quote?.stale && <div className="dk-warn"><strong>Showing a cached quote</strong> — it couldn't be refreshed. Quote date: {data.quote.asOf}.</div>}
+      {!m && <div style={{ ...card, color: "var(--t3)", fontSize: 13 }}>No usable annual results in NSE's filings for this company, so there's nothing to value or score.</div>}
+
+      {m && <DeskTiles m={m} fairValue={fairValue} price={price} onGo={goChapter} />}
+
+      <section id="sec-overview" className="ss-section dk-top" data-tab="overview">
+        <div className="dk-top-main">
+          <PriceChartPanel symbol={data.symbol} name={data.name} levels={valued || levels ? { ...(valued ? fv : {}), ...(levels ?? {}) } : null} />
+          {m && <KeyFiguresRow m={m} price={price} />}
+          <DataNote dates={data.dataDates} />
+          <WhyMoving symbol={data.symbol} />
+        </div>
+        {m && <div className="dk-top-side"><WhatToWatch m={m} symbol={data.symbol} signedIn={!!account} onAlert={() => setShowAlertModal(true)} /></div>}
+      </section>
+
+      <div data-sticky-top className="sd-bar dk-bar">
+        <div className="sd-bar-row">
+          <span className="dk-bar-name">{cardName(data.name)}{price > 0 && <b>{fmtRs(price)}</b>}</span>
+          <SectionNav ready={!!m} />
+        </div>
+      </div>
+
+      {m && <DeskChapter id="business" sec="about" m={m} fairValue={fairValue} price={price}
+        more={<>
+          <StockGlance r={m.research} />
+          <div id="sec-scores" data-tour="research"><ResearchPanel research={m.research} /></div>
+          <ChapterEnd id="business" m={m} />
+        </>} moreLabel="At a glance, the scorecard and every check">
+        <CompanyProfile symbol={data.symbol} m={m} />
+        <StockSectorCompare m={m} />
+        <StockBusiness m={m} symbol={data.symbol} name={data.name} />
+      </DeskChapter>}
+
+      {m && <DeskChapter id="growth" sec="financials" m={m} fairValue={fairValue} price={price} note={growthNote(m)}
+        more={<ChapterEnd id="growth" m={m} />} moreLabel="The checks behind the growth score">
+        <FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} />
+      </DeskChapter>}
+
+      {m && <DeskChapter id="safety" sec="health" m={m} fairValue={fairValue} price={price}
+        more={<><PiotroskiCard m={m} /><ChapterEnd id="safety" m={m} /></>} moreLabel="The Piotroski score and the checks">
+        <StockHealth m={m} />
+      </DeskChapter>}
+
+      <DeskChapter id="owners" sec="holding" m={m} fairValue={fairValue} price={price}
+        more={<><InsidersPanel symbol={data.symbol} />{m && <ChapterEnd id="owners" m={m} />}</>} moreLabel="Insider trades and the checks">
+        <ShareholdingPanel symbol={data.symbol} />
+        {m?.dividendRecord && <div id="sec-dividends"><StockDividends m={m} /></div>}
+      </DeskChapter>
+
+      {m && <DeskChapter id="value" sec="valuation" m={m} fairValue={fairValue} price={price}
+        more={<>
+          {filingsNote}
+          {valued && overrideCard}
+          {priceCard}
+          {levels && <div id="sec-sizing" className="ss-section"><PhasePositionPlanner levels={levels} /></div>}
+          {epsByYear}
+          <KeyNumbers data={data} m={m} />
+          <ChapterEnd id="value" m={m} />
+        </>} moreLabel="Check or change the inputs, size a position, every figure">
+        {valued && <ValuedAs valuation={m.valuation} />}
+        {valueChips}
+        {epsJumpNote}
+        {!valued && overrideCard}
+        {explorer}
+        <div id="sec-levels">
+          {positionCard}
+          {(valued || levels) && <MyLevelsCard symbol={symbol} fv={valued ? fv : null} levels={levels} price={price} priceLabel={priceLabel} fv2Label={fyLabel(m.fyEnd, 2)} />}
+        </div>
+        <div id="sec-peers"><PeersPanel symbol={data.symbol} onAnalyze={onOpenStock} /></div>
+      </DeskChapter>}
+
+      <DeskChapter id="price" sec="performance" m={m} fairValue={fairValue} price={price}
+        more={<><div id="sec-technicals"><TechnicalPanel ticker={data.symbol} /></div>{m && <ChapterEnd id="price" m={m} />}</>} moreLabel="Technicals and the checks">
+        {m && <StockPerformance m={m} />}
+      </DeskChapter>
+
+      <DeskChapter id="news" sec="filings" m={m} fairValue={fairValue} price={price}
+        more={<div id="sec-web"><AroundTheWeb symbol={data.symbol} name={data.name} /></div>} moreLabel="Around the web: videos, posts and news elsewhere">
+        <div data-tour="filings">
+          {m && <div id="sec-events"><StockRecent m={m} holding={data.holding} /></div>}
+          <StockEarningsCall symbol={data.symbol} m={m} />
+          <NewsPanel symbol={data.symbol} />
+        </div>
+      </DeskChapter>
+
+      <section className="ss-section dk-yourview" aria-labelledby="dk-yourview">
+        <h2 id="dk-yourview" className="dk-yourview-h">Your view</h2>
+        <div className="dk-yourview-grid">
+          <MyNotes key={data.symbol} symbol={data.symbol} />
+          {m && <div id="sec-thesis" data-tour="thesis"><ThesisMonitor metrics={m} account={account} /></div>}
+        </div>
+      </section>
+
+      <StockDataDates dates={data.dataDates} quote={data.quote} research={m?.research} />
+      <p style={{ fontSize: 11, color: "var(--t3)", textAlign: "center", lineHeight: 1.6 }}>
+        <TriangleAlert size={12} style={{ verticalAlign: "-1px", marginRight: 4 }} />Always cross-check figures on NSE or BSE before investing.
+      </p>
+    </div>
+  );
+
   return (
     <div style={{ padding: "8px var(--page-x) 16px", color: "var(--t1)" }}>
       {showAlertModal && (
         <CreateAlertModal stock={{ symbol: data.symbol, name: data.name, cmp: price, p1: levels?.p1, p2: levels?.p2, p3: levels?.p3 }} onClose={() => setShowAlertModal(false)} />
       )}
 
+      {!isPhone ? desk : (
       <div className="sd ap">
       {/* A phone shows the company's card on Overview only: the other tabs
           start with their own content, the pinned bar giving name and price */}
@@ -904,60 +1129,14 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
               company, why there's no fair value */}
           <div id="sec-valuation" className="ss-section">
           <h2 className="sd-h2">Valuation. <span>What its own numbers say it is worth.</span></h2>
-          {(m.cyclical || onCycle || m.valuation?.partialCycle || m.lender || m.utility || m.governmentOwned) && (
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
-          {m.lender && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--s3)", color: "var(--t2)", fontWeight: 500 }}>Lender</span>}
-          {m.governmentOwned && <span title={`${m.governmentPct > 0 ? `The government holds ${m.governmentPct}% as promoter. ` : "A government company (NSE's PSU lists). "}Government-owned companies usually trade on lower multiples; its own P/E history already reflects that${m.valuation?.psu ? ", and a bank's cost of equity is a point higher here" : ""}.`} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--s3)", color: "var(--t2)", fontWeight: 500 }}>Government-owned</span>}
-          {m.utility && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--s3)", color: "var(--t2)", fontWeight: 500 }}>Regulated utility</span>}
-          {(m.cyclical || onCycle || m.valuation?.partialCycle) && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--yellow-dim)", color: "var(--yellow)", fontWeight: 400 }}>Cyclical{m.valuation?.partialCycle ? " · partial cycle" : ""}</span>}
-          {/* The cycle-position gauge's reading, beside the price */}
-          {onCycle && m.valuation.positionLabel && <span title={`This year's net margin ${m.valuation.latestMargin}% against a through-cycle ${m.valuation.medianMargin}%`} style={{ fontSize: 11, padding: "3px 10px", borderRadius: 6, background: "var(--s3)", color: CYCLE_TONE[m.valuation.positionLabel], fontWeight: 400 }}>Profits {m.valuation.positionLabel}</span>}
-        </div>
-          )}
-
-          {(
-        <div className="sd-note">
-          <CircleCheck size={14} strokeWidth={2.2} style={{ verticalAlign: "-2px", marginRight: 6, color: "var(--green)" }} /><strong>Financials from NSE filings</strong> — EPS and valuation inputs use {data.annual?.scope?.toLowerCase() ?? "reported"} results for the year ended {longDate(m.fyEnd)}{m.provenance?.financials?.filedAt ? `, filed ${longDate(m.provenance.financials.filedAt)}` : ""}. The price's source and date are shown under it.{" "}
-          <a href={`https://www.nseindia.com/get-quotes/equity?symbol=${encodeURIComponent(data.symbol)}`} target="_blank" rel="noreferrer" style={{ color: "var(--accent)", fontWeight: 500, whiteSpace: "nowrap" }}>Open on NSE <ArrowUpRight size={13} style={{ verticalAlign: "-2px" }} /></a>
-          {onBook && (
-            <div className="hide-phone" style={{ marginTop: 4, color: "var(--t2)" }}>
-              P/B is what its <em>{m.valuation.roeBasis === "recent" ? "recent return on equity" : "through-cycle return on equity"}</em> supports ({m.valuation.justifiedPb.toFixed(2)}×; today's is in the key figures) — override with your own view if needed.
-            </div>
-          )}
-          {m.epsRebased && (
-            <div style={{ marginTop: 4, color: "var(--t2)" }}>
-              EPS here is FY{m.fyEnd.slice(2, 4)} profit over today's {m.epsRebased.sharesCr.toLocaleString("en-IN", { maximumFractionDigits: 1 })} Cr shares (₹{m.eps.toFixed(2)}). The filing's ₹{m.epsRebased.reportedEps.toFixed(2)} is on about {m.epsRebased.epsSharesCr.toLocaleString("en-IN", { maximumFractionDigits: 1 })} Cr, before the company issued more shares — today's count is what the share price is for.
-            </div>
-          )}
-          {m.epsCorrection && (
-            <div style={{ marginTop: 4, color: "var(--yellow)" }}>
-              The filing's annual EPS was ₹{m.epsCorrection.reportedEps.toFixed(2)}, inconsistent with profit and paid-up shares. EPS-based ratios and the fair value use ₹{m.epsCorrection.correctedEps.toFixed(2)} instead.
-            </div>
-          )}
-          {m.unitFixes?.length > 0 && (
-            <div style={{ marginTop: 4, color: "var(--t2)" }}>
-              {m.unitFixes.map(f => `FY${f.fyEnd.slice(2, 4)}`).join(" and ")} {m.unitFixes.length > 1 ? "filings were" : "filing was"} in the wrong unit on NSE (figures {m.unitFixes[0].factor > 1 ? `${m.unitFixes[0].factor.toLocaleString("en-IN")}× too small` : `${(1 / m.unitFixes[0].factor).toLocaleString("en-IN")}× too large`}, share capital included) — corrected here so growth rates aren't distorted.
-            </div>
-          )}
-        </div>
-      )}
-
-      {m?.epsJump && model === "earnings" && (
-        <div style={{ padding: "10px 14px", borderRadius: 8, background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", fontSize: 12, color: "var(--t2)", lineHeight: 1.5, marginBottom: 14 }}>
-          <strong style={{ color: "var(--yellow)" }}>Profit jumped this year — the fair value uses the usual level.</strong>{" "}
-          {fyLabel(m.fyEnd)} EPS is ₹{m.epsJump.eps.toFixed(2)}, more than 3× the usual ₹{m.epsJump.usualEps.toFixed(2)}, but the share price hasn't followed (P/E {m.epsJump.pe.toFixed(1)} on the last close, against a usual {m.medianPe.toFixed(1)}). That is how a one-off gain looks. If you expect this profit to last, type {round(m.epsJump.eps, 2)} into EPS below.
-        </div>
-      )}
+          {valueChips}
+          {filingsNote}
+      {epsJumpNote}
 
           </div>
           {!isPhone && overrideCard}
 
-          {model === "earnings" && <div data-tour="valuation"><ValuationExplorer key={`valuation-${symbol}`} metrics={m} price={price} levels={fv} epsInput={eps} peInput={pe} /></div>}
-          {onBook && (
-            <div data-tour="valuation" style={{ ...card, fontSize: 12, color: "var(--t2)", lineHeight: 1.55 }}>
-              <strong style={{ color: "var(--t1)" }}>Cash-flow (DCF) value and free-cash-flow yield: not meaningful for lenders.</strong> A bank's operating cash flow is deposits and loans moving, not cash the business generates.
-            </div>
-          )}
+          {explorer}
 
           {levels && <div id="sec-sizing" className="ss-section"><PhasePositionPlanner levels={levels} /></div>}
 
@@ -973,54 +1152,14 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
           <div id="sec-levels" className="ss-section">
 
           {/* Where the price sits — described against the levels, never an instruction */}
-          {position && (
-            <div data-tour="position" style={{ borderRadius: 12, padding: 18, marginBottom: 16, background: "var(--s2)", border: `1px solid color-mix(in srgb, ${positionTone} 45%, var(--bdr2))` }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8, flexWrap: "wrap" }}>
-                <span style={{ width: 40, height: 40, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, color: positionTone, background: `color-mix(in srgb, ${positionTone} 12%, transparent)` }}>
-                  <PositionIcon zone={position.zone} size={20} strokeWidth={2} />
-                </span>
-                <div>
-                  <div style={{ fontSize: 12, color: "var(--t3)", fontWeight: 500 }}>Where the price sits</div>
-                  <div style={{ fontSize: 19, fontWeight: 500, color: positionTone, letterSpacing: "-0.02em" }}>{position.label}</div>
-                </div>
-              </div>
-              <p style={{ fontSize: 13, color: "var(--t1)", margin: 0, lineHeight: 1.6 }}>{position.gist || position.detail}</p>
-              {/* Valuing at a historical P/E makes this common for de-rated stocks */}
-              {model === "earnings" && (position.zone === "below-stop" || position.zone === "phase3") && m.peFy && Number(pe) > m.peFy * 1.3 && (
-                <p style={{ fontSize: 12, color: "var(--t2)", margin: "8px 0 0", lineHeight: 1.6 }}>
-                  Today's P/E (in the key figures) is well under the multiple the levels use. Check whether the historical multiple still applies.
-                </p>
-              )}
-              <p style={{ fontSize: 11, color: "var(--t3)", margin: "8px 0 0" }}>{levels?.own ? "Against the levels you typed for this stock." : `Against your levels: your settings applied to the fair value from the ${onBook ? "book, P/B" : onCycle ? "mid-cycle EPS, multiple" : "EPS, P/E"} and growth above.`} A description of where the price is, not advice.</p>
-            </div>
-          )}
+          {positionCard}
 
           {/* The price ladder: the user's own levels, or how to set them */}
           {(valued || levels) && <MyLevelsCard symbol={symbol} fv={valued ? fv : null} levels={levels} price={price} priceLabel={priceLabel} fv2Label={fyLabel(m.fyEnd, 2)} />}
 
           {/* The valuation explorer above is the main valuation summary;
               leave this detailed EPS bridge collapsed to reduce repetition. */}
-          {valued && fv && (
-            <details style={{ ...card, padding: 0 }}>
-              <summary style={{ cursor: "pointer", padding: "16px 18px", color: "var(--t1)", fontSize: 13, fontWeight: 400, listStyle: "none" }}>
-                {onBook ? "Book" : onCycle ? "Mid-cycle EPS" : "EPS"} and fair value, year by year
-                {usingCustomInputs && <span style={{ fontSize: 11, marginLeft: 8, color: "var(--accent)", fontWeight: 500 }}>(custom inputs)</span>}
-              </summary>
-              <div className="ss-grid-fv" style={{ padding: "0 18px 18px" }}>
-                {[
-                  { label: onBook ? "Book/share less net NPA" : onCycle ? "Mid-cycle EPS" : usualEpsShown ? "Usual EPS" : `${fyLabel(m.fyEnd)} EPS`, val: eps ? `₹${Math.round(Number(eps))}` : "—", sub: `FV: ${fmtRs(fv.fv25)}` },
-                  { label: `${fyLabel(m.fyEnd, 1)} ${onBook ? "book" : onCycle ? "mid-cycle EPS" : "EPS"} (est.)`, val: fv.e26 ? `₹${fv.e26}` : "—", sub: `FV: ${fmtRs(fv.fv26)}` },
-                  { label: `${fyLabel(m.fyEnd, 2)} ${onBook ? "book" : onCycle ? "mid-cycle EPS" : "EPS"} (est.)`, val: fv.e27 ? `₹${fv.e27}` : "—", sub: `FV: ${fmtRs(fv.fv27)}` },
-                ].map(fc => (
-                  <div key={fc.label} style={{ background: "var(--s1)", borderRadius: 8, padding: 12, border: fc.hi ? "1px solid var(--green)" : "1px solid var(--bdr)" }}>
-                    <div style={{ fontSize: 11, color: "var(--t3)", marginBottom: 4 }}>{fc.label}</div>
-                    <div style={{ fontSize: 17, fontWeight: 400, color: fc.hi ? "var(--accent)" : "var(--t1)" }}>{fc.val}</div>
-                    <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 2 }}>{fc.sub}</div>
-                  </div>
-                ))}
-              </div>
-            </details>
-          )}
+          {epsByYear}
 
           {!isPhone && <PiotroskiCard m={m} />}
           <KeyNumbers data={data} m={m} />
@@ -1068,6 +1207,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       </div>
       </div>
       </div>
+      )}
     </div>
   );
 }

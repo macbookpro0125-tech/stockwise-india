@@ -43,7 +43,8 @@ for (const [sym, as, says] of MODELS) {
   test(`company page: ${sym}`, async ({ page, account }) => {
     await page.goto(`/stock/${sym}`);
     await expect(page.getByRole("heading", { level: 2 }).first()).toBeVisible();
-    await expect(page.getByText(as).first()).toBeVisible();
+    // (a computer folds the deeper tools, so the first mention can be hidden)
+    await expect(page.getByText(as).filter({ visible: true }).first()).toBeVisible();
     await expect(page.getByText(says).first()).toBeAttached();
     await page.waitForLoadState("networkidle");
     axeLog(await axeCheck(page, `stock ${sym}`));
