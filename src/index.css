@@ -3941,3 +3941,11 @@ html.no-blur { --pg-shine: none; }
 .site-foot-public { opacity: 0.8; }
 /* the app has tabs for these */
 html.in-app .site-foot-public { display: none; }
+
+/* A website ad card (src/ads.jsx WebAd) takes no room until AdSense fills it:
+   before the site is approved, or when there's no ad, nothing shows. Its
+   slot keeps its width, which AdSense needs to choose an ad */
+.ad-card.ad-web { height: 0; margin: 0 !important; padding: 0 !important; border: 0 !important; overflow: hidden; }
+.ad-card.ad-web .ad-tag { display: none; }
+.ad-card.ad-web:has(ins[data-ad-status="filled"]) { height: auto; margin: 12px 0 0 !important; padding: 10px !important; border: 1px solid var(--bdr2) !important; border-radius: 20px; background: var(--s2); overflow: visible; }
+.ad-card.ad-web:has(ins[data-ad-status="filled"]) .ad-tag { display: inline-block; position: static; margin: 0 0 6px; }

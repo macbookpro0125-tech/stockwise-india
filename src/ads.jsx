@@ -35,7 +35,9 @@ function previewing() {
 
 // "native" (the store app, ads on), "web" (the website, AdSense on),
 // "preview" (placeholders), or null; undefined until the config says
-const inAppView = () => /; wv\)/.test(navigator.userAgent || "") || !!window.Capacitor;
+// (the website loads Capacitor's library too, so its presence says nothing:
+// the app is the native platform, or Android's in-app web view)
+const inAppView = () => /; wv\)/.test(navigator.userAgent || "");
 let mode = typeof window === "undefined" ? null : nativeApp() ? undefined : previewing() ? "preview" : inAppView() ? null : undefined;
 let web = null; // { client, slot, testing } once the website's ads are on
 
@@ -150,13 +152,31 @@ export function useAdPause(active) {
   }, [active, on]);
 }
 
-// A website ad card (AdSense): Google fills the slot; marked "Ad" like the app's
+// A website ad card (AdSense): Google fills the slot; marked "Ad" like the
+// app's. Asked for once, and only once the card is near the screen and still
+// on the page: each push fills "the next empty slot", so a card that a list
+// redraw or a page change removes first left one push too many ("All 'ins'
+// elements already have ads", "no_div" — 26 Oct 2026), and a card far down a
+// list needn't use an ad request at all
 function WebAd({ className, size }) {
   const ref = useRef(null);
   useEffect(() => {
     const el = ref.current;
-    if (!el || el.dataset.adsbygoogleStatus) return;
-    try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch { /* blocked or not ready */ }
+    if (!el) return;
+    let done = false;
+    const ask = () => {
+      if (done || !el.isConnected || el.dataset.adsbygoogleStatus || el.dataset.asked) return;
+      done = true;
+      el.dataset.asked = "1";
+      try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch { /* blocked or not ready */ }
+    };
+    if (typeof IntersectionObserver === "undefined") { ask(); return; }
+    const io = new IntersectionObserver(entries => {
+      // near the screen for a moment, not just scrolled past
+      if (entries.some(e => e.isIntersecting)) setTimeout(() => { if (el.isConnected) { io.disconnect(); ask(); } }, 300);
+    }, { rootMargin: "300px 0px" });
+    io.observe(el.parentElement ?? el);
+    return () => { done = true; io.disconnect(); };
   }, []);
   return (
     <div className={`ad-card ad-web ad-${size} ${className}`} role="complementary" aria-label="Ad">

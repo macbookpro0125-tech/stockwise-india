@@ -392,8 +392,12 @@ export function createApp() {
         // default), test (Google's test ads, which earn nothing) or live,
         // shown only with an ad unit (ADSENSE_SLOT) — and never in the app,
         // which has AdMob (src/ads.jsx)
-        const webMode = ["test", "live"].includes(process.env.WEB_ADS) ? process.env.WEB_ADS : "off";
-        const slot = /^\d{6,12}$/.test(process.env.ADSENSE_SLOT ?? "") ? process.env.ADSENSE_SLOT : null;
+        // Live from 26 Oct 2026, ahead of Google's review: a card stays
+        // folded until AdSense fills it (index.css .ad-web), so nothing shows
+        // until the site is approved. WEB_ADS=off turns them off.
+        const webMode = ["test", "live", "off"].includes(process.env.WEB_ADS) ? process.env.WEB_ADS : "live";
+        // "Website list cards", a responsive display unit (not secret: it's in the page)
+        const slot = /^\d{6,12}$/.test(process.env.ADSENSE_SLOT ?? "") ? process.env.ADSENSE_SLOT : "9151561626";
         const web = webMode !== "off" && slot ? { mode: webMode, client: `ca-${ADSENSE_PUB}`, slot } : { mode: "off" };
         sendJson(res, 200, { ads: { mode, units }, web });
         return;

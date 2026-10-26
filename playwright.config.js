@@ -29,6 +29,9 @@ export default defineConfig({
     url: `http://127.0.0.1:${PORT}/api/health`,
     reuseExistingServer: false,
     timeout: 60_000,
-    env: { PORT: String(PORT), STOCKWISE_DB: join(tmpdir(), `stockwise-e2e-${process.pid}.db`), DATA_JOBS: "off", TRUST_PROXY: "1", TELEGRAM_BOT_TOKEN: "", RESEND_API_KEY: "" },
+    env: { PORT: String(PORT), STOCKWISE_DB: join(tmpdir(), `stockwise-e2e-${process.pid}.db`), DATA_JOBS: "off", TRUST_PROXY: "1", TELEGRAM_BOT_TOKEN: "", RESEND_API_KEY: "",
+      // the website's ads come from Google's servers: off here, so a test
+      // never waits on them or fails on their script's own console errors
+      WEB_ADS: "off" },
   },
 });
