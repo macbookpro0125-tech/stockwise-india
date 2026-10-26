@@ -8,12 +8,14 @@ import { api } from "./api.js";
 
 let favourites = null; // [id], in the order starred
 let changes = {}; // { id: { joinedCount, leftCount, joined, left, seenAt } }
+let today = {}; // { id: { avg1d, best, worst, resultsCount, results } } — the starred ones' day
+let pricesDate = null;
 let loading = null;
 const listeners = new Set();
 const emit = () => listeners.forEach(fn => fn());
 
 const load = () => (loading ??= api.screensHome()
-  .then(d => { favourites = d.favourites ?? []; changes = d.changes ?? {}; emit(); })
+  .then(d => { favourites = d.favourites ?? []; changes = d.changes ?? {}; today = d.today ?? {}; pricesDate = d.pricesDate ?? null; emit(); })
   .catch(() => { favourites ??= []; emit(); })
   .finally(() => { loading = null; }));
 
@@ -35,7 +37,7 @@ export const screensHome = {
     if (changes[id]) { changes = { ...changes, [id]: { ...changes[id], joinedCount: 0, leftCount: 0, joined: [], left: [], seenAt: new Date().toISOString() } }; emit(); }
     api.markScreenSeen(id).catch(() => {});
   },
-  reset() { favourites = null; changes = {}; emit(); },
+  reset() { favourites = null; changes = {}; today = {}; pricesDate = null; emit(); },
 };
 
 // Kept mounted pages redraw when any of it changes
@@ -47,7 +49,7 @@ export function useScreensHome() {
     if (favourites == null) load();
     return () => listeners.delete(fn);
   }, []);
-  return { favourites: screensHome.favourites(), changes, recents: recents(), loaded: favourites != null };
+  return { favourites: screensHome.favourites(), changes, today, pricesDate, recents: recents(), loaded: favourites != null };
 }
 
 // The last screeners opened on this device, newest first: [{ id, at }]

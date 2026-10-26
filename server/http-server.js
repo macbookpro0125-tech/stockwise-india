@@ -23,7 +23,7 @@ import { listHoldings, addHolding, addHoldings, updateHolding, removeHolding } f
 import { resolveImportRows, MAX_IMPORT_ROWS } from "./portfolio-import.js";
 import { getThesis, saveThesis } from "./user-thesis.js";
 import { listNotes, saveNote, deleteNote, listStrategies, saveStrategies, checkStrategyMatches, acknowledgeStrategyMatches } from "./user-notes.js";
-import { listFavourites, saveFavourites, markSeen, seenIds, changesSince } from "./screen-favourites.js";
+import { listFavourites, saveFavourites, markSeen, seenIds, changesSince, todayFor, pushFavouriteJoins } from "./screen-favourites.js";
 import { currentPrices } from "./prices.js";
 import { getPerformance, takeSnapshots } from "./performance.js";
 import { pricePosition, userLevels, fairValueOnly } from "./levels.js";
@@ -39,8 +39,9 @@ import { sectorComparison } from "./sector-compare.js";
 import { startDataJobs, jobStatus } from "./data-jobs.js";
 import { botInfo, linkCode, telegramChat, unlinkTelegram, sendTelegram, startTelegramPolling } from "./telegram.js";
 import { startAlertChecks } from "./alert-notifier.js";
-import { savePushToken, removePushToken } from "./push.js";
+import { savePushToken, removePushToken, pushReady, pushToUser } from "./push.js";
 import { startNewsPush } from "./news-push.js";
+import { niceName } from "../src/stockName.js";
 import { countPageLoad, countActive, visitStats, isOwner } from "./visits.js";
 import { startDigestJobs, weeklyEmailOn, setWeeklyEmail, unsubscribe } from "./digest.js";
 import { publicScreen, publicScreens, publicResultsCalendar, screenPageHtml, screensIndexHtml, resultsCalendarHtml, homePageHtml, sectorsIndexHtml, sectorPageHtml } from "./seo-lists.js";
@@ -236,6 +237,13 @@ function screenSymbolsFor(userId) {
     cache.set(id, symbols);
     return symbols;
   };
+}
+
+// …and its name with them, for a notification about it
+function screenInfoFor(userId) {
+  const symbolsOf = screenSymbolsFor(userId);
+  const own = new Map(listStrategies(userId).map(p => [p.id, p.name]));
+  return id => { const symbols = symbolsOf(id); return symbols ? { symbols, name: PRESETS.find(p => p.id === id)?.name ?? own.get(id) ?? id } : null; };
 }
 
 function decodePathSegment(value) {
@@ -1087,8 +1095,11 @@ export function createApp() {
         const userId = requireAuth(req, res);
         if (userId == null) return;
         const symbolsOf = screenSymbolsFor(userId);
-        const names = new Map(allMetrics().rows.map(m => [m.symbol, m.name]));
-        sendJson(res, 200, { favourites: listFavourites(userId), changes: changesSince(userId, symbolsOf, s => names.get(s) ?? null) });
+        const rows = new Map(allMetrics().rows.map(m => [m.symbol, m]));
+        const favourites = listFavourites(userId);
+        // each starred one's day: its companies' move at the last close and their results this week
+        const today = Object.fromEntries(favourites.map(id => [id, symbolsOf(id)]).filter(([, syms]) => syms).map(([id, syms]) => [id, todayFor(syms, sym => rows.get(sym))]));
+        sendJson(res, 200, { favourites, changes: changesSince(userId, symbolsOf, sym => rows.get(sym)?.name ?? null), today, pricesDate: loadMarketSnapshot()?.pricesDate ?? null });
         return;
       }
       if (url.pathname === "/api/screens/favourites" && req.method === "PUT") {
@@ -1610,7 +1621,28 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     startTelegramPolling();
     startAlertChecks();
     startNewsPush();
+    startFavouritePush();
     startDigestJobs();
     startBackups();
   }
+}
+
+// A phone notification when a company joins a starred screener
+// (screen-favourites.js): checked every 15 minutes from 8 in the morning to
+// 10 at night (IST), as the news is, so the evening's new close reaches the
+// phone that evening and nobody is woken
+function startFavouritePush({ everyMs = 15 * 60_000, log = console.error } = {}) {
+  const tick = async () => {
+    const h = new Date(Date.now() + 330 * 60_000).getUTCHours();
+    if (!pushReady() || h < 8 || h >= 22) return;
+    try {
+      const names = new Map(allMetrics().rows.map(m => [m.symbol, m.name]));
+      const { sent } = await pushFavouriteJoins({ screenFor: screenInfoFor, nameOf: sym => niceName(names.get(sym) ?? "") || sym, push: pushToUser, log });
+      if (sent) log(`[favourites-push] sent to ${sent} account${sent === 1 ? "" : "s"}`);
+    } catch (e) {
+      log(`[favourites-push] ${e.message}`);
+    }
+  };
+  setTimeout(tick, 3 * 60_000);
+  setInterval(tick, everyMs);
 }

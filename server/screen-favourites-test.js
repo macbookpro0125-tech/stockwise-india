@@ -33,4 +33,41 @@ assert.deepEqual(listFavourites(user), ["sound_banks", "custom_9"]);
 assert.throws(() => saveFavourites(user, "sound_banks"));
 console.log("ok: favourites are a clean list of ids");
 
+// The card's day: the move at the last close, best and worst, results this week
+const { todayFor, favouriteJoinsMessage, pushFavouriteJoins } = await import("./screen-favourites.js");
+const rowsT = {
+  A: { symbol: "A", name: "Alpha", ret1d: 2, events: [{ kind: "board", date: "2026-10-29", title: "Board meeting: financial results" }] },
+  B: { symbol: "B", name: "Beta", ret1d: -1, events: [{ kind: "board", date: "2026-11-20", title: "Board meeting: financial results" }] },
+  C: { symbol: "C", name: "Gamma", ret1d: 0.5, events: [{ kind: "action", date: "2026-10-28", title: "Dividend" }, { kind: "board", date: "2026-10-27", title: "Board meeting: fund raising" }] },
+};
+const t = todayFor(["A", "B", "C", "GONE"], s => rowsT[s], new Date("2026-10-26T06:00:00Z"));
+assert.equal(t.avg1d, 0.5, "the average move of its companies");
+assert.equal(t.best.name, "Alpha"); assert.equal(t.worst.name, "Beta");
+assert.deepEqual(t.results, [{ symbol: "A", name: "Alpha", date: "2026-10-29" }], "only results, only within the week ahead");
+console.log("ok: a card's day — the move, best and worst, results this week");
+
+// The notification: one company, or several across screeners
+const one = favouriteJoinsMessage([{ id: "x", name: "Sound Banks", joined: [{ symbol: "INDIANB", name: "Indian Bank" }] }]);
+assert.equal(one.title, "Sound Banks"); assert.match(one.body, /Indian Bank joined it/); assert.deepEqual(one.data, { stock: "INDIANB" });
+const several = favouriteJoinsMessage([{ id: "x", name: "Sound Banks", joined: [{ symbol: "A", name: "A1" }] }, { id: "y", name: "Doubled in a Year", joined: [{ symbol: "B", name: "B1" }, { symbol: "C", name: "C1" }] }]);
+assert.equal(several.title, "3 new in your favourite screeners"); assert.match(several.body, /2 companies joined Doubled in a Year/);
+assert.equal(favouriteJoinsMessage([]), null);
+console.log("ok: the notification's words");
+
+db.prepare("INSERT INTO push_tokens (token, user_id, platform, created_at) VALUES ('tok', ?, 'android', 'now')").run(user);
+let now = ["TCS", "INFY"];
+const sentTo = [];
+const run = () => pushFavouriteJoins({ screenFor: () => id => (id === "sound_banks" ? { symbols: now, name: "Sound Banks" } : null), nameOf: s => s, push: async (uid, m) => { sentTo.push(m); return true; }, log: () => {} });
+await run();
+assert.equal(sentTo.length, 0, "the first look only starts the record");
+now = ["TCS", "INFY", "INDIANB"];
+await run();
+assert.equal(sentTo.length, 1); assert.match(sentTo[0].body, /INDIANB joined/);
+await run();
+assert.equal(sentTo.length, 1, "told once, not again at the next check");
+now = ["TCS"];
+await run();
+assert.equal(sentTo.length, 1, "a company leaving isn't a notification");
+console.log("ok: a phone is told once when a company joins a starred screener");
+
 console.log("All screen favourite checks passed.");

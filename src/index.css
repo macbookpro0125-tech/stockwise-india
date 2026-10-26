@@ -3500,6 +3500,17 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 .ps-change em, .ps-new { font-style: normal; font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
 .ps-change em.joined, .ps-new { color: var(--pg-joined); background: color-mix(in srgb, var(--pg-joined) 13%, transparent); }
 .ps-change em.left { color: var(--pg-left); background: color-mix(in srgb, var(--pg-left) 13%, transparent); }
+/* The card's day: the move at the last close in plain figures, coloured only
+   by direction; results this week as a quiet list */
+.ps-fav-day .ps-fav-since { color: var(--pg-sub, var(--muted)); }
+.ps-move { font-style: normal; font-variant-numeric: tabular-nums; font-weight: 600; }
+.ps-change em.ps-move { background: none; padding: 0; font-size: 14px; }
+.ps-move.up { color: var(--pg-joined); }
+.ps-move.down { color: var(--pg-left); }
+.ps-move.flat { color: inherit; }
+.ps-fav-results { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+.ps-results-list { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 14px; }
+.ps-results-list small { color: var(--pg-sub, var(--muted)); font-size: 12px; margin-left: 2px; }
 .ps-fav-empty { cursor: default; gap: 6px; padding: 18px; box-shadow: var(--pg-shine); }
 .ps-fav-empty .ps-row-sub { line-height: 1.5; }
 .ps-pill { align-self: flex-start; margin-top: 10px; height: 38px; padding: 0 18px; border: 0; border-radius: 999px; background: var(--accent); color: var(--on-accent, #04201b); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }

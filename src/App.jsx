@@ -137,6 +137,7 @@ export default function App() {
     if (d.stock) navigate(stockPath(String(d.stock)), { state: { fromApp: true, depth: 1 } });
     else if (d.news) { setNewsOpen(String(d.news)); goTab("explore"); }
     else if (d.tab === "watchlist") goTab("watchlist");
+    else if (d.tab === "discover") goTab("discover");
   };
   useEffect(() => onPushTap(d => pushTap.current(d)), []);
   useEffect(() => { if (account?.userId) refreshPush(); }, [account?.userId]);

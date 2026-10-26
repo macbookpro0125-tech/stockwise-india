@@ -279,3 +279,15 @@ db.exec(`
     PRIMARY KEY (user_id, screen_id)
   );
 `);
+// Each starred screener's companies when its account's phones were last told
+// what joined it (screen-favourites.js pushFavouriteJoins) — apart from the
+// note of when it was opened, so a notification never resets the card
+db.exec(`
+  CREATE TABLE IF NOT EXISTS favourite_notified (
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    screen_id TEXT NOT NULL,
+    symbols TEXT NOT NULL,
+    at TEXT NOT NULL,
+    PRIMARY KEY (user_id, screen_id)
+  );
+`);

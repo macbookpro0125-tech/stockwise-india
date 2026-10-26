@@ -109,32 +109,67 @@ const changeBadge = ch => (ch?.joinedCount > 0
   ? <span className="ps-new">{ch.joinedCount} new</span>
   : null);
 
-// A starred screener: its name and size, then who joined and who left since
-// it was last opened
-function FavouriteCard({ p, count, change, onOpen }) {
+// A starred screener: its name and size; what joined or left since it was
+// last opened, only when something did; then its day, every day (26 Oct
+// 2026: "is that useful then?") — how its companies moved at the last close,
+// the best and the worst, and which report results in the coming week
+const pct = v => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v).toFixed(1)}%`;
+const tone = v => (v > 0.05 ? "up" : v < -0.05 ? "down" : "flat");
+const weekday = iso => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
+
+function FavouriteCard({ p, count, change, day, closeDate, onOpen }) {
+  const changed = (change?.joinedCount ?? 0) + (change?.leftCount ?? 0);
   const rows = [...(change?.joined ?? []).slice(0, 2).map(c => ({ ...c, how: "Joined" })), ...(change?.left ?? []).slice(0, 2).map(c => ({ ...c, how: "Left" }))].slice(0, 3);
-  const more = (change?.joinedCount ?? 0) + (change?.leftCount ?? 0) - rows.length;
+  const more = changed - rows.length;
   const since = dateOf(change?.seenAt);
+  const movers = day ? [day.best && { ...day.best, way: "best" }, day.worst && { ...day.worst, way: "worst" }].filter(Boolean) : [];
   return (
     <button type="button" className="ps-fav" onClick={() => onOpen(p)} aria-label={`Open ${p.name}`}>
       <span className="ps-fav-head">
         <span>
           <span className="ps-fav-name">{p.name}</span>
-          <span className="ps-row-sub">{companies(count) ?? " "}</span>
+          <span className="ps-row-sub">{companies(count) ?? "\u00a0"}</span>
         </span>
         <Logos top={count?.top} />
       </span>
-      <span className="ps-fav-changes">
-        <span className="ps-fav-since">{rows.length ? `Since you opened it${since ? `, ${since}` : ""}` : since ? `No change since ${since}` : "Changes show here after the next close"}</span>
-        {rows.map(c => (
-          <span key={c.how + c.symbol} className="ps-change">
-            <CompanyLogo symbol={c.symbol} size={22} fallback={c.name} />
-            <span className="ps-change-name">{cardName(c.name || c.symbol)}</span>
-            <em className={c.how === "Joined" ? "joined" : "left"}>{c.how}</em>
-          </span>
-        ))}
-        {more > 0 && <span className="ps-fav-since">and {more} more</span>}
-      </span>
+      {changed > 0 && (
+        <span className="ps-fav-changes">
+          <span className="ps-fav-since">Since you opened it{since ? `, ${since}` : ""}</span>
+          {rows.map(c => (
+            <span key={c.how + c.symbol} className="ps-change">
+              <CompanyLogo symbol={c.symbol} size={22} fallback={c.name} />
+              <span className="ps-change-name">{cardName(c.name || c.symbol)}</span>
+              <em className={c.how === "Joined" ? "joined" : "left"}>{c.how}</em>
+            </span>
+          ))}
+          {more > 0 && <span className="ps-fav-since">and {more} more</span>}
+        </span>
+      )}
+      {day && (
+        <span className="ps-fav-changes ps-fav-day">
+          {day.avg1d != null && (
+            <span className="ps-fav-since">
+              <em className={`ps-move ${tone(day.avg1d)}`}>{pct(day.avg1d)}</em> on average{closeDate ? ` at the ${closeDate} close` : " at the last close"}
+            </span>
+          )}
+          {movers.map(m => (
+            <span key={m.way} className="ps-change">
+              <CompanyLogo symbol={m.symbol} size={22} fallback={m.name} />
+              <span className="ps-change-name">{cardName(m.name || m.symbol)}</span>
+              <em className={`ps-move ${tone(m.ret1d)}`}>{pct(m.ret1d)}</em>
+            </span>
+          ))}
+          {day.resultsCount > 0 && (
+            <span className="ps-fav-results">
+              <span className="ps-fav-since">Results this week</span>
+              <span className="ps-results-list">
+                {day.results.slice(0, 3).map(r => <span key={r.symbol}>{cardName(r.name || r.symbol)} <small>{weekday(r.date)}</small></span>)}
+                {day.resultsCount > 3 && <span className="ps-row-sub">and {day.resultsCount - 3} more</span>}
+              </span>
+            </span>
+          )}
+        </span>
+      )}
       <span className="ps-fav-go" aria-hidden="true"><ChevronRight size={16} /></span>
     </button>
   );
@@ -143,7 +178,7 @@ function FavouriteCard({ p, count, change, onOpen }) {
 export default function PhoneScreens({ onSelect, onNewScreen, continueCard = null, theme = "dark" }) {
   const [presets, setPresets] = useState([]);
   const [custom, setCustom] = useState(strategiesStore.get);
-  const { favourites, changes, recents } = useScreensHome();
+  const { favourites, changes, today, pricesDate: closeIso, recents } = useScreensHome();
   const [all, setAll] = useState(() => !!window.history.state?.[OPEN_ALL]);
   const [query, setQuery] = useState("");
   const [kind, setKind] = useState("all");
@@ -242,7 +277,7 @@ export default function PhoneScreens({ onSelect, onNewScreen, continueCard = nul
       {favs.length ? (
         <>
           <div className="ps-favs" ref={railRef} onScroll={onRail} role="group" aria-label="Your favourite screeners">
-            {favs.map(p => <FavouriteCard key={p.id} p={p} count={counts[p.id]} change={changes[p.id]} onOpen={open} />)}
+            {favs.map(p => <FavouriteCard key={p.id} p={p} count={counts[p.id]} change={changes[p.id]} day={today[p.id]} closeDate={dateOf(closeIso ?? pricesDate)} onOpen={open} />)}
           </div>
           {favs.length > 1 && <div className="ps-dots" aria-hidden="true">{favs.map((p, i) => <i key={p.id} className={i === Math.min(favAt, favs.length - 1) ? "on" : ""} />)}</div>}
         </>
