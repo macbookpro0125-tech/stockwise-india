@@ -1,10 +1,11 @@
-import { createElement, useEffect, useState } from "react";
+import { createElement, useEffect, useRef, useState } from "react";
 
-// Ads (17 Oct 2026): only in the Android and iPhone apps (Capacitor), from
-// Google AdMob — a small ad card among the strategies and among the stock
-// rows, and "Watch an ad" in Settings for anyone who wants to support the
-// app. Nothing is ever locked behind an ad. The website, and the web app
-// installed from it, show none.
+// Ads (17 Oct 2026): in the Android and iPhone apps (Capacitor), from Google
+// AdMob — a small ad card among the strategies and among the stock rows, and
+// "Watch an ad" in Settings for anyone who wants to support the app. Nothing
+// is ever locked behind an ad. The website (26 Oct 2026) shows the same
+// cards in the same places from Google AdSense, once the server's WEB_ADS
+// switch is on — never inside the app, which has AdMob.
 //
 // The server says whether ads are on and which ad units to use
 // (/api/app-config, from ADS=off|test|live), so they can be switched without
@@ -32,16 +33,19 @@ function previewing() {
   } catch { return false; }
 }
 
-// "native" (the store app, ads on), "preview" (placeholders), or null
-let mode = typeof window === "undefined" ? null : nativeApp() ? undefined : previewing() ? "preview" : null;
+// "native" (the store app, ads on), "web" (the website, AdSense on),
+// "preview" (placeholders), or null; undefined until the config says
+const inAppView = () => /; wv\)/.test(navigator.userAgent || "") || !!window.Capacitor;
+let mode = typeof window === "undefined" ? null : nativeApp() ? undefined : previewing() ? "preview" : inAppView() ? null : undefined;
+let web = null; // { client, slot, testing } once the website's ads are on
 
 // The plugin, the config and consent, once: null when there are no ads
 let setup = null;
 function adsSetup() {
   if (setup) return setup;
   setup = (async () => {
-    if (!nativeApp()) return null;
     const config = await fetch("/api/app-config", { credentials: "same-origin" }).then(r => (r.ok ? r.json() : null)).catch(() => null);
+    if (!nativeApp()) return webSetup(config?.web);
     const ads = config?.ads;
     if (!ads || (ads.mode !== "test" && ads.mode !== "live")) return null;
     const units = ads.units?.[platform()] ?? {};
@@ -58,12 +62,27 @@ function adsSetup() {
   return setup;
 }
 
+// The website's AdSense, when the server has it on: Google's script, once
+function webSetup(w) {
+  if (!w || (w.mode !== "test" && w.mode !== "live") || !/^ca-pub-\d+$/.test(w.client ?? "") || !/^\d+$/.test(w.slot ?? "")) return null;
+  if (!document.querySelector("script[data-adsense]")) {
+    const s = document.createElement("script");
+    s.async = true;
+    s.crossOrigin = "anonymous";
+    s.dataset.adsense = "";
+    s.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(w.client)}`;
+    document.head.appendChild(s);
+  }
+  web = { client: w.client, slot: w.slot, testing: w.mode === "test" };
+  return { web: true };
+}
+
 export function useAdsOn() {
-  const [on, setOn] = useState(mode === "preview" || mode === "native");
+  const [on, setOn] = useState(mode === "preview" || mode === "native" || mode === "web");
   useEffect(() => {
     if (mode !== undefined) return;
     let live = true;
-    adsSetup().then(s => { mode = s ? "native" : null; if (live) setOn(!!s); });
+    adsSetup().then(s => { mode = s?.web ? "web" : s ? "native" : null; if (live) setOn(!!s); });
     return () => { live = false; };
   }, []);
   return on;
@@ -131,11 +150,30 @@ export function useAdPause(active) {
   }, [active, on]);
 }
 
+// A website ad card (AdSense): Google fills the slot; marked "Ad" like the app's
+function WebAd({ className, size }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || el.dataset.adsbygoogleStatus) return;
+    try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch { /* blocked or not ready */ }
+  }, []);
+  return (
+    <div className={`ad-card ad-web ad-${size} ${className}`} role="complementary" aria-label="Ad">
+      <span className="ad-tag">Ad</span>
+      <ins ref={ref} className="adsbygoogle" style={{ display: "block" }}
+        data-ad-client={web.client} data-ad-slot={web.slot} data-ad-format="auto" data-full-width-responsive="true"
+        {...(web.testing ? { "data-adtest": "on" } : {})} />
+    </div>
+  );
+}
+
 // A card-sized ad in a list. slot: a key for this place in the list that
 // stays the same while the list does (the plugin's rule)
 export function AdCard({ feed, slot, size = "small", className = "" }) {
   const on = useAdsOn();
   if (!on) return null;
+  if (mode === "web" && web) return <WebAd className={className} size={size} />;
   if (mode === "preview") {
     return (
       <div className={`ad-card ad-preview ad-${size} ${className}`} role="note" aria-label="Ad space">

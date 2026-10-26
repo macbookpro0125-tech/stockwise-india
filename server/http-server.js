@@ -120,6 +120,9 @@ const CONTENT_TYPES = {
 // Streams the file, and answers Range requests with just the bytes asked
 // for: the "How it works" video needs them — Safari won't play a video
 // without, and skipping ahead relies on them in every browser.
+// The website's AdSense publisher (not secret: it's in every page's head)
+const ADSENSE_PUB = /^pub-\d+$/.test(process.env.ADSENSE_PUBLISHER_ID ?? "") ? process.env.ADSENSE_PUBLISHER_ID : "pub-4001463380481442";
+
 function serveStatic(req, pathname, res) {
   if (!existsSync(DIST_DIR)) return false;
   let decoded;
@@ -385,7 +388,14 @@ export function createApp() {
           android: { native: "ca-app-pub-3940256099942544/2247696110", rewarded: "ca-app-pub-3940256099942544/5224354917" },
           ios: { native: "ca-app-pub-3940256099942544/3986624511", rewarded: "ca-app-pub-3940256099942544/1712485313" },
         } : {};
-        sendJson(res, 200, { ads: { mode, units } });
+        // The website's ads (AdSense, 26 Oct 2026): WEB_ADS=off (the
+        // default), test (Google's test ads, which earn nothing) or live,
+        // shown only with an ad unit (ADSENSE_SLOT) — and never in the app,
+        // which has AdMob (src/ads.jsx)
+        const webMode = ["test", "live"].includes(process.env.WEB_ADS) ? process.env.WEB_ADS : "off";
+        const slot = /^\d{6,12}$/.test(process.env.ADSENSE_SLOT ?? "") ? process.env.ADSENSE_SLOT : null;
+        const web = webMode !== "off" && slot ? { mode: webMode, client: `ca-${ADSENSE_PUB}`, slot } : { mode: "off" };
+        sendJson(res, 200, { ads: { mode, units }, web });
         return;
       }
       if (url.pathname === "/api/auth/signup" && req.method === "POST") {
@@ -1473,6 +1483,13 @@ export function createApp() {
         if (!pub) { sendJson(res, 404, { error: "Not found" }); return; }
         res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=3600" });
         res.end(`google.com, ${pub}, DIRECT, f08c47fec0942fa0\n`);
+        return;
+      }
+      // The website's AdSense account, as the seller of its ad space (26 Oct
+      // 2026): Google checks this before it serves ads on the site
+      if (url.pathname === "/ads.txt" && (req.method === "GET" || req.method === "HEAD")) {
+        res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=3600" });
+        res.end(req.method === "HEAD" ? undefined : `google.com, ${ADSENSE_PUB}, DIRECT, f08c47fec0942fa0\n`);
         return;
       }
       // What a search engine reads, and a company's page for anyone (seo.js)

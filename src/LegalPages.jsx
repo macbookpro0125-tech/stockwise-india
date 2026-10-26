@@ -38,12 +38,13 @@ const B = ({ children }) => <strong style={{ color: "var(--t1)", fontWeight: 400
 
 export function PrivacyPage({ signedIn }) {
   return (
-    <PublicPage title="Privacy policy" signedIn={signedIn} updated="24 October 2026">
+    <PublicPage title="Privacy policy" signedIn={signedIn} updated="26 October 2026">
       <P>
         This page explains what Jocular Insights keeps about you, why, and how to delete it. In short: we use your
         account and saved data to provide the service, and we don't sell your personal data. The website uses no analytics
-        services — we only count visits anonymously on our own server, without cookies; the mobile apps use Google AdMob, which processes ad-related device information as explained below. We don't
-        send AdMob your account or saved investing data.
+        services — we only count visits anonymously on our own server, without cookies. The website may show ads from
+        Google AdSense and the mobile apps ads from Google AdMob, which process ad-related information as explained below.
+        We don't send Google your account or saved investing data.
       </P>
 
       <H>What we keep on our server</H>
@@ -67,7 +68,7 @@ export function PrivacyPage({ signedIn }) {
 
       <H>What we don't do</H>
       <UL>
-        <LI>On the website (and the web app installed from it): no ads, no advertising or tracking cookies, no analytics services (only the anonymous visit counts above, on our own server), and no third-party scripts on our pages — apart from the sign-in services below, and only when you choose them. The Android and iPhone apps show ads; see "Ads in the Android and iPhone apps" below.</LI>
+        <LI>On the website (and the web app installed from it): no tracking or analytics services (only the anonymous visit counts above, on our own server), and no third-party scripts on our pages besides Google's ad script when website ads are on (below), and the sign-in services below, and only when you choose them. The Android and iPhone apps show ads; see "Ads in the Android and iPhone apps" below.</LI>
         <LI>We don't sell your personal data or share your saved account information for advertising. Service providers process only the information needed for features you use, as described below.</LI>
       </UL>
 
@@ -77,6 +78,17 @@ export function PrivacyPage({ signedIn }) {
         address or phone number, and your name if you allow it. For a phone number, Google sends the SMS code and runs its
         reCAPTCHA check to stop automated abuse. Their privacy policies cover that step; we never see your Google or Apple
         password. Signing in with email and a password uses none of this.
+      </P>
+
+      <H>Ads on the website</H>
+      <P>
+        The website may show ads from Google AdSense: a few cards marked "Ad" among the strategies and the stock lists —
+        never a banner over the page or an ad that covers it. To show and measure them and to prevent fraud, Google and
+        its partners use cookies and similar technology, and may use your visits to this and other sites to choose ads
+        (personalised ads). Where the law asks for it (for example in the EU or the UK), Google's consent message asks
+        you first. You can turn off personalised ads at adssettings.google.com, and read how Google uses this at
+        policies.google.com/technologies/partner-sites. We don't give Google your email, your watchlist, your portfolio
+        or anything else you save.
       </P>
 
       <H>Ads in the Android and iPhone apps</H>
