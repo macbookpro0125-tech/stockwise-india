@@ -119,9 +119,9 @@ const weekday = iso => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", 
 
 const rupees = v => `₹${v.toLocaleString("en-IN", { maximumFractionDigits: v < 100 ? 2 : 0 })}`;
 
-// Results this week, three at a time, moving on by itself every few seconds
+// Results this week, two at a time (26 Oct 2026: "more becomes clumsy"), moving on by itself every few seconds
 // (26 Oct 2026: "these should change automatically and the price also")
-const SHOWN = 3;
+const SHOWN = 2;
 function ResultsTicker({ results, total }) {
   const [at, setAt] = useState(0);
   const pages = Math.ceil(results.length / SHOWN);
