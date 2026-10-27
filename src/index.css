@@ -3970,11 +3970,11 @@ html.in-app .site-foot-public { display: none; }
 
 /* The company across the top: name, price, returns, actions; the gist under */
 .sd-side.sd-head { position: static; max-height: none; overflow: visible; padding: 0; }
-.sd-head .sd-id { display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto; grid-template-areas: "id price rets acts" "gist gist gist gist"; align-items: center; column-gap: var(--sp-8); padding: var(--sp-5) var(--sp-6); }
+.sd-head .sd-id { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: "id price acts" "id rets acts" "gist gist gist"; align-items: center; column-gap: var(--sp-8); padding: var(--sp-5) var(--sp-6); }
 .sd-head .sd-id-top { grid-area: id; }
 .sd-head .sd-id-name h2 { font-size: 22px; font-weight: 600; }
 .sd-head .sd-price { grid-area: price; margin: 0; }
-.sd-head .sd-returns { grid-area: rets; margin: 0; }
+.sd-head .sd-returns { grid-area: rets; margin: var(--sp-2) 0 0; }
 .sd-head .sd-actions { grid-area: acts; margin: 0; display: flex; }
 .sd-head .sd-action-bell { display: inline; }
 .sd-head-gist { grid-area: gist; margin: var(--sp-4) 0 0; padding-top: var(--sp-4); border-top: 1px solid var(--bdr); font-size: 15.5px; line-height: 1.55; color: var(--t2); text-wrap: pretty; }
@@ -4058,7 +4058,7 @@ html.in-app .site-foot-public { display: none; }
 .dk-yourview-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: var(--sp-6); align-items: start; }
 
 @media (max-width: 1100px) {
-  .sd-head .sd-id { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "id acts" "price rets" "gist gist"; row-gap: var(--sp-3); }
+  .sd-head .sd-id { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "id acts" "price price" "rets rets" "gist gist"; row-gap: var(--sp-2); }
   .dk-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .dk-top { grid-template-columns: minmax(0, 1fr); }
   .dk-keyfigs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
