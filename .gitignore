@@ -59,3 +59,4 @@ android/app/google-services.json
 # Users' reviews of the app this one was compared with, quoted word for word
 # with links that name it: research kept on this computer, not published
 replica/reviews.csv
+.x-out/
