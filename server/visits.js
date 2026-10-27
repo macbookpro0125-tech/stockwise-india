@@ -10,6 +10,10 @@
 //               and per week (visitors); the codes only until their day or
 //               week ends, to count each person once
 //
+//   detail      per day, by page, by where people came from (the address a
+//               link came from, as a site's name), by device and by hour —
+//               visitors (each once) and page loads; never more than the name
+//
 // Counted: a page itself (the app, a company page, the methodology…), not
 // its data, pictures or scripts; never a robot, a link preview or a
 // prefetch. Signed-in people: each account once a day, when the app asks who
@@ -29,6 +33,12 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS visit_weeks (
     week TEXT PRIMARY KEY,
     visitors INTEGER NOT NULL DEFAULT 0
+  );
+  -- a day's visitors and page loads by page, source, device and hour
+  CREATE TABLE IF NOT EXISTS visit_parts (
+    day TEXT NOT NULL, kind TEXT NOT NULL, key TEXT NOT NULL,
+    visitors INTEGER NOT NULL DEFAULT 0, page_loads INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (day, kind, key)
   );
   -- the period's secret and the codes seen in it; both gone when it ends
   CREATE TABLE IF NOT EXISTS visit_secrets (period TEXT PRIMARY KEY, secret TEXT NOT NULL);
@@ -69,8 +79,8 @@ function secretFor(period) {
 }
 
 // First time this code is seen in the period? Records it if so.
-function firstTime(period, what) {
-  const code = createHmac("sha256", secretFor(period)).update(what).digest("base64url").slice(0, 22);
+function firstTime(period, what, secretPeriod = period) {
+  const code = createHmac("sha256", secretFor(secretPeriod)).update(what).digest("base64url").slice(0, 22);
   return db.prepare("INSERT OR IGNORE INTO visit_seen (period, code) VALUES (?, ?)").run(period, code).changes === 1;
 }
 
@@ -81,11 +91,57 @@ function sweep(now) {
   if (lastSweep === day) return;
   lastSweep = day;
   const keep = [`d:${day}`, `w:${week}`, `u:${day}`];
-  db.prepare(`DELETE FROM visit_seen WHERE period NOT IN (${keep.map(() => "?").join(",")})`).run(...keep);
+  db.prepare(`DELETE FROM visit_seen WHERE period NOT IN (${keep.map(() => "?").join(",")}) AND period NOT LIKE ?`).run(...keep, `d:${day}|%`);
+  // the detail is kept two months
+  db.prepare("DELETE FROM visit_parts WHERE day < ?").run(istDay(now - 60 * 86_400_000));
   db.prepare(`DELETE FROM visit_secrets WHERE period NOT IN (${keep.map(() => "?").join(",")})`).run(...keep);
 }
 
 const bump = (day, column) => db.prepare(`INSERT INTO visit_days (day, ${column}) VALUES (?, 1) ON CONFLICT(day) DO UPDATE SET ${column} = ${column} + 1`).run(day);
+
+// The page, by its kind of address — anything else (a mistyped address) is
+// "Other", so the list can't fill with junk
+const FIXED = new Set(["/", "/about", "/help", "/methodology", "/privacy", "/disclaimer", "/stock-screener-india", "/screens", "/sectors", "/results-calendar", "/explore", "/news", "/reset-password"]);
+export function pageKey(pathname) {
+  const p = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
+  if (FIXED.has(p)) return p;
+  const m = /^\/(stock|sector|screens)\/([A-Za-z0-9&_.%-]{1,40})$/.exec(p);
+  if (m) return `/${m[1]}/${m[1] === "stock" ? decodeURIComponent(m[2]).toUpperCase() : m[2].toLowerCase()}`;
+  return "Other";
+}
+
+// Where a visit came from, by the site a link was on (the Referer); nothing
+// more of the address than the site's name
+const SOURCES = [
+  [/(^|\.)google\./, "Google"], [/(^|\.)(bing|duckduckgo|yahoo|ecosia|yandex)\./, "Other search"],
+  [/whatsapp|^wa\.me$/, "WhatsApp"], [/(^|\.)(t\.co|x\.com|twitter\.com)$/, "X (Twitter)"],
+  [/reddit/, "Reddit"], [/facebook|fb\.|instagram/, "Facebook or Instagram"], [/linkedin|lnkd\.in/, "LinkedIn"],
+  [/youtube|youtu\.be/, "YouTube"], [/(^|\.)t\.me$|telegram/, "Telegram"],
+];
+export function sourceOf(req) {
+  const ref = req.headers.referer ?? req.headers.referrer ?? "";
+  if (!ref) return "Typed, bookmark or app";
+  if (/^android-app:\/\/com\.google/.test(ref)) return "Google";
+  let host;
+  try { host = new URL(ref).hostname.replace(/^www\./, "").toLowerCase(); } catch { return "Other site"; }
+  const own = (req.headers.host ?? "").replace(/:\d+$/, "").replace(/^www\./, "").toLowerCase();
+  if (host === own || host === "jocularinsights.in" || host.endsWith(".onrender.com")) return "Within the site";
+  return SOURCES.find(([re]) => re.test(host))?.[1] ?? (host.length <= 40 ? host : "Other site");
+}
+
+// The Android app's web view says "wv"
+export function deviceOf(ua = "") {
+  if (/; wv\)/.test(ua)) return "Android app";
+  if (/iPad|Tablet/i.test(ua)) return "Tablet";
+  if (/Mobi|Android|iPhone/i.test(ua)) return "Phone";
+  return "Computer";
+}
+
+function countPart(day, kind, key, who) {
+  const first = firstTime(`d:${day}|${kind}|${key}`, who, `d:${day}`);
+  db.prepare(`INSERT INTO visit_parts (day, kind, key, visitors, page_loads) VALUES (?, ?, ?, ?, 1)
+    ON CONFLICT(day, kind, key) DO UPDATE SET page_loads = page_loads + 1, visitors = visitors + excluded.visitors`).run(day, kind, key, first ? 1 : 0);
+}
 
 // A page load; never throws — counting must not stop a page
 export function countPageLoad(req, pathname, now = Date.now()) {
@@ -97,6 +153,11 @@ export function countPageLoad(req, pathname, now = Date.now()) {
     bump(day, "page_loads");
     if (firstTime(`d:${day}`, who)) bump(day, "visitors");
     if (firstTime(`w:${week}`, who)) db.prepare("INSERT INTO visit_weeks (week, visitors) VALUES (?, 1) ON CONFLICT(week) DO UPDATE SET visitors = visitors + 1").run(week);
+    const ua = req.headers["user-agent"] ?? "";
+    countPart(day, "page", pageKey(pathname), who);
+    countPart(day, "source", sourceOf(req), who);
+    countPart(day, "device", deviceOf(ua), who);
+    countPart(day, "hour", ist(now).toISOString().slice(11, 13), who);
     return true;
   } catch (e) {
     console.error(`[visits] ${e.message}`);
@@ -124,6 +185,14 @@ export function visitStats(now = Date.now()) {
   const signups = Object.fromEntries(db.prepare(`
     SELECT substr(datetime(created_at, '+330 minutes'), 1, 10) AS day, COUNT(*) AS n FROM users WHERE created_at >= ? GROUP BY day
   `).all(since).map(r => [r.day, r.n]));
+  // the detail, today and over the last 7 days (each day's visitors added up)
+  const today = istDay(now), from7 = istDay(now - 6 * 86_400_000);
+  const parts = (from, to) => {
+    const out = {};
+    for (const r of db.prepare(`SELECT kind, key, SUM(visitors) AS visitors, SUM(page_loads) AS pageLoads FROM visit_parts
+      WHERE day >= ? AND day <= ? GROUP BY kind, key ORDER BY visitors DESC, pageLoads DESC`).all(from, to)) (out[r.kind] ??= []).push({ key: r.key, visitors: r.visitors, pageLoads: r.pageLoads });
+    return out;
+  };
   const week = istWeek(now);
   const weekStart = new Date(Date.parse(`${week}T00:00:00+05:30`)).toISOString();
   return {
@@ -134,6 +203,8 @@ export function visitStats(now = Date.now()) {
     accounts: db.prepare("SELECT COUNT(*) AS n FROM users").get().n,
     signupsThisWeek: db.prepare("SELECT COUNT(*) AS n FROM users WHERE created_at >= ?").get(weekStart).n,
     since: db.prepare("SELECT MIN(day) AS d FROM visit_days").get().d,
+    detail: { today: parts(today, today), last7: parts(from7, today) },
+    detailSince: db.prepare("SELECT MIN(day) AS d FROM visit_parts").get().d,
   };
 }
 

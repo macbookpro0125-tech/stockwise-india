@@ -65,6 +65,25 @@ assert(!db.prepare("SELECT 1 FROM visit_seen WHERE period = ?").get(`w:${istWeek
 countActive(7, nextMonday); countActive(7, nextMonday + H); countActive(8, nextMonday);
 assert(visitStats(nextMonday).days[0].activeUsers === 2, "two accounts active, each once");
 
+// the detail: by page, where from, device and hour, each person once a day
+const W = Date.parse("2026-10-27T04:30:00Z"); // Tuesday 10:00 IST
+const APP = "Mozilla/5.0 (Linux; Android 14; wv) AppleWebKit/537.36 Chrome/130.0 Mobile Safari/537.36";
+const MAC = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/130.0 Safari/537.36";
+countPageLoad(req("5.5.5.5", { headers: { referer: "https://www.google.com/", host: "jocularinsights.in" } }), "/stock/tcs", W);
+countPageLoad(req("5.5.5.5", { headers: { referer: "https://www.google.com/", host: "jocularinsights.in" } }), "/stock/TCS/", W + 60_000);
+countPageLoad(req("6.6.6.6", { ua: APP }), "/", W);
+countPageLoad(req("7.7.7.7", { ua: MAC, headers: { referer: "https://www.reddit.com/r/IndiaInvestments/comments/x", host: "jocularinsights.in" } }), "/stock/TCS", W + H);
+countPageLoad(req("8.8.8.8", { headers: { referer: "https://jocularinsights.in/screens", host: "jocularinsights.in" } }), "/wp-admin/../x", W + H);
+const d = visitStats(W + 2 * H).detail.today;
+const of = (kind, key) => d[kind]?.find(r => r.key === key);
+assert(of("page", "/stock/TCS")?.visitors === 2 && of("page", "/stock/TCS")?.pageLoads === 3, "a page: its visitors once each, every load counted, one address however it's typed");
+assert(of("page", "Other")?.visitors === 1 && !d.page.some(r => /wp-admin/.test(r.key)), "an address that isn't a page is Other");
+assert(of("source", "Google")?.visitors === 1 && of("source", "Reddit")?.visitors === 1 && of("source", "Typed, bookmark or app")?.visitors === 1 && of("source", "Within the site")?.visitors === 1, "where they came from, by site name");
+assert(of("device", "Android app")?.visitors === 1 && of("device", "Computer")?.visitors === 1 && of("device", "Phone")?.visitors === 2, "the app, a computer and phones");
+assert(of("hour", "10")?.visitors === 2 && of("hour", "11")?.visitors === 2, "by hour, in India's time");
+const kept = JSON.stringify(db.prepare("SELECT * FROM visit_parts").all());
+assert(!/5\.5\.5\.5|IndiaInvestments|comments|Chrome/.test(kept), "only a site's name is kept, never the address or browser");
+
 // who may see it
 assert(isOwner("Owner@Example.com", { OWNER_EMAILS: " owner@example.com , other@x.in" }), "an owner email, any case or spacing");
 assert(!isOwner("someone@example.com", { OWNER_EMAILS: "owner@example.com" }) && !isOwner("owner@example.com", {}) && !isOwner(null, { OWNER_EMAILS: "owner@example.com" }), "nobody else, and nobody when unset");
