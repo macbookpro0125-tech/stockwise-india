@@ -4269,3 +4269,12 @@ html.no-blur .sr-group { box-shadow: none; }
 }
 @media (prefers-reduced-motion: reduce) { .ps-sticky { transition: none; } }
 .auth-reason { margin: 4px 0 14px; padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--t1); font-size: var(--fs-sm); line-height: 1.45; }
+/* the public pages' ways in (PublicJoin.jsx, 28 Oct 2026) */
+.pj-card { margin: 22px 0; padding: 18px 20px; border-radius: 18px; border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--bdr)); background: radial-gradient(90% 140% at 0% 0%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 60%), var(--s2); }
+.pj-card h2 { margin: 0 0 10px; font-size: var(--fs-lg); font-weight: 600; color: var(--t1); }
+.pj-card ul { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 8px; }
+.pj-card li { display: flex; gap: 10px; align-items: flex-start; font-size: var(--fs-sm); color: var(--t2); line-height: 1.45; }
+.pj-card li svg { flex-shrink: 0; margin-top: 2px; color: var(--accent); }
+.pj-cta { width: 100%; min-height: 44px; }
+.pj-small { margin: 8px 0 0; font-size: var(--fs-xs); color: var(--t3); text-align: center; }
+.pj-wrap { width: 100%; max-width: 760px; margin: 0 auto; padding: 0 20px; box-sizing: border-box; }

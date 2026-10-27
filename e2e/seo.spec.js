@@ -71,7 +71,7 @@ test("S-H3 a strategy's page and the results calendar are open to everyone; a co
   await expect(page.getByRole("heading", { level: 1, name: "Indian stock screens" })).toBeVisible();
   await page.getByRole("link", { name: /High Quality Compounders/ }).click();
   await expect(page.getByRole("heading", { level: 1, name: /High Quality Compounders: NSE companies that match today/ })).toBeVisible();
-  await expect(page.getByText("The filters")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "The filters" })).toBeVisible();
   const first = page.locator(".pl-co").first();
   const name = (await first.locator(".pl-co-name").innerText()).trim();
   await first.click();
@@ -82,4 +82,17 @@ test("S-H3 a strategy's page and the results calendar are open to everyone; a co
   await expect(page.getByRole("heading", { level: 1, name: "Quarterly results calendar" })).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(1);
+  // the ways in (28 Oct 2026): a free account's card, and a day's "+N more"
+  // and the header's Sign in open the box on the page, saying why
+  await expect(page.getByRole("region", { name: "Know when your companies report" })).toBeVisible();
+  const more = page.locator(".ex-more").first();
+  if (await more.count()) {
+    await more.click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByText(/^Create a free account to see all \d+ companies reporting/)).toBeVisible();
+    await dialog.getByRole("button", { name: "Close" }).click();
+  }
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "Sign in" })).toBeVisible();
+  await expect(page).toHaveURL(/\/results-calendar$/);
 });

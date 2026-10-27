@@ -9,13 +9,14 @@ const UPDATED = "18 October 2026";
 // Shown once set: a privacy policy needs a way to reach you
 const CONTACT_EMAIL = "jocularinsights@gmail.com";
 
-export function PublicPage({ title, signedIn, updated = UPDATED, children }) {
+// onSignIn: the page's own sign-in box (PublicJoin.jsx), else the front page
+export function PublicPage({ title, signedIn, updated = UPDATED, children, onSignIn = null }) {
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
       <header style={{ borderBottom: "1px solid var(--bdr)" }}>
         <div style={{ maxWidth: 1240, margin: "0 auto", padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
           <a href="/" onClick={e => { e.preventDefault(); navigate("/"); }} style={{ textDecoration: "none" }}><Logo /></a>
-          <button className="btn-ghost" onClick={() => navigate("/")} style={{ height: 34, fontSize: 12 }}>
+          <button className="btn-ghost" onClick={() => (!signedIn && onSignIn ? onSignIn() : navigate("/"))} style={{ height: 34, fontSize: 12 }}>
             {signedIn ? "← Back to the app" : "Sign in"}
           </button>
         </div>
