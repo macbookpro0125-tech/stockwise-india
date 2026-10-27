@@ -108,7 +108,7 @@ test("N-H4 a starred company's news shows on the Watchlist, with a dot on its ta
   await page.addInitScript(() => { if (!sessionStorage.getItem("set")) { localStorage.setItem("watch-news-seen", new Date(Date.now() - 7 * 864e5).toISOString()); sessionStorage.setItem("set", "1"); } });
   // a computer's pages are in the bar down the left (26 Oct 2026); a phone's at the bottom
   const dot = ".tab-news-dot:visible, .btb-dot-news:visible, .side-rail .sr-dot:not(.warn):visible";
-  await page.goto(isMobile ? "/" : "/stock/TCS");
+  await page.goto("/");
   await expect(page.locator(dot).first()).toBeVisible();
   await expect(page.getByRole("button", { name: /^Watchlist.*new from your companies/ }).first(), "the tab's name still leads").toBeVisible();
   const { openPage } = await import("./fixtures.js");

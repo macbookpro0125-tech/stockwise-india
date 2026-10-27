@@ -4127,3 +4127,14 @@ html.has-rail .app-shell { padding-left: var(--rail-w); }
 .rp-foot { padding: 12px 14px; border-top: 1px solid var(--bdr); }
 .rp-open { width: 100%; height: 40px; border: 0; border-radius: 12px; background: var(--accent); color: var(--on-accent); font: 600 13.5px/1 var(--font); cursor: pointer; }
 html.no-blur .sr-group { box-shadow: none; }
+
+/* A company's page: its chapters in the bar down the left, each with its
+   symbol and short name, the one being read lit (StockDetail.jsx) */
+.dk-rail { position: fixed; z-index: 121; left: 0; top: 50%; transform: translateY(-50%); width: var(--rail-w); display: flex; justify-content: center; pointer-events: none; }
+.dk-chapters-rail { pointer-events: auto; gap: 2px; }
+.dk-chapters-rail .sr-tab { width: 52px; height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 0; color: var(--t3); }
+.dk-chapters-rail .sr-tab::after { display: none; }
+.dk-cr-label { font: 500 9.5px/1 var(--font); letter-spacing: 0.01em; }
+.dk-chapters-rail .sr-tab.on .dk-cr-label { font-weight: 600; }
+.sr-group-gap { flex: 1; }
+.dk-chapters-rail .sr-tab.on { color: var(--on-accent); }

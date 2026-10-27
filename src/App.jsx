@@ -409,7 +409,7 @@ export default function App() {
       {/* On a company page too: the tab it was opened from stays lit */}
       <BottomTabBar tab={tab} onTab={goTab} />
       {/* A computer: the pages in a slim bar down the left, with peeks */}
-      <SideRail tab={tab} onTab={goTab} account={account} theme={theme} onToggleTheme={toggleTheme} onOpenStock={openSymbol} />
+      <SideRail tab={tab} onTab={goTab} account={account} theme={theme} onToggleTheme={toggleTheme} onOpenStock={openSymbol} openSymbol={open?.symbol ?? null} />
       {/* A phone's top bar: the menu and + float once it's scrolled past, the
           menu opens Settings from the left, + what can be made (PhoneChrome.jsx) */}
       <PhoneChromeHost account={account} theme={theme} onToggleTheme={toggleTheme} onTab={goTab} onLogout={logout} onDeleted={accountDeleted} onTour={askForTour} stockOpen={!!open} />

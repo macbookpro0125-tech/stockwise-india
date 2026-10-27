@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { cardName } from "./stockName.js";
 import { SHOW_TAB, usePhone } from "./phoneTabs.js";
-import { NotebookPen, Check, X, TriangleAlert, LoaderCircle, ArrowLeft, ArrowUpRight, CalendarDays, CircleCheck, ArrowRight } from "lucide-react";
+import { NotebookPen, Check, X, TriangleAlert, LoaderCircle, ArrowLeft, ArrowUpRight, CalendarDays, CircleCheck, ArrowRight, FileText, Building2, TrendingUp, ShieldCheck, Users, Scale, ChartCandlestick, Newspaper } from "lucide-react";
 import { api } from "./api.js";
 import { fairValues, userLevels, pricePosition, fmtRs } from "../server/levels.js";
 import { useMyLevels } from "./myLevels.js";
@@ -511,7 +511,11 @@ function NextTab({ ready, current, onGo }) {
   );
 }
 
-function SectionNav({ ready, phone = false, phoneTab = "overview", onPhoneTab }) {
+// A computer's company page lists its chapters in the bar down the left,
+// each with a symbol (27 Oct 2026: "I want this in that bar … with symbols")
+const CHAPTER_ICONS = { overview: FileText, business: Building2, growth: TrendingUp, safety: ShieldCheck, owners: Users, value: Scale, price: ChartCandlestick, news: Newspaper };
+
+function SectionNav({ ready, phone = false, phoneTab = "overview", onPhoneTab, rail = false }) {
   const [present, setPresent] = useState(TABS);
   const [spied, setSpied] = useState("overview");
   const active = phone ? phoneTab : spied;
@@ -533,7 +537,9 @@ function SectionNav({ ready, phone = false, phoneTab = "overview", onPhoneTab })
     const onScroll = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        const line = barBottom() + 32;
+        // (beside the chapters, not over them, the bar down the left lights a
+        // chapter once its heading is near the top)
+        const line = barBottom() + (rail ? 160 : 32);
         let current = present[0]?.[0];
         for (const [id, , parts] of present) {
           if (parts.some(p => (document.getElementById(`sec-${p}`)?.getBoundingClientRect().top ?? Infinity) <= line)) current = id;
@@ -560,6 +566,21 @@ function SectionNav({ ready, phone = false, phoneTab = "overview", onPhoneTab })
     window.scrollTo({ top: docTop(el) - barBottom() - 10, behavior: reduced ? "auto" : "smooth" });
   };
   if (present.length < 2) return null;
+  if (rail) {
+    return (
+      <nav ref={rowRef} aria-label="Parts of this page" className="sr-group dk-chapters-rail">
+        {present.map(([id, label, parts, question]) => {
+          const Icon = CHAPTER_ICONS[id] ?? FileText;
+          return (
+            <button key={id} type="button" data-sec={id} title={question} aria-current={active === id ? "true" : undefined} onClick={() => go(parts, id)} className={`sr-tab${active === id ? " on" : ""}`}>
+              <Icon size={19} strokeWidth={1.8} aria-hidden="true" />
+              <span className="dk-cr-label">{label}</span>
+            </button>
+          );
+        })}
+      </nav>
+    );
+  }
   return (
     <nav ref={rowRef} aria-label="Parts of this page" className="sd-tabs">
       {present.map(([id, label, parts, question]) => (
@@ -952,12 +973,8 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         {m && <div className="dk-top-side"><WhatToWatch m={m} symbol={data.symbol} signedIn={!!account} onAlert={() => setShowAlertModal(true)} /></div>}
       </section>
 
-      <div data-sticky-top className="sd-bar dk-bar">
-        <div className="sd-bar-row">
-          <span className="dk-bar-name">{cardName(data.name)}{price > 0 && <b>{fmtRs(price)}</b>}</span>
-          <SectionNav ready={!!m} />
-        </div>
-      </div>
+      {/* the chapters, in the bar down the left (SideRail.jsx steps aside) */}
+      <aside className="dk-rail"><SectionNav ready={!!m} rail /></aside>
 
       {m && <DeskChapter id="business" sec="about" m={m} fairValue={fairValue} price={price}
         more={<>

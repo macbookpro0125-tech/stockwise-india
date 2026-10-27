@@ -164,7 +164,7 @@ function Peek({ id, label, onClose, onOpenAll, onOpenStock }) {
   );
 }
 
-export default function SideRail({ tab, onTab, account, theme, onToggleTheme, onOpenStock }) {
+export default function SideRail({ tab, onTab, account, theme, onToggleTheme, onOpenStock, openSymbol }) {
   const phone = usePhone();
   const badges = useTabBadges();
   const [peek, setPeek] = useState(null);
@@ -173,7 +173,7 @@ export default function SideRail({ tab, onTab, account, theme, onToggleTheme, on
     document.documentElement.classList.toggle("has-rail", !phone);
     return () => document.documentElement.classList.remove("has-rail");
   }, [phone]);
-  useEffect(() => { setPeek(null); }, [tab]);
+  useEffect(() => { setPeek(null); }, [tab, openSymbol]);
   if (phone) return null;
   const tabs = tabsFor(account);
   const go = id => { setPeek(null); onTab(id); };
@@ -188,7 +188,8 @@ export default function SideRail({ tab, onTab, account, theme, onToggleTheme, on
     <>
       <nav className="side-rail" aria-label="Pages" data-tour="tabs">
         <a href="/" className="sr-home" aria-label="Jocular Insights home" onClick={e => { e.preventDefault(); go("discover"); }}><BrandMark size={null} className="sr-mark" /></a>
-        <div className="sr-group">
+        {/* a company's page puts its chapters here instead (StockDetail.jsx) */}
+        {openSymbol ? <div className="sr-group-gap" /> : <div className="sr-group">
           {tabs.map(t => {
             const on = tab === t.id, open = peek === t.id;
             const b = badges[t.id] ?? {};
@@ -204,7 +205,7 @@ export default function SideRail({ tab, onTab, account, theme, onToggleTheme, on
               </button>
             );
           })}
-        </div>
+        </div>}
         <div className="sr-end">
           <button type="button" className="sr-tab" onClick={onToggleTheme} aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}>
             {theme === "dark" ? <Sun size={20} strokeWidth={1.8} aria-hidden="true" /> : <Moon size={20} strokeWidth={1.8} aria-hidden="true" />}

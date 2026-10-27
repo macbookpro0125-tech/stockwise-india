@@ -398,10 +398,15 @@ test("F03-H8 what changed recently: dated lines above the filings", async ({ pag
   await expect(card.locator("li time").first().or(card.getByText(/^Nothing new in the last six weeks/))).toBeVisible();
 });
 
-test("R-H1 a computer's left bar: Watchlist peeks over a company page; Esc closes it; Open, or a second click, goes to the page", async ({ page, account, isMobile }) => {
+test("R-H1 a computer's left bar: Watchlist peeks over the page; Esc closes it; Open, or a second click, goes to the page; a company's page lists its chapters there", async ({ page, account, isMobile }) => {
   test.skip(isMobile, "a phone has its bottom bar");
   await page.goto("/stock/TCS");
   await page.getByRole("button", { name: "Add to watchlist" }).click();
+  // a company's page: its chapters in the bar, each going to its part
+  const parts = page.getByRole("navigation", { name: "Parts of this page" });
+  await parts.getByRole("button", { name: "Owners" }).click();
+  await expect(page.locator("#sec-holding")).toBeInViewport();
+  await page.getByRole("button", { name: /^Back to / }).first().click();
   const rail = page.getByRole("navigation", { name: "Pages" });
   const star = rail.getByRole("button", { name: /^Watchlist/ });
   await star.click();
@@ -412,8 +417,6 @@ test("R-H1 a computer's left bar: Watchlist peeks over a company page; Esc close
   await expect(star).toHaveAttribute("aria-expanded", "true");
   await page.keyboard.press("Escape");
   await expect(peek).toBeHidden();
-  // Esc closed the peek, not the company page
-  await expect(page).toHaveURL(/\/stock\/TCS/);
   await star.click();
   await peek.getByRole("button", { name: "Open Watchlist →" }).click();
   await expect(star).toHaveAttribute("aria-current", "page");

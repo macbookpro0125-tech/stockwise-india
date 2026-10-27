@@ -87,6 +87,8 @@ export async function openPage(page, name) {
   // Watchlist, Portfolio and Alerts open a peek first, whose Open goes there
   const rail = page.locator("nav.side-rail");
   if (await rail.isVisible().catch(() => false)) {
+    // a company's page shows its chapters in the bar instead (27 Oct 2026): back first
+    if (!(await rail.getByRole("button", { name: re }).count())) await page.getByRole("button", { name: /^Back to / }).first().click();
     await rail.getByRole("button", { name: re }).click();
     if (/^(Watchlist|Portfolio|Alerts)/.test(name)) {
       const peek = page.getByRole("dialog", { name: re });
