@@ -117,7 +117,7 @@ export default function Header({ tab, onTab, account, onLogout, onDeleted, onSea
               <h1 style={{ fontSize: 17, fontWeight: 500, margin: 0, color: "var(--t1)", letterSpacing: "-0.03em", lineHeight: 1.2, whiteSpace: "nowrap" }}>
                 Jocular <span style={{ color: "var(--brand-wise)", fontWeight: 400 }}>Insights</span>
               </h1>
-              <p className="hide-phone" style={{ fontSize: 11, color: "var(--t3)", margin: 0, letterSpacing: "-0.01em", whiteSpace: "nowrap" }}>NSE stock research</p>
+              <p className="hide-phone" style={{ fontSize: 11, color: "var(--t3)", margin: 0, letterSpacing: "-0.01em", whiteSpace: "nowrap" }}>Indian stock market research</p>
             </div>
           </a>}
 

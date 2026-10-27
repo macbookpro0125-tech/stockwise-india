@@ -30,7 +30,7 @@ assert.match(sitemapPart("stocks"), /<loc>[^<]+<\/loc><lastmod>\d{4}-\d{2}-\d{2}
   const template = '<html><head><title>x</title></head><body><div id="root"></div></body></html>';
   const { homePageHtml } = await import("./seo-lists.js");
   const home = homePageHtml(template);
-  assert.match(home, /<h1>NSE stock screener/);
+  assert.match(home, /<h1>Indian stock market screener/);
   assert.match(home, /<link rel="canonical" href="https:\/\/jocularinsights\.in\/" \/>/);
   assert.ok(home.includes('"@type":"WebApplication"') && home.includes("/screens/high-quality-compounders"), "structured data, and a link to every screen");
   assert.ok(home.replace(/<[^>]+>/g, " ").split(/\s+/).length > 300, "the front page has real words in it");

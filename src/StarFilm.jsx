@@ -273,7 +273,7 @@ export default function StarFilm({ onJoin, onLogin, stats }) {
         </div>
 
         <div ref={cap(0)} className="sf-cap sf-sky sf-open" data-in="-0.05" data-hold="0.02" data-out="0.10"><div className="sf-ci">
-          <p className="sf-eb">NSE · Fundamental research</p>
+          <p className="sf-eb">Indian stock market · Fundamental research</p>
           <h1>Jocular <span>Insights</span></h1>
           <p>Find great businesses. Invest with clarity.</p>
           <button type="button" className="sf-btn" onClick={onJoin}>Create free account<Arrow /></button>

@@ -159,7 +159,7 @@ export default function SettingsView({ account, theme, onToggleTheme, onTab, onL
         <Row icon={Trash2} tint="#EF4444" label="Delete account…" danger onClick={() => setConfirming(true)}><span /></Row>
       </Group>
 
-      <p className="st-foot">Jocular Insights · NSE stock research</p>
+      <p className="st-foot">Jocular Insights · Indian stock market research</p>
 
       {confirming && createPortal(<DeleteAccountModal who={who} hasPassword={account?.hasPassword !== false} onClose={() => setConfirming(false)} onDeleted={onDeleted} />, document.body)}
     </div>

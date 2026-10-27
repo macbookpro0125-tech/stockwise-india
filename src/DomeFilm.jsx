@@ -251,7 +251,7 @@ export default function DomeFilm({ onJoin, onLogin }) {
           </div>
 
           <div ref={cap(0)} className="df-cap df-dk df-open" data-in="-0.05" data-hold="0.02" data-out="0.10"><div className="df-ci">
-            <p className="df-eb">NSE · Fundamental research</p>
+            <p className="df-eb">Indian stock market · Fundamental research</p>
             <h1>Stock<i>wise</i> India</h1>
             <p>Find great businesses. Invest with clarity.</p>
             <button type="button" className="df-btn df-btn-glow" onClick={onJoin}>Create free account<Arrow /></button>

@@ -7,7 +7,7 @@ import { BrandMark } from "./site.jsx";
 
 const SCENES = [
   {
-    eyebrow: "Jocular Insights · NSE stock research",
+    eyebrow: "Jocular Insights · Indian stock market research",
     title: <>See beyond<br />the stock price.</>,
     body: "Discover stronger businesses, understand their financial health, and decide what deserves a closer look.",
   },

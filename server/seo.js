@@ -342,5 +342,5 @@ export function aboutPageHtml(template) {
 <p>Jocular Insights is not registered with SEBI as an investment adviser or research analyst. Nothing here is a recommendation to buy, sell or hold anything. See the <a href="/disclaimer">disclaimer</a>.</p>
 <h2>Contact</h2>
 <p>Write to <a href="mailto:jocularinsights@gmail.com">jocularinsights@gmail.com</a> — for a figure that looks wrong, a question, or anything else.</p></main>`;
-  return pageHtml(template, { title: `${ABOUT_TITLE} | NSE stock research`, desc: ABOUT_DESCRIPTION, canonical, ld, body });
+  return pageHtml(template, { title: `${ABOUT_TITLE} | Indian stock market research`, desc: ABOUT_DESCRIPTION, canonical, ld, body });
 }

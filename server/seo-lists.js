@@ -158,7 +158,7 @@ export function homePageHtml(template) {
   const c = publicResultsCalendar();
   const reporting = c.days.reduce((n, d) => n + d.count, 0);
   const soon = c.days.flatMap(d => d.companies.map(x => ({ ...x, date: d.date }))).sort((a, b) => (b.marketCapCr ?? 0) - (a.marketCapCr ?? 0)).slice(0, 12);
-  const title = "NSE Stock Screener & Quality Scores | Jocular Insights";
+  const title = "Indian Stock Market Screener & Quality Scores (NSE) | Jocular Insights";
   const desc = "Screen every NSE-listed company with ready-made strategies, a quality score out of 100 from each company's own filings with every check explained, and results dates as they're announced. Free during early access.";
   const ld = {
     "@context": "https://schema.org",
@@ -169,7 +169,7 @@ export function homePageHtml(template) {
     ],
   };
   const body = `<main class="seo-stock seo-methodology seo-home">
-<h1>NSE stock screener with quality scores from company filings</h1>
+<h1>Indian stock market screener with quality scores from NSE company filings</h1>
 <p>Jocular Insights covers every company listed on the National Stock Exchange of India. Each one gets a quality score out of 100, worked out from its own quarterly and annual filings with NSE, with every check shown and explained: return on capital, debt, cash flow, growth, governance and more. Its results are drawn as pictures — how sales became profit, what it owns and owes, where the cash came from and went — beside the full tables.</p>
 <p>Prices are NSE's daily closes, at the ${esc(day(s.pricesDate) ?? "latest")} close. It is a research tool: it shows what the filings say, it doesn't tell anyone what to buy or sell.</p>
 <h2>Ready-made stock screens</h2>
