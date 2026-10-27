@@ -28,11 +28,28 @@ export function useLogosShown() {
   return on;
 }
 
+// The server hands logos to signed-in readers only (http-server.js), so a
+// signed-out page (the public company page, the results calendar) shows the
+// letters without asking — and nothing is asked until App knows which it is
+let signedIn;
+const authListeners = new Set();
+export function setLogosSignedIn(on) {
+  if (signedIn === on) return;
+  signedIn = on;
+  authListeners.forEach(fn => fn(on));
+}
+function useSignedIn() {
+  const [on, setOn] = useState(signedIn);
+  useEffect(() => { authListeners.add(setOn); setOn(signedIn); return () => authListeners.delete(setOn); }, []);
+  return on === true;
+}
+
 // Symbols whose logo failed this session, so lists don't ask again
 const missing = new Set();
 
 export default function CompanyLogo({ symbol, size = 20, slot = false, fallback = null }) {
-  const on = useLogosShown();
+  const shownByUser = useLogosShown();
+  const on = useSignedIn() && shownByUser;
   const [failed, setFailed] = useState(() => missing.has(symbol));
   const [loaded, setLoaded] = useState(false);
   useEffect(() => { setFailed(missing.has(symbol)); setLoaded(false); }, [symbol]);

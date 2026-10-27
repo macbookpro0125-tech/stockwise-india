@@ -1,4 +1,5 @@
 import { Suspense, useState, useEffect, useRef, useCallback } from "react";
+import { setLogosSignedIn } from "./CompanyLogo.jsx";
 import { flushSync } from "react-dom";
 import { lazyPage } from "./lazyPage.js";
 import ExploreView from "./ExploreView.jsx";
@@ -90,6 +91,8 @@ export default function App() {
   const path = usePath();
   // undefined = checking, null = signed out, else { userId, email }
   const [account, setAccount] = useState(undefined);
+  // logos are for signed-in readers (CompanyLogo.jsx); undefined while it's not known yet
+  useEffect(() => { setLogosSignedIn(account === undefined ? undefined : !!account); }, [account]);
   // A one-off message for the front page (e.g. after deleting an account)
   const [notice, setNotice] = useState(null);
   const [tab, setTab] = useState("discover");
