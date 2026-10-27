@@ -22,6 +22,7 @@ import { ValuedAs, BankValuation, CyclicalValuation, NoFairValue, pbAt, CYCLE_TO
 import PhasePositionPlanner from "./PhasePositionPlanner.jsx";
 import ThesisMonitor from "./ThesisMonitor.jsx";
 import StockSide from "./StockSide.jsx";
+import CompanyLogo from "./CompanyLogo.jsx";
 import StockGlance from "./StockGlance.jsx";
 import WhyMoving from "./WhyMoving.jsx";
 import StockPerformance from "./StockPerformance.jsx";
@@ -638,6 +639,19 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
   }, [onBack, showAlertModal]);
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
+  // A computer: once the company's card has scrolled away, a slim bar says
+  // which company this is (27 Oct 2026: "when I go down I should see which
+  // stock I am seeing")
+  const [mini, setMini] = useState(false);
+  useEffect(() => {
+    if (isPhone || !data) return;
+    const el = document.querySelector(".sd-side.sd-head");
+    if (!el) return;
+    const top = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--header-h")) || 0;
+    const io = new IntersectionObserver(([e]) => setMini(!e.isIntersecting), { rootMargin: `-${top}px 0px 0px 0px` });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [isPhone, !!data]);
 
   // Verify & Override (the original's inputs), plus the price box
   const [eps, setEps] = useState("");
@@ -952,6 +966,11 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         {m?.sector && <span>{m.sector}</span>}
         <span>{cardName(data.name)}</span>
       </nav>
+      <div className={`dk-mini${mini ? " on" : ""}`} aria-hidden={!mini}>
+        <CompanyLogo symbol={data.symbol} size={28} />
+        <span className="dk-mini-name"><b>{cardName(data.name)}</b><small>{data.symbol}{m?.sector ? ` · ${m.sector}` : ""}</small></span>
+        {price > 0 && <span className="dk-mini-px"><b>{fmtRs(price)}</b>{m?.ret1d != null && <em className={m.ret1d >= 0 ? "up" : "down"}>{m.ret1d >= 0 ? "+" : "−"}{Math.abs(m.ret1d).toFixed(2)}%</em>}</span>}
+      </div>
       <StockSide variant="head" gist={m ? gistLine(m, { fairValue, price }) : null} data={data} m={m} price={price} priceLabel={priceLabel} watched={watched}
         onWatch={() => toggleWatch(data.symbol, price)} onAlert={() => setShowAlertModal(true)} />
 

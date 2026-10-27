@@ -4138,3 +4138,17 @@ html.no-blur .sr-group { box-shadow: none; }
 .dk-chapters-rail .sr-tab.on .dk-cr-label { font-weight: 600; }
 .sr-group-gap { flex: 1; }
 .dk-chapters-rail .sr-tab.on { color: var(--on-accent); }
+
+/* A computer's company page, scrolled past its card: which company this
+   is, in a slim bar under the header */
+.dk-mini { position: fixed; z-index: 90; top: var(--header-h, 0px); left: var(--rail-w, 0px); right: 0; display: flex; align-items: center; gap: var(--sp-3); padding: 8px var(--page-x); background: var(--bg); border-bottom: 1px solid var(--bdr2); transform: translateY(-110%); opacity: 0; pointer-events: none; transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1), opacity 150ms; }
+.dk-mini.on { transform: none; opacity: 1; pointer-events: auto; }
+.dk-mini-name { display: flex; align-items: baseline; gap: var(--sp-2); min-width: 0; }
+.dk-mini-name b { font-size: 15px; font-weight: 600; color: var(--t1); white-space: nowrap; }
+.dk-mini-name small { font-size: var(--fs-xs); color: var(--t3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dk-mini-px { margin-left: auto; display: flex; align-items: baseline; gap: var(--sp-2); font-variant-numeric: tabular-nums; }
+.dk-mini-px b { font-size: 16px; font-weight: 600; color: var(--t1); }
+.dk-mini-px em { font-style: normal; font-size: var(--fs-sm); font-weight: 500; }
+.dk-mini-px .up { color: var(--green); }
+.dk-mini-px .down { color: var(--red); }
+@media (prefers-reduced-motion: reduce) { .dk-mini { transition: none; } }
