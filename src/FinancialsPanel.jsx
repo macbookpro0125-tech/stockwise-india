@@ -230,7 +230,7 @@ function FinancialsChart({ points }) {
       {layout && (
         <svg width={width} height={height} style={{ display: "block", overflow: "visible" }} onMouseLeave={() => setHover(null)}>
           <defs>
-            <linearGradient id="fcRevenue" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--green)" stopOpacity="0.95" /><stop offset="100%" stopColor="var(--green)" stopOpacity="0.55" /></linearGradient>
+            <linearGradient id="fcRevenue" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--fc-revenue, var(--green))" stopOpacity="0.95" /><stop offset="100%" stopColor="var(--fc-revenue, var(--green))" stopOpacity="0.55" /></linearGradient>
             <linearGradient id="fcProfit" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--accent)" stopOpacity="0.95" /><stop offset="100%" stopColor="var(--accent)" stopOpacity="0.55" /></linearGradient>
           </defs>
           <g transform={`translate(${MARGIN.left},${MARGIN.top})`}>
@@ -271,7 +271,7 @@ function FinancialsChart({ points }) {
       {hover != null && layout && (
         <div style={{ position: "absolute", top: 4, left: Math.min(width - 170, Math.max(0, MARGIN.left + hover * layout.band + layout.band / 2 - 80)), width: 160, background: "var(--s3)", border: "1px solid var(--bdr2)", borderRadius: 8, padding: "8px 10px", fontSize: 11, boxShadow: "0 4px 18px rgba(0,0,0,0.35)", pointerEvents: "none" }}>
           <div style={{ fontWeight: 500, marginBottom: 4 }}>{points[hover].period}</div>
-          {[["Revenue", points[hover].revenue, "var(--green)"], ["Profit", points[hover].profit, "var(--accent)"]].map(([l, v, c]) => (
+          {[["Revenue", points[hover].revenue, "var(--fc-revenue, var(--green))"], ["Profit", points[hover].profit, "var(--accent)"]].map(([l, v, c]) => (
             <div key={l} style={{ display: "flex", justifyContent: "space-between", gap: 10, ...MONO }}>
               <span style={{ color: "var(--t3)" }}><span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: c, marginRight: 5 }} />{l}</span>
               <span>{v == null ? "not reported" : `${fmtCr(v)} Cr`}</span>
@@ -279,7 +279,7 @@ function FinancialsChart({ points }) {
           ))}
           {points[hover].margin != null && (
             <div style={{ display: "flex", justifyContent: "space-between", gap: 10, ...MONO }}>
-              <span style={{ color: "var(--t3)" }}><span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: "var(--yellow)", marginRight: 5 }} />Margin</span>
+              <span style={{ color: "var(--t3)" }}><span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: "var(--fc-margin, var(--yellow))", marginRight: 5 }} />Margin</span>
               <span>{points[hover].margin.toFixed(1)}%</span>
             </div>
           )}
@@ -289,7 +289,7 @@ function FinancialsChart({ points }) {
       {showMargin && layout && <MarginChart points={points} width={width} band={layout.band} />}
 
       <div style={{ display: "flex", gap: 16, fontSize: 10, color: "var(--t3)", marginTop: 2, flexWrap: "wrap" }}>
-        {[["Revenue", "var(--green)"], ["Profit", "var(--accent)"], ...(showMargin ? [["Operating margin", "var(--yellow)"]] : [])].map(([l, c]) => (
+        {[["Revenue", "var(--fc-revenue, var(--green))"], ["Profit", "var(--accent)"], ...(showMargin ? [["Operating margin", "var(--fc-margin, var(--yellow))"]] : [])].map(([l, c]) => (
           <span key={l} style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
             <span style={{ width: 9, height: 9, borderRadius: 2, background: c }} />{l}
           </span>
@@ -318,8 +318,8 @@ function MarginChart({ points, width, band }) {
               <text x={-6} y={y(v) + 3} fontSize={9} fill="var(--t3)" textAnchor="end" style={MONO}>{Math.round(v)}%</text>
             </g>
           ))}
-          <path d={drawn.map((p, i) => `${i ? "L" : "M"}${p.cx.toFixed(1)},${y(p.margin).toFixed(1)}`).join(" ")} fill="none" stroke="var(--yellow)" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-          {drawn.map(p => <circle key={p.period} cx={p.cx} cy={y(p.margin)} r={2.5} fill="var(--yellow)" />)}
+          <path d={drawn.map((p, i) => `${i ? "L" : "M"}${p.cx.toFixed(1)},${y(p.margin).toFixed(1)}`).join(" ")} fill="none" stroke="var(--fc-margin, var(--yellow))" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+          {drawn.map(p => <circle key={p.period} cx={p.cx} cy={y(p.margin)} r={2.5} fill="var(--fc-margin, var(--yellow))" />)}
         </g>
       </svg>
     </>

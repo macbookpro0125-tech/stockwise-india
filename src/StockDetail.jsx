@@ -257,10 +257,10 @@ function ShareholdingPanel({ symbol }) {
   if (!quarters?.length) return null;
 
   const defs = [
-    { label: "Promoter", key: "promoter", color: "#E8A020" },
-    { label: "FII", key: "fii", color: "#4285F4" },
-    { label: "DII", key: "dii", color: "#34A853" },
-    { label: "Retail/Others", key: "retail", color: "#9AA0A6" },
+    { label: "Promoter", key: "promoter", color: "var(--sh-promoter, #E8A020)" },
+    { label: "FII", key: "fii", color: "var(--sh-fii, #4285F4)" },
+    { label: "DII", key: "dii", color: "var(--sh-dii, #34A853)" },
+    { label: "Retail/Others", key: "retail", color: "var(--sh-retail, #9AA0A6)" },
   ];
   const latest = quarters.at(-1);
   const segments = defs.filter(s => latest[s.key] != null && latest[s.key] > 0);
@@ -1007,35 +1007,35 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
           its checks as rows, then the detail under the questions they answer */}
       {m && <ChapterTab id="business" sec="about" m={m} fairValue={fairValue} price={price} rows={chapterChecks("business", m.research)}
         detail={[
-          { key: "about", question: "What does it do?", short: "What it sells, to whom, and where", body: <><CompanyProfile symbol={data.symbol} m={m} /><StockBusiness m={m} symbol={data.symbol} name={data.name} /></> },
-          { key: "sector", question: "How does it compare with its sector?", short: "Its figures against the sector's middle", body: <StockSectorCompare m={m} /> },
+          { key: "about", first: true, question: "What does it do?", short: "What it sells, to whom, and where", body: <><CompanyProfile symbol={data.symbol} m={m} /><StockBusiness m={m} symbol={data.symbol} name={data.name} /></> },
+          { key: "sector", after: "returns", question: "How does it compare with its sector?", short: "Its figures against the sector's middle", body: <StockSectorCompare m={m} /> },
           { key: "scores", question: "How was it scored?", short: "Every score and the reason behind it", body: <><StockGlance r={m.research} /><div id="sec-scores" data-tour="research"><ResearchPanel research={m.research} /></div></> },
         ]} />}
 
       {m && <ChapterTab id="growth" sec="financials" m={m} fairValue={fairValue} price={price} rows={chapterChecks("growth", m.research)}
         lead={growthNote(m) ? `${growthNote(m).lead} ${growthNote(m).text}` : null}
         detail={[
-          { key: "results", question: "What are its results, year by year?", short: "Sales, profit and margins; the full statements", body: <FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} /> },
+          { key: "results", after: "salesGrowth3y", question: "What are its results, year by year?", short: "Sales, profit and margins; the full statements", body: <FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} /> },
         ]} />}
 
       {m && <ChapterTab id="safety" sec="health" m={m} fairValue={fairValue} price={price} rows={chapterChecks("safety", m.research)} flags={m.research?.flags ?? []}
         detail={[
-          { key: "owns", question: "What does it own, and what does it owe?", short: "Its balance sheet, debt and cash", body: <StockHealth m={m} /> },
+          { key: "owns", after: "netDebt", question: "What does it own, and what does it owe?", short: "Its balance sheet, debt and cash", body: <StockHealth m={m} /> },
           { key: "piotroski", question: "Is it getting healthier?", short: m.piotroski != null ? `Piotroski score ${m.piotroski} of 9` : "Nine checks against last year", body: <PiotroskiCard m={m} /> },
         ]} />}
 
       <ChapterTab id="owners" sec="holding" m={m} fairValue={fairValue} price={price} rows={chapterChecks("owners", m?.research)} flags={m?.research?.flags ?? []}
         detail={[
-          { key: "who", question: "Who owns it?", short: "Promoters, funds and the public, quarter by quarter", body: <ShareholdingPanel symbol={data.symbol} /> },
+          { key: "who", first: true, question: "Who owns it?", short: "Promoters, funds and the public, quarter by quarter", body: <ShareholdingPanel symbol={data.symbol} /> },
           ...(m?.dividendRecord ? [{ key: "dividends", question: "What do shareholders get?", short: "Its dividends, yield and payout", body: <div id="sec-dividends"><StockDividends m={m} /></div> }] : []),
-          { key: "insiders", question: "Are insiders buying or selling?", short: "Trades by promoters and directors", body: <InsidersPanel symbol={data.symbol} /> },
+          { key: "insiders", after: "promoterStability", question: "Are insiders buying or selling?", short: "Trades by promoters and directors", body: <InsidersPanel symbol={data.symbol} /> },
         ]} />
 
       {m && <ChapterTab id="value" sec="valuation" m={m} fairValue={fairValue} price={price} rows={chapterChecks("value", m.research)}
         detail={[
-          { key: "ways", question: "What are the ways to value it?", short: "Fair value, cash flow, DCF, the growth the price assumes", body: <>{valued && <ValuedAs valuation={m.valuation} />}{valueChips}{epsJumpNote}{!valued && overrideCard}{explorer}</> },
+          { key: "ways", after: "ownHistory", question: "What are the ways to value it?", short: "Fair value, cash flow, DCF, the growth the price assumes", body: <>{valued && <ValuedAs valuation={m.valuation} />}{valueChips}{epsJumpNote}{!valued && overrideCard}{explorer}</> },
           { key: "levels", question: "Where does the price sit for you?", short: "Against your own price levels", body: <div id="sec-levels">{positionCard}{(valued || levels) && <MyLevelsCard symbol={symbol} fv={valued ? fv : null} levels={levels} price={price} priceLabel={priceLabel} fv2Label={fyLabel(m.fyEnd, 2)} />}</div> },
-          { key: "peers", question: "How does it compare with similar companies?", short: "Its peers' prices, P/E and quality", body: <div id="sec-peers"><PeersPanel symbol={data.symbol} onAnalyze={onOpenStock} /></div> },
+          { key: "peers", after: "peers", question: "How does it compare with similar companies?", short: "Its peers' prices, P/E and quality", body: <div id="sec-peers"><PeersPanel symbol={data.symbol} onAnalyze={onOpenStock} /></div> },
           { key: "yours", question: "What if you change the numbers?", short: "Test your own EPS, P/E, growth and price", body: <>{filingsNote}{valued && overrideCard}{priceCard}{epsByYear}</> },
           ...(levels ? [{ key: "sizing", question: "How much would you buy, and when?", short: "Size a position against your levels", body: <div id="sec-sizing" className="ss-section"><PhasePositionPlanner levels={levels} /></div> }] : []),
           { key: "figures", question: "What are all its figures?", short: "Every number from its filings", body: <KeyNumbers data={data} m={m} /> },
@@ -1043,8 +1043,8 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
 
       <ChapterTab id="price" sec="performance" m={m} fairValue={fairValue} price={price} rows={chapterChecks("price", m?.research)}
         detail={[
-          ...(m ? [{ key: "done", question: "How has the price done?", short: "Against the Nifty 50 and its sector index", body: <StockPerformance m={m} /> }] : []),
-          { key: "technicals", question: "What do the technicals say?", short: "Averages, momentum and levels", body: <div id="sec-technicals"><TechnicalPanel ticker={data.symbol} /></div> },
+          ...(m ? [{ key: "done", after: "relativeStrength", question: "How has the price done?", short: "Against the Nifty 50 and its sector index", body: <StockPerformance m={m} /> }] : []),
+          { key: "technicals", after: "trend", question: "What do the technicals say?", short: "Averages, momentum and levels", body: <div id="sec-technicals"><TechnicalPanel ticker={data.symbol} /></div> },
         ]} />
 
       <ChapterTab id="news" sec="filings" tour="filings" m={m} fairValue={fairValue} price={price} rows={[]}

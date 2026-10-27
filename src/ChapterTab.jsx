@@ -84,7 +84,9 @@ function Mark({ t, size = 13 }) {
   return <span className={`ct-mark ct-${t}`} aria-label={t === "info" ? undefined : WORDS[t]} aria-hidden={t === "info" ? "true" : undefined}><I size={size} strokeWidth={2.6} aria-hidden="true" /></span>;
 }
 
-// rows: the checks (chapterChecks); detail: [{ key, question, answer?, body }]
+// rows: the checks (chapterChecks); detail: [{ key, question, answer?,
+// short?, body, after?: a check's key it answers, first?: true }] — a panel
+// sits right under the question it answers; the rest open or close the tab
 export default function ChapterTab({ id, m, fairValue, price, sec, tab, tour, lead, rows, detail = [], flags = [] }) {
   const c = byId[id];
   const s = chapterScore(id, m?.research);
@@ -94,7 +96,16 @@ export default function ChapterTab({ id, m, fairValue, price, sec, tab, tour, le
     ? [`${n("good")} of ${rows.length} ${rows.length === 1 ? "check is" : "checks are"} strong`, n("mid") && `${n("mid")} fair`, n("bad") && `${n("bad")} weak`].filter(Boolean).join(", ")
       + (flags.length ? `. ${flags.length === 1 ? "One red flag" : `${flags.length} red flags`} below.` : (id === "safety" || id === "owners") && m ? ". No red flags in its filings." : ".")
     : null;
-  const anchor = k => `q-${id}-${k}`;
+  // one list: the checks in the model's order, each with the panel that
+  // answers it; a panel whose check is missing (a bank has other checks)
+  // goes to the end
+  const keys = new Set(rows.map(r => r.key));
+  const under = k => detail.filter(d => d.after === k);
+  const blocks = [
+    ...detail.filter(d => d.first).map(d => ({ ...d, info: true })),
+    ...rows.flatMap(r => [{ ...r, body: under(r.key).map(d => <div key={d.key} className="ct-evidence">{d.body}</div>) }]),
+    ...detail.filter(d => !d.first && !(d.after && keys.has(d.after))).map(d => ({ ...d, info: true })),
+  ];
   return (
     <section id={sec ? `sec-${sec}` : undefined} className="ss-section ct" data-tab={tab ?? id} data-tour={tour} aria-labelledby={`ct-${id}`}>
       <header className="ct-card ct-verdict">
@@ -118,46 +129,25 @@ export default function ChapterTab({ id, m, fairValue, price, sec, tab, tour, le
         {flags.length > 0 && (
           <ul className="ct-flags">{flags.map(f => <li key={f.id} className={f.severity === "critical" ? "ct-bad" : "ct-mid"}><b>{f.severity === "critical" ? "Red flag." : "Caution."}</b> {f.text}</li>)}</ul>
         )}
-        {(rows.length > 0 || detail.length > 0) && (
-          <nav className="ct-index" aria-label={`In the ${c.label} tab`}>
-            <p className="ct-index-h">In this tab</p>
-            {rows.map(r => (
-              <a key={r.key} href={`#${anchor(r.key)}`} className="ct-index-row" onClick={e => { e.preventDefault(); document.getElementById(anchor(r.key))?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>
-                <Mark t={r.tone} /><span className="ct-q">{r.question}</span><span className="ct-short">{r.answer}</span>
-              </a>
-            ))}
-            {detail.map(d => (
-              <a key={d.key} href={`#${anchor(d.key)}`} className="ct-index-row" onClick={e => { e.preventDefault(); document.getElementById(anchor(d.key))?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>
-                <Mark t="info" /><span className="ct-q">{d.question}</span><span className="ct-short">{d.short ?? ""}</span>
-              </a>
-            ))}
-          </nav>
-        )}
       </header>
 
-      {rows.map((r, i) => (
-        <article key={r.key} id={anchor(r.key)} className="ct-card ct-row">
-          <div className="ct-row-q">
-            <span className="ct-count">{i + 1} of {rows.length}</span>
-            <h3>{r.question}</h3>
-            <span className={`ct-chip ct-${r.tone}`}><Mark t={r.tone} size={12} /> {WORDS[r.tone]}</span>
-          </div>
-          <p className="ct-row-a">{r.answer}</p>
-          <div className="ct-row-e">
-            <span className="ct-measure">{r.measure}</span>
-            <span className={`ct-meter ct-${r.tone}`} aria-hidden="true"><i style={{ width: `${Math.max(3, Math.min(100, r.score))}%` }} /></span>
-            <span className="ct-measure">{Math.round(r.score)} out of 100</span>
-          </div>
-        </article>
-      ))}
-
-      {detail.length > 0 && <h3 className="ct-detail-h">The detail</h3>}
-      {detail.map(d => (
-        <article key={d.key} id={anchor(d.key)} className="ct-detail">
-          <header className="ct-detail-head"><h3>{d.question}</h3>{d.answer && <p>{d.answer}</p>}</header>
-          <div className="ct-detail-body">{d.body}</div>
-        </article>
-      ))}
+      <div className="ct-list">
+        {blocks.map(b => (
+          <article key={b.key} className="ct-q">
+            <div className="ct-q-head">
+              <div className="ct-q-left">
+                <h3>{b.question}</h3>
+                {!b.info && <span className={`ct-chip ct-${b.tone}`}><Mark t={b.tone} size={12} /> {WORDS[b.tone]}</span>}
+              </div>
+              <div className="ct-q-right">
+                {(b.info ? b.answer ?? b.short : b.answer) && <p className="ct-row-a">{b.info ? b.answer ?? b.short : b.answer}</p>}
+                {!b.info && <span className="ct-measure">Checked: {b.measure}</span>}
+              </div>
+            </div>
+            {b.info ? <div className="ct-evidence">{b.body}</div> : b.body}
+          </article>
+        ))}
+      </div>
     </section>
   );
 }
