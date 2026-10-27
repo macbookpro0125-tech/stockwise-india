@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
+import { Star, Bell, ChevronRight, Building2, TrendingUp, ShieldCheck, Users, Scale, ChartCandlestick, Newspaper } from "lucide-react";
+import { CHAPTERS } from "./chapterText.js";
 import { api } from "./api.js";
 import { BrandMark } from "./site.jsx";
 import CompanyLogo from "./CompanyLogo.jsx";
 import { AdCard } from "./ads.jsx";
+import AuthDialog from "./AuthDialog.jsx";
 import { niceName } from "./stockName.js";
 import { ANALYSIS_EXAMPLES, companyAnalysisFor } from "./company-analysis.js";
 
@@ -58,9 +61,33 @@ function Story({ s }) {
   );
 }
 
-export default function PublicStock({ symbol, onSignIn, initial = null }) {
+// What the full page answers, by chapter (an account opens them)
+const ICONS = { business: Building2, growth: TrendingUp, safety: ShieldCheck, owners: Users, value: Scale, price: ChartCandlestick, news: Newspaper };
+
+// onAuthed: signed in or up from this page — into the app, on this company
+// (App.jsx); the sign-up box opens here, saying why (27 Oct 2026: every tap
+// used to go to the front page first)
+export default function PublicStock({ symbol, onAuthed, initial = null }) {
   const [s, setS] = useState(() => initial?.symbol === symbol ? initial : null);
   const [error, setError] = useState("");
+  // the sign-up box: its mode, why it opened, and whether to star the company
+  const [auth, setAuth] = useState(null);
+  const short = s ? niceName(s.name) : symbol;
+  const ask = (why, mode = "signup") => setAuth({ mode, why });
+  const askWatch = () => setAuth({ mode: "signup", why: `Create a free account to add ${short} to your watchlist.`, watch: true });
+  const askAlert = () => ask(`Create a free account to set a price alert for ${short}.`);
+  const askFull = () => ask(`Create a free account to see ${short}'s full analysis.`);
+  const authed = async () => {
+    if (auth?.watch) await api.addWatch(symbol, s?.close).catch(() => {});
+    onAuthed?.();
+  };
+  // a phone: a slim bar into the full analysis once the top has scrolled by
+  const [past, setPast] = useState(false);
+  useEffect(() => {
+    const on = () => setPast(window.scrollY > 700);
+    on(); window.addEventListener("scroll", on, { passive: true });
+    return () => window.removeEventListener("scroll", on);
+  }, []);
   useEffect(() => {
     let active = true;
     const title = x => `${niceName(x.name)} share price, P/E, results & quality score | ${x.symbol} | Jocular Insights`;
@@ -99,7 +126,7 @@ export default function PublicStock({ symbol, onSignIn, initial = null }) {
     <div className="ps-page">
       <header className="ps-head">
         <a href="/" className="ps-brand"><BrandMark size={34} /><span>Jocular <b>Insights</b></span></a>
-        <button type="button" className="btn-primary ps-signin" onClick={onSignIn}>Sign in</button>
+        <button type="button" className="btn-primary ps-signin" onClick={() => ask(null, "signin")}>Sign in</button>
       </header>
       <main className="ps-main">
         {error && <p className="nw-empty">{error}</p>}
@@ -117,6 +144,11 @@ export default function PublicStock({ symbol, onSignIn, initial = null }) {
             {s.close != null && (
               <p className="ps-price">₹{num(s.close, 2)} <span className={s.change1d >= 0 ? "up" : "down"}>{pct(s.change1d, 2)}</span><small>close on {day(s.closeDate)}</small></p>
             )}
+            <div className="ps-acts">
+              <button type="button" className="ps-act" onClick={askWatch}><Star size={16} aria-hidden="true" /> Add to watchlist</button>
+              <button type="button" className="ps-act" onClick={askAlert}><Bell size={16} aria-hidden="true" /> Set a price alert</button>
+              <span>Free account</span>
+            </div>
             <div className="ps-cards">
               {s.quality != null && (
                 <div className="ps-score"><span>Quality score</span><b>{Math.round(s.quality)}<small>/100</small></b><em>From its own filings</em></div>
@@ -131,6 +163,15 @@ export default function PublicStock({ symbol, onSignIn, initial = null }) {
             <dl className="ps-facts">{facts.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
             {/* a company's page, where a search lands: a card after its key
                 figures and one before the way into the full analysis (ads.jsx) */}
+            <section className="ps-chapters" aria-labelledby="ps-chapters-h">
+              <h2 id="ps-chapters-h">The full page answers {CHAPTERS.length - 1} questions about {niceName(s.name)}</h2>
+              <p>Every answer from its own filings, each check shown with its figures.</p>
+              <ul>{CHAPTERS.filter(c => c.id !== "overview").map(c => {
+                const I = ICONS[c.id];
+                return <li key={c.id}><button type="button" onClick={() => ask(`Create a free account to see ${short}'s ${c.label.toLowerCase()} checks: ${c.question.charAt(0).toLowerCase()}${c.question.slice(1)}`)}><I size={18} aria-hidden="true" /><span><b>{c.label}</b><em>{c.question}</em></span><ChevronRight size={16} aria-hidden="true" /></button></li>;
+              })}</ul>
+              <button type="button" className="btn-primary ps-cta" onClick={askFull}>See the answers — free account</button>
+            </section>
             <AdCard feed="public" slot="company-top" size="medium" className="ps-ad" />
             {s.story && <Story s={s} />}
             {analysis && (
@@ -177,12 +218,17 @@ export default function PublicStock({ symbol, onSignIn, initial = null }) {
               <h2>See the full analysis</h2>
               <p>The scorecard's checks one by one, price charts, results year by year, what it sells and where, shareholding and its filings to NSE — free with an account.</p>
               <p><a href="/methodology">How the scores and fair values are calculated</a> · <a href="/disclaimer">Important limitations</a></p>
-              <button type="button" className="btn-primary ps-cta" onClick={onSignIn}>Sign in or create a free account</button>
+              <button type="button" className="btn-primary ps-cta" onClick={askFull}>Sign in or create a free account</button>
             </section>
             <p className="nw-note">Figures from NSE filings and prices at the last close. An educational tool, not investment advice.</p>
+            <div className={`ps-sticky${past ? " on" : ""}`} aria-hidden={!past}>
+              <span><b>{niceName(s.name)}</b></span>
+              <button type="button" className="btn-primary" tabIndex={past ? undefined : -1} onClick={askFull}>Full analysis, free</button>
+            </div>
           </>
         )}
       </main>
+      {auth && <AuthDialog mode={auth.mode} onModeChange={mode => setAuth(a => ({ ...a, mode }))} reason={auth.why} onAuthed={authed} onClose={() => setAuth(null)} />}
     </div>
   );
 }

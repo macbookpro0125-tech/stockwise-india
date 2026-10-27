@@ -4245,3 +4245,27 @@ html.no-blur .sr-group { box-shadow: none; }
 .vs-hour { position: relative; display: flex; align-items: flex-end; height: 100%; }
 .vs-hour i { display: block; width: 100%; min-height: 2px; border-radius: 3px 3px 0 0; background: color-mix(in srgb, var(--accent) 55%, transparent); }
 .vs-hour small { position: absolute; left: 0; bottom: -18px; font-size: 10px; color: var(--t3); white-space: nowrap; }
+/* the public company page: ways in (27 Oct 2026 mockup) */
+.ps-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 12px 0 4px; }
+.ps-act { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--bdr2); background: var(--s2); color: var(--t1); font: inherit; font-size: var(--fs-sm); cursor: pointer; }
+.ps-acts > span { font-size: var(--fs-xs); color: var(--t3); }
+.ps-chapters { margin: 18px 0; padding: 18px; border-radius: 18px; border: 1px solid var(--bdr); background: var(--s2); }
+.ps-chapters h2 { margin: 0 0 4px; font-size: var(--fs-lg); }
+.ps-chapters > p { margin: 0 0 10px; font-size: var(--fs-sm); color: var(--t2); }
+.ps-chapters ul { list-style: none; margin: 0 0 14px; padding: 0; display: grid; }
+.ps-chapters li + li { border-top: 1px solid var(--bdr); }
+.ps-chapters li button { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 52px; padding: 8px 2px; border: 0; background: none; color: var(--t2); font: inherit; text-align: left; cursor: pointer; }
+.ps-chapters li button > span { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.ps-chapters li b { font-size: var(--fs-sm); font-weight: 600; color: var(--t1); }
+.ps-chapters li em { font-style: normal; font-size: var(--fs-xs); color: var(--t3); }
+.ps-chapters .ps-cta { width: 100%; }
+.ps-sticky { display: none; }
+@media (max-width: 700px) {
+  .ps-sticky { display: flex; position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 40; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 8px 8px 16px; border-radius: 999px; border: 1px solid var(--bdr2); background: color-mix(in srgb, var(--s2) 92%, transparent); backdrop-filter: blur(16px); transform: translateY(140%); transition: transform 300ms cubic-bezier(.2,.8,.2,1); }
+  .ps-sticky.on { transform: none; }
+  .ps-sticky span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-sm); color: var(--t2); }
+  .ps-sticky b { color: var(--t1); font-weight: 600; }
+  .ps-sticky .btn-primary { flex-shrink: 0; min-height: 40px; border-radius: 999px; padding: 0 16px; }
+}
+@media (prefers-reduced-motion: reduce) { .ps-sticky { transition: none; } }
+.auth-reason { margin: 4px 0 14px; padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--t1); font-size: var(--fs-sm); line-height: 1.45; }

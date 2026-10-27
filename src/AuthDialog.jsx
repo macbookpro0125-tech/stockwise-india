@@ -43,7 +43,9 @@ const POINTS = [
 // the film behind it rests (html.auth-open). On the sky, three tiles say
 // what's inside; the logo sits with the form. On a phone the sky fills the
 // top and the steps rise from the bottom as a sheet, near the thumb.
-export default function AuthDialog({ mode, onModeChange, onAuthed, onClose }) {
+// reason: why it opened, said above the form (a company page's "Add to
+// watchlist" — 27 Oct 2026)
+export default function AuthDialog({ mode, onModeChange, onAuthed, onClose, reason = null }) {
   const ref = useRef(null);
   const [paused, setPaused] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -92,6 +94,7 @@ export default function AuthDialog({ mode, onModeChange, onAuthed, onClose }) {
         <button type="button" className="auth-close" onClick={onClose} aria-label="Close"><X size={20} aria-hidden="true" /></button>
         <div className="auth-body">
           <div className="auth-brand"><Logo size={19} /></div>
+          {reason && <p className="auth-reason">{reason}</p>}
           <AuthForm onAuthed={done} onProgress={setProgress} mode={mode} onModeChange={onModeChange} />
         </div>
       </div>

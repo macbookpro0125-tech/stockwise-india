@@ -55,9 +55,9 @@ test("F01-E3 a session that ends mid-use returns to sign-in, not a broken page",
   // something that asks the server, once the session has gone
   await page.getByRole("button", { name: /Create new screen|Start screening/ }).first().click();
   await page.goto("/stock/TCS");
-  // a company's public summary (23 Oct 2026), and its Sign in to the front page
+  // a company's public summary (23 Oct 2026); its Sign in opens the box right there (27 Oct 2026)
   await page.getByRole("button", { name: "Sign in", exact: true }).first().click();
-  await expect(page.getByRole("button", { name: "Create free account" }).first()).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Sign in" })).toBeVisible();
 });
 
 test("F03-E1 back and forward move between Discover and a company", async ({ page, account }) => {

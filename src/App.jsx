@@ -97,7 +97,6 @@ export default function App() {
   const [notice, setNotice] = useState(null);
   const [tab, setTab] = useState("discover");
   // someone not signed in, on a company's public page, asked to sign in
-  const [wantsSignIn, setWantsSignIn] = useState(false);
   const [theme, toggleTheme] = useTheme();
   // { symbol, at } rather than a bare symbol: searching the same symbol again
   // (e.g. retrying after an error) must re-fetch, and an unchanged string
@@ -296,6 +295,9 @@ export default function App() {
     setTourAsked("app");
   };
 
+  // Signed in from a company's public page: into the app, on that company
+  const intoAppHere = () => { setNotice(null); tabHistory.current = []; tabRef.current = "discover"; setTab("discover"); loadAccount(); };
+
   // /privacy, /disclaimer and /help are for everyone, signed in or not
   if (path === "/privacy") return <PrivacyPage signedIn={!!account} />;
   if (path === "/disclaimer") return <DisclaimerPage signedIn={!!account} />;
@@ -317,17 +319,17 @@ export default function App() {
     // Keep a crawlable company's summary visible while the session check is in
     // flight. main.jsx reads the JSON beside the server-written HTML before
     // React replaces the root; a signed-in visitor moves into the full app.
-    if (wantsSignIn) return <Landing notice={notice} onAuthed={() => { setNotice(null); tabHistory.current = []; tabRef.current = "discover"; setTab("discover"); if (!stockFromPath(window.location.pathname) && !chartFromPath(window.location.pathname)) navigate("/"); loadAccount(); }} />;
     const publicSymbol = stockFromPath(path);
     const initialPublicStock = window.__PUBLIC_STOCK__;
-    if (publicSymbol && initialPublicStock?.symbol === publicSymbol) return <PublicStock symbol={publicSymbol} initial={initialPublicStock} onSignIn={() => setWantsSignIn(true)} />;
+    if (publicSymbol && initialPublicStock?.symbol === publicSymbol) return <PublicStock symbol={publicSymbol} initial={initialPublicStock} onAuthed={intoAppHere} />;
     return null; // avoid a front-page flash while the session check is in flight
   }
 
   if (account === null) {
     // A company's page shows its public summary first (PublicStock.jsx, 23 Oct
-    // 2026); its Sign in button opens the front page, the link kept
-    if (stockFromPath(path) && !wantsSignIn) return <PublicStock symbol={stockFromPath(path)} initial={window.__PUBLIC_STOCK__} onSignIn={() => setWantsSignIn(true)} />;
+    // 2026); signing in or up there opens the box on the page and stays on
+    // the company (27 Oct 2026)
+    if (stockFromPath(path)) return <PublicStock symbol={stockFromPath(path)} initial={window.__PUBLIC_STOCK__} onAuthed={intoAppHere} />;
     // A shared stock or chart link stays where it points once the visitor signs in
     return <Landing notice={notice} onAuthed={() => { setNotice(null); tabHistory.current = []; tabRef.current = "discover"; setTab("discover"); if (!stockFromPath(window.location.pathname) && !chartFromPath(window.location.pathname)) navigate("/"); loadAccount(); }} />;
   }

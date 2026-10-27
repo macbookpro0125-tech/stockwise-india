@@ -12,7 +12,13 @@ const EXPECTED_CONSOLE = [
   // company with no logo, a form the server turned down) — the browser logs
   // each one; 5xx answers are caught separately below
   /Failed to load resource: the server responded with a status of 4\d\d/,
+  // Google sign-in's helper, on a phone, asks Google for its settings; Google
+  // refuses this test server's address (127.0.0.1 isn't one of the project's
+  // own sites), never the live one's — its failed request is matched below
+  /identitytoolkit\/v3\/relyingparty\/getProjectConfig.*blocked by CORS policy/,
 ];
+// requests to Google's sign-in that may fail here, as above
+const GOOGLE_SIGN_IN = /^https:\/\/(www\.googleapis\.com\/identitytoolkit|[a-z0-9-]+\.firebaseapp\.com\/)/;
 
 export const test = base.extend({
   account: async ({ page, context, baseURL }, use, testInfo) => {
@@ -30,9 +36,13 @@ export const test = base.extend({
   },
   page: async ({ page }, use, testInfo) => {
     const problems = [];
+    let googleFailed = 0;
+    page.on("requestfailed", r => { if (GOOGLE_SIGN_IN.test(r.url())) googleFailed++; });
     page.on("console", m => {
       if (m.type() !== "error") return;
       const text = m.text();
+      // the browser's line for that refused request names no address
+      if (/^Failed to load resource: net::ERR_FAILED$/.test(text) && googleFailed > 0) { googleFailed--; return; }
       if (!EXPECTED_CONSOLE.some(re => re.test(text))) problems.push(`console: ${text}`);
     });
     page.on("pageerror", e => problems.push(`page error: ${e.message}`));
