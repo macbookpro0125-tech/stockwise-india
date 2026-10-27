@@ -79,7 +79,7 @@ async function market() {
     `Biggest moves: ${gainers[0].name} ${gainers[0].move}, ${losers[0].name} ${losers[0].move}.`,
     // a company's page, where the full analysis is a free account away
     `${gainers[0].name}'s full analysis: ${SITE}/stock/${encodeURIComponent(gainers[0].symbol)}`,
-    "#Nifty #NSE",
+    "#Nifty #IndianStockMarket",
   ].join("\n\n");
   return { kind: "market", text, html: card({ eyebrow: "Market close", title: `The NSE at the close, ${day(strip.asOf)}`, body, foot: `NSE closing prices` }) };
 }
@@ -98,10 +98,12 @@ async function results() {
   const text = [
     `Results ${first.date === cal.today ? "today" : `on ${weekday(first.date)}`}: ${first.count} NSE companies, including ${names(first).slice(0, 3).map(short).join(", ")}.`,
     second ? `${weekday(second.date).split(",")[0]}: ${names(second).slice(0, 3).map(short).join(", ")} and ${second.count - 3} more.` : "",
-    `${shortName(first.companies[0].name)}, from its filings: ${SITE}/stock/${encodeURIComponent(first.companies[0].symbol)}`,
-    "#Results #NSE",
-  ].filter(Boolean).join("\n\n");
-  return { kind: "results", text, html: card({ eyebrow: "Results calendar", title: "Who reports results next", body, foot: "NSE board meeting notices" }) };
+    `${shortName(first.companies[0].name)}'s figures: ${SITE}/stock/${encodeURIComponent(first.companies[0].symbol)}`,
+    "#Results #IndianStockMarket",
+  ].filter(Boolean);
+  // over X's 280: without the next day's line
+  const joined = xlen(text.join("\n\n")) <= 280 ? text.join("\n\n") : text.filter((_, i) => i !== 1).join("\n\n");
+  return { kind: "results", text: joined, html: card({ eyebrow: "Results calendar", title: "Who reports results next", body, foot: "NSE board meeting notices" }) };
 }
 
 async function company(symbol) {
@@ -122,7 +124,7 @@ async function company(symbol) {
     `${name} (NSE: ${s.symbol}), from its own filings: quality score ${Math.round(s.quality)}/100, ROE ${num(s.roe, 1)}%, debt to equity ${num(s.debtToEquity, 2)}, P/E ${num(s.pe, 1)}.`,
     q ? `${q.label}: sales ${pct(q.salesYoY, 1)} YoY, profit ${pct(q.profitYoY, 1)}.${s.nextResults ? ` Next results ${day(s.nextResults).replace(/ \d{4}$/, "")}.` : ""}` : "",
     `${SITE}/stock/${encodeURIComponent(s.symbol)}`,
-    `#${s.symbol.replace(/[^A-Za-z0-9]/g, "")} #NSE`,
+    `#${s.symbol.replace(/[^A-Za-z0-9]/g, "")} #IndianStockMarket`,
   ].filter(Boolean).join("\n\n");
   return { kind: "company", text, html: card({ eyebrow: `${s.sector ?? "Company"} · NSE: ${s.symbol}`, title: name, body, foot: "From its NSE filings" }) };
 }
