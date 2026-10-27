@@ -1,4 +1,4 @@
-import { CalendarDays, CircleDollarSign, Bell, TriangleAlert, ChevronDown, ArrowDown } from "lucide-react";
+import { CalendarDays, CircleDollarSign, Bell, TriangleAlert, ArrowDown } from "lucide-react";
 import { byId, chapterScore, chapterJudgement, chapterLine, chapterFigures } from "./chapterText.js";
 import { resultsWatch, dividendWatch, cautions, keyFigures } from "./deskText.js";
 import { alertsStore } from "./stores.js";
@@ -9,7 +9,8 @@ import { NotesToggle } from "./StockChapters.jsx";
 // "it looks premium", then "design total page"): the company and its gist
 // across the top, four chapter tiles, the chart beside what to watch, then
 // one card per chapter — its answer and two figures on the left, its main
-// panel on the right, the deeper tools folded under "More". A phone keeps its
+// panel on the right, its deeper tools under them (each chapter is a tab of
+// its own, 27 Oct 2026). A phone keeps its
 // tabbed chapters (StockDetail.jsx). Every word comes from chapterText.js and
 // deskText.js; nothing here is a buy or sell call.
 
@@ -102,18 +103,6 @@ export function KeyFiguresRow({ m, price }) {
   );
 }
 
-// The deeper tools, folded. Built with the page (a computer has the room;
-// a phone never shows these) so a link into one — the Safety panel's line
-// to the scorecard — finds it and opens the fold (StockSide.jsx openCheck)
-function More({ label, children }) {
-  return (
-    <details className="dk-more">
-      <summary><ChevronDown size={16} aria-hidden="true" /> {label}</summary>
-      <div className="dk-more-body">{children}</div>
-    </details>
-  );
-}
-
 // One chapter: its answer, score and two figures on the left with a note;
 // its main panel on the right; deeper tools folded underneath
 export function DeskChapter({ id, m, fairValue, price, note, more, moreLabel, children, sec, tab }) {
@@ -138,7 +127,8 @@ export function DeskChapter({ id, m, fairValue, price, note, more, moreLabel, ch
         </header>
         <div className="dk-chapter-right">{children}</div>
       </div>
-      {more && <More label={moreLabel ?? `More on ${c.label.toLowerCase()}`}>{more}</More>}
+      {/* a tab has the room: the deeper tools shown, not folded */}
+      {more && <div className="dk-detail"><h3 className="dk-detail-h">{moreLabel ?? `More on ${c.label.toLowerCase()}`}</h3>{more}</div>}
     </section>
   );
 }

@@ -1,5 +1,5 @@
 // The app's flows, one test each (case ids from replica/test-plan.md).
-import { test, expect, openStocks, openFilters, openPage } from "./fixtures.js";
+import { test, expect, openStocks, openFilters, openPage, openChapter } from "./fixtures.js";
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 
@@ -308,7 +308,7 @@ test("F03-H2 the top answers each chapter in a tile and says what to watch; the 
   await expect(tile).toBeVisible();
   await tile.click();
   await expect(page.locator("#sec-financials")).toBeInViewport();
-  await page.locator("#sec-about summary", { hasText: "At a glance, the scorecard" }).click();
+  await openChapter(page, "Business");
   const glance = page.getByRole("region", { name: "At a glance" });
   await expect(glance.getByRole("img", { name: /Scores out of 100: Business \d+, Earnings \d+/ })).toBeVisible();
   await expect(glance.getByRole("heading", { name: "What stands out" })).toBeVisible();
@@ -318,6 +318,7 @@ test("F03-H2 the top answers each chapter in a tile and says what to watch; the 
   await first.click();
   await expect(page.locator("details[open] summary", { hasText: group }).first()).toBeVisible();
 
+  await openChapter(page, "Price");
   const perf = page.getByRole("region", { name: "How the price has done" });
   const table = perf.getByRole("table");
   for (const row of ["TCS", "NIFTY IT", "NIFTY 50"]) await expect(table.getByRole("rowheader", { name: row })).toBeVisible();
@@ -359,6 +360,7 @@ test("F03-H4 chart indicators: pivot points and their kinds, an oscillator in it
 
 test("F03-H5 the dividends section: yield against other payers, payout, the yearly record", async ({ page, account }) => {
   await page.goto("/stock/TCS");
+  await openChapter(page, "Owners");
   const div = page.getByRole("region", { name: "Dividends" });
   // the yield is the tile below, so the lead doesn't repeat it
   await expect(div.getByText(/^It paid ₹[\d,.]+ a share over the last 12 months\.$/)).toBeVisible();
@@ -372,6 +374,7 @@ test("F03-H5 the dividends section: yield against other payers, payout, the year
 
 test("F03-H6 financial health: cover, debt and cash, the yearly chart, the Scorecard's verdict", async ({ page, account }) => {
   await page.goto("/stock/LT");
+  await openChapter(page, "Safety");
   const health = page.getByRole("region", { name: "Financial health" });
   await expect(health.getByText(/Its short-term assets cover its short-term liabilities [\d.]+ times/)).toBeVisible();
   await expect(health.getByRole("img", { name: /FY\d\d balance sheet: Short-term assets ₹[\d,]+ Cr/ })).toBeVisible();
@@ -384,6 +387,7 @@ test("F03-H6 financial health: cover, debt and cash, the yearly chart, the Score
 
 test("F03-H7 against its sector: the sector's middle and how many it beats", async ({ page, account }) => {
   await page.goto("/stock/TCS");
+  await openChapter(page, "Business");
   const card = page.getByRole("region", { name: "Against its sector" });
   await expect(card.getByText("Return on equity")).toBeVisible();
   await expect(card.getByText(/middle [\d.]+%/).first()).toBeVisible();
@@ -393,6 +397,7 @@ test("F03-H7 against its sector: the sector's middle and how many it beats", asy
 
 test("F03-H8 what changed recently: dated lines above the filings", async ({ page, account }) => {
   await page.goto("/stock/TCS");
+  await openChapter(page, "News");
   const card = page.getByRole("region", { name: "What changed recently" });
   await expect(card).toBeVisible();
   await expect(card.locator("li time").first().or(card.getByText(/^Nothing new in the last six weeks/))).toBeVisible();

@@ -1,7 +1,7 @@
 // A sweep of every screen: each tab and one company page per valuation model
 // loads without console errors or server failures, says what it should, and
 // gets an accessibility scan (written to test-results/axe.txt, not failed on).
-import { test, expect, axeCheck, openStocks, openPage } from "./fixtures.js";
+import { test, expect, axeCheck, openStocks, openPage, openChapter } from "./fixtures.js";
 import { appendFileSync, mkdirSync } from "node:fs";
 
 const axeLog = lines => { mkdirSync("test-results", { recursive: true }); if (lines.length) appendFileSync("test-results/axe.txt", lines.join("\n") + "\n"); };
@@ -43,10 +43,11 @@ const MODELS = [
   ["RELIANCE", /steady earner/i, /P\/E/i],
 ];
 for (const [sym, as, says] of MODELS) {
-  test(`company page: ${sym}`, async ({ page, account }) => {
+  test(`company page: ${sym}`, async ({ page, account, isMobile }) => {
     await page.goto(`/stock/${sym}`);
     await expect(page.getByRole("heading", { level: 2 }).first()).toBeVisible();
-    // (a computer folds the deeper tools, so the first mention can be hidden)
+    // the model's name is in the Value tab on a computer
+    if (!isMobile) await openChapter(page, "Value");
     await expect(page.getByText(as).filter({ visible: true }).first()).toBeVisible();
     await expect(page.getByText(says).first()).toBeAttached();
     await page.waitForLoadState("networkidle");

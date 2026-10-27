@@ -114,4 +114,9 @@ export async function openPage(page, name) {
   await row.getByRole("button", { name: re }).click();
 }
 
+// A company's chapter, picked in its bar (a computer's tabs since 27 Oct 2026)
+export async function openChapter(page, name) {
+  await page.getByRole("navigation", { name: "Parts of this page" }).getByRole("button", { name, exact: true }).click();
+}
+
 export { expect };

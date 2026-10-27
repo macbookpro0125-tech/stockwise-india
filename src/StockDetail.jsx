@@ -609,8 +609,18 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
   useEffect(() => { setOpened(new Set(["overview"])); }, [symbol]);
   useEffect(() => { setOpened(o => (o.has(phoneTab) ? o : new Set(o).add(phoneTab))); }, [phoneTab]);
   const built = tab => !isPhone || tab === phoneTab || opened.has(tab);
+  // A computer shows one chapter at a time too, each in full (27 Oct 2026:
+  // "I want this to be tabs … we show everything"); the bar down the left
+  // picks it
+  const [deskTab, setDeskTab] = useState("overview");
+  useEffect(() => { setDeskTab("overview"); }, [symbol]);
+  const selectDeskTab = id => {
+    setDeskTab(id);
+    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
+  };
   useEffect(() => {
-    const show = e => setPhoneTab(e.detail);
+    const show = e => { setPhoneTab(e.detail); setDeskTab(e.detail); };
     window.addEventListener(SHOW_TAB, show);
     return () => window.removeEventListener(SHOW_TAB, show);
   }, []);
@@ -951,14 +961,10 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
   // the chapter bar once those have scrolled by, then a card per chapter
   // with its deeper tools folded under "More"
   const fairValue = valued ? fv?.fv25 : null;
-  const goChapter = id => {
-    const c = CHAPTERS.find(x => x.id === id);
-    const el = c?.parts.map(part => document.getElementById(`sec-${part}`)).find(Boolean);
-    if (!el) return;
-    const header = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--header-h")) || 0;
-    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    window.scrollTo({ top: docTop(el) - header - 70, behavior: reduced ? "auto" : "smooth" });
-  };
+  const goChapter = selectDeskTab;
+  // the tabs this company has, in order (no filings: no business, growth,
+  // safety or value)
+  const deskOrder = CHAPTERS.map(c => c.id).filter(id => m || !["business", "growth", "safety", "value"].includes(id));
   const desk = (
     <div className="dk">
       <nav className="dk-crumb" aria-label="Where you are">
@@ -980,7 +986,8 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       {data.quote?.stale && <div className="dk-warn"><strong>Showing a cached quote</strong> — it couldn't be refreshed. Quote date: {data.quote.asOf}.</div>}
       {!m && <div style={{ ...card, color: "var(--t3)", fontSize: 13 }}>No usable annual results in NSE's filings for this company, so there's nothing to value or score.</div>}
 
-      {m && <DeskTiles m={m} fairValue={fairValue} price={price} onGo={goChapter} />}
+      <div className="dk-tabs" data-desk-tab={deskTab}>
+      {m && <div data-tab="overview"><DeskTiles m={m} fairValue={fairValue} price={price} onGo={goChapter} /></div>}
 
       <section id="sec-overview" className="ss-section dk-top" data-tab="overview">
         <div className="dk-top-main">
@@ -993,7 +1000,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       </section>
 
       {/* the chapters, in the bar down the left (SideRail.jsx steps aside) */}
-      <aside className="dk-rail"><SectionNav ready={!!m} rail /></aside>
+      <aside className="dk-rail"><SectionNav ready={!!m} rail phone phoneTab={deskTab} onPhoneTab={selectDeskTab} /></aside>
 
       {m && <DeskChapter id="business" sec="about" m={m} fairValue={fairValue} price={price}
         more={<>
@@ -1058,7 +1065,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         </div>
       </DeskChapter>
 
-      <section className="ss-section dk-yourview" aria-labelledby="dk-yourview">
+      <section className="ss-section dk-yourview" data-tab="overview" aria-labelledby="dk-yourview">
         <h2 id="dk-yourview" className="dk-yourview-h">Your view</h2>
         <div className="dk-yourview-grid">
           <MyNotes key={data.symbol} symbol={data.symbol} />
@@ -1066,7 +1073,14 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         </div>
       </section>
 
-      <StockDataDates dates={data.dataDates} quote={data.quote} research={m?.research} />
+      <div data-tab="overview"><StockDataDates dates={data.dataDates} quote={data.quote} research={m?.research} /></div>
+      {/* each tab ends pointing on to the next, as a phone's do */}
+      {deskOrder.map((id, i) => deskOrder[i + 1] && (
+        <div key={id} data-tab={id} className="dk-next-row">
+          <button type="button" className="dk-next" onClick={() => selectDeskTab(deskOrder[i + 1])}>Next: {CHAPTERS.find(c => c.id === deskOrder[i + 1]).label} <ArrowRight size={16} aria-hidden="true" /></button>
+        </div>
+      ))}
+      </div>
       <p style={{ fontSize: 11, color: "var(--t3)", textAlign: "center", lineHeight: 1.6 }}>
         <TriangleAlert size={12} style={{ verticalAlign: "-1px", marginRight: 4 }} />Always cross-check figures on NSE or BSE before investing.
       </p>

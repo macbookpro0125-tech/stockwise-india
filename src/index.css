@@ -4152,3 +4152,24 @@ html.no-blur .sr-group { box-shadow: none; }
 .dk-mini-px .up { color: var(--green); }
 .dk-mini-px .down { color: var(--red); }
 @media (prefers-reduced-motion: reduce) { .dk-mini { transition: none; } }
+
+/* A computer's company page as tabs (27 Oct 2026): one chapter at a time,
+   picked in the bar down the left, each shown in full */
+.dk-tabs { display: flex; flex-direction: column; gap: var(--sp-4); }
+.dk-tabs[data-desk-tab="overview"] > [data-tab]:not([data-tab="overview"]) { display: none; }
+.dk-tabs[data-desk-tab="business"] > [data-tab]:not([data-tab="business"]) { display: none; }
+.dk-tabs[data-desk-tab="growth"] > [data-tab]:not([data-tab="growth"]) { display: none; }
+.dk-tabs[data-desk-tab="safety"] > [data-tab]:not([data-tab="safety"]) { display: none; }
+.dk-tabs[data-desk-tab="owners"] > [data-tab]:not([data-tab="owners"]) { display: none; }
+.dk-tabs[data-desk-tab="value"] > [data-tab]:not([data-tab="value"]) { display: none; }
+.dk-tabs[data-desk-tab="price"] > [data-tab]:not([data-tab="price"]) { display: none; }
+.dk-tabs[data-desk-tab="news"] > [data-tab]:not([data-tab="news"]) { display: none; }
+.dk-tabs > .dk-chapter { border-top: 0; padding-top: var(--sp-2); }
+.dk-detail { margin: var(--sp-6) 0 0 calc(300px + var(--sp-8)); display: flex; flex-direction: column; gap: var(--sp-4); }
+.dk-detail > * { margin-bottom: 0 !important; }
+.dk-detail-h { margin: 0; padding-top: var(--sp-5); border-top: 1px solid var(--bdr2); font-size: var(--fs-lg); font-weight: 600; color: var(--t1); }
+.dk-next-row { display: flex; justify-content: flex-end; margin-top: var(--sp-4); }
+.dk-next { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--bdr2); background: var(--s2); color: var(--accent); font: 600 var(--fs-md)/1 var(--font); cursor: pointer; }
+.dk-next:hover { border-color: var(--accent); }
+.dk-next:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 1100px) { .dk-detail { margin-left: 0; } }
