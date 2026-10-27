@@ -36,7 +36,8 @@ import InsidersPanel from "./InsidersPanel.jsx";
 import StockEarningsCall from "./StockEarningsCall.jsx";
 import StockSnapshot from "./StockSnapshot.jsx";
 import { CHAPTERS, VerdictLines, ChapterTop, ChapterEnd } from "./StockChapters.jsx";
-import { DeskTiles, WhatToWatch, KeyFiguresRow, DeskChapter } from "./StockDesk.jsx";
+import { DeskTiles, WhatToWatch, KeyFiguresRow } from "./StockDesk.jsx";
+import ChapterTab, { chapterChecks } from "./ChapterTab.jsx";
 import { gistLine } from "./chapterText.js";
 import { growthNote } from "./deskText.js";
 import { docTop } from "./motion.js";
@@ -1002,68 +1003,57 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       {/* the chapters, in the bar down the left (SideRail.jsx steps aside) */}
       <aside className="dk-rail"><SectionNav ready={!!m} rail phone phoneTab={deskTab} onPhoneTab={selectDeskTab} /></aside>
 
-      {m && <DeskChapter id="business" sec="about" m={m} fairValue={fairValue} price={price}
-        more={<>
-          <StockGlance r={m.research} />
-          <div id="sec-scores" data-tour="research"><ResearchPanel research={m.research} /></div>
-          <ChapterEnd id="business" m={m} />
-        </>} moreLabel="At a glance, the scorecard and every check">
-        <CompanyProfile symbol={data.symbol} m={m} />
-        <StockSectorCompare m={m} />
-        <StockBusiness m={m} symbol={data.symbol} name={data.name} />
-      </DeskChapter>}
+      {/* Each chapter as a tab of questions (ChapterTab.jsx, 27 Oct 2026):
+          its checks as rows, then the detail under the questions they answer */}
+      {m && <ChapterTab id="business" sec="about" m={m} fairValue={fairValue} price={price} rows={chapterChecks("business", m.research)}
+        detail={[
+          { key: "about", question: "What does it do?", short: "What it sells, to whom, and where", body: <><CompanyProfile symbol={data.symbol} m={m} /><StockBusiness m={m} symbol={data.symbol} name={data.name} /></> },
+          { key: "sector", question: "How does it compare with its sector?", short: "Its figures against the sector's middle", body: <StockSectorCompare m={m} /> },
+          { key: "scores", question: "How was it scored?", short: "Every score and the reason behind it", body: <><StockGlance r={m.research} /><div id="sec-scores" data-tour="research"><ResearchPanel research={m.research} /></div></> },
+        ]} />}
 
-      {m && <DeskChapter id="growth" sec="financials" m={m} fairValue={fairValue} price={price} note={growthNote(m)}
-        more={<ChapterEnd id="growth" m={m} />} moreLabel="The checks behind the growth score">
-        <FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} />
-      </DeskChapter>}
+      {m && <ChapterTab id="growth" sec="financials" m={m} fairValue={fairValue} price={price} rows={chapterChecks("growth", m.research)}
+        lead={growthNote(m) ? `${growthNote(m).lead} ${growthNote(m).text}` : null}
+        detail={[
+          { key: "results", question: "What are its results, year by year?", short: "Sales, profit and margins; the full statements", body: <FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} /> },
+        ]} />}
 
-      {m && <DeskChapter id="safety" sec="health" m={m} fairValue={fairValue} price={price}
-        more={<><PiotroskiCard m={m} /><ChapterEnd id="safety" m={m} /></>} moreLabel="The Piotroski score and the checks">
-        <StockHealth m={m} />
-      </DeskChapter>}
+      {m && <ChapterTab id="safety" sec="health" m={m} fairValue={fairValue} price={price} rows={chapterChecks("safety", m.research)} flags={m.research?.flags ?? []}
+        detail={[
+          { key: "owns", question: "What does it own, and what does it owe?", short: "Its balance sheet, debt and cash", body: <StockHealth m={m} /> },
+          { key: "piotroski", question: "Is it getting healthier?", short: m.piotroski != null ? `Piotroski score ${m.piotroski} of 9` : "Nine checks against last year", body: <PiotroskiCard m={m} /> },
+        ]} />}
 
-      <DeskChapter id="owners" sec="holding" m={m} fairValue={fairValue} price={price}
-        more={<><InsidersPanel symbol={data.symbol} />{m && <ChapterEnd id="owners" m={m} />}</>} moreLabel="Insider trades and the checks">
-        <ShareholdingPanel symbol={data.symbol} />
-        {m?.dividendRecord && <div id="sec-dividends"><StockDividends m={m} /></div>}
-      </DeskChapter>
+      <ChapterTab id="owners" sec="holding" m={m} fairValue={fairValue} price={price} rows={chapterChecks("owners", m?.research)} flags={m?.research?.flags ?? []}
+        detail={[
+          { key: "who", question: "Who owns it?", short: "Promoters, funds and the public, quarter by quarter", body: <ShareholdingPanel symbol={data.symbol} /> },
+          ...(m?.dividendRecord ? [{ key: "dividends", question: "What do shareholders get?", short: "Its dividends, yield and payout", body: <div id="sec-dividends"><StockDividends m={m} /></div> }] : []),
+          { key: "insiders", question: "Are insiders buying or selling?", short: "Trades by promoters and directors", body: <InsidersPanel symbol={data.symbol} /> },
+        ]} />
 
-      {m && <DeskChapter id="value" sec="valuation" m={m} fairValue={fairValue} price={price}
-        more={<>
-          {filingsNote}
-          {valued && overrideCard}
-          {priceCard}
-          {levels && <div id="sec-sizing" className="ss-section"><PhasePositionPlanner levels={levels} /></div>}
-          {epsByYear}
-          <KeyNumbers data={data} m={m} />
-          <ChapterEnd id="value" m={m} />
-        </>} moreLabel="Check or change the inputs, size a position, every figure">
-        {valued && <ValuedAs valuation={m.valuation} />}
-        {valueChips}
-        {epsJumpNote}
-        {!valued && overrideCard}
-        {explorer}
-        <div id="sec-levels">
-          {positionCard}
-          {(valued || levels) && <MyLevelsCard symbol={symbol} fv={valued ? fv : null} levels={levels} price={price} priceLabel={priceLabel} fv2Label={fyLabel(m.fyEnd, 2)} />}
-        </div>
-        <div id="sec-peers"><PeersPanel symbol={data.symbol} onAnalyze={onOpenStock} /></div>
-      </DeskChapter>}
+      {m && <ChapterTab id="value" sec="valuation" m={m} fairValue={fairValue} price={price} rows={chapterChecks("value", m.research)}
+        detail={[
+          { key: "ways", question: "What are the ways to value it?", short: "Fair value, cash flow, DCF, the growth the price assumes", body: <>{valued && <ValuedAs valuation={m.valuation} />}{valueChips}{epsJumpNote}{!valued && overrideCard}{explorer}</> },
+          { key: "levels", question: "Where does the price sit for you?", short: "Against your own price levels", body: <div id="sec-levels">{positionCard}{(valued || levels) && <MyLevelsCard symbol={symbol} fv={valued ? fv : null} levels={levels} price={price} priceLabel={priceLabel} fv2Label={fyLabel(m.fyEnd, 2)} />}</div> },
+          { key: "peers", question: "How does it compare with similar companies?", short: "Its peers' prices, P/E and quality", body: <div id="sec-peers"><PeersPanel symbol={data.symbol} onAnalyze={onOpenStock} /></div> },
+          { key: "yours", question: "What if you change the numbers?", short: "Test your own EPS, P/E, growth and price", body: <>{filingsNote}{valued && overrideCard}{priceCard}{epsByYear}</> },
+          ...(levels ? [{ key: "sizing", question: "How much would you buy, and when?", short: "Size a position against your levels", body: <div id="sec-sizing" className="ss-section"><PhasePositionPlanner levels={levels} /></div> }] : []),
+          { key: "figures", question: "What are all its figures?", short: "Every number from its filings", body: <KeyNumbers data={data} m={m} /> },
+        ]} />}
 
-      <DeskChapter id="price" sec="performance" m={m} fairValue={fairValue} price={price}
-        more={<><div id="sec-technicals"><TechnicalPanel ticker={data.symbol} /></div>{m && <ChapterEnd id="price" m={m} />}</>} moreLabel="Technicals and the checks">
-        {m && <StockPerformance m={m} />}
-      </DeskChapter>
+      <ChapterTab id="price" sec="performance" m={m} fairValue={fairValue} price={price} rows={chapterChecks("price", m?.research)}
+        detail={[
+          ...(m ? [{ key: "done", question: "How has the price done?", short: "Against the Nifty 50 and its sector index", body: <StockPerformance m={m} /> }] : []),
+          { key: "technicals", question: "What do the technicals say?", short: "Averages, momentum and levels", body: <div id="sec-technicals"><TechnicalPanel ticker={data.symbol} /></div> },
+        ]} />
 
-      <DeskChapter id="news" sec="filings" m={m} fairValue={fairValue} price={price}
-        more={<div id="sec-web"><AroundTheWeb symbol={data.symbol} name={data.name} /></div>} moreLabel="Around the web: videos, posts and news elsewhere">
-        <div data-tour="filings">
-          {m && <div id="sec-events"><StockRecent m={m} holding={data.holding} /></div>}
-          <StockEarningsCall symbol={data.symbol} m={m} />
-          <NewsPanel symbol={data.symbol} />
-        </div>
-      </DeskChapter>
+      <ChapterTab id="news" sec="filings" tour="filings" m={m} fairValue={fairValue} price={price} rows={[]}
+        detail={[
+          ...(m ? [{ key: "changed", question: "What changed recently?", short: "Dated changes from its filings", body: <div id="sec-events"><StockRecent m={m} holding={data.holding} /></div> }] : []),
+          { key: "call", question: "What did management say?", short: "Its latest earnings call", body: <StockEarningsCall symbol={data.symbol} m={m} /> },
+          { key: "nse", question: "What has it told NSE?", short: "Its announcements, newest first", body: <NewsPanel symbol={data.symbol} /> },
+          { key: "web", question: "What are others saying?", short: "Videos, posts and news elsewhere", body: <div id="sec-web"><AroundTheWeb symbol={data.symbol} name={data.name} /></div> },
+        ]} />
 
       <section className="ss-section dk-yourview" data-tab="overview" aria-labelledby="dk-yourview">
         <h2 id="dk-yourview" className="dk-yourview-h">Your view</h2>

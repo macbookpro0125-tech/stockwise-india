@@ -3,7 +3,6 @@ import { byId, chapterScore, chapterJudgement, chapterLine, chapterFigures } fro
 import { resultsWatch, dividendWatch, cautions, keyFigures } from "./deskText.js";
 import { alertsStore } from "./stores.js";
 import { fmtRs } from "../server/levels.js";
-import { NotesToggle } from "./StockChapters.jsx";
 
 // A company's page on a computer, laid out like a dashboard (26 Oct 2026:
 // "it looks premium", then "design total page"): the company and its gist
@@ -15,17 +14,6 @@ import { NotesToggle } from "./StockChapters.jsx";
 // deskText.js; nothing here is a buy or sell call.
 
 const TODAY = () => new Date().toISOString().slice(0, 10);
-
-// A chapter's score as a bar with its word
-function ScoreBar({ s }) {
-  if (!s) return null;
-  return (
-    <div className={`dk-score sd-tone-${s.tone}`}>
-      <span className="dk-score-bar" aria-hidden="true"><i style={{ width: `${Math.max(3, Math.min(100, s.score))}%` }} /></span>
-      <span className="dk-score-num"><b>{Math.round(s.score)}</b> {s.word}</span>
-    </div>
-  );
-}
 
 // The four tiles under the company: each chapter's answer and one figure;
 // a click goes to its chapter
@@ -100,35 +88,5 @@ export function KeyFiguresRow({ m, price }) {
         </div>
       )}
     </div>
-  );
-}
-
-// One chapter: its answer, score and two figures on the left with a note;
-// its main panel on the right; deeper tools folded underneath
-export function DeskChapter({ id, m, fairValue, price, note, more, moreLabel, children, sec, tab }) {
-  const c = byId[id];
-  const s = chapterScore(id, m?.research);
-  const judge = m ? chapterJudgement(id, m, { fairValue, price }) ?? chapterLine(id, m, { fairValue, price }) : null;
-  const figures = m ? chapterFigures(id, m, { fairValue, price }) : [];
-  return (
-    <section id={sec ? `sec-${sec}` : undefined} className="ss-section dk-chapter" data-tab={tab ?? id} aria-labelledby={`dk-${id}`}>
-      <div className="dk-chapter-grid">
-        <header className="dk-chapter-left">
-          <div className="dk-chapter-q"><h2 id={`dk-${id}`}>{c.label}</h2><NotesToggle /></div>
-          <p className="dk-chapter-question">{c.question}</p>
-          <ScoreBar s={s} />
-          {judge && <p className="dk-chapter-judge">{judge}</p>}
-          {figures.length > 0 && (
-            <dl className="dk-figs">
-              {figures.map(f => <div key={f.label}><dt>{f.label}</dt><dd>{f.value}</dd>{f.against && <small>{f.against}</small>}</div>)}
-            </dl>
-          )}
-          {note && <p className="dk-note">{note.lead && <b>{note.lead} </b>}{note.text}</p>}
-        </header>
-        <div className="dk-chapter-right">{children}</div>
-      </div>
-      {/* a tab has the room: the deeper tools shown, not folded */}
-      {more && <div className="dk-detail"><h3 className="dk-detail-h">{moreLabel ?? `More on ${c.label.toLowerCase()}`}</h3>{more}</div>}
-    </section>
   );
 }
