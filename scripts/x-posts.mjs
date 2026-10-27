@@ -77,7 +77,8 @@ async function market() {
   const text = [
     `NSE close, ${day(strip.asOf)}: Nifty 50 ${num(nifty.close)} (${pct(nifty.changePct)}). ${short(best.name)} ${pct(best.changePct)}, ${short(worst.name)} ${pct(worst.changePct)}.`,
     `Biggest moves: ${gainers[0].name} ${gainers[0].move}, ${losers[0].name} ${losers[0].move}.`,
-    `${SITE}/explore`,
+    // a company's page, where the full analysis is a free account away
+    `${gainers[0].name}'s full analysis: ${SITE}/stock/${encodeURIComponent(gainers[0].symbol)}`,
     "#Nifty #NSE",
   ].join("\n\n");
   return { kind: "market", text, html: card({ eyebrow: "Market close", title: `The NSE at the close, ${day(strip.asOf)}`, body, foot: `NSE closing prices` }) };
@@ -97,7 +98,7 @@ async function results() {
   const text = [
     `Results ${first.date === cal.today ? "today" : `on ${weekday(first.date)}`}: ${first.count} NSE companies, including ${names(first).slice(0, 3).map(short).join(", ")}.`,
     second ? `${weekday(second.date).split(",")[0]}: ${names(second).slice(0, 3).map(short).join(", ")} and ${second.count - 3} more.` : "",
-    `Full calendar: ${SITE}/results-calendar`,
+    `${shortName(first.companies[0].name)}, from its filings: ${SITE}/stock/${encodeURIComponent(first.companies[0].symbol)}`,
     "#Results #NSE",
   ].filter(Boolean).join("\n\n");
   return { kind: "results", text, html: card({ eyebrow: "Results calendar", title: "Who reports results next", body, foot: "NSE board meeting notices" }) };
