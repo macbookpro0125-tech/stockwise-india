@@ -22,7 +22,7 @@ const only = opt("only", "market,results,company").split(",");
 const get = async path => { const r = await fetch(SITE + path); if (!r.ok) throw new Error(`${path}: ${r.status}`); return r.json(); };
 const pct = (v, d = 2) => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v).toFixed(d)}%`;
 // a post's length as X counts it: every link is 23
-const xlen = t => t.replace(/https?:\/\/\S+/g, "x".repeat(23)).length;
+const xlen = t => [...t.replace(/https?:\/\/\S+/g, "x".repeat(23)).replace(/\uFE0F/g, "")].reduce((n, c) => n + (c.codePointAt(0) > 0x2000 && !/[₹×−–—’]/.test(c) ? 2 : 1), 0);
 const num = (v, d = 2) => Number(v).toLocaleString("en-IN", { minimumFractionDigits: d, maximumFractionDigits: d });
 const crore = v => v >= 1e5 ? `₹${(v / 1e5).toFixed(2)} lakh cr` : `₹${Math.round(v).toLocaleString("en-IN")} cr`;
 const day = d => new Date(`${d}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
@@ -120,9 +120,24 @@ async function company(symbol) {
       ${q ? `<div class="tile"><small>${esc(q.label)} results</small><b style="font-size:26px">Sales ${crore(q.salesCr)} <em class="${tone(q.salesYoY)}">${pct(q.salesYoY)}</em></b><b style="font-size:26px">Profit ${crore(q.profitCr)} <em class="${tone(q.profitYoY)}">${pct(q.profitYoY)}</em></b></div>` : ""}
       <div class="tile"><small>Market value</small><b>${crore(s.marketCapCr)}</b></div>
     </div></div>`;
+  // in plain words, one figure a line, each saying what it means (28 Oct 2026:
+  // "so everyone can understand")
+  const today = new Date(Date.now() + 330 * 60_000).toISOString().slice(0, 10);
+  const tomorrow = new Date(Date.now() + 330 * 60_000 + 86_400_000).toISOString().slice(0, 10);
+  const when = !s.nextResults ? null : s.nextResults === today ? "reports results today" : s.nextResults === tomorrow ? "reports results tomorrow" : `reports results ${day(s.nextResults).replace(/ \d{4}$/, "")}`;
+  const de = s.debtToEquity;
+  const debt = de == null ? null : de < 0.2 ? "Very little debt" : de < 0.5 ? "Low debt" : de < 1 ? "Some debt" : "High debt";
+  const round = v => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.round(Math.abs(v))}%`;
+  const lines = [
+    s.quality != null && `✅ Quality: ${Math.round(s.quality)}/100`,
+    s.roe != null && `💰 Earns ₹${Math.round(s.roe)} per ₹100 of owners' money`,
+    debt && `🏦 ${debt}`,
+    s.pe > 0 && `🏷️ Price = ${Math.round(s.pe)} years of profit (P/E)`,
+  ].filter(Boolean);
   const text = [
-    `${name} (NSE: ${s.symbol}), from its own filings: quality score ${Math.round(s.quality)}/100, ROE ${num(s.roe, 1)}%, debt to equity ${num(s.debtToEquity, 2)}, P/E ${num(s.pe, 1)}.`,
-    q ? `${q.label}: sales ${pct(q.salesYoY, 1)} YoY, profit ${pct(q.profitYoY, 1)}.${s.nextResults ? ` Next results ${day(s.nextResults).replace(/ \d{4}$/, "")}.` : ""}` : "",
+    `${name} ${when ?? "in numbers"}. From its filings:`,
+    lines.join("\n"),
+    q ? `Last quarter: sales ${round(q.salesYoY)}, profit ${round(q.profitYoY)} vs last year` : "",
     `${SITE}/stock/${encodeURIComponent(s.symbol)}`,
     `#${s.symbol.replace(/[^A-Za-z0-9]/g, "")} #IndianStockMarket`,
   ].filter(Boolean).join("\n\n");
