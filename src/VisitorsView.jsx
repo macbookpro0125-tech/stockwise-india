@@ -20,8 +20,14 @@ const countryName = c => (c === "Unknown" ? "Unknown" : countryNames?.of(c) ?? c
 const hourName = h => { const n = Number(h); return `${n % 12 || 12} ${n < 12 ? "am" : "pm"}`; };
 
 // One breakdown: its rows with a bar for visitors, the first few unless opened
-function Breakdown({ id, title, note, rows = [], name = k => k, first = 8 }) {
+// total: the period's visitors — for a list where each visit has one row
+// (country, device, hour), the visits from before the list began counting
+// are shown as one row, so the list adds up to the total (28 Oct 2026)
+const EARLIER = "Before this list started";
+function Breakdown({ id, title, note, rows: given = [], name = k => k, first = 8, total = null }) {
   const [all, setAll] = useState(false);
+  const counted = given.reduce((n, r) => n + r.visitors, 0);
+  const rows = total != null && total > counted ? [...given, { key: EARLIER, visitors: total - counted, pageLoads: null }] : given;
   if (!rows.length) return null;
   const max = Math.max(1, ...rows.map(r => r.visitors));
   const shown = all ? rows : rows.slice(0, first);
@@ -33,9 +39,9 @@ function Breakdown({ id, title, note, rows = [], name = k => k, first = 8 }) {
         <thead><tr><th>{title.split(" ")[0] === "Pages" ? "Page" : "Name"}</th><th>Visitors</th><th>Page loads</th></tr></thead>
         <tbody>{shown.map(r => (
           <tr key={r.key}>
-            <th>{name(r.key)}</th>
+            <th className={r.key === EARLIER ? "vs-earlier" : undefined}>{r.key === EARLIER ? EARLIER : name(r.key)}</th>
             <td><span className="vs-bar" style={{ width: `${(r.visitors / max) * 100}%` }} aria-hidden="true" />{fmt(r.visitors)}</td>
-            <td>{fmt(r.pageLoads)}</td>
+            <td>{r.pageLoads == null ? "—" : fmt(r.pageLoads)}</td>
           </tr>
         ))}</tbody>
       </table>
@@ -119,10 +125,10 @@ export default function VisitorsView() {
       {s.detail && (
         <>
           {Object.keys(s.detail[period] ?? {}).length === 0 && <p className="nw-empty">No detail yet{s.detailSince ? "" : " — it starts with the next visit"}.</p>}
-          <Breakdown id="vs-pages" title="Pages people arrived on" note="The page a visit started on, from Google, a link or a typed address. Moving around inside the app isn't counted here." rows={s.detail[period]?.page} name={pageName} />
+          <Breakdown id="vs-pages" title="Pages people arrived on" note="The page a visit started on, from Google, a link or a typed address. Someone who opened two pages counts on both, so this adds up to more than the visitors." rows={s.detail[period]?.page} name={pageName} />
           <Breakdown id="vs-sources" title="Where they came from" note="The site a link was on. Typed, bookmark or app: no link, as when the address is typed, saved, or opened in our app." rows={s.detail[period]?.source} />
-          <Breakdown id="vs-countries" title="Country" note="From each visitor's internet address, looked up on our server; only the country is kept." rows={s.detail[period]?.country} name={countryName} />
-          <Breakdown id="vs-devices" title="Device" rows={s.detail[period]?.device} />
+          <Breakdown id="vs-countries" title="Country" note="From each visitor's internet address, looked up on our server; only the country is kept." rows={s.detail[period]?.country} name={countryName} total={sum("visitors")} />
+          <Breakdown id="vs-devices" title="Device" rows={s.detail[period]?.device} total={sum("visitors")} />
           <Hours rows={s.detail[period]?.hour} />
           {many && <p className="vs-note">Over {span} days each day's visitors are added up, so someone who came on two days counts twice; By week counts each person once a week.</p>}
         </>

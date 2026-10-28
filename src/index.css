@@ -4287,3 +4287,4 @@ html.no-blur .sr-group { box-shadow: none; }
   .fin-sticky .fin-label .fin-chart-icon { margin-top: 2px; }
 }
 .vs-period-top { margin: 0 0 14px; position: sticky; top: 8px; z-index: 5; backdrop-filter: blur(12px); }
+.vs-table th.vs-earlier { color: var(--t3); font-style: italic; font-weight: 400; }
