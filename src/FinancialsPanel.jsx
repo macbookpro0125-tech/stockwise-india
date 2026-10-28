@@ -121,15 +121,18 @@ function TrendBars({ cols, rowKey, kind }) {
 
 function StatementTable({ history, rows, note, extraCols = [] }) {
   const [open, setOpen] = useState(null);
+  // a phone sees only a few columns: start at the newest, on the right (28 Oct 2026)
+  const scroller = useRef(null);
+  useEffect(() => { const el = scroller.current; if (el) el.scrollLeft = el.scrollWidth; }, [history, extraCols]);
   const years = [...[...history].reverse(), ...extraCols]; // oldest on the left, as Screener lays it out; TTM last
   const shown = rows.filter(([, key]) => years.some(y => y[key] != null));
   if (!shown.length) return <div style={{ fontSize: 12, color: "var(--t3)", padding: "20px 0" }}>Not in this company's filings.</div>;
   return (
-    <div style={{ overflowX: "auto" }}>
+    <div ref={scroller} className="fin-scroll" style={{ overflowX: "auto" }}>
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, minWidth: 520 }}>
         <thead>
           <tr>
-            <th style={{ textAlign: "left", padding: "8px 10px", fontSize: 11.5, color: "var(--t3)", borderBottom: "1px solid var(--bdr2)", position: "sticky", left: 0, background: "var(--s2)" }}>Item</th>
+            <th className="fin-sticky" style={{ textAlign: "left", padding: "8px 10px", fontSize: 11.5, color: "var(--t3)", borderBottom: "1px solid var(--bdr2)", position: "sticky", left: 0, background: "var(--s2)", zIndex: 2 }}>Item</th>
             {years.map(y => (
               <th key={y.label ?? y.fyEnd} style={{ textAlign: "right", padding: "8px 10px", fontSize: 10, color: y.ttm ? "var(--accent)" : "var(--t3)", whiteSpace: "nowrap", borderBottom: "1px solid var(--bdr2)", background: y.ttm ? "color-mix(in srgb, var(--accent) 6%, transparent)" : undefined }} title={y.ttm ? `The last four quarters, to ${periodLabel(y.fyEnd)}` : undefined}>{y.label ?? periodLabel(y.fyEnd)}</th>
             ))}
@@ -141,7 +144,7 @@ function StatementTable({ history, rows, note, extraCols = [] }) {
             return (
               <Fragment key={id}>
                 <tr className={`fin-row${isOpen ? " open" : ""}`}>
-                  <td style={{ padding: label.startsWith("  ") ? "4px 6px 4px 18px" : "4px 6px", color: label.startsWith("  ") ? "var(--t3)" : "var(--t2)", fontSize: label.startsWith("  ") ? 11.5 : undefined, whiteSpace: "nowrap", position: "sticky", left: 0, background: "var(--s2)", borderBottom: "1px solid var(--bdr)", zIndex: 1 }}>
+                  <td style={{ padding: label.startsWith("  ") ? "4px 6px 4px 18px" : "4px 6px", color: label.startsWith("  ") ? "var(--t3)" : "var(--t2)", fontSize: label.startsWith("  ") ? 11.5 : undefined, position: "sticky", left: 0, background: "var(--s2)", borderBottom: "1px solid var(--bdr)", zIndex: 1 }} className="fin-sticky">
                     <button type="button" className="fin-label" onClick={() => setOpen(isOpen ? null : id)} aria-expanded={isOpen} title="Show as a chart">
                       <span>{label.trim()}</span><ChartColumn size={12} aria-hidden="true" className="fin-chart-icon" />
                     </button>
