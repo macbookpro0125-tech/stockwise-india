@@ -127,7 +127,7 @@ async function company(symbol) {
   const when = !s.nextResults ? null : s.nextResults === today ? "reports results today" : s.nextResults === tomorrow ? "reports results tomorrow" : `reports results ${day(s.nextResults).replace(/ \d{4}$/, "")}`;
   const de = s.debtToEquity;
   const debt = de == null ? null : de < 0.2 ? "Very little debt" : de < 0.5 ? "Low debt" : de < 1 ? "Some debt" : "High debt";
-  const round = v => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.round(Math.abs(v))}%`;
+  const round = v => (Math.round(Math.abs(v)) === 0 ? "flat" : `${v > 0 ? "+" : "−"}${Math.round(Math.abs(v))}%`);
   const lines = [
     s.quality != null && `✅ Quality: ${Math.round(s.quality)}/100`,
     s.roe != null && `💰 Earns ₹${Math.round(s.roe)} per ₹100 of owners' money`,
