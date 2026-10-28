@@ -14,6 +14,9 @@ const weekName = d => `Week of ${new Intl.DateTimeFormat("en-IN", { day: "numeri
 const PAGE_NAMES = { "/": "Front page", "/about": "About", "/help": "Help", "/methodology": "Methodology", "/privacy": "Privacy policy", "/disclaimer": "Disclaimer", "/stock-screener-india": "Stock screener (guide)", "/screens": "All screens", "/sectors": "All sectors", "/results-calendar": "Results calendar", "/explore": "Explore", "/news": "News", "/reset-password": "Reset password", Other: "Other addresses" };
 const words = slug => { const t = slug.replace(/-/g, " "); return t.charAt(0).toUpperCase() + t.slice(1); };
 const pageName = k => PAGE_NAMES[k] ?? k.replace(/^\/stock\//, "Company · ").replace(/^\/(sector|screens)\/(.+)$/, (_, kind, slug) => `${kind === "sector" ? "Sector" : "Screen"} · ${words(slug)}`);
+// A country's name from its two-letter code
+const countryNames = (() => { try { return new Intl.DisplayNames(["en"], { type: "region" }); } catch { return null; } })();
+const countryName = c => (c === "Unknown" ? "Unknown" : countryNames?.of(c) ?? c);
 const hourName = h => { const n = Number(h); return `${n % 12 || 12} ${n < 12 ? "am" : "pm"}`; };
 
 // One breakdown: its rows with a bar for visitors, the first few unless opened
@@ -113,13 +116,14 @@ export default function VisitorsView() {
           {Object.keys(s.detail[period] ?? {}).length === 0 && <p className="nw-empty">No detail yet{s.detailSince ? "" : " — it starts with the next visit"}.</p>}
           <Breakdown id="vs-pages" title="Pages people arrived on" note="The page a visit started on, from Google, a link or a typed address. Moving around inside the app isn't counted here." rows={s.detail[period]?.page} name={pageName} />
           <Breakdown id="vs-sources" title="Where they came from" note="The site a link was on. Typed, bookmark or app: no link, as when the address is typed, saved, or opened in our app." rows={s.detail[period]?.source} />
+          <Breakdown id="vs-countries" title="Country" note="From each visitor's internet address, looked up on our server; only the country is kept." rows={s.detail[period]?.country} name={countryName} />
           <Breakdown id="vs-devices" title="Device" rows={s.detail[period]?.device} />
           <Hours rows={s.detail[period]?.hour} />
           {period === "last7" && <p className="vs-note">Over 7 days each day's visitors are added up, so someone who came on two days counts twice.</p>}
         </>
       )}
 
-      <p className="nw-note">Counted on our own server since {s.since ? dayName(s.since) : "today"}, without cookies: each visitor is a code made with a secret that's deleted at the end of the day (and the week), so nobody can be identified or followed. Robots and link previews aren't counted. One person on a phone and a computer counts twice.{s.detailSince ? ` The detail by page, source, device and hour starts on ${dayName(s.detailSince)}.` : ""}</p>
+      <p className="nw-note">Counted on our own server since {s.since ? dayName(s.since) : "today"}, without cookies: each visitor is a code made with a secret that's deleted at the end of the day (and the week), so nobody can be identified or followed. Robots and link previews aren't counted. One person on a phone and a computer counts twice.{s.detailSince ? ` The detail by page, source, device, hour and country starts on ${dayName(s.detailSince)}.` : ""}</p>
     </div>
   );
 }

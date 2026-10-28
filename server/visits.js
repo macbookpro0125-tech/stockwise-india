@@ -11,7 +11,8 @@
 //               week ends, to count each person once
 //
 //   detail      per day, by page, by where people came from (the address a
-//               link came from, as a site's name), by device and by hour —
+//               link came from, as a site's name), by device, by hour and by
+//               country (from the address, looked up on this server) —
 //               visitors (each once) and page loads; never more than the name
 //
 // Counted: a page itself (the app, a company page, the methodology…), not
@@ -22,6 +23,7 @@ import { createHmac, randomBytes } from "node:crypto";
 import { extname } from "node:path";
 import { db } from "./db.js";
 import { clientIp } from "./rate-limit.js";
+import geoip from "geoip-country";
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS visit_days (
@@ -137,6 +139,15 @@ export function deviceOf(ua = "") {
   return "Computer";
 }
 
+// The visitor's country: Cloudflare's own header when it sends one, else the
+// address looked up in a country list kept on this server (geoip-country,
+// MaxMind's GeoLite2) — no outside service is asked, and only the country is kept
+export function countryOf(req) {
+  const cf = String(req.headers["cf-ipcountry"] ?? "").toUpperCase();
+  if (/^[A-Z]{2}$/.test(cf) && cf !== "XX" && cf !== "T1") return cf;
+  try { return geoip.lookup(clientIp(req))?.country ?? "Unknown"; } catch { return "Unknown"; }
+}
+
 function countPart(day, kind, key, who) {
   const first = firstTime(`d:${day}|${kind}|${key}`, who, `d:${day}`);
   db.prepare(`INSERT INTO visit_parts (day, kind, key, visitors, page_loads) VALUES (?, ?, ?, ?, 1)
@@ -158,6 +169,7 @@ export function countPageLoad(req, pathname, now = Date.now()) {
     countPart(day, "source", sourceOf(req), who);
     countPart(day, "device", deviceOf(ua), who);
     countPart(day, "hour", ist(now).toISOString().slice(11, 13), who);
+    countPart(day, "country", countryOf(req), who);
     return true;
   } catch (e) {
     console.error(`[visits] ${e.message}`);

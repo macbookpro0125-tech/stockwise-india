@@ -81,6 +81,11 @@ assert(of("page", "Other")?.visitors === 1 && !d.page.some(r => /wp-admin/.test(
 assert(of("source", "Google")?.visitors === 1 && of("source", "Reddit")?.visitors === 1 && of("source", "Typed, bookmark or app")?.visitors === 1 && of("source", "Within the site")?.visitors === 1, "where they came from, by site name");
 assert(of("device", "Android app")?.visitors === 1 && of("device", "Computer")?.visitors === 1 && of("device", "Phone")?.visitors === 2, "the app, a computer and phones");
 assert(of("hour", "10")?.visitors === 2 && of("hour", "11")?.visitors === 2, "by hour, in India's time");
+assert(d.country?.reduce((n, r) => n + r.visitors, 0) === 4, "every visitor has a country row, each once");
+const { countryOf } = await import("./visits.js");
+assert(countryOf(req("49.36.0.1")) === "IN" && countryOf(req("8.8.8.8")) === "US", "an address's country, looked up here");
+assert(countryOf(req("8.8.8.8", { headers: { "cf-ipcountry": "in" } })) === "IN", "Cloudflare's country header comes first");
+assert(countryOf(req("10.0.0.1")) === "Unknown", "a private address has no country");
 const kept = JSON.stringify(db.prepare("SELECT * FROM visit_parts").all());
 assert(!/5\.5\.5\.5|IndiaInvestments|comments|Chrome/.test(kept), "only a site's name is kept, never the address or browser");
 

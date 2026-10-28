@@ -39,7 +39,7 @@ const B = ({ children }) => <strong style={{ color: "var(--t1)", fontWeight: 400
 
 export function PrivacyPage({ signedIn }) {
   return (
-    <PublicPage title="Privacy policy" signedIn={signedIn} updated="27 October 2026">
+    <PublicPage title="Privacy policy" signedIn={signedIn} updated="28 October 2026">
       <P>
         This page explains what Jocular Insights keeps about you, why, and how to delete it. In short: we use your
         account and saved data to provide the service, and we don't sell your personal data. The website uses no analytics
@@ -55,7 +55,7 @@ export function PrivacyPage({ signedIn }) {
         <LI><B>What you save:</B> your watchlist (with the price when you added each stock and your notes on it), your price alerts, your portfolio holdings (buy price, quantity, date and notes), the investment thesis and the notes you write on a company's page, and the strategies you save on Discover.</LI>
         <LI><B>Phone notifications, only if you turn them on</B> (in the Android app): a token from Google's Firebase Cloud Messaging that lets us send notifications to that phone — your watchlist companies' news, a reminder the evening before one of them announces its results, and your price alerts. The notification goes through Google; its text is the company's news or your alert. Turning notifications off, or signing out, deletes the token.</LI>
         <LI><B>The weekly email, only if you turn it on</B> (Settings or the Account menu): we use your account's email address to send, on Sunday mornings, your starred companies' week, their news and their coming results, through our email provider (Resend). Every email has a link that turns it off at once, without signing in; we also keep when it was last sent.</LI>
-        <LI><B>Visit counts, anonymous:</B> how many people loaded our pages each day and week, how many signed-in accounts opened the app each day, and the number of page loads — totals only, also split by the page you arrived on, the name of the site a link came from (such as Google or Reddit, never the full address), the kind of device (phone, computer or our app) and the hour. To count each visitor once, your connection's address and browser are turned into a code with a secret that is deleted at the end of each day (and week), so the code can't identify you or follow you across days. No cookie is used, and no address is stored.</LI>
+        <LI><B>Visit counts, anonymous:</B> how many people loaded our pages each day and week, how many signed-in accounts opened the app each day, and the number of page loads — totals only, also split by the page you arrived on, the name of the site a link came from (such as Google or Reddit, never the full address), the kind of device (phone, computer or our app), the hour, and the country, looked up from your connection's address on our own server (using MaxMind's GeoLite2 data) — only the country is kept. To count each visitor once, your connection's address and browser are turned into a code with a secret that is deleted at the end of each day (and week), so the code can't identify you or follow you across days. No cookie is used, and no address is stored.</LI>
         <LI><B>Telegram, only if you connect it:</B> your Telegram chat ID and the name on your Telegram account, so your alerts reach you, and when each alert was last sent. Not your phone number — Telegram doesn't give it to us. Disconnecting (on the Alerts tab, or sending /stop to the bot) removes them.</LI>
       </UL>
 
