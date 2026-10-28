@@ -73,24 +73,32 @@ export default function VisitorsView() {
   useEffect(() => { api.ownerStats().then(setS).catch(e => setError(e.message)); }, []);
   if (error) return <div className="vs-page"><p className="nw-empty">{error}</p></div>;
   if (!s) return <div className="vs-page"><div className="nw-skel" role="status" aria-label="Loading">{[0, 1, 2].map(i => <span key={i} />)}</div></div>;
-  const thisWeek = s.weeks.find(w => w.week === s.week)?.visitors ?? 0;
-  const today = s.days.find(d => d.day === s.today);
-  const max = Math.max(1, ...s.days.map(d => d.visitors));
+  // one period for the whole page (28 Oct 2026, "last month, last week button")
+  const PERIODS = [["today", "Today", 1], ["last7", "Last 7 days", 7], ["last30", "Last 30 days", 30]];
+  const [, label, span] = PERIODS.find(([k]) => k === period);
+  const from = new Date(Date.parse(`${s.today}T00:00:00Z`) - (span - 1) * 86_400_000).toISOString().slice(0, 10);
+  const inPeriod = s.days.filter(d => d.day >= from);
+  const sum = k => inPeriod.reduce((n, d) => n + (d[k] ?? 0), 0);
+  const many = span > 1;
+  const max = Math.max(1, ...inPeriod.map(d => d.visitors));
   return (
     <div className="vs-page">
+      <div className="vs-period vs-period-top" role="group" aria-label="Period">
+        {PERIODS.map(([k, l]) => <button key={k} type="button" aria-pressed={period === k} onClick={() => setPeriod(k)}>{l}</button>)}
+      </div>
       <div className="vs-tiles">
-        <div className="vs-tile"><span>Visitors this week</span><b>{fmt(thisWeek)}</b><em>Since Monday, each person once</em></div>
-        <div className="vs-tile"><span>Visitors today</span><b>{fmt(today?.visitors)}</b><em>{fmt(today?.pageLoads)} page loads</em></div>
-        <div className="vs-tile"><span>Signed in today</span><b>{fmt(today?.activeUsers)}</b><em>Accounts that opened the app</em></div>
-        <div className="vs-tile"><span>Sign-ups this week</span><b>{fmt(s.signupsThisWeek)}</b><em>{fmt(s.accounts)} {s.accounts === 1 ? "account" : "accounts"} in all</em></div>
+        <div className="vs-tile"><span>Visitors · {label.toLowerCase()}</span><b>{fmt(sum("visitors"))}</b><em>{many ? "Each day's visitors added up" : "Each person once"}</em></div>
+        <div className="vs-tile"><span>Page loads</span><b>{fmt(sum("pageLoads"))}</b><em>Every page opened</em></div>
+        <div className="vs-tile"><span>Signed in</span><b>{fmt(sum("activeUsers"))}</b><em>{many ? "Accounts each day, added up" : "Accounts that opened the app"}</em></div>
+        <div className="vs-tile"><span>Sign-ups</span><b>{fmt(sum("signups"))}</b><em>{fmt(s.accounts)} {s.accounts === 1 ? "account" : "accounts"} in all</em></div>
       </div>
 
       <section className="vs-section" aria-labelledby="vs-days">
         <h3 className="ex-h" id="vs-days">By day</h3>
-        {s.days.length ? (
+        {inPeriod.length ? (
           <table className="vs-table">
             <thead><tr><th>Day</th><th>Visitors</th><th>Page loads</th><th>Signed in</th><th>Sign-ups</th></tr></thead>
-            <tbody>{s.days.map(d => (
+            <tbody>{inPeriod.map(d => (
               <tr key={d.day}>
                 <th>{d.day === s.today ? "Today" : dayName(d.day)}</th>
                 <td><span className="vs-bar" style={{ width: `${(d.visitors / max) * 100}%` }} aria-hidden="true" />{fmt(d.visitors)}</td>
@@ -98,7 +106,7 @@ export default function VisitorsView() {
               </tr>
             ))}</tbody>
           </table>
-        ) : <p className="nw-empty">Nothing counted yet. The first visit after this went live starts it.</p>}
+        ) : <p className="nw-empty">Nothing counted yet in this period.</p>}
       </section>
 
       {s.weeks.length > 0 && (
@@ -110,16 +118,13 @@ export default function VisitorsView() {
 
       {s.detail && (
         <>
-          <div className="vs-period" role="group" aria-label="Detail for">
-            {[["today", "Today"], ["last7", "Last 7 days"]].map(([k, l]) => <button key={k} type="button" aria-pressed={period === k} onClick={() => setPeriod(k)}>{l}</button>)}
-          </div>
           {Object.keys(s.detail[period] ?? {}).length === 0 && <p className="nw-empty">No detail yet{s.detailSince ? "" : " — it starts with the next visit"}.</p>}
           <Breakdown id="vs-pages" title="Pages people arrived on" note="The page a visit started on, from Google, a link or a typed address. Moving around inside the app isn't counted here." rows={s.detail[period]?.page} name={pageName} />
           <Breakdown id="vs-sources" title="Where they came from" note="The site a link was on. Typed, bookmark or app: no link, as when the address is typed, saved, or opened in our app." rows={s.detail[period]?.source} />
           <Breakdown id="vs-countries" title="Country" note="From each visitor's internet address, looked up on our server; only the country is kept." rows={s.detail[period]?.country} name={countryName} />
           <Breakdown id="vs-devices" title="Device" rows={s.detail[period]?.device} />
           <Hours rows={s.detail[period]?.hour} />
-          {period === "last7" && <p className="vs-note">Over 7 days each day's visitors are added up, so someone who came on two days counts twice.</p>}
+          {many && <p className="vs-note">Over {span} days each day's visitors are added up, so someone who came on two days counts twice; By week counts each person once a week.</p>}
         </>
       )}
 

@@ -4286,3 +4286,4 @@ html.no-blur .sr-group { box-shadow: none; }
   .fin-sticky .fin-label { align-items: flex-start; line-height: 1.3; }
   .fin-sticky .fin-label .fin-chart-icon { margin-top: 2px; }
 }
+.vs-period-top { margin: 0 0 14px; position: sticky; top: 8px; z-index: 5; backdrop-filter: blur(12px); }

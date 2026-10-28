@@ -188,9 +188,9 @@ export function countActive(userId, now = Date.now()) {
   }
 }
 
-// The owner's page: the last 14 days, the last 8 weeks, and the accounts
+// The owner's page: the last 30 days, the last 8 weeks, and the accounts
 export function visitStats(now = Date.now()) {
-  const days = db.prepare("SELECT day, visitors, page_loads AS pageLoads, active_users AS activeUsers FROM visit_days ORDER BY day DESC LIMIT 14").all();
+  const days = db.prepare("SELECT day, visitors, page_loads AS pageLoads, active_users AS activeUsers FROM visit_days ORDER BY day DESC LIMIT 30").all();
   const weeks = db.prepare("SELECT week, visitors FROM visit_weeks ORDER BY week DESC LIMIT 8").all();
   // sign-ups by IST day, from the accounts themselves
   const since = new Date(Date.parse(`${days.at(-1)?.day ?? istDay(now)}T00:00:00+05:30`)).toISOString();
@@ -198,7 +198,7 @@ export function visitStats(now = Date.now()) {
     SELECT substr(datetime(created_at, '+330 minutes'), 1, 10) AS day, COUNT(*) AS n FROM users WHERE created_at >= ? GROUP BY day
   `).all(since).map(r => [r.day, r.n]));
   // the detail, today and over the last 7 days (each day's visitors added up)
-  const today = istDay(now), from7 = istDay(now - 6 * 86_400_000);
+  const today = istDay(now), from7 = istDay(now - 6 * 86_400_000), from30 = istDay(now - 29 * 86_400_000);
   const parts = (from, to) => {
     const out = {};
     for (const r of db.prepare(`SELECT kind, key, SUM(visitors) AS visitors, SUM(page_loads) AS pageLoads FROM visit_parts
@@ -215,7 +215,7 @@ export function visitStats(now = Date.now()) {
     accounts: db.prepare("SELECT COUNT(*) AS n FROM users").get().n,
     signupsThisWeek: db.prepare("SELECT COUNT(*) AS n FROM users WHERE created_at >= ?").get(weekStart).n,
     since: db.prepare("SELECT MIN(day) AS d FROM visit_days").get().d,
-    detail: { today: parts(today, today), last7: parts(from7, today) },
+    detail: { today: parts(today, today), last7: parts(from7, today), last30: parts(from30, today) },
     detailSince: db.prepare("SELECT MIN(day) AS d FROM visit_parts").get().d,
   };
 }
