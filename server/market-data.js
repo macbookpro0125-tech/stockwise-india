@@ -3,7 +3,7 @@
 // actions (dividends, bonuses, splits) and sectors (NSE index constituents).
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { UA, NSE_BASE, fetchJson, parseQeDate } from "./fetch-nse.js";
+import { UA, NSE_BASE, fetchJson, parseQeDate, nseSession } from "./fetch-nse.js";
 import { rebaseTracker, suspendedAfter } from "./share-changes.js";
 import { PRICE_DIR, SNAPSHOT_PATH, HISTORY_DIR } from "./paths.js";
 import { historyWriter } from "./price-history.js";
@@ -544,22 +544,29 @@ export function nseClassification(json, known) {
   if (!sector || !known.has(sector)) return null;
   return { sector, ...(info.basicIndustry ? { basic: String(info.basicIndustry).trim() } : {}), ...(info.macro ? { macro: String(info.macro).trim() } : {}) };
 }
-async function nseSectors(symbols, skip, { pauseMs = 300, max = Number(process.env.NSE_SECTOR_BATCH ?? 2500), getJson = fetchJson } = {}) {
+// Through a cookie session (fetch-nse.js nseSession): when NSE refuses, the
+// session is renewed and the company asked once more; five refusals in a row
+// end the run, with NSE's own error in the log.
+async function nseSectors(symbols, skip, { pauseMs = 300, max = Number(process.env.NSE_SECTOR_BATCH ?? 2500), session = nseSession() } = {}) {
   const out = { ...(loadMarketSnapshot()?.nseSectors ?? {}) };
   const known = new Set([...Object.values(fallbackSectors({})), ...Object.values(skip)]);
   const todo = symbols.filter(s => !skip[s] && !(s in out)).slice(0, max);
-  let failed = 0, read = 0;
+  let failed = 0, read = 0, lastError = null;
   for (const sym of todo) {
-    try {
-      const json = await getJson(`${NSE_BASE}/api/quote-equity?symbol=${encodeURIComponent(sym)}`);
+    let json = null;
+    try { json = await session.quote(sym); }
+    catch (error) {
+      lastError = error;
+      await session.renew(sym).catch(() => {});
+      try { json = await session.quote(sym); } catch (again) { lastError = again; }
+    }
+    if (json) {
       out[sym] = nseClassification(json, known); // null: asked, NSE gave none
       failed = 0; read++;
-    } catch {
-      if (++failed >= 5) break;
-    }
+    } else if (++failed >= 5) break;
     if (pauseMs) await new Promise(r => setTimeout(r, pauseMs));
   }
-  if (todo.length) console.error(`[sectors] NSE classification read for ${read} of ${todo.length} companies${failed >= 5 ? " (NSE stopped answering; the rest next run)" : ""}`);
+  if (todo.length) console.error(`[sectors] NSE classification read for ${read} of ${todo.length} companies${failed >= 5 ? ` (NSE stopped answering: ${String(lastError?.message ?? lastError).slice(0, 120)}; ${session.cookies} cookies; the rest next run)` : ""}`);
   return out;
 }
 export { nseSectors as _nseSectorsForTest };
