@@ -13,6 +13,7 @@ import PhoneScreens from "./PhoneScreens.jsx";
 import { NEW_SCREEN_EVENT } from "./phoneChrome.js";
 import { noteRecent } from "./screensHome.js";
 import FilterPanel, { isActiveFilter } from "./screener/FilterPanel.jsx";
+import FilterBoard from "./screener/FilterBoard.jsx";
 import StrategyPicker from "./StrategyPicker.jsx";
 import { returnScroll } from "./returnScroll.js";
 import MetricPicker from "./screener/MetricPicker.jsx";
@@ -679,6 +680,12 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews }) {
                   : <> — prices first, then every company's filings (about 2 hours)</>}.
                 {" "}Results only cover what's loaded.
               </div>
+            )}
+
+            {/* a computer: the filters open on a board above the results (FilterBoard.jsx) */}
+            {!isPhone && meta && filters && (
+              <FilterBoard meta={meta} filters={filters} onChange={changeFilters} onMore={() => setPicker("filter")}
+                matched={results?.matched ?? null} total={results?.total ?? null} />
             )}
 
             {error && (
