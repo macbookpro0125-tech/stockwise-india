@@ -25,6 +25,13 @@ assert.equal((sm.match(/<loc>/g) ?? []).length, companies + pages.length, "the p
 assert.match(sm, /<loc>https:\/\/jocularinsights\.in\/stock\/[A-Z0-9&%-]+<\/loc>/);
 // a company's page dated by its latest filing, not today
 assert.match(sitemapPart("stocks"), /<loc>[^<]+<\/loc><lastmod>\d{4}-\d{2}-\d{2}<\/lastmod>/);
+// what IndexNow is told about: the front page, the calendar and every company, each dated as in the sitemap
+{
+  const { changedPageEntries } = await import("./seo.js");
+  const e = changedPageEntries();
+  assert.deepEqual(e.slice(0, 2).map(([p]) => p), ["/", "/results-calendar"]);
+  assert.equal(e.length - 2, (sitemapPart("stocks").match(/<loc>/g) ?? []).length);
+}
 // the front page and /about written into the page
 {
   const template = '<html><head><title>x</title></head><body><div id="root"></div></body></html>';

@@ -55,6 +55,11 @@ test("S-H2 robots.txt and the sitemap", async ({ request }) => {
   const stocks = await (await request.get("/sitemap-stocks.xml")).text();
   expect((stocks.match(/<loc>/g) ?? []).length).toBeGreaterThan(2000);
   expect(stocks).toContain("<loc>https://jocularinsights.in/stock/TCS</loc>");
+  // IndexNow reads the site's key back (30 Oct 2026, indexnow.js)
+  const { INDEXNOW_KEY } = await import("../server/indexnow-key.js");
+  const key = await request.get(`/${INDEXNOW_KEY}.txt`);
+  expect(key.status()).toBe(200);
+  expect(await key.text()).toBe(INDEXNOW_KEY);
 });
 
 // 24 Oct 2026: pages people search for — each strategy's companies, the strategies, the results calendar

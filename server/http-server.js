@@ -44,6 +44,7 @@ import { startNewsPush } from "./news-push.js";
 import { niceName } from "../src/stockName.js";
 import { countPageLoad, countActive, visitStats, isOwner } from "./visits.js";
 import { startDigestJobs, weeklyEmailOn, setWeeklyEmail, unsubscribe } from "./digest.js";
+import { INDEXNOW_KEY, startIndexNow } from "./indexnow.js";
 import { publicScreen, publicScreens, publicResultsCalendar, screenPageHtml, screensIndexHtml, resultsCalendarHtml, homePageHtml, sectorsIndexHtml, sectorPageHtml } from "./seo-lists.js";
 import { publicSectors, publicSector } from "./seo-story.js";
 import { publicSubPage, isSubPagePath } from "./seo-pages.js";
@@ -60,7 +61,7 @@ import { summarizeFiling } from "./filing-summary.js";
 import { logoFor } from "./logos.js";
 import { PRESETS } from "./presets.js";
 import { DIST_DIR } from "./paths.js";
-import { robotsTxt, sitemapXml, sitemapPart, publicStock, stockPageHtml, methodologyPageHtml, stockScreenerPageHtml, aboutPageHtml, pageHtml } from "./seo.js";
+import { robotsTxt, sitemapXml, sitemapPart, changedPageEntries, SITE, publicStock, stockPageHtml, methodologyPageHtml, stockScreenerPageHtml, aboutPageHtml, pageHtml } from "./seo.js";
 import { HttpError, badRequest, payloadTooLarge } from "./http-errors.js";
 import { companyVideos } from "./videos.js";
 import { searchName } from "../src/webLinks.js";
@@ -1507,6 +1508,12 @@ export function createApp() {
         res.end(req.method === "HEAD" ? undefined : sitemapXml());
         return;
       }
+      // IndexNow reads its key back from here (indexnow.js)
+      if (url.pathname === `/${INDEXNOW_KEY}.txt` && (req.method === "GET" || req.method === "HEAD")) {
+        res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=86400" });
+        res.end(req.method === "HEAD" ? undefined : INDEXNOW_KEY);
+        return;
+      }
       const sitemapName = url.pathname.match(/^\/sitemap-([a-z]+)\.xml$/)?.[1];
       if (sitemapName && (req.method === "GET" || req.method === "HEAD")) {
         await marketReady();
@@ -1648,6 +1655,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     startFavouritePush();
     startDigestJobs();
     startBackups();
+    startIndexNow({ entries: changedPageEntries, site: SITE });
   }
 }
 

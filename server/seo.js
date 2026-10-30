@@ -85,12 +85,20 @@ export function sitemapPart(name) {
   if (name === "sectors") return urlset(SECTOR_PATHS().map(p => [p, lastmod]));
   // each company's financials, latest results and earnings calls; /explore and /news
   if (name === "details") return urlset(subPagePaths());
-  if (name === "stocks") {
-    // pages with nothing to say are noindexed (seo-story.js), so not listed
-    const rows = (allMetrics().rows ?? []).filter(r => r.name && (r.quarters?.length || r.history?.length || r.research?.quality != null)).sort((a, b) => (b.marketCapCr ?? 0) - (a.marketCapCr ?? 0));
-    return urlset(rows.map(r => [`/stock/${encodeURIComponent(r.symbol)}`, r.quarters?.[0]?.filed ?? r.history?.[0]?.filed ?? null]));
-  }
+  if (name === "stocks") return urlset(stockEntries());
   return null;
+}
+// Each company's page and the day it last changed, biggest first
+function stockEntries() {
+  // pages with nothing to say are noindexed (seo-story.js), so not listed
+  const rows = (allMetrics().rows ?? []).filter(r => r.name && (r.quarters?.length || r.history?.length || r.research?.quality != null)).sort((a, b) => (b.marketCapCr ?? 0) - (a.marketCapCr ?? 0));
+  return rows.map(r => [`/stock/${encodeURIComponent(r.symbol)}`, r.quarters?.[0]?.filed ?? r.history?.[0]?.filed ?? null]);
+}
+// The dated pages IndexNow is told about when they change (indexnow.js): the
+// front page and results calendar with each close, a company with its results
+export function changedPageEntries() {
+  const lastmod = loadMarketSnapshot()?.pricesDate ?? null;
+  return [["/", lastmod], ["/results-calendar", lastmod], ...stockEntries()];
 }
 
 // A company's public summary: figures at the last close, from the app's data
