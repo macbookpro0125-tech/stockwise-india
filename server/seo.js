@@ -371,7 +371,8 @@ export function aboutPageHtml(template) {
 <h1>${esc(ABOUT_TITLE)}</h1>
 <p>Jocular Insights is an independent research tool for India's stock market, built and run in India. It reads every NSE-listed company's own filings and turns them into figures, scores and pictures anyone can check.</p>
 <h2>Where the data comes from</h2>
-<ul><li>Company results, balance sheets, cash flows and segment figures: the quarterly and annual filings each company makes to NSE.</li><li>Products, exports and customers: the Business Responsibility and Sustainability Report the largest companies file each year.</li><li>Prices: NSE's daily closing prices (bhavcopy), updated each trading evening.</li><li>Shareholding, board meetings and corporate actions: NSE's filings and calendar.</li></ul>
+<ul><li>Company results, balance sheets, cash flows and segment figures: the quarterly and annual filings each company makes to NSE.</li><li>Products, exports and customers: the Business Responsibility and Sustainability Report the largest companies file each year.</li><li>Prices: NSE's daily closing prices (bhavcopy), updated each trading evening.</li><li>Shareholding, board meetings and corporate actions: NSE's filings and calendar.</li><li>Sectors: NSE's index lists, and BSE's classification for companies those lists don't cover.</li></ul>
+<p>All of it is information the exchanges publish and companies must disclose under SEBI's rules. Jocular Insights is not affiliated with NSE or BSE, and neither checks or endorses what's shown here.</p>
 <h2>How the figures are made</h2>
 <p>Every figure is worked out by fixed rules, the same for every company, and each score shows the checks behind it. The <a href="/methodology">methodology</a> explains them in full, and <a href="/help">How the figures work</a> says when each one changes.</p>
 <h2>What it isn't</h2>

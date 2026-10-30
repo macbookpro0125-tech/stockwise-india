@@ -518,10 +518,12 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
   // under FMCG, and a mapped sector mustn't make a sugar mill non-cyclical.
   // NSE's own classification (market-data.js nseSectors) counts as an NSE
   // sector, ahead of the industry mapping and any guess from the filings
+  // and BSE's, by the same scheme, for those NSE's don't reach
   const nseSector = snap?.nseSectors?.[sym]?.sector ?? null;
-  const indexSector = snap?.sectors?.[sym] ?? nseSector ?? null;
+  const bseSector = snap?.bseSectors?.[sym]?.sector ?? null;
+  const indexSector = snap?.sectors?.[sym] ?? nseSector ?? bseSector ?? null;
   const peerSector = indexSector ?? snap?.industrySectors?.[sym] ?? null;
-  const industry = snap?.industries?.[sym] ?? snap?.nseSectors?.[sym]?.basic ?? null;
+  const industry = snap?.industries?.[sym] ?? snap?.nseSectors?.[sym]?.basic ?? snap?.bseSectors?.[sym]?.basic ?? null;
   const nameSector = sectorFromName(stock.name);
   const utility = peerSector ? UTILITY_SECTORS.has(peerSector) : false;
   const nameLower = String(stock.name || "").toLowerCase();
@@ -537,7 +539,7 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
   // on NSE's sectors.
   const businessSector = peerSector ? null : sectorFromBusiness(stock.business);
   const sector = peerSector ?? businessSector ?? nameSector;
-  const sectorSource = peerSector ? (indexSector ? "NSE sector" : "NSE industry mapped to sector") : businessSector ? "company's filings" : nameSector ? "company name" : null;
+  const sectorSource = peerSector ? (indexSector ? (!snap?.sectors?.[sym] && !nseSector ? "BSE sector" : "NSE sector") : "NSE industry mapped to sector") : businessSector ? "company's filings" : nameSector ? "company name" : null;
 
   // Interest cover = EBIT / interest, the original's definition
   const interestCoverage = !lender && latest.financeCosts > 0 && latest.pbt != null
@@ -579,7 +581,7 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     const opms = span.map(h => h.opm).filter(v => v != null && Number.isFinite(v));
     const opmMean = opms.length >= 3 ? opms.reduce((a, b) => a + b, 0) / opms.length : null;
     const opmCv = opmMean > 0 ? Math.sqrt(opms.reduce((t, v) => t + (v - opmMean) ** 2, 0) / (opms.length - 1)) / opmMean : null;
-    const industryCyclical = CYCLICAL_INDUSTRY.test(snap?.industries?.[sym] ?? "") || cyclical;
+    const industryCyclical = CYCLICAL_INDUSTRY.test(industry ?? "") || cyclical;
     // A loss year counts only beside margins that swing too, or a commodity
     // industry: a one-off write-down or a single bad year (Bharti's AGR dues,
     // Trent's lockdown year, Info Edge's investment write-offs) isn't a cycle

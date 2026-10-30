@@ -3,11 +3,12 @@
 // actions (dividends, bonuses, splits) and sectors (NSE index constituents).
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { UA, NSE_BASE, fetchJson, parseQeDate } from "./fetch-nse.js";
+import { UA, NSE_BASE, fetchJson, parseQeDate, nseSession } from "./fetch-nse.js";
 import { rebaseTracker, suspendedAfter } from "./share-changes.js";
 import { PRICE_DIR, SNAPSHOT_PATH, HISTORY_DIR } from "./paths.js";
 import { historyWriter } from "./price-history.js";
-import { fetchText as requestText } from "./upstream.js";
+import { fetchText as requestText, fetchJson as requestJson } from "./upstream.js";
+import { fetchEquityList } from "./equity-list.js";
 import { momentumStats } from "./momentum.js";
 import { SECTOR_INDEX } from "./sector-indices.js";
 import { fileURLToPath } from "node:url";
@@ -512,21 +513,119 @@ async function sectorsBySymbol() {
   // 11 Oct 2026) — and for all of them when NSE doesn't answer — rather than
   // the mapped sectors thinning out a few at a time
   const industries = { ...loadMarketSnapshot()?.industries, ...await industriesBySymbol().catch(() => ({})) };
+  const sectorOf = votedSectors(industries, fromIndex);
+  const industrySectors = {};
+  for (const [sym, industry] of Object.entries(industries)) if (!fromIndex[sym] && sectorOf[industry]) industrySectors[sym] = sectorOf[industry];
+  return { sectors: fromIndex, industrySectors, industries };
+}
+
+// An industry's sector, where most of its companies the index lists name
+// agree on one (75% or more of at least `min`)
+export function votedSectors(industries, fromIndex, min = 3) {
   const votes = {};
   for (const [sym, industry] of Object.entries(industries)) {
     const sector = fromIndex[sym];
-    if (sector) (votes[industry] ??= {})[sector] = (votes[industry][sector] ?? 0) + 1;
+    if (sector && industry) (votes[industry] ??= {})[sector] = (votes[industry][sector] ?? 0) + 1;
   }
   const sectorOf = {};
   for (const [industry, v] of Object.entries(votes)) {
     const total = Object.values(v).reduce((a, b) => a + b, 0);
     const [best, n] = Object.entries(v).sort((a, b) => b[1] - a[1])[0];
-    if (total >= 3 && n / total >= 0.75) sectorOf[industry] = best;
+    if (total >= min && n / total >= 0.75) sectorOf[industry] = best;
   }
-  const industrySectors = {};
-  for (const [sym, industry] of Object.entries(industries)) if (!fromIndex[sym] && sectorOf[industry]) industrySectors[sym] = sectorOf[industry];
-  return { sectors: fromIndex, industrySectors, industries };
+  return sectorOf;
 }
+
+// BSE's classification for the companies NSE's lists miss (30 Oct 2026):
+// NSE's quote API refuses the GitHub data job (403 even with its cookies),
+// and BSE's list of companies carries no industry (null for all 5,122). BSE
+// does answer it, though, and BSE and NSE classify by the same scheme (macro
+// sector, sector, industry, basic industry). So BSE's list gives each NSE
+// company's BSE code (by ISIN, else the same symbol), and BSE's header for
+// that code its sector — asked once per company and kept, like NSE's.
+const BSE_LIST = "https://api.bseindia.com/BseIndiaAPI/api/ListofScripData/w?Group=&Scripcode=&industry=&segment=Equity&status=Active";
+const BSE_HEADER = code => `https://api.bseindia.com/BseIndiaAPI/api/ComHeadernew/w?quotetype=EQ&scripcode=${encodeURIComponent(code)}&seriesid=`;
+const BSE_HEADERS = { "User-Agent": UA, Accept: "application/json, text/plain, */*", Referer: "https://www.bseindia.com/", Origin: "https://www.bseindia.com" };
+// BSE's field names aren't documented and its casing varies, so each is
+// found by name
+const bseField = (row, ...patterns) => {
+  if (!row || typeof row !== "object") return null;
+  for (const re of patterns) {
+    const key = Object.keys(row).find(k => re.test(k));
+    const v = key == null ? null : row[key];
+    if (typeof v === "string" && v.trim() && v.trim() !== "-") return v.trim();
+    if (typeof v === "number") return String(v);
+  }
+  return null;
+};
+export function bseCodes(rows, equityList) {
+  const byIsin = new Map(), bySymbol = new Map();
+  for (const r of Array.isArray(rows) ? rows : []) {
+    const code = bseField(r, /^scrip_?cd$/i, /^scrip_?code$/i);
+    if (!code) continue;
+    const isin = bseField(r, /^isin(_?number|_?no|_?code)?$/i, /isin/i);
+    const symbol = bseField(r, /^scrip_?id$/i);
+    if (isin) byIsin.set(isin.toUpperCase(), code);
+    if (symbol) bySymbol.set(symbol.toUpperCase(), code);
+  }
+  const out = {};
+  for (const e of equityList) {
+    const code = byIsin.get(String(e.isin ?? "").trim().toUpperCase()) ?? bySymbol.get(e.symbol);
+    if (code) out[e.symbol] = code;
+  }
+  return out;
+}
+// BSE's header for a company: its sector, where it's one NSE's lists use,
+// with the basic industry beside it. BSE's "Sector" field is the macro sector
+// (30 Oct 2026: 656 of 1,737 matched, all in the eight sectors that share
+// their macro's name — "Commodities" or "Industrials" never match), so the
+// finer fields are tried first, then any field naming a known sector.
+const BSE_SECTOR_VERSION = 3;
+// "Oil, Gas & Consumable Fuels" at BSE is "Oil Gas & Consumable Fuels" at NSE
+const sectorKey = v => String(v).toLowerCase().replace(/[^a-z0-9&]+/g, " ").trim();
+export function bseClassification(json, known) {
+  if (!json || typeof json !== "object") return null;
+  const names = new Map([...known].map(k => [sectorKey(k), k]));
+  const asKnown = v => (typeof v === "string" ? names.get(sectorKey(v)) ?? null : null);
+  const fine = [/^industry_?new$/i, /^industry_?name$/i, /^industry$/i, /^igroup(_?name)?$/i, /^sector_?new$/i, /^sector(_?name)?$/i];
+  let sector = null;
+  for (const re of fine) {
+    sector = asKnown(bseField(json, re));
+    if (sector) break;
+  }
+  sector ??= Object.values(json).map(asKnown).find(Boolean) ?? null;
+  if (!sector) return null;
+  const basic = bseField(json, /^isub_?group(_?name)?$/i, /^basic_?industry$/i);
+  return { sector, ...(basic && sectorKey(basic) !== sectorKey(sector) ? { basic } : {}) };
+}
+async function bseSectors(symbols, skip, { pauseMs = 250, max = Number(process.env.BSE_SECTOR_BATCH ?? 2500), getJson = url => requestJson(url, { headers: BSE_HEADERS, service: "BSE", maxBytes: 25 * 1024 * 1024, timeoutMs: 30_000 }), equityList = null } = {}) {
+  // a company BSE gave nothing usable for is asked again when the reading
+  // changes (BSE_SECTOR_VERSION)
+  const before = loadMarketSnapshot();
+  // (and one from the first reading, which kept the sector as its industry)
+  const current = before?.bseSectorsVersion === BSE_SECTOR_VERSION;
+  const out = Object.fromEntries(Object.entries(before?.bseSectors ?? {}).filter(([, v]) => current || (v && v.basic && v.basic !== v.sector)));
+  const todo = symbols.filter(s => !skip[s] && !(s in out));
+  if (!todo.length) return out;
+  const codes = bseCodes(await getJson(BSE_LIST), equityList ?? await fetchEquityList());
+  const known = new Set([...Object.values(fallbackSectors({})), ...Object.values(skip)]);
+  let failed = 0, read = 0, found = 0, lastError = null, sample = null;
+  for (const sym of todo.filter(s => codes[s]).slice(0, max)) {
+    try {
+      const json = await getJson(BSE_HEADER(codes[sym]));
+      out[sym] = bseClassification(json, known); // null: asked, BSE gave none we use
+      if (out[sym]) found++; else sample ??= { [sym]: json };
+      failed = 0; read++;
+    } catch (error) {
+      lastError = error;
+      if (++failed >= 5) break;
+    }
+    if (pauseMs) await new Promise(r => setTimeout(r, pauseMs));
+  }
+  console.error(`[sectors] BSE: ${Object.keys(codes).length} NSE companies have a BSE code; read ${read}, ${found} with a sector${failed >= 5 ? ` (BSE stopped answering: ${String(lastError?.message ?? lastError).slice(0, 120)})` : ""}${sample ? `; one with none: ${JSON.stringify(sample).slice(0, 600)}` : ""}`);
+  return out;
+}
+export { bseSectors as _bseSectorsForTest, BSE_SECTOR_VERSION };
 
 // NSE's own classification of each company (25 Oct 2026): the index lists
 // cover ~750 companies and NSE's announcement "industry" ~935, which left ~290
@@ -544,22 +643,29 @@ export function nseClassification(json, known) {
   if (!sector || !known.has(sector)) return null;
   return { sector, ...(info.basicIndustry ? { basic: String(info.basicIndustry).trim() } : {}), ...(info.macro ? { macro: String(info.macro).trim() } : {}) };
 }
-async function nseSectors(symbols, skip, { pauseMs = 300, max = Number(process.env.NSE_SECTOR_BATCH ?? 2500), getJson = fetchJson } = {}) {
+// Through a cookie session (fetch-nse.js nseSession): when NSE refuses, the
+// session is renewed and the company asked once more; five refusals in a row
+// end the run, with NSE's own error in the log.
+async function nseSectors(symbols, skip, { pauseMs = 300, max = Number(process.env.NSE_SECTOR_BATCH ?? 2500), session = nseSession() } = {}) {
   const out = { ...(loadMarketSnapshot()?.nseSectors ?? {}) };
   const known = new Set([...Object.values(fallbackSectors({})), ...Object.values(skip)]);
   const todo = symbols.filter(s => !skip[s] && !(s in out)).slice(0, max);
-  let failed = 0, read = 0;
+  let failed = 0, read = 0, lastError = null;
   for (const sym of todo) {
-    try {
-      const json = await getJson(`${NSE_BASE}/api/quote-equity?symbol=${encodeURIComponent(sym)}`);
+    let json = null;
+    try { json = await session.quote(sym); }
+    catch (error) {
+      lastError = error;
+      await session.renew(sym).catch(() => {});
+      try { json = await session.quote(sym); } catch (again) { lastError = again; }
+    }
+    if (json) {
       out[sym] = nseClassification(json, known); // null: asked, NSE gave none
       failed = 0; read++;
-    } catch {
-      if (++failed >= 5) break;
-    }
+    } else if (++failed >= 5) break;
     if (pauseMs) await new Promise(r => setTimeout(r, pauseMs));
   }
-  if (todo.length) console.error(`[sectors] NSE classification read for ${read} of ${todo.length} companies${failed >= 5 ? " (NSE stopped answering; the rest next run)" : ""}`);
+  if (todo.length) console.error(`[sectors] NSE classification read for ${read} of ${todo.length} companies${failed >= 5 ? ` (NSE stopped answering: ${String(lastError?.message ?? lastError).slice(0, 120)}; ${session.cookies} cookies; the rest next run)` : ""}`);
   return out;
 }
 export { nseSectors as _nseSectorsForTest };
@@ -752,6 +858,8 @@ export async function buildMarketSnapshot(fyEndDates, { yearsOfActions = 6 } = {
   for (const [sym, list] of Object.entries(year.rebases)) splits[sym] = [...(splits[sym] ?? []), ...list];
   const { sectors, industrySectors, industries } = await sectorsBySymbol();
   const nseSectorMap = await nseSectors(Object.keys(latest.prices), sectors).catch(() => loadMarketSnapshot()?.nseSectors ?? {});
+  const named = { ...sectors, ...Object.fromEntries(Object.entries(nseSectorMap).filter(([, v]) => v?.sector).map(([k, v]) => [k, v.sector])) };
+  const bseSectorMap = await bseSectors(Object.keys(latest.prices), named).catch(error => { console.error(`[sectors] BSE didn't answer (${String(error?.message ?? error).slice(0, 160)}); keeping the last answers`); return loadMarketSnapshot()?.bseSectors ?? {}; });
 
   const snapshot = {
     builtAt: now.toISOString(),
@@ -763,6 +871,9 @@ export async function buildMarketSnapshot(fyEndDates, { yearsOfActions = 6 } = {
     sectors,
     industrySectors,
     industries,
+    // BSE's classification for the companies NSE's don't cover
+    bseSectors: bseSectorMap,
+    bseSectorsVersion: BSE_SECTOR_VERSION,
     // NSE's own classification for the companies the index lists miss
     nseSectors: nseSectorMap,
     // null when NSE didn't answer — unknown, not "no resignations"

@@ -19,6 +19,48 @@ export async function fetchJson(url) {
   return requestJson(url, { headers: { "User-Agent": UA, Accept: "application/json" }, service: "NSE", maxBytes: 25 * 1024 * 1024 });
 }
 
+// A browser-like session for NSE's quote API (30 Oct 2026). Its filings and
+// index APIs answer a plain request, but /api/quote-equity refuses one
+// without the cookies its pages set (nsit, nseappid, bm_sv …): the data job
+// read the sector of 0 of 2,500 companies two nights running. So the session
+// opens the home page and a quote page first, keeps the cookies they set, and
+// sends them with the browser's headers; renew() starts over when NSE has
+// stopped honouring them. fetchImpl is for the tests.
+export function nseSession({ fetchImpl } = {}) {
+  const jar = new Map();
+  const keep = headers => {
+    const lines = headers.getSetCookie?.() ?? (headers.get("set-cookie") ? [headers.get("set-cookie")] : []);
+    for (const line of lines) {
+      const [pair] = String(line).split(";");
+      const at = pair.indexOf("=");
+      if (at > 0) jar.set(pair.slice(0, at).trim(), pair.slice(at + 1).trim());
+    }
+  };
+  const browser = { "User-Agent": UA, "Accept-Language": "en-US,en;q=0.9" };
+  const cookie = () => [...jar].map(([k, v]) => `${k}=${v}`).join("; ");
+  const open = async url => {
+    await requestText(url, { headers: { ...browser, Accept: "text/html,application/xhtml+xml", ...(jar.size ? { Cookie: cookie() } : {}) }, service: "NSE", maxBytes: 5 * 1024 * 1024, onHeaders: keep, ...(fetchImpl ? { fetchImpl } : {}) });
+  };
+  let primed = false;
+  return {
+    get cookies() { return jar.size; },
+    async renew(symbol = "RELIANCE") {
+      jar.clear();
+      await open(`${NSE_BASE}/`).catch(() => {});
+      await open(`${NSE_BASE}/get-quotes/equity?symbol=${encodeURIComponent(symbol)}`).catch(() => {});
+      primed = true;
+    },
+    async quote(symbol) {
+      if (!primed) await this.renew(symbol);
+      const body = await requestText(`${NSE_BASE}/api/quote-equity?symbol=${encodeURIComponent(symbol)}`, {
+        headers: { ...browser, Accept: "application/json, text/plain, */*", Referer: `${NSE_BASE}/get-quotes/equity?symbol=${encodeURIComponent(symbol)}`, ...(jar.size ? { Cookie: cookie() } : {}) },
+        service: "NSE", maxBytes: 5 * 1024 * 1024, onHeaders: keep, ...(fetchImpl ? { fetchImpl } : {}),
+      });
+      try { return JSON.parse(body); } catch { throw new Error("NSE: quote wasn't JSON (a challenge page?)"); }
+    },
+  };
+}
+
 export async function fetchXbrl(url) {
   return requestText(url, { headers: { "User-Agent": UA }, service: "NSE XBRL", maxBytes: 25 * 1024 * 1024 });
 }
