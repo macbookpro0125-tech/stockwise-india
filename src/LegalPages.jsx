@@ -228,7 +228,7 @@ export function DisclaimerPage({ signedIn }) {
 // same words the server writes for search engines: seo.js aboutPageHtml)
 export function AboutPage({ signedIn }) {
   return (
-    <PublicPage title="About Jocular Insights" signedIn={signedIn} updated="25 October 2026">
+    <PublicPage title="About Jocular Insights" signedIn={signedIn} updated="30 October 2026">
       <P>
         Jocular Insights is an independent research tool for India's stock market, built and run in India. It reads every
         NSE-listed company's own filings and turns them into figures, scores and pictures anyone can check.
@@ -239,7 +239,12 @@ export function AboutPage({ signedIn }) {
         <LI><B>Products, exports and customers:</B> the Business Responsibility and Sustainability Report the largest companies file each year.</LI>
         <LI><B>Prices:</B> NSE's daily closing prices, updated each trading evening.</LI>
         <LI><B>Shareholding, board meetings and corporate actions:</B> NSE's filings and calendar.</LI>
+        <LI><B>Sectors:</B> NSE's index lists, and BSE's classification for companies those lists don't cover.</LI>
       </UL>
+      <P>
+        All of it is information the exchanges publish and companies must disclose under SEBI's rules. Jocular Insights
+        is not affiliated with NSE or BSE, and neither checks or endorses what's shown here.
+      </P>
       <H>How the figures are made</H>
       <P>
         Every figure is worked out by fixed rules, the same for every company, and each score shows the checks behind it.
