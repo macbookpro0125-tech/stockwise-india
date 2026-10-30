@@ -1,6 +1,6 @@
 import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { SlidersHorizontal, ChevronLeft, ChevronRight, Bookmark, Share, Table2, PanelsLeftRight } from "lucide-react";
+import { SlidersHorizontal, ChevronLeft, ChevronRight, Bookmark, Share } from "lucide-react";
 import { api } from "./api.js";
 import PresetCards, { presetRules } from "./PresetCards.jsx";
 import { NewsTile } from "./NewsView.jsx";
@@ -14,7 +14,6 @@ import { NEW_SCREEN_EVENT } from "./phoneChrome.js";
 import { noteRecent } from "./screensHome.js";
 import FilterPanel, { isActiveFilter } from "./screener/FilterPanel.jsx";
 import FilterBoard, { ActiveFilters } from "./screener/FilterBoard.jsx";
-import WorkspaceSplit from "./WorkspaceSplit.jsx";
 import StrategyPicker from "./StrategyPicker.jsx";
 import { returnScroll } from "./returnScroll.js";
 import MetricPicker from "./screener/MetricPicker.jsx";
@@ -345,11 +344,6 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [requestKey]);
 
-  // The Workspace's results as the table, or as a list beside a chart (a
-  // computer, WorkspaceSplit.jsx), remembered on this device
-  const [view, setViewState] = useState(() => { try { return localStorage.getItem("workspaceView") === "split" ? "split" : "table"; } catch { return "table"; } });
-  const setView = v => { setViewState(v); try { localStorage.setItem("workspaceView", v); } catch {} };
-  const split = view === "split" && !isPhone;
   // Undo and redo for the filters you change (31 Oct 2026): each change keeps
   // the filters before it; opening a strategy starts afresh
   const filtersNow = useRef(filters);
@@ -688,10 +682,6 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
               </div>
               {!isPhone && (
                 <div className="screen-actions">
-                  <div className="ws-view" role="group" aria-label="Show the results as">
-                    <button type="button" aria-pressed={!split} onClick={() => setView("table")}><Table2 size={14} aria-hidden="true" /> Table</button>
-                    <button type="button" aria-pressed={split} onClick={() => setView("split")}><PanelsLeftRight size={14} aria-hidden="true" /> List and chart</button>
-                  </div>
                   <button type="button" onClick={handleShare} disabled={!activeCount} title="Copy a link that opens this screen" className="btn-ghost tb-btn">
                     <Share size={14} aria-hidden="true" /> {copyFeedback || "Share"}
                   </button>
@@ -730,16 +720,14 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
               </div>
             )}
 
-            {/* a computer: the filters in a column beside the results, and
-                the ones that are on as chips over them (FilterBoard.jsx) */}
-            <div className={!isPhone && meta && filters ? "fb-split" : undefined}>
-            {!isPhone && meta && filters && (
+            {/* a computer: every filter on a board by kind, then the ones
+                that are on as chips, over the full-width table (FilterBoard.jsx) */}
+            {!isPhone && meta && filters && (<>
               <FilterBoard meta={meta} filters={filters} onChange={changeFilters} onMore={() => setFiltersOpen(true)}
-                onUndo={history.current.past.length ? () => stepFilters(true) : null} onRedo={history.current.future.length ? () => stepFilters(false) : null}
+                onUndo={history.current.past.length ? () => stepFilters(true) : null} onRedo={history.current.future.length ? () => stepFilters(false) : null} />
+              <ActiveFilters meta={meta} filters={filters} onChange={changeFilters} onAdd={() => setPicker("filter")}
                 matched={results?.matched ?? null} total={results?.total ?? null} />
-            )}
-            <div className="fb-results">
-            {!isPhone && meta && filters && <ActiveFilters meta={meta} filters={filters} onChange={changeFilters} />}
+            </>)}
 
             {error && (
               <div style={{ padding: "14px 18px", borderRadius: 12, background: "var(--red-dim)", border: "1px solid var(--red-bdr)", color: "var(--red)", fontSize: 13, marginBottom: 20, lineHeight: 1.6 }}>
@@ -765,13 +753,13 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
               const marketPe = meta?.byId.get("pe")?.range?.q?.[50];
               const one = v => (v == null ? "—" : v.toLocaleString("en-IN", { maximumFractionDigits: 1 }));
               return (<>
-              <dl className="ss-stats" aria-label="This list in figures">
+              {isPhone && <dl className="ss-stats" aria-label="This list in figures">
                 {isPhone && <div><dt>Companies</dt><dd>{st.count.toLocaleString("en-IN")}</dd></div>}
                 <div><dt>Middle quality</dt><dd>{st.quality == null ? "—" : Math.round(st.quality)}<small>/100</small></dd></div>
                 <div><dt>Middle P/E</dt><dd>{one(st.pe)}×{marketPe ? <small>market {one(marketPe)}×</small> : null}</dd></div>
                 <div><dt>Middle ROCE</dt><dd>{one(st.roce)}%</dd></div>
                 <div><dt>Below fair value</dt><dd>{st.belowFair.toLocaleString("en-IN")}<small>of {st.valued.toLocaleString("en-IN")} valued</small></dd></div>
-              </dl>
+              </dl>}
               <div className="ss-shortcuts">
                 <div className="ss-row" role="group" aria-label="Narrow to">
                   <span className="ss-label">Narrow to</span>
@@ -781,20 +769,17 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
                     </button>
                   ))}
                 </div>
-                {!split && <div className="ss-row hide-phone" role="group" aria-label="Columns to show">
+                <div className="ss-row hide-phone" role="group" aria-label="Columns to show">
                   <span className="ss-label">Show</span>
                   <div className="ss-seg">
                     {COLUMN_SETS.map(set => (
                       <button key={set.id} type="button" aria-pressed={currentSet(columns) === set.id} onClick={() => setColumns(set.columns)}>{set.label}</button>
                     ))}
                   </div>
-                </div>}
+                </div>
               </div>
             </>); })()}
 
-            {split && results?.results ? (
-              <WorkspaceSplit matches={signal ? applySignal(results.results, signal) : results.results} onOpenStock={onOpenStock} />
-            ) : (
             <ResultsTable
               theme={theme}
               sortTo={ranking}
@@ -827,9 +812,6 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
               ) : null}
               meta={meta}
             />
-            )}
-            </div>
-            </div>
           </main>
         </div>
         )}

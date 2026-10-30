@@ -87,3 +87,45 @@ export function filterWords(def, f) {
   if (f.min != null && f.max != null) return `${name} ${n(f.min)} to ${n(f.max)}`;
   return f.min != null ? `${name} ${n(f.min)} or more` : `${name} up to ${n(f.max)}`;
 }
+
+// Every other filter (31 Oct 2026, the board's kinds and "All"): ready
+// ranges from where today's companies actually sit — its highest and lowest
+// tenth and quarter, and either side of the middle — so all 154 are a
+// dropdown, with the figure each one means. Neutral words: for some measures
+// high is good, for others low is.
+const roundNice = v => {
+  const a = Math.abs(v);
+  const d = a >= 100 ? 0 : a >= 10 ? 1 : a >= 1 ? 1 : 2;
+  return Number(v.toFixed(d));
+};
+export function amountWords(def, v) {
+  const n = Number(v).toLocaleString("en-IN", { maximumFractionDigits: 2 });
+  if (def?.unit === "%") return `${n}%`;
+  if (def?.unit === "x") return `${n}×`;
+  if (def?.unit === "₹ Cr") return `₹${n} Cr`;
+  if (def?.unit === "₹") return `₹${n}`;
+  return n;
+}
+export function rangeChoices(def) {
+  const q = def?.range?.q;
+  if (!Array.isArray(q) || q.length < 101) return [];
+  const at = p => roundNice(q[p]);
+  const picks = [
+    ["Highest 10%", at(90), null], ["Highest 25%", at(75), null], ["Above the middle", at(50), null],
+    ["Below the middle", null, at(50)], ["Lowest 25%", null, at(25)], ["Lowest 10%", null, at(10)],
+  ];
+  const seen = new Set();
+  return picks
+    .filter(([, min, max]) => { const k = `${min}|${max}`; if (seen.has(k)) return false; seen.add(k); return true; })
+    .map(([label, min, max]) => [`${label} (${min != null ? `${amountWords(def, min)} or more` : `${amountWords(def, max)} or less`})`, min, max]);
+}
+
+// The board's item for any filter: its ready choices where it has them
+// (BOARD_GROUPS), else ranges from the market (rangeChoices), else a list
+export function boardItem(def) {
+  const ready = BOARD_GROUPS.flatMap(g => g.items).find(i => i.id === def.id);
+  if (ready) return ready;
+  if (def.options) return { id: def.id, label: def.label, category: true };
+  const choices = rangeChoices(def);
+  return choices.length ? { id: def.id, label: def.label, choices } : null;
+}

@@ -77,7 +77,7 @@ export async function openFilters(page) {
   if (await board.isVisible()) {
     const show = board.getByRole("button", { name: /^Show filters/ });
     if (await show.isVisible()) await show.click();
-    await board.getByRole("button", { name: /^\+ More filters/ }).click();
+    await board.getByRole("button", { name: /^Exact ranges/ }).click();
   } else {
     await page.getByRole("button", { name: /^Filters/ }).first().click();
   }

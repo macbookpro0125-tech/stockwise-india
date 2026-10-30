@@ -20,3 +20,18 @@ assert.equal(filterWords({ label: "P/E", short: "P/E TTM/FY", unit: "x" }, { id:
 assert.equal(filterWords({ label: "Theme" }, { id: "theme", values: ["Defence"] }), "Theme: Defence");
 for (const it of BOARD_GROUPS.flatMap(g => g.items).filter(i => i.choices)) for (const [label, min, max] of it.choices) assert.ok(label && (min != null || max != null), `${it.id}: ${label} sets a bound`);
 console.log("filterBoard tests passed");
+{
+  const { rangeChoices, boardItem } = await import("./filterBoard.js");
+  const q = Array.from({ length: 101 }, (_, i) => i);
+  const roce = { id: "roceX", label: "ROCE X", unit: "%", range: { q } };
+  const c = rangeChoices(roce);
+  assert.deepEqual(c[0], ["Highest 10% (90% or more)", 90, null]);
+  assert.deepEqual(c.at(-1), ["Lowest 10% (10% or less)", null, 10]);
+  assert.equal(rangeChoices({ id: "x" }).length, 0, "no range known: no choices");
+  const flat = { id: "flat", label: "Flat", range: { q: Array(101).fill(0) } };
+  assert.equal(rangeChoices(flat).length, 2, "the same figure everywhere: no repeats");
+  assert.equal(boardItem({ id: "pe", label: "P/E" }).label, "P/E", "a ready filter keeps its own choices");
+  assert.equal(boardItem({ id: "sector", label: "Sector", options: ["IT"] }).category, true);
+  assert.equal(boardItem(roce).choices.length, 6);
+  console.log("filterBoard range choices passed");
+}
