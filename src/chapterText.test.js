@@ -2,7 +2,7 @@
 // with the figures shown under it. A sweep of every listed company (26 Oct
 // 2026) found these cases worded against their own figures.
 import assert from "node:assert/strict";
-import { chapterJudgement, chapterFigures, gistLine } from "./chapterText.js";
+import { chapterJudgement, chapterFigures, gistLine, chapterLine } from "./chapterText.js";
 
 const group = (id, score, items = []) => ({ id, applicable: true, score, weight: 1, items });
 const research = (scores = {}, extra = {}) => ({
@@ -60,3 +60,11 @@ assert.match(gistLine(company({ ttmProfitCr: -100 })), /made a loss lately/);
 assert.match(gistLine(company({ salesGrowth3y: 18, epsGrowth3y: -10 })), /with sales up but earnings down/);
 assert.match(gistLine(company({}, { valuation: 60 }), { fairValue: 557, price: 693 }), /priced above its own fair value/);
 console.log("All chapter wording checks passed.");
+
+// growth has slowed: the value line says the fair value may be too high (30 Oct 2026)
+{
+  const slowed = { growthSlowed: { multiple: 27.8, growth: 5.7, supportedPe: 19.9 }, research: { groups: [] } };
+  assert.match(chapterLine("value", slowed, { fairValue: 3785, price: 2530 }), /growth has slowed, so it may be too high$/);
+  assert.doesNotMatch(chapterLine("value", { ...slowed, growthSlowed: null }, { fairValue: 3785, price: 2530 }), /slowed/);
+  console.log("ok: a fair value from a P/E of faster years says it may be too high");
+}

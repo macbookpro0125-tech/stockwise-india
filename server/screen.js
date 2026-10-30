@@ -323,6 +323,28 @@ export function capHistoricalMultiples(rows, peers = peerMultiples) {
     }
     if (m.research) m.research = computeResearch(m);
   }
+  for (const m of rows) m.growthSlowed = slowedGrowth(m);
+}
+
+// A usual P/E that recent growth doesn't support (30 Oct 2026, the valuation
+// review: TCS's 27.8× came from faster years; its profit grew 5.7% a year over
+// the last three). Graham's rule of thumb — 8.5× for no growth, plus 2× the
+// growth rate — says what recent growth supports; well above that, the page
+// warns that the fair value may be too high. The fair value itself is left
+// alone: a cap on recent growth alone called Asian Paints and Britannia 150–300%
+// overvalued after two slow years, so changing the number waits for a tested
+// method. Only where it matters — the price looks 10% or more below fair
+// value, which is where a too-high fair value misleads; earnings-valued
+// companies only; null when nothing to say.
+export const SLOWED_GROWTH = { below: 15, margin: 1.3, cheapBy: -10 };
+export function slowedGrowth(m) {
+  if (m.valuation?.model !== "earnings" || !(m.vsFairValue <= SLOWED_GROWTH.cheapBy)) return null;
+  const multiple = m.valuationMultiple ?? m.valuationPe;
+  const growth = m.epsGrowth3y;
+  if (!(multiple > 0) || !Number.isFinite(growth) || growth >= SLOWED_GROWTH.below) return null;
+  const supportedPe = 8.5 + 2 * Math.max(growth, 0);
+  if (multiple <= supportedPe * SLOWED_GROWTH.margin) return null;
+  return { multiple: Math.round(multiple * 10) / 10, growth: Math.round(growth * 10) / 10, supportedPe: Math.round(supportedPe * 10) / 10 };
 }
 
 // What the screener's filter picker and column picker offer, with each

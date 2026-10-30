@@ -18,7 +18,7 @@ import PeersPanel from "./PeersPanel.jsx";
 import NewsPanel from "./NewsPanel.jsx";
 import AroundTheWeb from "./AroundTheWeb.jsx";
 import ValuationExplorer from "./ValuationExplorer.jsx";
-import { ValuedAs, BankValuation, CyclicalValuation, NoFairValue, pbAt, CYCLE_TONE } from "./ValuationModel.jsx";
+import { ValuedAs, SlowedGrowthNote, BankValuation, CyclicalValuation, NoFairValue, pbAt, CYCLE_TONE } from "./ValuationModel.jsx";
 import PhasePositionPlanner from "./PhasePositionPlanner.jsx";
 import ThesisMonitor from "./ThesisMonitor.jsx";
 import StockSide from "./StockSide.jsx";
@@ -1033,7 +1033,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
 
       {m && <ChapterTab id="value" sec="valuation" m={m} fairValue={fairValue} price={price} rows={chapterChecks("value", m.research)}
         detail={[
-          { key: "ways", after: "ownHistory", question: "What are the ways to value it?", short: "Fair value, cash flow, DCF, the growth the price assumes", body: <>{valued && <ValuedAs valuation={m.valuation} />}{valueChips}{epsJumpNote}{!valued && overrideCard}{explorer}</> },
+          { key: "ways", after: "ownHistory", question: "What are the ways to value it?", short: "Fair value, cash flow, DCF, the growth the price assumes", body: <>{valued && <ValuedAs valuation={m.valuation} />}{valued && <SlowedGrowthNote slowed={m.growthSlowed} />}{valueChips}{epsJumpNote}{!valued && overrideCard}{explorer}</> },
           { key: "levels", question: "Where does the price sit for you?", short: "Against your own price levels", body: <div id="sec-levels">{positionCard}{(valued || levels) && <MyLevelsCard symbol={symbol} fv={valued ? fv : null} levels={levels} price={price} priceLabel={priceLabel} fv2Label={fyLabel(m.fyEnd, 2)} />}</div> },
           { key: "peers", after: "peers", question: "How does it compare with similar companies?", short: "Its peers' prices, P/E and quality", body: <div id="sec-peers"><PeersPanel symbol={data.symbol} onAnalyze={onOpenStock} /></div> },
           { key: "yours", question: "What if you change the numbers?", short: "Test your own EPS, P/E, growth and price", body: <>{filingsNote}{valued && overrideCard}{priceCard}{epsByYear}</> },

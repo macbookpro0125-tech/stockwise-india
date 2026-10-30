@@ -20,6 +20,18 @@ export const VALUED_AS = {
   cyclical: "cyclical — mid-cycle earnings × its usual multiple of them",
 };
 
+// When a company looks cheap mostly because its usual P/E came from faster
+// years (server/screen.js slowedGrowth, 30 Oct 2026): the fair value stays,
+// with why it may be too high
+export function SlowedGrowthNote({ slowed }) {
+  if (!slowed) return null;
+  return (
+    <p role="note" style={{ fontSize: 12, lineHeight: 1.5, color: "var(--yellow)", background: "var(--yellow-dim)", borderRadius: 8, padding: "8px 12px", margin: "0 0 12px" }}>
+      Growth has slowed: this fair value uses its usual P/E of {slowed.multiple}×, but its profit grew {slowed.growth}% a year over the last three years, which supports nearer {slowed.supportedPe}× (8.5 plus twice the growth rate). The fair value may be too high.
+    </p>
+  );
+}
+
 // "Valued as …" for every company, above its valuation inputs
 export function ValuedAs({ valuation }) {
   if (!valuation) return null;

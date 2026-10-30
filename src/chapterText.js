@@ -68,7 +68,9 @@ export function chapterLine(id, m, { fairValue, price } = {}) {
     case "value":
       if (num(fairValue) && num(price) && price > 0) {
         const gap = (fairValue / price - 1) * 100;
-        return `Fair value ${fmtRs(fairValue)}, ${Math.abs(gap) < 2 ? "about today's price" : `${p1(Math.abs(gap))} ${gap > 0 ? "above" : "below"} the price`}`;
+        const line = `Fair value ${fmtRs(fairValue)}, ${Math.abs(gap) < 2 ? "about today's price" : `${p1(Math.abs(gap))} ${gap > 0 ? "above" : "below"} the price`}`;
+        // its usual P/E came from faster growth than lately (server/screen.js slowedGrowth)
+        return m.growthSlowed && gap > 0 ? `${line}, but its growth has slowed, so it may be too high` : line;
       }
       return num(m.pe) && num(m.medianPe) ? `P/E ${Math.round(m.pe)} against its usual ${Math.round(m.medianPe)}` : null;
     case "news": {
@@ -217,6 +219,8 @@ export function chapterJudgement(id, m, opts = {}) {
     }
     case "value": {
       const mix = valueMix(t, opts);
+      // looks cheap mostly on a P/E from faster years: say so, not just "cheap"
+      if (m.growthSlowed && (fvGap(opts) ?? 0) > 0.1) return "Below its fair value, but its growth has slowed";
       if (mix === "peers-cheap") return "Cheap against its peers, though above its own fair value";
       if (mix === "peers-dear") return "Under its own fair value, but dear against its peers";
       const g = fvGap(opts);

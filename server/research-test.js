@@ -418,4 +418,15 @@ assert(near(over.m.valuationMultiple, 10, 1e-9) && near(over.m.levels.fv25 / ove
 const fewPeers = capped(5, 3);
 assert(fewPeers.m.levels === fewPeers.before.levels && /no peer group/.test(fewPeers.m.valuationMultipleBasis), "fewer than five peers with a P/E: no cap");
 
+// A usual P/E that recent growth doesn't support, where the price looks cheap (30 Oct 2026)
+{
+  const { slowedGrowth } = await import("./screen.js");
+  const tcs = { valuation: { model: "earnings" }, valuationMultiple: 27.8, epsGrowth3y: 5.7, vsFairValue: -33 };
+  assert(JSON.stringify(slowedGrowth(tcs)) === JSON.stringify({ multiple: 27.8, growth: 5.7, supportedPe: 19.9 }), "TCS: 27.8x against the 19.9x its 5.7% growth supports is flagged");
+  assert(slowedGrowth({ ...tcs, vsFairValue: -5 }) === null, "not when the price doesn't look cheap");
+  assert(slowedGrowth({ ...tcs, epsGrowth3y: 16 }) === null && slowedGrowth({ ...tcs, valuationMultiple: 22 }) === null, "not when growth is 15%+ or the P/E is within 30% of what it supports");
+  assert(slowedGrowth({ ...tcs, valuation: { model: "book" } }) === null && slowedGrowth({ ...tcs, epsGrowth3y: null }) === null, "only for earnings-valued companies with a growth figure");
+  assert(slowedGrowth({ ...tcs, epsGrowth3y: -4 }).supportedPe === 8.5, "shrinking profit supports the no-growth 8.5x");
+}
+
 console.log("\nAll research-score checks passed.");
