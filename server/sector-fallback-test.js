@@ -57,15 +57,20 @@ const equityList = [
 assert.deepEqual(bseCodes(bseRows, equityList), { FLAIR: "544000", SAMECO: "500001" });
 assert.deepEqual(bseCodes(null, equityList), {});
 const knownSectors = new Set(["Consumer Durables", "Information Technology"]);
-assert.deepEqual(bseClassification({ Sector: "Consumer Durables", IndustryNew: "Stationary" }, knownSectors), { sector: "Consumer Durables", basic: "Stationary" });
+assert.deepEqual(bseClassification({ Sector: "Consumer Durables", ISubGroupName: "Stationary" }, knownSectors), { sector: "Consumer Durables", basic: "Stationary" });
 assert.equal(bseClassification({ Sector: "Made Up" }, knownSectors), null);
+// BSE's "Sector" is the macro sector: the finer field wins where it's a known sector
+const known2 = new Set(["Chemicals", "Fast Moving Consumer Goods"]);
+assert.deepEqual(bseClassification({ Sector: "Commodities", IndustryNew: "Chemicals", IGroupName: "Chemicals & Petrochemicals", ISubGroupName: "Specialty Chemicals" }, known2), { sector: "Chemicals", basic: "Specialty Chemicals" });
+assert.deepEqual(bseClassification({ Sector: "Commodities", Other: "Chemicals" }, known2), { sector: "Chemicals" }, "any field naming a known sector");
+assert.equal(bseClassification({ Sector: "Commodities" }, known2), null);
 
 // each company NSE's lists miss is asked for once; the codes come from BSE's list
 const bseAsked = [];
 const fakeBse = async url => {
   bseAsked.push(url);
   if (url.includes("ListofScripData")) return bseRows;
-  return url.includes("scripcode=544000") ? { Sector: "Consumer Durables", IndustryNew: "Stationary" } : { Sector: "Something Else" };
+  return url.includes("scripcode=544000") ? { Sector: "Consumer Durables", ISubGroupName: "Stationary" } : { Sector: "Something Else" };
 };
 const fromBse = await bseSectors(["FLAIR", "SAMECO", "NSEONLY", "TCS"], { TCS: "Information Technology" }, { pauseMs: 0, getJson: fakeBse, equityList });
 assert.deepEqual(fromBse.FLAIR, { sector: "Consumer Durables", basic: "Stationary" });
