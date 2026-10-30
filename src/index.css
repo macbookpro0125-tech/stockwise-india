@@ -4288,3 +4288,42 @@ html.no-blur .sr-group { box-shadow: none; }
 }
 .vs-period-top { margin: 0 0 14px; position: sticky; top: 8px; z-index: 5; backdrop-filter: blur(12px); }
 .vs-table th.vs-earlier { color: var(--t3); font-style: italic; font-weight: 400; }
+
+/* ── a screen's companies, quality against P/E (QualityValueMap.jsx) ── */
+.qv { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; margin: 0 0 16px; }
+.qv-chart, .qv-side { border: 1px solid var(--bdr); border-radius: var(--r-lg, 14px); background: var(--s1, var(--s2)); }
+.qv-chart { padding: 12px 12px 8px; min-width: 0; }
+.qv-chart svg { display: block; width: 100%; height: auto; }
+.qv-zone { stroke: none; }
+.qv-hl { fill: color-mix(in srgb, var(--green) 9%, transparent); }
+.qv-hh { fill: color-mix(in srgb, var(--accent) 6%, transparent); }
+.qv-lh { fill: color-mix(in srgb, var(--red) 6%, transparent); }
+.qv-grid { stroke: var(--bdr); stroke-width: 1; }
+.qv-mid { stroke: var(--t3); stroke-width: 1; stroke-dasharray: 4 4; }
+.qv-tick { fill: var(--t3); font: 400 11px var(--font); }
+.qv-axis { fill: var(--t3); font: 500 11px var(--font); }
+.qv-zl { font: 600 11px var(--font); letter-spacing: .04em; text-transform: uppercase; }
+.qv-label { fill: var(--t2); font: 500 11px var(--font); pointer-events: none; }
+.qv-dot { cursor: pointer; outline: none; }
+.qv-dot circle { stroke-width: 1.5; transition: stroke-width 120ms ease; }
+.qv-dot:focus-visible circle { stroke-width: 3; }
+.qv-note { margin: 6px 4px 0; font-size: 12px; line-height: 1.5; color: var(--t3); }
+.qv-empty { margin: 0 0 16px; font-size: 13px; color: var(--t3); }
+.qv-side { padding: 12px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.qv-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.qv-tabs button { padding: 5px 10px; border-radius: 999px; border: 1px solid var(--bdr2); background: none; color: var(--t2); font: 500 11.5px var(--font); cursor: pointer; }
+.qv-tabs button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.qv-list { list-style: none; margin: 0; padding: 0; }
+.qv-list button { display: flex; justify-content: space-between; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 6px 4px; border: 0; border-bottom: 1px solid var(--bdr); background: none; color: var(--t1); font: 400 13px var(--font); text-align: left; cursor: pointer; }
+.qv-list span:first-child { display: flex; flex-direction: column; min-width: 0; }
+.qv-list b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.qv-list small { color: var(--t3); font-size: 11px; }
+.qv-figs { flex: none; color: var(--t2); font-variant-numeric: tabular-nums; }
+.qv-figs em { margin-left: 6px; padding: 1px 7px; border-radius: 999px; font-style: normal; font-weight: 600; color: var(--green); background: color-mix(in srgb, var(--green) 14%, transparent); }
+.qv-more { padding: 8px 4px; font-size: 12px; color: var(--t3); }
+@media (hover: hover) and (pointer: fine) {
+  .qv-dot:hover circle { stroke-width: 3; }
+  .qv-list button:hover { background: var(--s2); }
+  .qv-tabs button:hover { border-color: var(--t3); }
+}
+@media (max-width: 1000px) { .qv { grid-template-columns: 1fr; } }

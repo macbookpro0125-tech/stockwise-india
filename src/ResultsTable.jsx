@@ -2,7 +2,8 @@ import { Fragment, Suspense, useState, useEffect, useRef, useMemo } from "react"
 import { lazyPage } from "./lazyPage.js";
 import CompanyLogo from "./CompanyLogo.jsx";
 import { cardName, splitUnit } from "./stockName.js";
-import { ArrowDown, ArrowUp, Check, Info, Columns3, Search, ArrowUpRight, SearchX, Star, ChevronDown, Funnel, Download } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, Info, Columns3, Search, ArrowUpRight, SearchX, Star, ChevronDown, Funnel, Download, ChartScatter } from "lucide-react";
+import QualityValueMap from "./QualityValueMap.jsx";
 import { StarIcon, BellIcon, actionButtonStyle } from "./icons.jsx";
 import { useWatchlist, toggleWatch } from "./watchlist.js";
 import { useMyLevels, withMyLevels } from "./myLevels.js";
@@ -336,6 +337,7 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
     });
   };
 
+  const [showMap, setShowMap] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState(null);
 
@@ -532,12 +534,20 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
                 <Info size={15} />
               </button>
             )}
+            {/* the screen's companies on a quality-against-P/E chart (QualityValueMap.jsx) */}
+            {!loading && (matches?.length ?? 0) > 2 && (
+              <button type="button" onClick={() => setShowMap(v => !v)} aria-pressed={showMap} className="btn-ghost tb-btn hide-phone" title="Quality against P/E for these companies">
+                <ChartScatter size={14} aria-hidden="true" /> Chart
+              </button>
+            )}
             {!loading && (matches?.length ?? 0) > 0 && (
               <ExportMenu onExcel={exportExcel} onCsv={exportCsv} busy={exporting || sorted.length === 0} />
             )}
           </div>
         </div>
       )}
+
+      {showMap && !isMobile && !loading && <QualityValueMap matches={matches} onAnalyze={onAnalyze} />}
 
       {/* ── Phones: one toolbar — Filters, the sort (column and direction), and
              a search button that opens the name box with the score boxes.
