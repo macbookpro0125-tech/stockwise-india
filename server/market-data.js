@@ -7,7 +7,8 @@ import { UA, NSE_BASE, fetchJson, parseQeDate, nseSession } from "./fetch-nse.js
 import { rebaseTracker, suspendedAfter } from "./share-changes.js";
 import { PRICE_DIR, SNAPSHOT_PATH, HISTORY_DIR } from "./paths.js";
 import { historyWriter } from "./price-history.js";
-import { fetchText as requestText } from "./upstream.js";
+import { fetchText as requestText, fetchJson as requestJson } from "./upstream.js";
+import { fetchEquityList } from "./equity-list.js";
 import { momentumStats } from "./momentum.js";
 import { SECTOR_INDEX } from "./sector-indices.js";
 import { fileURLToPath } from "node:url";
@@ -512,20 +513,63 @@ async function sectorsBySymbol() {
   // 11 Oct 2026) — and for all of them when NSE doesn't answer — rather than
   // the mapped sectors thinning out a few at a time
   const industries = { ...loadMarketSnapshot()?.industries, ...await industriesBySymbol().catch(() => ({})) };
+  const sectorOf = votedSectors(industries, fromIndex);
+  const industrySectors = {};
+  for (const [sym, industry] of Object.entries(industries)) if (!fromIndex[sym] && sectorOf[industry]) industrySectors[sym] = sectorOf[industry];
+  // BSE's industry for the companies NSE's labels leave out (bseIndustries)
+  const bse = await bseIndustries().catch(error => { console.error(`[sectors] BSE's list didn't load (${String(error?.message ?? error).slice(0, 120)}); keeping the last one`); return null; })
+    ?? loadMarketSnapshot()?.bseIndustries ?? {};
+  const bseSectorOf = votedSectors(bse, fromIndex, 2);
+  let fromBse = 0;
+  for (const [sym, industry] of Object.entries(bse)) if (!fromIndex[sym] && !industrySectors[sym] && bseSectorOf[industry]) { industrySectors[sym] = bseSectorOf[industry]; fromBse++; }
+  if (Object.keys(bse).length) console.error(`[sectors] BSE industries for ${Object.keys(bse).length} NSE companies; ${Object.keys(bseSectorOf).length} industries map to a sector; ${fromBse} companies get one from BSE`);
+  return { sectors: fromIndex, industrySectors, industries, bseIndustries: bse };
+}
+
+// An industry's sector, where most of its companies the index lists name
+// agree on one (75% or more of at least `min`)
+export function votedSectors(industries, fromIndex, min = 3) {
   const votes = {};
   for (const [sym, industry] of Object.entries(industries)) {
     const sector = fromIndex[sym];
-    if (sector) (votes[industry] ??= {})[sector] = (votes[industry][sector] ?? 0) + 1;
+    if (sector && industry) (votes[industry] ??= {})[sector] = (votes[industry][sector] ?? 0) + 1;
   }
   const sectorOf = {};
   for (const [industry, v] of Object.entries(votes)) {
     const total = Object.values(v).reduce((a, b) => a + b, 0);
     const [best, n] = Object.entries(v).sort((a, b) => b[1] - a[1])[0];
-    if (total >= 3 && n / total >= 0.75) sectorOf[industry] = best;
+    if (total >= min && n / total >= 0.75) sectorOf[industry] = best;
   }
-  const industrySectors = {};
-  for (const [sym, industry] of Object.entries(industries)) if (!fromIndex[sym] && sectorOf[industry]) industrySectors[sym] = sectorOf[industry];
-  return { sectors: fromIndex, industrySectors, industries };
+  return sectorOf;
+}
+
+// BSE's industry for every NSE company also listed there (30 Oct 2026): NSE's
+// quote API refuses the GitHub data job (403 even with its cookies), so its
+// classification can't be read company by company. BSE publishes its whole
+// list of active companies, each with an industry, in one answer; they're
+// matched to NSE's by ISIN (NSE's equity list), else by the same symbol.
+// The industries map to sectors by the same vote as NSE's (votedSectors).
+const BSE_LIST = "https://api.bseindia.com/BseIndiaAPI/api/ListofScripData/w?Group=&Scripcode=&industry=&segment=Equity&status=Active";
+export function bseIndustryMap(rows, equityList) {
+  const byIsin = new Map(), bySymbol = new Map();
+  for (const r of Array.isArray(rows) ? rows : []) {
+    const industry = typeof r?.INDUSTRY === "string" ? r.INDUSTRY.trim() : "";
+    if (!industry || industry === "-") continue;
+    if (r.ISIN_NUMBER) byIsin.set(String(r.ISIN_NUMBER).trim(), industry);
+    if (r.scrip_id) bySymbol.set(String(r.scrip_id).trim().toUpperCase(), industry);
+  }
+  const out = {};
+  for (const e of equityList) {
+    const industry = byIsin.get(e.isin?.trim()) ?? bySymbol.get(e.symbol);
+    if (industry) out[e.symbol] = industry;
+  }
+  return out;
+}
+async function bseIndustries() {
+  const rows = await requestJson(BSE_LIST, { headers: { "User-Agent": UA, Accept: "application/json, text/plain, */*", Referer: "https://www.bseindia.com/", Origin: "https://www.bseindia.com" }, service: "BSE", maxBytes: 25 * 1024 * 1024, timeoutMs: 30_000 });
+  const map = bseIndustryMap(rows, await fetchEquityList());
+  if (Object.keys(map).length < 500) throw new Error(`only ${Object.keys(map).length} companies matched (${Array.isArray(rows) ? rows.length : "no"} BSE rows)`);
+  return map;
 }
 
 // NSE's own classification of each company (25 Oct 2026): the index lists
@@ -757,7 +801,7 @@ export async function buildMarketSnapshot(fyEndDates, { yearsOfActions = 6 } = {
   // with the share changes only NSE's prices showed (CCAVENUE's ten-into-one,
   // Oct 2026): every return and per-share figure on today's share basis
   for (const [sym, list] of Object.entries(year.rebases)) splits[sym] = [...(splits[sym] ?? []), ...list];
-  const { sectors, industrySectors, industries } = await sectorsBySymbol();
+  const { sectors, industrySectors, industries, bseIndustries: bseIndustryLabels } = await sectorsBySymbol();
   const nseSectorMap = await nseSectors(Object.keys(latest.prices), sectors).catch(() => loadMarketSnapshot()?.nseSectors ?? {});
 
   const snapshot = {
@@ -770,6 +814,8 @@ export async function buildMarketSnapshot(fyEndDates, { yearsOfActions = 6 } = {
     sectors,
     industrySectors,
     industries,
+    // BSE's industry for each NSE company listed there too
+    bseIndustries: bseIndustryLabels,
     // NSE's own classification for the companies the index lists miss
     nseSectors: nseSectorMap,
     // null when NSE didn't answer — unknown, not "no resignations"

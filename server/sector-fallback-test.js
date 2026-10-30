@@ -1,7 +1,7 @@
 // When niftyindices.com's sector lists don't load, the last good sectors stand
 // (market-data.js fallbackSectors), never an empty map
 import assert from "node:assert/strict";
-import { fallbackSectors, _nseSectorsForTest as nseSectors } from "./market-data.js";
+import { fallbackSectors, _nseSectorsForTest as nseSectors, bseIndustryMap, votedSectors } from "./market-data.js";
 import { nseSession } from "./fetch-nse.js";
 
 const seed = fallbackSectors({});
@@ -40,4 +40,26 @@ const none = await nseSectors(["A", "B", "C", "D", "E", "F", "G"], {}, { pauseMs
 assert.equal(refusals, 10, "each of five companies asked twice, then it stops");
 assert.equal(stubborn.renewed, 5);
 assert.ok(!("F" in none));
+
+// BSE's list, matched to NSE's companies by ISIN (a different BSE symbol
+// still matches), else by the same symbol; blank industries are skipped
+const bseRows = [
+  { SCRIP_CD: "544000", scrip_id: "FLAIRWRIT", ISIN_NUMBER: "INE00Y201027", INDUSTRY: "Stationary" },
+  { SCRIP_CD: "500001", scrip_id: "SAMECO", ISIN_NUMBER: "INE999X01011", INDUSTRY: "Software" },
+  { SCRIP_CD: "500002", scrip_id: "BLANK", ISIN_NUMBER: "INE888X01011", INDUSTRY: "" },
+];
+const equityList = [
+  { symbol: "FLAIR", isin: "INE00Y201027" },
+  { symbol: "SAMECO", isin: "INE000000000" },
+  { symbol: "BLANK", isin: "INE888X01011" },
+  { symbol: "NSEONLY", isin: "INE777X01011" },
+];
+assert.deepEqual(bseIndustryMap(bseRows, equityList), { FLAIR: "Stationary", SAMECO: "Software" });
+assert.deepEqual(bseIndustryMap(null, equityList), {});
+
+// an industry takes the sector most of its indexed companies have, 75% of at least `min`
+const labels = { A: "Software", B: "Software", C: "Software", D: "Software", E: "Sugar", F: "Sugar", G: "Mixed", H: "Mixed", I: "Lone" };
+const indexed = { A: "Information Technology", B: "Information Technology", C: "Information Technology", E: "Fast Moving Consumer Goods", F: "Fast Moving Consumer Goods", G: "Realty", H: "Construction", I: "Textiles" };
+assert.deepEqual(votedSectors(labels, indexed), { Software: "Information Technology" });
+assert.deepEqual(votedSectors(labels, indexed, 2), { Software: "Information Technology", Sugar: "Fast Moving Consumer Goods" }, "a split industry and a lone one stay unmapped");
 console.log("All sector-fallback checks passed.");
