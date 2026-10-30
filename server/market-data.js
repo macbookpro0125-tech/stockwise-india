@@ -517,7 +517,7 @@ async function sectorsBySymbol() {
   const industrySectors = {};
   for (const [sym, industry] of Object.entries(industries)) if (!fromIndex[sym] && sectorOf[industry]) industrySectors[sym] = sectorOf[industry];
   // BSE's industry for the companies NSE's labels leave out (bseIndustries)
-  const bse = await bseIndustries().catch(error => { console.error(`[sectors] BSE's list didn't load (${String(error?.message ?? error).slice(0, 120)}); keeping the last one`); return null; })
+  const bse = await bseIndustries().catch(error => { console.error(`[sectors] BSE's list didn't load (${String(error?.message ?? error).slice(0, 600)}); keeping the last one`); return null; })
     ?? loadMarketSnapshot()?.bseIndustries ?? {};
   const bseSectorOf = votedSectors(bse, fromIndex, 2);
   let fromBse = 0;
@@ -550,17 +550,31 @@ export function votedSectors(industries, fromIndex, min = 3) {
 // matched to NSE's by ISIN (NSE's equity list), else by the same symbol.
 // The industries map to sectors by the same vote as NSE's (votedSectors).
 const BSE_LIST = "https://api.bseindia.com/BseIndiaAPI/api/ListofScripData/w?Group=&Scripcode=&industry=&segment=Equity&status=Active";
+// BSE's field names aren't documented and its casing has varied, so each is
+// found by name: the ISIN, the industry (its newest classification first)
+// and BSE's symbol
+const bseField = (row, ...patterns) => {
+  for (const re of patterns) {
+    const key = Object.keys(row).find(k => re.test(k));
+    const v = key == null ? null : row[key];
+    if (typeof v === "string" && v.trim() && v.trim() !== "-") return v.trim();
+  }
+  return null;
+};
 export function bseIndustryMap(rows, equityList) {
   const byIsin = new Map(), bySymbol = new Map();
   for (const r of Array.isArray(rows) ? rows : []) {
-    const industry = typeof r?.INDUSTRY === "string" ? r.INDUSTRY.trim() : "";
-    if (!industry || industry === "-") continue;
-    if (r.ISIN_NUMBER) byIsin.set(String(r.ISIN_NUMBER).trim(), industry);
-    if (r.scrip_id) bySymbol.set(String(r.scrip_id).trim().toUpperCase(), industry);
+    if (!r || typeof r !== "object") continue;
+    const industry = bseField(r, /^industry_?new$/i, /^basic_?industry$/i, /^industry$/i, /industry/i);
+    if (!industry) continue;
+    const isin = bseField(r, /^isin(_?number|_?no|_?code)?$/i, /isin/i);
+    const symbol = bseField(r, /^scrip_?id$/i, /^(scrip_?)?symbol$/i);
+    if (isin) byIsin.set(isin.toUpperCase(), industry);
+    if (symbol) bySymbol.set(symbol.toUpperCase(), industry);
   }
   const out = {};
   for (const e of equityList) {
-    const industry = byIsin.get(e.isin?.trim()) ?? bySymbol.get(e.symbol);
+    const industry = byIsin.get(String(e.isin ?? "").trim().toUpperCase()) ?? bySymbol.get(e.symbol);
     if (industry) out[e.symbol] = industry;
   }
   return out;
@@ -568,7 +582,10 @@ export function bseIndustryMap(rows, equityList) {
 async function bseIndustries() {
   const rows = await requestJson(BSE_LIST, { headers: { "User-Agent": UA, Accept: "application/json, text/plain, */*", Referer: "https://www.bseindia.com/", Origin: "https://www.bseindia.com" }, service: "BSE", maxBytes: 25 * 1024 * 1024, timeoutMs: 30_000 });
   const map = bseIndustryMap(rows, await fetchEquityList());
-  if (Object.keys(map).length < 500) throw new Error(`only ${Object.keys(map).length} companies matched (${Array.isArray(rows) ? rows.length : "no"} BSE rows)`);
+  if (Object.keys(map).length < 500) {
+    const first = Array.isArray(rows) ? rows[0] : rows;
+    throw new Error(`only ${Object.keys(map).length} companies matched (${Array.isArray(rows) ? rows.length : "no"} BSE rows; a row: ${JSON.stringify(first ?? null).slice(0, 400)})`);
+  }
   return map;
 }
 

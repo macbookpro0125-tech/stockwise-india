@@ -56,6 +56,8 @@ const equityList = [
 ];
 assert.deepEqual(bseIndustryMap(bseRows, equityList), { FLAIR: "Stationary", SAMECO: "Software" });
 assert.deepEqual(bseIndustryMap(null, equityList), {});
+// other casings and the newer industry field
+assert.deepEqual(bseIndustryMap([{ Scrip_Id: "X", Isin_No: "ine00y201027", Industry: "Old", IndustryNew: "Stationery" }], equityList), { FLAIR: "Stationery" });
 
 // an industry takes the sector most of its indexed companies have, 75% of at least `min`
 const labels = { A: "Software", B: "Software", C: "Software", D: "Software", E: "Sugar", F: "Sugar", G: "Mixed", H: "Mixed", I: "Lone" };
