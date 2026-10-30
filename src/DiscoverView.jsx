@@ -684,9 +684,8 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews }) {
 
             {/* a computer: the filters open on a board above the results (FilterBoard.jsx) */}
             {!isPhone && meta && filters && (
-              <FilterBoard meta={meta} filters={filters} onChange={changeFilters} onMore={() => setPicker("filter")}
-                matched={results?.matched ?? null} total={results?.total ?? null}
-                ready={ribbon} yours={ownStrategies} activeId={activePresetId} onOpenStrategy={pickFromWheel} onSave={() => setShowSaveModal(true)} />
+              <FilterBoard meta={meta} filters={filters} onChange={changeFilters} onMore={() => setFiltersOpen(true)}
+                matched={results?.matched ?? null} total={results?.total ?? null} />
             )}
 
             {error && (
@@ -762,15 +761,9 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews }) {
               onEditColumns={meta ? () => setPicker("column") : null}
               updating={updating}
               // Hover or click opens the drawer; on a narrow window, the full-screen sheet
-              filtersButton={!isPhone ? (
-                <button ref={filtersBtnRef} data-tour="filters" className={`btn-ghost tb-btn filters-btn${filtersOpen ? " on" : ""}`}
-                  aria-expanded={filtersOpen} aria-controls="filters-drawer"
-                  onMouseEnter={() => { if (hoverable && window.innerWidth > 900) openDrawer(); }}
-                  onMouseLeave={leaveDrawer}
-                  onClick={() => (window.innerWidth <= 900 ? setSheetOpen(true) : filtersOpen && !hoverable ? setFiltersOpen(false) : openDrawer())}>
-                  <SlidersHorizontal size={14} aria-hidden="true" /> Filters{activeCount > 0 && <span className="filters-count">{activeCount}</span>}
-                </button>
-              ) : null}
+              // a computer has the filter board; its "More filters" opens the drawer
+              scoreBoxes={isPhone}
+              filtersButton={null}
               phoneFilters={isPhone ? (
                 <button data-tour="filters" className="btn-ghost" onClick={() => setSheetOpen(true)} style={{ height: 36, fontSize: 13 }}>
                   <SlidersHorizontal size={14} /> Filters{activeCount > 0 && <span style={{ marginLeft: 2, fontSize: 10.5, padding: "0 7px", borderRadius: 999, fontWeight: 500, background: "var(--accent)", color: "var(--on-accent)" }}>{activeCount}</span>}

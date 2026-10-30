@@ -69,9 +69,18 @@ export async function axeCheck(page, label) {
   return bad.map(v => `${label}: ${v.id} (${v.impact}) ×${v.nodes.length} — ${v.help}; e.g. ${v.nodes[0]?.target?.join(" ")} [${(v.nodes[0]?.any?.[0]?.message ?? "").slice(0, 160)}] <${(v.nodes[0]?.html ?? "").slice(0, 140)}>`);
 }
 
-// The filters live in a drawer that opens from the Filters button (16 Oct 2026)
+// The filters' drawer (16 Oct 2026): on a computer it opens from the filter
+// board's "More filters" (30 Oct 2026; the board folded opens first), on a
+// narrow window from the Filters button
 export async function openFilters(page) {
-  await page.getByRole("button", { name: /^Filters/ }).first().click();
+  const board = page.locator(".fb");
+  if (await board.isVisible()) {
+    const show = board.getByRole("button", { name: /^Show filters/ });
+    if (await show.isVisible()) await show.click();
+    await board.getByRole("button", { name: /^\+ More filters/ }).click();
+  } else {
+    await page.getByRole("button", { name: /^Filters/ }).first().click();
+  }
   await page.locator(".filters-drawer.open").waitFor();
 }
 

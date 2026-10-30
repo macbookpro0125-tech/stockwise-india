@@ -4338,12 +4338,12 @@ html.no-blur .sr-group { box-shadow: none; }
 .ss-seg button[aria-pressed="true"] { background: var(--s3); color: var(--accent); }
 @media (hover: hover) and (pointer: fine) { .ss-seg button:hover { color: var(--t1); } }
 @media (max-width: 640px) { .ss-shortcuts .ss-row:first-child { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; } }
-.ss-stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin: 0 0 12px; }
-.ss-stats div { padding: 10px 12px; border: 1px solid var(--bdr); border-radius: var(--r-md, 10px); background: var(--s2); min-width: 0; }
-.ss-stats dt { font-size: 11.5px; color: var(--t3); }
-.ss-stats dd { margin: 4px 0 0; font-size: 18px; font-weight: 600; color: var(--t1); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ss-stats small { margin-left: 6px; font-size: 11px; font-weight: 400; color: var(--t3); }
-@media (max-width: 640px) { .ss-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .ss-stats div:first-child { grid-column: 1 / -1; } }
+.ss-stats { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 0; margin: 0 0 10px; font-size: 13px; color: var(--t3); }
+.ss-stats div { display: inline-flex; align-items: baseline; gap: 6px; padding: 0 14px; border-left: 1px solid var(--bdr2); }
+.ss-stats div:first-child { padding-left: 0; border-left: 0; }
+.ss-stats dt { font-size: 12.5px; color: var(--t3); }
+.ss-stats dd { margin: 0; font-size: 14px; font-weight: 600; color: var(--t1); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ss-stats small { margin-left: 4px; font-size: 12px; font-weight: 400; color: var(--t3); }
 
 /* ── the filter board on a computer (screener/FilterBoard.jsx) ── */
 .fb { margin: 0 0 12px; border: 1px solid var(--bdr); border-radius: var(--r-lg, 14px); background: var(--s1, var(--s2)); }
@@ -4392,3 +4392,6 @@ html.no-blur .sr-group { box-shadow: none; }
 .fb-strategy .fb-select { width: 260px; }
 .fb-fold { display: block; width: 100%; min-height: 32px; border: 0; border-top: 1px solid var(--bdr); background: none; color: var(--t3); font: 500 12px var(--font); cursor: pointer; border-radius: 0 0 var(--r-lg, 14px) var(--r-lg, 14px); }
 @media (hover: hover) and (pointer: fine) { .fb-fold:hover { color: var(--accent); background: var(--s2); } }
+/* a computer: with the filter board, the name search is all that's left of
+   this row, so it stays a compact box rather than a full-width bar */
+@media (min-width: 641px) { .score-line > .score-row:only-child { flex: 0 1 340px; } }

@@ -29,9 +29,9 @@ function Pick({ item, def, filter, onPick }) {
   return (
     <div className="fb-item">
       <label htmlFor={id}>{item.label}</label>
-      <select id={id} className={`fb-select${on ? " on" : ""}`} title={def.about} value={value} onChange={e => onPick(e.target.value)}>
+      <select id={id} className={`fb-select${on ? " on" : ""}`} title={value === "custom" ? filterWords(def, filter) : def.about} value={value} onChange={e => onPick(e.target.value)}>
         <option value="">Any</option>
-        {value === "custom" && <option value="custom">Custom: {filterWords(def, filter)}</option>}
+        {value === "custom" && <option value="custom" title={filterWords(def, filter)}>Custom range</option>}
         {item.choices.map(([label], i) => <option key={label} value={String(i)}>{label}</option>)}
       </select>
     </div>
@@ -43,10 +43,9 @@ const OPEN_KEY = "filterBoardOpen";
 const readOpen = () => { try { return localStorage.getItem(OPEN_KEY) !== "0"; } catch { return true; } };
 const writeOpen = v => { try { localStorage.setItem(OPEN_KEY, v ? "1" : "0"); } catch {} };
 
-export default function FilterBoard({ meta, filters, onChange, onMore, matched, total, ready = [], yours = [], activeId = null, onOpenStrategy, onSave }) {
+export default function FilterBoard({ meta, filters, onChange, onMore, matched, total }) {
   const [open, setOpenState] = useState(readOpen);
   const setOpen = v => { setOpenState(v); writeOpen(v); };
-  const stratId = useId();
   const [tab, setTab] = useState("all");
   const [find, setFind] = useState("");
   const findId = useId(), ownId = useId();
@@ -82,15 +81,6 @@ export default function FilterBoard({ meta, filters, onChange, onMore, matched, 
           )}
         </div>
         {open && (<div id="fb-panel">
-        <div className="fb-strategy">
-          <label htmlFor={stratId}>Open a strategy</label>
-          <select id={stratId} className="fb-select" value={activeId ?? ""} onChange={e => e.target.value && onOpenStrategy?.(e.target.value)}>
-            <option value="">{activeId ? "" : "Choose one…"}</option>
-            {yours.length > 0 && <optgroup label="Your strategies">{yours.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</optgroup>}
-            {ready.length > 0 && <optgroup label="Ready-made">{ready.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</optgroup>}
-          </select>
-          {onSave && <button type="button" className="fb-ghost" onClick={onSave} disabled={!active.length}>+ Save as new strategy</button>}
-        </div>
         <div className="fb-tabs" role="group" aria-label="Filter groups">
           {[{ id: "all", label: "All" }, ...BOARD_GROUPS].map(g => (
             <button key={g.id} type="button" aria-pressed={tab === g.id} onClick={() => setTab(g.id)}>{g.label}</button>
