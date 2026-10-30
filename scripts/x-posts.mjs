@@ -95,9 +95,11 @@ async function results() {
   const label = d => d.date === cal.today ? "Today" : weekday(d.date);
   const body = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:40px">${col(first, label(first))}${second ? col(second, label(second)) : ""}</div>`;
   const short = shortName;
+  const listed = (shown, count) => count > shown.length ? `${shown.join(", ")} and ${count - shown.length} more` : shown.length > 1 ? `${shown.slice(0, -1).join(", ")} and ${shown.at(-1)}` : shown.join("");
   const text = [
     `Results ${first.date === cal.today ? "today" : `on ${weekday(first.date)}`}: ${first.count} NSE companies, including ${names(first).slice(0, 3).map(short).join(", ")}.`,
-    second ? `${weekday(second.date).split(",")[0]}: ${names(second).slice(0, 3).map(short).join(", ")} and ${second.count - 3} more.` : "",
+    // "and 2 more" only when there are more; two names read "A and B"
+    second ? `${weekday(second.date).split(",")[0]}: ${listed(names(second).slice(0, 3).map(short), second.count)}.` : "",
     `${shortName(first.companies[0].name)}'s figures: ${SITE}/stock/${encodeURIComponent(first.companies[0].symbol)}`,
     "#Results #IndianStockMarket",
   ].filter(Boolean);
