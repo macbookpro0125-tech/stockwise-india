@@ -64,6 +64,9 @@ const known2 = new Set(["Chemicals", "Fast Moving Consumer Goods"]);
 assert.deepEqual(bseClassification({ Sector: "Commodities", IndustryNew: "Chemicals", IGroupName: "Chemicals & Petrochemicals", ISubGroupName: "Specialty Chemicals" }, known2), { sector: "Chemicals", basic: "Specialty Chemicals" });
 assert.deepEqual(bseClassification({ Sector: "Commodities", Other: "Chemicals" }, known2), { sector: "Chemicals" }, "any field naming a known sector");
 assert.equal(bseClassification({ Sector: "Commodities" }, known2), null);
+// BSE's punctuation differs from NSE's; the basic industry is kept only where it says more
+assert.deepEqual(bseClassification({ Sector: "Energy", IndustryNew: "Oil, Gas & Consumable Fuels", ISubGroup: "Offshore Support Solution Drilling" }, new Set(["Oil Gas & Consumable Fuels"])), { sector: "Oil Gas & Consumable Fuels", basic: "Offshore Support Solution Drilling" });
+assert.deepEqual(bseClassification({ Sector: "Healthcare", IndustryNew: "Healthcare", ISubGroup: "Healthcare" }, new Set(["Healthcare"])), { sector: "Healthcare" });
 
 // each company NSE's lists miss is asked for once; the codes come from BSE's list
 const bseAsked = [];

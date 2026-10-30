@@ -580,25 +580,31 @@ export function bseCodes(rows, equityList) {
 // (30 Oct 2026: 656 of 1,737 matched, all in the eight sectors that share
 // their macro's name — "Commodities" or "Industrials" never match), so the
 // finer fields are tried first, then any field naming a known sector.
-const BSE_SECTOR_VERSION = 2;
+const BSE_SECTOR_VERSION = 3;
+// "Oil, Gas & Consumable Fuels" at BSE is "Oil Gas & Consumable Fuels" at NSE
+const sectorKey = v => String(v).toLowerCase().replace(/[^a-z0-9&]+/g, " ").trim();
 export function bseClassification(json, known) {
   if (!json || typeof json !== "object") return null;
+  const names = new Map([...known].map(k => [sectorKey(k), k]));
+  const asKnown = v => (typeof v === "string" ? names.get(sectorKey(v)) ?? null : null);
   const fine = [/^industry_?new$/i, /^industry_?name$/i, /^industry$/i, /^igroup(_?name)?$/i, /^sector_?new$/i, /^sector(_?name)?$/i];
   let sector = null;
   for (const re of fine) {
-    const v = bseField(json, re);
-    if (v && known.has(v)) { sector = v; break; }
+    sector = asKnown(bseField(json, re));
+    if (sector) break;
   }
-  sector ??= Object.values(json).find(v => typeof v === "string" && known.has(v.trim()))?.trim() ?? null;
+  sector ??= Object.values(json).map(asKnown).find(Boolean) ?? null;
   if (!sector) return null;
   const basic = bseField(json, /^isub_?group(_?name)?$/i, /^basic_?industry$/i);
-  return { sector, ...(basic && basic !== sector ? { basic } : {}) };
+  return { sector, ...(basic && sectorKey(basic) !== sectorKey(sector) ? { basic } : {}) };
 }
 async function bseSectors(symbols, skip, { pauseMs = 250, max = Number(process.env.BSE_SECTOR_BATCH ?? 2500), getJson = url => requestJson(url, { headers: BSE_HEADERS, service: "BSE", maxBytes: 25 * 1024 * 1024, timeoutMs: 30_000 }), equityList = null } = {}) {
   // a company BSE gave nothing usable for is asked again when the reading
   // changes (BSE_SECTOR_VERSION)
   const before = loadMarketSnapshot();
-  const out = Object.fromEntries(Object.entries(before?.bseSectors ?? {}).filter(([, v]) => v || before?.bseSectorsVersion === BSE_SECTOR_VERSION));
+  // (and one from the first reading, which kept the sector as its industry)
+  const current = before?.bseSectorsVersion === BSE_SECTOR_VERSION;
+  const out = Object.fromEntries(Object.entries(before?.bseSectors ?? {}).filter(([, v]) => current || (v && v.basic && v.basic !== v.sector)));
   const todo = symbols.filter(s => !skip[s] && !(s in out));
   if (!todo.length) return out;
   const codes = bseCodes(await getJson(BSE_LIST), equityList ?? await fetchEquityList());
