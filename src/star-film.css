@@ -215,3 +215,33 @@
   .sf-sky .sf-ci::before { background: radial-gradient(closest-side, rgba(8,8,16,.92), rgba(8,8,16,.8) 60%, rgba(8,8,16,0)); }
   .sf-sky p, .sf-sky h1 span, .sf-sky h2 span { color: #F4F4FF; }
 }
+
+/* ── the first screen's search (HeroSearch.jsx): over the sky, so in the
+   dark material whatever the theme, like the bar's Sign in ── */
+.hs { position: relative; width: min(100%, 420px); margin: 22px 0 0 auto; text-align: left; }
+.hs-form { position: relative; }
+.hs-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #A8A8C0; pointer-events: none; }
+.hs input { width: 100%; height: 50px; padding: 0 16px 0 44px; border-radius: 980px; border: 1px solid rgba(255,255,255,.18);
+  background: rgba(20,20,36,.72); color: #F4F4FF; font: 400 16px/1 var(--font); outline: none;
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); transition: border-color 160ms ease; }
+.hs input::placeholder { color: #8282A0; }
+.hs input:focus-visible { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent); }
+.hs input::-webkit-search-cancel-button { display: none; }
+.hs-list { position: absolute; z-index: 5; left: 0; right: 0; top: 56px; margin: 0; padding: 6px; list-style: none; border-radius: 16px;
+  border: 1px solid rgba(255,255,255,.14); background: #0E0E1A; box-shadow: 0 16px 40px rgba(0,0,0,.45); }
+.hs-list button { display: flex; align-items: baseline; gap: 10px; width: 100%; min-height: 44px; padding: 8px 12px; border: 0; border-radius: 10px;
+  background: none; color: #F4F4FF; font: 400 14px/1.3 var(--font); text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.hs-list b { flex: none; font-weight: 600; color: var(--accent); }
+.hs-list span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #A8A8C0; }
+.hs-list [aria-selected="true"] button, .hs-list button:active { background: rgba(255,255,255,.08); }
+.hs-try { margin: 12px 0 0 !important; color: #A8A8C0; font: 400 14px/1.4 var(--font) !important; text-align: right; }
+.hs-try a { color: var(--accent); text-decoration: none; }
+.sf-why { margin: 12px 0 0 !important; color: #A8A8C0; font-size: 14px !important; }
+@media (hover: hover) and (pointer: fine) {
+  .hs-list button:hover { background: rgba(255,255,255,.08); }
+  .hs-try a:hover { text-decoration: underline; text-underline-offset: 3px; }
+}
+@media (max-width: 720px) {
+  .hs { margin: 18px 0 0; width: 100%; }
+  .hs-try { text-align: left; }
+}

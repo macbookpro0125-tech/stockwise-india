@@ -4,6 +4,7 @@ import { Logo } from "./site.jsx";
 import StrategyMark, { markColor } from "./StrategyMarks.jsx";
 import { createStarScene } from "./starScene.js";
 import DomeFilm from "./DomeFilm.jsx";
+import HeroSearch from "./HeroSearch.jsx";
 import "./star-film.css";
 
 // The top of the signed-out front page (16 Oct 2026, "make it from scratch,
@@ -275,8 +276,10 @@ export default function StarFilm({ onJoin, onLogin, stats }) {
         <div ref={cap(0)} className="sf-cap sf-sky sf-open" data-in="-0.05" data-hold="0.02" data-out="0.10"><div className="sf-ci">
           <p className="sf-eb">Indian stock market · Fundamental research</p>
           <h1>Jocular <span>Insights</span></h1>
-          <p>Find great businesses. Invest with clarity.</p>
+          <p>Free quality scores and fair values for every NSE company, from its own filings.</p>
+          <HeroSearch className="sf-hs" />
           <button type="button" className="sf-btn" onClick={onJoin}>Create free account<Arrow /></button>
+          <p className="sf-why">Your watchlist, price alerts and results reminders.</p>
         </div></div>
 
         <div ref={cap(1)} className="sf-cap sf-sky sf-left" data-in="0.13" data-hold="0.20" data-out="0.27"><div className="sf-ci">

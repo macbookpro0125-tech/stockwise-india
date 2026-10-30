@@ -6,6 +6,7 @@ import domeMidUrl from "./assets/dome-mid.webp";
 import domeStarUrl from "./assets/dome-star.webp";
 import { Logo } from "./site.jsx";
 import "./dome-film.css";
+import HeroSearch from "./HeroSearch.jsx";
 
 // The top of the signed-out front page (16 Oct 2026): a scroll film, ported
 // from stockwise-scroll/source/film.html. A sticky full-screen stage holds a
@@ -252,9 +253,11 @@ export default function DomeFilm({ onJoin, onLogin }) {
 
           <div ref={cap(0)} className="df-cap df-dk df-open" data-in="-0.05" data-hold="0.02" data-out="0.10"><div className="df-ci">
             <p className="df-eb">Indian stock market · Fundamental research</p>
-            <h1>Stock<i>wise</i> India</h1>
-            <p>Find great businesses. Invest with clarity.</p>
+            <h1>Jocular <i>Insights</i></h1>
+            <p>Free quality scores and fair values for every NSE company, from its own filings.</p>
+            <HeroSearch className="sf-hs" />
             <button type="button" className="df-btn df-btn-glow" onClick={onJoin}>Create free account<Arrow /></button>
+            <p className="sf-why">Your watchlist, price alerts and results reminders.</p>
           </div></div>
 
           <div ref={cap(1)} className="df-cap df-dk df-left" data-in="0.13" data-hold="0.20" data-out="0.27"><div className="df-ci">

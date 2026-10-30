@@ -761,6 +761,8 @@ export function createApp() {
       // The strategies' and the results calendar's pages, no sign-in needed (seo-lists.js, PublicLists.jsx)
       if (url.pathname === "/api/public/screens" && req.method === "GET") { sendJson(res, 200, publicScreens()); return; }
       if (url.pathname === "/api/public/sectors" && req.method === "GET") { sendJson(res, 200, publicSectors()); return; }
+      // the front page's search (HeroSearch.jsx): NSE's own list, symbols and names only
+      if (url.pathname === "/api/public/search" && req.method === "GET") { sendJson(res, 200, await searchEquities(url.searchParams.get("q"))); return; }
       if (url.pathname === "/api/public/page" && req.method === "GET") {
         const path = url.searchParams.get("path") ?? "";
         const page = isSubPagePath(path) ? await publicSubPage(path) : null;
