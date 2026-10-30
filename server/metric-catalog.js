@@ -93,6 +93,8 @@ export const METRICS = [
   { id: "ret5y", label: "5-year return", short: "5Y", category: "Price & returns", unit: "%", decimals: 1, signed: true },
   { id: "ret1wVsNifty", label: "1-week return vs NIFTY 50", short: "1W vs NIFTY", category: "Price & returns", unit: "%", decimals: 1, signed: true, about: "The stock's return minus NIFTY 50's over the same days, in percentage points." },
   { id: "ret1mVsNifty", label: "1-month return vs NIFTY 50", short: "1M vs NIFTY", category: "Price & returns", unit: "%", decimals: 1, signed: true },
+  { id: "priceStrength", label: "Price strength (1–99)", short: "Price strength", category: "Price & returns", unit: "", decimals: 0, about: "How the share price has done against every other company's: the return over 3 months (counted double), 6, 9 and 12 months, ranked 1 to 99. 90 means stronger than 90% of companies. A ranking of the past, not a forecast, and separate from the quality score." },
+  { id: "ret9m", label: "Return, 9 months", short: "9M", category: "Price & returns", unit: "%", decimals: 1, signed: true },
   { id: "ret3mVsNifty", label: "3-month return vs NIFTY 50", short: "3M vs NIFTY", category: "Price & returns", unit: "%", decimals: 1, signed: true },
   { id: "ret6mVsNifty", label: "6-month return vs NIFTY 50", short: "6M vs NIFTY", category: "Price & returns", unit: "%", decimals: 1, signed: true },
   { id: "ret1yVsNifty", label: "1-year return vs NIFTY 50", short: "1Y vs NIFTY", category: "Price & returns", unit: "%", decimals: 1, signed: true },

@@ -123,6 +123,13 @@ export default function App() {
     hadOpen.current = !!open;
   }, [open, account?.userId]);
 
+  // Discover's own step changed (a card opened a screen, Back to the
+  // screeners): the tab follows, without a step of its own in the history
+  const followStep = t => {
+    if (t === tabRef.current) return;
+    tabRef.current = t;
+    setTab(t);
+  };
   const goTab = (t) => {
     if (t !== tabRef.current) tabHistory.current.push(tabRef.current);
     if (open) navigate("/");
@@ -270,7 +277,7 @@ export default function App() {
   useEffect(() => {
     if (!owner || tour) return;
     const seen = toursSeen(owner);
-    const want = tourAsked ?? (open ? (!seen.stock && "stock") : (tab === "discover" && !seen.app && "app"));
+    const want = tourAsked ?? (open ? (!seen.stock && "stock") : ((tab === "discover" || tab === "workspace") && !seen.app && "app"));
     if (!want || (want === "stock") !== !!open) return;
     const ready = want === "stock" ? '[data-tour="research"]' : '[data-tour="row"]';
     const started = Date.now();
@@ -388,17 +395,20 @@ export default function App() {
   const logout = () => forgetPush().finally(() => api.logout().then(() => signedOut()));
   const accountDeleted = () => signedOut("Your account and everything saved with it have been deleted.");
   return (
-    <div className={`app-shell${!open && tab === "discover" ? " on-discover" : ""}`} style={{ minHeight: "100vh", background: "var(--bg)" }}>
+    <div className={`app-shell${!open && (tab === "discover" || tab === "workspace") ? " on-discover" : ""}`} style={{ minHeight: "100vh", background: "var(--bg)" }}>
       <PriceStrip onOpenStock={openSymbol} onOpenIndex={name => { setIndexOpen(name); goTab("explore"); }} />
       <Header tab={open ? null : tab} onTab={goTab} account={account} onLogout={logout} onDeleted={accountDeleted} onSearch={openSymbol} theme={theme} onToggleTheme={toggleTheme} onTour={askForTour} />
       <div style={{ height: 16 }} />
       {/* A phone: the page's name in large type, as a native app's (index.css .phone-title) */}
-      {!open && tab !== "discover" && <h2 className="phone-title phone-only" style={{ padding: "0 var(--page-x)" }}>{TABS.find(t => t.id === tab)?.label === "Performance" ? "Strategy performance" : TABS.find(t => t.id === tab)?.label}</h2>}
+      {!open && tab !== "discover" && tab !== "workspace" && <h2 className="phone-title phone-only" style={{ padding: "0 var(--page-x)" }}>{TABS.find(t => t.id === tab)?.label === "Performance" ? "Strategy performance" : TABS.find(t => t.id === tab)?.label}</h2>}
       <Suspense fallback={<div role="status" style={{ minHeight: 220, display: "grid", placeItems: "center", color: "var(--t3)", fontSize: 13 }}>Loading this screen…</div>}>
         {open && <StockDetail key={open.at} symbol={open.symbol} account={account} onBack={closeStock} backTo={TABS.find(t => t.id === tab)?.label} onOpenStock={openSymbol} />}
         {/* Kept mounted (hidden) while a stock is open, so its filters and
             results are still there on Back. */}
-        {tab === "discover" && <div hidden={!!open}><DiscoverView onOpenStock={openSymbol} theme={theme} onOpenNews={id => { setNewsOpen(id ?? null); goTab("explore"); }} /></div>}
+        {/* Screeners and Workspace (a computer) are its two steps: one view, so
+            the screen built in one is there in the other */}
+        {(tab === "discover" || tab === "workspace") && <div hidden={!!open}><DiscoverView onOpenStock={openSymbol} theme={theme} onOpenNews={id => { setNewsOpen(id ?? null); goTab("explore"); }}
+          page={tab} onPage={followStep} /></div>}
         {!open && tab === "watchlist" && <WatchlistView onOpenStock={openSymbol} onOpenNews={id => { setNewsOpen(id); goTab("explore"); }} />}
         {!open && tab === "portfolio" && <PortfolioView onOpenStock={openSymbol} />}
         {!open && tab === "performance" && <PerformanceView onOpenStock={openSymbol} />}

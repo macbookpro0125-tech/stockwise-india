@@ -1,6 +1,6 @@
 import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { SlidersHorizontal, ChevronLeft, ChevronRight, Bookmark, Share } from "lucide-react";
+import { SlidersHorizontal, ChevronLeft, ChevronRight, Bookmark, Share, Table2, PanelsLeftRight } from "lucide-react";
 import { api } from "./api.js";
 import PresetCards, { presetRules } from "./PresetCards.jsx";
 import { NewsTile } from "./NewsView.jsx";
@@ -14,6 +14,7 @@ import { NEW_SCREEN_EVENT } from "./phoneChrome.js";
 import { noteRecent } from "./screensHome.js";
 import FilterPanel, { isActiveFilter } from "./screener/FilterPanel.jsx";
 import FilterBoard, { ActiveFilters } from "./screener/FilterBoard.jsx";
+import WorkspaceSplit from "./WorkspaceSplit.jsx";
 import StrategyPicker from "./StrategyPicker.jsx";
 import { returnScroll } from "./returnScroll.js";
 import MetricPicker from "./screener/MetricPicker.jsx";
@@ -85,7 +86,7 @@ function Modal({ onClose, width = 340, children }) {
 
 // The periods a ranked strategy's switch offers (Top Gainers)
 const PERIOD_WORDS = { ret1d: "1 day", ret1w: "1 week", ret1m: "1 month", ret3m: "3 months", ret6m: "6 months", ret1y: "1 year", ret3y: "3 years", ret5y: "5 years" };
-export default function DiscoverView({ onOpenStock, theme, onOpenNews }) {
+export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "discover", onPage = null }) {
   const { meta, error: metaError, retry: retryMeta } = useScreenerMeta();
   // A shared link wins; else the last screen. null until the first screen
   // says what the old saved criteria became.
@@ -198,6 +199,20 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews }) {
     if (window.history.state?.discoverStep === "stocks") window.history.back();
     else setPhoneStep("strategies");
   };
+  // A computer: the Screeners and Workspace tabs are these two steps. The
+  // tab picked moves the step; a step taken here moves the tab (App.jsx).
+  const pageStep = page === "workspace" ? "stocks" : "strategies";
+  const lastPage = useRef(page);
+  useEffect(() => {
+    if (isPhone || !onPage) return;
+    if (lastPage.current !== page) {
+      lastPage.current = page;
+      if (pageStep !== phoneStep) { if (pageStep === "stocks") showStocks(); else showStrategies(); }
+      return;
+    }
+    const want = phoneStep === "stocks" ? "workspace" : "discover";
+    if (want !== page) { lastPage.current = want; onPage(want); }
+  }, [page, phoneStep, isPhone]); // eslint-disable-line react-hooks/exhaustive-deps
   const [results, setResults] = useState(null);
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState("");
@@ -330,6 +345,11 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [requestKey]);
 
+  // The Workspace's results as the table, or as a list beside a chart (a
+  // computer, WorkspaceSplit.jsx), remembered on this device
+  const [view, setViewState] = useState(() => { try { return localStorage.getItem("workspaceView") === "split" ? "split" : "table"; } catch { return "table"; } });
+  const setView = v => { setViewState(v); try { localStorage.setItem("workspaceView", v); } catch {} };
+  const split = view === "split" && !isPhone;
   // Undo and redo for the filters you change (31 Oct 2026): each change keeps
   // the filters before it; opening a strategy starts afresh
   const filtersNow = useRef(filters);
@@ -628,7 +648,7 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews }) {
             header, so it's in reach however far down the list you are */}
         {phoneStep === "stocks" && !isPhone && (
           <button type="button" onClick={showStrategies} className="screen-back-pin" aria-label="Back to all strategies">
-            <ChevronLeft size={18} strokeWidth={2.2} aria-hidden="true" /> All strategies
+            <ChevronLeft size={18} strokeWidth={2.2} aria-hidden="true" /> All screeners
           </button>
         )}
 
@@ -668,6 +688,10 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews }) {
               </div>
               {!isPhone && (
                 <div className="screen-actions">
+                  <div className="ws-view" role="group" aria-label="Show the results as">
+                    <button type="button" aria-pressed={!split} onClick={() => setView("table")}><Table2 size={14} aria-hidden="true" /> Table</button>
+                    <button type="button" aria-pressed={split} onClick={() => setView("split")}><PanelsLeftRight size={14} aria-hidden="true" /> List and chart</button>
+                  </div>
                   <button type="button" onClick={handleShare} disabled={!activeCount} title="Copy a link that opens this screen" className="btn-ghost tb-btn">
                     <Share size={14} aria-hidden="true" /> {copyFeedback || "Share"}
                   </button>
@@ -757,17 +781,20 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews }) {
                     </button>
                   ))}
                 </div>
-                <div className="ss-row hide-phone" role="group" aria-label="Columns to show">
+                {!split && <div className="ss-row hide-phone" role="group" aria-label="Columns to show">
                   <span className="ss-label">Show</span>
                   <div className="ss-seg">
                     {COLUMN_SETS.map(set => (
                       <button key={set.id} type="button" aria-pressed={currentSet(columns) === set.id} onClick={() => setColumns(set.columns)}>{set.label}</button>
                     ))}
                   </div>
-                </div>
+                </div>}
               </div>
             </>); })()}
 
+            {split && results?.results ? (
+              <WorkspaceSplit matches={signal ? applySignal(results.results, signal) : results.results} onOpenStock={onOpenStock} />
+            ) : (
             <ResultsTable
               theme={theme}
               sortTo={ranking}
@@ -800,6 +827,7 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews }) {
               ) : null}
               meta={meta}
             />
+            )}
             </div>
             </div>
           </main>

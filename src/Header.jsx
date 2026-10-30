@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Star, BriefcaseBusiness, ChartLine, Bell, Sun, Moon, Zap, Settings, Telescope, Users } from "lucide-react";
+import { Star, BriefcaseBusiness, ChartLine, Bell, Sun, Moon, Zap, Settings, Telescope, Users, PanelsLeftRight } from "lucide-react";
 import { useWatchlist } from "./watchlist.js";
 import { portfolioStore, alertsStore } from "./stores.js";
 import StockSearchBar from "./StockSearchBar.jsx";
@@ -30,7 +30,11 @@ export function GridIcon({ size = 24, strokeWidth = 2, filled = false, ...rest }
 }
 
 export const TABS = [
-  { id: "discover", label: "Discover", short: "Discover", Icon: GridIcon },
+  // A computer splits Discover in two (31 Oct 2026): Screeners, the ready-made
+  // screens to pick from, and Workspace, where a screen is built and studied
+  // (DiscoverView's two steps). A phone keeps the one Discover tab.
+  { id: "discover", label: "Discover", wide: "Screeners", short: "Discover", Icon: GridIcon },
+  { id: "workspace", label: "Workspace", short: "Workspace", Icon: PanelsLeftRight, wideOnly: true },
   // The indices and the news (ExploreView.jsx, 23 Oct 2026)
   { id: "explore", label: "Explore", short: "Explore", Icon: Telescope },
   // Short-term and speculative, so only for accounts the server allows
@@ -53,7 +57,9 @@ const PHONE_TABS = ["discover", "watchlist", "explore", "portfolio"];
 
 const HEADER_BG = { light: "rgba(255,255,255,0.82)", dark: "rgba(7,7,14,0.85)" };
 
-export const tabsFor = account => TABS.filter(t => !t.phone && (!t.gated || account?.features?.[t.gated]));
+export const tabsFor = (account, phone = false) => TABS
+  .filter(t => !t.phone && !(phone && t.wideOnly) && (!t.gated || account?.features?.[t.gated]))
+  .map(t => (!phone && t.wide ? { ...t, label: t.wide } : t));
 const phoneTabs = PHONE_TABS.map(id => TABS.find(t => t.id === id));
 
 // Counts and badges for the tabs, shared by the header and the bottom bar
@@ -81,7 +87,7 @@ export default function Header({ tab, onTab, account, onLogout, onDeleted, onSea
   // other page does (asked the same day). Discover says which of its two it's
   // showing (html[data-discover-step], DiscoverView.jsx) and index.css hides
   // the row on the start page.
-  const onDiscover = tab === "discover";
+  const onDiscover = tab === "discover" || tab === "workspace";
 
   // --header-h: how much of the top the pinned header covers, so bars pinned
   // below it (the stock page's action bar) sit under it at any width — 0 on
@@ -137,7 +143,7 @@ export default function Header({ tab, onTab, account, onLogout, onDeleted, onSea
 
         {/* a computer's pages are in the bar down the left (SideRail.jsx, 26 Oct 2026) */}
         {phone && <div className={`discovery-tabs${onDiscover ? " tabs-on-discover" : ""}`} data-tour="tabs" style={{ display: "flex", gap: 0 }}>
-          {tabsFor(account).map(t => {
+          {tabsFor(account, true).map(t => {
             const b = badges[t.id] ?? {};
             const active = tab === t.id;
             return (

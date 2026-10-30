@@ -129,6 +129,10 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
   const [failed, setFailed] = useState({});
   const [tops, setTops] = useState({});
   const [kind, setKind] = useState(() => { const k = kindOnOpen; kindOnOpen = "all"; return k; });
+  // the grid's search: a strategy by its name or what it looks for (31 Oct 2026)
+  const [find, setFind] = useState("");
+  const q = find.trim().toLowerCase();
+  const found = p => !q || `${p.name} ${p.description ?? ""}`.toLowerCase().includes(q);
   const [query, setQuery] = useState("");
   const [presets, setPresets] = useState([]);
   const [customPresets, setCustomPresets] = useState(loadCustomPresets);
@@ -440,12 +444,15 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
               </button>
             );
           })}
+          <input type="search" className="sc-find" value={find} onChange={e => setFind(e.target.value)} aria-label="Find a screener"
+            placeholder="Find a screener: volume, dividend, banks…" autoComplete="off" spellCheck={false} />
         </div>
       )}
+      {grid && q && !allPresets.some(found) && <p className="sc-none">No screener matches "{find}".</p>}
       <div className="preset-scroll" style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 6, scrollbarWidth: "none", maskImage: "linear-gradient(to right, transparent 0, black 0, black calc(100% - 48px), transparent 100%)", WebkitMaskImage: "linear-gradient(to right, transparent 0, black 0, black calc(100% - 48px), transparent 100%)" }}>
         <style>{`.preset-scroll::-webkit-scrollbar{display:none}`}</style>
 
-        {(grid && kind !== "all" ? allPresets.filter(p => kindOf(p)[0] === kind) : allPresets).map((p, shownIndex) => {
+        {(grid ? allPresets.filter(p => (kind === "all" || kindOf(p)[0] === kind) && found(p)) : allPresets).map((p, shownIndex) => {
           const active = p.id === activePresetId;
           const isCustom = !!p.custom;
 

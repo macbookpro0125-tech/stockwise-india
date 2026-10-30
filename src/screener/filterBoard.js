@@ -37,6 +37,7 @@ export const BOARD_GROUPS = [
     { id: "freeFloat", label: "Free float", choices: [["Over 30%", 30, null], ["Over 50%", 50, null]] },
   ] },
   { id: "price", label: "Price and technical", items: [
+    { id: "priceStrength", label: "Price strength", choices: [["70 or more", 70, null], ["80 or more", 80, null], ["90 or more", 90, null], ["Under 30", null, 30]] },
     { id: "ret1y", label: "1-year return", choices: [["Up", 0, null], ["Up 20% or more", 20, null], ["Down", null, 0], ["Down 20% or more", null, -20]] },
     { id: "vsSma200", label: "vs 200-day average", choices: [["Above it", 0, null], ["Below it", null, 0]] },
     { id: "rsi14", label: "RSI", choices: [["Under 30", null, 30], ["30 to 70", 30, 70], ["Over 70", 70, null]] },

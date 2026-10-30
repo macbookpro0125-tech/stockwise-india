@@ -318,7 +318,7 @@ function technicals(days, nifty) {
 // and six months, and one, three and five years back (calendar months —
 // Other apps don't say which base they use; theirs differ from these by
 // under a point). All the days come from cached bhavcopies.
-const RETURN_PERIODS = [["d1", { days: 1 }], ["w1", { days: 7 }], ["m1", { months: 1 }], ["m3", { months: 3 }], ["m6", { months: 6 }], ["y1", { months: 12 }], ["y3", { months: 36 }], ["y5", { months: 60 }]];
+const RETURN_PERIODS = [["d1", { days: 1 }], ["w1", { days: 7 }], ["m1", { months: 1 }], ["m3", { months: 3 }], ["m6", { months: 6 }], ["m9", { months: 9 }], ["y1", { months: 12 }], ["y3", { months: 36 }], ["y5", { months: 60 }]];
 
 // The market and each sector's index, over the same periods (sector-indices.js)
 // The Explore page's indices (explore.js): the broad market, then sectors

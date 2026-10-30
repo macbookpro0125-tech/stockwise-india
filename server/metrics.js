@@ -1,6 +1,7 @@
 // Every number the Discover table and the stock page show, derived from one
 // company's stored filings plus the market-wide snapshot — one place, so the
 // same stock can't show two different P/Es on two screens.
+import { priceStrengthOf } from "./price-strength.js";
 import { calculateLevels, roundPrice } from "./levels.js";
 import { DETAIL_TAGS, segmentsArePlaces } from "./fetch-nse.js";
 const DETAIL_KEYS = ["materials", "purchases", "inventoryChange", ...Object.keys(DETAIL_TAGS.year), ...Object.keys(DETAIL_TAGS.atEnd)];
@@ -932,6 +933,8 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     ret1wVsNifty: ret.w1VsNifty ?? null,
     ret1mVsNifty: ret.m1VsNifty ?? null,
     ret3mVsNifty: ret.m3VsNifty ?? null,
+    ret9m: ret.m9 ?? null,
+    priceStrength: priceStrengthOf(snap, sym),
     ret6mVsNifty: ret.m6VsNifty ?? null,
     ret1yVsNifty: ret.y1VsNifty ?? null,
     priceCagr5y: ret.cagr5y ?? null,
