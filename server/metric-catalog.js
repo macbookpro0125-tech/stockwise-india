@@ -190,6 +190,10 @@ export const CATEGORY_METRICS = [
   // When a company reports, from NSE's board-meeting calendar and its latest
   // filing (30 Oct 2026, the Finviz ideas): a company can be in several
   { id: "resultsWhen", label: "Results", category: "Size", options: ["Today", "Next 7 days", "Next 14 days", "Reported in the last 30 days"], get: (m, now = Date.now()) => resultsWhen(m, now), about: "From NSE's board-meeting calendar, and the date its latest quarter was filed." },
+  // From NSE's index lists and its F&O list (market-data.js)
+  { id: "index", label: "Index", category: "Size", options: ["Nifty 50", "Nifty Next 50", "Nifty Midcap 150", "Nifty Smallcap 250", "Nifty 500", "Nifty Bank"], get: m => m.indices ?? [], about: "The NSE indices a company is a member of, from niftyindices.com's lists." },
+  { id: "theme", label: "Theme", category: "Size", options: ["Defence", "Railways PSU", "EV and new-age auto", "PSU banks", "Energy", "Digital", "Capital markets", "Housing", "Manufacturing", "Tourism", "Healthcare"], get: m => m.themes ?? [], about: "NSE's thematic indices (Nifty India Defence, Nifty India Railways PSU and others): a company's theme is its membership of NSE's list, never our guess." },
+  { id: "fno", label: "Futures and options", category: "Size", options: ["Traded in F&O"], get: m => (m.fno ? "Traded in F&O" : null), about: "Companies whose shares trade in NSE's futures and options market, from NSE's list of F&O contracts." },
   // Your own list of companies, pasted in: only those (the Tickers box)
   { id: "symbols", label: "Only these companies", category: "Size", free: true, get: m => m.symbol },
   { id: "sector", label: "Sector", category: "Size" },

@@ -361,7 +361,9 @@ export function screenerMeta() {
       ...x,
       options: x.id === "sector" ? sectors : x.options,
       ...(x.id === "sector" ? { counts } : {}),
-      known: x.id === "sector" ? rows.filter(m => m.sector).length : rows.length,
+      // how many companies the filter can speak for: an index or F&O list the
+      // snapshot couldn't read speaks for none, and the panel leaves it out
+      known: x.id === "sector" ? rows.filter(m => m.sector).length : x.id === "index" ? rows.filter(m => m.indices != null).length : x.id === "fno" ? rows.filter(m => m.fno != null).length : x.id === "theme" ? rows.filter(m => m.themes != null).length : rows.length,
     })),
     companies: rows.length,
     // The dates behind each metric's basis ("most companies' latest year is

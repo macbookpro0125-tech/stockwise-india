@@ -440,6 +440,11 @@ assert(fewPeers.m.levels === fewPeers.before.levels && /no peer group/.test(fewP
   assert(JSON.stringify(own) === JSON.stringify([{ id: "symbols", values: ["TCS", "M&M"] }, { id: "resultsWhen", values: ["Today"] }]), "symbols cleaned to NSE form, once each; unknown choices dropped");
   assert(matchesFilters({ symbol: "TCS" }, [own[0]], new Map()) && !matchesFilters({ symbol: "INFY" }, [own[0]], new Map()), "your own list keeps only its companies");
   assert(METRICS.find(x => x.id === "freeFloat").get({ promoterPct: 71.8 }) === 100 - 71.8, "free float is what promoters don't hold");
+  const hal = { symbol: "HAL", indices: ["Nifty 50", "Nifty 500"], themes: ["Defence"], fno: true };
+  assert(matchesFilters(hal, cleanFilters([{ id: "index", values: ["Nifty 50"] }, { id: "theme", values: ["Defence"] }, { id: "fno", values: ["Traded in F&O"] }]), new Map()), "index, theme and F&O from NSE's lists");
+  assert(!matchesFilters({ ...hal, themes: [] }, cleanFilters([{ id: "theme", values: ["Defence"] }]), new Map()) && !matchesFilters({ symbol: "X", indices: null }, cleanFilters([{ id: "index", values: ["Nifty 50"] }]), new Map()), "not in the list, or the list unknown: left out");
+  const seed = JSON.parse((await import("node:fs")).readFileSync(new URL("./index-lists-seed.json", import.meta.url), "utf8"));
+  assert(seed.screenIndices["Nifty 50"].length >= 45 && seed.themes.Defence.length >= 5 && seed.fno.length >= 150 && seed.savedOn, "the saved lists are whole and dated");
 }
 
 console.log("\nAll research-score checks passed.");

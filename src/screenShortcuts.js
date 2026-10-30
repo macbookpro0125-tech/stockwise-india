@@ -30,6 +30,7 @@ export const COLUMN_SETS = [
   { id: "quality", label: "Quality", columns: ["roce", "roe", "opm", "debtToEquity", "piotroski", "profitGrowth5y"] },
   { id: "owners", label: "Owners", columns: ["promoterPct", "pledgedPct", "fiiPct", "diiPct", "marketCapCr"] },
   { id: "returns", label: "Returns", columns: ["ret1w", "ret1m", "ret1y", "downFrom52wHigh", "upFrom52wLow"] },
+  { id: "technical", label: "Technical", columns: ["rsi14", "vsSma50", "vsSma200", "volatility1y", "beta1y", "delivery1m"] },
 ];
 
 // The set the table shows now, if it's exactly one of them

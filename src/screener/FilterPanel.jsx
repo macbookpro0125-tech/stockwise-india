@@ -175,6 +175,22 @@ function SectorPick({ def, filter, companies, onChange }) {
   );
 }
 
+// A theme from NSE's thematic indices: one at a time, from a list
+function ThemePick({ def, filter, onChange }) {
+  const id = useId();
+  const value = filter?.values?.[0] ?? "";
+  return (
+    <div className="filter-row">
+      <label htmlFor={id} style={{ display: "block", fontSize: 12.5, fontWeight: 400, color: "var(--t1)", marginBottom: 8 }} title={def.about}>Theme</label>
+      <select id={id} className="input-base" value={value} onChange={e => onChange(e.target.value ? [e.target.value] : [])} style={{ width: "100%", height: 36, fontSize: 13, cursor: "pointer" }}>
+        <option value="">Any theme</option>
+        {def.options.map(o => <option key={o} value={o}>{o}</option>)}
+      </select>
+      <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 4 }}>From NSE's thematic indices</div>
+    </div>
+  );
+}
+
 // Your own list: symbols typed or pasted, separated by commas or spaces
 function SymbolsBox({ filter, onChange }) {
   const id = useId();
@@ -216,7 +232,7 @@ function CapSize({ def, filter, onChange, columns = 3, short = o => o.replace(" 
   );
 }
 
-const PINNED_IDS = new Set(["capSize", "sector", "resultsWhen", "symbols"]);
+const PINNED_IDS = new Set(["capSize", "sector", "resultsWhen", "index", "theme", "fno", "symbols"]);
 
 export default function FilterPanel({ meta, filters, onChange, onAddFilter, onReset }) {
   const active = filters.filter(isActiveFilter).length;
@@ -256,6 +272,9 @@ export default function FilterPanel({ meta, filters, onChange, onAddFilter, onRe
       <CapSize def={meta.byId.get("capSize")} filter={cap} onChange={setCap} />
       {meta.byId.get("sector") && <SectorPick def={meta.byId.get("sector")} filter={sector} companies={meta.companies} onChange={setSector} />}
       {meta.byId.get("resultsWhen") && <CapSize def={meta.byId.get("resultsWhen")} filter={filters.find(f => f.id === "resultsWhen")} onChange={setValues("resultsWhen")} columns={2} short={o => o.replace("Reported in the last 30 days", "Reported, 30 days")} />}
+      {meta.byId.get("index")?.known > 0 && <CapSize def={meta.byId.get("index")} filter={filters.find(f => f.id === "index")} onChange={setValues("index")} columns={2} short={o => o.replace("Nifty ", "")} />}
+      {meta.byId.get("theme")?.known > 0 && <ThemePick def={meta.byId.get("theme")} filter={filters.find(f => f.id === "theme")} onChange={setValues("theme")} />}
+      {meta.byId.get("fno")?.known > 0 && <CapSize def={meta.byId.get("fno")} filter={filters.find(f => f.id === "fno")} onChange={setValues("fno")} columns={1} />}
       {meta.byId.get("symbols") && <SymbolsBox filter={filters.find(f => f.id === "symbols")} onChange={setValues("symbols")} />}
 
       {filters.filter(f => !PINNED_IDS.has(f.id)).map(f => {

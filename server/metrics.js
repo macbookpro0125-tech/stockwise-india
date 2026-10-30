@@ -718,6 +718,11 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     // The next results board meeting NSE's calendar lists; null when none is
     // announced (or the calendar couldn't be read)
     nextResults: snap?.resultsDates?.[sym] ?? null,
+    // The indices it's in, and whether it trades in futures and options
+    // (market-data.js); null when the snapshot doesn't know
+    indices: snap?.screenIndices ? Object.entries(snap.screenIndices).filter(([, list]) => list.includes(sym)).map(([name]) => name) : null,
+    fno: snap?.fno ? snap.fno.includes(sym) : null,
+    themes: snap?.themes ? Object.entries(snap.themes).filter(([, list]) => list.includes(sym)).map(([name]) => name) : null,
     // Board meetings ahead and corporate actions near today (market-data.js
     // eventsBySymbol); null when the snapshot couldn't read NSE's lists
     events: snap?.events ? snap.events[sym] ?? [] : null,

@@ -432,6 +432,60 @@ export async function indexMembers() {
   return out;
 }
 
+// The indices a screen can filter on (30 Oct 2026, the Finviz ideas), read
+// as the heat map's are; an index whose list can't be read keeps the last
+// snapshot's members, or is left out — never guessed
+export const SCREEN_INDEX_LISTS = {
+  "Nifty 50": ["ind_nifty50list", "NIFTY 50"], "Nifty Next 50": ["ind_niftynext50list", "NIFTY NEXT 50"],
+  "Nifty Midcap 150": ["ind_niftymidcap150list", "NIFTY MIDCAP 150"], "Nifty Smallcap 250": ["ind_niftysmallcap250list", "NIFTY SMALLCAP 250"],
+  "Nifty 500": ["ind_nifty500list", "NIFTY 500"], "Nifty Bank": ["ind_niftybanklist", "NIFTY BANK"],
+};
+// Themes: NSE's own thematic indices, so a company's theme is NSE's
+// membership, never our guess (niftyindices.com; NSE's page has no copy)
+export const THEME_LISTS = {
+  "Defence": ["ind_niftyindiadefence_list", "NIFTY INDIA DEFENCE"], "Railways PSU": ["ind_niftyindiarailwayspsu_list", "NIFTY INDIA RAILWAYS PSU"],
+  "EV and new-age auto": ["ind_niftyev_newageautomotive_list", "NIFTY EV & NEW AGE AUTOMOTIVE"], "PSU banks": ["ind_niftypsubanklist", "NIFTY PSU BANK"],
+  "Energy": ["ind_niftyenergylist", "NIFTY ENERGY"], "Digital": ["ind_niftyindiadigital_list", "NIFTY INDIA DIGITAL"],
+  "Capital markets": ["ind_niftycapitalmarkets_list", "NIFTY CAPITAL MARKETS"], "Housing": ["ind_niftyhousing_list", "NIFTY HOUSING"],
+  "Manufacturing": ["ind_niftyindiamanufacturing_list", "NIFTY INDIA MANUFACTURING"], "Tourism": ["ind_niftyindiatourism_list", "NIFTY INDIA TOURISM"],
+  "Healthcare": ["ind_niftyhealthcarelist", "NIFTY HEALTHCARE INDEX"],
+};
+export async function screenIndexMembers(lists = SCREEN_INDEX_LISTS, key = "screenIndices") {
+  const out = {};
+  const before = loadMarketSnapshot()?.[key] ?? {};
+  for (const [name, [list, nseName]] of Object.entries(lists)) {
+    let symbols = [];
+    const csv = await fetchText(`https://www.niftyindices.com/IndexConstituent/${list}.csv`).catch(() => null);
+    if (csv) {
+      const [header, ...lines] = csv.trim().split("\n");
+      const iSym = header.split(",").map(c => c.trim()).indexOf("Symbol");
+      if (iSym >= 0) symbols = lines.map(l => l.split(",")[iSym]?.trim()).filter(Boolean);
+    }
+    if (symbols.length < 10) {
+      const json = await fetchJson(`${NSE_BASE}/api/equity-stockIndices?index=${encodeURIComponent(nseName)}`).catch(() => null);
+      symbols = (json?.data ?? []).filter(r => r?.symbol && r.symbol.toUpperCase() !== nseName && r.priority !== 1).map(r => r.symbol);
+    }
+    if (symbols.length >= 5) out[name] = symbols;
+    else if (before[name]?.length >= 5) out[name] = before[name];
+    else if (SEED[key]?.[name]?.length >= 5) out[name] = SEED[key][name];
+  }
+  return out;
+}
+
+// The lists as read on 30 Oct 2026, for when neither niftyindices.com nor NSE
+// answers and no snapshot has them yet (the GitHub data job is refused by
+// niftyindices.com). NSE reviews index members twice a year; refresh this
+// file when a live read works (scripts: see index-lists-seed.json's savedOn)
+const SEED = (() => { try { return JSON.parse(readFileSync(new URL("./index-lists-seed.json", import.meta.url), "utf8")); } catch { return {}; } })();
+
+// The companies traded in futures and options, from NSE's list of F&O
+// contract sizes; the last snapshot's list when NSE doesn't answer
+export async function fnoSymbols() {
+  const csv = await fetchText("https://nsearchives.nseindia.com/content/fo/fo_mktlots.csv").catch(() => null);
+  const symbols = csv ? csv.trim().split("\n").slice(1).map(l => l.split(",")[1]?.trim()).filter(s => s && /^[A-Z0-9&-]+$/.test(s) && !/^(NIFTY|BANKNIFTY|FINNIFTY|MIDCPNIFTY|SENSEX|BANKEX)/.test(s)) : [];
+  return symbols.length >= 50 ? symbols : loadMarketSnapshot()?.fno ?? SEED.fno ?? null;
+}
+
 // Each of them with its year of daily closes from NSE's daily index file (the
 // year walk has already read every day's) and NSE's valuation on the last day
 export async function indexBoard(fromIso, toIso) {
@@ -894,6 +948,9 @@ export async function buildMarketSnapshot(fyEndDates, { yearsOfActions = 6 } = {
     indices: await indexCloses(latest.date),
     indexBoard: await indexBoard(year.from, latest.date).catch(() => null),
     indexMembers: await indexMembers().catch(() => null),
+    screenIndices: await screenIndexMembers().catch(() => null),
+    themes: await screenIndexMembers(THEME_LISTS, "themes").catch(() => null),
+    fno: await fnoSymbols().catch(() => null),
   };
   writeFileSync(SNAPSHOT_PATH, JSON.stringify(snapshot));
   return snapshot;
