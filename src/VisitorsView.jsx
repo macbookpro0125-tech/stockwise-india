@@ -11,9 +11,9 @@ const dayName = d => new Intl.DateTimeFormat("en-IN", { weekday: "short", day: "
 const weekName = d => `Week of ${new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${d}T00:00:00Z`))}`;
 
 // A page's address, as words
-const PAGE_NAMES = { "/": "Front page", "/about": "About", "/help": "Help", "/methodology": "Methodology", "/privacy": "Privacy policy", "/disclaimer": "Disclaimer", "/stock-screener-india": "Stock screener (guide)", "/screens": "All screens", "/sectors": "All sectors", "/results-calendar": "Results calendar", "/explore": "Explore", "/news": "News", "/reset-password": "Reset password", Other: "Other addresses" };
+const PAGE_NAMES = { "/": "Front page", "/about": "About", "/help": "Help", "/methodology": "Methodology", "/privacy": "Privacy policy", "/disclaimer": "Disclaimer", "/stock-screener-india": "Stock screener (guide)", "/screens": "All screens", "/sectors": "All sectors", "/results-calendar": "Results calendar", "/explore": "Explore", "/news": "News", "/learn": "Guides", "/reset-password": "Reset password", Other: "Other addresses" };
 const words = slug => { const t = slug.replace(/-/g, " "); return t.charAt(0).toUpperCase() + t.slice(1); };
-const pageName = k => PAGE_NAMES[k] ?? k.replace(/^\/stock\//, "Company · ").replace(/^\/(sector|screens)\/(.+)$/, (_, kind, slug) => `${kind === "sector" ? "Sector" : "Screen"} · ${words(slug)}`);
+const pageName = k => PAGE_NAMES[k] ?? k.replace(/^\/stock\//, "Company · ").replace(/^\/(sector|screens|learn)\/(.+)$/, (_, kind, slug) => `${{ sector: "Sector", screens: "Screen", learn: "Guide" }[kind]} · ${words(slug)}`);
 // A country's name from its two-letter code
 const countryNames = (() => { try { return new Intl.DisplayNames(["en"], { type: "region" }); } catch { return null; } })();
 const countryName = c => (c === "Unknown" ? "Unknown" : countryNames?.of(c) ?? c);
@@ -134,7 +134,7 @@ export default function VisitorsView() {
         </>
       )}
 
-      <p className="nw-note">Counted on our own server since {s.since ? dayName(s.since) : "today"}, without cookies: each visitor is a code made with a secret that's deleted at the end of the day (and the week), so nobody can be identified or followed. Robots and link previews aren't counted. One person on a phone and a computer counts twice.{s.detailSince ? ` The detail by page, source, device, hour and country starts on ${dayName(s.detailSince)}.` : ""}</p>
+      <p className="nw-note">Counted on our own server since {s.since ? dayName(s.since) : "today"}, without cookies: each visitor is a code made with a secret that's deleted at the end of the day (and the week), so nobody can be identified or followed. Robots and link previews aren't counted; from 30 Oct 2026 a visit counts only once the page has started in a browser, which most robots never do, so earlier days count more. One person on a phone and a computer counts twice.{s.detailSince ? ` The detail by page, source, device, hour and country starts on ${dayName(s.detailSince)}.` : ""}</p>
     </div>
   );
 }

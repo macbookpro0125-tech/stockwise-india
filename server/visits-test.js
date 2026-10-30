@@ -89,6 +89,20 @@ assert(countryOf(req("10.0.0.1")) === "Unknown", "a private address has no count
 const kept = JSON.stringify(db.prepare("SELECT * FROM visit_parts").all());
 assert(!/5\.5\.5\.5|IndiaInvestments|comments|Chrome/.test(kept), "only a site's name is kept, never the address or browser");
 
+// the app's signal from a browser (30 Oct 2026): the page it reports, the link it came from as the page saw it
+{
+  const { countBrowserVisit } = await import("./visits.js");
+  const V = Date.parse("2026-10-30T09:30:00Z");
+  const post = (headers = {}) => ({ method: "POST", headers: { "user-agent": CHROME, referer: "https://jocularinsights.in/stock/TCS", host: "jocularinsights.in", "sec-fetch-site": "same-origin", ...headers }, socket: { remoteAddress: "9.9.9.9" } });
+  assert(countBrowserVisit(post(), { path: "/stock/infy?x=1", referrer: "https://www.google.com/" }, V), "a page that started in a browser counts");
+  const v = visitStats(V).detail.today;
+  assert(v.page.find(r => r.key === "/stock/INFY")?.visitors === 1 && v.source.find(r => r.key === "Google")?.visitors === 1, "as its page, from the link the page came from (not the signal's own address)");
+  assert(countBrowserVisit(post(), { path: "/learn/pe-ratio-explained" }, V) && visitStats(V).detail.today.page.some(r => r.key === "/learn/pe-ratio-explained"), "a guide is its own page");
+  assert(!countBrowserVisit(post({ "sec-fetch-site": "cross-site" }), { path: "/" }, V), "not from another site");
+  assert(!countBrowserVisit(post({ "user-agent": "Mozilla/5.0 HeadlessChrome/130" }), { path: "/" }, V), "not a headless browser");
+  assert(!countBrowserVisit({ ...post(), method: "GET" }, { path: "/" }, V) && !countBrowserVisit(post(), { path: "https://x.com/" }, V) && !countBrowserVisit(post(), {}, V), "only the app's own POST with a page's address");
+}
+
 // who may see it
 assert(isOwner("Owner@Example.com", { OWNER_EMAILS: " owner@example.com , other@x.in" }), "an owner email, any case or spacing");
 assert(!isOwner("someone@example.com", { OWNER_EMAILS: "owner@example.com" }) && !isOwner("owner@example.com", {}) && !isOwner(null, { OWNER_EMAILS: "owner@example.com" }), "nobody else, and nobody when unset");

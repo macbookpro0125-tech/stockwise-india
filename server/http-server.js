@@ -42,7 +42,7 @@ import { startAlertChecks } from "./alert-notifier.js";
 import { savePushToken, removePushToken, pushReady, pushToUser } from "./push.js";
 import { startNewsPush } from "./news-push.js";
 import { niceName } from "../src/stockName.js";
-import { countPageLoad, countActive, visitStats, isOwner } from "./visits.js";
+import { countBrowserVisit, countActive, visitStats, isOwner } from "./visits.js";
 import { startDigestJobs, weeklyEmailOn, setWeeklyEmail, unsubscribe } from "./digest.js";
 import { INDEXNOW_KEY, startIndexNow } from "./indexnow.js";
 import { publicScreen, publicScreens, publicResultsCalendar, screenPageHtml, screensIndexHtml, resultsCalendarHtml, homePageHtml, sectorsIndexHtml, sectorPageHtml } from "./seo-lists.js";
@@ -364,8 +364,6 @@ export function createApp() {
     res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
     if (req.headers["x-forwarded-proto"] === "https") res.setHeader("Strict-Transport-Security", "max-age=15552000");
     if (url.pathname.startsWith("/api/")) res.setHeader("X-Request-Id", requestId);
-    // a person loading a page, counted anonymously (visits.js)
-    if (!url.pathname.startsWith("/api/")) countPageLoad(req, url.pathname);
     try {
       // Anything that reads the market waits for one to exist (built in
       // slices, screen.js) — never sign-in, and never the health check, which
@@ -578,6 +576,14 @@ export function createApp() {
       }
 
       // The weekly email about the starred companies (digest.js): the Settings switch
+      // a person loading a page, counted anonymously once the page has started
+      // in their browser (visits.js; main.jsx sends it)
+      if (url.pathname === "/api/visit" && req.method === "POST") {
+        countBrowserVisit(req, await readJsonBody(req).catch(() => ({})));
+        res.writeHead(204, { "Cache-Control": "no-store" });
+        res.end();
+        return;
+      }
       if (url.pathname === "/api/account/weekly-email" && (req.method === "GET" || req.method === "POST")) {
         const userId = requireAuth(req, res);
         if (userId == null) return;

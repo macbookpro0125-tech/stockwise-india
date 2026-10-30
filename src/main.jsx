@@ -60,4 +60,9 @@ createRoot(document.getElementById("root")).render(
 );
 // started: the page's guard (index.html) shows no "didn't start" message
 window.__appStarted = true;
+// Counted as a visit only now the page has started in a browser, which most
+// robots never do (server/visits.js): the page and the link it came from
+try {
+  fetch("/api/visit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: location.pathname, referrer: document.referrer }), keepalive: true, credentials: "omit" }).catch(() => {});
+} catch {}
 document.getElementById("boot-guard")?.remove();

@@ -17,7 +17,10 @@
 //
 // Counted: a page itself (the app, a company page, the methodology…), not
 // its data, pictures or scripts; never a robot, a link preview or a
-// prefetch. Signed-in people: each account once a day, when the app asks who
+// prefetch. From 30 Oct 2026 only once the page has started in a browser
+// (the app's own signal, countBrowserVisit): most robots never run a page's
+// scripts, and they had been most of the "visitors" — US computers with no
+// link, opening only the front page. Signed-in people: each account once a day, when the app asks who
 // is signed in (/api/auth/me).
 import { createHmac, randomBytes } from "node:crypto";
 import { extname } from "node:path";
@@ -103,11 +106,11 @@ const bump = (day, column) => db.prepare(`INSERT INTO visit_days (day, ${column}
 
 // The page, by its kind of address — anything else (a mistyped address) is
 // "Other", so the list can't fill with junk
-const FIXED = new Set(["/", "/about", "/help", "/methodology", "/privacy", "/disclaimer", "/stock-screener-india", "/screens", "/sectors", "/results-calendar", "/explore", "/news", "/reset-password"]);
+const FIXED = new Set(["/", "/about", "/help", "/methodology", "/privacy", "/disclaimer", "/stock-screener-india", "/screens", "/sectors", "/results-calendar", "/explore", "/news", "/learn", "/reset-password"]);
 export function pageKey(pathname) {
   const p = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
   if (FIXED.has(p)) return p;
-  const m = /^\/(stock|sector|screens)\/([A-Za-z0-9&_.%-]{1,40})$/.exec(p);
+  const m = /^\/(stock|sector|screens|learn)\/([A-Za-z0-9&_.%-]{1,60})$/.exec(p);
   if (m) return `/${m[1]}/${m[1] === "stock" ? decodeURIComponent(m[2]).toUpperCase() : m[2].toLowerCase()}`;
   return "Other";
 }
@@ -175,6 +178,20 @@ export function countPageLoad(req, pathname, now = Date.now()) {
     console.error(`[visits] ${e.message}`);
     return false;
   }
+}
+
+// The app's signal that it started in a browser (main.jsx → POST /api/visit):
+// counted as the page load it reports — its address, and the link it came
+// from as the page saw it (document.referrer). Only from this site's own
+// pages (the browser says same-origin), so another site can't add visits.
+export function countBrowserVisit(req, { path, referrer } = {}, now = Date.now()) {
+  if (req.method !== "POST" || typeof path !== "string" || !path.startsWith("/") || path.length > 300) return false;
+  const site = req.headers["sec-fetch-site"];
+  if (site && site !== "same-origin") return false;
+  const headers = { ...req.headers, accept: "text/html" };
+  delete headers.referer;
+  if (typeof referrer === "string" && /^https?:\/\//.test(referrer) && referrer.length <= 500) headers.referer = referrer;
+  return countPageLoad({ method: "GET", headers, socket: req.socket }, path.split(/[?#]/)[0], now);
 }
 
 // A signed-in account opening the app: once a day each

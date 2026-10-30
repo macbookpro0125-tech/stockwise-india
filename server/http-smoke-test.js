@@ -435,11 +435,14 @@ async function main() {
   assert((await fetch(`${BASE}/api/owner/stats`, { headers: { Cookie: aliceCookie } })).status === 404, "anyone but the owner is told there's nothing there");
   const statsBefore = await (await fetch(`${BASE}/api/owner/stats`, { headers: { Cookie: daveCookie } })).json();
   const loadsBefore = statsBefore.days[0]?.pageLoads ?? 0;
+  // counted when the page has started in a browser (main.jsx's signal), not when it's fetched (30 Oct 2026)
+  const visit = (ua, extra = {}) => fetch(`${BASE}/api/visit`, { method: "POST", headers: { "Content-Type": "application/json", "User-Agent": ua, ...extra }, body: JSON.stringify({ path: "/stock/TCS", referrer: "https://www.google.com/" }) });
   await fetch(`${BASE}/`, { headers: { Accept: "text/html", "User-Agent": "Mozilla/5.0 Chrome/130" } });
-  await fetch(`${BASE}/`, { headers: { Accept: "text/html", "User-Agent": "Googlebot/2.1" } });
-  await fetch(`${BASE}/api/stats`, { headers: { Accept: "text/html", "User-Agent": "Mozilla/5.0 Chrome/130" } });
+  assert((await visit("Mozilla/5.0 Chrome/130", { "Sec-Fetch-Site": "same-origin" })).status === 204, "the app's signal is taken quietly");
+  await visit("Googlebot/2.1");
+  await visit("Mozilla/5.0 Chrome/130", { "Sec-Fetch-Site": "cross-site" });
   const statsAfter = await (await fetch(`${BASE}/api/owner/stats`, { headers: { Cookie: daveCookie } })).json();
-  assert(statsAfter.days[0].pageLoads === loadsBefore + 1 && statsAfter.accounts >= 2, "a person's page load is counted, a robot's and a data request aren't");
+  assert(statsAfter.days[0].pageLoads === loadsBefore + 1 && statsAfter.accounts >= 2, "a page that started in a person's browser is counted; a page fetched, a robot and another site's signal aren't");
   const ownerMe = await (await fetch(`${BASE}/api/auth/me`, { headers: { Cookie: daveCookie } })).json();
   assert(ownerMe.features.owner === true, "the owner's account knows it may see them");
   delete process.env.OWNER_EMAILS;
