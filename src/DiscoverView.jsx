@@ -7,6 +7,7 @@ import { NewsTile } from "./NewsView.jsx";
 import { useAdPause } from "./ads.jsx";
 import { strategiesStore, browserLeftovers, moveLeftovers, discardLeftovers } from "./accountData.js";
 import ResultsTable from "./ResultsTable.jsx";
+import { SIGNALS, applySignal, signalCounts, COLUMN_SETS, currentSet } from "./screenShortcuts.js";
 import ScreensHome from "./ScreensHome.jsx";
 import PhoneScreens from "./PhoneScreens.jsx";
 import { NEW_SCREEN_EVENT } from "./phoneChrome.js";
@@ -96,7 +97,10 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews }) {
     const saved = read("screenerColumns", DEFAULT_COLUMNS);
     return Array.isArray(saved) && saved.join() === OLD_DEFAULT_COLUMNS.join() ? DEFAULT_COLUMNS : saved;
   });
+  // a signal narrowing the results, and the column sets (screenShortcuts.js)
+  const [signal, setSignal] = useState(null);
   const [activePresetId, setActivePresetId] = useState(null);
+  useEffect(() => { setSignal(null); }, [activePresetId]);
   const [activePresetName, setActivePresetName] = useState(null);
   const [activePresetAbout, setActivePresetAbout] = useState(null);
   // A strategy that ranks by a measure (Top Gainers, 22 Oct 2026): what the
@@ -694,13 +698,34 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews }) {
               </div>
             )}
 
+            {results?.results?.length > 0 && (() => { const counts = signalCounts(results.results); return (
+              <div className="ss-shortcuts">
+                <div className="ss-row" role="group" aria-label="Narrow to">
+                  <span className="ss-label">Narrow to</span>
+                  {SIGNALS.map(sg => (
+                    <button key={sg.id} type="button" className="ph-chip" aria-pressed={signal === sg.id} onClick={() => setSignal(v => (v === sg.id ? null : sg.id))}>
+                      {sg.label} · {counts[sg.id]}
+                    </button>
+                  ))}
+                </div>
+                <div className="ss-row hide-phone" role="group" aria-label="Columns to show">
+                  <span className="ss-label">Show</span>
+                  <div className="ss-seg">
+                    {COLUMN_SETS.map(set => (
+                      <button key={set.id} type="button" aria-pressed={currentSet(columns) === set.id} onClick={() => setColumns(set.columns)}>{set.label}</button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ); })()}
+
             <ResultsTable
               theme={theme}
               sortTo={ranking}
-              matches={results?.results}
+              matches={signal ? applySignal(results?.results, signal) : results?.results}
               loading={!results && !error}
               onAnalyze={onOpenStock}
-              totalMatches={results?.matched}
+              totalMatches={signal ? applySignal(results?.results, signal).length : results?.matched}
               hideCountOnPhone={wheelItems.length > 1}
               filters={filters}
               onFiltersChange={changeFilters}
