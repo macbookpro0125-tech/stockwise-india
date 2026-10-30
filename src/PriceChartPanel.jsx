@@ -7,7 +7,7 @@ import {
 import { ChartCandlestick, ChartNoAxesColumn, ChartLine, ChartArea, SlidersHorizontal, Minus, X, Maximize2, Minimize2, Camera, Layers } from "lucide-react";
 import { api } from "./api.js";
 import { aggregateBars, sma, ema, bollinger, rsi, macd, indexFrom } from "./chartMath.js";
-import { pivotPoints, PIVOT_LEVELS, atr, supertrend, psar, stochastic, adx, obv, cci, williamsR, mfi, donchian } from "./chartIndicators.js";
+import { pivotPoints, PIVOT_LEVELS, atr, supertrend, psar, stochastic, adx, obv, cci, williamsR, mfi, donchian, yearHigh, volumeRatio, relativeLine } from "./chartIndicators.js";
 
 // Attribution notice (Lightweight Charts licence, Apache 2.0):
 //   TradingView Lightweight Charts™ — Copyright TradingView, Inc. https://www.tradingview.com/
@@ -51,9 +51,12 @@ const INDICATORS = [
   { id: "psar", label: "Parabolic SAR", color: "#E879F9", group: "Trend & bands" },
   { id: "donchian", label: "Donchian channel (20)", color: "#60A5FA", group: "Trend & bands" },
   { id: "pivots", label: "Pivot points", color: "#F59E0B", group: "Levels" },
+  { id: "high52", label: "52-week high", color: "#C9A227", group: "Levels" },
   { id: "volume", label: "Volume", group: "Volume" },
+  { id: "volx", label: "Volume vs 50-day average", color: "#94A3B8", group: "Volume", pane: true },
   { id: "obv", label: "On-balance volume", color: "#22D3EE", group: "Volume", pane: true },
   { id: "mfi", label: "Money flow (14)", color: "#34D399", group: "Volume", pane: true },
+  { id: "rs", label: "Against the Nifty 500", color: "#22C55E", group: "Market", pane: true },
   { id: "rsi", label: "RSI (14)", color: "#A78BFA", group: "Oscillators", pane: true },
   { id: "macd", label: "MACD (12, 26, 9)", color: "#3B82F6", group: "Oscillators", pane: true },
   { id: "stoch", label: "Stochastic (14, 3, 3)", color: "#F472B6", group: "Oscillators", pane: true },
@@ -62,14 +65,14 @@ const INDICATORS = [
   { id: "cci", label: "CCI (20)", color: "#FB923C", group: "Oscillators", pane: true },
   { id: "willr", label: "Williams %R (14)", color: "#C084FC", group: "Oscillators", pane: true },
 ];
-const GROUPS = ["Moving averages", "Trend & bands", "Levels", "Volume", "Oscillators"];
+const GROUPS = ["Moving averages", "Trend & bands", "Levels", "Volume", "Market", "Oscillators"];
 // Pivot points: worked out from the previous week, month, quarter or year
 // (chartIndicators.js), offered for periods longer than a bar
 const PIVOT_KINDS = [["classic", "Classic"], ["fibonacci", "Fibonacci"], ["camarilla", "Camarilla"]];
 const PIVOT_BASES = { D: [["W", "week"], ["M", "month"], ["Q", "quarter"], ["Y", "year"]], W: [["M", "month"], ["Q", "quarter"], ["Y", "year"]], M: [["Q", "quarter"], ["Y", "year"]] };
 const pivotBasisFor = (interval, pref) => ((PIVOT_BASES[interval] ?? PIVOT_BASES.D).some(([id]) => id === pref) ? pref : interval === "M" ? "Y" : "M");
 const PIVOT_COLORS = { P: "#F59E0B", R: "#FB7185", S: "#38BDF8" };
-const DEFAULT_PREFS = { type: "candles", interval: "D", levels: true, pivotKind: "classic", pivotBasis: "M", ind: { ma50: true, ma200: true, volume: true } };
+const DEFAULT_PREFS = { type: "candles", interval: "D", levels: true, pivotKind: "classic", pivotBasis: "M", ind: { ma50: true, ma200: true, volume: true, high52: true } };
 
 const readJson = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } };
 const writeJson = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* private mode */ } };
@@ -233,7 +236,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
 
   const bars = useMemo(() => aggregateBars(data?.bars ?? [], prefs.interval), [data, prefs.interval]);
   const narrow = boxW < 560;
-  const extraPanes = INDICATORS.filter(i => i.pane && prefs.ind[i.id]).length;
+  const extraPanes = INDICATORS.filter(i => i.pane && prefs.ind[i.id] && (i.id !== "rs" || data?.benchmark)).length;
   const pivotBasis = pivotBasisFor(prefs.interval, prefs.pivotBasis);
   const height = page
     ? Math.max(300, vh - (narrow ? 330 : 260))   // pane proportions only; the page lays out by flex
@@ -437,7 +440,21 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
     };
     for (const def of INDICATORS.filter(i => i.pane && prefs.ind[i.id])) {
       const col = def.color;
-      if (def.id === "rsi") {
+      // (no line against the market when the index's days aren't kept)
+      if (def.id === "rs" && !data?.benchmark) continue;
+      if (def.id === "rs") {
+        // Rising: doing better than the market; falling: worse. 100 is the first bar shown loaded.
+        const v = relativeLine(bars, data.benchmark.closes);
+        guides(paneLine(v, col), [100]);
+        legendSeries.push({ label: "vs Nifty 500", color: col, values: v, pane: true, fmt: i => (v[i] == null ? "—" : fmtNum(v[i])) });
+      } else if (def.id === "volx") {
+        // Each bar's volume against the 50 before it; the dashed line is a usual day
+        const v = volumeRatio(bars, 50);
+        const h = chart.addSeries(HistogramSeries, { priceLineVisible: false, lastValueVisible: false, priceFormat: { type: "custom", minMove: 0.1, formatter: x => `${x.toFixed(1)}×` } }, pane);
+        h.setData(bars.map((b, i) => (v[i] == null ? { time: b.date } : { time: b.date, value: v[i], color: alpha(b.close >= b.open ? c.up : c.down, v[i] >= 1.5 ? 0.85 : 0.35) })));
+        guides(h, [1]);
+        legendSeries.push({ label: "Vol ×avg", color: col, values: v, pane: true, fmt: i => (v[i] == null ? "—" : `${v[i].toFixed(1)}×`) });
+      } else if (def.id === "rsi") {
         const r = rsi(closes, 14);
         guides(paneLine(r, col, { autoscaleInfoProvider: fixed(0, 100) }), [70, 30]);
         legendSeries.push({ label: "RSI", color: col, values: r, pane: true });
@@ -497,6 +514,12 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
       // numbers. There each line gets a small tag drawn over the chart
       // (levelTags below), and the list above the chart gives its price.
       main.createPriceLine({ price: l.price, color: resolve(l.color), lineWidth: 1, lineStyle: l.style, axisLabelVisible: !narrow, title: narrow ? "" : l.title });
+    }
+    // The year's high, labelled with how far the price is below it
+    if (prefs.ind.high52) {
+      const hi = yearHigh(data?.bars);
+      if (hi) main.createPriceLine({ price: hi.price, color: ind("high52").color, lineWidth: 1, lineStyle: LineStyle.Dashed, axisLabelVisible: true,
+        title: narrow ? "52w high" : hi.belowPct < 0.05 ? "52-week high · at it" : `52-week high · ${hi.belowPct.toFixed(1)}% below` });
     }
     for (const p of lines) {
       main.createPriceLine({ price: p, color: c.text, lineWidth: 1, lineStyle: LineStyle.Solid, axisLabelVisible: true, title: "" });

@@ -119,6 +119,30 @@ export const SCREEN_GUIDES = {
     suits: "People who want to see the year's biggest moves and read what drove them.",
     limits: "A doubling says nothing about what happens next; many of these are cyclical or re-rated on expectations. Check the results behind the move.",
   },
+  unusual_volume: {
+    search: "Stocks with unusual volume today in India (NSE)",
+    lookFor: "Companies worth ₹500 Cr or more that traded at least three times their usual daily volume (the 50 trading days before) on the last trading day.",
+    suits: "People who want to see where the market's attention moved today, and then read why.",
+    limits: "Heavy volume says something happened, not whether it's good: results, news, a block deal or an index change can all cause it. Read the filings before reading the price.",
+  },
+  delivery_spike: {
+    search: "Stocks with high delivery percentage today in India (NSE)",
+    lookFor: "Companies worth ₹500 Cr or more where 60% or more of the last day's traded shares were taken as delivery, at least 20 points above their average for the month before.",
+    suits: "People who track whether buyers are holding shares rather than trading them within the day.",
+    limits: "Delivery shows shares changing hands to be held, not who bought or why; a single large deal can lift it for a day. One day is a reason to look, not a signal.",
+  },
+  pullback_50dma: {
+    search: "Stocks pulling back to the 50-day moving average in India",
+    lookFor: "Companies worth ₹500 Cr or more, up 15% or more in six months and 10% or more above their 200-day average, now within 3% of their 50-day average.",
+    suits: "People who follow trends and prefer to look at a rising share after a pause rather than at a new high.",
+    limits: "A moving average isn't a floor: a pullback can turn into a fall. The screen reads prices only, so check the business behind the trend.",
+  },
+  beating_market: {
+    search: "Indian stocks outperforming the NIFTY 50",
+    lookFor: "Companies worth ₹500 Cr or more whose share price beat the NIFTY 50 by 10 points or more over three months, and also beat it over one month and one year.",
+    suits: "People who look for shares with strength relative to the market, not just a rising price.",
+    limits: "Past outperformance doesn't carry on by itself, and leaders can fall hardest when the market turns. Look at what's behind the move.",
+  },
   sound_banks: {
     search: "Banks with low NPA and strong capital",
     lookFor: "Banks with gross bad loans of 2% or less, net bad loans of 0.5% or less, CET1 capital of 12% or more and a return on assets of at least 1%.",

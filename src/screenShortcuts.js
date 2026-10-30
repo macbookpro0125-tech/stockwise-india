@@ -26,8 +26,11 @@ export const signalCounts = (rows = [], now = Date.now()) => Object.fromEntries(
 // Each set: the table's columns for one kind of question
 export const COLUMN_SETS = [
   { id: "overview", label: "Overview", columns: DEFAULT_COLUMNS },
-  { id: "value", label: "Value", columns: ["pe", "priceToBook", "evToEbitda", "divYield", "vsFairValue", "marketCapCr"] },
+  { id: "value", label: "Value", columns: ["pe", "peg", "priceToBook", "evToEbitda", "vsFairValue", "marketCapCr"] },
+  { id: "growth", label: "Growth", columns: ["salesGrowth1y", "salesGrowth3y", "salesGrowth5y", "profitGrowth3y", "epsGrowth3y", "peg"] },
   { id: "quality", label: "Quality", columns: ["roce", "roe", "opm", "debtToEquity", "piotroski", "profitGrowth5y"] },
+  { id: "dividends", label: "Dividends", columns: ["divYield", "dividendPerShare", "payoutPct", "profitGrowth5y", "debtToEquity"] },
+  { id: "balance", label: "Balance sheet", columns: ["debtToEquity", "netDebtCr", "currentRatio", "interestCoverage", "netDebtToEbitda"] },
   { id: "owners", label: "Owners", columns: ["promoterPct", "pledgedPct", "fiiPct", "diiPct", "marketCapCr"] },
   { id: "returns", label: "Returns", columns: ["ret1w", "ret1m", "ret1y", "downFrom52wHigh", "upFrom52wLow"] },
   { id: "technical", label: "Technical", columns: ["rsi14", "vsSma50", "vsSma200", "volatility1y", "beta1y", "delivery1m"] },

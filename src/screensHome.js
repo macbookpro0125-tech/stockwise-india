@@ -63,6 +63,8 @@ const MAX_RECENT = 8;
 function recents() {
   try { return JSON.parse(localStorage.getItem(RECENT_KEY) || "[]").filter(r => r && typeof r.id === "string"); } catch { return []; }
 }
+// Just the ids, newest first (the strategy list's Recent row)
+export const recentScreenIds = () => recents().map(r => r.id);
 export function noteRecent(id) {
   try {
     const next = [{ id, at: Date.now() }, ...recents().filter(r => r.id !== id)].slice(0, MAX_RECENT);

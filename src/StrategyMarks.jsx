@@ -114,6 +114,33 @@ const MARKS = {
   </>],
 };
 
+// 31 Oct 2026: the four screens from the daily prices
+// short bars, then one tall one (a day's volume against usual days)
+MARKS.unusual_volume = ["#0CA678", <>
+  <rect x="3" y="27" width="6" height="9" rx="1.5" opacity=".55" />
+  <rect x="11" y="25" width="6" height="11" rx="1.5" opacity=".55" />
+  <rect x="19" y="28" width="6" height="8" rx="1.5" opacity=".55" />
+  <rect x="29" y="4" width="8" height="32" rx="1.5" />
+</>];
+// a box with a rising arrow (shares taken as delivery)
+MARKS.delivery_spike = ["#D9480F", <>
+  <path d="M4 17h32v17a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" />
+  <path d="M2 11h36v6H2z" opacity=".6" />
+  <path d="M20 31V22M15.5 26l4.5-4.5 4.5 4.5" fill="none" stroke={W} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+</>];
+// a rising line dipping back to touch its average
+MARKS.pullback_50dma = ["#1C7ED6", <>
+  <path d="M3 33C12 30 22 24 37 13" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" opacity=".5" />
+  <path d="M3 28l9-10 7 6 6-15 7 12" fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" />
+  <circle cx="32" cy="21" r="4" />
+</>];
+// two lines, one pulling ahead of the other
+MARKS.beating_market = ["#AE3EC9", <>
+  <path d="M3 32l10-6 8 2 16-10" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" opacity=".5" />
+  <path d="M3 28l10-10 8 3 14-17" fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" />
+  <path d="M28 4h7v7" fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" />
+</>];
+
 export const markColor = id => MARKS[id]?.[0] ?? null;
 
 export default function StrategyMark({ preset, size = 40 }) {

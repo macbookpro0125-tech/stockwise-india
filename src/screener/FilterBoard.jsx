@@ -1,4 +1,5 @@
 import { useEffect, useId, useState } from "react";
+import { Undo2, Redo2 } from "lucide-react";
 import { BOARD_GROUPS, choiceOf, setChoice, setValues, matchesFind, filterWords } from "./filterBoard.js";
 import { isActiveFilter } from "./FilterPanel.jsx";
 
@@ -45,7 +46,7 @@ const OPEN_KEY = "filterBoardOpen", GROUPS_KEY = "filterGroupsOpen";
 const read = (key, fallback) => { try { const v = localStorage.getItem(key); return v == null ? fallback : JSON.parse(v); } catch { return fallback; } };
 const write = (key, v) => { try { localStorage.setItem(key, JSON.stringify(v)); } catch {} };
 
-export default function FilterBoard({ meta, filters, onChange, onMore, matched, total }) {
+export default function FilterBoard({ meta, filters, onChange, onMore, matched, total, onUndo = null, onRedo = null }) {
   const [open, setOpenState] = useState(() => read(OPEN_KEY, 1) !== 0);
   const setOpen = v => { setOpenState(v); write(OPEN_KEY, v ? 1 : 0); };
   const [shut, setShutState] = useState(() => read(GROUPS_KEY, ["growth", "owners", "price"]));
@@ -80,6 +81,8 @@ export default function FilterBoard({ meta, filters, onChange, onMore, matched, 
     <aside className="fb" aria-labelledby="fb-title">
       <div className="fb-head">
         <h2 id="fb-title">Filters{active.length > 0 && <span className="fb-on">{active.length} on</span>}</h2>
+        <button type="button" className="fb-icon" onClick={onUndo ?? undefined} disabled={!onUndo} aria-label="Undo the last filter change" title="Undo"><Undo2 size={15} aria-hidden="true" /></button>
+        <button type="button" className="fb-icon" onClick={onRedo ?? undefined} disabled={!onRedo} aria-label="Redo" title="Redo"><Redo2 size={15} aria-hidden="true" /></button>
         <button type="button" className="fb-link-btn" onClick={() => { onChange([]); setOwn(""); }} disabled={!active.length}>Clear all</button>
         <button type="button" className="fb-fold" aria-expanded="true" onClick={() => setOpen(false)} title="Hide filters" aria-label="Hide filters">«</button>
       </div>

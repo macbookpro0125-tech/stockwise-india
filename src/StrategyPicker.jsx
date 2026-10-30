@@ -4,6 +4,7 @@ import { Check, ChevronLeft, Globe, Info, List } from "lucide-react";
 import WheelPicker from "./WheelPicker.jsx";
 import StrategyMark from "./StrategyMarks.jsx";
 import { groupStrategies, describeRules } from "./strategyAbout.js";
+import { recentScreenIds } from "./screensHome.js";
 
 // The screen's name on Discover's stock list (a computer): the strategy
 // wheel, and on its pill two buttons — every strategy as a list (also a
@@ -88,27 +89,58 @@ export default function StrategyPicker({ presets, items, value, onPick, meta, fi
   );
 }
 
+// Every strategy on one panel (31 Oct 2026): a search, the recent ones, and
+// all of them in columns by kind — one click to any of them
 function StrategyList({ presets, value, onPick, hasYours }) {
-  const ref = useRef(null);
-  // Open on the current one
-  useEffect(() => { (ref.current?.querySelector('[aria-current="true"]') ?? ref.current?.querySelector("button"))?.focus(); }, []);
-  const row = (id, name, description, icon) => (
-    <button key={id} type="button" className="sp-row" aria-current={id === value ? "true" : undefined} onClick={() => onPick(id)}>
-      {icon}
-      <span className="sp-row-text"><b>{name}</b>{description && <em>{description}</em>}</span>
-      {id === value && <Check className="sp-check" size={17} strokeWidth={2.4} aria-hidden="true" />}
+  const ref = useRef(null), findRef = useRef(null);
+  const [find, setFind] = useState("");
+  useEffect(() => { findRef.current?.focus(); }, []);
+  const q = find.trim().toLowerCase();
+  const hit = p => !q || `${p.name} ${p.description ?? ""}`.toLowerCase().includes(q);
+  const byId = new Map(presets.map(p => [p.id, p]));
+  // the strategies opened lately on this device (screensHome.js), the open one first
+  const recent = recentScreenIds().map(id => byId.get(id)).filter(Boolean).slice(0, 5);
+  const groups = groupStrategies(presets).map(g => ({ ...g, items: g.items.filter(hit) })).filter(g => g.items.length);
+  const name = (id, label, title) => (
+    <button key={id} type="button" className="sp-name" title={title} aria-current={id === value ? "true" : undefined} onClick={() => onPick(id)}>
+      {label}{id === value && <Check size={14} strokeWidth={2.6} aria-hidden="true" />}
     </button>
   );
+  const chip = p => (
+    <button key={p.id} type="button" className="ph-chip" aria-pressed={p.id === value} onClick={() => onPick(p.id)}>{p.name}</button>
+  );
+  // Enter opens the first one found
+  const first = groups[0]?.items[0];
   return (
-    <div ref={ref} className="sp-pop sp-list" role="dialog" aria-label="Every strategy">
-      {hasYours && row(YOURS, "Your filters", "The filters you've set yourself", <span className="sp-icon"><List size={16} aria-hidden="true" /></span>)}
-      {row(ALL, "Whole market", "Every NSE company screened here, no rules", <span className="sp-icon"><Globe size={16} aria-hidden="true" /></span>)}
-      {groupStrategies(presets).map(g => (
-        <section key={g.id} aria-label={g.label}>
-          <h4 className="sp-kind">{g.label}</h4>
-          {g.items.map(p => row(p.id, p.name, p.description, <StrategyMark preset={p} size={30} />))}
-        </section>
-      ))}
+    <div ref={ref} className="sp-pop sp-list sp-board" role="dialog" aria-label="Every strategy">
+      <input ref={findRef} type="search" className="sp-find" value={find} onChange={e => setFind(e.target.value)} aria-label="Find a strategy"
+        placeholder="Find a strategy: volume, dividend, banks…" autoComplete="off" spellCheck={false}
+        onKeyDown={e => { if (e.key === "Enter" && first) { e.preventDefault(); onPick(first.id); } }} />
+      {!q && (
+        <div className="sp-quick">
+          <span className="sp-quick-label">Start from</span>
+          <div className="sp-chips">
+            <button type="button" className="ph-chip" aria-pressed={value === ALL} onClick={() => onPick(ALL)}>Whole market</button>
+            {hasYours && <button type="button" className="ph-chip" aria-pressed={value === YOURS} onClick={() => onPick(YOURS)}>Your filters</button>}
+          </div>
+        </div>
+      )}
+      {!q && recent.length > 0 && (
+        <div className="sp-quick">
+          <span className="sp-quick-label">Recent</span>
+          <div className="sp-chips">{recent.map(chip)}</div>
+        </div>
+      )}
+      <div className="sp-cols">
+        {groups.map(g => (
+          <section key={g.id} aria-label={g.label}>
+            <h4 className="sp-kind">{g.label}</h4>
+            {g.items.map(p => name(p.id, p.name, p.description))}
+          </section>
+        ))}
+      </div>
+      {q && !groups.length && <p className="sp-none">No strategy matches "{find}".</p>}
+      {q && first && <p className="sp-hint">{first.description} <span>· Enter opens {first.name}</span></p>}
     </div>
   );
 }

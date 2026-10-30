@@ -156,7 +156,7 @@ test("F02-H7 the strategy wheel switches strategy from the stock list", async ({
   const box = await wheel.boundingBox();
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.wheel(0, -100);
-  await expect(page.locator(".screen-title")).toHaveText("Doubled in a Year");
+  await expect(page.locator(".screen-title")).toHaveText("Beating the Market");
   await expect(page.getByRole("button", { name: "HDFC Bank Limited" })).toHaveCount(0);
   // and the keyboard: Home is the whole market
   await wheel.focus();
@@ -241,10 +241,15 @@ test("F02-H9 the strategy list and what a strategy looks for", async ({ page, ac
   await page.keyboard.press("Escape");
   await expect(about).toHaveCount(0);
   await page.locator(".wheel-title").dblclick();
+  // (31 Oct 2026: a search, the recent ones, then every strategy by kind)
   const list = page.getByRole("dialog", { name: "Every strategy" });
-  await expect(list.getByRole("button", { name: /Sound Banks/ })).toHaveAttribute("aria-current", "true");
+  const all = list.locator(".sp-cols");
+  await expect(all.getByRole("button", { name: /Sound Banks/ })).toHaveAttribute("aria-current", "true");
+  await expect(list.locator(".sp-quick").getByRole("button", { name: "Sound Banks" })).toBeVisible();
   await expect(list.getByText(/OFSS/)).toHaveCount(0);
-  await list.getByRole("button", { name: /High Margins, Low Debt/ }).click();
+  await list.getByRole("searchbox", { name: "Find a strategy" }).fill("margins");
+  await expect(all.getByRole("button")).toHaveCount(1);
+  await all.getByRole("button", { name: /High Margins, Low Debt/ }).click();
   await expect(page.locator(".screen-title")).toHaveText("High Margins, Low Debt");
   await expect(list).toHaveCount(0);
 });

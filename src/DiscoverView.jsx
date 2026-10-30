@@ -330,10 +330,33 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [requestKey]);
 
-  const changeFilters = useCallback(next => {
+  // Undo and redo for the filters you change (31 Oct 2026): each change keeps
+  // the filters before it; opening a strategy starts afresh
+  const filtersNow = useRef(filters);
+  filtersNow.current = filters;
+  const history = useRef({ past: [], future: [] });
+  const [, setHistoryTick] = useState(0);
+  const setOwn = useCallback(next => {
     setFilters(next); setActivePresetId(null); setActivePresetName(null); setActivePresetAbout(null);
     setRanking(r => (r.periods ? { ...r, periods: null } : r)); // your own filters now: the list keeps its order
   }, []);
+  const changeFilters = useCallback(next => {
+    const h = history.current;
+    if (filtersNow.current) h.past = [...h.past, filtersNow.current].slice(-50);
+    h.future = [];
+    setHistoryTick(t => t + 1);
+    setOwn(next);
+  }, [setOwn]);
+  const stepFilters = useCallback(back => {
+    const h = history.current;
+    const from = back ? h.past : h.future;
+    if (!from.length) return;
+    const to = from[from.length - 1];
+    if (back) { h.past = h.past.slice(0, -1); h.future = [...h.future, filtersNow.current ?? []]; }
+    else { h.future = h.future.slice(0, -1); h.past = [...h.past, filtersNow.current ?? []]; }
+    setHistoryTick(t => t + 1);
+    setOwn(to);
+  }, [setOwn]);
   // Gain over another period: the return filter and the order both move to it
   const pickPeriod = id => {
     setFilters(fs => fs.map(f => (ranking.periods?.includes(f.id) ? { ...f, id } : f)));
@@ -341,6 +364,7 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews }) {
   };
 
   const applyPreset = useCallback(async preset => {
+    history.current = { past: [], future: [] };
     if (preset.custom) strategiesStore.acknowledge(preset.id);
     // however it was opened — search, a link, the Continue card — it is recent
     if (preset.id) noteRecent(preset.id);
@@ -687,6 +711,7 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews }) {
             <div className={!isPhone && meta && filters ? "fb-split" : undefined}>
             {!isPhone && meta && filters && (
               <FilterBoard meta={meta} filters={filters} onChange={changeFilters} onMore={() => setFiltersOpen(true)}
+                onUndo={history.current.past.length ? () => stepFilters(true) : null} onRedo={history.current.future.length ? () => stepFilters(false) : null}
                 matched={results?.matched ?? null} total={results?.total ?? null} />
             )}
             <div className="fb-results">

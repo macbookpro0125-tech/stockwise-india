@@ -40,6 +40,8 @@ export default function MetricPicker({ meta, mode, chosen, onToggle, onClose }) 
                 <button key={c} type="button" onClick={() => setCat(c)}
                   style={{ display: "block", width: "100%", textAlign: "left", border: "none", borderRadius: 8, padding: "8px 10px", fontSize: 13, cursor: "pointer", background: c === cat ? "var(--s3)" : "transparent", color: c === cat ? "var(--t1)" : "var(--t2)", fontWeight: c === cat ? 600 : 500 }}>
                   {c}
+                  {/* how many measures each holds */}
+                  <span style={{ float: "right", fontSize: 11.5, fontWeight: 400, color: "var(--t3)" }}>{c === "All" ? all.length : all.filter(x => x?.category === c).length}</span>
                 </button>
               ))}
             </nav>

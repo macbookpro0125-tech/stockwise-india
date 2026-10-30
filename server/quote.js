@@ -9,6 +9,7 @@
 // (scripts/backfill-history.mjs).
 import { historyBars } from "./price-history.js";
 import { loadMarketSnapshot } from "./market-data.js";
+import { benchmarkFor } from "./index-history.js";
 
 export const PRICE_RANGES = ["1mo", "6mo", "1y", "5y", "max"];
 const MONTHS = { "1mo": 1, "6mo": 6, "1y": 12, "5y": 60 };
@@ -26,5 +27,7 @@ export function barsInRange(bars, range) {
 export function fetchDailyBars(symbol, range = "1y", snapshot = loadMarketSnapshot()) {
   const all = historyBars(symbol, snapshot);
   // keptFrom: the first day kept, so the page can say how far back it goes
-  return { symbol, range, source: "NSE", keptFrom: all[0]?.date ?? null, bars: barsInRange(all, range) };
+  const bars = barsInRange(all, range);
+  // the Nifty 500 on the same days, for the line against the market (null when not kept)
+  return { symbol, range, source: "NSE", keptFrom: all[0]?.date ?? null, bars, benchmark: benchmarkFor(bars) };
 }

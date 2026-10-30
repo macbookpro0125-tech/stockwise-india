@@ -30,6 +30,7 @@ export const METRICS = [
 
   // ── Valuation ──
   { id: "pe", label: "P/E (TTM, else latest FY)", short: "P/E TTM/FY", category: "Valuation", unit: "x", decimals: 1, about: "Today's price ÷ EPS over the latest four consecutive quarters. If four consecutive quarters aren't available, it uses the latest audited year's EPS; P/E FY shows that figure separately." },
+  { id: "peg", label: "PEG ratio", short: "PEG", category: "Valuation", unit: "x", decimals: 2, about: "P/E ÷ the yearly growth in earnings per share over 3 years. Around 1 means the P/E is in line with the growth; well under 1, cheap for its growth. Only where both are positive." },
   { id: "peTtm", label: "P/E on the last four quarters", short: "P/E TTM", category: "Valuation", unit: "x", decimals: 1, about: "Price ÷ EPS over the last four quarters (trailing twelve months), when all four consecutive quarters are available." },
   { id: "peFy", label: "P/E on latest audited year", short: "P/E FY", category: "Valuation", unit: "x", decimals: 1, about: "Today's price ÷ the latest audited financial year's EPS. Use this when comparing to the app's annual P/E history." },
   { id: "medianPe", label: "5-year median annual P/E", short: "Median FY P/E", category: "Valuation", unit: "x", decimals: 1, about: "Median of the company's year-end price ÷ audited annual EPS over up to five years. Fair value uses this, capped at twice the sector's median P/E when enough peers have one." },
@@ -92,6 +93,7 @@ export const METRICS = [
   { id: "ret5y", label: "5-year return", short: "5Y", category: "Price & returns", unit: "%", decimals: 1, signed: true },
   { id: "ret1wVsNifty", label: "1-week return vs NIFTY 50", short: "1W vs NIFTY", category: "Price & returns", unit: "%", decimals: 1, signed: true, about: "The stock's return minus NIFTY 50's over the same days, in percentage points." },
   { id: "ret1mVsNifty", label: "1-month return vs NIFTY 50", short: "1M vs NIFTY", category: "Price & returns", unit: "%", decimals: 1, signed: true },
+  { id: "ret3mVsNifty", label: "3-month return vs NIFTY 50", short: "3M vs NIFTY", category: "Price & returns", unit: "%", decimals: 1, signed: true },
   { id: "ret6mVsNifty", label: "6-month return vs NIFTY 50", short: "6M vs NIFTY", category: "Price & returns", unit: "%", decimals: 1, signed: true },
   { id: "ret1yVsNifty", label: "1-year return vs NIFTY 50", short: "1Y vs NIFTY", category: "Price & returns", unit: "%", decimals: 1, signed: true },
   { id: "ret1yVsSector", label: "1-year return vs its sector index", short: "1Y vs sector", category: "Price & returns", unit: "%", decimals: 1, signed: true, about: "The stock's 1-year return minus its sector's NSE index (NIFTY IT for a software company), in percentage points. Empty where NSE has no index for the sector." },
@@ -105,6 +107,9 @@ export const METRICS = [
   { id: "avgVolume3m", label: "Average daily volume, 3 months", short: "Avg vol 3M", category: "Volume & technicals", unit: "shares", decimals: 0 },
   { id: "volumeChange1d", label: "Volume change, 1 day", short: "Vol chg 1D", category: "Volume & technicals", unit: "%", decimals: 0, signed: true },
   { id: "volumeChange1w", label: "Volume change, 1 week", short: "Vol chg 1W", category: "Volume & technicals", unit: "%", decimals: 0, signed: true, about: "This week's average daily volume vs last week's." },
+  { id: "volVsAvg50", label: "Volume vs 50-day average", short: "Vol ×avg", category: "Volume & technicals", unit: "x", decimals: 1, about: "The last day's volume as a multiple of the average of the 50 trading days before it: 3× means three times a usual day." },
+  { id: "delivery1d", label: "Delivery %, last day", short: "Deliv 1D", category: "Volume & technicals", unit: "%", decimals: 1, about: "Share of the last day's traded shares taken into demat accounts rather than traded within the day." },
+  { id: "deliveryJump", label: "Delivery % vs its 1-month average", short: "Deliv jump", category: "Volume & technicals", unit: "%", decimals: 1, signed: true, about: "The last day's delivery % minus the average of the 20 days before it, in percentage points." },
   { id: "delivery1m", label: "Delivery %, 1-month average", short: "Delivery", category: "Volume & technicals", unit: "%", decimals: 1, about: "Share of traded shares actually taken into demat accounts rather than traded within the day. Higher means more long-term buying." },
   { id: "rsi14", label: "RSI, 14 days", short: "RSI", category: "Volume & technicals", unit: "", decimals: 1, about: "Relative strength index: above 70 is usually read as overbought, below 30 as oversold." },
   { id: "vsEma20", label: "Price vs 20-day EMA", short: "vs 20 EMA", category: "Volume & technicals", unit: "%", decimals: 1, signed: true },
@@ -228,6 +233,7 @@ const ABOUT = {
   ret3y: "Change from the close three years earlier, adjusted for splits and bonuses (not per year).",
   ret5y: "Change from the close five years earlier, adjusted for splits and bonuses (not per year).",
   ret1mVsNifty: "The stock's 1-month return minus NIFTY 50's, in percentage points.",
+  ret3mVsNifty: "The stock's 3-month return minus NIFTY 50's, in percentage points.",
   ret6mVsNifty: "The stock's 6-month return minus NIFTY 50's, in percentage points.",
   ret1yVsNifty: "The stock's 1-year return minus NIFTY 50's, in percentage points.",
   downFrom52wHigh: "How far the price is below its highest point of the past 52 weeks (split-adjusted).",

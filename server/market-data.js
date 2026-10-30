@@ -7,6 +7,7 @@ import { UA, NSE_BASE, fetchJson, parseQeDate, nseSession } from "./fetch-nse.js
 import { rebaseTracker, suspendedAfter } from "./share-changes.js";
 import { PRICE_DIR, SNAPSHOT_PATH, HISTORY_DIR } from "./paths.js";
 import { historyWriter } from "./price-history.js";
+import { saveIndexDays, BENCHMARK } from "./index-history.js";
 import { fetchText as requestText, fetchJson as requestJson } from "./upstream.js";
 import { fetchEquityList } from "./equity-list.js";
 import { momentumStats } from "./momentum.js";
@@ -168,6 +169,7 @@ async function yearOfDays(toIso, splits) {
   const ranges = {};
   const series = new Map(); // symbol -> [{ date, close, volume, delivery }], newest first
   const nifty = new Map(); // date -> NIFTY 50 close
+  const bench = new Map(); // date -> Nifty 500 close, kept for the chart (index-history.js)
   const seen = new Set();
   let failed = 0;
   for (let d = new Date(to); isoDay(d) > fromIso; d.setUTCDate(d.getUTCDate() - 1)) {
@@ -189,8 +191,11 @@ async function yearOfDays(toIso, splits) {
     if (!day.date || seen.has(day.date) || day.date <= fromIso) continue;
     seen.add(day.date);
     history.add(day.date, day.days);
-    const niftyClose = (await indexFile(day.date))?.get("Nifty 50")?.close;
+    const indexDay = await indexFile(day.date);
+    const niftyClose = indexDay?.get("Nifty 50")?.close;
     if (niftyClose > 0) nifty.set(day.date, niftyClose);
+    const benchClose = indexDay?.get(BENCHMARK)?.close;
+    if (benchClose > 0) bench.set(day.date, benchClose);
     rebases.see(day.date, day.days);
     for (const [sym, v] of day.days) {
       const f = factorAfter(sym, day.date);
@@ -215,6 +220,7 @@ async function yearOfDays(toIso, splits) {
     momentum[sym] = momentumStats(days);
   }
   try { history.save(); } catch (e) { console.error(JSON.stringify({ event: "price_history_save_failed", message: e.message })); }
+  try { saveIndexDays(bench); } catch (e) { console.error(JSON.stringify({ event: "index_history_save_failed", message: e.message })); }
   return { from: fromIso, tradingDays: seen.size, ranges, tech, momentum, rebases: rebases.found };
 }
 
@@ -242,8 +248,21 @@ function technicals(days, nifty) {
     const thisWeek = mean(vols.slice(-5)), lastWeek = mean(vols.slice(-10, -5));
     if (lastWeek > 0) out.volumeChange1w = r2((thisWeek / lastWeek - 1) * 100);
   }
+  // The last day's volume against the 50 days before it (unusual volume)
+  if (vols.length >= 51) {
+    const before = mean(vols.slice(-51, -1));
+    if (before > 0) out.volVsAvg50 = r2(vols.at(-1) / before);
+  }
   const deliv = days.slice(-21).map(d => d.delivery).filter(v => v != null);
   if (deliv.length >= 10) out.delivery1m = r2(mean(deliv));
+  // The last day's delivery %, and how far it's above the 20 days before it
+  // in percentage points (a delivery spike)
+  const lastDeliv = days[n - 1].delivery;
+  if (lastDeliv != null) {
+    out.delivery1d = r2(lastDeliv);
+    const prior = days.slice(-21, -1).map(d => d.delivery).filter(v => v != null);
+    if (prior.length >= 10) out.deliveryJump = r2(lastDeliv - mean(prior));
+  }
 
   if (n >= 15) {
     let gain = 0, loss = 0;

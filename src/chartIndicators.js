@@ -227,3 +227,53 @@ export function mfi(bars, n = 14) {
   }
   return out;
 }
+
+// The highest high in the year to the last bar (dailyBars: the daily bars,
+// whatever the chart's interval), and the last close's distance below it in %
+export function yearHigh(dailyBars) {
+  if (!dailyBars?.length) return null;
+  const last = dailyBars[dailyBars.length - 1];
+  const from = new Date(`${last.date}T00:00:00Z`);
+  from.setUTCFullYear(from.getUTCFullYear() - 1);
+  const fromIso = from.toISOString().slice(0, 10);
+  let high = null;
+  for (const b of dailyBars) if (b.date > fromIso && b.high > 0 && (high == null || b.high > high.price)) high = { price: b.high, date: b.date };
+  if (!high) return null;
+  return { ...high, belowPct: ((high.price - last.close) / high.price) * 100 };
+}
+
+// Each bar's volume as a multiple of the average of the n bars before it
+// (null until there are n, or with no volume)
+export function volumeRatio(bars, n = 50) {
+  const out = bars.map(() => null);
+  let sum = 0, count = 0;
+  for (let i = 0; i < bars.length; i++) {
+    if (i >= n) {
+      if (count === n && sum > 0 && bars[i].volume != null) out[i] = bars[i].volume / (sum / n);
+      const old = bars[i - n].volume;
+      if (old != null) { sum -= old; count--; }
+    }
+    if (bars[i].volume != null) { sum += bars[i].volume; count++; }
+  }
+  return out;
+}
+
+// The price against an index: close ÷ the index's close on the bar's last
+// day (benchCloses: [[date, close]] daily, oldest first), rebased to 100 at
+// the first bar both have. A bar is a day, week or month starting on its
+// date; its last day is the last index day before the next bar starts.
+export function relativeLine(bars, benchCloses) {
+  if (!bars?.length || !benchCloses?.length) return bars?.map(() => null) ?? [];
+  const days = benchCloses.filter(([, c]) => c > 0);
+  const out = [];
+  let j = -1, base = null;
+  for (let i = 0; i < bars.length; i++) {
+    const next = bars[i + 1]?.date;
+    while (j + 1 < days.length && (next == null || days[j + 1][0] < next)) j++;
+    const idx = j >= 0 && days[j][0] >= bars[i].date ? days[j][1] : null;
+    const ratio = idx ? bars[i].close / idx : null;
+    if (ratio != null && base == null) base = ratio;
+    out.push(ratio == null ? null : (ratio / base) * 100);
+  }
+  return out;
+}

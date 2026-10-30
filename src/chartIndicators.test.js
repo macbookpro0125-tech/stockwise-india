@@ -81,3 +81,30 @@ const bar = (date, open, high, low, closeP, volume = 100) => ({ date, open, high
   assert.ok(pu.at(-1) < up.at(-1).low && pd.at(-1) > down.at(-1).high);
   console.log("ok: Supertrend and Parabolic SAR sit under a rising market and over a falling one");
 }
+
+{
+  // The year's high, and how far the last close is below it
+  const { yearHigh, volumeRatio, relativeLine } = await import("./chartIndicators.js");
+  const bars = [bar("2025-10-01", 1, 500, 1, 100), bar("2025-11-03", 1, 200, 1, 150), bar("2026-06-01", 1, 180, 1, 160), bar("2026-10-30", 1, 170, 1, 150)];
+  const h = yearHigh(bars);
+  assert.equal(h.price, 200, "a high more than a year back is left out");
+  assert.equal(h.date, "2025-11-03");
+  assert.ok(close(h.belowPct, 25));
+  assert.equal(yearHigh([]), null);
+
+  // Volume against the average of the bars before it
+  const v = volumeRatio([bar("d1", 1, 1, 1, 1, 100), bar("d2", 1, 1, 1, 1, 300), bar("d3", 1, 1, 1, 1, 400), bar("d4", 1, 1, 1, 1, 100)], 2);
+  assert.deepEqual(v.slice(0, 2), [null, null], "none until two before");
+  assert.ok(close(v[2], 2) && close(v[3], 100 / 350));
+
+  // The price against an index, rebased to 100; a week's bar uses the index on its last day
+  const daily = [bar("2026-10-05", 1, 1, 1, 100), bar("2026-10-06", 1, 1, 1, 110), bar("2026-10-07", 1, 1, 1, 121)];
+  const idx = [["2026-10-05", 1000], ["2026-10-06", 1100], ["2026-10-07", 1100]];
+  const r = relativeLine(daily, idx);
+  assert.ok(close(r[0], 100) && close(r[1], 100) && close(r[2], 110), "kept pace, then 10% ahead");
+  const weekly = [bar("2026-09-28", 1, 1, 1, 100), bar("2026-10-05", 1, 1, 1, 121)];
+  const w = relativeLine(weekly, [["2026-10-02", 1000], ["2026-10-09", 1100]]);
+  assert.ok(close(w[0], 100) && close(w[1], 110));
+  assert.equal(relativeLine(daily, [["2026-10-06", 1100]])[0], null, "no index day in a bar: no point");
+  console.log("ok: the year's high, volume against its average, and the line against an index");
+}

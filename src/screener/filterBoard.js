@@ -15,6 +15,7 @@ export const BOARD_GROUPS = [
   ] },
   { id: "value", label: "Value", items: [
     { id: "pe", label: "P/E", choices: [["Under 10", null, 10], ["Under 15", null, 15], ["Under 20", null, 20], ["Under 30", null, 30], ["Under 40", null, 40], ["Over 40", 40, null]] },
+    { id: "peg", label: "PEG", choices: [["Under 1", null, 1], ["Under 1.5", null, 1.5], ["Under 2", null, 2]] },
     { id: "priceToBook", label: "Price to book", choices: [["Under 1", null, 1], ["Under 2", null, 2], ["Under 3", null, 3], ["Under 5", null, 5]] },
     { id: "vsFairValue", label: "vs fair value", choices: [["Below fair value", null, 0], ["20% or more below", null, -20], ["Above fair value", 0, null]] },
     { id: "divYield", label: "Dividend yield", choices: [["Over 1%", 1, null], ["Over 2%", 2, null], ["Over 3%", 3, null], ["Over 5%", 5, null]] },

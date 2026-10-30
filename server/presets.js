@@ -246,6 +246,58 @@ export const PRESETS = [
       { id: "marketCapCr", min: 1000, max: null },
     ],
   },
+  // Four more, 31 Oct 2026, after a look at the screen lists technical
+  // screeners offer: the ones this app's own daily NSE figures support, in
+  // plain words. (Chart patterns — cup with handle, VCP — are left out:
+  // picking them by code is too unreliable to show as fact.)
+  {
+    id: "unusual_volume",
+    name: "Unusual Volume",
+    icon: "📊",
+    description: "Traded three times a usual day or more on the last trading day",
+    filters: [
+      { id: "volVsAvg50", min: 3, max: null },
+      { id: "marketCapCr", min: 500, max: null },
+    ],
+    sort: "volVsAvg50",
+  },
+  {
+    id: "delivery_spike",
+    name: "Delivery Spike",
+    icon: "📦",
+    description: "Far more of the last day's trades were taken as delivery than usual for the company",
+    filters: [
+      { id: "deliveryJump", min: 20, max: null },
+      { id: "delivery1d", min: 60, max: null },
+      { id: "marketCapCr", min: 500, max: null },
+    ],
+    sort: "deliveryJump",
+  },
+  {
+    id: "pullback_50dma",
+    name: "Pullback to the 50-Day Average",
+    icon: "↩️",
+    description: "In an uptrend, now back near its 50-day average price",
+    filters: [
+      { id: "vsSma50", min: -3, max: 3 },
+      { id: "vsSma200", min: 10, max: null },
+      { id: "ret6m", min: 15, max: null },
+      { id: "marketCapCr", min: 500, max: null },
+    ],
+  },
+  {
+    id: "beating_market",
+    name: "Beating the Market",
+    icon: "🏁",
+    description: "Ahead of the NIFTY 50 over the last month, three months and year",
+    filters: [
+      { id: "ret3mVsNifty", min: 10, max: null },
+      { id: "ret1mVsNifty", min: 0, max: null },
+      { id: "ret1yVsNifty", min: 0, max: null },
+      { id: "marketCapCr", min: 500, max: null },
+    ],
+    sort: "ret3mVsNifty",
+  },
   {
     // Banks on their own figures (bad loans, capital, return on assets) —
     // debt and margins don't fit a bank. Usual Indian yardsticks: gross NPA

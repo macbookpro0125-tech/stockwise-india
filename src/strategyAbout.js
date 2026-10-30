@@ -7,15 +7,23 @@ export const KINDS = [
   ["quality", "Quality & growth", ["high_quality_compounders", "undervalued_growth", "small_cap_multibaggers", "ofss_style_filter", "debt_paydown", "sound_banks"]],
   ["value", "Value", ["turnaround_plays", "psu_value", "net_net_value", "fallen_quality"]],
   ["income", "Income & safety", ["dividend_aristocrats", "dividend_growth", "defensive_bluechips"]],
-  ["momentum", "Momentum", ["top_gainers", "momentum_growth", "up_every_timeframe", "near_highs_cheap", "doubled_in_year"]],
+  ["momentum", "Momentum", ["top_gainers", "momentum_growth", "up_every_timeframe", "near_highs_cheap", "doubled_in_year", "beating_market", "pullback_50dma"]],
+  ["volume", "Volume", ["unusual_volume", "delivery_spike"]],
   ["owners", "Big investors", ["fii_favorites", "dii_backed"]],
 ];
 // What a card's best matches are best by: the quality score, or for a
 // strategy that ranks by a measure (Top Gainers) that measure — with the
 // figure to show beside each name
 const OVER = { ret1d: "a day", ret1w: "a week", ret1m: "a month", ret6m: "six months", ret1y: "a year", ret3y: "three years", ret5y: "five years" };
+const signed = (v, unit) => (v == null ? null : `${v > 0 ? "+" : ""}${Math.round(v)}${unit}`);
+// Strategies that rank by something other than a gain (31 Oct 2026)
+const RANKED_BY = {
+  volVsAvg50: { label: "Most traded", head: "Most traded against a usual day", figure: c => (c.value == null ? null : `${c.value.toFixed(1)}×`) },
+  deliveryJump: { label: "Biggest jump", head: "Biggest jump in delivery %", figure: c => signed(c.value, " pts") },
+  ret3mVsNifty: { label: "Furthest ahead", head: "Furthest ahead of the NIFTY 50 over three months", figure: c => signed(c.value, " pts") },
+};
 export const bestBy = p => (p?.sort
-  ? { label: "Biggest gain", head: `Biggest gains over ${OVER[p.sort] ?? "the period"}`, figure: c => (c.value == null ? null : `${c.value > 0 ? "+" : ""}${Math.round(c.value)}%`) }
+  ? RANKED_BY[p.sort] ?? { label: "Biggest gain", head: `Biggest gains over ${OVER[p.sort] ?? "the period"}`, figure: c => signed(c.value, "%") }
   : { label: "Best by quality", head: "Best by quality score", figure: c => c.quality });
 
 export const kindOf = p => (p.custom ? ["yours", "Yours"] : KINDS.find(k => k[2].includes(p.id)) ?? ["other", "Other"]);
