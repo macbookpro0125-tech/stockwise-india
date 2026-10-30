@@ -13,7 +13,7 @@ import PhoneScreens from "./PhoneScreens.jsx";
 import { NEW_SCREEN_EVENT } from "./phoneChrome.js";
 import { noteRecent } from "./screensHome.js";
 import FilterPanel, { isActiveFilter } from "./screener/FilterPanel.jsx";
-import FilterBoard from "./screener/FilterBoard.jsx";
+import FilterBoard, { ActiveFilters } from "./screener/FilterBoard.jsx";
 import StrategyPicker from "./StrategyPicker.jsx";
 import { returnScroll } from "./returnScroll.js";
 import MetricPicker from "./screener/MetricPicker.jsx";
@@ -682,11 +682,15 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews }) {
               </div>
             )}
 
-            {/* a computer: the filters open on a board above the results (FilterBoard.jsx) */}
+            {/* a computer: the filters in a column beside the results, and
+                the ones that are on as chips over them (FilterBoard.jsx) */}
+            <div className={!isPhone && meta && filters ? "fb-split" : undefined}>
             {!isPhone && meta && filters && (
               <FilterBoard meta={meta} filters={filters} onChange={changeFilters} onMore={() => setFiltersOpen(true)}
                 matched={results?.matched ?? null} total={results?.total ?? null} />
             )}
+            <div className="fb-results">
+            {!isPhone && meta && filters && <ActiveFilters meta={meta} filters={filters} onChange={changeFilters} />}
 
             {error && (
               <div style={{ padding: "14px 18px", borderRadius: 12, background: "var(--red-dim)", border: "1px solid var(--red-bdr)", color: "var(--red)", fontSize: 13, marginBottom: 20, lineHeight: 1.6 }}>
@@ -713,7 +717,7 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews }) {
               const one = v => (v == null ? "—" : v.toLocaleString("en-IN", { maximumFractionDigits: 1 }));
               return (<>
               <dl className="ss-stats" aria-label="This list in figures">
-                <div><dt>Companies</dt><dd>{st.count.toLocaleString("en-IN")}</dd></div>
+                {isPhone && <div><dt>Companies</dt><dd>{st.count.toLocaleString("en-IN")}</dd></div>}
                 <div><dt>Middle quality</dt><dd>{st.quality == null ? "—" : Math.round(st.quality)}<small>/100</small></dd></div>
                 <div><dt>Middle P/E</dt><dd>{one(st.pe)}×{marketPe ? <small>market {one(marketPe)}×</small> : null}</dd></div>
                 <div><dt>Middle ROCE</dt><dd>{one(st.roce)}%</dd></div>
@@ -771,6 +775,8 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews }) {
               ) : null}
               meta={meta}
             />
+            </div>
+            </div>
           </main>
         </div>
         )}
