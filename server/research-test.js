@@ -429,4 +429,17 @@ assert(fewPeers.m.levels === fewPeers.before.levels && /no peer group/.test(fewP
   assert(slowedGrowth({ ...tcs, epsGrowth3y: -4 }).supportedPe === 8.5, "shrinking profit supports the no-growth 8.5x");
 }
 
+// The results-date filter, your own list and free float (30 Oct 2026)
+{
+  const { resultsWhen, cleanFilters, matchesFilters, METRICS } = await import("./metric-catalog.js");
+  const NOW = Date.parse("2026-10-30T07:30:00Z");
+  assert(JSON.stringify(resultsWhen({ nextResults: "2026-10-30" }, NOW)) === JSON.stringify(["Today", "Next 7 days", "Next 14 days"]), "reporting today is in all three");
+  assert(JSON.stringify(resultsWhen({ nextResults: "2026-11-09", latestQuarterFiled: "2026-10-12T18:00:00" }, NOW)) === JSON.stringify(["Next 14 days", "Reported in the last 30 days"]), "in 10 days, and filed 18 days ago");
+  assert(resultsWhen({ nextResults: "2026-10-20", latestQuarterFiled: "2026-08-01" }, NOW).length === 0, "a past meeting and an old filing: none");
+  const own = cleanFilters([{ id: "symbols", values: [" tcs", "M&M", "bad sym", "TCS"] }, { id: "resultsWhen", values: ["Today", "Someday"] }]);
+  assert(JSON.stringify(own) === JSON.stringify([{ id: "symbols", values: ["TCS", "M&M"] }, { id: "resultsWhen", values: ["Today"] }]), "symbols cleaned to NSE form, once each; unknown choices dropped");
+  assert(matchesFilters({ symbol: "TCS" }, [own[0]], new Map()) && !matchesFilters({ symbol: "INFY" }, [own[0]], new Map()), "your own list keeps only its companies");
+  assert(METRICS.find(x => x.id === "freeFloat").get({ promoterPct: 71.8 }) === 100 - 71.8, "free float is what promoters don't hold");
+}
+
 console.log("\nAll research-score checks passed.");

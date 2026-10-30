@@ -7,7 +7,7 @@ import { NewsTile } from "./NewsView.jsx";
 import { useAdPause } from "./ads.jsx";
 import { strategiesStore, browserLeftovers, moveLeftovers, discardLeftovers } from "./accountData.js";
 import ResultsTable from "./ResultsTable.jsx";
-import { SIGNALS, applySignal, signalCounts, COLUMN_SETS, currentSet } from "./screenShortcuts.js";
+import { SIGNALS, applySignal, signalCounts, COLUMN_SETS, currentSet, listStats } from "./screenShortcuts.js";
 import ScreensHome from "./ScreensHome.jsx";
 import PhoneScreens from "./PhoneScreens.jsx";
 import { NEW_SCREEN_EVENT } from "./phoneChrome.js";
@@ -698,7 +698,20 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews }) {
               </div>
             )}
 
-            {results?.results?.length > 0 && (() => { const counts = signalCounts(results.results); return (
+            {results?.results?.length > 0 && (() => {
+              const counts = signalCounts(results.results);
+              const shown = signal ? applySignal(results.results, signal) : results.results;
+              const st = listStats(shown);
+              const marketPe = meta?.byId.get("pe")?.range?.q?.[50];
+              const one = v => (v == null ? "—" : v.toLocaleString("en-IN", { maximumFractionDigits: 1 }));
+              return (<>
+              <dl className="ss-stats" aria-label="This list in figures">
+                <div><dt>Companies</dt><dd>{st.count.toLocaleString("en-IN")}</dd></div>
+                <div><dt>Middle quality</dt><dd>{st.quality == null ? "—" : Math.round(st.quality)}<small>/100</small></dd></div>
+                <div><dt>Middle P/E</dt><dd>{one(st.pe)}×{marketPe ? <small>market {one(marketPe)}×</small> : null}</dd></div>
+                <div><dt>Middle ROCE</dt><dd>{one(st.roce)}%</dd></div>
+                <div><dt>Below fair value</dt><dd>{st.belowFair.toLocaleString("en-IN")}<small>of {st.valued.toLocaleString("en-IN")} valued</small></dd></div>
+              </dl>
               <div className="ss-shortcuts">
                 <div className="ss-row" role="group" aria-label="Narrow to">
                   <span className="ss-label">Narrow to</span>
@@ -717,7 +730,7 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews }) {
                   </div>
                 </div>
               </div>
-            ); })()}
+            </>); })()}
 
             <ResultsTable
               theme={theme}

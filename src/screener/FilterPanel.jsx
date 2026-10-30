@@ -175,7 +175,23 @@ function SectorPick({ def, filter, companies, onChange }) {
   );
 }
 
-function CapSize({ def, filter, onChange }) {
+// Your own list: symbols typed or pasted, separated by commas or spaces
+function SymbolsBox({ filter, onChange }) {
+  const id = useId();
+  const [text, setText] = useState((filter?.values ?? []).join(", "));
+  useEffect(() => { setText((filter?.values ?? []).join(", ")); }, [filter?.values?.join()]); // eslint-disable-line react-hooks/exhaustive-deps
+  const apply = () => onChange([...new Set(text.toUpperCase().split(/[\s,;]+/).map(v => v.replace(/[^A-Z0-9&-]/g, "")).filter(Boolean))].slice(0, 60));
+  return (
+    <div className="filter-row">
+      <label htmlFor={id} style={{ display: "block", fontSize: 12.5, fontWeight: 400, color: "var(--t1)", marginBottom: 8 }}>Only these companies</label>
+      <input id={id} className="input-base" value={text} onChange={e => setText(e.target.value)} onBlur={apply} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); apply(); } }}
+        placeholder="TCS, INFY, RELIANCE" autoCapitalize="characters" autoCorrect="off" spellCheck={false} enterKeyHint="done" style={{ width: "100%", height: 36, fontSize: 16 }} />
+      <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 4 }}>NSE symbols, up to 60. Leave empty for every company.</div>
+    </div>
+  );
+}
+
+function CapSize({ def, filter, onChange, columns = 3, short = o => o.replace(" cap", "") }) {
   const chosen = new Set(filter?.values ?? []);
   const toggle = o => {
     const next = new Set(chosen);
@@ -185,13 +201,13 @@ function CapSize({ def, filter, onChange }) {
   return (
     <div className="filter-row">
       <div style={{ fontSize: 12.5, fontWeight: 400, color: "var(--t1)", marginBottom: 8 }} title={def.about}>{def.label}</div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 6 }}>
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`, gap: 6 }}>
         {def.options.map(o => {
           const on = chosen.has(o);
           return (
             <button key={o} type="button" onClick={() => toggle(o)} aria-pressed={on}
               style={{ height: 32, borderRadius: 8, fontSize: 12, fontWeight: 400, cursor: "pointer", border: `1px solid ${on ? "var(--accent)" : "var(--bdr2)"}`, background: on ? "color-mix(in srgb, var(--accent) 10%, transparent)" : "transparent", color: on ? "var(--accent)" : "var(--t2)" }}>
-              {o.replace(" cap", "")}
+              {short(o)}
             </button>
           );
         })}
@@ -199,6 +215,8 @@ function CapSize({ def, filter, onChange }) {
     </div>
   );
 }
+
+const PINNED_IDS = new Set(["capSize", "sector", "resultsWhen", "symbols"]);
 
 export default function FilterPanel({ meta, filters, onChange, onAddFilter, onReset }) {
   const active = filters.filter(isActiveFilter).length;
@@ -209,6 +227,12 @@ export default function FilterPanel({ meta, filters, onChange, onAddFilter, onRe
     if (!values.length) return remove("capSize");
     if (cap) return replace("capSize", { id: "capSize", values });
     onChange([...filters, { id: "capSize", values }]);
+  };
+  // the other pinned choices: one filter each, gone when nothing's picked
+  const setValues = id => values => {
+    if (!values.length) return remove(id);
+    if (filters.some(f => f.id === id)) return replace(id, { id, values });
+    onChange([...filters, { id, values }]);
   };
   const sector = filters.find(f => f.id === "sector");
   const setSector = values => {
@@ -231,8 +255,10 @@ export default function FilterPanel({ meta, filters, onChange, onAddFilter, onRe
 
       <CapSize def={meta.byId.get("capSize")} filter={cap} onChange={setCap} />
       {meta.byId.get("sector") && <SectorPick def={meta.byId.get("sector")} filter={sector} companies={meta.companies} onChange={setSector} />}
+      {meta.byId.get("resultsWhen") && <CapSize def={meta.byId.get("resultsWhen")} filter={filters.find(f => f.id === "resultsWhen")} onChange={setValues("resultsWhen")} columns={2} short={o => o.replace("Reported in the last 30 days", "Reported, 30 days")} />}
+      {meta.byId.get("symbols") && <SymbolsBox filter={filters.find(f => f.id === "symbols")} onChange={setValues("symbols")} />}
 
-      {filters.filter(f => f.id !== "capSize" && f.id !== "sector").map(f => {
+      {filters.filter(f => !PINNED_IDS.has(f.id)).map(f => {
         const def = meta.byId.get(f.id);
         if (!def) return null;
         const props = { key: f.id, def, filter: f, companies: meta.companies, onChange: next => replace(f.id, next), onRemove: () => remove(f.id), move: canMove(filters, f.id), onMove: step => onChange(moveFilter(filters, f.id, step)) };

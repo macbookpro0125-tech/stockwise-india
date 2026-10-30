@@ -34,3 +34,18 @@ export const COLUMN_SETS = [
 
 // The set the table shows now, if it's exactly one of them
 export const currentSet = columns => COLUMN_SETS.find(s => s.columns.join() === (columns ?? []).join())?.id ?? null;
+
+// A line of figures about the list itself (the Stats idea): how many, the
+// middle quality, P/E and ROCE, and how many trade below their fair value
+const middle = v => { const s = v.filter(Number.isFinite).sort((a, b) => a - b); if (!s.length) return null; const k = s.length >> 1; return s.length % 2 ? s[k] : (s[k - 1] + s[k]) / 2; };
+export function listStats(rows = []) {
+  const valued = rows.filter(r => r.fv25 > 0 && r.cmp > 0);
+  return {
+    count: rows.length,
+    quality: middle(rows.map(r => r.research?.quality)),
+    pe: middle(rows.map(r => r.peTtm ?? r.pe).filter(v => v > 0)),
+    roce: middle(rows.map(r => r.roce)),
+    belowFair: valued.filter(r => r.cmp < r.fv25).length,
+    valued: valued.length,
+  };
+}

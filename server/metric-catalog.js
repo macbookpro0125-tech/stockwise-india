@@ -118,6 +118,7 @@ export const METRICS = [
   { id: "promoterPct", label: "Promoter holding", short: "Promoter", category: "Ownership", unit: "%", decimals: 1 },
   { id: "fiiPct", label: "FII holding", short: "FII", category: "Ownership", unit: "%", decimals: 1, about: "Foreign institutional investors." },
   { id: "diiPct", label: "DII holding", short: "DII", category: "Ownership", unit: "%", decimals: 1, about: "Domestic institutions: mutual funds, insurers, banks." },
+  { id: "freeFloat", label: "Free float (not held by promoters)", short: "Free float", category: "Ownership", unit: "%", decimals: 1, get: m => (Number.isFinite(m.promoterPct) ? 100 - m.promoterPct : null), about: "The share of the company not held by its promoters: what institutions and the public hold, so what can actually trade." },
   { id: "pledgedPct", label: "Promoter shares pledged", short: "Pledged", category: "Ownership", unit: "%", decimals: 1, about: "Share of the promoters' own holding that is pledged." },
 
   // ── Financial health ──
@@ -186,6 +187,11 @@ export const METRICS = [
 // Category filters: a set of values rather than a range
 export const CATEGORY_METRICS = [
   { id: "capSize", label: "Market cap size", category: "Size", options: ["Large cap", "Mid cap", "Small cap"], about: "By market-cap rank, as AMFI does: the top 100 are large, 101–250 mid, the rest small." },
+  // When a company reports, from NSE's board-meeting calendar and its latest
+  // filing (30 Oct 2026, the Finviz ideas): a company can be in several
+  { id: "resultsWhen", label: "Results", category: "Size", options: ["Today", "Next 7 days", "Next 14 days", "Reported in the last 30 days"], get: (m, now = Date.now()) => resultsWhen(m, now), about: "From NSE's board-meeting calendar, and the date its latest quarter was filed." },
+  // Your own list of companies, pasted in: only those (the Tickers box)
+  { id: "symbols", label: "Only these companies", category: "Size", free: true, get: m => m.symbol },
   { id: "sector", label: "Sector", category: "Size" },
 ];
 
@@ -348,8 +354,10 @@ export function cleanFilters(filters) {
     if (f?.id === "score") f = { id: "quality", min: num(f.min) == null ? null : num(f.min) * 10, max: num(f.max) == null ? null : num(f.max) * 10 };
     const x = f && BY_ID.get(f.id);
     if (!x) return [];
-    if (x.options || x.id === "sector") {
-      const values = Array.isArray(f.values) ? f.values.filter(v => typeof v === "string").slice(0, 60) : [];
+    if (x.options || x.free || x.id === "sector") {
+      let values = Array.isArray(f.values) ? f.values.filter(v => typeof v === "string").slice(0, 60) : [];
+      if (x.options) values = values.filter(v => x.options.includes(v));
+      if (x.free) values = [...new Set(values.map(v => v.trim().toUpperCase()).filter(v => /^[A-Z0-9&-]{1,20}$/.test(v)))];
       return values.length ? [{ id: x.id, values }] : [];
     }
     const min = num(f.min), max = num(f.max);
@@ -360,8 +368,9 @@ export function cleanFilters(filters) {
 export function matchesFilters(m, filters, sizes) {
   for (const f of filters) {
     if (f.values) {
-      const v = f.id === "capSize" ? sizes.get(m.symbol) : m[f.id];
-      if (!f.values.includes(v)) return false;
+      const def = CATEGORY_BY_ID.get(f.id);
+      const v = f.id === "capSize" ? sizes.get(m.symbol) : def?.get ? def.get(m) : m[f.id];
+      if (!(Array.isArray(v) ? v.some(x => f.values.includes(x)) : f.values.includes(v))) return false;
       continue;
     }
     const v = valueOf(BY_ID.get(f.id), m);
@@ -403,4 +412,24 @@ export function coverageNotes(rows, filters) {
     }
   }
   return notes;
+}
+
+const CATEGORY_BY_ID = new Map(CATEGORY_METRICS.map(x => [x.id, x]));
+
+// The results filter's groups a company is in today (IST): reporting today,
+// in the next 7 or 14 days, or filed in the last 30
+const IST_MS = 330 * 60_000;
+const istDayOf = t => new Date(t + IST_MS).toISOString().slice(0, 10);
+const plusDays = (day, n) => new Date(Date.parse(`${day}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
+export function resultsWhen(m, now = Date.now()) {
+  const today = istDayOf(now), out = [];
+  const next = m.nextResults;
+  if (next && next >= today) {
+    if (next === today) out.push("Today");
+    if (next <= plusDays(today, 6)) out.push("Next 7 days");
+    if (next <= plusDays(today, 13)) out.push("Next 14 days");
+  }
+  const filed = m.latestQuarterFiled?.slice(0, 10);
+  if (filed && filed <= today && filed >= plusDays(today, -29)) out.push("Reported in the last 30 days");
+  return out;
 }
