@@ -86,11 +86,14 @@ export default function StockSearchBar({ onAnalyze, placeholder = "Search any st
     onAnalyze(s.ticker);
   }, [onAnalyze]);
 
-  // Enter on free text: the top suggestion if there is one, else the text as a symbol
+  // Enter on free text: the top suggestion if there is one, else the text as a
+  // symbol — only the characters a symbol has (30 Oct 2026: "\NMDC" opened
+  // /stock/%5CNMDC, an error page)
   const submitText = () => {
     const top = suggestions[0];
+    const symbol = query.toUpperCase().replace(/[^A-Z0-9&-]/g, "");
     if (top) handleSelect(top);
-    else if (query.trim()) { onAnalyze(query.trim().toUpperCase()); setQuery(""); setShowSuggestions(false); }
+    else if (symbol) { onAnalyze(symbol); setQuery(""); setShowSuggestions(false); }
   };
 
   const handleKeyDown = e => {
