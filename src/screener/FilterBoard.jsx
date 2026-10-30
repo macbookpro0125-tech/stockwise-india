@@ -38,7 +38,15 @@ function Pick({ item, def, filter, onPick }) {
   );
 }
 
-export default function FilterBoard({ meta, filters, onChange, onMore, matched, total }) {
+// Folded or open, remembered on this computer; open the first time
+const OPEN_KEY = "filterBoardOpen";
+const readOpen = () => { try { return localStorage.getItem(OPEN_KEY) !== "0"; } catch { return true; } };
+const writeOpen = v => { try { localStorage.setItem(OPEN_KEY, v ? "1" : "0"); } catch {} };
+
+export default function FilterBoard({ meta, filters, onChange, onMore, matched, total, ready = [], yours = [], activeId = null, onOpenStrategy, onSave }) {
+  const [open, setOpenState] = useState(readOpen);
+  const setOpen = v => { setOpenState(v); writeOpen(v); };
+  const stratId = useId();
   const [tab, setTab] = useState("all");
   const [find, setFind] = useState("");
   const findId = useId(), ownId = useId();
@@ -63,11 +71,25 @@ export default function FilterBoard({ meta, filters, onChange, onMore, matched, 
             {active.length > 0 && <span className="fb-on">{active.length} on</span>}
             {matched != null && <span className="fb-count"><b>{matched.toLocaleString("en-IN")}</b>{total ? ` of ${total.toLocaleString("en-IN")}` : ""} companies match</span>}
           </div>
+          {!open ? (
+            <button type="button" className="fb-ghost fb-toggle" aria-expanded="false" aria-controls="fb-panel" onClick={() => setOpen(true)}>Show filters ▾</button>
+          ) : (
           <div className="fb-tools">
             <label htmlFor={findId}>Find a filter</label>
             <input id={findId} type="search" value={find} onChange={e => setFind(e.target.value)} placeholder="ROCE, pledged, RSI…" autoComplete="off" spellCheck={false} />
             <button type="button" className="fb-ghost" onClick={() => { onChange([]); setOwn(""); }} disabled={!active.length}>Clear all</button>
           </div>
+          )}
+        </div>
+        {open && (<div id="fb-panel">
+        <div className="fb-strategy">
+          <label htmlFor={stratId}>Open a strategy</label>
+          <select id={stratId} className="fb-select" value={activeId ?? ""} onChange={e => e.target.value && onOpenStrategy?.(e.target.value)}>
+            <option value="">{activeId ? "" : "Choose one…"}</option>
+            {yours.length > 0 && <optgroup label="Your strategies">{yours.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</optgroup>}
+            {ready.length > 0 && <optgroup label="Ready-made">{ready.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</optgroup>}
+          </select>
+          {onSave && <button type="button" className="fb-ghost" onClick={onSave} disabled={!active.length}>+ Save as new strategy</button>}
         </div>
         <div className="fb-tabs" role="group" aria-label="Filter groups">
           {[{ id: "all", label: "All" }, ...BOARD_GROUPS].map(g => (
@@ -91,6 +113,8 @@ export default function FilterBoard({ meta, filters, onChange, onMore, matched, 
             <button type="button" className="fb-more" onClick={onMore}>+ More filters ({more})</button>
           </div>
         </div>
+        <button type="button" className="fb-fold" aria-expanded="true" aria-controls="fb-panel" onClick={() => setOpen(false)}>Hide filters ▴</button>
+        </div>)}
       </section>
       {active.length > 0 && (
         <div className="fb-active" role="group" aria-label="Filters that are on">

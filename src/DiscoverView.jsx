@@ -685,7 +685,8 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews }) {
             {/* a computer: the filters open on a board above the results (FilterBoard.jsx) */}
             {!isPhone && meta && filters && (
               <FilterBoard meta={meta} filters={filters} onChange={changeFilters} onMore={() => setPicker("filter")}
-                matched={results?.matched ?? null} total={results?.total ?? null} />
+                matched={results?.matched ?? null} total={results?.total ?? null}
+                ready={ribbon} yours={ownStrategies} activeId={activePresetId} onOpenStrategy={pickFromWheel} onSave={() => setShowSaveModal(true)} />
             )}
 
             {error && (
