@@ -1,6 +1,8 @@
 // What search engines read (seo.js): node --no-warnings server/seo-test.js
 import assert from "node:assert/strict";
-const { robotsTxt, sitemapXml, sitemapPart, publicStock, stockPageHtml, aboutPageHtml } = await import("./seo.js");
+const { robotsTxt, sitemapXml, sitemapPart, publicStock, stockPageHtml, aboutPageHtml, helpPageHtml } = await import("./seo.js");
+const { GUIDES, GUIDE_PATHS } = await import("./guides.js");
+const { publicSubPage, isSubPagePath } = await import("./seo-pages.js");
 const { allMetrics } = await import("./screen.js");
 
 assert.match(robotsTxt(), /Disallow: \/api\//);
@@ -19,7 +21,9 @@ const { PRESETS } = await import("./presets.js");
 const { screenPageHtml, screensIndexHtml, resultsCalendarHtml, publicScreen, screenSlug } = await import("./seo-lists.js");
 const pages = ["/", "/about", "/help", "/methodology", "/stock-screener-india", "/privacy", "/disclaimer",
   // the strategies' pages and the results calendar (seo-lists.js)
-  "/screens", "/results-calendar", ...PRESETS.map(p => `/screens/${screenSlug(p.id)}`)];
+  "/screens", "/results-calendar", ...PRESETS.map(p => `/screens/${screenSlug(p.id)}`),
+  // the guides (guides.js, 30 Oct 2026)
+  ...GUIDE_PATHS()];
 for (const p of pages) assert.ok(sm.includes(`<loc>https://jocularinsights.in${p}</loc>`), `the sitemap lists ${p}`);
 assert.equal((sm.match(/<loc>/g) ?? []).length, companies + pages.length, "the public pages and every company, nothing else");
 assert.match(sm, /<loc>https:\/\/jocularinsights\.in\/stock\/[A-Z0-9&%-]+<\/loc>/);
@@ -99,6 +103,20 @@ assert.match(sp, /not a recommendation/, "says it isn't advice");
 assert.equal(screenPageHtml(template, "no-such-strategy"), null);
 assert.equal((screensIndexHtml(template).match(/href="\/screens\//g) ?? []).length, PRESETS.length, "the index links every strategy");
 assert.match(resultsCalendarHtml(template), /<h1>Quarterly results calendar<\/h1>/);
+// the guides and /help, written for search engines in full (30 Oct 2026, AdSense's "more content")
+{
+  const template = '<html><head><title>x</title></head><body><div id="root"></div></body></html>';
+  const words = h => h.replace(/<script[\s\S]*?<\/script>/g, "").replace(/<[^>]+>/g, " ").split(/\s+/).filter(Boolean).length;
+  assert.ok(words(helpPageHtml(template)) > 400, "/help is written into the page");
+  assert.ok(GUIDES.length >= 10 && new Set(GUIDES.map(g => g.slug)).size === GUIDES.length, "ten or more guides, each its own address");
+  for (const p of GUIDE_PATHS()) {
+    assert.ok(isSubPagePath(p), `${p} is a public page`);
+    const page = await publicSubPage(p);
+    assert.ok(page && page.canonical === `https://jocularinsights.in${p}` && words(page.body) > 250, `${p} has its own text`);
+    for (const [, to] of page.body.matchAll(/href="(\/[^"]*)"/g)) assert.ok(!/undefined|null/.test(to), `${p} links to ${to}`);
+  }
+  assert.equal(await publicSubPage("/learn/no-such-guide"), null);
+}
 console.log(`ok: robots.txt, a sitemap of ${companies + pages.length} pages, and ${sym}'s page with its own title, description, canonical, structured data and figures`);
 
 // each screen's guide, and what joined and left since a week ago (seo-lists.js)

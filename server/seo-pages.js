@@ -9,6 +9,7 @@
 //   /stock/TCS/earnings-call       the next results date and saved call summaries
 //   /explore                       indices, the day's biggest moves, results this week
 //   /news                          the latest company announcements to NSE
+//   /learn, /learn/<slug>          our guides to reading the figures (guides.js)
 //
 // Facts from filings and NSE's prices only: no fair value, nothing about
 // buying or selling. Publisher headlines aren't turned into pages (their words
@@ -19,6 +20,7 @@ import { allMetrics } from "./screen.js";
 import { loadMarketSnapshot } from "./market-data.js";
 import { DATA_DIR } from "./paths.js";
 import { niceName } from "../src/stockName.js";
+import { GUIDES, GUIDES_UPDATED, guideBySlug } from "./guides.js";
 
 const SITE = "https://jocularinsights.in";
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -217,10 +219,42 @@ ${[...byDay].map(([d, list]) => `<h2>${esc(day(d))}</h2><ul>${list.map(f => `<li
   };
 }
 
-// The page for a path, or null: { title, desc, canonical, body, noindex? }
+// ── /learn ───────────────────────────────────────────────────────────────
+// The guides' own HTML, written in guides.js; the titles and descriptions escaped
+function learnIndexPage() {
+  return {
+    title: "Learn to read Indian stocks: plain-English guides | Jocular Insights",
+    desc: "Short guides to reading an Indian company's results, balance sheet, cash flow and shareholding, and what P/E, ROE, ROCE and debt to equity really tell you.",
+    canonical: `${SITE}/learn`,
+    body: `<main class="seo-stock seo-methodology"><p>${link("/", "Jocular Insights")} › Learn</p><h1>Learn to read a company's figures</h1>
+<p>Short guides, in plain words, to the numbers on every company page: what each one measures, how to compare it fairly, and the traps to avoid. They explain ideas, never what to buy or sell.</p>
+<ul>${GUIDES.map(g => `<li>${link(`/learn/${g.slug}`, g.title)}<br /><small>${esc(g.desc)}</small></li>`).join("")}</ul>
+<p>${link("/methodology", "How our scores and fair values work")} · ${link("/help", "How the figures work")} · ${link("/screens", "Stock screens")}</p></main>`,
+  };
+}
+function guidePage(g) {
+  const i = GUIDES.indexOf(g), next = GUIDES[(i + 1) % GUIDES.length];
+  return {
+    title: `${g.title} | Jocular Insights`,
+    desc: g.desc,
+    canonical: `${SITE}/learn/${g.slug}`,
+    ld: { "@context": "https://schema.org", "@type": "Article", headline: g.title, description: g.desc, dateModified: GUIDES_UPDATED, author: { "@type": "Organization", name: "Jocular Insights" }, publisher: { "@type": "Organization", name: "Jocular Insights", url: `${SITE}/` }, mainEntityOfPage: `${SITE}/learn/${g.slug}` },
+    body: `<main class="seo-stock seo-methodology"><p>${link("/", "Jocular Insights")} › ${link("/learn", "Learn")}</p><article><h1>${esc(g.title)}</h1>
+<p><b>${esc(g.desc)}</b></p>
+${g.sections.map(([h, html]) => `<h2>${esc(h)}</h2>${html}`).join("\n")}
+${g.see?.length ? `<h2>See it on real data</h2><ul>${g.see.map(([to, text]) => `<li>${link(to, text)}</li>`).join("")}</ul>` : ""}
+<p><small>Updated ${esc(day(GUIDES_UPDATED))}. For learning only, not investment advice: see the ${link("/disclaimer", "disclaimer")}.</small></p></article>
+<p>Next: ${link(`/learn/${next.slug}`, next.title)} · ${link("/learn", "All guides")}</p></main>`,
+  };
+}
+
+// The page for a path, or null: { title, desc, canonical, body, noindex?, ld? }
 export async function publicSubPage(path) {
   if (path === "/explore") return explorePage();
   if (path === "/news") return newsPage();
+  if (path === "/learn") return learnIndexPage();
+  const guide = path.match(/^\/learn\/([a-z0-9-]+)$/);
+  if (guide) { const g = guideBySlug(guide[1]); return g ? guidePage(g) : null; }
   const m = path.match(/^\/stock\/([^/]+)\/(financials|earnings-call|results\/(q[1-4]-fy\d\d))$/);
   if (!m) return null;
   const row = rowOf(decodeURIComponent(m[1]).toUpperCase());
@@ -229,7 +263,7 @@ export async function publicSubPage(path) {
   if (m[2] === "earnings-call") return earningsCallPage(row);
   return resultsPage(row, m[3]);
 }
-export const isSubPagePath = path => path === "/explore" || path === "/news" || /^\/stock\/[^/]+\/(financials|earnings-call|results\/q[1-4]-fy\d\d)$/.test(path);
+export const isSubPagePath = path => path === "/explore" || path === "/news" || /^\/learn(\/[a-z0-9-]+)?$/.test(path) || /^\/stock\/[^/]+\/(financials|earnings-call|results\/q[1-4]-fy\d\d)$/.test(path);
 
 // For the sitemap: each company's financials and its latest results; an
 // earnings-call page only once a summary has been written

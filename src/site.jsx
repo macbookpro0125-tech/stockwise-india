@@ -71,6 +71,7 @@ export function SiteFooter() {
       <p className="site-foot-line">Not investment advice. Consult a SEBI-registered adviser · Data from NSE filings and daily closes</p>
       <nav className="site-foot-links" aria-label="About Jocular Insights">
         <SiteLink to="/help" style={FOOT_LINK}>Help</SiteLink>
+        <SiteLink to="/learn" style={FOOT_LINK}>Learn</SiteLink>
         <SiteLink to="/methodology" style={FOOT_LINK}>Methodology</SiteLink>
         <SiteLink to="/about" style={FOOT_LINK}>About</SiteLink>
         <SiteLink to="/disclaimer" style={FOOT_LINK}>Disclaimer</SiteLink>

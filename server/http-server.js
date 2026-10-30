@@ -61,7 +61,7 @@ import { summarizeFiling } from "./filing-summary.js";
 import { logoFor } from "./logos.js";
 import { PRESETS } from "./presets.js";
 import { DIST_DIR } from "./paths.js";
-import { robotsTxt, sitemapXml, sitemapPart, changedPageEntries, SITE, publicStock, stockPageHtml, methodologyPageHtml, stockScreenerPageHtml, aboutPageHtml, pageHtml } from "./seo.js";
+import { robotsTxt, sitemapXml, sitemapPart, changedPageEntries, SITE, publicStock, stockPageHtml, methodologyPageHtml, stockScreenerPageHtml, aboutPageHtml, helpPageHtml, pageHtml } from "./seo.js";
 import { HttpError, badRequest, payloadTooLarge } from "./http-errors.js";
 import { companyVideos } from "./videos.js";
 import { searchName } from "../src/webLinks.js";
@@ -1530,7 +1530,7 @@ export function createApp() {
         const lower = p.match(/^\/stock\/([^/]+?)\/?$/);
         const to = p === "/index.html" ? "/"
           : lower && (decodePathSegment(lower[1]) !== decodePathSegment(lower[1]).toUpperCase() || p.endsWith("/")) ? `/stock/${encodeURIComponent(decodePathSegment(lower[1]).toUpperCase())}`
-          : /^\/(screens\/[a-z0-9-]+|sector\/[a-z0-9-]+|screens|sectors|results-calendar|methodology|about|help|privacy|disclaimer|stock-screener-india)\/$/.test(p) ? p.slice(0, -1)
+          : /^\/(screens\/[a-z0-9-]+|sector\/[a-z0-9-]+|screens|sectors|results-calendar|methodology|about|help|learn|learn\/[a-z0-9-]+|privacy|disclaimer|stock-screener-india)\/$/.test(p) ? p.slice(0, -1)
           : null;
         if (to && to !== p) {
           res.writeHead(301, { Location: `${to}${url.search}`, "Cache-Control": "public, max-age=86400" });
@@ -1551,7 +1551,7 @@ export function createApp() {
           return;
         }
         const data = `<script id="public-page-data" type="application/json">${JSON.stringify({ path: url.pathname, title: page.title, body: page.body }).replace(/</g, "\\u003c")}</script>`;
-        const html = pageHtml(template, { title: page.title, desc: page.desc, canonical: page.canonical, ld: { "@context": "https://schema.org", "@type": "WebPage", name: page.title, description: page.desc, url: page.canonical }, body: page.body + data })
+        const html = pageHtml(template, { title: page.title, desc: page.desc, canonical: page.canonical, ld: page.ld ?? { "@context": "https://schema.org", "@type": "WebPage", name: page.title, description: page.desc, url: page.canonical }, body: page.body + data })
           .replace("</head>", `${page.noindex ? '<meta name="robots" content="noindex" />\n' : ""}</head>`);
         res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache" });
         res.end(req.method === "HEAD" ? undefined : html);
@@ -1563,6 +1563,12 @@ export function createApp() {
         if (url.pathname === "/") await marketReady();
         const template = readFileSync(join(DIST_DIR, "index.html"), "utf-8");
         const html = url.pathname === "/" ? homePageHtml(template) : aboutPageHtml(template);
+        res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache" });
+        res.end(req.method === "HEAD" ? undefined : html);
+        return;
+      }
+      if (url.pathname === "/help" && (req.method === "GET" || req.method === "HEAD") && existsSync(join(DIST_DIR, "index.html"))) {
+        const html = helpPageHtml(readFileSync(join(DIST_DIR, "index.html"), "utf-8"));
         res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache" });
         res.end(req.method === "HEAD" ? undefined : html);
         return;

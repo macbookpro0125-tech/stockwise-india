@@ -4,12 +4,13 @@ import { Logo, SiteFooter, navigate } from "./site.jsx";
 import { useJoin, JoinCard, JoinBar } from "./PublicJoin.jsx";
 
 // The server-written public pages (server/seo-pages.js: a company's
-// financials, results and earnings calls, /explore and /news) shown as the
+// financials, results and earnings calls, /explore, /news and the /learn
+// guides) shown as the
 // server wrote them, so what search engines index and what people read are
 // the same. The first visit uses the copy written into the page (main.jsx
 // keeps it); moving here inside the app fetches it. Links inside stay in the
 // app.
-export const isPublicHtmlPath = path => path === "/explore" || path === "/news" || /^\/stock\/[^/]+\/(financials|earnings-call|results\/q[1-4]-fy\d\d)$/.test(path);
+export const isPublicHtmlPath = path => path === "/explore" || path === "/news" || /^\/learn(\/[a-z0-9-]+)?$/.test(path) || /^\/stock\/[^/]+\/(financials|earnings-call|results\/q[1-4]-fy\d\d)$/.test(path);
 
 export default function PublicHtmlPage({ path, signedIn }) {
   const first = typeof window !== "undefined" && window.__PUBLIC_PAGE__?.path === path ? window.__PUBLIC_PAGE__ : null;

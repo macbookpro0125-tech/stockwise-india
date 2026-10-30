@@ -101,3 +101,19 @@ test("S-H3 a strategy's page and the results calendar are open to everyone; a co
   await expect(page.getByRole("dialog", { name: "Sign in" })).toBeVisible();
   await expect(page).toHaveURL(/\/results-calendar$/);
 });
+
+// 30 Oct 2026: the guides, open to everyone and written into the page
+test("S-H5 the guides: a list, each guide its own page, and links between them stay in the app @phone", async ({ page, request }) => {
+  const html = await (await request.get("/learn/pe-ratio-explained")).text();
+  expect(html).toMatch(/<title>The P\/E ratio, explained for Indian stocks \| Jocular Insights<\/title>/);
+  expect(html).toContain('"@type":"Article"');
+  expect(html).toMatch(/<link rel="canonical" href="https:\/\/jocularinsights\.in\/learn\/pe-ratio-explained"/);
+  expect((await request.get("/learn/no-such-guide")).status()).toBe(404);
+  expect(await (await request.get("/help")).text()).toContain("Where the figures come from");
+
+  await page.goto("/learn");
+  await expect(page.getByRole("heading", { level: 1, name: "Learn to read a company's figures" })).toBeVisible();
+  await page.getByRole("link", { name: "How to read a bank or finance company" }).click();
+  await expect(page).toHaveURL(/\/learn\/how-to-analyse-a-bank$/);
+  await expect(page.getByRole("heading", { level: 1, name: "How to read a bank or finance company" })).toBeVisible();
+});

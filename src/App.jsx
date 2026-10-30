@@ -192,7 +192,7 @@ export default function App() {
           return;
         }
 
-        if (["/privacy", "/disclaimer", "/help", "/about", "/methodology", "/reset-password", "/stock-screener-india", "/screens", "/results-calendar", "/sectors", "/explore", "/news"].includes(currentPath) || /^\/(screens|sector)\//.test(currentPath) || /^\/stock\/[^/]+\/./.test(currentPath)) {
+        if (["/privacy", "/disclaimer", "/help", "/about", "/methodology", "/reset-password", "/stock-screener-india", "/screens", "/results-calendar", "/sectors", "/explore", "/news", "/learn"].includes(currentPath) || /^\/(screens|sector|learn)\//.test(currentPath) || /^\/stock\/[^/]+\/./.test(currentPath)) {
           if (canGoBack) window.history.back();
           else navigate("/", { replace: true });
           return;

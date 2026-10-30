@@ -302,6 +302,12 @@ export function HelpPage({ signedIn }) {
         value). For the exact group weights, missing-data rules, bank model and limitations, see the <SiteLink to="/methodology">full scoring and valuation methodology</SiteLink>. These are estimates to help you think, not targets or advice; see the <SiteLink to="/disclaimer">disclaimer</SiteLink>.
       </P>
 
+      <H>Learn to read the figures</H>
+      <P>
+        Our <SiteLink to="/learn">guides</SiteLink> explain what each figure means and how to compare it fairly: quarterly
+        results, P/E, ROE and ROCE, cash flow and more.
+      </P>
+
       <H>What it costs</H>
       <P>
         Nothing. There is no subscription, so there is nothing to renew or cancel, and nothing is sold to you: no loans,

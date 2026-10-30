@@ -29,6 +29,7 @@ export const SITE = "https://jocularinsights.in";
 import { LIST_PATHS } from "./seo-lists.js";
 import { stockStory, SECTOR_PATHS } from "./seo-story.js";
 import { subPagePaths, stockPageLinks } from "./seo-pages.js";
+import { GUIDE_PATHS, GUIDES_UPDATED } from "./guides.js";
 const PUBLIC_PATHS = ["/", "/about", "/help", "/methodology", SCREENER_PAGE_PATH, "/privacy", "/disclaimer"];
 
 export const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -80,7 +81,7 @@ export function sitemapXml() {
 // sitemap-pages.xml, sitemap-screens.xml, sitemap-stocks.xml; null for any other
 export function sitemapPart(name) {
   const lastmod = loadMarketSnapshot()?.pricesDate ?? null;
-  if (name === "pages") return urlset(PUBLIC_PATHS.map(p => [p, p === "/" ? lastmod : null]));
+  if (name === "pages") return urlset([...PUBLIC_PATHS.map(p => [p, p === "/" ? lastmod : null]), ...GUIDE_PATHS().map(p => [p, GUIDES_UPDATED])]);
   if (name === "screens") return urlset(LIST_PATHS().map(p => [p, lastmod]));
   if (name === "sectors") return urlset(SECTOR_PATHS().map(p => [p, lastmod]));
   // each company's financials, latest results and earnings calls; /explore and /news
@@ -336,6 +337,33 @@ ${s.story?.sparse ? `<meta name="robots" content="noindex" />\n` : ""}
 // what search engines' "who is behind this" guidance asks of a finance site
 export const ABOUT_TITLE = "About Jocular Insights";
 export const ABOUT_DESCRIPTION = "Who runs Jocular Insights, where its data comes from, how the figures are made, and how to reach us.";
+// /help written into the page (30 Oct 2026: a search engine read 11 words
+// there). The same words as HelpPage in src/LegalPages.jsx; change both
+export function helpPageHtml(template) {
+  const canonical = `${SITE}/help`;
+  const title = "How the figures work | Jocular Insights";
+  const desc = "Where every figure in Jocular Insights comes from, when it changes, why one can be missing, how the scores and fair values are made, what it costs and how to contact us.";
+  const body = `<main class="seo-stock seo-methodology"><p><a href="/">Jocular Insights</a> › Help</p>
+<h1>How the figures work</h1>
+<p>Everything in Jocular Insights is worked out from public data by fixed rules. This page says where each figure comes from, when it changes, and why one can be missing. If something looks wrong, <a href="mailto:jocularinsights@gmail.com">tell us</a>.</p>
+<h2>Where the figures come from</h2>
+<ul><li><b>Company results:</b> the quarterly and annual results each company files with NSE. Ratios such as P/E, ROE and debt to equity are calculated from them.</li><li><b>Prices and returns:</b> NSE's daily closing prices, and NSE's index closes for comparisons with the NIFTY 50 and sector indices. The price chart, its technicals and the latest close at the top of a company page use the same NSE daily prices.</li><li><b>Shareholding and announcements:</b> the shareholding patterns and announcements companies file with NSE.</li></ul>
+<h2>When they change</h2>
+<p>Each weekday evening, after NSE publishes the day's prices, we read the closing prices and the results companies have filed since the last check. If that run fails, it is tried again the next morning. So prices are the last trading day's close, and new results usually appear the evening they are filed.</p>
+<p>Every company page ends with <b>Where these figures come from</b>: the close the returns use, the latest quarter and year filed and when, and when its filings were last read.</p>
+<h2>Why a figure or score can be missing</h2>
+<ul><li>The company hasn't filed enough years for a check that needs them, such as five-year growth.</li><li>The check doesn't apply. Banks and other lenders are judged on bad loans and capital instead of debt to equity.</li><li>The filings can't show it, such as related-party deals or forecasts. Those are left out, never guessed.</li><li>A company whose latest audited year is about 18 months behind the rest has stopped filing, and drops out of the screener.</li></ul>
+<h2>Scores, fair values and levels</h2>
+<p>The quality score is out of 100, across six groups: business quality, earnings quality, balance sheet, governance, growth and valuation. Every check shows its reason on the company's Scorecard. A fair value is an estimate from each company's normalized earnings and its own usual P/E, capped at twice its sector's (banks on book value). For the exact group weights, missing-data rules, bank model and limitations, see the <a href="/methodology">full scoring and valuation methodology</a>. These are estimates to help you think, not targets or advice; see the <a href="/disclaimer">disclaimer</a>.</p>
+<h2>Learn to read the figures</h2>
+<p>Our <a href="/learn">guides</a> explain what each figure means and how to compare it fairly: <a href="/learn/how-to-read-quarterly-results">quarterly results</a>, <a href="/learn/pe-ratio-explained">P/E</a>, <a href="/learn/roe-and-roce">ROE and ROCE</a>, <a href="/learn/cash-flow-statement">cash flow</a> and more.</p>
+<h2>What it costs</h2>
+<p>Nothing. There is no subscription, so there is nothing to renew or cancel, and nothing is sold to you: no loans, no credit offers, no paid tier. The Android app shows a few ads among lists, never in front of what you are reading, and nothing is ever locked behind one.</p>
+<h2>Contact us</h2>
+<p>Email <a href="mailto:jocularinsights@gmail.com">jocularinsights@gmail.com</a>. Tell us the company and the figure that looks wrong; a screenshot helps. For privacy requests, see the <a href="/privacy">privacy policy</a>.</p></main>`;
+  return pageHtml(template, { title, desc, canonical, ld: { "@context": "https://schema.org", "@type": "WebPage", name: title, description: desc, url: canonical }, body });
+}
+
 export function aboutPageHtml(template) {
   const canonical = `${SITE}/about`;
   const ld = { "@context": "https://schema.org", "@type": "AboutPage", name: ABOUT_TITLE, description: ABOUT_DESCRIPTION, url: canonical, publisher: { "@type": "Organization", name: "Jocular Insights", url: `${SITE}/`, email: "jocularinsights@gmail.com" } };
