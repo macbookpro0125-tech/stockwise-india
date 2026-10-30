@@ -1,7 +1,7 @@
 // When niftyindices.com's sector lists don't load, the last good sectors stand
 // (market-data.js fallbackSectors), never an empty map
 import assert from "node:assert/strict";
-import { fallbackSectors, _nseSectorsForTest as nseSectors, bseIndustryMap, votedSectors } from "./market-data.js";
+import { fallbackSectors, _nseSectorsForTest as nseSectors, _bseSectorsForTest as bseSectors, bseCodes, bseClassification, votedSectors } from "./market-data.js";
 import { nseSession } from "./fetch-nse.js";
 
 const seed = fallbackSectors({});
@@ -41,12 +41,12 @@ assert.equal(refusals, 10, "each of five companies asked twice, then it stops");
 assert.equal(stubborn.renewed, 5);
 assert.ok(!("F" in none));
 
-// BSE's list, matched to NSE's companies by ISIN (a different BSE symbol
-// still matches), else by the same symbol; blank industries are skipped
+// BSE's list gives each NSE company its BSE code, by ISIN (a different BSE
+// symbol still matches), else by the same symbol
 const bseRows = [
-  { SCRIP_CD: "544000", scrip_id: "FLAIRWRIT", ISIN_NUMBER: "INE00Y201027", INDUSTRY: "Stationary" },
-  { SCRIP_CD: "500001", scrip_id: "SAMECO", ISIN_NUMBER: "INE999X01011", INDUSTRY: "Software" },
-  { SCRIP_CD: "500002", scrip_id: "BLANK", ISIN_NUMBER: "INE888X01011", INDUSTRY: "" },
+  { SCRIP_CD: 544000, scrip_id: "FLAIRWRIT", ISIN_NUMBER: "INE00Y201027", INDUSTRY: null },
+  { SCRIP_CD: "500001", scrip_id: "SAMECO", ISIN_NUMBER: "INE999X01011", INDUSTRY: null },
+  { SCRIP_CD: "", scrip_id: "BLANK", ISIN_NUMBER: "INE888X01011" },
 ];
 const equityList = [
   { symbol: "FLAIR", isin: "INE00Y201027" },
@@ -54,10 +54,23 @@ const equityList = [
   { symbol: "BLANK", isin: "INE888X01011" },
   { symbol: "NSEONLY", isin: "INE777X01011" },
 ];
-assert.deepEqual(bseIndustryMap(bseRows, equityList), { FLAIR: "Stationary", SAMECO: "Software" });
-assert.deepEqual(bseIndustryMap(null, equityList), {});
-// other casings and the newer industry field
-assert.deepEqual(bseIndustryMap([{ Scrip_Id: "X", Isin_No: "ine00y201027", Industry: "Old", IndustryNew: "Stationery" }], equityList), { FLAIR: "Stationery" });
+assert.deepEqual(bseCodes(bseRows, equityList), { FLAIR: "544000", SAMECO: "500001" });
+assert.deepEqual(bseCodes(null, equityList), {});
+const knownSectors = new Set(["Consumer Durables", "Information Technology"]);
+assert.deepEqual(bseClassification({ Sector: "Consumer Durables", IndustryNew: "Stationary" }, knownSectors), { sector: "Consumer Durables", basic: "Stationary" });
+assert.equal(bseClassification({ Sector: "Made Up" }, knownSectors), null);
+
+// each company NSE's lists miss is asked for once; the codes come from BSE's list
+const bseAsked = [];
+const fakeBse = async url => {
+  bseAsked.push(url);
+  if (url.includes("ListofScripData")) return bseRows;
+  return url.includes("scripcode=544000") ? { Sector: "Consumer Durables", IndustryNew: "Stationary" } : { Sector: "Something Else" };
+};
+const fromBse = await bseSectors(["FLAIR", "SAMECO", "NSEONLY", "TCS"], { TCS: "Information Technology" }, { pauseMs: 0, getJson: fakeBse, equityList });
+assert.deepEqual(fromBse.FLAIR, { sector: "Consumer Durables", basic: "Stationary" });
+assert.equal(fromBse.SAMECO, null, "a sector name NSE's lists don't use isn't taken");
+assert.ok(!("NSEONLY" in fromBse) && !bseAsked.some(u => u.includes("TCS")), "no BSE code, or an NSE sector already: not asked");
 
 // an industry takes the sector most of its indexed companies have, 75% of at least `min`
 const labels = { A: "Software", B: "Software", C: "Software", D: "Software", E: "Sugar", F: "Sugar", G: "Mixed", H: "Mixed", I: "Lone" };

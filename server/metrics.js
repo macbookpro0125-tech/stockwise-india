@@ -518,10 +518,12 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
   // under FMCG, and a mapped sector mustn't make a sugar mill non-cyclical.
   // NSE's own classification (market-data.js nseSectors) counts as an NSE
   // sector, ahead of the industry mapping and any guess from the filings
+  // and BSE's, by the same scheme, for those NSE's don't reach
   const nseSector = snap?.nseSectors?.[sym]?.sector ?? null;
-  const indexSector = snap?.sectors?.[sym] ?? nseSector ?? null;
+  const bseSector = snap?.bseSectors?.[sym]?.sector ?? null;
+  const indexSector = snap?.sectors?.[sym] ?? nseSector ?? bseSector ?? null;
   const peerSector = indexSector ?? snap?.industrySectors?.[sym] ?? null;
-  const industry = snap?.industries?.[sym] ?? snap?.nseSectors?.[sym]?.basic ?? snap?.bseIndustries?.[sym] ?? null;
+  const industry = snap?.industries?.[sym] ?? snap?.nseSectors?.[sym]?.basic ?? snap?.bseSectors?.[sym]?.basic ?? null;
   const nameSector = sectorFromName(stock.name);
   const utility = peerSector ? UTILITY_SECTORS.has(peerSector) : false;
   const nameLower = String(stock.name || "").toLowerCase();
@@ -537,7 +539,7 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
   // on NSE's sectors.
   const businessSector = peerSector ? null : sectorFromBusiness(stock.business);
   const sector = peerSector ?? businessSector ?? nameSector;
-  const sectorSource = peerSector ? (indexSector ? "NSE sector" : !snap?.industries?.[sym] && snap?.bseIndustries?.[sym] ? "BSE industry mapped to sector" : "NSE industry mapped to sector") : businessSector ? "company's filings" : nameSector ? "company name" : null;
+  const sectorSource = peerSector ? (indexSector ? (!snap?.sectors?.[sym] && !nseSector ? "BSE sector" : "NSE sector") : "NSE industry mapped to sector") : businessSector ? "company's filings" : nameSector ? "company name" : null;
 
   // Interest cover = EBIT / interest, the original's definition
   const interestCoverage = !lender && latest.financeCosts > 0 && latest.pbt != null

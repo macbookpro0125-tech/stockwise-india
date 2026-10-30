@@ -17,7 +17,7 @@ const x = (v, dp = 1) => (v == null ? "—" : `${v.toFixed(dp)}×`);
 const SECTOR_SOURCE = {
   "NSE sector": ["Sector from NSE's index lists", "Sector as NSE lists it"],
   "NSE industry mapped to sector": ["Sector from its NSE industry", "Sector from its NSE industry"],
-  "BSE industry mapped to sector": ["Sector from its BSE industry", "Sector from its BSE industry"],
+  "BSE sector": ["Sector as BSE classifies it", "Sector as BSE lists it"],
   "company name": ["Sector read from the company's name", "Sector read from its name"],
 };
 
