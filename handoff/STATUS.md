@@ -1,0 +1,48 @@
+# Status
+
+_Last updated: 31 Oct 2026, by Claude (Opus) on branch `screeners-home`._
+
+## Live on jocularinsights.in
+
+Everything up to `a3fffd0` ("The opening without words…"), pushed 31 Oct 2026:
+- the market map page
+- compare
+- portfolio against the market
+- screen alerts
+- faster first load
+- the opening animation, without words
+
+## Committed but NOT pushed yet
+
+Waiting for the owner to say "push", after the full test run.
+
+| Commit | What |
+|---|---|
+| `eecff14` | Stock pages: "28% below our fair value" in the title, Google snippet and a row (the rupee value stays behind sign-in); peers from the same industry |
+| `c11b4e9` | The Workspace tab is renamed **Screen builder** |
+| `a8ca410`, `f3a6fc5` | **Desk**, a page of its own: pick a list (every NSE company, watchlist, your screens, ready-made screens), walk it with ↑/↓, the chart in the middle, Business / Price / Peers on the right |
+| `aa6fe86` | Desk: market mood bar (advancing / topping / declining / basing) and six price patterns (breakout, near highs, pullback, tight weeks, tightening range, quiet volume) |
+| `965f4e6` | **My desk**: cards you choose, saved to the account |
+| `25cb072` | Desk restyled the Apple way (same layout) |
+| `3f48e23`, `ddc6055`, `b0f9fd4` | My desk: drag any card anywhere and resize it from its corner, a 12-column grid; drag fixes |
+| this folder | `handoff/` |
+
+Tests: the unit tests pass. Both Desk end-to-end tests pass (3 of 4 runs; one
+unexplained failure). The full end-to-end suite hasn't been run on these yet.
+
+## Open / next
+
+1. **Owner is trying My desk now.** He reported "can't add a card, can't move it". Fixed in `b0f9fd4`: a drag released over the chart never ended. Wait for his feedback.
+2. **New Android build for the Play launch (~7 Nov 2026).** It brings push alerts for saved screens, the haptic and the chime of the opening.
+3. **Visitor review ~6 Nov 2026.** Read `/api/owner/stats` while signed in as the owner. Count only from 30 Oct; earlier days include bots. On 31 Oct there were about 5 real visitors a day and 0 sign-ups since the 13 testers on 24 Oct.
+4. **Search:**
+   - Google has indexed 31 of 6,849 sitemap pages (the sitemap was first read on 30 Oct).
+   - Stock pages rank around position 71, for "*company* share price" searches.
+   - Check again in 2–3 weeks.
+5. **Price strength shows "—" locally.** The local snapshot lacks 9-month returns, so the scores and the two strength views on the Desk can't be checked locally. The live data has them. Confirm on live after the next push.
+6. **Only 895 of 2,263 companies have an industry label.** Lemon Tree, Chalet and ITC Hotels have none, so their peers fall back to the broad sector.
+
+## Set aside (don't redo without asking)
+
+- **3D glass logo for the opening:** `git stash` "3D opening logo (glow)". The owner chose the plain version.
+- **Chapter sidebar on the company page:** `git stash`, "not wanted".
