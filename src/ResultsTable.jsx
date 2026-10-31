@@ -940,7 +940,7 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
 
                     {!fixedInColumns && (<>
                     <td style={cell}>{qualityCell(stock, profileOpen)}</td>
-                    <td style={{ ...cell, paddingTop: 6, paddingBottom: 6 }}><ResearchBar research={stock.research} /></td>
+                    <td style={cell}><ResearchBar research={stock.research} /></td>
                     <td style={{ ...cell, fontWeight: 500, color: "var(--t1)", ...MONO, whiteSpace: "nowrap" }}>
                       {stock.cmp ? `₹${fmt(stock.cmp)}` : "—"}
                     </td>

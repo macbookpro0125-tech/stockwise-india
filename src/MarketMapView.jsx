@@ -27,12 +27,12 @@ const dayMonth = d => new Intl.DateTimeFormat("en-IN", { day: "numeric", month: 
 // [id, label, the move that's full colour, in words]
 const HEAT_PERIODS = [["1d", "1D", 3, "the day"], ["1w", "1W", 6, "the week"], ["1m", "1M", 10, "the month"], ["3m", "3M", 15, "three months"], ["6m", "6M", 20, "six months"], ["1y", "1Y", 30, "the year"]];
 // Deeper green or red the bigger the move, full at ±3% a day (±6% a week, ±10% a month…)
-const heatColor = (c, limit) => {
+export const heatColor = (c, limit) => {
   const t = Math.min(1, Math.abs(c) / limit);
   if (Math.abs(c) < 0.05) return "var(--s3)";
   return `color-mix(in srgb, ${c > 0 ? "#1f9d55" : "#d64545"} ${Math.round(28 + 62 * t)}%, var(--s2))`;
 };
-const pct = c => `${c > 0 ? "+" : c < 0 ? "−" : ""}${Math.abs(c).toFixed(2)}%`;
+export const pct = c => `${c > 0 ? "+" : c < 0 ? "−" : ""}${Math.abs(c).toFixed(2)}%`;
 const sign = c => (c > 0 ? "+" : c < 0 ? "−" : "");
 const clamp = (v, lo = -1, hi = 1) => Math.max(lo, Math.min(hi, v));
 // −1 red … +1 green, as a move at the limit
@@ -85,7 +85,7 @@ const ems = str => [...str].reduce((w, c) => w + (/[WM]/.test(c) ? 0.98 : /[I1.,
 // well, else on two or three lines, or running up a tall thin tile. Down to 5.5 px, so even a
 // phone's smallest tiles say whose they are ("write something in the tiles itself", 23 Oct
 // 2026). The move only where there's room too.
-function fitLabel(t, name, move) {
+export function fitLabel(t, name, move) {
   const ways = [];
   for (const up of t.h > t.w * 1.4 ? [false, true] : [false]) {
     const along = up ? t.h : t.w, across = up ? t.w : t.h;
@@ -175,13 +175,78 @@ function HeatCard({ t, items, limit, words, at, mode, ctx }) {
   );
 }
 
-export default function MarketMapView({ onOpenStock, onOpenIndex, screen = null }) {
+// A sector in brief, under the map when it's opened on its own: its rises and falls, its
+// middle P/E now against its last five year-ends, results due, its industries, its index
+function SectorBrief({ name, period, words, onOpenStock, onOpenIndex }) {
+  const [b, setB] = useState(null);
+  useEffect(() => { setB(null); api.sectorBrief(name, period).then(setB).catch(() => setB({ failed: true })); }, [name, period]);
+  if (!b) return <div className="nw-skel mm-brief-wait" role="status" aria-label={`Loading ${name}`}>{[0, 1, 2].map(i => <span key={i} />)}</div>;
+  if (b.failed) return null;
+  const peMax = Math.max(...b.peYears.map(y => y.pe), b.medianPe ?? 0) || 1;
+  const Row = ({ r }) => (
+    <li><button type="button" className="mm-brief-co" onClick={() => onOpenStock(r.symbol)}>
+      <span className="mm-brief-sym">{r.symbol}</span><span className="mm-brief-name">{niceName(r.name)}</span>
+      <span className={`mm-brief-move ${r.change >= 0 ? "up" : "down"}`}>{pct(r.change)}</span>
+    </button></li>
+  );
+  return (
+    <section className="mm-brief" aria-labelledby="mm-brief-h">
+      <div className="mm-brief-top">
+        <h3 className="ex-h" id="mm-brief-h">{name} in brief</h3>
+        {b.index && onOpenIndex && <button type="button" className="ex-heat-back" onClick={() => onOpenIndex(b.index)}>{b.index}: its year and news ›</button>}
+      </div>
+      <p className="mm-brief-lede">{b.count} companies, worth {crShort(b.marketCapCr)} together{b.medianPe ? `; the middle P/E is ${b.medianPe.toFixed(1)}` : ""}{b.peYears.length > 1 ? `, against ${Math.min(...b.peYears.map(y => y.pe)).toFixed(0)} to ${Math.max(...b.peYears.map(y => y.pe)).toFixed(0)} at its last ${b.peYears.length} year-ends` : ""}.</p>
+      <div className="mm-brief-grid">
+        <div>
+          <h4 className="mm-brief-h4">Rose most over {words}</h4>
+          {b.risers.length ? <ol className="mm-brief-list">{b.risers.map(r => <Row key={r.symbol} r={r} />)}</ol> : <p className="mm-brief-none">None rose.</p>}
+        </div>
+        <div>
+          <h4 className="mm-brief-h4">Fell most over {words}</h4>
+          {b.fallers.length ? <ol className="mm-brief-list">{b.fallers.map(r => <Row key={r.symbol} r={r} />)}</ol> : <p className="mm-brief-none">None fell.</p>}
+        </div>
+        {b.peYears.length > 1 && (
+          <div>
+            <h4 className="mm-brief-h4">Middle P/E, year by year</h4>
+            <div className="mm-pe" role="img" aria-label={`Middle P/E: ${b.peYears.map(y => `${y.year} ${y.pe}`).join(", ")}${b.medianPe ? `, now ${b.medianPe.toFixed(1)}` : ""}`}>
+              {[...b.peYears.map(y => ({ label: `Mar ${y.year.slice(2)}`, pe: y.pe })), ...(b.medianPe ? [{ label: "Now", pe: b.medianPe, now: true }] : [])].map(y => (
+                <span key={y.label} className={`mm-pe-col${y.now ? " now" : ""}`}>
+                  <span className="mm-pe-v">{y.pe.toFixed(0)}</span>
+                  <span className="mm-pe-bar" style={{ height: `${Math.max(6, (y.pe / peMax) * 64)}px` }} />
+                  <span className="mm-pe-l">{y.label}</span>
+                </span>
+              ))}
+            </div>
+            <p className="mm-brief-note">Each year the middle of its companies' own P/Es at the year-end price.</p>
+          </div>
+        )}
+        <div>
+          <h4 className="mm-brief-h4">Results in the next two weeks</h4>
+          {b.results.length ? <ul className="mm-brief-list">{b.results.map(r => (
+            <li key={r.symbol}><button type="button" className="mm-brief-co" onClick={() => onOpenStock(r.symbol)}>
+              <span className="mm-brief-date">{dayMonth(r.date)}</span><span className="mm-brief-name">{niceName(r.name)}</span>
+            </button></li>
+          ))}</ul> : <p className="mm-brief-none">None on NSE's calendar.</p>}
+        </div>
+      </div>
+      {b.industries.length > 1 && (
+        <div className="mm-brief-inds" aria-label="Its industries">
+          {b.industries.map(i => <span key={i.name} className="mm-brief-ind">{i.name} <b className={i.change >= 0 ? "up" : "down"}>{i.change == null ? "—" : pct(i.change)}</b> <small>{i.count}</small></span>)}
+        </div>
+      )}
+    </section>
+  );
+}
+
+export default function MarketMapView({ onOpenStock, onOpenIndex, screen = null, request = null }) {
   const [set, setSet] = useState("Nifty 50");
   const [period, setPeriod] = useState("1d");
   const [size, setSize] = useState("cap");
   const [colour, setColour] = useState("move");
   const [only, setOnly] = useState("");
   const [find, setFind] = useState("");
+  // from a company page: the whole market, its sector open, the company found
+  useEffect(() => { if (request) { setSet("all"); setOnly(""); setFocus(request.sector ?? null); setFind(request.find ?? ""); } }, [request?.at]); // eslint-disable-line react-hooks/exhaustive-deps
   // a screen sent from the Workspace opens as its own map
   useEffect(() => { if (screen?.symbols?.length) { setSet("screen"); setFocus(null); } }, [screen?.at]); // eslint-disable-line react-hooks/exhaustive-deps
   const [focus, setFocus] = useState(null);
@@ -553,6 +618,7 @@ export default function MarketMapView({ onOpenStock, onOpenIndex, screen = null 
           return <><i style={{ background: mode.one ? deeper(0) : diverge(-1) }} />{lo}{!mode.one && <><i style={{ background: "var(--s3)" }} />{mode.id === "move" ? "0" : ""}</>}<i style={{ background: mode.one ? deeper(1) : diverge(1) }} />{hi}</>;
         })()}</span>
       </div>
+      {zoom && set !== "sectors" && <SectorBrief name={zoom} period={period} words={words} onOpenStock={t => open({ symbol: t })} onOpenIndex={onOpenIndex} />}
     </section>
   );
 }

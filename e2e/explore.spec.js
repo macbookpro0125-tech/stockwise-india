@@ -1,6 +1,6 @@
 // The Explore page (23 Oct 2026): the indices at their last close, each
 // opening in full, and the news under them.
-import { test, expect, openPage, openStocks } from "./fixtures.js";
+import { test, expect, openPage, openStocks, openChapter } from "./fixtures.js";
 
 test("X-H1 the indices: cards with the day's change; one opens with its year, returns and valuation; Back returns @phone", async ({ page, account }) => {
   await page.goto("/");
@@ -203,6 +203,38 @@ test("X-H13 zooming the map in names more boxes; Fit shows the whole map again @
   expect(await named()).toBeGreaterThan(before);
   await zoom.getByRole("button", { name: "Fit the whole map" }).click();
   await expect(zoom).toContainText("1×");
+});
+
+// 31 Oct 2026: a sector opened on the map has its brief under it
+test("X-H14 a sector opened on the map: its rises and falls, its P/E by year, results due @phone", async ({ page, account }) => {
+  await page.goto("/");
+  await openPage(page, "Market map");
+  const map = page.getByRole("region", { name: "Market map" });
+  await map.getByRole("group", { name: "Which companies" }).getByRole("button", { name: "All NSE" }).click();
+  await expect.poll(() => map.locator(".ex-tile").count(), { timeout: 45_000 }).toBeGreaterThan(500);
+  await map.getByRole("combobox", { name: "Sector" }).selectOption("Information Technology");
+  const brief = page.getByRole("region", { name: "Information Technology in brief" });
+  await expect(brief).toContainText(/\d+ companies, worth ₹/);
+  await expect(brief.getByRole("heading", { name: "Rose most over the day" })).toBeVisible();
+  await expect(brief.getByRole("img", { name: /^Middle P\/E: / })).toBeVisible();
+  await brief.locator(".mm-brief-co").first().click();
+  await expect(page).toHaveURL(/\/stock\//);
+});
+
+// 31 Oct 2026: a company page's map of its industry, and the way to the market map
+test("X-H15 a company page maps its industry, outlines the company, and opens the market map at it", async ({ page, account, isMobile }) => {
+  test.skip(isMobile, "the computer's chapters");
+  await page.goto("/stock/TCS");
+  await openChapter(page, "Price");
+  const ask = page.getByText("Did it move alone, or with its industry?").first();
+  if (!(await page.locator(".im").count())) await ask.click();
+  const im = page.getByRole("region", { name: /^Its (industry|sector): / });
+  await expect(im.locator(".ex-tile.im-me")).toHaveCount(1, { timeout: 45_000 });
+  await expect(im).toContainText(/rose and .* fell of \d+/);
+  await im.getByRole("button", { name: "See it on the market map ›" }).click();
+  const map = page.getByRole("region", { name: "Market map" });
+  await expect(map.getByRole("searchbox", { name: "Find a company on the map" })).toHaveValue("TCS");
+  await expect(map.locator(".ex-tile.hit").first()).toBeVisible({ timeout: 45_000 });
 });
 
 // 23 Oct 2026: "when I click a stock in the heat map and press Back, it goes

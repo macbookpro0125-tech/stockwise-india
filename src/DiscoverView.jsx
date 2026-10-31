@@ -681,7 +681,7 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
               </button>
             )}
             <div className="screen-head-row">
-              <div style={{ minWidth: 0, flex: 1 }}>
+              <div className="screen-head-main">
                 {/* A computer: the name is the strategy wheel itself — the
                     strategy on its pill, the others above and below to
                     scroll to (one name, in one place) */}

@@ -83,7 +83,7 @@ export function ScoreBar({ value, tone, title, width = 52 }) {
     <span className="score-bar" title={title}>
       <b style={{ color: v == null ? "var(--t3)" : "var(--t1)" }}>{v == null ? "—" : v}</b>
       <span className="score-bar-track" style={{ width }} aria-hidden="true">
-        {v != null && <span style={{ width: `${v}%`, background: tone.dot, boxShadow: `0 0 8px -1px ${tone.dot}` }} />}
+        {v != null && <span style={{ width: `${v}%`, background: tone.dot }} />}
       </span>
     </span>
   );
@@ -91,14 +91,15 @@ export function ScoreBar({ value, tone, title, width = 52 }) {
 export function QualityBar({ research }) {
   return <ScoreBar value={research?.quality ?? null} tone={qualityTone(research?.quality ?? null)} title={researchTitle(research)} />;
 }
-// The research score's bar, its stance in small words beneath
+// The research score's bar, on one line like the quality's (31 Oct 2026: the
+// stance beneath made the rows uneven); its colour is the stance, its words in
+// the tooltip and for a screen reader
 export function ResearchBar({ research }) {
   const v = research?.overall ?? null;
-  const t = overallTone(v);
+  const stance = research?.stance ?? "Not rated";
   return (
-    <span style={{ display: "inline-flex", flexDirection: "column", gap: 3 }}>
-      <ScoreBar value={v} tone={t} title={researchTitle(research)} width={44} />
-      <span style={{ fontSize: 10.5, fontWeight: 500, color: research?.stance === "Review required" ? "var(--red)" : v == null ? "var(--t3)" : t.color }}>{research?.stance ?? "Not rated"}</span>
+    <span aria-label={`Research score ${v == null ? "not rated" : `${Math.round(v)} of 100`}, ${stance}`}>
+      <ScoreBar value={v} tone={overallTone(v)} title={`${stance}. ${researchTitle(research)}`} />
     </span>
   );
 }

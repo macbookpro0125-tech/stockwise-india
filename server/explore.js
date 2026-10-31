@@ -93,11 +93,13 @@ async function members() {
 
 // "all": every company over ₹500 crore (smaller ones, thinly traded, would be
 // slivers too thin to see or click)
-export const HEAT_SETS = [...Object.keys(HEATMAP_LISTS), "all", "list", "sectors"];
+export const HEAT_SETS = [...Object.keys(HEATMAP_LISTS), "all", "list", "group", "sectors"];
 const ALL_FLOOR_CR = 500;
 const PERIOD = { "1d": ["ret1d", 1], "1w": ["ret1w", 5], "1m": ["ret1m", 21], "3m": ["ret3m", 63], "6m": ["ret6m", 126], "1y": ["ret1y", 0] };
 
-export async function heatmap(set = "Nifty 50", period = "1d", symbols = null) {
+// "group": one industry's companies, or one sector's ({ industry } or { sector }),
+// for a company page's map of its neighbours
+export async function heatmap(set = "Nifty 50", period = "1d", symbols = null, group = null) {
   if (!PERIOD[period]) period = "1d";
   const [key, sessions] = PERIOD[period];
   const { board: b, snap } = await board();
@@ -123,6 +125,7 @@ export async function heatmap(set = "Nifty 50", period = "1d", symbols = null) {
   let list = null;
   if (set === "all") list = rows.filter(r => r.marketCapCr >= ALL_FLOOR_CR).map(r => r.symbol);
   else if (set === "list") list = symbols ?? [];
+  else if (set === "group") list = rows.filter(r => r.marketCapCr > 0 && (group?.industry ? r.industry === group.industry : group?.sector ? r.sector === group.sector : false)).map(r => r.symbol);
   else list = (await members())?.[set];
   if (!list) return { asOf, set, period, items: [], pending: true };
   const bySymbol = new Map(rows.map(r => [r.symbol, r]));
@@ -138,6 +141,49 @@ export async function heatmap(set = "Nifty 50", period = "1d", symbols = null) {
     }))
     .sort((a, b2) => b2.weight - a.weight);
   return { asOf, set, period, items, members: list.length, ...(set === "all" ? { floorCr: ALL_FLOOR_CR } : {}) };
+}
+
+// A sector in brief, under the map when it's opened on its own (31 Oct 2026):
+// its biggest rises and falls over the period, its middle P/E now and at each
+// of the last five year-ends (from each company's own P/E then), results due
+// in the next two weeks, its industries, and its NSE index if it has one.
+const median = list => {
+  const v = list.filter(x => x != null && Number.isFinite(x)).sort((a, b) => a - b);
+  return v.length ? (v.length % 2 ? v[(v.length - 1) / 2] : (v[v.length / 2 - 1] + v[v.length / 2]) / 2) : null;
+};
+export function sectorBrief(name, period = "1d") {
+  const [key] = PERIOD[period] ?? PERIOD["1d"];
+  const all = allMetrics().rows.filter(r => (r.sector || "Other") === name && r.marketCapCr > 0);
+  if (!all.length) return null;
+  const moved = all.filter(r => r[key] != null && r.marketCapCr >= 500);
+  const row = r => ({ symbol: r.symbol, name: r.name, change: r[key], marketCapCr: r.marketCapCr, close: r.cmp ?? null });
+  const byMove = [...moved].sort((a, b) => b[key] - a[key]);
+  // the P/E at each year-end, among companies with a positive one then
+  const years = new Map();
+  for (const r of all) for (const h of r.peHistory ?? []) if (h.pe > 0 && h.fyEnd) {
+    const y = h.fyEnd.slice(0, 4);
+    if (!years.has(y)) years.set(y, []);
+    years.get(y).push(h.pe);
+  }
+  const peYears = [...years].filter(([, l]) => l.length >= Math.min(5, all.length)).sort(([a], [b2]) => a.localeCompare(b2)).slice(-5)
+    .map(([year, l]) => ({ year, pe: Math.round(median(l) * 10) / 10, companies: l.length }));
+  const today = new Date(Date.now() + 5.5 * 3600_000).toISOString().slice(0, 10);
+  const end = new Date(Date.parse(`${today}T00:00:00Z`) + 14 * 86_400_000).toISOString().slice(0, 10);
+  const inds = new Map();
+  for (const r of moved) { const k = r.industry || "Other"; if (!inds.has(k)) inds.set(k, []); inds.get(k).push(r); }
+  const wmove = list => { const cap = list.reduce((t, r) => t + r.marketCapCr, 0); return cap ? Math.round(list.reduce((t, r) => t + r[key] * r.marketCapCr, 0) / cap * 100) / 100 : null; };
+  return {
+    name, period, asOf: loadMarketSnapshot()?.pricesDate ?? null, count: all.length,
+    marketCapCr: all.reduce((t, r) => t + r.marketCapCr, 0),
+    medianPe: median(all.map(r => (r.peTtm ?? r.pe) > 0 ? r.peTtm ?? r.pe : null)), peYears,
+    risers: byMove.filter(r => r[key] > 0).slice(0, 5).map(row),
+    fallers: byMove.filter(r => r[key] < 0).reverse().slice(0, 5).map(row),
+    industries: [...inds].map(([n, l]) => ({ name: n, count: l.length, change: wmove(l) })).sort((a, b2) => b2.count - a.count),
+    results: all.filter(r => r.nextResults && r.nextResults >= today && r.nextResults <= end)
+      .sort((a, b2) => a.nextResults.localeCompare(b2.nextResults) || b2.marketCapCr - a.marketCapCr).slice(0, 12)
+      .map(r => ({ symbol: r.symbol, name: r.name, date: r.nextResults })),
+    index: SECTOR_INDEX[name] ?? null,
+  };
 }
 
 // Top movers: the biggest rises and falls over a day, a week or a month among

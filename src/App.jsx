@@ -109,6 +109,8 @@ export default function App() {
   const [indexOpen, setIndexOpen] = useState(null);
   // …and a screen's companies, from the Workspace's "Show as map"
   const [mapScreen, setMapScreen] = useState(null);
+  // …and a company's sector with the company found, from its page
+  const [mapRequest, setMapRequest] = useState(null);
   // Where the Discover list was scrolled to, so Back lands on the same row
   const discoverScroll = useRef(0);
   // Native Android Back walks the app's tab history after leaving a stock or
@@ -406,7 +408,7 @@ export default function App() {
       {/* A phone: the page's name in large type, as a native app's (index.css .phone-title) */}
       {!open && tab !== "discover" && tab !== "workspace" && <h2 className="phone-title phone-only" style={{ padding: "0 var(--page-x)" }}>{TABS.find(t => t.id === tab)?.label === "Performance" ? "Strategy performance" : TABS.find(t => t.id === tab)?.label}</h2>}
       <Suspense fallback={<div role="status" style={{ minHeight: 220, display: "grid", placeItems: "center", color: "var(--t3)", fontSize: 13 }}>Loading this screen…</div>}>
-        {open && <StockDetail key={open.at} symbol={open.symbol} account={account} onBack={closeStock} backTo={TABS.find(t => t.id === tab)?.label} onOpenStock={openSymbol} />}
+        {open && <StockDetail key={open.at} symbol={open.symbol} account={account} onBack={closeStock} onOpenMap={req => { setMapRequest({ ...req, at: Date.now() }); goTab("map"); }} backTo={TABS.find(t => t.id === tab)?.label} onOpenStock={openSymbol} />}
         {/* Kept mounted (hidden) while a stock is open, so its filters and
             results are still there on Back. */}
         {/* Screeners and Workspace (a computer) are its two steps: one view, so
@@ -421,7 +423,7 @@ export default function App() {
             returns to the heat map or the news where they were */}
         {tab === "explore" && <div hidden={!!open}><ExploreView onOpenStock={openSymbol} openId={newsOpen} onOpened={() => setNewsOpen(null)} openIndexName={indexOpen} onIndexOpened={() => setIndexOpen(null)} onOpenMap={() => goTab("map")} /></div>}
         {/* Kept mounted under a company page too: Back returns to the map as it was */}
-        {tab === "map" && <div hidden={!!open}><MarketMapView screen={mapScreen} onOpenStock={openSymbol} onOpenIndex={name => { setIndexOpen(name); goTab("explore"); }} /></div>}
+        {tab === "map" && <div hidden={!!open}><MarketMapView screen={mapScreen} request={mapRequest} onOpenStock={openSymbol} onOpenIndex={name => { setIndexOpen(name); goTab("explore"); }} /></div>}
         {!open && tab === "momentum" && account?.features?.momentum && <MomentumView onOpenStock={openSymbol} />}
         {!open && tab === "visitors" && account?.features?.owner && <VisitorsView />}
         {!open && tab === "settings" && <SettingsView account={account} theme={theme} onToggleTheme={toggleTheme} onTab={goTab} onLogout={logout} onDeleted={accountDeleted} onTour={askForTour} />}

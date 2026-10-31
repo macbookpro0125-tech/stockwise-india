@@ -54,7 +54,7 @@ import { fetchTechnicals } from "./technicals.js";
 import { shareholdingHistory, companyFilings, companyNews, sectorPeers, companyProfile, insiderTrades } from "./company-extras.js";
 import { stockMoves } from "./moves.js";
 import { marketNews, topNews, newsItem, newsItemFiling, newsForSymbols, watchlistLatest, KINDS as NEWS_KINDS } from "./market-news.js";
-import { exploreBoard, exploreIndex, heatmap, HEAT_SETS, topMovers, resultsWeek } from "./explore.js";
+import { exploreBoard, exploreIndex, heatmap, HEAT_SETS, topMovers, resultsWeek, sectorBrief } from "./explore.js";
 import { summarizeMove, aiClient } from "./ai-moves.js";
 import { summarizeCall } from "./call-summary.js";
 import { summarizeFiling } from "./filing-summary.js";
@@ -816,7 +816,15 @@ export function createApp() {
         if (!HEAT_SETS.includes(set)) { sendJson(res, 400, { error: "Unknown heat map" }); return; }
         // "list": the companies asked for (a watchlist, a portfolio), at most 600
         const symbols = set === "list" ? (url.searchParams.get("symbols") ?? "").split(",").map(x => x.trim().toUpperCase()).filter(x => /^[A-Z0-9&_.-]{1,20}$/.test(x)).slice(0, 600) : null;
-        sendJson(res, 200, await heatmap(set, url.searchParams.get("period") ?? "1d", symbols));
+        const group = set === "group" ? { industry: url.searchParams.get("industry") || null, sector: url.searchParams.get("sector") || null } : null;
+        sendJson(res, 200, await heatmap(set, url.searchParams.get("period") ?? "1d", symbols, group));
+        return;
+      }
+      if (url.pathname === "/api/explore/sector" && req.method === "GET") {
+        if (requireAuth(req, res) == null) return;
+        const brief = sectorBrief(String(url.searchParams.get("name") ?? "").slice(0, 80), url.searchParams.get("period") ?? "1d");
+        if (!brief) { sendJson(res, 404, { error: "No such sector" }); return; }
+        sendJson(res, 200, brief);
         return;
       }
       if (url.pathname === "/api/explore/index" && req.method === "GET") {

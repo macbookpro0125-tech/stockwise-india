@@ -15,6 +15,7 @@ import PriceChartPanel from "./PriceChartPanel.jsx";
 import FinancialsPanel from "./FinancialsPanel.jsx";
 import TechnicalPanel from "./TechnicalPanel.jsx";
 import PeersPanel from "./PeersPanel.jsx";
+import IndustryMap from "./IndustryMap.jsx";
 import NewsPanel from "./NewsPanel.jsx";
 import AroundTheWeb from "./AroundTheWeb.jsx";
 import ValuationExplorer from "./ValuationExplorer.jsx";
@@ -592,7 +593,7 @@ function SectionNav({ ready, phone = false, phoneTab = "overview", onPhoneTab, r
   );
 }
 
-export default function StockDetail({ symbol, account, onBack, backTo = "Discover", onOpenStock }) {
+export default function StockDetail({ symbol, account, onBack, backTo = "Discover", onOpenStock, onOpenMap }) {
   const watched = useWatchlist().has(symbol);
   // A phone shows one tab's parts at a time (asked for 20 Oct 2026: the
   // page was 25 screens in one scroll, "congested and not understandable");
@@ -1044,6 +1045,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       <ChapterTab id="price" sec="performance" m={m} fairValue={fairValue} price={price} rows={chapterChecks("price", m?.research)}
         detail={[
           ...(m ? [{ key: "done", after: "relativeStrength", question: "How has the price done?", short: "Against the Nifty 50 and its sector index", body: <StockPerformance m={m} /> }] : []),
+          ...(m && (m.industry || m.sector) ? [{ key: "neighbours", question: "Did it move alone, or with its industry?", short: "Its industry as a map", body: <IndustryMap symbol={data.symbol} industry={m.industry} sector={m.sector} onOpenStock={onOpenStock} onOpenMap={onOpenMap} /> }] : []),
           { key: "technicals", after: "trend", question: "What do the technicals say?", short: "Averages, momentum and levels", body: <div id="sec-technicals"><TechnicalPanel ticker={data.symbol} /></div> },
         ]} />
 
@@ -1134,6 +1136,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         <StockSnapshot m={m} price={price} dates={data.dataDates} />
       </section>
       <div id="sec-performance" className="ss-section" data-tab="price">{built("price") && <StockPerformance m={m} />}</div>
+      {m && (m.industry || m.sector) && <div className="ss-section" data-tab="price">{built("price") && <IndustryMap symbol={data.symbol} industry={m.industry} sector={m.sector} onOpenStock={onOpenStock} onOpenMap={onOpenMap} />}</div>}
 
       <div id="sec-about" className="ss-section" data-tab="business"><CompanyProfile symbol={data.symbol} m={m} /></div>
       {m && built("business") && <StockBusiness m={m} symbol={data.symbol} name={data.name} />}

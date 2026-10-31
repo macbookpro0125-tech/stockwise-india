@@ -1737,10 +1737,13 @@ select {
 .screen-back-pin:active { transform: scale(0.97); }
 .screen-back-pin:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 @media (prefers-reduced-transparency: reduce) { .screen-back-pin { background: var(--s2); -webkit-backdrop-filter: none; backdrop-filter: none; } }
-.screen-head-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
+/* the actions go under the name when the window's too narrow for both (31 Oct
+   2026: a narrow window squeezed the name into a thin column) */
+.screen-head-row { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; }
+.screen-head-main { flex: 1 1 320px; min-width: min(100%, 320px); }
 .screen-title { margin: 0; font-size: clamp(26px, 2.6vw, 36px); font-weight: 500; line-height: 1.1; letter-spacing: -0.03em; color: var(--t1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .screen-about { margin: 8px 0 0; max-width: 76ch; font-size: 15px; line-height: 1.5; color: var(--t2); }
-.screen-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.screen-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; flex-shrink: 0; }
 
 /* Discover's start page: no tab row; its stock lists have it (Header.jsx) */
 html[data-discover-step="strategies"] .discovery-tabs.tabs-on-discover { display: none !important; }
@@ -2870,6 +2873,44 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 .mm-zoom button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 @media (hover: hover) and (pointer: fine) { .mm-zoom button:hover:not(:disabled) { background: var(--s3); } }
 .mm-zoom-at { min-width: 38px; text-align: center; font-size: var(--fs-xs); font-weight: 600; font-variant-numeric: tabular-nums; color: var(--t2); }
+/* A sector in brief, under its map */
+.mm-brief { margin-top: 18px; padding: 16px 18px; border: 1px solid var(--bdr2); border-radius: 16px; background: var(--s1); }
+.mm-brief-wait { margin-top: 18px; }
+.mm-brief-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.mm-brief-top .ex-h { margin: 0; }
+.mm-brief-lede { margin: 6px 0 14px; color: var(--t2); font-size: var(--fs-sm); line-height: 1.5; }
+.mm-brief-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 18px 24px; }
+.mm-brief-grid > div, .mm-brief-list li { min-width: 0; }
+.mm-brief-h4 { margin: 0 0 6px; color: var(--t3); font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+.mm-brief-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; }
+.mm-brief-co { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 34px; padding: 4px 8px; border: 0; border-radius: 8px; background: transparent; color: var(--t1); font: inherit; font-size: var(--fs-sm); text-align: left; cursor: pointer; touch-action: manipulation; }
+@media (hover: hover) and (pointer: fine) { .mm-brief-co:hover { background: var(--s2); } }
+.mm-brief-co:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.mm-brief-sym { flex: none; width: 92px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.mm-brief-date { flex: none; min-width: 54px; color: var(--t3); font-variant-numeric: tabular-nums; }
+.mm-brief-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--t2); }
+.mm-brief-move { flex: none; font-weight: 600; font-variant-numeric: tabular-nums; }
+.mm-brief-move.up, .mm-brief-ind .up, .im-line .up { color: var(--green); }
+.mm-brief-move.down, .mm-brief-ind .down, .im-line .down { color: var(--red); }
+.mm-brief-none, .mm-brief-note { margin: 4px 0 0; color: var(--t3); font-size: var(--fs-xs); }
+.mm-pe { display: flex; align-items: flex-end; gap: 10px; height: 104px; }
+.mm-pe-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.mm-pe-v { font-size: var(--fs-xs); font-weight: 600; font-variant-numeric: tabular-nums; color: var(--t2); }
+.mm-pe-bar { width: 100%; max-width: 34px; border-radius: 5px 5px 2px 2px; background: color-mix(in srgb, var(--t3) 45%, transparent); }
+.mm-pe-col.now .mm-pe-bar { background: var(--accent); }
+.mm-pe-col.now .mm-pe-v { color: var(--t1); }
+.mm-pe-l { font-size: 10px; color: var(--t3); white-space: nowrap; }
+.mm-brief-inds { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--bdr2); }
+.mm-brief-ind { padding: 4px 10px; border-radius: 999px; background: var(--s2); color: var(--t2); font-size: var(--fs-xs); }
+.mm-brief-ind small { color: var(--t3); }
+/* A company page's map of its industry */
+.im { margin: 8px 0; }
+.im-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.im-h { margin: 0; font-size: var(--fs-md); font-weight: 600; color: var(--t1); }
+.im-line { margin: 8px 0 10px; color: var(--t2); font-size: var(--fs-sm); line-height: 1.5; }
+.im-map { margin-bottom: 10px; }
+.ex-heat .ex-tile.im-me { z-index: 2; outline: 2px solid #fff; outline-offset: -2px; box-shadow: 0 0 0 3px var(--accent); cursor: default; }
+.im-more { margin-top: 2px; }
 /* Explore's way to the map: a few coloured blocks, its name, a chevron */
 .ex-map-link { display: flex; align-items: center; gap: 14px; width: 100%; margin-top: 26px; padding: 14px 16px; border: 1px solid var(--bdr2); border-radius: 16px; background: var(--s1); color: var(--t1); font: inherit; text-align: left; cursor: pointer; touch-action: manipulation; transition: transform 120ms var(--ease-out, ease-out), border-color 150ms; }
 .ex-map-link:active { transform: scale(0.99); }
@@ -4540,7 +4581,9 @@ html.no-blur .sr-group { box-shadow: none; }
 
 /* The table's quality badge opens the six-factor profile (ResultsTable.jsx) */
 .qb-toggle { display: inline-flex; align-items: center; gap: 4px; padding: 0; border: 0; background: none; cursor: pointer; color: var(--t3); }
-.qb-toggle svg { transition: transform 160ms ease-out; }
+.qb-toggle svg { transition: transform 160ms ease-out, opacity 160ms; opacity: 0.45; }
+.qb-toggle svg[data-open], .qb-toggle:focus-visible svg { opacity: 1; }
+@media (hover: hover) and (pointer: fine) { .rt-row:hover .qb-toggle svg { opacity: 1; } }
 .qb-toggle svg[data-open] { transform: rotate(180deg); color: var(--accent); }
 .qb-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 999px; }
 @media (hover: hover) and (pointer: fine) { .qb-toggle:hover svg { color: var(--accent); } }
@@ -4681,7 +4724,9 @@ tr:hover .row-acts { --row-bg: var(--s3); }
   --glass-edge: inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 0 0 1px rgba(0, 0, 0, 0.04); }
 
 /* the table's heading, pinned: rows pass softly under it */
-.rt-thead.rt-thead-stuck th { background: var(--glass) !important; -webkit-backdrop-filter: blur(18px) saturate(180%); backdrop-filter: blur(18px) saturate(180%); }
+/* the pinned heading is solid: a table cell can't blur what's behind it, so the
+   glass let the rows' bright bars show through as they scrolled under */
+.rt-thead.rt-thead-stuck th { background: color-mix(in srgb, var(--s1) 55%, var(--bg)) !important; -webkit-backdrop-filter: none; backdrop-filter: none; }
 
 /* menus: the column ▾, + views, Export */
 .column-menu, .vt-menu, .export-menu-list {
