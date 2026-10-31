@@ -298,6 +298,21 @@ export const PRESETS = [
     ],
     sort: "ret3mVsNifty",
   },
+  // 31 Oct 2026: a breakout as plain figures — at a 52-week high on the
+  // last trading day, on clearly heavier volume than usual, the day up
+  {
+    id: "breaking_out",
+    name: "Breaking Out",
+    icon: "🚀",
+    description: "At a 52-week high on the last trading day, on at least 1.5 times a usual day's volume",
+    filters: [
+      { id: "downFrom52wHigh", min: null, max: 1 },
+      { id: "volVsAvg50", min: 1.5, max: null },
+      { id: "ret1d", min: 0, max: null },
+      { id: "marketCapCr", min: 500, max: null },
+    ],
+    sort: "volVsAvg50",
+  },
   {
     // Banks on their own figures (bad loans, capital, return on assets) —
     // debt and margins don't fit a bank. Usual Indian yardsticks: gross NPA

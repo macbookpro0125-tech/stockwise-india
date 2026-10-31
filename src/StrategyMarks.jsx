@@ -141,6 +141,13 @@ MARKS.beating_market = ["#AE3EC9", <>
   <path d="M28 4h7v7" fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" />
 </>];
 
+// a line climbing through a ceiling (a breakout to a new high)
+MARKS.breaking_out = ["#F08C00", <>
+  <path d="M3 12h34" fill="none" stroke="currentColor" strokeWidth="2.4" strokeDasharray="3 3" opacity=".55" />
+  <path d="M3 34l9-8 6 4 8-12 6 2 5-16" fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" />
+  <circle cx="37" cy="4.5" r="3.5" />
+</>];
+
 export const markColor = id => MARKS[id]?.[0] ?? null;
 
 export default function StrategyMark({ preset, size = 40 }) {

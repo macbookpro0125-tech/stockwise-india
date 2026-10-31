@@ -4,9 +4,10 @@ import {
   createChart, CandlestickSeries, BarSeries, LineSeries, AreaSeries, HistogramSeries,
   ColorType, CrosshairMode, LineStyle,
 } from "lightweight-charts";
-import { ChartCandlestick, ChartNoAxesColumn, ChartLine, ChartArea, SlidersHorizontal, Minus, X, Maximize2, Minimize2, Camera, Layers } from "lucide-react";
+import { ChartCandlestick, ChartNoAxesColumn, ChartLine, ChartArea, SlidersHorizontal, Minus, X, Maximize2, Minimize2, Camera, Layers, BrickWall, CandlestickChart, Slash } from "lucide-react";
 import { api } from "./api.js";
 import { aggregateBars, sma, ema, bollinger, rsi, macd, indexFrom } from "./chartMath.js";
+import { heikinAshi, renko, renkoBox, fibLevels } from "./chartTypes.js";
 import { pivotPoints, PIVOT_LEVELS, atr, supertrend, psar, stochastic, adx, obv, cci, williamsR, mfi, donchian, yearHigh, volumeRatio, relativeLine } from "./chartIndicators.js";
 
 // Attribution notice (Lightweight Charts licence, Apache 2.0):
@@ -23,12 +24,17 @@ import { pivotPoints, PIVOT_LEVELS, atr, supertrend, psar, stochastic, adx, obv,
 const MONO = { fontVariantNumeric: "tabular-nums" };
 const PREFS_KEY = "stockwise-india-chart";
 const LINES_KEY = "stockwise-india-chart-lines";
+// your trend lines, per company: [{ t1, p1, t2, p2 }] (31 Oct 2026)
+const TRENDS_KEY = "stockwise-india-chart-trends";
 
 const TYPES = [
   { id: "candles", label: "Candles", Icon: ChartCandlestick },
   { id: "bars", label: "Bars", Icon: ChartNoAxesColumn },
   { id: "line", label: "Line", Icon: ChartLine },
   { id: "area", label: "Area", Icon: ChartArea },
+  // 31 Oct 2026: candles averaged with the one before, and bricks per move
+  { id: "heikin", label: "Heikin Ashi", Icon: CandlestickChart },
+  { id: "renko", label: "Renko", Icon: BrickWall },
 ];
 const INTERVALS = [{ id: "D", label: "D", title: "Daily" }, { id: "W", label: "W", title: "Weekly" }, { id: "M", label: "M", title: "Monthly" }];
 const RANGES = [
@@ -52,6 +58,7 @@ const INDICATORS = [
   { id: "donchian", label: "Donchian channel (20)", color: "#60A5FA", group: "Trend & bands" },
   { id: "pivots", label: "Pivot points", color: "#F59E0B", group: "Levels" },
   { id: "high52", label: "52-week high", color: "#C9A227", group: "Levels" },
+  { id: "fib", label: "Fibonacci levels (year's low to high)", color: "#A78BFA", group: "Levels" },
   { id: "volume", label: "Volume", group: "Volume" },
   { id: "volx", label: "Volume vs 50-day average", color: "#94A3B8", group: "Volume", pane: true },
   { id: "obv", label: "On-balance volume", color: "#22D3EE", group: "Volume", pane: true },
@@ -121,6 +128,13 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
   const [error, setError] = useState(null);
   const [lines, setLines] = useState(() => readJson(LINES_KEY, {})[symbol] ?? []);
   const [drawing, setDrawing] = useState(false);
+  // a trend line: off, or waiting for its first or second point
+  const [trends, setTrends] = useState(() => readJson(TRENDS_KEY, {})[symbol] ?? []);
+  const [trendFrom, setTrendFrom] = useState(null); // null: off; true: waiting; { t, p }: the first point
+  const trendRef = useRef(null);
+  trendRef.current = trendFrom;
+  const saveTrends = next => { setTrends(next); writeJson(TRENDS_KEY, { ...readJson(TRENDS_KEY, {}), [symbol]: next }); };
+  useEffect(() => { setTrends(readJson(TRENDS_KEY, {})[symbol] ?? []); setTrendFrom(null); }, [symbol]);
   const [typedPrice, setTypedPrice] = useState("");
   const [legend, setLegend] = useState(null);
   const [themeTick, setThemeTick] = useState(0);
@@ -234,9 +248,22 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
     return () => { cancelled = true; };
   }, [symbol, span]);
 
-  const bars = useMemo(() => aggregateBars(data?.bars ?? [], prefs.interval), [data, prefs.interval]);
+  // Heikin Ashi averages the bars; Renko replaces them with bricks, one per
+  // box the close moves — time drops out, so a brick's day is kept as
+  // realDate and the time axis is hidden
+  const box = useMemo(() => renkoBox(data?.bars ?? []), [data]);
+  const bars = useMemo(() => {
+    const daily = data?.bars ?? [];
+    if (prefs.type === "renko") {
+      const start = Date.parse(`${daily[0]?.date ?? "2000-01-03"}T00:00:00Z`);
+      return renko(daily, box).map((b, i) => ({ date: new Date(start + i * 86400000).toISOString().slice(0, 10), realDate: b.date,
+        open: b.open, close: b.close, high: Math.max(b.open, b.close), low: Math.min(b.open, b.close), volume: null }));
+    }
+    const agg = aggregateBars(daily, prefs.interval);
+    return prefs.type === "heikin" ? heikinAshi(agg) : agg;
+  }, [data, prefs.interval, prefs.type, box]);
   const narrow = boxW < 560;
-  const extraPanes = INDICATORS.filter(i => i.pane && prefs.ind[i.id] && (i.id !== "rs" || data?.benchmark)).length;
+  const extraPanes = prefs.type === "renko" ? 0 : INDICATORS.filter(i => i.pane && prefs.ind[i.id] && (i.id !== "rs" || data?.benchmark)).length;
   const pivotBasis = pivotBasisFor(prefs.interval, prefs.pivotBasis);
   const height = page
     ? Math.max(300, vh - (narrow ? 330 : 260))   // pane proportions only; the page lays out by flex
@@ -264,7 +291,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
     if (!chart || bars.length < 2) return;
     const last = bars.length - 1;
     const r = RANGES.find(x => x.id === id);
-    if (!r || id === "All") { chart.timeScale().fitContent(); return; }
+    if (!r || id === "All" || prefs.type === "renko") { chart.timeScale().fitContent(); return; }
     const lastDate = bars[last].date;
     const from = id === "YTD" ? `${lastDate.slice(0, 4)}-01-01` : monthsBack(lastDate, r.months);
     chart.timeScale().setVisibleLogicalRange({ from: indexFrom(bars, from) - 0.5, to: last + 3 });
@@ -295,7 +322,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
       grid: { vertLines: { color: c.grid }, horzLines: { color: c.grid } },
       crosshair: { mode: CrosshairMode.Normal },
       rightPriceScale: { borderColor: c.border },
-      timeScale: { borderColor: c.border, rightOffset: 3, minBarSpacing: 0.5 },
+      timeScale: { borderColor: c.border, rightOffset: 3, minBarSpacing: 0.5, visible: prefs.type !== "renko" },
       localization: { locale: "en-IN" },
       kineticScroll: { touch: !reducedMotion(), mouse: false },
       // An up-or-down swipe over the chart scrolls the page, as on any other
@@ -338,7 +365,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
     const base = { priceLineColor: c.t3, autoscaleInfoProvider, priceFormat };
 
     let main;
-    if (prefs.type === "candles") {
+    if (prefs.type === "candles" || prefs.type === "heikin" || prefs.type === "renko") {
       main = chart.addSeries(CandlestickSeries, { ...base, upColor: c.up, downColor: c.down, wickUpColor: c.up, wickDownColor: c.down, borderVisible: false });
       main.setData(ohlc);
     } else if (prefs.type === "bars") {
@@ -438,7 +465,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
       s.setData(toLine(vals));
       return s;
     };
-    for (const def of INDICATORS.filter(i => i.pane && prefs.ind[i.id])) {
+    for (const def of INDICATORS.filter(i => i.pane && prefs.ind[i.id] && prefs.type !== "renko")) {
       const col = def.color;
       // (no line against the market when the index's days aren't kept)
       if (def.id === "rs" && !data?.benchmark) continue;
@@ -521,6 +548,22 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
       if (hi) main.createPriceLine({ price: hi.price, color: ind("high52").color, lineWidth: 1, lineStyle: LineStyle.Dashed, axisLabelVisible: true,
         title: narrow ? "52w high" : hi.belowPct < 0.05 ? "52-week high · at it" : `52-week high · ${hi.belowPct.toFixed(1)}% below` });
     }
+    // Fibonacci levels between the year's low and high, worked out, not drawn
+    if (prefs.ind.fib) {
+      const f = fibLevels(data?.bars);
+      if (f) for (const l of f.levels) main.createPriceLine({ price: l.price, color: ind("fib").color, lineWidth: 1, lineStyle: LineStyle.SparseDotted, axisLabelVisible: !narrow, title: narrow ? "" : `Fib ${(l.ratio * 100).toFixed(1)}%` });
+    }
+    // Your trend lines, each from its first point on to the latest bar
+    if (prefs.type !== "renko" && bars.length) {
+      const lastDay = bars[bars.length - 1].date;
+      const days = d => Date.parse(`${d}T00:00:00Z`) / 86400000;
+      for (const t of trends) {
+        const slope = (t.p2 - t.p1) / Math.max(1, days(t.t2) - days(t.t1));
+        const s2 = chart.addSeries(LineSeries, { color: c.text, lineWidth: 1.5, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false, autoscaleInfoProvider: () => null });
+        const end = days(lastDay) > days(t.t2) ? lastDay : t.t2;
+        s2.setData([{ time: t.t1, value: t.p1 }, ...(end !== t.t1 ? [{ time: end, value: t.p1 + slope * (days(end) - days(t.t1)) }] : [])]);
+      }
+    }
     for (const p of lines) {
       main.createPriceLine({ price: p, color: c.text, lineWidth: 1, lineStyle: LineStyle.Solid, axisLabelVisible: true, title: "" });
     }
@@ -542,6 +585,20 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
       setLegend(at && { ...at, active: i != null });
     });
     chart.subscribeClick(param => {
+      // a trend line: the first click its start, the second its end
+      if (trendRef.current && param.point && param.time) {
+        const price = mainRef.current?.coordinateToPrice(param.point.y);
+        if (price == null || !(price > 0)) return;
+        const p = Math.round(price * 100) / 100, t = typeof param.time === "string" ? param.time : null;
+        if (!t) return;
+        if (trendRef.current === true) { setTrendFrom({ t, p }); return; }
+        const a = trendRef.current;
+        if (a.t === t) return;
+        const [first, second] = a.t < t ? [a, { t, p }] : [{ t, p }, a];
+        setTrendFrom(null);
+        saveTrends([...(readJson(TRENDS_KEY, {})[symbol] ?? []), { t1: first.t, p1: first.p, t2: second.t, p2: second.p }]);
+        return;
+      }
       if (!drawingRef.current || !param.point) return;
       const price = mainRef.current?.coordinateToPrice(param.point.y);
       if (price == null || !(price > 0)) return;
@@ -595,7 +652,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
       chartRef.current = null; mainRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bars, prefs.type, prefs.ind, prefs.pivotKind, pivotBasis, levelLines, lines, themeTick, narrow, symbol, height, page]);
+  }, [bars, prefs.type, prefs.ind, prefs.pivotKind, pivotBasis, levelLines, lines, trends, themeTick, narrow, symbol, height, page]);
 
   const pickRange = id => {
     setRange(id);
@@ -632,7 +689,10 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
   };
 
   const first = bars[0], last = bars.at(-1);
+  // the change over the range from the real closes, not bricks or averaged candles
+  const priceBars = useMemo(() => (prefs.type === "renko" || prefs.type === "heikin" ? aggregateBars(data?.bars ?? [], prefs.interval) : bars), [bars, data, prefs.type, prefs.interval]);
   const rangeBars = useMemo(() => {
+    const bars = priceBars;
     if (bars.length < 2) return null;
     const r = RANGES.find(x => x.id === range);
     if (range === "All" || !r) return bars;
@@ -641,7 +701,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
     // year (the close on or before the same day a year back) — starting at the
     // first bar inside it gave a 1Y of −18.4% beside the table's −16.9%
     return bars.slice(Math.max(0, indexFrom(bars, range === "YTD" ? `${lastDate.slice(0, 4)}-01-01` : monthsBack(lastDate, r.months)) - 1));
-  }, [bars, range]);
+  }, [priceBars, range]);
   const rangeChange = rangeBars && rangeBars.length > 1 ? ((rangeBars.at(-1).close - rangeBars[0].close) / rangeBars[0].close) * 100 : null;
   const activeInd = INDICATORS.filter(i => prefs.ind[i.id]).length;
 
@@ -777,6 +837,11 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
         <button type="button" onClick={() => setDrawing(d => !d)} aria-pressed={drawing} title="Horizontal line: click the chart, or type a price" style={btn(drawing)}>
           <Minus size={14} aria-hidden="true" />H-Line
         </button>
+        {prefs.type !== "renko" && (
+          <button type="button" onClick={() => { setDrawing(false); setTrendFrom(t => (t ? null : true)); }} aria-pressed={!!trendFrom} title="Trend line: click its first point, then its second" style={btn(!!trendFrom)}>
+            <Slash size={14} aria-hidden="true" />Trend
+          </button>
+        )}
 
         <div style={{ ...group, marginLeft: narrow ? 0 : "auto", flexWrap: "nowrap" }}>
           <button type="button" onClick={snapshot} title="Save the chart as an image" aria-label="Save the chart as an image" style={btn(false)}><Camera size={14} aria-hidden="true" /></button>
@@ -825,6 +890,22 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
 
       {!narrow && levelLists}
 
+      {/* Trend lines: what to click while drawing, and each one drawn, removable */}
+      {(trendFrom || trends.length > 0 || prefs.type === "renko") && (
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginBottom: 8, fontSize: 12, color: "var(--t2)" }}>
+          {prefs.type === "renko" && <span>Renko: one brick for each ₹{box?.toLocaleString("en-IN")} the close moves; time isn't to scale, so the dates are in the legend.</span>}
+          {trendFrom === true && <span>{narrow ? "Tap" : "Click"} the trend line's first point.</span>}
+          {trendFrom && trendFrom !== true && <span>Now {narrow ? "tap" : "click"} its second point.</span>}
+          {prefs.type !== "renko" && trends.map((t, i) => (
+            <span key={`${t.t1}-${i}`} style={{ display: "inline-flex", alignItems: "center", gap: 2, height: narrow ? 34 : 26, padding: "0 2px 0 9px", borderRadius: 999, border: "1px solid var(--bdr2)", background: "var(--s3)", color: "var(--t1)", ...MONO }}>
+              ⟋ {fmtRs(t.p1)} → {fmtRs(t.p2)}
+              <button type="button" onClick={() => saveTrends(trends.filter((_, j) => j !== i))} aria-label={`Remove the trend line from ${fmtRs(t.p1)} to ${fmtRs(t.p2)}`} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: narrow ? 32 : 22, minHeight: narrow ? 32 : 22, border: 0, background: "none", color: "var(--t2)", cursor: "pointer", padding: 0, borderRadius: 999 }}>
+                <X size={13} aria-hidden="true" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
       {(drawing || lines.length > 0) && (
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginBottom: 8, fontSize: 12, color: "var(--t2)" }}>
           {drawing && (
@@ -863,7 +944,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
             {legend && narrow && (
               <div aria-hidden="true" style={{ position: "absolute", top: 4, left: 6, right: 62, zIndex: 3, pointerEvents: "none", fontSize: 11, lineHeight: 1.55, color: "var(--t2)", ...MONO, textShadow: "0 0 4px var(--s2), 0 0 4px var(--s2)" }}>
                 {(() => {
-                  const b = legend.bar, ohlc = prefs.type === "candles" || prefs.type === "bars";
+                  const b = legend.bar, ohlc = prefs.type === "candles" || prefs.type === "bars" || prefs.type === "heikin";
                   const n = x => (Math.abs(x) >= 100 ? Math.round(x).toLocaleString("en-IN") : fmtNum(x));
                   const pct = legend.changePct != null && (
                     <span style={{ color: legend.change >= 0 ? "var(--green)" : "var(--red)", fontWeight: 400 }}>{legend.change >= 0 ? "+" : "−"}{Math.abs(legend.changePct).toFixed(2)}%</span>
@@ -872,7 +953,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
                   return legend.active ? (
                     <>
                       <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                        <span style={{ color: "var(--t1)", fontWeight: 400 }}>{new Date(`${b.date}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "2-digit", timeZone: "UTC" })}</span>{" "}
+                        <span style={{ color: "var(--t1)", fontWeight: 400 }}>{new Date(`${b.realDate ?? b.date}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "2-digit", timeZone: "UTC" })}</span>{" "}
                         {ohlc && <>O {n(b.open)} H {n(b.high)} L {n(b.low)} </>}C <b style={{ color: "var(--t1)", fontWeight: 450 }}>{fmtNum(b.close)}</b> {pct}
                       </div>
                       {extras.length > 0 && (
@@ -894,7 +975,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
             {legend && !narrow && (
               <div aria-hidden="true" style={{ position: "absolute", top: 6, left: 8, zIndex: 3, pointerEvents: "none", fontSize: 12, lineHeight: 1.6, color: "var(--t2)", ...MONO, textShadow: "0 0 4px var(--s2), 0 0 4px var(--s2)" }}>
                 {(() => {
-                  const b = legend.bar, ohlc = prefs.type === "candles" || prefs.type === "bars";
+                  const b = legend.bar, ohlc = prefs.type === "candles" || prefs.type === "bars" || prefs.type === "heikin";
                   const v = n => <b style={{ color: "var(--t1)", fontWeight: 400 }}>{fmtNum(n)}</b>;
                   const change = legend.change != null && (
                     <span style={{ color: legend.change >= 0 ? "var(--green)" : "var(--red)", fontWeight: 400 }}>
@@ -906,14 +987,14 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
                   return narrow ? (
                     <>
                       <div className="chart-row" style={{ gap: 8 }}>
-                        <span style={{ color: "var(--t1)", fontWeight: 400 }}>{b.date}{b.partial && <span style={{ color: "var(--yellow)", fontWeight: 500 }}> · in progress</span>}</span>
+                        <span style={{ color: "var(--t1)", fontWeight: 400 }}>{b.realDate ?? b.date}{b.partial && <span style={{ color: "var(--yellow)", fontWeight: 500 }}> · in progress</span>}</span>
                         <span>C {v(b.close)}</span>{change}
                       </div>
                       {ohlc && <div className="chart-row" style={{ gap: 8 }}><span>O {v(b.open)} H {v(b.high)} L {v(b.low)}</span>{vol}</div>}
                     </>
                   ) : (
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                      <span style={{ color: "var(--t1)", fontWeight: 400 }}>{b.date}{b.partial && <span style={{ color: "var(--yellow)", fontWeight: 500 }}> · in progress</span>}</span>
+                      <span style={{ color: "var(--t1)", fontWeight: 400 }}>{b.realDate ?? b.date}{b.partial && <span style={{ color: "var(--yellow)", fontWeight: 500 }}> · in progress</span>}</span>
                       {ohlc ? <span>O {v(b.open)} H {v(b.high)} L {v(b.low)} C {v(b.close)}</span> : <span>C {v(b.close)}</span>}
                       {change}{vol}
                     </div>

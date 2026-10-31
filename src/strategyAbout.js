@@ -7,7 +7,7 @@ export const KINDS = [
   ["quality", "Quality & growth", ["high_quality_compounders", "undervalued_growth", "small_cap_multibaggers", "ofss_style_filter", "debt_paydown", "sound_banks"]],
   ["value", "Value", ["turnaround_plays", "psu_value", "net_net_value", "fallen_quality"]],
   ["income", "Income & safety", ["dividend_aristocrats", "dividend_growth", "defensive_bluechips"]],
-  ["momentum", "Momentum", ["top_gainers", "momentum_growth", "up_every_timeframe", "near_highs_cheap", "doubled_in_year", "beating_market", "pullback_50dma"]],
+  ["momentum", "Momentum", ["top_gainers", "momentum_growth", "up_every_timeframe", "near_highs_cheap", "doubled_in_year", "beating_market", "pullback_50dma", "breaking_out"]],
   ["volume", "Volume", ["unusual_volume", "delivery_spike"]],
   ["owners", "Big investors", ["fii_favorites", "dii_backed"]],
 ];

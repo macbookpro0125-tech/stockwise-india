@@ -143,6 +143,12 @@ export const SCREEN_GUIDES = {
     suits: "People who look for shares with strength relative to the market, not just a rising price.",
     limits: "Past outperformance doesn't carry on by itself, and leaders can fall hardest when the market turns. Look at what's behind the move.",
   },
+  breaking_out: {
+    search: "Stocks breaking out to 52-week highs today in India (NSE)",
+    lookFor: "Companies worth ₹500 Cr or more that closed within 1% of their 52-week high on the last trading day, up on the day, on at least 1.5 times their usual volume (the 50 days before).",
+    suits: "People who watch for shares moving into new ground with more trading behind the move.",
+    limits: "Many breakouts fail and fall back; one day's volume can come from a single deal. A new high is a reason to read the company's news and results, not a signal on its own.",
+  },
   sound_banks: {
     search: "Banks with low NPA and strong capital",
     lookFor: "Banks with gross bad loans of 2% or less, net bad loans of 0.5% or less, CET1 capital of 12% or more and a return on assets of at least 1%.",
