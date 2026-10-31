@@ -4884,10 +4884,8 @@ tr:hover .row-acts { --row-bg: var(--s3); }
 
 /* ── The opening, third version (Intro.jsx, 31 Oct 2026, "Apple-like") ────────
    0.15–1.3 s  a market line sweeps up the black, a point of light at its tip
-   0.55–1.7    "Find the few / worth owning." rises out of its mask, huge
-   1.75        the headline lifts away; the line dims
-   1.85–2.4    the glass JI and the name come forward
-   2.9         a soft push into the app */
+   1.38–1.78   the point flies to the centre; a ripple, and the glass JI and name
+   2.7         the logo flies into its place in the header, the film falls away */
 .i4 { position: fixed; inset: 0; z-index: 2147483000; overflow: hidden; background: #000; color: #F5F5F7; cursor: default; user-select: none; -webkit-user-select: none;
   font-family: -apple-system, "SF Pro Display", system-ui, "Inter", sans-serif;
   transition: opacity 520ms cubic-bezier(0.4, 0, 0.2, 1), transform 560ms cubic-bezier(0.4, 0, 0.2, 1); }
@@ -4899,11 +4897,10 @@ tr:hover .row-acts { --row-bg: var(--s3); }
 .i4-chart { position: absolute; inset: 0; width: 100%; height: 100%; transition: opacity 600ms ease; }
 .i4-line { fill: none; stroke-width: 5; vector-effect: non-scaling-stroke; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1;
   filter: drop-shadow(0 0 8px rgba(62, 139, 255, 0.75)) drop-shadow(0 0 22px rgba(168, 107, 255, 0.45));
-  animation: i4-draw 1150ms cubic-bezier(0.33, 1, 0.68, 1) 150ms forwards, i4-half 500ms ease 0.75s forwards, i4-dim 600ms ease 1.75s forwards; }
-@keyframes i4-half { to { opacity: 0.5; } }
-.i4-area { opacity: 0; animation: i4-in 900ms ease-out 0.55s forwards, i4-dim 600ms ease 1.75s forwards; }
+  animation: i4-draw 1150ms cubic-bezier(0.33, 1, 0.68, 1) 150ms forwards, i4-dim 600ms ease 1.45s forwards; }
+.i4-area { opacity: 0; animation: i4-in 900ms ease-out 0.55s forwards, i4-dim 600ms ease 1.45s forwards; }
 @keyframes i4-draw { to { stroke-dashoffset: 0; } }
-.i4-echo { fill: none; stroke-width: 2; vector-effect: non-scaling-stroke; opacity: 0.14; stroke-dasharray: 1; stroke-dashoffset: 1; animation: i4-draw 1300ms cubic-bezier(0.33, 1, 0.68, 1) 260ms forwards, i4-dim 600ms ease 1.75s forwards; }
+.i4-echo { fill: none; stroke-width: 2; vector-effect: non-scaling-stroke; opacity: 0.14; stroke-dasharray: 1; stroke-dashoffset: 1; animation: i4-draw 1300ms cubic-bezier(0.33, 1, 0.68, 1) 260ms forwards, i4-dim 600ms ease 1.45s forwards; }
 /* a bright run of light travelling up the line after it's drawn */
 .i4-shimmer { fill: none; stroke: #fff; stroke-width: 3; vector-effect: non-scaling-stroke; stroke-linecap: round; stroke-dasharray: 0.08 1; stroke-dashoffset: 0.08; opacity: 0;
   filter: drop-shadow(0 0 5px rgba(220, 205, 255, 0.95)); animation: i4-shimmer 900ms cubic-bezier(0.45, 0, 0.25, 1) 1.25s forwards; }
@@ -4924,24 +4921,6 @@ tr:hover .row-acts { --row-bg: var(--s3); }
 .i4.landed .i4-ripple { animation: i4-ripple 900ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 .i4.landed .i4-ripple.two { animation-delay: 120ms; border-color: rgba(0, 224, 190, 0.7); }
 @keyframes i4-ripple { 0% { opacity: 1; transform: scale(0.2); } 100% { opacity: 0; transform: scale(2.6); } }
-/* the headline: each line rises out of its own mask */
-.i4-head { position: absolute; left: 0; right: 0; top: 33%; margin: 0; padding: 0 5vw; text-align: center; font-size: clamp(52px, 15vw, 140px); font-weight: 700; line-height: 1.04; letter-spacing: -0.045em;
-  animation: i4-head-out 460ms cubic-bezier(0.5, 0, 0.75, 0) 1.5s forwards; }
-.i4-mask { display: block; overflow: hidden; padding-bottom: 0.08em; }
-.i4-mask > span { display: inline-block; transform: translateY(110%); animation: i4-rise 760ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-.i4-mask:nth-child(1) > span { animation-delay: 0.5s; }
-.i4-mask:nth-child(2) > span { animation-delay: 0.66s; }
-@keyframes i4-rise { to { transform: none; } }
-.i4-word { display: inline-block; white-space: pre; opacity: 0; transform: translateY(0.18em) scale(0.97); animation: i4-sharpen 620ms cubic-bezier(0.16, 1, 0.3, 1) calc(0.5s + var(--w) * 0.07s) forwards; }
-@keyframes i4-sharpen { to { opacity: 1; transform: none; } }
-/* the gradient line: each word carries its own part of the gradient, so a word
-   moving on its own never smears the line's single gradient across the others */
-.i4-head .i4-grad { background: none; color: inherit; }
-.i4-grad .i4-word { -webkit-background-clip: text; background-clip: text; color: transparent; }
-.i4-grad .i4-word:nth-child(1) { background-image: linear-gradient(90deg, #00E0BE, #2FB4F0); }
-.i4-grad .i4-word:nth-child(2) { background-image: linear-gradient(90deg, #3E8BFF, #A86BFF); }
-@keyframes i4-head-out { to { transform: translateY(-40px); opacity: 0; } }
-.i4-grad { background: linear-gradient(90deg, #00E0BE 0%, #3E8BFF 55%, #A86BFF 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
 /* the lockup */
 .i4-lockup { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: 18px; }
 .i4-lockup img { position: relative; width: min(40vw, 160px); height: auto; opacity: 0; transform: scale(0.6); filter: blur(10px) drop-shadow(0 0 30px rgba(62, 139, 255, 0.5)); }

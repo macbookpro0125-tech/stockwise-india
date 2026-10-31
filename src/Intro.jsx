@@ -5,14 +5,14 @@ import { tick } from "./haptics.js";
 // earlier ones looked cheap, slow and not like a markets app). One hero
 // moment on black, as Apple's product films do it: a smooth market line in
 // a teal–blue–violet gradient sweeps up the screen, a point of light riding
-// its tip; the headline rises out of a mask line by line, very large; then
-// the point of light becomes the app's own glass JI and the name, and the
-// film cuts to the app.
+// its tip; the point of light becomes the app's own glass JI and the name,
+// and the logo flies into its place in the app. No words but the name (31
+// Oct 2026: "remove that wording totally").
 //
 // When: each start of the phone app; in a browser once a visit, on the front
 // page. Never for a test browser or a search engine (navigator.webdriver), nor
 // with reduced motion. A tap skips it.
-const LENGTH_MS = 3200;
+const LENGTH_MS = 2700;
 
 function wanted() {
   if (typeof window === "undefined") return false;
@@ -77,9 +77,6 @@ function chime() {
   } catch {}
 }
 
-// the headline, a word at a time
-const words = (text, from) => text.split(" ").map((w, i, all) => <span key={i} className="i4-word" style={{ "--w": from + i }}>{w}{i < all.length - 1 ? " " : ""}</span>);
-
 export default function Intro() {
   const [on, setOn] = useState(decide);
   const [leaving, setLeaving] = useState(false);
@@ -124,15 +121,15 @@ export default function Intro() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // The point of light: it rides the line's tip as the line draws (the draw is
-  // CSS; the point follows the same curve and timing), waits while the headline
-  // is up, then flies in an arc to where the logo will stand, growing, and
+  // CSS; the point follows the same curve and timing), then flies in an arc to
+  // where the logo will stand, growing, and
   // bursts into the ripple the logo comes out of (one thing becomes the next)
   useEffect(() => {
     const line = lineRef.current, dot = dotRef.current, root = rootRef.current, logo = logoRef.current;
     if (!on || !line || !dot || !root || !logo) return;
     const total = line.getTotalLength();
     const t0 = performance.now();
-    const RIDE = [150, 1300], FLY = [1720, 2120];
+    const RIDE = [150, 1300], FLY = [1380, 1780];
     const out = t => 1 - (1 - t) ** 3, inOut = t => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
     let raf = 0, end = null, down = false;
     const step = now => {
@@ -185,10 +182,6 @@ export default function Intro() {
       </svg>
       <span ref={dotRef} className="i4-dot" aria-hidden="true" />
 
-      <h1 className="i4-head" aria-hidden="true">
-        <span className="i4-mask"><span>{words("Find the few", 0)}</span></span>
-        <span className="i4-mask"><span className="i4-grad">{words("worth owning.", 3)}</span></span>
-      </h1>
 
       <div className="i4-lockup" aria-hidden="true">
         <span className="i4-logo-wrap"><span className="i4-ripple" /><span className="i4-ripple two" /><img ref={logoRef} src="/jocular-insights-dark.png" alt="" width="160" height="160" decoding="sync" /><span className="i4-glint" /></span>
