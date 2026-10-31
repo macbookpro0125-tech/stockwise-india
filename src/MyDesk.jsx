@@ -79,7 +79,7 @@ export default function MyDesk({ rows = [], market, onOpenStock, MoodBar }) {
     if (e.button !== 0 || drag) return;
     e.preventDefault();
     const sx = e.clientX, sy = e.clientY, orig = { ...c }, before = cards;
-    let preview = before, started = false;
+    let preview = before, started = false, ended = false;
     // the move and the release are heard on the window, so a fast drag, a
     // release outside the card or a lost capture still ends it
     const onMove = ev => {
@@ -94,22 +94,29 @@ export default function MyDesk({ rows = [], market, onOpenStock, MoodBar }) {
       setDrag({ id: c.id, mode, dx, dy, preview });
     };
     const end = cancel => {
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
-      window.removeEventListener("pointercancel", onCancel);
+      if (ended) return;
+      ended = true;
+      window.removeEventListener("pointermove", onMove, true);
+      window.removeEventListener("pointerup", onUp, true);
+      window.removeEventListener("mouseup", onUp, true);
+      window.removeEventListener("pointercancel", onCancel, true);
       window.removeEventListener("blur", onCancel);
-      window.removeEventListener("keydown", onEsc);
+      window.removeEventListener("keydown", onEsc, true);
       setDrag(null);
       if (!cancel && started && preview !== before) setCards(compact(preview));
     };
     const onUp = () => end(false);
     const onCancel = () => end(true);
     const onEsc = ev => { if (ev.key === "Escape") end(true); };
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
-    window.addEventListener("pointercancel", onCancel);
+    // in the capture phase, before anything inside a card (the chart stops
+    // the release on its way up) can keep it from us; mouseup as well, in
+    // case a pointerup never comes
+    window.addEventListener("pointermove", onMove, true);
+    window.addEventListener("pointerup", onUp, true);
+    window.addEventListener("mouseup", onUp, true);
+    window.addEventListener("pointercancel", onCancel, true);
     window.addEventListener("blur", onCancel);
-    window.addEventListener("keydown", onEsc);
+    window.addEventListener("keydown", onEsc, true);
   };
   // the keyboard: arrows move the card a cell, with Shift they resize it
   const onKey = (e, c) => {
