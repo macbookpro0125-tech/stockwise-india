@@ -1,17 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { tick } from "./haptics.js";
 
-// The opening (31 Oct 2026, "I want this kind of opening when I open my
-// app… make something cool"): the JI tile rising out of a navy field with a
-// teal glow, faint rays and drifting sparks; a ring that fills as the app
-// really gets ready; three lines that type themselves out and tick when what
-// they name has loaded (the app, the latest NSE close, the ready-made
-// screens) — facts from the server, nothing staged; then the name, and the
-// whole of it dissolves into the app.
+// The opening, third version (31 Oct 2026: "start fresh … Apple-like"; the
+// earlier ones looked cheap, slow and not like a markets app). One hero
+// moment on black, as Apple's product films do it: a smooth market line in
+// a teal–blue–violet gradient sweeps up the screen, a point of light riding
+// its tip; the headline rises out of a mask line by line, very large; then
+// the point of light becomes the app's own glass JI and the name, and the
+// film cuts to the app.
 //
 // When: each start of the phone app; in a browser once a visit, on the front
 // page. Never for a test browser or a search engine (navigator.webdriver), nor
-// with reduced motion. A tap skips it. At most 2.6 s, however slow the server.
-const MIN_MS = 1700, MAX_MS = 2600;
+// with reduced motion. A tap skips it.
+const LENGTH_MS = 3200;
 
 function wanted() {
   if (typeof window === "undefined") return false;
@@ -27,24 +28,6 @@ function wanted() {
   return true;
 }
 
-const shortDay = d => new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${d}T00:00:00Z`));
-
-// the facts, straight from the server, given up on after the longest the opening lasts
-async function facts() {
-  const ctl = new AbortController();
-  const stop = setTimeout(() => ctl.abort(), MAX_MS - 300);
-  try {
-    const r = await fetch("/api/public/screens", { signal: ctl.signal });
-    if (!r.ok) return null;
-    const d = await r.json();
-    return { date: d.pricesDate ?? null, screens: d.screens?.length ?? null };
-  } catch {
-    return null;
-  } finally {
-    clearTimeout(stop);
-  }
-}
-
 // set before the app's first effects run, so what waits for the opening
 // (StarFilm.jsx's 3D scene) knows to wait; cleared, with an "intro-leaving"
 // event, the moment the opening starts to go
@@ -54,25 +37,26 @@ function decide() {
   return yes;
 }
 
+// The line: a market's climb with two honest dips, drawn as one smooth curve
+// (Catmull–Rom through the points). A picture of a market, not a claim about one.
+const POINTS = [[0, 820], [120, 760], [230, 790], [340, 650], [450, 690], [560, 520], [650, 560], [760, 380], [860, 300], [1000, 170]];
+function smooth(pts) {
+  let d = `M${pts[0][0]},${pts[0][1]}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const [p0, p1, p2, p3] = [pts[i - 1] ?? pts[i], pts[i], pts[i + 1], pts[i + 2] ?? pts[i + 1]];
+    const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
+    const c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+    d += ` C${c1[0].toFixed(1)},${c1[1].toFixed(1)} ${c2[0].toFixed(1)},${c2[1].toFixed(1)} ${p2[0]},${p2[1]}`;
+  }
+  return d;
+}
+
 export default function Intro() {
   const [on, setOn] = useState(decide);
   const [leaving, setLeaving] = useState(false);
-  const [app, setApp] = useState(false);
-  const [f, setF] = useState(undefined); // undefined: still asking; null: no answer
-  const started = useRef(performance.now());
-  // the ring creeps on by itself (to 80% over the shortest opening) so it never
-  // sits still; each real step that's done lifts it at least that far
-  const [creep, setCreep] = useState(0);
-  // how many lines have finished typing (each takes its turn: index.css .intro-lines li);
-  // a line ticks only once it's typed, so the ring and the lines finish together
-  const [typed, setTyped] = useState(0);
   const done = useRef(false);
-
-  // eighteen sparks, each its own place, size, speed and delay
-  const sparks = useMemo(() => Array.from({ length: 18 }, (_, i) => ({
-    left: `${(i * 37 + 11) % 100}%`, top: `${40 + ((i * 53) % 55)}%`,
-    size: 1.5 + ((i * 7) % 3), dur: `${3.2 + ((i * 13) % 20) / 10}s`, delay: `${-((i * 17) % 30) / 10}s`,
-  })), []);
+  const lineRef = useRef(null), dotRef = useRef(null), rootRef = useRef(null), logoRef = useRef(null);
+  const path = useMemo(() => smooth(POINTS), []);
 
   const finish = () => {
     if (done.current) return;
@@ -80,62 +64,81 @@ export default function Intro() {
     setLeaving(true);
     window.__introActive = false;
     window.dispatchEvent(new Event("intro-leaving"));
-    setTimeout(() => setOn(false), 520);
+    setTimeout(() => setOn(false), 560);
   };
 
   useEffect(() => {
     if (!on) return;
-    const t1 = setTimeout(() => setApp(true), 380);
-    const typing = [1110, 1390, 1670].map((ms, i) => setTimeout(() => setTyped(i + 1), ms));
-    const tick = setInterval(() => setCreep(Math.min(0.8, ((performance.now() - started.current) / MIN_MS) * 0.8)), 90);
-    facts().then(setF);
-    const cap = setTimeout(finish, MAX_MS);
-    return () => { clearTimeout(t1); clearTimeout(cap); clearInterval(tick); typing.forEach(clearTimeout); };
+    const t = setTimeout(finish, LENGTH_MS);
+    return () => clearTimeout(t);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // everything in (or given up on) and the opening has had its moment: away
+  // The point of light: it rides the line's tip as the line draws (the draw is
+  // CSS; the point follows the same curve and timing), waits while the headline
+  // is up, then flies in an arc to where the logo will stand, growing, and
+  // bursts into the ripple the logo comes out of (one thing becomes the next)
   useEffect(() => {
-    if (!on || !app || f === undefined) return;
-    const left = Math.max(0, MIN_MS - (performance.now() - started.current));
-    const t = setTimeout(finish, left);
-    return () => clearTimeout(t);
-  }, [app, f]); // eslint-disable-line react-hooks/exhaustive-deps
+    const line = lineRef.current, dot = dotRef.current, root = rootRef.current, logo = logoRef.current;
+    if (!on || !line || !dot || !root || !logo) return;
+    const total = line.getTotalLength();
+    const t0 = performance.now();
+    const RIDE = [150, 1300], FLY = [1720, 2120];
+    const out = t => 1 - (1 - t) ** 3, inOut = t => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
+    let raf = 0, end = null, landed = false;
+    const step = now => {
+      const e = now - t0, W = root.clientWidth, H = root.clientHeight;
+      if (e < FLY[0]) {
+        const t = Math.max(0, Math.min(1, (e - RIDE[0]) / (RIDE[1] - RIDE[0])));
+        const p = line.getPointAtLength(total * out(t));
+        // the line is stretched to the screen (viewBox 0–1000 each way)
+        end = [(p.x / 1000) * W, (p.y / 1000) * H];
+        dot.style.transform = `translate(${end[0]}px, ${end[1]}px)`;
+      } else if (e < FLY[1]) {
+        const r = logo.getBoundingClientRect(), to = [r.left + r.width / 2, r.top + r.height / 2];
+        const t = inOut((e - FLY[0]) / (FLY[1] - FLY[0]));
+        // an arc: out and over, not a straight slide
+        const mid = [(end[0] + to[0]) / 2 + W * 0.12, Math.min(end[1], to[1]) - H * 0.08];
+        const x = (1 - t) ** 2 * end[0] + 2 * (1 - t) * t * mid[0] + t * t * to[0];
+        const y = (1 - t) ** 2 * end[1] + 2 * (1 - t) * t * mid[1] + t * t * to[1];
+        dot.style.transform = `translate(${x}px, ${y}px) scale(${1 + 2.2 * t})`;
+      } else if (!landed) {
+        landed = true;
+        root.classList.add("landed");
+        // a light tap, in the phone app, as the logo lands
+        if (document.documentElement.classList.contains("in-app")) { try { tick(); } catch {} }
+      }
+      if (e < FLY[1] + 50) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [on]);
 
   if (!on) return null;
-  const lines = [
-    { text: "Opening your research desk", ok: app && typed > 0 },
-    { text: f?.date ? `Prices · NSE close of ${shortDay(f.date)}` : "Prices · NSE's daily close", ok: !!f?.date && typed > 1, failed: f === null },
-    { text: f?.screens ? `${f.screens} ready-made screens` : "Ready-made screens", ok: !!f?.screens && typed > 2, failed: f === null },
-  ];
-  const progress = leaving ? 1 : Math.max(creep, lines.filter(l => l.ok).length / 3);
-  const pctShown = Math.min(100, Math.round(progress * 100));
-  const R = 64, C = 2 * Math.PI * R;
   return (
-    <div className={`intro${leaving ? " leaving" : ""}`} role="status" aria-label="Opening Jocular Insights" onClick={finish}>
-      <div className="intro-glow" aria-hidden="true" />
-      <div className="intro-rays" aria-hidden="true" />
-      <div className="intro-sparks" aria-hidden="true">
-        {sparks.map((s, i) => <i key={i} style={{ left: s.left, top: s.top, width: s.size, height: s.size, animationDuration: s.dur, animationDelay: s.delay }} />)}
-      </div>
-      <div className="intro-core" aria-hidden="true">
-        <svg className="intro-ring" viewBox="0 0 160 160" width="160" height="160">
-          <circle cx="80" cy="80" r={R} className="intro-ring-track" />
-          <circle cx="80" cy="80" r={R} className="intro-ring-fill" style={{ strokeDasharray: C, strokeDashoffset: C * (1 - Math.min(1, progress)) }} />
-        </svg>
-        <img className="intro-mark" src="/jocular-insights-mark.svg" alt="" width="92" height="92" decoding="sync" />
-      </div>
-      <div className="intro-name" aria-hidden="true">Jocular <span>Insights</span></div>
-      <div className="intro-tag" aria-hidden="true">Indian stock market research</div>
-      <ul className="intro-lines" aria-hidden="true">
-        {lines.map((l, i) => (
-          <li key={i} className={l.ok ? "ok" : l.failed ? "failed" : ""} style={{ animationDelay: `${0.55 + i * 0.28}s` }}>
-            <span className="intro-tick">{l.ok ? "✓" : "·"}</span><span className="intro-text">{l.text}</span>
-          </li>
-        ))}
-      </ul>
-      <div className="intro-bar" aria-hidden="true">
-        <span className="intro-bar-track"><span style={{ width: `${pctShown}%` }} /></span>
-        <span className="intro-bar-label">Getting ready · {pctShown}%</span>
+    <div ref={rootRef} className={`i4${leaving ? " leaving" : ""}`} role="status" aria-label="Opening Jocular Insights" onClick={finish}>
+      <div className="i4-glow" aria-hidden="true" />
+      <svg className="i4-chart" viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <linearGradient id="i4-stroke" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0" stopColor="#00E0BE" /><stop offset="0.55" stopColor="#3E8BFF" /><stop offset="1" stopColor="#A86BFF" />
+          </linearGradient>
+          <linearGradient id="i4-area" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#3E8BFF" stopOpacity="0.32" /><stop offset="1" stopColor="#3E8BFF" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d={`${path} L1000,1000 L0,1000 Z`} className="i4-area" fill="url(#i4-area)" />
+        <path ref={lineRef} d={path} className="i4-line" stroke="url(#i4-stroke)" pathLength="1" />
+      </svg>
+      <span ref={dotRef} className="i4-dot" aria-hidden="true" />
+
+      <h1 className="i4-head" aria-hidden="true">
+        <span className="i4-mask"><span>Find the few</span></span>
+        <span className="i4-mask"><span className="i4-grad">worth owning.</span></span>
+      </h1>
+
+      <div className="i4-lockup" aria-hidden="true">
+        <span className="i4-logo-wrap"><span className="i4-ripple" /><span className="i4-ripple two" /><img ref={logoRef} src="/jocular-insights-dark.png" alt="" width="160" height="160" decoding="sync" /></span>
+        <div className="i4-name">Jocular <span>Insights</span></div>
       </div>
     </div>
   );
