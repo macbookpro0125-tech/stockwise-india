@@ -54,8 +54,9 @@ test("D-1 the Desk walks a ready-made screen; a click and the arrow keys move th
 
 });
 
-test("D-2 My desk: a suggested layout, arranged, with a note, kept after a reload", async ({ page, account, isMobile }) => {
+test("D-2 My desk: cards dragged anywhere, resized by the corner and by keys, kept after a reload", async ({ page, account, isMobile }) => {
   test.skip(isMobile, "the desk is a computer's");
+  await page.setViewportSize({ width: 1440, height: 1700 }); // the whole desk in view, to drag across it
   await page.goto("/");
   await openPage(page, "Desk");
   await page.getByRole("group", { name: "Desk layout" }).getByRole("button", { name: "My desk" }).click();
@@ -64,30 +65,60 @@ test("D-2 My desk: a suggested layout, arranged, with a note, kept after a reloa
   await expect(cards).toHaveCount(6);
   await expect(page.getByRole("region", { name: "Company list" }).locator(".md-list li").first()).toBeVisible({ timeout: 45_000 });
 
-  // pick a company in the list: the business card follows it
+  // pick a company in the list: the cards follow it
   const second = page.getByRole("region", { name: "Company list" }).locator(".md-list li").nth(1);
   const sym = (await second.locator("b").textContent()).trim();
   await second.getByRole("button").click();
-  await expect(page.locator(".md-picked")).toBeVisible();
   await expect(second).toHaveAttribute("aria-selected", "true");
 
-  // arrange: remove the peers, widen the price card, move the chart first; add a note
-  await page.getByRole("button", { name: "Arrange" }).click();
-  await page.getByRole("button", { name: "Remove Peers" }).click();
-  await page.getByRole("group", { name: "Price width" }).getByRole("button", { name: "2" }).click();
-  await page.getByRole("button", { name: "Move Chart earlier" }).click();
-  await page.getByRole("button", { name: "Done" }).click();
+  const boxOf = name => page.getByRole("region", { name, exact: true }).boundingBox();
+  // drag the Peers card by its title up to the top left, above everything
+  const peers = page.getByRole("region", { name: "Peers", exact: true });
+  const ph = await peers.locator(".md-card-head h3").boundingBox();
+  const list0 = await boxOf("Company list");
+  await page.mouse.move(ph.x + 10, ph.y + 10);
+  await page.mouse.down();
+  await page.mouse.move(ph.x - 100, ph.y - 200, { steps: 6 });
+  await page.mouse.move(list0.x + 20, list0.y - 4, { steps: 8 });
+  await expect(page.locator(".md-ghost")).toBeVisible();
+  await page.mouse.up();
+  await expect.poll(async () => (await boxOf("Peers")).y).toBeLessThan((await boxOf("Company list")).y);
+
+  // widen the Business card from its corner
+  const corner = page.getByRole("region", { name: "Business", exact: true }).locator(".md-resize");
+  await corner.scrollIntoViewIfNeeded();
+  const biz0b = await boxOf("Business");
+  const cb = await corner.boundingBox();
+  await page.mouse.move(cb.x + 9, cb.y + 9);
+  await page.mouse.down();
+  await page.mouse.move(cb.x - 200, cb.y + 160, { steps: 8 });
+  await page.mouse.up();
+  await expect.poll(async () => (await boxOf("Business")).height).toBeGreaterThan(biz0b.height + 100);
+
+  // and the keyboard: Shift + → makes the Price card wider
+  const price0 = await boxOf("Price");
+  await page.getByRole("button", { name: /^Move or resize Price/ }).focus();
+  await page.keyboard.press("Shift+ArrowRight");
+  await page.keyboard.press("Shift+ArrowRight");
+  await expect.poll(async () => (await boxOf("Price")).width).toBeGreaterThan(price0.width + 20);
+
+  // a note, then everything kept after a reload
   await page.getByRole("button", { name: "Add card" }).click();
   await page.getByRole("dialog", { name: "Add a card" }).getByRole("button", { name: /^Notes/ }).click();
   await page.getByRole("textbox", { name: "Notes" }).fill(`watch ${sym}`);
   await expect(page.locator(".md-save")).toHaveText("Saved", { timeout: 10_000 });
-  if (process.env.MYDESK_SHOT) { await page.waitForTimeout(1500); await page.evaluate(() => { document.activeElement?.blur(); window.scrollTo(0, 0); }); await page.screenshot({ path: process.env.MYDESK_SHOT, fullPage: true }); }
+  const before = { peers: await boxOf("Peers"), biz: await boxOf("Business"), price: await boxOf("Price") };
+  if (process.env.MYDESK_SHOT) { await page.evaluate(() => { document.activeElement?.blur(); window.scrollTo(0, 0); }); await page.waitForTimeout(800); await page.screenshot({ path: process.env.MYDESK_SHOT, fullPage: true }); }
 
   await page.reload();
   await openPage(page, "Desk");
-  await expect(cards).toHaveCount(6);
-  await expect(page.getByRole("region", { name: "Peers", exact: true })).toHaveCount(0);
-  await expect(cards.nth(1)).toHaveAttribute("aria-label", "Chart");
-  await expect(page.getByRole("region", { name: "Price", exact: true })).toHaveAttribute("style", /--w: ?2/);
+  await expect(cards).toHaveCount(7);
+  await page.waitForTimeout(600);
+  const after = { peers: await boxOf("Peers"), biz: await boxOf("Business"), price: await boxOf("Price") };
+  for (const k of Object.keys(before)) {
+    expect(Math.abs(after[k].x - before[k].x), k).toBeLessThan(3);
+    expect(Math.abs(after[k].width - before[k].width), k).toBeLessThan(3);
+    expect(Math.abs(after[k].height - before[k].height), k).toBeLessThan(3);
+  }
   await expect(page.getByRole("textbox", { name: "Notes" })).toHaveValue(`watch ${sym}`);
 });

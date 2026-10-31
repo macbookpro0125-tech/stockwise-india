@@ -2,7 +2,7 @@ import { db } from "./db.js";
 import { badRequest } from "./http-errors.js";
 
 // Each user's own Desk (31 Oct 2026, step 3 of "this kind of work, better"):
-// the cards they chose, in their order, each one, two or three columns wide.
+// the cards they chose, each where they put it and as big as they made it.
 // Kept whole, as the page sends it, once it's been checked here.
 
 export const CARD_KINDS = ["list", "chart", "business", "price", "peers", "mood", "patterns", "watchlist", "results", "notes"];
@@ -20,7 +20,12 @@ export function cleanLayout(input) {
       if (!CARD_KINDS.includes(c?.kind)) throw badRequest("Unknown card");
       const id = typeof c.id === "string" && /^[a-z0-9-]{1,40}$/i.test(c.id) && !seen.has(c.id) ? c.id : `${c.kind}-${seen.size + 1}`;
       seen.add(id);
-      const card = { id, kind: c.kind, w: [1, 2, 3].includes(c.w) ? c.w : 1 };
+      // where it sits in the 12-column grid, in cells (src/deskGrid.js);
+      // a layout from before the grid has only w, 1–3
+      const int = (x, lo, hi) => (Number.isInteger(x) && x >= lo && x <= hi ? x : null);
+      const card = { id, kind: c.kind, w: int(c.w, 1, 12) ?? 4 };
+      const x = int(c.x, 0, 11), y = int(c.y, 0, 200), h = int(c.h, 1, 60);
+      if (x != null && y != null && h != null) Object.assign(card, { x: Math.min(x, 12 - card.w), y, h });
       if (c.kind === "notes") card.text = String(c.text ?? "").slice(0, NOTE_MAX);
       return card;
     }),

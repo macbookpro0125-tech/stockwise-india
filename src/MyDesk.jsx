@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, Plus, X, Pencil, Check } from "lucide-react";
+import { Plus, X, GripVertical } from "lucide-react";
+import { COLS, SIZES, compact, placeNew, clampCard, fromOld } from "./deskGrid.js";
 import { api } from "./api.js";
 import PriceChartPanel from "./PriceChartPanel.jsx";
 import PeersPanel from "./PeersPanel.jsx";
@@ -7,40 +8,40 @@ import { cardName } from "./stockName.js";
 import { v, quality, pct, tone, price, Score, STAGE_WORDS, Business, PriceFacts } from "./ScreenDesk.jsx";
 
 // My desk (31 Oct 2026, step 3): the Desk's pieces as cards you choose and
-// arrange — one, two or three columns wide — kept with your account
+// arrange anywhere, at any size (deskGrid.js) — kept with your account
 // (server/desk-layout.js). Every card follows one picked company: pick it in
 // the list, your watchlist, the results or the patterns, and the chart, the
 // business, the price and the peers all turn to it.
 
 export const CARDS = [
-  { kind: "list", label: "Company list", about: "The list picked at the top; a click picks a company", w: 1 },
-  { kind: "chart", label: "Chart", about: "The picked company's price chart", w: 2 },
-  { kind: "business", label: "Business", about: "Quality, fair value, returns on capital, debt, growth", w: 1 },
-  { kind: "price", label: "Price", about: "Trend stage, 52-week range, averages, RSI, trend checks", w: 1 },
-  { kind: "peers", label: "Peers", about: "Companies like the picked one", w: 1 },
-  { kind: "mood", label: "Market mood", about: "How many companies are in each stage of their trend", w: 3 },
-  { kind: "patterns", label: "Patterns in the list", about: "Which companies in the list show each price pattern", w: 1 },
-  { kind: "watchlist", label: "Watchlist", about: "Your starred companies", w: 1 },
-  { kind: "results", label: "Results this week", about: "Who reports in the next days", w: 1 },
-  { kind: "notes", label: "Notes", about: "Your own words, kept with the layout", w: 1 },
+  { kind: "list", label: "Company list", about: "The list picked at the top; a click picks a company" },
+  { kind: "chart", label: "Chart", about: "The picked company's price chart" },
+  { kind: "business", label: "Business", about: "Quality, fair value, returns on capital, debt, growth" },
+  { kind: "price", label: "Price", about: "Trend stage, 52-week range, averages, RSI, trend checks" },
+  { kind: "peers", label: "Peers", about: "Companies like the picked one" },
+  { kind: "mood", label: "Market mood", about: "How many companies are in each stage of their trend" },
+  { kind: "patterns", label: "Patterns in the list", about: "Which companies in the list show each price pattern" },
+  { kind: "watchlist", label: "Watchlist", about: "Your starred companies" },
+  { kind: "results", label: "Results this week", about: "Who reports in the next days" },
+  { kind: "notes", label: "Notes", about: "Your own words, kept with the layout" },
 ];
 const SUGGESTED = [
-  { kind: "mood", w: 3 }, { kind: "list", w: 1 }, { kind: "chart", w: 2 },
-  { kind: "business", w: 1 }, { kind: "price", w: 1 }, { kind: "peers", w: 1 },
+  { kind: "mood", x: 0, y: 0, w: 12, h: 4 }, { kind: "list", x: 0, y: 4, w: 3, h: 20 }, { kind: "chart", x: 3, y: 4, w: 6, h: 20 },
+  { kind: "business", x: 9, y: 4, w: 3, h: 20 }, { kind: "price", x: 0, y: 24, w: 6, h: 14 }, { kind: "peers", x: 6, y: 24, w: 6, h: 14 },
 ];
 const label = kind => CARDS.find(c => c.kind === kind)?.label ?? kind;
 const newId = kind => `${kind}-${Math.random().toString(36).slice(2, 8)}`;
+const ROW = 30, GAP = 12;
 
 export default function MyDesk({ rows = [], market, onOpenStock, MoodBar }) {
   const [layout, setLayout] = useState(null); // null: loading; { cards }
-  const [editing, setEditing] = useState(false);
   const [adding, setAdding] = useState(false);
   const [saveState, setSaveState] = useState("");
   const [picked, setPicked] = useState(null);
   const [watch, setWatch] = useState(null);
   const [results, setResults] = useState(null);
 
-  useEffect(() => { api.deskLayout().then(d => setLayout(d.layout ?? { cards: [] })).catch(() => setLayout({ cards: [] })); }, []);
+  useEffect(() => { api.deskLayout().then(d => setLayout({ cards: fromOld(d.layout?.cards ?? []) })).catch(() => setLayout({ cards: [] })); }, []);
   const kinds = new Set((layout?.cards ?? []).map(c => c.kind));
   useEffect(() => { if (kinds.has("watchlist") && !watch) api.watchlist().then(d => setWatch(d.results ?? [])).catch(() => setWatch([])); }, [kinds.has("watchlist")]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (kinds.has("results") && !results) api.resultsWeek().then(setResults).catch(() => setResults({ days: [] })); }, [kinds.has("results")]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -56,8 +57,60 @@ export default function MyDesk({ rows = [], market, onOpenStock, MoodBar }) {
   useEffect(() => () => clearTimeout(timer.current), []);
   const cards = layout?.cards ?? [];
   const setCards = list => change({ cards: list });
-  const move = (i, d) => { const j = i + d; if (j < 0 || j >= cards.length) return; const l = [...cards]; [l[i], l[j]] = [l[j], l[i]]; setCards(l); };
-  const add = (kind, w) => { setCards([...cards, { id: newId(kind), kind, w: w ?? CARDS.find(c => c.kind === kind)?.w ?? 1 }]); setAdding(false); };
+  const add = kind => { setCards(compact([...cards, placeNew(cards, { id: newId(kind), kind, ...SIZES[kind] })])); setAdding(false); };
+
+  // ── the grid: its width in pixels, and a card's box from its cells ──
+  const gridRef = useRef(null);
+  const [width, setWidth] = useState(1000);
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setWidth(el.clientWidth));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [layout != null]); // eslint-disable-line react-hooks/exhaustive-deps
+  const colW = (width - GAP * (COLS - 1)) / COLS;
+  const box = c => ({ left: c.x * (colW + GAP), top: c.y * (ROW + GAP), width: c.w * colW + (c.w - 1) * GAP, height: c.h * ROW + (c.h - 1) * GAP });
+
+  // ── dragging: the card follows the pointer exactly; where it would land
+  // shows as a shape behind it, and the others make room as it goes ──
+  const [drag, setDrag] = useState(null); // { id, mode, dx, dy, preview }
+  const startDrag = (e, c, mode) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    const sx = e.clientX, sy = e.clientY, orig = { ...c };
+    const target = e.currentTarget;
+    target.setPointerCapture?.(e.pointerId);
+    let preview = cards;
+    const onMove = ev => {
+      const dx = ev.clientX - sx, dy = ev.clientY - sy;
+      const cell = mode === "move"
+        ? { ...orig, x: orig.x + Math.round(dx / (colW + GAP)), y: orig.y + Math.round(dy / (ROW + GAP)) }
+        : { ...orig, w: orig.w + Math.round(dx / (colW + GAP)), h: orig.h + Math.round(dy / (ROW + GAP)) };
+      const at = clampCard(cell);
+      preview = compact(cards.map(x => (x.id === c.id ? at : x)), c.id);
+      setDrag({ id: c.id, mode, dx, dy, preview });
+    };
+    const onUp = () => {
+      target.removeEventListener("pointermove", onMove);
+      target.removeEventListener("pointerup", onUp);
+      target.removeEventListener("pointercancel", onUp);
+      setDrag(null);
+      if (preview !== cards) setCards(compact(preview));
+    };
+    target.addEventListener("pointermove", onMove);
+    target.addEventListener("pointerup", onUp);
+    target.addEventListener("pointercancel", onUp);
+    setDrag({ id: c.id, mode, dx: 0, dy: 0, preview });
+  };
+  // the keyboard: arrows move the card a cell, with Shift they resize it
+  const onKey = (e, c) => {
+    const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+    if (!d) return;
+    e.preventDefault();
+    const at = clampCard(e.shiftKey ? { ...c, w: c.w + d[0], h: c.h + d[1] } : { ...c, x: c.x + d[0], y: c.y + d[1] });
+    setCards(compact(cards.map(x => (x.id === c.id ? at : x)), c.id));
+  };
 
   // the picked company's figures, from the list or the watchlist
   const known = useMemo(() => new Map([...(watch ?? []), ...rows].map(r => [r.symbol, r])), [rows, watch]);
@@ -84,15 +137,16 @@ export default function MyDesk({ rows = [], market, onOpenStock, MoodBar }) {
     }
   };
 
+  const shown = drag?.preview ?? cards;
+  const rowsUsed = Math.max(0, ...shown.map(c => c.y + c.h));
+  const ghost = drag && shown.find(c => c.id === drag.id);
   return (
     <div className="md">
       <div className="md-bar">
         {r && <span className="md-picked">Following <b>{cardName(r.name)}</b>{stage ? <span className={`desk-stage ${stage}`}>{STAGE_WORDS[stage]}</span> : null}</span>}
         <span className="md-save" aria-live="polite">{saveState}</span>
-        {cards.length > 0 && <button type="button" className="btn-ghost md-btn" onClick={() => setAdding(true)}><Plus size={14} /> Add card</button>}
-        {cards.length > 0 && <button type="button" className={editing ? "btn-primary md-btn" : "btn-ghost md-btn"} aria-pressed={editing} onClick={() => setEditing(e => !e)}>
-          {editing ? <><Check size={14} /> Done</> : <><Pencil size={14} /> Arrange</>}
-        </button>}
+        {cards.length > 0 && <span className="md-tip">Drag a card by its title to move it, by its corner to resize</span>}
+        {cards.length > 0 && <button type="button" className="desk-open md-btn" onClick={() => setAdding(true)}><Plus size={14} /> Add card</button>}
       </div>
 
       {!cards.length && (
@@ -110,23 +164,29 @@ export default function MyDesk({ rows = [], market, onOpenStock, MoodBar }) {
         </div>
       )}
 
-      <div className={`md-grid${editing ? " editing" : ""}`}>
-        {cards.map((c, i) => (
-          <section key={c.id} className="md-card" style={{ "--w": c.w }} aria-label={label(c.kind)}>
-            <header className="md-card-head">
-              <h3>{label(c.kind)}</h3>
-              {editing && <div className="md-tools">
-                <button type="button" className="md-icon" aria-label={`Move ${label(c.kind)} earlier`} disabled={i === 0} onClick={() => move(i, -1)}><ArrowLeft size={14} /></button>
-                <button type="button" className="md-icon" aria-label={`Move ${label(c.kind)} later`} disabled={i === cards.length - 1} onClick={() => move(i, 1)}><ArrowRight size={14} /></button>
-                <span className="md-width" role="group" aria-label={`${label(c.kind)} width`}>
-                  {[1, 2, 3].map(w => <button key={w} type="button" aria-pressed={c.w === w} onClick={() => setCards(cards.map(x => (x.id === c.id ? { ...x, w } : x)))}>{w}</button>)}
-                </span>
-                <button type="button" className="md-icon" aria-label={`Remove ${label(c.kind)}`} onClick={() => setCards(cards.filter(x => x.id !== c.id))}><X size={14} /></button>
-              </div>}
-            </header>
-            <div className="md-card-body">{body(c)}</div>
-          </section>
-        ))}
+      <div ref={gridRef} className={`md-grid${drag ? " dragging" : ""}`} style={{ height: rowsUsed ? rowsUsed * (ROW + GAP) - GAP : 0 }}>
+        {ghost && <div className="md-ghost" style={box(ghost)} aria-hidden="true" />}
+        {shown.map(c => {
+          const lifted = drag?.id === c.id;
+          const orig = lifted ? cards.find(x => x.id === c.id) : c;
+          const b = box(orig);
+          const style = lifted
+            ? (drag.mode === "move"
+              ? { ...b, transform: `translate(${drag.dx}px, ${drag.dy}px)` }
+              : { ...b, width: Math.max(colW * 2, b.width + drag.dx), height: Math.max(ROW * 3, b.height + drag.dy) })
+            : box(c);
+          return (
+            <section key={c.id} className={`md-card${lifted ? " lifted" : ""}`} style={style} aria-label={label(c.kind)}>
+              <header className="md-card-head" onPointerDown={e => { if (!e.target.closest("button")) startDrag(e, c, "move"); }}>
+                <span className="md-grip" role="button" tabIndex={0} aria-label={`Move or resize ${label(c.kind)}: arrow keys move it, Shift with arrow keys resizes it`} onKeyDown={e => onKey(e, c)}><GripVertical size={14} /></span>
+                <h3>{label(c.kind)}</h3>
+                <button type="button" className="md-icon md-remove" aria-label={`Remove ${label(c.kind)}`} onClick={() => setCards(compact(cards.filter(x => x.id !== c.id)))}><X size={14} /></button>
+              </header>
+              <div className="md-card-body">{body(c)}</div>
+              <span className="md-resize" aria-hidden="true" onPointerDown={e => startDrag(e, c, "resize")} />
+            </section>
+          );
+        })}
       </div>
     </div>
   );
