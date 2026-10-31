@@ -43,7 +43,7 @@ export const TABS = [
   // screens to pick from, and Workspace, where a screen is built and studied
   // (DiscoverView's two steps). A phone keeps the one Discover tab.
   { id: "discover", label: "Discover", wide: "Screeners", short: "Discover", Icon: GridIcon },
-  { id: "workspace", label: "Workspace", short: "Workspace", Icon: PanelsLeftRight, wideOnly: true },
+  { id: "workspace", label: "Screen builder", short: "Builder", Icon: PanelsLeftRight, wideOnly: true },
   // The indices and the news (ExploreView.jsx, 23 Oct 2026)
   { id: "explore", label: "Explore", short: "Explore", Icon: Telescope },
   // The market map, a page of its own (MarketMapView.jsx, 31 Oct 2026); a
