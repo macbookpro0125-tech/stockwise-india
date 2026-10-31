@@ -59,8 +59,12 @@ export function stockStory(symbol) {
   const n = niceName(m.name);
   const sectorName = m.sector ?? null;
   const peersAll = (c.byPeers.get(peerKey(m)) ?? []).filter(r => r.symbol !== m.symbol);
-  // the closest in size, either side
-  const peers = [...peersAll].sort((a, b) => Math.abs(Math.log((a.marketCapCr || 1) / (m.marketCapCr || 1))) - Math.abs(Math.log((b.marketCapCr || 1) / (m.marketCapCr || 1)))).slice(0, 6)
+  // the closest in size, either side; from its own industry where that has
+  // at least three others (a hotel chain beside hotels, not a burger chain
+  // and an online marketplace from the same broad sector)
+  const sameIndustry = m.industry ? peersAll.filter(r => r.industry === m.industry) : [];
+  const peersIn = sameIndustry.length >= 3 ? m.industry : null;
+  const peers = [...(peersIn ? sameIndustry : peersAll)].sort((a, b) => Math.abs(Math.log((a.marketCapCr || 1) / (m.marketCapCr || 1))) - Math.abs(Math.log((b.marketCapCr || 1) / (m.marketCapCr || 1)))).slice(0, 6)
     .sort((a, b) => (b.marketCapCr ?? 0) - (a.marketCapCr ?? 0)).map(mini);
   const group = [m, ...peersAll];
   const sectorPe = median(group.map(r => (r.pe > 0 ? r.pe : null)));
@@ -105,7 +109,7 @@ export function stockStory(symbol) {
   const sparse = !m.quarters?.length && !(m.history?.length) && q == null;
   return {
     sector: sectorName ? { name: sectorName, slug: sectorSlug(sectorName) } : null,
-    summary: sentences, trend, peers, screens, qa, sparse,
+    summary: sentences, trend, peers, peersIn, screens, qa, sparse,
     sectorMedians: { pe: sectorPe, roe: sectorRoe, companies: group.length },
   };
 }

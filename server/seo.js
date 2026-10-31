@@ -113,6 +113,8 @@ export function publicStock(symbol) {
     low52w: r.low52w ?? null, high52w: r.high52w ?? null, marketCapCr: r.marketCapCr ?? null,
     pe: r.pe ?? null, pb: r.priceToBook ?? null, roe: r.roe ?? null, roce: r.roce ?? null, debtToEquity: r.debtToEquity ?? null, divYield: r.divYield ?? null,
     quality: r.research?.quality ?? null,
+    // how far the price is from today's fair value, in percent; the value itself stays in the app
+    vsFairValue: Number.isFinite(r.vsFairValue) ? r.vsFairValue : null,
     quarter: q ? { end: q.fyEnd, filed: q.filed ?? null, label: fyQuarter(q.fyEnd), salesCr: q.revenueCr ?? null, salesYoY: q.salesYoY ?? null, profitCr: q.profitCr ?? null, profitYoY: q.profitYoY ?? null, opm: q.opm ?? null, eps: q.eps ?? null } : null,
     recentQuarters: (r.quarters ?? []).slice(0, 8).map(x => ({ end: x.fyEnd, filed: x.filed ?? null, label: fyQuarter(x.fyEnd), salesCr: x.revenueCr ?? null, salesYoY: x.salesYoY ?? null, profitCr: x.profitCr ?? null, profitYoY: x.profitYoY ?? null, opm: x.opm ?? null, eps: x.eps ?? null })),
     nextResults: r.nextResults ?? null,
@@ -169,6 +171,7 @@ function describe(s) {
     s.pe != null && s.pe > 0 && `P/E ${num(s.pe)}`,
     s.roce != null && `ROCE ${num(s.roce)}%`,
     s.quality != null && `quality score ${Math.round(s.quality)}/100`,
+    s.vsFairValue != null && (Math.abs(s.vsFairValue) < 3 ? "close to our fair value" : `${Math.round(Math.abs(s.vsFairValue))}% ${s.vsFairValue > 0 ? "above" : "below"} our fair value`),
   ].filter(Boolean);
   const analysis = companyAnalysisFor(s);
   const result = analysis?.latest;
@@ -189,11 +192,18 @@ function storyHtml(s) {
   const peerRows = t.peers.map(p => `<tr><td><a href="/stock/${encodeURIComponent(p.symbol)}">${esc(p.name)}</a></td><td>${cell(p.price, v => `₹${num(v, 2)}`)}</td><td>${cell(p.pe, v => num(v))}</td><td>${cell(p.roe, v => `${num(v)}%`)}</td><td>${cell(p.roce, v => `${num(v)}%`)}</td><td>${cell(p.debtToEquity, v => num(v, 2))}</td><td>${cell(p.quality, v => `${Math.round(v)}/100`)}</td></tr>`).join("");
   return `<section class="ps-story">
 ${t.summary.length || t.trend ? `<h2>${esc(n)} in short</h2>${t.summary.length ? `<p>${esc(t.summary.join(" "))}</p>` : ""}${t.trend ? `<p>${esc(t.trend)}</p>` : ""}` : ""}
-${t.peers.length ? `<h2>${esc(n)} against similar companies</h2><div class="ps-table-wrap"><table><caption>Listed ${esc(t.sector?.name ?? "")} companies closest in size, at the last close</caption><thead><tr><th>Company</th><th>Price</th><th>P/E</th><th>ROE</th><th>ROCE</th><th>Debt/equity</th><th>Quality</th></tr></thead><tbody>${peerRows}</tbody></table></div>${t.sector ? `<p><a href="/sector/${esc(t.sector.slug)}">Every listed ${esc(t.sector.name)} company</a></p>` : ""}` : ""}
+${t.peers.length ? `<h2>${esc(n)} against similar companies</h2><div class="ps-table-wrap"><table><caption>Listed ${esc(t.peersIn ?? t.sector?.name ?? "")} companies closest in size, at the last close</caption><thead><tr><th>Company</th><th>Price</th><th>P/E</th><th>ROE</th><th>ROCE</th><th>Debt/equity</th><th>Quality</th></tr></thead><tbody>${peerRows}</tbody></table></div>${t.sector ? `<p><a href="/sector/${esc(t.sector.slug)}">Every listed ${esc(t.sector.name)} company</a></p>` : ""}` : ""}
 <h2>Stock screens ${esc(n)} passes</h2>${t.screens.length ? `<ul>${t.screens.map(x => `<li><a href="/screens/${esc(x.slug)}">${esc(x.name)}</a></li>`).join("")}</ul>` : `<p>It passes none of the ready-made screens today. <a href="/screens">See every screen</a>.</p>`}
 <h2>Questions about ${esc(n)}</h2>${t.qa.map(x => `<h3>${esc(x.q)}</h3><p>${esc(x.a)}</p>`).join("")}
 ${s.links?.length ? `<h2>More on ${esc(n)}</h2><ul>${s.links.map(l => `<li><a href="${esc(l.path)}">${esc(l.label)}</a></li>`).join("")}</ul>` : ""}
 </section>`;
+}
+
+// Where the price stands against today's fair value, in words ("18% above")
+function fairWords(v) {
+  if (v == null) return null;
+  if (Math.abs(v) < 3) return "close to it";
+  return `${Math.round(Math.abs(v))}% ${v > 0 ? "above" : "below"}`;
 }
 
 // The summary as plain HTML, for the page itself (what a crawler reads)
@@ -203,7 +213,7 @@ function summaryHtml(s) {
   const q = s.quarter;
   return `<main class="seo-stock">
 <p><a href="/">Jocular Insights</a> › ${s.story?.sector ? `<a href="/sector/${esc(s.story.sector.slug)}">${esc(s.story.sector.name)}</a>` : `<a href="/sectors">Sectors</a>`} › ${esc(s.symbol)}</p>
-<h1>${esc(n)} share price, P/E and quality score</h1>
+<h1>${esc(n)} share price, fair value and quality score</h1>
 <p>${esc(n)} (NSE: ${esc(s.symbol)})${s.industry ? ` · ${esc(s.industry)}` : ""}</p>
 ${s.close != null ? `<p><strong>₹${esc(num(s.close, 2))}</strong> ${esc(pct(s.change1d, 2) ?? "")} · close on ${esc(day(s.closeDate))}</p>` : ""}
 <table>
@@ -217,6 +227,7 @@ ${row("ROCE", s.roce != null ? `${num(s.roce)}%` : null)}
 ${row("Debt to equity", s.debtToEquity != null ? num(s.debtToEquity, 2) : null)}
 ${row("Dividend yield", s.divYield != null ? `${num(s.divYield, 2)}%` : null)}
 ${row("Quality score", s.quality != null ? `${Math.round(s.quality)} / 100` : null)}
+${row("Against our fair value", fairWords(s.vsFairValue))}
 ${q ? row(`${q.label} sales`, q.salesCr != null ? `₹${Math.round(q.salesCr).toLocaleString("en-IN")} crore${q.salesYoY != null ? ` (${pct(q.salesYoY)} on a year earlier)` : ""}` : null) : ""}
 ${q ? row(`${q.label} profit`, q.profitCr != null ? `₹${Math.round(q.profitCr).toLocaleString("en-IN")} crore${q.profitYoY != null ? ` (${pct(q.profitYoY)} on a year earlier)` : ""}` : null) : ""}
 ${row("Next results", s.nextResults ? day(s.nextResults) : null)}
@@ -301,7 +312,7 @@ export function stockPageHtml(template, symbol) {
   const s = publicStock(symbol);
   if (!s) return null;
   const n = plain(s.name);
-  const title = `${n} share price, P/E, results & quality score | ${s.symbol} | Jocular Insights`;
+  const title = `${n} share price, fair value, P/E & results | ${s.symbol} | Jocular Insights`;
   const desc = describe(s);
   const canonical = `${SITE}/stock/${encodeURIComponent(s.symbol)}`;
   const ld = {
