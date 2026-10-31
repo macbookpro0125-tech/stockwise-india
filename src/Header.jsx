@@ -29,6 +29,15 @@ export function GridIcon({ size = 24, strokeWidth = 2, filled = false, ...rest }
   );
 }
 
+// The market map's mark: uneven blocks, as the map's own boxes are
+export function MapIcon({ size = 20, strokeWidth = 2, filled = false, ...rest }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinejoin="round" {...rest}>
+      {[[3, 3, 10, 18], [15, 3, 6, 8], [15, 13, 6, 3], [15, 18, 6, 3]].map(([x, y, w, h]) => <rect key={`${x}${y}`} x={x} y={y} width={w} height={h} rx="2" fill={filled ? "currentColor" : "none"} />)}
+    </svg>
+  );
+}
+
 export const TABS = [
   // A computer splits Discover in two (31 Oct 2026): Screeners, the ready-made
   // screens to pick from, and Workspace, where a screen is built and studied
@@ -37,6 +46,9 @@ export const TABS = [
   { id: "workspace", label: "Workspace", short: "Workspace", Icon: PanelsLeftRight, wideOnly: true },
   // The indices and the news (ExploreView.jsx, 23 Oct 2026)
   { id: "explore", label: "Explore", short: "Explore", Icon: Telescope },
+  // The market map, a page of its own (MarketMapView.jsx, 31 Oct 2026); a
+  // phone reaches it from Explore and Settings, its bar keeping four tabs
+  { id: "map", label: "Market map", short: "Map", Icon: MapIcon },
   // Short-term and speculative, so only for accounts the server allows
   // (http-server.js momentumAllowed) — /api/auth/me says which
   { id: "momentum", label: "Momentum", short: "Momentum", Icon: Zap, gated: "momentum" },

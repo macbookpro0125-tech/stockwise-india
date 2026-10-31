@@ -91,28 +91,53 @@ async function members() {
   return membersFallback.members;
 }
 
-export const HEAT_SETS = [...Object.keys(HEATMAP_LISTS), "sectors"];
-const PERIOD = { "1d": ["ret1d", 1], "1w": ["ret1w", 5], "1m": ["ret1m", 21] };
+// "all": every company over ₹500 crore (smaller ones, thinly traded, would be
+// slivers too thin to see or click)
+export const HEAT_SETS = [...Object.keys(HEATMAP_LISTS), "all", "list", "sectors"];
+const ALL_FLOOR_CR = 500;
+const PERIOD = { "1d": ["ret1d", 1], "1w": ["ret1w", 5], "1m": ["ret1m", 21], "3m": ["ret3m", 63], "6m": ["ret6m", 126], "1y": ["ret1y", 0] };
 
-export async function heatmap(set = "Nifty 50", period = "1d") {
-  const [key, sessions] = PERIOD[period] ?? PERIOD["1d"];
+export async function heatmap(set = "Nifty 50", period = "1d", symbols = null) {
+  if (!PERIOD[period]) period = "1d";
+  const [key, sessions] = PERIOD[period];
   const { board: b, snap } = await board();
   const asOf = b?.days[b.days.length - 1] ?? snap?.pricesDate ?? null;
   if (set === "sectors") {
     if (!b) return { asOf, set, period, items: [], pending: true };
     const items = b.indices.filter(i => i.group === "sector").map(i => {
       const closes = i.closes.filter(c => c != null);
-      return { index: i.name, change: period === "1d" ? i.changePct : over(closes, sessions), weight: 1 };
+      // a year: the board's whole year, when it holds one
+      const change = period === "1d" ? i.changePct : sessions ? over(closes, sessions) : closes.length > 240 ? over(closes, closes.length - 1) : null;
+      return { index: i.name, change, weight: 1 };
     }).filter(i => i.change != null);
     return { asOf, set, period, items };
   }
-  const list = (await members())?.[set];
+  const rows = allMetrics().rows;
+  // ahead of or behind the Nifty 50 over the period, in points: a day's from the board's
+  // Nifty 50, longer ones the evening build's
+  const nifty = b?.indices.find(i => i.name === "Nifty 50" || i.name === "NIFTY 50");
+  // the coming week, from today in India (as resultsWeek counts it)
+  const today = new Date(Date.now() + 5.5 * 3600_000).toISOString().slice(0, 10);
+  const weekOut = new Date(Date.parse(`${today}T00:00:00Z`) + 7 * 86_400_000).toISOString().slice(0, 10);
+  const vsNifty = r => (period === "1d" ? (r.ret1d != null && nifty?.changePct != null ? Math.round((r.ret1d - nifty.changePct) * 100) / 100 : null) : r[`${key}VsNifty`] ?? null);
+  let list = null;
+  if (set === "all") list = rows.filter(r => r.marketCapCr >= ALL_FLOOR_CR).map(r => r.symbol);
+  else if (set === "list") list = symbols ?? [];
+  else list = (await members())?.[set];
   if (!list) return { asOf, set, period, items: [], pending: true };
-  const bySymbol = new Map(allMetrics().rows.map(r => [r.symbol, r]));
+  const bySymbol = new Map(rows.map(r => [r.symbol, r]));
   const items = list.map(sym => bySymbol.get(sym)).filter(r => r?.marketCapCr > 0 && r[key] != null)
-    .map(r => ({ symbol: r.symbol, name: r.name, sector: r.sector ?? null, weight: r.marketCapCr, change: r[key], close: r.cmp ?? null }))
+    .map(r => ({
+      symbol: r.symbol, name: r.name, sector: r.sector ?? null, industry: r.industry ?? null, weight: r.marketCapCr, change: r[key], close: r.cmp ?? null,
+      // what else the map can be coloured by (MarketMapView.jsx COLOUR_BY)
+      vsNifty: vsNifty(r), down52: r.downFrom52wHigh ?? null, volX: r.volVsAvg50 ?? null, delivery: r.delivery1m ?? null,
+      strength: r.priceStrength ?? null, quality: r.research?.quality ?? null, pe: r.peTtm ?? r.pe ?? null,
+      // the map's quick filters, and its mark for results in the coming week
+      fno: !!r.fno, psu: !!r.governmentOwned, themes: r.themes?.length ? r.themes : undefined,
+      resultsOn: r.nextResults && r.nextResults >= today && r.nextResults <= weekOut ? r.nextResults : undefined,
+    }))
     .sort((a, b2) => b2.weight - a.weight);
-  return { asOf, set, period, items, members: list.length };
+  return { asOf, set, period, items, members: list.length, ...(set === "all" ? { floorCr: ALL_FLOOR_CR } : {}) };
 }
 
 // Top movers: the biggest rises and falls over a day, a week or a month among

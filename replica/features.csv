@@ -44,3 +44,18 @@ S-ALERTS,"Alert when a watched company files results, a dividend or a board meet
 S-DISCOVER,"Bank filters: gross and net NPA, capital ratio, provision cover",no,yes,"Fix #5 — the filters were in since 9 Oct (41 banks); added Tier 1 and credit-deposit ratio and a Sound Banks strategy so they can be found. CASA isn't in NSE's filings data, so not offered"
 S-DISCOVER,Reorder screener filters,no,yes,"Fix #6 — up and down arrows on each filter row; the results' filter columns follow the order"
 S-STOCK,3-year range on the price chart,no,yes,Built 20 Oct 2026. Fix #7
+S-EXPLORE,Heat map grouped by sector and industry,yes,yes,Sector heading shows its value-weighted move
+S-EXPLORE,Heat map of the whole market,yes,yes,All NSE over ₹500 cr; Nifty 500 after the evening build
+S-EXPLORE,Heat map boxes by value or equal size,yes,yes,
+S-EXPLORE,Heat map periods up to a year,yes,yes,1D 1W 1M 3M 6M 1Y
+S-EXPLORE,Heat map hover card with industry peers,yes,yes,Computer only; a phone tap opens the company
+S-EXPLORE,Heat map zoom into one sector,yes,yes,
+S-EXPLORE,Heat map full screen,yes,yes,
+S-EXPLORE,Heat map bubbles and matrix views,yes,no,Left out on purpose: same information, more clutter
+S-MAP,Map coloured by other measures,yes,yes,"Move, vs Nifty, 52-week high, volume, delivery, price strength, quality, P/E vs sector"
+S-MAP,Rises and falls per sector and overall,partial,yes,
+S-MAP,Watchlist and portfolio as maps,partial,yes,Portfolio sized by holding value; coloured by gain too
+S-MAP,Find a company on the map,yes,yes,
+S-MAP,"F&O, PSU and theme filters",partial,yes,
+S-MAP,Results-week marks,no,yes,
+S-MAP,A screen's results as a map,partial,yes,From the Workspace; first 600

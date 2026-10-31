@@ -1,6 +1,6 @@
 // The Explore page (23 Oct 2026): the indices at their last close, each
 // opening in full, and the news under them.
-import { test, expect, openPage } from "./fixtures.js";
+import { test, expect, openPage, openStocks } from "./fixtures.js";
 
 test("X-H1 the indices: cards with the day's change; one opens with its year, returns and valuation; Back returns @phone", async ({ page, account }) => {
   await page.goto("/");
@@ -40,15 +40,15 @@ test("X-H2 a sector opens with its companies' biggest moves", async ({ page, acc
 
 test("X-H3 the heat map: an index's companies by size and move; another index, period and the sectors; a box opens its company @phone", async ({ page, account }) => {
   await page.goto("/");
-  await openPage(page, "Explore");
-  const heat = page.getByRole("region", { name: "Heat map" });
+  await openPage(page, "Market map");
+  const heat = page.getByRole("region", { name: "Market map" });
   const tiles = heat.locator(".ex-tile");
   await expect(tiles.first()).toBeVisible({ timeout: 45_000 });
   expect(await tiles.count()).toBeGreaterThan(40);
   await expect(heat).toContainText(/Size: market value/);
-  // the largest company's box is the biggest
+  // the largest company's box (first, in the largest sector) is bigger than the smallest's
   const areas = await tiles.evaluateAll(els => els.map(e => e.offsetWidth * e.offsetHeight));
-  expect(areas[0]).toBe(Math.max(...areas));
+  expect(areas[0]).toBeGreaterThan(Math.min(...areas));
   // nothing spills out of the map
   const spill = await heat.locator(".ex-heat").evaluate(box => [...box.children].filter(c => c.classList.contains("ex-tile")).some(t => t.offsetLeft + t.offsetWidth > box.clientWidth + 1 || t.offsetTop + t.offsetHeight > box.clientHeight + 1));
   expect(spill).toBe(false);
@@ -58,17 +58,159 @@ test("X-H3 the heat map: an index's companies by size and move; another index, p
   await expect(heat).toContainText("over the week");
   await heat.getByRole("group", { name: "Which companies" }).getByRole("button", { name: "Sectors" }).click();
   await expect(heat).toContainText("Each sector's index");
-  await heat.getByRole("group", { name: "Which companies" }).getByRole("button", { name: "NIFTY 50" }).click();
+  await heat.getByRole("group", { name: "Which companies" }).getByRole("button", { name: "NIFTY 50", exact: true }).click();
   await tiles.first().click();
   await expect(page).toHaveURL(/\/stock\//);
+});
+
+// 31 Oct 2026, "have you seen Finviz's maps": sectors in blocks, the whole
+// market, equal boxes, a sector on its own, the whole screen
+test("X-H6 the heat map groups by sector; All NSE, equal boxes, one sector, and full screen @phone", async ({ page, account }) => {
+  await page.goto("/");
+  await openPage(page, "Market map");
+  const heat = page.getByRole("region", { name: "Market map" });
+  const tiles = heat.locator(".ex-tile");
+  await expect(tiles.first()).toBeVisible({ timeout: 45_000 });
+  await expect(heat.locator(".ex-heat-head").first()).toBeVisible();
+  await heat.getByRole("group", { name: "Which companies" }).getByRole("button", { name: "All NSE" }).click();
+  await expect.poll(() => tiles.count(), { timeout: 20_000 }).toBeGreaterThan(500);
+  await expect(heat).toContainText(/companies over ₹500 cr/);
+  // a sector's heading opens it on its own; Back to all sectors
+  const first = heat.locator(".ex-heat-head").first();
+  const sector = (await first.locator(".ex-heat-head-name").textContent()).trim();
+  await first.click();
+  await expect(heat.getByRole("combobox", { name: "Sector" })).toHaveValue(sector);
+  const few = await tiles.count();
+  expect(few).toBeLessThan(500);
+  await heat.getByRole("button", { name: "All sectors" }).click();
+  await expect.poll(() => tiles.count()).toBeGreaterThan(few);
+  // equal boxes: all about the same size within a block
+  await heat.getByRole("group", { name: "Which companies" }).getByRole("button", { name: "NIFTY 50", exact: true }).click();
+  await heat.getByRole("group", { name: "Box size" }).getByRole("button", { name: "Equal" }).click();
+  await expect(heat).toContainText("Size: all the same");
+  // a longer period
+  await heat.getByRole("group", { name: "Over" }).getByRole("button", { name: "1Y" }).click();
+  await expect(heat).toContainText("over the year");
+  // the whole screen, and Esc back
+  await page.getByRole("button", { name: "Full screen" }).click();
+  await expect(page.locator(".ex-heat-fullscreen")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Leave full screen" })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(page.locator(".ex-heat-fullscreen")).toHaveCount(0);
+});
+
+// 31 Oct 2026: "I want this map in a separate page, not in Explore"
+test("X-H9 the map is a page of its own; Explore's card opens it @phone", async ({ page, account }) => {
+  await page.goto("/");
+  await openPage(page, "Explore");
+  await expect(page.locator(".ex-tile")).toHaveCount(0);
+  await page.locator(".ex-map-link").click();
+  const map = page.getByRole("region", { name: "Market map" });
+  await expect(map.locator(".ex-tile").first()).toBeVisible({ timeout: 45_000 });
+});
+
+// 31 Oct 2026: colour by more than the move; how many rose and fell; your
+// own watchlist and portfolio as maps
+test("X-H10 the map: colour by, rises and falls, my watchlist and my portfolio @phone", async ({ page, account, baseURL }) => {
+  const req = page.context().request;
+  for (const t of ["TCS", "INFY", "SBIN"]) expect((await req.post(`${baseURL}/api/watchlist`, { data: { ticker: t } })).ok()).toBeTruthy();
+  expect((await req.post(`${baseURL}/api/portfolio`, { data: { ticker: "TCS", qty: 10, buyPrice: 2000 } })).ok()).toBeTruthy();
+  expect((await req.post(`${baseURL}/api/portfolio`, { data: { ticker: "SBIN", qty: 100, buyPrice: 900 } })).ok()).toBeTruthy();
+  await page.goto("/");
+  await openPage(page, "Market map");
+  const map = page.getByRole("region", { name: "Market map" });
+  const tiles = map.locator(".ex-tile");
+  await expect(tiles.first()).toBeVisible({ timeout: 45_000 });
+  // how many rose and fell, adding up to the companies shown
+  const strip = await map.locator(".mm-breadth").getAttribute("aria-label");
+  const [, up, down, flat] = strip.match(/(\d+) rose, (\d+) fell, (\d+) unchanged/).map(Number);
+  expect(up + down + flat).toBe(await tiles.count());
+  // coloured by the distance from the 52-week high: the boxes say it
+  await map.getByRole("combobox", { name: "Colour by" }).selectOption("high");
+  await expect(map).toContainText("how far below its 52-week high");
+  await expect(tiles.first().locator(".ex-tile-chg")).toHaveText(/^(−\d+%|At high)$/);
+  // the watchlist: its three companies
+  await map.getByRole("group", { name: "Which companies" }).getByRole("button", { name: "My watchlist" }).click();
+  await expect.poll(() => tiles.count()).toBe(3);
+  // the portfolio: its two, and the gain on what was paid to colour by
+  await map.getByRole("group", { name: "Which companies" }).getByRole("button", { name: "My portfolio" }).click();
+  await expect.poll(() => tiles.count()).toBe(2);
+  await expect(map).toContainText("what your holding is worth");
+  await map.getByRole("combobox", { name: "Colour by" }).selectOption("gain");
+  await expect(map).toContainText("your gain or loss on what you paid");
+});
+
+// 31 Oct 2026: find a company, F&O / PSU / theme filters, results-week marks
+test("X-H11 the map: find a company, filter to F&O or a theme, and results marks @phone", async ({ page, account }) => {
+  await page.goto("/");
+  await openPage(page, "Market map");
+  const map = page.getByRole("region", { name: "Market map" });
+  const tiles = map.locator(".ex-tile");
+  await map.getByRole("group", { name: "Which companies" }).getByRole("button", { name: "All NSE" }).click();
+  await expect.poll(() => tiles.count(), { timeout: 45_000 }).toBeGreaterThan(500);
+  const all = await tiles.count();
+  // find: the match lit, the rest dimmed; Esc clears it
+  const find = map.getByRole("searchbox", { name: "Find a company on the map" });
+  // the symbol, and the companies whose names have it (Reliance Power and the rest)
+  await find.fill("RELIANCE");
+  await expect(map.locator(".ex-tile.hit").filter({ has: page.locator(".ex-tile-name", { hasText: /^RELI/ }) }).first()).toBeVisible();
+  await expect(map.locator(".ex-heat.finding")).toHaveCount(1);
+  await expect(map).toContainText(/is lit|companies match/);
+  await find.press("Escape");
+  await expect(map.locator(".ex-tile.hit")).toHaveCount(0);
+  await find.fill("zzzz");
+  await expect(map).toContainText("Nothing here matches");
+  await find.fill("");
+  // F&O only: fewer boxes; a theme: fewer still
+  const show = map.getByRole("combobox", { name: "Show" });
+  await show.selectOption("fno");
+  await expect.poll(() => tiles.count()).toBeLessThan(all);
+  await show.selectOption({ label: "Defence" });
+  await expect.poll(() => tiles.count()).toBeLessThan(60);
+  await show.selectOption("");
+  await expect.poll(() => tiles.count()).toBe(all);
+});
+
+// 31 Oct 2026: a screen's companies as a map, from the Workspace
+test("X-H12 the Workspace's Show as map draws the screen's companies on the market map", async ({ page, account, isMobile }) => {
+  test.skip(isMobile, "the Workspace is a computer's");
+  await page.goto("/");
+  await openStocks(page);
+  const count = page.locator(".screen-count b");
+  await expect(count).toBeVisible({ timeout: 45_000 });
+  const matched = Number((await count.textContent()).replace(/,/g, ""));
+  await page.getByRole("button", { name: "Show as map" }).click();
+  const map = page.getByRole("region", { name: "Market map" });
+  await expect(map.getByRole("button", { name: /^Screen: / })).toHaveAttribute("aria-pressed", "true");
+  await expect.poll(() => map.locator(".ex-tile").count(), { timeout: 45_000 }).toBeGreaterThan(0);
+  expect(await map.locator(".ex-tile").count()).toBeLessThanOrEqual(Math.min(matched, 600));
+});
+
+// 31 Oct 2026: "it should be a real zoom: details not shown should show when I zoom in"
+test("X-H13 zooming the map in names more boxes; Fit shows the whole map again @phone", async ({ page, account }) => {
+  await page.goto("/");
+  await openPage(page, "Market map");
+  const map = page.getByRole("region", { name: "Market map" });
+  await map.getByRole("group", { name: "Which companies" }).getByRole("button", { name: "All NSE" }).click();
+  await expect.poll(() => map.locator(".ex-tile").count(), { timeout: 45_000 }).toBeGreaterThan(500);
+  const zoom = map.getByRole("group", { name: "Zoom" });
+  await expect(zoom.getByRole("button", { name: "Zoom out" })).toBeDisabled();
+  // the share of drawn boxes with a name: more of them once zoomed in
+  const named = () => map.locator(".ex-heat").evaluate(b => b.querySelectorAll(".ex-tile .ex-tile-name").length / Math.max(1, b.querySelectorAll(".ex-tile").length));
+  const before = await named();
+  for (let i = 0; i < 3; i++) await zoom.getByRole("button", { name: "Zoom in" }).click();
+  await expect(zoom).toContainText("4.1×");
+  expect(await named()).toBeGreaterThan(before);
+  await zoom.getByRole("button", { name: "Fit the whole map" }).click();
+  await expect(zoom).toContainText("1×");
 });
 
 // 23 Oct 2026: "when I click a stock in the heat map and press Back, it goes
 // to the main page, not back to the heat map"
 test("X-H4 Back from a company opened in the heat map returns to the heat map as it was @phone", async ({ page, account }) => {
   await page.goto("/");
-  await openPage(page, "Explore");
-  const heat = page.getByRole("region", { name: "Heat map" });
+  await openPage(page, "Market map");
+  const heat = page.getByRole("region", { name: "Market map" });
   await expect(heat.locator(".ex-tile").first()).toBeVisible({ timeout: 45_000 });
   await heat.getByRole("group", { name: "Which companies" }).getByRole("button", { name: "Bank Nifty" }).click();
   await heat.getByRole("group", { name: "Over" }).getByRole("button", { name: "1W" }).click();
@@ -93,11 +235,11 @@ test("X-H4 Back from a company opened in the heat map returns to the heat map as
 test("X-H5 a computer's company page names where Back goes, and Esc goes back", async ({ page, account, isMobile }) => {
   test.skip(isMobile, "a computer's Back");
   await page.goto("/");
-  await openPage(page, "Explore");
-  const heat = page.getByRole("region", { name: "Heat map" });
+  await openPage(page, "Market map");
+  const heat = page.getByRole("region", { name: "Market map" });
   await expect(heat.locator(".ex-tile").first()).toBeVisible({ timeout: 45_000 });
   await heat.locator(".ex-tile").first().click();
-  const back = page.getByRole("button", { name: /^Back to Explore/ }).first();
+  const back = page.getByRole("button", { name: /^Back to Market map/ }).first();
   await expect(back).toBeVisible();
   const box = await back.boundingBox();
   expect(box.height, "a button, not a line of text").toBeGreaterThanOrEqual(40);
@@ -152,9 +294,9 @@ test("X-H8 a phone shows each section's first few, and See all opens the rest as
   const page2 = page.locator(".ex-full");
   await expect(page2.getByRole("button", { name: "Losers" })).toHaveAttribute("aria-pressed", "true");
   expect(await page2.locator(".ex-movers-list li").count()).toBeGreaterThan(4);
-  await expect(page.getByRole("heading", { name: "Heat map" })).toBeHidden();
+  await expect(page.locator(".ex-map-link")).toBeHidden();
   await page.goBack();
-  await expect(page.getByRole("heading", { name: "Heat map" })).toBeVisible();
+  await expect(page.locator(".ex-map-link")).toBeVisible();
 
   // the news: four, then all of it
   const news = page.locator(".nw-page");
@@ -163,5 +305,5 @@ test("X-H8 a phone shows each section's first few, and See all opens the rest as
   await page.getByRole("button", { name: "See all the news" }).click();
   await expect(page.locator(".ex-full .nw-row").nth(4)).toBeVisible();
   await page.locator(".ex-full").getByRole("button", { name: "Explore", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Heat map" })).toBeVisible();
+  await expect(page.locator(".ex-map-link")).toBeVisible();
 });

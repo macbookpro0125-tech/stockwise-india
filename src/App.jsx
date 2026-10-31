@@ -3,6 +3,7 @@ import { setLogosSignedIn } from "./CompanyLogo.jsx";
 import { flushSync } from "react-dom";
 import { lazyPage } from "./lazyPage.js";
 import ExploreView from "./ExploreView.jsx";
+import MarketMapView from "./MarketMapView.jsx";
 import PublicStock from "./PublicStock.jsx";
 import { api } from "./api.js";
 import Landing from "./Landing.jsx";
@@ -106,6 +107,8 @@ export default function App() {
   const [newsOpen, setNewsOpen] = useState(null);
   // …and an index, from the price strip
   const [indexOpen, setIndexOpen] = useState(null);
+  // …and a screen's companies, from the Workspace's "Show as map"
+  const [mapScreen, setMapScreen] = useState(null);
   // Where the Discover list was scrolled to, so Back lands on the same row
   const discoverScroll = useRef(0);
   // Native Android Back walks the app's tab history after leaving a stock or
@@ -409,14 +412,16 @@ export default function App() {
         {/* Screeners and Workspace (a computer) are its two steps: one view, so
             the screen built in one is there in the other */}
         {(tab === "discover" || tab === "workspace") && <div hidden={!!open}><DiscoverView onOpenStock={openSymbol} theme={theme} onOpenNews={id => { setNewsOpen(id ?? null); goTab("explore"); }}
-          page={tab} onPage={followStep} /></div>}
+          page={tab} onPage={followStep} onShowMap={(name, symbols) => { setMapScreen({ name, symbols, at: Date.now() }); goTab("map"); }} /></div>}
         {!open && tab === "watchlist" && <WatchlistView onOpenStock={openSymbol} onOpenNews={id => { setNewsOpen(id); goTab("explore"); }} />}
         {!open && tab === "portfolio" && <PortfolioView onOpenStock={openSymbol} />}
         {!open && tab === "performance" && <PerformanceView onOpenStock={openSymbol} />}
         {!open && tab === "alerts" && <AlertsView onOpenStock={openSymbol} />}
         {/* Kept mounted (hidden) under a company page too, as Discover is: Back
             returns to the heat map or the news where they were */}
-        {tab === "explore" && <div hidden={!!open}><ExploreView onOpenStock={openSymbol} openId={newsOpen} onOpened={() => setNewsOpen(null)} openIndexName={indexOpen} onIndexOpened={() => setIndexOpen(null)} /></div>}
+        {tab === "explore" && <div hidden={!!open}><ExploreView onOpenStock={openSymbol} openId={newsOpen} onOpened={() => setNewsOpen(null)} openIndexName={indexOpen} onIndexOpened={() => setIndexOpen(null)} onOpenMap={() => goTab("map")} /></div>}
+        {/* Kept mounted under a company page too: Back returns to the map as it was */}
+        {tab === "map" && <div hidden={!!open}><MarketMapView screen={mapScreen} onOpenStock={openSymbol} onOpenIndex={name => { setIndexOpen(name); goTab("explore"); }} /></div>}
         {!open && tab === "momentum" && account?.features?.momentum && <MomentumView onOpenStock={openSymbol} />}
         {!open && tab === "visitors" && account?.features?.owner && <VisitorsView />}
         {!open && tab === "settings" && <SettingsView account={account} theme={theme} onToggleTheme={toggleTheme} onTab={goTab} onLogout={logout} onDeleted={accountDeleted} onTour={askForTour} />}

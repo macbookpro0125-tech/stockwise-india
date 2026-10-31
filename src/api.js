@@ -112,7 +112,7 @@ export const api = {
   exploreIndex: name => request(`/api/explore/index?name=${encodeURIComponent(name)}`),
   movers: period => request(`/api/explore/movers?period=${period}`),
   resultsWeek: () => request("/api/explore/results"),
-  heatmap: (set, period) => request(`/api/explore/heatmap?set=${encodeURIComponent(set)}&period=${period}`),
+  heatmap: (set, period, symbols = null) => request(`/api/explore/heatmap?set=${encodeURIComponent(set)}&period=${period}${symbols ? `&symbols=${encodeURIComponent(symbols.join(","))}` : ""}`),
   newsItem: id => request(`/api/news/item/${encodeURIComponent(id)}`),
   newsFilingLines: id => request(`/api/news/item/${encodeURIComponent(id)}/read`),
   currentPrices: (symbols) => request(`/api/prices?symbols=${symbols.map(encodeURIComponent).join(",")}`),

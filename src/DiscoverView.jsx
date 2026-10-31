@@ -1,6 +1,7 @@
 import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { SlidersHorizontal, ChevronLeft, ChevronRight, Bookmark, Share } from "lucide-react";
+import { MapIcon } from "./Header.jsx";
 import { api } from "./api.js";
 import PresetCards, { presetRules } from "./PresetCards.jsx";
 import { NewsTile } from "./NewsView.jsx";
@@ -87,7 +88,7 @@ function Modal({ onClose, width = 340, children }) {
 
 // The periods a ranked strategy's switch offers (Top Gainers)
 const PERIOD_WORDS = { ret1d: "1 day", ret1w: "1 week", ret1m: "1 month", ret3m: "3 months", ret6m: "6 months", ret1y: "1 year", ret3y: "3 years", ret5y: "5 years" };
-export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "discover", onPage = null }) {
+export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "discover", onPage = null, onShowMap = null }) {
   const { meta, error: metaError, retry: retryMeta } = useScreenerMeta();
   // A shared link wins; else the last screen. null until the first screen
   // says what the old saved criteria became.
@@ -708,6 +709,13 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
                 <div className="screen-actions">
                   {results?.matched != null && <span className="screen-count"><b>{results.matched.toLocaleString("en-IN")}</b> of {(results.total ?? 0).toLocaleString("en-IN")} companies
                     {results?.snapshot?.pricesDate && <small> · prices of {new Date(`${results.snapshot.pricesDate}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" })}</small>}</span>}
+                  {/* the screen's companies on the market map (31 Oct 2026) */}
+                  {onShowMap && results?.results?.length > 0 && (
+                    <button type="button" className="btn-ghost tb-btn" title="See this screen's companies on the market map, by sector"
+                      onClick={() => onShowMap(wheelPresets.find(p => p.id === wheelValue)?.name ?? (activeCount ? "Untitled screen" : "Whole market"), results.results.map(r => r.symbol))}>
+                      <MapIcon size={14} aria-hidden="true" /> Show as map
+                    </button>
+                  )}
                   <button type="button" onClick={handleShare} disabled={!activeCount} title="Copy a link that opens this screen" className="btn-ghost tb-btn">
                     <Share size={14} aria-hidden="true" /> {copyFeedback || "Share"}
                   </button>

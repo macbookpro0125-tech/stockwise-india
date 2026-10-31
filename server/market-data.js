@@ -425,7 +425,7 @@ async function indexFile(isoDate) {
 // The members of the indices the Explore page's heat map shows, from
 // niftyindices.com's lists (as the sectors are); an index whose list can't be
 // read is left out, not guessed
-export const HEATMAP_LISTS = { "Nifty 50": "ind_nifty50list", "Nifty Bank": "ind_niftybanklist", "Nifty Next 50": "ind_niftynext50list", "NIFTY Midcap 100": "ind_niftymidcap100list", "NIFTY Smallcap 100": "ind_niftysmallcap100list" };
+export const HEATMAP_LISTS = { "Nifty 50": "ind_nifty50list", "Nifty Bank": "ind_niftybanklist", "Nifty Next 50": "ind_niftynext50list", "NIFTY Midcap 100": "ind_niftymidcap100list", "NIFTY Smallcap 100": "ind_niftysmallcap100list", "NIFTY 500": "ind_nifty500list" };
 // niftyindices.com doesn't answer the GitHub data job (25 Oct 2026: the live
 // snapshot had no members at all), so NSE's own index page stands in for it,
 // and the last snapshot's members for both

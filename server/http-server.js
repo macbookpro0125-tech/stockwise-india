@@ -814,7 +814,9 @@ export function createApp() {
         if (requireAuth(req, res) == null) return;
         const set = url.searchParams.get("set") ?? "Nifty 50";
         if (!HEAT_SETS.includes(set)) { sendJson(res, 400, { error: "Unknown heat map" }); return; }
-        sendJson(res, 200, await heatmap(set, url.searchParams.get("period") ?? "1d"));
+        // "list": the companies asked for (a watchlist, a portfolio), at most 600
+        const symbols = set === "list" ? (url.searchParams.get("symbols") ?? "").split(",").map(x => x.trim().toUpperCase()).filter(x => /^[A-Z0-9&_.-]{1,20}$/.test(x)).slice(0, 600) : null;
+        sendJson(res, 200, await heatmap(set, url.searchParams.get("period") ?? "1d", symbols));
         return;
       }
       if (url.pathname === "/api/explore/index" && req.method === "GET") {

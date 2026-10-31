@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronRight, Heart, Bookmark, ChartLine, Zap, Moon, Image, Compass, Download, ShieldCheck, FileText, LogOut, Trash2, BookOpen, Mail, Star, Bell, Users } from "lucide-react";
 import { navigate } from "./site.jsx";
+import { MapIcon } from "./Header.jsx";
 import { problemMailto } from "./help.js";
 import { useLogosShown, setLogosShown } from "./CompanyLogo.jsx";
 import { installState, onInstallChange, promptInstall } from "./installApp.js";
@@ -118,6 +119,7 @@ export default function SettingsView({ account, theme, onToggleTheme, onTab, onL
           onClick={() => { showStrategiesOfKind(saved ? "yours" : "all"); onTab("discover"); }} />
         {/* Alerts gave its tab to Explore on a phone (23 Oct 2026) */}
         <Row icon={Bell} tint="#F59E0B" label="Alerts" detail={alertsDetail} onClick={() => onTab("alerts")} />
+        <Row icon={MapIcon} tint="#14B892" label="Market map" detail="Every sector and company by its move" onClick={() => onTab("map")} />
         <Row icon={ChartLine} tint="#3B82F6" label="Strategy performance" detail="How past picks have moved" onClick={() => onTab("performance")} />
         {account?.features?.momentum && <Row icon={Zap} tint="#F59E0B" label="Momentum" onClick={() => onTab("momentum")} />}
         {account?.features?.owner && <Row icon={Users} tint="#6366F1" label="Visitors" detail="Who's using the site, counted anonymously" onClick={() => onTab("visitors")} />}

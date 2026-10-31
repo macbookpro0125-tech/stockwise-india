@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ChevronRight } from "lucide-react";
 import { api } from "./api.js";
 import CompanyLogo from "./CompanyLogo.jsx";
@@ -23,10 +23,10 @@ const SHORT = {
   "Nifty Consumer Durables": ["Consumer Durables", "CD"], "Nifty Media": ["Media", "MD"], "Nifty Infrastructure": ["Infrastructure", "INF"], "Nifty India Defence": ["Defence", "DEF"],
   "Nifty Capital Markets": ["Capital Markets", "CM"], "Nifty Power": ["Power", "PW"], "Nifty Cement": ["Cement", "CE"], "Nifty Chemicals": ["Chemicals", "CH"],
 };
-const label = name => SHORT[name]?.[0] ?? name.replace(/^nifty\s+/i, "");
+export const label = name => SHORT[name]?.[0] ?? name.replace(/^nifty\s+/i, "");
 const badge = name => SHORT[name]?.[1] ?? label(name).slice(0, 2).toUpperCase();
 const points = v => v.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const shortDate = d => (d ? new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${d}T00:00:00Z`)) : "");
+export const shortDate = d => (d ? new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", timeZone: "UTC" }).format(new Date(`${d}T00:00:00Z`)) : "");
 const tone = v => (v > 0.05 ? "up" : v < -0.05 ? "down" : "flat");
 
 // A small area chart of the closes; its colour is the card's
@@ -220,155 +220,29 @@ function IndexDetail({ name, onBack, onOpenStock, onOpenNews }) {
   );
 }
 
-// ---- The heat map ------------------------------------------------------------
+// ---- The market map: a page of its own (MarketMapView.jsx, 31 Oct 2026) ----------
 
-// Squarified treemap: boxes in proportion to their weight, as near square as
-// the space allows (Bruls, Huizing & van Wijk), biggest first
-export function squarify(items, width, height) {
-  const total = items.reduce((a, i) => a + i.weight, 0);
-  if (!total || width <= 0 || height <= 0) return [];
-  const nodes = items.map(i => ({ ...i, area: (i.weight / total) * width * height }));
-  const out = [];
-  let r = { x: 0, y: 0, w: width, h: height }, row = [];
-  const worst = (list, side) => {
-    const sum = list.reduce((a, n) => a + n.area, 0), max = Math.max(...list.map(n => n.area)), min = Math.min(...list.map(n => n.area));
-    return Math.max((side * side * max) / (sum * sum), (sum * sum) / (side * side * min));
-  };
-  const place = list => {
-    const sum = list.reduce((a, n) => a + n.area, 0);
-    if (r.w >= r.h) {
-      const w = sum / r.h; let y = r.y;
-      for (const n of list) { out.push({ ...n, x: r.x, y, w, h: n.area / w }); y += n.area / w; }
-      r = { x: r.x + w, y: r.y, w: r.w - w, h: r.h };
-    } else {
-      const h = sum / r.w; let x = r.x;
-      for (const n of list) { out.push({ ...n, x, y: r.y, w: n.area / h, h }); x += n.area / h; }
-      r = { x: r.x, y: r.y + h, w: r.w, h: r.h - h };
-    }
-  };
-  for (const n of nodes) {
-    const side = Math.min(r.w, r.h);
-    if (!row.length || worst([...row, n], side) <= worst(row, side)) row.push(n);
-    else { place(row); row = [n]; }
-  }
-  if (row.length) place(row);
-  return out;
-}
-
-const HEAT_SETS = [["Nifty 50", "NIFTY 50"], ["Nifty Bank", "Bank Nifty"], ["Nifty Next 50", "Next 50"], ["NIFTY Midcap 100", "Midcap 100"], ["NIFTY Smallcap 100", "Smallcap 100"], ["sectors", "Sectors"]];
-const HEAT_PERIODS = [["1d", "1D", 3, "the day"], ["1w", "1W", 6, "the week"], ["1m", "1M", 10, "the month"]];
-// Deeper green or red the bigger the move, full at ±3% a day (±6% a week, ±10% a month)
-const heatColor = (c, limit) => {
-  const t = Math.min(1, Math.abs(c) / limit);
-  if (Math.abs(c) < 0.05) return "var(--s3)";
-  return `color-mix(in srgb, ${c > 0 ? "#1f9d55" : "#d64545"} ${Math.round(28 + 62 * t)}%, var(--s2))`;
-};
-
-// A name in n lines, split evenly (DRREDDY: DRR / ED / DY, not DRR / EDD / Y)
-function evenly(name, n) {
-  const lines = [];
-  for (let i = 0, at = 0; i < n; i++) { const len = Math.ceil((name.length - at) / (n - i)); lines.push(name.slice(at, at + len)); at += len; }
-  return lines;
-}
-
-function Heatmap({ onOpenStock, onOpenIndex }) {
-  const [set, setSet] = useState("Nifty 50");
-  const [period, setPeriod] = useState("1d");
-  const [data, setData] = useState(null);
-  const [width, setWidth] = useState(0);
-  const box = useRef(null);
-  useEffect(() => { setData(null); api.heatmap(set, period).then(setData).catch(() => setData({ items: [], pending: true })); }, [set, period]);
-  useEffect(() => {
-    const el = box.current;
-    if (!el) return;
-    const ro = new ResizeObserver(() => setWidth(el.clientWidth));
-    ro.observe(el);
-    setWidth(el.clientWidth);
-    return () => ro.disconnect();
-  }, []);
-  // a phone's is taller than wide, so its smaller tiles have room for a name
-  const height = width < 640 ? Math.round(width * 1.4) : Math.round(Math.min(520, width * 0.5));
-  const [, , limit, words] = HEAT_PERIODS.find(([p]) => p === period);
-  const tiles = useMemo(() => (data?.items?.length ? squarify(data.items, width, height) : []), [data, width, height]);
-  // Each tile's label: the name as large as the box allows, whole (a bold capital is about 0.76
-  // of its size wide), on one line where it reads well, else on two or three lines, or running
-  // up a tall thin tile. Down to 5.5 px, so even a phone's
-  // smallest tiles say whose they are, in the tile ("I can't see the names of the companies",
-  // "write something in the tiles itself", 23 Oct 2026). The move only where there's room too.
-  // how wide a run of bold capitals is, in ems: W and M wider, I and punctuation narrower
-  const ems = str => [...str].reduce((w, c) => w + (/[WM]/.test(c) ? 0.98 : /[I1.,'\-&]/.test(c) ? 0.42 : /\d/.test(c) ? 0.66 : 0.76), 0);
-  const laid = tiles.map(t => {
-    const name = t.symbol ?? label(t.index);
-    const move = `${t.change > 0 ? "+" : ""}${t.change.toFixed(2)}%`;
-    // Every way to set it out: on 1–3 lines, the right way up or running up a tall thin tile,
-    // with the move under the name (at 0.8 of its size; a figure is about 0.6 of it wide) or not
-    const ways = [];
-    for (const up of t.h > t.w * 1.4 ? [false, true] : [false]) {
-      const along = up ? t.h : t.w, across = up ? t.w : t.h;
-      for (const n of [1, 2, 3]) {
-        if (n > 1 && name.length < n * 2) continue;
-        // the widest line when split evenly
-        const per = Math.max(...evenly(name, n).map(ems));
-        for (const withMove of [true, false]) {
-          const size = Math.min(n === 1 ? 22 : 16, Math.max(9, Math.sqrt(t.w * t.h) / 4.6), (along - 6) / per,
-            (across - 4) / (n * 1.15 + (withMove ? 0.8 * 1.2 : 0)), withMove ? (along - 6) / (move.length * 0.6 * 0.8) : Infinity);
-          ways.push({ up, n, withMove, size });
-        }
-      }
-    }
-    // The first that reads well, the move kept wherever it fits: one line at 8.5 px or more, two
-    // lines, running up the tile, two lines up it, three lines (7.5 px); then the same, smaller
-    // (5 px); the name alone only where even that leaves no room for the move
-    const rank = o => (o.withMove ? 0 : 10) + (o.up ? [2, 3, 5][o.n - 1] : [0, 1, 4][o.n - 1]);
-    const order = [...ways].sort((a, b) => rank(a) - rank(b));
-    const pick = order.find(o => o.withMove && o.size >= (o.n === 1 && !o.up ? 8.5 : 7.5))
-      ?? order.find(o => o.withMove && o.size >= 5)
-      ?? order.find(o => o.size >= 5.5)
-      ?? ways.reduce((a, b) => (b.size > a.size ? b : a));
-    const lines = evenly(name, pick.n);
-    const named = pick.size >= 5;
-    // a small move is a pale tile: dark letters on it in the light theme
-    return { t, name, move, lines, up: pick.up, size: pick.size, named, moved: named && pick.withMove, pale: Math.abs(t.change) / limit < 0.5 };
-  });
+// Explore's way to it
+function MapLink({ onOpen }) {
   return (
-    <section className="ex-section" aria-labelledby="ex-heat">
-      <h3 className="ex-h" id="ex-heat">Heat map</h3>
-      <div className="ex-heat-bar">
-        <div className="ph-chips ex-heat-sets" role="group" aria-label="Which companies">
-          {HEAT_SETS.map(([id, l]) => <button key={id} type="button" className="ph-chip" aria-pressed={set === id} onClick={() => setSet(id)}>{l}</button>)}
-        </div>
-        <div className="ex-ranges ex-heat-periods" role="group" aria-label="Over">
-          {HEAT_PERIODS.map(([p, l]) => <button key={p} type="button" className="ex-range" aria-pressed={period === p} onClick={() => setPeriod(p)}>{l}</button>)}
-        </div>
-      </div>
-      <div ref={box} className="ex-heat" style={{ height }}>
-        {data == null && <div className="ex-heat-wait" role="status">Drawing the heat map…</div>}
-        {data?.pending && <div className="ex-heat-wait">The heat map arrives with the evening data update.</div>}
-        {laid.map(({ t, name, move, lines, up, named, moved, size, pale }) => (
-          <button key={t.symbol ?? t.index} type="button" className={`ex-tile${pale ? " pale" : ""}`} title={`${t.name ? niceName(t.name) : name}: ${t.change > 0 ? "+" : ""}${t.change.toFixed(2)}%`}
-            aria-label={`${t.name ? niceName(t.name) : name}, ${t.change >= 0 ? "up" : "down"} ${Math.abs(t.change).toFixed(2)}% over ${words}`}
-            onClick={() => (t.symbol ? onOpenStock(t.symbol) : onOpenIndex(t.index))}
-            style={{ left: t.x, top: t.y, width: t.w, height: t.h, background: heatColor(t.change, limit) }}>
-            {named && (
-              <span className={`ex-tile-in${up ? " up" : ""}`}>
-                <span className="ex-tile-name" style={{ fontSize: size }}>{lines.map((l, i) => <Fragment key={i}>{i > 0 && <br />}{l}</Fragment>)}</span>
-                {moved && <span className="ex-tile-chg" style={{ fontSize: Math.min(15, Math.max(size * 0.8, size >= 10 ? 8 : 0)) }}>{move}</span>}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
-      <div className="ex-heat-key">
-        <span>{set === "sectors" ? "Each sector's index" : `Size: market value${data?.members && data.items.length < data.members ? ` · ${data.items.length} of ${data.members} companies` : ""}`} · colour: the move over {words}{data?.asOf ? ` to the close on ${shortDate(data.asOf)}` : ""}</span>
-        <span className="ex-heat-scale" aria-hidden="true"><i style={{ background: heatColor(-limit, limit) }} />−{limit}%<i style={{ background: "var(--s3)" }} />0<i style={{ background: heatColor(limit, limit) }} />+{limit}%</span>
-      </div>
+    <section className="ex-section" aria-labelledby="ex-map-link">
+      <button type="button" className="ex-map-link" onClick={onOpen}>
+        <span className="ex-map-link-art" aria-hidden="true"><i /><i /><i /><i /><i /></span>
+        <span className="ex-map-link-text">
+          <span className="ex-map-link-title" id="ex-map-link">Market map</span>
+          <span className="ex-map-link-sub">Every sector and company, coloured by its move</span>
+        </span>
+        <ChevronRight size={20} aria-hidden="true" />
+      </button>
     </section>
   );
 }
 
 // ---- Top movers and the week's results ------------------------------------------
 
-const crShort = v => (v >= 100000 ? `₹${(v / 100000).toLocaleString("en-IN", { maximumFractionDigits: 1 })} lakh cr` : `₹${Math.round(v).toLocaleString("en-IN")} cr`);
+const MOVER_PERIODS = [["1d", "1D", "the day"], ["1w", "1W", "the week"], ["1m", "1M", "the month"]];
+
+export const crShort = v => (v >= 100000 ? `₹${(v / 100000).toLocaleString("en-IN", { maximumFractionDigits: 1 })} lakh cr` : `₹${Math.round(v).toLocaleString("en-IN")} cr`);
 
 // A phone shows each section's first few (preview), and "See all" opens the
 // whole of it as a page of its own (23 Oct 2026: "on the phone show only three
@@ -401,14 +275,14 @@ function TopMovers({ onOpenStock, preview = false, onSeeAll, start = {} }) {
   useEffect(() => { setData(null); api.movers(period).then(setData).catch(() => setData({ gainers: [], losers: [] })); }, [period]);
   const all = data?.[side] ?? [];
   const list = preview ? all.slice(0, PREVIEW) : all;
-  const [, , , words] = HEAT_PERIODS.find(([p]) => p === period);
+  const [, , words] = MOVER_PERIODS.find(([p]) => p === period);
   return (
     <section className="ex-section" aria-labelledby="ex-movers">
       <div className="ex-sec-bar">
         <SectionHead id="ex-movers" title="Top movers" more={`See all ${all.length} ${side}`} onMore={preview && all.length > PREVIEW ? () => onSeeAll({ side, period }) : null} />
         <div className="ex-sec-controls">
           <Segmented label="Rises or falls" value={side} onChange={setSide} tint={side === "gainers" ? "up" : "down"} options={[["gainers", "Gainers"], ["losers", "Losers"]]} />
-          <Segmented label="Movers over" value={period} onChange={setPeriod} options={HEAT_PERIODS.map(([p, l]) => [p, l])} />
+          <Segmented label="Movers over" value={period} onChange={setPeriod} options={MOVER_PERIODS.map(([p, l]) => [p, l])} />
         </div>
       </div>
       {data == null
@@ -479,7 +353,7 @@ function ResultsWeek({ onOpenStock, preview = false, onSeeAll }) {
   );
 }
 
-export default function ExploreView({ onOpenStock, openId = null, onOpened, openIndexName = null, onIndexOpened }) {
+export default function ExploreView({ onOpenStock, openId = null, onOpened, openIndexName = null, onIndexOpened, onOpenMap }) {
   const [board, setBoard] = useState(null);
   const [index, setIndex] = useState(() => window.history.state?.newsItem ? null : window.history.state?.exploreIndex ?? null);
   const indexRef = useRef(null);
@@ -556,7 +430,7 @@ export default function ExploreView({ onOpenStock, openId = null, onOpened, open
                 : <>
                   <Row id="ex-market" title="Market" items={board.market} asOf={board.asOf} onOpen={openIndex} />
                   <Row id="ex-sectors" title="Sectors" items={board.sectors} asOf={board.asOf} onOpen={openIndex} />
-                  <Heatmap onOpenStock={onOpenStock} onOpenIndex={openIndex} />
+                  {onOpenMap && <MapLink onOpen={onOpenMap} />}
                 </>}
             {/* from the companies' own figures: there even before the indices are */}
             <TopMovers onOpenStock={onOpenStock} preview={phone} onSeeAll={f => openFull({ kind: "movers", ...f })} />
