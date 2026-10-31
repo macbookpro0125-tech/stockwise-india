@@ -41,9 +41,22 @@
   <!-- In the Android or iPhone app, the page the server writes for search
        engines (seo.js: a heading and paragraphs) stays unseen until the app
        has drawn itself: it flashed up for a moment at every start (26 Oct
-       2026). main.jsx adds app-drawn after the first draw. A browser shows
-       it as ever — it's what a search engine and a visitor without script read -->
-  <style>html.in-app:not(.app-drawn) #root { visibility: hidden; }</style>
+       2026). main.jsx adds app-drawn after the first draw. A browser too, since
+       31 Oct 2026 ("I see this page whenever I move from one page to another
+       or open the app": a reload showed it for half a second before the app).
+       If the app hasn't started 4 s on, it shows after all; without script
+       (the noscript below) it shows at once, for a search engine or a visitor
+       who reads it. A load that takes a moment shows a small spinner. -->
+  <style>
+    html:not(.app-drawn) #root { visibility: hidden; animation: root-show 0s linear 4s forwards; }
+    html.in-app:not(.app-drawn) #root { animation: none; }
+    @keyframes root-show { to { visibility: visible; } }
+    html:not(.app-drawn) body::after { content: ""; position: fixed; left: 50%; top: 45%; width: 26px; height: 26px; margin: -13px 0 0 -13px; border-radius: 50%; border: 2.5px solid rgba(127, 127, 127, 0.18); border-top-color: #00E0BE; opacity: 0; animation: boot-spin 0.8s linear infinite, boot-fade 0.2s ease-out 0.35s forwards; }
+    @keyframes boot-spin { to { transform: rotate(360deg); } }
+    @keyframes boot-fade { to { opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) { html:not(.app-drawn) body::after { animation: boot-fade 0.2s ease-out 0.35s forwards; } }
+  </style>
+  <noscript><style>html:not(.app-drawn) #root { visibility: visible; animation: none; } html:not(.app-drawn) body::after { display: none; }</style></noscript>
   <script>
     (function () {
       var ua = navigator.userAgent || "";
