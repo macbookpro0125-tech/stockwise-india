@@ -51,20 +51,70 @@ function smooth(pts) {
   return d;
 }
 
+// A soft two-note chime, made here (no sound file): a bell-like tone and its
+// fifth, each a quick rise and a long fall. Only where sound may play unasked
+// (the phone app); a browser that hasn't been tapped stays silent.
+function chime() {
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    ctx.resume?.();
+    if (ctx.state !== "running") { ctx.close?.(); return; }
+    const now = ctx.currentTime, out = ctx.createGain();
+    out.gain.value = 0.9;
+    out.connect(ctx.destination);
+    for (const [freq, at, peak] of [[1318.5, 0, 0.07], [1975.5, 0.09, 0.045], [659.3, 0, 0.03]]) {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = "sine"; o.frequency.value = freq;
+      g.gain.setValueAtTime(0, now + at);
+      g.gain.linearRampToValueAtTime(peak, now + at + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + at + 1.3);
+      o.connect(g).connect(out);
+      o.start(now + at); o.stop(now + at + 1.4);
+    }
+    setTimeout(() => ctx.close?.(), 1700);
+  } catch {}
+}
+
+// the headline, a word at a time
+const words = (text, from) => text.split(" ").map((w, i, all) => <span key={i} className="i4-word" style={{ "--w": from + i }}>{w}{i < all.length - 1 ? " " : ""}</span>);
+
 export default function Intro() {
   const [on, setOn] = useState(decide);
   const [leaving, setLeaving] = useState(false);
+  // kept as state (not added to the element by hand), so a redraw keeps them
+  const [landed, setLanded] = useState(false);
+  const [flying, setFlying] = useState(false);
   const done = useRef(false);
   const lineRef = useRef(null), dotRef = useRef(null), rootRef = useRef(null), logoRef = useRef(null);
+  const landedRef = useRef(false);
   const path = useMemo(() => smooth(POINTS), []);
 
+  // The ending: the logo shrinks and flies into the app's own logo in its
+  // header (whichever is showing: the app's bar, the phone's search bar, the
+  // front page's) while the film around it falls away; with none in view, it
+  // just fades. The app's logo is then exactly where this one came to rest.
   const finish = () => {
     if (done.current) return;
     done.current = true;
+    const img = logoRef.current;
+    const target = img && [...document.querySelectorAll(".brand-mark")].find(el => {
+      if (rootRef.current?.contains(el)) return false;
+      const r = el.getBoundingClientRect();
+      return r.width > 8 && r.top >= -4 && r.top < window.innerHeight * 0.3 && getComputedStyle(el).visibility !== "hidden";
+    });
+    let fly = false;
+    if (target && landedRef.current) {
+      const from = img.getBoundingClientRect(), to = target.getBoundingClientRect();
+      img.style.setProperty("--fly", `translate(${to.left + to.width / 2 - (from.left + from.width / 2)}px, ${to.top + to.height / 2 - (from.top + from.height / 2)}px) scale(${to.width / from.width})`);
+      fly = true;
+    }
+    setFlying(fly);
     setLeaving(true);
     window.__introActive = false;
     window.dispatchEvent(new Event("intro-leaving"));
-    setTimeout(() => setOn(false), 560);
+    setTimeout(() => setOn(false), fly ? 760 : 560);
   };
 
   useEffect(() => {
@@ -84,7 +134,7 @@ export default function Intro() {
     const t0 = performance.now();
     const RIDE = [150, 1300], FLY = [1720, 2120];
     const out = t => 1 - (1 - t) ** 3, inOut = t => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
-    let raf = 0, end = null, landed = false;
+    let raf = 0, end = null, down = false;
     const step = now => {
       const e = now - t0, W = root.clientWidth, H = root.clientHeight;
       if (e < FLY[0]) {
@@ -101,11 +151,12 @@ export default function Intro() {
         const x = (1 - t) ** 2 * end[0] + 2 * (1 - t) * t * mid[0] + t * t * to[0];
         const y = (1 - t) ** 2 * end[1] + 2 * (1 - t) * t * mid[1] + t * t * to[1];
         dot.style.transform = `translate(${x}px, ${y}px) scale(${1 + 2.2 * t})`;
-      } else if (!landed) {
-        landed = true;
-        root.classList.add("landed");
-        // a light tap, in the phone app, as the logo lands
-        if (document.documentElement.classList.contains("in-app")) { try { tick(); } catch {} }
+      } else if (!down) {
+        down = true;
+        landedRef.current = true;
+        setLanded(true);
+        // a light tap and a soft chime, in the phone app, as the logo lands
+        if (document.documentElement.classList.contains("in-app")) { try { tick(); } catch {} chime(); }
       }
       if (e < FLY[1] + 50) raf = requestAnimationFrame(step);
     };
@@ -115,7 +166,7 @@ export default function Intro() {
 
   if (!on) return null;
   return (
-    <div ref={rootRef} className={`i4${leaving ? " leaving" : ""}`} role="status" aria-label="Opening Jocular Insights" onClick={finish}>
+    <div ref={rootRef} className={`i4${landed ? " landed" : ""}${flying ? " flying" : ""}${leaving ? " leaving" : ""}`} role="status" aria-label="Opening Jocular Insights" onClick={finish}>
       <div className="i4-glow" aria-hidden="true" />
       <svg className="i4-chart" viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true">
         <defs>
@@ -127,17 +178,20 @@ export default function Intro() {
           </linearGradient>
         </defs>
         <path d={`${path} L1000,1000 L0,1000 Z`} className="i4-area" fill="url(#i4-area)" />
+        {/* an echo of the line behind it, for depth, and a travelling shimmer once it's drawn */}
+        <path d={path} className="i4-echo" stroke="url(#i4-stroke)" pathLength="1" transform="translate(0 46)" />
         <path ref={lineRef} d={path} className="i4-line" stroke="url(#i4-stroke)" pathLength="1" />
+        <path d={path} className="i4-shimmer" pathLength="1" />
       </svg>
       <span ref={dotRef} className="i4-dot" aria-hidden="true" />
 
       <h1 className="i4-head" aria-hidden="true">
-        <span className="i4-mask"><span>Find the few</span></span>
-        <span className="i4-mask"><span className="i4-grad">worth owning.</span></span>
+        <span className="i4-mask"><span>{words("Find the few", 0)}</span></span>
+        <span className="i4-mask"><span className="i4-grad">{words("worth owning.", 3)}</span></span>
       </h1>
 
       <div className="i4-lockup" aria-hidden="true">
-        <span className="i4-logo-wrap"><span className="i4-ripple" /><span className="i4-ripple two" /><img ref={logoRef} src="/jocular-insights-dark.png" alt="" width="160" height="160" decoding="sync" /></span>
+        <span className="i4-logo-wrap"><span className="i4-ripple" /><span className="i4-ripple two" /><img ref={logoRef} src="/jocular-insights-dark.png" alt="" width="160" height="160" decoding="sync" /><span className="i4-glint" /></span>
         <div className="i4-name">Jocular <span>Insights</span></div>
       </div>
     </div>

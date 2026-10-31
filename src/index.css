@@ -4903,6 +4903,11 @@ tr:hover .row-acts { --row-bg: var(--s3); }
 @keyframes i4-half { to { opacity: 0.5; } }
 .i4-area { opacity: 0; animation: i4-in 900ms ease-out 0.55s forwards, i4-dim 600ms ease 1.75s forwards; }
 @keyframes i4-draw { to { stroke-dashoffset: 0; } }
+.i4-echo { fill: none; stroke-width: 2; vector-effect: non-scaling-stroke; opacity: 0.14; stroke-dasharray: 1; stroke-dashoffset: 1; animation: i4-draw 1300ms cubic-bezier(0.33, 1, 0.68, 1) 260ms forwards, i4-dim 600ms ease 1.75s forwards; }
+/* a bright run of light travelling up the line after it's drawn */
+.i4-shimmer { fill: none; stroke: #fff; stroke-width: 3; vector-effect: non-scaling-stroke; stroke-linecap: round; stroke-dasharray: 0.08 1; stroke-dashoffset: 0.08; opacity: 0;
+  filter: drop-shadow(0 0 5px rgba(220, 205, 255, 0.95)); animation: i4-shimmer 900ms cubic-bezier(0.45, 0, 0.25, 1) 1.25s forwards; }
+@keyframes i4-shimmer { 0% { opacity: 0; stroke-dashoffset: 0.08; } 15% { opacity: 0.9; } 100% { opacity: 0; stroke-dashoffset: -1; } }
 @keyframes i4-dim { to { opacity: 0.22; } }
 .i4-dot { position: absolute; left: 0; top: 0; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: #fff; will-change: transform;
   box-shadow: 0 0 0 6px rgba(233, 221, 255, 0.35), 0 0 28px 10px rgba(168, 107, 255, 0.7), 0 0 60px 24px rgba(62, 139, 255, 0.35);
@@ -4927,12 +4932,28 @@ tr:hover .row-acts { --row-bg: var(--s3); }
 .i4-mask:nth-child(1) > span { animation-delay: 0.5s; }
 .i4-mask:nth-child(2) > span { animation-delay: 0.66s; }
 @keyframes i4-rise { to { transform: none; } }
-@keyframes i4-head-out { to { transform: translateY(-40px); opacity: 0; filter: blur(6px); } }
+.i4-word { display: inline-block; white-space: pre; opacity: 0; transform: translateY(0.18em) scale(0.97); animation: i4-sharpen 620ms cubic-bezier(0.16, 1, 0.3, 1) calc(0.5s + var(--w) * 0.07s) forwards; }
+@keyframes i4-sharpen { to { opacity: 1; transform: none; } }
+/* the gradient line: each word carries its own part of the gradient, so a word
+   moving on its own never smears the line's single gradient across the others */
+.i4-head .i4-grad { background: none; color: inherit; }
+.i4-grad .i4-word { -webkit-background-clip: text; background-clip: text; color: transparent; }
+.i4-grad .i4-word:nth-child(1) { background-image: linear-gradient(90deg, #00E0BE, #2FB4F0); }
+.i4-grad .i4-word:nth-child(2) { background-image: linear-gradient(90deg, #3E8BFF, #A86BFF); }
+@keyframes i4-head-out { to { transform: translateY(-40px); opacity: 0; } }
 .i4-grad { background: linear-gradient(90deg, #00E0BE 0%, #3E8BFF 55%, #A86BFF 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
 /* the lockup */
 .i4-lockup { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: 18px; }
 .i4-lockup img { position: relative; width: min(40vw, 160px); height: auto; opacity: 0; transform: scale(0.6); filter: blur(10px) drop-shadow(0 0 30px rgba(62, 139, 255, 0.5)); }
 .i4.landed .i4-lockup img { animation: i4-come 760ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.i4-glint { position: absolute; inset: 0; border-radius: 50%; overflow: hidden; pointer-events: none; }
+.i4-glint::after { content: ""; position: absolute; inset: -20%; background: linear-gradient(115deg, transparent 40%, rgba(255, 255, 255, 0.75) 50%, transparent 60%); transform: translateX(-80%); mix-blend-mode: overlay; }
+.i4.landed .i4-glint::after { animation: i4-glint 900ms cubic-bezier(0.45, 0, 0.25, 1) 480ms forwards; }
+@keyframes i4-glint { to { transform: translateX(80%); } }
+/* the ending: the film falls away around the logo, which flies into the app's own */
+.i4.flying { opacity: 1 !important; transform: none !important; background: transparent; transition: background-color 560ms ease; }
+.i4.flying > :not(.i4-lockup), .i4.flying .i4-name, .i4.flying .i4-ripple, .i4.flying .i4-glint { opacity: 0 !important; transition: opacity 360ms ease; animation: none !important; }
+.i4.flying .i4-lockup img { opacity: 1; filter: none; transform: var(--fly); transition: transform 680ms cubic-bezier(0.65, 0, 0.35, 1); animation: none; }
 @keyframes i4-come { to { opacity: 1; transform: none; filter: blur(0) drop-shadow(0 0 30px rgba(62, 139, 255, 0.5)); } }
 .i4-name { font-size: clamp(30px, 8.4vw, 48px); font-weight: 700; letter-spacing: -0.035em; opacity: 0; transform: translateY(12px); }
 .i4.landed .i4-name { animation: i4-name 700ms cubic-bezier(0.16, 1, 0.3, 1) 160ms forwards; }
