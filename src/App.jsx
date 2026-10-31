@@ -6,7 +6,7 @@ import ExploreView from "./ExploreView.jsx";
 import PublicStock from "./PublicStock.jsx";
 import { api } from "./api.js";
 import Landing from "./Landing.jsx";
-import { PrivacyPage, DisclaimerPage, HelpPage, AboutPage } from "./LegalPages.jsx";
+import { PrivacyPage, DisclaimerPage, HelpPage, AboutPage, MeasuresPage } from "./LegalPages.jsx";
 import MethodologyPage from "./MethodologyPage.jsx";
 import StockScreenerPage from "./StockScreenerPage.jsx";
 import { ScreensIndexPage, ScreenPage, ResultsCalendarPage, SectorsIndexPage, SectorPage } from "./PublicLists.jsx";
@@ -199,7 +199,7 @@ export default function App() {
           return;
         }
 
-        if (["/privacy", "/disclaimer", "/help", "/about", "/methodology", "/reset-password", "/stock-screener-india", "/screens", "/results-calendar", "/sectors", "/explore", "/news", "/learn"].includes(currentPath) || /^\/(screens|sector|learn)\//.test(currentPath) || /^\/stock\/[^/]+\/./.test(currentPath)) {
+        if (["/privacy", "/disclaimer", "/help", "/measures", "/about", "/methodology", "/reset-password", "/stock-screener-india", "/screens", "/results-calendar", "/sectors", "/explore", "/news", "/learn"].includes(currentPath) || /^\/(screens|sector|learn)\//.test(currentPath) || /^\/stock\/[^/]+\/./.test(currentPath)) {
           if (canGoBack) window.history.back();
           else navigate("/", { replace: true });
           return;
@@ -309,6 +309,7 @@ export default function App() {
   if (path === "/privacy") return <PrivacyPage signedIn={!!account} />;
   if (path === "/disclaimer") return <DisclaimerPage signedIn={!!account} />;
   if (path === "/help") return <HelpPage signedIn={!!account} />;
+  if (path === "/measures") return <MeasuresPage signedIn={!!account} />;
   if (path === "/about") return <AboutPage signedIn={!!account} />;
   if (path === "/methodology") return <MethodologyPage signedIn={!!account} />;
   if (path === "/stock-screener-india") return <StockScreenerPage signedIn={!!account} />;

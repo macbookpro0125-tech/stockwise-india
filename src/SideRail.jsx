@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Sun, Moon, X, CalendarDays, TrendingUp, TrendingDown, Tag, CircleDollarSign, PieChart } from "lucide-react";
+import { Sun, Moon, X, Menu, CalendarDays, TrendingUp, TrendingDown, Tag, CircleDollarSign, PieChart } from "lucide-react";
 import { tabsFor, useTabBadges, GridIcon } from "./Header.jsx";
 import { BrandMark } from "./site.jsx";
 import CompanyLogo from "./CompanyLogo.jsx";
@@ -168,12 +168,18 @@ export default function SideRail({ tab, onTab, account, theme, onToggleTheme, on
   const phone = usePhone();
   const badges = useTabBadges();
   const [peek, setPeek] = useState(null);
+  // The Workspace gets the whole width (31 Oct 2026): there the bar hides,
+  // and comes back over the page from ☰ at the top left, or the mouse at
+  // the left edge, or the keyboard reaching it
+  const tucked = tab === "workspace" && !openSymbol;
+  const [shown, setShown] = useState(false);
   // the page's content moves over for the bar (index.css html.has-rail)
   useEffect(() => {
-    document.documentElement.classList.toggle("has-rail", !phone);
-    return () => document.documentElement.classList.remove("has-rail");
-  }, [phone]);
-  useEffect(() => { setPeek(null); }, [tab, openSymbol]);
+    document.documentElement.classList.toggle("has-rail", !phone && !tucked);
+    document.documentElement.classList.toggle("rail-tucked", !phone && tucked);
+    return () => document.documentElement.classList.remove("has-rail", "rail-tucked");
+  }, [phone, tucked]);
+  useEffect(() => { setPeek(null); setShown(false); }, [tab, openSymbol]);
   if (phone) return null;
   const tabs = tabsFor(account);
   const go = id => { setPeek(null); onTab(id); };
@@ -186,7 +192,15 @@ export default function SideRail({ tab, onTab, account, theme, onToggleTheme, on
   const label = id => tabs.find(t => t.id === id)?.label ?? id;
   return (
     <>
-      <nav className="side-rail" aria-label="Pages" data-tour="tabs">
+      {tucked && !shown && (
+        <>
+          <button type="button" className="sr-reveal" aria-label="Show the pages" title="Pages" onClick={() => setShown(true)}><Menu size={18} aria-hidden="true" /></button>
+          <div className="sr-edge" aria-hidden="true" onMouseEnter={() => setShown(true)} />
+        </>
+      )}
+      <nav className={`side-rail${tucked ? " sr-tucked" : ""}${tucked && shown ? " sr-shown" : ""}`} aria-label="Pages" data-tour="tabs"
+        onMouseLeave={tucked ? () => { if (!peek) setShown(false); } : undefined}
+        onFocus={tucked ? () => setShown(true) : undefined}>
         <a href="/" className="sr-home" aria-label="Jocular Insights home" onClick={e => { e.preventDefault(); go("discover"); }}><BrandMark size={null} className="sr-mark" /></a>
         {/* a company's page puts its chapters here instead (StockDetail.jsx) */}
         {openSymbol ? <div className="sr-group-gap" /> : <div className="sr-group">

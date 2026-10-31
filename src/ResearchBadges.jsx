@@ -73,3 +73,32 @@ export function OverallScore({ research }) {
     </span>
   );
 }
+
+// A score as a short bar for the table (31 Oct 2026, "it should show
+// visually"): the number, then a bar filled to it in its band's colour, so
+// a column of scores compares at a glance. The heading carries "/100".
+export function ScoreBar({ value, tone, title, width = 52 }) {
+  const v = value == null ? null : Math.max(0, Math.min(100, Math.round(value)));
+  return (
+    <span className="score-bar" title={title}>
+      <b style={{ color: v == null ? "var(--t3)" : "var(--t1)" }}>{v == null ? "—" : v}</b>
+      <span className="score-bar-track" style={{ width }} aria-hidden="true">
+        {v != null && <span style={{ width: `${v}%`, background: tone.dot, boxShadow: `0 0 8px -1px ${tone.dot}` }} />}
+      </span>
+    </span>
+  );
+}
+export function QualityBar({ research }) {
+  return <ScoreBar value={research?.quality ?? null} tone={qualityTone(research?.quality ?? null)} title={researchTitle(research)} />;
+}
+// The research score's bar, its stance in small words beneath
+export function ResearchBar({ research }) {
+  const v = research?.overall ?? null;
+  const t = overallTone(v);
+  return (
+    <span style={{ display: "inline-flex", flexDirection: "column", gap: 3 }}>
+      <ScoreBar value={v} tone={t} title={researchTitle(research)} width={44} />
+      <span style={{ fontSize: 10.5, fontWeight: 500, color: research?.stance === "Review required" ? "var(--red)" : v == null ? "var(--t3)" : t.color }}>{research?.stance ?? "Not rated"}</span>
+    </span>
+  );
+}

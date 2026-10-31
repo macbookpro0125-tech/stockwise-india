@@ -129,3 +129,11 @@ export function boardItem(def) {
   const choices = rangeChoices(def);
   return choices.length ? { id: def.id, label: def.label, choices } : null;
 }
+
+// A range set elsewhere (a strategy, the sliders) in plain words, for the
+// dropdown that has no choice for it: "Up to 0.3×", "20% or more", "10 to 20"
+export function rangeWords(def, f) {
+  if (!f || (f.min == null && f.max == null)) return "Any";
+  if (f.min != null && f.max != null) return `${amountWords(def, f.min)} to ${amountWords(def, f.max)}`;
+  return f.min != null ? `${amountWords(def, f.min)} or more` : `Up to ${amountWords(def, f.max)}`;
+}

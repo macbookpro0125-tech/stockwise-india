@@ -105,6 +105,9 @@ export async function openPage(page, name) {
   // a computer: the pages are in the bar down the left (26 Oct 2026);
   // Watchlist, Portfolio and Alerts open a peek first, whose Open goes there
   const rail = page.locator("nav.side-rail");
+  // the Workspace tucks the bar away (31 Oct 2026): its ☰ brings it back
+  const reveal = page.getByRole("button", { name: "Show the pages" });
+  if (await reveal.isVisible().catch(() => false)) await reveal.click();
   if (await rail.isVisible().catch(() => false)) {
     // a company's page shows its chapters in the bar instead (27 Oct 2026): back first
     if (!(await rail.getByRole("button", { name: re }).count())) await page.getByRole("button", { name: /^Back to / }).first().click();
@@ -139,3 +142,7 @@ export async function openChapter(page, name) {
 }
 
 export { expect };
+
+// The screen's name over the list (31 Oct 2026): a computer's heading
+// (StrategyPicker.jsx .sp-name-big), else the title a phone shows
+export const screenTitle = page => page.locator(".sp-name-big, .screen-title:not(.sr-only)").first();

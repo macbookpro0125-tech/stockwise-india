@@ -1716,7 +1716,7 @@ select {
   padding-right: 32px !important;
 }
 
-.screen-head { margin: 4px 0 26px; }
+.screen-head { margin: 4px 0 18px; }
 .screen-back { display: inline-flex; align-items: center; gap: 2px; margin: 0 0 12px -4px; padding: 2px 4px; border: 0; border-radius: 6px; background: none; color: var(--accent); font: 500 14px/1.2 var(--font); cursor: pointer; }
 .screen-back:hover { text-decoration: underline; text-underline-offset: 3px; }
 .screen-back:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -1740,7 +1740,7 @@ select {
 .screen-head-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
 .screen-title { margin: 0; font-size: clamp(26px, 2.6vw, 36px); font-weight: 500; line-height: 1.1; letter-spacing: -0.03em; color: var(--t1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .screen-about { margin: 8px 0 0; max-width: 76ch; font-size: 15px; line-height: 1.5; color: var(--t2); }
-.screen-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.screen-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
 /* Discover's start page: no tab row; its stock lists have it (Header.jsx) */
 html[data-discover-step="strategies"] .discovery-tabs.tabs-on-discover { display: none !important; }
@@ -4376,15 +4376,17 @@ html.no-blur .sr-group { box-shadow: none; }
 .fb-tools { flex: none; display: flex; align-items: center; gap: 6px; }
 .fb-icon { width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: var(--r-sm, 8px); background: none; color: var(--t2); cursor: pointer; }
 .fb-icon:disabled { opacity: .35; cursor: default; }
-.fb-find { width: 210px; height: 32px; box-sizing: border-box; padding: 0 12px; border-radius: 8px; border: 1px solid var(--bdr2); background: var(--s2); color: var(--t1); font: 400 13px var(--font); }
+.fb-find { width: 190px; height: 32px; box-sizing: border-box; padding: 0 12px; border-radius: 8px; border: 1px solid var(--bdr2); background: var(--s2); color: var(--t1); font: 400 13px var(--font); }
 .fb-find:focus, .fb-own input:focus { outline: none; border-color: var(--accent); }
 .fb-fold { height: 32px; padding: 0 10px; border: 0; border-radius: 8px; background: none; color: var(--t2); font: 500 12.5px var(--font); cursor: pointer; white-space: nowrap; }
-.fb-body { padding: 14px 18px 16px; max-height: min(52vh, 460px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.fb-body { padding: 12px 14px 14px; }
 .fb-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 22px; }
 .fb-item { display: grid; grid-template-columns: minmax(0, 132px) minmax(0, 1fr); align-items: center; gap: 10px; }
 .fb-item label { font-size: 12.5px; color: var(--t2); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .fb-select { width: 100%; min-width: 0; height: 30px; padding: 0 6px; border-radius: 7px; border: 1px solid var(--bdr2); background: var(--s2); color: var(--t1); font: 400 12.5px var(--font); cursor: pointer; }
-.fb-select:not(.on) { color: var(--t2); }
+/* an empty filter is quiet text; only one that's on gets a box */
+.fb-select:not(.on) { border-color: transparent; background-color: transparent; color: var(--t3); }
+.fb-select:not(.on):focus-visible { border-color: var(--bdr2); }
 .fb-select.on { border-color: color-mix(in srgb, var(--accent) 60%, transparent); background: color-mix(in srgb, var(--accent) 13%, var(--s2)); color: var(--accent); }
 .fb-own { display: flex; align-items: center; gap: 10px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--bdr); }
 .fb-own label { font-size: 12.5px; color: var(--t2); }
@@ -4392,19 +4394,13 @@ html.no-blur .sr-group { box-shadow: none; }
 .fb-own .fb-link { margin-left: auto; font-size: 12.5px; }
 .fb-none { margin: 4px 0; font-size: 13px; color: var(--t2); }
 .fb-link { border: 0; background: none; padding: 0; color: var(--accent); font: inherit; cursor: pointer; }
-.fb-active { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 14px; }
 .fb-chip { min-height: 30px; padding: 0 12px; border-radius: 999px; border: 0; background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); font: 500 12.5px var(--font); cursor: pointer; }
 .fb-chip span { margin-left: 5px; opacity: .75; }
-.fb-add { min-height: 30px; padding: 0 12px; border-radius: 999px; border: 1px dashed var(--bdr2); background: none; color: var(--t2); font: 500 12.5px var(--font); cursor: pointer; }
-.fb-clear { font-size: 12.5px; color: var(--t3); margin-left: 2px; }
-.fb-count { margin-left: auto; font-size: 13px; color: var(--t2); }
-.fb-count b { font-size: 15px; color: var(--t1); font-weight: 600; }
-.fb button:focus-visible, .fb select:focus-visible, .fb-chip:focus-visible, .fb-add:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.fb button:focus-visible, .fb select:focus-visible, .fb-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 @media (hover: hover) and (pointer: fine) {
   .fb-tabs button:hover, .fb-fold:hover, .fb-icon:hover:not(:disabled) { color: var(--t1); background: var(--s2); }
-  .fb-select:hover { border-color: var(--t3); }
+  .fb-select:hover { border-color: var(--bdr2); background-color: var(--s2); color: var(--t1); }
   .fb-chip:hover { background: color-mix(in srgb, var(--accent) 22%, transparent); }
-  .fb-add:hover { color: var(--accent); border-color: var(--accent); }
 }
 @media (min-width: 1700px) { .fb-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
 @media (max-width: 1050px) { .fb-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .fb-find { width: 160px; } }
@@ -4417,3 +4413,322 @@ html.no-blur .sr-group { box-shadow: none; }
 .sc-find:focus { outline: none; border-color: var(--accent); }
 .sc-none { margin: 0 0 18px; font-size: 13.5px; color: var(--t2); }
 
+
+/* The board folded: what's on, in one line (FilterBoard.jsx) */
+.fb-summary { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 2px 4px; }
+.fb-summary .fb-none { margin: 0; font-size: 13px; color: var(--t3); }
+.fb-more { flex: none; height: 32px; padding: 0 8px; border: 0; border-radius: 8px; background: none; color: var(--t2); font: 500 12.5px var(--font); cursor: pointer; }
+.fb-more.on { background: var(--s3); color: var(--t1); font-weight: 600; }
+@media (hover: hover) and (pointer: fine) { .fb-more:hover { color: var(--t1); background: var(--s2); } }
+
+/* The Workspace's header on a computer: the name with ▾, the count, Share, Save (StrategyPicker.jsx) */
+.sp-plain { margin: 0; }
+.sp-title { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 2px 6px 2px 0; border: 0; background: none; color: var(--t1); font: 600 clamp(24px, 2.2vw, 30px)/1.15 var(--font); letter-spacing: -0.025em; cursor: pointer; }
+.sp-title span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sp-title svg { flex: none; color: var(--t3); transition: transform 160ms ease-out, color 160ms; }
+.sp-title[aria-expanded="true"] svg { transform: rotate(180deg); color: var(--accent); }
+.sp-title:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+@media (hover: hover) and (pointer: fine) { .sp-title:hover svg { color: var(--accent); } }
+.sp-plain .sp-buttons { position: static; transform: none; display: inline-flex; vertical-align: middle; margin-left: 2px; }
+.sp-plain .sp-pop { top: calc(100% + 8px); left: 0; right: auto; transform-origin: top left; }
+.screen-count { margin-right: 6px; font-size: 13px; color: var(--t2); white-space: nowrap; }
+.screen-count b { font-size: 15px; font-weight: 600; color: var(--t1); }
+
+/* The table's quality badge opens the six-factor profile (ResultsTable.jsx) */
+.qb-toggle { display: inline-flex; align-items: center; gap: 4px; padding: 0; border: 0; background: none; cursor: pointer; color: var(--t3); }
+.qb-toggle svg { transition: transform 160ms ease-out; }
+.qb-toggle svg[data-open] { transform: rotate(180deg); color: var(--accent); }
+.qb-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 999px; }
+@media (hover: hover) and (pointer: fine) { .qb-toggle:hover svg { color: var(--accent); } }
+
+/* The results table, open on the page (ResultsTable.jsx) */
+.rt-open { border-top: 1px solid var(--bdr); }
+.rt-open-scroll { overflow-x: auto; scrollbar-width: thin; }
+.rt-open .data-table tbody tr td { border-bottom: 1px solid var(--bdr); }
+
+/* The Workspace: the left bar tucked away, back over the page on demand (SideRail.jsx) */
+.side-rail.sr-tucked { transform: translateX(-100%); transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1); box-shadow: none; }
+.side-rail.sr-tucked.sr-shown { transform: none; box-shadow: 12px 0 40px rgba(0, 0, 0, 0.35); }
+.sr-reveal { position: absolute; top: 42px; left: 14px; z-index: 121; width: 36px; height: 36px; display: grid; place-items: center; border: 1px solid var(--bdr2); border-radius: 10px; background: var(--s2); color: var(--t2); cursor: pointer; }
+.sr-reveal:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) { .sr-reveal:hover { color: var(--accent); border-color: var(--accent); } }
+.sr-edge { position: fixed; top: 64px; bottom: 0; left: 0; width: 8px; z-index: 119; }
+@media (prefers-reduced-motion: reduce) { .side-rail.sr-tucked { transition: opacity 150ms ease; } }
+html.rail-tucked .app-header a[aria-label="Jocular Insights home"] { margin-left: 40px; }
+.rt-thead { position: relative; z-index: 4; }
+.rt-thead.rt-thead-stuck th { box-shadow: 0 8px 16px -10px rgba(0, 0, 0, 0.6); }
+
+/* The Workspace's one toolbar row over the table: views left, tools right (ResultsTable.jsx) */
+.results-topbar .rt-lead { flex: 1 1 auto; min-width: 0; }
+.results-topbar .rt-lead::-webkit-scrollbar { display: none; }
+.results-topbar .rt-lead .ss-seg { flex-wrap: nowrap; }
+.rt-find { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 10px; border-radius: 9px; border: 1px solid var(--bdr2); background: var(--s2); color: var(--t3); }
+.rt-find input { width: 150px; border: 0; background: none; color: var(--t1); font: 400 13px var(--font); outline: none; }
+.rt-find:focus-within { border-color: var(--accent); }
+.screen-count small { font-size: 12px; color: var(--t3); }
+.results-topbar:has(> .rt-lead) { flex-wrap: nowrap; }
+.results-topbar:has(> .rt-lead) .rt-actions { flex: none; }
+.results-topbar:has(> .rt-lead) .tb-label { display: none; }
+.results-topbar .rt-lead .ss-seg button { padding: 0 8px; white-space: nowrap; }
+.rt-find input { width: 120px; }
+
+/* The column views: as many as fit, the rest behind + (ViewTabs.jsx) */
+.vt { position: relative; min-width: 0; }
+.vt-ruler { position: absolute; visibility: hidden; pointer-events: none; left: 0; top: 0; white-space: nowrap; }
+.vt .ss-seg { flex-wrap: nowrap; }
+.vt-more { display: inline-flex; align-items: center; justify-content: center; min-width: 38px; }
+.vt-menu { position: absolute; top: calc(100% + 6px); left: auto; right: 0; z-index: 30; min-width: 170px; padding: 6px; border-radius: 12px; border: 1px solid var(--bdr2); background: var(--s2); box-shadow: var(--sh-lg, 0 18px 40px rgba(0,0,0,.35)); display: flex; flex-direction: column; transform-origin: top right; animation: sp-in 160ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+.vt-menu button { height: 34px; padding: 0 12px; border: 0; border-radius: 8px; background: none; color: var(--t1); font: 400 13.5px var(--font); text-align: left; cursor: pointer; }
+.vt-menu button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+@media (hover: hover) and (pointer: fine) { .vt-menu button:hover { background: var(--s3); } }
+
+/* Watch, alert and NSE beside a company's name, on hover or focus (ResultsTable.jsx) */
+.row-acts { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); display: flex; gap: 4px; padding-left: 18px; opacity: 0; transition: opacity 120ms;
+  background: linear-gradient(to right, transparent, var(--row-bg, var(--s2)) 16px); pointer-events: none; }
+tr:hover .row-acts, tr:focus-within .row-acts { pointer-events: auto; }
+.row-acts[data-watched] { pointer-events: auto; }
+.row-acts[data-watched] { opacity: 1; }
+.row-acts[data-watched] > :not(:first-child) { opacity: 0; transition: opacity 120ms; }
+tr:hover .row-acts, tr:focus-within .row-acts, tr:hover .row-acts > *, tr:focus-within .row-acts > * { opacity: 1; }
+.row-nse { width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 7px; border: 1px solid var(--bdr2); color: var(--t3); text-decoration: none; }
+@media (hover: none) { .row-acts, .row-acts > * { opacity: 1 !important; } }
+tr:hover .row-acts { --row-bg: var(--s3); }
+/* Table headings on one line, a size smaller, the unit beside the name (ResultsTable.jsx) */
+.data-table thead th { font-size: 11.5px !important; padding-top: 8px !important; padding-bottom: 8px !important; }
+.data-table thead .th-unit { display: none; }
+.th-u { margin-left: 3px; font-size: 10.5px; font-weight: 400; color: var(--t3); }
+/* Columns move by dragging their heading (ResultsTable.jsx) */
+.data-table thead th.th-move { cursor: grab; }
+.data-table thead th.th-move:active { cursor: grabbing; }
+.data-table thead th.th-over { box-shadow: inset 2px 0 0 var(--accent) !important; }
+/* A column's ▾ menu: its name, 🗑, and its period (ColumnMenu.jsx) */
+.cm-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 8px; padding: 6px 6px 10px 10px; margin-bottom: 4px; border-bottom: 1px solid var(--bdr2); }
+.cm-head strong { font-size: 14px; font-weight: 600; color: var(--t1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cm-trash { width: 30px; height: 30px; display: grid; place-items: center; border: 0; border-radius: 8px; background: none; color: var(--t2); cursor: pointer; }
+.cm-trash:focus-visible { outline: 2px solid var(--accent); }
+@media (hover: hover) and (pointer: fine) { .cm-trash:hover { color: var(--red); background: color-mix(in srgb, var(--red) 12%, transparent); } }
+.cm-period { grid-column: 1 / -1; justify-self: start; height: 28px; padding: 0 6px; border: 0; border-radius: 7px; background: var(--s2); color: var(--t2); font: 400 13px var(--font); cursor: pointer; }
+/* /measures: every measure in full (LegalPages.jsx) */
+.measure { padding: 12px 0 14px; border-bottom: 1px solid var(--bdr); scroll-margin-top: 80px; }
+.measure h3 { margin: 0 0 4px; font-size: 14.5px; font-weight: 500; color: var(--t1); }
+.measure h3 small { font-size: 12px; font-weight: 400; color: var(--t3); }
+.measure-here { background: color-mix(in srgb, var(--accent) 8%, transparent); border-radius: 8px; padding-left: 10px; padding-right: 10px; }
+
+/* The filter board's group cards (FilterBoard.jsx, 31 Oct 2026): a heading
+   per kind, and in each row the name left, its value a chip right */
+.fb-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: start; }
+.fb-cards.fb-cards-one { grid-template-columns: minmax(0, 1fr); }
+.fb-cards-one .fb-rows { columns: 3 260px; column-gap: 28px; }
+.fb-cards-one .fb-card .fb-item { break-inside: avoid; }
+.fb-card { border: 1px solid var(--bdr); border-radius: 12px; background: var(--bg); padding: 10px 12px 6px; min-width: 0; }
+.fb-card h3 { display: flex; align-items: center; justify-content: space-between; margin: 0 0 4px; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--t3); }
+.fb-card h3 span { font-size: 11px; letter-spacing: 0; text-transform: none; color: var(--accent); font-weight: 600; }
+.fb-rows .fb-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 38px; border-top: 1px solid color-mix(in srgb, var(--bdr) 70%, transparent); }
+.fb-rows .fb-item:first-child { border-top: 0; }
+.fb-rows .fb-item label { flex: 1 1 auto; min-width: 0; font-size: 13px; color: var(--t1); text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fb-rows .fb-select { flex: none; width: 150px; height: 28px; padding: 0 26px 0 10px; border-radius: 999px; font-size: 12.5px; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;
+  appearance: none; -webkit-appearance: none; background-repeat: no-repeat; background-position: right 9px center; background-size: 10px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238a8aa0' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+.fb-rows .fb-select:not(.on) { border: 1px solid var(--bdr2); background-color: transparent; color: var(--t3); }
+.fb-rows .fb-select.on { border: 1px solid transparent; background-color: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); font-weight: 500; }
+@media (hover: hover) and (pointer: fine) { .fb-rows .fb-select:not(.on):hover { border-color: var(--t3); color: var(--t1); } }
+@media (max-width: 1100px) { .fb-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.fb-rows > div > .fb-item { border-top: 0 !important; }
+.fb-rows > div + div { border-top: 1px solid color-mix(in srgb, var(--bdr) 70%, transparent); }
+.fb-rows > div { break-inside: avoid; }
+.fb-tabs { -webkit-mask-image: linear-gradient(to right, black calc(100% - 28px), transparent); mask-image: linear-gradient(to right, black calc(100% - 28px), transparent); padding-right: 24px; }
+
+/* Customise: one list of every filter, ticked ones on the board (FilterBoard.jsx) */
+.cf-scrim { position: fixed; inset: 0; z-index: 400; display: grid; place-items: center; padding: 16px; background: rgba(0, 0, 0, 0.45); animation: fadeIn 150ms ease-out; }
+.cf { width: min(720px, 100%); max-height: min(86vh, 760px); display: flex; flex-direction: column; border-radius: 18px; border: 1px solid var(--bdr2); background: var(--s2); box-shadow: 0 30px 70px rgba(0, 0, 0, 0.4); overflow: hidden; }
+.cf-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 18px 20px 10px; }
+.cf-head h3 { margin: 0; font-size: 18px; font-weight: 600; color: var(--t1); letter-spacing: -0.01em; }
+.cf-head p { margin: 4px 0 0; font-size: 13px; color: var(--t3); }
+.cf-head p b { color: var(--accent); }
+.cf-done { height: 34px; padding: 0 18px; font-size: 13px; }
+.cf-find { margin: 0 20px 8px; height: 38px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--bdr2); background: var(--s1, var(--bg)); color: var(--t1); font: 400 14px var(--font); }
+.cf-find:focus { outline: none; border-color: var(--accent); }
+.cf-list { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 4px 20px 12px; columns: 2 280px; column-gap: 28px; }
+.cf-list section { break-inside: avoid; margin-bottom: 14px; }
+.cf-list h4 { margin: 8px 0 4px; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--t3); }
+.cf-row { display: flex; align-items: center; gap: 10px; min-height: 32px; font-size: 13.5px; color: var(--t1); cursor: pointer; }
+.cf-row input { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+.cf-foot { padding: 10px 20px 14px; border-top: 1px solid var(--bdr); font-size: 12.5px; color: var(--t3); }
+/* Customise filters: easy to see (FilterBoard.jsx) */
+.fb-custom { flex: none; display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 8px; border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent); background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--accent); font: 600 12.5px var(--font); cursor: pointer; white-space: nowrap; }
+.fb-custom:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) { .fb-custom:hover { background: color-mix(in srgb, var(--accent) 18%, transparent); } }
+/* The kind tabs that fit, the rest under More (FilterBoard.jsx) */
+.fb-tabs { position: relative; overflow: hidden; -webkit-mask-image: none; mask-image: none; padding-right: 0; }
+.fb-tabs-ruler { position: absolute; left: 0; top: 0; display: flex; gap: 2px; visibility: hidden; pointer-events: none; white-space: nowrap; }
+.fb-more { width: auto; max-width: 128px; text-overflow: ellipsis; }
+.fb-find { width: clamp(120px, 14vw, 190px); }
+@media (max-width: 1100px) { .fb-custom-words { display: none; } .fb-custom { padding: 0 9px; } }
+
+/* ── Liquid glass on the Workspace (31 Oct 2026) ─────────────────────────
+   Only on what floats above the content — the pinned table heading, the
+   menus, the Choose-your-filters panel, the page bar over the Workspace —
+   never on the figures themselves. A bright top edge is light catching the
+   glass; menus arrive as a material (scale and blur together), not a fade.
+   "Reduce transparency" in the system settings makes them solid. */
+:root { --glass: color-mix(in srgb, var(--s2) 78%, transparent); --glass-thick: color-mix(in srgb, var(--s2) 90%, transparent);
+  --glass-edge: inset 0 1px 0 rgba(255, 255, 255, 0.10), inset 0 0 0 1px rgba(255, 255, 255, 0.04); }
+:root[data-theme="light"] { --glass: rgba(255, 255, 255, 0.74); --glass-thick: rgba(255, 255, 255, 0.88);
+  --glass-edge: inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 0 0 1px rgba(0, 0, 0, 0.04); }
+
+/* the table's heading, pinned: rows pass softly under it */
+.rt-thead.rt-thead-stuck th { background: var(--glass) !important; -webkit-backdrop-filter: blur(18px) saturate(180%); backdrop-filter: blur(18px) saturate(180%); }
+
+/* menus: the column ▾, + views, Export */
+.column-menu, .vt-menu, .export-menu-list {
+  background: var(--glass-thick) !important; -webkit-backdrop-filter: blur(40px) saturate(180%); backdrop-filter: blur(40px) saturate(180%);
+  border-color: color-mix(in srgb, var(--bdr2) 70%, transparent) !important;
+  box-shadow: var(--glass-edge), 0 22px 50px rgba(0, 0, 0, 0.32), 0 3px 10px rgba(0, 0, 0, 0.12) !important;
+  animation: glass-in 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.column-menu { transform-origin: top right; }
+@keyframes glass-in { from { opacity: 0; transform: scale(0.96); filter: blur(4px); } }
+
+/* Choose your filters: a glass sheet over a dimmed, blurred page */
+.cf-scrim { background: rgba(0, 0, 0, 0.32); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.cf { background: var(--glass-thick); -webkit-backdrop-filter: blur(40px) saturate(180%); backdrop-filter: blur(40px) saturate(180%);
+  box-shadow: var(--glass-edge), 0 40px 90px rgba(0, 0, 0, 0.45); animation: glass-in 240ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+.cf-find { background: color-mix(in srgb, var(--bg) 55%, transparent); }
+
+/* the page bar sliding over the Workspace, and its ☰ */
+.side-rail.sr-tucked.sr-shown { background: var(--glass-thick); -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%); box-shadow: var(--glass-edge), 16px 0 44px rgba(0, 0, 0, 0.3); }
+.sr-reveal { background: var(--glass); -webkit-backdrop-filter: blur(18px) saturate(180%); backdrop-filter: blur(18px) saturate(180%); box-shadow: var(--glass-edge); }
+
+@media (prefers-reduced-transparency: reduce) {
+  .rt-thead.rt-thead-stuck th, .column-menu, .vt-menu, .export-menu-list, .cf, .side-rail.sr-tucked.sr-shown, .sr-reveal { background: var(--s2) !important; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .cf-scrim { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(0, 0, 0, 0.5); }
+}
+@media (prefers-reduced-motion: reduce) { .column-menu, .vt-menu, .export-menu-list, .cf { animation: fadeIn 150ms ease; } }
+
+/* The filter cards and their chips: a glass finish — light and edges, no
+   blur, since nothing sits behind them to see through (31 Oct 2026) */
+.fb-card { background: linear-gradient(180deg, color-mix(in srgb, var(--t1) 3.5%, var(--bg)), var(--bg) 60%);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--t1) 7%, transparent); }
+:root[data-theme="light"] .fb-card { background: linear-gradient(180deg, #fff, color-mix(in srgb, var(--s2) 60%, #fff)); box-shadow: inset 0 1px 0 #fff, 0 1px 2px rgba(0, 0, 0, 0.04); }
+/* a filter that's on: a lit liquid-glass pill */
+.fb-rows .fb-select.on {
+  background-color: transparent;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%2300E0BE' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"),
+    linear-gradient(180deg, color-mix(in srgb, var(--accent) 26%, transparent), color-mix(in srgb, var(--accent) 12%, transparent));
+  background-repeat: no-repeat, no-repeat; background-position: right 9px center, 0 0; background-size: 10px, 100% 100%;
+  border: 1px solid color-mix(in srgb, var(--accent) 38%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 22%, transparent), inset 0 -1px 0 color-mix(in srgb, var(--accent) 20%, transparent), 0 2px 10px -4px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+:root[data-theme="light"] .fb-rows .fb-select.on { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 2px 8px -4px color-mix(in srgb, var(--accent) 50%, transparent); }
+@media (prefers-reduced-transparency: reduce) { .fb-rows .fb-select.on { background-image: none; background-color: color-mix(in srgb, var(--accent) 18%, var(--s2)); box-shadow: none; } }
+
+/* The filter cards as the menus' glass (31 Oct 2026): the same frosted
+   surface, bright top edge and soft shadow; pointed at, a card lifts a
+   little and glows */
+.fb-card {
+  background: var(--glass-thick); -webkit-backdrop-filter: blur(28px) saturate(170%); backdrop-filter: blur(28px) saturate(170%);
+  border: 1px solid color-mix(in srgb, var(--bdr2) 70%, transparent);
+  box-shadow: var(--glass-edge), 0 10px 28px -12px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.12);
+  transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 220ms ease, border-color 220ms ease;
+}
+:root[data-theme="light"] .fb-card { background: var(--glass-thick); box-shadow: var(--glass-edge), 0 10px 26px -14px rgba(16, 24, 40, 0.28), 0 1px 3px rgba(16, 24, 40, 0.06); }
+@media (hover: hover) and (pointer: fine) {
+  .fb-card:hover, .fb-card:focus-within {
+    transform: translateY(-3px);
+    border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+    box-shadow: var(--glass-edge), 0 18px 40px -14px rgba(0, 0, 0, 0.55), 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent), 0 8px 28px -10px color-mix(in srgb, var(--accent) 45%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) { .fb-card { transition: box-shadow 150ms ease, border-color 150ms ease; } .fb-card:hover, .fb-card:focus-within { transform: none; } }
+@media (prefers-reduced-transparency: reduce) { .fb-card { background: var(--s2); -webkit-backdrop-filter: none; backdrop-filter: none; } }
+
+/* A table row pointed at: the cards' glass glow (31 Oct 2026) — a soft teal
+   tint, a teal edge on the left, teal hairlines above and below; the
+   pinned cells light with it */
+.rt-row > td { transition: background-color 160ms ease, box-shadow 160ms ease; }
+@media (hover: hover) and (pointer: fine) {
+  .rt-row:hover > td {
+    background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 16%, var(--s2)), color-mix(in srgb, var(--accent) 9%, var(--s2))) !important;
+    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--accent) 60%, transparent), inset 0 -1px 0 color-mix(in srgb, var(--accent) 60%, transparent), inset 0 12px 18px -14px color-mix(in srgb, #fff 18%, transparent) !important;
+  }
+  .rt-row:hover > td:first-child { box-shadow: inset 3px 0 0 var(--accent), inset 0 1px 0 color-mix(in srgb, var(--accent) 60%, transparent), inset 0 -1px 0 color-mix(in srgb, var(--accent) 60%, transparent) !important; }
+  .rt-row:hover .row-acts { --row-bg: color-mix(in srgb, var(--accent) 8%, var(--s2)); }
+}
+.rt-row:focus-within > td { background: color-mix(in srgb, var(--accent) 7%, var(--s2)) !important; }
+/* A card's ✎ (FilterBoard.jsx) */
+.fb-card-tail { display: inline-flex; align-items: center; gap: 6px; font-style: normal; }
+.fb-card-edit { width: 22px; height: 22px; display: grid; place-items: center; padding: 0; border: 1px solid var(--bdr2); border-radius: 6px; background: none; color: var(--t3); cursor: pointer; }
+.fb-card-edit:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+@media (hover: hover) and (pointer: fine) { .fb-card-edit:hover, .fb-card:hover .fb-card-edit { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 50%, transparent); } }
+/* One focus ring on the panel's search, not two (FilterBoard.jsx) */
+.cf-find:focus, .cf-find:focus-visible { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
+.fb-find:focus-visible, .rt-find input:focus-visible { outline: none; }
+/* The panel's search: bigger, glass, a soft teal glow while typing (FilterBoard.jsx) */
+.cf-search { position: relative; display: flex; align-items: center; gap: 10px; margin: 2px 20px 12px; height: 46px; padding: 0 14px; border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--bdr2) 80%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--t1) 6%, transparent), color-mix(in srgb, var(--t1) 2%, transparent));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 9%, transparent), 0 1px 2px rgba(0, 0, 0, 0.2);
+  color: var(--t3); transition: border-color 160ms ease, box-shadow 200ms ease, background 200ms ease; cursor: text; }
+.cf-search .cf-find { flex: 1; min-width: 0; margin: 0; height: 100%; padding: 0; border: 0 !important; background: none !important; box-shadow: none !important; font: 400 15.5px var(--font); color: var(--t1); outline: none; }
+.cf-search:focus-within { border-color: color-mix(in srgb, var(--accent) 70%, transparent); color: var(--accent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 9%, transparent), color-mix(in srgb, var(--accent) 3%, transparent));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 12%, transparent), 0 0 0 4px color-mix(in srgb, var(--accent) 14%, transparent), 0 6px 24px -6px color-mix(in srgb, var(--accent) 45%, transparent); }
+:root[data-theme="light"] .cf-search { background: rgba(255, 255, 255, 0.7); box-shadow: inset 0 1px 0 #fff, 0 1px 3px rgba(16, 24, 40, 0.06); }
+:root[data-theme="light"] .cf-search:focus-within { background: color-mix(in srgb, var(--accent) 5%, #fff); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 14%, transparent), 0 6px 20px -8px color-mix(in srgb, var(--accent) 40%, transparent); }
+/* The board's search: the panel's glass and glow, sized for the board's row */
+.fb-search { display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 11px; border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--bdr2) 80%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--t1) 6%, transparent), color-mix(in srgb, var(--t1) 2%, transparent));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 9%, transparent); color: var(--t3); cursor: text;
+  transition: border-color 160ms ease, box-shadow 200ms ease, background 200ms ease; }
+.fb-search .fb-find { height: 100%; padding: 0; border: 0 !important; background: none !important; box-shadow: none !important; color: var(--t1); font: 400 13.5px var(--font); outline: none; }
+.fb-search:focus-within { border-color: color-mix(in srgb, var(--accent) 70%, transparent); color: var(--accent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 9%, transparent), color-mix(in srgb, var(--accent) 3%, transparent));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 12%, transparent), 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent), 0 4px 18px -6px color-mix(in srgb, var(--accent) 45%, transparent); }
+:root[data-theme="light"] .fb-search { background: rgba(255, 255, 255, 0.75); box-shadow: inset 0 1px 0 #fff, 0 1px 2px rgba(16, 24, 40, 0.05); }
+:root[data-theme="light"] .fb-search:focus-within { background: color-mix(in srgb, var(--accent) 5%, #fff); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent), 0 4px 16px -6px color-mix(in srgb, var(--accent) 40%, transparent); }
+.cf-head, .cf-search, .cf-foot { flex: none; }
+/* Inside the glass search bars the whole bar shows focus (its glow), so the
+   site-wide outline on the text box itself is left off — only here */
+.cf-search input:focus-visible, .fb-search input:focus-visible, .rt-find input:focus-visible { outline: none !important; }
+/* The table's Find a company: the same glass and glow as the board's search */
+.rt-find { height: 34px; padding: 0 11px; gap: 7px; border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--bdr2) 80%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--t1) 6%, transparent), color-mix(in srgb, var(--t1) 2%, transparent));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 9%, transparent); color: var(--t3); cursor: text;
+  transition: border-color 160ms ease, box-shadow 200ms ease, background 200ms ease; }
+.rt-find input { font-size: 13.5px; }
+.rt-find:focus-within { border-color: color-mix(in srgb, var(--accent) 70%, transparent); color: var(--accent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 9%, transparent), color-mix(in srgb, var(--accent) 3%, transparent));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 12%, transparent), 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent), 0 4px 18px -6px color-mix(in srgb, var(--accent) 45%, transparent); }
+:root[data-theme="light"] .rt-find { background: rgba(255, 255, 255, 0.75); box-shadow: inset 0 1px 0 #fff, 0 1px 2px rgba(16, 24, 40, 0.05); }
+:root[data-theme="light"] .rt-find:focus-within { background: color-mix(in srgb, var(--accent) 5%, #fff); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent), 0 4px 16px -6px color-mix(in srgb, var(--accent) 40%, transparent); }
+.results-topbar .rt-lead { min-width: 136px; }
+/* The Workspace's name: what the screen is, a line about it, and Switch screener (StrategyPicker.jsx) */
+.sp-name-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px; }
+.sp-name-big { margin: 0; font-size: clamp(24px, 2.2vw, 30px); font-weight: 650; line-height: 1.15; letter-spacing: -0.025em; color: var(--t1); }
+.sp-switch { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--bdr2); background: var(--s2); color: var(--t2); font: 500 12.5px var(--font); cursor: pointer; }
+.sp-switch[aria-expanded="true"] { border-color: var(--accent); color: var(--accent); }
+.sp-switch[aria-expanded="true"] svg { transform: rotate(180deg); }
+.sp-switch svg { transition: transform 160ms ease-out; }
+@media (hover: hover) and (pointer: fine) { .sp-switch:hover { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 50%, transparent); } }
+.sp-line { margin: 4px 0 0; font-size: 13.5px; color: var(--t3); }
+/* "Also on": filters in force that this tab doesn't show (FilterBoard.jsx) */
+.fb-also { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin-top: 14px; padding: 10px 12px; border-radius: 12px; border: 1px dashed color-mix(in srgb, var(--accent) 35%, transparent); background: color-mix(in srgb, var(--accent) 5%, transparent); }
+.fb-also > span { margin-right: 4px; font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--t3); }
+/* A rule the screener set that isn't on Most used, shown in its card (FilterBoard.jsx) */
+.fb-rule-extra .fb-item label::after { content: "in use"; margin-left: 8px; padding: 1px 6px; border-radius: 999px; font-size: 10px; font-weight: 600; letter-spacing: .02em; color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); vertical-align: 1px; }
+/* Scores as short bars in the table (ResearchBadges.jsx) */
+.score-bar { display: inline-flex; align-items: center; gap: 8px; font-variant-numeric: tabular-nums; }
+.score-bar b { min-width: 20px; font-size: 13.5px; font-weight: 600; text-align: right; }
+.score-bar-track { position: relative; height: 6px; border-radius: 3px; background: color-mix(in srgb, var(--t1) 10%, transparent); overflow: hidden; }
+.score-bar-track > span { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; }
+.qb-toggle .score-bar { gap: 8px; }
+/* The cards in balanced columns, ending level (FilterBoard.jsx) */
+.fb-cards.fb-cols { display: grid; gap: 12px; align-items: stretch; }
+.fb-col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.fb-col > .fb-card:last-child { flex: 1; }
+/* Watchlist only, in the Workspace's one toolbar row (ResultsTable.jsx) */
+.rt-watch { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 11px; border-radius: 10px; border: 1px solid var(--bdr2); background: var(--s2); color: var(--t2); font: 500 12.5px var(--font); cursor: pointer; white-space: nowrap; }
+.rt-watch span { opacity: .75; font-variant-numeric: tabular-nums; }
+.rt-watch.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--s2)); color: var(--accent); font-weight: 600; }

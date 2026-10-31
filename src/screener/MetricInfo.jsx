@@ -52,12 +52,31 @@ export function basisText(basis, periods = {}) {
   }
 }
 
-export function Definition({ def, meta }) {
+// The first sentence of a measure's note, for menus: the rest is on /measures
+export function firstLine(text) {
+  if (!text) return "";
+  const m = String(text).match(/^.+?[.!?](?=\s|$)/);
+  const one = (m ? m[0] : String(text)).trim();
+  return one.length > 140 ? `${one.slice(0, 137).replace(/\s+\S*$/, "")}…` : one;
+}
+
+export function Definition({ def, meta, titled = true, short = false }) {
   const basis = basisText(def.basis, meta?.periods);
   const known = def.range?.known ?? def.known;
+  // Menus (31 Oct 2026, "this is too much"): one line, and Read more opens
+  // the measure on its own page
+  if (short) return (
+    <>
+      {titled && <div style={{ fontSize: 12.5, fontWeight: 450, color: "var(--t1)", marginBottom: 3 }}>{def.label}</div>}
+      <div style={{ fontSize: 12, color: "var(--t2)", lineHeight: 1.45 }}>
+        {firstLine(def.about) || def.label}{" "}
+        <a href={`/measures#${encodeURIComponent(def.id)}`} target="_blank" rel="noreferrer" style={{ color: "var(--accent)", textDecoration: "none", whiteSpace: "nowrap" }}>Read more ›</a>
+      </div>
+    </>
+  );
   return (
     <>
-      <div style={{ fontSize: 12.5, fontWeight: 450, color: "var(--t1)", marginBottom: 4 }}>{def.label}</div>
+      {titled && <div style={{ fontSize: 12.5, fontWeight: 450, color: "var(--t1)", marginBottom: 4 }}>{def.label}</div>}
       {def.about && <div style={{ fontSize: 12, color: "var(--t2)", lineHeight: 1.5 }}>{def.about}</div>}
       {basis && <div style={{ fontSize: 11.5, color: "var(--t2)", lineHeight: 1.5, marginTop: 6 }}><span style={{ color: "var(--t3)" }}>Period: </span>{basis}.</div>}
       {known != null && meta?.companies > 0 && known < meta.companies && (
@@ -105,7 +124,7 @@ export function MetricInfo({ def, meta }) {
       {open && at && (
         <div ref={pop} role="dialog" aria-label={def.label} onClick={e => e.stopPropagation()}
           style={{ position: "fixed", left: at.left, top: at.top, width: at.width, zIndex: 300, padding: "12px 14px", borderRadius: 10, background: "var(--s3)", border: "1px solid var(--bdr2)", boxShadow: "0 10px 30px rgba(0,0,0,0.35)", textAlign: "left", whiteSpace: "normal", fontWeight: 400, cursor: "default" }}>
-          <Definition def={def} meta={meta} />
+          <Definition def={def} meta={meta} short />
         </div>
       )}
     </>

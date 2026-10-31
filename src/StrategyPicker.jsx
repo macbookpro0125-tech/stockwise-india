@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, ChevronLeft, Globe, Info, List } from "lucide-react";
+import { Check, ChevronDown, ChevronLeft, Globe, Info, List } from "lucide-react";
 import WheelPicker from "./WheelPicker.jsx";
 import StrategyMark from "./StrategyMarks.jsx";
 import { groupStrategies, describeRules } from "./strategyAbout.js";
@@ -65,26 +65,26 @@ export default function StrategyPicker({ presets, items, value, onPick, meta, fi
     </div>
   );
 
+  // A computer (31 Oct 2026, "why it looks so messy"): the name alone, with
+  // ▾ for every strategy — the wheel's faded rows above and below are gone
+  // What the screen is, in words (31 Oct 2026, "Your filters ▾ ⓘ doesn't
+  // make sense"): its name, a line saying what it is, and a labelled button
+  // to switch — the rules are on the board, so no ⓘ here
+  const own = (filters ?? []).filter(f => (f.values?.length ?? 0) > 0 || f.min != null || f.max != null).length;
+  const name = current?.name ?? (value === ALL || !own ? "Whole market" : "Untitled screen");
+  const line = current?.description
+    ?? (value === ALL || !own ? "Every NSE company, no filters" : `${own} filter${own === 1 ? "" : "s"} you've set · not saved yet`);
   return (
-    <div ref={wrap} className="screen-wheel-wrap">
-      <WheelPicker label="Strategy" items={items} value={value} onChange={onPick} rowHeight={42} className="wheel-title"
-        onDoubleClick={() => setPanel("list")} />
-      <div className="sp-buttons">
-        <button ref={listBtn} type="button" className="sp-btn" aria-label="Every strategy" title="Every strategy (or double-click the name)"
-          aria-expanded={panel === "list"} aria-haspopup="dialog" onClick={() => toggle("list")}>
-          <List size={17} strokeWidth={2.2} aria-hidden="true" />
-        </button>
-        <button ref={aboutBtn} type="button" className="sp-btn" aria-label="About this strategy" title="What this strategy looks for"
-          aria-expanded={panel === "about"} aria-haspopup="dialog" onClick={() => toggle("about")}>
-          <Info size={17} strokeWidth={2.2} aria-hidden="true" />
+    <div ref={wrap} className="screen-wheel-wrap sp-plain">
+      <div className="sp-name-row">
+        <h2 className="sp-name-big">{name}</h2>
+        <button ref={listBtn} type="button" className="sp-switch" aria-expanded={panel === "list"} aria-haspopup="dialog" onClick={() => toggle("list")}>
+          Switch screener <ChevronDown size={14} strokeWidth={2.4} aria-hidden="true" />
         </button>
       </div>
+      <p className="sp-line">{line}</p>
 
       {panel === "list" && <StrategyList presets={presets} value={value} onPick={pick} hasYours={items.some(i => i.id === YOURS)} />}
-      {panel === "about" && (
-        <StrategyAbout preset={current} value={value} meta={meta} filters={filters}
-          onEditRules={() => { setPanel(null); onEditRules?.(); }} />
-      )}
     </div>
   );
 }
@@ -141,38 +141,6 @@ function StrategyList({ presets, value, onPick, hasYours }) {
       </div>
       {q && !groups.length && <p className="sp-none">No strategy matches "{find}".</p>}
       {q && first && <p className="sp-hint">{first.description} <span>· Enter opens {first.name}</span></p>}
-    </div>
-  );
-}
-
-function StrategyAbout({ preset, value, meta, filters, onEditRules }) {
-  const ref = useRef(null);
-  useEffect(() => { ref.current?.focus(); }, []);
-  const name = preset?.name ?? (value === YOURS ? "Your filters" : "Whole market");
-  const description = preset?.description ?? (value === YOURS ? "The filters you've set yourself." : "Every NSE company screened here — no rules yet. Pick a strategy, or add filters of your own.");
-  const rules = describeRules(preset ? preset.filters : value === YOURS ? filters : [], meta);
-  return (
-    <div className="sp-pop sp-about" role="dialog" aria-labelledby="sp-about-title">
-      <div className="sp-about-head">
-        {preset ? <StrategyMark preset={preset} size={36} /> : <span className="sp-icon sp-icon-lg"><Globe size={18} aria-hidden="true" /></span>}
-        <h3 id="sp-about-title" ref={ref} tabIndex={-1}>{name}</h3>
-      </div>
-      <p className="sp-about-desc">{description}</p>
-      {rules.length > 0 && (
-        <>
-          <h4 className="sp-kind">What it looks for</h4>
-          <ul className="sp-rules">
-            {rules.map(r => (
-              <li key={`${r.id}-${r.text}`}>
-                <b>{r.text}</b>
-                {r.about && <span>{r.about}</span>}
-              </li>
-            ))}
-          </ul>
-          <p className="sp-note">A company missing a figure a rule needs is left out. A screen to research from, not advice.</p>
-        </>
-      )}
-      <button type="button" className="btn-ghost sp-edit" onClick={onEditRules}>{rules.length ? "Change the rules" : "Add a filter"}</button>
     </div>
   );
 }

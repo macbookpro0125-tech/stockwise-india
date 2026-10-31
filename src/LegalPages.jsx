@@ -1,3 +1,6 @@
+import { useEffect } from "react";
+import { useScreenerMeta } from "./screener/meta.js";
+import { Definition } from "./screener/MetricInfo.jsx";
 import { SiteLink, SiteFooter, Logo, navigate } from "./site.jsx";
 import { problemMailto } from "./help.js";
 
@@ -326,6 +329,41 @@ export function HelpPage({ signedIn }) {
         app's version filled in. Tell us the company and the figure that looks wrong; a screenshot helps. For
         privacy requests, see the <SiteLink to="/privacy">privacy policy</SiteLink>.
       </P>
+    </PublicPage>
+  );
+}
+
+// Every measure in full (31 Oct 2026): the column and filter menus say one
+// line each, and "Read more" lands here, on the measure's own heading
+// (/measures#roce). Grouped as the filter board's kinds.
+export function MeasuresPage({ signedIn }) {
+  const { meta, error } = useScreenerMeta();
+  useEffect(() => {
+    const id = decodeURIComponent(window.location.hash.slice(1));
+    if (!meta || !id) return;
+    const el = document.getElementById(`m-${id}`);
+    if (el) { el.scrollIntoView({ block: "start" }); el.classList.add("measure-here"); }
+  }, [meta]);
+  return (
+    <PublicPage title="What each measure means" signedIn={signedIn} updated="31 October 2026">
+      <P>Every figure you can filter on or show as a column, what it measures and the period it covers. All are worked out from companies' filings with NSE and NSE's daily closing prices.</P>
+      {error && <P>Couldn't load the list just now: {error}</P>}
+      {!meta && !error && <P>Loading…</P>}
+      {meta && meta.categories.map(cat => {
+        const list = [...meta.metrics, ...(meta.categoryMetrics ?? [])].filter(m => m.category === cat && m.id !== "symbols");
+        if (!list.length) return null;
+        return (
+          <section key={cat}>
+            <H>{cat}</H>
+            {list.map(m => (
+              <div key={m.id} id={`m-${m.id}`} className="measure">
+                <h3>{m.label}{m.short && m.short !== m.label ? <small> · {m.short}</small> : null}</h3>
+                <Definition def={m} meta={meta} titled={false} />
+              </div>
+            ))}
+          </section>
+        );
+      })}
     </PublicPage>
   );
 }

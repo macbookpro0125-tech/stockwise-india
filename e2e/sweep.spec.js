@@ -20,7 +20,8 @@ test("every tab opens", async ({ page, account }) => {
   await page.keyboard.press("Escape");
   await openStocks(page);
   await expect(page.locator("table, [role=table]").first()).toBeVisible();
-  await expect(rail, "a stock list has the bar").toBeVisible();
+  // the Workspace gives the table the width: the bar is tucked behind ☰
+  await expect(page.getByRole("button", { name: "Show the pages" }), "a stock list has the bar behind ☰").toBeVisible();
   axeLog(await axeCheck(page, "Discover"));
   for (const tab of ["Explore", "Momentum", "Watchlist", "Portfolio", "Performance", "Alerts"]) {
     await openPage(page, tab);

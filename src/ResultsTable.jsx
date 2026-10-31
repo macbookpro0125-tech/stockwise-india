@@ -1,6 +1,7 @@
 import { Fragment, Suspense, useState, useEffect, useRef, useMemo } from "react";
 import { lazyPage } from "./lazyPage.js";
 import CompanyLogo from "./CompanyLogo.jsx";
+import { headOf, periodsOf } from "./columnHeads.js";
 import { cardName, splitUnit } from "./stockName.js";
 import { ArrowDown, ArrowUp, Check, Info, Columns3, Search, ArrowUpRight, SearchX, Star, ChevronDown, Funnel, Download, ChartScatter } from "lucide-react";
 import QualityValueMap from "./QualityValueMap.jsx";
@@ -10,7 +11,7 @@ import { useMyLevels, withMyLevels } from "./myLevels.js";
 import CreateAlertModal from "./CreateAlertModal.jsx";
 import { AdCard, useAdFeed } from "./ads.jsx";
 import { formatValue, valueColor, unitLabel } from "./screener/meta.js";
-import { QualityBadge, OverallScore, qualityTone, overallTone, researchTitle, researchMissingText } from "./ResearchBadges.jsx";
+import { QualityBadge, OverallScore, QualityBar, ResearchBar, qualityTone, overallTone, researchTitle, researchMissingText } from "./ResearchBadges.jsx";
 import ResearchProfile from "./ResearchProfile.jsx";
 import { MetricInfo, ColumnGuide } from "./screener/MetricInfo.jsx";
 import ColumnMenu from "./screener/ColumnMenu.jsx";
@@ -119,21 +120,41 @@ function MenuButton({ label, menu }) {
         className="column-menu-btn" data-on={filtered || open || undefined}>
         <Icon size={filtered ? 12 : 14} strokeWidth={2.2} aria-hidden="true" fill={filtered ? "currentColor" : "none"} />
       </button>
-      {open && <ColumnMenu anchor={ref.current} label={label} text={menu.text} def={menu.def} about={menu.about} meta={menu.meta} filter={menu.filter} onSort={menu.onSort} onApply={menu.onApply} onClose={() => setOpen(false)} />}
+      {open && <ColumnMenu anchor={ref.current} label={label} text={menu.text} def={menu.def} about={menu.about} meta={menu.meta} filter={menu.filter} onSort={menu.onSort} onApply={menu.onApply} column={menu.column} onClose={() => setOpen(false)} />}
     </>
   );
 }
 
-function SortTh({ label, unit = "", title, col, sortBy, sortDir, onSort, accent, info, menu }) {
+// Quality, Research and CMP when they're columns like the rest: their
+// headings, units and the sort each stands for
+const FIXED_HEAD = { quality: { label: "Quality", unit: "of 100", col: "quality" }, researchScore: { label: "Res", unit: "of 100", col: "overall" }, cmp: { label: "CMP", unit: "₹", col: "cmp" } };
+
+// Units as a heading's short tail: "Quality /100", "ROCE %"
+const UNIT_SHORT = { "of 100": "/100", "of 9": "/9" };
+
+function SortTh({ label, unit = "", title, col, sortBy, sortDir, onSort, accent, info, menu, move = null }) {
   const active = sortBy === col;
+  const [over, setOver] = useState(false);
+  // move: { onDrop(fromId), left, right } — drag a heading onto another to
+  // put it there, or Alt+← / Alt+→ on it (31 Oct 2026)
+  const dragProps = move ? {
+    draggable: true,
+    onDragStart: e => { e.dataTransfer.setData("text/x-column", col); e.dataTransfer.effectAllowed = "move"; },
+    onDragOver: e => { if (e.dataTransfer.types.includes("text/x-column")) { e.preventDefault(); setOver(true); } },
+    onDragLeave: () => setOver(false),
+    onDrop: e => { e.preventDefault(); setOver(false); const from = e.dataTransfer.getData("text/x-column"); if (from && from !== col) move.onDrop(from); },
+    onKeyDown: e => { if (!e.altKey) return; if (e.key === "ArrowLeft" && move.left) { e.preventDefault(); move.left(); } else if (e.key === "ArrowRight" && move.right) { e.preventDefault(); move.right(); } },
+  } : {};
   return (
     <th
+      {...dragProps}
+      className={`${move ? "th-move" : ""}${over ? " th-over" : ""}` || undefined}
       onClick={() => onSort(col)}
       aria-sort={ariaSort(active, sortDir)}
       title={title}
       style={{
         ...thStyle,
-        whiteSpace: "nowrap", verticalAlign: "bottom",
+        whiteSpace: "nowrap", verticalAlign: "middle",
         color: active ? "var(--t1)" : "var(--t2)",
         fontWeight: active ? 600 : 500,
         cursor: "pointer",
@@ -141,17 +162,16 @@ function SortTh({ label, unit = "", title, col, sortBy, sortDir, onSort, accent,
         transition: "color 120ms",
       }}
     >
-      {/* Every header the same shape: the name on one line with its ▾, the
-          unit small beneath it (blank when there's none), so names and
-          units line up across the row; the definition is in the ▾ menu */}
+      {/* Every header the same shape: the name and its unit on one line with
+          its ▾; the definition is in the ▾ menu */}
       <span className="th-head">
         <button type="button" style={{ ...sortBtnStyle, whiteSpace: "nowrap" }}>
-          <span>{label}</span>
+          {/* one line (31 Oct 2026): the name, its unit small beside it */}
+          <span className="th-label">{label}{unit ? <small className="th-u">{UNIT_SHORT[unit] ?? unit}</small> : null}</span>
           <SortArrow active={active} dir={sortDir} />
         </button>
         {menu ? <MenuButton label={unit ? `${label} ${unit}` : label} menu={menu} /> : info}
       </span>
-      <span className="th-unit" aria-hidden={!unit}>{unit || "\u00a0"}</span>
     </th>
   );
 }
@@ -255,7 +275,7 @@ function StarButton({ symbol, price, watched, size = 30 }) {
   );
 }
 
-export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, totalMatches, hideCountOnPhone = false, universe = null, filters = null, onFiltersChange = null, phoneFilters = null, filtersButton = null, updating = false, queryUsed, unsupported = [], notes = [], executionTime, snapshot, netNet = false, noun = "stocks", emptyTitle = "No stocks matched your criteria", emptyHint = "Try relaxing some filters", columns = [], onEditColumns = null, filteredIds = [], meta = null, theme = "dark", sortTo = null, scoreBoxes = true }) {
+export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, totalMatches, hideCountOnPhone = false, universe = null, filters = null, onFiltersChange = null, phoneFilters = null, filtersButton = null, updating = false, queryUsed, unsupported = [], notes = [], executionTime, snapshot, netNet = false, noun = "stocks", emptyTitle = "No stocks matched your criteria", emptyHint = "Try relaxing some filters", columns = [], onEditColumns = null, filteredIds = [], meta = null, theme = "dark", sortTo = null, scoreBoxes = true, lead = null, onMoveColumn = null, onStepColumn = null, onRemoveColumn = null, onSwapColumn = null, fixedInColumns = false }) {
   const watchlist = useWatchlist();
   // Each row with the user's own levels (myLevels.js) — none while they're off
   const myLevels = useMyLevels();
@@ -301,6 +321,29 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
   }, [netNet, matches]);
 
   const [isMobile, setIsMobile] = useState(typeof window !== "undefined" && window.innerWidth < 640);
+  // The column names stay in view under the app's header as the page
+  // scrolls (31 Oct 2026). The table scrolls sideways in its own strip, so
+  // CSS sticky can't hold them to the page: they're moved down by the
+  // distance scrolled past, each frame, and stop at the table's end.
+  const tableWrap = useRef(null), tableHead = useRef(null);
+  useEffect(() => {
+    let frame = 0;
+    const place = () => {
+      frame = 0;
+      const wrap = tableWrap.current, head = tableHead.current;
+      if (!wrap || !head) return;
+      const top = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--header-h")) || 0;
+      const r = wrap.getBoundingClientRect();
+      const off = Math.min(Math.max(0, top - r.top), Math.max(0, r.height - head.offsetHeight * 2));
+      head.style.transform = off ? `translateY(${off}px)` : "";
+      head.classList.toggle("rt-thead-stuck", off > 0);
+    };
+    const ask = () => { if (!frame) frame = requestAnimationFrame(place); };
+    window.addEventListener("scroll", ask, { passive: true });
+    window.addEventListener("resize", ask);
+    ask();
+    return () => { window.removeEventListener("scroll", ask); window.removeEventListener("resize", ask); cancelAnimationFrame(frame); };
+  });
   useEffect(() => {
     const handler = () => setIsMobile(window.innerWidth < 640);
     window.addEventListener("resize", handler);
@@ -372,6 +415,17 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
   // A column's value: from the metrics the screen was asked for, else the
   // row's own field (cmp and the table's fixed fields)
   const colValue = (s, id) => s.values?.[id] ?? s[id] ?? null;
+  // The quality badge opens the six-factor profile under the row
+  // (31 Oct 2026: the box under each name went, for room)
+  const qualityCell = (stock, profileOpen) => (stock.research?.groups ? (
+    <button type="button" className="qb-toggle" aria-expanded={profileOpen}
+      aria-label={`${profileOpen ? "Hide" : "Show"} six-factor research profile${stock.research.quality == null ? "" : `, quality ${Math.round(stock.research.quality)} out of 100`}`}
+      title="The six things the quality score is made of"
+      onClick={() => setOpenResearchProfile(current => current === stock.symbol ? null : stock.symbol)}>
+      <QualityBar research={stock.research} />
+      <ChevronDown size={13} aria-hidden="true" data-open={profileOpen || undefined} />
+    </button>
+  ) : <QualityBar research={stock.research} />);
   const q = search.trim().toLowerCase();
   const watchedMatches = (matches || []).filter(s => watchlist.has(s.symbol)).length;
   const textFiltered = (matches || []).filter(s => (!watchOnly || watchlist.has(s.symbol)) &&
@@ -479,16 +533,22 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
       {/* A phone on Discover: the count and dates are on the strategy's ⓘ page */}
       {(totalMatches != null || loading) && !(isMobile && hideCountOnPhone) && (
         <div className="results-topbar">
-          <div className="rt-count">
+          {/* A computer's Workspace (31 Oct 2026): the column views lead the one
+              toolbar row, the name search sits with the tools, the date is
+              in the page's header */}
+          {lead && !isMobile && <div className="rt-lead">{lead}</div>}
+          <div className="rt-count" hidden={!!lead && !isMobile && !loading && !updating && !notes.length && !(totalMatches != null && visible.length < totalMatches)}>
             {loading ? (
               <span style={{ color: "var(--t3)" }}>Scanning market…</span>
             ) : (
               <>
                 {/* Only what's on screen (20 Oct 2026: no total, no "of the
                     market") — "Showing 50", and Load more at the end */}
-                <span className="rt-showing">
+                {/* (a computer's header says how many match: this says so only
+                    while more are still to load, 31 Oct 2026) */}
+                {(updating || isMobile || totalMatches == null || visible.length < totalMatches) && <span className="rt-showing">
                   {updating ? "Updating…" : <>Showing <b>{visible.length.toLocaleString("en-IN")}</b></>}
-                </span>
+                </span>}
                 {/* Why some companies are missing: an ⓘ beside it */}
                 {notes.length > 0 && (
                   <button type="button" onClick={() => setShowNotes(v => !v)} aria-expanded={showNotes} aria-label="Why some companies are left out" title={notes.join(" ")}
@@ -496,13 +556,25 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
                     <Info size={14} aria-hidden="true" />
                   </button>
                 )}
-                {snapshot?.pricesDate && (
+                {snapshot?.pricesDate && !(lead && !isMobile) && (
                   <span className="rt-meta">Prices as of {new Date(`${snapshot.pricesDate}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })}</span>
                 )}
               </>
             )}
           </div>
           <div className="rt-actions">
+            {lead && !isMobile && watchlist.size > 0 && (matches?.length ?? 0) > 0 && (
+              // (in the one toolbar row too, 31 Oct 2026)
+              <button type="button" aria-pressed={watchOnly} onClick={() => setWatchOnly(v => !v)} className={`rt-watch${watchOnly ? " on" : ""}`} title="Only companies on your watchlist">
+                <Star size={13} fill={watchOnly ? "currentColor" : "none"} aria-hidden="true" /> Watchlist only <span>({watchedMatches})</span>
+              </button>
+            )}
+            {lead && !isMobile && (matches?.length ?? 0) > 0 && (
+              <label className="rt-find">
+                <Search size={14} aria-hidden="true" />
+                <input type="text" placeholder="Find a company…" value={search} onChange={e => setSearch(e.target.value)} aria-label="Filter by name or ticker" />
+              </label>
+            )}
             {exportError && <span style={{ fontSize: 11, color: "var(--red)" }}>{exportError}</span>}
             {selected.size >= 2 && (
               <button onClick={() => setShowCompare(true)} className="btn-primary tb-btn">
@@ -525,8 +597,8 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
               </div>
             )}
             {onEditColumns && (
-              <button onClick={onEditColumns} className="btn-ghost tb-btn hide-phone" title="Choose which columns the table shows">
-                <Columns3 size={14} /> Columns
+              <button onClick={onEditColumns} className="btn-ghost tb-btn hide-phone" title="Choose which columns the table shows" aria-label="Columns">
+                <Columns3 size={14} /> <span className="tb-label">Columns</span>
               </button>
             )}
             {!loading && (matches?.length ?? 0) > 0 && (
@@ -537,7 +609,7 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
             {/* the screen's companies on a quality-against-P/E chart (QualityValueMap.jsx) */}
             {!loading && (matches?.length ?? 0) > 2 && (
               <button type="button" onClick={() => setShowMap(v => !v)} aria-pressed={showMap} className="btn-ghost tb-btn hide-phone" title="Quality against P/E for these companies">
-                <ChartScatter size={14} aria-hidden="true" /> Chart
+                <ChartScatter size={14} aria-hidden="true" /> <span className="tb-label">Chart</span>
               </button>
             )}
             {!loading && (matches?.length ?? 0) > 0 && (
@@ -589,7 +661,7 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
              Piotroski with it ── */}
       {/* The Filters button stays even when the filters leave nothing (the
           way back out); the name box and scores need rows to work on */}
-      {!loading && ((matches?.length ?? 0) > 0 || filtersButton) && (!isMobile || searchOpen || !!q || scoreFiltered) && (
+      {!loading && ((matches?.length ?? 0) > 0 || filtersButton) && (!isMobile || searchOpen || !!q || scoreFiltered) && !(lead && !isMobile && !scoreBoxes && !filtersButton) && (
         <div className="score-line">
         {filtersButton}
         {(matches?.length ?? 0) > 0 && <div className="score-row">
@@ -765,38 +837,55 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
 
       {/* ── Desktop table ── */}
       {!isMobile && !noData && (loading || sorted.length > 0) && (
-        <div style={{ borderRadius: 12, border: "1px solid var(--bdr2)", overflow: "hidden", boxShadow: "var(--sh-xs)", background: "var(--s2)" }}>
-          <div style={{ overflowX: "auto", overflowY: "auto", maxHeight: "min(70vh, 780px)" }}>
+        <div className="rt-open">
+          {/* Open on the page, not in a box with its own scrollbars (31 Oct
+              2026): the page scrolls down; only a table wider than the
+              screen scrolls sideways */}
+          <div className="rt-open-scroll" ref={tableWrap}>
             <table className="data-table" style={{ minWidth: 640 + columns.length * 80 }}>
-              <thead>
+              <thead ref={tableHead} className="rt-thead">
                 <tr>
-                  <th title={`Tick up to ${MAX_COMPARE} to compare`} style={{ ...thStyle, padding: "10px 8px", width: RANK_W, minWidth: RANK_W, boxSizing: "border-box", left: 0, zIndex: 4, verticalAlign: "bottom" }}>#<span className="th-unit" aria-hidden="true">{"\u00a0"}</span></th>
-                  <th onClick={() => handleSort("name")} aria-sort={ariaSort(sortBy === "name", sortDir)} style={{ ...thStyle, color: sortBy === "name" ? "var(--t1)" : "var(--t2)", fontWeight: sortBy === "name" ? 600 : 500, left: RANK_W, zIndex: 4, cursor: "pointer", minWidth: 200, boxShadow: "inset -1px 0 0 var(--bdr)", verticalAlign: "bottom" }}>
+                  <th title={`Tick up to ${MAX_COMPARE} to compare`} style={{ ...thStyle, padding: "10px 8px", width: RANK_W, minWidth: RANK_W, boxSizing: "border-box", left: 0, zIndex: 4, verticalAlign: "middle" }}>#<span className="th-unit" aria-hidden="true">{"\u00a0"}</span></th>
+                  <th onClick={() => handleSort("name")} aria-sort={ariaSort(sortBy === "name", sortDir)} style={{ ...thStyle, color: sortBy === "name" ? "var(--t1)" : "var(--t2)", fontWeight: sortBy === "name" ? 600 : 500, left: RANK_W, zIndex: 4, cursor: "pointer", minWidth: 200, boxShadow: "inset -1px 0 0 var(--bdr)", verticalAlign: "middle" }}>
                     <span className="th-head">
                       <button type="button" style={sortBtnStyle}>Stock <SortArrow active={sortBy === "name"} dir={sortDir} /></button>
                       <MenuButton label="Stock" menu={{ ...menuFor("name", null), text: true }} />
                     </span>
                     <span className="th-unit" aria-hidden="true">{"\u00a0"}</span>
                   </th>
+                  {!fixedInColumns && (<>
                   <SortTh label="Quality" unit="of 100" title="Quality score out of 100 — business, earnings, balance sheet, governance, growth and valuation" col="quality" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} menu={menuFor("quality", "quality")} info={<MetricInfo def={meta?.byId.get("quality")} meta={meta} />} />
-                  <SortTh label="Research" unit="of 100" title="Overall research score: quality and valuation blended, trimmed for price swings and data gaps. Not a buy or sell signal." col="overall" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} menu={menuFor("overall", "researchScore")} info={<MetricInfo def={meta?.byId.get("researchScore")} meta={meta} />} />
+                  <SortTh label="Res" unit="of 100" title="Research score. Overall research score: quality and valuation blended, trimmed for price swings and data gaps. Not a buy or sell signal." col="overall" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} menu={menuFor("overall", "researchScore")} info={<MetricInfo def={meta?.byId.get("researchScore")} meta={meta} />} />
                   <SortTh label="CMP" unit="₹" col="cmp"         sortBy={sortBy} sortDir={sortDir} onSort={handleSort} menu={menuFor("cmp", "cmp")} info={<MetricInfo def={meta?.byId.get("cmp")} meta={meta} />} />
-                  {columns.map(def => (
-                    <SortTh key={def.id} label={def.short} unit={unitLabel(def)} title={def.label} col={def.id} sortBy={sortBy} sortDir={sortDir} onSort={handleSort} menu={menuFor(def.id, def.id)} info={<MetricInfo def={def} meta={meta} />} />
+                  </>)}
+                  {columns.map((def, ci) => (
+                    <SortTh key={def.id} label={FIXED_HEAD[def.id]?.label ?? headOf(def)} unit={FIXED_HEAD[def.id]?.unit ?? unitLabel(def)} title={`${def.label}${onMoveColumn ? " · drag to move" : ""}`} col={FIXED_HEAD[def.id]?.col ?? def.id} sortBy={sortBy} sortDir={sortDir} onSort={handleSort}
+                      menu={{ ...menuFor(FIXED_HEAD[def.id]?.col ?? def.id, def.id), column: isMobile ? null : {
+                        name: def.label,
+                        first: ci === 0, last: ci === columns.length - 1,
+                        onRemove: onRemoveColumn ? () => onRemoveColumn(def.id) : null,
+                        onStep: onStepColumn ? where => onStepColumn(def.id, where) : null,
+                        periods: onSwapColumn ? periodsOf(def.id, id => !!meta?.byId.get(id)) : null,
+                        current: def.id,
+                        onPeriod: to => onSwapColumn?.(def.id, to),
+                      } }} info={<MetricInfo def={def} meta={meta} />}
+                      move={onMoveColumn && !isMobile ? {
+                        onDrop: from => onMoveColumn(from, def.id),
+                        left: ci > 0 ? () => onMoveColumn(def.id, columns[ci - 1].id) : null,
+                        right: ci < columns.length - 1 ? () => onMoveColumn(def.id, columns[ci + 1].id) : null,
+                      } : null} />
                   ))}
-                  <th style={{ ...thStyle, color: "var(--accent)", fontWeight: 400, background: "color-mix(in srgb, var(--accent) 4%, var(--s1))", verticalAlign: "bottom" }}>
-                    Your levels
-                    <span className="th-unit">₹ · L1 L2 L3 · FV</span>
+                  <th style={{ ...thStyle, color: "var(--accent)", fontWeight: 400, background: "color-mix(in srgb, var(--accent) 4%, var(--s1))", verticalAlign: "middle", whiteSpace: "nowrap" }}>
+                    Your levels<small className="th-u">₹ · L1 L2 L3 · FV</small>
                   </th>
-                  <th style={{ ...thStyle, right: 0, zIndex: 4, boxShadow: "inset 1px 0 0 var(--bdr)", verticalAlign: "bottom" }}>Actions<span className="th-unit" aria-hidden="true">{"\u00a0"}</span></th>
                 </tr>
               </thead>
               <tbody>
                 {loading && Array.from({ length: 8 }).map((_, i) => (
                   <tr key={i}>
-                    {Array.from({ length: 7 + columns.length }).map((_, j) => (
+                    {Array.from({ length: (fixedInColumns ? 3 : 6) + columns.length }).map((_, j) => (
                       <td key={j} style={cell}>
-                        <div className="skeleton-pulse" style={{ height: 13, borderRadius: 4, width: j === 1 ? 140 : j === 5 + columns.length ? 100 : 55 }} />
+                        <div className="skeleton-pulse" style={{ height: 13, borderRadius: 4, width: j === 1 ? 140 : 55 }} />
                       </td>
                     ))}
                   </tr>
@@ -811,9 +900,8 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
                   <Fragment key={stock.symbol}>
                   <tr
                     data-tour={i === 0 ? "row" : undefined}
-                    style={{ background: rowBg, transition: "background 100ms" }}
-                    onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = "var(--s3)"; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = rowBg; }}
+                    className="rt-row"
+                    style={{ background: rowBg }}
                   >
                     <td style={{ ...cell, padding: "8px 8px", position: "sticky", left: 0, background: rowBg, zIndex: 1, width: RANK_W, minWidth: RANK_W, boxSizing: "border-box" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -828,7 +916,7 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
                       </div>
                     </td>
 
-                    <td style={{ ...cell, minWidth: 200, position: "sticky", left: RANK_W, background: rowBg, zIndex: 1, boxShadow: "inset -1px 0 0 var(--bdr)" }}>
+                    <td style={{ ...cell, minWidth: 200, width: 240, maxWidth: 260, position: "sticky", left: RANK_W, background: rowBg, zIndex: 1, boxShadow: "inset -1px 0 0 var(--bdr)", "--row-bg": "var(--s2)" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
                         <CompanyLogo symbol={stock.symbol} size={28} fallback={stock.name} />
                         <div style={{ minWidth: 0, flex: "1 1 auto" }}>
@@ -838,24 +926,31 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
                             <NcavBadge stock={stock} />
                             {stock.sector && <span title={stock.sector} style={{ fontSize: 10.5, color: "var(--t3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{stock.sector}</span>}
                           </div>
-                          <ResearchProfile
-                            research={stock.research}
-                            expanded={profileOpen}
-                            triggerOnly
-                            onToggle={() => setOpenResearchProfile(current => current === stock.symbol ? null : stock.symbol)}
-                          />
+                        </div>
+                        {/* Watch, alert and NSE beside the name (31 Oct 2026: the
+                            Actions column went, for room) — on hover or focus;
+                            a starred one keeps its star */}
+                        <div className="row-acts" data-watched={watchlist.has(stock.symbol) || undefined} data-tour={i === 0 ? "row-actions" : undefined}>
+                          <StarButton symbol={stock.symbol} price={stock.cmp} watched={watchlist.has(stock.symbol)} size={26} />
+                          {bell(stock, 26)}
+                          <a href={nseUrl(stock.symbol)} target="_blank" rel="noreferrer" title="Open on NSE" aria-label="Open on NSE" className="row-nse"><ArrowUpRight size={13} /></a>
                         </div>
                       </div>
                     </td>
 
-                    <td style={cell}><QualityBadge research={stock.research} /></td>
-                    <td style={{ ...cell, paddingTop: 6, paddingBottom: 6 }}><OverallScore research={stock.research} /></td>
-
+                    {!fixedInColumns && (<>
+                    <td style={cell}>{qualityCell(stock, profileOpen)}</td>
+                    <td style={{ ...cell, paddingTop: 6, paddingBottom: 6 }}><ResearchBar research={stock.research} /></td>
                     <td style={{ ...cell, fontWeight: 500, color: "var(--t1)", ...MONO, whiteSpace: "nowrap" }}>
                       {stock.cmp ? `₹${fmt(stock.cmp)}` : "—"}
                     </td>
+                    </>)}
 
                     {columns.map(def => {
+                      // Quality, Research and CMP as columns like any other (31 Oct 2026)
+                      if (def.id === "quality") return <td key={def.id} style={cell}>{qualityCell(stock, profileOpen)}</td>;
+                      if (def.id === "researchScore") return <td key={def.id} style={{ ...cell, paddingTop: 6, paddingBottom: 6 }}><ResearchBar research={stock.research} /></td>;
+                      if (def.id === "cmp") return <td key={def.id} style={{ ...cell, fontWeight: 500, color: "var(--t1)", ...MONO, whiteSpace: "nowrap" }}>{stock.cmp ? `₹${fmt(stock.cmp)}` : "—"}</td>;
                       const v = colValue(stock, def.id);
                       return (
                         <td key={def.id} style={{ ...cell, ...MONO, color: valueColor(def, v), whiteSpace: "nowrap" }}>
@@ -866,23 +961,10 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
 
                     <td style={{ ...cell, background: "color-mix(in srgb, var(--accent) 2%, transparent)" }}><FvCell stock={stock} /></td>
 
-                    {/* Pinned to the right edge, as the name is to the left: watch, alert
-                        and NSE stay in reach while wide screens scroll sideways */}
-                    <td style={{ ...cell, position: "sticky", right: 0, background: rowBg, zIndex: 1, boxShadow: "inset 1px 0 0 var(--bdr)" }}>
-                      <div data-tour={i === 0 ? "row-actions" : undefined} style={{ display: "flex", gap: 5, alignItems: "center" }}>
-                        {/* The company's name opens it; the row keeps only watch, alert and NSE */}
-                        <StarButton symbol={stock.symbol} price={stock.cmp} watched={watchlist.has(stock.symbol)} />
-                        {bell(stock)}
-                        <a
-                          href={nseUrl(stock.symbol)} target="_blank" rel="noreferrer" title="Open on NSE" aria-label="Open on NSE"
-                          style={{ width: 30, height: 30, borderRadius: 8, border: "1px solid var(--bdr2)", background: "transparent", color: "var(--t3)", textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 120ms", flexShrink: 0 }}
-                        ><ArrowUpRight size={15} /></a>
-                      </div>
-                    </td>
                   </tr>
                   {profileOpen && (
                     <tr className="research-profile-table-row">
-                      <td colSpan={7 + columns.length}>
+                      <td colSpan={(fixedInColumns ? 3 : 6) + columns.length}>
                         <ResearchProfile research={stock.research} symbol={stock.symbol} expanded panelOnly />
                       </td>
                     </tr>

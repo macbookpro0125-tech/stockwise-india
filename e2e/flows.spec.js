@@ -1,5 +1,5 @@
 // The app's flows, one test each (case ids from replica/test-plan.md).
-import { test, expect, openStocks, openFilters, openPage, openChapter } from "./fixtures.js";
+import { test, expect, openStocks, openFilters, openPage, openChapter, screenTitle } from "./fixtures.js";
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 
@@ -62,7 +62,7 @@ test("F01-H3 Open screen on the front page signs up into that strategy", async (
   await dialog.getByLabel("Password", { exact: true }).fill(randomUUID());
   await dialog.getByRole("button", { name: "Create free account" }).click();
   await page.getByRole("button", { name: "Skip tour" }).click();
-  await expect(page.locator(".screen-title")).toHaveText(name);
+  await expect(screenTitle(page)).toHaveText(name);
   expect(new URL(page.url()).searchParams.has("strategy")).toBe(false); // used once, then gone
 });
 
@@ -91,9 +91,9 @@ test("F02-H1 a strategy, sector and name filter narrow the list; sort works", as
   await page.getByRole("combobox").filter({ has: page.getByRole("option", { name: "All sectors" }) }).selectOption("Information Technology");
   await expect(page.getByRole("button", { name: "Tata Consultancy Services Limited" })).toBeVisible();
   // "Infosys Limited": HCL Infosystems, also IT (by its own filings since 22 Oct 2026), shares "infosys"
-  await page.getByPlaceholder("Filter by name or ticker…").fill("infosys limited");
+  await page.getByRole("textbox", { name: /Filter by name or ticker/ }).fill("infosys limited");
   await expect(rows).toHaveCount(1);
-  await page.getByPlaceholder("Filter by name or ticker…").fill("zzzz-nothing");
+  await page.getByRole("textbox", { name: /Filter by name or ticker/ }).fill("zzzz-nothing");
   await expect(rows).toHaveCount(0);
   await expect(page.getByText(/None of these \d+ companies match/).first()).toBeVisible(); // F02-E1 says why it's empty
 });
@@ -119,7 +119,7 @@ test("F02-H5 the curved row of strategies pauses on hover; a card opens its stra
   expect(new Set(states)).toEqual(new Set(["paused"]));
   const name = await page.evaluate(({ x, y }) => document.elementFromPoint(x, y).closest(".cr-tile").querySelector(".rb-card b").textContent, spot);
   await page.mouse.click(spot.x, spot.y);
-  await expect(page.locator(".screen-title")).toHaveText(name);
+  await expect(screenTitle(page)).toHaveText(name);
 });
 
 // Fix plan #5 and #6 (replica/fixes.md): a screen on the banks' own figures,
@@ -129,7 +129,7 @@ test("F02-H6 Sound Banks screens on bad loans and capital; filters move up and d
   const card = page.locator("button.sc2").filter({ hasText: "Sound Banks" });
   await card.scrollIntoViewIfNeeded();
   await card.click();
-  await expect(page.locator(".screen-title")).toHaveText("Sound Banks");
+  await expect(screenTitle(page)).toHaveText("Sound Banks");
   await expect(page.getByRole("button", { name: "HDFC Bank Limited" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Tata Consultancy Services Limited" })).toHaveCount(0);
   await openFilters(page);
@@ -143,55 +143,41 @@ test("F02-H6 Sound Banks screens on bad loans and capital; filters move up and d
   expect(await names()).toEqual(["Net NPA", "Gross NPA", "Return on assets", "CET1 capital ratio"]);
 });
 
-// The strategy wheel beside the screen's name (computer): spinning it
-// switches strategy where the stocks are, without going back to the cards
-test("F02-H7 the strategy wheel switches strategy from the stock list", async ({ page, account }) => {
+// Switch screener beside the screen's name (computer, 31 Oct 2026): another
+// strategy opens where the stocks are, without going back to the cards
+test("F02-H7 Switch screener changes strategy from the stock list", async ({ page, account }) => {
   await page.goto("/");
   const card = page.locator("button.sc2").filter({ hasText: "Sound Banks" });
   await card.scrollIntoViewIfNeeded();
   await card.click();
-  const wheel = page.getByRole("listbox", { name: "Strategy" });
-  await expect(wheel.getByRole("option", { selected: true })).toHaveText("Sound Banks");
-  // the mouse wheel turns it; it opens the row it settles on
-  const box = await wheel.boundingBox();
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-  await page.mouse.wheel(0, -100);
-  await expect(page.locator(".screen-title")).toHaveText("Beating the Market");
+  await expect(screenTitle(page)).toHaveText("Sound Banks");
+  await page.getByRole("button", { name: /^Switch screener/ }).click();
+  const list = page.getByRole("dialog", { name: "Every strategy" });
+  await list.getByRole("searchbox", { name: "Find a strategy" }).fill("beating");
+  await list.locator(".sp-cols").getByRole("button", { name: /Beating the Market/ }).click();
+  await expect(screenTitle(page)).toHaveText("Beating the Market");
   await expect(page.getByRole("button", { name: "HDFC Bank Limited" })).toHaveCount(0);
-  // and the keyboard: Home is the whole market
-  await wheel.focus();
-  await page.keyboard.press("Home");
-  await expect(page.locator(".screen-title")).toHaveText("Whole market");
-  await expect(wheel.getByRole("option", { selected: true })).toHaveText("Whole market");
-  // a strategy card chosen elsewhere turns the wheel to it
-  await page.getByRole("button", { name: "Back to all strategies" }).click();
-  await page.locator("button.sc2").filter({ hasText: "Sound Banks" }).click();
-  await expect(wheel.getByRole("option", { selected: true })).toHaveText("Sound Banks");
+  // the whole market from the same list
+  await page.getByRole("button", { name: /^Switch screener/ }).click();
+  await page.getByRole("dialog", { name: "Every strategy" }).getByRole("button", { name: "Whole market" }).click();
+  await expect(screenTitle(page)).toHaveText("Whole market");
 });
 
-// The way back from a stock list (computer): a pill pinned under the header
-// however far down the list, landing on the strategies — the card you left,
-// or the top of the grid — never the intro above them
-test("F02-H8 back from a stock list is always in reach and lands on the strategies", async ({ page, account }) => {
+// The way back from a stock list (computer, 31 Oct 2026): Screeners in the
+// left bar lands on the strategies — the card you left — and so does the
+// browser's own Back
+test("F02-H8 back from a stock list lands on the strategies", async ({ page, account }) => {
   await page.goto("/");
   const card = page.locator("button.sc2").filter({ hasText: "Sound Banks" });
   await card.scrollIntoViewIfNeeded();
   await card.click();
-  await expect(page.locator(".screen-title")).toHaveText("Sound Banks");
-  await page.evaluate(() => window.scrollTo(0, 1500));
-  const back = page.getByRole("button", { name: "Back to all strategies" });
-  await expect(back).toBeInViewport();
-  await back.click();
+  await expect(screenTitle(page)).toHaveText("Sound Banks");
+  // the Workspace tucks the bar away: its ☰ brings it back
+  await page.getByRole("button", { name: "Show the pages" }).click();
+  await page.locator("nav.side-rail").getByRole("button", { name: /^Screeners/ }).click();
   await expect(card).toBeInViewport();
-  // started from the top of Discover: back at the strategies, not the intro
-  await page.evaluate(() => window.scrollTo(0, 0));
-  await page.getByRole("button", { name: /Start screening/ }).first().click();
-  await expect(page.locator(".screen-title")).toBeVisible();
-  await back.click();
-  await expect(page.getByRole("heading", { name: /Explore the strategies/ })).toBeInViewport();
-  // and the browser's own Back
   await page.locator("button.sc2").filter({ hasText: "Doubled in a Year" }).click();
-  await expect(page.locator(".screen-title")).toHaveText("Doubled in a Year");
+  await expect(screenTitle(page)).toHaveText("Doubled in a Year");
   await page.goBack();
   await expect(page.locator("button.sc2").filter({ hasText: "Doubled in a Year" })).toBeInViewport();
 });
@@ -203,7 +189,7 @@ test("F02-H12 Top Gainers ranks by the gain over the period picked", async ({ pa
   const card = page.locator("button.sc2").filter({ hasText: "Top Gainers" });
   await expect(card).toContainText(/Biggest gain/);
   await card.click();
-  await expect(page.locator(".screen-title")).toHaveText("Top Gainers");
+  await expect(screenTitle(page)).toHaveText("Top Gainers");
   const column = async short => page.locator("table").first().evaluate((t, short) => {
     const i = [...t.querySelectorAll("thead th")].findIndex(th => th.textContent.trim().startsWith(short));
     return i < 0 ? [] : [...t.querySelectorAll("tbody tr")].map(tr => tr.children[i]?.textContent).filter(v => v && /\d/.test(v)).map(v => Number(v.replace(/[+%,]/g, "")));
@@ -226,21 +212,18 @@ test("F03-H8 the company page says what happened around its latest move", async 
   await expect(card).toContainText("not a forecast or advice");
 });
 
-// On the wheel's pill (computer): every strategy as a list (also a
-// double-click), and what this one looks for, rule by rule
-test("F02-H9 the strategy list and what a strategy looks for", async ({ page, account }) => {
+// Every strategy as one list from Switch screener (computer), and a
+// strategy's rules on the board, each in its card (31 Oct 2026)
+test("F02-H9 the strategy list, and a strategy's rules on the board", async ({ page, account }) => {
   await page.goto("/");
   const card = page.locator("button.sc2").filter({ hasText: "Sound Banks" });
   await card.scrollIntoViewIfNeeded();
   await card.click();
-  await page.getByRole("button", { name: "About this strategy" }).click();
-  const about = page.getByRole("dialog", { name: "Sound Banks" });
-  await expect(about.getByText("What it looks for")).toBeVisible();
-  await expect(about.getByText("Gross NPA at most 2%")).toBeVisible();
-  await expect(about.getByText(/Gross bad loans as a share of all loans/)).toBeVisible();
-  await page.keyboard.press("Escape");
-  await expect(about).toHaveCount(0);
-  await page.locator(".wheel-title").dblclick();
+  await expect(page.locator(".sp-line")).toHaveText(/bad loans/);
+  const board = page.locator(".fb");
+  await expect(board.getByText("Gross NPA", { exact: false }).first()).toBeVisible();
+  await expect(board.getByText("Return on assets", { exact: false }).first()).toBeVisible();
+  await page.getByRole("button", { name: /^Switch screener/ }).click();
   // (31 Oct 2026: a search, the recent ones, then every strategy by kind)
   const list = page.getByRole("dialog", { name: "Every strategy" });
   const all = list.locator(".sp-cols");
@@ -250,7 +233,7 @@ test("F02-H9 the strategy list and what a strategy looks for", async ({ page, ac
   await list.getByRole("searchbox", { name: "Find a strategy" }).fill("margins");
   await expect(all.getByRole("button")).toHaveCount(1);
   await all.getByRole("button", { name: /High Margins, Low Debt/ }).click();
-  await expect(page.locator(".screen-title")).toHaveText("High Margins, Low Debt");
+  await expect(screenTitle(page)).toHaveText("High Margins, Low Debt");
   await expect(list).toHaveCount(0);
 });
 

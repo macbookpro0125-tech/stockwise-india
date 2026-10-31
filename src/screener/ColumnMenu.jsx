@@ -1,5 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useRef } from "react";
-import { ArrowUp, ArrowDown, X } from "lucide-react";
+import { ArrowUp, ArrowDown, X, ArrowLeft, ArrowRight, ArrowLeftToLine, ArrowRightToLine, Trash2 } from "lucide-react";
 import { formatInput, unitLabel } from "./meta.js";
 import { Definition } from "./MetricInfo.jsx";
 
@@ -18,7 +18,7 @@ function parse(text) {
 
 // about: the column's metric, whose definition and period head the menu (the
 // ⓘ that used to sit beside every header now lives here)
-export default function ColumnMenu({ anchor, label, text = false, def, about = null, meta = null, filter, onSort, onApply, onClose }) {
+export default function ColumnMenu({ anchor, label, text = false, def, about = null, meta = null, filter, onSort, onApply, onClose, column = null }) {
   const [at, setAt] = useState(null);
   const [min, setMin] = useState(def ? formatInput(def, filter?.min) : "");
   const [max, setMax] = useState(def ? formatInput(def, filter?.max) : "");
@@ -65,9 +65,26 @@ export default function ColumnMenu({ anchor, label, text = false, def, about = n
     <div ref={ref} role="dialog" aria-label={`${label}: sort and filter`} className="column-menu"
       onClick={e => e.stopPropagation()}
       style={{ position: "fixed", left: at.left, top: at.top, width: at.width, zIndex: 300, padding: 6, borderRadius: 10, background: "var(--s3)", border: "1px solid var(--bdr2)", boxShadow: "0 10px 30px rgba(0,0,0,0.35)", textAlign: "left", fontWeight: 400, cursor: "default", whiteSpace: "normal" }}>
+      {/* The column itself (31 Oct 2026): its name with 🗑 to take it off,
+          and the period it shows where the measure has several */}
+      {column && (
+        <div className="cm-head">
+          <strong>{column.name}</strong>
+          {column.onRemove && (
+            <button type="button" className="cm-trash" aria-label={`Remove the ${column.name} column`} title="Remove this column" onClick={() => { column.onRemove(); onClose(); }}>
+              <Trash2 size={15} aria-hidden="true" />
+            </button>
+          )}
+          {column.periods && (
+            <select className="cm-period" aria-label="Period" value={column.current} onChange={e => { column.onPeriod(e.target.value); onClose(); }}>
+              {column.periods.map(([id, words]) => <option key={id} value={id}>{words}</option>)}
+            </select>
+          )}
+        </div>
+      )}
       {about && (
         <div style={{ padding: "8px 10px 10px", marginBottom: 4, borderBottom: "1px solid var(--bdr2)" }}>
-          <Definition def={about} meta={meta} />
+          <Definition def={about} meta={meta} titled={!column} short />
         </div>
       )}
       <button type="button" className="column-menu-item" style={item} onClick={() => { onSort("asc"); onClose(); }}>
@@ -76,6 +93,18 @@ export default function ColumnMenu({ anchor, label, text = false, def, about = n
       <button type="button" className="column-menu-item" style={item} onClick={() => { onSort("desc"); onClose(); }}>
         <ArrowDown size={14} aria-hidden="true" /> {text ? "Sort Z to A" : "Sort largest to smallest"}
       </button>
+
+      {column?.onStep && (
+        <div style={{ borderTop: "1px solid var(--bdr2)", marginTop: 6, paddingTop: 6 }}>
+          {[["left", "Move left", ArrowLeft, column.first], ["right", "Move right", ArrowRight, column.last],
+            ["start", "Move to the start", ArrowLeftToLine, column.first], ["end", "Move to the end", ArrowRightToLine, column.last]].map(([where, words, Icon, off]) => (
+            <button key={where} type="button" className="column-menu-item" style={{ ...item, opacity: off ? 0.4 : 1, cursor: off ? "default" : "pointer" }} disabled={off}
+              onClick={() => { column.onStep(where); onClose(); }}>
+              <Icon size={14} aria-hidden="true" /> {words}
+            </button>
+          ))}
+        </div>
+      )}
 
       {def && (
         <form onSubmit={apply} style={{ borderTop: "1px solid var(--bdr2)", marginTop: 6, padding: "10px 6px 4px" }}>

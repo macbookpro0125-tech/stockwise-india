@@ -35,3 +35,11 @@ console.log("filterBoard tests passed");
   assert.equal(boardItem(roce).choices.length, 6);
   console.log("filterBoard range choices passed");
 }
+{
+  const { rangeWords } = await import("./filterBoard.js");
+  assert.equal(rangeWords({ unit: "x" }, { min: null, max: 0.3 }), "Up to 0.3×");
+  assert.equal(rangeWords({ unit: "%" }, { min: 20, max: null }), "20% or more");
+  assert.equal(rangeWords({}, { min: 10, max: 20 }), "10 to 20");
+  assert.equal(rangeWords({}, undefined), "Any");
+  console.log("filterBoard range words passed");
+}

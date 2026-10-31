@@ -13,7 +13,9 @@ import PhoneScreens from "./PhoneScreens.jsx";
 import { NEW_SCREEN_EVENT } from "./phoneChrome.js";
 import { noteRecent } from "./screensHome.js";
 import FilterPanel, { isActiveFilter } from "./screener/FilterPanel.jsx";
-import FilterBoard, { ActiveFilters } from "./screener/FilterBoard.jsx";
+import FilterBoard from "./screener/FilterBoard.jsx";
+import ViewTabs from "./ViewTabs.jsx";
+import { inOrder, moveTo, moveStep } from "./columnHeads.js";
 import StrategyPicker from "./StrategyPicker.jsx";
 import { returnScroll } from "./returnScroll.js";
 import MetricPicker from "./screener/MetricPicker.jsx";
@@ -294,12 +296,37 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtersOpen, picker, showImportModal]);
 
-  // The table's columns: yours, then any metric you're filtering on
+  // The table's columns: yours, then any metric you're filtering on — in the
+  // order you've dragged them into (columnHeads.js), remembered here
+  const [colOrder, setColOrder] = useState(() => read("columnOrder", []));
+  // a filter's own column taken off with its ×: the filter stays on
+  const [hiddenCols, setHiddenCols] = useState(() => read("hiddenColumns", []));
+  const saveHidden = next => { setHiddenCols(next); try { localStorage.setItem("hiddenColumns", JSON.stringify(next)); } catch {} };
+  // A computer: Quality, Research and CMP lead as columns like the rest,
+  // so they move and come off the same way (31 Oct 2026)
+  const FIXED_COLS = isPhone ? [] : ["quality", "researchScore", "cmp"];
   const shownColumnIds = useMemo(() => {
-    const ids = [...columns];
-    for (const f of filters ?? []) if (!f.values && !ids.includes(f.id)) ids.push(f.id);
-    return ids;
-  }, [columns, filters]);
+    const ids = [...FIXED_COLS.filter(id => !hiddenCols.includes(id)), ...columns.filter(id => !FIXED_COLS.includes(id))];
+    for (const f of filters ?? []) if (!f.values && !ids.includes(f.id) && !hiddenCols.includes(f.id)) ids.push(f.id);
+    return inOrder(ids, colOrder);
+  }, [columns, filters, colOrder, hiddenCols, isPhone]); // eslint-disable-line react-hooks/exhaustive-deps
+  // A column's ×: off the table (31 Oct 2026); Columns brings it back
+  const removeColumn = id => {
+    if (columns.includes(id)) setColumns(prev => prev.filter(c => c !== id));
+    else saveHidden([...new Set([...hiddenCols, id])]);
+  };
+  const saveOrder = next => { setColOrder(next); try { localStorage.setItem("columnOrder", JSON.stringify(next)); } catch {} };
+  const moveColumn = (id, target) => saveOrder(moveTo(shownColumnIds, id, target));
+  // from a column's ▾ menu: "left", "right", "start" or "end"
+  const stepColumn = (id, where) => saveOrder(moveStep(shownColumnIds, id, where));
+  // a column switched to another period of the same measure, in its place
+  const swapColumn = (id, to) => {
+    if (id === to || shownColumnIds.includes(to)) return;
+    saveOrder(shownColumnIds.map(c => (c === id ? to : c)));
+    const hidden = hiddenCols.filter(c => c !== to);
+    if (columns.includes(id)) { setColumns(prev => prev.map(c => (c === id ? to : c))); if (hidden.length !== hiddenCols.length) saveHidden(hidden); }
+    else { setColumns(prev => [...prev, to]); saveHidden([...new Set([...hidden, id])]); }
+  };
   const shownColumns = useMemo(() => (meta ? shownColumnIds.map(id => meta.byId.get(id)).filter(Boolean) : []), [meta, shownColumnIds]);
   const activeCount = (filters ?? []).filter(isActiveFilter).length;
 
@@ -449,6 +476,8 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
       });
       setActivePresetId(null);
     } else {
+      if (hiddenCols.includes(id)) { saveHidden(hiddenCols.filter(c => c !== id)); return; }
+      if (FIXED_COLS.includes(id)) { saveHidden([...hiddenCols, id]); return; }
       setColumns(prev => (prev.includes(id) ? prev.filter(c => c !== id) : (filters ?? []).some(f => f.id === id) ? prev : [...prev, id]));
     }
   };
@@ -638,13 +667,8 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
           );
         })()}
 
-        {/* A computer: back to the strategies on a pill pinned under the
-            header, so it's in reach however far down the list you are */}
-        {phoneStep === "stocks" && !isPhone && (
-          <button type="button" onClick={showStrategies} className="screen-back-pin" aria-label="Back to all strategies">
-            <ChevronLeft size={18} strokeWidth={2.2} aria-hidden="true" /> All screeners
-          </button>
-        )}
+        {/* A computer: the Screeners page is in the left bar (31 Oct 2026),
+            so there's no pill back to it here */}
 
         {/* Second page: back to the strategies, and which screen this is —
             its name, what it looks for, and Save */}
@@ -660,7 +684,7 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
                 {/* A computer: the name is the strategy wheel itself — the
                     strategy on its pill, the others above and below to
                     scroll to (one name, in one place) */}
-                <h2 className={`screen-title${wheelItems.length > 1 ? " sr-only" : ""}`}>{activePresetName ?? (activeCount > 0 ? "Your filters" : "Whole market")}</h2>
+                {(isPhone || wheelItems.length <= 1) && <h2 className={`screen-title${wheelItems.length > 1 ? " sr-only" : ""}`}>{activePresetName ?? (activeCount > 0 ? "Your filters" : "Whole market")}</h2>}
                 {wheelItems.length > 1 && (
                   <StrategyPicker presets={wheelPresets} items={wheelItems} value={wheelValue} onPick={pickFromWheel}
                     meta={meta} filters={filters} phone={isPhone}
@@ -669,7 +693,7 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
                 )}
                 {/* A phone keeps the list clean: the strategy's line, rules,
                     count and dates are on its ⓘ page */}
-                {!(isPhone && wheelItems.length > 1) && <p className="screen-about">
+                {isPhone && wheelItems.length <= 1 && <p className="screen-about">
                   {activePresetAbout ?? (activeCount > 0 ? `${activeCount} filter${activeCount === 1 ? "" : "s"} of your own.` : "Every NSE company. Add a filter to narrow it down.")}
                 </p>}
                 {/* A phone: the screen's rules as chips under it (the
@@ -682,6 +706,8 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
               </div>
               {!isPhone && (
                 <div className="screen-actions">
+                  {results?.matched != null && <span className="screen-count"><b>{results.matched.toLocaleString("en-IN")}</b> of {(results.total ?? 0).toLocaleString("en-IN")} companies
+                    {results?.snapshot?.pricesDate && <small> · prices of {new Date(`${results.snapshot.pricesDate}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" })}</small>}</span>}
                   <button type="button" onClick={handleShare} disabled={!activeCount} title="Copy a link that opens this screen" className="btn-ghost tb-btn">
                     <Share size={14} aria-hidden="true" /> {copyFeedback || "Share"}
                   </button>
@@ -725,8 +751,6 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
             {!isPhone && meta && filters && (<>
               <FilterBoard meta={meta} filters={filters} onChange={changeFilters} onMore={() => setFiltersOpen(true)}
                 onUndo={history.current.past.length ? () => stepFilters(true) : null} onRedo={history.current.future.length ? () => stepFilters(false) : null} />
-              <ActiveFilters meta={meta} filters={filters} onChange={changeFilters} onAdd={() => setPicker("filter")}
-                matched={results?.matched ?? null} total={results?.total ?? null} />
             </>)}
 
             {error && (
@@ -761,22 +785,14 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
                 <div><dt>Below fair value</dt><dd>{st.belowFair.toLocaleString("en-IN")}<small>of {st.valued.toLocaleString("en-IN")} valued</small></dd></div>
               </dl>}
               <div className="ss-shortcuts">
-                <div className="ss-row" role="group" aria-label="Narrow to">
+                {isPhone && <div className="ss-row" role="group" aria-label="Narrow to">
                   <span className="ss-label">Narrow to</span>
                   {SIGNALS.map(sg => (
                     <button key={sg.id} type="button" className="ph-chip" aria-pressed={signal === sg.id} onClick={() => setSignal(v => (v === sg.id ? null : sg.id))}>
                       {sg.label} · {counts[sg.id]}
                     </button>
                   ))}
-                </div>
-                <div className="ss-row hide-phone" role="group" aria-label="Columns to show">
-                  <span className="ss-label">Show</span>
-                  <div className="ss-seg">
-                    {COLUMN_SETS.map(set => (
-                      <button key={set.id} type="button" aria-pressed={currentSet(columns) === set.id} onClick={() => setColumns(set.columns)}>{set.label}</button>
-                    ))}
-                  </div>
-                </div>
+                </div>}
               </div>
             </>); })()}
 
@@ -804,6 +820,13 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
               // Hover or click opens the drawer; on a narrow window, the full-screen sheet
               // a computer has the filter board; its "More filters" opens the drawer
               scoreBoxes={isPhone}
+              onMoveColumn={moveColumn}
+              onStepColumn={stepColumn}
+              onRemoveColumn={removeColumn}
+              onSwapColumn={swapColumn}
+              fixedInColumns={!isPhone}
+              // a computer: the column views lead the table's one toolbar row
+              lead={!isPhone ? <ViewTabs sets={COLUMN_SETS} current={currentSet(columns)} onPick={set => setColumns(set.columns)} /> : null}
               filtersButton={null}
               phoneFilters={isPhone ? (
                 <button data-tour="filters" className="btn-ghost" onClick={() => setSheetOpen(true)} style={{ height: 36, fontSize: 13 }}>
