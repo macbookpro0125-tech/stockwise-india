@@ -76,32 +76,40 @@ export default function MyDesk({ rows = [], market, onOpenStock, MoodBar }) {
   // shows as a shape behind it, and the others make room as it goes ──
   const [drag, setDrag] = useState(null); // { id, mode, dx, dy, preview }
   const startDrag = (e, c, mode) => {
-    if (e.button !== 0) return;
+    if (e.button !== 0 || drag) return;
     e.preventDefault();
-    const sx = e.clientX, sy = e.clientY, orig = { ...c };
-    const target = e.currentTarget;
-    target.setPointerCapture?.(e.pointerId);
-    let preview = cards;
+    const sx = e.clientX, sy = e.clientY, orig = { ...c }, before = cards;
+    let preview = before, started = false;
+    // the move and the release are heard on the window, so a fast drag, a
+    // release outside the card or a lost capture still ends it
     const onMove = ev => {
       const dx = ev.clientX - sx, dy = ev.clientY - sy;
+      // a few pixels before it lifts, so a click stays a click
+      if (!started && Math.hypot(dx, dy) < 4) return;
+      started = true;
       const cell = mode === "move"
         ? { ...orig, x: orig.x + Math.round(dx / (colW + GAP)), y: orig.y + Math.round(dy / (ROW + GAP)) }
         : { ...orig, w: orig.w + Math.round(dx / (colW + GAP)), h: orig.h + Math.round(dy / (ROW + GAP)) };
-      const at = clampCard(cell);
-      preview = compact(cards.map(x => (x.id === c.id ? at : x)), c.id);
+      preview = compact(before.map(x => (x.id === c.id ? clampCard(cell) : x)), c.id);
       setDrag({ id: c.id, mode, dx, dy, preview });
     };
-    const onUp = () => {
-      target.removeEventListener("pointermove", onMove);
-      target.removeEventListener("pointerup", onUp);
-      target.removeEventListener("pointercancel", onUp);
+    const end = cancel => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onCancel);
+      window.removeEventListener("blur", onCancel);
+      window.removeEventListener("keydown", onEsc);
       setDrag(null);
-      if (preview !== cards) setCards(compact(preview));
+      if (!cancel && started && preview !== before) setCards(compact(preview));
     };
-    target.addEventListener("pointermove", onMove);
-    target.addEventListener("pointerup", onUp);
-    target.addEventListener("pointercancel", onUp);
-    setDrag({ id: c.id, mode, dx: 0, dy: 0, preview });
+    const onUp = () => end(false);
+    const onCancel = () => end(true);
+    const onEsc = ev => { if (ev.key === "Escape") end(true); };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onCancel);
+    window.addEventListener("blur", onCancel);
+    window.addEventListener("keydown", onEsc);
   };
   // the keyboard: arrows move the card a cell, with Shift they resize it
   const onKey = (e, c) => {

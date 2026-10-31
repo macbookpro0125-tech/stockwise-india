@@ -72,6 +72,11 @@ test("D-2 My desk: cards dragged anywhere, resized by the corner and by keys, ke
   await expect(second).toHaveAttribute("aria-selected", "true");
 
   const boxOf = name => page.getByRole("region", { name, exact: true }).boundingBox();
+  // a plain click on a card's title doesn't lift it, and nothing stays lifted
+  await page.getByRole("region", { name: "Chart", exact: true }).locator(".md-card-head h3").click();
+  await page.getByRole("region", { name: "Chart", exact: true }).locator(".md-card-head h3").click();
+  await expect(page.locator(".md-card.lifted")).toHaveCount(0);
+  await expect(page.locator(".md-ghost")).toHaveCount(0);
   // drag the Peers card by its title up to the top left, above everything
   const peers = page.getByRole("region", { name: "Peers", exact: true });
   const ph = await peers.locator(".md-card-head h3").boundingBox();
@@ -82,6 +87,7 @@ test("D-2 My desk: cards dragged anywhere, resized by the corner and by keys, ke
   await page.mouse.move(list0.x + 20, list0.y - 4, { steps: 8 });
   await expect(page.locator(".md-ghost")).toBeVisible();
   await page.mouse.up();
+  await expect(page.locator(".md-card.lifted")).toHaveCount(0);
   await expect.poll(async () => (await boxOf("Peers")).y).toBeLessThan((await boxOf("Company list")).y);
 
   // widen the Business card from its corner
