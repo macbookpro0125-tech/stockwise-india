@@ -26,6 +26,7 @@ Waiting for the owner to say "push", after the full test run.
 | `25cb072` | Desk restyled the Apple way (same layout) |
 | `3f48e23`, `ddc6055`, `b0f9fd4` | My desk: drag any card anywhere and resize it from its corner, a 12-column grid; drag fixes |
 | this folder | `handoff/` |
+| (next commit) | Price strength from local daily prices when the data file has no 9-month returns |
 
 Tests: the unit tests pass. Both Desk end-to-end tests pass (3 of 4 runs; one
 unexplained failure). The full end-to-end suite hasn't been run on these yet.
@@ -39,7 +40,7 @@ unexplained failure). The full end-to-end suite hasn't been run on these yet.
    - Google has indexed 31 of 6,849 sitemap pages (the sitemap was first read on 30 Oct).
    - Stock pages rank around position 71, for "*company* share price" searches.
    - Check again in 2–3 weeks.
-5. **Price strength shows "—" locally.** The local snapshot lacks 9-month returns, so the scores and the two strength views on the Desk can't be checked locally. The live data has them. Confirm on live after the next push.
+5. **Price strength locally:** a data file without 9-month returns (the local one, from 23 Oct) now gets them from the daily prices kept in `data/history/` (`server/price-strength.js`). It takes a few seconds the first time; nothing is downloaded.
 6. **Only 895 of 2,263 companies have an industry label.** Lemon Tree, Chalet and ITC Hotels have none, so their peers fall back to the broad sector.
 
 ## Set aside (don't redo without asking)

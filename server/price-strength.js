@@ -4,6 +4,8 @@
 // ranked across all companies with all four; 90 means a stronger price than
 // 90% of them. A ranking of the past from NSE's closes, not a forecast, and
 // apart from the quality score, which is about the business.
+import { historyBars } from "./price-history.js";
+
 const WEIGHTS = [["m3", 0.4], ["m6", 0.2], ["m9", 0.2], ["y1", 0.2]];
 
 export function weightedReturn(r) {
@@ -29,11 +31,44 @@ export function priceStrengthRanks(returns) {
   return out;
 }
 
+// The return over 9 calendar months from a company's daily bars (oldest
+// first, on today's share basis), as the data job works it out
+// (market-data.js RETURN_PERIODS): the last close on or before latestDate,
+// against the last close on or before the same date 9 months back
+export function nineMonthReturn(bars, latestDate) {
+  if (!bars?.length || !latestDate) return null;
+  const onOrBefore = iso => { for (let i = bars.length - 1; i >= 0; i--) if (bars[i].date <= iso) return bars[i]; return null; };
+  const now = onOrBefore(latestDate);
+  const base = new Date(`${latestDate}T00:00:00Z`);
+  const day = base.getUTCDate();
+  base.setUTCMonth(base.getUTCMonth() - 9);
+  if (base.getUTCDate() !== day) base.setUTCDate(0);
+  const then = onOrBefore(base.toISOString().slice(0, 10));
+  if (!now || !then || then.date >= now.date || !(then.close > 0)) return null;
+  return Math.round((now.close / then.close - 1) * 10000) / 100;
+}
+
+// A snapshot built before 31 Oct 2026 has no 9-month returns, and without
+// them no company has a strength; theirs are then worked out from the daily
+// prices kept on this machine (price-history.js) — nothing is fetched
+function withNineMonths(snap, barsOf) {
+  const all = Object.entries(snap.returns);
+  if (all.filter(([, r]) => Number.isFinite(r?.m9)).length * 2 >= all.length) return snap.returns;
+  const out = {};
+  for (const [sym, r] of all) {
+    if (Number.isFinite(r?.m9) || ![r?.m3, r?.m6, r?.y1].every(Number.isFinite)) { out[sym] = r; continue; }
+    let m9 = null;
+    try { m9 = nineMonthReturn(barsOf(sym), snap.pricesDate); } catch { m9 = null; }
+    out[sym] = m9 == null ? r : { ...r, m9 };
+  }
+  return out;
+}
+
 // One ranking per snapshot, worked out the first time it's asked for
 const cache = new WeakMap();
-export function priceStrengthOf(snap, sym) {
+export function priceStrengthOf(snap, sym, barsOf = s => historyBars(s, snap)) {
   if (!snap?.returns) return null;
   let ranks = cache.get(snap);
-  if (!ranks) cache.set(snap, (ranks = priceStrengthRanks(snap.returns)));
+  if (!ranks) cache.set(snap, (ranks = priceStrengthRanks(withNineMonths(snap, barsOf))));
   return ranks.get(sym) ?? null;
 }

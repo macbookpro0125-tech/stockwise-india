@@ -4,6 +4,7 @@ Newest first. One line per piece of work; the commit message has the detail.
 
 ## 31 Oct 2026
 
+- **Price strength showed "—" locally.** The 23 Oct data file has no 9-month returns. They're now worked out from the kept daily prices, so 2,109 of 2,263 companies have a strength locally. Live had them all along (Cupid 98, TCS 56).
 - **`handoff/` folder made**, so another AI or account can pick up without re-reading everything.
 - **My desk: drags.** A drag released over the chart never ended, because the chart swallowed the release. It now listens in the capture phase. Titles no longer select their text; narrow cards hide their score columns.
 - **My desk: free grid** (12 columns). Drag a card by its title, resize it by its corner, or use the keyboard (arrows move, Shift + arrows resize). Saved per account.
