@@ -4990,9 +4990,11 @@ tr:hover .row-acts { --row-bg: var(--s3); }
 
 
 /* ── The Screen builder's desk (ScreenDesk.jsx, 31 Oct 2026) ── */
-.desk-switch { display: inline-flex; gap: 2px; padding: 3px; margin: 0 0 12px; border: 1px solid var(--bdr2); border-radius: 10px; background: var(--s1); }
-.desk-switch button { height: 30px; padding: 0 14px; border: 0; border-radius: 7px; background: transparent; color: var(--t2); font: inherit; font-size: 13px; cursor: pointer; }
-.desk-switch button[aria-pressed="true"] { background: var(--s4); color: var(--t1); font-weight: 500; }
+.desk-page { padding: 4px var(--page-x) 24px; }
+.desk-page-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 4px 0 14px; }
+.desk-page-top h1 { margin: 0; font-size: var(--fs-2xl); font-weight: 600; letter-spacing: -0.02em; color: var(--t1); }
+.desk-source { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--t3); }
+.desk-source select { height: 36px; min-width: 260px; padding: 0 10px; border: 1px solid var(--bdr2); border-radius: 9px; background: var(--s1); color: var(--t1); font: inherit; font-size: 13.5px; }
 .desk-empty { padding: 48px 16px; text-align: center; color: var(--t3); font-size: 14px; }
 .desk .up { color: var(--green); }
 .desk .down { color: var(--red); }

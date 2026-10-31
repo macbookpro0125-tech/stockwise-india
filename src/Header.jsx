@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Star, BriefcaseBusiness, ChartLine, Bell, Sun, Moon, Zap, Settings, Telescope, Users, PanelsLeftRight } from "lucide-react";
+import { Star, BriefcaseBusiness, ChartLine, Bell, Sun, Moon, Zap, Settings, Telescope, Users, PanelsLeftRight, Columns3 } from "lucide-react";
 import { useWatchlist } from "./watchlist.js";
 import { portfolioStore, alertsStore } from "./stores.js";
 import StockSearchBar from "./StockSearchBar.jsx";
@@ -44,6 +44,8 @@ export const TABS = [
   // (DiscoverView's two steps). A phone keeps the one Discover tab.
   { id: "discover", label: "Discover", wide: "Screeners", short: "Discover", Icon: GridIcon },
   { id: "workspace", label: "Screen builder", short: "Builder", Icon: PanelsLeftRight, wideOnly: true },
+  // A list walked with its chart and company beside it (DeskView.jsx, 31 Oct 2026)
+  { id: "desk", label: "Desk", short: "Desk", Icon: Columns3, wideOnly: true },
   // The indices and the news (ExploreView.jsx, 23 Oct 2026)
   { id: "explore", label: "Explore", short: "Explore", Icon: Telescope },
   // The market map, a page of its own (MarketMapView.jsx, 31 Oct 2026); a

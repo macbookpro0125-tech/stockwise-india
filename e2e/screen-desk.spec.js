@@ -1,12 +1,12 @@
-// The Screen builder's desk (31 Oct 2026): the screen's companies, the one
-// picked charted beside its business and price, moved with a click or ↑/↓
-import { test, expect, openStocks } from "./fixtures.js";
+// The Desk, a page of its own (31 Oct 2026): a list, the company picked
+// charted beside its business and price, moved with a click or ↑/↓
+import { test, expect, openPage } from "./fixtures.js";
 
-test("D-1 the desk shows the screen's companies; a click and the arrow keys move the chart and the company together", async ({ page, account, isMobile }) => {
+test("D-1 the Desk walks a ready-made screen; a click and the arrow keys move the chart and the company together", async ({ page, account, isMobile }) => {
   test.skip(isMobile, "the desk is a computer's");
   await page.goto("/");
-  await openStocks(page);
-  await page.getByRole("group", { name: "Show the screen as" }).getByRole("button", { name: "Desk" }).click();
+  await openPage(page, "Desk");
+  await page.getByRole("combobox", { name: "List" }).selectOption({ label: "High Quality Compounders" });
   const list = page.getByRole("listbox", { name: /^Companies/ });
   await expect(list.getByRole("option").first()).toBeVisible({ timeout: 45_000 });
   const first = await list.getByRole("option").first().locator("b").textContent();
@@ -34,9 +34,6 @@ test("D-1 the desk shows the screen's companies; a click and the arrow keys move
     await expect(list.getByRole("option")).toHaveCount(n);
     expect(n).toBeLessThanOrEqual(all);
   }
-  if (process.env.DESK_SHOT) { await views.getByRole("button", { name: /^All/ }).click(); await page.evaluate(() => window.scrollTo(0, document.querySelector(".desk-switch").getBoundingClientRect().top + window.scrollY - 70)); await page.waitForTimeout(1500); await page.screenshot({ path: process.env.DESK_SHOT }); }
+  if (process.env.DESK_SHOT) { await views.getByRole("button", { name: /^All/ }).click(); await page.waitForTimeout(1500); await page.screenshot({ path: process.env.DESK_SHOT }); }
 
-  // and back to the table, remembered
-  await page.getByRole("group", { name: "Show the screen as" }).getByRole("button", { name: "Table" }).click();
-  await expect(list).toHaveCount(0);
 });

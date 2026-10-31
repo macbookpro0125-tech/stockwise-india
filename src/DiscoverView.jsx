@@ -7,13 +7,11 @@ import { cardName } from "./stockName.js";
 import PresetCards, { presetRules } from "./PresetCards.jsx";
 import { lazyPage } from "./lazyPage.js";
 // the news card's module (all of News) is fetched when the card first shows
-// the Screen builder's desk: list, chart and the company side by side (a computer's)
-const ScreenDesk = lazyPage(() => import("./ScreenDesk.jsx"));
 const NewsTile = lazyPage(() => import("./NewsView.jsx").then(m => ({ default: m.NewsTile })));
 import { useAdPause } from "./ads.jsx";
 import { strategiesStore, browserLeftovers, moveLeftovers, discardLeftovers } from "./accountData.js";
 import ResultsTable from "./ResultsTable.jsx";
-import { SIGNALS, applySignal, signalCounts, COLUMN_SETS, currentSet, listStats, DESK_COLUMNS } from "./screenShortcuts.js";
+import { SIGNALS, applySignal, signalCounts, COLUMN_SETS, currentSet, listStats } from "./screenShortcuts.js";
 import ScreensHome from "./ScreensHome.jsx";
 import PhoneScreens from "./PhoneScreens.jsx";
 import { NEW_SCREEN_EVENT } from "./phoneChrome.js";
@@ -108,9 +106,6 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
   });
   // a signal narrowing the results, and the column sets (screenShortcuts.js)
   const [signal, setSignal] = useState(null);
-  // A computer's Screen builder shows the screen as a table or as the desk
-  const [deskOn, setDeskOn] = useState(() => { try { return localStorage.getItem("screenBuilderView") === "desk"; } catch { return false; } });
-  useEffect(() => { try { localStorage.setItem("screenBuilderView", deskOn ? "desk" : "table"); } catch {} }, [deskOn]);
   const [activePresetId, setActivePresetId] = useState(null);
   useEffect(() => { setSignal(null); }, [activePresetId]);
   const [activePresetName, setActivePresetName] = useState(null);
@@ -377,12 +372,10 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
   // filters go from null to [], and a key that read the same for both never
   // changed — so the first screen never ran and a new user's Discover sat on
   // its loading rows until a reload.
-  // the desk's figures ride along while it's showing
-  const askedColumns = useMemo(() => (deskOn && !isPhone ? [...new Set([...shownColumnIds, ...DESK_COLUMNS])] : shownColumnIds), [deskOn, isPhone, shownColumnIds]);
-  const requestKey = filters ? JSON.stringify([filters.filter(isActiveFilter), askedColumns]) : null;
+  const requestKey = filters ? JSON.stringify([filters.filter(isActiveFilter), shownColumnIds]) : null;
   useEffect(() => {
     if (!filters) return;
-    const t = setTimeout(() => run({ filters: filters.filter(isActiveFilter), columns: askedColumns }), 300);
+    const t = setTimeout(() => run({ filters: filters.filter(isActiveFilter), columns: shownColumnIds }), 300);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [requestKey]);
@@ -850,15 +843,7 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
               </div>
             </>); })()}
 
-            {!isPhone && <div className="desk-switch" role="group" aria-label="Show the screen as">
-              <button type="button" aria-pressed={!deskOn} onClick={() => setDeskOn(false)}>Table</button>
-              <button type="button" aria-pressed={deskOn} onClick={() => setDeskOn(true)}>Desk</button>
-            </div>}
-            {deskOn && !isPhone ? (
-              <Suspense fallback={<div className="desk-empty" role="status">Loading the desk…</div>}>
-                <ScreenDesk rows={signal ? applySignal(results?.results, signal) : results?.results ?? []} loading={!results && !error} onOpenStock={onOpenStock} />
-              </Suspense>
-            ) : <ResultsTable
+            <ResultsTable
               theme={theme}
               sortTo={ranking}
               matches={signal ? applySignal(results?.results, signal) : results?.results}
@@ -896,7 +881,7 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
                 </button>
               ) : null}
               meta={meta}
-            />}
+            />
           </main>
         </div>
         )}

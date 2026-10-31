@@ -37,6 +37,7 @@ const Landing = lazyPage(loadLanding);
 const SIGNED_IN_HINT = "stockwise-signed-in";
 const ExploreView = lazyPage(() => import("./ExploreView.jsx"));
 const MarketMapView = lazyPage(() => import("./MarketMapView.jsx"));
+const DeskView = lazyPage(() => import("./DeskView.jsx"));
 const named = (load, name) => lazyPage(() => load().then(m => ({ default: m[name] })));
 const legal = name => named(() => import("./LegalPages.jsx"), name);
 const PrivacyPage = legal("PrivacyPage"), DisclaimerPage = legal("DisclaimerPage"), HelpPage = legal("HelpPage"), AboutPage = legal("AboutPage"), MeasuresPage = legal("MeasuresPage");
@@ -445,6 +446,7 @@ export default function App() {
             returns to the heat map or the news where they were */}
         {tab === "explore" && <div hidden={!!open}><ExploreView onOpenStock={openSymbol} openId={newsOpen} onOpened={() => setNewsOpen(null)} openIndexName={indexOpen} onIndexOpened={() => setIndexOpen(null)} onOpenMap={() => goTab("map")} /></div>}
         {/* Kept mounted under a company page too: Back returns to the map as it was */}
+        {tab === "desk" && <div hidden={!!open}><DeskView onOpenStock={openSymbol} /></div>}
         {tab === "map" && <div hidden={!!open}><MarketMapView screen={mapScreen} request={mapRequest} onOpenStock={openSymbol} onOpenIndex={name => { setIndexOpen(name); goTab("explore"); }} /></div>}
         {!open && tab === "momentum" && account?.features?.momentum && <MomentumView onOpenStock={openSymbol} />}
         {!open && tab === "visitors" && account?.features?.owner && <VisitorsView />}

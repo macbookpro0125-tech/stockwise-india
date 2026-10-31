@@ -5,7 +5,7 @@ import PeersPanel from "./PeersPanel.jsx";
 import { QualityBadge } from "./ResearchBadges.jsx";
 import { cardName } from "./stockName.js";
 
-// The Screen builder's desk (31 Oct 2026, asked for "this kind of work,
+// The Desk (DeskView.jsx, 31 Oct 2026, asked for "this kind of work,
 // better"): the screen's companies down the left, the one picked charted in
 // the middle, its business, price and peers on the right — one click or ↑/↓
 // moves all three. Each row carries both scores, the price's strength and the
@@ -47,7 +47,7 @@ function Score({ value, title }) {
   return <span className={`desk-score ${n >= 70 ? "hi" : n >= 40 ? "mid" : "lo"}`} title={title}>{n}</span>;
 }
 
-export default function ScreenDesk({ rows = [], loading, onOpenStock }) {
+export default function ScreenDesk({ rows = [], loading, onOpenStock, empty = "No companies in this list." }) {
   const [view, setView] = useState(() => read("deskView", "all"));
   const [sort, setSort] = useState(() => read("deskSort", "screen"));
   const [side, setSide] = useState(() => read("deskSide", "business"));
@@ -81,7 +81,7 @@ export default function ScreenDesk({ rows = [], loading, onOpenStock }) {
   }, [current?.symbol]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading && !rows.length) return <div className="desk-empty" role="status">Loading the screen…</div>;
-  if (!rows.length) return <div className="desk-empty">No companies in this screen. Loosen a filter to fill the desk.</div>;
+  if (!rows.length) return <div className="desk-empty">{empty}</div>;
 
   const r = current;
   const fv = fromFair(r);
