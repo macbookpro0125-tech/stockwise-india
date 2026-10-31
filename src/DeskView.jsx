@@ -17,6 +17,8 @@ export default function DeskView({ onOpenStock }) {
   const [source, setSource] = useState(read);
   const [presets, setPresets] = useState([]);
   const [mine, setMine] = useState(() => strategiesStore.get());
+  // whether the lists have come, so a list that's gone (a deleted screen) can be told from one still loading
+  const [loaded, setLoaded] = useState({ presets: false, mine: strategiesStore.get().length > 0 });
   const [res, setRes] = useState(null);
   const [error, setError] = useState("");
   const [market, setMarket] = useState(null);
@@ -26,9 +28,9 @@ export default function DeskView({ onOpenStock }) {
   useEffect(() => { api.deskMarket().then(setMarket).catch(() => {}); }, []);
 
   useEffect(() => { try { localStorage.setItem("deskSource", source); } catch {} }, [source]);
-  useEffect(() => { api.presets().then(l => setPresets(Array.isArray(l) ? l : [])).catch(() => {}); }, []);
+  useEffect(() => { api.presets().then(l => setPresets(Array.isArray(l) ? l : [])).catch(() => {}).finally(() => setLoaded(x => ({ ...x, presets: true }))); }, []);
   useEffect(() => {
-    const fn = () => setMine(strategiesStore.get());
+    const fn = () => { setMine(strategiesStore.get()); setLoaded(x => ({ ...x, mine: true })); };
     window.addEventListener("customPresetsUpdated", fn);
     if (!strategiesStore.get().length) strategiesStore.load();
     return () => window.removeEventListener("customPresetsUpdated", fn);
@@ -47,12 +49,16 @@ export default function DeskView({ onOpenStock }) {
       }
       const [kind, id] = source.split(":");
       const p = (kind === "mine" ? mine : presets).find(x => String(x.id) === id);
-      if (!p) return null; // still loading the lists
+      if (!p) {
+        // a screen that's gone (deleted, or renamed away): back to every company
+        if (loaded[kind === "mine" ? "mine" : "presets"]) setSource(ALL);
+        return null;
+      }
       return api.screen(Array.isArray(p.filters) ? { filters: p.filters, columns: DESK_COLUMNS } : { ...p.criteria, columns: DESK_COLUMNS });
     };
     run().then(r => { if (!off && r) setRes(r); }).catch(e => { if (!off) setError(e?.message || "The list didn't load."); });
     return () => { off = true; };
-  }, [source, presets.length, mine.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [source, presets.length, mine.length, loaded.presets, loaded.mine]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <section className="desk-page" aria-label="Desk">
@@ -89,7 +95,7 @@ export default function DeskView({ onOpenStock }) {
 // under 40% weak, mixed between.
 const STAGE_TONE = { advancing: "var(--green)", topping: "var(--yellow)", declining: "var(--red)", basing: "var(--brand-wise)" };
 export function MoodBar({ market }) {
-  if (!market) return <div className="mood mood-loading" role="status" aria-label="Loading the market's mood" />;
+  if (!market) return <div className="mood mood-loading" role="status">Working out the market's mood…</div>;
   if (!market.liquid) return null;
   const a200 = market.above200 ?? 0;
   const word = a200 >= 60 ? "Strong" : a200 < 40 ? "Weak" : "Mixed";

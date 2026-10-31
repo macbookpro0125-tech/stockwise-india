@@ -96,12 +96,14 @@ export const LIQUID_CR = 1;
 // The whole market's mood and each company's stage and patterns:
 // { date, liquid, stages: { id: n }, above50, above200, setups: { id: n },
 //   bySymbol: { SYM: { stage, setups } } } — worked out once per day of prices
-let cached = null;
+let cached = null, pending = null; // the day's answer, and the one being worked out
+
 export async function deskMarket(symbols, { snapshot = loadMarketSnapshot(), barsOf = sym => historyBars(sym, snapshot) } = {}) {
   const date = snapshot?.pricesDate ?? null;
   if (cached && cached.date === date && cached.count === symbols.length) return cached.value;
-  if (cached?.pending && cached.date === date) return cached.pending;
-  const pending = (async () => {
+  // asked again while it's being worked out: the same answer, never the day before's
+  if (pending && pending.date === date && pending.count === symbols.length) return pending.promise;
+  const promise = (async () => {
     const bySymbol = {};
     const stages = Object.fromEntries(STAGES.map(s => [s.id, 0]));
     const setups = Object.fromEntries(SETUPS.map(s => [s.id, 0]));
@@ -119,7 +121,7 @@ export async function deskMarket(symbols, { snapshot = loadMarketSnapshot(), bar
     const value = { date, liquid, stages, above50: liquid ? (a50 / liquid) * 100 : null, above200: liquid ? (a200 / liquid) * 100 : null, setups, bySymbol };
     cached = { date, count: symbols.length, value };
     return value;
-  })().catch(e => { cached = null; throw e; });
-  cached = { ...(cached ?? {}), date, pending };
-  return pending;
+  })().finally(() => { pending = null; });
+  pending = { date, count: symbols.length, promise };
+  return promise;
 }

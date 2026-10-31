@@ -181,8 +181,9 @@ const num = (x, dp = 1) => (x == null ? "—" : x.toLocaleString("en-IN", { maxi
 export function Business({ r }) {
   const fv = fromFair(r);
   return (
-    <dl className="desk-facts">
+    <div className="desk-facts">
       <div className="desk-big"><QualityBadge research={r.research} size={13} /><span>{quality(r) != null ? "Quality score, from its own filings" : "Not scored yet"}</span></div>
+      <dl>
       <Row label="Against fair value" hint="Today's fair value: normalized earnings at the company's own usual P/E">{fv == null ? "—" : <span className={fv < 0 ? "up" : "down"}>{fairWords(fv)}</span>}</Row>
       <Row label="Fair value">{price(r.fv25)}</Row>
       <Row label="P/E">{r.pe > 0 ? num(r.pe) : "—"}</Row>
@@ -195,7 +196,8 @@ export function Business({ r }) {
       <Row label="Pledged">{r.pledgedPct != null ? `${num(r.pledgedPct)}%` : "—"}</Row>
       <Row label="Market cap">{r.marketCapCr != null ? `₹${num(r.marketCapCr, 0)} cr` : "—"}</Row>
       {r.nextResults && <Row label="Next results">{new Date(`${r.nextResults}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" })}</Row>}
-    </dl>
+      </dl>
+    </div>
   );
 }
 
@@ -209,20 +211,22 @@ export function PriceFacts({ r, stage, stageInfo }) {
     ["Price strength 70 or more", v(r, "priceStrength") >= 70],
   ];
   return (
-    <dl className="desk-facts">
+    <div className="desk-facts">
       <div className="desk-big"><Score value={v(r, "priceStrength")} title="Price strength, 1–99" /><span>Price strength: the last year's return, recent months counted most, ranked against every NSE company</span></div>
       {at != null && <div className="desk-range" aria-label={`52-week range ${price(lo)} to ${price(hi)}`}>
         <div className="desk-range-bar"><i style={{ left: `${at * 100}%` }} /></div>
         <div className="desk-range-ends"><span>{price(lo)}</span><span>52-week range</span><span>{price(hi)}</span></div>
       </div>}
+      <dl>
       {stage && <Row label="Trend stage" hint={stageInfo?.find(s => s.id === stage)?.about}><span className={`desk-stage ${stage}`}>{STAGE_WORDS[stage]}</span></Row>}
       <Row label="RSI, 14 days">{v(r, "rsi14") != null ? v(r, "rsi14").toFixed(0) : "—"}</Row>
       <Row label="Against 50-day average"><span className={tone(v(r, "vsSma50"))}>{pct(v(r, "vsSma50"))}</span></Row>
       <Row label="Against 200-day average"><span className={tone(v(r, "vsSma200"))}>{pct(v(r, "vsSma200"))}</span></Row>
       <Row label="Volatility, 1 year">{v(r, "volatility1y") != null ? `${v(r, "volatility1y").toFixed(0)}%` : "—"}</Row>
+      </dl>
       <div className="desk-checks">
-        {checks.map(([label, ok]) => <div key={label} className={ok ? "ok" : "no"}><span aria-hidden="true">{ok ? "✓" : "–"}</span>{label}</div>)}
+        {checks.map(([label, ok]) => <div key={label} className={ok ? "ok" : "no"}><span aria-hidden="true">{ok ? "✓" : "–"}</span>{label}<span className="sr-only">{ok ? ": yes" : ": no"}</span></div>)}
       </div>
-    </dl>
+    </div>
   );
 }

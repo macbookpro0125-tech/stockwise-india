@@ -81,7 +81,7 @@ export function chapterChecks(id, r) {
 
 function Mark({ t, size = 13 }) {
   const I = MARKS[t];
-  return <span className={`ct-mark ct-${t}`} aria-label={t === "info" ? undefined : WORDS[t]} aria-hidden={t === "info" ? "true" : undefined}><I size={size} strokeWidth={2.6} aria-hidden="true" /></span>;
+  return <span className={`ct-mark ct-${t}`} role={t === "info" ? undefined : "img"} aria-label={t === "info" ? undefined : WORDS[t]} aria-hidden={t === "info" ? "true" : undefined}><I size={size} strokeWidth={2.6} aria-hidden="true" /></span>;
 }
 
 // rows: the checks (chapterChecks); detail: [{ key, question, answer?,

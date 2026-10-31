@@ -70,13 +70,15 @@ export default function MyDesk({ rows = [], market, onOpenStock, MoodBar }) {
     return () => ro.disconnect();
   }, [layout != null]); // eslint-disable-line react-hooks/exhaustive-deps
   const colW = (width - GAP * (COLS - 1)) / COLS;
+  // too narrow for columns: the cards one under another, in their order, at full width
+  const narrow = width < 640;
   const box = c => ({ left: c.x * (colW + GAP), top: c.y * (ROW + GAP), width: c.w * colW + (c.w - 1) * GAP, height: c.h * ROW + (c.h - 1) * GAP });
 
   // ── dragging: the card follows the pointer exactly; where it would land
   // shows as a shape behind it, and the others make room as it goes ──
   const [drag, setDrag] = useState(null); // { id, mode, dx, dy, preview }
   const startDrag = (e, c, mode) => {
-    if (e.button !== 0 || drag) return;
+    if (e.button !== 0 || drag || narrow) return;
     e.preventDefault();
     const sx = e.clientX, sy = e.clientY, orig = { ...c }, before = cards;
     let preview = before, started = false, ended = false;
@@ -121,7 +123,7 @@ export default function MyDesk({ rows = [], market, onOpenStock, MoodBar }) {
   // the keyboard: arrows move the card a cell, with Shift they resize it
   const onKey = (e, c) => {
     const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
-    if (!d) return;
+    if (!d || narrow) return;
     e.preventDefault();
     const at = clampCard(e.shiftKey ? { ...c, w: c.w + d[0], h: c.h + d[1] } : { ...c, x: c.x + d[0], y: c.y + d[1] });
     setCards(compact(cards.map(x => (x.id === c.id ? at : x)), c.id));
@@ -152,7 +154,8 @@ export default function MyDesk({ rows = [], market, onOpenStock, MoodBar }) {
     }
   };
 
-  const shown = drag?.preview ?? cards;
+  const stacked = cs => { let y = 0; return [...cs].sort((a, b) => a.y - b.y || a.x - b.x).map(c => { const at = { ...c, x: 0, w: COLS, y }; y += c.h; return at; }); };
+  const shown = narrow ? stacked(cards) : drag?.preview ?? cards;
   const rowsUsed = Math.max(0, ...shown.map(c => c.y + c.h));
   const ghost = drag && shown.find(c => c.id === drag.id);
   return (
@@ -160,7 +163,7 @@ export default function MyDesk({ rows = [], market, onOpenStock, MoodBar }) {
       <div className="md-bar">
         {r && <span className="md-picked">Following <b>{cardName(r.name)}</b>{stage ? <span className={`desk-stage ${stage}`}>{STAGE_WORDS[stage]}</span> : null}</span>}
         <span className="md-save" aria-live="polite">{saveState}</span>
-        {cards.length > 0 && <span className="md-tip">Drag a card by its title to move it, by its corner to resize</span>}
+        {cards.length > 0 && !narrow && <span className="md-tip">Drag a card by its title to move it, by its corner to resize</span>}
         {cards.length > 0 && <button type="button" className="desk-open md-btn" onClick={() => setAdding(true)}><Plus size={14} /> Add card</button>}
       </div>
 
@@ -191,7 +194,7 @@ export default function MyDesk({ rows = [], market, onOpenStock, MoodBar }) {
               : { ...b, width: Math.max(colW * 2, b.width + drag.dx), height: Math.max(ROW * 3, b.height + drag.dy) })
             : box(c);
           return (
-            <section key={c.id} className={`md-card${lifted ? " lifted" : ""}`} style={style} aria-label={label(c.kind)}>
+            <section key={c.id} className={`md-card${lifted ? " lifted" : ""}${narrow ? " fixed" : ""}`} style={style} aria-label={label(c.kind)}>
               <header className="md-card-head" onPointerDown={e => { if (!e.target.closest("button")) startDrag(e, c, "move"); }}>
                 <span className="md-grip" role="button" tabIndex={0} aria-label={`Move or resize ${label(c.kind)}: arrow keys move it, Shift with arrow keys resizes it`} onKeyDown={e => onKey(e, c)}><GripVertical size={14} /></span>
                 <h3>{label(c.kind)}</h3>

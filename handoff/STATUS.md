@@ -1,6 +1,6 @@
 # Status
 
-_Last updated: 31 Oct 2026, by Claude (Opus) on branch `screeners-home`._
+_Last updated: 1 Nov 2026, by Claude (Opus) on branch `screeners-home`._
 
 ## Live on jocularinsights.in
 
@@ -26,10 +26,12 @@ Waiting for the owner to say "push", after the full test run.
 | `25cb072` | Desk restyled the Apple way (same layout) |
 | `3f48e23`, `ddc6055`, `b0f9fd4` | My desk: drag any card anywhere and resize it from its corner, a 12-column grid; drag fixes |
 | this folder | `handoff/` |
-| (next commit) | Price strength from local daily prices when the data file has no 9-month returns |
+| `0b86dda` | Price strength from local daily prices when the data file has no 9-month returns |
+| (1 Nov) | Overnight debug: Desk fixes, narrow windows, accessibility fixes across the app (see LOG) |
 
-Tests: the unit tests pass. Both Desk end-to-end tests pass (3 of 4 runs; one
-unexplained failure). The full end-to-end suite hasn't been run on these yet.
+Tests (1 Nov, overnight): the unit tests pass, all 136 end-to-end tests pass,
+and the accessibility scan is clean. Ready to push whenever the owner says
+"push"; run the checks again first if anything has changed since.
 
 ## Open / next
 

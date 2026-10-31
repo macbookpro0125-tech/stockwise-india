@@ -2,6 +2,21 @@
 
 Newest first. One line per piece of work; the commit message has the detail.
 
+## 1 Nov 2026 (overnight debug, asked for "debug everything, start to last")
+
+- **Full run:** unit tests pass; all 136 end-to-end tests pass (24 skipped by design); the build is clean apart from the usual large-file warning. The live site's 10 public pages answer in under a second.
+- **Fixed bugs:**
+  - The Desk was stuck on "Loading" when its last list was a deleted screen; it now falls back to every company.
+  - The market mood could hand out the previous day's answer while the new one was being worked out.
+  - Desk and My desk on a narrow window: they stack instead of scrolling sideways or squeezing.
+  - The mood bar says "Working out the market's mood…" while it loads.
+- **Accessibility:** the scan of every page went from about 30 serious findings to none. Fixed:
+  - footer links that were too faint
+  - the "Strong/Fair/Weak" badges' labels
+  - low-contrast return labels, Explore badges and dates
+  - the Desk's change badges, facts list and stage tag
+- **The sweep test** now covers Desk and Market map, and its time limit went up to 3 minutes.
+
 ## 31 Oct 2026
 
 - **Price strength showed "—" locally.** The 23 Oct data file has no 9-month returns. They're now worked out from the kept daily prices, so 2,109 of 2,263 companies have a strength locally. Live had them all along (Cupid 98, TCS 56).

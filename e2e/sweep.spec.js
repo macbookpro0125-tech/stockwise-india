@@ -8,6 +8,8 @@ const axeLog = lines => { mkdirSync("test-results", { recursive: true }); if (li
 const nav = page => page.getByRole("navigation").first();
 
 test("every tab opens", async ({ page, account }) => {
+  // ten pages, each scanned for accessibility
+  test.setTimeout(180_000);
   await page.goto("/");
   await expect(page.getByRole("button", { name: "Account" })).toBeVisible();
   // a computer's pages are in the bar down the left on every page (26 Oct
@@ -23,7 +25,7 @@ test("every tab opens", async ({ page, account }) => {
   // the Workspace gives the table the width: the bar is tucked behind ☰
   await expect(page.getByRole("button", { name: "Show the pages" }), "a stock list has the bar behind ☰").toBeVisible();
   axeLog(await axeCheck(page, "Discover"));
-  for (const tab of ["Explore", "Momentum", "Watchlist", "Portfolio", "Performance", "Alerts"]) {
+  for (const tab of ["Explore", "Market map", "Desk", "Momentum", "Watchlist", "Portfolio", "Performance", "Alerts"]) {
     await openPage(page, tab);
     await page.waitForLoadState("networkidle");
     await expect(rail, "the other pages keep the bar").toBeVisible();
