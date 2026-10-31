@@ -1,6 +1,7 @@
 import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.jsx";
+import Intro from "./Intro.jsx";
 // Inter, served with the app rather than from Google Fonts (no third-party
 // request); the optical-size axis tightens it at heading sizes
 import "@fontsource-variable/inter/opsz.css";
@@ -53,6 +54,8 @@ function Drawn() {
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
+    {/* first, so it has decided before the app asks whether to wait for it */}
+    <Intro />
     <App />
     <ReconnectNotice />
     <Drawn />
