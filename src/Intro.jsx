@@ -63,6 +63,9 @@ export default function Intro() {
   // the ring creeps on by itself (to 80% over the shortest opening) so it never
   // sits still; each real step that's done lifts it at least that far
   const [creep, setCreep] = useState(0);
+  // how many lines have finished typing (each takes its turn: index.css .intro-lines li);
+  // a line ticks only once it's typed, so the ring and the lines finish together
+  const [typed, setTyped] = useState(0);
   const done = useRef(false);
 
   // eighteen sparks, each its own place, size, speed and delay
@@ -83,10 +86,11 @@ export default function Intro() {
   useEffect(() => {
     if (!on) return;
     const t1 = setTimeout(() => setApp(true), 380);
+    const typing = [1110, 1390, 1670].map((ms, i) => setTimeout(() => setTyped(i + 1), ms));
     const tick = setInterval(() => setCreep(Math.min(0.8, ((performance.now() - started.current) / MIN_MS) * 0.8)), 90);
     facts().then(setF);
     const cap = setTimeout(finish, MAX_MS);
-    return () => { clearTimeout(t1); clearTimeout(cap); clearInterval(tick); };
+    return () => { clearTimeout(t1); clearTimeout(cap); clearInterval(tick); typing.forEach(clearTimeout); };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // everything in (or given up on) and the opening has had its moment: away
@@ -99,9 +103,9 @@ export default function Intro() {
 
   if (!on) return null;
   const lines = [
-    { text: "Opening your research desk", ok: app },
-    { text: f?.date ? `Prices · NSE close of ${shortDay(f.date)}` : "Prices · NSE's daily close", ok: !!f?.date, failed: f === null },
-    { text: f?.screens ? `${f.screens} ready-made screens` : "Ready-made screens", ok: !!f?.screens, failed: f === null },
+    { text: "Opening your research desk", ok: app && typed > 0 },
+    { text: f?.date ? `Prices · NSE close of ${shortDay(f.date)}` : "Prices · NSE's daily close", ok: !!f?.date && typed > 1, failed: f === null },
+    { text: f?.screens ? `${f.screens} ready-made screens` : "Ready-made screens", ok: !!f?.screens && typed > 2, failed: f === null },
   ];
   const progress = leaving ? 1 : Math.max(creep, lines.filter(l => l.ok).length / 3);
   const pctShown = Math.min(100, Math.round(progress * 100));
