@@ -1,3 +1,4 @@
+import CompareFor from "./CompareFor.jsx";
 import { useState, useEffect } from "react";
 import { api } from "./api.js";
 import { QualityBadge } from "./ResearchBadges.jsx";
@@ -39,6 +40,8 @@ const PHONE_ORDER = ["Mkt Cap", "P/E", "ROCE", "Sales Gr 3Y", "Quality", "Div Yl
 const PHONE_COLUMNS = PHONE_ORDER.map(name => COLUMNS.find(([c]) => c === name));
 
 export default function PeersPanel({ symbol, onAnalyze }) {
+  // Compare: this company and its four largest peers side by side (CompareFor.jsx)
+  const [comparing, setComparing] = useState(false);
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [showAll, setShowAll] = useState(false);
@@ -63,10 +66,16 @@ export default function PeersPanel({ symbol, onAnalyze }) {
 
   return (
     <div style={{ border: "1px solid var(--bdr2)", borderRadius: 14, background: "var(--s2)", padding: 16, marginBottom: 16 }}>
-      <div style={{ fontSize: 14, fontWeight: 500, color: "var(--t1)", letterSpacing: "-0.01em" }}>
-        Peers
-        {data?.peerLabel && <span style={{ fontSize: 11, fontWeight: 500, color: "var(--t3)", marginLeft: 8 }}>{data.peerLabel}</span>}
+      <div className="peers-head">
+        <div style={{ fontSize: 14, fontWeight: 500, color: "var(--t1)", letterSpacing: "-0.01em" }}>
+          Peers
+          {data?.peerLabel && <span style={{ fontSize: 11, fontWeight: 500, color: "var(--t3)", marginLeft: 8 }}>{data.peerLabel}</span>}
+        </div>
+        {rows.filter(r => r.symbol !== symbol).length > 0 && (
+          <button type="button" className="ex-heat-back" onClick={() => setComparing(true)}>Compare with its top {Math.min(4, rows.filter(r => r.symbol !== symbol).length)} peers</button>
+        )}
       </div>
+      {comparing && <CompareFor symbols={[symbol, ...rows.filter(r => r.symbol !== symbol).slice(0, 4).map(r => r.symbol)]} onClose={() => setComparing(false)} />}
       <p style={{ fontSize: 11, color: "var(--t3)", margin: "4px 0 12px", lineHeight: 1.5 }}>
         {data?.peerBasis === "business"
           ? <>Companies in the {data.peerLabel} sector, largest first{data.total > top30 ? ` (top ${top30} of ${data.total})` : ""}. NSE doesn't classify this company, so its sector here comes from how its results filing describes its business{data.business?.length ? <>: “{data.business.join("; ")}”</> : ""} — a match that's right for about 9 companies in 10. Peer medians exclude this company.</>

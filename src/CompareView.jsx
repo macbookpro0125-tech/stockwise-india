@@ -3,6 +3,7 @@ import { lazyPage } from "./lazyPage.js";
 import { FileText, X } from "lucide-react";
 import { api } from "./api.js";
 import { QualityBadge, overallTone } from "./ResearchBadges.jsx";
+import CompareChart from "./CompareChart.jsx";
 const InvestmentBriefView = lazyPage(() => import("./InvestmentBriefView.jsx"));
 
 // Ported from stock-screener's src/components/CompareView.jsx: up to five
@@ -110,6 +111,7 @@ export default function CompareView({ stocks, pricesDate, onClose }) {
           </div>
         </div>
 
+        <CompareChart stocks={stocks} />
         <div style={{ background: "var(--card)", borderRadius: 12, border: "1px solid var(--bdr2)", overflowX: "auto", boxShadow: "var(--sh-md)" }}>
           <div style={{ minWidth: 180 + stocks.length * 140 }}>
             <div style={{ display: "grid", gridTemplateColumns: cols, borderBottom: "1px solid var(--bdr)" }}>

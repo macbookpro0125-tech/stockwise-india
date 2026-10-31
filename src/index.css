@@ -4926,3 +4926,40 @@ tr:hover .row-acts { --row-bg: var(--s3); }
 .intro-bar-track span { display: block; height: 100%; background: #E9EEFF; transition: width 260ms linear; }
 .intro-bar-label { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(233, 238, 255, 0.55); font-variant-numeric: tabular-nums; }
 
+/* A company's peers: their heading, and the way to compare it with the largest */
+.peers-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+/* Compare's price chart (CompareChart.jsx) */
+.cc { margin: 0 0 18px; padding: 16px 18px; border: 1px solid var(--bdr2); border-radius: 12px; background: var(--card, var(--s1)); }
+.cc-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.cc-h { margin: 0; font-size: var(--fs-md); font-weight: 600; color: var(--t1); }
+.cc-wait { display: grid; place-items: center; height: 200px; color: var(--t3); font-size: var(--fs-sm); }
+.cc-svg { display: block; width: 100%; height: auto; touch-action: pan-y; }
+.cc-grid { stroke: var(--bdr2); stroke-width: 1; }
+.cc-zero { stroke: var(--t3); stroke-width: 1; opacity: 0.6; }
+.cc-cursor { stroke: var(--t2); stroke-width: 1; stroke-dasharray: 3 3; }
+.cc-tick { fill: var(--t3); font-size: 11px; font-variant-numeric: tabular-nums; }
+.cc-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 8px 0 0; padding: 0; list-style: none; font-size: var(--fs-sm); }
+.cc-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.cc-legend i { width: 14px; height: 3px; border-radius: 2px; border: 0 solid; }
+.cc-legend i.dash { height: 0; border-top-width: 2px; border-top-style: dashed; }
+.cc-name { color: var(--t2); }
+.cc-legend b { font-variant-numeric: tabular-nums; }
+.cc-legend b.up { color: var(--green); } .cc-legend b.down { color: var(--red); }
+.cc-when { color: var(--t3); }
+/* The watchlist's compare picker */
+.wl-cmp-btn { margin-left: auto; height: 32px; padding: 0 12px; border: 1px solid var(--bdr2); border-radius: 999px; background: transparent; color: var(--accent); font: inherit; font-size: var(--fs-sm); font-weight: 600; cursor: pointer; touch-action: manipulation; }
+.wl-cmp-count { margin-left: 8px; color: var(--t3); font-size: var(--fs-sm); }
+.wl-cmp-list { display: grid; gap: 2px; max-height: 50vh; overflow-y: auto; overscroll-behavior: contain; margin: 8px 0 12px; }
+.wl-cmp-row { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 6px; border-radius: 10px; cursor: pointer; }
+.wl-cmp-row input { width: 18px; height: 18px; accent-color: var(--accent); }
+.wl-cmp-row span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--t1); }
+.wl-cmp-row small { color: var(--t3); }
+.wl-cmp-go { width: 100%; height: 44px; }
+/* You against the market (PortfolioVsMarket.jsx) */
+.pvm { margin: 14px 0; padding: 16px 18px; border: 1px solid var(--bdr2); border-radius: 14px; background: var(--s1); }
+.pvm-h { margin: 0 0 6px; font-size: var(--fs-md); font-weight: 600; color: var(--t1); }
+.pvm-line { margin: 0 0 10px; color: var(--t2); font-size: var(--fs-sm); line-height: 1.5; }
+.pvm-line b { color: var(--t1); font-variant-numeric: tabular-nums; }
+.pvm-line b.up { color: var(--green); } .pvm-line b.down { color: var(--red); }
+.pvm-note { margin: 8px 0 0; color: var(--t3); font-size: var(--fs-xs); line-height: 1.5; }
+

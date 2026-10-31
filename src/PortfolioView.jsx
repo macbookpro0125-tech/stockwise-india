@@ -5,6 +5,7 @@ import { BellIcon } from "./icons.jsx";
 import { api } from "./api.js";
 import { portfolioStore } from "./stores.js";
 import AddHoldingModal from "./AddHoldingModal.jsx";
+import PortfolioVsMarket from "./PortfolioVsMarket.jsx";
 import ImportHoldingsModal from "./ImportHoldingsModal.jsx";
 import CreateAlertModal from "./CreateAlertModal.jsx";
 import { todayIst } from "./watchEvents.js";
@@ -208,6 +209,7 @@ export default function PortfolioView({ onOpenStock }) {
   return (
     <div className="wl-page" style={{ padding: "8px var(--page-x) 16px", animation: "fadeUp 280ms cubic-bezier(0,0,0.2,1) backwards" }}>
       {holdings.length > 0 && <PortfolioCard t={t} rows={rows} count={holdings.length} pricesDate={pricesDate} />}
+      {holdings.length > 0 && <PortfolioVsMarket version={holdings.map(h => `${h.id}:${h.qty}:${h.buyPrice}:${h.buyDate ?? ""}`).join(",")} />}
       <div className="pf-actions">
         <button type="button" onClick={() => { setEditItem(null); setShowModal(true); }} className="btn-primary pf-add"><Plus size={15} aria-hidden="true" /> Add holding</button>
         <button type="button" onClick={() => setShowImport(true)} className="btn-ghost pf-import"><Upload size={15} aria-hidden="true" /> Import from broker file</button>

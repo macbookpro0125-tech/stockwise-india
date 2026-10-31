@@ -5,6 +5,7 @@ import { BellIcon } from "./icons.jsx";
 import { api } from "./api.js";
 import { useWatchlist, toggleWatch, watchSaved, useWatchLists, primeWatchLists, setInList, createList as createWatchList, renameList as renameWatchList, deleteList as deleteWatchList } from "./watchlist.js";
 import CreateAlertModal from "./CreateAlertModal.jsx";
+import CompareFor from "./CompareFor.jsx";
 import { pricePosition } from "../server/levels.js";
 import { useMyLevels, withMyLevels } from "./myLevels.js";
 import { nextEvent, todayIst } from "./watchEvents.js";
@@ -206,7 +207,38 @@ function RowSheet({ name, item, lists, current, onClose, onAlert, onToggleList, 
   );
 }
 
+// Compare from the watchlist (31 Oct 2026): tick two to five, then see them
+// side by side with their prices on one chart (CompareFor.jsx)
+function ComparePicker({ items, nameOf, onCompare, onClose }) {
+  const [picked, setPicked] = useState(() => items.slice(0, Math.min(3, items.length)).map(i => i.ticker));
+  const toggle = t => setPicked(p => (p.includes(t) ? p.filter(x => x !== t) : p.length >= 5 ? p : [...p, t]));
+  return (
+    <div className="wl-sheet-wrap" role="presentation">
+      <div className="wl-sheet-scrim" onClick={onClose} />
+      <div className="wl-sheet" role="dialog" aria-modal="true" aria-label="Compare">
+        <div className="wl-sheet-head">
+          <b>Compare</b><span className="wl-cmp-count">{picked.length} of up to 5</span>
+          <button type="button" className="wl-sheet-x" aria-label="Close" onClick={onClose}><X size={18} /></button>
+        </div>
+        <div className="wl-cmp-list">
+          {items.map(i => (
+            <label key={i.ticker} className="wl-cmp-row">
+              <input type="checkbox" checked={picked.includes(i.ticker)} disabled={!picked.includes(i.ticker) && picked.length >= 5} onChange={() => toggle(i.ticker)} />
+              <span>{nameOf(i.ticker)}</span><small>{i.ticker}</small>
+            </label>
+          ))}
+        </div>
+        <button type="button" className="btn-primary wl-cmp-go" disabled={picked.length < 2} onClick={() => onCompare(picked)}>
+          {picked.length < 2 ? "Pick at least two" : `Compare ${picked.length}`}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function WatchlistView({ onOpenStock, onOpenNews }) {
+  const [picking, setPicking] = useState(false);
+  const [comparing, setComparing] = useState(null);
   const today = todayIst();
   const watched = useWatchlist();
   const [data, setData] = useState(null);
@@ -334,8 +366,11 @@ export default function WatchlistView({ onOpenStock, onOpenNews }) {
           <SortPill id="name" label="Name" />
           <SortPill id="quality" label="Quality" />
           <SortPill id="addedAt" label="Added" />
+          {items.length > 1 && <button type="button" className="wl-cmp-btn" onClick={() => setPicking(true)}>Compare…</button>}
         </div>
       )}
+      {picking && <ComparePicker items={sorted} nameOf={t => cardName(rows.get(t)?.name ?? t)} onClose={() => setPicking(false)} onCompare={list => { setPicking(false); setComparing(list); }} />}
+      {comparing && <CompareFor symbols={comparing} onClose={() => setComparing(null)} />}
 
       {items.length > 0 && (
         <ul className="wl-list">

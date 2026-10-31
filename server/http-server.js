@@ -54,6 +54,9 @@ import { fetchTechnicals } from "./technicals.js";
 import { shareholdingHistory, companyFilings, companyNews, sectorPeers, companyProfile, insiderTrades } from "./company-extras.js";
 import { stockMoves } from "./moves.js";
 import { marketNews, topNews, newsItem, newsItemFiling, newsForSymbols, watchlistLatest, KINDS as NEWS_KINDS } from "./market-news.js";
+import { portfolioVsMarket } from "./portfolio-vs-market.js";
+import { historyBars } from "./price-history.js";
+import { readIndexHistory } from "./index-history.js";
 import { exploreBoard, exploreIndex, heatmap, HEAT_SETS, topMovers, resultsWeek, sectorBrief } from "./explore.js";
 import { summarizeMove, aiClient } from "./ai-moves.js";
 import { summarizeCall } from "./call-summary.js";
@@ -1266,6 +1269,24 @@ export function createApp() {
         return;
       }
 
+      // The portfolio against the market: its value each day beside the same
+      // money in the Nifty 500 (portfolio-vs-market.js)
+      if (url.pathname === "/api/portfolio/vs-market" && req.method === "GET") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        const snap = loadMarketSnapshot();
+        sendJson(res, 200, portfolioVsMarket(listHoldings(userId), readIndexHistory(), t => historyBars(t, snap)) ?? { empty: true });
+        return;
+      }
+      // Compare: the table's rows for up to five companies, from anywhere in the app
+      if (url.pathname === "/api/compare" && req.method === "GET") {
+        if (requireAuth(req, res) == null) return;
+        const symbols = [...new Set((url.searchParams.get("symbols") ?? "").split(",").map(x => x.trim().toUpperCase()).filter(isValidSymbol))].slice(0, 5);
+        if (symbols.length < 2) { sendJson(res, 400, { error: "Pick two to five companies" }); return; }
+        const snap = loadMarketSnapshot();
+        sendJson(res, 200, { results: rowsFor(symbols), snapshot: snap ? { pricesDate: snap.pricesDate } : null });
+        return;
+      }
       if (url.pathname === "/api/portfolio" && req.method === "GET") {
         const userId = requireAuth(req, res);
         if (userId == null) return;
