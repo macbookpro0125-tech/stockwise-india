@@ -156,6 +156,10 @@ export function allMetrics() {
   return buildNow(version);
 }
 
+// Whether the market in hand is the latest snapshot's (not one being rebuilt
+// behind) — for the daily screen alerts, which must compare today's matches
+export const marketCurrent = () => cache != null && cache.version === marketVersion();
+
 // For the server: resolves once there's a market to answer from, building
 // the first one in slices — so no request, and no health check, ever waits
 // on a build run straight through

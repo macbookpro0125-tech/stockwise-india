@@ -249,6 +249,8 @@ addColumn("users", "email_verified_at", "TEXT");
 // The newest watchlist news an account's phones were sent (news-push.js);
 // after the accounts table's rebuild above, which keeps only its own columns
 addColumn("users", "push_news_at", "TEXT");
+// the price date of the last screen-alert check (screen-alerts.js), so each day is checked once
+addColumn("users", "screen_alert_date", "TEXT");
 // A sign-up waiting for the code emailed to it (auth.js startSignup): no
 // account exists until the code matches. Only hashes are kept.
 db.exec(`

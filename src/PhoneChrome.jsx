@@ -9,7 +9,8 @@ import { useWatchlist, toggleWatch } from "./watchlist.js";
 import { tick } from "./haptics.js";
 import StockSearchBar from "./StockSearchBar.jsx";
 import AddHoldingModal from "./AddHoldingModal.jsx";
-import ImportHoldingsModal from "./ImportHoldingsModal.jsx";
+import { lazyPage } from "./lazyPage.js";
+const ImportHoldingsModal = lazyPage(() => import("./ImportHoldingsModal.jsx"));
 import CreateAlertModal from "./CreateAlertModal.jsx";
 import { BrandMark } from "./site.jsx";
 
@@ -148,7 +149,7 @@ export function CreateSheet({ onTab }) {
         document.body,
       )}
       {modal?.kind === "holding" && <AddHoldingModal onClose={() => setModal(null)} onSave={async h => { await api.addHolding(h); setModal(null); portfolioStore.refresh(); onTab("portfolio"); }} />}
-      {modal?.kind === "import" && <ImportHoldingsModal onClose={() => setModal(null)} onImported={() => { setModal(null); portfolioStore.refresh(); onTab("portfolio"); }} />}
+      {modal?.kind === "import" && <Suspense fallback={null}><ImportHoldingsModal onClose={() => setModal(null)} onImported={() => { setModal(null); portfolioStore.refresh(); onTab("portfolio"); }} /></Suspense>}
       {modal?.kind === "alert" && <CreateAlertModal stock={modal.stock} onClose={made => { setModal(null); if (made) setToast(`Alert set on ${modal.stock.name}`); }} />}
       {toast && createPortal(<div className="pc-toast" role="status">{toast}</div>, document.body)}
     </>

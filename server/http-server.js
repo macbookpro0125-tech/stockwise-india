@@ -41,6 +41,7 @@ import { botInfo, linkCode, telegramChat, unlinkTelegram, sendTelegram, startTel
 import { startAlertChecks } from "./alert-notifier.js";
 import { savePushToken, removePushToken, pushReady, pushToUser } from "./push.js";
 import { startNewsPush } from "./news-push.js";
+import { startScreenAlerts } from "./screen-alerts.js";
 import { niceName } from "../src/stockName.js";
 import { countBrowserVisit, countActive, visitStats, isOwner } from "./visits.js";
 import { startDigestJobs, weeklyEmailOn, setWeeklyEmail, unsubscribe } from "./digest.js";
@@ -1698,6 +1699,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     startAlertChecks();
     startNewsPush();
     startFavouritePush();
+    startScreenAlerts();
     startDigestJobs();
     startBackups();
     startIndexNow({ entries: changedPageEntries, site: SITE });

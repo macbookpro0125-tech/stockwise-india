@@ -4962,4 +4962,16 @@ tr:hover .row-acts { --row-bg: var(--s3); }
 .pvm-line b { color: var(--t1); font-variant-numeric: tabular-nums; }
 .pvm-line b.up { color: var(--green); } .pvm-line b.down { color: var(--red); }
 .pvm-note { margin: 8px 0 0; color: var(--t3); font-size: var(--fs-xs); line-height: 1.5; }
+/* A saved screen: "tell me when a company joins", and the ones that have */
+.save-notify { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 18px; cursor: pointer; }
+.save-notify input { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--accent); flex: none; }
+.save-notify b { display: block; font-size: 14px; font-weight: 600; color: var(--t1); }
+.save-notify small { display: block; margin-top: 2px; font-size: 12.5px; line-height: 1.45; color: var(--t3); }
+.tb-btn[aria-pressed="true"] { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, var(--bdr2)); }
+.arrivals { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: 0 0 12px; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--bdr2)); border-radius: 12px; background: color-mix(in srgb, var(--accent) 8%, var(--s1)); font-size: var(--fs-sm); }
+.arrivals-h { color: var(--t2); margin-right: 2px; }
+.arrivals-co { height: 28px; padding: 0 10px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--t1); font: inherit; font-weight: 600; cursor: pointer; touch-action: manipulation; }
+@media (hover: hover) and (pointer: fine) { .arrivals-co:hover { background: color-mix(in srgb, var(--accent) 26%, transparent); } }
+.arrivals-more { color: var(--t3); }
+.arrivals-x { margin-left: auto; display: inline-grid; place-items: center; width: 28px; height: 28px; border: 0; border-radius: 999px; background: transparent; color: var(--t3); cursor: pointer; }
 

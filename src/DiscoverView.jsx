@@ -1,10 +1,13 @@
-import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from "react";
+import { Suspense, useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { SlidersHorizontal, ChevronLeft, ChevronRight, Bookmark, Share } from "lucide-react";
+import { SlidersHorizontal, ChevronLeft, ChevronRight, Bookmark, Share, BellRing, BellOff, X } from "lucide-react";
 import { MapIcon } from "./Header.jsx";
 import { api } from "./api.js";
+import { cardName } from "./stockName.js";
 import PresetCards, { presetRules } from "./PresetCards.jsx";
-import { NewsTile } from "./NewsView.jsx";
+import { lazyPage } from "./lazyPage.js";
+// the news card's module (all of News) is fetched when the card first shows
+const NewsTile = lazyPage(() => import("./NewsView.jsx").then(m => ({ default: m.NewsTile })));
 import { useAdPause } from "./ads.jsx";
 import { strategiesStore, browserLeftovers, moveLeftovers, discardLeftovers } from "./accountData.js";
 import ResultsTable from "./ResultsTable.jsx";
@@ -231,6 +234,11 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
     setTimeout(() => { setSheetOpen(false); setSheetClosing(false); window.scrollTo(0, 0); }, ms);
   };
   const [showSaveModal, setShowSaveModal] = useState(false);
+  // "tell me when a company joins" for a screen being saved (screen-alerts.js)
+  const [saveNotify, setSaveNotify] = useState(true);
+  // the companies that joined a saved screen since it was last opened, named
+  // when it's opened (the card's "N new" says only how many)
+  const [arrivals, setArrivals] = useState(null);
   const [savePresetName, setSavePresetName] = useState("");
   const [showImportModal, setShowImportModal] = useState(false);
   const [importText, setImportText] = useState("");
@@ -407,6 +415,7 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
 
   const applyPreset = useCallback(async preset => {
     history.current = { past: [], future: [] };
+    setArrivals(preset.custom && preset.newSymbols?.length ? { screen: preset.name, symbols: preset.newSymbols } : null);
     if (preset.custom) strategiesStore.acknowledge(preset.id);
     // however it was opened — search, a link, the Continue card — it is recent
     if (preset.id) noteRecent(preset.id);
@@ -435,6 +444,8 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
   }, []);
   const wheelPresets = useMemo(() => [...ribbon, ...ownStrategies.map(p => ({ ...p, custom: true }))], [ribbon, ownStrategies]);
   const yours = !activePresetId && (filters ?? []).some(isActiveFilter);
+  // the saved screen open now, if one is
+  const activeSaved = activePresetId ? ownStrategies.find(p => p.id === activePresetId) ?? null : null;
   const wheelItems = useMemo(() => [
     ...(yours ? [{ id: "__yours", label: "Your filters" }] : []),
     { id: "__all", label: "Whole market" },
@@ -487,13 +498,18 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
   const confirmSavePreset = () => {
     const name = savePresetName.trim();
     if (!name) return;
+    const id = `custom_${Date.now()}`;
     writeCustomPresets([...readCustomPresets(), {
-      id: `custom_${Date.now()}`, name, icon: "📌", custom: true,
+      id, name, icon: "📌", custom: true,
       description: `${activeCount} filter${activeCount === 1 ? "" : "s"}`,
       filters: filters.filter(isActiveFilter),
+      ...(saveNotify ? { notify: true } : {}),
     }]).then(() => strategiesStore.checkMatches()).catch(() => {});
     setSavePresetName("");
     setShowSaveModal(false);
+    // the screen just saved is the one open now (its name and bell show)
+    setActivePresetId(id);
+    setActivePresetName(name);
   };
   const handleUpdatePreset = id => writeCustomPresets(readCustomPresets().map(p => (p.id === id ? { ...p, newMatches: 0, filters: filters.filter(isActiveFilter), criteria: undefined, description: `${activeCount} filters` } : p))).then(() => strategiesStore.checkMatches()).catch(() => {});
   const handleRenamePreset = (id, name) => writeCustomPresets(readCustomPresets().map(p => (p.id === id ? { ...p, name } : p)));
@@ -568,8 +584,12 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
             autoFocus type="text" placeholder="e.g. My pharma screen"
             value={savePresetName} onChange={e => setSavePresetName(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter") confirmSavePreset(); if (e.key === "Escape") setShowSaveModal(false); }}
-            className="input-base" style={{ marginBottom: 16, fontSize: 15 }}
+            className="input-base" style={{ marginBottom: 12, fontSize: 15 }}
           />
+          <label className="save-notify">
+            <input type="checkbox" checked={saveNotify} onChange={e => setSaveNotify(e.target.checked)} />
+            <span><b>Tell me when a company joins</b><small>Once a day after the close: on your phone in the app, on Telegram if you've linked it, and marked on the screen</small></span>
+          </label>
           <div style={{ display: "flex", gap: 10 }}>
             <button onClick={confirmSavePreset} disabled={!savePresetName.trim()} className="btn-primary" style={{ flex: 1 }}>Save</button>
             <button onClick={() => setShowSaveModal(false)} className="btn-ghost" style={{ flex: 1 }}>Cancel</button>
@@ -663,7 +683,7 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
               onStart={newScreen}
               onCreate={newScreen}
               continueCard={continueCard || null}
-              newsTile={onOpenNews && !isPhone ? <NewsTile onOpen={id => onOpenNews(id)} onSeeAll={() => onOpenNews(null)} /> : null}
+              newsTile={onOpenNews && !isPhone ? <Suspense fallback={null}><NewsTile onOpen={id => onOpenNews(id)} onSeeAll={() => onOpenNews(null)} /></Suspense> : null}
             >{cards}</ScreensHome>
           );
         })()}
@@ -719,6 +739,13 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
                   <button type="button" onClick={handleShare} disabled={!activeCount} title="Copy a link that opens this screen" className="btn-ghost tb-btn">
                     <Share size={14} aria-hidden="true" /> {copyFeedback || "Share"}
                   </button>
+                  {activeSaved && (
+                    <button type="button" className="btn-ghost tb-btn" aria-pressed={!!activeSaved.notify}
+                      title={activeSaved.notify ? "You'll be told when a company joins this screen. Click to stop." : "Be told when a company joins this screen, once a day after the close"}
+                      onClick={() => writeCustomPresets(readCustomPresets().map(p => (p.id === activeSaved.id ? { ...p, notify: !p.notify || undefined } : p))).catch(() => {})}>
+                      {activeSaved.notify ? <BellRing size={14} aria-hidden="true" /> : <BellOff size={14} aria-hidden="true" />} {activeSaved.notify ? "Alerts on" : "Alerts off"}
+                    </button>
+                  )}
                   {activeCount > 0 && (
                     <button type="button" className="btn-primary tb-btn" onClick={() => setShowSaveModal(true)}>
                       <Bookmark size={14} aria-hidden="true" /> Save as strategy
@@ -729,6 +756,18 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
             </div>
           </header>
         )}
+
+        {arrivals && (() => {
+          const nameOf = sym => cardName(results?.results?.find(r => r.symbol === sym)?.name ?? sym);
+          return (
+            <div className="arrivals" role="status">
+              <span className="arrivals-h">New in “{arrivals.screen}” since you last looked:</span>
+              {arrivals.symbols.slice(0, 12).map(sym => <button key={sym} type="button" className="arrivals-co" onClick={() => onOpenStock(sym)}>{nameOf(sym)}</button>)}
+              {arrivals.symbols.length > 12 && <span className="arrivals-more">and {arrivals.symbols.length - 12} more</span>}
+              <button type="button" className="arrivals-x" aria-label="Dismiss" onClick={() => setArrivals(null)}><X size={15} aria-hidden="true" /></button>
+            </div>
+          );
+        })()}
 
         {phoneStep === "stocks" && (
         <div className="screener screener-side-closed">

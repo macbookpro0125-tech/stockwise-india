@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, Pause, Play } from "lucide-react";
-import AuthForm from "./AuthForm.jsx";
+import { lazyPage } from "./lazyPage.js";
+// the form itself is fetched when the dialog first opens
+const AuthForm = lazyPage(() => import("./AuthForm.jsx"));
 import SkyPanel from "./SkyPanel.jsx";
 import StrategyMark from "./StrategyMarks.jsx";
 import { Logo } from "./site.jsx";
@@ -95,7 +97,7 @@ export default function AuthDialog({ mode, onModeChange, onAuthed, onClose, reas
         <div className="auth-body">
           <div className="auth-brand"><Logo size={19} /></div>
           {reason && <p className="auth-reason">{reason}</p>}
-          <AuthForm onAuthed={done} onProgress={setProgress} mode={mode} onModeChange={onModeChange} />
+          <Suspense fallback={<div className="auth-wait" role="status" aria-label="Loading" />}><AuthForm onAuthed={done} onProgress={setProgress} mode={mode} onModeChange={onModeChange} /></Suspense>
         </div>
       </div>
     </div>,

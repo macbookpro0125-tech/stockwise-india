@@ -27,7 +27,7 @@ export const strategiesStore = {
   },
   acknowledge(id) {
     const revision = ++strategyRevision;
-    strategies = (strategies ?? []).map(p => p.id === id ? { ...p, newMatches: 0 } : p);
+    strategies = (strategies ?? []).map(p => p.id === id ? { ...p, newMatches: 0, newSymbols: [] } : p);
     emit("customPresetsUpdated");
     return api.acknowledgeStrategyMatches(id).then(() => {
       if (revision === strategyRevision) emit("customPresetsUpdated");
@@ -37,10 +37,10 @@ export const strategiesStore = {
     const revision = ++strategyRevision;
     strategies = list;
     emit("customPresetsUpdated");
-    const unread = new Map((list ?? []).map(p => [p.id, p.newMatches]));
+    const unread = new Map((list ?? []).map(p => [p.id, { newMatches: p.newMatches, newSymbols: p.newSymbols }]));
     return api.saveStrategies(list).then(d => {
       if (revision === strategyRevision) {
-        strategies = (d.strategies ?? list).map(p => unread.has(p.id) ? { ...p, newMatches: unread.get(p.id) } : p);
+        strategies = (d.strategies ?? list).map(p => unread.has(p.id) ? { ...p, ...unread.get(p.id) } : p);
         emit("customPresetsUpdated");
       }
     }).catch(() => {});

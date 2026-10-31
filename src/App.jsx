@@ -2,17 +2,9 @@ import { Suspense, useState, useEffect, useRef, useCallback } from "react";
 import { setLogosSignedIn } from "./CompanyLogo.jsx";
 import { flushSync } from "react-dom";
 import { lazyPage } from "./lazyPage.js";
-import ExploreView from "./ExploreView.jsx";
-import MarketMapView from "./MarketMapView.jsx";
 import PublicStock from "./PublicStock.jsx";
 import { api } from "./api.js";
-import Landing from "./Landing.jsx";
-import { PrivacyPage, DisclaimerPage, HelpPage, AboutPage, MeasuresPage } from "./LegalPages.jsx";
-import MethodologyPage from "./MethodologyPage.jsx";
-import StockScreenerPage from "./StockScreenerPage.jsx";
-import { ScreensIndexPage, ScreenPage, ResultsCalendarPage, SectorsIndexPage, SectorPage } from "./PublicLists.jsx";
 import PublicHtmlPage, { isPublicHtmlPath } from "./PublicHtmlPage.jsx";
-import ResetPassword from "./ResetPassword.jsx";
 import { usePath, navigate, stockFromPath, stockPath, chartFromPath, SiteFooter } from "./site.jsx";
 import Header, { BottomTabBar, TABS } from "./Header.jsx";
 import SideRail from "./SideRail.jsx";
@@ -35,6 +27,26 @@ import { useTabBadges } from "./Header.jsx";
 
 // Keep the first Discover screen small; load account tabs and full stock
 // research only when the user opens them.
+// Fetched when first opened, not with the app (31 Oct 2026: every visitor
+// downloaded every page before the first one could draw)
+// The front page and its 3D films: a signed-in visitor never sees them. Fetched
+// alongside the sign-in check unless this browser was signed in last time
+// (SIGNED_IN_HINT), so a new visitor waits no longer than before.
+const loadLanding = () => import("./Landing.jsx");
+const Landing = lazyPage(loadLanding);
+const SIGNED_IN_HINT = "stockwise-signed-in";
+const ExploreView = lazyPage(() => import("./ExploreView.jsx"));
+const MarketMapView = lazyPage(() => import("./MarketMapView.jsx"));
+const named = (load, name) => lazyPage(() => load().then(m => ({ default: m[name] })));
+const legal = name => named(() => import("./LegalPages.jsx"), name);
+const PrivacyPage = legal("PrivacyPage"), DisclaimerPage = legal("DisclaimerPage"), HelpPage = legal("HelpPage"), AboutPage = legal("AboutPage"), MeasuresPage = legal("MeasuresPage");
+const lists = name => named(() => import("./PublicLists.jsx"), name);
+const ScreensIndexPage = lists("ScreensIndexPage"), ScreenPage = lists("ScreenPage"), ResultsCalendarPage = lists("ResultsCalendarPage"), SectorsIndexPage = lists("SectorsIndexPage"), SectorPage = lists("SectorPage");
+const MethodologyPage = lazyPage(() => import("./MethodologyPage.jsx"));
+const StockScreenerPage = lazyPage(() => import("./StockScreenerPage.jsx"));
+const ResetPassword = lazyPage(() => import("./ResetPassword.jsx"));
+// a page fetched on demand, the page's own colour behind it while it comes
+const pub = el => <Suspense fallback={<div role="status" aria-label="Loading" style={{ minHeight: "100vh" }} />}>{el}</Suspense>;
 const WatchlistView = lazyPage(() => import("./WatchlistView.jsx"));
 const PortfolioView = lazyPage(() => import("./PortfolioView.jsx"));
 const PerformanceView = lazyPage(() => import("./PerformanceView.jsx"));
@@ -241,7 +253,17 @@ export default function App() {
 
   // email or phone (a phone sign-in has no email), name, and whether there is a password at all
   const loadAccount = () => api.me().then(d => setAccount({ userId: d.userId, email: d.email ?? null, phone: d.phone ?? null, name: d.name ?? null, hasPassword: d.hasPassword !== false, features: d.features ?? {} })).catch(() => setAccount(null));
-  useEffect(() => { loadAccount(); }, []);
+  useEffect(() => {
+    let hint = false;
+    try { hint = localStorage.getItem(SIGNED_IN_HINT) === "1"; } catch {}
+    if (!hint) loadLanding().catch(() => {});
+    loadAccount();
+  }, []);
+  // remembered for the next visit's guess (above); only a hint, never trusted
+  useEffect(() => {
+    if (account === undefined) return;
+    try { if (account) localStorage.setItem(SIGNED_IN_HINT, "1"); else localStorage.removeItem(SIGNED_IN_HINT); } catch {}
+  }, [account]);
   // Saved strategies and My Notes come with the account
   useEffect(() => {
     if (!account?.userId) return;
@@ -311,22 +333,22 @@ export default function App() {
   const intoAppHere = () => { setNotice(null); tabHistory.current = []; tabRef.current = "discover"; setTab("discover"); loadAccount(); };
 
   // /privacy, /disclaimer and /help are for everyone, signed in or not
-  if (path === "/privacy") return <PrivacyPage signedIn={!!account} />;
-  if (path === "/disclaimer") return <DisclaimerPage signedIn={!!account} />;
-  if (path === "/help") return <HelpPage signedIn={!!account} />;
-  if (path === "/measures") return <MeasuresPage signedIn={!!account} />;
-  if (path === "/about") return <AboutPage signedIn={!!account} />;
-  if (path === "/methodology") return <MethodologyPage signedIn={!!account} />;
-  if (path === "/stock-screener-india") return <StockScreenerPage signedIn={!!account} />;
+  if (path === "/privacy") return pub(<PrivacyPage signedIn={!!account} />);
+  if (path === "/disclaimer") return pub(<DisclaimerPage signedIn={!!account} />);
+  if (path === "/help") return pub(<HelpPage signedIn={!!account} />);
+  if (path === "/measures") return pub(<MeasuresPage signedIn={!!account} />);
+  if (path === "/about") return pub(<AboutPage signedIn={!!account} />);
+  if (path === "/methodology") return pub(<MethodologyPage signedIn={!!account} />);
+  if (path === "/stock-screener-india") return pub(<StockScreenerPage signedIn={!!account} />);
   // The strategies' pages and the results calendar, for everyone (PublicLists.jsx)
-  if (path === "/screens") return <ScreensIndexPage signedIn={!!account} />;
-  if (path === "/results-calendar") return <ResultsCalendarPage signedIn={!!account} />;
-  if (/^\/screens\/[a-z0-9-]+\/?$/.test(path)) return <ScreenPage slug={path.split("/")[2]} signedIn={!!account} />;
-  if (path === "/sectors") return <SectorsIndexPage signedIn={!!account} />;
+  if (path === "/screens") return pub(<ScreensIndexPage signedIn={!!account} />);
+  if (path === "/results-calendar") return pub(<ResultsCalendarPage signedIn={!!account} />);
+  if (/^\/screens\/[a-z0-9-]+\/?$/.test(path)) return pub(<ScreenPage slug={path.split("/")[2]} signedIn={!!account} />);
+  if (path === "/sectors") return pub(<SectorsIndexPage signedIn={!!account} />);
   if (isPublicHtmlPath(path)) return <PublicHtmlPage path={path} signedIn={!!account} />;
-  if (/^\/sector\/[a-z0-9-]+\/?$/.test(path)) return <SectorPage slug={path.split("/")[2]} signedIn={!!account} />;
+  if (/^\/sector\/[a-z0-9-]+\/?$/.test(path)) return pub(<SectorPage slug={path.split("/")[2]} signedIn={!!account} />);
   // The page a reset email links to: saving signs in, then into the app
-  if (path === "/reset-password") return <ResetPassword onDone={() => { tabHistory.current = []; tabRef.current = "discover"; setTab("discover"); navigate("/"); loadAccount(); }} />;
+  if (path === "/reset-password") return pub(<ResetPassword onDone={() => { tabHistory.current = []; tabRef.current = "discover"; setTab("discover"); navigate("/"); loadAccount(); }} />);
 
   if (account === undefined) {
     // Keep a crawlable company's summary visible while the session check is in
@@ -344,7 +366,7 @@ export default function App() {
     // the company (27 Oct 2026)
     if (stockFromPath(path)) return <PublicStock symbol={stockFromPath(path)} initial={window.__PUBLIC_STOCK__} onAuthed={intoAppHere} />;
     // A shared stock or chart link stays where it points once the visitor signs in
-    return <Landing notice={notice} onAuthed={() => { setNotice(null); tabHistory.current = []; tabRef.current = "discover"; setTab("discover"); if (!stockFromPath(window.location.pathname) && !chartFromPath(window.location.pathname)) navigate("/"); loadAccount(); }} />;
+    return pub(<Landing notice={notice} onAuthed={() => { setNotice(null); tabHistory.current = []; tabRef.current = "discover"; setTab("discover"); if (!stockFromPath(window.location.pathname) && !chartFromPath(window.location.pathname)) navigate("/"); loadAccount(); }} />);
   }
 
   // /chart/TCS: the price chart alone, whole-screen (the phone's expand button)

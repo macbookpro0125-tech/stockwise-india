@@ -40,6 +40,8 @@ function cleanStrategy(p) {
   return {
     id: str(p.id || `custom_${Date.now()}`, 40), name: str(p.name, 60).trim(), icon: str(p.icon || "📌", 8), custom: true,
     description: str(p.description, 120), filters,
+    // "tell me when a company joins" (screen-alerts.js)
+    ...(p.notify === true ? { notify: true } : {}),
     // older saved strategies kept the original's criteria object
     ...(p.criteria && typeof p.criteria === "object" && !filters.length && JSON.stringify(p.criteria).length <= 4000 ? { criteria: JSON.parse(JSON.stringify(p.criteria)) } : {}),
   };
@@ -78,16 +80,19 @@ export function checkStrategyMatches(userId, strategies, symbolsById) {
     const symbols = [...new Set(symbolsById[strategy.id] ?? [])].filter(s => isValidSymbol(s)).sort();
     const filterHash = JSON.stringify(strategy.filters.length ? strategy.filters : strategy.criteria ?? []);
     const old = get.get(userId, strategy.id);
-    let arrivals = [];
+    let arrivals = [], fresh = [];
     if (old?.filter_hash === filterHash) {
       let previous = [], unread = [];
       try { previous = JSON.parse(old.match_symbols) ?? []; } catch {}
       try { unread = JSON.parse(old.new_symbols) ?? []; } catch {}
       const previousSet = new Set(previous);
-      arrivals = [...new Set([...unread, ...symbols.filter(s => !previousSet.has(s))])].sort();
+      // fresh: joined since this last check (what a screen alert tells of)
+      fresh = symbols.filter(s => !previousSet.has(s));
+      arrivals = [...new Set([...unread, ...fresh])].sort();
     }
     put.run(userId, strategy.id, filterHash, JSON.stringify(symbols), JSON.stringify(arrivals), now);
-    result[strategy.id] = { newMatches: arrivals.length, checkedAt: now };
+    // newSymbols: every arrival not yet seen, for the screen to name them
+    result[strategy.id] = { newMatches: arrivals.length, newSymbols: arrivals, fresh, checkedAt: now };
   }
   return result;
 }
