@@ -53,3 +53,7 @@ export function listStats(rows = []) {
     valued: valued.length,
   };
 }
+
+// The figures the Screen builder's desk (ScreenDesk.jsx) reads from each
+// row's values, asked for with the screen while the desk is showing
+export const DESK_COLUMNS = ["priceStrength", "ret1m", "ret3m", "ret1y", "rsi14", "vsSma50", "vsSma200", "downFrom52wHigh", "volatility1y"];
