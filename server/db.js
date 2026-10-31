@@ -267,6 +267,14 @@ db.exec(`
 // The screeners a user stars for the top of their Screeners page, in their
 // order, and each screener's companies when they last opened it, so the page
 // can say which joined and which left since (screen-favourites.js)
+// Each user's own Desk: the cards they chose, in their order (desk-layout.js)
+db.exec(`
+  CREATE TABLE IF NOT EXISTS desk_layouts (
+    user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    layout TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+`);
 db.exec(`
   CREATE TABLE IF NOT EXISTS favourite_screens (
     user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,

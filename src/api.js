@@ -75,6 +75,9 @@ export const api = {
   presets: () => request("/api/presets"),
   // the Desk: the market mood and each company's stage and patterns
   deskMarket: () => request("/api/desk/market"),
+  deskLayout: () => request("/api/desk/layout"),
+  saveDeskLayout: layout => request("/api/desk/layout", { method: "PUT", body: JSON.stringify(layout) }),
+  clearDeskLayout: () => request("/api/desk/layout", { method: "DELETE" }),
   metrics: () => request("/api/metrics"),
   marketStrip: () => request("/api/market-strip"),
   stats: () => request("/api/stats"),

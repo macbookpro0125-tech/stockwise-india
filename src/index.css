@@ -5093,3 +5093,56 @@ tr:hover .row-acts { --row-bg: var(--s3); }
 .mood-meta { margin-left: auto; font-size: 11.5px; color: var(--t3); }
 .mood-bar { display: flex; gap: 2px; height: 6px; margin-top: 10px; border-radius: 3px; overflow: hidden; }
 .mood-bar i { display: block; min-width: 2px; }
+
+/* ── My desk: your own cards (MyDesk.jsx, 31 Oct 2026) ── */
+.desk-page-top h1 { margin-right: auto; }
+.desk-page-top { justify-content: flex-start; }
+.desk-mode { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--bdr2); border-radius: 10px; background: var(--s1); }
+.desk-mode button { height: 30px; padding: 0 14px; border: 0; border-radius: 7px; background: transparent; color: var(--t2); font: inherit; font-size: 13px; cursor: pointer; }
+.desk-mode button[aria-pressed="true"] { background: var(--s4); color: var(--t1); font-weight: 500; }
+.md-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; min-height: 36px; }
+.md-picked { display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--t2); }
+.md-picked b { color: var(--t1); }
+.md-save { margin-left: auto; font-size: 12px; color: var(--t3); }
+.md-btn { height: 34px; font-size: 13px; gap: 6px; }
+.md-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; align-items: start; }
+.md-card { grid-column: span var(--w, 1); min-width: 0; background: var(--card); border: 1px solid var(--bdr); border-radius: 14px; overflow: hidden; }
+@media (max-width: 1180px) { .md-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .md-card { grid-column: span min(var(--w, 1), 2); } }
+.md-grid.editing .md-card { border-style: dashed; border-color: var(--bdr3); }
+.md-card-head { display: flex; align-items: center; gap: 8px; min-height: 42px; padding: 0 12px 0 14px; border-bottom: 1px solid var(--bdr); }
+.md-card-head h3 { margin: 0 auto 0 0; font-size: 13px; font-weight: 600; color: var(--t1); }
+.md-tools { display: flex; align-items: center; gap: 4px; }
+.md-icon { display: inline-grid; place-items: center; width: 28px; height: 28px; border: 1px solid var(--bdr2); border-radius: 7px; background: transparent; color: var(--t2); cursor: pointer; }
+.md-icon:disabled { opacity: 0.35; cursor: default; }
+.md-width { display: inline-flex; border: 1px solid var(--bdr2); border-radius: 7px; overflow: hidden; }
+.md-width button { width: 24px; height: 26px; border: 0; background: transparent; color: var(--t3); font: inherit; font-size: 12px; cursor: pointer; }
+.md-width button[aria-pressed="true"] { background: var(--s4); color: var(--t1); font-weight: 600; }
+.md-card-body { max-height: 640px; overflow: auto; overscroll-behavior: contain; }
+.md-card-body > .mood { margin: 0; border: 0; border-radius: 0; }
+.md-card-body .chart-panel, .md-card-body > section { border: 0; }
+.md-quiet { margin: 0; padding: 16px 14px; font-size: 13px; color: var(--t3); }
+.md-list { list-style: none; margin: 0; padding: 4px 0; }
+.md-list button { display: grid; grid-template-columns: minmax(0, 1fr) auto 34px 34px; gap: 8px; align-items: center; width: 100%; padding: 8px 14px; border: 0; border-left: 2px solid transparent; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.md-list li[aria-selected="true"] button { background: var(--s2); border-left-color: var(--accent); }
+@media (hover: hover) and (pointer: fine) { .md-list li:not([aria-selected="true"]) button:hover { background: var(--s1); } }
+.md-notes { display: block; width: 100%; min-height: 160px; padding: 12px 14px; border: 0; background: transparent; color: var(--t1); font: inherit; font-size: 16px; line-height: 1.5; resize: vertical; outline: none; }
+.md-patterns { margin: 0; padding: 6px 14px 12px; }
+.md-patterns > div { padding: 8px 0; border-bottom: 1px solid var(--bdr); }
+.md-patterns dt { font-size: 13px; color: var(--t1); font-weight: 500; }
+.md-patterns dt span, .md-results h4 span { color: var(--t3); font-weight: 400; margin-left: 4px; }
+.md-patterns dd, .md-results > div > div { display: flex; flex-wrap: wrap; gap: 5px; margin: 6px 0 0; }
+.md-patterns .md-quiet, .md-results .md-quiet { padding: 0; font-size: 12px; }
+.md-patterns button.desk-tag, .md-results button.desk-tag { border: 0; font: inherit; font-size: 11.5px; cursor: pointer; }
+.md-results { padding: 6px 14px 12px; }
+.md-results > div { padding: 8px 0; border-bottom: 1px solid var(--bdr); }
+.md-results h4 { margin: 0; font-size: 13px; font-weight: 500; color: var(--t1); }
+.md-start { padding: 22px; border: 1px dashed var(--bdr3); border-radius: 14px; }
+.md-start h2 { margin: 0 0 6px; font-size: 18px; font-weight: 600; color: var(--t1); }
+.md-start p { margin: 0 0 16px; font-size: 13.5px; color: var(--t2); }
+.md-add { margin-bottom: 12px; padding: 14px; border: 1px solid var(--bdr2); border-radius: 14px; background: var(--card2); }
+.md-add-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; font-size: 14px; color: var(--t1); }
+.md-palette { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+.md-option { display: flex; flex-direction: column; gap: 3px; padding: 10px 12px; border: 1px solid var(--bdr2); border-radius: 10px; background: var(--card); color: var(--t1); font: inherit; text-align: left; cursor: pointer; transition: border-color 140ms, background 140ms; }
+.md-option b { font-size: 13.5px; font-weight: 600; }
+.md-option span { font-size: 12px; color: var(--t3); line-height: 1.4; }
+@media (hover: hover) and (pointer: fine) { .md-option:hover { border-color: var(--accent); background: var(--s1); } }

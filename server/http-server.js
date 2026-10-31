@@ -5,6 +5,7 @@
 // on the page, which is exactly what a single XSS bug turns into full
 // account takeover. httpOnly means client-side JS can't read it at all.
 import { deskMarket, STAGES, SETUPS, LIQUID_CR } from "./price-setups.js";
+import { getDeskLayout, saveDeskLayout, clearDeskLayout } from "./desk-layout.js";
 import "./env.js"; // first, so the rest see .env's settings
 import { createServer } from "node:http";
 import { randomUUID, createHash } from "node:crypto";
@@ -813,6 +814,15 @@ export function createApp() {
       if (url.pathname === "/api/explore/results" && req.method === "GET") {
         if (requireAuth(req, res) == null) return;
         sendJson(res, 200, resultsWeek());
+        return;
+      }
+      // Each user's own Desk layout (desk-layout.js)
+      if (url.pathname === "/api/desk/layout" && ["GET", "PUT", "DELETE"].includes(req.method)) {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        if (req.method === "GET") sendJson(res, 200, { layout: getDeskLayout(userId) });
+        else if (req.method === "PUT") sendJson(res, 200, { layout: saveDeskLayout(userId, await readJsonBody(req)) });
+        else { clearDeskLayout(userId); sendJson(res, 200, { layout: null }); }
         return;
       }
       // The Desk's market mood and each company's stage and patterns (price-setups.js)

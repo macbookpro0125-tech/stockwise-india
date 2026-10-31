@@ -3,6 +3,7 @@ import { api } from "./api.js";
 import { strategiesStore } from "./accountData.js";
 import { DESK_COLUMNS } from "./screenShortcuts.js";
 import ScreenDesk from "./ScreenDesk.jsx";
+import MyDesk from "./MyDesk.jsx";
 
 // The Desk, a page of its own (31 Oct 2026, "I want it separate page"): pick
 // a list — every NSE company, a ready-made screen, one of your own or your
@@ -19,6 +20,9 @@ export default function DeskView({ onOpenStock }) {
   const [res, setRes] = useState(null);
   const [error, setError] = useState("");
   const [market, setMarket] = useState(null);
+  // the Desk as it comes, or the cards you arranged yourself
+  const [mode, setMode] = useState(() => { try { return localStorage.getItem("deskMode") === "mine" ? "mine" : "desk"; } catch { return "desk"; } });
+  useEffect(() => { try { localStorage.setItem("deskMode", mode); } catch {} }, [mode]);
   useEffect(() => { api.deskMarket().then(setMarket).catch(() => {}); }, []);
 
   useEffect(() => { try { localStorage.setItem("deskSource", source); } catch {} }, [source]);
@@ -54,6 +58,10 @@ export default function DeskView({ onOpenStock }) {
     <section className="desk-page" aria-label="Desk">
       <div className="desk-page-top">
         <h1>Desk</h1>
+        <div className="desk-mode" role="group" aria-label="Desk layout">
+          <button type="button" aria-pressed={mode === "desk"} onClick={() => setMode("desk")}>Desk</button>
+          <button type="button" aria-pressed={mode === "mine"} onClick={() => setMode("mine")}>My desk</button>
+        </div>
         <label className="desk-source">
           <span>List</span>
           <select value={source} onChange={e => setSource(e.target.value)}>
@@ -64,9 +72,11 @@ export default function DeskView({ onOpenStock }) {
           </select>
         </label>
       </div>
-      <MoodBar market={market} />
+      {mode === "desk" && <MoodBar market={market} />}
       {error
         ? <div className="desk-empty" role="alert">{error}</div>
+        : mode === "mine"
+        ? <MyDesk rows={res?.results ?? []} market={market} onOpenStock={onOpenStock} MoodBar={MoodBar} />
         : <ScreenDesk rows={res?.results ?? []} loading={!res} onOpenStock={onOpenStock}
             empty={source === WATCH ? "Your watchlist is empty. Star a company to add it." : undefined} market={market} />}
     </section>
@@ -78,7 +88,7 @@ export default function DeskView({ onOpenStock }) {
 // averages. The word is from the 200-day share alone: 60% or more strong,
 // under 40% weak, mixed between.
 const STAGE_TONE = { advancing: "var(--green)", topping: "var(--yellow)", declining: "var(--red)", basing: "var(--brand-wise)" };
-function MoodBar({ market }) {
+export function MoodBar({ market }) {
   if (!market) return <div className="mood mood-loading" role="status" aria-label="Loading the market's mood" />;
   if (!market.liquid) return null;
   const a200 = market.above200 ?? 0;

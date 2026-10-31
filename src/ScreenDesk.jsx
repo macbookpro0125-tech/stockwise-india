@@ -11,8 +11,8 @@ import { cardName } from "./stockName.js";
 // moves all three. Each row carries both scores, the price's strength and the
 // business's quality, so a strong price on a weak business shows at a glance.
 
-const v = (r, id) => r?.values?.[id] ?? r?.[id] ?? null;
-const quality = r => r?.research?.quality ?? null;
+export const v = (r, id) => r?.values?.[id] ?? r?.[id] ?? null;
+export const quality = r => r?.research?.quality ?? null;
 const fromFair = r => (r?.fv25 > 0 && r?.cmp > 0 ? (r.cmp / r.fv25 - 1) * 100 : null);
 
 // Quick views over the list (near highs and pullbacks are patterns, below)
@@ -31,21 +31,21 @@ const SORTS = [
   { id: "m3", label: "3-month return", key: r => v(r, "ret3m") },
 ];
 
-const pct = (x, dp = 1) => (x == null ? "—" : `${x > 0 ? "+" : x < 0 ? "−" : ""}${Math.abs(x).toFixed(dp)}%`);
-const tone = x => (x == null ? "" : x > 0 ? "up" : x < 0 ? "down" : "");
-const price = x => (x == null ? "—" : `₹${x.toLocaleString("en-IN", { maximumFractionDigits: x < 100 ? 2 : 1 })}`);
+export const pct = (x, dp = 1) => (x == null ? "—" : `${x > 0 ? "+" : x < 0 ? "−" : ""}${Math.abs(x).toFixed(dp)}%`);
+export const tone = x => (x == null ? "" : x > 0 ? "up" : x < 0 ? "down" : "");
+export const price = x => (x == null ? "—" : `₹${x.toLocaleString("en-IN", { maximumFractionDigits: x < 100 ? 2 : 1 })}`);
 const fairWords = d => (d == null ? "—" : Math.abs(d) < 3 ? "Close to it" : `${Math.round(Math.abs(d))}% ${d < 0 ? "below" : "above"}`);
 const read = (k, d) => { try { return localStorage.getItem(k) ?? d; } catch { return d; } };
 const keep = (k, x) => { try { localStorage.setItem(k, x); } catch {} };
 
 // A score as a small coloured box: green from 70, amber from 40
-function Score({ value, title }) {
+export function Score({ value, title }) {
   if (value == null) return <span className="desk-score none" title={title}>—</span>;
   const n = Math.round(value);
   return <span className={`desk-score ${n >= 70 ? "hi" : n >= 40 ? "mid" : "lo"}`} title={title}>{n}</span>;
 }
 
-const STAGE_WORDS = { advancing: "Advancing", topping: "Topping", declining: "Declining", basing: "Basing" };
+export const STAGE_WORDS = { advancing: "Advancing", topping: "Topping", declining: "Declining", basing: "Basing" };
 
 // market: the day's stages and patterns (api.deskMarket), or null while it loads
 export default function ScreenDesk({ rows = [], loading, onOpenStock, empty = "No companies in this list.", market = null }) {
@@ -178,7 +178,7 @@ export default function ScreenDesk({ rows = [], loading, onOpenStock, empty = "N
 const Row = ({ label, children, hint }) => <div className="desk-row"><dt title={hint}>{label}</dt><dd>{children}</dd></div>;
 const num = (x, dp = 1) => (x == null ? "—" : x.toLocaleString("en-IN", { maximumFractionDigits: dp }));
 
-function Business({ r }) {
+export function Business({ r }) {
   const fv = fromFair(r);
   return (
     <dl className="desk-facts">
@@ -199,7 +199,7 @@ function Business({ r }) {
   );
 }
 
-function PriceFacts({ r, stage, stageInfo }) {
+export function PriceFacts({ r, stage, stageInfo }) {
   const lo = r.low52w, hi = r.high52w;
   const at = lo > 0 && hi > lo && r.cmp ? Math.min(1, Math.max(0, (r.cmp - lo) / (hi - lo))) : null;
   const checks = [
