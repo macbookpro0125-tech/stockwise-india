@@ -121,7 +121,7 @@ export default function ScreenDesk({ rows = [], loading, onOpenStock, empty = "N
             {list.map(x => (
               <li key={x.symbol} id={`desk-${x.symbol}`} data-sym={x.symbol} role="option" aria-selected={x === r} onClick={() => setPicked(x.symbol)} onDoubleClick={() => onOpenStock?.(x.symbol)}>
                 <span className="desk-name"><b>{stageOf(x.symbol) && <i className={`desk-stage-dot ${stageOf(x.symbol)}`} title={STAGE_WORDS[stageOf(x.symbol)]} />}{x.symbol}</b><small>{cardName(x.name)}</small></span>
-                <span className="desk-price">{price(x.cmp)}<small className={tone(x.ret1d)}>{pct(x.ret1d, 2)}</small></span>
+                <span className="desk-price">{price(x.cmp)}<small className={`desk-chg ${tone(x.ret1d)}`}>{pct(x.ret1d, 2)}</small></span>
                 <Score value={v(x, "priceStrength")} title="Price strength, 1–99" />
                 <Score value={quality(x)} title="Quality score, out of 100" />
               </li>
@@ -143,7 +143,7 @@ export default function ScreenDesk({ rows = [], loading, onOpenStock, empty = "N
                 </div>}
               </div>
               <div className="desk-quote">
-                <b>{price(r.cmp)}</b> <span className={tone(r.ret1d)}>{pct(r.ret1d, 2)}</span>
+                <b>{price(r.cmp)}</b> <span className={`desk-chg ${tone(r.ret1d)}`}>{pct(r.ret1d, 2)} today</span>
                 {v(r, "downFrom52wHigh") != null && <small>{v(r, "downFrom52wHigh") < 0.5 ? "at its 52-week high" : `${v(r, "downFrom52wHigh").toFixed(1)}% under its 52-week high`}</small>}
               </div>
               <button type="button" className="btn-ghost desk-open" onClick={() => onOpenStock?.(r.symbol)}>Full page <ArrowUpRight size={14} /></button>

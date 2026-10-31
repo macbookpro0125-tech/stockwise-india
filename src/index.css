@@ -5146,3 +5146,84 @@ tr:hover .row-acts { --row-bg: var(--s3); }
 .md-option b { font-size: 13.5px; font-weight: 600; }
 .md-option span { font-size: 12px; color: var(--t3); line-height: 1.4; }
 @media (hover: hover) and (pointer: fine) { .md-option:hover { border-color: var(--accent); background: var(--s1); } }
+
+/* ── The Desk, Apple's way (31 Oct 2026: "don't change the main concept but
+   make it the way Apple would"): the same pieces in the same places — softer
+   surfaces instead of outlines, segmented controls instead of outlined chips,
+   the Stocks app's change badges, one large number per panel, tighter
+   display type, and press feedback on every control. ── */
+.desk-page { --desk-r: 16px; --desk-surface: color-mix(in srgb, var(--card) 88%, var(--t1) 2%); }
+.desk-page-top h1 { font-size: 30px; font-weight: 700; letter-spacing: -0.025em; }
+.desk-mode, .desk-source select { border: 0; background: color-mix(in srgb, var(--t1) 7%, transparent); }
+.desk-mode { border-radius: 9px; padding: 2px; }
+.desk-mode button { height: 28px; border-radius: 7px; font-size: 12.5px; }
+.desk-mode button[aria-pressed="true"] { background: var(--s5); box-shadow: 0 1px 3px rgba(0,0,0,0.35); }
+.desk-source select { height: 32px; border-radius: 9px; }
+
+/* the mood: one quiet line and a hairline bar */
+.desk-page .mood { padding: 12px 16px; border: 0; border-radius: var(--desk-r); background: var(--desk-surface); }
+.desk-page .mood-top { gap: 6px 20px; }
+.desk-page .mood-word { padding: 4px 12px; font-size: 12px; }
+.desk-page .mood-bar { height: 4px; margin-top: 12px; gap: 3px; border-radius: 2px; }
+.desk-page .mood-bar i { border-radius: 2px; }
+
+/* views and patterns: a filled pill row, the picked one solid */
+.desk-views { gap: 4px; margin-bottom: 8px; }
+.desk-row-label { min-width: 70px; font-size: 11px; letter-spacing: 0.02em; text-transform: none; font-weight: 600; color: var(--t3); }
+.desk-chip { height: 30px; padding: 0 12px; border: 0; border-radius: 8px; background: color-mix(in srgb, var(--t1) 6%, transparent); font-size: 12.5px; font-weight: 500; transition: background 140ms, transform 100ms ease-out; }
+.desk-chip:active:not(:disabled) { transform: scale(0.96); }
+.desk-chip span { font-weight: 400; }
+.desk-chip:disabled { opacity: 0.32; }
+@media (hover: hover) and (pointer: fine) { .desk-chip:not([aria-pressed="true"]):not(:disabled):hover { background: color-mix(in srgb, var(--t1) 11%, transparent); border-color: transparent; } }
+
+/* the three panes: surfaces, not outlines */
+.desk-grid { gap: 14px; margin-top: 6px; }
+.desk-list, .desk-main, .desk-side { border: 0; border-radius: var(--desk-r); background: var(--desk-surface); }
+.desk-list-head { padding: 14px 16px 6px; }
+.desk-list-head select { border: 0; background: color-mix(in srgb, var(--t1) 7%, transparent); border-radius: 7px; }
+.desk-cols { padding: 6px 16px 8px; border-bottom: 0; text-transform: none; letter-spacing: 0; font-size: 11.5px; }
+.desk-list ul { padding: 2px 8px 8px; }
+.desk-list li { padding: 9px 10px; border-left: 0; border-radius: 10px; transition: background 120ms; }
+.desk-list li + li { box-shadow: 0 -1px 0 var(--bdr); }
+.desk-list li[aria-selected="true"], .desk-list li[aria-selected="true"] + li { box-shadow: none; }
+.desk-list li[aria-selected="true"] { background: var(--accent); }
+.desk-list li[aria-selected="true"] .desk-name b, .desk-list li[aria-selected="true"] .desk-name small, .desk-list li[aria-selected="true"] .desk-price { color: var(--on-accent); }
+.desk-list li[aria-selected="true"] .desk-stage-dot { background: var(--on-accent); }
+.desk-list li[aria-selected="true"] .desk-chg { background: color-mix(in srgb, var(--on-accent) 18%, transparent); color: var(--on-accent); }
+.desk-list li[aria-selected="true"] .desk-score { background: color-mix(in srgb, var(--on-accent) 16%, transparent); color: var(--on-accent); }
+.desk-list li:active { transform: scale(0.99); }
+.desk-name b { font-size: 13.5px; letter-spacing: -0.005em; }
+.desk-price { gap: 3px; font-weight: 500; }
+.desk-chg { min-width: 62px; padding: 1px 6px; border-radius: 5px; font-size: 11.5px !important; font-weight: 600; text-align: center; color: #fff !important; background: var(--s5); font-variant-numeric: tabular-nums; }
+.desk-chg.up { background: #22a94a; }
+.desk-chg.down { background: #d6453d; }
+.desk-hint { border-top: 0; padding: 8px 16px 12px; }
+
+/* the company: big name, big price, the chart without a frame of its own */
+.desk-main { padding: 18px 20px 16px; }
+.desk-title h2 { font-size: 24px; font-weight: 700; letter-spacing: -0.022em; line-height: 1.15; }
+.desk-title > span { display: block; margin-top: 2px; font-size: 13px; }
+.desk-quote b { font-size: 28px; font-weight: 600; letter-spacing: -0.03em; line-height: 1.1; }
+.desk-quote .desk-chg { margin-top: 4px; min-width: 0; padding: 2px 8px; }
+.desk-quote small { margin-top: 4px; }
+.desk-open { height: 32px; border: 0; border-radius: 9px; background: var(--accent); color: var(--on-accent); font-weight: 600; }
+.desk-tags { margin-top: 10px; }
+.desk-stage, .desk-tag { height: 24px; padding: 0 10px; border-radius: 999px; font-size: 11.5px; font-weight: 600; }
+.desk-main .chart-panel, .desk-main > section, .desk-main [class*="chart"] { border-color: transparent; }
+.desk-strip { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; margin-top: 14px; padding-top: 0; border-top: 0; }
+.desk-strip > div { padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--t1) 4%, transparent); }
+.desk-strip dt { font-size: 11px; font-weight: 500; }
+.desk-strip dd { margin-top: 3px; font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+
+/* the side: a segmented control, then grouped rows */
+.desk-tabs { gap: 2px; margin: 12px 12px 4px; padding: 2px; border-bottom: 0; border-radius: 9px; background: color-mix(in srgb, var(--t1) 7%, transparent); }
+.desk-tabs button { height: 28px; border: 0; border-radius: 7px; font-size: 12.5px; }
+.desk-tabs button[aria-selected="true"] { background: var(--s5); border-bottom: 0; box-shadow: 0 1px 3px rgba(0,0,0,0.35); }
+.desk-facts { padding: 10px 16px 16px; }
+.desk-big { margin: 4px 0 12px; }
+.desk-row { padding: 9px 0; }
+.desk-row:last-of-type { border-bottom: 0; }
+.desk-range-bar { height: 4px; border-radius: 2px; }
+.desk-range-bar i { top: -4px; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; box-shadow: 0 1px 4px rgba(0,0,0,0.5); }
+
+@media (prefers-reduced-motion: reduce) { .desk-chip, .desk-list li { transition: none; } .desk-chip:active:not(:disabled), .desk-list li:active { transform: none; } }
