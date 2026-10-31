@@ -7,7 +7,7 @@
 // offline; the built files carry a hash in their names and never change, so
 // they come from the copy first. Bump VERSION to drop every copy. A page
 // that gets the host's 502 during a deploy opens from the copy too.
-const VERSION = "v7"; // v3: the glass JI logo; v4: its header pictures (21 Oct 2026); v5: the mark without its tile (22 Oct); v6: the white JI site icon (27 Oct); v7: the same JI filling its circle, to show in a tab (31 Oct)
+const VERSION = "v7"; // v3: the glass JI logo; v4: its header pictures (21 Oct 2026); v5: the mark without its tile (22 Oct); v6: the white JI site icon (27 Oct); v7: the tab icon drawn solid at 16–48 px, to show in a tab (31 Oct)
 const SHELL = `jocular-shell-${VERSION}`, ASSETS = `jocular-assets-${VERSION}`;
 const KEEP_ASSETS = 80; // a few deploys' worth; the oldest go first
 
