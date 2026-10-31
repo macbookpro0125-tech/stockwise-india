@@ -5065,3 +5065,31 @@ tr:hover .row-acts { --row-bg: var(--s3); }
 .desk-checks .ok { color: var(--t1); }
 .desk-checks .ok span { color: var(--green); font-weight: 700; }
 .desk-peers { padding: 8px 4px; max-height: calc(100vh - 200px); overflow: auto; }
+.desk-row-label { align-self: center; min-width: 58px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--t3); }
+.desk-views + .desk-views { margin-top: -4px; }
+.desk-link { padding: 0; border: 0; background: none; color: var(--accent); font: inherit; cursor: pointer; }
+.desk-stage-dot { display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; vertical-align: 1px; }
+.desk-stage-dot.advancing, .desk-stage.advancing { --tone: var(--green); }
+.desk-stage-dot.topping, .desk-stage.topping { --tone: var(--yellow); }
+.desk-stage-dot.declining, .desk-stage.declining { --tone: var(--red); }
+.desk-stage-dot.basing, .desk-stage.basing { --tone: var(--brand-wise); }
+.desk-stage-dot { background: var(--tone); }
+.desk-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.desk-stage, .desk-tag { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 6px; font-size: 11.5px; font-weight: 500; }
+.desk-stage { color: var(--tone); background: color-mix(in srgb, var(--tone) 14%, transparent); }
+.desk-tag { color: var(--t2); background: var(--s3); }
+
+.mood { margin: 0 0 14px; padding: 12px 14px 10px; border: 1px solid var(--bdr); border-radius: 14px; background: var(--card); }
+.mood-loading { height: 62px; }
+.mood-top { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; font-size: 13px; color: var(--t2); }
+.mood-word { padding: 3px 10px; border-radius: 999px; font-weight: 600; font-size: 12.5px; }
+.mood-word.strong { background: var(--green-dim); color: var(--green); }
+.mood-word.mixed { background: var(--yellow-dim); color: var(--yellow); }
+.mood-word.weak { background: var(--red-dim); color: var(--red); }
+.mood-stage { display: inline-flex; align-items: center; gap: 6px; }
+.mood-stage i { width: 8px; height: 8px; border-radius: 50%; }
+.mood-stage b { color: var(--t1); font-variant-numeric: tabular-nums; }
+.mood-stage small { color: var(--t3); }
+.mood-meta { margin-left: auto; font-size: 11.5px; color: var(--t3); }
+.mood-bar { display: flex; gap: 2px; height: 6px; margin-top: 10px; border-radius: 3px; overflow: hidden; }
+.mood-bar i { display: block; min-width: 2px; }

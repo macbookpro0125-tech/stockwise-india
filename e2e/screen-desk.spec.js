@@ -34,6 +34,22 @@ test("D-1 the Desk walks a ready-made screen; a click and the arrow keys move th
     await expect(list.getByRole("option")).toHaveCount(n);
     expect(n).toBeLessThanOrEqual(all);
   }
+  // the market's mood, and a pattern narrows the list to the companies showing it
+  const mood = page.getByRole("region", { name: "Market mood" });
+  await expect(mood).toContainText(/Market: (Strong|Mixed|Weak)/, { timeout: 45_000 });
+  await expect(mood).toContainText("Advancing");
+  await views.getByRole("button", { name: /^All/ }).click();
+  const patterns = page.getByRole("group", { name: "Price patterns" });
+  const chips = patterns.getByRole("button");
+  for (let i = 0; i < await chips.count(); i++) {
+    const chip = chips.nth(i);
+    const k = Number((await chip.locator("span").textContent()).replace(/,/g, ""));
+    if (!k) continue;
+    await chip.click();
+    await expect(list.getByRole("option")).toHaveCount(k);
+    await chip.click();
+    break;
+  }
   if (process.env.DESK_SHOT) { await views.getByRole("button", { name: /^All/ }).click(); await page.waitForTimeout(1500); await page.screenshot({ path: process.env.DESK_SHOT }); }
 
 });

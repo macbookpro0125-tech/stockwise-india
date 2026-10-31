@@ -4,6 +4,7 @@
 // the client to store — a token in localStorage is readable by any script
 // on the page, which is exactly what a single XSS bug turns into full
 // account takeover. httpOnly means client-side JS can't read it at all.
+import { deskMarket, STAGES, SETUPS, LIQUID_CR } from "./price-setups.js";
 import "./env.js"; // first, so the rest see .env's settings
 import { createServer } from "node:http";
 import { randomUUID, createHash } from "node:crypto";
@@ -812,6 +813,13 @@ export function createApp() {
       if (url.pathname === "/api/explore/results" && req.method === "GET") {
         if (requireAuth(req, res) == null) return;
         sendJson(res, 200, resultsWeek());
+        return;
+      }
+      // The Desk's market mood and each company's stage and patterns (price-setups.js)
+      if (url.pathname === "/api/desk/market" && req.method === "GET") {
+        if (requireAuth(req, res) == null) return;
+        const m = await deskMarket((allMetrics().rows ?? []).map(r => r.symbol));
+        sendJson(res, 200, { ...m, stageInfo: STAGES, setupInfo: SETUPS, liquidCr: LIQUID_CR });
         return;
       }
       if (url.pathname === "/api/explore/heatmap" && req.method === "GET") {

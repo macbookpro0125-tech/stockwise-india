@@ -73,6 +73,8 @@ export const api = {
   forgotPassword: (email) => request("/api/auth/forgot", { method: "POST", body: JSON.stringify({ email }) }),
   resetPassword: (token, password) => request("/api/auth/reset", { method: "POST", body: JSON.stringify({ token, password }) }),
   presets: () => request("/api/presets"),
+  // the Desk: the market mood and each company's stage and patterns
+  deskMarket: () => request("/api/desk/market"),
   metrics: () => request("/api/metrics"),
   marketStrip: () => request("/api/market-strip"),
   stats: () => request("/api/stats"),

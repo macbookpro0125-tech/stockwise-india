@@ -15,13 +15,11 @@ const v = (r, id) => r?.values?.[id] ?? r?.[id] ?? null;
 const quality = r => r?.research?.quality ?? null;
 const fromFair = r => (r?.fv25 > 0 && r?.cmp > 0 ? (r.cmp / r.fv25 - 1) * 100 : null);
 
-// Quick views over the screen's own list
+// Quick views over the list (near highs and pullbacks are patterns, below)
 const VIEWS = [
   { id: "all", label: "All", test: () => true },
   { id: "both", label: "Strong price + business", test: r => v(r, "priceStrength") >= 70 && quality(r) >= 70 },
   { id: "strong", label: "Strongest prices", test: r => v(r, "priceStrength") >= 80 },
-  { id: "highs", label: "Near 52-week high", test: r => v(r, "downFrom52wHigh") != null && v(r, "downFrom52wHigh") <= 5 },
-  { id: "pullback", label: "Pulled back, trend intact", test: r => v(r, "vsSma50") < 0 && v(r, "vsSma200") > 0 },
   { id: "weak", label: "Under its 200-day average", test: r => v(r, "vsSma200") < 0 },
   { id: "value", label: "Below fair value", test: r => fromFair(r) != null && fromFair(r) < 0 },
 ];
@@ -47,20 +45,28 @@ function Score({ value, title }) {
   return <span className={`desk-score ${n >= 70 ? "hi" : n >= 40 ? "mid" : "lo"}`} title={title}>{n}</span>;
 }
 
-export default function ScreenDesk({ rows = [], loading, onOpenStock, empty = "No companies in this list." }) {
+const STAGE_WORDS = { advancing: "Advancing", topping: "Topping", declining: "Declining", basing: "Basing" };
+
+// market: the day's stages and patterns (api.deskMarket), or null while it loads
+export default function ScreenDesk({ rows = [], loading, onOpenStock, empty = "No companies in this list.", market = null }) {
   const [view, setView] = useState(() => read("deskView", "all"));
   const [sort, setSort] = useState(() => read("deskSort", "screen"));
   const [side, setSide] = useState(() => read("deskSide", "business"));
+  const [pattern, setPattern] = useState(null);
+  const stageOf = sym => market?.bySymbol?.[sym]?.stage ?? null;
+  const has = (sym, id) => !!market?.bySymbol?.[sym]?.setups?.includes(id);
   useEffect(() => keep("deskView", view), [view]);
   useEffect(() => keep("deskSort", sort), [sort]);
   useEffect(() => keep("deskSide", side), [side]);
 
   const counts = useMemo(() => Object.fromEntries(VIEWS.map(x => [x.id, rows.filter(x.test).length])), [rows]);
+  const inView = useMemo(() => rows.filter((VIEWS.find(x => x.id === view) ?? VIEWS[0]).test), [rows, view]);
+  const patternCounts = useMemo(() => Object.fromEntries((market?.setupInfo ?? []).map(p => [p.id, inView.filter(r => has(r.symbol, p.id)).length])), [inView, market]); // eslint-disable-line react-hooks/exhaustive-deps
   const list = useMemo(() => {
-    const shown = rows.filter((VIEWS.find(x => x.id === view) ?? VIEWS[0]).test);
+    const shown = pattern ? inView.filter(r => has(r.symbol, pattern)) : inView;
     const key = SORTS.find(s => s.id === sort)?.key;
     return key ? [...shown].sort((a, b) => (key(b) ?? -Infinity) - (key(a) ?? -Infinity)) : shown;
-  }, [rows, view, sort]);
+  }, [inView, pattern, sort, market]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [picked, setPicked] = useState(null);
   const current = list.find(r => r.symbol === picked) ?? list[0] ?? null;
@@ -88,12 +94,21 @@ export default function ScreenDesk({ rows = [], loading, onOpenStock, empty = "N
   return (
     <div className="desk">
       <div className="desk-views" role="group" aria-label="Quick views">
+        <span className="desk-row-label">View</span>
         {VIEWS.map(x => (
           <button key={x.id} type="button" className="desk-chip" aria-pressed={view === x.id} disabled={!counts[x.id] && view !== x.id} onClick={() => setView(x.id)}>
             {x.label} <span>{counts[x.id].toLocaleString("en-IN")}</span>
           </button>
         ))}
       </div>
+      {market?.setupInfo && <div className="desk-views" role="group" aria-label="Price patterns">
+        <span className="desk-row-label">Pattern</span>
+        {market.setupInfo.map(p => (
+          <button key={p.id} type="button" className="desk-chip" title={p.about} aria-pressed={pattern === p.id} disabled={!patternCounts[p.id] && pattern !== p.id} onClick={() => setPattern(v => (v === p.id ? null : p.id))}>
+            {p.label} <span>{patternCounts[p.id] ?? 0}</span>
+          </button>
+        ))}
+      </div>}
 
       <div className="desk-grid">
         <section className="desk-list" aria-label="Companies">
@@ -105,7 +120,7 @@ export default function ScreenDesk({ rows = [], loading, onOpenStock, empty = "N
           <ul ref={listRef} role="listbox" tabIndex={0} aria-label="Companies: up and down arrows move, Enter opens" aria-activedescendant={r ? `desk-${r.symbol}` : undefined} onKeyDown={onKey}>
             {list.map(x => (
               <li key={x.symbol} id={`desk-${x.symbol}`} data-sym={x.symbol} role="option" aria-selected={x === r} onClick={() => setPicked(x.symbol)} onDoubleClick={() => onOpenStock?.(x.symbol)}>
-                <span className="desk-name"><b>{x.symbol}</b><small>{cardName(x.name)}</small></span>
+                <span className="desk-name"><b>{stageOf(x.symbol) && <i className={`desk-stage-dot ${stageOf(x.symbol)}`} title={STAGE_WORDS[stageOf(x.symbol)]} />}{x.symbol}</b><small>{cardName(x.name)}</small></span>
                 <span className="desk-price">{price(x.cmp)}<small className={tone(x.ret1d)}>{pct(x.ret1d, 2)}</small></span>
                 <Score value={v(x, "priceStrength")} title="Price strength, 1–99" />
                 <Score value={quality(x)} title="Quality score, out of 100" />
@@ -113,7 +128,7 @@ export default function ScreenDesk({ rows = [], loading, onOpenStock, empty = "N
             ))}
             {!list.length && <li className="desk-none">None in this view.</li>}
           </ul>
-          <p className="desk-hint">↑ ↓ to move · Enter for the full page</p>
+          <p className="desk-hint">↑ ↓ to move · Enter for the full page{pattern ? <> · <button type="button" className="desk-link" onClick={() => setPattern(null)}>Clear pattern</button></> : null}</p>
         </section>
 
         <section className="desk-main" aria-label="Chart">
@@ -122,6 +137,10 @@ export default function ScreenDesk({ rows = [], loading, onOpenStock, empty = "N
               <div className="desk-title">
                 <h2>{cardName(r.name)}</h2>
                 <span>NSE: {r.symbol}{r.sector ? ` · ${r.sector}` : ""}</span>
+                {stageOf(r.symbol) && <div className="desk-tags">
+                  <span className={`desk-stage ${stageOf(r.symbol)}`} title={market.stageInfo?.find(s => s.id === stageOf(r.symbol))?.about}>{STAGE_WORDS[stageOf(r.symbol)]}</span>
+                  {(market.bySymbol[r.symbol].setups ?? []).map(id => { const p = market.setupInfo?.find(x => x.id === id); return p ? <span key={id} className="desk-tag" title={p.about}>{p.label}</span> : null; })}
+                </div>}
               </div>
               <div className="desk-quote">
                 <b>{price(r.cmp)}</b> <span className={tone(r.ret1d)}>{pct(r.ret1d, 2)}</span>
@@ -148,7 +167,7 @@ export default function ScreenDesk({ rows = [], loading, onOpenStock, empty = "N
             ))}
           </div>
           {r && side === "business" && <Business r={r} />}
-          {r && side === "price" && <PriceFacts r={r} />}
+          {r && side === "price" && <PriceFacts r={r} stage={stageOf(r.symbol)} stageInfo={market?.stageInfo} />}
           {r && side === "peers" && <div className="desk-peers"><PeersPanel symbol={r.symbol} onAnalyze={onOpenStock} /></div>}
         </aside>
       </div>
@@ -180,7 +199,7 @@ function Business({ r }) {
   );
 }
 
-function PriceFacts({ r }) {
+function PriceFacts({ r, stage, stageInfo }) {
   const lo = r.low52w, hi = r.high52w;
   const at = lo > 0 && hi > lo && r.cmp ? Math.min(1, Math.max(0, (r.cmp - lo) / (hi - lo))) : null;
   const checks = [
@@ -196,6 +215,7 @@ function PriceFacts({ r }) {
         <div className="desk-range-bar"><i style={{ left: `${at * 100}%` }} /></div>
         <div className="desk-range-ends"><span>{price(lo)}</span><span>52-week range</span><span>{price(hi)}</span></div>
       </div>}
+      {stage && <Row label="Trend stage" hint={stageInfo?.find(s => s.id === stage)?.about}><span className={`desk-stage ${stage}`}>{STAGE_WORDS[stage]}</span></Row>}
       <Row label="RSI, 14 days">{v(r, "rsi14") != null ? v(r, "rsi14").toFixed(0) : "—"}</Row>
       <Row label="Against 50-day average"><span className={tone(v(r, "vsSma50"))}>{pct(v(r, "vsSma50"))}</span></Row>
       <Row label="Against 200-day average"><span className={tone(v(r, "vsSma200"))}>{pct(v(r, "vsSma200"))}</span></Row>
