@@ -4934,7 +4934,7 @@ tr:hover .row-acts { --row-bg: var(--s3); }
 /* the ending: the logo flies to the app's own while the film falls away */
 .i4.flying { opacity: 1 !important; transform: none !important; }
 .i4.flying > :not(.i4-lockup), .i4.flying .i4-name, .i4.flying .i4-ripple, .i4.flying .i4-glint, .i4.flying .i4-logo-wrap::before { opacity: 0 !important; transition: opacity 360ms ease; animation: none !important; }
-.i4.flying .i4-lockup img { opacity: 1; transform: var(--fly); transition: transform 885ms cubic-bezier(0.65, 0, 0.35, 1); animation: none; }
+.i4.flying .i4-lockup img { opacity: 1; transform: var(--fly); animation: none; }
 .i4-name { font-size: clamp(30px, 8.4vw, 48px); font-weight: 700; letter-spacing: -0.035em; opacity: 0; transform: translateY(12px); will-change: transform, opacity; animation: i4-name 700ms cubic-bezier(0.16, 1, 0.3, 1) 1.94s forwards; }
 .i4-name span { color: #8FB4FF; }
 @keyframes i4-name { to { opacity: 1; transform: none; } }

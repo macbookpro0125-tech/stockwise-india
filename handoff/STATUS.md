@@ -8,7 +8,7 @@ Everything up to `c20da4a`, pushed 1 Nov 2026: Desk and My desk, stock pages wit
 
 ## Committed but NOT pushed yet
 
-Only this note.
+The opening: the logo really glides into the page's logo, 30% slower.
 
 ## Open / next
 

@@ -13,6 +13,7 @@ import { tick } from "./haptics.js";
 // page. Never for a test browser or a search engine (navigator.webdriver), nor
 // with reduced motion. A tap skips it.
 const LENGTH_MS = 2700;
+const FLIGHT_MS = 885; // the logo into the page's logo (30% slower, 1 Nov 2026)
 const RIDE = [150, 1300], FLY = [1380, 1780]; // CSS's logo waits for FLY's end (index.css)
 
 function wanted() {
@@ -104,14 +105,18 @@ export default function Intro() {
     let fly = false;
     if (target && landedRef.current) {
       const from = img.getBoundingClientRect(), to = target.getBoundingClientRect();
-      img.style.setProperty("--fly", `translate(${to.left + to.width / 2 - (from.left + from.width / 2)}px, ${to.top + to.height / 2 - (from.top + from.height / 2)}px) scale(${to.width / from.width})`);
+      const end = `translate(${to.left + to.width / 2 - (from.left + from.width / 2)}px, ${to.top + to.height / 2 - (from.top + from.height / 2)}px) scale(${to.width / from.width})`;
+      img.style.setProperty("--fly", end);
+      // told outright, not by a CSS transition: one taking over from the
+      // logo's own arrival animation jumped straight to the end (1 Nov 2026)
+      img.animate?.([{ transform: "none", opacity: 1 }, { transform: end, opacity: 1 }], { duration: FLIGHT_MS, easing: "cubic-bezier(0.65, 0, 0.35, 1)", fill: "forwards" });
       fly = true;
     }
     setFlying(fly);
     setLeaving(true);
     window.__introActive = false;
     window.dispatchEvent(new Event("intro-leaving"));
-    setTimeout(() => setOn(false), fly ? 965 : 560);
+    setTimeout(() => setOn(false), fly ? FLIGHT_MS + 80 : 560);
   };
 
   useEffect(() => {
