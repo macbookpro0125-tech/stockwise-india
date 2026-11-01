@@ -91,7 +91,7 @@ function Modal({ onClose, width = 340, children }) {
 
 // The periods a ranked strategy's switch offers (Top Gainers)
 const PERIOD_WORDS = { ret1d: "1 day", ret1w: "1 week", ret1m: "1 month", ret3m: "3 months", ret6m: "6 months", ret1y: "1 year", ret3y: "3 years", ret5y: "5 years" };
-export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "discover", onPage = null, onShowMap = null, visible = true, onOpenTab = null }) {
+export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "discover", onPage = null, onShowMap = null, visible = true, onOpenTab = null, account = null }) {
   const { meta, error: metaError, retry: retryMeta } = useScreenerMeta();
   // A shared link wins; else the last screen. null until the first screen
   // says what the old saved criteria became.
@@ -678,6 +678,7 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
               visible={visible}
               onOpenStock={onOpenStock}
               onOpenTab={onOpenTab}
+              account={account}
               onPickScreen={preset => { applyPreset(preset); setFiltersOpen(false); showStocks(); }}
               onCreate={newScreen}
               continueCard={continueCard || null}

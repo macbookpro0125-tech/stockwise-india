@@ -5,6 +5,8 @@ import { api } from "./api.js";
 import HowItWorks from "./HowItWorks.jsx";
 import { ScreenIcon } from "./PhoneScreens.jsx";
 import { navigate } from "./site.jsx";
+import { tabsFor } from "./Header.jsx";
+import { CalendarDays, Layers3, BookOpen } from "lucide-react";
 
 // A computer's home once signed in (1 Nov 2026, the owner: "I want something
 // good" of the hero and its bright cards): what's happened to the market and to
@@ -85,7 +87,21 @@ function MarketChart({ closes }) {
   return <div ref={host} className="td-chart" role="img" aria-label="The Nifty 500 over the last year" />;
 }
 
-export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onPickScreen, onCreate, continueCard = null, newsTile = null, children }) {
+// Every part of the app from one place (1 Nov 2026, the owner: "every option in
+// this page"), by name, with what it's for. The bar's own list, so a new page or
+// one kept to some accounts turns up here by itself.
+const ABOUT = {
+  discover: "All the ready-made screens", workspace: "Build your own filter", desk: "A list with its charts beside it",
+  explore: "Indices and news", map: "The market, by size and move", momentum: "Short-term moves", watchlist: "Companies you follow",
+  portfolio: "What you hold", performance: "How screens have done", alerts: "Your price and results alerts", visitors: "Who's been on the site",
+};
+const SITE_PAGES = [
+  { path: "/results-calendar", label: "Results calendar", about: "Who reports, and when", Icon: CalendarDays },
+  { path: "/sectors", label: "Sectors", about: "Companies by sector", Icon: Layers3 },
+  { path: "/learn", label: "Guides", about: "How to read the numbers", Icon: BookOpen },
+];
+
+export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onPickScreen, onCreate, account = null, continueCard = null, newsTile = null, children }) {
   const [strip, setStrip] = useState(null);
   const [watch, setWatch] = useState(null);
   const [calendar, setCalendar] = useState(null);
@@ -139,6 +155,21 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onPi
         </div>
         <HowItWorks plain label="See how it works" />
       </div>
+
+      <nav className="td-box td-all-pages" aria-label="Everything in the app">
+        {tabsFor(account).map(t => (
+          <button key={t.id} type="button" onClick={() => (t.id === "discover" ? seeAll() : onOpenTab?.(t.id))}>
+            <t.Icon size={18} strokeWidth={1.8} aria-hidden="true" />
+            <span>{t.label}<small>{ABOUT[t.id]}</small></span>
+          </button>
+        ))}
+        {SITE_PAGES.map(p => (
+          <button key={p.path} type="button" onClick={() => navigate(p.path)}>
+            <p.Icon size={18} strokeWidth={1.8} aria-hidden="true" />
+            <span>{p.label}<small>{p.about}</small></span>
+          </button>
+        ))}
+      </nav>
 
       <div className="td-grid td-summary">
         {market?.length > 1 && (

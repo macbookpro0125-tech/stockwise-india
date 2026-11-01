@@ -5449,3 +5449,10 @@ button.td-line { cursor: pointer; }
 .td-index-nums b { display: block; font-weight: 450; }
 .td-index-nums i { font-style: normal; font-size: 12.5px; }
 
+/* The home's list of everything in the app */
+.td-all-pages { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1px; margin-bottom: 16px; background: var(--bdr); }
+.td-all-pages button { display: flex; gap: 10px; min-width: 0; padding: 12px 14px; border: 0; background: var(--s2); color: var(--t1); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.td-all-pages svg { flex: none; margin-top: 1px; color: var(--accent); }
+.td-all-pages small { display: block; margin-top: 2px; font-size: 11.5px; color: var(--t3); }
+@media (hover: hover) and (pointer: fine) { .td-all-pages button:hover { background: var(--s3); } }
+

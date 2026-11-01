@@ -8,7 +8,7 @@ Everything up to the chart upgrade and phone full-screen chart (`5c5a347`), the 
 
 ## Committed but NOT pushed yet
 
-Desktop: different icons for Screen builder and Desk (sliders, monitor). The header's logo stays: the owner didn't want it removed. A new signed-in computer home (`TodayHome.jsx`): a black opening with a still star picture with a slow twinkle (the visitors' page keeps its 3D stars), a product shot, then a Market summary sheet, in the structure of TradingView's front page with our own words and art. Waiting on the owner's yes; don't push before it.
+Desktop: different icons for Screen builder and Desk (sliders, monitor). The header's logo stays: the owner didn't want it removed. A new signed-in computer home (`TodayHome.jsx`): a black opening with a still star picture with a slow twinkle (the visitors' page keeps its 3D stars), a product shot, then a Market summary sheet with a list of every page in the app, in the structure of TradingView's front page with our own words and art. Waiting on the owner's yes; don't push before it.
 
 ## Open / next
 
