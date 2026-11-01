@@ -25,14 +25,18 @@ const TWINKLES = Array.from({ length: 44 }, (_, i) => ({
   animationDuration: `${4 + (i * 1.7) % 5}s`, animationDelay: `${-((i * 2.3) % 8)}s`,
 }));
 
-// Now and then a star falls: each waits its turn in a long cycle
+// Fast streaks: each crosses in about half a second, then waits its turn
 const SHOOTING = [
-  { left: "62%", top: "5%", animationDelay: "3s", animationDuration: "17s" },
-  { left: "92%", top: "20%", animationDelay: "11s", animationDuration: "23s" },
-  { left: "34%", top: "2%", animationDelay: "19s", animationDuration: "29s" },
-  { left: "78%", top: "9%", animationDelay: "7s", animationDuration: "19s" },
-  { left: "20%", top: "26%", animationDelay: "14s", animationDuration: "31s" },
-  { left: "98%", top: "38%", animationDelay: "25s", animationDuration: "37s" },
+  { left: "70%", top: "4%", animationDelay: "1s", animationDuration: "7s" },
+  { left: "96%", top: "14%", animationDelay: "3.5s", animationDuration: "9s" },
+  { left: "40%", top: "1%", animationDelay: "5s", animationDuration: "8s" },
+  { left: "84%", top: "30%", animationDelay: "2s", animationDuration: "11s" },
+  { left: "30%", top: "22%", animationDelay: "6.5s", animationDuration: "10s" },
+  { left: "100%", top: "42%", animationDelay: "8s", animationDuration: "12s" },
+  { left: "58%", top: "10%", animationDelay: "9.5s", animationDuration: "13s" },
+  { left: "22%", top: "48%", animationDelay: "4s", animationDuration: "14s" },
+  { left: "92%", top: "55%", animationDelay: "11s", animationDuration: "15s" },
+  { left: "48%", top: "36%", animationDelay: "12.5s", animationDuration: "16s" },
 ];
 
 // A bright star's six thin rays, fading outwards, with a soft glow at the heart
