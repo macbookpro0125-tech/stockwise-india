@@ -109,3 +109,5 @@ The `/learn` guides, IndexNow, the new tab icons, and the opening animation.
 - **1 Nov 2026 (Claude Opus):** Home's Nifty chart was empty in the owner's Safari: its fill used color-mix(), now plain rgba. Not tested in Safari here.
 - **1 Nov 2026 (Claude Opus):** Market summary rearranged: market, your companies, screeners, then the page menu; the chart is the one main card.
 - **1 Nov 2026 (Claude Opus):** Home's cards stand out at rest: lighter glass, clearer edge, soft halo.
+- **1 Nov 2026 (Claude Opus):** Home's card colour halved at the owner's word: they looked dull.
+- **1 Nov 2026 (Claude Opus):** Colour behind the home's Market summary cards halved at the owner's word.
