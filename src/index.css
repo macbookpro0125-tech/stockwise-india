@@ -5435,12 +5435,11 @@ button.td-line { cursor: pointer; }
 .td-tints i + i { background: radial-gradient(closest-side, rgba(0, 200, 190, 0.13), transparent); left: 52%; top: 26%; animation: td-tint-b 33s ease-in-out infinite alternate; }
 @keyframes td-tint-a { from { transform: translate3d(-40px, 0, 0); opacity: 0.45; } to { transform: translate3d(120px, 30px, 0); opacity: 1; } }
 @keyframes td-tint-b { from { transform: translate3d(70px, 20px, 0); opacity: 1; } to { transform: translate3d(-110px, -20px, 0); opacity: 0.4; } }
-.td-shoot { position: absolute; width: 240px; height: 2px; border-radius: 2px; opacity: 0; background: linear-gradient(90deg, #fff, rgba(190, 215, 255, 0.55) 25%, transparent); box-shadow: -2px 0 8px rgba(255, 255, 255, 0.7); will-change: transform, opacity; animation: td-shoot 9s linear infinite; }
-@keyframes td-shoot { 0% { transform: rotate(-24deg) translate3d(0, 0, 0); opacity: 0; } 0.6% { opacity: 1; } 5% { opacity: 1; } 6.5% { transform: rotate(-24deg) translate3d(-1000px, 0, 0); opacity: 0; } 100% { transform: rotate(-24deg) translate3d(-1000px, 0, 0); opacity: 0; } }
+.td-shoot { position: absolute; width: 150px; height: 1.5px; border-radius: 2px; opacity: 0; background: linear-gradient(90deg, #fff, transparent); will-change: transform, opacity; animation: td-shoot 17s linear infinite; }
+@keyframes td-shoot { 0% { transform: rotate(-24deg) translate3d(0, 0, 0); opacity: 0; } 1% { opacity: 1; } 5% { transform: rotate(-24deg) translate3d(-340px, 0, 0); opacity: 0; } 100% { transform: rotate(-24deg) translate3d(-340px, 0, 0); opacity: 0; } }
 .td-stream { position: absolute; left: 0; top: 0; width: 200%; height: 720px; pointer-events: none; will-change: transform; animation: td-stream 150s linear infinite; }
 .td-stream-fast { animation-duration: 75s; }
 .td-stream-big { animation-duration: 110s; }
-.td-stream-near { animation-duration: 55s; }
 @keyframes td-stream { to { transform: translate3d(-50%, 0, 0); } }
 .td-hero.td-still :is(.td-sky, .td-tints i, .td-shoot, .td-twinkle, .td-stream) { animation-play-state: paused; }
 @media (prefers-reduced-motion: reduce) { .td-sky, .td-tints i, .td-stream { animation: none; } .td-shoot { display: none; } }

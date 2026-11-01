@@ -25,18 +25,18 @@ const TWINKLES = Array.from({ length: 44 }, (_, i) => ({
   animationDuration: `${4 + (i * 1.7) % 5}s`, animationDelay: `${-((i * 2.3) % 8)}s`,
 }));
 
-// Fast streaks: each crosses in about half a second, then waits its turn
+// Streaks: each crosses in a second or two, then waits its turn
 const SHOOTING = [
-  { left: "70%", top: "4%", animationDelay: "1s", animationDuration: "7s" },
-  { left: "96%", top: "14%", animationDelay: "3.5s", animationDuration: "9s" },
-  { left: "40%", top: "1%", animationDelay: "5s", animationDuration: "8s" },
-  { left: "84%", top: "30%", animationDelay: "2s", animationDuration: "11s" },
-  { left: "30%", top: "22%", animationDelay: "6.5s", animationDuration: "10s" },
-  { left: "100%", top: "42%", animationDelay: "8s", animationDuration: "12s" },
-  { left: "58%", top: "10%", animationDelay: "9.5s", animationDuration: "13s" },
-  { left: "22%", top: "48%", animationDelay: "4s", animationDuration: "14s" },
-  { left: "92%", top: "55%", animationDelay: "11s", animationDuration: "15s" },
-  { left: "48%", top: "36%", animationDelay: "12.5s", animationDuration: "16s" },
+  { left: "70%", top: "4%", animationDelay: "1s", animationDuration: "17s" },
+  { left: "96%", top: "14%", animationDelay: "3.5s", animationDuration: "23s" },
+  { left: "40%", top: "1%", animationDelay: "5s", animationDuration: "29s" },
+  { left: "84%", top: "30%", animationDelay: "2s", animationDuration: "19s" },
+  { left: "30%", top: "22%", animationDelay: "6.5s", animationDuration: "31s" },
+  { left: "100%", top: "42%", animationDelay: "8s", animationDuration: "37s" },
+  { left: "58%", top: "10%", animationDelay: "9.5s", animationDuration: "21s" },
+  { left: "22%", top: "48%", animationDelay: "4s", animationDuration: "27s" },
+  { left: "92%", top: "55%", animationDelay: "11s", animationDuration: "33s" },
+  { left: "48%", top: "36%", animationDelay: "12.5s", animationDuration: "25s" },
 ];
 
 // A bright star's six thin rays, fading outwards, with a soft glow at the heart
@@ -165,8 +165,7 @@ function StarField() {
       <div className="td-tints" aria-hidden="true"><i /><i /></div>
       <StarStream count={260} size={0.7} seed={11} className="td-stream-slow" />
       <StarStream count={90} size={1.1} seed={29} className="td-stream-fast" />
-      <StarStream count={14} size={1} seed={53} className="td-stream-big" points />
-      <StarStream count={8} size={1} seed={97} className="td-stream-near" points />
+      <StarStream count={6} size={1} seed={53} className="td-stream-big" points />
       {SHOOTING.map((t, i) => <span key={i} className="td-shoot" aria-hidden="true" style={t} />)}
       {TWINKLES.map((t, i) => <span key={i} className="td-twinkle" aria-hidden="true" style={t} />)}
     </>
