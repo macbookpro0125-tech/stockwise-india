@@ -35,9 +35,25 @@ const SHOOTING = [
   { left: "98%", top: "38%", animationDelay: "25s", animationDuration: "37s" },
 ];
 
+// A bright star's six thin rays, fading outwards, with a soft glow at the heart
+function sixPoints(c, x, y, len) {
+  const alpha = c.globalAlpha;
+  const halo = c.createRadialGradient(x, y, 0, x, y, len * 0.6);
+  halo.addColorStop(0, "rgba(255,255,255,0.45)"); halo.addColorStop(1, "rgba(255,255,255,0)");
+  c.fillStyle = halo; c.fillRect(x - len, y - len, len * 2, len * 2);
+  for (let i = 0; i < 3; i++) {
+    const a = Math.PI / 2 + (i * Math.PI) / 3, dx = Math.cos(a) * len, dy = Math.sin(a) * len;
+    const g = c.createLinearGradient(x - dx, y - dy, x + dx, y + dy);
+    g.addColorStop(0, "rgba(255,255,255,0)"); g.addColorStop(0.5, "#fff"); g.addColorStop(1, "rgba(255,255,255,0)");
+    c.strokeStyle = g; c.lineWidth = 1;
+    c.beginPath(); c.moveTo(x - dx, y - dy); c.lineTo(x + dx, y + dy); c.stroke();
+  }
+  c.fillStyle = "#fff"; c.globalAlpha = alpha;
+}
+
 // Stars that keep travelling: one picture, painted twice side by side and slid
 // by exactly one copy, so it runs for ever without a jump. One sliding layer each.
-function StarStream({ count, size, seed: start, className }) {
+function StarStream({ count, size, seed: start, className, points = false }) {
   const ref = useRef(null);
   useEffect(() => {
     const cv = ref.current, c = cv?.getContext?.("2d");
@@ -45,14 +61,17 @@ function StarStream({ count, size, seed: start, className }) {
     const w = Math.round(cv.clientWidth / 2), h = cv.clientHeight;
     cv.width = w * 2; cv.height = h;
     let seed = start;
-    const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    const rnd = () => { seed = (seed * 16807) % 2147483647; rnd.last = seed / 2147483647; return rnd.last; };
     c.fillStyle = "#fff";
     for (let i = 0; i < count; i++) {
       const x = rnd() * w, y = rnd() * h, r = size * (0.6 + rnd() * 0.7);
       c.globalAlpha = 0.45 + rnd() * 0.55;
-      for (const at of [x, x + w]) { c.beginPath(); c.arc(at, y, r, 0, Math.PI * 2); c.fill(); }
+      for (const at of [x, x + w]) {
+        if (points) sixPoints(c, at, y, 8 + rnd.last * 14);
+        c.beginPath(); c.arc(at, y, points ? 1.5 : r, 0, Math.PI * 2); c.fill();
+      }
     }
-  }, [count, size, start]);
+  }, [count, size, start, points]);
   return <canvas ref={ref} className={`td-stream ${className}`} aria-hidden="true" />;
 }
 
@@ -142,6 +161,8 @@ function StarField() {
       <div className="td-tints" aria-hidden="true"><i /><i /></div>
       <StarStream count={260} size={0.7} seed={11} className="td-stream-slow" />
       <StarStream count={90} size={1.1} seed={29} className="td-stream-fast" />
+      <StarStream count={14} size={1} seed={53} className="td-stream-big" points />
+      <StarStream count={8} size={1} seed={97} className="td-stream-near" points />
       {SHOOTING.map((t, i) => <span key={i} className="td-shoot" aria-hidden="true" style={t} />)}
       {TWINKLES.map((t, i) => <span key={i} className="td-twinkle" aria-hidden="true" style={t} />)}
     </>

@@ -5439,6 +5439,8 @@ button.td-line { cursor: pointer; }
 @keyframes td-shoot { 0% { transform: rotate(-24deg) translate3d(0, 0, 0); opacity: 0; } 1% { opacity: 1; } 5% { transform: rotate(-24deg) translate3d(-340px, 0, 0); opacity: 0; } 100% { transform: rotate(-24deg) translate3d(-340px, 0, 0); opacity: 0; } }
 .td-stream { position: absolute; left: 0; top: 0; width: 200%; height: 720px; pointer-events: none; will-change: transform; animation: td-stream 150s linear infinite; }
 .td-stream-fast { animation-duration: 75s; }
+.td-stream-big { animation-duration: 110s; }
+.td-stream-near { animation-duration: 55s; }
 @keyframes td-stream { to { transform: translate3d(-50%, 0, 0); } }
 .td-hero.td-still :is(.td-sky, .td-tints i, .td-shoot, .td-twinkle, .td-stream) { animation-play-state: paused; }
 @media (prefers-reduced-motion: reduce) { .td-sky, .td-tints i, .td-stream { animation: none; } .td-shoot { display: none; } }
