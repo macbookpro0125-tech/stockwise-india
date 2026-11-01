@@ -8,7 +8,7 @@ Everything up to the iPhone opening fixes and the phone stock bar (`6683c51`; no
 
 ## Committed but NOT pushed yet
 
-The sign-in card no longer opens on the email step with the keyboard up before jumping back to the choices. Google sign-in hidden on an iPhone's Home Screen version, with a note on Safari and on setting a password. Its Google window can't hand the answer back (the owner's phone stuck on "Opening Google…"). A real fix would be the redirect sign-in through a proxy on our own domain, which also needs the owner to add a redirect address in Google's console.
+On Performance a screen's name opens that screen; the arrow or the rest of the row shows its results. The sign-in card no longer opens on the email step with the keyboard up before jumping back to the choices. Google sign-in hidden on an iPhone's Home Screen version, with a note on Safari and on setting a password. Its Google window can't hand the answer back (the owner's phone stuck on "Opening Google…"). A real fix would be the redirect sign-in through a proxy on our own domain, which also needs the owner to add a redirect address in Google's console.
 
 ## Open / next
 

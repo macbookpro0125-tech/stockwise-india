@@ -97,7 +97,7 @@ function Merged({ p, onOpenStock }) {
   );
 }
 
-export default function PerformanceView({ onOpenStock }) {
+export default function PerformanceView({ onOpenStock, onOpenScreen }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [snapping, setSnapping] = useState(false);
@@ -244,9 +244,11 @@ export default function PerformanceView({ onOpenStock }) {
         const isOpen = open === p.presetId;
         return (
           <div key={p.presetId} style={{ border: "1px solid var(--bdr2)", borderRadius: 14, background: "var(--s2)", marginBottom: 10, overflow: "hidden" }}>
-            <button onClick={() => setOpen(isOpen ? null : p.presetId)} style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "13px 16px", background: "none", border: "none", cursor: "pointer" }}>
+            {/* The name opens the screen and its companies (1 Nov 2026); anywhere else
+                on the row, and the arrow, opens these results */}
+            <div onClick={() => setOpen(isOpen ? null : p.presetId)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "13px 16px", cursor: "pointer" }}>
               <div style={{ textAlign: "left", minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 500, color: "var(--t1)", letterSpacing: "-0.01em" }}>{p.presetName}</div>
+                <button type="button" className="pf-screen-name" onClick={e => { e.stopPropagation(); onOpenScreen?.(p.presetId); }}>{p.presetName}</button>
                 <div style={{ fontSize: 10, color: "var(--t3)", marginTop: 2 }}>
                   {/* The headline % is the oldest cohort's return, not a blend of all snapshots */}
                   {p.snapshots.length} snapshot{p.snapshots.length === 1 ? "" : "s"} · first picks {fmtDate(p.sinceDate)} · the figure tracks those
@@ -255,9 +257,11 @@ export default function PerformanceView({ onOpenStock }) {
               <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                 <RetBadge pct={p.overallAvgReturnPct} />
                 {tooEarly(daysSince(p.sinceDate)) && <EarlyTag days={daysSince(p.sinceDate)} />}
-                <ChevronDown size={16} style={{ color: "var(--t3)", transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 200ms", flexShrink: 0 }} />
+                <button type="button" className="pf-row-more" aria-expanded={isOpen} aria-label={`${isOpen ? "Hide" : "Show"} results for ${p.presetName}`} onClick={e => { e.stopPropagation(); setOpen(isOpen ? null : p.presetId); }}>
+                  <ChevronDown size={16} aria-hidden="true" style={{ transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 200ms" }} />
+                </button>
               </div>
-            </button>
+            </div>
             {isOpen && <Merged p={p} onOpenStock={onOpenStock} />}
             {isOpen && p.snapshots.length > 1 && (
               <button type="button" className="pf-snaps-toggle" onClick={() => setSnapsOpen(o => ({ ...o, [p.presetId]: !o[p.presetId] }))} aria-expanded={!!snapsOpen[p.presetId]}>

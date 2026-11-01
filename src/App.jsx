@@ -440,7 +440,7 @@ export default function App() {
           page={tab} onPage={followStep} onShowMap={(name, symbols) => { setMapScreen({ name, symbols, at: Date.now() }); goTab("map"); }} /></div>}
         {!open && tab === "watchlist" && <WatchlistView onOpenStock={openSymbol} onOpenNews={id => { setNewsOpen(id); goTab("explore"); }} />}
         {!open && tab === "portfolio" && <PortfolioView onOpenStock={openSymbol} />}
-        {!open && tab === "performance" && <PerformanceView onOpenStock={openSymbol} />}
+        {!open && tab === "performance" && <PerformanceView onOpenStock={openSymbol} onOpenScreen={id => { window.history.replaceState(window.history.state, "", `/?strategy=${encodeURIComponent(id)}`); goTab("discover"); }} />}
         {!open && tab === "alerts" && <AlertsView onOpenStock={openSymbol} />}
         {/* Kept mounted (hidden) under a company page too, as Discover is: Back
             returns to the heat map or the news where they were */}

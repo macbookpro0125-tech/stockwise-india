@@ -553,15 +553,19 @@ test("F08-H3 strategy performance: an early pick shows its return, marked early"
   } }));
   await page.goto("/");
   await openPage(page, "Performance");
-  const strategy = page.getByRole("button", { name: /Defensive Bluechips/ });
+  const strategy = page.locator("div").filter({ has: page.getByRole("button", { name: "Show results for Defensive Bluechips" }) }).last();
   await expect(strategy).toContainText("+2.5%");
   await expect(strategy).toContainText(/early/i);
-  await strategy.click();
+  await page.getByRole("button", { name: "Show results for Defensive Bluechips" }).click();
   await expect(page.getByText("+10.0%")).toBeVisible();
   await expect(page.getByText("-5.0%")).toBeVisible();
   // each company once, with the day it was first picked (24 Oct 2026)
   await expect(page.locator(".pf-picked").first()).toContainText(/^Picked \d{1,2} \w+ \d{4}/);
-  await expect(strategy).toContainText(/early · 25 days/);
+  await expect(page.getByText(/early · 25 days/)).toBeVisible();
+  // the name opens the screen itself, with its companies (1 Nov 2026)
+  await page.getByRole("button", { name: "Defensive Bluechips", exact: true }).click();
+  await expect(page).not.toHaveURL(/strategy=/);
+  await expect(page.getByRole("heading", { name: "Defensive Bluechips" }).or(page.getByText("Defensive Bluechips").first())).toBeVisible();
 });
 
 // ── F09 delete account ──────────────────────────────────────────────────────
