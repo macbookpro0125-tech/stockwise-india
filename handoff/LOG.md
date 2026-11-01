@@ -80,3 +80,4 @@ The `/learn` guides, IndexNow, the new tab icons, and the opening animation.
 - **1 Nov 2026 (Claude Opus):** iPhone recording: about 2.5 s of white, then the film with its line already drawn. Held the film's clock and removed the pale first paint; launch screen dark in `ios/` for the next build.
 - **1 Nov 2026 (Claude Opus):** The glow showed the phone stock bar's solid colour as a box: the bar now runs edge to edge under the header.
 - **1 Nov 2026 (Claude Opus):** iPhone opening fixes and the phone stock bar are live. Full tests: 135 passed, N-H3 failed (needs NSE, unreachable from this computer); F04-H1 passed, so it was a timing failure. A Watchlist quick-action sheet was mocked up and parked by the owner.
+- **1 Nov 2026 (Claude Opus):** iPhone Home Screen: Google sign-in hung for ever, a limit of pop-ups there. Hidden there, with a note; Safari keeps it. Not checked on a real iPhone.

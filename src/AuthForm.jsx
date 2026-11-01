@@ -3,7 +3,7 @@ import { Smartphone, Mail, MailCheck, ChevronLeft, Eye, EyeOff } from "lucide-re
 import { api } from "./api.js";
 import { SiteLink } from "./site.jsx";
 import { preloadFirebase, signInWithProvider, sendPhoneCode, toE164, nativeGoogleAvailable } from "./socialSignIn.js";
-import { providersFor } from "./signInChoices.js";
+import { providersFor, iphoneHomeScreen } from "./signInChoices.js";
 
 // The two companies' own marks, as their sign-in button guidelines ask
 const GoogleLogo = () => (
@@ -216,7 +216,7 @@ export default function AuthForm({ onAuthed, mode, onModeChange, onProgress }) {
       // Inside the apps Google and Apple refuse to sign in through the web
       // view; Google is offered there once the app signs in with it natively
       // (signInChoices.js)
-      const inApp = !!window.Capacitor?.isNativePlatform?.();
+      const inApp = !!window.Capacitor?.isNativePlatform?.() || iphoneHomeScreen();
       const providers = providersFor(o.firebase?.providers, { inApp, nativeGoogle: nativeGoogleAvailable() });
       if (providers.length) {
         setFb({ ...o.firebase, providers });
@@ -286,6 +286,7 @@ export default function AuthForm({ onAuthed, mode, onModeChange, onProgress }) {
         )}
       </div>
       {error && <div style={{ ...errorBox, marginTop: 12 }}>{error}</div>}
+      {iphoneHomeScreen() && <p className="auth-legal">Use Google? Open jocularinsights.in in Safari to sign in with it. Here, sign in with your email; if you have no password yet, "Forgot password" sets one.</p>}
       <p className="auth-legal">
         By continuing you agree to the <SiteLink to="/disclaimer" newTab>disclaimer</SiteLink> and <SiteLink to="/privacy" newTab>privacy policy</SiteLink>.
       </p>
