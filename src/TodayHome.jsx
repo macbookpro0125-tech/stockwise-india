@@ -269,6 +269,23 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onPi
   }, [visible]);
 
   const tabs = tabsFor(account);
+  // A soft light that follows the mouse across a card: only the position changes,
+  // once a frame at most, and the browser draws the rest (index.css .td-box::after)
+  const spot = useRef({ card: null, x: 0, y: 0, frame: 0 });
+  const moveSpot = e => {
+    if (e.pointerType !== "mouse") return;
+    const s = spot.current;
+    s.card = e.target.closest?.(".td-box") ?? null;
+    s.x = e.clientX; s.y = e.clientY;
+    s.frame ||= requestAnimationFrame(() => {
+      s.frame = 0;
+      if (!s.card) return;
+      const r = s.card.getBoundingClientRect();
+      s.card.style.setProperty("--spot-x", `${s.x - r.left}px`);
+      s.card.style.setProperty("--spot-y", `${s.y - r.top}px`);
+    });
+  };
+
   const rows = watch?.results ?? [];
   const mine = new Set(rows.map(r => r.symbol));
   const moved = [...rows].sort((a, b) => Math.abs(b.ret1d ?? 0) - Math.abs(a.ret1d ?? 0)).slice(0, WATCH_ROWS);
@@ -298,7 +315,7 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onPi
       </section>
 
       {/* Stays still as you scroll, and this comes up over it, like a tab pulled up */}
-      <div ref={sheetRef} className="td-sheet">
+      <div ref={sheetRef} className="td-sheet" onPointerMove={moveSpot}>
     <div className="td">
       <div className="td-top">
         <div>

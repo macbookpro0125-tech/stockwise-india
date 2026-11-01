@@ -5591,3 +5591,12 @@ html.td-night[data-theme="light"] :is(.app-header, .side-rail) .brand-mark .bm-l
   .td-sheet .td-box:hover::before { --td-rim: linear-gradient(170deg, var(--accent), color-mix(in srgb, var(--accent) 45%, transparent) 55%, color-mix(in srgb, var(--accent) 30%, transparent)); }
 }
 
+/* The light that follows the mouse (TodayHome.jsx moveSpot), on the surface and on
+   the edge nearest the pointer */
+.td-sheet .td-box::after { content: ""; position: absolute; inset: 0; z-index: 1; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity 220ms ease-out; background: radial-gradient(340px circle at var(--spot-x, 50%) var(--spot-y, 50%), color-mix(in srgb, var(--accent) 24%, transparent), transparent 70%); }
+@media (hover: hover) and (pointer: fine) {
+  .td-sheet .td-box:hover::after { opacity: 1; }
+  .td-sheet .td-box:hover::before { --td-rim: radial-gradient(260px circle at var(--spot-x, 50%) var(--spot-y, 50%), var(--accent), color-mix(in srgb, var(--accent) 22%, transparent) 75%); }
+}
+@media (prefers-reduced-motion: reduce) { .td-sheet .td-box::after { display: none; } }
+
