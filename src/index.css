@@ -4890,7 +4890,9 @@ tr:hover .row-acts { --row-bg: var(--s3); }
    "the opening is lagging" on Android): the phone's graphics chip runs them,
    so the app loading behind doesn't stall them. No painted strokes, blurs or
    blend modes in motion; times count from the first frame, as CSS delays. */
-.i4 { position: fixed; inset: 0; z-index: 2147483000; overflow: hidden; color: #F5F5F7; cursor: default; user-select: none; -webkit-user-select: none;
+/* visible: the page hides #root until the app has drawn (index.html), and the
+   app now waits for this film */
+.i4 { visibility: visible; position: fixed; inset: 0; z-index: 2147483000; overflow: hidden; color: #F5F5F7; cursor: default; user-select: none; -webkit-user-select: none;
   font-family: -apple-system, "SF Pro Display", system-ui, "Inter", sans-serif;
   transition: opacity 520ms cubic-bezier(0.4, 0, 0.2, 1), transform 560ms cubic-bezier(0.4, 0, 0.2, 1); }
 .i4.leaving { opacity: 0; transform: scale(1.04); pointer-events: none; }

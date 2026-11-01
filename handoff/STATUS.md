@@ -8,7 +8,7 @@ Everything up to the opening's gentler start (`d1bfc55`), pushed 1 Nov 2026: Des
 
 ## Committed but NOT pushed yet
 
-Nothing.
+The fix for the opening hidden behind a spinner in the Android app (live since `d1bfc55`: the app shows only a spinner, then the logo's last part).
 
 ## Open / next
 
