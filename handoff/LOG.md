@@ -97,3 +97,4 @@ The `/learn` guides, IndexNow, the new tab icons, and the opening animation.
 - **1 Nov 2026 (Claude Opus):** Home's sky and product shot redrawn for sharp screens at the owner's request.
 - **1 Nov 2026 (Claude Opus):** Home: more room between and inside the Market summary sections.
 - **1 Nov 2026 (Claude Opus):** Home's opening has a light-theme version (pale sky, blue stars, light product shot): black looked wrong between white chrome.
+- **1 Nov 2026 (Claude Opus):** Home: stars and moving things removed from the light theme at the owner's word; dark keeps its sky.

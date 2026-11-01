@@ -5526,3 +5526,6 @@ button.td-line { cursor: pointer; }
 [data-theme="light"] .td-shot .td-shot-light { display: block; }
 [data-theme="light"] .td-shot .td-shot-dark { display: none; }
 
+/* Light theme: a plain opening, no sky (1 Nov 2026, the owner: "remove") */
+[data-theme="light"] :is(.td-sky, .td-stream, .td-shoot, .td-twinkle, .td-star-letter, .td-tints) { display: none; }
+
