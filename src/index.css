@@ -5562,3 +5562,15 @@ html.td-night[data-theme="light"] :is(.app-header, .side-rail) .brand-mark .bm-l
   .td-sheet .td-big:hover { box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 65%, transparent), inset 0 1px 0 var(--ga-shine), 0 18px 50px var(--ga-drop), 0 0 34px color-mix(in srgb, var(--accent) 38%, transparent) !important; }
 }
 
+/* The cards lift off the page at rest, not only under the pointer (1 Nov 2026,
+   the owner: "cards should be highlighted"): a lighter glass, a clear edge, a soft
+   coloured halo; the pointer strengthens it */
+.td-sheet { --ga-glass: rgba(46, 48, 82, 0.62); --ga-edge: rgba(255, 255, 255, 0.2); --ga-shine: rgba(255, 255, 255, 0.16); --td-halo: rgba(0, 224, 190, 0.1); --td-lift: rgba(0, 0, 0, 0.45); }
+[data-theme="light"] .td-sheet { --ga-glass: rgba(255, 255, 255, 0.8); --ga-edge: rgba(16, 24, 40, 0.14); --ga-shine: #fff; --td-halo: rgba(37, 99, 235, 0.1); --td-lift: rgba(16, 24, 40, 0.12); }
+.td-sheet :is(.td-box:not(.td-big), .td-all-pages, .sc2, .ls, .sc2-list) { box-shadow: 0 0 0 1px var(--ga-edge), inset 0 1px 0 var(--ga-shine), 0 12px 32px var(--td-lift), 0 0 24px var(--td-halo) !important; }
+.td-sheet .td-big { box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, var(--ga-edge)), inset 0 1px 0 var(--ga-shine), 0 18px 50px var(--td-lift), 0 0 36px var(--td-halo) !important; }
+@media (hover: hover) and (pointer: fine) {
+  .td-sheet :is(.td-box, .td-all-pages, .sc2.in, .ls, .sc2-list):hover { box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 75%, transparent), inset 0 1px 0 var(--ga-shine), 0 16px 38px var(--td-lift), 0 0 40px color-mix(in srgb, var(--accent) 42%, transparent) !important; }
+}
+.td-sheet .sc2-list :is(.sc2, .ls), .td-sheet .ls :is(.sc2, .ls) { box-shadow: none !important; }
+
