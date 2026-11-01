@@ -5441,21 +5441,16 @@ button.td-line { cursor: pointer; }
 .td-stream-fast { animation-duration: 75s; }
 .td-stream-big { animation-duration: 110s; }
 @keyframes td-stream { to { transform: translate3d(-50%, 0, 0); } }
-/* J and I meet on the great star, drifting with it. A 16 s cycle: 2 s to glide in, a
-   soft touch, a pulse of light; the rest is quiet. Transform and opacity only. */
-.td-meet { position: absolute; z-index: 1; left: 88%; top: 182px; width: 0; height: 0; pointer-events: none; will-change: transform; animation: td-drift-near 44s ease-in-out infinite alternate; }
-.td-meet > * { position: absolute; left: 0; top: 0; opacity: 0; will-change: transform, opacity; animation-duration: 16s; animation-iteration-count: infinite; animation-delay: 2s; animation-fill-mode: backwards; }
-.td-letter { font-size: 30px; font-weight: 300; font-style: normal; line-height: 1; letter-spacing: 0; color: var(--td-on-black); animation-timing-function: cubic-bezier(0.65, 0, 0.35, 1); }
-.td-letter-j { animation-name: td-letter-j; }
-.td-letter-i { animation-name: td-letter-i; }
-@keyframes td-letter-j { 0% { transform: translate(-150px, 0) translate(-100%, -50%); opacity: 0; } 5% { opacity: 1; } 12.5% { transform: translate(1px, 0) translate(-100%, -50%); opacity: 1; } 13.5% { transform: translate(3px, 0) translate(-100%, -50%) scale(0.97); opacity: 1; } 15% { transform: translate(2px, 0) translate(-100%, -50%); opacity: 1; } 20%, 100% { transform: translate(2px, 0) translate(-100%, -50%); opacity: 0; } }
-@keyframes td-letter-i { 0% { transform: translate(150px, 0) translate(0, -50%); opacity: 0; } 5% { opacity: 1; } 12.5% { transform: translate(-1px, 0) translate(0, -50%); opacity: 1; } 13.5% { transform: translate(-3px, 0) translate(0, -50%) scale(0.97); opacity: 1; } 15% { transform: translate(-2px, 0) translate(0, -50%); opacity: 1; } 20%, 100% { transform: translate(-2px, 0) translate(0, -50%); opacity: 0; } }
-.td-bloom { width: 220px; height: 220px; margin: -110px 0 0 -110px; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.12) 45%, transparent); animation-name: td-bloom; animation-timing-function: ease-out; }
-@keyframes td-bloom { 0%, 12.5% { transform: scale(0.5); opacity: 0; } 14.5% { transform: scale(1); opacity: 1; } 24%, 100% { transform: scale(1.15); opacity: 0; } }
-.td-hairline { width: 160px; height: 160px; margin: -80px 0 0 -80px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6); animation-name: td-hairline; animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1); }
-@keyframes td-hairline { 0%, 12.5% { transform: scale(0.2); opacity: 0; } 13.5% { opacity: 0.9; } 25%, 100% { transform: scale(1.9); opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .td-meet { display: none; } }
-.td-hero.td-still :is(.td-sky, .td-tints i, .td-shoot, .td-twinkle, .td-stream, .td-meet, .td-meet > *) { animation-play-state: paused; }
+/* J and I as constellations, each wandering its own slow way; they never meet */
+.td-star-letter { position: absolute; width: 112px; height: 142px; overflow: visible; pointer-events: none; will-change: transform; }
+.td-star-letter polyline { fill: none; stroke: #00E0BE; stroke-opacity: 0.55; stroke-width: 1; }
+.td-star-letter circle { fill: #fff; filter: drop-shadow(0 0 3px #fff); }
+.td-star-j { left: 5%; top: 60px; animation: td-wander-j 130s ease-in-out infinite alternate; }
+.td-star-i { left: 84%; top: 120px; animation: td-wander-i 160s ease-in-out infinite alternate; }
+@keyframes td-wander-j { 0% { transform: translate3d(0, 0, 0) rotate(-8deg); } 30% { transform: translate3d(150px, 170px, 0) rotate(5deg); } 65% { transform: translate3d(70px, 300px, 0) rotate(-4deg); } 100% { transform: translate3d(260px, 90px, 0) rotate(9deg); } }
+@keyframes td-wander-i { 0% { transform: translate3d(0, 0, 0) rotate(7deg); } 35% { transform: translate3d(-170px, 200px, 0) rotate(-6deg); } 70% { transform: translate3d(-40px, 280px, 0) rotate(4deg); } 100% { transform: translate3d(-240px, 40px, 0) rotate(-9deg); } }
+@media (prefers-reduced-motion: reduce) { .td-star-letter { animation: none; } }
+.td-hero.td-still :is(.td-sky, .td-tints i, .td-shoot, .td-twinkle, .td-stream, .td-star-letter) { animation-play-state: paused; }
 @media (prefers-reduced-motion: reduce) { .td-sky, .td-tints i, .td-stream { animation: none; } .td-shoot { display: none; } }
 /* the sky falls away behind the words, so they read cleanly */
 .td-hero::after { content: ""; position: absolute; z-index: 0; left: 50%; top: 20px; width: min(1100px, 92%); height: 340px; transform: translateX(-50%); pointer-events: none; background: radial-gradient(closest-side, rgba(0, 0, 0, 0.92) 55%, rgba(0, 0, 0, 0)); }

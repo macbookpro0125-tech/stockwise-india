@@ -31,6 +31,19 @@ const SHOOTING = Array.from({ length: 20 }, (_, i) => ({
   animationDelay: `${(i * 3.7) % 29}s`, animationDuration: `${17 + (i * 7) % 21}s`,
 }));
 
+// J and I drawn as constellations, floating freely and slowly through the sky
+const LETTER_J = [[[26, 6], [62, 3], [94, 8]], [[62, 3], [66, 52], [60, 98], [40, 122], [16, 116], [6, 94]]];
+const LETTER_I = [[[6, 8], [34, 4], [62, 7]], [[34, 4], [32, 62], [35, 120]], [[6, 124], [35, 120], [64, 125]]];
+function StarLetter({ points, className }) {
+  const dots = [...new Set(points.flat().map(p => p.join()))].map(p => p.split(",").map(Number));
+  return (
+    <svg className={`td-star-letter ${className}`} viewBox="-6 -6 112 142" aria-hidden="true">
+      {points.map((line, i) => <polyline key={i} points={line.map(p => p.join()).join(" ")} />)}
+      {dots.map(([x, y], i) => <circle key={i} cx={x} cy={y} r={i % 3 === 0 ? 2.6 : 1.9} />)}
+    </svg>
+  );
+}
+
 // A bright star's six thin rays, fading outwards, with a soft glow at the heart
 function sixPoints(c, x, y, len) {
   const alpha = c.globalAlpha;
@@ -236,12 +249,8 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onPi
       <div className="td-sky-watch" aria-hidden="true" />
       <section className="td-hero" aria-labelledby="td-hero-title">
         <StarField />
-        {/* J and I glide together along the great star's ray, touch, and melt into its light */}
-        <div className="td-meet" aria-hidden="true">
-          <i className="td-bloom" /><i className="td-hairline" />
-          <span className="td-letter td-letter-j">J</span>
-          <span className="td-letter td-letter-i">I</span>
-        </div>
+        <StarLetter className="td-star-j" points={LETTER_J} />
+        <StarLetter className="td-star-i" points={LETTER_I} />
         <h2 id="td-hero-title">India's markets, read from the source.</h2>
         <p>Every NSE company, scored on what it files. Find the few worth your time.</p>
         <button type="button" className="td-cta" onClick={onCreate}>Start screening</button>
