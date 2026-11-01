@@ -4,11 +4,11 @@ _Last updated: 1 Nov 2026, by Claude (Opus) on branch `screeners-home`._
 
 ## Live on jocularinsights.in
 
-Everything up to the logo's glide (`6a9f871`), pushed 1 Nov 2026: Desk and My desk, stock pages with "below our fair value" and same-industry peers, the Screen builder name, the overnight fixes, and the opening rebuilt so it doesn't lag on Android.
+Everything up to the opening's gentler start (`d1bfc55`), pushed 1 Nov 2026: Desk and My desk, stock pages with "below our fair value" and same-industry peers, the Screen builder name, the overnight fixes, and the opening rebuilt so it doesn't lag on Android.
 
 ## Committed but NOT pushed yet
 
-The opening: the app waits for the logo to land before building, to end the lag on Android; a slower start, so the point of light is seen.
+Nothing.
 
 ## Open / next
 
