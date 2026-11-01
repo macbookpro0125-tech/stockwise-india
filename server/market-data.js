@@ -671,14 +671,17 @@ export function bseClassification(json, known) {
   const basic = bseField(json, /^isub_?group(_?name)?$/i, /^basic_?industry$/i);
   return { sector, ...(basic && sectorKey(basic) !== sectorKey(sector) ? { basic } : {}) };
 }
-async function bseSectors(symbols, skip, { pauseMs = 250, max = Number(process.env.BSE_SECTOR_BATCH ?? 2500), getJson = url => requestJson(url, { headers: BSE_HEADERS, service: "BSE", maxBytes: 25 * 1024 * 1024, timeoutMs: 30_000 }), equityList = null } = {}) {
+async function bseSectors(symbols, skip, { industries = null, pauseMs = 250, max = Number(process.env.BSE_SECTOR_BATCH ?? 2500), getJson = url => requestJson(url, { headers: BSE_HEADERS, service: "BSE", maxBytes: 25 * 1024 * 1024, timeoutMs: 30_000 }), equityList = null } = {}) {
   // a company BSE gave nothing usable for is asked again when the reading
   // changes (BSE_SECTOR_VERSION)
   const before = loadMarketSnapshot();
   // (and one from the first reading, which kept the sector as its industry)
   const current = before?.bseSectorsVersion === BSE_SECTOR_VERSION;
   const out = Object.fromEntries(Object.entries(before?.bseSectors ?? {}).filter(([, v]) => current || (v && v.basic && v.basic !== v.sector)));
-  const todo = symbols.filter(s => !skip[s] && !(s in out));
+  // a company with a sector but no industry is asked too, for the industry (1
+  // Nov 2026: 410 of them, largely the big ones the index lists name, such as
+  // Lemon Tree, so their peers were the whole broad sector)
+  const todo = symbols.filter(s => (!skip[s] || (industries && !industries[s])) && !(s in out));
   if (!todo.length) return out;
   const codes = bseCodes(await getJson(BSE_LIST), equityList ?? await fetchEquityList());
   const known = new Set([...Object.values(fallbackSectors({})), ...Object.values(skip)]);
@@ -932,7 +935,7 @@ export async function buildMarketSnapshot(fyEndDates, { yearsOfActions = 6 } = {
   const { sectors, industrySectors, industries } = await sectorsBySymbol();
   const nseSectorMap = await nseSectors(Object.keys(latest.prices), sectors).catch(() => loadMarketSnapshot()?.nseSectors ?? {});
   const named = { ...sectors, ...Object.fromEntries(Object.entries(nseSectorMap).filter(([, v]) => v?.sector).map(([k, v]) => [k, v.sector])) };
-  const bseSectorMap = await bseSectors(Object.keys(latest.prices), named).catch(error => { console.error(`[sectors] BSE didn't answer (${String(error?.message ?? error).slice(0, 160)}); keeping the last answers`); return loadMarketSnapshot()?.bseSectors ?? {}; });
+  const bseSectorMap = await bseSectors(Object.keys(latest.prices), named, { industries }).catch(error => { console.error(`[sectors] BSE didn't answer (${String(error?.message ?? error).slice(0, 160)}); keeping the last answers`); return loadMarketSnapshot()?.bseSectors ?? {}; });
 
   const snapshot = {
     builtAt: now.toISOString(),

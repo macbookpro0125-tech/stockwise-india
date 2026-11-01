@@ -79,6 +79,9 @@ const fromBse = await bseSectors(["FLAIR", "SAMECO", "NSEONLY", "TCS"], { TCS: "
 assert.deepEqual(fromBse.FLAIR, { sector: "Consumer Durables", basic: "Stationary" });
 assert.equal(fromBse.SAMECO, null, "a sector name NSE's lists don't use isn't taken");
 assert.ok(!("NSEONLY" in fromBse) && !bseAsked.some(u => u.includes("TCS")), "no BSE code, or an NSE sector already: not asked");
+const fromBse2 = await bseSectors(["FLAIR", "TCS"], { FLAIR: "Consumer Durables", TCS: "Information Technology" }, { industries: { TCS: "Computers - Software" }, pauseMs: 0, getJson: fakeBse, equityList });
+assert.equal(fromBse2.FLAIR?.basic, "Stationary", "a sector but no industry: asked, for the industry");
+assert.ok(!("TCS" in fromBse2), "a sector and an industry: not asked");
 
 // an industry takes the sector most of its indexed companies have, 75% of at least `min`
 const labels = { A: "Software", B: "Software", C: "Software", D: "Software", E: "Sugar", F: "Sugar", G: "Mixed", H: "Mixed", I: "Lone" };
