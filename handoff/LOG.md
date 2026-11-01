@@ -94,3 +94,4 @@ The `/learn` guides, IndexNow, the new tab icons, and the opening animation.
 - **1 Nov 2026 (Claude Opus):** J and I collision removed: the owner found it ugly.
 - **1 Nov 2026 (Claude Opus):** J and I collision rebuilt to be simple, as the owner asked: thin white letters, a soft pulse, one hairline ring. No tails, burst colour or logo.
 - **1 Nov 2026 (Claude Opus):** Collision dropped at the owner's word: J and I are now constellations floating slowly and freely.
+- **1 Nov 2026 (Claude Opus):** Home's sky and product shot redrawn for sharp screens at the owner's request.

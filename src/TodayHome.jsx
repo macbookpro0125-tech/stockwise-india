@@ -39,7 +39,7 @@ function StarLetter({ points, className }) {
   return (
     <svg className={`td-star-letter ${className}`} viewBox="-6 -6 112 142" aria-hidden="true">
       {points.map((line, i) => <polyline key={i} points={line.map(p => p.join()).join(" ")} />)}
-      {dots.map(([x, y], i) => <circle key={i} cx={x} cy={y} r={i % 3 === 0 ? 2.6 : 1.9} />)}
+      {dots.map(([x, y], i) => <circle key={i} cx={x} cy={y} r={i % 3 === 0 ? 2 : 1.5} />)}
     </svg>
   );
 }
@@ -48,13 +48,13 @@ function StarLetter({ points, className }) {
 function sixPoints(c, x, y, len) {
   const alpha = c.globalAlpha;
   const halo = c.createRadialGradient(x, y, 0, x, y, len * 0.6);
-  halo.addColorStop(0, "rgba(255,255,255,0.45)"); halo.addColorStop(1, "rgba(255,255,255,0)");
+  halo.addColorStop(0, "rgba(255,255,255,0.28)"); halo.addColorStop(1, "rgba(255,255,255,0)");
   c.fillStyle = halo; c.fillRect(x - len, y - len, len * 2, len * 2);
   for (let i = 0; i < 3; i++) {
     const a = Math.PI / 2 + (i * Math.PI) / 3, dx = Math.cos(a) * len, dy = Math.sin(a) * len;
     const g = c.createLinearGradient(x - dx, y - dy, x + dx, y + dy);
     g.addColorStop(0, "rgba(255,255,255,0)"); g.addColorStop(0.5, "#fff"); g.addColorStop(1, "rgba(255,255,255,0)");
-    c.strokeStyle = g; c.lineWidth = 1;
+    c.strokeStyle = g; c.lineWidth = 0.7;
     c.beginPath(); c.moveTo(x - dx, y - dy); c.lineTo(x + dx, y + dy); c.stroke();
   }
   c.fillStyle = "#fff"; c.globalAlpha = alpha;
@@ -67,8 +67,9 @@ function StarStream({ count, size, seed: start, className, points = false }) {
   useEffect(() => {
     const cv = ref.current, c = cv?.getContext?.("2d");
     if (!c) return;
-    const w = Math.round(cv.clientWidth / 2), h = cv.clientHeight;
-    cv.width = w * 2; cv.height = h;
+    const w = Math.round(cv.clientWidth / 2), h = cv.clientHeight, dpr = Math.min(window.devicePixelRatio || 1, 2);
+    cv.width = w * 2 * dpr; cv.height = h * dpr;
+    c.scale(dpr, dpr);
     let seed = start;
     const rnd = () => { seed = (seed * 16807) % 2147483647; rnd.last = seed / 2147483647; return rnd.last; };
     c.fillStyle = "#fff";
@@ -77,7 +78,7 @@ function StarStream({ count, size, seed: start, className, points = false }) {
       c.globalAlpha = 0.45 + rnd() * 0.55;
       for (const at of [x, x + w]) {
         if (points) sixPoints(c, at, y, 8 + rnd.last * 14);
-        c.beginPath(); c.arc(at, y, points ? 1.5 : r, 0, Math.PI * 2); c.fill();
+        c.beginPath(); c.arc(at, y, points ? 1.2 : r, 0, Math.PI * 2); c.fill();
       }
     }
   }, [count, size, start, points]);
@@ -111,7 +112,7 @@ function StarField() {
         const far = dx && dy ? len * 0.6 : len;
         const g = ctx.createLinearGradient(x - dx * far, y - dy * far, x + dx * far, y + dy * far);
         g.addColorStop(0, "rgba(255,255,255,0)"); g.addColorStop(0.5, "rgba(255,255,255,0.95)"); g.addColorStop(1, "rgba(255,255,255,0)");
-        ctx.strokeStyle = g; ctx.lineWidth = 1;
+        ctx.strokeStyle = g; ctx.lineWidth = 0.7;
         ctx.beginPath(); ctx.moveTo(x - dx * far, y - dy * far); ctx.lineTo(x + dx * far, y + dy * far); ctx.stroke();
       }
     };
@@ -122,13 +123,13 @@ function StarField() {
       const p = across(rnd()), col = ["rgba(86,100,190,0.09)", "rgba(150,100,220,0.07)", "rgba(40,170,170,0.05)"][i % 3];
       glow(p.x, p.y + (rnd() - 0.5) * 70, 110 + rnd() * 150, col);
     }
-    for (let i = 0; i < 2600; i++) {
+    for (let i = 0; i < 1500; i++) {
       const p = across(rnd()), off = (rnd() + rnd() + rnd() - 1.5) * 130;
-      star(p.x, p.y + off, 0.25 + rnd() * 0.45, 0.2 + rnd() * 0.5);
+      star(p.x, p.y + off, 0.35 + rnd() * 0.3, 0.3 + rnd() * 0.45);
     }
     // the whole sky
     const tints = ["#fff", "#fff", "#fff", "#CFE0FF", "#FFE9CF"];
-    for (let i = 0; i < 1500; i++) star(rnd() * (w + PAD * 2) - PAD, rnd() * (h + PAD * 2) - PAD, rnd() < 0.92 ? 0.3 + rnd() * 0.5 : 0.8 + rnd() * 0.8, 0.25 + rnd() * 0.7, tints[Math.floor(rnd() * tints.length)]);
+    for (let i = 0; i < 1500; i++) star(rnd() * (w + PAD * 2) - PAD, rnd() * (h + PAD * 2) - PAD, rnd() < 0.94 ? 0.35 + rnd() * 0.35 : 0.8 + rnd() * 0.4, 0.35 + rnd() * 0.65, tints[Math.floor(rnd() * tints.length)]);
     ctx = nearCtx;
     // Constellations: the teal lines of the front page's film, joining a few groups
     for (let c = 0; c < 6; c++) {
@@ -137,7 +138,7 @@ function StarField() {
       const n = 4 + Math.floor(rnd() * 3);
       for (let i = 0; i < n; i++) {
         const nx = x + (rnd() - 0.3) * 90, ny = y + (rnd() - 0.5) * 70;
-        ctx.globalAlpha = 0.34; ctx.strokeStyle = "#00E0BE"; ctx.lineWidth = 0.8;
+        ctx.globalAlpha = 0.42; ctx.strokeStyle = "#00E0BE"; ctx.lineWidth = 0.6;
         ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(nx, ny); ctx.stroke();
         star(x, y, 1.5, 0.95);
         x = nx; y = ny;

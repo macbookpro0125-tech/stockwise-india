@@ -5435,7 +5435,7 @@ button.td-line { cursor: pointer; }
 .td-tints i + i { background: radial-gradient(closest-side, rgba(0, 200, 190, 0.13), transparent); left: 52%; top: 26%; animation: td-tint-b 33s ease-in-out infinite alternate; }
 @keyframes td-tint-a { from { transform: translate3d(-40px, 0, 0); opacity: 0.45; } to { transform: translate3d(120px, 30px, 0); opacity: 1; } }
 @keyframes td-tint-b { from { transform: translate3d(70px, 20px, 0); opacity: 1; } to { transform: translate3d(-110px, -20px, 0); opacity: 0.4; } }
-.td-shoot { position: absolute; width: 150px; height: 1.5px; border-radius: 2px; opacity: 0; background: linear-gradient(90deg, #fff, transparent); will-change: transform, opacity; animation: td-shoot 17s linear infinite; }
+.td-shoot { position: absolute; width: 150px; height: 1px; border-radius: 2px; opacity: 0; background: linear-gradient(90deg, #fff, transparent); will-change: transform, opacity; animation: td-shoot 17s linear infinite; }
 @keyframes td-shoot { 0% { transform: rotate(-24deg) translate3d(0, 0, 0); opacity: 0; } 1% { opacity: 1; } 5% { transform: rotate(-24deg) translate3d(-340px, 0, 0); opacity: 0; } 100% { transform: rotate(-24deg) translate3d(-340px, 0, 0); opacity: 0; } }
 .td-stream { position: absolute; left: 0; top: 0; width: 200%; height: 720px; pointer-events: none; will-change: transform; animation: td-stream 150s linear infinite; }
 .td-stream-fast { animation-duration: 75s; }
@@ -5443,8 +5443,8 @@ button.td-line { cursor: pointer; }
 @keyframes td-stream { to { transform: translate3d(-50%, 0, 0); } }
 /* J and I as constellations, each wandering its own slow way; they never meet */
 .td-star-letter { position: absolute; width: 112px; height: 142px; overflow: visible; pointer-events: none; will-change: transform; }
-.td-star-letter polyline { fill: none; stroke: #00E0BE; stroke-opacity: 0.55; stroke-width: 1; }
-.td-star-letter circle { fill: #fff; filter: drop-shadow(0 0 3px #fff); }
+.td-star-letter polyline { fill: none; stroke: #00E0BE; stroke-opacity: 0.6; stroke-width: 0.7; }
+.td-star-letter circle { fill: #fff; }
 .td-star-j { left: 5%; top: 60px; animation: td-wander-j 130s ease-in-out infinite alternate; }
 .td-star-i { left: 84%; top: 120px; animation: td-wander-i 160s ease-in-out infinite alternate; }
 @keyframes td-wander-j { 0% { transform: translate3d(0, 0, 0) rotate(-8deg); } 30% { transform: translate3d(150px, 170px, 0) rotate(5deg); } 65% { transform: translate3d(70px, 300px, 0) rotate(-4deg); } 100% { transform: translate3d(260px, 90px, 0) rotate(9deg); } }
@@ -5456,7 +5456,7 @@ button.td-line { cursor: pointer; }
 .td-hero::after { content: ""; position: absolute; z-index: 0; left: 50%; top: 20px; width: min(1100px, 92%); height: 340px; transform: translateX(-50%); pointer-events: none; background: radial-gradient(closest-side, rgba(0, 0, 0, 0.92) 55%, rgba(0, 0, 0, 0)); }
 .td-hero h2, .td-hero p, .td-cta { z-index: 1; }
 .td-hero > h2, .td-hero > p, .td-cta, .td-shot { flex: none; }
-.td-twinkle { position: absolute; width: 2.5px; height: 2.5px; border-radius: 50%; background: var(--td-on-black); box-shadow: 0 0 5px var(--td-on-black); opacity: 0.2; will-change: opacity; animation: td-twinkle 6s ease-in-out infinite; }
+.td-twinkle { position: absolute; width: 2px; height: 2px; border-radius: 50%; background: var(--td-on-black); box-shadow: 0 0 3px rgba(255, 255, 255, 0.55); opacity: 0.2; will-change: opacity; animation: td-twinkle 6s ease-in-out infinite; }
 @keyframes td-twinkle { 50% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .td-twinkle { animation: none; opacity: 0.6; } }
 .td-hero::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 620px; background: radial-gradient(46% 60% at 50% 30%, rgba(62, 70, 140, 0.34), transparent 72%), radial-gradient(26% 34% at 72% 48%, rgba(168, 107, 255, 0.12), transparent 75%), radial-gradient(26% 34% at 26% 52%, rgba(0, 224, 190, 0.08), transparent 75%); }
