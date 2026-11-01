@@ -20,8 +20,8 @@ const short = s => String(s ?? "").replace(/ (Limited|Ltd\.?)$/i, "");
 const WATCH_ROWS = 8, QUICK_SCREENS = 6;
 
 // A few stars over the still sky that slowly brighten and dim, each in its own time
-const TWINKLES = Array.from({ length: 28 }, (_, i) => ({
-  left: `${(i * 37.3 + 4) % 100}%`, top: `${(i * 23.7 + 3) % 62}%`,
+const TWINKLES = Array.from({ length: 44 }, (_, i) => ({
+  left: `${(i * 37.3 + 4) % 100}%`, top: `${(i * 23.7 + 3) % 70}%`,
   animationDuration: `${4 + (i * 1.7) % 5}s`, animationDelay: `${-((i * 2.3) % 8)}s`,
 }));
 
@@ -37,23 +37,62 @@ function StarField() {
     ctx.scale(dpr, dpr);
     let seed = 7;
     const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
-    for (let i = 0; i < 900; i++) {
-      const r = rnd() < 0.9 ? 0.3 + rnd() * 0.5 : 0.8 + rnd() * 0.7;
-      ctx.globalAlpha = 0.25 + rnd() * 0.65;
-      ctx.fillStyle = "#fff";
-      ctx.beginPath(); ctx.arc(rnd() * w, rnd() * h, r, 0, Math.PI * 2); ctx.fill();
+    const skyH = Math.min(h, 760);
+    const glow = (x, y, r, color) => {
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, color); g.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = g; ctx.fillRect(x - r, y - r, r * 2, r * 2);
+    };
+    const star = (x, y, r, a, color = "#fff") => { ctx.globalAlpha = a; ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); };
+    const rays = (x, y, len, a) => {
+      ctx.globalAlpha = a;
+      for (const [dx, dy] of [[1, 0], [0, 1], [0.7, 0.7], [0.7, -0.7]]) {
+        const far = dx && dy ? len * 0.6 : len;
+        const g = ctx.createLinearGradient(x - dx * far, y - dy * far, x + dx * far, y + dy * far);
+        g.addColorStop(0, "rgba(255,255,255,0)"); g.addColorStop(0.5, "rgba(255,255,255,0.95)"); g.addColorStop(1, "rgba(255,255,255,0)");
+        ctx.strokeStyle = g; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(x - dx * far, y - dy * far); ctx.lineTo(x + dx * far, y + dy * far); ctx.stroke();
+      }
+    };
+    // The Milky Way: a band of soft colour across the sky, thick with faint stars
+    const across = t => ({ x: t * w, y: skyH * (0.72 - 0.6 * t) });
+    ctx.globalAlpha = 1;
+    for (let i = 0; i < 26; i++) {
+      const p = across(rnd()), col = ["rgba(86,100,190,0.09)", "rgba(150,100,220,0.07)", "rgba(40,170,170,0.05)"][i % 3];
+      glow(p.x, p.y + (rnd() - 0.5) * 70, 110 + rnd() * 150, col);
     }
-    // a few bright ones, with the long thin rays of the front page's
-    for (let i = 0; i < 9; i++) {
-      const x = rnd() * w, y = rnd() * h, len = 7 + rnd() * 12;
-      ctx.globalAlpha = 0.85;
-      const g = ctx.createRadialGradient(x, y, 0, x, y, len);
-      g.addColorStop(0, "rgba(255,255,255,0.9)"); g.addColorStop(0.12, "rgba(255,255,255,0.25)"); g.addColorStop(1, "rgba(255,255,255,0)");
-      ctx.fillStyle = g;
-      ctx.fillRect(x - len, y - 0.6, len * 2, 1.2);
-      ctx.fillRect(x - 0.6, y - len, 1.2, len * 2);
-      ctx.beginPath(); ctx.arc(x, y, 1.3, 0, Math.PI * 2); ctx.fillStyle = "#fff"; ctx.fill();
+    for (let i = 0; i < 2600; i++) {
+      const p = across(rnd()), off = (rnd() + rnd() + rnd() - 1.5) * 130;
+      star(p.x, p.y + off, 0.25 + rnd() * 0.45, 0.2 + rnd() * 0.5);
     }
+    // the whole sky
+    const tints = ["#fff", "#fff", "#fff", "#CFE0FF", "#FFE9CF"];
+    for (let i = 0; i < 1500; i++) star(rnd() * w, rnd() * h, rnd() < 0.92 ? 0.3 + rnd() * 0.5 : 0.8 + rnd() * 0.8, 0.25 + rnd() * 0.7, tints[Math.floor(rnd() * tints.length)]);
+    // Constellations: the teal lines of the front page's film, joining a few groups
+    for (let c = 0; c < 6; c++) {
+      let x = (0.04 + ((c * 0.17 + rnd() * 0.06) % 0.92)) * w, y = (c % 2 ? 0.1 + rnd() * 0.25 : 0.62 + rnd() * 0.3) * skyH;
+      if (x > w * 0.25 && x < w * 0.75 && y < skyH * 0.55) y = skyH * 0.08;
+      const n = 4 + Math.floor(rnd() * 3);
+      for (let i = 0; i < n; i++) {
+        const nx = x + (rnd() - 0.3) * 90, ny = y + (rnd() - 0.5) * 70;
+        ctx.globalAlpha = 0.34; ctx.strokeStyle = "#00E0BE"; ctx.lineWidth = 0.8;
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(nx, ny); ctx.stroke();
+        star(x, y, 1.5, 0.95);
+        x = nx; y = ny;
+      }
+      star(x, y, 1.5, 0.95);
+    }
+    // bright stars with rays, and one great one off to the side of the headline
+    for (let i = 0; i < 16; i++) {
+      const x = rnd() * w, y = rnd() * skyH;
+      ctx.globalAlpha = 1; glow(x, y, 12, "rgba(255,255,255,0.3)");
+      rays(x, y, 9 + rnd() * 16, 0.8); star(x, y, 1.3, 1);
+    }
+    const bigX = w * 0.88, bigY = skyH * 0.24;
+    ctx.globalAlpha = 1;
+    glow(bigX, bigY, 170, "rgba(255,220,170,0.16)"); glow(bigX, bigY, 40, "rgba(255,255,255,0.6)");
+    rays(bigX, bigY, 130, 0.9); star(bigX, bigY, 2.6, 1);
+    ctx.globalAlpha = 1;
   }, []);
   return (
     <>

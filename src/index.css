@@ -5426,6 +5426,9 @@ button.td-line { cursor: pointer; }
 .td-hero p { position: relative; margin: 14px 0 0; font-size: 18px; color: var(--td-on-black-2); }
 .td-cta { position: relative; margin-top: 26px; height: 50px; padding: 0 28px; border: 0; border-radius: 999px; background: var(--td-on-black); color: var(--td-black); font: inherit; font-size: 16px; font-weight: 500; cursor: pointer; }
 .td-sky { position: absolute; inset: 0; width: 100%; height: 100%; }
+/* the sky falls away behind the words, so they read cleanly */
+.td-hero::after { content: ""; position: absolute; z-index: 0; left: 50%; top: 20px; width: min(1100px, 92%); height: 340px; transform: translateX(-50%); pointer-events: none; background: radial-gradient(closest-side, rgba(0, 0, 0, 0.92) 55%, rgba(0, 0, 0, 0)); }
+.td-hero h2, .td-hero p, .td-cta { z-index: 1; }
 .td-twinkle { position: absolute; width: 2.5px; height: 2.5px; border-radius: 50%; background: var(--td-on-black); box-shadow: 0 0 5px var(--td-on-black); opacity: 0.2; will-change: opacity; animation: td-twinkle 6s ease-in-out infinite; }
 @keyframes td-twinkle { 50% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .td-twinkle { animation: none; opacity: 0.6; } }
