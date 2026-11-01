@@ -90,3 +90,5 @@ The `/learn` guides, IndexNow, the new tab icons, and the opening animation.
 - **1 Nov 2026 (Claude Opus):** The owner didn't like the header logo removed: put back. Keep both logos on a computer.
 - **1 Nov 2026 (Claude Opus):** New signed-in computer home, committed locally for the owner to judge. Phones keep their own home. `ScreensHome.jsx` now serves no computer page.
 - **1 Nov 2026 (Claude Opus):** Home: the opening is one screen and stays put; Market summary rises over it like a sheet, peeking at the bottom of the first screen.
+- **1 Nov 2026 (Claude Opus):** Home's sky: the owner asked for J and I to travel and collide. Built in CSS (`.td-meet`); not yet live.
+- **1 Nov 2026 (Claude Opus):** J and I collision removed: the owner found it ugly.
