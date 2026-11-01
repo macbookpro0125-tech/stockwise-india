@@ -5425,7 +5425,19 @@ button.td-line { cursor: pointer; }
 .td-hero h2 { position: relative; margin: 0; font-size: clamp(36px, 4.4vw, 60px); font-weight: 600; line-height: 1.08; letter-spacing: -0.035em; text-wrap: balance; }
 .td-hero p { position: relative; margin: 14px 0 0; font-size: 18px; color: var(--td-on-black-2); }
 .td-cta { position: relative; margin-top: 26px; height: 50px; padding: 0 28px; border: 0; border-radius: 999px; background: var(--td-on-black); color: var(--td-black); font: inherit; font-size: 16px; font-weight: 500; cursor: pointer; }
-.td-sky { position: absolute; inset: 0; width: 100%; height: 100%; }
+.td-sky { position: absolute; inset: -44px; width: calc(100% + 88px); height: calc(100% + 88px); will-change: transform; animation: td-drift-far 70s ease-in-out infinite alternate; }
+.td-sky-near { animation: td-drift-near 44s ease-in-out infinite alternate; }
+@keyframes td-drift-far { from { transform: translate3d(-14px, 8px, 0); } to { transform: translate3d(14px, -8px, 0); } }
+@keyframes td-drift-near { from { transform: translate3d(32px, -14px, 0); } to { transform: translate3d(-32px, 14px, 0); } }
+.td-tints { position: absolute; inset: 0; height: 640px; overflow: hidden; pointer-events: none; }
+.td-tints i { position: absolute; width: 760px; height: 480px; border-radius: 50%; will-change: transform, opacity; background: radial-gradient(closest-side, rgba(120, 90, 230, 0.2), transparent); left: 8%; top: 12%; animation: td-tint-a 26s ease-in-out infinite alternate; }
+.td-tints i + i { background: radial-gradient(closest-side, rgba(0, 200, 190, 0.13), transparent); left: 52%; top: 26%; animation: td-tint-b 33s ease-in-out infinite alternate; }
+@keyframes td-tint-a { from { transform: translate3d(-40px, 0, 0); opacity: 0.45; } to { transform: translate3d(120px, 30px, 0); opacity: 1; } }
+@keyframes td-tint-b { from { transform: translate3d(70px, 20px, 0); opacity: 1; } to { transform: translate3d(-110px, -20px, 0); opacity: 0.4; } }
+.td-shoot { position: absolute; width: 130px; height: 1.5px; border-radius: 2px; opacity: 0; background: linear-gradient(90deg, #fff, transparent); will-change: transform, opacity; animation: td-shoot 17s linear infinite; }
+@keyframes td-shoot { 0% { transform: rotate(-24deg) translate3d(0, 0, 0); opacity: 0; } 1% { opacity: 1; } 5% { transform: rotate(-24deg) translate3d(-340px, 0, 0); opacity: 0; } 100% { transform: rotate(-24deg) translate3d(-340px, 0, 0); opacity: 0; } }
+.td-hero.td-still :is(.td-sky, .td-tints i, .td-shoot, .td-twinkle) { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) { .td-sky, .td-tints i { animation: none; } .td-shoot { display: none; } }
 /* the sky falls away behind the words, so they read cleanly */
 .td-hero::after { content: ""; position: absolute; z-index: 0; left: 50%; top: 20px; width: min(1100px, 92%); height: 340px; transform: translateX(-50%); pointer-events: none; background: radial-gradient(closest-side, rgba(0, 0, 0, 0.92) 55%, rgba(0, 0, 0, 0)); }
 .td-hero h2, .td-hero p, .td-cta { z-index: 1; }

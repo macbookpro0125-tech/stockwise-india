@@ -25,16 +25,25 @@ const TWINKLES = Array.from({ length: 44 }, (_, i) => ({
   animationDuration: `${4 + (i * 1.7) % 5}s`, animationDelay: `${-((i * 2.3) % 8)}s`,
 }));
 
-// The front page's night sky, painted once: no 3D scene, so it costs nothing
-// after the first moment. The same stars at every visit.
+// Now and then a star falls: each waits its turn in a long cycle
+const SHOOTING = [
+  { left: "62%", top: "5%", animationDelay: "3s", animationDuration: "17s" },
+  { left: "92%", top: "20%", animationDelay: "11s", animationDuration: "23s" },
+  { left: "34%", top: "2%", animationDelay: "19s", animationDuration: "29s" },
+];
+
+// The front page's night sky, painted once on two layers that the browser
+// slides past each other, so moving it costs next to nothing: no 3D scene. The same stars at every visit.
 function StarField() {
-  const ref = useRef(null);
+  const ref = useRef(null), nearRef = useRef(null);
   useEffect(() => {
-    const cv = ref.current, ctx = cv?.getContext?.("2d");
-    if (!ctx) return;
-    const w = cv.clientWidth, h = cv.clientHeight, dpr = Math.min(window.devicePixelRatio || 1, 2);
-    cv.width = w * dpr; cv.height = h * dpr;
-    ctx.scale(dpr, dpr);
+    const far = ref.current, near = nearRef.current;
+    if (!far?.getContext || !near) return undefined;
+    // each layer is PAD larger all round than the sky, so it can drift without showing an edge
+    const PAD = 44, w = far.clientWidth - PAD * 2, h = far.clientHeight - PAD * 2, dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const open = cv => { cv.width = (w + PAD * 2) * dpr; cv.height = (h + PAD * 2) * dpr; const c = cv.getContext("2d"); c.scale(dpr, dpr); c.translate(PAD, PAD); return c; };
+    let ctx = open(far);
+    const nearCtx = open(near);
     let seed = 7;
     const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
     const skyH = Math.min(h, 760);
@@ -67,7 +76,8 @@ function StarField() {
     }
     // the whole sky
     const tints = ["#fff", "#fff", "#fff", "#CFE0FF", "#FFE9CF"];
-    for (let i = 0; i < 1500; i++) star(rnd() * w, rnd() * h, rnd() < 0.92 ? 0.3 + rnd() * 0.5 : 0.8 + rnd() * 0.8, 0.25 + rnd() * 0.7, tints[Math.floor(rnd() * tints.length)]);
+    for (let i = 0; i < 1500; i++) star(rnd() * (w + PAD * 2) - PAD, rnd() * (h + PAD * 2) - PAD, rnd() < 0.92 ? 0.3 + rnd() * 0.5 : 0.8 + rnd() * 0.8, 0.25 + rnd() * 0.7, tints[Math.floor(rnd() * tints.length)]);
+    ctx = nearCtx;
     // Constellations: the teal lines of the front page's film, joining a few groups
     for (let c = 0; c < 6; c++) {
       let x = (0.04 + ((c * 0.17 + rnd() * 0.06) % 0.92)) * w, y = (c % 2 ? 0.1 + rnd() * 0.25 : 0.62 + rnd() * 0.3) * skyH;
@@ -93,10 +103,18 @@ function StarField() {
     glow(bigX, bigY, 170, "rgba(255,220,170,0.16)"); glow(bigX, bigY, 40, "rgba(255,255,255,0.6)");
     rays(bigX, bigY, 130, 0.9); star(bigX, bigY, 2.6, 1);
     ctx.globalAlpha = 1;
+    // nothing moves while the sky is scrolled out of view
+    const hero = far.parentElement;
+    const io = new IntersectionObserver(([e]) => hero.classList.toggle("td-still", !e.isIntersecting));
+    io.observe(hero);
+    return () => io.disconnect();
   }, []);
   return (
     <>
       <canvas ref={ref} className="td-sky" aria-hidden="true" />
+      <canvas ref={nearRef} className="td-sky td-sky-near" aria-hidden="true" />
+      <div className="td-tints" aria-hidden="true"><i /><i /></div>
+      {SHOOTING.map((t, i) => <span key={i} className="td-shoot" aria-hidden="true" style={t} />)}
       {TWINKLES.map((t, i) => <span key={i} className="td-twinkle" aria-hidden="true" style={t} />)}
     </>
   );
