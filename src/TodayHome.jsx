@@ -215,9 +215,15 @@ const ABOUT = {
   portfolio: "What you hold", performance: "How screens have done", alerts: "Your price and results alerts", visitors: "Who's been on the site",
 };
 const SITE_PAGES = [
-  { path: "/results-calendar", label: "Results calendar", about: "Who reports, and when", Icon: CalendarDays },
-  { path: "/sectors", label: "Sectors", about: "Companies by sector", Icon: Layers3 },
-  { path: "/learn", label: "Guides", about: "How to read the numbers", Icon: BookOpen },
+  { id: "calendar", path: "/results-calendar", label: "Results calendar", about: "Who reports, and when", Icon: CalendarDays },
+  { id: "sectors", path: "/sectors", label: "Sectors", about: "Companies by sector", Icon: Layers3 },
+  { id: "guides", path: "/learn", label: "Guides", about: "How to read the numbers", Icon: BookOpen },
+];
+
+const PAGE_GROUPS = [
+  { title: "Find companies", items: ["discover", "workspace", "desk", "guides"] },
+  { title: "The market", items: ["explore", "map", "momentum", "calendar", "sectors"] },
+  { title: "Your things", items: ["watchlist", "portfolio", "performance", "alerts", "visitors"] },
 ];
 
 export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onPickScreen, onCreate, account = null, continueCard = null, newsTile = null, children }) {
@@ -260,6 +266,7 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onPi
     };
   }, [visible]);
 
+  const tabs = tabsFor(account);
   const rows = watch?.results ?? [];
   const mine = new Set(rows.map(r => r.symbol));
   const moved = [...rows].sort((a, b) => Math.abs(b.ret1d ?? 0) - Math.abs(a.ret1d ?? 0)).slice(0, WATCH_ROWS);
@@ -303,17 +310,21 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onPi
       </div>
 
       <nav className="td-box td-all-pages" aria-label="Everything in the app">
-        {tabsFor(account).map(t => (
-          <button key={t.id} type="button" onClick={() => (t.id === "discover" ? seeAll() : onOpenTab?.(t.id))}>
-            <t.Icon size={18} strokeWidth={1.8} aria-hidden="true" />
-            <span>{t.label}<small>{ABOUT[t.id]}</small></span>
-          </button>
-        ))}
-        {SITE_PAGES.map(p => (
-          <button key={p.path} type="button" onClick={() => navigate(p.path)}>
-            <p.Icon size={18} strokeWidth={1.8} aria-hidden="true" />
-            <span>{p.label}<small>{p.about}</small></span>
-          </button>
+        {PAGE_GROUPS.map(g => (
+          <div key={g.title} className="td-page-group">
+            <h3>{g.title}</h3>
+            {g.items.map(id => {
+              const tab = tabs.find(t => t.id === id), site = SITE_PAGES.find(p => p.id === id);
+              if (!tab && !site) return null; // a page this account doesn't have
+              const Icon = (tab ?? site).Icon;
+              return (
+                <button key={id} type="button" onClick={() => (site ? navigate(site.path) : id === "discover" ? seeAll() : onOpenTab?.(id))}>
+                  <Icon size={18} strokeWidth={1.8} aria-hidden="true" />
+                  <span>{(tab ?? site).label}<small>{tab ? ABOUT[id] : site.about}</small></span>
+                </button>
+              );
+            })}
+          </div>
         ))}
       </nav>
 

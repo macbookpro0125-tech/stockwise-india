@@ -102,3 +102,4 @@ The `/learn` guides, IndexNow, the new tab icons, and the opening animation.
 - **1 Nov 2026 (Claude Opus):** Light theme's pale sky dropped at the owner's word: the opening is the black sky with white stars in both themes.
 - **1 Nov 2026 (Claude Opus):** Light theme: header and left bar turn black while the home's sky is on screen, white again once the sheet covers it.
 - **1 Nov 2026 (Claude Opus):** Home's cards are glass over soft colour with a hover glow and lift; the Nifty chart refits when its box changes size.
+- **1 Nov 2026 (Claude Opus):** Home's list of pages is now three labelled groups, the owner's pick.

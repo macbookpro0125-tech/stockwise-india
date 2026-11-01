@@ -5538,3 +5538,11 @@ html.td-night[data-theme="light"] :is(.app-header, .side-rail) .brand-mark .bm-l
 .td-sheet .sc2-list :is(.sc2, .ls), .td-sheet .ls :is(.sc2, .ls) { background: transparent; box-shadow: none !important; transform: none !important; -webkit-backdrop-filter: none; backdrop-filter: none; }
 @media (prefers-reduced-motion: reduce) { .td-sheet :is(.td-box, .sc2, .ls, .sc2-list) { transition: none; transform: none !important; } }
 
+/* The home's list of pages, in three labelled groups */
+.td-sheet .td-all-pages { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; padding: 8px; align-items: start; }
+.td-page-group { display: grid; gap: 2px; min-width: 0; padding: 12px 8px; }
+.td-page-group + .td-page-group { box-shadow: inset 1px 0 0 var(--bdr); }
+.td-page-group h3 { margin: 0 0 8px; padding: 0 10px; font-size: 12px; font-weight: 600; letter-spacing: 0.02em; color: var(--t3); }
+.td-sheet .td-all-pages .td-page-group button { padding: 10px; border-radius: 12px; box-shadow: none; transition: background-color 150ms ease-out; }
+@media (max-width: 900px) { .td-sheet .td-all-pages { grid-template-columns: minmax(0, 1fr); } .td-page-group + .td-page-group { box-shadow: inset 0 1px 0 var(--bdr); } }
+
