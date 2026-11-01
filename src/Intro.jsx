@@ -38,7 +38,10 @@ function wanted() {
 function decide() {
   const yes = wanted();
   if (yes) window.__introActive = true;
-  if (yes && window.JocularApp) window.__introHeld = true;
+  // on an iPhone too, as an app or from the Home Screen: its first second is
+  // blank, and the line was fully drawn by the time it showed (1 Nov 2026, recording)
+  const iphone = /iPhone|iPad/.test(navigator.userAgent) && (window.Capacitor?.isNativePlatform?.() || navigator.standalone);
+  if (yes && (window.JocularApp || iphone)) window.__introHeld = true;
   return yes;
 }
 
@@ -99,7 +102,7 @@ function chime() {
 
 export default function Intro() {
   const [on, setOn] = useState(decide);
-  // the Android app holds the film under its launch logo till it's drawn
+  // a phone app holds the film till it's drawn (on Android, under its launch logo)
   const [held, setHeld] = useState(() => !!window.__introHeld);
   const [leaving, setLeaving] = useState(false);
   // kept as state (not added to the element by hand), so a redraw keeps it

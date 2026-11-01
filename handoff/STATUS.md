@@ -8,7 +8,7 @@ Everything up to the glass look across the app (`6337941`; not checked on a real
 
 ## Committed but NOT pushed yet
 
-Nothing.
+The iPhone opening, from the owner's recording of 1 Nov: no pale first paint for light-theme users when the opening will play, and the film's clock held till it's drawn (iPhone app or Home Screen). The launch screen's own colour needs a new iPhone build. Not checked on an iPhone; tested with an iPhone profile in Chrome only. Rerun the full tests before pushing (two failed on 1 Nov while NSE was unreachable; see LOG).
 
 ## Open / next
 

@@ -72,7 +72,12 @@
     (function () {
       var ua = navigator.userAgent || "";
       if (/; wv\)/.test(ua) || window.Capacitor) document.documentElement.classList.add("in-app");
-      try { if (localStorage.getItem("stockwise-india-theme") === "light") document.documentElement.setAttribute("data-theme", "light"); } catch (e) {}
+      // light from the first paint, unless the opening is about to play on black
+      // (a pale screen before it, 1 Nov 2026, the owner's iPhone recording)
+      try {
+        var d = document.documentElement, opening = d.classList.contains("in-app") || navigator.standalone || (location.pathname === "/" && !sessionStorage.getItem("introSeen"));
+        if (!opening && localStorage.getItem("stockwise-india-theme") === "light") d.setAttribute("data-theme", "light");
+      } catch (e) {}
     })();
   </script>
 </head>
