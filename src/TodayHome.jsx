@@ -189,7 +189,7 @@ function MarketChart({ closes }) {
     const chart = createChart(host.current, {
       autoSize: true,
       layout: { background: { type: ColorType.Solid, color: "rgba(0, 0, 0, 0)" }, textColor: v("--t3"), fontFamily: getComputedStyle(document.body).fontFamily, attributionLogo: false },
-      grid: { vertLines: { visible: false }, horzLines: { color: v("--bdr") } },
+      grid: { vertLines: { visible: false }, horzLines: { visible: false } },
       rightPriceScale: { borderVisible: false }, timeScale: { borderVisible: false }, localization: { locale: "en-IN", priceFormatter: p => Math.round(p).toLocaleString("en-IN") },
       handleScroll: false, handleScale: false,
     });
