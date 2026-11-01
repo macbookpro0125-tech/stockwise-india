@@ -452,6 +452,41 @@ test("F04-H1 watch from the company page, note it, remove it", async ({ page, ac
   await expect(page.getByRole("button", { name: /^Open Tata Consultancy Services/ })).toHaveCount(0);
 });
 
+test("F03-H5 the chart's tools: more types, a search for indicators, saved views, a candle's figures, the table, drawings", async ({ page, account }) => {
+  await page.goto("/chart/TCS");
+  const chart = page.locator("[role=figure]");
+  await chart.waitFor();
+  await page.waitForTimeout(1500);
+  await page.getByRole("button", { name: /^Indicators/ }).click();
+  await page.getByRole("searchbox", { name: "Search indicators" }).fill("ichi");
+  await page.getByLabel("Ichimoku Clouds").check();
+  await page.getByRole("searchbox", { name: "Search indicators" }).fill("");
+  await page.getByRole("button", { name: /^Indicators/ }).click();
+  await page.getByRole("button", { name: /Saved views|^Views/ }).click();
+  await page.getByRole("textbox", { name: "Name this view" }).fill("Clouds");
+  await page.getByRole("button", { name: "Save view" }).click();
+  await expect(page.getByRole("button", { name: "Clouds", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: /Saved views|^Views/ }).click();
+  const at = async (x, y) => { const b = await chart.boundingBox(); await page.mouse.click(b.x + b.width * x, b.y + b.height * y); };
+  await at(0.5, 0.3);
+  await expect(page.getByRole("status").filter({ hasText: "Volume" })).toContainText("Open");
+  await page.getByRole("button", { name: "Close the day's figures" }).click();
+  await page.getByRole("button", { name: /Table of prices|^Table/ }).click();
+  await expect(page.getByRole("dialog", { name: "TCS prices" }).locator("tbody tr").first()).toBeVisible();
+  await page.getByRole("button", { name: "Close the table" }).click();
+  await page.getByRole("button", { name: /Draw on the chart|^Draw/ }).click();
+  await page.getByRole("button", { name: "Rectangle", exact: true }).click();
+  await page.waitForTimeout(700);
+  await at(0.3, 0.3);
+  await expect(page.getByText(/its second point/)).toBeVisible();
+  await page.waitForTimeout(700);
+  await at(0.6, 0.5);
+  await expect(page.getByRole("button", { name: "Remove this Rectangle" })).toBeVisible();
+  await expect(page.locator(".chart-draw-layer rect").last()).toBeAttached();
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Remove this Rectangle" })).toBeVisible();
+});
+
 // ── F05 portfolio ───────────────────────────────────────────────────────────
 test("F05-H1 add, edit and remove a holding", async ({ page, account }) => {
   await page.goto("/");

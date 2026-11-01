@@ -1,13 +1,14 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import {
-  createChart, CandlestickSeries, BarSeries, LineSeries, AreaSeries, HistogramSeries,
-  ColorType, CrosshairMode, LineStyle,
+  createChart, createSeriesMarkers, CandlestickSeries, BarSeries, LineSeries, AreaSeries, HistogramSeries, BaselineSeries,
+  ColorType, CrosshairMode, LineStyle, LineType, PriceScaleMode,
 } from "lightweight-charts";
-import { ChartCandlestick, ChartNoAxesColumn, ChartLine, ChartArea, SlidersHorizontal, Minus, X, Maximize2, Minimize2, Camera, Layers, BrickWall, CandlestickChart, Slash } from "lucide-react";
+import { ChartCandlestick, ChartNoAxesColumn, ChartLine, ChartArea, SlidersHorizontal, Minus, X, Maximize2, Minimize2, Camera, Layers, BrickWall, CandlestickChart, Slash, Eye, Pencil, Table2, Settings2, Shapes, Search, Plus, Undo2 } from "lucide-react";
 import { api } from "./api.js";
 import { aggregateBars, sma, ema, bollinger, rsi, macd, indexFrom } from "./chartMath.js";
 import { heikinAshi, renko, renkoBox, fibLevels } from "./chartTypes.js";
+import { STUDIES, lineBreak, kagi } from "./chartStudies.js";
 import { pivotPoints, PIVOT_LEVELS, atr, supertrend, psar, stochastic, adx, obv, cci, williamsR, mfi, donchian, yearHigh, volumeRatio, relativeLine } from "./chartIndicators.js";
 
 // Attribution notice (Lightweight Charts licence, Apache 2.0):
@@ -27,6 +28,11 @@ const LINES_KEY = "stockwise-india-chart-lines";
 // your trend lines, per company: [{ t1, p1, t2, p2 }] (31 Oct 2026)
 const TRENDS_KEY = "stockwise-india-chart-trends";
 
+// your drawings, per company: [{ k, t1, p1, t2, p2, text }] (1 Nov 2026)
+const DRAW_KEY = "stockwise-india-chart-draw";
+// your saved set of chart settings, by name
+const VIEWS_KEY = "stockwise-india-chart-views";
+
 const TYPES = [
   { id: "candles", label: "Candles", Icon: ChartCandlestick },
   { id: "bars", label: "Bars", Icon: ChartNoAxesColumn },
@@ -35,7 +41,32 @@ const TYPES = [
   // 31 Oct 2026: candles averaged with the one before, and bricks per move
   { id: "heikin", label: "Heikin Ashi", Icon: CandlestickChart },
   { id: "renko", label: "Renko", Icon: BrickWall },
+  // 1 Nov 2026: the rest of a broker's list that daily bars can draw
+  { id: "hollow", label: "Hollow candle", Icon: ChartCandlestick },
+  { id: "hlc", label: "HLC bar", Icon: ChartNoAxesColumn },
+  { id: "vertex", label: "Vertex line", Icon: ChartLine },
+  { id: "step", label: "Step", Icon: ChartLine },
+  { id: "baseline", label: "Baseline", Icon: ChartArea },
+  { id: "scatter", label: "Scatter", Icon: ChartLine },
+  { id: "histogram", label: "Histogram", Icon: ChartNoAxesColumn },
+  { id: "linebreak", label: "Line break", Icon: BrickWall },
+  { id: "kagi", label: "Kagi", Icon: ChartLine },
 ];
+// Made from the closes alone, with time dropping out of the axis
+const BRICKS = new Set(["renko", "linebreak", "kagi"]);
+const DRAW_TOOLS = [
+  { id: "trend", label: "Trend line", points: 2 },
+  { id: "hline", label: "Horizontal", points: 1 },
+  { id: "vertical", label: "Vertical", points: 1 },
+  { id: "segment", label: "Segment", points: 2 },
+  { id: "arrow", label: "Arrow", points: 2 },
+  { id: "rect", label: "Rectangle", points: 2 },
+  { id: "ellipse", label: "Ellipse", points: 2 },
+  { id: "fib", label: "Fib retracement", points: 2 },
+  { id: "avg", label: "Average line", points: 2 },
+  { id: "note", label: "Note", points: 1 },
+];
+const svgEsc = t => String(t).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
 const INTERVALS = [{ id: "D", label: "D", title: "Daily" }, { id: "W", label: "W", title: "Weekly" }, { id: "M", label: "M", title: "Monthly" }];
 const RANGES = [
   { id: "1M", months: 1 }, { id: "3M", months: 3 }, { id: "6M", months: 6 }, { id: "YTD" },
@@ -72,7 +103,9 @@ const INDICATORS = [
   { id: "cci", label: "CCI (20)", color: "#FB923C", group: "Oscillators", pane: true },
   { id: "willr", label: "Williams %R (14)", color: "#C084FC", group: "Oscillators", pane: true },
 ];
-const GROUPS = ["Moving averages", "Trend & bands", "Levels", "Volume", "Market", "Oscillators"];
+const STUDY_COLORS = ["#22D3EE", "#F472B6", "#A3E635", "#FBBF24", "#818CF8", "#FB7185", "#2DD4BF", "#C084FC", "#F97316", "#60A5FA", "#E879F9", "#84CC16"];
+for (const [i, st] of STUDIES.entries()) INDICATORS.push({ id: st.id, label: st.label, group: st.group, pane: !!st.pane, study: st, color: STUDY_COLORS[i % STUDY_COLORS.length] });
+const GROUPS = ["Moving averages", "Trend & bands", "Price lines", "Levels", "Volume", "Market", "Oscillators", "Volatility & statistics", "Patterns"];
 // Pivot points: worked out from the previous week, month, quarter or year
 // (chartIndicators.js), offered for periods longer than a bar
 const PIVOT_KINDS = [["classic", "Classic"], ["fibonacci", "Fibonacci"], ["camarilla", "Camarilla"]];
@@ -136,6 +169,31 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
   const saveTrends = next => { setTrends(next); writeJson(TRENDS_KEY, { ...readJson(TRENDS_KEY, {}), [symbol]: next }); };
   useEffect(() => { setTrends(readJson(TRENDS_KEY, {})[symbol] ?? []); setTrendFrom(null); }, [symbol]);
   const [typedPrice, setTypedPrice] = useState("");
+  // one sheet open under the toolbar at a time
+  const [pop, setPop] = useState(null); // "type" | "views" | "draw" | "settings"
+  const togglePop = id => { setMenuOpen(false); setPop(p => (p === id ? null : id)); };
+  const [indQuery, setIndQuery] = useState("");
+  const [views, setViews] = useState(() => readJson(VIEWS_KEY, []));
+  const [viewName, setViewName] = useState("");
+  const saveViews = next => { setViews(next); writeJson(VIEWS_KEY, next); };
+  // A drawing tool waiting for its points, and what's been drawn on this company
+  const [tool, setTool] = useState(null); // { id, from?: { t, p } }
+  const toolRef = useRef(null);
+  toolRef.current = tool;
+  const [noteText, setNoteText] = useState("");
+  const noteRef = useRef("");
+  noteRef.current = noteText;
+  const [draws, setDraws] = useState(() => readJson(DRAW_KEY, {})[symbol] ?? []);
+  const drawsRef = useRef(draws);
+  drawsRef.current = draws;
+  const paintRef = useRef(null), svgRef = useRef(null);
+  const saveDraws = next => { setDraws(next); writeJson(DRAW_KEY, { ...readJson(DRAW_KEY, {}), [symbol]: next }); };
+  useEffect(() => { setDraws(readJson(DRAW_KEY, {})[symbol] ?? []); setTool(null); }, [symbol]);
+  useEffect(() => { paintRef.current?.(); }, [draws]);
+  // the candle tapped, with its figures in a card over the chart
+  const [picked, setPicked] = useState(null);
+  const [tableOpen, setTableOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [legend, setLegend] = useState(null);
   const [themeTick, setThemeTick] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
@@ -155,6 +213,15 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
   drawingRef.current = drawing;
 
   useEffect(() => { writeJson(PREFS_KEY, prefs); }, [prefs]);
+  useEffect(() => { setPicked(null); }, [symbol, prefs.interval, prefs.type]);
+  useEffect(() => {
+    if (!pop && !tableOpen) return undefined;
+    const away = e => { if (pop && !menuRef.current?.contains(e.target)) setPop(null); };
+    const esc = e => { if (e.key === "Escape") { setPop(null); setTableOpen(false); } };
+    document.addEventListener("pointerdown", away);
+    document.addEventListener("keydown", esc);
+    return () => { document.removeEventListener("pointerdown", away); document.removeEventListener("keydown", esc); };
+  }, [pop, tableOpen]);
   useEffect(() => { setLines(readJson(LINES_KEY, {})[symbol] ?? []); }, [symbol]);
   const saveLines = next => {
     setLines(next);
@@ -259,11 +326,18 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
       return renko(daily, box).map((b, i) => ({ date: new Date(start + i * 86400000).toISOString().slice(0, 10), realDate: b.date,
         open: b.open, close: b.close, high: Math.max(b.open, b.close), low: Math.min(b.open, b.close), volume: null }));
     }
+    if (BRICKS.has(prefs.type)) {
+      const start = Date.parse(`${daily[0]?.date ?? "2000-01-03"}T00:00:00Z`);
+      const day = i => new Date(start + i * 86400000).toISOString().slice(0, 10);
+      if (prefs.type === "linebreak") return lineBreak(daily).map((b, i) => ({ date: day(i), realDate: b.date, open: b.open, close: b.close, high: Math.max(b.open, b.close), low: Math.min(b.open, b.close), volume: null }));
+      return kagi(daily).map((k, i) => ({ date: day(i), realDate: k.date, open: k.value, close: k.value, high: k.value, low: k.value, up: k.up, volume: null }));
+    }
     const agg = aggregateBars(daily, prefs.interval);
     return prefs.type === "heikin" ? heikinAshi(agg) : agg;
   }, [data, prefs.interval, prefs.type, box]);
   const narrow = boxW < 560;
-  const extraPanes = prefs.type === "renko" ? 0 : INDICATORS.filter(i => i.pane && prefs.ind[i.id] && (i.id !== "rs" || data?.benchmark)).length;
+  const isBrick = BRICKS.has(prefs.type);
+  const extraPanes = isBrick ? 0 : INDICATORS.filter(i => i.pane && prefs.ind[i.id] && (i.id !== "rs" || data?.benchmark)).length;
   const pivotBasis = pivotBasisFor(prefs.interval, prefs.pivotBasis);
   const height = page
     ? Math.max(300, vh - (narrow ? 330 : 260))   // pane proportions only; the page lays out by flex
@@ -291,7 +365,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
     if (!chart || bars.length < 2) return;
     const last = bars.length - 1;
     const r = RANGES.find(x => x.id === id);
-    if (!r || id === "All" || prefs.type === "renko") { chart.timeScale().fitContent(); return; }
+    if (!r || id === "All" || BRICKS.has(prefs.type)) { chart.timeScale().fitContent(); return; }
     const lastDate = bars[last].date;
     const from = id === "YTD" ? `${lastDate.slice(0, 4)}-01-01` : monthsBack(lastDate, r.months);
     chart.timeScale().setVisibleLogicalRange({ from: indexFrom(bars, from) - 0.5, to: last + 3 });
@@ -322,7 +396,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
       grid: { vertLines: { color: c.grid }, horzLines: { color: c.grid } },
       crosshair: { mode: CrosshairMode.Normal },
       rightPriceScale: { borderColor: c.border },
-      timeScale: { borderColor: c.border, rightOffset: 3, minBarSpacing: 0.5, visible: prefs.type !== "renko" },
+      timeScale: { borderColor: c.border, rightOffset: 3, minBarSpacing: 0.5, visible: !isBrick },
       localization: { locale: "en-IN" },
       kineticScroll: { touch: !reducedMotion(), mouse: false },
       // An up-or-down swipe over the chart scrolls the page, as on any other
@@ -365,7 +439,25 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
     const base = { priceLineColor: c.t3, autoscaleInfoProvider, priceFormat };
 
     let main;
-    if (prefs.type === "candles" || prefs.type === "heikin" || prefs.type === "renko") {
+    if (prefs.type === "hollow") {
+      main = chart.addSeries(CandlestickSeries, { ...base, upColor: "rgba(0,0,0,0)", downColor: c.down, wickUpColor: c.up, wickDownColor: c.down, borderUpColor: c.up, borderDownColor: c.down, borderVisible: true });
+      main.setData(ohlc.map(({ open, high, low, close, time }) => ({ time, open, high, low, close })));
+    } else if (prefs.type === "hlc") {
+      main = chart.addSeries(BarSeries, { ...base, upColor: c.up, downColor: c.down, openVisible: false });
+      main.setData(ohlc);
+    } else if (prefs.type === "vertex" || prefs.type === "scatter" || prefs.type === "step") {
+      main = chart.addSeries(LineSeries, { ...base, color: c.accent, lineWidth: prefs.type === "step" ? 2 : 1.5, lineType: prefs.type === "step" ? LineType.WithSteps : LineType.Simple, lineVisible: prefs.type !== "scatter", pointMarkersVisible: prefs.type !== "step", pointMarkersRadius: 2 });
+      main.setData(bars.map(b => ({ time: b.date, value: b.close })));
+    } else if (prefs.type === "baseline") {
+      main = chart.addSeries(BaselineSeries, { ...base, baseValue: { type: "price", price: bars[0].close }, topLineColor: c.up, bottomLineColor: c.down, topFillColor1: alpha(c.up, 0.25), topFillColor2: alpha(c.up, 0.02), bottomFillColor1: alpha(c.down, 0.02), bottomFillColor2: alpha(c.down, 0.25), lineWidth: 2 });
+      main.setData(bars.map(b => ({ time: b.date, value: b.close })));
+    } else if (prefs.type === "histogram") {
+      main = chart.addSeries(HistogramSeries, { ...base });
+      main.setData(bars.map(b => ({ time: b.date, value: b.close, color: alpha(b.close >= b.open ? c.up : c.down, 0.7) })));
+    } else if (prefs.type === "kagi") {
+      main = chart.addSeries(LineSeries, { ...base, color: c.up, lineWidth: 2, lineType: LineType.WithSteps });
+      main.setData(bars.map(b => ({ time: b.date, value: b.close, color: b.up ? c.up : c.down })));
+    } else if (prefs.type === "candles" || prefs.type === "heikin" || prefs.type === "renko" || prefs.type === "linebreak") {
       main = chart.addSeries(CandlestickSeries, { ...base, upColor: c.up, downColor: c.down, wickUpColor: c.up, wickDownColor: c.down, borderVisible: false });
       main.setData(ohlc);
     } else if (prefs.type === "bars") {
@@ -379,10 +471,10 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
       main.setData(bars.map(b => ({ time: b.date, value: b.close })));
     }
     mainRef.current = main;
-    main.priceScale().applyOptions({ scaleMargins: { top: narrow ? 0.13 : 0.08, bottom: withVolume ? (narrow ? 0.15 : 0.24) : 0.06 } });
+    main.priceScale().applyOptions({ mode: prefs.log ? PriceScaleMode.Logarithmic : PriceScaleMode.Normal, invertScale: !!prefs.invert, scaleMargins: { top: narrow ? 0.13 : 0.08, bottom: withVolume ? (narrow ? 0.15 : 0.24) : 0.06 } });
 
     // Warm-up bars stay as whitespace, so every series shares the same time axis
-    const toLine = vals => bars.map((b, i) => (vals[i] == null ? { time: b.date } : { time: b.date, value: vals[i] }));
+    const toLine = vals => bars.map((b, i) => (vals[i] == null || !Number.isFinite(vals[i]) ? { time: b.date } : { time: b.date, value: vals[i] }));
     const overlay = (vals, color, opts = {}) => {
       const s = chart.addSeries(LineSeries, { color, lineWidth: 1.5, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false, ...opts });
       s.setData(toLine(vals));
@@ -430,6 +522,17 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
       overlay(sar, col, { lineVisible: false, pointMarkersVisible: true, pointMarkersRadius: narrow ? 1.5 : 2 });
       legendSeries.push({ label: "SAR", color: col, values: sar });
     }
+    // The longer list on the price (chartStudies.js): one colour per line
+    const tint = (col, k, n) => (n < 2 || k === 0 ? col : STUDY_COLORS[(STUDY_COLORS.indexOf(col) + k) % STUDY_COLORS.length]);
+    if (!isBrick) for (const def of INDICATORS.filter(i => i.study && !i.pane && prefs.ind[i.id])) {
+      const made = def.study.calc(bars);
+      made.forEach((l, k) => overlay(l.values, tint(def.color, k, made.length), { lineWidth: 1 }));
+      if (made[0]) legendSeries.push({ label: made[0].label, color: def.color, values: made[0].values });
+      if (def.study.markers) {
+        const marks = def.study.markers(bars);
+        createSeriesMarkers(main, marks.map(m => ({ time: bars[m.index].date, position: m.under ? "belowBar" : "aboveBar", shape: m.under ? "arrowUp" : "arrowDown", size: 0.1, color: def.color, text: narrow ? "" : m.text })));
+      }
+    }
     // Pivots: a line per level for each period, broken where the next period
     // starts (its last point transparent); left out of the price scale's
     // range, so far ones don't squash the candles
@@ -465,8 +568,26 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
       s.setData(toLine(vals));
       return s;
     };
-    for (const def of INDICATORS.filter(i => i.pane && prefs.ind[i.id] && prefs.type !== "renko")) {
+    for (const def of INDICATORS.filter(i => i.pane && prefs.ind[i.id] && !isBrick)) {
       const col = def.color;
+      if (def.study) {
+        const made = def.study.calc(bars);
+        const fmt = def.study.volume ? { priceFormat: { type: "volume" } } : {};
+        const scale = def.study.range ? { autoscaleInfoProvider: fixed(...def.study.range) } : {};
+        let firstLine = null;
+        made.forEach((l, k) => {
+          let s;
+          if (l.hist) {
+            s = chart.addSeries(HistogramSeries, { priceLineVisible: false, lastValueVisible: false }, pane);
+            s.setData(bars.map((b, i) => (l.values[i] == null || !Number.isFinite(l.values[i]) ? { time: b.date } : { time: b.date, value: l.values[i], color: alpha(l.values[i] >= 0 ? c.up : c.down, 0.5) })));
+          } else s = paneLine(l.values, tint(col, k, made.length), { lastValueVisible: k === 0, ...fmt, ...scale });
+          firstLine ??= s;
+        });
+        if (firstLine && def.study.guides) guides(firstLine, def.study.guides);
+        if (made[0]) legendSeries.push({ label: made[0].label, color: col, values: made[0].values, pane: true, fmt: def.study.volume ? (i => fmtVol(made[0].values[i])) : undefined });
+        pane++;
+        continue;
+      }
       // (no line against the market when the index's days aren't kept)
       if (def.id === "rs" && !data?.benchmark) continue;
       if (def.id === "rs") {
@@ -554,7 +675,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
       if (f) for (const l of f.levels) main.createPriceLine({ price: l.price, color: ind("fib").color, lineWidth: 1, lineStyle: LineStyle.SparseDotted, axisLabelVisible: !narrow, title: narrow ? "" : `Fib ${(l.ratio * 100).toFixed(1)}%` });
     }
     // Your trend lines, each from its first point on to the latest bar
-    if (prefs.type !== "renko" && bars.length) {
+    if (!isBrick && bars.length) {
       const lastDay = bars[bars.length - 1].date;
       const days = d => Date.parse(`${d}T00:00:00Z`) / 86400000;
       for (const t of trends) {
@@ -585,6 +706,20 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
       setLegend(at && { ...at, active: i != null });
     });
     chart.subscribeClick(param => {
+      // A drawing tool: one point, or the first and then the second
+      const t0 = toolRef.current;
+      if (t0 && t0.id !== "trend" && t0.id !== "hline" && param.point) {
+        const price = mainRef.current?.coordinateToPrice(param.point.y);
+        const li = param.logical != null ? Math.max(0, Math.min(bars.length - 1, Math.round(param.logical))) : null;
+        if (price == null || !(price > 0) || li == null) return;
+        const here = { t: bars[li].date, p: Math.round(price * 100) / 100 };
+        const def = DRAW_TOOLS.find(d => d.id === t0.id);
+        if (def.points === 2 && !t0.from) { setTool({ ...t0, from: here }); return; }
+        const made = def.points === 1 ? { k: def.id, t1: here.t, p1: here.p, ...(def.id === "note" ? { text: noteRef.current.trim() || "Note" } : {}) } : { k: def.id, t1: t0.from.t, p1: t0.from.p, t2: here.t, p2: here.p };
+        saveDraws([...drawsRef.current, made]);
+        setTool(null);
+        return;
+      }
       // a trend line: the first click its start, the second its end
       if (trendRef.current && param.point && param.time) {
         const price = mainRef.current?.coordinateToPrice(param.point.y);
@@ -606,6 +741,43 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
       const rounded = Math.round(price * 100) / 100;
       saveLines([...(readJson(LINES_KEY, {})[symbol] ?? []), rounded]);
     });
+    // A plain tap on a candle: its figures in a card (1 Nov 2026)
+    chart.subscribeClick(param => {
+      if (toolRef.current || drawingRef.current || trendRef.current || !param.point || param.logical == null) return;
+      const i = Math.round(param.logical);
+      if (i < 0 || i >= bars.length) return;
+      setPicked({ bar: bars[i], prev: bars[i - 1] ?? null });
+    });
+
+    // Your drawings, in an SVG over the price pane, placed afresh as the view moves
+    const paintDraws = () => {
+      const svg = svgRef.current;
+      if (!svg || chartRef.current !== chart) return;
+      const rows = BRICKS.has(prefs.type) ? [] : drawsRef.current;
+      if (!rows.length) { svg.innerHTML = ""; return; }
+      const ts = chart.timeScale();
+      const X = d => ts.logicalToCoordinate(indexFrom(bars, d));
+      const Y = p => main.priceToCoordinate(p);
+      const ink = c.text;
+      const paneH = chart.panes()[0]?.getHeight?.() ?? host.clientHeight;
+      const paneW = host.clientWidth - chart.priceScale("right").width();
+      let html = `<defs><clipPath id="cd-${symbol}"><rect x="0" y="0" width="${paneW}" height="${paneH}"/></clipPath><marker id="cdh-${symbol}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="${ink}"/></marker></defs><g clip-path="url(#cd-${symbol})" fill="none" stroke="${ink}" stroke-width="1.5">`;
+      for (const d of rows) {
+        const x1 = X(d.t1), y1 = Y(d.p1), x2 = d.t2 ? X(d.t2) : null, y2 = d.t2 ? Y(d.p2) : null;
+        if (x1 == null || y1 == null) continue;
+        if (d.k === "vertical") html += `<line x1="${x1}" x2="${x1}" y1="0" y2="${paneH}"/>`;
+        else if (d.k === "note") html += `<circle cx="${x1}" cy="${y1}" r="3" fill="${ink}"/><text x="${x1 + 7}" y="${y1 + 4}" fill="${ink}" stroke="none" font-size="12">${svgEsc(d.text ?? "Note")}</text>`;
+        else if (x2 == null || y2 == null) continue;
+        else if (d.k === "segment") html += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
+        else if (d.k === "arrow") html += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" marker-end="url(#cdh-${symbol})"/>`;
+        else if (d.k === "rect") html += `<rect x="${Math.min(x1, x2)}" y="${Math.min(y1, y2)}" width="${Math.abs(x2 - x1)}" height="${Math.abs(y2 - y1)}" fill="${alpha(c.accent, 0.1)}"/>`;
+        else if (d.k === "ellipse") html += `<ellipse cx="${(x1 + x2) / 2}" cy="${(y1 + y2) / 2}" rx="${Math.abs(x2 - x1) / 2}" ry="${Math.abs(y2 - y1) / 2}" fill="${alpha(c.accent, 0.1)}"/>`;
+        else if (d.k === "fib") for (const r of [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1]) { const y = Y(d.p1 + (d.p2 - d.p1) * r); if (y != null) html += `<line x1="${Math.min(x1, x2)}" x2="${Math.max(x1, x2)}" y1="${y}" y2="${y}" stroke-width="1"/><text x="${Math.min(x1, x2) + 3}" y="${y - 3}" fill="${ink}" stroke="none" font-size="10">${(r * 100).toFixed(1)}%</text>`; }
+        else if (d.k === "avg") { const a = indexFrom(bars, d.t1 < d.t2 ? d.t1 : d.t2), z = indexFrom(bars, d.t1 < d.t2 ? d.t2 : d.t1), w = bars.slice(a, z + 1), m = w.reduce((n, b) => n + b.close, 0) / (w.length || 1), y = Y(m); if (y != null) html += `<line x1="${x1}" x2="${x2}" y1="${y}" y2="${y}" stroke-dasharray="5 3"/><text x="${Math.min(x1, x2) + 3}" y="${y - 4}" fill="${ink}" stroke="none" font-size="10">Avg ${fmtNum(m)}</text>`; }
+      }
+      svg.innerHTML = `${html}</g>`;
+    };
+    paintRef.current = paintDraws;
 
     const kept = keepView.current;
     // (a chart redrawn while hidden — another tab of a phone's company page —
@@ -620,6 +792,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
     const placeTags = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
+        paintDraws();
         const items = [
           ...(narrow ? levelLines.map(l => ({ key: l.title, text: `${l.short} ${Math.round(l.price).toLocaleString("en-IN")}`, color: resolve(l.color), price: l.price })) : []),
           ...(pivotsLatest ? PIVOT_LEVELS.map(L => ({ key: `pivot-${L}`, text: L, color: PIVOT_COLORS[L[0]], price: pivotsLatest[L] })) : []),
@@ -649,10 +822,10 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
       tagRo?.disconnect();
       keepView.current = { bars, range: chart.timeScale().getVisibleLogicalRange() };
       chart.remove();
-      chartRef.current = null; mainRef.current = null;
+      chartRef.current = null; mainRef.current = null; paintRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bars, prefs.type, prefs.ind, prefs.pivotKind, pivotBasis, levelLines, lines, trends, themeTick, narrow, symbol, height, page]);
+  }, [bars, prefs.type, prefs.ind, prefs.pivotKind, pivotBasis, levelLines, lines, trends, themeTick, narrow, symbol, height, page, prefs.log, prefs.invert]);
 
   const pickRange = id => {
     setRange(id);
@@ -722,13 +895,31 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
   const sheetLabel = { margin: "0 0 6px 2px", fontSize: 11, fontWeight: 450, letterSpacing: "0.02em", textTransform: "uppercase", color: "var(--t3)" };
   const basisWord = (PIVOT_BASES[prefs.interval] ?? PIVOT_BASES.D).find(([id]) => id === pivotBasis)?.[1] ?? "month";
   // Every indicator, in its group; pivot points open their own settings
+  const q = indQuery.trim().toLowerCase();
+  const onNow = INDICATORS.filter(i => prefs.ind[i.id]);
   const picker = compact => (
     <div style={{ display: "grid", gap: compact ? 10 : 6 }}>
-      {GROUPS.map(g => (
+      <div style={{ position: "relative" }}>
+        <Search size={14} aria-hidden="true" style={{ position: "absolute", left: 9, top: 10, color: "var(--t3)" }} />
+        <input type="search" value={indQuery} onChange={e => setIndQuery(e.target.value)} placeholder={`Search ${INDICATORS.length} indicators`} aria-label="Search indicators" style={{ width: "100%", height: 34, padding: "0 8px 0 30px", fontSize: compact ? 16 : 13, boxSizing: "border-box" }} />
+      </div>
+      {!q && onNow.length > 0 && (
+        <div>
+          <div style={{ ...sheetLabel, margin: compact ? sheetLabel.margin : "4px 0 2px 8px" }}>On now</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+            {onNow.map(i => (
+              <span key={i.id} className="chart-chip"><span>{i.label.replace(/ \(.*\)$/, "")}</span><button type="button" onClick={() => toggleInd(i.id)} aria-label="Turn off" title="Turn off"><X size={12} aria-hidden="true" /></button></span>
+            ))}
+            <button type="button" onClick={() => setPrefs(p => ({ ...p, ind: {} }))} style={btn(false, { height: 28, fontSize: 11.5 })}>Clear all</button>
+          </div>
+        </div>
+      )}
+      {q && !INDICATORS.some(i => i.label.toLowerCase().includes(q)) && <p style={{ margin: 8, fontSize: 13, color: "var(--t3)" }}>Nothing by that name.</p>}
+      {GROUPS.filter(g => !q || INDICATORS.some(i => i.group === g && i.label.toLowerCase().includes(q))).map(g => (
         <div key={g}>
           <div style={{ ...sheetLabel, margin: compact ? sheetLabel.margin : "4px 0 2px 8px" }}>{g}</div>
           <div role="group" aria-label={g} style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 2 }}>
-            {INDICATORS.filter(i => i.group === g).map(i => (
+            {INDICATORS.filter(i => i.group === g && (!q || i.label.toLowerCase().includes(q))).map(i => (
               <label key={i.id} style={{ display: "flex", alignItems: "center", gap: 8, minHeight: compact ? 40 : 32, padding: "0 8px", borderRadius: 6, fontSize: 13, color: "var(--t1)", cursor: "pointer" }}>
                 <input type="checkbox" checked={!!prefs.ind[i.id]} onChange={() => toggleInd(i.id)} />
                 {i.color && <span aria-hidden="true" style={{ width: 10, height: 3, borderRadius: 2, background: i.color, flexShrink: 0 }} />}
@@ -775,6 +966,79 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
     </>
   );
 
+  const tileBtn = active => btn(active, { flexDirection: "column", height: 52, gap: 3, padding: "0 2px", justifyContent: "center", fontSize: 11, whiteSpace: "normal", lineHeight: 1.15, textAlign: "center" });
+  const sheet = { display: "grid", gap: 10, padding: 10, marginBottom: 8, borderRadius: 12, background: "var(--s3)", border: "1px solid var(--bdr2)" };
+  const typeTiles = (
+    <div role="group" aria-label="Chart type" style={{ display: "grid", gridTemplateColumns: `repeat(${narrow ? 4 : 8}, minmax(0, 1fr))`, gap: 4 }}>
+      {TYPES.map(({ id, label, Icon }) => (
+        <button key={id} type="button" onClick={() => { setPref({ type: id }); setPop(null); }} aria-pressed={prefs.type === id} style={tileBtn(prefs.type === id)}><Icon size={16} aria-hidden="true" />{label}</button>
+      ))}
+    </div>
+  );
+  const applyView = v => { keepView.current = null; setPrefs(p => ({ ...p, type: v.type, interval: v.interval, ind: { ...v.ind }, pivotKind: v.pivotKind ?? p.pivotKind, pivotBasis: v.pivotBasis ?? p.pivotBasis, log: !!v.log, invert: !!v.invert })); setPop(null); };
+  const saveView = e => {
+    e.preventDefault();
+    const n = viewName.trim();
+    if (!n) return;
+    saveViews([...views.filter(v => v.name !== n), { name: n, type: prefs.type, interval: prefs.interval, ind: prefs.ind, pivotKind: prefs.pivotKind, pivotBasis: prefs.pivotBasis, log: !!prefs.log, invert: !!prefs.invert }]);
+    setViewName("");
+  };
+  const pickTool = id => {
+    setPop(null); setDrawing(false); setTrendFrom(null); setTool(null);
+    if (id === "hline") setDrawing(true);
+    else if (id === "trend") setTrendFrom(true);
+    else setTool({ id });
+  };
+  const toolLabel = id => DRAW_TOOLS.find(d => d.id === id)?.label ?? id;
+  const sheets = (
+    <>
+      {pop === "type" && <div style={sheet}><div style={sheetLabel}>Chart type</div>{typeTiles}</div>}
+      {pop === "views" && (
+        <div role="group" aria-label="Saved views" style={sheet}>
+          <div style={sheetLabel}>Saved views</div>
+          {views.length === 0 && <p style={{ margin: 0, fontSize: 13, color: "var(--t3)" }}>Set up the chart as you like it, then save it here to bring it back with one tap.</p>}
+          {views.map(v => (
+            <div key={v.name} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <button type="button" onClick={() => applyView(v)} style={btn(false, { flex: 1, justifyContent: "flex-start", height: 38, overflow: "hidden" })}>{v.name}</button>
+              <button type="button" onClick={() => saveViews(views.filter(x => x !== v))} aria-label={`Delete the view ${v.name}`} style={btn(false, { width: 38, height: 38, padding: 0, justifyContent: "center" })}><X size={14} aria-hidden="true" /></button>
+            </div>
+          ))}
+          <form onSubmit={saveView} style={{ display: "flex", gap: 6 }}>
+            <input value={viewName} onChange={e => setViewName(e.target.value)} placeholder="Name this view" aria-label="Name this view" maxLength={40} style={{ flex: 1, minWidth: 0, height: 38, fontSize: narrow ? 16 : 13 }} />
+            <button type="submit" disabled={!viewName.trim()} style={btn(false, { height: 38 })}><Plus size={14} aria-hidden="true" />Save view</button>
+          </form>
+          <p style={{ margin: 0, fontSize: 11, color: "var(--t3)" }}>Kept on this device.</p>
+        </div>
+      )}
+      {pop === "draw" && (
+        <div role="group" aria-label="Drawing tools" style={sheet}>
+          <div style={sheetLabel}>Draw on the chart</div>
+          {isBrick ? <p style={{ margin: 0, fontSize: 13, color: "var(--t3)" }}>Drawing needs a chart with dates. Switch from {TYPES.find(t => t.id === prefs.type)?.label} to use it.</p> : (
+            <>
+              <div style={{ display: "grid", gridTemplateColumns: `repeat(${narrow ? 3 : 5}, minmax(0, 1fr))`, gap: 4 }}>
+                {DRAW_TOOLS.map(d => <button key={d.id} type="button" onClick={() => pickTool(d.id)} style={btn(false, { height: 38, justifyContent: "center", fontSize: 12, padding: "0 4px" })}>{d.label}</button>)}
+              </div>
+              <input value={noteText} onChange={e => setNoteText(e.target.value)} placeholder="Text for a note (optional)" aria-label="Text for a note" maxLength={60} style={{ height: 36, fontSize: narrow ? 16 : 13 }} />
+            </>
+          )}
+        </div>
+      )}
+      {pop === "settings" && (
+        <div role="group" aria-label="Chart settings" style={sheet}>
+          <div style={sheetLabel}>Price scale</div>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--t1)" }}><input type="checkbox" checked={!!prefs.log} onChange={() => setPref({ log: !prefs.log })} />Log scale</label>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--t1)" }}><input type="checkbox" checked={!!prefs.invert} onChange={() => setPref({ invert: !prefs.invert })} />Upside down</label>
+          <button type="button" onClick={() => { keepView.current = null; setPrefs({ ...DEFAULT_PREFS, ind: { ...DEFAULT_PREFS.ind } }); setPop(null); }} style={btn(false, { justifySelf: "start", height: 34 })}>Back to the usual chart</button>
+        </div>
+      )}
+    </>
+  );
+  const tableBars = tableOpen ? [...priceBars].reverse().slice(0, 500) : [];
+  const copyTable = () => {
+    const text = ["Date\tOpen\tHigh\tLow\tClose\tVolume", ...[...tableBars].map(b => `${b.date}\t${b.open}\t${b.high}\t${b.low}\t${b.close}\t${b.volume ?? ""}`)].join("\n");
+    navigator.clipboard?.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1600); }).catch(() => {});
+  };
+
   return (
     <div ref={cardRef} className={page ? "chart-page-card" : undefined} style={page
       // The chart page is a column the height of the screen: every control
@@ -808,11 +1072,12 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
       {!narrow ? (
       <div role="toolbar" aria-label="Chart settings" style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: 8 }}>
         <div role="group" aria-label="Chart type" style={group}>
-          {TYPES.map(({ id, label, Icon }) => (
+          {TYPES.slice(0, 6).map(({ id, label, Icon }) => (
             <button key={id} type="button" onClick={() => setPref({ type: id })} aria-pressed={prefs.type === id} title={label} aria-label={narrow ? label : undefined} style={btn(prefs.type === id)}>
               <Icon size={14} aria-hidden="true" />{!narrow && label}
             </button>
           ))}
+          <button type="button" onClick={() => togglePop("type")} aria-expanded={pop === "type"} style={btn(pop === "type" || !TYPES.slice(0, 6).some(t => t.id === prefs.type))}><Shapes size={14} aria-hidden="true" />{TYPES.slice(6).find(t => t.id === prefs.type)?.label ?? "More"}</button>
         </div>
         <div role="group" aria-label="Bar interval" style={group}>
           {INTERVALS.map(iv => (
@@ -821,7 +1086,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
         </div>
 
         <div style={{ position: "relative" }}>
-          <button type="button" onClick={() => setMenuOpen(o => !o)} aria-expanded={menuOpen} aria-haspopup="true" style={btn(menuOpen || activeInd > 0)}>
+          <button type="button" onClick={() => { setPop(null); setMenuOpen(o => !o); }} aria-expanded={menuOpen} aria-haspopup="true" style={btn(menuOpen || activeInd > 0)}>
             <SlidersHorizontal size={14} aria-hidden="true" />Indicators{activeInd > 0 && <span style={MONO}> · {activeInd}</span>}
           </button>
           {menuOpen && !narrow && (
@@ -834,14 +1099,10 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
         <button type="button" onClick={() => setPref({ levels: !prefs.levels })} aria-pressed={prefs.levels} disabled={!levels} title="Fair value, and your own price levels if you've turned them on" style={btn(prefs.levels && !!levels, !levels ? { opacity: 0.5, cursor: "not-allowed" } : {})}>
           <Layers size={14} aria-hidden="true" />Levels
         </button>
-        <button type="button" onClick={() => setDrawing(d => !d)} aria-pressed={drawing} title="Horizontal line: click the chart, or type a price" style={btn(drawing)}>
-          <Minus size={14} aria-hidden="true" />H-Line
-        </button>
-        {prefs.type !== "renko" && (
-          <button type="button" onClick={() => { setDrawing(false); setTrendFrom(t => (t ? null : true)); }} aria-pressed={!!trendFrom} title="Trend line: click its first point, then its second" style={btn(!!trendFrom)}>
-            <Slash size={14} aria-hidden="true" />Trend
-          </button>
-        )}
+        <button type="button" onClick={() => togglePop("draw")} aria-expanded={pop === "draw"} style={btn(pop === "draw" || drawing || !!trendFrom || !!tool)}><Pencil size={14} aria-hidden="true" />Draw</button>
+        <button type="button" onClick={() => togglePop("views")} aria-expanded={pop === "views"} style={btn(pop === "views")}><Eye size={14} aria-hidden="true" />Views</button>
+        <button type="button" onClick={() => setTableOpen(true)} style={btn(false)}><Table2 size={14} aria-hidden="true" />Table</button>
+        <button type="button" onClick={() => togglePop("settings")} aria-expanded={pop === "settings"} aria-label="Chart settings" title="Chart settings" style={btn(pop === "settings" || !!prefs.log || !!prefs.invert)}><Settings2 size={14} aria-hidden="true" /></button>
 
         <div style={{ ...group, marginLeft: narrow ? 0 : "auto", flexWrap: "nowrap" }}>
           <button type="button" onClick={snapshot} title="Save the chart as an image" aria-label="Save the chart as an image" style={btn(false)}><Camera size={14} aria-hidden="true" /></button>
@@ -854,49 +1115,64 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
       </div>
       ) : (
         <div role="toolbar" aria-label="Chart settings" style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
-          <div role="group" aria-label="Bar interval" style={{ display: "inline-flex", gap: 2, padding: 2, borderRadius: 9, background: "var(--s3)", border: "1px solid var(--bdr2)" }}>
-            {INTERVALS.map(iv => (
-              <button key={iv.id} type="button" onClick={() => pickInterval(iv.id)} aria-pressed={prefs.interval === iv.id} title={iv.title} aria-label={iv.title} style={seg(prefs.interval === iv.id)}>{iv.label}</button>
-            ))}
+          {/* One row that slides sideways, so every tool has a proper finger's width */}
+          <div className="chart-tools-row">
+            <div role="group" aria-label="Bar interval" style={{ display: "inline-flex", flex: "none", gap: 2, padding: 2, borderRadius: 9, background: "var(--s3)", border: "1px solid var(--bdr2)" }}>
+              {INTERVALS.map(iv => (
+                <button key={iv.id} type="button" onClick={() => pickInterval(iv.id)} aria-pressed={prefs.interval === iv.id} title={iv.title} aria-label={iv.title} style={seg(prefs.interval === iv.id)}>{iv.label}</button>
+              ))}
+            </div>
+            <button type="button" onClick={() => togglePop("type")} aria-expanded={pop === "type"} aria-label={`Chart type: ${TYPES.find(t => t.id === prefs.type)?.label}`} style={iconBtn(pop === "type")}><ChartCandlestick size={16} aria-hidden="true" /></button>
+            <button type="button" onClick={() => { setPop(null); setMenuOpen(o => !o); }} aria-expanded={menuOpen} aria-controls={`chart-options-${symbol}${page ? "-page" : ""}`} aria-label={`Indicators${activeInd > 0 ? `, ${activeInd} on` : ""}`} style={iconBtn(menuOpen || activeInd > 0)}>
+              <span aria-hidden="true" style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontStyle: "italic", fontSize: 15, fontWeight: 400 }}>ƒx</span>
+              {activeInd > 0 && <span aria-hidden="true" style={{ fontSize: 10, fontWeight: 500, ...MONO }}>{activeInd}</span>}
+            </button>
+            <button type="button" onClick={() => togglePop("draw")} aria-expanded={pop === "draw"} aria-label="Draw on the chart" style={iconBtn(pop === "draw" || drawing || !!trendFrom || !!tool)}><Pencil size={16} aria-hidden="true" /></button>
+            <button type="button" onClick={() => togglePop("views")} aria-expanded={pop === "views"} aria-label="Saved views" style={iconBtn(pop === "views")}><Eye size={16} aria-hidden="true" /></button>
+            <button type="button" onClick={() => setTableOpen(true)} aria-label="Table of prices" style={iconBtn(false)}><Table2 size={16} aria-hidden="true" /></button>
+            <button type="button" onClick={() => setPref({ levels: !prefs.levels })} aria-pressed={prefs.levels && !!levels} disabled={!levels} aria-label="Fair value and your price levels" style={iconBtn(prefs.levels && !!levels, !levels ? { opacity: 0.45, cursor: "not-allowed" } : {})}><Layers size={16} aria-hidden="true" /></button>
+            <button type="button" onClick={() => togglePop("settings")} aria-expanded={pop === "settings"} aria-label="Chart settings" style={iconBtn(pop === "settings" || !!prefs.log || !!prefs.invert)}><Settings2 size={16} aria-hidden="true" /></button>
+            <button type="button" onClick={snapshot} aria-label="Save the chart as an image" style={iconBtn(false)}><Camera size={16} aria-hidden="true" /></button>
           </div>
-          <button type="button" onClick={() => setMenuOpen(o => !o)} aria-expanded={menuOpen} aria-controls={`chart-options-${symbol}${page ? "-page" : ""}`} aria-label={`Indicators and chart type${activeInd > 0 ? `, ${activeInd} on` : ""}`} style={iconBtn(menuOpen || activeInd > 0)}>
-            <span aria-hidden="true" style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontStyle: "italic", fontSize: 15, fontWeight: 400 }}>ƒx</span>
-            {activeInd > 0 && <span aria-hidden="true" style={{ fontSize: 10, fontWeight: 500, ...MONO }}>{activeInd}</span>}
-          </button>
-          <button type="button" onClick={() => setPref({ levels: !prefs.levels })} aria-pressed={prefs.levels && !!levels} disabled={!levels} aria-label="Fair value and your price levels" style={iconBtn(prefs.levels && !!levels, !levels ? { opacity: 0.45, cursor: "not-allowed" } : {})}><Layers size={16} aria-hidden="true" /></button>
-          <button type="button" onClick={() => setDrawing(d => !d)} aria-pressed={drawing} aria-label="Draw a horizontal line" style={iconBtn(drawing)}><Minus size={16} aria-hidden="true" /></button>
-          <button type="button" onClick={snapshot} aria-label="Save the chart as an image" style={iconBtn(false)}><Camera size={16} aria-hidden="true" /></button>
           {!page && (
-            <a href={chartPageUrl(symbol, name, levels)} onClick={openExpanded} aria-label="Expand the chart to full screen" style={iconBtn(false, { marginLeft: "auto", textDecoration: "none" })}><Maximize2 size={16} aria-hidden="true" /></a>
+            <a href={chartPageUrl(symbol, name, levels)} onClick={openExpanded} aria-label="Expand the chart to full screen" style={iconBtn(false, { flex: "none", textDecoration: "none" })}><Maximize2 size={16} aria-hidden="true" /></a>
           )}
         </div>
       )}
       {menuOpen && narrow && (
-        <div id={`chart-options-${symbol}${page ? "-page" : ""}`} role="group" aria-label="Chart options" style={{ display: "grid", gap: 12, padding: 10, marginBottom: 8, borderRadius: 12, background: "var(--s3)", border: "1px solid var(--bdr2)" }}>
-          <div>
-            <div style={sheetLabel}>Chart type</div>
-            <div role="group" aria-label="Chart type" style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 4 }}>
-              {TYPES.map(({ id, label, Icon }) => (
-                <button key={id} type="button" onClick={() => setPref({ type: id })} aria-pressed={prefs.type === id} style={btn(prefs.type === id, { flexDirection: "column", height: 52, gap: 3, padding: 0, justifyContent: "center", fontSize: 11 })}>
-                  <Icon size={16} aria-hidden="true" />{label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div role="group" aria-label="Indicators">{picker(true)}</div>
+        <div id={`chart-options-${symbol}${page ? "-page" : ""}`} role="group" aria-label="Indicators" style={{ ...sheet, maxHeight: "60vh", overflowY: "auto", overscrollBehavior: "contain" }}>
+          {picker(true)}
         </div>
       )}
+      {sheets}
       </div>
 
       {!narrow && levelLists}
 
+      {tool && (
+        <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8, fontSize: 12, color: "var(--t2)" }}>
+          <span>{toolLabel(tool.id)}: {narrow ? "tap" : "click"} {DRAW_TOOLS.find(d => d.id === tool.id).points === 1 ? "the spot" : tool.from ? "its second point" : "its first point"}.</span>
+          <button type="button" onClick={() => setTool(null)} style={btn(false, { height: 28 })}>Cancel</button>
+        </div>
+      )}
+      {draws.length > 0 && !isBrick && (
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginBottom: 8, fontSize: 12 }}>
+          {draws.map((d, i) => (
+            <span key={`${d.k}-${d.t1}-${i}`} className="chart-chip"><span>{d.k === "note" ? d.text : toolLabel(d.k)}</span><button type="button" onClick={() => saveDraws(draws.filter((_, j) => j !== i))} aria-label={`Remove this ${toolLabel(d.k)}`}><X size={12} aria-hidden="true" /></button></span>
+          ))}
+          <button type="button" onClick={() => saveDraws(draws.slice(0, -1))} aria-label="Undo the last drawing" style={btn(false, { height: 28 })}><Undo2 size={13} aria-hidden="true" /></button>
+          {draws.length > 1 && <button type="button" onClick={() => saveDraws([])} style={btn(false, { height: 28, fontSize: 11.5 })}>Clear drawings</button>}
+        </div>
+      )}
       {/* Trend lines: what to click while drawing, and each one drawn, removable */}
-      {(trendFrom || trends.length > 0 || prefs.type === "renko") && (
+      {(trendFrom || trends.length > 0 || isBrick) && (
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginBottom: 8, fontSize: 12, color: "var(--t2)" }}>
           {prefs.type === "renko" && <span>Renko: one brick for each ₹{box?.toLocaleString("en-IN")} the close moves; time isn't to scale, so the dates are in the legend.</span>}
+          {prefs.type === "linebreak" && <span>Line break: a new bar only when the close passes the last three; time isn't to scale.</span>}
+          {prefs.type === "kagi" && <span>Kagi: the line turns when the close comes back 4% from its last extreme; time isn't to scale.</span>}
           {trendFrom === true && <span>{narrow ? "Tap" : "Click"} the trend line's first point.</span>}
           {trendFrom && trendFrom !== true && <span>Now {narrow ? "tap" : "click"} its second point.</span>}
-          {prefs.type !== "renko" && trends.map((t, i) => (
+          {!isBrick && trends.map((t, i) => (
             <span key={`${t.t1}-${i}`} style={{ display: "inline-flex", alignItems: "center", gap: 2, height: narrow ? 34 : 26, padding: "0 2px 0 9px", borderRadius: 999, border: "1px solid var(--bdr2)", background: "var(--s3)", color: "var(--t1)", ...MONO }}>
               ⟋ {fmtRs(t.p1)} → {fmtRs(t.p2)}
               <button type="button" onClick={() => saveTrends(trends.filter((_, j) => j !== i))} aria-label={`Remove the trend line from ${fmtRs(t.p1)} to ${fmtRs(t.p2)}`} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: narrow ? 32 : 22, minHeight: narrow ? 32 : 22, border: 0, background: "none", color: "var(--t2)", cursor: "pointer", padding: 0, borderRadius: 999 }}>
@@ -1019,6 +1295,23 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
                 ))}
               </div>
             )}
+            <svg ref={svgRef} aria-hidden="true" className="chart-draw-layer" />
+            {picked && (() => {
+              const b = picked.bar, ch = picked.prev ? b.close - picked.prev.close : null, pct = picked.prev?.close ? (ch / picked.prev.close) * 100 : null;
+              return (
+                <div className="chart-candle-card" role="status">
+                  <button type="button" onClick={() => setPicked(null)} aria-label="Close the day's figures"><X size={14} aria-hidden="true" /></button>
+                  <div className="chart-candle-date">{new Date(`${b.realDate ?? b.date}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })}{b.partial ? " · in progress" : ""}</div>
+                  <div className="chart-candle-close">{fmtRs(b.close)}{pct != null && <span style={{ color: ch >= 0 ? "var(--green)" : "var(--red)" }}> {ch >= 0 ? "+" : "−"}{Math.abs(pct).toFixed(2)}%</span>}</div>
+                  <dl>
+                    <div><dt>Open</dt><dd>{fmtNum(b.open)}</dd></div>
+                    <div><dt>High</dt><dd>{fmtNum(b.high)}</dd></div>
+                    <div><dt>Low</dt><dd>{fmtNum(b.low)}</dd></div>
+                    <div><dt>Volume</dt><dd>{fmtVol(b.volume)}</dd></div>
+                  </dl>
+                </div>
+              );
+            })()}
             <div
               ref={hostRef}
               role="figure"
@@ -1036,12 +1329,35 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
           ))}
         </div>
         <span style={{ marginLeft: narrow ? 0 : "auto", fontSize: 10, color: "var(--t3)" }}>
-          {data?.stale ? `${data.staleReason} · ` : ""}{INTERVALS.find(i => i.id === prefs.interval)?.title} bars · NSE closes{data?.keptFrom ? ` from ${new Date(`${data.keptFrom}T00:00:00Z`).toLocaleDateString("en-IN", { month: "short", year: "numeric", timeZone: "UTC" })}` : ""} · {narrow ? "drag sideways to pan, pinch to zoom, press and hold for a day's values" : "drag to pan, scroll to zoom"}
+          {data?.stale ? `${data.staleReason} · ` : ""}{INTERVALS.find(i => i.id === prefs.interval)?.title} bars · NSE closes{data?.keptFrom ? ` from ${new Date(`${data.keptFrom}T00:00:00Z`).toLocaleDateString("en-IN", { month: "short", year: "numeric", timeZone: "UTC" })}` : ""} · {narrow ? "drag sideways to pan, pinch to zoom, tap a candle for its figures" : "drag to pan, scroll to zoom, click a candle for its figures"}
           {" · "}<a href="https://www.tradingview.com/" target="_blank" rel="noopener" style={{ color: "inherit" }}>Chart by TradingView</a>
         </span>
       </div>
       {narrow && pivotNow && <div style={{ marginTop: 10 }}>{levelLists}</div>}
 
+      {tableOpen && createPortal(
+        <div className="chart-table-wrap" role="dialog" aria-modal="true" aria-label={`${symbol} prices`} onClick={e => { if (e.target === e.currentTarget) setTableOpen(false); }}>
+          <div className="chart-table-card">
+            <div className="chart-table-head">
+              <h2>{symbol}</h2>
+              <button type="button" onClick={copyTable} style={btn(copied)}>{copied ? "Copied" : "Copy"}</button>
+              <button type="button" onClick={() => setTableOpen(false)} aria-label="Close the table" style={btn(false, { padding: "0 8px" })}><X size={15} aria-hidden="true" /></button>
+            </div>
+            <div className="chart-table-scroll">
+              <table>
+                <thead><tr><th>Date</th><th>Open</th><th>High</th><th>Low</th><th>Close</th><th>Change</th><th>Volume</th></tr></thead>
+                <tbody>
+                  {tableBars.map((b, i) => {
+                    const prev = tableBars[i + 1], pct = prev?.close ? ((b.close - prev.close) / prev.close) * 100 : null;
+                    return <tr key={b.date}><td>{new Date(`${b.date}T00:00:00Z`).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "2-digit", timeZone: "UTC" })}</td><td>{fmtNum(b.open)}</td><td>{fmtNum(b.high)}</td><td>{fmtNum(b.low)}</td><td>{fmtNum(b.close)}</td><td style={{ color: pct == null ? undefined : pct >= 0 ? "var(--green)" : "var(--red)" }}>{pct == null ? "—" : `${pct >= 0 ? "+" : "−"}${Math.abs(pct).toFixed(2)}%`}</td><td>{fmtVol(b.volume)}</td></tr>;
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
       {expanded && createPortal(
         <div className="chart-overlay" role="dialog" aria-modal="true" aria-label={`${name || symbol} price chart`}>
           <div className="chart-overlay-bar">

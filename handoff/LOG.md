@@ -83,3 +83,4 @@ The `/learn` guides, IndexNow, the new tab icons, and the opening animation.
 - **1 Nov 2026 (Claude Opus):** iPhone Home Screen: Google sign-in hung for ever, a limit of pop-ups there. Hidden there, with a note; Safari keeps it. Not checked on a real iPhone.
 - **1 Nov 2026 (Claude Opus):** From the owner's recording: the sign-in card showed the email step until the server's sign-in options arrived. It now waits for them; with no answer it still falls back to email.
 - **1 Nov 2026 (Claude Opus):** Performance: a screen's name opens the screen and its companies (through `?strategy=`), as the owner asked.
+- **1 Nov 2026 (Claude Opus):** Chart upgrade from the owner's broker-app screenshots. Left out: intraday timeframes, open interest, plain VWAP (no such data); Anchored VWAP runs from the year's start only, and indicators have no settings for their periods. A second chart click within 0.5 s counts as a double click, so it's ignored.
