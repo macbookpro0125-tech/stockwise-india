@@ -17,8 +17,14 @@ const day = d => new Date(`${d}T00:00:00Z`).toLocaleDateString("en-IN", { day: "
 const short = s => String(s ?? "").replace(/ (Limited|Ltd\.?)$/i, "");
 const WATCH_ROWS = 8, QUICK_SCREENS = 6;
 
-// The front page's night sky, painted once: no 3D scene and nothing moving, so
-// it costs nothing after the first moment. The same stars at every visit.
+// A few stars over the still sky that slowly brighten and dim, each in its own time
+const TWINKLES = Array.from({ length: 28 }, (_, i) => ({
+  left: `${(i * 37.3 + 4) % 100}%`, top: `${(i * 23.7 + 3) % 62}%`,
+  animationDuration: `${4 + (i * 1.7) % 5}s`, animationDelay: `${-((i * 2.3) % 8)}s`,
+}));
+
+// The front page's night sky, painted once: no 3D scene, so it costs nothing
+// after the first moment. The same stars at every visit.
 function StarField() {
   const ref = useRef(null);
   useEffect(() => {
@@ -47,7 +53,12 @@ function StarField() {
       ctx.beginPath(); ctx.arc(x, y, 1.3, 0, Math.PI * 2); ctx.fillStyle = "#fff"; ctx.fill();
     }
   }, []);
-  return <canvas ref={ref} className="td-sky" aria-hidden="true" />;
+  return (
+    <>
+      <canvas ref={ref} className="td-sky" aria-hidden="true" />
+      {TWINKLES.map((t, i) => <span key={i} className="td-twinkle" aria-hidden="true" style={t} />)}
+    </>
+  );
 }
 
 // The market's last year, large, as the first thing in the summary. Our own
