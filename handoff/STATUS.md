@@ -4,40 +4,15 @@ _Last updated: 1 Nov 2026, by Claude (Opus) on branch `screeners-home`._
 
 ## Live on jocularinsights.in
 
-Everything up to `a3fffd0` ("The opening without words…"), pushed 31 Oct 2026:
-- the market map page
-- compare
-- portfolio against the market
-- screen alerts
-- faster first load
-- the opening animation, without words
+Everything up to `c20da4a`, pushed 1 Nov 2026: Desk and My desk, stock pages with "below our fair value" and same-industry peers, the Screen builder name, the overnight fixes, and the opening rebuilt so it doesn't lag on Android.
 
 ## Committed but NOT pushed yet
 
-Waiting for the owner to say "push", after the full test run.
-
-| Commit | What |
-|---|---|
-| `eecff14` | Stock pages: "28% below our fair value" in the title, Google snippet and a row (the rupee value stays behind sign-in); peers from the same industry |
-| `c11b4e9` | The Workspace tab is renamed **Screen builder** |
-| `a8ca410`, `f3a6fc5` | **Desk**, a page of its own: pick a list (every NSE company, watchlist, your screens, ready-made screens), walk it with ↑/↓, the chart in the middle, Business / Price / Peers on the right |
-| `aa6fe86` | Desk: market mood bar (advancing / topping / declining / basing) and six price patterns (breakout, near highs, pullback, tight weeks, tightening range, quiet volume) |
-| `965f4e6` | **My desk**: cards you choose, saved to the account |
-| `25cb072` | Desk restyled the Apple way (same layout) |
-| `3f48e23`, `ddc6055`, `b0f9fd4` | My desk: drag any card anywhere and resize it from its corner, a 12-column grid; drag fixes |
-| this folder | `handoff/` |
-| (1 Nov) | Android version 1.2, build 4 |
-| (1 Nov) | The opening animation rebuilt so it doesn't lag on Android |
-| `0b86dda` | Price strength from local daily prices when the data file has no 9-month returns |
-| (1 Nov) | Overnight debug: Desk fixes, narrow windows, accessibility fixes across the app (see LOG) |
-
-Tests (1 Nov, overnight): the unit tests pass, all 136 end-to-end tests pass,
-and the accessibility scan is clean. Ready to push whenever the owner says
-"push"; run the checks again first if anything has changed since.
+Only this note.
 
 ## Open / next
 
-1. **Owner is trying My desk now.** He reported "can't add a card, can't move it". Fixed in `b0f9fd4`: a drag released over the chart never ended. Wait for his feedback.
+1. **Owner is checking on his phone (1 Nov):** the opening on Android, and My desk ("can't add a card, can't move it", fixed in `b0f9fd4`). Wait for his feedback.
 2. **Android 1.2 (build 4) is built for the Play launch (~7 Nov 2026):** `android/app/build/outputs/bundle/release/app-release.aab`, signed, pointing at the live site. The owner uploads it. Checked on the emulator 1 Nov: screens, haptic, push token. Not checked: the chime (emulator has no sound), a push actually arriving, the release build run on a phone. AdMob answered "Publisher misconfiguration" for the real app ID on 1 Nov: expected while the account is unverified and no store is linked; recheck after the Play listing is public.
 3. **Visitor review ~6 Nov 2026.** Read `/api/owner/stats` while signed in as the owner. Count only from 30 Oct; earlier days include bots. On 31 Oct there were about 5 real visitors a day and 0 sign-ups since the 13 testers on 24 Oct.
 4. **Search:**
