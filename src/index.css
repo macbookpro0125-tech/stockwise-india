@@ -5375,3 +5375,7 @@ body::before { content: ""; position: fixed; inset: 0; z-index: 0; pointer-event
 .chart-page-ranges button[aria-pressed="true"] { color: var(--accent); font-weight: 500; }
 .chart-page-credit { width: 100%; font-size: 10px; color: var(--t3); text-align: right; }
 
+/* One logo on a computer: the bar down the left carries it; the header keeps the
+   name. With the bar tucked away, the header's logo comes back. */
+html.has-rail .hdr-mark { display: none; }
+

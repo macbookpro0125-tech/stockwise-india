@@ -8,7 +8,7 @@ Everything up to the chart upgrade and phone full-screen chart (`5c5a347`), the 
 
 ## Committed but NOT pushed yet
 
-Nothing.
+Desktop: one logo (the left bar's; the header keeps the name) and different icons for Screen builder and Desk. A signed-in "Today" home is mocked up, waiting on the owner.
 
 ## Open / next
 
