@@ -236,6 +236,12 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onPi
       <div className="td-sky-watch" aria-hidden="true" />
       <section className="td-hero" aria-labelledby="td-hero-title">
         <StarField />
+        {/* J and I glide together along the great star's ray, touch, and melt into its light */}
+        <div className="td-meet" aria-hidden="true">
+          <i className="td-bloom" /><i className="td-hairline" />
+          <span className="td-letter td-letter-j">J</span>
+          <span className="td-letter td-letter-i">I</span>
+        </div>
         <h2 id="td-hero-title">India's markets, read from the source.</h2>
         <p>Every NSE company, scored on what it files. Find the few worth your time.</p>
         <button type="button" className="td-cta" onClick={onCreate}>Start screening</button>

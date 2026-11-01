@@ -92,3 +92,4 @@ The `/learn` guides, IndexNow, the new tab icons, and the opening animation.
 - **1 Nov 2026 (Claude Opus):** Home: the opening is one screen and stays put; Market summary rises over it like a sheet, peeking at the bottom of the first screen.
 - **1 Nov 2026 (Claude Opus):** Home's sky: the owner asked for J and I to travel and collide. Built in CSS (`.td-meet`); not yet live.
 - **1 Nov 2026 (Claude Opus):** J and I collision removed: the owner found it ugly.
+- **1 Nov 2026 (Claude Opus):** J and I collision rebuilt to be simple, as the owner asked: thin white letters, a soft pulse, one hairline ring. No tails, burst colour or logo.
