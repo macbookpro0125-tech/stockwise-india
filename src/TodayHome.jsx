@@ -31,6 +31,11 @@ const SHOOTING = Array.from({ length: 20 }, (_, i) => ({
   animationDelay: `${(i * 3.7) % 29}s`, animationDuration: `${17 + (i * 7) % 21}s`,
 }));
 
+// The sky's ink: white stars at night, deep blue ones on the light theme's pale sky
+const isLight = () => document.documentElement.getAttribute("data-theme") === "light";
+const inkRgb = () => (isLight() ? "30,58,120" : "255,255,255");
+const inkHex = () => (isLight() ? "#1E3A78" : "#fff");
+
 // J and I drawn as constellations, floating freely and slowly through the sky
 const LETTER_J = [[[26, 6], [62, 3], [94, 8]], [[62, 3], [66, 52], [60, 98], [40, 122], [16, 116], [6, 94]]];
 const LETTER_I = [[[6, 8], [34, 4], [62, 7]], [[34, 4], [32, 62], [35, 120]], [[6, 124], [35, 120], [64, 125]]];
@@ -48,16 +53,16 @@ function StarLetter({ points, className }) {
 function sixPoints(c, x, y, len) {
   const alpha = c.globalAlpha;
   const halo = c.createRadialGradient(x, y, 0, x, y, len * 0.6);
-  halo.addColorStop(0, "rgba(255,255,255,0.28)"); halo.addColorStop(1, "rgba(255,255,255,0)");
+  halo.addColorStop(0, `rgba(${inkRgb()},${isLight() ? 0.08 : 0.28})`); halo.addColorStop(1, `rgba(${inkRgb()},0)`);
   c.fillStyle = halo; c.fillRect(x - len, y - len, len * 2, len * 2);
   for (let i = 0; i < 3; i++) {
     const a = Math.PI / 2 + (i * Math.PI) / 3, dx = Math.cos(a) * len, dy = Math.sin(a) * len;
     const g = c.createLinearGradient(x - dx, y - dy, x + dx, y + dy);
-    g.addColorStop(0, "rgba(255,255,255,0)"); g.addColorStop(0.5, "#fff"); g.addColorStop(1, "rgba(255,255,255,0)");
+    g.addColorStop(0, `rgba(${inkRgb()},0)`); g.addColorStop(0.5, inkHex()); g.addColorStop(1, `rgba(${inkRgb()},0)`);
     c.strokeStyle = g; c.lineWidth = 0.7;
     c.beginPath(); c.moveTo(x - dx, y - dy); c.lineTo(x + dx, y + dy); c.stroke();
   }
-  c.fillStyle = "#fff"; c.globalAlpha = alpha;
+  c.fillStyle = inkHex(); c.globalAlpha = alpha;
 }
 
 // Stars that keep travelling: one picture, painted twice side by side and slid
@@ -72,7 +77,7 @@ function StarStream({ count, size, seed: start, className, points = false }) {
     c.scale(dpr, dpr);
     let seed = start;
     const rnd = () => { seed = (seed * 16807) % 2147483647; rnd.last = seed / 2147483647; return rnd.last; };
-    c.fillStyle = "#fff";
+    c.fillStyle = inkHex();
     for (let i = 0; i < count; i++) {
       const x = rnd() * w, y = rnd() * h, r = size * (0.6 + rnd() * 0.7);
       c.globalAlpha = 0.45 + rnd() * 0.55;
@@ -101,17 +106,19 @@ function StarField() {
     const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
     const skyH = Math.min(h, 760);
     const glow = (x, y, r, color) => {
+      if (isLight() && r <= 170 && !color.includes("100,") && !color.includes("170,170")) return; // no star glows by day
       const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-      g.addColorStop(0, color); g.addColorStop(1, "rgba(0,0,0,0)");
+      // (fading to black would leave a grey smudge on the pale sky)
+      g.addColorStop(0, color); g.addColorStop(1, isLight() ? "rgba(255,255,255,0)" : "rgba(0,0,0,0)");
       ctx.fillStyle = g; ctx.fillRect(x - r, y - r, r * 2, r * 2);
     };
-    const star = (x, y, r, a, color = "#fff") => { ctx.globalAlpha = a; ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); };
+    const star = (x, y, r, a, color = inkHex()) => { ctx.globalAlpha = a; ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); };
     const rays = (x, y, len, a) => {
       ctx.globalAlpha = a;
       for (const [dx, dy] of [[1, 0], [0, 1], [0.7, 0.7], [0.7, -0.7]]) {
         const far = dx && dy ? len * 0.6 : len;
         const g = ctx.createLinearGradient(x - dx * far, y - dy * far, x + dx * far, y + dy * far);
-        g.addColorStop(0, "rgba(255,255,255,0)"); g.addColorStop(0.5, "rgba(255,255,255,0.95)"); g.addColorStop(1, "rgba(255,255,255,0)");
+        g.addColorStop(0, `rgba(${inkRgb()},0)`); g.addColorStop(0.5, `rgba(${inkRgb()},0.95)`); g.addColorStop(1, `rgba(${inkRgb()},0)`);
         ctx.strokeStyle = g; ctx.lineWidth = 0.7;
         ctx.beginPath(); ctx.moveTo(x - dx * far, y - dy * far); ctx.lineTo(x + dx * far, y + dy * far); ctx.stroke();
       }
@@ -128,7 +135,7 @@ function StarField() {
       star(p.x, p.y + off, 0.35 + rnd() * 0.3, 0.3 + rnd() * 0.45);
     }
     // the whole sky
-    const tints = ["#fff", "#fff", "#fff", "#CFE0FF", "#FFE9CF"];
+    const tints = [inkHex(), inkHex(), inkHex(), "#CFE0FF", "#FFE9CF"];
     for (let i = 0; i < 1500; i++) star(rnd() * (w + PAD * 2) - PAD, rnd() * (h + PAD * 2) - PAD, rnd() < 0.94 ? 0.35 + rnd() * 0.35 : 0.8 + rnd() * 0.4, 0.35 + rnd() * 0.65, tints[Math.floor(rnd() * tints.length)]);
     ctx = nearCtx;
     // Constellations: the teal lines of the front page's film, joining a few groups
@@ -148,12 +155,12 @@ function StarField() {
     // bright stars with rays, and one great one off to the side of the headline
     for (let i = 0; i < 16; i++) {
       const x = rnd() * w, y = rnd() * skyH;
-      ctx.globalAlpha = 1; glow(x, y, 12, "rgba(255,255,255,0.3)");
+      ctx.globalAlpha = 1; glow(x, y, 12, `rgba(${inkRgb()},0.3)`);
       rays(x, y, 9 + rnd() * 16, 0.8); star(x, y, 1.3, 1);
     }
     const bigX = w * 0.88, bigY = skyH * 0.24;
     ctx.globalAlpha = 1;
-    glow(bigX, bigY, 170, "rgba(255,220,170,0.16)"); glow(bigX, bigY, 40, "rgba(255,255,255,0.6)");
+    glow(bigX, bigY, 170, "rgba(255,220,170,0.16)"); glow(bigX, bigY, 40, `rgba(${inkRgb()},0.6)`);
     rays(bigX, bigY, 130, 0.9); star(bigX, bigY, 2.6, 1);
     ctx.globalAlpha = 1;
     // nothing moves while the sky is scrolled out of view
@@ -222,6 +229,13 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onPi
   const [calendar, setCalendar] = useState(null);
   const [presets, setPresets] = useState([]);
   const [market, setMarket] = useState(null);
+  // the sky is painted in the theme's ink, so a change of theme paints it afresh
+  const [theme, setTheme] = useState(() => document.documentElement.getAttribute("data-theme"));
+  useEffect(() => {
+    const mo = new MutationObserver(() => setTheme(document.documentElement.getAttribute("data-theme")));
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    return () => mo.disconnect();
+  }, []);
   useEffect(() => {
     api.marketStrip().then(setStrip).catch(() => {});
     api.publicResultsCalendar().then(setCalendar).catch(() => {});
@@ -249,14 +263,15 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onPi
           visitors' page's night sky, as a still picture. Then the product, fading into the page. */}
       <div className="td-sky-watch" aria-hidden="true" />
       <section className="td-hero" aria-labelledby="td-hero-title">
-        <StarField />
+        <StarField key={theme} />
         <StarLetter className="td-star-j" points={LETTER_J} />
         <StarLetter className="td-star-i" points={LETTER_I} />
         <h2 id="td-hero-title">India's markets, read from the source.</h2>
         <p>Every NSE company, scored on what it files. Find the few worth your time.</p>
         <button type="button" className="td-cta" onClick={onCreate}>Start screening</button>
         <div className="td-shot">
-          <img src="/screens/home-shot.jpg" alt="Jocular Insights listing companies that match a screen, with their quality scores" width="1280" height="800" />
+          <img className="td-shot-light" src="/screens/home-shot-light.jpg" alt="Jocular Insights listing a screen and its filters" width="1280" height="800" />
+          <img className="td-shot-dark" src="/screens/home-shot.jpg" alt="Jocular Insights listing companies that match a screen, with their quality scores" width="1280" height="800" />
         </div>
         <button type="button" className="td-shot-pill" onClick={seeAll}>See every screener<ChevronRight size={15} aria-hidden="true" /></button>
       </section>

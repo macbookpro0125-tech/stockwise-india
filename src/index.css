@@ -5419,7 +5419,7 @@ button.td-line { cursor: pointer; }
 @media (max-width: 1000px) { .td-grid { grid-template-columns: minmax(0, 1fr); } .td-market { grid-template-columns: repeat(3, minmax(0, 1fr)); } .td-screens { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
 /* The home's opening and summary sheet: --td-black stays black in both themes */
-:root { --td-black: #000; --td-on-black: #F5F5F7; --td-on-black-2: #A1A1AA; --td-glow: #00E0BE; --td-glow-2: #3E8BFF; }
+:root { --td-clear: rgba(0, 0, 0, 0.92); --td-black: #000; --td-on-black: #F5F5F7; --td-on-black-2: #A1A1AA; --td-glow: #00E0BE; --td-glow-2: #3E8BFF; }
 .td-page { position: relative; margin: -40px calc(-1 * var(--page-x)) 0; }
 .td-sky-watch { position: absolute; left: 0; top: 0; width: 1px; height: 100vh; pointer-events: none; }
 .td-hero { position: sticky; top: var(--header-h, 0px); overflow: hidden; display: flex; flex-direction: column; align-items: center; height: calc(100vh - var(--header-h, 0px)); min-height: 560px; padding: 56px var(--page-x) 0; background: var(--td-black); color: var(--td-on-black); text-align: center; }
@@ -5453,7 +5453,7 @@ button.td-line { cursor: pointer; }
 .td-hero.td-still :is(.td-sky, .td-tints i, .td-shoot, .td-twinkle, .td-stream, .td-star-letter) { animation-play-state: paused; }
 @media (prefers-reduced-motion: reduce) { .td-sky, .td-tints i, .td-stream { animation: none; } .td-shoot { display: none; } }
 /* the sky falls away behind the words, so they read cleanly */
-.td-hero::after { content: ""; position: absolute; z-index: 0; left: 50%; top: 20px; width: min(1100px, 92%); height: 340px; transform: translateX(-50%); pointer-events: none; background: radial-gradient(closest-side, rgba(0, 0, 0, 0.92) 55%, rgba(0, 0, 0, 0)); }
+.td-hero::after { content: ""; position: absolute; z-index: 0; left: 50%; top: 20px; width: min(1100px, 92%); height: 340px; transform: translateX(-50%); pointer-events: none; background: radial-gradient(closest-side, var(--td-clear) 55%, transparent); }
 .td-hero h2, .td-hero p, .td-cta { z-index: 1; }
 .td-hero > h2, .td-hero > p, .td-cta, .td-shot { flex: none; }
 .td-twinkle { position: absolute; width: 2px; height: 2px; border-radius: 50%; background: var(--td-on-black); box-shadow: 0 0 3px rgba(255, 255, 255, 0.55); opacity: 0.2; will-change: opacity; animation: td-twinkle 6s ease-in-out infinite; }
@@ -5509,4 +5509,20 @@ button.td-line { cursor: pointer; }
 .td-sheet .td-screen { padding: 18px 20px; }
 .td-sheet .td-empty { padding: 18px 20px 24px; }
 .td-sheet .td-all-pages button { padding: 16px 18px; }
+
+/* The opening on the light theme: a pale daylight sky in the page's own colours */
+[data-theme="light"] { --td-black: #EEF2FA; --td-on-black: #101828; --td-on-black-2: #475467; --td-clear: rgba(238, 242, 250, 0.9); }
+[data-theme="light"] .td-hero { background: linear-gradient(#E6ECF8, #F5F6F8 92%); }
+[data-theme="light"] .td-hero::before { background: radial-gradient(46% 60% at 50% 30%, rgba(120, 150, 240, 0.2), transparent 72%), radial-gradient(26% 34% at 72% 48%, rgba(168, 107, 255, 0.1), transparent 75%), radial-gradient(26% 34% at 26% 52%, rgba(0, 190, 170, 0.08), transparent 75%); }
+[data-theme="light"] .td-cta { background: var(--accent); color: #fff; }
+[data-theme="light"] .td-twinkle { background: #2563EB; box-shadow: 0 0 3px rgba(37, 99, 235, 0.5); }
+[data-theme="light"] .td-shoot { background: linear-gradient(90deg, #2563EB, transparent); }
+[data-theme="light"] .td-star-letter polyline { stroke: #0B8F7E; }
+[data-theme="light"] .td-star-letter circle { fill: #1E3A78; }
+[data-theme="light"] .td-shot { box-shadow: 0 0 0 1px rgba(16, 24, 40, 0.12), 0 -14px 50px rgba(30, 58, 120, 0.16); }
+[data-theme="light"] .td-shot-pill { background: rgba(255, 255, 255, 0.88); color: #101828; box-shadow: 0 0 0 1px rgba(16, 24, 40, 0.12), 0 6px 18px rgba(16, 24, 40, 0.12); }
+[data-theme="light"] .td-sheet { box-shadow: 0 -1px 0 var(--ga-edge), 0 -18px 44px rgba(30, 58, 120, 0.12); }
+.td-shot .td-shot-light { display: none; }
+[data-theme="light"] .td-shot .td-shot-light { display: block; }
+[data-theme="light"] .td-shot .td-shot-dark { display: none; }
 
