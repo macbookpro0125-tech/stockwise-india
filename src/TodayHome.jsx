@@ -16,8 +16,39 @@ const tone = n => (n == null ? "var(--t3)" : n >= 0 ? "var(--green)" : "var(--re
 const day = d => new Date(`${d}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" });
 const short = s => String(s ?? "").replace(/ (Limited|Ltd\.?)$/i, "");
 const WATCH_ROWS = 8, QUICK_SCREENS = 6;
-// A picture of a market with honest dips, not a claim about one
-const LINE = "M0,270 C60,250 90,225 130,235 C170,245 200,250 250,205 C300,160 330,190 380,185 C430,180 470,130 520,140 C570,150 600,165 650,110 C700,55 740,90 790,70 C840,50 900,45 1000,10";
+
+// The front page's night sky, painted once: no 3D scene and nothing moving, so
+// it costs nothing after the first moment. The same stars at every visit.
+function StarField() {
+  const ref = useRef(null);
+  useEffect(() => {
+    const cv = ref.current, ctx = cv?.getContext?.("2d");
+    if (!ctx) return;
+    const w = cv.clientWidth, h = cv.clientHeight, dpr = Math.min(window.devicePixelRatio || 1, 2);
+    cv.width = w * dpr; cv.height = h * dpr;
+    ctx.scale(dpr, dpr);
+    let seed = 7;
+    const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    for (let i = 0; i < 900; i++) {
+      const r = rnd() < 0.9 ? 0.3 + rnd() * 0.5 : 0.8 + rnd() * 0.7;
+      ctx.globalAlpha = 0.25 + rnd() * 0.65;
+      ctx.fillStyle = "#fff";
+      ctx.beginPath(); ctx.arc(rnd() * w, rnd() * h, r, 0, Math.PI * 2); ctx.fill();
+    }
+    // a few bright ones, with the long thin rays of the front page's
+    for (let i = 0; i < 9; i++) {
+      const x = rnd() * w, y = rnd() * h, len = 7 + rnd() * 12;
+      ctx.globalAlpha = 0.85;
+      const g = ctx.createRadialGradient(x, y, 0, x, y, len);
+      g.addColorStop(0, "rgba(255,255,255,0.9)"); g.addColorStop(0.12, "rgba(255,255,255,0.25)"); g.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = g;
+      ctx.fillRect(x - len, y - 0.6, len * 2, 1.2);
+      ctx.fillRect(x - 0.6, y - len, 1.2, len * 2);
+      ctx.beginPath(); ctx.arc(x, y, 1.3, 0, Math.PI * 2); ctx.fillStyle = "#fff"; ctx.fill();
+    }
+  }, []);
+  return <canvas ref={ref} className="td-sky" aria-hidden="true" />;
+}
 
 // The market's last year, large, as the first thing in the summary. Our own
 // index history: the Nifty 500's closes, kept with any company's prices.
@@ -72,21 +103,13 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onPi
 
   return (
     <div className="td-page">
-      {/* The opening, on black whichever the theme: one line, one button, and a
-          horizon of light, drawn here. Then the product, fading into the page. */}
+      {/* The opening, on black whichever the theme: one line, one button, and the
+          visitors' page's night sky, as a still picture. Then the product, fading into the page. */}
       <section className="td-hero" aria-labelledby="td-hero-title">
+        <StarField />
         <h2 id="td-hero-title">India's markets, read from the source.</h2>
         <p>Every NSE company, scored on what it files. Find the few worth your time.</p>
         <button type="button" className="td-cta" onClick={onCreate}>Start screening</button>
-        {/* The app's own market line, as in its opening: drawn once, no video */}
-        <svg className="td-mline" viewBox="0 0 1000 300" preserveAspectRatio="none" aria-hidden="true">
-          <defs>
-            <linearGradient id="td-stroke" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stopColor="#00E0BE" /><stop offset="0.55" stopColor="#3E8BFF" /><stop offset="1" stopColor="#A86BFF" /></linearGradient>
-            <linearGradient id="td-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#3E8BFF" stopOpacity="0.28" /><stop offset="1" stopColor="#3E8BFF" stopOpacity="0" /></linearGradient>
-          </defs>
-          <path className="td-line-fill" d={`${LINE} L1000,300 L0,300 Z`} fill="url(#td-fill)" />
-          <path className="td-line-stroke" d={LINE} stroke="url(#td-stroke)" />
-        </svg>
         <div className="td-shot">
           <img src="/screens/home-shot.jpg" alt="Jocular Insights listing companies that match a screen, with their quality scores" width="1280" height="800" />
           <button type="button" className="td-shot-pill" onClick={seeAll}>See every screener<ChevronRight size={15} aria-hidden="true" /></button>
