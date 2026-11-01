@@ -4,11 +4,11 @@ _Last updated: 1 Nov 2026, by Claude (Opus) on branch `screeners-home`._
 
 ## Live on jocularinsights.in
 
-Everything up to the opening's gentler start (`d1bfc55`), pushed 1 Nov 2026: Desk and My desk, stock pages with "below our fair value" and same-industry peers, the Screen builder name, the overnight fixes, and the opening rebuilt so it doesn't lag on Android.
+Everything up to the opening's spinner fix (`c700e40`), pushed 1 Nov 2026: Desk and My desk, stock pages with "below our fair value" and same-industry peers, the Screen builder name, the overnight fixes, and the opening rebuilt so it doesn't lag on Android.
 
 ## Committed but NOT pushed yet
 
-The fix for the opening hidden behind a spinner in the Android app (live since `d1bfc55`: the app shows only a spinner, then the logo's last part).
+Nothing.
 
 ## Open / next
 
