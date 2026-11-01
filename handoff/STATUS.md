@@ -8,7 +8,7 @@ Everything up to the glass look across the app (`6337941`; not checked on a real
 
 ## Committed but NOT pushed yet
 
-The iPhone opening, from the owner's recording of 1 Nov: no pale first paint for light-theme users when the opening will play, and the film's clock held till it's drawn (iPhone app or Home Screen). Also dark Home Screen launch images (`public/startup/`, iPhones take them only when re-added to the Home Screen). The native iPhone app's launch image is still Capacitor's default white one with its X logo (`ios/.../Splash.imageset`): replace it before any iPhone release. Not checked on an iPhone; tested with an iPhone profile in Chrome only. Rerun the full tests before pushing (two failed on 1 Nov while NSE was unreachable; see LOG).
+The iPhone opening, from the owner's recording of 1 Nov: no pale first paint for light-theme users when the opening will play, and the film's clock held till it's drawn (iPhone app or Home Screen). Also dark Home Screen launch images (`public/startup/`, iPhones take them only when re-added to the Home Screen). The native iPhone app's launch image is still Capacitor's default white one with its X logo (`ios/.../Splash.imageset`): replace it before any iPhone release. Not checked on an iPhone; tested with an iPhone profile in Chrome only. Also the phone's Back-and-tabs bar on stock pages, now edge to edge. Rerun the full tests before pushing (two failed on 1 Nov while NSE was unreachable; see LOG).
 
 ## Open / next
 

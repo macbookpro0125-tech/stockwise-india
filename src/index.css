@@ -5313,3 +5313,8 @@ body::before { content: ""; position: fixed; inset: 0; z-index: 0; pointer-event
   body::before { display: none; }
   .md-grid .md-card, .sd-card, .sd.ap .sd-card, .sd.ap .sd-snap-card, .sd.ap .sd-metrics, .sd-snap-card, .sd-metrics, .ss-section, .dk-keyfigs, .desk-list, .desk-main, .desk-side, .mood, .card, .sc2, .ls, .sc2-list, .fb, .ex-card, .ex-map-link, .nw-list, .ex-heat { background: var(--card); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
+/* a phone's sticky Back-and-tabs bar runs edge to edge, like the header above it:
+   inside the page's gutter its solid colour was a box on the glow (1 Nov 2026) */
+@media (max-width: 640px) {
+  .sd.ap .sd-bar { margin-top: -24px; margin-left: -20px; margin-right: -20px; padding-left: 20px; padding-right: 20px; }
+}
