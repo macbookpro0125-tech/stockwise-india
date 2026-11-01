@@ -4,11 +4,11 @@ _Last updated: 1 Nov 2026, by Claude (Opus) on branch `screeners-home`._
 
 ## Live on jocularinsights.in
 
-Everything up to the Android opening's fixes (`4c19b85`), pushed 1 Nov 2026 (the launch-logo hold needs app 1.3, build 5): Desk and My desk, stock pages with "below our fair value" and same-industry peers, the Screen builder name, the overnight fixes, and the opening rebuilt so it doesn't lag on Android.
+Everything up to the opening's ending and dark first paint (`8348850`; the iPhone white screen is not yet checked on an iPhone), and the Android opening's fixes (`4c19b85`), pushed 1 Nov 2026 (the launch-logo hold needs app 1.3, build 5): Desk and My desk, stock pages with "below our fair value" and same-industry peers, the Screen builder name, the overnight fixes, and the opening rebuilt so it doesn't lag on Android.
 
 ## Committed but NOT pushed yet
 
-The opening's ending (1 Nov 2026): the logo flies only once the page under it is finished, the point of light and logo start on the same tick, and the page is dark from its first paint (the owner saw a white screen on iPhone; not reproduced or checked on an iPhone, whose cause here is a best reading). No new app build needed; 1.3 (build 5) stands.
+Nothing.
 
 ## Open / next
 
