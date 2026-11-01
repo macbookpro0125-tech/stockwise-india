@@ -26,6 +26,7 @@ Waiting for the owner to say "push", after the full test run.
 | `25cb072` | Desk restyled the Apple way (same layout) |
 | `3f48e23`, `ddc6055`, `b0f9fd4` | My desk: drag any card anywhere and resize it from its corner, a 12-column grid; drag fixes |
 | this folder | `handoff/` |
+| (1 Nov) | Android version 1.2, build 4 |
 | `0b86dda` | Price strength from local daily prices when the data file has no 9-month returns |
 | (1 Nov) | Overnight debug: Desk fixes, narrow windows, accessibility fixes across the app (see LOG) |
 
@@ -36,7 +37,7 @@ and the accessibility scan is clean. Ready to push whenever the owner says
 ## Open / next
 
 1. **Owner is trying My desk now.** He reported "can't add a card, can't move it". Fixed in `b0f9fd4`: a drag released over the chart never ended. Wait for his feedback.
-2. **New Android build for the Play launch (~7 Nov 2026).** It brings push alerts for saved screens, the haptic and the chime of the opening.
+2. **Android 1.2 (build 4) is built for the Play launch (~7 Nov 2026):** `android/app/build/outputs/bundle/release/app-release.aab`, signed, pointing at the live site. The owner uploads it. Checked on the emulator 1 Nov: screens, haptic, push token. Not checked: the chime (emulator has no sound), a push actually arriving, the release build run on a phone. AdMob answered "Publisher misconfiguration" for the real app ID on 1 Nov: expected while the account is unverified and no store is linked; recheck after the Play listing is public.
 3. **Visitor review ~6 Nov 2026.** Read `/api/owner/stats` while signed in as the owner. Count only from 30 Oct; earlier days include bots. On 31 Oct there were about 5 real visitors a day and 0 sign-ups since the 13 testers on 24 Oct.
 4. **Search:**
    - Google has indexed 31 of 6,849 sitemap pages (the sitemap was first read on 30 Oct).

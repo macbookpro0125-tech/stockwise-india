@@ -4,6 +4,7 @@ Newest first. One line per piece of work; the commit message has the detail.
 
 ## 1 Nov 2026 (overnight debug, asked for "debug everything, start to last")
 
+- **1 Nov:** Android 1.2 (build 4) built and signed for the Play launch; checked on the emulator (screens, haptic, push token). AdMob reports "Publisher misconfiguration" for the real app ID until the account and store link are done.
 - **Full run:** unit tests pass; all 136 end-to-end tests pass (24 skipped by design); the build is clean apart from the usual large-file warning. The live site's 10 public pages answer in under a second.
 - **Fixed bugs:**
   - The Desk was stuck on "Loading" when its last list was a deleted screen; it now falls back to every company.
