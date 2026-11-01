@@ -26,18 +26,10 @@ const TWINKLES = Array.from({ length: 44 }, (_, i) => ({
 }));
 
 // Streaks: each crosses in a second or two, then waits its turn
-const SHOOTING = [
-  { left: "70%", top: "4%", animationDelay: "1s", animationDuration: "17s" },
-  { left: "96%", top: "14%", animationDelay: "3.5s", animationDuration: "23s" },
-  { left: "40%", top: "1%", animationDelay: "5s", animationDuration: "29s" },
-  { left: "84%", top: "30%", animationDelay: "2s", animationDuration: "19s" },
-  { left: "30%", top: "22%", animationDelay: "6.5s", animationDuration: "31s" },
-  { left: "100%", top: "42%", animationDelay: "8s", animationDuration: "37s" },
-  { left: "58%", top: "10%", animationDelay: "9.5s", animationDuration: "21s" },
-  { left: "22%", top: "48%", animationDelay: "4s", animationDuration: "27s" },
-  { left: "92%", top: "55%", animationDelay: "11s", animationDuration: "33s" },
-  { left: "48%", top: "36%", animationDelay: "12.5s", animationDuration: "25s" },
-];
+const SHOOTING = Array.from({ length: 20 }, (_, i) => ({
+  left: `${22 + (i * 41.7) % 80}%`, top: `${1 + (i * 17.3) % 56}%`,
+  animationDelay: `${(i * 3.7) % 29}s`, animationDuration: `${17 + (i * 7) % 21}s`,
+}));
 
 // A bright star's six thin rays, fading outwards, with a soft glow at the heart
 function sixPoints(c, x, y, len) {
