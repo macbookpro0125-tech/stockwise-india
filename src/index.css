@@ -5522,3 +5522,19 @@ html.td-night[data-theme="light"] :is(.app-header, .side-rail) .brand-mark .bm-d
 html.td-night[data-theme="light"] :is(.app-header, .side-rail) .brand-mark .bm-light { display: none; }
 .app-header, .side-rail, .price-strip { transition: background-color 240ms ease; }
 
+/* The home's cards as glass (1 Nov 2026): colour behind them to see through, held
+   still as the page scrolls, a bright top edge, and a glow and small lift on hover */
+.td-sheet { --td-g1: rgba(0, 224, 190, 0.16); --td-g2: rgba(168, 107, 255, 0.2); --td-g3: rgba(62, 139, 255, 0.16);
+  background: radial-gradient(50vw 50vh at 12% 22%, var(--td-g1), transparent 72%) fixed, radial-gradient(54vw 56vh at 90% 45%, var(--td-g2), transparent 72%) fixed, radial-gradient(50vw 46vh at 42% 96%, var(--td-g3), transparent 72%) fixed, var(--bg); }
+[data-theme="light"] .td-sheet { --td-g1: rgba(0, 200, 170, 0.2); --td-g2: rgba(150, 100, 255, 0.2); --td-g3: rgba(50, 120, 255, 0.18); }
+.td-sheet :is(.td-box, .sc2, .ls, .sc2-list) { background: var(--ga-glass); border-radius: 18px; box-shadow: 0 0 0 1px var(--ga-edge), inset 0 1px 0 var(--ga-shine), 0 10px 30px var(--ga-drop) !important; transition: box-shadow 200ms ease-out, transform 200ms ease-out; }
+.td-sheet .td-all-pages { gap: 0; background: var(--ga-glass); }
+.td-sheet .td-all-pages button { background: transparent; box-shadow: inset 0 0 0 0.5px var(--bdr); }
+@media (hover: hover) and (pointer: fine) {
+  .td-sheet :is(.td-box, .sc2, .ls, .sc2-list) { -webkit-backdrop-filter: blur(22px) saturate(170%); backdrop-filter: blur(22px) saturate(170%); }
+  .td-sheet :is(.td-box, .sc2.in, .ls, .sc2-list):hover { transform: translateY(-2px); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 65%, transparent), inset 0 1px 0 var(--ga-shine), 0 14px 34px var(--ga-drop), 0 0 34px color-mix(in srgb, var(--accent) 38%, transparent) !important; }
+  .td-sheet .td-all-pages button:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+}
+.td-sheet .sc2-list :is(.sc2, .ls), .td-sheet .ls :is(.sc2, .ls) { background: transparent; box-shadow: none !important; transform: none !important; -webkit-backdrop-filter: none; backdrop-filter: none; }
+@media (prefers-reduced-motion: reduce) { .td-sheet :is(.td-box, .sc2, .ls, .sc2-list) { transition: none; transform: none !important; } }
+

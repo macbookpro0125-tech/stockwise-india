@@ -197,7 +197,11 @@ function MarketChart({ closes }) {
     const series = chart.addSeries(AreaSeries, { lineColor: line, lineWidth: 2, topColor: fill, bottomColor: "transparent", priceLineVisible: false });
     series.setData(closes.map(([time, value]) => ({ time, value })));
     chart.timeScale().fitContent();
-    return () => chart.remove();
+    // the whole year across the box, whatever its width becomes (it was left
+    // squeezed to one side when the window changed size)
+    const ro = new ResizeObserver(() => chart.timeScale().fitContent());
+    ro.observe(host.current);
+    return () => { ro.disconnect(); chart.remove(); };
   }, [closes]);
   return <div ref={host} className="td-chart" role="img" aria-label="The Nifty 500 over the last year" />;
 }
