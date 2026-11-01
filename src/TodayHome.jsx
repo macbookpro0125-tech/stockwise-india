@@ -120,16 +120,16 @@ function StarField() {
     const across = t => ({ x: t * w, y: skyH * (0.72 - 0.6 * t) });
     ctx.globalAlpha = 1;
     for (let i = 0; i < 26; i++) {
-      const p = across(rnd()), col = ["rgba(86,100,190,0.09)", "rgba(150,100,220,0.07)", "rgba(40,170,170,0.05)"][i % 3];
+      const p = across(rnd()), col = ["rgba(86,100,210,0.12)", "rgba(150,100,230,0.1)", "rgba(40,170,170,0.06)"][i % 3];
       glow(p.x, p.y + (rnd() - 0.5) * 70, 110 + rnd() * 150, col);
     }
-    for (let i = 0; i < 1500; i++) {
+    for (let i = 0; i < 1000; i++) {
       const p = across(rnd()), off = (rnd() + rnd() + rnd() - 1.5) * 130;
       star(p.x, p.y + off, 0.35 + rnd() * 0.3, 0.3 + rnd() * 0.45);
     }
     // the whole sky
     const tints = ["#fff", "#fff", "#fff", "#CFE0FF", "#FFE9CF"];
-    for (let i = 0; i < 1500; i++) star(rnd() * (w + PAD * 2) - PAD, rnd() * (h + PAD * 2) - PAD, rnd() < 0.94 ? 0.35 + rnd() * 0.35 : 0.8 + rnd() * 0.4, 0.35 + rnd() * 0.65, tints[Math.floor(rnd() * tints.length)]);
+    for (let i = 0; i < 950; i++) star(rnd() * (w + PAD * 2) - PAD, rnd() * (h + PAD * 2) - PAD, rnd() < 0.94 ? 0.35 + rnd() * 0.35 : 0.8 + rnd() * 0.4, 0.35 + rnd() * 0.65, tints[Math.floor(rnd() * tints.length)]);
     ctx = nearCtx;
     // Constellations: the teal lines of the front page's film, joining a few groups
     for (let c = 0; c < 6; c++) {
@@ -169,8 +169,8 @@ function StarField() {
       <canvas ref={ref} className="td-sky" aria-hidden="true" />
       <canvas ref={nearRef} className="td-sky td-sky-near" aria-hidden="true" />
       <div className="td-tints" aria-hidden="true"><i /><i /></div>
-      <StarStream count={260} size={0.7} seed={11} className="td-stream-slow" />
-      <StarStream count={90} size={1.1} seed={29} className="td-stream-fast" />
+      <StarStream count={170} size={0.7} seed={11} className="td-stream-slow" />
+      <StarStream count={60} size={1.1} seed={29} className="td-stream-fast" />
       <StarStream count={6} size={1} seed={53} className="td-stream-big" points />
       {SHOOTING.map((t, i) => <span key={i} className="td-shoot" aria-hidden="true" style={t} />)}
       {TWINKLES.map((t, i) => <span key={i} className="td-twinkle" aria-hidden="true" style={t} />)}
