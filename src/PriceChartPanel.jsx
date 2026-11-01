@@ -6,6 +6,7 @@ import {
 } from "lightweight-charts";
 import { ChartCandlestick, ChartNoAxesColumn, ChartLine, ChartArea, SlidersHorizontal, Minus, X, Maximize2, Minimize2, Camera, Layers, BrickWall, CandlestickChart, Slash, Eye, Pencil, Table2, Settings2, Shapes, Search, Plus, Undo2 } from "lucide-react";
 import { api } from "./api.js";
+import ChartTopBar from "./ChartTopBar.jsx";
 import { aggregateBars, sma, ema, bollinger, rsi, macd, indexFrom } from "./chartMath.js";
 import { heikinAshi, renko, renkoBox, fibLevels } from "./chartTypes.js";
 import { STUDIES, lineBreak, kagi } from "./chartStudies.js";
@@ -154,7 +155,8 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
     const p = readJson(PREFS_KEY, DEFAULT_PREFS);
     return { ...DEFAULT_PREFS, ...p, ind: { ...(p.ind ?? DEFAULT_PREFS.ind) } };
   });
-  const [range, setRange] = useState("1Y");
+  // a phone's full-screen chart opens close up, so each candle can be read
+  const [range, setRange] = useState(() => (page && typeof window !== "undefined" && window.innerWidth < 560 ? "3M" : "1Y"));
   const [span, setSpan] = useState("5y");       // how much history is loaded
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -203,6 +205,8 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
   const [menuOpen, setMenuOpen] = useState(false);
   const [vh, setVh] = useState(() => (typeof window !== "undefined" ? window.innerHeight : 800));
   const [expanded, setExpanded] = useState(false);
+  const [overlaySym, setOverlaySym] = useState(symbol);
+  const [volTop, setVolTop] = useState(null);
   const [levelTags, setLevelTags] = useState([]);
   const [pivotNow, setPivotNow] = useState(null);
 
@@ -291,6 +295,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
   const openExpanded = e => {
     e.preventDefault();
     window.history.pushState({ ...(window.history.state ?? {}), chartOverlay: true }, "");
+    setOverlaySym(symbol);
     setExpanded(true);
   };
   function closeExpanded() {
@@ -416,6 +421,8 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
     });
     const closes = bars.map(b => b.close);
     const withVolume = prefs.ind.volume && bars.some(b => b.volume != null);
+    // A phone's full-screen chart: volume in a pane of its own, under the candles
+    const volPane = page && narrow && withVolume && !isBrick;
 
     // The price scale stretches to take in levels just beyond the candles, not
     // far ones: a fair value 75% above the price would squash the candles flat.
@@ -471,7 +478,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
       main.setData(bars.map(b => ({ time: b.date, value: b.close })));
     }
     mainRef.current = main;
-    main.priceScale().applyOptions({ mode: prefs.log ? PriceScaleMode.Logarithmic : PriceScaleMode.Normal, invertScale: !!prefs.invert, scaleMargins: { top: narrow ? 0.13 : 0.08, bottom: withVolume ? (narrow ? 0.15 : 0.24) : 0.06 } });
+    main.priceScale().applyOptions({ mode: prefs.log ? PriceScaleMode.Logarithmic : PriceScaleMode.Normal, invertScale: !!prefs.invert, scaleMargins: { top: narrow ? 0.13 : 0.08, bottom: withVolume && !volPane ? (narrow ? 0.15 : 0.24) : 0.06 } });
 
     // Warm-up bars stay as whitespace, so every series shares the same time axis
     const toLine = vals => bars.map((b, i) => (vals[i] == null || !Number.isFinite(vals[i]) ? { time: b.date } : { time: b.date, value: vals[i] }));
@@ -551,13 +558,16 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
     }
     setPivotNow(pivotsLatest);
 
-    if (withVolume) {
+    if (volPane) {
+      const vol = chart.addSeries(HistogramSeries, { priceFormat: { type: "volume" }, priceLineVisible: false, lastValueVisible: false }, 1);
+      vol.setData(bars.map(b => ({ time: b.date, value: b.volume ?? 0, color: alpha(b.close >= b.open ? c.up : c.down, 0.7) })));
+    } else if (withVolume) {
       const vol = chart.addSeries(HistogramSeries, { priceFormat: { type: "volume" }, priceScaleId: "", priceLineVisible: false, lastValueVisible: false });
       vol.priceScale().applyOptions({ scaleMargins: { top: narrow ? 0.88 : 0.8, bottom: 0 } });
       vol.setData(bars.map(b => ({ time: b.date, value: b.volume ?? 0, color: alpha(b.close >= b.open ? c.up : c.down, 0.45) })));
     }
 
-    let pane = 1;
+    let pane = volPane ? 2 : 1;
     const paneHeight = narrow ? 90 : 110;
     // Each pane indicator in the menu's order, one pane each, with its usual
     // guide lines (70/30 for RSI, 80/20 for Stochastic and MFI…)
@@ -793,6 +803,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
         paintDraws();
+        setVolTop(volPane ? chart.panes()[0]?.getHeight?.() ?? null : null);
         const items = [
           ...(narrow ? levelLines.map(l => ({ key: l.title, text: `${l.short} ${Math.round(l.price).toLocaleString("en-IN")}`, color: resolve(l.color), price: l.price })) : []),
           ...(pivotsLatest ? PIVOT_LEVELS.map(L => ({ key: `pivot-${L}`, text: L, color: PIVOT_COLORS[L[0]], price: pivotsLatest[L] })) : []),
@@ -827,6 +838,12 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bars, prefs.type, prefs.ind, prefs.pivotKind, pivotBasis, levelLines, lines, trends, themeTick, narrow, symbol, height, page, prefs.log, prefs.invert]);
 
+  const zoom = by => {
+    const ts = chartRef.current?.timeScale(), r = ts?.getVisibleLogicalRange();
+    if (!r) return;
+    const mid = r.to - (r.to - r.from) * 0.35, half = ((r.to - r.from) * by) / 2;
+    ts.setVisibleLogicalRange({ from: mid - half * 1.3, to: mid + half * 0.7 });
+  };
   const pickRange = id => {
     setRange(id);
     if (id === "All" && span !== "max") { keepView.current = null; setSpan("max"); return; }
@@ -1296,6 +1313,13 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
               </div>
             )}
             <svg ref={svgRef} aria-hidden="true" className="chart-draw-layer" />
+            {page && narrow && (
+              <div className="chart-zoom" style={volTop != null ? { top: volTop - 50 } : { bottom: 42 }}>
+                <button type="button" onClick={() => zoom(1.4)} aria-label="Zoom out">−</button>
+                <button type="button" onClick={() => zoom(0.7)} aria-label="Zoom in">+</button>
+              </div>
+            )}
+            {page && narrow && volTop != null && <span className="chart-vol-label" aria-hidden="true" style={{ top: volTop + 6 }}>Volume</span>}
             {picked && (() => {
               const b = picked.bar, ch = picked.prev ? b.close - picked.prev.close : null, pct = picked.prev?.close ? (ch / picked.prev.close) * 100 : null;
               return (
@@ -1322,6 +1346,15 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
         )}
       </div>
 
+      {page && narrow ? (
+        <div className="chart-page-foot">
+          {rangeChange != null && <span className="chart-page-chg">Chg. <b style={{ color: rangeChange >= 0 ? "var(--green)" : "var(--red)" }}>{rangeChange >= 0 ? "+" : "−"}{Math.abs(rangeChange).toFixed(2)}%</b></span>}
+          <div role="group" aria-label="Date range" className="chart-page-ranges">
+            {RANGES.map(r => <button key={r.id} type="button" onClick={() => pickRange(r.id)} aria-pressed={range === r.id}>{r.id}</button>)}
+          </div>
+          <a href="https://www.tradingview.com/" target="_blank" rel="noopener" className="chart-page-credit">Chart by TradingView</a>
+        </div>
+      ) : (
       <div style={{ display: "flex", gap: 6, marginTop: 10, flexWrap: "wrap", alignItems: "center" }}>
         <div role="group" aria-label="Date range" style={narrow ? { display: "grid", gridTemplateColumns: `repeat(${RANGES.length}, minmax(0, 1fr))`, gap: 4, width: "100%" } : group}>
           {RANGES.map(r => (
@@ -1333,6 +1366,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
           {" · "}<a href="https://www.tradingview.com/" target="_blank" rel="noopener" style={{ color: "inherit" }}>Chart by TradingView</a>
         </span>
       </div>
+      )}
       {narrow && pivotNow && <div style={{ marginTop: 10 }}>{levelLists}</div>}
 
       {tableOpen && createPortal(
@@ -1360,11 +1394,8 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
       )}
       {expanded && createPortal(
         <div className="chart-overlay" role="dialog" aria-modal="true" aria-label={`${name || symbol} price chart`}>
-          <div className="chart-overlay-bar">
-            <h2>{symbol}{name && <span> · {name}</span>}</h2>
-            <button type="button" onClick={closeExpanded} aria-label="Close the full-screen chart" autoFocus><X size={18} aria-hidden="true" /></button>
-          </div>
-          <PriceChartPanel symbol={symbol} name={name} levels={levels} page />
+          <ChartTopBar symbol={overlaySym} onSymbol={setOverlaySym} onClose={closeExpanded} />
+          <PriceChartPanel key={overlaySym} symbol={overlaySym} name={overlaySym === symbol ? name : ""} levels={overlaySym === symbol ? levels : null} page />
         </div>,
         document.body,
       )}
