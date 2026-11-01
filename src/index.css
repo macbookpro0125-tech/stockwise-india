@@ -4886,56 +4886,56 @@ tr:hover .row-acts { --row-bg: var(--s3); }
    0.15–1.3 s  a market line sweeps up the black, a point of light at its tip
    1.38–1.78   the point flies to the centre; a ripple, and the glass JI and name
    2.7         the logo flies into its place in the header, the film falls away */
-.i4 { position: fixed; inset: 0; z-index: 2147483000; overflow: hidden; background: #000; color: #F5F5F7; cursor: default; user-select: none; -webkit-user-select: none;
+/* Only opacity and transform move here, on layers drawn once (28 Oct 2026 → 1 Nov:
+   "the opening is lagging" on Android): the phone's graphics chip runs them,
+   so the app loading behind doesn't stall them. No painted strokes, blurs or
+   blend modes in motion; times count from the first frame, as CSS delays. */
+.i4 { position: fixed; inset: 0; z-index: 2147483000; overflow: hidden; color: #F5F5F7; cursor: default; user-select: none; -webkit-user-select: none;
   font-family: -apple-system, "SF Pro Display", system-ui, "Inter", sans-serif;
   transition: opacity 520ms cubic-bezier(0.4, 0, 0.2, 1), transform 560ms cubic-bezier(0.4, 0, 0.2, 1); }
 .i4.leaving { opacity: 0; transform: scale(1.04); pointer-events: none; }
-.i4-glow { position: absolute; inset: 0; opacity: 0;
+.i4-bg { position: absolute; inset: 0; background: #000; }
+.i4-glow { position: absolute; inset: 0; opacity: 0; will-change: transform, opacity;
   background: radial-gradient(60% 45% at 78% 22%, rgba(168, 107, 255, 0.28), transparent 70%), radial-gradient(70% 50% at 20% 85%, rgba(0, 224, 190, 0.18), transparent 70%);
-  animation: i4-in 1.2s ease-out 0.2s forwards; }
+  animation: i4-in 1.2s ease-out 0.2s forwards, i4-push-far 3.4s cubic-bezier(0.25, 0.1, 0.25, 1) both; }
 @keyframes i4-in { to { opacity: 1; } }
-.i4-chart { position: absolute; inset: 0; width: 100%; height: 100%; transition: opacity 600ms ease; }
-.i4-line { fill: none; stroke-width: 5; vector-effect: non-scaling-stroke; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1;
-  filter: drop-shadow(0 0 8px rgba(62, 139, 255, 0.75)) drop-shadow(0 0 22px rgba(168, 107, 255, 0.45));
-  animation: i4-draw 1150ms cubic-bezier(0.33, 1, 0.68, 1) 150ms forwards, i4-dim 600ms ease 1.45s forwards; }
-.i4-area { opacity: 0; animation: i4-in 900ms ease-out 0.55s forwards, i4-dim 600ms ease 1.45s forwards; }
-@keyframes i4-draw { to { stroke-dashoffset: 0; } }
-.i4-echo { fill: none; stroke-width: 2; vector-effect: non-scaling-stroke; opacity: 0.14; stroke-dasharray: 1; stroke-dashoffset: 1; animation: i4-draw 1300ms cubic-bezier(0.33, 1, 0.68, 1) 260ms forwards, i4-dim 600ms ease 1.45s forwards; }
-/* a bright run of light travelling up the line after it's drawn */
-.i4-shimmer { fill: none; stroke: #fff; stroke-width: 3; vector-effect: non-scaling-stroke; stroke-linecap: round; stroke-dasharray: 0.08 1; stroke-dashoffset: 0.08; opacity: 0;
-  filter: drop-shadow(0 0 5px rgba(220, 205, 255, 0.95)); animation: i4-shimmer 900ms cubic-bezier(0.45, 0, 0.25, 1) 1.25s forwards; }
-@keyframes i4-shimmer { 0% { opacity: 0; stroke-dashoffset: 0.08; } 15% { opacity: 0.9; } 100% { opacity: 0; stroke-dashoffset: -1; } }
+/* the camera's slow push, and the line dimming once the logo's coming */
+.i4-chart { position: absolute; inset: 0; will-change: transform, opacity; transform-origin: 60% 55%;
+  animation: i4-push 3.4s cubic-bezier(0.25, 0.1, 0.25, 1) both, i4-dim 600ms ease 1.45s forwards; }
+/* the line draws by uncovering: a window and its contents moving opposite
+   ways, in step with the point of light (Intro.jsx); the line only climbs
+   left to right, so this is exactly its drawing */
+.i4-area { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; will-change: opacity; animation: i4-in 900ms ease-out 0.55s forwards; }
+.i4-reveal, .i4-reveal-in { position: absolute; inset: 0; will-change: transform; }
+.i4-reveal { overflow: hidden; transform: translateX(-100%); }
+.i4-reveal-in { transform: translateX(100%); }
+.i4-reveal svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.i4-line { fill: none; stroke-width: 5; vector-effect: non-scaling-stroke; stroke-linecap: round; stroke-linejoin: round;
+  filter: drop-shadow(0 0 8px rgba(62, 139, 255, 0.75)); }
+.i4-echo { fill: none; stroke-width: 2; vector-effect: non-scaling-stroke; opacity: 0.14; }
 @keyframes i4-dim { to { opacity: 0.22; } }
-.i4-dot { position: absolute; left: 0; top: 0; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: #fff; will-change: transform;
+.i4-dot { position: absolute; left: 0; top: 0; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; background: #fff; will-change: transform, opacity;
   box-shadow: 0 0 0 6px rgba(233, 221, 255, 0.35), 0 0 28px 10px rgba(168, 107, 255, 0.7), 0 0 60px 24px rgba(62, 139, 255, 0.35);
-  transform: translate(-40px, 82vh); transition: opacity 180ms ease; }
-.i4.landed .i4-dot { opacity: 0; }
-/* the camera: a slow push in, the glow and the line at different depths */
-.i4-chart { animation: i4-push 3.4s cubic-bezier(0.25, 0.1, 0.25, 1) both; transform-origin: 60% 55%; }
-.i4-glow { animation: i4-in 1.2s ease-out 0.2s forwards, i4-push-far 3.4s cubic-bezier(0.25, 0.1, 0.25, 1) both !important; }
+  transform: translate(-40px, 82vh); }
 @keyframes i4-push { from { transform: scale(1.14) translateY(2%); } to { transform: none; } }
 @keyframes i4-push-far { from { transform: scale(1.04) translateY(-1%); } to { transform: none; } }
-/* where the point of light lands: a ripple, and the logo out of it */
+/* where the point of light lands, at 1.78s: a ripple, and the logo out of it */
 .i4-logo-wrap { position: relative; display: grid; place-items: center; }
-.i4-ripple { position: absolute; width: 60%; aspect-ratio: 1; border-radius: 50%; border: 2px solid rgba(190, 210, 255, 0.85); opacity: 0; transform: scale(0.2); }
-.i4.landed .i4-ripple { animation: i4-ripple 900ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-.i4.landed .i4-ripple.two { animation-delay: 120ms; border-color: rgba(0, 224, 190, 0.7); }
+.i4-logo-wrap::before { content: ""; position: absolute; inset: -30%; background: radial-gradient(closest-side, rgba(62, 139, 255, 0.4), transparent); opacity: 0; will-change: opacity; animation: i4-in 760ms ease-out 1.78s forwards; }
+.i4-ripple { position: absolute; width: 60%; aspect-ratio: 1; border-radius: 50%; border: 2px solid rgba(190, 210, 255, 0.85); opacity: 0; transform: scale(0.2); will-change: transform, opacity; animation: i4-ripple 900ms cubic-bezier(0.16, 1, 0.3, 1) 1.78s forwards; }
+.i4-ripple.two { animation-delay: 1.9s; border-color: rgba(0, 224, 190, 0.7); }
 @keyframes i4-ripple { 0% { opacity: 1; transform: scale(0.2); } 100% { opacity: 0; transform: scale(2.6); } }
-/* the lockup */
 .i4-lockup { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: 18px; }
-.i4-lockup img { position: relative; width: min(40vw, 160px); height: auto; opacity: 0; transform: scale(0.6); filter: blur(10px) drop-shadow(0 0 30px rgba(62, 139, 255, 0.5)); }
-.i4.landed .i4-lockup img { animation: i4-come 760ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.i4-lockup img { position: relative; width: min(40vw, 160px); height: auto; opacity: 0; transform: scale(0.6); will-change: transform, opacity; animation: i4-come 760ms cubic-bezier(0.16, 1, 0.3, 1) 1.78s forwards; }
+@keyframes i4-come { to { opacity: 1; transform: none; } }
 .i4-glint { position: absolute; inset: 0; border-radius: 50%; overflow: hidden; pointer-events: none; }
-.i4-glint::after { content: ""; position: absolute; inset: -20%; background: linear-gradient(115deg, transparent 40%, rgba(255, 255, 255, 0.75) 50%, transparent 60%); transform: translateX(-80%); mix-blend-mode: overlay; }
-.i4.landed .i4-glint::after { animation: i4-glint 900ms cubic-bezier(0.45, 0, 0.25, 1) 480ms forwards; }
-@keyframes i4-glint { to { transform: translateX(80%); } }
-/* the ending: the film falls away around the logo, which flies into the app's own */
-.i4.flying { opacity: 1 !important; transform: none !important; background: transparent; transition: background-color 560ms ease; }
-.i4.flying > :not(.i4-lockup), .i4.flying .i4-name, .i4.flying .i4-ripple, .i4.flying .i4-glint { opacity: 0 !important; transition: opacity 360ms ease; animation: none !important; }
-.i4.flying .i4-lockup img { opacity: 1; filter: none; transform: var(--fly); transition: transform 680ms cubic-bezier(0.65, 0, 0.35, 1); animation: none; }
-@keyframes i4-come { to { opacity: 1; transform: none; filter: blur(0) drop-shadow(0 0 30px rgba(62, 139, 255, 0.5)); } }
-.i4-name { font-size: clamp(30px, 8.4vw, 48px); font-weight: 700; letter-spacing: -0.035em; opacity: 0; transform: translateY(12px); }
-.i4.landed .i4-name { animation: i4-name 700ms cubic-bezier(0.16, 1, 0.3, 1) 160ms forwards; }
+.i4-glint::after { content: ""; position: absolute; inset: -20%; background: linear-gradient(115deg, transparent 40%, rgba(255, 255, 255, 0.3) 50%, transparent 60%); transform: translateX(-80%); opacity: 0; will-change: transform; animation: i4-glint 900ms cubic-bezier(0.45, 0, 0.25, 1) 2.26s forwards; }
+@keyframes i4-glint { 0% { opacity: 1; transform: translateX(-80%); } 100% { opacity: 1; transform: translateX(80%); } }
+/* the ending: the logo flies to the app's own while the film falls away */
+.i4.flying { opacity: 1 !important; transform: none !important; }
+.i4.flying > :not(.i4-lockup), .i4.flying .i4-name, .i4.flying .i4-ripple, .i4.flying .i4-glint, .i4.flying .i4-logo-wrap::before { opacity: 0 !important; transition: opacity 360ms ease; animation: none !important; }
+.i4.flying .i4-lockup img { opacity: 1; transform: var(--fly); transition: transform 680ms cubic-bezier(0.65, 0, 0.35, 1); animation: none; }
+.i4-name { font-size: clamp(30px, 8.4vw, 48px); font-weight: 700; letter-spacing: -0.035em; opacity: 0; transform: translateY(12px); will-change: transform, opacity; animation: i4-name 700ms cubic-bezier(0.16, 1, 0.3, 1) 1.94s forwards; }
 .i4-name span { color: #8FB4FF; }
 @keyframes i4-name { to { opacity: 1; transform: none; } }
 

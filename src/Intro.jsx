@@ -13,6 +13,7 @@ import { tick } from "./haptics.js";
 // page. Never for a test browser or a search engine (navigator.webdriver), nor
 // with reduced motion. A tap skips it.
 const LENGTH_MS = 2700;
+const RIDE = [150, 1300], FLY = [1380, 1780]; // CSS's logo waits for FLY's end (index.css)
 
 function wanted() {
   if (typeof window === "undefined") return false;
@@ -80,11 +81,10 @@ function chime() {
 export default function Intro() {
   const [on, setOn] = useState(decide);
   const [leaving, setLeaving] = useState(false);
-  // kept as state (not added to the element by hand), so a redraw keeps them
-  const [landed, setLanded] = useState(false);
+  // kept as state (not added to the element by hand), so a redraw keeps it
   const [flying, setFlying] = useState(false);
   const done = useRef(false);
-  const lineRef = useRef(null), dotRef = useRef(null), rootRef = useRef(null), logoRef = useRef(null);
+  const lineRef = useRef(null), dotRef = useRef(null), rootRef = useRef(null), logoRef = useRef(null), revealRef = useRef(null), revealInRef = useRef(null);
   const landedRef = useRef(false);
   const path = useMemo(() => smooth(POINTS), []);
 
@@ -120,66 +120,87 @@ export default function Intro() {
     return () => clearTimeout(t);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // The point of light: it rides the line's tip as the line draws (the draw is
-  // CSS; the point follows the same curve and timing), then flies in an arc to
-  // where the logo will stand, growing, and
-  // bursts into the ripple the logo comes out of (one thing becomes the next)
+  // The point of light rides the line's tip as the line is uncovered, then
+  // flies in an arc to where the logo will stand, growing, and bursts into the
+  // ripple the logo comes out of. All of it is worked out once, here, and
+  // handed to the browser as keyframes (1 Nov 2026, "lagging" on Android): the
+  // graphics chip runs them, whatever the app loading behind is doing.
   useEffect(() => {
-    const line = lineRef.current, dot = dotRef.current, root = rootRef.current, logo = logoRef.current;
-    if (!on || !line || !dot || !root || !logo) return;
-    const total = line.getTotalLength();
-    const t0 = performance.now();
-    const RIDE = [150, 1300], FLY = [1380, 1780];
-    const out = t => 1 - (1 - t) ** 3, inOut = t => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
-    let raf = 0, end = null, down = false;
-    const step = now => {
-      const e = now - t0, W = root.clientWidth, H = root.clientHeight;
-      if (e < FLY[0]) {
-        const t = Math.max(0, Math.min(1, (e - RIDE[0]) / (RIDE[1] - RIDE[0])));
-        const p = line.getPointAtLength(total * out(t));
-        // the line is stretched to the screen (viewBox 0–1000 each way)
-        end = [(p.x / 1000) * W, (p.y / 1000) * H];
-        dot.style.transform = `translate(${end[0]}px, ${end[1]}px)`;
-      } else if (e < FLY[1]) {
-        const r = logo.getBoundingClientRect(), to = [r.left + r.width / 2, r.top + r.height / 2];
-        const t = inOut((e - FLY[0]) / (FLY[1] - FLY[0]));
-        // an arc: out and over, not a straight slide
-        const mid = [(end[0] + to[0]) / 2 + W * 0.12, Math.min(end[1], to[1]) - H * 0.08];
-        const x = (1 - t) ** 2 * end[0] + 2 * (1 - t) * t * mid[0] + t * t * to[0];
-        const y = (1 - t) ** 2 * end[1] + 2 * (1 - t) * t * mid[1] + t * t * to[1];
-        dot.style.transform = `translate(${x}px, ${y}px) scale(${1 + 2.2 * t})`;
-      } else if (!down) {
-        down = true;
-        landedRef.current = true;
-        setLanded(true);
-        // a light tap and a soft chime, in the phone app, as the logo lands
-        if (document.documentElement.classList.contains("in-app")) { try { tick(); } catch {} chime(); }
-      }
-      if (e < FLY[1] + 50) raf = requestAnimationFrame(step);
+    const line = lineRef.current, dot = dotRef.current, root = rootRef.current, logo = logoRef.current, win = revealRef.current, inner = revealInRef.current;
+    if (!on || !line || !dot || !root || !logo || !win || !inner || !dot.animate) return;
+    const W = root.clientWidth, H = root.clientHeight, total = line.getTotalLength();
+    // the curve's height at each x (viewBox 0–1000 each way, stretched to the screen)
+    const table = Array.from({ length: 201 }, (_, i) => line.getPointAtLength((total * i) / 200));
+    const yAt = x => {
+      let i = 1;
+      while (i < 200 && table[i].x < x) i++;
+      const a = table[i - 1], b = table[i], f = b.x > a.x ? (x - a.x) / (b.x - a.x) : 0;
+      return a.y + (b.y - a.y) * f;
     };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
+    const out = t => 1 - (1 - t) ** 3, inOut = t => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
+    const [S, R, F, E] = [RIDE[0], RIDE[1], FLY[0], FLY[1]];
+    const r = logo.getBoundingClientRect(), to = [r.left + r.width / 2, r.top + r.height / 2];
+    const end = [W, (yAt(1000) / 1000) * H];
+    const mid = [(end[0] + to[0]) / 2 + W * 0.12, Math.min(end[1], to[1]) - H * 0.08];
+    const dotFrames = [], outer = [], in2 = [];
+    const STEPS = 40;
+    for (let i = 0; i <= STEPS; i++) {
+      const t = i / STEPS, p = out(t), offset = (S + (R - S) * t) / E, x = p * 1000;
+      dotFrames.push({ offset, transform: `translate(${(x / 1000) * W}px, ${(yAt(x) / 1000) * H}px) scale(1)`, opacity: 1 });
+      outer.push({ offset: t, transform: `translateX(${(p - 1) * 100}%)` });
+      in2.push({ offset: t, transform: `translateX(${(1 - p) * 100}%)` });
+    }
+    for (let i = 0; i <= 24; i++) {
+      const t = inOut(i / 24), offset = (F + (E - F) * (i / 24)) / E;
+      const x = (1 - t) ** 2 * end[0] + 2 * (1 - t) * t * mid[0] + t * t * to[0];
+      const y = (1 - t) ** 2 * end[1] + 2 * (1 - t) * t * mid[1] + t * t * to[1];
+      dotFrames.push({ offset, transform: `translate(${x}px, ${y}px) scale(${1 + 2.2 * t})`, opacity: 1 });
+    }
+    dotFrames.unshift({ offset: 0, transform: dotFrames[0].transform, opacity: 1 });
+    const runs = [
+      dot.animate(dotFrames, { duration: E, fill: "forwards", easing: "linear" }),
+      win.animate(outer, { duration: R - S, delay: S, fill: "both", easing: "linear" }),
+      inner.animate(in2, { duration: R - S, delay: S, fill: "both", easing: "linear" }),
+      dot.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 180, delay: E, fill: "forwards", composite: "replace" }),
+    ];
+    // a light tap and a soft chime, in the phone app, as the logo lands
+    const land = setTimeout(() => {
+      landedRef.current = true;
+      if (document.documentElement.classList.contains("in-app")) { try { tick(); } catch {} chime(); }
+    }, E);
+    return () => { clearTimeout(land); runs.forEach(a => a.cancel()); };
   }, [on]);
 
   if (!on) return null;
   return (
-    <div ref={rootRef} className={`i4${landed ? " landed" : ""}${flying ? " flying" : ""}${leaving ? " leaving" : ""}`} role="status" aria-label="Opening Jocular Insights" onClick={finish}>
+    <div ref={rootRef} className={`i4${flying ? " flying" : ""}${leaving ? " leaving" : ""}`} role="status" aria-label="Opening Jocular Insights" onClick={finish}>
+      <div className="i4-bg" aria-hidden="true" />
       <div className="i4-glow" aria-hidden="true" />
-      <svg className="i4-chart" viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true">
-        <defs>
-          <linearGradient id="i4-stroke" x1="0" y1="1" x2="1" y2="0">
-            <stop offset="0" stopColor="#00E0BE" /><stop offset="0.55" stopColor="#3E8BFF" /><stop offset="1" stopColor="#A86BFF" />
-          </linearGradient>
-          <linearGradient id="i4-area" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#3E8BFF" stopOpacity="0.32" /><stop offset="1" stopColor="#3E8BFF" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        <path d={`${path} L1000,1000 L0,1000 Z`} className="i4-area" fill="url(#i4-area)" />
-        {/* an echo of the line behind it, for depth, and a travelling shimmer once it's drawn */}
-        <path d={path} className="i4-echo" stroke="url(#i4-stroke)" pathLength="1" transform="translate(0 46)" />
-        <path ref={lineRef} d={path} className="i4-line" stroke="url(#i4-stroke)" pathLength="1" />
-        <path d={path} className="i4-shimmer" pathLength="1" />
-      </svg>
+      <div className="i4-chart" aria-hidden="true">
+        {/* the fill under the line fades in on its own, so it has no hard edge */}
+        <svg className="i4-area" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="i4-area" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor="#3E8BFF" stopOpacity="0.32" /><stop offset="1" stopColor="#3E8BFF" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <path d={`${path} L1000,1000 L0,1000 Z`} fill="url(#i4-area)" />
+        </svg>
+        <div ref={revealRef} className="i4-reveal">
+          <div ref={revealInRef} className="i4-reveal-in">
+            <svg viewBox="0 0 1000 1000" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="i4-stroke" x1="0" y1="1" x2="1" y2="0">
+                  <stop offset="0" stopColor="#00E0BE" /><stop offset="0.55" stopColor="#3E8BFF" /><stop offset="1" stopColor="#A86BFF" />
+                </linearGradient>
+              </defs>
+              {/* an echo of the line behind it, for depth */}
+              <path d={path} className="i4-echo" stroke="url(#i4-stroke)" transform="translate(0 46)" />
+              <path ref={lineRef} d={path} className="i4-line" stroke="url(#i4-stroke)" />
+            </svg>
+          </div>
+        </div>
+      </div>
       <span ref={dotRef} className="i4-dot" aria-hidden="true" />
 
 

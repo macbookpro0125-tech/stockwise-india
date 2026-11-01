@@ -13,8 +13,7 @@ test("F01-H1/H2/N1/N2 sign up, out, wrong password, back in", async ({ page }) =
   // Sign-up and sign-in open a dialog: the ways in first, then email
   await page.getByRole("button", { name: "Create free account" }).first().click();
   const dialog = page.getByRole("dialog");
-  const viaEmail = dialog.getByRole("button", { name: "Continue with email" });
-  if (await viaEmail.isVisible().catch(() => false)) await viaEmail.click();
+  await dialog.getByRole("button", { name: "Continue with email" }).click();
   await dialog.getByLabel("Email").fill(email);
   await dialog.getByLabel("Password", { exact: true }).fill("short");
   await dialog.getByRole("button", { name: "Create free account" }).click();
@@ -30,8 +29,7 @@ test("F01-H1/H2/N1/N2 sign up, out, wrong password, back in", async ({ page }) =
   // Wrong password, then the right one
   await page.getByRole("button", { name: /^Sign in/ }).first().click();
   const signIn = page.getByRole("dialog");
-  const signInEmail = signIn.getByRole("button", { name: "Continue with email" });
-  if (await signInEmail.isVisible().catch(() => false)) await signInEmail.click();
+  await signIn.getByRole("button", { name: "Continue with email" }).click();
   await signIn.getByLabel("Email").fill(email);
   await signIn.getByLabel("Password", { exact: true }).fill(password + "x");
   await signIn.getByRole("button", { name: /^Sign in$/ }).click();
@@ -56,8 +54,7 @@ test("F01-H3 Open screen on the front page signs up into that strategy", async (
   const name = (await open.getAttribute("aria-label")).replace(/^Open /, "");
   await open.click();
   const dialog = page.getByRole("dialog");
-  const viaEmail = dialog.getByRole("button", { name: "Continue with email" });
-  if (await viaEmail.isVisible().catch(() => false)) await viaEmail.click();
+  await dialog.getByRole("button", { name: "Continue with email" }).click();
   await dialog.getByLabel("Email").fill(`ui-${Date.now()}-open@example.test`);
   await dialog.getByLabel("Password", { exact: true }).fill(randomUUID());
   await dialog.getByRole("button", { name: "Create free account" }).click();

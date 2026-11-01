@@ -33,8 +33,8 @@ test("S-H4 Add to watchlist on a company's public page signs up there, then show
   await page.getByRole("button", { name: "Add to watchlist" }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog.getByText("Create a free account to add Tata Consultancy Services to your watchlist.")).toBeVisible();
-  const viaEmail = dialog.getByRole("button", { name: "Continue with email" });
-  if (await viaEmail.isVisible().catch(() => false)) await viaEmail.click();
+  // the box shows its ways in first: wait for them, they may take a moment to draw
+  await dialog.getByRole("button", { name: "Continue with email" }).click();
   await dialog.getByLabel("Email").fill(`ps-${Date.now()}@example.test`);
   await dialog.getByLabel("Password", { exact: true }).fill(randomUUID());
   await dialog.getByRole("button", { name: "Create free account" }).click();

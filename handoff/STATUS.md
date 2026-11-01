@@ -27,6 +27,7 @@ Waiting for the owner to say "push", after the full test run.
 | `3f48e23`, `ddc6055`, `b0f9fd4` | My desk: drag any card anywhere and resize it from its corner, a 12-column grid; drag fixes |
 | this folder | `handoff/` |
 | (1 Nov) | Android version 1.2, build 4 |
+| (1 Nov) | The opening animation rebuilt so it doesn't lag on Android |
 | `0b86dda` | Price strength from local daily prices when the data file has no 9-month returns |
 | (1 Nov) | Overnight debug: Desk fixes, narrow windows, accessibility fixes across the app (see LOG) |
 
