@@ -103,8 +103,9 @@ test("F02-H5 a computer's home: the market, your watchlist, and a screener opene
   await page.getByRole("region", { name: "Screeners" }).getByRole("button", { name: /^High Quality Compounders/ }).click();
   await expect(page.getByRole("heading", { name: "High Quality Compounders" })).toBeVisible();
   await page.goto("/stock/TCS");
+  const saved = page.waitForResponse(r => r.url().endsWith("/api/watchlist") && r.request().method() === "POST");
   await page.getByRole("button", { name: "Add to watchlist" }).click();
-  await page.waitForTimeout(800);
+  await saved;
   await page.goto("/");
   const row = page.getByRole("region", { name: "Your watchlist" }).getByRole("button", { name: /^Tata Consultancy/ });
   await row.click();
