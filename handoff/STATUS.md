@@ -4,11 +4,11 @@ _Last updated: 1 Nov 2026, by Claude (Opus) on branch `screeners-home`._
 
 ## Live on jocularinsights.in
 
-Everything up to the opening's ending and dark first paint (`8348850`; the iPhone white screen is not yet checked on an iPhone), and the Android opening's fixes (`4c19b85`), pushed 1 Nov 2026 (the launch-logo hold needs app 1.3, build 5): Desk and My desk, stock pages with "below our fair value" and same-industry peers, the Screen builder name, the overnight fixes, and the opening rebuilt so it doesn't lag on Android.
+Everything up to the glass look across the app (`6337941`; not checked on a real phone), the BSE lookup for missing industry labels, the opening's ending and dark first paint (`8348850`; the iPhone white screen is not yet checked on an iPhone), and the Android opening's fixes (`4c19b85`), pushed 1 Nov 2026 (the launch-logo hold needs app 1.3, build 5): Desk and My desk, stock pages with "below our fair value" and same-industry peers, the Screen builder name, the overnight fixes, and the opening rebuilt so it doesn't lag on Android.
 
 ## Committed but NOT pushed yet
 
-The indexing log, the BSE lookup for companies with a sector but no industry (Open item 6), and the glass look across the app: soft glows behind every page (`body::before`), big cards light glass with an edge, a glow under the pointer (computers only). No blur on touch screens, to keep phones smooth; not yet checked on a real phone. Block at the end of `src/index.css`.
+Nothing.
 
 ## Open / next
 
@@ -20,7 +20,7 @@ The indexing log, the BSE lookup for companies with a sector but no industry (Op
    - Stock pages rank around position 71, for "*company* share price" searches.
    - Check again in 2–3 weeks.
 5. **Price strength locally:** a data file without 9-month returns (the local one, from 23 Oct) now gets them from the daily prices kept in `data/history/` (`server/price-strength.js`). It takes a few seconds the first time; nothing is downloaded.
-6. **Industry labels: 2,136 of 2,551 companies had one on 1 Nov 2026 (the old "895" was out of date).** The 410 without were companies with a sector from NSE's index lists, largely big ones (Lemon Tree, Chalet, ITC Hotels), which the BSE lookup skipped. Fixed in `server/market-data.js` and committed; the labels arrive with the first evening data job after a push. BSE refuses this computer (403), so check the job's `[sectors] BSE` log line and a Lemon Tree page after that run. Labels come from two schemes (NSE announcements' and BSE's), so the same industry can carry two names.
+6. **Industry labels: 2,136 of 2,551 companies had one on 1 Nov 2026 (the old "895" was out of date).** The 410 without were companies with a sector from NSE's index lists, largely big ones (Lemon Tree, Chalet, ITC Hotels), which the BSE lookup skipped. Fixed in `server/market-data.js` and live; the labels arrive with the first evening data job after a push. BSE refuses this computer (403), so check the job's `[sectors] BSE` log line and a Lemon Tree page after that run. Labels come from two schemes (NSE announcements' and BSE's), so the same industry can carry two names.
 
 ## Set aside (don't redo without asking)
 
