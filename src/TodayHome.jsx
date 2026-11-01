@@ -233,6 +233,29 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onPi
     if (visible) api.watchlist().then(setWatch).catch(() => setWatch({ results: [] }));
   }, [visible]);
 
+  // The header and the left bar go black with the sky while it's on screen, on the
+  // light theme too (index.css html.td-night), and back as the sheet comes up over it
+  const sheetRef = useRef(null);
+  useEffect(() => {
+    let frame = 0;
+    const check = () => {
+      frame = 0;
+      const top = sheetRef.current?.getBoundingClientRect().top ?? 0;
+      const bar = document.querySelector(".app-header")?.getBoundingClientRect().bottom ?? 0;
+      document.documentElement.classList.toggle("td-night", visible && top > bar);
+    };
+    const soon = () => { if (!frame) frame = requestAnimationFrame(check); };
+    check();
+    window.addEventListener("scroll", soon, { passive: true });
+    window.addEventListener("resize", soon);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", soon);
+      window.removeEventListener("resize", soon);
+      document.documentElement.classList.remove("td-night");
+    };
+  }, [visible]);
+
   const rows = watch?.results ?? [];
   const mine = new Set(rows.map(r => r.symbol));
   const moved = [...rows].sort((a, b) => Math.abs(b.ret1d ?? 0) - Math.abs(a.ret1d ?? 0)).slice(0, WATCH_ROWS);
@@ -262,7 +285,7 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onPi
       </section>
 
       {/* Stays still as you scroll, and this comes up over it, like a tab pulled up */}
-      <div className="td-sheet">
+      <div ref={sheetRef} className="td-sheet">
     <div className="td">
       <div className="td-top">
         <div>

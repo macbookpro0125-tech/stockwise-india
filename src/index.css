@@ -5509,3 +5509,16 @@ button.td-line { cursor: pointer; }
 .td-sheet .td-screen { padding: 18px 20px; }
 .td-sheet .td-empty { padding: 18px 20px 24px; }
 .td-sheet .td-all-pages button { padding: 16px 18px; }
+
+/* The light theme's header and left bar, black while the home's sky is on screen */
+html.td-night[data-theme="light"] :is(.app-header, .side-rail, .price-strip) {
+  --bg: #080810; --s1: #0E0E1A; --s2: #141424; --s3: #1A1A2E; --s4: #222238; --s5: #2A2A44; --surf: #0C0C17; --card: #111120; --card2: #171728;
+  --t1: #F4F4FF; --t2: #A8A8C0; --t3: #8282A0; --bdr: rgba(255,255,255,0.08); --bdr2: rgba(255,255,255,0.14); --bdr3: rgba(255,255,255,0.22);
+  --accent: #00E0BE; --brand-wise: #6FA0FF; --green: #34D65C; --red: #FF5C5C;
+  color: var(--t1); }
+html.td-night[data-theme="light"] .app-header { background: #000 !important; }
+html.td-night[data-theme="light"] :is(.side-rail, .price-strip) { background: #000; }
+html.td-night[data-theme="light"] :is(.app-header, .side-rail) .brand-mark .bm-dark { display: block; }
+html.td-night[data-theme="light"] :is(.app-header, .side-rail) .brand-mark .bm-light { display: none; }
+.app-header, .side-rail, .price-strip { transition: background-color 240ms ease; }
+
