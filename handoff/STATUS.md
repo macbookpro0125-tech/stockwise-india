@@ -4,11 +4,11 @@ _Last updated: 1 Nov 2026, by Claude (Opus) on branch `screeners-home`._
 
 ## Live on jocularinsights.in
 
-Everything up to the glass look across the app (`6337941`; not checked on a real phone), the BSE lookup for missing industry labels, the opening's ending and dark first paint (`8348850`; the iPhone white screen is not yet checked on an iPhone), and the Android opening's fixes (`4c19b85`), pushed 1 Nov 2026 (the launch-logo hold needs app 1.3, build 5): Desk and My desk, stock pages with "below our fair value" and same-industry peers, the Screen builder name, the overnight fixes, and the opening rebuilt so it doesn't lag on Android.
+Everything up to the iPhone opening fixes and the phone stock bar (`6683c51`; not checked on an iPhone, and the owner must re-add the Home Screen icon for the dark launch image), the glass look across the app (`6337941`; not checked on a real phone), the BSE lookup for missing industry labels, the opening's ending and dark first paint (`8348850`; the iPhone white screen is not yet checked on an iPhone), and the Android opening's fixes (`4c19b85`), pushed 1 Nov 2026 (the launch-logo hold needs app 1.3, build 5): Desk and My desk, stock pages with "below our fair value" and same-industry peers, the Screen builder name, the overnight fixes, and the opening rebuilt so it doesn't lag on Android.
 
 ## Committed but NOT pushed yet
 
-The iPhone opening, from the owner's recording of 1 Nov: no pale first paint for light-theme users when the opening will play, and the film's clock held till it's drawn (iPhone app or Home Screen). Also dark Home Screen launch images (`public/startup/`, iPhones take them only when re-added to the Home Screen). The native iPhone app's launch image is still Capacitor's default white one with its X logo (`ios/.../Splash.imageset`): replace it before any iPhone release. Not checked on an iPhone; tested with an iPhone profile in Chrome only. Also the phone's Back-and-tabs bar on stock pages, now edge to edge. Rerun the full tests before pushing (two failed on 1 Nov while NSE was unreachable; see LOG).
+Nothing.
 
 ## Open / next
 
