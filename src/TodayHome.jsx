@@ -129,8 +129,10 @@ function StarField() {
     ctx.globalAlpha = 1;
     // nothing moves while the sky is scrolled out of view
     const hero = far.parentElement;
+    // (the sheet covers the sky rather than scrolling it away, so a marker a screen
+    // tall says when it's gone)
     const io = new IntersectionObserver(([e]) => hero.classList.toggle("td-still", !e.isIntersecting));
-    io.observe(hero);
+    io.observe(hero.previousElementSibling);
     return () => io.disconnect();
   }, []);
   return (
@@ -215,6 +217,7 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onPi
     <div className="td-page">
       {/* The opening, on black whichever the theme: one line, one button, and the
           visitors' page's night sky, as a still picture. Then the product, fading into the page. */}
+      <div className="td-sky-watch" aria-hidden="true" />
       <section className="td-hero" aria-labelledby="td-hero-title">
         <StarField />
         <h2 id="td-hero-title">India's markets, read from the source.</h2>
@@ -222,10 +225,11 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onPi
         <button type="button" className="td-cta" onClick={onCreate}>Start screening</button>
         <div className="td-shot">
           <img src="/screens/home-shot.jpg" alt="Jocular Insights listing companies that match a screen, with their quality scores" width="1280" height="800" />
-          <button type="button" className="td-shot-pill" onClick={seeAll}>See every screener<ChevronRight size={15} aria-hidden="true" /></button>
         </div>
+        <button type="button" className="td-shot-pill" onClick={seeAll}>See every screener<ChevronRight size={15} aria-hidden="true" /></button>
       </section>
 
+      {/* Stays still as you scroll, and this comes up over it, like a tab pulled up */}
       <div className="td-sheet">
     <div className="td">
       <div className="td-top">
