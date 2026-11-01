@@ -111,7 +111,7 @@ export default function Intro() {
     setLeaving(true);
     window.__introActive = false;
     window.dispatchEvent(new Event("intro-leaving"));
-    setTimeout(() => setOn(false), fly ? 760 : 560);
+    setTimeout(() => setOn(false), fly ? 965 : 560);
   };
 
   useEffect(() => {
