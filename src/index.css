@@ -5236,13 +5236,25 @@ tr:hover .row-acts { --row-bg: var(--s3); }
 .md-grid { position: relative; display: block; min-height: 120px; transition: height 220ms cubic-bezier(0.2, 0.8, 0.2, 1); }
 .md-grid .md-card { position: absolute; display: flex; flex-direction: column; grid-column: auto; border: 0; border-radius: 16px; background: color-mix(in srgb, var(--card) 88%, var(--t1) 2%);
   transition: left 260ms cubic-bezier(0.2, 0.8, 0.2, 1), top 260ms cubic-bezier(0.2, 0.8, 0.2, 1), width 260ms cubic-bezier(0.2, 0.8, 0.2, 1), height 260ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 160ms; }
-/* each card has an edge of its own, and each row a line (1 Nov 2026, the owner
-   on a laptop, light theme: "can't see the difference in between"). Drawn with a
-   shadow: a border would shift the contents of cards placed to the pixel. */
-.md-grid .md-card { box-shadow: 0 0 0 1px var(--bdr2), 0 2px 6px rgba(0, 0, 0, 0.25); }
-[data-theme="light"] .md-grid .md-card { background: var(--card); box-shadow: 0 0 0 1px var(--bdr3), 0 2px 8px rgba(16, 24, 40, 0.08); }
-.md-card-head { background: var(--card2); }
+/* Glass cards over the app's soft teal and violet glows, each with an edge of its
+   own, a line between rows, and a glow under the pointer (1 Nov 2026, the owner:
+   "can't see the difference in between", then "glass effects … it should glow").
+   Edges are shadows: a border would shift the contents of cards placed to the pixel. */
+.md-grid { --md-edge: rgba(255, 255, 255, 0.13); --md-shine: rgba(255, 255, 255, 0.1); --md-glass: rgba(24, 24, 40, 0.58); --md-title: rgba(255, 255, 255, 0.04); --md-drop: rgba(0, 0, 0, 0.35); --md-glow: 34%; }
+[data-theme="light"] .md-grid { --md-edge: rgba(16, 24, 40, 0.14); --md-shine: rgba(255, 255, 255, 0.9); --md-glass: rgba(255, 255, 255, 0.62); --md-title: rgba(255, 255, 255, 0.45); --md-drop: rgba(16, 24, 40, 0.08); --md-glow: 28%; }
+.md-grid::before { content: ""; position: absolute; inset: -24px; z-index: 0; pointer-events: none;
+  background: radial-gradient(620px 460px at 12% 8%, color-mix(in srgb, #00E0BE 12%, transparent), transparent 72%), radial-gradient(720px 520px at 88% 30%, color-mix(in srgb, #A86BFF 14%, transparent), transparent 72%), radial-gradient(620px 460px at 40% 92%, color-mix(in srgb, #3E8BFF 10%, transparent), transparent 72%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 140px), linear-gradient(to right, transparent, #000 140px, #000 calc(100% - 140px), transparent); -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to bottom, transparent, #000 140px), linear-gradient(to right, transparent, #000 140px, #000 calc(100% - 140px), transparent); mask-composite: intersect; }
+.md-grid .md-card { z-index: 1; background: var(--md-glass); -webkit-backdrop-filter: blur(22px) saturate(170%); backdrop-filter: blur(22px) saturate(170%);
+  box-shadow: 0 0 0 1px var(--md-edge), inset 0 1px 0 var(--md-shine), 0 8px 24px var(--md-drop); }
+.md-card-head { background: var(--md-title, var(--card2)); }
+.md-card-body > section, .md-card-body .chart-panel, .md-card-body > .mood { background: transparent; }
 .md-list li + li { border-top: 1px solid var(--bdr); }
+@media (hover: hover) and (pointer: fine) {
+  .md-grid .md-card:hover { box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent), inset 0 1px 0 var(--md-shine), 0 8px 24px var(--md-drop), 0 0 28px color-mix(in srgb, var(--accent) var(--md-glow), transparent); }
+}
+@media (prefers-reduced-transparency: reduce) { .md-grid .md-card { background: var(--card); -webkit-backdrop-filter: none; backdrop-filter: none; } .md-grid::before { display: none; } }
 .md-grid .md-card.lifted { z-index: 5; transition: box-shadow 160ms; box-shadow: 0 18px 50px rgba(0,0,0,0.55), 0 0 0 1px var(--accent); }
 .md-grid.dragging, .md-grid.dragging * { user-select: none; -webkit-user-select: none; }
 .md-ghost { position: absolute; border-radius: 16px; background: color-mix(in srgb, var(--accent) 12%, transparent); outline: 2px dashed color-mix(in srgb, var(--accent) 55%, transparent); outline-offset: -2px; transition: left 160ms, top 160ms, width 160ms, height 160ms; }
