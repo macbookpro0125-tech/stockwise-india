@@ -16,6 +16,8 @@ const tone = n => (n == null ? "var(--t3)" : n >= 0 ? "var(--green)" : "var(--re
 const day = d => new Date(`${d}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" });
 const short = s => String(s ?? "").replace(/ (Limited|Ltd\.?)$/i, "");
 const WATCH_ROWS = 8, QUICK_SCREENS = 6;
+// A picture of a market with honest dips, not a claim about one
+const LINE = "M0,270 C60,250 90,225 130,235 C170,245 200,250 250,205 C300,160 330,190 380,185 C430,180 470,130 520,140 C570,150 600,165 650,110 C700,55 740,90 790,70 C840,50 900,45 1000,10";
 
 // The market's last year, large, as the first thing in the summary. Our own
 // index history: the Nifty 500's closes, kept with any company's prices.
@@ -29,7 +31,7 @@ function MarketChart({ closes }) {
       autoSize: true,
       layout: { background: { type: ColorType.Solid, color: "transparent" }, textColor: v("--t3"), fontFamily: getComputedStyle(document.body).fontFamily, attributionLogo: false },
       grid: { vertLines: { visible: false }, horzLines: { color: v("--bdr") } },
-      rightPriceScale: { borderVisible: false }, timeScale: { borderVisible: false }, localization: { locale: "en-IN" },
+      rightPriceScale: { borderVisible: false }, timeScale: { borderVisible: false }, localization: { locale: "en-IN", priceFormatter: p => Math.round(p).toLocaleString("en-IN") },
       handleScroll: false, handleScale: false,
     });
     const fill = `color-mix(in srgb, ${line} 22%, transparent)`;
@@ -73,11 +75,18 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onPi
       {/* The opening, on black whichever the theme: one line, one button, and a
           horizon of light, drawn here. Then the product, fading into the page. */}
       <section className="td-hero" aria-labelledby="td-hero-title">
-        <div className="td-stars" aria-hidden="true" />
         <h2 id="td-hero-title">India's markets, read from the source.</h2>
         <p>Every NSE company, scored on what it files. Find the few worth your time.</p>
         <button type="button" className="td-cta" onClick={onCreate}>Start screening</button>
-        <div className="td-horizon" aria-hidden="true" />
+        {/* The app's own market line, as in its opening: drawn once, no video */}
+        <svg className="td-mline" viewBox="0 0 1000 300" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="td-stroke" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stopColor="#00E0BE" /><stop offset="0.55" stopColor="#3E8BFF" /><stop offset="1" stopColor="#A86BFF" /></linearGradient>
+            <linearGradient id="td-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#3E8BFF" stopOpacity="0.28" /><stop offset="1" stopColor="#3E8BFF" stopOpacity="0" /></linearGradient>
+          </defs>
+          <path className="td-line-fill" d={`${LINE} L1000,300 L0,300 Z`} fill="url(#td-fill)" />
+          <path className="td-line-stroke" d={LINE} stroke="url(#td-stroke)" />
+        </svg>
         <div className="td-shot">
           <img src="/screens/home-shot.jpg" alt="Jocular Insights listing companies that match a screen, with their quality scores" width="1280" height="800" />
           <button type="button" className="td-shot-pill" onClick={seeAll}>See every screener<ChevronRight size={15} aria-hidden="true" /></button>
