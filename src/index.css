@@ -4901,11 +4901,11 @@ tr:hover .row-acts { --row-bg: var(--s3); }
 @keyframes i4-in { to { opacity: 1; } }
 /* the camera's slow push, and the line dimming once the logo's coming */
 .i4-chart { position: absolute; inset: 0; will-change: transform, opacity; transform-origin: 60% 55%;
-  animation: i4-push 3.4s cubic-bezier(0.25, 0.1, 0.25, 1) both, i4-dim 600ms ease 1.45s forwards; }
+  animation: i4-push 3.4s cubic-bezier(0.25, 0.1, 0.25, 1) both, i4-dim 600ms ease 1.9s forwards; }
 /* the line draws by uncovering: a window and its contents moving opposite
    ways, in step with the point of light (Intro.jsx); the line only climbs
    left to right, so this is exactly its drawing */
-.i4-area { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; will-change: opacity; animation: i4-in 900ms ease-out 0.55s forwards; }
+.i4-area { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; will-change: opacity; animation: i4-in 900ms ease-out 0.85s forwards; }
 .i4-reveal, .i4-reveal-in { position: absolute; inset: 0; will-change: transform; }
 .i4-reveal { overflow: hidden; transform: translateX(-100%); }
 .i4-reveal-in { transform: translateX(100%); }
@@ -4919,23 +4919,23 @@ tr:hover .row-acts { --row-bg: var(--s3); }
   transform: translate(-40px, 82vh); }
 @keyframes i4-push { from { transform: scale(1.14) translateY(2%); } to { transform: none; } }
 @keyframes i4-push-far { from { transform: scale(1.04) translateY(-1%); } to { transform: none; } }
-/* where the point of light lands, at 1.78s: a ripple, and the logo out of it */
+/* where the point of light lands, at 2.23s: a ripple, and the logo out of it */
 .i4-logo-wrap { position: relative; display: grid; place-items: center; }
-.i4-logo-wrap::before { content: ""; position: absolute; inset: -30%; background: radial-gradient(closest-side, rgba(62, 139, 255, 0.4), transparent); opacity: 0; will-change: opacity; animation: i4-in 760ms ease-out 1.78s forwards; }
-.i4-ripple { position: absolute; width: 60%; aspect-ratio: 1; border-radius: 50%; border: 2px solid rgba(190, 210, 255, 0.85); opacity: 0; transform: scale(0.2); will-change: transform, opacity; animation: i4-ripple 900ms cubic-bezier(0.16, 1, 0.3, 1) 1.78s forwards; }
-.i4-ripple.two { animation-delay: 1.9s; border-color: rgba(0, 224, 190, 0.7); }
+.i4-logo-wrap::before { content: ""; position: absolute; inset: -30%; background: radial-gradient(closest-side, rgba(62, 139, 255, 0.4), transparent); opacity: 0; will-change: opacity; animation: i4-in 760ms ease-out 2.23s forwards; }
+.i4-ripple { position: absolute; width: 60%; aspect-ratio: 1; border-radius: 50%; border: 2px solid rgba(190, 210, 255, 0.85); opacity: 0; transform: scale(0.2); will-change: transform, opacity; animation: i4-ripple 900ms cubic-bezier(0.16, 1, 0.3, 1) 2.23s forwards; }
+.i4-ripple.two { animation-delay: 2.35s; border-color: rgba(0, 224, 190, 0.7); }
 @keyframes i4-ripple { 0% { opacity: 1; transform: scale(0.2); } 100% { opacity: 0; transform: scale(2.6); } }
 .i4-lockup { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: 18px; }
-.i4-lockup img { position: relative; width: min(40vw, 160px); height: auto; opacity: 0; transform: scale(0.6); will-change: transform, opacity; animation: i4-come 760ms cubic-bezier(0.16, 1, 0.3, 1) 1.78s forwards; }
+.i4-lockup img { position: relative; width: min(40vw, 160px); height: auto; opacity: 0; transform: scale(0.6); will-change: transform, opacity; animation: i4-come 760ms cubic-bezier(0.16, 1, 0.3, 1) 2.23s forwards; }
 @keyframes i4-come { to { opacity: 1; transform: none; } }
 .i4-glint { position: absolute; inset: 0; border-radius: 50%; overflow: hidden; pointer-events: none; }
-.i4-glint::after { content: ""; position: absolute; inset: -20%; background: linear-gradient(115deg, transparent 40%, rgba(255, 255, 255, 0.3) 50%, transparent 60%); transform: translateX(-80%); opacity: 0; will-change: transform; animation: i4-glint 900ms cubic-bezier(0.45, 0, 0.25, 1) 2.26s forwards; }
+.i4-glint::after { content: ""; position: absolute; inset: -20%; background: linear-gradient(115deg, transparent 40%, rgba(255, 255, 255, 0.3) 50%, transparent 60%); transform: translateX(-80%); opacity: 0; will-change: transform; animation: i4-glint 900ms cubic-bezier(0.45, 0, 0.25, 1) 2.71s forwards; }
 @keyframes i4-glint { 0% { opacity: 1; transform: translateX(-80%); } 100% { opacity: 1; transform: translateX(80%); } }
 /* the ending: the logo flies to the app's own while the film falls away */
 .i4.flying { opacity: 1 !important; transform: none !important; }
 .i4.flying > :not(.i4-lockup), .i4.flying .i4-name, .i4.flying .i4-ripple, .i4.flying .i4-glint, .i4.flying .i4-logo-wrap::before { opacity: 0 !important; transition: opacity 360ms ease; animation: none !important; }
 .i4.flying .i4-lockup img { opacity: 1; transform: var(--fly); animation: none; }
-.i4-name { font-size: clamp(30px, 8.4vw, 48px); font-weight: 700; letter-spacing: -0.035em; opacity: 0; transform: translateY(12px); will-change: transform, opacity; animation: i4-name 700ms cubic-bezier(0.16, 1, 0.3, 1) 1.94s forwards; }
+.i4-name { font-size: clamp(30px, 8.4vw, 48px); font-weight: 700; letter-spacing: -0.035em; opacity: 0; transform: translateY(12px); will-change: transform, opacity; animation: i4-name 700ms cubic-bezier(0.16, 1, 0.3, 1) 2.39s forwards; }
 .i4-name span { color: #8FB4FF; }
 @keyframes i4-name { to { opacity: 1; transform: none; } }
 

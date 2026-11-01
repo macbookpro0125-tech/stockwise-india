@@ -12,10 +12,10 @@ import { tick } from "./haptics.js";
 // When: each start of the phone app; in a browser once a visit, on the front
 // page. Never for a test browser or a search engine (navigator.webdriver), nor
 // with reduced motion. A tap skips it.
-const LENGTH_MS = 2700;
+const LENGTH_MS = 3150;
 const FLIGHT_MS = 885; // the logo into the page's logo (30% slower, 1 Nov 2026)
-export const LAND_MS = 1780; // the logo lands; the app starts building (main.jsx)
-const RIDE = [150, 1300], FLY = [1380, LAND_MS]; // CSS's logo waits for FLY's end (index.css)
+export const LAND_MS = 2230; // the logo lands; the app starts building (main.jsx)
+const RIDE = [400, 1750], FLY = [1830, LAND_MS]; // the point of light waits at the start, where it can be seen // CSS's logo waits for FLY's end (index.css)
 
 function wanted() {
   if (typeof window === "undefined") return false;
@@ -148,7 +148,8 @@ export default function Intro() {
       const a = table[i - 1], b = table[i], f = b.x > a.x ? (x - a.x) / (b.x - a.x) : 0;
       return a.y + (b.y - a.y) * f;
     };
-    const out = t => 1 - (1 - t) ** 3, inOut = t => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
+    // gentle at both ends: a fast start hid the point of light (1 Nov 2026)
+    const out = t => (1 - Math.cos(Math.PI * t)) / 2, inOut = t => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
     const [S, R, F, E] = [RIDE[0], RIDE[1], FLY[0], FLY[1]];
     const r = logo.getBoundingClientRect(), to = [r.left + r.width / 2, r.top + r.height / 2];
     const end = [W, (yAt(1000) / 1000) * H];
@@ -156,7 +157,7 @@ export default function Intro() {
     const dotFrames = [], outer = [], in2 = [];
     const STEPS = 40;
     for (let i = 0; i <= STEPS; i++) {
-      const t = i / STEPS, p = out(t), offset = (S + (R - S) * t) / E, x = p * 1000;
+      const t = i / STEPS, p = 0.04 + 0.96 * out(t), offset = (S + (R - S) * t) / E, x = p * 1000;
       dotFrames.push({ offset, transform: `translate(${(x / 1000) * W}px, ${(yAt(x) / 1000) * H}px) scale(1)`, opacity: 1 });
       outer.push({ offset: t, transform: `translateX(${(p - 1) * 100}%)` });
       in2.push({ offset: t, transform: `translateX(${(1 - p) * 100}%)` });

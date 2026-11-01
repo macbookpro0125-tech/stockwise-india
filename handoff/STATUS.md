@@ -8,7 +8,7 @@ Everything up to the logo's glide (`6a9f871`), pushed 1 Nov 2026: Desk and My de
 
 ## Committed but NOT pushed yet
 
-The opening: the app waits for the logo to land before building, to end the lag on Android.
+The opening: the app waits for the logo to land before building, to end the lag on Android; a slower start, so the point of light is seen.
 
 ## Open / next
 
