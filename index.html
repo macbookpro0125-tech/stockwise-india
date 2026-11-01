@@ -55,7 +55,10 @@
        (the noscript below) it shows at once, for a search engine or a visitor
        who reads it. A load that takes a moment shows a small spinner. -->
   <style>
-    html.in-app { background: #080810; }
+    /* the page's own colour from the very first paint: a browser's is white,
+       and shows until the styles arrive (1 Nov 2026, seen on iPhone) */
+    html { background: #080810; }
+    html[data-theme="light"] { background: #F5F6F8; }
     html:not(.app-drawn) #root { visibility: hidden; animation: root-show 0s linear 4s forwards; }
     html.in-app:not(.app-drawn) #root { animation: none; }
     @keyframes root-show { to { visibility: visible; } }
@@ -69,6 +72,7 @@
     (function () {
       var ua = navigator.userAgent || "";
       if (/; wv\)/.test(ua) || window.Capacitor) document.documentElement.classList.add("in-app");
+      try { if (localStorage.getItem("stockwise-india-theme") === "light") document.documentElement.setAttribute("data-theme", "light"); } catch (e) {}
     })();
   </script>
 </head>

@@ -33,13 +33,28 @@ function wanted() {
 }
 
 // set before the app's first effects run, so what waits for the opening
-// (StarFilm.jsx's 3D scene) knows to wait; cleared, with an "intro-gone"
-// event, the moment the opening has gone
+// (main.jsx's app) knows to wait; cleared, with an "intro-leaving"
+// event, the moment the opening starts to go
 function decide() {
   const yes = wanted();
   if (yes) window.__introActive = true;
   if (yes && window.JocularApp) window.__introHeld = true;
   return yes;
+}
+
+// Calls back once the frames come steadily, or after `longest` ms; returns a cancel
+function whenSteady(then, longest) {
+  let raf = 0, last = 0, steady = 0;
+  const stop = () => { clearTimeout(t); cancelAnimationFrame(raf); };
+  const t = setTimeout(() => { stop(); then(); }, longest);
+  const frame = now => {
+    steady = last && now - last < 50 ? steady + 1 : 0;
+    last = now;
+    if (steady >= 3) { stop(); then(); }
+    else raf = requestAnimationFrame(frame);
+  };
+  raf = requestAnimationFrame(frame);
+  return stop;
 }
 
 // The line: a market's climb with two honest dips, drawn as one smooth curve
@@ -91,7 +106,7 @@ export default function Intro() {
   const [flying, setFlying] = useState(false);
   const done = useRef(false);
   const lineRef = useRef(null), dotRef = useRef(null), rootRef = useRef(null), logoRef = useRef(null), revealRef = useRef(null), revealInRef = useRef(null);
-  const landedRef = useRef(false);
+  const landedRef = useRef(false), runsRef = useRef(null);
   const path = useMemo(() => smooth(POINTS), []);
 
   const headerLogo = () => [...document.querySelectorAll(".brand-mark")].find(el => {
@@ -121,14 +136,9 @@ export default function Intro() {
     }
     setFlying(fly);
     setLeaving(true);
+    window.__introActive = false;
     window.dispatchEvent(new Event("intro-leaving"));
-    // the front page's 3D sky waits for this: started under the flying logo, it
-    // stopped the logo in mid-screen on Android (1 Nov 2026, filmed)
-    setTimeout(() => {
-      window.__introActive = false;
-      window.dispatchEvent(new Event("intro-gone"));
-      setOn(false);
-    }, fly ? FLIGHT_MS + 80 : 560);
+    setTimeout(() => setOn(false), fly ? FLIGHT_MS + 80 : 560);
   };
 
   // Android (1 Nov 2026, filmed): a slow phone takes a second to draw the film,
@@ -137,38 +147,37 @@ export default function Intro() {
   // then takes over from the launch logo (MainActivity.java).
   useEffect(() => {
     if (!on || !held) return undefined;
-    let raf = 0, gone = false, last = 0, steady = 0;
-    const begin = () => {
-      if (gone) return;
-      gone = true;
-      cancelAnimationFrame(raf);
-      window.__introHeld = false;
-      window.dispatchEvent(new Event("intro-started"));
-      window.JocularApp?.pageReady();
-      setHeld(false);
+    let cancel = () => {};
+    const look = () => {
+      cancel = whenSteady(() => {
+        window.__introHeld = false;
+        // all at once, so the point of light and the logo keep time
+        runsRef.current?.forEach(a => a.play());
+        rootRef.current?.classList.remove("held");
+        window.dispatchEvent(new Event("intro-started"));
+        window.JocularApp?.pageReady();
+        setHeld(false);
+      }, 2000);
     };
-    const longest = setTimeout(begin, 2000);
-    const frame = now => {
-      steady = last && now - last < 50 ? steady + 1 : 0;
-      last = now;
-      if (steady >= 3) begin();
-      else raf = requestAnimationFrame(frame);
-    };
-    const look = () => { if (!gone) raf = requestAnimationFrame(frame); };
-    (logoRef.current?.decode?.() ?? Promise.resolve()).then(look, look);
-    return () => { gone = true; clearTimeout(longest); cancelAnimationFrame(raf); };
+    let gone = false;
+    const once = () => { if (!gone) look(); };
+    (logoRef.current?.decode?.() ?? Promise.resolve()).then(once, once);
+    return () => { gone = true; cancel(); };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!on || held) return undefined;
-    // the logo flies when the app's own logo is there to fly to; the app can draw
-    // before its header does (it asks who's signed in first), so that's what's
-    // waited for, rather than fading out over nothing
+    // The logo flies when the page under it is finished: its own logo there to
+    // fly to (the app asks who's signed in first) and the phone done building it
+    // (1 Nov 2026, "small lag" as the logo goes in, seen on film as a logo stopped
+    // mid-screen). A page that's still drawing shows nothing but its background.
+    let cancel = () => {};
     let t = setTimeout(function wait(left = 2500) {
-      if (left <= 0 || headerLogo()) finish();
+      if (left <= 0) finish();
+      else if (headerLogo()) cancel = whenSteady(finish, 1200);
       else t = setTimeout(() => wait(left - 100), 100);
     }, LENGTH_MS);
-    return () => clearTimeout(t);
+    return () => { clearTimeout(t); cancel(); };
   }, [held]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // The point of light rides the line's tip as the line is uncovered, then
@@ -178,7 +187,7 @@ export default function Intro() {
   // graphics chip runs them, whatever the app loading behind is doing.
   useEffect(() => {
     const line = lineRef.current, dot = dotRef.current, root = rootRef.current, logo = logoRef.current, win = revealRef.current, inner = revealInRef.current;
-    if (!on || held || !line || !dot || !root || !logo || !win || !inner || !dot.animate) return;
+    if (!on || !line || !dot || !root || !logo || !win || !inner || !dot.animate) return;
     const W = root.clientWidth, H = root.clientHeight, total = line.getTotalLength();
     // the curve's height at each x (viewBox 0–1000 each way, stretched to the screen)
     const table = Array.from({ length: 201 }, (_, i) => line.getPointAtLength((total * i) / 200));
@@ -215,12 +224,19 @@ export default function Intro() {
       inner.animate(in2, { duration: R - S, delay: S, fill: "both", easing: "linear" }),
       dot.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 180, delay: E, fill: "forwards", composite: "replace" }),
     ];
-    // a light tap and a soft chime, in the phone app, as the logo lands
+    if (window.__introHeld) runs.forEach(a => a.pause());
+    runsRef.current = runs;
+    return () => { runs.forEach(a => a.cancel()); };
+  }, [on]);
+
+  // a light tap and a soft chime, in the phone app, as the logo lands
+  useEffect(() => {
+    if (!on || held) return undefined;
     const land = setTimeout(() => {
       landedRef.current = true;
       if (document.documentElement.classList.contains("in-app")) { try { tick(); } catch {} chime(); }
-    }, E);
-    return () => { clearTimeout(land); runs.forEach(a => a.cancel()); };
+    }, FLY[1]);
+    return () => clearTimeout(land);
   }, [on, held]);
 
   if (!on) return null;

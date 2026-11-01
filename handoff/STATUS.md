@@ -8,7 +8,7 @@ Everything up to the Android opening's fixes (`4c19b85`), pushed 1 Nov 2026 (the
 
 ## Committed but NOT pushed yet
 
-Nothing.
+The opening's ending (1 Nov 2026): the logo flies only once the page under it is finished, the point of light and logo start on the same tick, and the page is dark from its first paint (the owner saw a white screen on iPhone; not reproduced or checked on an iPhone, whose cause here is a best reading). No new app build needed; 1.3 (build 5) stands.
 
 ## Open / next
 

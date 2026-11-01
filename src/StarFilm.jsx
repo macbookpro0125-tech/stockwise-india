@@ -128,17 +128,9 @@ function readTheme() {
 export default function StarFilm({ onJoin, onLogin, stats }) {
   // Whether the browser draws WebGL 2: learnt from the scene itself (it returns
   // null without it), rather than a test context made just to ask — that
-  // cost a second context at every load. And while the opening plays
-  // (Intro.jsx) the scene waits: building it froze the page for a moment,
-  // which stalled the opening's ring and lines (31 Oct 2026).
+  // cost a second context at every load. The opening keeps this whole page
+  // back till its logo has landed (main.jsx), and flies once it's built (Intro.jsx).
   const [gl2, setGl2] = useState(true);
-  const [ready, setReady] = useState(() => !window.__introActive);
-  useEffect(() => {
-    if (ready) return;
-    const go = () => setReady(true);
-    window.addEventListener("intro-gone", go, { once: true });
-    return () => window.removeEventListener("intro-gone", go);
-  }, [ready]);
   const trackRef = useRef(null), stageRef = useRef(null), canvasRef = useRef(null);
   const barRef = useRef(null), cueRef = useRef(null), capsRef = useRef([]), pickRef = useRef(null), pointerRef = useRef(null), openRef = useRef(null), frontRef = useRef(0);
   const sceneRef = useRef(null);
@@ -147,7 +139,7 @@ export default function StarFilm({ onJoin, onLogin, stats }) {
   const strategies = stats?.strategies ?? 13;
 
   useEffect(() => {
-    if (!gl2 || !ready) return;
+    if (!gl2) return;
     const track = trackRef.current, stage = stageRef.current, cv = canvasRef.current;
     const caps = capsRef.current.filter(Boolean);
     const cue = cueRef.current, bar = barRef.current;
@@ -267,7 +259,7 @@ export default function StarFilm({ onJoin, onLogin, stats }) {
       scene.destroy();
       sceneRef.current = null;
     };
-  }, [gl2, ready]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [gl2]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // The real counts, once they arrive: one star per company, one constellation per strategy
   useEffect(() => { if (companies != null) sceneRef.current?.setCounts(companies, strategies); }, [companies, strategies]);
