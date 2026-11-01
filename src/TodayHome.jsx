@@ -214,7 +214,7 @@ function MarketChart({ closes }) {
 const ABOUT = {
   discover: "All the ready-made screens", workspace: "Build your own filter", desk: "A list with its charts beside it",
   explore: "Indices and news", map: "The market, by size and move", momentum: "Short-term moves", watchlist: "Companies you follow",
-  portfolio: "What you hold", performance: "How screens have done", alerts: "Your price and results alerts", visitors: "Who's been on the site",
+  portfolio: "What you hold", performance: "How screens have done", alerts: "Your price and results alerts",
 };
 const SITE_PAGES = [
   { id: "calendar", path: "/results-calendar", label: "Results calendar", about: "Who reports, and when", Icon: CalendarDays },
@@ -225,7 +225,7 @@ const SITE_PAGES = [
 const PAGE_GROUPS = [
   { title: "Find companies", items: ["discover", "workspace", "desk", "guides"] },
   { title: "The market", items: ["explore", "map", "momentum", "calendar", "sectors"] },
-  { title: "Your things", items: ["watchlist", "portfolio", "performance", "alerts", "visitors"] },
+  { title: "Your things", items: ["watchlist", "portfolio", "performance", "alerts"] },
 ];
 
 export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onPickScreen, onCreate, account = null, continueCard = null, newsTile = null, children }) {
@@ -311,30 +311,10 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onPi
         <HowItWorks plain label="See how it works" />
       </div>
 
-      <nav className="td-box td-all-pages" aria-label="Everything in the app">
-        {PAGE_GROUPS.map(g => (
-          <div key={g.title} className="td-page-group">
-            <h3>{g.title}</h3>
-            {g.items.map(id => {
-              const tab = tabs.find(t => t.id === id), site = SITE_PAGES.find(p => p.id === id);
-              if (!tab && !site) return null; // a page this account doesn't have
-              const Icon = (tab ?? site).Icon;
-              return (
-                <button key={id} type="button" onClick={() => (site ? navigate(site.path) : id === "discover" ? seeAll() : onOpenTab?.(id))}>
-                  <Icon size={18} strokeWidth={1.8} aria-hidden="true" />
-                  <span>{(tab ?? site).label}<small>{tab ? ABOUT[id] : site.about}</small></span>
-                </button>
-              );
-            })}
-          </div>
-        ))}
-      </nav>
-
       <div className="td-grid td-summary">
         {market?.length > 1 && (
           <section className="td-box td-big" aria-label="Nifty 500">
             <div className="td-big-head">
-              <span className="td-badge" aria-hidden="true">500</span>
               <div><h3>Nifty 500</h3><b>{num(market.at(-1)[1])}</b> <i style={{ color: tone(market.at(-1)[1] - market[0][1]) }}>{pct(((market.at(-1)[1] - market[0][1]) / market[0][1]) * 100)}</i> <small>over the year</small></div>
             </div>
             <MarketChart closes={market} />
@@ -345,7 +325,6 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onPi
             <div className="td-head"><h3>Major indices</h3><button type="button" onClick={() => onOpenTab?.("explore")}>Explore</button></div>
             {strip.indices.slice(0, 6).map(m => (
               <div key={m.name} className="td-index">
-                <span className="td-badge" aria-hidden="true">{m.name.replace(/^NIFTY\s*/i, "").slice(0, 3)}</span>
                 <span className="td-name">{m.name}</span>
                 <span className="td-index-nums"><b>{num(m.close)}</b><i style={{ color: tone(m.changePct) }}>{pct(m.changePct)}</i></span>
               </div>
@@ -409,6 +388,26 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onPi
           </button>
         ))}
       </section>
+
+      <h3 className="td-menu-title">Everything in the app</h3>
+      <nav className="td-box td-all-pages" aria-label="Everything in the app">
+        {PAGE_GROUPS.map(g => (
+          <div key={g.title} className="td-page-group">
+            <h3>{g.title}</h3>
+            {g.items.map(id => {
+              const tab = tabs.find(t => t.id === id), site = SITE_PAGES.find(p => p.id === id);
+              if (!tab && !site) return null; // a page this account doesn't have
+              const Icon = (tab ?? site).Icon;
+              return (
+                <button key={id} type="button" onClick={() => (site ? navigate(site.path) : id === "discover" ? seeAll() : onOpenTab?.(id))}>
+                  <Icon size={18} strokeWidth={1.8} aria-hidden="true" />
+                  <span>{(tab ?? site).label}<small>{tab ? ABOUT[id] : site.about}</small></span>
+                </button>
+              );
+            })}
+          </div>
+        ))}
+      </nav>
 
       {continueCard}
       {newsTile && <div className="td-news">{newsTile}</div>}

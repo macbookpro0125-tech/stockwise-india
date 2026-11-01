@@ -107,3 +107,4 @@ The `/learn` guides, IndexNow, the new tab icons, and the opening animation.
 - **1 Nov 2026 (Claude Opus):** Stock page: the glass and glow came off the whole-width sections (`ss-section`); only the cards in them keep it.
 - **1 Nov 2026 (Claude Opus):** New computer home pushed. 137 tests passed before one late CSS fix (glass off `.ss-section`, the owner's screenshot); 15 chart, home and general tests rerun after it, passing. Not checked: the moving sky on real slower laptops (46 fps in the test browser); after Screen builder, `/` stays on the builder.
 - **1 Nov 2026 (Claude Opus):** Home's Nifty chart was empty in the owner's Safari: its fill used color-mix(), now plain rgba. Not tested in Safari here.
+- **1 Nov 2026 (Claude Opus):** Market summary rearranged: market, your companies, screeners, then the page menu; the chart is the one main card.

@@ -5548,3 +5548,17 @@ html.td-night[data-theme="light"] :is(.app-header, .side-rail) .brand-mark .bm-l
 /* A company page's section is the wide wrapper around its cards, not a card */
 .ss-section { background: transparent; box-shadow: none !important; border-color: transparent; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
 .ss-section:hover { box-shadow: none !important; }
+
+/* One main card (the market's chart); the rest quieter, their glow only on hover */
+.td-menu-title { margin: 64px 0 16px; font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
+.td-sheet .td-all-pages { margin-bottom: 0; }
+.td-sheet .td-big { box-shadow: 0 0 0 1px var(--bdr3), inset 0 1px 0 var(--ga-shine), 0 18px 50px var(--ga-drop) !important; }
+.td-sheet .td-big-head b { font-size: 34px; letter-spacing: -0.03em; }
+.td-sheet .td-chart { height: 340px; }
+.td-sheet :is(.td-box:not(.td-big), .td-all-pages) { box-shadow: 0 0 0 1px var(--ga-edge), inset 0 1px 0 var(--ga-shine) !important; }
+.td-sheet .td-index { min-height: 56px; }
+@media (hover: hover) and (pointer: fine) {
+  .td-sheet :is(.td-box:not(.td-big), .td-all-pages):hover { box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 65%, transparent), inset 0 1px 0 var(--ga-shine), 0 14px 34px var(--ga-drop), 0 0 34px color-mix(in srgb, var(--accent) 38%, transparent) !important; }
+  .td-sheet .td-big:hover { box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 65%, transparent), inset 0 1px 0 var(--ga-shine), 0 18px 50px var(--ga-drop), 0 0 34px color-mix(in srgb, var(--accent) 38%, transparent) !important; }
+}
+

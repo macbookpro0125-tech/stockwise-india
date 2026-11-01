@@ -8,7 +8,7 @@ Everything up to the new signed-in computer home (`TodayHome.jsx`: a night-sky o
 
 ## Committed but NOT pushed yet
 
-Nothing.
+Home's Nifty chart fix for Safari (not tested in Safari) and the rearranged Market summary: market first, your companies next, the page menu lower down, no Visitors entry or index badges.
 
 ## Open / next
 
