@@ -5296,22 +5296,21 @@ body::before { content: ""; position: fixed; inset: 0; z-index: 0; pointer-event
   background: radial-gradient(52vw 44vh at 14% 12%, rgba(0, 224, 190, 0.15), transparent 72%), radial-gradient(56vw 52vh at 90% 34%, rgba(168, 107, 255, 0.18), transparent 72%), radial-gradient(52vw 44vh at 42% 96%, rgba(62, 139, 255, 0.13), transparent 72%); }
 #root { position: relative; z-index: 1; }
 .app-shell { background: transparent !important; }
-.ss-section { border-radius: var(--r-lg); }
 .md-grid .md-card.lifted { box-shadow: 0 18px 50px rgba(0,0,0,0.55), 0 0 0 1px var(--accent) !important; }
-.md-grid .md-card, .sd-card, .sd.ap .sd-card, .sd.ap .sd-snap-card, .sd.ap .sd-metrics, .sd-snap-card, .sd-metrics, .ss-section, .dk-keyfigs, .desk-list, .desk-main, .desk-side, .mood, .card, .sc2, .ls, .sc2-list, .fb, .ex-card, .ex-map-link, .nw-list, .ex-heat {
+.md-grid .md-card, .sd-card, .sd.ap .sd-card, .sd.ap .sd-snap-card, .sd.ap .sd-metrics, .sd-snap-card, .sd-metrics, .dk-keyfigs, .desk-list, .desk-main, .desk-side, .mood, .card, .sc2, .ls, .sc2-list, .fb, .ex-card, .ex-map-link, .nw-list, .ex-heat {
   background: var(--ga-solid); border-color: transparent;
   box-shadow: 0 0 0 1px var(--ga-edge), inset 0 1px 0 var(--ga-shine), 0 6px 20px var(--ga-drop) !important; transition: box-shadow 180ms ease-out; }
 .card .card, .sd-card .card, .md-card .card, .md-card .mood, .sd-card .sd-card { background: transparent; box-shadow: none !important; -webkit-backdrop-filter: none; backdrop-filter: none; }
 @media (hover: hover) and (pointer: fine) {
-  .md-grid .md-card, .sd-card, .sd.ap .sd-card, .sd.ap .sd-snap-card, .sd.ap .sd-metrics, .sd-snap-card, .sd-metrics, .ss-section, .dk-keyfigs, .desk-list, .desk-main, .desk-side, .mood, .card, .sc2, .ls, .sc2-list, .fb, .ex-card, .ex-map-link, .nw-list, .ex-heat {
+  .md-grid .md-card, .sd-card, .sd.ap .sd-card, .sd.ap .sd-snap-card, .sd.ap .sd-metrics, .sd-snap-card, .sd-metrics, .dk-keyfigs, .desk-list, .desk-main, .desk-side, .mood, .card, .sc2, .ls, .sc2-list, .fb, .ex-card, .ex-map-link, .nw-list, .ex-heat {
     background: var(--ga-glass); -webkit-backdrop-filter: blur(18px) saturate(165%); backdrop-filter: blur(18px) saturate(165%); }
-  .md-grid .md-card:hover, .sd-card:hover, .sd.ap .sd-card:hover, .sd.ap .sd-snap-card:hover, .sd.ap .sd-metrics:hover, .sd-snap-card:hover, .sd-metrics:hover, .ss-section:hover, .dk-keyfigs:hover, .desk-list:hover, .desk-main:hover, .desk-side:hover, .mood:hover, .card:hover, .sc2.in:hover, .ls:hover, .sc2-list:hover, .fb:hover, .ex-card:hover, .ex-map-link:hover, .nw-list:hover, .ex-heat:hover {
+  .md-grid .md-card:hover, .sd-card:hover, .sd.ap .sd-card:hover, .sd.ap .sd-snap-card:hover, .sd.ap .sd-metrics:hover, .sd-snap-card:hover, .sd-metrics:hover, .dk-keyfigs:hover, .desk-list:hover, .desk-main:hover, .desk-side:hover, .mood:hover, .card:hover, .sc2.in:hover, .ls:hover, .sc2-list:hover, .fb:hover, .ex-card:hover, .ex-map-link:hover, .nw-list:hover, .ex-heat:hover {
     box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 50%, transparent), inset 0 1px 0 var(--ga-shine), 0 6px 20px var(--ga-drop), 0 0 26px color-mix(in srgb, var(--accent) var(--ga-glow), transparent) !important; }
   .card .card:hover, .sd-card .card:hover, .md-card .card:hover, .md-card .mood:hover, .sd-card .sd-card:hover { box-shadow: none !important; }
 }
 @media (prefers-reduced-transparency: reduce) {
   body::before { display: none; }
-  .md-grid .md-card, .sd-card, .sd.ap .sd-card, .sd.ap .sd-snap-card, .sd.ap .sd-metrics, .sd-snap-card, .sd-metrics, .ss-section, .dk-keyfigs, .desk-list, .desk-main, .desk-side, .mood, .card, .sc2, .ls, .sc2-list, .fb, .ex-card, .ex-map-link, .nw-list, .ex-heat { background: var(--card); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .md-grid .md-card, .sd-card, .sd.ap .sd-card, .sd.ap .sd-snap-card, .sd.ap .sd-metrics, .sd-snap-card, .sd-metrics, .dk-keyfigs, .desk-list, .desk-main, .desk-side, .mood, .card, .sc2, .ls, .sc2-list, .fb, .ex-card, .ex-map-link, .nw-list, .ex-heat { background: var(--card); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 /* a phone's sticky Back-and-tabs bar runs edge to edge, like the header above it:
    inside the page's gutter its solid colour was a box on the glow (1 Nov 2026) */

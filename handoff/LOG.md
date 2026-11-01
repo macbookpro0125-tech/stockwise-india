@@ -104,3 +104,4 @@ The `/learn` guides, IndexNow, the new tab icons, and the opening animation.
 - **1 Nov 2026 (Claude Opus):** Home's cards are glass over soft colour with a hover glow and lift; the Nifty chart refits when its box changes size.
 - **1 Nov 2026 (Claude Opus):** Home's list of pages is now three labelled groups, the owner's pick.
 - **1 Nov 2026 (Claude Opus):** Home's sky refined: a third fewer specks, wider clear space behind the words, more violet and blue; product picture now the company list.
+- **1 Nov 2026 (Claude Opus):** Stock page: the glass and glow came off the whole-width sections (`ss-section`); only the cards in them keep it.
