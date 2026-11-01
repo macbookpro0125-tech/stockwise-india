@@ -4,11 +4,11 @@ _Last updated: 1 Nov 2026, by Claude (Opus) on branch `screeners-home`._
 
 ## Live on jocularinsights.in
 
-Everything up to the opening's spinner fix (`c700e40`), pushed 1 Nov 2026: Desk and My desk, stock pages with "below our fair value" and same-industry peers, the Screen builder name, the overnight fixes, and the opening rebuilt so it doesn't lag on Android.
+Everything up to the Android opening's fixes (`4c19b85`), pushed 1 Nov 2026 (the launch-logo hold needs app 1.3, build 5): Desk and My desk, stock pages with "below our fair value" and same-industry peers, the Screen builder name, the overnight fixes, and the opening rebuilt so it doesn't lag on Android.
 
 ## Committed but NOT pushed yet
 
-The Android opening's fixes, 1 Nov 2026: the launch logo holds until the film is drawn (needs the new app build), the film's clock waits for it, and the logo waits for the header and flies before the front page's 3D sky starts. All tests pass. In browsers and on iPhone only the last part changes.
+Nothing.
 
 ## Open / next
 
