@@ -226,7 +226,10 @@ export default function AuthForm({ onAuthed, mode, onModeChange, onProgress }) {
   }, []);
   const signup = mode === "signup";
   const hasChoices = !!fb?.providers?.length;
-  const shown = step === "choose" && !hasChoices ? "email" : step;
+  // only once the server has said there are no other ways in: until then the card
+  // opened on the email step, keyboard up, and jumped back half a second later
+  // (1 Nov 2026, the owner's iPhone recording). canReset comes with that answer.
+  const shown = step === "choose" && !hasChoices && canReset !== null ? "email" : step;
   // email chosen, a real-looking address, a password that's long enough
   useEffect(() => {
     if (!onProgress) return;
@@ -265,7 +268,7 @@ export default function AuthForm({ onAuthed, mode, onModeChange, onProgress }) {
     <div className="auth-step">
       <h2 className="auth-title">{signup ? "Create your account" : "Welcome back"}</h2>
       <p className="auth-sub">{signup ? "Free while in early access. No card needed." : "Your watchlist, alerts and portfolio are waiting."}</p>
-      <div className="auth-choices">
+      {canReset === null ? <div className="auth-choices" style={{ minHeight: 120 }} aria-busy="true" /> : <div className="auth-choices">
         {has("google") && (
           <button type="button" className="auth-choice auth-choice-primary" disabled={!!socialBusy} onClick={() => social("google")}>
             <GoogleLogo /> {socialBusy === "google" ? "Opening Google…" : "Continue with Google"}
@@ -284,7 +287,7 @@ export default function AuthForm({ onAuthed, mode, onModeChange, onProgress }) {
             <Smartphone size={18} aria-hidden="true" /> Continue with phone number
           </button>
         )}
-      </div>
+      </div>}
       {error && <div style={{ ...errorBox, marginTop: 12 }}>{error}</div>}
       {iphoneHomeScreen() && <p className="auth-legal">Use Google? Open jocularinsights.in in Safari to sign in with it. Here, sign in with your email; if you have no password yet, "Forgot password" sets one.</p>}
       <p className="auth-legal">
