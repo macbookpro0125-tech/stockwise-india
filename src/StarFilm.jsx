@@ -136,8 +136,8 @@ export default function StarFilm({ onJoin, onLogin, stats }) {
   useEffect(() => {
     if (ready) return;
     const go = () => setReady(true);
-    window.addEventListener("intro-leaving", go, { once: true });
-    return () => window.removeEventListener("intro-leaving", go);
+    window.addEventListener("intro-gone", go, { once: true });
+    return () => window.removeEventListener("intro-gone", go);
   }, [ready]);
   const trackRef = useRef(null), stageRef = useRef(null), canvasRef = useRef(null);
   const barRef = useRef(null), cueRef = useRef(null), capsRef = useRef([]), pickRef = useRef(null), pointerRef = useRef(null), openRef = useRef(null), frontRef = useRef(0);

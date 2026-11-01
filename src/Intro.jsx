@@ -14,7 +14,8 @@ import { tick } from "./haptics.js";
 // with reduced motion. A tap skips it.
 const LENGTH_MS = 3150;
 const FLIGHT_MS = 885; // the logo into the page's logo (30% slower, 1 Nov 2026)
-export const LAND_MS = 2230; // the logo lands; the app starts building (main.jsx)
+export const APP_START_MS = 2750; // the logo has landed and settled: the app starts building (main.jsx)
+const LAND_MS = 2230;
 const RIDE = [400, 1750], FLY = [1830, LAND_MS]; // the point of light waits at the start, where it can be seen // CSS's logo waits for FLY's end (index.css)
 
 function wanted() {
@@ -32,11 +33,12 @@ function wanted() {
 }
 
 // set before the app's first effects run, so what waits for the opening
-// (StarFilm.jsx's 3D scene) knows to wait; cleared, with an "intro-leaving"
-// event, the moment the opening starts to go
+// (StarFilm.jsx's 3D scene) knows to wait; cleared, with an "intro-gone"
+// event, the moment the opening has gone
 function decide() {
   const yes = wanted();
   if (yes) window.__introActive = true;
+  if (yes && window.JocularApp) window.__introHeld = true;
   return yes;
 }
 
@@ -82,6 +84,8 @@ function chime() {
 
 export default function Intro() {
   const [on, setOn] = useState(decide);
+  // the Android app holds the film under its launch logo till it's drawn
+  const [held, setHeld] = useState(() => !!window.__introHeld);
   const [leaving, setLeaving] = useState(false);
   // kept as state (not added to the element by hand), so a redraw keeps it
   const [flying, setFlying] = useState(false);
@@ -89,6 +93,12 @@ export default function Intro() {
   const lineRef = useRef(null), dotRef = useRef(null), rootRef = useRef(null), logoRef = useRef(null), revealRef = useRef(null), revealInRef = useRef(null);
   const landedRef = useRef(false);
   const path = useMemo(() => smooth(POINTS), []);
+
+  const headerLogo = () => [...document.querySelectorAll(".brand-mark")].find(el => {
+    if (rootRef.current?.contains(el)) return false;
+    const r = el.getBoundingClientRect();
+    return r.width > 8 && r.top >= -4 && r.top < window.innerHeight * 0.3 && getComputedStyle(el).visibility !== "hidden";
+  });
 
   // The ending: the logo shrinks and flies into the app's own logo in its
   // header (whichever is showing: the app's bar, the phone's search bar, the
@@ -98,11 +108,7 @@ export default function Intro() {
     if (done.current) return;
     done.current = true;
     const img = logoRef.current;
-    const target = img && [...document.querySelectorAll(".brand-mark")].find(el => {
-      if (rootRef.current?.contains(el)) return false;
-      const r = el.getBoundingClientRect();
-      return r.width > 8 && r.top >= -4 && r.top < window.innerHeight * 0.3 && getComputedStyle(el).visibility !== "hidden";
-    });
+    const target = img && headerLogo();
     let fly = false;
     if (target && landedRef.current) {
       const from = img.getBoundingClientRect(), to = target.getBoundingClientRect();
@@ -115,21 +121,55 @@ export default function Intro() {
     }
     setFlying(fly);
     setLeaving(true);
-    window.__introActive = false;
     window.dispatchEvent(new Event("intro-leaving"));
-    setTimeout(() => setOn(false), fly ? FLIGHT_MS + 80 : 560);
+    // the front page's 3D sky waits for this: started under the flying logo, it
+    // stopped the logo in mid-screen on Android (1 Nov 2026, filmed)
+    setTimeout(() => {
+      window.__introActive = false;
+      window.dispatchEvent(new Event("intro-gone"));
+      setOn(false);
+    }, fly ? FLIGHT_MS + 80 : 560);
   };
 
+  // Android (1 Nov 2026, filmed): a slow phone takes a second to draw the film,
+  // and its clock ran on meanwhile, so the line was half gone when it showed.
+  // The film waits, paused, for the picture and for the frames to come steadily,
+  // then takes over from the launch logo (MainActivity.java).
   useEffect(() => {
-    if (!on) return;
-    // the logo flies when the app is there to fly to; a slow phone holds it a
-    // moment longer rather than fading out over nothing
-    let t = setTimeout(function wait(left = 1500) {
-      if (left <= 0 || document.documentElement.classList.contains("app-drawn")) finish();
+    if (!on || !held) return undefined;
+    let raf = 0, gone = false, last = 0, steady = 0;
+    const begin = () => {
+      if (gone) return;
+      gone = true;
+      cancelAnimationFrame(raf);
+      window.__introHeld = false;
+      window.dispatchEvent(new Event("intro-started"));
+      window.JocularApp?.pageReady();
+      setHeld(false);
+    };
+    const longest = setTimeout(begin, 2000);
+    const frame = now => {
+      steady = last && now - last < 50 ? steady + 1 : 0;
+      last = now;
+      if (steady >= 3) begin();
+      else raf = requestAnimationFrame(frame);
+    };
+    const look = () => { if (!gone) raf = requestAnimationFrame(frame); };
+    (logoRef.current?.decode?.() ?? Promise.resolve()).then(look, look);
+    return () => { gone = true; clearTimeout(longest); cancelAnimationFrame(raf); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!on || held) return undefined;
+    // the logo flies when the app's own logo is there to fly to; the app can draw
+    // before its header does (it asks who's signed in first), so that's what's
+    // waited for, rather than fading out over nothing
+    let t = setTimeout(function wait(left = 2500) {
+      if (left <= 0 || headerLogo()) finish();
       else t = setTimeout(() => wait(left - 100), 100);
     }, LENGTH_MS);
     return () => clearTimeout(t);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [held]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // The point of light rides the line's tip as the line is uncovered, then
   // flies in an arc to where the logo will stand, growing, and bursts into the
@@ -138,7 +178,7 @@ export default function Intro() {
   // graphics chip runs them, whatever the app loading behind is doing.
   useEffect(() => {
     const line = lineRef.current, dot = dotRef.current, root = rootRef.current, logo = logoRef.current, win = revealRef.current, inner = revealInRef.current;
-    if (!on || !line || !dot || !root || !logo || !win || !inner || !dot.animate) return;
+    if (!on || held || !line || !dot || !root || !logo || !win || !inner || !dot.animate) return;
     const W = root.clientWidth, H = root.clientHeight, total = line.getTotalLength();
     // the curve's height at each x (viewBox 0–1000 each way, stretched to the screen)
     const table = Array.from({ length: 201 }, (_, i) => line.getPointAtLength((total * i) / 200));
@@ -181,11 +221,11 @@ export default function Intro() {
       if (document.documentElement.classList.contains("in-app")) { try { tick(); } catch {} chime(); }
     }, E);
     return () => { clearTimeout(land); runs.forEach(a => a.cancel()); };
-  }, [on]);
+  }, [on, held]);
 
   if (!on) return null;
   return (
-    <div ref={rootRef} className={`i4${flying ? " flying" : ""}${leaving ? " leaving" : ""}`} role="status" aria-label="Opening Jocular Insights" onClick={finish}>
+    <div ref={rootRef} className={`i4${held ? " held" : ""}${flying ? " flying" : ""}${leaving ? " leaving" : ""}`} role="status" aria-label="Opening Jocular Insights" onClick={finish}>
       <div className="i4-bg" aria-hidden="true" />
       <div className="i4-glow" aria-hidden="true" />
       <div className="i4-chart" aria-hidden="true">

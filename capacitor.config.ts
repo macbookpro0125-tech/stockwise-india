@@ -12,6 +12,9 @@ const url = process.env.APP_URL ?? "https://jocularinsights.in";
 const local = /^http:\/\/(10\.0\.2\.2|localhost|127\.0\.0\.1)(:\d+)?$/.test(url);
 
 const config: CapacitorConfig = {
+  // Android's web view is white until the page draws: a second of white between
+  // the launch screen and the opening (1 Nov 2026, found by filming the app)
+  backgroundColor: "#080810",
   appId: "com.jocularinsights.app",
   appName: "Jocular Insights",
   // Shown only if the site can't be reached at first start

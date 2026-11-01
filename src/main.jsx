@@ -1,7 +1,7 @@
 import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.jsx";
-import Intro, { LAND_MS } from "./Intro.jsx";
+import Intro, { APP_START_MS } from "./Intro.jsx";
 // Inter, served with the app rather than from Google Fonts (no third-party
 // request); the optical-size axis tightens it at heading sizes
 import "@fontsource-variable/inter/opsz.css";
@@ -48,11 +48,11 @@ function ReconnectNotice() {
 // Once the app has drawn itself, the root is shown (index.html keeps it
 // unseen in the app till then, so the search engines' page doesn't flash)
 function Drawn() {
-  useEffect(() => { document.documentElement.classList.add("app-drawn"); }, []);
+  useEffect(() => { document.documentElement.classList.add("app-drawn"); window.JocularApp?.pageReady(); }, []);
   return null;
 }
 
-// The app waits for the opening's logo to land (1 Nov 2026, the opening "still
+// The app waits for the opening's logo to land and settle (1 Nov 2026, the opening "still
 // laggy" on Android: building the app and reading the 711 KB company list ran
 // beside it). The film then has the phone to itself, and the app is built
 // behind the logo before it flies. A tap on the film starts it at once.
@@ -61,9 +61,12 @@ function AfterOpening({ children }) {
   useEffect(() => {
     if (go) return undefined;
     const start = () => setGo(true);
-    const t = setTimeout(start, LAND_MS);
+    let t;
+    const timer = () => { t = setTimeout(start, APP_START_MS); };
+    if (window.__introHeld) window.addEventListener("intro-started", timer, { once: true });
+    else timer();
     window.addEventListener("intro-leaving", start, { once: true });
-    return () => { clearTimeout(t); window.removeEventListener("intro-leaving", start); };
+    return () => { clearTimeout(t); window.removeEventListener("intro-started", timer); window.removeEventListener("intro-leaving", start); };
   }, [go]);
   return go ? children : null;
 }

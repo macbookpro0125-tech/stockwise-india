@@ -8,12 +8,12 @@ Everything up to the opening's spinner fix (`c700e40`), pushed 1 Nov 2026: Desk 
 
 ## Committed but NOT pushed yet
 
-Nothing.
+The Android opening's fixes, 1 Nov 2026: the launch logo holds until the film is drawn (needs the new app build), the film's clock waits for it, and the logo waits for the header and flies before the front page's 3D sky starts. All tests pass. In browsers and on iPhone only the last part changes.
 
 ## Open / next
 
 1. **Owner is checking on his phone (1 Nov):** the opening on Android, and My desk ("can't add a card, can't move it", fixed in `b0f9fd4`). Wait for his feedback.
-2. **Android 1.2 (build 4) is built for the Play launch (~7 Nov 2026):** `android/app/build/outputs/bundle/release/app-release.aab`, signed, pointing at the live site. The owner uploads it. Checked on the emulator 1 Nov: screens, haptic, push token. Not checked: the chime (emulator has no sound), a push actually arriving, the release build run on a phone. AdMob answered "Publisher misconfiguration" for the real app ID on 1 Nov: expected while the account is unverified and no store is linked; recheck after the Play listing is public.
+2. **Android 1.3 (build 5) is built for the Play launch (~7 Nov 2026), and replaces 1.2 (build 4):** `~/Desktop/jocular-play/jocular-insights-1.3-build5.aab`, also `android/app/build/outputs/bundle/release/app-release.aab`, signed, pointing at the live site. The owner uploads it. Checked on the emulator 1 Nov: screens, haptic, push token. Not checked: the chime (emulator has no sound), a push actually arriving, the release build run on a phone. AdMob answered "Publisher misconfiguration" for the real app ID on 1 Nov: expected while the account is unverified and no store is linked; recheck after the Play listing is public.
 3. **Visitor review ~6 Nov 2026.** Read `/api/owner/stats` while signed in as the owner. Count only from 30 Oct; earlier days include bots. On 31 Oct there were about 5 real visitors a day and 0 sign-ups since the 13 testers on 24 Oct.
 4. **Search:**
    - Google has indexed 31 of 6,849 sitemap pages (the sitemap was first read on 30 Oct).

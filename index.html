@@ -55,6 +55,7 @@
        (the noscript below) it shows at once, for a search engine or a visitor
        who reads it. A load that takes a moment shows a small spinner. -->
   <style>
+    html.in-app { background: #080810; }
     html:not(.app-drawn) #root { visibility: hidden; animation: root-show 0s linear 4s forwards; }
     html.in-app:not(.app-drawn) #root { animation: none; }
     @keyframes root-show { to { visibility: visible; } }

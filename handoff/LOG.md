@@ -67,3 +67,4 @@ The `/learn` guides, IndexNow, the new tab icons, and the opening animation.
 
 - **23 Oct:** News/Explore went live. The repo history was rewritten to remove a competitor's name; old clones must never be pushed.
 - **17–23 Oct:** ChatGPT pushed half-done work twice; the owner stopped using it on this repo.
+- **1 Nov 2026 (Claude Opus):** Filmed the opening in the Android app and fixed what the films showed: white web view, an empty gap before the film, the line half gone when first seen, and the logo fading out instead of flying (the app's header wasn't drawn yet; then the 3D sky stalled the flight). Native changes are in app 1.3 (build 5). On the emulator the front page's text still takes about a second to appear after the logo lands.
