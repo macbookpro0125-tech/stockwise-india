@@ -188,13 +188,15 @@ function MarketChart({ closes }) {
     const up = closes.at(-1)[1] >= closes[0][1], line = v(up ? "--green" : "--red");
     const chart = createChart(host.current, {
       autoSize: true,
-      layout: { background: { type: ColorType.Solid, color: "transparent" }, textColor: v("--t3"), fontFamily: getComputedStyle(document.body).fontFamily, attributionLogo: false },
+      layout: { background: { type: ColorType.Solid, color: "rgba(0, 0, 0, 0)" }, textColor: v("--t3"), fontFamily: getComputedStyle(document.body).fontFamily, attributionLogo: false },
       grid: { vertLines: { visible: false }, horzLines: { color: v("--bdr") } },
       rightPriceScale: { borderVisible: false }, timeScale: { borderVisible: false }, localization: { locale: "en-IN", priceFormatter: p => Math.round(p).toLocaleString("en-IN") },
       handleScroll: false, handleScale: false,
     });
-    const fill = `color-mix(in srgb, ${line} 22%, transparent)`;
-    const series = chart.addSeries(AreaSeries, { lineColor: line, lineWidth: 2, topColor: fill, bottomColor: "transparent", priceLineVisible: false });
+    // plain rgba: chart drawing can't rely on color-mix() (the line vanished in Safari)
+    const m = /^#([0-9a-f]{6})$/i.exec(line), n = m ? parseInt(m[1], 16) : 0x808080;
+    const fill = `rgba(${n >> 16}, ${(n >> 8) & 255}, ${n & 255}, 0.22)`, none = `rgba(${n >> 16}, ${(n >> 8) & 255}, ${n & 255}, 0)`;
+    const series = chart.addSeries(AreaSeries, { lineColor: line, lineWidth: 2, topColor: fill, bottomColor: none, priceLineVisible: false });
     series.setData(closes.map(([time, value]) => ({ time, value })));
     chart.timeScale().fitContent();
     // the whole year across the box, whatever its width becomes (it was left
