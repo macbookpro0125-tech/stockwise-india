@@ -14,7 +14,8 @@ import { tick } from "./haptics.js";
 // with reduced motion. A tap skips it.
 const LENGTH_MS = 2700;
 const FLIGHT_MS = 885; // the logo into the page's logo (30% slower, 1 Nov 2026)
-const RIDE = [150, 1300], FLY = [1380, 1780]; // CSS's logo waits for FLY's end (index.css)
+export const LAND_MS = 1780; // the logo lands; the app starts building (main.jsx)
+const RIDE = [150, 1300], FLY = [1380, LAND_MS]; // CSS's logo waits for FLY's end (index.css)
 
 function wanted() {
   if (typeof window === "undefined") return false;
@@ -121,7 +122,12 @@ export default function Intro() {
 
   useEffect(() => {
     if (!on) return;
-    const t = setTimeout(finish, LENGTH_MS);
+    // the logo flies when the app is there to fly to; a slow phone holds it a
+    // moment longer rather than fading out over nothing
+    let t = setTimeout(function wait(left = 1500) {
+      if (left <= 0 || document.documentElement.classList.contains("app-drawn")) finish();
+      else t = setTimeout(() => wait(left - 100), 100);
+    }, LENGTH_MS);
     return () => clearTimeout(t);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

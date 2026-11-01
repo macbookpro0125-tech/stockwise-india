@@ -4,6 +4,7 @@ Newest first. One line per piece of work; the commit message has the detail.
 
 ## 1 Nov 2026 (overnight debug, asked for "debug everything, start to last")
 
+- **1 Nov:** The opening: the app now waits for the logo to land before building (`AfterOpening`, main.jsx), so the film has the phone to itself; the logo holds until the app has drawn.
 - **1 Nov:** The opening's last part: the logo's flight into the page's logo was jumping straight to the end (a CSS transition taking over from its arrival animation). Now a real glide, 885 ms (30% slower), as the owner asked.
 - **1 Nov:** Pushed to main at `c20da4a` (15 commits); live, with the health check, a stock page and /desk answering.
 - **1 Nov:** The opening rebuilt for Android lag: only opacity and transform move, from precomputed keyframes and CSS delays, so the app loading behind can't stall it. Janky frames on the emulator fell from about 47% to 17–27%. The travelling shimmer and the logo's blur-in are gone.

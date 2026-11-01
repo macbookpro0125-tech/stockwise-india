@@ -1,7 +1,7 @@
 import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.jsx";
-import Intro from "./Intro.jsx";
+import Intro, { LAND_MS } from "./Intro.jsx";
 // Inter, served with the app rather than from Google Fonts (no third-party
 // request); the optical-size axis tightens it at heading sizes
 import "@fontsource-variable/inter/opsz.css";
@@ -52,13 +52,31 @@ function Drawn() {
   return null;
 }
 
+// The app waits for the opening's logo to land (1 Nov 2026, the opening "still
+// laggy" on Android: building the app and reading the 711 KB company list ran
+// beside it). The film then has the phone to itself, and the app is built
+// behind the logo before it flies. A tap on the film starts it at once.
+function AfterOpening({ children }) {
+  const [go, setGo] = useState(() => !window.__introActive);
+  useEffect(() => {
+    if (go) return undefined;
+    const start = () => setGo(true);
+    const t = setTimeout(start, LAND_MS);
+    window.addEventListener("intro-leaving", start, { once: true });
+    return () => { clearTimeout(t); window.removeEventListener("intro-leaving", start); };
+  }, [go]);
+  return go ? children : null;
+}
+
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     {/* first, so it has decided before the app asks whether to wait for it */}
     <Intro />
-    <App />
-    <ReconnectNotice />
-    <Drawn />
+    <AfterOpening>
+      <App />
+      <ReconnectNotice />
+      <Drawn />
+    </AfterOpening>
   </StrictMode>
 );
 // started: the page's guard (index.html) shows no "didn't start" message
