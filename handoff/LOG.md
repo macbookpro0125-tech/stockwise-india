@@ -73,3 +73,4 @@ The `/learn` guides, IndexNow, the new tab icons, and the opening animation.
 - **1 Nov 2026 (Claude Opus):** The opening's ending and dark first paint (`8348850`) are live; the owner is checking on his phones.
 - **1 Nov 2026 (Claude Opus):** Search Console: front page and the sector pages not yet on Google requested. Confirmed: front page, consumer-durables, services, utilities. Unconfirmed (timeout): construction-materials, oil-gas-and-consumable-fuels, forest-materials.
 - **1 Nov 2026 (Claude Opus):** The BSE lookup now also asks about companies with a sector but no industry (410, mostly large ones). Not yet run against BSE, which refuses this computer; the GitHub data job will.
+- **1 Nov 2026 (Claude Opus):** My desk's cards have a visible edge, a tinted title bar and lines between list rows. The owner's words were unclear ("can't see the difference in between"); read as cards blending into the page.

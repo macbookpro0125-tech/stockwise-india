@@ -8,7 +8,7 @@ Everything up to the opening's ending and dark first paint (`8348850`; the iPhon
 
 ## Committed but NOT pushed yet
 
-The indexing log, and the BSE lookup for companies with a sector but no industry (Open item 6).
+The indexing log, the BSE lookup for companies with a sector but no industry (Open item 6), and clearer edges on My desk's cards.
 
 ## Open / next
 
