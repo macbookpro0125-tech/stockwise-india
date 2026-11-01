@@ -30,7 +30,31 @@ const SHOOTING = [
   { left: "62%", top: "5%", animationDelay: "3s", animationDuration: "17s" },
   { left: "92%", top: "20%", animationDelay: "11s", animationDuration: "23s" },
   { left: "34%", top: "2%", animationDelay: "19s", animationDuration: "29s" },
+  { left: "78%", top: "9%", animationDelay: "7s", animationDuration: "19s" },
+  { left: "20%", top: "26%", animationDelay: "14s", animationDuration: "31s" },
+  { left: "98%", top: "38%", animationDelay: "25s", animationDuration: "37s" },
 ];
+
+// Stars that keep travelling: one picture, painted twice side by side and slid
+// by exactly one copy, so it runs for ever without a jump. One sliding layer each.
+function StarStream({ count, size, seed: start, className }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const cv = ref.current, c = cv?.getContext?.("2d");
+    if (!c) return;
+    const w = Math.round(cv.clientWidth / 2), h = cv.clientHeight;
+    cv.width = w * 2; cv.height = h;
+    let seed = start;
+    const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    c.fillStyle = "#fff";
+    for (let i = 0; i < count; i++) {
+      const x = rnd() * w, y = rnd() * h, r = size * (0.6 + rnd() * 0.7);
+      c.globalAlpha = 0.45 + rnd() * 0.55;
+      for (const at of [x, x + w]) { c.beginPath(); c.arc(at, y, r, 0, Math.PI * 2); c.fill(); }
+    }
+  }, [count, size, start]);
+  return <canvas ref={ref} className={`td-stream ${className}`} aria-hidden="true" />;
+}
 
 // The front page's night sky, painted once on two layers that the browser
 // slides past each other, so moving it costs next to nothing: no 3D scene. The same stars at every visit.
@@ -114,6 +138,8 @@ function StarField() {
       <canvas ref={ref} className="td-sky" aria-hidden="true" />
       <canvas ref={nearRef} className="td-sky td-sky-near" aria-hidden="true" />
       <div className="td-tints" aria-hidden="true"><i /><i /></div>
+      <StarStream count={260} size={0.7} seed={11} className="td-stream-slow" />
+      <StarStream count={90} size={1.1} seed={29} className="td-stream-fast" />
       {SHOOTING.map((t, i) => <span key={i} className="td-shoot" aria-hidden="true" style={t} />)}
       {TWINKLES.map((t, i) => <span key={i} className="td-twinkle" aria-hidden="true" style={t} />)}
     </>

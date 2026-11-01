@@ -5436,8 +5436,11 @@ button.td-line { cursor: pointer; }
 @keyframes td-tint-b { from { transform: translate3d(70px, 20px, 0); opacity: 1; } to { transform: translate3d(-110px, -20px, 0); opacity: 0.4; } }
 .td-shoot { position: absolute; width: 130px; height: 1.5px; border-radius: 2px; opacity: 0; background: linear-gradient(90deg, #fff, transparent); will-change: transform, opacity; animation: td-shoot 17s linear infinite; }
 @keyframes td-shoot { 0% { transform: rotate(-24deg) translate3d(0, 0, 0); opacity: 0; } 1% { opacity: 1; } 5% { transform: rotate(-24deg) translate3d(-340px, 0, 0); opacity: 0; } 100% { transform: rotate(-24deg) translate3d(-340px, 0, 0); opacity: 0; } }
-.td-hero.td-still :is(.td-sky, .td-tints i, .td-shoot, .td-twinkle) { animation-play-state: paused; }
-@media (prefers-reduced-motion: reduce) { .td-sky, .td-tints i { animation: none; } .td-shoot { display: none; } }
+.td-stream { position: absolute; left: 0; top: 0; width: 200%; height: 720px; pointer-events: none; will-change: transform; animation: td-stream 150s linear infinite; }
+.td-stream-fast { animation-duration: 75s; }
+@keyframes td-stream { to { transform: translate3d(-50%, 0, 0); } }
+.td-hero.td-still :is(.td-sky, .td-tints i, .td-shoot, .td-twinkle, .td-stream) { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) { .td-sky, .td-tints i, .td-stream { animation: none; } .td-shoot { display: none; } }
 /* the sky falls away behind the words, so they read cleanly */
 .td-hero::after { content: ""; position: absolute; z-index: 0; left: 50%; top: 20px; width: min(1100px, 92%); height: 340px; transform: translateX(-50%); pointer-events: none; background: radial-gradient(closest-side, rgba(0, 0, 0, 0.92) 55%, rgba(0, 0, 0, 0)); }
 .td-hero h2, .td-hero p, .td-cta { z-index: 1; }
