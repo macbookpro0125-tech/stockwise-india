@@ -95,28 +95,20 @@ test("F02-H1 a strategy, sector and name filter narrow the list; sort works", as
   await expect(page.getByText(/None of these \d+ companies match/).first()).toBeVisible(); // F02-E1 says why it's empty
 });
 
-test("F02-H5 the curved row of strategies pauses on hover; a card opens its strategy", async ({ page, account }) => {
+test("F02-H5 a computer's home: the market, your watchlist, and a screener opened from it", async ({ page, account }) => {
   await page.goto("/");
-  await expect(page.locator(".cr-tile").first()).toBeAttached();
-  await expect(page.getByRole("button", { name: "Start screening" })).toBeInViewport(); // the row doesn't push it below the fold
-  await page.waitForTimeout(1500); // the band fades in once measured
-  // the middle of the card nearest the centre of the screen
-  const spot = await page.evaluate(() => {
-    let best = null;
-    for (const t of document.querySelectorAll(".cr-tile")) {
-      if (getComputedStyle(t).visibility !== "visible") continue;
-      const r = t.querySelectorAll(".cr-strip")[8].getBoundingClientRect();
-      const x = r.left + r.width / 2, y = r.top + r.height / 2, d = Math.abs(x - innerWidth / 2);
-      if (!best || d < best.d) best = { x, y, d };
-    }
-    return best;
-  });
-  await page.mouse.move(spot.x, spot.y);
-  const states = await page.locator(".cr-tile").evaluateAll(ts => ts.map(t => getComputedStyle(t).animationPlayState));
-  expect(new Set(states)).toEqual(new Set(["paused"]));
-  const name = await page.evaluate(({ x, y }) => document.elementFromPoint(x, y).closest(".cr-tile").querySelector(".rb-card b").textContent, spot);
-  await page.mouse.click(spot.x, spot.y);
-  await expect(screenTitle(page)).toHaveText(name);
+  await expect(page.getByRole("heading", { name: "Market summary" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "The market" })).toContainText("NIFTY 50");
+  await expect(page.getByRole("region", { name: "Your watchlist" })).toContainText("Nothing here yet");
+  await page.getByRole("region", { name: "Screeners" }).getByRole("button", { name: /^High Quality Compounders/ }).click();
+  await expect(page.getByRole("heading", { name: "High Quality Compounders" })).toBeVisible();
+  await page.goto("/stock/TCS");
+  await page.getByRole("button", { name: "Add to watchlist" }).click();
+  await page.waitForTimeout(800);
+  await page.goto("/");
+  const row = page.getByRole("region", { name: "Your watchlist" }).getByRole("button", { name: /^Tata Consultancy/ });
+  await row.click();
+  await expect(page).toHaveURL(/\/stock\/TCS/);
 });
 
 // Fix plan #5 and #6 (replica/fixes.md): a screen on the banks' own figures,

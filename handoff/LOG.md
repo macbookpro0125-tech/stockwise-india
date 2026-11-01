@@ -88,3 +88,4 @@ The `/learn` guides, IndexNow, the new tab icons, and the opening animation.
 - **1 Nov 2026 (Claude Opus):** Chart upgrade, Performance link and sign-in fixes are live. Tests: 136 passed, N-H3 failed (needs NSE, unreachable from this computer). D-1 passed here but failed some runs earlier (`.desk-title span` matched 2 elements), not yet explained. Minute and hour charts declined by the owner for now: they need paid licensed data.
 - **1 Nov 2026 (Claude Opus):** Desktop: the second logo removed and the Screen builder and Desk icons told apart (sliders, monitor).
 - **1 Nov 2026 (Claude Opus):** The owner didn't like the header logo removed: put back. Keep both logos on a computer.
+- **1 Nov 2026 (Claude Opus):** New signed-in computer home, committed locally for the owner to judge. Phones keep their own home. `ScreensHome.jsx` now serves no computer page.

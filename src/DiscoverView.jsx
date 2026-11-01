@@ -12,7 +12,7 @@ import { useAdPause } from "./ads.jsx";
 import { strategiesStore, browserLeftovers, moveLeftovers, discardLeftovers } from "./accountData.js";
 import ResultsTable from "./ResultsTable.jsx";
 import { SIGNALS, applySignal, signalCounts, COLUMN_SETS, currentSet, listStats } from "./screenShortcuts.js";
-import ScreensHome from "./ScreensHome.jsx";
+import TodayHome from "./TodayHome.jsx";
 import PhoneScreens from "./PhoneScreens.jsx";
 import { NEW_SCREEN_EVENT } from "./phoneChrome.js";
 import { noteRecent } from "./screensHome.js";
@@ -91,7 +91,7 @@ function Modal({ onClose, width = 340, children }) {
 
 // The periods a ranked strategy's switch offers (Top Gainers)
 const PERIOD_WORDS = { ret1d: "1 day", ret1w: "1 week", ret1m: "1 month", ret3m: "3 months", ret6m: "6 months", ret1y: "1 year", ret3y: "3 years", ret5y: "5 years" };
-export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "discover", onPage = null, onShowMap = null }) {
+export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "discover", onPage = null, onShowMap = null, visible = true, onOpenTab = null }) {
   const { meta, error: metaError, retry: retryMeta } = useScreenerMeta();
   // A shared link wins; else the last screen. null until the first screen
   // says what the old saved criteria became.
@@ -674,17 +674,15 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
           // The screener's home: a hero, three ways in, then the strategies as
           // big cards (ScreensHome.jsx)
           return (
-            <ScreensHome
-              ribbon={ribbon}
-              onPickStrategy={preset => { applyPreset(preset); setFiltersOpen(false); showStocks(); }}
-              compact={isPhone}
-              meta={meta}
-              total={results?.total}
-              onStart={newScreen}
+            <TodayHome
+              visible={visible}
+              onOpenStock={onOpenStock}
+              onOpenTab={onOpenTab}
+              onPickScreen={preset => { applyPreset(preset); setFiltersOpen(false); showStocks(); }}
               onCreate={newScreen}
               continueCard={continueCard || null}
-              newsTile={onOpenNews && !isPhone ? <Suspense fallback={null}><NewsTile onOpen={id => onOpenNews(id)} onSeeAll={() => onOpenNews(null)} /></Suspense> : null}
-            >{cards}</ScreensHome>
+              newsTile={onOpenNews ? <Suspense fallback={null}><NewsTile onOpen={id => onOpenNews(id)} onSeeAll={() => onOpenNews(null)} /></Suspense> : null}
+            >{cards}</TodayHome>
           );
         })()}
 
