@@ -75,3 +75,4 @@ The `/learn` guides, IndexNow, the new tab icons, and the opening animation.
 - **1 Nov 2026 (Claude Opus):** The BSE lookup now also asks about companies with a sector but no industry (410, mostly large ones). Not yet run against BSE, which refuses this computer; the GitHub data job will.
 - **1 Nov 2026 (Claude Opus):** My desk's cards have a visible edge, a tinted title bar and lines between list rows. The owner's words were unclear ("can't see the difference in between"); read as cards blending into the page.
 - **1 Nov 2026 (Claude Opus):** My desk's cards are light glass over soft teal, violet and blue glows, with an accent glow under the pointer (computers only; a phone has no hover).
+- **1 Nov 2026 (Claude Opus):** The owner asked for My desk's glass and glow on the whole app. Done at the end of `src/index.css` for the big cards; small rows stay plain, per their earlier dislike of glowing bubbles.

@@ -5236,25 +5236,11 @@ tr:hover .row-acts { --row-bg: var(--s3); }
 .md-grid { position: relative; display: block; min-height: 120px; transition: height 220ms cubic-bezier(0.2, 0.8, 0.2, 1); }
 .md-grid .md-card { position: absolute; display: flex; flex-direction: column; grid-column: auto; border: 0; border-radius: 16px; background: color-mix(in srgb, var(--card) 88%, var(--t1) 2%);
   transition: left 260ms cubic-bezier(0.2, 0.8, 0.2, 1), top 260ms cubic-bezier(0.2, 0.8, 0.2, 1), width 260ms cubic-bezier(0.2, 0.8, 0.2, 1), height 260ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 160ms; }
-/* Glass cards over the app's soft teal and violet glows, each with an edge of its
-   own, a line between rows, and a glow under the pointer (1 Nov 2026, the owner:
-   "can't see the difference in between", then "glass effects … it should glow").
-   Edges are shadows: a border would shift the contents of cards placed to the pixel. */
-.md-grid { --md-edge: rgba(255, 255, 255, 0.13); --md-shine: rgba(255, 255, 255, 0.1); --md-glass: rgba(24, 24, 40, 0.58); --md-title: rgba(255, 255, 255, 0.04); --md-drop: rgba(0, 0, 0, 0.35); --md-glow: 34%; }
-[data-theme="light"] .md-grid { --md-edge: rgba(16, 24, 40, 0.14); --md-shine: rgba(255, 255, 255, 0.9); --md-glass: rgba(255, 255, 255, 0.62); --md-title: rgba(255, 255, 255, 0.45); --md-drop: rgba(16, 24, 40, 0.08); --md-glow: 28%; }
-.md-grid::before { content: ""; position: absolute; inset: -24px; z-index: 0; pointer-events: none;
-  background: radial-gradient(620px 460px at 12% 8%, color-mix(in srgb, #00E0BE 12%, transparent), transparent 72%), radial-gradient(720px 520px at 88% 30%, color-mix(in srgb, #A86BFF 14%, transparent), transparent 72%), radial-gradient(620px 460px at 40% 92%, color-mix(in srgb, #3E8BFF 10%, transparent), transparent 72%);
-  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 140px), linear-gradient(to right, transparent, #000 140px, #000 calc(100% - 140px), transparent); -webkit-mask-composite: source-in;
-  mask-image: linear-gradient(to bottom, transparent, #000 140px), linear-gradient(to right, transparent, #000 140px, #000 calc(100% - 140px), transparent); mask-composite: intersect; }
-.md-grid .md-card { z-index: 1; background: var(--md-glass); -webkit-backdrop-filter: blur(22px) saturate(170%); backdrop-filter: blur(22px) saturate(170%);
-  box-shadow: 0 0 0 1px var(--md-edge), inset 0 1px 0 var(--md-shine), 0 8px 24px var(--md-drop); }
-.md-card-head { background: var(--md-title, var(--card2)); }
-.md-card-body > section, .md-card-body .chart-panel, .md-card-body > .mood { background: transparent; }
+/* My desk's cards take the app's glass (below), drawn with shadows: a border
+   would shift the contents of cards placed to the pixel. */
+.md-card-head { background: var(--ga-title); }
+.md-card-body > section, .md-card-body .chart-panel, .md-card-body > .mood { background: transparent; box-shadow: none; }
 .md-list li + li { border-top: 1px solid var(--bdr); }
-@media (hover: hover) and (pointer: fine) {
-  .md-grid .md-card:hover { box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent), inset 0 1px 0 var(--md-shine), 0 8px 24px var(--md-drop), 0 0 28px color-mix(in srgb, var(--accent) var(--md-glow), transparent); }
-}
-@media (prefers-reduced-transparency: reduce) { .md-grid .md-card { background: var(--card); -webkit-backdrop-filter: none; backdrop-filter: none; } .md-grid::before { display: none; } }
 .md-grid .md-card.lifted { z-index: 5; transition: box-shadow 160ms; box-shadow: 0 18px 50px rgba(0,0,0,0.55), 0 0 0 1px var(--accent); }
 .md-grid.dragging, .md-grid.dragging * { user-select: none; -webkit-user-select: none; }
 .md-ghost { position: absolute; border-radius: 16px; background: color-mix(in srgb, var(--accent) 12%, transparent); outline: 2px dashed color-mix(in srgb, var(--accent) 55%, transparent); outline-offset: -2px; transition: left 160ms, top 160ms, width 160ms, height 160ms; }
@@ -5298,3 +5284,32 @@ tr:hover .row-acts { --row-bg: var(--s3); }
 .desk-price .desk-chg.up, .desk-price .desk-chg.down { color: #fff; }
 .desk-list li[aria-selected="true"] .desk-price .desk-chg, .md-list li[aria-selected="true"] .desk-price .desk-chg { color: var(--on-accent); }
 .desk-stage.desk-stage { color: var(--tone); } /* over .desk-title span's grey */
+
+/* The whole app (1 Nov 2026, the owner, after My desk: "this effect … every where
+   whole app"): soft teal, violet and blue glows behind the pages, the big cards
+   light glass over them, each with an edge, and a glow under the pointer. Only
+   the big cards: glass inside glass and rows in bubbles look busy. No blur on a
+   touch screen: it costs phones frames (the Android opening's lesson). */
+:root { --ga-edge: rgba(255, 255, 255, 0.13); --ga-shine: rgba(255, 255, 255, 0.09); --ga-glass: rgba(24, 24, 40, 0.58); --ga-solid: rgba(24, 24, 40, 0.84); --ga-title: rgba(255, 255, 255, 0.04); --ga-drop: rgba(0, 0, 0, 0.32); --ga-glow: 30%; }
+:root[data-theme="light"] { --ga-edge: rgba(16, 24, 40, 0.14); --ga-shine: rgba(255, 255, 255, 0.9); --ga-glass: rgba(255, 255, 255, 0.62); --ga-solid: rgba(255, 255, 255, 0.86); --ga-title: rgba(255, 255, 255, 0.45); --ga-drop: rgba(16, 24, 40, 0.07); --ga-glow: 26%; }
+body::before { content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background: radial-gradient(52vw 44vh at 14% 12%, rgba(0, 224, 190, 0.15), transparent 72%), radial-gradient(56vw 52vh at 90% 34%, rgba(168, 107, 255, 0.18), transparent 72%), radial-gradient(52vw 44vh at 42% 96%, rgba(62, 139, 255, 0.13), transparent 72%); }
+#root { position: relative; z-index: 1; }
+.app-shell { background: transparent !important; }
+.ss-section { border-radius: var(--r-lg); }
+.md-grid .md-card.lifted { box-shadow: 0 18px 50px rgba(0,0,0,0.55), 0 0 0 1px var(--accent) !important; }
+.md-grid .md-card, .sd-card, .sd.ap .sd-card, .sd.ap .sd-snap-card, .sd.ap .sd-metrics, .sd-snap-card, .sd-metrics, .ss-section, .dk-keyfigs, .desk-list, .desk-main, .desk-side, .mood, .card, .sc2, .ls, .sc2-list, .fb, .ex-card, .ex-map-link, .nw-list, .ex-heat {
+  background: var(--ga-solid); border-color: transparent;
+  box-shadow: 0 0 0 1px var(--ga-edge), inset 0 1px 0 var(--ga-shine), 0 6px 20px var(--ga-drop) !important; transition: box-shadow 180ms ease-out; }
+.card .card, .sd-card .card, .md-card .card, .md-card .mood, .sd-card .sd-card { background: transparent; box-shadow: none !important; -webkit-backdrop-filter: none; backdrop-filter: none; }
+@media (hover: hover) and (pointer: fine) {
+  .md-grid .md-card, .sd-card, .sd.ap .sd-card, .sd.ap .sd-snap-card, .sd.ap .sd-metrics, .sd-snap-card, .sd-metrics, .ss-section, .dk-keyfigs, .desk-list, .desk-main, .desk-side, .mood, .card, .sc2, .ls, .sc2-list, .fb, .ex-card, .ex-map-link, .nw-list, .ex-heat {
+    background: var(--ga-glass); -webkit-backdrop-filter: blur(18px) saturate(165%); backdrop-filter: blur(18px) saturate(165%); }
+  .md-grid .md-card:hover, .sd-card:hover, .sd.ap .sd-card:hover, .sd.ap .sd-snap-card:hover, .sd.ap .sd-metrics:hover, .sd-snap-card:hover, .sd-metrics:hover, .ss-section:hover, .dk-keyfigs:hover, .desk-list:hover, .desk-main:hover, .desk-side:hover, .mood:hover, .card:hover, .sc2.in:hover, .ls:hover, .sc2-list:hover, .fb:hover, .ex-card:hover, .ex-map-link:hover, .nw-list:hover, .ex-heat:hover {
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 50%, transparent), inset 0 1px 0 var(--ga-shine), 0 6px 20px var(--ga-drop), 0 0 26px color-mix(in srgb, var(--accent) var(--ga-glow), transparent) !important; }
+  .card .card:hover, .sd-card .card:hover, .md-card .card:hover, .md-card .mood:hover, .sd-card .sd-card:hover { box-shadow: none !important; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  body::before { display: none; }
+  .md-grid .md-card, .sd-card, .sd.ap .sd-card, .sd.ap .sd-snap-card, .sd.ap .sd-metrics, .sd-snap-card, .sd-metrics, .ss-section, .dk-keyfigs, .desk-list, .desk-main, .desk-side, .mood, .card, .sc2, .ls, .sc2-list, .fb, .ex-card, .ex-map-link, .nw-list, .ex-heat { background: var(--card); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}

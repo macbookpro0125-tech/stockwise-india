@@ -8,7 +8,7 @@ Everything up to the opening's ending and dark first paint (`8348850`; the iPhon
 
 ## Committed but NOT pushed yet
 
-The indexing log, the BSE lookup for companies with a sector but no industry (Open item 6), and My desk's cards: clearer edges, light glass over soft glows, a glow under the pointer.
+The indexing log, the BSE lookup for companies with a sector but no industry (Open item 6), and the glass look across the app: soft glows behind every page (`body::before`), big cards light glass with an edge, a glow under the pointer (computers only). No blur on touch screens, to keep phones smooth; not yet checked on a real phone. Block at the end of `src/index.css`.
 
 ## Open / next
 
