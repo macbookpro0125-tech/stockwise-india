@@ -113,3 +113,4 @@ The `/learn` guides, IndexNow, the new tab icons, and the opening animation.
 - **1 Nov 2026 (Claude Opus):** Colour behind the home's Market summary cards halved at the owner's word.
 - **1 Nov 2026 (Claude Opus):** Home's cards given light and depth: gradient surface and edge, softer inner lines, no chart gridlines.
 - **1 Nov 2026 (Claude Opus):** Home's cards: a soft glow follows the mouse across each card.
+- **2 Nov 2026 (Claude Opus):** Pushed Market summary's rearrangement, card lighting, mouse glow and Safari chart fix. 137 tests passed, none failed. Owner to check the chart in Safari.

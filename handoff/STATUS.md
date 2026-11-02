@@ -4,11 +4,11 @@ _Last updated: 1 Nov 2026, by Claude (Opus) on branch `screeners-home`._
 
 ## Live on jocularinsights.in
 
-Everything up to the new signed-in computer home (`TodayHome.jsx`: a night-sky opening that a Market summary sheet slides over, glass cards; `ScreensHome.jsx` no longer serves a computer page), new icons for Screen builder and Desk, the chart upgrade and phone full-screen chart (`5c5a347`), the Performance name link, the sign-in card fix, Google hidden on an iPhone's Home Screen version (none checked on a real phone), the iPhone opening fixes and the phone stock bar (`6683c51`; not checked on an iPhone, and the owner must re-add the Home Screen icon for the dark launch image), the glass look across the app (`6337941`; not checked on a real phone), the BSE lookup for missing industry labels, the opening's ending and dark first paint (`8348850`; the iPhone white screen is not yet checked on an iPhone), and the Android opening's fixes (`4c19b85`), pushed 1 Nov 2026 (the launch-logo hold needs app 1.3, build 5): Desk and My desk, stock pages with "below our fair value" and same-industry peers, the Screen builder name, the overnight fixes, and the opening rebuilt so it doesn't lag on Android.
+Everything up to the home's rearranged Market summary, lit cards with a glow that follows the mouse, and the Safari chart fix (`d71e976`; Safari not tested here), the new signed-in computer home (`TodayHome.jsx`: a night-sky opening that a Market summary sheet slides over, glass cards; `ScreensHome.jsx` no longer serves a computer page), new icons for Screen builder and Desk, the chart upgrade and phone full-screen chart (`5c5a347`), the Performance name link, the sign-in card fix, Google hidden on an iPhone's Home Screen version (none checked on a real phone), the iPhone opening fixes and the phone stock bar (`6683c51`; not checked on an iPhone, and the owner must re-add the Home Screen icon for the dark launch image), the glass look across the app (`6337941`; not checked on a real phone), the BSE lookup for missing industry labels, the opening's ending and dark first paint (`8348850`; the iPhone white screen is not yet checked on an iPhone), and the Android opening's fixes (`4c19b85`), pushed 1 Nov 2026 (the launch-logo hold needs app 1.3, build 5): Desk and My desk, stock pages with "below our fair value" and same-industry peers, the Screen builder name, the overnight fixes, and the opening rebuilt so it doesn't lag on Android.
 
 ## Committed but NOT pushed yet
 
-Home's Nifty chart fix for Safari (not tested in Safari) and the rearranged Market summary: market first, your companies next, the page menu lower down, no Visitors entry or index badges.
+Nothing.
 
 ## Open / next
 
