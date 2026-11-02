@@ -20,7 +20,7 @@ Nothing.
    - Stock pages rank around position 71, for "*company* share price" searches.
    - Check again in 2–3 weeks.
 5. **Price strength locally:** a data file without 9-month returns (the local one, from 23 Oct) now gets them from the daily prices kept in `data/history/` (`server/price-strength.js`). It takes a few seconds the first time; nothing is downloaded.
-6. **Industry labels: 2,136 of 2,551 companies had one on 1 Nov 2026 (the old "895" was out of date).** The 410 without were companies with a sector from NSE's index lists, largely big ones (Lemon Tree, Chalet, ITC Hotels), which the BSE lookup skipped. Fixed in `server/market-data.js` and live; the labels arrive with the first evening data job after a push. BSE refuses this computer (403), so check the job's `[sectors] BSE` log line and a Lemon Tree page after that run. Labels come from two schemes (NSE announcements' and BSE's), so the same industry can carry two names.
+6. **Industry labels: 2,136 of 2,551 companies had one on 1 Nov 2026 (the old "895" was out of date).** The 410 without were companies with a sector from NSE's index lists, largely big ones (Lemon Tree, Chalet, ITC Hotels), which the BSE lookup skipped. Fixed in `server/market-data.js` and live; the first scheduled data job after the push is 2 Nov, 16:30 IST (the release was last built 1 Nov 07:51 UTC, before it; 410 still unlabelled). BSE refuses this computer (403), so check the job's `[sectors] BSE` log line and a Lemon Tree page after that run. Labels come from two schemes (NSE announcements' and BSE's), so the same industry can carry two names.
 
 ## Set aside (don't redo without asking)
 
