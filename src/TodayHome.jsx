@@ -311,6 +311,7 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onPi
         <div className="td-shot">
           <img src="/screens/home-shot.jpg" alt="Jocular Insights listing companies that match a screen, with their quality scores" width="1280" height="800" />
         </div>
+        <div className="td-shot-fade" aria-hidden="true" />
         <button type="button" className="td-shot-pill" onClick={seeAll}>See every screener<ChevronRight size={15} aria-hidden="true" /></button>
       </section>
 

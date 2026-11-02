@@ -2,6 +2,10 @@
 
 Newest first. One line per piece of work; the commit message has the detail.
 
+## 3 Nov 2026
+
+- **3 Nov:** The home's picture fades out above "See every screener", so the button doesn't cover a company row. Google: requested ETERNAL, HAL, BEL, DMART; ASIANPAINT and BAJFINANCE are already on. Lemon Tree's industry label is live.
+
 ## 1 Nov 2026 (overnight debug, asked for "debug everything, start to last")
 
 - **1 Nov:** Fixed: since the app began waiting for the logo, the page's hide-until-drawn rule hid the opening's first 2.2s in the Android app, showing only the boot spinner. Check the opening with an app user agent, in real time.
