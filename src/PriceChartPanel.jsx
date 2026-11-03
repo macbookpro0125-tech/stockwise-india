@@ -370,6 +370,8 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
     if (!chart || bars.length < 2) return;
     const last = bars.length - 1;
     const r = RANGES.find(x => x.id === id);
+    // a range picked fits the prices to it again, whatever moved the scale before
+    chart.priceScale("right").applyOptions({ autoScale: true });
     if (!r || id === "All" || BRICKS.has(prefs.type)) { chart.timeScale().fitContent(); return; }
     const lastDate = bars[last].date;
     const from = id === "YTD" ? `${lastDate.slice(0, 4)}-01-01` : monthsBack(lastDate, r.months);
@@ -406,8 +408,9 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
       kineticScroll: { touch: !reducedMotion(), mouse: false },
       // An up-or-down swipe over the chart scrolls the page, as on any other
       // part of it; sideways drags pan and pinches zoom. On the chart's own
-      // page there's nothing to scroll, so vertical drags move the price scale.
-      handleScroll: { vertTouchDrag: page, horzTouchDrag: true, mouseWheel: true, pressedMouseMove: true },
+      // page too: a swipe that moved the price scale left the candles off the
+      // top and bottom of the screen (3 Nov 2026), so the scale always fits them.
+      handleScroll: { vertTouchDrag: false, horzTouchDrag: true, mouseWheel: true, pressedMouseMove: true },
     });
     chartRef.current = chart;
 
@@ -904,7 +907,8 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
   });
   const group = { display: "inline-flex", gap: 4, flexWrap: narrow ? "nowrap" : "wrap" };
   // A phone's icon row: square-ish buttons, a segmented D/W/M
-  const iconBtn = (active, extra = {}) => btn(active, { width: 40, height: 36, padding: 0, gap: 2, justifyContent: "center", ...extra });
+  // plain icons, no box round each (3 Nov 2026: the boxed row "looks cheap"); the one in use is tinted
+  const iconBtn = (active, extra = {}) => btn(active, { width: 40, height: 36, padding: 0, gap: 2, justifyContent: "center", border: 0, borderRadius: 9, width: 44, height: 40, background: active ? "color-mix(in srgb, var(--accent) 14%, transparent)" : "transparent", color: active ? "var(--accent)" : "var(--t1)", ...extra });
   const seg = active => ({
     minWidth: 30, height: 30, padding: "0 6px", border: 0, borderRadius: 7, fontFamily: "inherit", fontSize: 12, fontWeight: 450, cursor: "pointer",
     background: active ? "color-mix(in srgb, var(--accent) 18%, transparent)" : "transparent", color: active ? "var(--accent)" : "var(--t2)",
@@ -1010,6 +1014,14 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
   const sheets = (
     <>
       {pop === "type" && <div style={sheet}><div style={sheetLabel}>Chart type</div>{typeTiles}</div>}
+      {pop === "interval" && (
+        <div role="group" aria-label="Bar interval" style={sheet}>
+          <div style={sheetLabel}>Each bar is</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
+            {INTERVALS.map(iv => <button key={iv.id} type="button" onClick={() => { pickInterval(iv.id); setPop(null); }} aria-pressed={prefs.interval === iv.id} style={btn(prefs.interval === iv.id, { height: 40, justifyContent: "center" })}>{iv.title}</button>)}
+          </div>
+        </div>
+      )}
       {pop === "views" && (
         <div role="group" aria-label="Saved views" style={sheet}>
           <div style={sheetLabel}>Saved views</div>
@@ -1134,22 +1146,18 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
         <div role="toolbar" aria-label="Chart settings" style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
           {/* One row that slides sideways, so every tool has a proper finger's width */}
           <div className="chart-tools-row">
-            <div role="group" aria-label="Bar interval" style={{ display: "inline-flex", flex: "none", gap: 2, padding: 2, borderRadius: 9, background: "var(--s3)", border: "1px solid var(--bdr2)" }}>
-              {INTERVALS.map(iv => (
-                <button key={iv.id} type="button" onClick={() => pickInterval(iv.id)} aria-pressed={prefs.interval === iv.id} title={iv.title} aria-label={iv.title} style={seg(prefs.interval === iv.id)}>{iv.label}</button>
-              ))}
-            </div>
-            <button type="button" onClick={() => togglePop("type")} aria-expanded={pop === "type"} aria-label={`Chart type: ${TYPES.find(t => t.id === prefs.type)?.label}`} style={iconBtn(pop === "type")}><ChartCandlestick size={16} aria-hidden="true" /></button>
+            <button type="button" onClick={() => togglePop("type")} aria-expanded={pop === "type"} aria-label={`Chart type: ${TYPES.find(t => t.id === prefs.type)?.label}`} style={iconBtn(pop === "type")}><ChartCandlestick size={20} aria-hidden="true" /></button>
+            <button type="button" onClick={() => togglePop("interval")} aria-expanded={pop === "interval"} aria-label={`Bars: ${INTERVALS.find(i => i.id === prefs.interval)?.title}`} style={iconBtn(pop === "interval", { fontSize: 15, fontWeight: 500, width: 44 })}>1{prefs.interval}</button>
             <button type="button" onClick={() => { setPop(null); setMenuOpen(o => !o); }} aria-expanded={menuOpen} aria-controls={`chart-options-${symbol}${page ? "-page" : ""}`} aria-label={`Indicators${activeInd > 0 ? `, ${activeInd} on` : ""}`} style={iconBtn(menuOpen || activeInd > 0)}>
-              <span aria-hidden="true" style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontStyle: "italic", fontSize: 15, fontWeight: 400 }}>ƒx</span>
+              <span aria-hidden="true" style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontStyle: "italic", fontSize: 19, fontWeight: 400 }}>ƒx</span>
               {activeInd > 0 && <span aria-hidden="true" style={{ fontSize: 10, fontWeight: 500, ...MONO }}>{activeInd}</span>}
             </button>
-            <button type="button" onClick={() => togglePop("draw")} aria-expanded={pop === "draw"} aria-label="Draw on the chart" style={iconBtn(pop === "draw" || drawing || !!trendFrom || !!tool)}><Pencil size={16} aria-hidden="true" /></button>
-            <button type="button" onClick={() => togglePop("views")} aria-expanded={pop === "views"} aria-label="Saved views" style={iconBtn(pop === "views")}><Eye size={16} aria-hidden="true" /></button>
-            <button type="button" onClick={() => setTableOpen(true)} aria-label="Table of prices" style={iconBtn(false)}><Table2 size={16} aria-hidden="true" /></button>
-            <button type="button" onClick={() => setPref({ levels: !prefs.levels })} aria-pressed={prefs.levels && !!levels} disabled={!levels} aria-label="Fair value and your price levels" style={iconBtn(prefs.levels && !!levels, !levels ? { opacity: 0.45, cursor: "not-allowed" } : {})}><Layers size={16} aria-hidden="true" /></button>
-            <button type="button" onClick={() => togglePop("settings")} aria-expanded={pop === "settings"} aria-label="Chart settings" style={iconBtn(pop === "settings" || !!prefs.log || !!prefs.invert)}><Settings2 size={16} aria-hidden="true" /></button>
-            <button type="button" onClick={snapshot} aria-label="Save the chart as an image" style={iconBtn(false)}><Camera size={16} aria-hidden="true" /></button>
+            <button type="button" onClick={() => togglePop("draw")} aria-expanded={pop === "draw"} aria-label="Draw on the chart" style={iconBtn(pop === "draw" || drawing || !!trendFrom || !!tool)}><Pencil size={20} aria-hidden="true" /></button>
+            <button type="button" onClick={() => togglePop("views")} aria-expanded={pop === "views"} aria-label="Saved views" style={iconBtn(pop === "views")}><Eye size={20} aria-hidden="true" /></button>
+            <button type="button" onClick={() => setTableOpen(true)} aria-label="Table of prices" style={iconBtn(false)}><Table2 size={20} aria-hidden="true" /></button>
+            <button type="button" onClick={() => setPref({ levels: !prefs.levels })} aria-pressed={prefs.levels && !!levels} disabled={!levels} aria-label="Fair value and your price levels" style={iconBtn(prefs.levels && !!levels, !levels ? { opacity: 0.45, cursor: "not-allowed" } : {})}><Layers size={20} aria-hidden="true" /></button>
+            <button type="button" onClick={() => togglePop("settings")} aria-expanded={pop === "settings"} aria-label="Chart settings" style={iconBtn(pop === "settings" || !!prefs.log || !!prefs.invert)}><Settings2 size={20} aria-hidden="true" /></button>
+            <button type="button" onClick={snapshot} aria-label="Save the chart as an image" style={iconBtn(false)}><Camera size={20} aria-hidden="true" /></button>
           </div>
           {!page && (
             <a href={chartPageUrl(symbol, name, levels)} onClick={openExpanded} aria-label="Expand the chart to full screen" style={iconBtn(false, { flex: "none", textDecoration: "none" })}><Maximize2 size={16} aria-hidden="true" /></a>

@@ -5334,7 +5334,7 @@ body::before { content: ""; position: fixed; inset: 0; z-index: 0; pointer-event
 
 /* The price chart's tools (1 Nov 2026): a phone's row slides sideways; your
    drawings, a candle's figures and the table of prices */
-.chart-tools-row { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.chart-tools-row { display: flex; align-items: center; gap: 2px; flex: 1; min-width: 0; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding-right: 28px; -webkit-mask-image: linear-gradient(to right, black calc(100% - 32px), transparent); mask-image: linear-gradient(to right, black calc(100% - 32px), transparent); }
 .chart-tools-row::-webkit-scrollbar { display: none; }
 .chart-tools-row > button { flex: none; }
 .chart-chip { display: inline-flex; align-items: center; gap: 2px; min-height: 28px; padding: 0 2px 0 9px; border-radius: 999px; border: 1px solid var(--bdr2); background: var(--s2); color: var(--t1); font-size: 12px; }
@@ -5382,6 +5382,8 @@ body::before { content: ""; position: fixed; inset: 0; z-index: 0; pointer-event
 .chart-page-ranges button { flex: none; min-width: 36px; height: 40px; padding: 0 6px; border: 0; background: none; color: var(--t2); font: inherit; font-size: 13px; cursor: pointer; }
 .chart-page-ranges button[aria-pressed="true"] { color: var(--accent); font-weight: 500; }
 .chart-page-credit { width: 100%; font-size: 10px; color: var(--t3); text-align: right; }
+/* the full-screen layer already keeps clear of the home bar; the foot needn't again */
+.chart-overlay .chart-page-foot { padding-bottom: 0; }
 
 /* A computer's home once signed in (TodayHome.jsx) */
 .td { max-width: 1180px; margin: 0 auto; padding: 26px 0 40px; color: var(--t1); }
