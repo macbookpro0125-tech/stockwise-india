@@ -4,6 +4,7 @@ Newest first. One line per piece of work; the commit message has the detail.
 
 ## 3 Nov 2026
 
+- **3 Nov:** Pushed to main at `83c223d` (3 commits); live, with the health check answering. Full tests passed first (137 passed, 24 skipped).
 - **3 Nov:** Market map: the zoom buttons sit below the map instead of over its bottom-right companies (owner: "covering last stocks").
 - **3 Nov:** News: a "usually good / bad news" box on each announcement and a tag on its row (owner: "just show whether it is good or bad news for the stock"). A general reading of the words, never guessed: an "Orders passed" with no detail says "Not clear from the notice".
 - **3 Nov:** The home's picture fades out above "See every screener", so the button doesn't cover a company row. Google: requested ETERNAL, HAL, BEL, DMART; ASIANPAINT and BAJFINANCE are already on. Lemon Tree's industry label is live.
