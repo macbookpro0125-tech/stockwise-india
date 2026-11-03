@@ -2874,7 +2874,7 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 .ex-heat.zoomed { cursor: grab; }
 .ex-heat.zoomed:active { cursor: grabbing; }
 .ex-tile-more { display: block; max-width: 100%; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; font-weight: 500; opacity: 0.85; text-shadow: 0 1px 2px rgba(0,0,0,0.35); writing-mode: horizontal-tb; }
-.mm-zoom { position: absolute; right: 10px; bottom: 10px; z-index: 6; display: inline-flex; align-items: center; gap: 2px; padding: 3px; border: 1px solid var(--glass-edge, var(--bdr)); border-radius: 12px; background: var(--glass-thick, var(--s2)); -webkit-backdrop-filter: blur(16px) saturate(160%); backdrop-filter: blur(16px) saturate(160%); box-shadow: 0 6px 20px rgba(0,0,0,0.35); }
+.mm-zoom { position: relative; z-index: 1; display: flex; width: max-content; margin: 8px 0 0 auto; align-items: center; gap: 2px; padding: 3px; border: 1px solid var(--glass-edge, var(--bdr)); border-radius: 12px; background: var(--glass-thick, var(--s2)); -webkit-backdrop-filter: blur(16px) saturate(160%); backdrop-filter: blur(16px) saturate(160%); }
 @media (prefers-reduced-transparency: reduce) { .mm-zoom { background: var(--s2); -webkit-backdrop-filter: none; backdrop-filter: none; } }
 .mm-zoom button { display: inline-grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 9px; background: transparent; color: var(--t1); cursor: pointer; touch-action: manipulation; }
 .mm-zoom button:disabled { opacity: 0.35; cursor: default; }

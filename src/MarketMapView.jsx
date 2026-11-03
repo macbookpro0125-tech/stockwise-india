@@ -597,16 +597,17 @@ export default function MarketMapView({ onOpenStock, onOpenIndex, screen = null,
         ))}
         {tileEls}
         </div>
-        {kept.length > 0 && (
-          <div className="mm-zoom" role="group" aria-label="Zoom">
-            <button type="button" aria-label="Zoom out" disabled={view.z <= 1} onClick={() => zoomAt(width / 2, height / 2, view.z / 1.6)}><Minus size={16} aria-hidden="true" /></button>
-            <span className="mm-zoom-at" aria-live="polite">{view.z < 1.05 ? "1×" : `${view.z.toFixed(view.z < 10 ? 1 : 0)}×`}</span>
-            <button type="button" aria-label="Zoom in" disabled={view.z >= MAX_ZOOM} onClick={() => zoomAt(width / 2, height / 2, view.z * 1.6)}><Plus size={16} aria-hidden="true" /></button>
-            {view.z > 1 && <button type="button" aria-label="Fit the whole map" title="The whole map" onClick={() => setView({ z: 1, x: 0, y: 0 })}><Scan size={15} aria-hidden="true" /></button>}
-          </div>
-        )}
         {hover && laid[hover.i] && <HeatCard t={laid[hover.i].t} items={items} limit={limit} words={words} at={hover} mode={mode} ctx={ctx} />}
       </div>
+      {/* below the map, not on it, so it never covers the last companies (3 Nov 2026) */}
+      {kept.length > 0 && (
+        <div className="mm-zoom" role="group" aria-label="Zoom">
+          <button type="button" aria-label="Zoom out" disabled={view.z <= 1} onClick={() => zoomAt(width / 2, height / 2, view.z / 1.6)}><Minus size={16} aria-hidden="true" /></button>
+          <span className="mm-zoom-at" aria-live="polite">{view.z < 1.05 ? "1×" : `${view.z.toFixed(view.z < 10 ? 1 : 0)}×`}</span>
+          <button type="button" aria-label="Zoom in" disabled={view.z >= MAX_ZOOM} onClick={() => zoomAt(width / 2, height / 2, view.z * 1.6)}><Plus size={16} aria-hidden="true" /></button>
+          {view.z > 1 && <button type="button" aria-label="Fit the whole map" title="The whole map" onClick={() => setView({ z: 1, x: 0, y: 0 })}><Scan size={15} aria-hidden="true" /></button>}
+        </div>
+      )}
       <div className="ex-heat-key">
         <span>{set === "sectors" ? "Each sector's index" : `Size: ${size === "equal" ? "all the same" : set === "portfolio" ? "what your holding is worth" : "market value"} · ${shown} ${zoom ? `${zoom} ` : ""}companies${data?.floorCr ? ` over ₹${data.floorCr} cr` : data?.members && data.items.length < data.members ? ` of ${data.members}` : ""}`} · colour: {mode.words(words)}{data?.asOf ? ` to the close on ${shortDate(data.asOf)}` : ""}
           <span className="mm-missing"> · zoom: {canHover() ? "pinch, or Ctrl/⌘ and scroll, or + and −; drag to move" : "pinch, or + and −; drag to move"}</span>
