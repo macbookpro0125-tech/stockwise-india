@@ -4,6 +4,7 @@ Newest first. One line per piece of work; the commit message has the detail.
 
 ## 3 Nov 2026
 
+- **3 Nov:** 11 more Learn guides (22 in all), for AdSense's content review. AdSense and AdMob both "not approved"; not resubmitted (plan: AdSense in 2–3 weeks, AdMob after the Play listing is public).
 - **3 Nov:** Play: 1.3 (build 5) uploaded by the owner and sent for review as the closed testing release, with release notes.
 - **3 Nov:** Pushed to main at `83c223d` (3 commits); live, with the health check answering. Full tests passed first (137 passed, 24 skipped).
 - **3 Nov:** Market map: the zoom buttons sit below the map instead of over its bottom-right companies (owner: "covering last stocks").

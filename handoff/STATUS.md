@@ -8,7 +8,7 @@ Pushed 3 Nov 2026 (`83c223d`, live in about 80 s): The home's "See every screene
 
 ## Committed but NOT pushed yet
 
-Nothing.
+11 new guides at /learn (22 in all, `server/guides.js`): profit margins, free cash flow, P/B, large/mid/small cap, bonus/split/buyback/rights, promoter pledging, working capital, the Piotroski F-score, reading announcements, credit ratings, cyclical and defensive sectors. Written for AdSense, whose 30 Oct email hinted at "insufficient content". In the sitemap; checked at phone width.
 
 ## Open / next
 

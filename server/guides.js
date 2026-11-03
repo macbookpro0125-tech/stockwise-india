@@ -9,7 +9,7 @@
 //
 // Each section's text is our own HTML, written here (not from any input).
 
-export const GUIDES_UPDATED = "2026-10-30";
+export const GUIDES_UPDATED = "2026-11-03";
 
 export const GUIDES = [
   {
@@ -226,6 +226,216 @@ export const GUIDES = [
       ["After the screen", `<p>Read each company on the list: its results over recent quarters, its balance sheet, its cash flow and who owns it. A screen is where research starts, not where it ends. Our <a href="/stock-screener-india">screener guide</a> explains each filter.</p>`],
     ],
     see: [["/screens", "All ready-made screens"], ["/stock-screener-india", "The screener guide"]],
+  },
+  // 3 Nov 2026: ten more, after AdSense's second "insufficient content" hint
+  {
+    slug: "profit-margins",
+    title: "Profit margins: gross, operating and net",
+    desc: "What a company's margins measure, how gross, operating and net margin differ, and why the trend in a margin tells you more than its level.",
+    sections: [
+      ["Margin is profit as a share of sales", `<p>A margin is a profit divided by revenue. If a company sells ₹100 of goods and keeps ₹15 as operating profit, its operating margin is 15%. Margins let you compare a small company with a large one, and one year with another, on the same footing.</p>`],
+      ["Three margins, three questions", `<ul>
+<li><b>Gross margin</b>: revenue minus the cost of the goods sold, as a share of revenue. It asks how much the company can charge above what its product costs to make. Many Indian results filings don't show it separately, because they list materials, purchases and change in inventory as their own lines.</li>
+<li><b>Operating margin</b> (EBITDA margin): profit from running the business, before depreciation, interest and tax. It asks how well the whole operation turns sales into profit.</li>
+<li><b>Net margin</b>: final profit after everything, as a share of revenue. It also reflects how much the company borrows (interest) and how heavily it invests (depreciation).</li>
+</ul>`],
+      ["Level depends on the business", `<p>A software company may keep 25% of revenue as operating profit; a grocery retailer may keep 7% and still be an excellent business, because it sells far more for each rupee it has invested. Compare a margin with the company's own past and with others in its industry, never across industries. Our <a href="/sectors">sector pages</a> group companies that can be compared.</p>`],
+      ["The trend is the story", `<ul>
+<li><b>Widening margins</b> can mean pricing power, a better product mix or costs that grow slower than sales.</li>
+<li><b>Shrinking margins</b> with rising sales can mean the company is buying growth with discounts, or that a raw material has become dearer.</li>
+<li>A margin that swings every year usually belongs to a business tied to a commodity price. See <a href="/learn/cyclical-and-defensive-sectors">cyclical and defensive sectors</a>.</li>
+</ul>`],
+      ["One check before trusting a margin", `<p>Look at <b>other income</b> and <b>exceptional items</b>. A net margin lifted by interest on a large cash pile or a one-off gain says little about the business itself. The operating margin leaves both out, which is why analysts lean on it.</p>`],
+    ],
+    see: [["/learn/how-to-read-quarterly-results", "How to read quarterly results"], ["/sectors", "Sectors, to compare like with like"]],
+  },
+  {
+    slug: "free-cash-flow",
+    title: "Free cash flow: the cash a business really makes",
+    desc: "What free cash flow is, how to work it out from a cash flow statement, and why a company can report profits every year and still need to borrow.",
+    sections: [
+      ["The idea", `<p>Free cash flow is the cash a business generates from its operations after paying for the investment it needs to keep going and grow. It is the money that could be paid out to shareholders, used to repay debt, or kept, without the company borrowing or selling new shares.</p>`],
+      ["Working it out", `<p>From the cash flow statement: take <b>cash from operating activities</b> and subtract <b>capital expenditure</b>, which appears under investing activities as purchase of property, plant and equipment (and intangible assets). For example, ₹500 crore of operating cash less ₹200 crore spent on new plants leaves ₹300 crore of free cash flow. See <a href="/learn/cash-flow-statement">the cash flow statement, explained</a> for where each line comes from.</p>`],
+      ["Why it can differ from profit", `<ul>
+<li><b>Money stuck in working capital.</b> Sales made on credit are counted as revenue before the customer pays. If receivables and inventory grow faster than sales, profit rises while cash doesn't. See <a href="/learn/working-capital">working capital</a>.</li>
+<li><b>Heavy investment.</b> A company building new capacity can show negative free cash flow for years. That isn't bad in itself, if the new capacity later earns good returns.</li>
+<li><b>Depreciation versus real spending.</b> Profit is charged depreciation, an estimate; free cash flow counts what was actually spent this year.</li>
+</ul>`],
+      ["What to look for", `<p>Add up free cash flow over five years and compare it with the profit reported over the same years. A business whose cash roughly keeps pace with its profit is converting earnings into money. One that reports profit year after year while its free cash flow stays negative, and its debt rises, deserves a closer look.</p>`],
+    ],
+    see: [["/learn/cash-flow-statement", "The cash flow statement"], ["/stock/TCS/financials", "A company's cash flow, as an example"]],
+  },
+  {
+    slug: "price-to-book",
+    title: "Book value and the price-to-book ratio",
+    desc: "What book value per share means, how the P/B ratio is worked out, why it is the main measure for banks, and when a low P/B is not a bargain.",
+    sections: [
+      ["Book value", `<p>Book value is the shareholders' equity on the balance sheet: everything the company owns minus everything it owes. Divided by the number of shares, it gives <b>book value per share</b>. It is what the accounts say each share would be worth if the company sold its assets at their recorded values and paid off all its debts.</p>`],
+      ["The P/B ratio", `<p>Price-to-book is the share price divided by book value per share. A P/B of 3 means the market values the company at three times what its accounts say it is worth. A P/B below 1 means the shares cost less than the book value behind them.</p>`],
+      ["Why P/B matters most for lenders", `<p>A bank's assets are mostly loans and its liabilities mostly deposits, both recorded close to their real value, so its book value is a meaningful number. That is why banks and lending companies are usually valued on P/B rather than P/E, and why the fair value in Jocular Insights uses book value for them. The real question for a lender is whether its book value is honest: loans that won't be repaid but haven't been written off yet make it look larger than it is. See <a href="/learn/how-to-analyse-a-bank">how to analyse a bank</a>.</p>`],
+      ["Why high P/B can be fair", `<p>For a company whose value lies in brands, software or know-how, the balance sheet records little of what it owns. Such companies can earn very high returns on a small book value and trade at a high P/B for years. P/B and <a href="/learn/roe-and-roce">return on equity</a> go together: a company earning 25% on its equity deserves a higher P/B than one earning 8%.</p>`],
+      ["When a low P/B is a trap", `<ul>
+<li>Returns on equity have been low for years, so the book value isn't earning much.</li>
+<li>The assets are worth less than recorded: idle plants, old inventory, doubtful receivables, or bad loans at a lender.</li>
+<li>Book value is shrinking because the company is making losses.</li>
+</ul>`],
+    ],
+    see: [["/learn/how-to-analyse-a-bank", "How to analyse a bank"], ["/methodology", "How our fair value is worked out"]],
+  },
+  {
+    slug: "large-mid-small-cap",
+    title: "Large cap, mid cap and small cap in India",
+    desc: "What market capitalisation is, how SEBI's rules sort Indian companies into large, mid and small caps, and how the three groups tend to differ.",
+    sections: [
+      ["Market capitalisation", `<p>Market capitalisation, or market cap, is what the stock market values a company at: its share price multiplied by the number of shares. A company with 100 crore shares at ₹500 has a market cap of ₹50,000 crore. It changes every trading day with the price.</p>`],
+      ["How India draws the lines", `<p>SEBI's rules for mutual funds sort listed companies by full market cap:</p>
+<ul>
+<li><b>Large cap</b>: the 1st to 100th largest companies.</li>
+<li><b>Mid cap</b>: the 101st to 250th.</li>
+<li><b>Small cap</b>: the 251st company and beyond.</li>
+</ul>
+<p>The Association of Mutual Funds in India (AMFI) publishes the list every six months, so a company can move between groups as its price changes. Very small companies, far down the list, are often called micro caps; that term has no official definition.</p>`],
+      ["How the groups differ", `<ul>
+<li><b>Large caps</b> are usually established leaders in their industries. Their shares trade heavily, they are followed by many analysts, and their prices tend to move less than smaller companies'.</li>
+<li><b>Mid caps</b> include companies growing into leaders and established firms in smaller niches. They can grow faster, and fall harder.</li>
+<li><b>Small caps</b> are the widest group: young businesses, small specialists, and companies past their best. Fewer analysts follow them, information is thinner, and their prices can swing sharply. Some trade so little that buying or selling a modest amount moves the price.</li>
+</ul>`],
+      ["Size is not quality", `<p>A small company can be excellently run and a large one poorly. Size tells you mainly how much attention a company gets and how easily its shares trade. The quality of the business is in its filings: its returns on capital, its debt, and whether its profits turn into cash. Jocular Insights scores every company on those, whatever its size.</p>`],
+    ],
+    see: [["/screens", "Screens, which you can narrow by size"], ["/sectors", "Companies by sector"]],
+  },
+  {
+    slug: "bonus-split-buyback-rights",
+    title: "Bonus issues, splits, buybacks and rights issues",
+    desc: "The four corporate actions that change a company's share count, what each does to your holding, and which of them actually moves money.",
+    sections: [
+      ["Bonus issue", `<p>A bonus issue gives shareholders free extra shares out of the company's reserves, for example one new share for every one held (1:1). No money changes hands. The company is worth the same afterwards, so the share price adjusts down in proportion: a ₹1,000 share becomes two shares of about ₹500. What your holding is worth doesn't change on the day.</p>`],
+      ["Stock split", `<p>A split divides each share into several of a smaller face value, for example one ₹10 share into five ₹2 shares. Like a bonus, it changes the number of shares and the price per share, not the value of what you own. Companies usually split or issue bonuses when the share price has become high, to make a single share cheaper to buy.</p>`],
+      ["Buyback", `<p>In a buyback the company spends its own cash to buy back shares, usually at a price above the market's, and cancels them. Here money really moves: cash leaves the company and goes to the shareholders who sell. Those who stay own a larger share of a company with less cash. Most Indian buybacks are now tender offers, where every shareholder can offer shares and the company accepts them in proportion; part of the offer is reserved for small shareholders.</p>`],
+      ["Rights issue", `<p>A rights issue offers existing shareholders new shares, in proportion to what they hold, usually at a discount to the market price. It brings new money into the company. If you don't take up your rights, your share of the company shrinks. In India the right to buy, called a rights entitlement, arrives in your demat account and can be sold on the exchange if you don't want to use it.</p>`],
+      ["Reading the announcement", `<p>Each of these is announced to the stock exchange with a <b>record date</b>: you must hold the shares at the end of that day to take part. Our <a href="/news">news page</a> shows these announcements as companies file them, with what the terms mean. See also <a href="/learn/dividends-record-date">dividends and the record date</a>.</p>`],
+    ],
+    see: [["/news", "The latest company announcements"], ["/learn/dividends-record-date", "Record date and ex-date"]],
+  },
+  {
+    slug: "promoter-pledge",
+    title: "Promoter pledging: what it is and why it matters",
+    desc: "What it means when a company's promoters pledge their shares, where the disclosure appears, and why a high or rising pledge is watched closely.",
+    sections: [
+      ["Promoters and pledges", `<p>Promoters are the founders or controlling shareholders of a company. A <b>pledge</b> is when they put up some of their shares as security for a loan, much as a house can secure a home loan. The loan may be for the promoter's other businesses, for personal needs, or to put money into the company itself.</p>`],
+      ["Why it is watched", `<p>If the share price falls far enough, the lender can ask for more security. If the promoter can't provide it, the lender can sell the pledged shares in the market. That selling can push the price down further, which can trigger more selling. A large pledge can turn an ordinary fall into a steep one, and the company can lose its controlling shareholder.</p>`],
+      ["Where to see it", `<p>Listed companies report each quarter how much of the promoters' holding is pledged, in the <a href="/learn/shareholding-pattern">shareholding pattern</a>. Promoters must also tell the exchange when they create or release a pledge, so changes show up in the company's announcements on the <a href="/news">news page</a>.</p>`],
+      ["How to read the number", `<ul>
+<li><b>Look at the share pledged</b>, not just whether there is a pledge: a few per cent of the promoter's holding is very different from most of it.</li>
+<li><b>Look at the trend</b>: a pledge rising quarter after quarter suggests the promoter needs money; one falling suggests loans are being repaid.</li>
+<li><b>Ask what the loan is for.</b> Money borrowed to put into the company itself, as part of a rights issue for example, is different from borrowing for unrelated businesses.</li>
+</ul>`],
+    ],
+    see: [["/learn/shareholding-pattern", "The shareholding pattern"], ["/screens", "Screens that leave out pledged companies"]],
+  },
+  {
+    slug: "working-capital",
+    title: "Working capital: receivables, inventory and the cash cycle",
+    desc: "How money gets tied up in a business's day-to-day running, how to measure debtor days and inventory days, and why the trend warns early of trouble.",
+    sections: [
+      ["What working capital is", `<p>A business needs money just to keep running: it buys raw materials before it sells, keeps stock on its shelves, and often waits for customers to pay. Against that, it may get credit from its own suppliers. <b>Working capital</b> is the money tied up in this cycle: current assets such as receivables and inventory, minus current liabilities such as amounts owed to suppliers.</p>`],
+      ["Three measures in days", `<ul>
+<li><b>Debtor days</b>: receivables divided by revenue, times 365. It says how many days, on average, customers take to pay.</li>
+<li><b>Inventory days</b>: inventory divided by the cost of goods sold, times 365. It says how long stock sits before it is sold.</li>
+<li><b>Payable days</b>: what the company owes suppliers, divided by its purchases (or cost of goods sold), times 365. It says how long the company itself takes to pay.</li>
+</ul>
+<p>Debtor days plus inventory days minus payable days is the <b>cash conversion cycle</b>: how many days the company's own money is tied up before a sale comes back as cash.</p>`],
+      ["Why it matters", `<p>When a company's cycle lengthens, profit can rise while cash falls, and the gap is often filled with borrowing. Rising debtor days can mean customers are paying late, or that the company is offering easy credit to keep sales growing. Rising inventory days can mean products aren't selling. These often show up in the balance sheet a few quarters before they show up in profit. See <a href="/learn/free-cash-flow">free cash flow</a>.</p>`],
+      ["Compare within an industry", `<p>A supermarket that is paid in cash at the till and pays its suppliers later can run with very little working capital, or less than none. A capital goods maker that builds machines over months and is paid in stages needs a great deal. Judge a company against its own history and its industry's peers.</p>`],
+    ],
+    see: [["/learn/reading-a-balance-sheet", "Reading a balance sheet"], ["/learn/free-cash-flow", "Free cash flow"]],
+  },
+  {
+    slug: "piotroski-f-score",
+    title: "The Piotroski F-score, explained",
+    desc: "The nine simple checks behind the Piotroski F-score, what a high or low score suggests about a company's finances this year, and what the score can't tell you.",
+    sections: [
+      ["Where it comes from", `<p>The F-score was set out in 2000 by Joseph Piotroski, an accounting professor, as a way to separate stronger from weaker companies among those that looked cheap on their book value. It is nine yes-or-no tests, each worth one point, comparing this year's accounts with last year's. A score of 8 or 9 is strong, 0 to 2 is weak.</p>`],
+      ["Profitability: four points", `<ul>
+<li>Net profit was positive.</li>
+<li>Cash from operations was positive.</li>
+<li>Return on assets improved on the year before.</li>
+<li>Cash from operations was larger than net profit, a sign that profit is backed by cash.</li>
+</ul>`],
+      ["Debt and funding: three points", `<ul>
+<li>Long-term debt fell, relative to total assets.</li>
+<li>The current ratio (current assets divided by current liabilities) improved.</li>
+<li>No new shares were issued during the year.</li>
+</ul>`],
+      ["Efficiency: two points", `<ul>
+<li>Gross margin improved.</li>
+<li>Asset turnover (revenue divided by total assets) improved.</li>
+</ul>`],
+      ["What it can and can't tell you", `<p>The score measures whether a company's finances got better or worse over one year. It says nothing about whether the business is good over the long run, whether the price is reasonable, or what comes next. A great company can score 5 in a year it borrowed to build a factory; a weak one can score 8 in a lucky year. Jocular Insights shows the score with each of its nine checks, and leaves it out for banks and other lenders, whose accounts don't fit the tests. Where a company's filings don't give a cost of goods sold, it compares operating margin instead of gross margin. See the <a href="/methodology">methodology</a>.</p>`],
+    ],
+    see: [["/methodology", "Our methodology"], ["/stock-screener-india", "The screener guide, with the F-score filter"]],
+  },
+  {
+    slug: "reading-company-announcements",
+    title: "How to read a company's stock exchange announcements",
+    desc: "Why listed companies file announcements with NSE, the kinds that matter most, the routine ones you can skip, and how to read one without overreacting.",
+    sections: [
+      ["Why companies announce", `<p>Under SEBI's listing rules, a listed company must tell the stock exchange promptly about anything that could matter to investors: results, dividends, large orders, deals, changes among its directors, credit ratings, legal cases and more. The rule is known by its number, Regulation 30. Most announcements must be filed within 24 hours of the event, and some, such as a board meeting's decisions, sooner. They appear on the exchange's website at once, for everyone at the same time.</p>`],
+      ["The ones that usually matter", `<ul>
+<li><b>Results</b> and the board meeting outcome that approves them. See <a href="/learn/how-to-read-quarterly-results">how to read quarterly results</a>.</li>
+<li><b>Orders and contracts</b>, judged by their size next to the company's yearly sales.</li>
+<li><b>Fund-raising</b>: preferential issues, QIPs, rights issues. See <a href="/learn/bonus-split-buyback-rights">bonus, split, buyback and rights</a>.</li>
+<li><b>Credit ratings</b>, especially a downgrade. See <a href="/learn/credit-ratings">credit ratings, explained</a>.</li>
+<li><b>Resignations</b> of a chief executive, finance head or auditor, and the reason given.</li>
+<li><b>Tax demands, penalties and court orders</b>, judged by their size next to profit.</li>
+</ul>`],
+      ["The routine ones", `<p>Many filings are paperwork the rules require: newspaper copies of notices, trading-window closures, certificates, investor meeting schedules, share certificate replacements. They rarely say anything about the business. Our <a href="/news">news page</a> leaves most of them out.</p>`],
+      ["Reading one calmly", `<ul>
+<li><b>Read the filing, not just the subject line.</b> A subject such as "Action(s) taken or orders passed" can describe a large penalty or a case the company won.</li>
+<li><b>Put numbers next to the company's size.</b> A ₹50 crore order is huge for a company with ₹200 crore of sales and small for one with ₹50,000 crore.</li>
+<li><b>Look for what's missing.</b> An announcement that gives no figure or no reason is worth noting.</li>
+</ul>
+<p>Jocular Insights marks each announcement with how news of that kind is usually read, and says "not clear" when the filing doesn't say enough to tell. That is a reading of the words, never a prediction of the price.</p>`],
+    ],
+    see: [["/news", "The latest announcements"], ["/results-calendar", "Upcoming results"]],
+  },
+  {
+    slug: "credit-ratings",
+    title: "Credit ratings, explained for shareholders",
+    desc: "What a credit rating agency's grade says about a company's debt, how the scale from AAA to D works, what outlooks and watches mean, and why shareholders should care.",
+    sections: [
+      ["What a rating is", `<p>A credit rating is an agency's opinion of how likely a company is to repay its borrowings in full and on time. In India the agencies are registered with SEBI: CRISIL, ICRA, CARE Ratings, India Ratings, Acuité and Infomerics among them. Companies pay to have their loans and bonds rated, and must tell the stock exchange when a rating is assigned or changed.</p>`],
+      ["The scale", `<ul>
+<li><b>AAA</b>: the highest safety. <b>AA</b> and <b>A</b> follow, each still strong.</li>
+<li><b>BBB</b>: moderate safety, the lowest of the <b>investment grade</b> ratings.</li>
+<li><b>BB</b>, <b>B</b> and <b>C</b>: increasing risk of not being repaid.</li>
+<li><b>D</b>: in default, or about to be.</li>
+</ul>
+<p>A plus or minus sign places a company within a grade, so AA+ sits just below AAA. Short-term debt, such as commercial paper, has its own scale, with A1+ the highest.</p>`],
+      ["Outlooks and watches", `<p>An <b>outlook</b> (stable, positive or negative) says which way the agency thinks the rating may move over the next year or two. A <b>rating watch</b> is stronger: an event, such as a merger or a sudden loss, could change the rating soon. "Reaffirmed" means the rating stays as it was.</p>`],
+      ["Why shareholders should care", `<p>Lenders are repaid before shareholders, so a company's debt is safer than its shares. If the agencies doubt the debt, the shares carry more risk still. A downgrade also raises what the company pays to borrow, which eats into profit. Agencies tend to move after problems are visible, so a rating is a check on what's known, not an early warning.</p>`],
+    ],
+    see: [["/learn/debt-to-equity", "Debt to equity"], ["/news", "Rating announcements in the latest filings"]],
+  },
+  {
+    slug: "cyclical-and-defensive-sectors",
+    title: "Cyclical and defensive sectors",
+    desc: "Why some industries' profits rise and fall with the economy or commodity prices while others stay steady, and how that changes the way you read their numbers.",
+    sections: [
+      ["Two kinds of business", `<p>A <b>cyclical</b> business earns much more in good years than bad ones, because its sales or its prices follow the economy or a commodity. A <b>defensive</b> business sells things people buy whatever the economy is doing, so its profits change more slowly.</p>`],
+      ["Examples in India", `<ul>
+<li><b>Usually cyclical</b>: metals and mining, cement, chemicals, cars and commercial vehicles, real estate, capital goods, and companies whose profit depends on the price of oil, steel or another commodity.</li>
+<li><b>Usually defensive</b>: everyday consumer goods (food, soap, toothpaste), medicines, power utilities with regulated returns, and telecom services.</li>
+</ul>
+<p>These are tendencies, not rules: a well-run cement company can be steadier than a struggling consumer brand.</p>`],
+      ["Reading a cyclical company's numbers", `<ul>
+<li><b>P/E misleads at the extremes.</b> At the top of a cycle, profits are high and the P/E looks low, just before profits fall. At the bottom, profits are thin and the P/E looks high. See <a href="/learn/pe-ratio-explained">the P/E ratio, explained</a>.</li>
+<li><b>Average across a whole cycle.</b> Five to seven years of profit, margins and returns say more than the latest year.</li>
+<li><b>Watch the balance sheet.</b> A cyclical company with little debt can survive a bad stretch; one with heavy debt may not. See <a href="/learn/debt-to-equity">debt to equity</a>.</li>
+</ul>`],
+      ["Reading a defensive company's numbers", `<p>Steady businesses usually trade at higher P/E ratios, because their profits are easier to predict. The question for them is less about the cycle and more about growth: whether volumes, not just prices, are rising, and whether margins are holding. Our <a href="/sectors">sector pages</a> show how each sector's companies have done.</p>`],
+    ],
+    see: [["/sectors", "All sectors"], ["/learn/profit-margins", "Profit margins"]],
   },
 ];
 
