@@ -987,12 +987,16 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
     </>
   );
 
-  const tileBtn = active => btn(active, { flexDirection: "column", height: 52, gap: 3, padding: "0 2px", justifyContent: "center", fontSize: 11, whiteSpace: "normal", lineHeight: 1.15, textAlign: "center" });
+  const tileBtn = (active, extra) => btn(active, { flexDirection: "column", height: 52, gap: 3, padding: "0 2px", justifyContent: "center", fontSize: 11, whiteSpace: "normal", lineHeight: 1.15, textAlign: "center", ...extra });
   const sheet = { display: "grid", gap: 10, padding: 10, marginBottom: 8, borderRadius: 12, background: "var(--s3)", border: "1px solid var(--bdr2)" };
   const typeTiles = (
-    <div role="group" aria-label="Chart type" style={{ display: "grid", gridTemplateColumns: `repeat(${narrow ? 4 : 8}, minmax(0, 1fr))`, gap: 4 }}>
+    // a phone: one column, a list (3 Nov 2026, "one column, like a list"); a computer: tiles
+    <div role="group" aria-label="Chart type" style={narrow ? { display: "grid", gap: 2, maxHeight: "45vh", overflowY: "auto", overscrollBehavior: "contain" } : { display: "grid", gridTemplateColumns: "repeat(8, minmax(0, 1fr))", gap: 4 }}>
       {TYPES.map(({ id, label, Icon }) => (
-        <button key={id} type="button" onClick={() => { setPref({ type: id }); setPop(null); }} aria-pressed={prefs.type === id} style={tileBtn(prefs.type === id)}><Icon size={16} aria-hidden="true" />{label}</button>
+        <button key={id} type="button" onClick={() => { setPref({ type: id }); setPop(null); }} aria-pressed={prefs.type === id}
+          style={narrow ? btn(prefs.type === id, { height: 44, gap: 12, padding: "0 12px", border: 0, fontSize: 15, justifyContent: "flex-start", background: prefs.type === id ? "color-mix(in srgb, var(--accent) 14%, transparent)" : "transparent", color: prefs.type === id ? "var(--accent)" : "var(--t1)" }) : tileBtn(prefs.type === id)}>
+          <Icon size={18} aria-hidden="true" />{label}
+        </button>
       ))}
     </div>
   );
@@ -1013,7 +1017,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
   const toolLabel = id => DRAW_TOOLS.find(d => d.id === id)?.label ?? id;
   const sheets = (
     <>
-      {pop === "type" && <div style={sheet}><div style={sheetLabel}>Chart type</div>{typeTiles}</div>}
+      {pop === "type" && <div style={sheet}>{!narrow && <div style={sheetLabel}>Chart type</div>}{typeTiles}</div>}
       {pop === "interval" && (
         <div role="group" aria-label="Bar interval" style={sheet}>
           <div style={sheetLabel}>Each bar is</div>

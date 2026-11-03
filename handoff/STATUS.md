@@ -8,7 +8,7 @@ Pushed 3 Nov 2026 at `157e5bb` (full tests passed first): The phone's full-scree
 
 ## Committed but NOT pushed yet
 
-Nothing.
+The phone chart's type picker is a one-column list (owner: "one column, like a list"), scrolling past 45% of the screen; computers keep the tiles.
 
 ## Open / next
 
