@@ -112,3 +112,65 @@ const MARKET_TERMS = [
 export function explainHeadline(title = "") {
   return MARKET_TERMS.filter(([re]) => re.test(title)).slice(0, 4).map(([, term, means]) => ({ term, means }));
 }
+
+// Good or bad news, the way an announcement of this kind is usually read (3 Nov
+// 2026, "just show whether it is good or bad news for the stock"). A general
+// reading of the words, never a forecast of the price: an "Orders passed" with
+// no detail is "not clear", not guessed.
+// tone: good | bad | mixed | routine | unclear | waiting (results without figures yet)
+const pct = v => `${Math.abs(Math.round(v))}%`;
+const TONES = [
+  // bad first: a downgrade or a penalty outweighs anything else in the same notice
+  [/downgrad|negative outlook|watch with negative|credit ?watch negative/i, "bad", "A credit rating cut: lenders see the company as a bigger risk."],
+  [/\bdefault|delay in (payment|servicing|repayment)/i, "bad", "A missed or late payment on a loan or bond."],
+  [/insolvency|\bnclt\b|\bcirp\b|winding[- ]up|liquidat/i, "bad", "An insolvency or winding-up case."],
+  [/\bfraud\b|forensic audit/i, "bad", "A fraud or forensic audit is mentioned."],
+  [/\bsearch\b.*income[- ]tax|income[- ]tax.*\b(search|survey)\b|\braids?\b/i, "bad", "A tax search or raid."],
+  [/resign\w* of (the )?(statutory |secretarial )?auditor|auditor\w*.{0,20}resign/i, "bad", "The auditor has quit, which investors usually take as a warning sign."],
+  [/\bpenalt(y|ies)\b|\bfined\b|imposed a fine|tax demand|demand order|show cause notice/i, "bad", "A fine, tax demand or notice from an authority. Its size next to the company's profit decides how much it matters."],
+  [/\bfire\b|accident|explosion|lock-?out|\bstrike\b|shut ?down of|suspension of (operations|production)/i, "bad", "Work at a plant or office has been disrupted."],
+  [/invocation of pledge|pledge (was |has been )?invoked/i, "bad", "A lender has sold shares a promoter had pledged."],
+  // good
+  [/upgrad|positive outlook/i, "good", "A credit rating raised: lenders see the company as safer."],
+  [/in (the company's |its )?favou?r|quashed|set aside|dismissed the (appeal|petition|case)|demand (was |has been )?(dropped|deleted|withdrawn)/i, "good", "A case or demand has gone the company's way."],
+  [/letter of award|\bloa\b|work orders?|purchase orders?|(bag|bags|bagged|receiv\w*|secur\w*|won|wins?)\s+(an?\s+)?([\w-]+\s+){0,3}orders?\b|order (inflow|win)/i, "good", "New work won. How much it matters depends on its size next to the company's yearly sales."],
+  [/buy-?back/i, "good", "The company is buying back its own shares, usually above the market price."],
+  [/\bbonus\b/i, "routine", "Free extra shares, but the company is worth the same, so the price adjusts down. Your holding's value doesn't change."],
+  [/sub-?division|stock split|split of (equity )?shares/i, "routine", "Shares split into smaller ones. Your holding's value doesn't change."],
+  [/\bdividend\b/i, "good", "Cash for shareholders out of profits."],
+  [/commercial (operation|production)|commission(ed|ing) of|capacity (addition|expansion)|new (plant|facility)/i, "good", "New capacity has started, which can add to sales."],
+  [/\b(usfda|fda)\b.{0,40}(approval|approved|eir|no observations)|final approval from (the )?u\.?s\.?/i, "good", "A drug approval or a clean inspection by a regulator."],
+  [/reaffirm/i, "routine", "The credit rating is unchanged."],
+  // mixed
+  [/preferential (issue|allotment)|\bqip\b|qualified institutions? placement|rights issue|private placement|fund ?rais/i, "mixed", "Money comes in for growth, but new shares make each existing share a slightly smaller part of the company."],
+  [/acquisition|acquire|amalgamation|merger|demerger/i, "mixed", "A deal. Whether it helps depends on the price paid and how well it fits."],
+  [/resign/i, "mixed", "Someone senior has left. A planned change is routine; a sudden exit from the top matters more, so read the reason."],
+  [/spurt in (volume|price)|clarification/i, "routine", "The exchange asked about a sudden price move, and this is the company's reply."],
+];
+const KIND_TONE = {
+  legal: ["unclear", "The notice doesn't say what the order or case is, or who it favours. Read the filing's key lines."],
+  deals: ["unclear", "The notice doesn't say enough to tell. Read the filing for the size."],
+  people: ["routine", "A change in the team. Usually routine."],
+  updates: ["routine", "A disclosure the rules require. Usually routine."],
+  dividends: ["good", "Money or shares for shareholders."],
+};
+export const TONE_LABEL = { good: "Usually good news", bad: "Usually bad news", mixed: "Good and bad", routine: "Routine", unclear: "Not clear from the notice", waiting: "Figures not in yet" };
+
+export function newsTone({ title = "", summary = "", kind, numbers } = {}) {
+  if (kind === "results") {
+    if (!numbers || (numbers.profitYoY == null && numbers.salesYoY == null)) return { tone: "waiting", why: "The figures reach the app with the evening data update. Look again then." };
+    const { profitCr, profitYoY: p, salesYoY: s } = numbers;
+    if (profitCr != null && profitCr < 0) return { tone: "bad", why: "The company made a loss this quarter." };
+    const up = v => v != null && v >= 5, down = v => v != null && v <= -5;
+    const said = [p != null && `profit ${p >= 0 ? "up" : "down"} ${pct(p)}`, s != null && `sales ${s >= 0 ? "up" : "down"} ${pct(s)}`].filter(Boolean).join(", ");
+    const why = `${said[0].toUpperCase()}${said.slice(1)} on the same quarter a year earlier.`;
+    if (up(p) && !down(s)) return { tone: "good", why };
+    if (down(p) && !up(s)) return { tone: "bad", why };
+    if (p != null && Math.abs(p) < 5 && (s == null || Math.abs(s) < 5)) return { tone: "routine", why: `${why} About the same as a year ago.` };
+    return { tone: "mixed", why };
+  }
+  const text = `${title} ${summary ?? ""}`;
+  for (const [re, tone, why] of TONES) if (re.test(text)) return { tone, why };
+  const [tone, why] = KIND_TONE[kind] ?? ["unclear", "The notice doesn't say enough to tell."];
+  return { tone, why };
+}

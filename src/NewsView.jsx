@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, ExternalLink, FileText, Newspaper, ChevronRight, Fuel, Globe, Landmark, ChartColumn, Rocket, IndianRupee, Gem, Scale, ChartLine, Cpu, Building2, Car, Pill, Pickaxe, ShoppingBasket, House, Zap, Shield, Building, Tv, FlaskConical, ChartCandlestick, Construction, WashingMachine, HeartPulse, X } from "lucide-react";
+import { ArrowLeft, ExternalLink, FileText, Newspaper, ChevronRight, Fuel, Globe, Landmark, ChartColumn, Rocket, IndianRupee, Gem, Scale, ChartLine, TrendingUp, TrendingDown, Minus, CircleHelp, Cpu, Building2, Car, Pill, Pickaxe, ShoppingBasket, House, Zap, Shield, Building, Tv, FlaskConical, ChartCandlestick, Construction, WashingMachine, HeartPulse, X } from "lucide-react";
 import { api } from "./api.js";
-import { explainFiling, explainHeadline } from "./filingTerms.js";
+import { explainFiling, explainHeadline, newsTone, TONE_LABEL } from "./filingTerms.js";
 import { compareResults } from "./resultsCompare.js";
 import { resultsTable } from "./resultsTable.js";
 import CompanyLogo from "./CompanyLogo.jsx";
@@ -102,7 +102,7 @@ export function NewsRow({ item, onOpen, asOf, compact = false, dated = true }) {
         </span>
         {filing
           ? <>
-            <span className="nw-kind-line"><span className={`nw-kind k-${item.kind}`}>{KIND_LABEL[item.kind]}</span><span className="nw-subject">{item.numbers ? `${fyQuarter(item.numbers.quarter)} results` : compact && item.summary ? item.summary : item.title}</span></span>
+            <span className="nw-kind-line"><span className={`nw-kind k-${item.kind}`}>{KIND_LABEL[item.kind]}</span><ToneChip item={item} /><span className="nw-subject">{item.numbers ? `${fyQuarter(item.numbers.quarter)} results` : compact && item.summary ? item.summary : item.title}</span></span>
             {item.numbers ? <Figures n={item.numbers} quarter={false} /> : item.summary && !compact && <span className="nw-text">{item.summary}</span>}
             {/* the same news filed again that day (its record date, its press release) */}
             {item.also?.length > 0 && !compact && !item.numbers && item.also.map(a => <span key={a.id} className="nw-also">{a.summary ?? a.title}</span>)}
@@ -392,6 +392,28 @@ function QuarterBars({ bars }) {
   );
 }
 
+// Good or bad news, as news like this is usually read (filingTerms.js newsTone)
+const TONE_ICON = { good: TrendingUp, bad: TrendingDown, mixed: Scale, routine: Minus, unclear: CircleHelp, waiting: CircleHelp };
+const toneOf = item => newsTone({ title: [item.title, ...(item.also ?? []).map(a => a.title)].join(" "), summary: [item.summary, ...(item.also ?? []).map(a => a.summary)].filter(Boolean).join(" "), kind: item.kind, numbers: item.numbers });
+function Tone({ item }) {
+  const { tone, why } = toneOf(item);
+  const Icon = TONE_ICON[tone];
+  return (
+    <section className={`nw-tone t-${tone}`} aria-label="Good or bad news">
+      <span className="nw-tone-head"><Icon size={18} aria-hidden="true" />{TONE_LABEL[tone]}</span>
+      <p className="nw-tone-why">{why}</p>
+      <p className="nw-plain-note">How news like this is usually read, not a forecast of the price or advice.</p>
+    </section>
+  );
+}
+// The same, small, on a row: only when it leans one way
+function ToneChip({ item }) {
+  const { tone } = toneOf(item);
+  if (!["good", "bad", "mixed"].includes(tone)) return null;
+  const Icon = TONE_ICON[tone];
+  return <span className={`nw-tone-chip t-${tone}`} title={TONE_LABEL[tone]}><Icon size={12} aria-hidden="true" />{{ good: "Good", bad: "Bad", mixed: "Mixed" }[tone]}</span>;
+}
+
 // What the announcement is, in plain words: its kind, and the market terms it
 // uses (filingTerms.js) — what the words mean, not a view on the company
 function Plain({ item }) {
@@ -429,6 +451,7 @@ function Detail({ id, onBack, onOpen, onOpenStock }) {
       <p className="nw-eyebrow"><span className={`nw-kind k-${item.kind}`}>{KIND_LABEL[item.kind]}</span><span>{fullTime(item.time)}</span></p>
       <h2 className="nw-title">{niceName(item.company)}</h2>
       <p className="nw-byline">{item.title} · announced to NSE</p>
+      <Tone item={item} />
       {/* results: the table across the page when the quarter on file is this one */}
       {item.kind === "results" && item.numbers && data.quarters?.[0]?.end === item.numbers.quarter && <ResultsTable quarters={data.quarters} valuation={data.valuation} />}
       {/* a wide screen: the announcement on the left, the company and more beside it */}

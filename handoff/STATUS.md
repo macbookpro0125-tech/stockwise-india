@@ -8,7 +8,7 @@ Everything up to the home's rearranged Market summary, lit cards with a glow tha
 
 ## Committed but NOT pushed yet
 
-The home's "See every screener" button no longer sits on a company row: the picture fades out above it (site only; full tests passed 3 Nov).
+The home's "See every screener" button no longer sits on a company row: the picture fades out above it (site only; full tests passed 3 Nov). News now says whether an announcement is usually good or bad news: a box on each item (good, bad, good and bad, routine, not clear, figures not in yet) with one line why, and a small Good/Bad/Mixed tag on list rows (`newsTone` in `src/filingTerms.js`; results judged from profit and sales against a year earlier). Unit and news tests passed; checked at phone width on local data, where only "not clear" and "Mixed" items existed.
 
 ## Open / next
 

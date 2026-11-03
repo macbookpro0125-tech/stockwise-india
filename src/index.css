@@ -2811,6 +2811,15 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 .nw-qbar.loss { border-radius: 0 0 3px 3px; background: color-mix(in srgb, var(--red) 55%, transparent); }
 .nw-qbar.loss.now { background: var(--red); }
 .nw-qbar-ends { display: flex; justify-content: space-between; margin-left: 60px; font-size: var(--fs-xs); color: var(--t3); }
+/* A news item's good or bad: green, red, amber, or plain grey when routine or not clear */
+.nw-tone { --tone: var(--t2); margin: 14px 0; padding: 14px 16px; border-radius: 14px; background: color-mix(in srgb, var(--tone) 9%, var(--s1)); border: 1px solid color-mix(in srgb, var(--tone) 30%, transparent); }
+.nw-tone.t-good, .nw-tone-chip.t-good { --tone: var(--green); }
+.nw-tone.t-bad, .nw-tone-chip.t-bad { --tone: var(--red); }
+.nw-tone.t-mixed, .nw-tone-chip.t-mixed { --tone: var(--yellow); }
+.nw-tone-head { display: flex; align-items: center; gap: 8px; font-size: var(--fs-lg); font-weight: 600; color: var(--tone); }
+.nw-tone.t-routine .nw-tone-head, .nw-tone.t-unclear .nw-tone-head, .nw-tone.t-waiting .nw-tone-head { color: var(--t1); }
+.nw-tone-why { margin: 6px 0 0; font-size: var(--fs-md); line-height: 1.5; color: var(--t1); }
+.nw-tone-chip { flex-shrink: 0; display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px; border-radius: 999px; font-size: var(--fs-2xs); line-height: 1.5; background: color-mix(in srgb, var(--tone) 14%, transparent); color: var(--tone); }
 /* A news item's "What this means": the kind of announcement and its terms, in plain words */
 .nw-plain { margin: 14px 0; padding: 14px 16px; border-radius: 14px; background: color-mix(in srgb, var(--accent) 8%, var(--s1)); border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent); }
 .nw-plain-kind { margin: 6px 0 0; font-size: var(--fs-md); line-height: 1.5; color: var(--t1); }
