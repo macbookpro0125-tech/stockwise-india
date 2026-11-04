@@ -1,6 +1,6 @@
 # Status
 
-_Last updated: 3 Nov 2026, by Claude (Opus) on branch `screeners-home`._
+_Last updated: 4 Nov 2026, by Claude (Opus) on branch `screeners-home`._
 
 ## Live on jocularinsights.in
 
@@ -13,7 +13,7 @@ Nothing.
 ## Open / next
 
 1. **Owner is checking on his phone (1 Nov):** the opening on Android, and My desk ("can't add a card, can't move it", fixed in `b0f9fd4`). Wait for his feedback.
-2. **Android 1.3 (build 5) was sent for Google's review on 3 Nov 2026** as the closed testing (Alpha) release, full rollout, replacing 1.1 (build 3) from 24 Oct. Play's quick checks were still running when sent; its two warnings were only the missing crash-debugging files. Check Publishing overview for approval. Built for the Play launch (~7 Nov 2026): `~/Desktop/jocular-play/jocular-insights-1.3-build5.aab`, also `android/app/build/outputs/bundle/release/app-release.aab`, signed, pointing at the live site. The owner uploads it. Checked on the emulator 1 Nov: screens, haptic, push token. Not checked: the chime (emulator has no sound), a push actually arriving, the release build run on a phone. AdMob answered "Publisher misconfiguration" for the real app ID on 1 Nov: expected while the account is unverified and no store is linked; recheck after the Play listing is public.
+2. **Android 1.3 (build 5): approved and published to closed testing on 3 Nov 2026** (checked 4 Nov in Play Console, jocularinsights@gmail.com, `/u/1/` in the browser pane that day). Production access: 12 testers opted in for 11 days of the 14 needed, so **apply for production around 7 Nov 2026** (Dashboard → Apply for production; Google asks questions about the closed test, and the earlier draft answers are in `replica/launch/play-listing.md`). If a tester leaves before then, the 14 days restart. The owner still has to answer Play's "Declare your trader status" banner. Not checked yet: the chime, a push actually arriving, the release build on a real phone. AdMob said "Publisher misconfiguration" on 1 Nov, expected until the Play listing is public.
 3. **Visitor review ~6 Nov 2026.** Read `/api/owner/stats` while signed in as the owner. Count only from 30 Oct; earlier days include bots. On 31 Oct there were about 5 real visitors a day and 0 sign-ups since the 13 testers on 24 Oct.
 4. **Search:**
    - Google has indexed 31 of 6,849 sitemap pages (the sitemap was first read on 30 Oct).
