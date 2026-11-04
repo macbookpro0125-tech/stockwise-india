@@ -9,7 +9,7 @@ import { usePath, navigate, stockFromPath, stockPath, chartFromPath, SiteFooter 
 import Header, { BottomTabBar, TABS } from "./Header.jsx";
 import SideRail from "./SideRail.jsx";
 import PriceStrip from "./PriceStrip.jsx";
-import DiscoverView from "./DiscoverView.jsx";
+import DiscoverView, { BUILDER_PATH } from "./DiscoverView.jsx";
 import Tour, { APP_TOUR, STOCK_TOUR } from "./Tour.jsx";
 import { resetWatchlist } from "./watchlist.js";
 import { resetMyLevels } from "./myLevels.js";
@@ -109,7 +109,8 @@ export default function App() {
   useEffect(() => { setLogosSignedIn(account === undefined ? undefined : !!account); }, [account]);
   // A one-off message for the front page (e.g. after deleting an account)
   const [notice, setNotice] = useState(null);
-  const [tab, setTab] = useState("discover");
+  // /builder opens a computer's Screen builder (DiscoverView.jsx)
+  const [tab, setTab] = useState(() => (window.location.pathname === BUILDER_PATH && !window.matchMedia?.("(max-width: 640px)").matches ? "workspace" : "discover"));
   // someone not signed in, on a company's public page, asked to sign in
   const [theme, toggleTheme] = useTheme();
   // { symbol, at } rather than a bare symbol: searching the same symbol again
@@ -130,6 +131,14 @@ export default function App() {
   // linked page. Tabs do not add browser history entries on the web.
   const tabHistory = useRef([]);
   const tabRef = useRef(tab);
+  // Off the Screen builder, its address goes too, so a reload on another page
+  // doesn't land back in it
+  useEffect(() => {
+    if (tab !== "workspace" && window.location.pathname === BUILDER_PATH) {
+      const { discoverStep, ...state } = window.history.state ?? {}; // eslint-disable-line no-unused-vars
+      window.history.replaceState(state, "", `/${window.location.search}`);
+    }
+  }, [tab]);
   tabRef.current = tab;
 
   // Ratings on Play, in the Android app (rateApp.js): each day it's used,

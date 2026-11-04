@@ -91,6 +91,9 @@ function Modal({ onClose, width = 340, children }) {
 
 // The periods a ranked strategy's switch offers (Top Gainers)
 const PERIOD_WORDS = { ret1d: "1 day", ret1w: "1 week", ret1m: "1 month", ret3m: "3 months", ret6m: "6 months", ret1y: "1 year", ret3y: "3 years", ret5y: "5 years" };
+// Screen builder's address on a computer (App.jsx opens it as that tab)
+export const BUILDER_PATH = "/builder";
+
 export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "discover", onPage = null, onShowMap = null, visible = true, onOpenTab = null, account = null }) {
   const { meta, error: metaError, retry: retryMeta } = useScreenerMeta();
   // A shared link wins; else the last screen. null until the first screen
@@ -141,7 +144,11 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
     mq.addEventListener("change", on);
     return () => mq.removeEventListener("change", on);
   }, []);
-  const [phoneStep, setPhoneStep] = useState(() => (window.history.state?.discoverStep === "stocks" || filtersFromLink() ? "stocks" : "strategies"));
+  // A computer's Screen builder has its own address (4 Nov 2026), so a reload
+  // or a shared link opens it again; a phone keeps both steps on "/"
+  const builderPath = () => !window.matchMedia?.("(max-width: 640px)").matches;
+  // (a computer: the address alone says which, so a reload on "/" is the screeners)
+  const [phoneStep, setPhoneStep] = useState(() => ((builderPath() ? window.location.pathname === BUILDER_PATH : window.history.state?.discoverStep === "stocks") || filtersFromLink() ? "stocks" : "strategies"));
   useEffect(() => {
     const back = () => setPhoneStep(window.history.state?.discoverStep === "stocks" ? "stocks" : "strategies");
     window.addEventListener("popstate", back);
@@ -158,7 +165,7 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
   const strategiesY = useRef(null);
   const showStocks = () => {
     if (phoneStep === "strategies") strategiesY.current = window.scrollY;
-    if (window.history.state?.discoverStep !== "stocks") window.history.pushState({ ...(window.history.state ?? {}), discoverStep: "stocks" }, "");
+    if (window.history.state?.discoverStep !== "stocks") window.history.pushState({ ...(window.history.state ?? {}), discoverStep: "stocks" }, "", builderPath() ? `${BUILDER_PATH}${window.location.search}` : undefined);
     setPhoneStep("stocks");
     window.scrollTo(0, 0);
   };
@@ -202,7 +209,11 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
   }, []);
   const showStrategies = () => {
     if (window.history.state?.discoverStep === "stocks") window.history.back();
-    else setPhoneStep("strategies");
+    else {
+      // opened at /builder itself, with nothing behind it: the screeners are at "/"
+      if (window.location.pathname === BUILDER_PATH) window.history.replaceState(window.history.state, "", `/${window.location.search}`);
+      setPhoneStep("strategies");
+    }
   };
   // A computer: the Screeners and Workspace tabs are these two steps. The
   // tab picked moves the step; a step taken here moves the tab (App.jsx).

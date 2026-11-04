@@ -8,7 +8,7 @@ Pushed 4 Nov 2026 at `3885578`: The phone chart's type picker is a one-column li
 
 ## Committed but NOT pushed yet
 
-Nothing.
+- Screen builder at `/builder` (computer). Unit tests and all 138 end-to-end tests passed on 4 Nov.
 
 ## Open / next
 
@@ -22,7 +22,7 @@ Nothing.
 5. **Price strength locally:** a data file without 9-month returns (the local one, from 23 Oct) now gets them from the daily prices kept in `data/history/` (`server/price-strength.js`). It takes a few seconds the first time; nothing is downloaded.
 6. **Industry labels: 2,136 of 2,551 companies had one on 1 Nov 2026 (the old "895" was out of date).** The 410 without were companies with a sector from NSE's index lists, largely big ones (Lemon Tree, Chalet, ITC Hotels), which the BSE lookup skipped. Fixed in `server/market-data.js` and live; the first scheduled data job after the push is 2 Nov, 16:30 IST (the release was last built 1 Nov 07:51 UTC, before it; 410 still unlabelled). BSE refuses this computer (403), so check the job's `[sectors] BSE` log line and a Lemon Tree page after that run. Labels come from two schemes (NSE announcements' and BSE's), so the same industry can carry two names.
 
-7. **Screen builder and `/`:** on a computer, reloading or re-entering `/` while on Screen builder stays there, because the builder is marked only in the browser's history entry. The logo, Back and other routes tried do reach the home (checked 3 Nov). A reload can't be told from re-entering the address, so fixing it means a reload on the builder also goes home, or giving the builder its own address: owner's call, unchanged for now.
+7. **Screen builder has its own address, `/builder`, on a computer** (owner chose it on 4 Nov). A reload or a link opens it; leaving it puts the address back to `/`. A phone keeps both steps on `/`. Committed, not pushed.
 8. **Industry labels:** Lemon Tree's live page shows "Hotels & Resorts" (3 Nov). The total unlabelled wasn't recounted.
 
 ## Set aside (don't redo without asking)
