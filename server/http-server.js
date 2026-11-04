@@ -4,6 +4,7 @@
 // the client to store — a token in localStorage is readable by any script
 // on the page, which is exactly what a single XSS bug turns into full
 // account takeover. httpOnly means client-side JS can't read it at all.
+import { cleanBusiness } from "./business-sectors.js";
 import { deskMarket, STAGES, SETUPS, LIQUID_CR } from "./price-setups.js";
 import { getDeskLayout, saveDeskLayout, clearDeskLayout } from "./desk-layout.js";
 import "./env.js"; // first, so the rest see .env's settings
@@ -939,7 +940,9 @@ export function createApp() {
             }
             case "technicals": sendJson(res, 200, await fetchTechnicals(symbol)); return;
             case "shareholding": sendJson(res, 200, { quarters: await shareholdingHistory(symbol) }); return;
-            case "profile": sendJson(res, 200, await companyProfile(symbol)); return;
+            // and the business lines its own results filing names, which every
+            // filer has (the report above is only the top ~1,000's)
+            case "profile": sendJson(res, 200, { ...(await companyProfile(symbol)), filedBusiness: cleanBusiness(getStock(symbol)?.business).slice(0, 8) }); return;
             case "filings": sendJson(res, 200, await companyFilings(symbol)); return;
             case "news": sendJson(res, 200, await companyNews(getStock(symbol)?.name ?? symbol)); return;
             case "peers": sendJson(res, 200, sectorPeers(symbol)); return;

@@ -679,7 +679,7 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
           // A phone: Screeners — favourites, recently opened, the rest
           // (PhoneScreens.jsx, 26 Oct 2026)
           if (isPhone) return (
-            <PhoneScreens theme={theme} continueCard={continueCard || null} onNewScreen={newScreen}
+            <PhoneScreens theme={theme} continueCard={continueCard || null} onNewScreen={newScreen} onOpenStock={onOpenStock} onOpenTab={onOpenTab}
               onSelect={preset => { applyPreset(preset); setFiltersOpen(false); showStocks(); }} />
           );
           // The screener's home: a hero, three ways in, then the strategies as

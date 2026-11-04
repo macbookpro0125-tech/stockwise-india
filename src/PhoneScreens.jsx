@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { lazyPage } from "./lazyPage.js";
 import {
   BadgeCheck, ShieldCheck, Landmark, Percent, Tag, Scale, HandCoins, RotateCcw, TrendingUp, TrendingDown, ChevronsUp, Crown, Zap,
   Sprout, Rocket, Globe, Building2, Building, Mountain, ArrowUpRight, SlidersHorizontal, ChevronRight, ChevronLeft, Star, Search, Plus,
@@ -11,6 +12,9 @@ import CompanyLogo from "./CompanyLogo.jsx";
 import { cardName } from "./stockName.js";
 import { AdCard, useAdFeed } from "./ads.jsx";
 import { tick } from "./haptics.js";
+// the computer home's Market summary, here too (4 Nov 2026), loaded after the
+// screeners so the phone's first screen isn't held up by its chart
+const MarketSummary = lazyPage(() => import("./TodayHome.jsx").then(m => ({ default: m.MarketSummary })));
 
 // Discover's first page on a phone (asked for 26 Oct 2026, after ten rounds of
 // mock-ups): "Screeners" — the ones starred at the top, as cards that swipe,
@@ -202,7 +206,7 @@ function FavouriteCard({ p, count, change, day, closeDate, onOpen }) {
   );
 }
 
-export default function PhoneScreens({ onSelect, onNewScreen, continueCard = null, theme = "dark" }) {
+export default function PhoneScreens({ onSelect, onNewScreen, continueCard = null, theme = "dark", onOpenStock = null, onOpenTab = null }) {
   const [presets, setPresets] = useState([]);
   const [custom, setCustom] = useState(strategiesStore.get);
   const { favourites, changes, today, pricesDate: closeIso, recents } = useScreensHome();
@@ -310,12 +314,15 @@ export default function PhoneScreens({ onSelect, onNewScreen, continueCard = nul
           {favs.length > 1 && <div className="ps-dots" aria-hidden="true">{favs.map((p, i) => <i key={p.id} className={i === Math.min(favAt, favs.length - 1) ? "on" : ""} />)}</div>}
         </>
       ) : (
-        <div className="ps-fav ps-fav-empty">
-          <span className="ps-fav-name">Keep your screeners here</span>
-          <span className="ps-row-sub">Star a screener and it stays at the top, with the companies that joined or left since you last looked.</span>
-          <button type="button" className="ps-pill" onClick={() => showAll("all")}>Browse all {list.length || ""}</button>
-        </div>
+        // none yet: one line, not a card (4 Nov 2026: "favourites show too much")
+        <button type="button" className="ps-fav-hint" onClick={() => showAll("all")}>
+          <span>Star a screener to keep it here</span><b>Browse all{list.length ? ` ${list.length}` : ""}</b>
+        </button>
       )}
+
+      <div className="ps-summary">
+        <Suspense fallback={null}><MarketSummary onOpenStock={onOpenStock} onOpenTab={onOpenTab} /></Suspense>
+      </div>
 
       {recent.length > 0 && (
         <>

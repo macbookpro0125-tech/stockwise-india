@@ -366,6 +366,32 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
     ].filter(l => l.price > 0);
   }, [prefs.levels, levelsKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // dragging the price numbers by touch (the grip over them, below)
+  const gripRef = useRef(null);
+  const axisGrip = {
+    start: e => {
+      const scale = chartRef.current?.priceScale("right");
+      const range = scale?.getVisibleRange();
+      if (!range || e.touches.length !== 1) return;
+      const now = Date.now();
+      if (gripRef.current?.tapAt && now - gripRef.current.tapAt < 300) { scale.setAutoScale(true); gripRef.current = null; return; }
+      gripRef.current = { y: e.touches[0].clientY, range, moved: false, tapAt: now };
+    },
+    move: e => {
+      const g = gripRef.current, scale = chartRef.current?.priceScale("right");
+      if (!g || !scale || e.touches.length !== 1) return;
+      const dy = e.touches[0].clientY - g.y;
+      if (!g.moved && Math.abs(dy) < 4) return;
+      g.moved = true;
+      // a 150-pixel drag doubles or halves the span shown, around its middle
+      const k = Math.exp(dy / 150);
+      const mid = (g.range.from + g.range.to) / 2, half = ((g.range.to - g.range.from) / 2) * k;
+      scale.setAutoScale(false);
+      scale.setVisibleRange({ from: mid - half, to: mid + half });
+    },
+    end: () => { if (gripRef.current?.moved) gripRef.current = null; },
+  };
+
   const applyRange = (id, chart = chartRef.current) => {
     if (!chart || bars.length < 2) return;
     const last = bars.length - 1;
@@ -1354,6 +1380,11 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
               aria-label={`${name || symbol} ${prefs.type} chart, ${INTERVALS.find(i => i.id === prefs.interval)?.title.toLowerCase()} bars, ${first?.date} to ${last?.date}. ${last?.partial ? "Latest price, today in progress," : "Last close"} ${fmtRs(last?.close)}${rangeChange != null ? `, ${rangeChange >= 0 ? "up" : "down"} ${Math.abs(rangeChange).toFixed(1)} percent over ${range === "All" ? "all history" : range}` : ""}.${levelLines.length ? ` Levels shown: ${levelLines.map(l => `${l.title} ${fmtRs(l.price)}`).join(", ")}.` : ""}`}
               style={{ ...(page ? { flex: 1, minHeight: 200 } : { height }), width: "100%", cursor: drawing ? "crosshair" : undefined, opacity: loading ? 0.6 : 1 }}
             />
+            {/* A finger on the price numbers stretches the scale, as in Kite
+                (4 Nov 2026): the library does this for a mouse only, and on a
+                phone an up-or-down swipe there scrolled the page. Down squeezes
+                the candles, up stretches them; a double tap fits them again. */}
+            <div className="chart-axis-grip" aria-hidden="true" onTouchStart={axisGrip.start} onTouchMove={axisGrip.move} onTouchEnd={axisGrip.end} />
           </>
         )}
       </div>

@@ -110,7 +110,7 @@ test.describe("the phone layout", () => {
 
   test("M-H23 Screeners: a star puts a screener in Favourites, and + offers what can be made @phone", async ({ page, account }) => {
     await page.goto("/");
-    await expect(page.getByText("Keep your screeners here")).toBeVisible();
+    await expect(page.getByRole("button", { name: /Star a screener to keep it here/ })).toBeVisible();
     await page.getByRole("button", { name: "Add Defensive Bluechips to favourites" }).click();
     await expect(page.getByRole("group", { name: "Your favourite screeners" }).getByText("Defensive Bluechips")).toBeVisible();
     await page.reload();

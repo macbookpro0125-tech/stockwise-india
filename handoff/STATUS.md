@@ -8,7 +8,16 @@ Pushed 4 Nov 2026 at `3885578`: The phone chart's type picker is a one-column li
 
 ## Committed but NOT pushed yet
 
-- Screen builder at `/builder` (computer). Unit tests and all 138 end-to-end tests passed on 4 Nov.
+- Screen builder at `/builder` (computer).
+- The owner's phone list (4 Nov):
+  - the phone home: Favourites as one line when empty, then the computer's Market summary (`MarketSummary` in `TodayHome.jsx`)
+  - the overall score in "In short"
+  - "What it does" in words (`src/aboutText.js`, from the BRSR description and every filing's business lines)
+  - a quarterly summary (latest quarter, 8-quarter sales and profit bars)
+  - bar labels that no longer collide
+  - the price scale dragged by touch, like Kite (double tap fits it)
+
+Unit tests and the full end-to-end suite passed (the one failure was a test still looking for the old Favourites text, now updated).
 
 ## Open / next
 

@@ -229,21 +229,8 @@ const PAGE_GROUPS = [
 ];
 
 export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onPickScreen, onCreate, account = null, continueCard = null, newsTile = null, children }) {
-  const [strip, setStrip] = useState(null);
-  const [watch, setWatch] = useState(null);
-  const [calendar, setCalendar] = useState(null);
   const [presets, setPresets] = useState([]);
-  const [market, setMarket] = useState(null);
-  useEffect(() => {
-    api.marketStrip().then(setStrip).catch(() => {});
-    api.publicResultsCalendar().then(setCalendar).catch(() => {});
-    api.presets().then(p => setPresets(p ?? [])).catch(() => {});
-    api.prices("RELIANCE", "1y").then(d => setMarket(d?.benchmark?.closes ?? null)).catch(() => {});
-  }, []);
-  // again on coming back: a company may have been starred on its page
-  useEffect(() => {
-    if (visible) api.watchlist().then(setWatch).catch(() => setWatch({ results: [] }));
-  }, [visible]);
+  useEffect(() => { api.presets().then(p => setPresets(p ?? [])).catch(() => {}); }, []);
 
   // The header and the left bar go black with the sky while it's on screen, on the
   // light theme too (index.css html.td-night), and back as the sheet comes up over it
@@ -286,14 +273,6 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onPi
     });
   };
 
-  const rows = watch?.results ?? [];
-  const mine = new Set(rows.map(r => r.symbol));
-  const moved = [...rows].sort((a, b) => Math.abs(b.ret1d ?? 0) - Math.abs(a.ret1d ?? 0)).slice(0, WATCH_ROWS);
-  const under = rows.filter(r => r.fv25 > 0 && r.cmp > 0 && r.cmp < r.fv25).map(r => ({ r, by: (1 - r.cmp / r.fv25) * 100 })).sort((a, b) => b.by - a.by).slice(0, 3);
-  const coming = (calendar?.days ?? []).slice(0, 3).map(d => {
-    const yours = (d.companies ?? []).filter(c => mine.has(c.symbol));
-    return { date: d.date, yours, count: d.count };
-  });
   const seeAll = () => document.getElementById("all-screeners")?.scrollIntoView({ behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
 
   return (
@@ -318,6 +297,84 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onPi
       {/* Stays still as you scroll, and this comes up over it, like a tab pulled up */}
       <div ref={sheetRef} className="td-sheet" onPointerMove={moveSpot}>
     <div className="td">
+      <MarketSummary visible={visible} onOpenStock={onOpenStock} onOpenTab={onOpenTab} />
+
+      <section className="td-box td-screens" aria-label="Screeners">
+        <div className="td-head">
+          <h3>Screeners</h3>
+          <span className="td-head-acts">
+            <button type="button" onClick={seeAll}>See all{presets.length ? ` ${presets.length}` : ""}</button>
+            <button type="button" onClick={onCreate}><Plus size={13} aria-hidden="true" />Create new screen</button>
+          </span>
+        </div>
+        {presets.slice(0, QUICK_SCREENS).map(p => (
+          <button key={p.id} type="button" className="td-screen" onClick={() => onPickScreen?.(p)}>
+            <span className="td-screen-icon"><ScreenIcon p={p} size={18} /></span>
+            <span>{p.name}<small>{p.description}</small></span>
+          </button>
+        ))}
+      </section>
+
+      <h3 className="td-menu-title">Everything in the app</h3>
+      <nav className="td-box td-all-pages" aria-label="Everything in the app">
+        {PAGE_GROUPS.map(g => (
+          <div key={g.title} className="td-page-group">
+            <h3>{g.title}</h3>
+            {g.items.map(id => {
+              const tab = tabs.find(t => t.id === id), site = SITE_PAGES.find(p => p.id === id);
+              if (!tab && !site) return null; // a page this account doesn't have
+              const Icon = (tab ?? site).Icon;
+              return (
+                <button key={id} type="button" onClick={() => (site ? navigate(site.path) : id === "discover" ? seeAll() : onOpenTab?.(id))}>
+                  <Icon size={18} strokeWidth={1.8} aria-hidden="true" />
+                  <span>{(tab ?? site).label}<small>{tab ? ABOUT[id] : site.about}</small></span>
+                </button>
+              );
+            })}
+          </div>
+        ))}
+      </nav>
+
+      {continueCard}
+      {newsTile && <div className="td-news">{newsTile}</div>}
+
+      <section id="all-screeners" className="td-all" aria-labelledby="sh-popular">
+        <h2 id="sh-popular" className="td-all-title">All screeners</h2>
+        {children}
+      </section>
+    </div>
+      </div>
+    </div>
+  );
+}
+
+// The Market summary (4 Nov 2026: shared with a phone's home, PhoneScreens.jsx):
+// the Nifty 500's year, the major indices, the watchlist's biggest moves, what
+// sits under its fair value, and the results coming up
+export function MarketSummary({ visible = true, onOpenStock, onOpenTab }) {
+  const [strip, setStrip] = useState(null);
+  const [watch, setWatch] = useState(null);
+  const [calendar, setCalendar] = useState(null);
+  const [market, setMarket] = useState(null);
+  useEffect(() => {
+    api.marketStrip().then(setStrip).catch(() => {});
+    api.publicResultsCalendar().then(setCalendar).catch(() => {});
+    api.prices("RELIANCE", "1y").then(d => setMarket(d?.benchmark?.closes ?? null)).catch(() => {});
+  }, []);
+  // again on coming back: a company may have been starred on its page
+  useEffect(() => {
+    if (visible) api.watchlist().then(setWatch).catch(() => setWatch({ results: [] }));
+  }, [visible]);
+  const rows = watch?.results ?? [];
+  const mine = new Set(rows.map(r => r.symbol));
+  const moved = [...rows].sort((a, b) => Math.abs(b.ret1d ?? 0) - Math.abs(a.ret1d ?? 0)).slice(0, WATCH_ROWS);
+  const under = rows.filter(r => r.fv25 > 0 && r.cmp > 0 && r.cmp < r.fv25).map(r => ({ r, by: (1 - r.cmp / r.fv25) * 100 })).sort((a, b) => b.by - a.by).slice(0, 3);
+  const coming = (calendar?.days ?? []).slice(0, 3).map(d => {
+    const yours = (d.companies ?? []).filter(c => mine.has(c.symbol));
+    return { date: d.date, yours, count: d.count };
+  });
+  return (
+    <>
       <div className="td-top">
         <div>
           <h2 className="td-title">Market summary</h2>
@@ -390,52 +447,6 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onPi
           )}
         </div>
       </div>
-
-      <section className="td-box td-screens" aria-label="Screeners">
-        <div className="td-head">
-          <h3>Screeners</h3>
-          <span className="td-head-acts">
-            <button type="button" onClick={seeAll}>See all{presets.length ? ` ${presets.length}` : ""}</button>
-            <button type="button" onClick={onCreate}><Plus size={13} aria-hidden="true" />Create new screen</button>
-          </span>
-        </div>
-        {presets.slice(0, QUICK_SCREENS).map(p => (
-          <button key={p.id} type="button" className="td-screen" onClick={() => onPickScreen?.(p)}>
-            <span className="td-screen-icon"><ScreenIcon p={p} size={18} /></span>
-            <span>{p.name}<small>{p.description}</small></span>
-          </button>
-        ))}
-      </section>
-
-      <h3 className="td-menu-title">Everything in the app</h3>
-      <nav className="td-box td-all-pages" aria-label="Everything in the app">
-        {PAGE_GROUPS.map(g => (
-          <div key={g.title} className="td-page-group">
-            <h3>{g.title}</h3>
-            {g.items.map(id => {
-              const tab = tabs.find(t => t.id === id), site = SITE_PAGES.find(p => p.id === id);
-              if (!tab && !site) return null; // a page this account doesn't have
-              const Icon = (tab ?? site).Icon;
-              return (
-                <button key={id} type="button" onClick={() => (site ? navigate(site.path) : id === "discover" ? seeAll() : onOpenTab?.(id))}>
-                  <Icon size={18} strokeWidth={1.8} aria-hidden="true" />
-                  <span>{(tab ?? site).label}<small>{tab ? ABOUT[id] : site.about}</small></span>
-                </button>
-              );
-            })}
-          </div>
-        ))}
-      </nav>
-
-      {continueCard}
-      {newsTile && <div className="td-news">{newsTile}</div>}
-
-      <section id="all-screeners" className="td-all" aria-labelledby="sh-popular">
-        <h2 id="sh-popular" className="td-all-title">All screeners</h2>
-        {children}
-      </section>
-    </div>
-      </div>
-    </div>
+    </>
   );
 }

@@ -1,5 +1,5 @@
 import { Check, Minus, X, TriangleAlert, Eye, Info } from "lucide-react";
-import { CHAPTERS, byId, WORD, chapterScore, chapterLine, chapterJudgement, chapterFigures, gistLine, watchFor } from "./chapterText.js";
+import { CHAPTERS, byId, WORD, band, chapterScore, chapterLine, chapterJudgement, chapterFigures, gistLine, watchFor } from "./chapterText.js";
 
 export { CHAPTERS };
 
@@ -20,9 +20,17 @@ export function VerdictLines({ m, fairValue, price, onGo }) {
     .filter(x => x.s);
   const gist = gistLine(m, { fairValue, price });
   if (!rows.length && !gist) return null;
+  // the company's overall quality score, top right (4 Nov 2026: "show the overall score")
+  const overall = r?.quality != null ? { score: Math.round(r.quality), tone: band(r.quality) } : null;
   return (
     <section className="sd-card sd-verdict" aria-labelledby="verdict-title">
-      <div className="sd-chapter-qrow"><h3 id="verdict-title" className="sd-verdict-h">In short</h3><NotesToggle /></div>
+      <div className="sd-chapter-qrow">
+        <h3 id="verdict-title" className="sd-verdict-h">In short</h3>
+        <span className="sd-verdict-overall">
+          {overall && <span className={`sd-chapter-score sd-tone-${overall.tone}`} aria-label={`Overall quality ${overall.score} of 100, ${WORD[overall.tone]}`}><b>{overall.score}</b>{WORD[overall.tone]} overall</span>}
+          <NotesToggle />
+        </span>
+      </div>
       {gist && <p className="sd-gist">{gist}</p>}
       <ul className="sd-verdict-list">
         {rows.map(({ c, s }) => (

@@ -4,6 +4,13 @@ Newest first. One line per piece of work; the commit message has the detail.
 
 ## 4 Nov 2026
 
+- **4 Nov:** The owner's phone list:
+  - Favourites, when empty, is one line, and the computer's Market summary now shows on a phone's home.
+  - In short shows the overall score at the top right.
+  - "What it does" is a paragraph built only from filings.
+  - The quarterly view gets the latest quarter's tiles and 8-quarter bars; quarters no longer say "a year over N years".
+  - Crowded bar charts show the first, last and tapped values only.
+  - A finger on the price numbers stretches or squeezes the scale.
 - **4 Nov:** Screen builder at `/builder` on a computer, so a reload stays there and other pages go back to `/`. New test `e2e/builder-address.spec.js`; full suite 138 passed.
 - **4 Nov:** Play: 1.3 approved and published to closed testing (3 Nov). 12 testers for 11 of 14 days, so production access can be applied for around 7 Nov. Trader status still to declare (owner).
 - **4 Nov:** Pushed the chart type list at `3885578` (full tests passed first).

@@ -86,8 +86,13 @@ function fmtCell(v, kind) {
 
 // A row's figures as a small bar chart, oldest to newest, opened from the
 // row's chart button; bars grow in, a loss or outflow in red
-function TrendBars({ cols, rowKey, kind }) {
+function TrendBars({ cols, rowKey, kind, yearly = true }) {
   const [shown, setShown] = useState(false);
+  // a phone has room for every value only when the bars are wide enough
+  // (4 Nov 2026: "the chart numbers are colliding with each other"): then
+  // the first, the last and the one tapped show theirs
+  const [boxRef, width] = useWidth();
+  const [picked, setPicked] = useState(null);
   useEffect(() => { const id = requestAnimationFrame(() => setShown(true)); return () => cancelAnimationFrame(id); }, []);
   const pts = cols.map(c => ({ label: c.label ?? shortLabel(c.fyEnd), v: c[rowKey] })).filter(p => p.v != null && isFinite(p.v));
   if (pts.length < 2) return <div style={{ fontSize: 11.5, color: "var(--t3)", padding: "8px 0" }}>Not enough years to chart.</div>;
@@ -95,13 +100,19 @@ function TrendBars({ cols, rowKey, kind }) {
   const span = hi - lo || 1;
   const first = pts.find(p => !String(p.label).includes("TTM")), last = [...pts].reverse().find(p => !String(p.label).includes("TTM"));
   const n = pts.filter(p => !String(p.label).includes("TTM")).length - 1;
-  const cagr = kind === "cr" && n >= 2 && first.v > 0 && last.v > 0 ? (Math.pow(last.v / first.v, 1 / n) - 1) * 100 : null;
+  // a growth rate a year only for years: quarters would read as years
+  const cagr = yearly && kind === "cr" && n >= 2 && first.v > 0 && last.v > 0 ? (Math.pow(last.v / first.v, 1 / n) - 1) * 100 : null;
   return (
-    <div className="trend-bars">
+    <div className="trend-bars" ref={boxRef}>
       <div className="trend-plot" style={{ "--zero": `${(hi / span) * 100}%` }}>
-        {pts.map((p, i) => (
-          <div key={p.label} className="trend-col" title={`${p.label}: ${fmtCell(p.v, kind)}`}>
-            <span className="trend-val" style={MONO}>{fmtCell(p.v, kind)}</span>
+        {pts.map((p, i) => {
+          const each = width ? width / pts.length : 99;
+          const crowded = each < Math.max(46, fmtCell(p.v, kind).length * 6.2 + 8);
+          const sayValue = !crowded || i === 0 || i === pts.length - 1 || i === picked;
+          const sayLabel = each >= 40 || i === 0 || i === pts.length - 1 || i === picked || (pts.length - 1 - i) % 2 === 0;
+          return (
+          <div key={p.label} className={`trend-col${i === picked ? " picked" : ""}`} title={`${p.label}: ${fmtCell(p.v, kind)}`} onClick={() => setPicked(x => (x === i ? null : i))}>
+            <span className="trend-val" style={{ ...MONO, visibility: sayValue ? "visible" : "hidden" }}>{fmtCell(p.v, kind)}</span>
             <span className="trend-area">
               <span className="trend-bar" style={{
                 top: p.v >= 0 ? `${((hi - p.v) / span) * 100}%` : `${(hi / span) * 100}%`, height: `${Math.max((Math.abs(p.v) / span) * 100, 0.8)}%`,
@@ -110,16 +121,53 @@ function TrendBars({ cols, rowKey, kind }) {
                 transition: `transform 520ms cubic-bezier(0.22, 1, 0.36, 1) ${i * 45}ms`,
               }} />
             </span>
-            <span className="trend-x">{p.label}</span>
+            <span className="trend-x" style={{ visibility: sayLabel ? "visible" : "hidden" }}>{p.label}</span>
           </div>
-        ))}
+          );
+        })}
       </div>
+      {width > 0 && width / pts.length < 46 && <div className="trend-note">Tap a bar for its figure.</div>}
       {cagr != null && <div className="trend-note">{cagr >= 0 ? "Grew" : "Shrank"} {Math.abs(cagr).toFixed(1)}% a year over {n} years.</div>}
     </div>
   );
 }
 
-function StatementTable({ history, rows, note, extraCols = [] }) {
+// The quarters at a glance, above their table (4 Nov 2026: "quarterly is not
+// good on a phone"): the latest quarter's sales, profit and margin against a
+// year earlier, then the last eight quarters' sales and profit as bars
+function QuarterPicture({ quarters }) {
+  const q = quarters?.[0];
+  if (!q) return null;
+  const last8 = quarters.slice(0, 8).reverse();
+  const vs = v => (v == null || !isFinite(v) ? null : `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(1)}% on a year earlier`);
+  const tile = (label, value, against, tone) => (
+    <div className="qp-tile">
+      <small>{label}</small>
+      <b style={MONO}>{value}</b>
+      {against && <small className={tone}>{against}</small>}
+    </div>
+  );
+  const rs = v => (v == null ? "—" : `₹${Math.round(v).toLocaleString("en-IN")} Cr`);
+  return (
+    <div className="qp">
+      <div className="qp-head">Latest quarter, to {periodLabel(q.fyEnd)}</div>
+      <div className="qp-tiles">
+        {tile("Sales", rs(q.revenueCr), vs(q.salesYoY), q.salesYoY >= 0 ? "up" : "down")}
+        {tile("Net profit", rs(q.profitCr), vs(q.profitYoY), q.profitYoY >= 0 ? "up" : "down")}
+        {q.opm != null && tile("Operating margin", `${q.opm.toFixed(1)}%`, null)}
+      </div>
+      {last8.length >= 2 && <>
+        <div className="qp-chart-h">Sales, quarter by quarter</div>
+        <TrendBars cols={last8.map(x => ({ ...x, label: shortLabel(x.fyEnd) }))} rowKey="revenueCr" kind="cr" yearly={false} />
+        <div className="qp-chart-h">Net profit, quarter by quarter</div>
+        <TrendBars cols={last8.map(x => ({ ...x, label: shortLabel(x.fyEnd) }))} rowKey="profitCr" kind="cr" yearly={false} />
+      </>}
+      <div className="qp-chart-h">Every line, quarter by quarter</div>
+    </div>
+  );
+}
+
+function StatementTable({ history, rows, note, extraCols = [], yearly = true }) {
   const [open, setOpen] = useState(null);
   // a phone sees only a few columns: start at the newest, on the right (28 Oct 2026)
   const scroller = useRef(null);
@@ -158,7 +206,7 @@ function StatementTable({ history, rows, note, extraCols = [] }) {
                 {isOpen && (
                   <tr>
                     <td colSpan={years.length + 1} style={{ padding: 0, borderBottom: "1px solid var(--bdr)" }}>
-                      <div className="fin-trend"><TrendBars cols={years} rowKey={key} kind={kind} /></div>
+                      <div className="fin-trend"><TrendBars cols={years} rowKey={key} kind={kind} yearly={yearly} /></div>
                     </td>
                   </tr>
                 )}
@@ -415,7 +463,7 @@ export default function FinancialsPanel({ history: filed, quarters: filedQuarter
           ? <FinancialsChart points={points} />
           : <div style={{ fontSize: 12, color: "var(--t3)", padding: "24px 0" }}>Not enough reported years to chart. The tables show everything available.</div>)
         : tab === "quarterly"
-          ? <StatementTable history={quarters} rows={STATEMENTS.quarterly} note="Each quarter is its own three months; the last two columns compare with the same quarter a year earlier." />
+          ? <><QuarterPicture quarters={quarters} /><StatementTable history={quarters} yearly={false} rows={STATEMENTS.quarterly} note="Each quarter is its own three months; the last two columns compare with the same quarter a year earlier." /></>
           : <>
             {["profitLoss", "balanceSheet", "cashFlow"].includes(tab) && <YearPicture key={tab} history={history} tab={tab} />}
             {tab === "cashFlow" && <FundFlow history={history} />}

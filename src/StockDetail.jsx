@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
+import { aboutParagraph } from "./aboutText.js";
 import { cardName } from "./stockName.js";
 import { SHOW_TAB, usePhone } from "./phoneTabs.js";
 import { NotebookPen, Check, X, TriangleAlert, LoaderCircle, ArrowLeft, ArrowUpRight, CalendarDays, CircleCheck, ArrowRight, FileText, Building2, TrendingUp, ShieldCheck, Users, Scale, ChartCandlestick, Newspaper } from "lucide-react";
@@ -126,6 +127,25 @@ function PeHistoryTable({ m }) {
   );
 }
 
+// A phone's Summary: what the company does, in a few sentences, under In short
+function WhatItDoes({ symbol, m, onMore }) {
+  const [d, setD] = useState(null);
+  useEffect(() => {
+    let off = false;
+    api.panel(symbol, "profile").then(x => { if (!off) setD(x); }).catch(() => { if (!off) setD({}); });
+    return () => { off = true; };
+  }, [symbol]);
+  const text = d ? aboutParagraph(cardName(m?.name ?? symbol), m, d) : null;
+  if (!text) return null;
+  return (
+    <section className="sd-card sd-about" aria-labelledby="about-title">
+      <h3 id="about-title" className="sd-verdict-h">What it does</h3>
+      <p className="sd-about-text">{text}</p>
+      {onMore && <button type="button" className="sd-about-more" onClick={onMore}>More about the company →</button>}
+    </section>
+  );
+}
+
 // "About the company": what it does and the basics. The description, business
 // lines, incorporation, headcount and contacts come from its Business
 // Responsibility & Sustainability Report (filed by the top ~1,000 listed
@@ -151,7 +171,8 @@ function CompanyProfile({ symbol, m }) {
     return () => { cancelled = true; };
   }, [symbol]);
   const p = d?.profile, l = d?.listing, latest = m?.history?.[0];
-  const description = p?.about || p?.mainActivity || null;
+  // what it does, in words, from its report and its results filing (aboutText.js)
+  const description = d ? aboutParagraph(cardName(m?.name ?? symbol), m, d) : null;
   // The sector, industry and market cap are on the cards just above
   // (StockSnapshot.jsx), so they aren't repeated here
   const facts = [
@@ -193,18 +214,13 @@ function CompanyProfile({ symbol, m }) {
         <div style={{ fontSize: 13, color: "var(--t3)" }}>Loading company details…</div>
       ) : (
         <>
-          {description && <p style={{ fontSize: 13.5, color: "var(--t2)", lineHeight: 1.6, margin: "0 0 8px" }}>{description}.</p>}
-          {p?.businessLines?.length > 0 && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
-              {p.businessLines.filter(b => b.length <= 70).map(b => <span key={b} style={{ fontSize: 12, padding: "3px 9px", borderRadius: 999, background: "var(--s3)", color: "var(--t2)" }}>{b}</span>)}
-            </div>
-          )}
+          {description && <p style={{ fontSize: 13.5, color: "var(--t2)", lineHeight: 1.6, margin: "0 0 12px" }}>{description}</p>}
           {p?.businessLines?.some(b => b.length > 70) && (
             <ul style={{ margin: "0 0 12px", padding: "0 0 0 18px", fontSize: 13, color: "var(--t2)", lineHeight: 1.55 }}>
               {p.businessLines.filter(b => b.length > 70).map(b => <li key={b}>{b}</li>)}
             </ul>
           )}
-          {!p && <p style={{ fontSize: 12.5, color: "var(--t3)", lineHeight: 1.55, margin: "0 0 10px" }}>No business description on NSE: the company doesn't file a business responsibility report (only the top ~1,000 listed companies must). The basics below are from its listing and results.</p>}
+          {!description && <p style={{ fontSize: 12.5, color: "var(--t3)", lineHeight: 1.55, margin: "0 0 10px" }}>No business description on NSE: the company doesn't file a business responsibility report (only the top ~1,000 listed companies must), and its results name no business lines. The basics below are from its listing and results.</p>}
           <div className="company-facts">
             {shown.map(([label, value]) => (
               <div key={label} style={{ minWidth: 0 }}>
@@ -1130,6 +1146,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       <section id="sec-overview" className="ss-section sd-section" data-tab="overview">
         {/* a phone: the gist and a bar per chapter first, then a shorter chart */}
         {isPhone && m && <VerdictLines m={m} fairValue={valued ? fv?.fv25 : null} price={price} onGo={showPhoneTab} />}
+        {isPhone && m && <WhatItDoes symbol={data.symbol} m={m} onMore={() => showPhoneTab("business")} />}
         <PriceChartPanel symbol={data.symbol} name={data.name} compact={isPhone} levels={valued || levels ? { ...(valued ? fv : {}), ...(levels ?? {}) } : null} />
         <WhyMoving symbol={data.symbol} />
         {m && !isPhone && <StockGlance r={m.research} />}
