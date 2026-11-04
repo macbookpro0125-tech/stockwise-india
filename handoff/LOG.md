@@ -2,6 +2,10 @@
 
 Newest first. One line per piece of work; the commit message has the detail.
 
+## 4 Nov 2026
+
+- **4 Nov:** Pushed the chart type list at `3885578` (full tests passed first).
+
 ## 3 Nov 2026
 
 - **3 Nov:** Phone chart: chart types as a one-column list instead of a grid of tiles.
