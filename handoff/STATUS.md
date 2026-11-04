@@ -15,7 +15,7 @@ Pushed 4 Nov 2026 at `3885578`: The phone chart's type picker is a one-column li
 
 ## Committed but NOT pushed yet
 
-Nothing.
+- Desktop speed (4 Nov, "my desktop is laggy"): no backdrop blur on the many cards (header and side bar keep theirs); the price strip and the home's sky pause while scrolling (`html.is-scrolling`, main.jsx) and the sky is hidden once the sheet covers it; the sheet's glows scroll instead of being fixed. Measured on this Mac's Intel graphics in the browser pane: the sky and the strip each roughly halve idle frame rate; the per-card blur hurt the Desk most. The owner should check it on their own computer. Unit and 79 page tests passed.
 
 ## Open / next
 

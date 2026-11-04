@@ -5,6 +5,20 @@ import Intro, { APP_START_MS } from "./Intro.jsx";
 // Inter, served with the app rather than from Google Fonts (no third-party
 // request); the optical-size axis tightens it at heading sizes
 import "@fontsource-variable/inter/opsz.css";
+
+// While the page scrolls, the endless motions (the price strip, the home's
+// night sky) hold still, so scrolling has the frames to itself (4 Nov 2026:
+// "my desktop is laggy" — each moving thing makes the browser redraw the page
+// every frame); they carry on a moment after the scrolling stops
+{
+  let timer = 0;
+  window.addEventListener("scroll", () => {
+    const root = document.documentElement;
+    if (!root.classList.contains("is-scrolling")) root.classList.add("is-scrolling");
+    clearTimeout(timer);
+    timer = setTimeout(() => root.classList.remove("is-scrolling"), 250);
+  }, { passive: true });
+}
 import "./index.css";
 import { installGlow } from "./glow.js";
 import { installFastNumbers } from "./fastNumbers.js";

@@ -5534,10 +5534,13 @@ html.td-night[data-theme="light"] :is(.app-header, .side-rail) .brand-mark .bm-d
 html.td-night[data-theme="light"] :is(.app-header, .side-rail) .brand-mark .bm-light { display: none; }
 .app-header, .side-rail, .price-strip { transition: background-color 240ms ease; }
 
-/* The home's cards as glass (1 Nov 2026): colour behind them to see through, held
-   still as the page scrolls, a bright top edge, and a glow and small lift on hover */
+/* The home's cards as glass (1 Nov 2026): colour behind them to see through, a bright top edge, and a glow and small lift on hover */
 .td-sheet { --td-g1: rgba(0, 224, 190, 0.08); --td-g2: rgba(168, 107, 255, 0.1); --td-g3: rgba(62, 139, 255, 0.08);
-  background: radial-gradient(50vw 50vh at 12% 22%, var(--td-g1), transparent 72%) fixed, radial-gradient(54vw 56vh at 90% 45%, var(--td-g2), transparent 72%) fixed, radial-gradient(50vw 46vh at 42% 96%, var(--td-g3), transparent 72%) fixed, var(--bg); }
+  /* (4 Nov 2026) the glows scroll with the sheet, repeating every screen's
+     height: held still ("fixed") they made the browser repaint the whole sheet
+     on every scrolled frame — the home scrolled at a third of the speed */
+  background: radial-gradient(50vw 50vh at 12% 22%, var(--td-g1), transparent 72%), radial-gradient(54vw 56vh at 90% 45%, var(--td-g2), transparent 72%), radial-gradient(50vw 46vh at 42% 96%, var(--td-g3), transparent 72%), var(--bg);
+  background-size: 100% 110vh, 100% 110vh, 100% 110vh, auto; background-repeat: repeat-y; }
 [data-theme="light"] .td-sheet { --td-g1: rgba(0, 200, 170, 0.1); --td-g2: rgba(150, 100, 255, 0.1); --td-g3: rgba(50, 120, 255, 0.09); }
 .td-sheet :is(.td-box, .sc2, .ls, .sc2-list) { background: var(--ga-glass); border-radius: 18px; box-shadow: 0 0 0 1px var(--ga-edge), inset 0 1px 0 var(--ga-shine), 0 10px 30px var(--ga-drop) !important; transition: box-shadow 200ms ease-out, transform 200ms ease-out; }
 .td-sheet .td-all-pages { gap: 0; background: var(--ga-glass); }
@@ -5643,3 +5646,20 @@ html.td-night[data-theme="light"] :is(.app-header, .side-rail) .brand-mark .bm-l
 .ps-summary .td-grid, .ps-summary .td-summary { grid-template-columns: minmax(0, 1fr) !important; gap: 12px; margin-bottom: 12px; }
 .ps-summary .td-side { display: grid; gap: 12px; }
 .ps-summary .td-box { margin: 0; }
+
+/* Speed on a computer (4 Nov 2026, "my desktop is laggy"): a backdrop blur on
+   every card made the browser blur what's behind each one again on every
+   scrolled frame — 25 to 35 cards at once on the home and Explore. Behind the
+   cards is only the page's soft glow, already a blur, so the cards keep their
+   see-through glass, edge, shine and hover glow without one. The home's cards
+   over the night sky are a little more solid instead, so stars don't show
+   through. The header and the left bar keep theirs: one of each. */
+@media (hover: hover) and (pointer: fine) {
+  .md-grid .md-card, .sd-card, .sd.ap .sd-card, .sd.ap .sd-snap-card, .sd.ap .sd-metrics, .sd-snap-card, .sd-metrics, .dk-keyfigs, .desk-list, .desk-main, .desk-side, .mood, .card, .sc2, .ls, .sc2-list, .fb, .fb-card, .ex-card, .ex-map-link, .nw-list, .ex-heat, .td-box, .sr-reveal {
+    -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+  .td-sheet :is(.td-box, .sc2, .ls, .sc2-list) { background: var(--ga-solid) !important; }
+}
+/* still while scrolling (main.jsx), and the sky out of drawing once the
+   sheet covers it (TodayHome.jsx td-still): it can't be seen then */
+html.is-scrolling :is(.price-strip-track, .td-sky, .td-tints i, .td-shoot, .td-twinkle, .td-stream, .td-star-letter) { animation-play-state: paused; }
+.td-hero.td-still :is(canvas, .td-tints, .td-stream, .td-shoot, .td-twinkle, .td-star-letter) { visibility: hidden; }
