@@ -4,6 +4,7 @@ Newest first. One line per piece of work; the commit message has the detail.
 
 ## 4 Nov 2026
 
+- **4 Nov:** Pushed `e741f7a..a0c4571` (desktop speed): live in about 80 s.
 - **4 Nov:** Desktop lag: per-card blur removed, the strip and sky pause while scrolling, the sky is hidden when covered, and the sheet's glows are no longer fixed. Measurement note: the browser pane caps any endless animation near 38 fps on this Mac, and headless Chrome without a screen shows false GPU backpressure; check on a real computer.
 - **4 Nov:** Pushed `3885578..e741f7a` (phone batch, /builder): live in about 90 s.
 - **4 Nov:** The owner's phone list:

@@ -4,6 +4,8 @@ _Last updated: 4 Nov 2026, by Claude (Opus) on branch `screeners-home`._
 
 ## Live on jocularinsights.in
 
+Pushed 4 Nov 2026 at `a0c4571`: the desktop speed fixes (no per-card blur; the strip and sky pause while scrolling; the covered sky stops drawing; the sheet's glows aren't fixed). Full tests passed: 139 plus the sweep, rerun alone after a timeout on a slow run. Owner to check on their own computer.
+
 Pushed 4 Nov 2026 at `e741f7a` (live in about 90 s; `/`, `/builder` and stock pages answered):
 - the phone batch: Market summary on the home, the overall score in In short, "What it does", quarters at a glance, uncrowded bar labels, and the touch-drag price scale
 - Screen builder at `/builder`
@@ -15,7 +17,7 @@ Pushed 4 Nov 2026 at `3885578`: The phone chart's type picker is a one-column li
 
 ## Committed but NOT pushed yet
 
-- Desktop speed (4 Nov, "my desktop is laggy"): no backdrop blur on the many cards (header and side bar keep theirs); the price strip and the home's sky pause while scrolling (`html.is-scrolling`, main.jsx) and the sky is hidden once the sheet covers it; the sheet's glows scroll instead of being fixed. Measured on this Mac's Intel graphics in the browser pane: the sky and the strip each roughly halve idle frame rate; the per-card blur hurt the Desk most. The owner should check it on their own computer. Unit and 79 page tests passed.
+Nothing.
 
 ## Open / next
 
