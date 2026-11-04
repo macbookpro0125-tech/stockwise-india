@@ -4,6 +4,7 @@ Newest first. One line per piece of work; the commit message has the detail.
 
 ## 4 Nov 2026
 
+- **4 Nov:** Pushed `3885578..e741f7a` (phone batch, /builder): live in about 90 s.
 - **4 Nov:** The owner's phone list:
   - Favourites, when empty, is one line, and the computer's Market summary now shows on a phone's home.
   - In short shows the overall score at the top right.
