@@ -47,3 +47,17 @@ test("TB-1 the top bar: pages in the tray, the rest under the account, a backing
   await page.goto("/stock/TCS");
   await expect(page.getByRole("navigation", { name: "Parts of this page" })).toBeVisible();
 });
+
+// light theme over the home's night sky: the bar is the sky's black, its
+// words light (6 Nov 2026: it was clear, the light page behind pale words)
+test("TB-2 the top bar reads clearly over the home's night sky in the light theme", async ({ page, account, isMobile }) => {
+  test.skip(isMobile, "a phone has its own bars");
+  await page.addInitScript(() => { try { localStorage.setItem("stockwise-india-theme", "light"); } catch { /* */ } });
+  await page.goto("/");
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await expect(page.locator("html")).toHaveClass(/td-night/);
+  const bar = page.locator(".tb");
+  await expect(bar).toHaveCSS("background-color", "rgb(0, 0, 0)");
+  const lum = await page.locator(".tb-tab.on").evaluate(e => { const [r, g, b] = getComputedStyle(e).color.match(/\d+/g).map(Number); return (r + g + b) / 3; });
+  expect(lum, "the current tab's word is light on the black").toBeGreaterThan(200);
+});

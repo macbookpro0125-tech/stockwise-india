@@ -183,3 +183,6 @@ After the visitor review (Google starting to send people to screens pages; X 2 v
 
 ## 6 Nov: 8 more lists and a Share button
 Large/mid/small caps by SEBI's size bands (top 100, next 150, the rest), high ROE (20%+), high ROCE (25%+, not lenders), high promoter holding (70%+), Piotroski 8-9, penny stocks under ₹10 (with a plain warning). No promoter-stake-change list: no such figure in the metrics. A Share button on every list, sector and screen page (PublicLists.jsx ShareButton): the phone's share sheet, else WhatsApp with the message ready; the person sends it. 33 lists. S-H6 extended.
+
+## 6 Nov: top bar colour over the night sky (light theme)
+Owner's Safari screenshot: on the home in light mode the bar was clear, showing the light page behind the dark theme's pale words (td-night gives the header dark variables). Now black there, joining the sky; past the sky the normal light bar. Test TB-2.

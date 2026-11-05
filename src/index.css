@@ -5921,3 +5921,8 @@ html.td-night[data-theme="light"] .tb { --tb-search-bg: rgba(255, 255, 255, 0.07
 @media (prefers-reduced-transparency: reduce) { .tb.tb-scrolled { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--bg); } }
 /* a narrow window: the words a little tighter, so all eight fit */
 @media (max-width: 1000px) { .tb { gap: 10px; } .tb-nav { gap: 0; } .tb-tab { padding: 0 7px; font-size: 13.5px; } .tb-tab.on::after { left: 7px; right: 7px; } }
+/* over the home's night sky in the light theme the bar's words are the
+   dark theme's, so the bar is the sky's black too, joining it (6 Nov 2026:
+   "the colour of top bar" — clear, it showed the light page behind pale words) */
+html.td-night[data-theme="light"] .tb, html.td-night[data-theme="light"] .tb.tb-scrolled { background: #000; box-shadow: none; }
+html.td-night[data-theme="light"] .tb.tb-scrolled { box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08); }
