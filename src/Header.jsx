@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Star, BriefcaseBusiness, ChartLine, Bell, Sun, Moon, Zap, Settings, Telescope, Users, SlidersHorizontal, Monitor } from "lucide-react";
+import { Star, BriefcaseBusiness, ChartLine, Bell, Sun, Moon, Zap, Settings, Telescope, Users, SlidersHorizontal, Monitor, ChartNoAxesCombined } from "lucide-react";
 import { useWatchlist } from "./watchlist.js";
 import { portfolioStore, alertsStore } from "./stores.js";
 import StockSearchBar from "./StockSearchBar.jsx";
@@ -46,6 +46,8 @@ export const TABS = [
   { id: "workspace", label: "Screen builder", short: "Builder", Icon: SlidersHorizontal, wideOnly: true },
   // A list walked with its chart and company beside it (DeskView.jsx, 31 Oct 2026)
   { id: "desk", label: "Desk", short: "Desk", Icon: Monitor, wideOnly: true },
+  // The market in detail: indices, sectors, moves, results (MarketsView.jsx, 5 Nov 2026)
+  { id: "markets", label: "Markets", short: "Markets", Icon: ChartNoAxesCombined },
   // The indices and the news (ExploreView.jsx, 23 Oct 2026)
   { id: "explore", label: "Explore", short: "Explore", Icon: Telescope },
   // The market map, a page of its own (MarketMapView.jsx, 31 Oct 2026); a

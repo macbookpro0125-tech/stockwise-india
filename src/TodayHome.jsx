@@ -214,7 +214,7 @@ function MarketChart({ closes }) {
 // one kept to some accounts turns up here by itself.
 const ABOUT = {
   discover: "All the ready-made screens", workspace: "Build your own filter", desk: "A list with its charts beside it",
-  explore: "Indices and news", map: "The market, by size and move", momentum: "Short-term moves", watchlist: "Companies you follow",
+  markets: "Indices, sectors and the big moves", explore: "Indices and news", map: "The market, by size and move", momentum: "Short-term moves", watchlist: "Companies you follow",
   portfolio: "What you hold", performance: "How screens have done", alerts: "Your price and results alerts",
 };
 const SITE_PAGES = [
@@ -225,7 +225,7 @@ const SITE_PAGES = [
 
 const PAGE_GROUPS = [
   { title: "Find companies", items: ["discover", "workspace", "desk", "guides"] },
-  { title: "The market", items: ["explore", "map", "momentum", "calendar", "sectors"] },
+  { title: "The market", items: ["markets", "explore", "map", "momentum", "calendar", "sectors"] },
   { title: "Your things", items: ["watchlist", "portfolio", "performance", "alerts"] },
 ];
 
