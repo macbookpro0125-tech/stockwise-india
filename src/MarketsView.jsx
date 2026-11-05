@@ -24,6 +24,9 @@ const badge = name => {
   const words = rest.split(/\s+/).filter(Boolean);
   return (words.length > 1 ? words.map(w => w[0]).join("") : rest.slice(0, 4)).toUpperCase().slice(0, 4);
 };
+// each index its own steady colour, like a logo (not the day's red or green)
+const BADGE_COLOURS = ["#c2273a", "#1f7fb5", "#2c9ad1", "#5b1a3a", "#0f8a72", "#7b4fd6", "#c06414", "#3657c9", "#8a2c7a", "#2f7d3a"];
+const badgeColour = name => BADGE_COLOURS[[...String(name)].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % BADGE_COLOURS.length];
 const RANGES = [["1M", 21], ["3M", 63], ["6M", 126], ["1Y", Infinity]];
 
 function IndexChart({ days, closes, label }) {
@@ -71,7 +74,18 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
   useEffect(() => { setMovers(null); api.movers(period).then(setMovers).catch(() => setMovers({ gainers: [], losers: [] })); }, [period]);
 
   const strip = useRef(null);
-  const scroll = d => strip.current?.scrollBy({ left: d * strip.current.clientWidth * 0.8, behavior: "smooth" });
+  const scroll = d => strip.current?.scrollBy({ left: d * strip.current.clientWidth * 0.75, behavior: "smooth" });
+  // whether there's more to either side, for the round arrows over the row's ends
+  const [ends, setEnds] = useState({ back: false, next: false });
+  const look = () => { const el = strip.current; if (el) setEnds({ back: el.scrollLeft > 4, next: el.scrollLeft + el.clientWidth < el.scrollWidth - 4 }); };
+  useEffect(() => {
+    look();
+    const el = strip.current;
+    if (!el) return undefined;
+    const ro = new ResizeObserver(look);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [board]); // eslint-disable-line react-hooks/exhaustive-deps
   const indices = board?.market ?? [];
   const sectors = useMemo(() => [...(board?.sectors ?? [])].filter(s => s.changePct != null).sort((a, b) => b.changePct - a.changePct), [board]);
   const widest = Math.max(1, ...sectors.map(s => Math.abs(s.changePct)));
@@ -97,22 +111,22 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
       <section className="mk-section" aria-labelledby="mk-idx">
         <div className="mk-section-h">
           <h2 id="mk-idx">Indices</h2>
-          <div className="mk-arrows">
-            <button type="button" aria-label="Earlier indices" onClick={() => scroll(-1)}><ChevronLeft size={18} /></button>
-            <button type="button" aria-label="More indices" onClick={() => scroll(1)}><ChevronRight size={18} /></button>
-          </div>
         </div>
-        <div className="mk-strip" ref={strip} role="tablist" aria-label="Pick an index">
+        <div className="mk-strip-wrap">
+        {ends.back && <button type="button" className="mk-end back" aria-label="Earlier indices" onClick={() => scroll(-1)}><ChevronLeft size={20} /></button>}
+        {ends.next && <button type="button" className="mk-end next" aria-label="More indices" onClick={() => scroll(1)}><ChevronRight size={20} /></button>}
+        <div className="mk-strip" ref={strip} role="tablist" aria-label="Pick an index" onScroll={look}>
           {!board && [0, 1, 2, 3].map(i => <span key={i} className="mk-pill mk-skel" />)}
           {indices.map(i => (
             <button key={i.name} type="button" role="tab" aria-selected={pick === i.name} className="mk-pill" onClick={() => setPick(i.name)}>
-              <span className={`mk-badge ${tone(i.changePct)}`}>{badge(i.name)}</span>
+              <span className="mk-badge" style={{ background: badgeColour(i.name) }}>{badge(i.name)}</span>
               <span className="mk-pill-text">
                 <b>{i.name}</b>
                 <span><span className="mk-num">{num(i.close)}</span> <span className={`mk-chg ${tone(i.changePct)}`}>{pct(i.changePct)}</span></span>
               </span>
             </button>
           ))}
+        </div>
         </div>
 
         <div className="mk-card mk-index">

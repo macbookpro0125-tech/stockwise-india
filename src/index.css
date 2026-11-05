@@ -5794,3 +5794,18 @@ button.td-index:active, button.td-line:active { background: color-mix(in srgb, v
   .mk-sectors button { grid-template-columns: minmax(90px, 1fr) minmax(60px, 1fr) 64px; }
   .mk-arrows { display: none; }
 }
+/* the index row, airy (5 Nov 2026, "space, and it looks premium"): four across
+   the width, no boxes, the picked one in a soft pill; round arrows over the ends */
+.mk-strip-wrap { position: relative; margin-bottom: 14px; }
+.mk-strip { gap: 8px; margin-bottom: 0; padding: 2px 0 6px; }
+.mk-pill { flex: 0 0 calc((100% - 24px) / 4); min-width: 230px; padding: 12px 18px; border: 0; border-radius: 999px; background: transparent; }
+.mk-pill[aria-selected="true"] { border: 0; background: color-mix(in srgb, var(--t1) 7%, transparent); }
+@media (hover: hover) and (pointer: fine) { .mk-pill:not([aria-selected="true"]):hover { background: color-mix(in srgb, var(--t1) 4%, transparent); } }
+.mk-badge { width: 44px; height: 44px; font-size: 12.5px; letter-spacing: -0.01em; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12); }
+.mk-pill-text b { font-size: 15px; }
+.mk-pill-text > span { font-size: 14px; }
+.mk-end { position: absolute; top: 50%; z-index: 2; transform: translateY(-50%); display: inline-grid; place-items: center; width: 44px; height: 44px; border: 1px solid var(--bdr2); border-radius: 50%; background: var(--bg); color: var(--t1); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.28); cursor: pointer; transition: transform 120ms ease-out; }
+.mk-end.next { right: -6px; }
+.mk-end.back { left: -6px; }
+.mk-end:active { transform: translateY(-50%) scale(0.94); }
+@media (max-width: 640px) { .mk-pill { flex-basis: auto; min-width: 210px; } .mk-end { display: none; } }
