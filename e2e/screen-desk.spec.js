@@ -10,14 +10,14 @@ test("D-1 the Desk walks a ready-made screen; a click and the arrow keys move th
   const list = page.getByRole("listbox", { name: /^Companies/ });
   await expect(list.getByRole("option").first()).toBeVisible({ timeout: 45_000 });
   const first = await list.getByRole("option").first().locator("b").textContent();
-  await expect(page.locator(".desk-title span")).toContainText(first);
+  await expect(page.locator(".desk-title > span")).toContainText(first);
 
   await list.getByRole("option").nth(2).click();
   const third = await list.getByRole("option").nth(2).locator("b").textContent();
-  await expect(page.locator(".desk-title span")).toContainText(third);
+  await expect(page.locator(".desk-title > span")).toContainText(third);
   await list.press("ArrowDown");
   const fourth = await list.getByRole("option").nth(3).locator("b").textContent();
-  await expect(page.locator(".desk-title span")).toContainText(fourth);
+  await expect(page.locator(".desk-title > span")).toContainText(fourth);
   await expect(list.getByRole("option").nth(3)).toHaveAttribute("aria-selected", "true");
 
   // the side's tabs, and a quick view narrows the list
