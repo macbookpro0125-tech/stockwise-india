@@ -53,13 +53,35 @@ export const LISTS = [
   rule("high-dividend-yield-stocks", "High dividend yield stocks", m => m.divYield >= 3 && m.marketCapCr >= 500, "high dividend yield stocks India", "NSE companies whose dividends of the last year come to 3% or more of the share price, worth ₹500 crore or more", { label: "Dividend yield", get: m => (m.divYield != null ? `${num(m.divYield, 1)}%` : "—") }, (a, b) => b.divYield - a.divYield),
   rule("low-pe-stocks", "Low P/E stocks", m => m.pe > 0 && m.pe < 12 && m.marketCapCr >= 1000, "low PE stocks India", "profitable NSE companies valued at under 12 times their earnings, worth ₹1,000 crore or more — a low P/E can mean cheap, or a business the market expects to shrink"),
   rule("52-week-high-stocks", "Stocks at a 52-week high", m => m.high52w > 0 && m.cmp >= m.high52w * 0.98 && m.marketCapCr >= 500, "52 week high stocks NSE", "NSE companies that closed within 2% of their highest price of the past year, worth ₹500 crore or more", { label: "52-week high", get: m => `₹${num(m.high52w, 2)}` }, byCap),
+  // (6 Nov 2026, more) SEBI's size bands: the largest 100 by market value,
+  // the next 150, then the rest
+  rule("large-cap-stocks", "Large cap stocks", (m, c) => c.rank(m) <= 100, "large cap stocks India", "the 100 largest NSE companies by market value — SEBI's definition of a large cap", { label: "Size rank", get: (m, c) => `#${c.rank(m)}` }, byCap),
+  rule("mid-cap-stocks", "Mid cap stocks", (m, c) => c.rank(m) > 100 && c.rank(m) <= 250, "mid cap stocks India", "NSE companies ranked 101st to 250th by market value — SEBI's definition of a mid cap", { label: "Size rank", get: (m, c) => `#${c.rank(m)}` }, byCap),
+  rule("small-cap-stocks", "Small cap stocks", (m, c) => c.rank(m) > 250 && m.marketCapCr >= 500, "small cap stocks India", "NSE companies ranked 251st or lower by market value — SEBI's definition of a small cap — worth ₹500 crore or more", { label: "Size rank", get: (m, c) => `#${c.rank(m)}` }, byCap),
+  rule("high-roe-stocks", "High ROE stocks", m => m.roe >= 20 && m.marketCapCr >= 1000, "high ROE stocks India", "NSE companies earning 20% or more on their shareholders' equity in the latest year, worth ₹1,000 crore or more", { label: "ROE", get: m => `${num(m.roe, 1)}%` }, (a, b) => b.roe - a.roe),
+  rule("high-roce-stocks", "High ROCE stocks", m => !m.lender && m.roce >= 25 && m.marketCapCr >= 1000, "high ROCE stocks India", "NSE companies (not banks or lenders) earning 25% or more on all the capital they use, worth ₹1,000 crore or more", { label: "ROCE", get: m => `${num(m.roce, 1)}%` }, (a, b) => b.roce - a.roce),
+  rule("high-promoter-holding-stocks", "High promoter holding stocks", m => m.promoterPct >= 70 && m.marketCapCr >= 500, "high promoter holding stocks", "NSE companies whose founders or parent (the promoters) own 70% or more, worth ₹500 crore or more", { label: "Promoters own", get: m => `${num(m.promoterPct, 1)}%` }, (a, b) => b.promoterPct - a.promoterPct),
+  rule("piotroski-score-stocks", "Piotroski score 8 and 9 stocks", m => m.piotroski >= 8 && m.marketCapCr >= 500, "Piotroski score stocks India", "NSE companies passing 8 or all 9 of Piotroski's checks of financial strength in their latest results, worth ₹500 crore or more", { label: "Piotroski", get: m => `${m.piotroski}/9` }),
+  rule("penny-stocks", "Penny stocks under ₹10", m => m.cmp < 10 && m.marketCapCr >= 50, "penny stocks India", "NSE companies whose share closed under ₹10, worth ₹50 crore or more — shares this cheap are often small, thinly traded and can swing hard"),
   rule("52-week-low-stocks", "Stocks at a 52-week low", m => m.low52w > 0 && m.cmp <= m.low52w * 1.02 && m.marketCapCr >= 500, "52 week low stocks NSE", "NSE companies that closed within 2% of their lowest price of the past year, worth ₹500 crore or more", { label: "52-week low", get: m => `₹${num(m.low52w, 2)}` }, byCap),
 ];
 
 // A list's companies at the last close, in its order; null if it isn't known
+// each company's place by market value, for the size bands
+// (worked out once per market build)
+let ranks = null;
+function sizeRanks() {
+  const market = allMetrics();
+  if (ranks?.market === market) return ranks;
+  const order = (market.rows ?? []).filter(listed).sort(byCap);
+  const map = new Map(order.map((m, i) => [m.symbol, i + 1]));
+  ranks = { market, rank: m => map.get(m.symbol) ?? Infinity };
+  return ranks;
+}
 function members(def) {
   const rows = (allMetrics().rows ?? []).filter(listed);
-  if (def.kind === "rule") return rows.filter(m => { try { return def.test(m); } catch { return false; } }).sort(def.order);
+  const c = sizeRanks();
+  if (def.kind === "rule") return rows.filter(m => { try { return def.test(m, c); } catch { return false; } }).sort(def.order);
   const symbols = def.from(loadMarketSnapshot());
   if (!symbols?.length) return null;
   const set = new Set(symbols);
@@ -119,7 +141,7 @@ export function listPageHtml(template, slug) {
   const order = def.kind === "rule" ? (def.order === byCap ? "largest first" : def.extra && def.order !== byQuality ? `by ${def.extra.label.toLowerCase()}, highest first` : "highest quality score first") : "largest first";
   const cell = (v, f) => (v == null ? "—" : f(v));
   const shown = list.slice(0, SHOWN);
-  const rows = shown.map((m, i) => `<tr><td>${i + 1}</td><td>${link(`/stock/${encodeURIComponent(m.symbol)}`, niceName(m.name))} <small>${esc(m.symbol)}</small></td><td>₹${esc(num(m.cmp, 2))}</td><td>${esc(crore(m.marketCapCr) ?? "—")}</td>${def.extra ? `<td>${esc(def.extra.get(m))}</td>` : ""}<td>${cell(m.pe > 0 ? m.pe : null, v => esc(num(v)))}</td><td>${cell(m.roe, v => `${esc(num(v))}%`)}</td><td>${cell(m.lender ? null : m.debtToEquity, v => esc(num(v, 2)))}</td><td>${cell(quality(m), v => `${Math.round(v)}/100`)}</td></tr>`).join("");
+  const rows = shown.map((m, i) => `<tr><td>${i + 1}</td><td>${link(`/stock/${encodeURIComponent(m.symbol)}`, niceName(m.name))} <small>${esc(m.symbol)}</small></td><td>₹${esc(num(m.cmp, 2))}</td><td>${esc(crore(m.marketCapCr) ?? "—")}</td>${def.extra ? `<td>${esc(def.extra.get(m, sizeRanks()))}</td>` : ""}<td>${cell(m.pe > 0 ? m.pe : null, v => esc(num(v)))}</td><td>${cell(m.roe, v => `${esc(num(v))}%`)}</td><td>${cell(m.lender ? null : m.debtToEquity, v => esc(num(v, 2)))}</td><td>${cell(quality(m), v => `${Math.round(v)}/100`)}</td></tr>`).join("");
   const others = publicLists().filter(x => x.def.kind === def.kind && x.def.slug !== slug).slice(0, 8);
   const source = def.kind === "rule"
     ? `The list is a plain rule on reported figures at the last close: ${def.about}. It changes with every close.`
@@ -163,7 +185,7 @@ export function publicListData(slug) {
     medianPe: median(list.map(m => (m.pe > 0 ? m.pe : null))), medianRoe: median(list.map(m => m.roe)),
     best: best.map(m => ({ symbol: m.symbol, name: niceName(m.name), quality: quality(m) })),
     extraLabel: def.extra?.label ?? null, missing: missing(def, list),
-    companies: list.slice(0, SHOWN).map(m => ({ ...row(m), ...(def.extra ? { extra: def.extra.get(m) } : {}) })),
+    companies: list.slice(0, SHOWN).map(m => ({ ...row(m), ...(def.extra ? { extra: def.extra.get(m, sizeRanks()) } : {}) })),
     others: publicLists().filter(x => x.def.kind === def.kind && x.def.slug !== slug).slice(0, 8).map(x => ({ slug: x.def.slug, name: x.def.name, count: x.list.length })),
   };
 }

@@ -122,7 +122,7 @@ test("S-H5 the guides: a list, each guide its own page, and links between them s
 // themes, price bands and plain filters
 test("S-H6 stock lists: an index's companies, a theme, a price band; in the sitemap; open to everyone @phone", async ({ page, request }) => {
   const sm = await (await request.get("/sitemap-lists.xml")).text();
-  for (const slug of ["nifty-50-stocks", "defence-stocks", "stocks-under-100", "debt-free-stocks"]) expect(sm).toContain(`<loc>https://jocularinsights.in/lists/${slug}</loc>`);
+  for (const slug of ["nifty-50-stocks", "defence-stocks", "stocks-under-100", "debt-free-stocks", "large-cap-stocks", "high-roe-stocks", "piotroski-score-stocks"]) expect(sm).toContain(`<loc>https://jocularinsights.in/lists/${slug}</loc>`);
   const html = await (await request.get("/lists/nifty-50-stocks")).text();
   expect(html).toMatch(/<title>Nifty 50 stocks list[^<]*\| Jocular Insights<\/title>/);
   expect(html).toMatch(/<link rel="canonical" href="https:\/\/jocularinsights\.in\/lists\/nifty-50-stocks"/);
@@ -132,6 +132,8 @@ test("S-H6 stock lists: an index's companies, a theme, a price band; in the site
   await page.goto("/lists");
   await page.getByRole("link", { name: /^Defence stocks/ }).click();
   await expect(page.getByRole("heading", { name: "Defence stocks" }).first()).toBeVisible();
+  // shared to WhatsApp (or the phone's share sheet) with the list's own address
+  await expect(page.getByRole("button", { name: "Share" })).toBeVisible();
   await page.locator(".pl-co").first().click();
   await expect(page).toHaveURL(/\/stock\//);
 });

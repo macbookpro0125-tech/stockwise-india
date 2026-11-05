@@ -2,7 +2,7 @@
 // 24 Oct 2026): every strategy, one strategy's companies, the results
 // calendar, and the sectors (25 Oct 2026) — for anyone, signed in or not. Companies open their own page.
 import { useEffect, useState } from "react";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Share2 } from "lucide-react";
 import { api } from "./api.js";
 import { PublicPage } from "./LegalPages.jsx";
 import { navigate, stockPath } from "./site.jsx";
@@ -21,6 +21,19 @@ const crore = v => (v == null ? null : v >= 100000 ? `₹${num(v / 100000, 2)} l
 const day = iso => (iso ? new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : null);
 const weekday = iso => (iso ? new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "short", timeZone: "UTC" }) : null);
 const NOT_ADVICE = "These are the NSE companies that pass a set of filters on reported figures at the last close — a starting point for research, not a recommendation to buy or sell. Check each company's filings before deciding anything.";
+
+// Share a list (6 Nov 2026: WhatsApp groups bring people more than X does):
+// a phone's own share sheet where there is one, else WhatsApp with the
+// message ready. The person sends it; nothing is sent for them.
+function ShareButton({ text, path }) {
+  if (!text) return null;
+  const url = `https://jocularinsights.in${path}`;
+  const share = async () => {
+    if (navigator.share) { try { await navigator.share({ text, url }); return; } catch { return; } }
+    window.open(`https://wa.me/?text=${encodeURIComponent(`${text} ${url}`)}`, "_blank", "noopener");
+  };
+  return <button type="button" className="pl-share" onClick={share}><Share2 size={15} aria-hidden="true" /> Share</button>;
+}
 
 // a link that stays in the app
 const go = path => e => { e.preventDefault(); navigate(path); window.scrollTo(0, 0); };
@@ -75,7 +88,7 @@ export function ScreenPage({ slug, signedIn }) {
   const [join, box] = useJoin();
   return (
     <PublicPage title={s ? `${s.name}: NSE companies that match today` : "Stock screen"} signedIn={signedIn} updated={s?.pricesDate ? `${day(s.pricesDate)} (the latest NSE close)` : "with each NSE close"} onSignIn={() => join(null, "signin")}>
-      <p className="pl-crumb"><A to="/screens">Stock screens</A> › {s?.name ?? "…"}</p>
+      <p className="pl-crumb"><A to="/screens">Stock screens</A> › {s?.name ?? "…"}{s && <ShareButton path={`/screens/${slug}`} text={`${s.name}: the NSE companies that pass it today, with their quality scores`} />}</p>
       {error && <p className="nw-empty">{error}</p>}
       {!s && !error && <Wait />}
       {s && (
@@ -201,7 +214,7 @@ export function SectorPage({ slug, signedIn }) {
   const [join, box] = useJoin();
   return (
     <PublicPage title={s ? `${s.name} stocks on NSE` : "Sector"} signedIn={signedIn} updated={s?.pricesDate ? `${day(s.pricesDate)} (the latest NSE close)` : "with each NSE close"} onSignIn={() => join(null, "signin")}>
-      <p className="pl-crumb"><A to="/sectors">Sectors</A> › {s?.name ?? "…"}</p>
+      <p className="pl-crumb"><A to="/sectors">Sectors</A> › {s?.name ?? "…"}{s && <ShareButton path={`/sector/${slug}`} text={`${s.name} stocks on NSE: all ${s.count}, with their P/E and quality scores`} />}</p>
       {error && <p className="nw-empty">{error}</p>}
       {!s && !error && <Wait />}
       {s && (
@@ -283,7 +296,7 @@ export function ListPage({ slug, signedIn }) {
   const [join, box] = useJoin();
   return (
     <PublicPage title={s?.name ?? "Stock list"} signedIn={signedIn} updated={s?.pricesDate ? `${day(s.pricesDate)} (the latest NSE close)` : "with each NSE close"} onSignIn={() => join(null, "signin")}>
-      <p className="pl-crumb"><A to="/lists">Lists</A> › {s?.name ?? "…"}</p>
+      <p className="pl-crumb"><A to="/lists">Lists</A> › {s?.name ?? "…"}{s && <ShareButton path={`/lists/${slug}`} text={`${s.name}: all ${s.count}, with their P/E and quality scores`} />}</p>
       {error && <p className="nw-empty">{error}</p>}
       {!s && !error && <Wait />}
       {s && (

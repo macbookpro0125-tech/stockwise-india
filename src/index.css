@@ -3151,7 +3151,11 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 .wl-news { margin: 0 0 22px; }
 /* The public lists (PublicLists.jsx): screens, one screen's companies, the results calendar */
 .pl-lede { margin: 0 0 18px; font-size: var(--fs-md); line-height: 1.6; color: var(--t2); }
-.pl-crumb { margin: -16px 0 14px; font-size: var(--fs-sm); color: var(--t3); }
+.pl-crumb { margin: -16px 0 14px; font-size: var(--fs-sm); color: var(--t3); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+/* sharing a list (PublicLists.jsx ShareButton, 6 Nov 2026) */
+.pl-share { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border: 1px solid var(--bdr2); border-radius: 999px; background: var(--s2); color: var(--t1); font: 500 13px var(--font); cursor: pointer; }
+.pl-share:active { transform: scale(0.97); }
+@media (hover: hover) and (pointer: fine) { .pl-share:hover { border-color: var(--accent); color: var(--accent); } }
 .pl-crumb a, .pl-more a { color: var(--accent); }
 .pl-h { margin: 26px 0 10px; font-size: var(--fs-lg); font-weight: 500; color: var(--t1); display: flex; align-items: baseline; gap: 10px; }
 .pl-h span { font-size: var(--fs-sm); font-weight: 400; color: var(--t3); }
