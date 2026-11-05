@@ -84,9 +84,16 @@ function fmtCell(v, kind) {
   return fmtCr(v);
 }
 
+// The figures where more is better: their bars are green when they grew and
+// red when they shrank (5 Nov 2026) — a quarter against the same quarter a
+// year earlier (a dip from the quarter before is often only the season), a
+// year against the year before. Costs, debt, tax and the rest stay one colour.
+const MORE_IS_BETTER = new Set(["revenueCr", "operatingProfitCr", "pbdtCr", "pbtCr", "profitCr", "eps", "opm", "netMargin", "roe", "roce", "ocfCr", "fcfCr", "equityCr", "cashBankCr"]);
+
 // A row's figures as a small bar chart, oldest to newest, opened from the
 // row's chart button; bars grow in, a loss or outflow in red
-function TrendBars({ cols, rowKey, kind, yearly = true }) {
+// before: earlier periods, not drawn, that the first bars are set against
+function TrendBars({ cols, rowKey, kind, yearly = true, before = [] }) {
   const [shown, setShown] = useState(false);
   // a phone has room for every value only when the bars are wide enough
   // (4 Nov 2026: "the chart numbers are colliding with each other"): then
@@ -95,6 +102,15 @@ function TrendBars({ cols, rowKey, kind, yearly = true }) {
   const [picked, setPicked] = useState(null);
   useEffect(() => { const id = requestAnimationFrame(() => setShown(true)); return () => cancelAnimationFrame(id); }, []);
   const pts = cols.map(c => ({ label: c.label ?? shortLabel(c.fyEnd), v: c[rowKey] })).filter(p => p.v != null && isFinite(p.v));
+  // what each bar is set against: four quarters back, or the year before (by position in cols)
+  const back = yearly ? 1 : 4;
+  const vsOf = i => {
+    if (!MORE_IS_BETTER.has(rowKey)) return null;
+    const all = [...before, ...cols];
+    const j = all.findIndex(c => c === cols.find(x => (x.label ?? shortLabel(x.fyEnd)) === pts[i].label));
+    const then = j >= back ? all[j - back]?.[rowKey] : null;
+    return then != null && isFinite(then) ? pts[i].v - then : null;
+  };
   if (pts.length < 2) return <div style={{ fontSize: 11.5, color: "var(--t3)", padding: "8px 0" }}>Not enough years to chart.</div>;
   const hi = Math.max(0, ...pts.map(p => p.v)), lo = Math.min(0, ...pts.map(p => p.v));
   const span = hi - lo || 1;
@@ -116,7 +132,11 @@ function TrendBars({ cols, rowKey, kind, yearly = true }) {
             <span className="trend-area">
               <span className="trend-bar" style={{
                 top: p.v >= 0 ? `${((hi - p.v) / span) * 100}%` : `${(hi / span) * 100}%`, height: `${Math.max((Math.abs(p.v) / span) * 100, 0.8)}%`,
-                background: p.v < 0 ? "var(--red)" : String(p.label).includes("TTM") ? "color-mix(in srgb, var(--accent) 55%, transparent)" : "var(--accent)",
+                background: (() => {
+                  const vs = vsOf(i);
+                  const base = p.v < 0 ? "var(--red)" : vs == null ? "var(--accent)" : vs >= 0 ? "var(--green)" : "var(--red)";
+                  return String(p.label).includes("TTM") ? `color-mix(in srgb, ${base} 55%, transparent)` : base;
+                })(),
                 transform: shown ? "none" : "scaleY(0)", transformOrigin: p.v >= 0 ? "bottom" : "top",
                 transition: `transform 520ms cubic-bezier(0.22, 1, 0.36, 1) ${i * 45}ms`,
               }} />
@@ -127,6 +147,7 @@ function TrendBars({ cols, rowKey, kind, yearly = true }) {
         })}
       </div>
       {width > 0 && width / pts.length < 46 && <div className="trend-note">Tap a bar for its figure.</div>}
+      {MORE_IS_BETTER.has(rowKey) && <div className="trend-note">Green: up on {yearly ? "the year before" : "the same quarter a year earlier"}. Red: down.</div>}
       {cagr != null && <div className="trend-note">{cagr >= 0 ? "Grew" : "Shrank"} {Math.abs(cagr).toFixed(1)}% a year over {n} years.</div>}
     </div>
   );
@@ -139,6 +160,8 @@ function QuarterPicture({ quarters }) {
   const q = quarters?.[0];
   if (!q) return null;
   const last8 = quarters.slice(0, 8).reverse();
+  // the four before them, for the first bars' year-earlier colour
+  const prior = quarters.slice(8, 12).reverse();
   const vs = v => (v == null || !isFinite(v) ? null : `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(1)}% on a year earlier`);
   const tile = (label, value, against, tone) => (
     <div className="qp-tile">
@@ -158,9 +181,9 @@ function QuarterPicture({ quarters }) {
       </div>
       {last8.length >= 2 && <>
         <div className="qp-chart-h">Sales, quarter by quarter</div>
-        <TrendBars cols={last8.map(x => ({ ...x, label: shortLabel(x.fyEnd) }))} rowKey="revenueCr" kind="cr" yearly={false} />
+        <TrendBars cols={last8.map(x => ({ ...x, label: shortLabel(x.fyEnd) }))} rowKey="revenueCr" kind="cr" yearly={false} before={prior} />
         <div className="qp-chart-h">Net profit, quarter by quarter</div>
-        <TrendBars cols={last8.map(x => ({ ...x, label: shortLabel(x.fyEnd) }))} rowKey="profitCr" kind="cr" yearly={false} />
+        <TrendBars cols={last8.map(x => ({ ...x, label: shortLabel(x.fyEnd) }))} rowKey="profitCr" kind="cr" yearly={false} before={prior} />
       </>}
       <div className="qp-chart-h">Every line, quarter by quarter</div>
     </div>
