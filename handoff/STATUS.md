@@ -4,6 +4,13 @@ _Last updated: 4 Nov 2026, by Claude (Opus) on branch `screeners-home`._
 
 ## Live on jocularinsights.in
 
+Pushed 5 Nov 2026 at `4c78350` (all 142 tests passed):
+- **Markets:** a new page (`MarketsView.jsx`, tab `markets`; phone: Settings → Markets) with the index picker and its chart, sectors, the market's trend, the biggest moves and the week's results.
+- **What to watch:** Lately and Coming up.
+- **The home:** news across the full width.
+- **Market map:** logos.
+- **Results bars:** green or red against a year earlier.
+
 Pushed 5 Nov 2026 at `11d1e3b`: the chart line/area is red when the price fell over the range shown and green when it rose, and full screen fills the screen.
 
 Pushed 5 Nov 2026 at `e2d1eab`: the home's Market summary is wider (1,480 px), every card opens something (an index its Explore page, the Nifty 500 card its page, a results day the calendar), and Results coming names the three biggest companies each day, the watchlist's first. 140 tests passed; F03-E1 (back/forward) failed once and passed 4 of 4 on rerun: an occasional timing failure, not from this batch.
@@ -23,7 +30,7 @@ Pushed 4 Nov 2026 at `3885578`: The phone chart's type picker is a one-column li
 
 ## Committed but NOT pushed yet
 
-- What to watch (computer company page) adds "Lately" (last 90 days of events, via `recentChanges(m, holding, today, { window: 90 })`) and "Coming up" (announced board meetings and record dates). F03-H2 updated. Needs a clean full test run before pushing.
+Nothing.
 
 ## Open / next
 
