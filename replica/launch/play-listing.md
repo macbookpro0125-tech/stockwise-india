@@ -8,44 +8,51 @@ Insights is not SEBI-registered, so the listing says it's educational.
 
 ## Store listing
 
-**App name** (30 max) — `Jocular Insights: NSE Screener` (30). The owner
-wanted the name to say it's a stock screener (20 Oct 2026); "Jocular Insights:
-Stock Screener" is 32, over Play's limit, so "stock screener" leads the short
-description instead — Play searches both. The AdMob app is named
-"Jocular Insights – Stock Screener" (only the owner sees that one).
+**5 Nov 2026, for searches on "stocks" and "screener" (the owner's aim).**
+Play matches searches most strongly on the name, then the short description,
+then the full description. Installs, ratings and use decide the order, so a
+new app shows sooner for "stock screener", "NSE screener" or "Indian stock
+screener" than for "stocks" alone. The owner's "Jocular insights : Indian
+stock screener" is 39 characters, over the 30 allowed.
 
-**Short description** (80 max) —
-`NSE stock screener with ready-made strategies, quality scores and fair values.` (78)
+**App name** (30 max): `Jocular: Indian Stock Screener` (30). Was `Jocular Insights: NSE Screener`. The phone's icon label stays "Jocular Insights" (set in the app; a new build would be needed to change it).
 
-**Full description** (4,000 max; the last section added 20 Oct 2026 from
-the review study, replica/fixes.md) —
+**Short description** (80 max):
+`Stock screener for Indian stocks: NSE shares, quality scores and fair value` (75)
+
+**Full description** (4,000 max; rewritten 5 Nov 2026 for search, everything in it is in the app):
 
 ```
-Jocular Insights helps you research NSE-listed companies from their own filings.
+Jocular Insights is a stock screener for Indian stocks. Research every NSE-listed company from its own filings, screen the whole share market in seconds, and see which stocks fit what you look for.
 
-STRATEGIES
-Start from a ready-made strategy — quality compounders, dividend payers, undervalued growth, Graham net-nets and more — and see which companies fit it at today's close. Change any filter, or build your own screen from more than a hundred measures.
+STOCK SCREENER WITH READY-MADE SCREENS
+Start from a ready-made screen (quality compounders, dividend payers, undervalued growth, stocks near their highs, Graham net-nets and more) and see which stocks fit it at today's close. Change any filter, or build your own stock screen from more than a hundred measures: P/E, ROE, ROCE, debt, growth, promoter holding, dividend yield, price strength and more. Save a screen and get told when a new company joins it.
 
 A QUALITY SCORE FROM THE FILINGS
-Every company is scored out of 100 across six areas: business quality, earnings quality, balance sheet, governance, growth and valuation. Each check shows its reason. What the filings can't show is listed as not checked — never guessed.
+Every stock is scored out of 100 across six areas: business quality, earnings quality, balance sheet, governance, growth and valuation. Each check shows its reason. What the filings can't show is listed as not checked, never guessed.
 
-FAIR VALUE AND PRICE LEVELS
-A fair-value estimate from each company's normalized earnings and its own usual P/E (banks on book value, cyclicals on mid-cycle earnings), with reference price levels. They are estimates to help you think, not targets or advice.
+FAIR VALUE
+A fair-value estimate for each company from its normalised earnings and its own usual P/E (banks on book value, cyclicals on mid-cycle earnings). It's an estimate to help you think, not a target or advice.
 
 THE WHOLE COMPANY ON ONE PAGE
-Price and financial charts, ten years of results, quarterly figures, shareholding, peers, and the company's own announcements to NSE.
+What the company does, in plain words. Price charts with indicators, ten years of results, quarterly results at a glance, shareholding, peers in the same industry, and the company's own announcements to NSE, each marked as usually good or bad news for the share.
 
-YOUR WATCHLIST, ALERTS AND PORTFOLIO
-Save companies, set price alerts on the daily close, and record what you own to see your gain or loss and where each price sits against its levels.
+THE INDIAN SHARE MARKET AT A GLANCE
+Nifty and sector indices, a market map of every NSE stock coloured by its move, top gainers and losers, and the results calendar.
 
-Prices are daily closing prices; company figures update as new results are filed.
+WATCHLIST, ALERTS AND PORTFOLIO
+Save stocks to your watchlist, set price alerts, and record what you own to see your gain or loss and how your portfolio did against the Nifty 500.
+
+Prices are NSE daily closing prices; company figures update as new results are filed.
 
 IMPORTANT
-Jocular Insights is an educational research tool. It is not investment advice, and it is not registered with SEBI as an investment adviser or research analyst. Scores, fair values and levels come from rules applied to public filings and can be wrong. Do your own research and consult a SEBI-registered adviser before investing.
+Jocular Insights is an educational research tool. It is not investment advice, and it is not registered with SEBI as an investment adviser or research analyst. Scores and fair values come from rules applied to public filings and can be wrong. Do your own research and consult a SEBI-registered adviser before investing.
 
 FREE, WITH NOTHING TO CANCEL
-There is no subscription and no paid tier, so there is nothing to renew or cancel, and nothing is sold to you: no loans, no credit offers. The app shows a few ads among lists. If you'd like to support it, you can choose to watch a video ad from Settings. There are no pop-ups or ads between screens, and nothing is locked behind an ad.
+There is no subscription and no paid tier, so there is nothing to renew or cancel, and nothing is sold to you: no loans, no credit offers. The app shows a few ads among lists. There are no pop-ups or ads between screens, and nothing is locked behind an ad.
 ```
+
+Earlier wording (20 Oct 2026): name `Jocular Insights: NSE Screener`, short description `NSE stock screener with ready-made strategies, quality scores and fair values.`; the full description began "Jocular Insights helps you research NSE-listed companies from their own filings."
 
 **App category** — Finance · **Tags** — Finance, Investing, Stock market,
 Research
