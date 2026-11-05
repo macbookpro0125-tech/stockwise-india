@@ -5696,3 +5696,13 @@ button.td-index:active, button.td-line:active { background: color-mix(in srgb, v
 .dk-watch-events { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .dk-watch-events li { display: grid; grid-template-columns: 54px minmax(0, 1fr); gap: 10px; font-size: 13px; line-height: 1.45; color: var(--t2); }
 .dk-watch-events time { color: var(--t3); font-variant-numeric: tabular-nums; }
+
+/* The home's news across the full width (5 Nov 2026, "cover full"): a grid of
+   cards, three across on a laptop, in place of one narrow column */
+.td-news .ap-tile-news { display: flex; flex-direction: column; align-items: stretch; width: 100%; max-width: none; text-align: left; }
+.td-news .ap-news-title { text-align: left; }
+.td-news .ap-news-items { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+@media (min-width: 1400px) { .td-news .ap-news-items { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 900px) { .td-news .ap-news-items { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.td-news .ap-news-item { width: auto; max-width: none; height: 100%; }
+.td-news .ap-news-foot { justify-content: flex-start; }

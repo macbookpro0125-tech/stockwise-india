@@ -694,7 +694,7 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
               onPickScreen={preset => { applyPreset(preset); setFiltersOpen(false); showStocks(); }}
               onCreate={newScreen}
               continueCard={continueCard || null}
-              newsTile={onOpenNews ? <Suspense fallback={null}><NewsTile onOpen={id => onOpenNews(id)} onSeeAll={() => onOpenNews(null)} /></Suspense> : null}
+              newsTile={onOpenNews ? <Suspense fallback={null}><NewsTile perPage={typeof window !== "undefined" && window.innerWidth >= 1400 ? 8 : 6} onOpen={id => onOpenNews(id)} onSeeAll={() => onOpenNews(null)} /></Suspense> : null}
             >{cards}</TodayHome>
           );
         })()}

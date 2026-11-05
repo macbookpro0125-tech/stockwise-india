@@ -629,18 +629,19 @@ function tileLine(item) {
 // three every 6 s; still while a pointer or focus is on it, or with reduced
 // motion; the dots choose a set
 const TILE_SHOWN = 3, TILE_EVERY = 6000;
-export function NewsTile({ onOpen, onSeeAll }) {
+// perPage: how many show at a time (a computer's home shows six, two rows of three)
+export function NewsTile({ onOpen, onSeeAll, perPage = TILE_SHOWN }) {
   const [data, setData] = useState(null);
   const [page, setPage] = useState(0);
   const [held, setHeld] = useState(false);
-  useEffect(() => { api.newsTop(9).then(setData).catch(() => setData({ items: [] })); }, []);
-  const pages = Math.max(1, Math.ceil((data?.items?.length ?? 0) / TILE_SHOWN));
+  useEffect(() => { api.newsTop(Math.max(9, perPage * 3)).then(setData).catch(() => setData({ items: [] })); }, [perPage]);
+  const pages = Math.max(1, Math.ceil((data?.items?.length ?? 0) / perPage));
   useEffect(() => {
     if (pages < 2 || held || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
     const t = setInterval(() => setPage(p => (p + 1) % pages), TILE_EVERY);
     return () => clearInterval(t);
   }, [pages, held]);
-  const shown = data?.items?.slice(page * TILE_SHOWN, page * TILE_SHOWN + TILE_SHOWN) ?? [];
+  const shown = data?.items?.slice(page * perPage, page * perPage + perPage) ?? [];
   return (
     <Reveal as="section" delay={3} className="ap-tile ap-tile-news" aria-labelledby="ap-news-title"
       onPointerEnter={() => setHeld(true)} onPointerLeave={() => setHeld(false)} onFocus={() => setHeld(true)} onBlur={() => setHeld(false)}>
@@ -648,7 +649,7 @@ export function NewsTile({ onOpen, onSeeAll }) {
       <h3 id="ap-news-title" className="ap-news-title">What's new today</h3>
       <div className="ap-news-items" key={page} aria-live="off">
         {data == null
-          ? [0, 1, 2].map(i => <span key={i} className="ap-news-skel" />)
+          ? Array.from({ length: perPage }, (_, i) => <span key={i} className="ap-news-skel" />)
           : shown.length
             ? shown.map(item => (
               <button key={item.id} type="button" className="ap-news-item" onClick={() => onOpen(item.id)}>
@@ -667,7 +668,7 @@ export function NewsTile({ onOpen, onSeeAll }) {
         <button type="button" className="ap-tile-link ap-news-link" onClick={onSeeAll}>Read the news<ChevronRight size={17} aria-hidden="true" /></button>
         {pages > 1 && (
           <span className="ap-news-dots" role="group" aria-label="More news">
-            {Array.from({ length: pages }, (_, i) => <button key={i} type="button" aria-label={`News ${i * TILE_SHOWN + 1} to ${Math.min((i + 1) * TILE_SHOWN, data.items.length)}`} aria-pressed={page === i} onClick={() => setPage(i)} />)}
+            {Array.from({ length: pages }, (_, i) => <button key={i} type="button" aria-label={`News ${i * perPage + 1} to ${Math.min((i + 1) * perPage, data.items.length)}`} aria-pressed={page === i} onClick={() => setPage(i)} />)}
           </span>
         )}
       </div>

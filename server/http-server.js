@@ -894,7 +894,7 @@ export function createApp() {
       }
       if (url.pathname === "/api/news/top" && req.method === "GET") {
         if (requireAuth(req, res) == null) return;
-        sendJson(res, 200, await topNews(Math.min(12, Math.max(1, Number(url.searchParams.get("n")) || 3))));
+        sendJson(res, 200, await topNews(Math.min(24, Math.max(1, Number(url.searchParams.get("n")) || 3))));
         return;
       }
       // An announcement's attachment, read for its key lines (filing-summary.js)
