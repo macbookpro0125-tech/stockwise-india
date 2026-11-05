@@ -228,7 +228,7 @@ const PAGE_GROUPS = [
   { title: "Your things", items: ["watchlist", "portfolio", "performance", "alerts"] },
 ];
 
-export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onPickScreen, onCreate, account = null, continueCard = null, newsTile = null, children }) {
+export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onOpenIndex, onPickScreen, onCreate, account = null, continueCard = null, newsTile = null, children }) {
   const [presets, setPresets] = useState([]);
   useEffect(() => { api.presets().then(p => setPresets(p ?? [])).catch(() => {}); }, []);
 
@@ -297,7 +297,7 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onPi
       {/* Stays still as you scroll, and this comes up over it, like a tab pulled up */}
       <div ref={sheetRef} className="td-sheet" onPointerMove={moveSpot}>
     <div className="td">
-      <MarketSummary visible={visible} onOpenStock={onOpenStock} onOpenTab={onOpenTab} />
+      <MarketSummary visible={visible} onOpenStock={onOpenStock} onOpenTab={onOpenTab} onOpenIndex={onOpenIndex} />
 
       <section className="td-box td-screens" aria-label="Screeners">
         <div className="td-head">
@@ -351,7 +351,10 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onPi
 // The Market summary (4 Nov 2026: shared with a phone's home, PhoneScreens.jsx):
 // the Nifty 500's year, the major indices, the watchlist's biggest moves, what
 // sits under its fair value, and the results coming up
-export function MarketSummary({ visible = true, onOpenStock, onOpenTab }) {
+export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIndex }) {
+  // 5 Nov 2026 ("when I click on those cards it's not working"): every card
+  // opens something — an index its page in Explore, a results day the calendar
+  const openIndex = name => (onOpenIndex ? onOpenIndex(name) : onOpenTab?.("explore"));
   const [strip, setStrip] = useState(null);
   const [watch, setWatch] = useState(null);
   const [calendar, setCalendar] = useState(null);
@@ -388,7 +391,8 @@ export function MarketSummary({ visible = true, onOpenStock, onOpenTab }) {
 
       <div className="td-grid td-summary">
         {market?.length > 1 && (
-          <section className="td-box td-big" aria-label="Nifty 500">
+          <section className="td-box td-big td-click" aria-label="Nifty 500" role="link" tabIndex={0} title="Open the Nifty 500"
+            onClick={() => openIndex("Nifty 500")} onKeyDown={e => { if (e.key === "Enter") openIndex("Nifty 500"); }}>
             <div className="td-big-head">
               <div><h3>Nifty 500</h3><b>{num(market.at(-1)[1])}</b> <i style={{ color: tone(market.at(-1)[1] - market[0][1]) }}>{pct(((market.at(-1)[1] - market[0][1]) / market[0][1]) * 100)}</i> <small>over the year</small></div>
             </div>
@@ -399,10 +403,10 @@ export function MarketSummary({ visible = true, onOpenStock, onOpenTab }) {
           <section className="td-box" aria-label="The market">
             <div className="td-head"><h3>Major indices</h3><button type="button" onClick={() => onOpenTab?.("explore")}>Explore</button></div>
             {strip.indices.slice(0, 6).map(m => (
-              <div key={m.name} className="td-index">
+              <button key={m.name} type="button" className="td-index" onClick={() => openIndex(m.name)}>
                 <span className="td-name">{m.name}</span>
                 <span className="td-index-nums"><b>{num(m.close)}</b><i style={{ color: tone(m.changePct) }}>{pct(m.changePct)}</i></span>
-              </div>
+              </button>
             ))}
           </section>
         )}
@@ -438,10 +442,10 @@ export function MarketSummary({ visible = true, onOpenStock, onOpenTab }) {
             <section className="td-box" aria-label="Results coming">
               <div className="td-head"><h3>Results coming</h3><button type="button" onClick={() => navigate("/results-calendar")}>Calendar</button></div>
               {coming.map(c => (
-                <div key={c.date} className="td-line">
+                <button key={c.date} type="button" className="td-line" onClick={() => navigate("/results-calendar")}>
                   <span className={c.yours.length ? undefined : "td-quiet"}>{c.yours.length ? c.yours.map(y => short(y.name)).join(", ") : `${c.count} ${c.count === 1 ? "company" : "companies"}`}</span>
                   <em>{day(c.date)}</em>
-                </div>
+                </button>
               ))}
             </section>
           )}

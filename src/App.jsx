@@ -446,7 +446,7 @@ export default function App() {
         {/* Screeners and Workspace (a computer) are its two steps: one view, so
             the screen built in one is there in the other */}
         {(tab === "discover" || tab === "workspace") && <div hidden={!!open}><DiscoverView onOpenStock={openSymbol} theme={theme} onOpenNews={id => { setNewsOpen(id ?? null); goTab("explore"); }}
-          page={tab} onPage={followStep} visible={!open} onOpenTab={goTab} account={account} onShowMap={(name, symbols) => { setMapScreen({ name, symbols, at: Date.now() }); goTab("map"); }} /></div>}
+          page={tab} onPage={followStep} visible={!open} onOpenTab={goTab} onOpenIndex={name => { setIndexOpen(name); goTab("explore"); }} account={account} onShowMap={(name, symbols) => { setMapScreen({ name, symbols, at: Date.now() }); goTab("map"); }} /></div>}
         {!open && tab === "watchlist" && <WatchlistView onOpenStock={openSymbol} onOpenNews={id => { setNewsOpen(id); goTab("explore"); }} />}
         {!open && tab === "portfolio" && <PortfolioView onOpenStock={openSymbol} />}
         {!open && tab === "performance" && <PerformanceView onOpenStock={openSymbol} onOpenScreen={id => { window.history.replaceState(window.history.state, "", `/?strategy=${encodeURIComponent(id)}`); goTab("discover"); }} />}

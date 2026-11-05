@@ -206,7 +206,7 @@ function FavouriteCard({ p, count, change, day, closeDate, onOpen }) {
   );
 }
 
-export default function PhoneScreens({ onSelect, onNewScreen, continueCard = null, theme = "dark", onOpenStock = null, onOpenTab = null }) {
+export default function PhoneScreens({ onSelect, onNewScreen, continueCard = null, theme = "dark", onOpenStock = null, onOpenTab = null, onOpenIndex = null }) {
   const [presets, setPresets] = useState([]);
   const [custom, setCustom] = useState(strategiesStore.get);
   const { favourites, changes, today, pricesDate: closeIso, recents } = useScreensHome();
@@ -321,7 +321,7 @@ export default function PhoneScreens({ onSelect, onNewScreen, continueCard = nul
       )}
 
       <div className="ps-summary">
-        <Suspense fallback={null}><MarketSummary onOpenStock={onOpenStock} onOpenTab={onOpenTab} /></Suspense>
+        <Suspense fallback={null}><MarketSummary onOpenStock={onOpenStock} onOpenTab={onOpenTab} onOpenIndex={onOpenIndex} /></Suspense>
       </div>
 
       {recent.length > 0 && (
