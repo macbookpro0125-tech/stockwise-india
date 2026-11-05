@@ -23,3 +23,26 @@ test("MK-1 Markets: pick an index and it's charted; the moves open a company", a
   await gainer.click();
   await expect(page).toHaveURL(/\/stock\//);
 });
+
+test("MK-2 See all lists every index; a search narrows it, a click charts it, Back returns", async ({ page, account, isMobile }) => {
+  test.skip(isMobile, "a computer's side bar");
+  await page.goto("/");
+  await openPage(page, "Markets");
+  await page.getByRole("button", { name: /^See all \d+/ }).first().click();
+  await expect(page.getByRole("heading", { name: "All indices", level: 1 })).toBeVisible();
+  const rows = page.locator(".mk-all button");
+  await expect(rows.first()).toBeVisible({ timeout: 30_000 });
+  const total = await rows.count();
+  expect(total).toBeGreaterThan(8);
+  await page.getByRole("searchbox", { name: "Find an index" }).fill("bank");
+  await expect.poll(() => rows.count()).toBeLessThan(total);
+  const name = (await rows.first().locator("b").textContent()).trim();
+  await rows.first().click();
+  await expect(page.getByRole("heading", { name: "Markets", level: 1 })).toBeVisible();
+  await expect(page.locator(".mk-index h3")).toHaveText(name, { timeout: 20_000 });
+  // and the browser's Back from the list returns to Markets
+  await page.getByRole("button", { name: /^See all \d+/ }).first().click();
+  await expect(page.getByRole("heading", { name: "All indices", level: 1 })).toBeVisible();
+  await page.goBack();
+  await expect(page.getByRole("heading", { name: "Markets", level: 1 })).toBeVisible();
+});

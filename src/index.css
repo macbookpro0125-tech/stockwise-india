@@ -5809,3 +5809,23 @@ button.td-index:active, button.td-line:active { background: color-mix(in srgb, v
 .mk-end.back { left: -6px; }
 .mk-end:active { transform: translateY(-50%) scale(0.94); }
 @media (max-width: 640px) { .mk-pill { flex-basis: auto; min-width: 210px; } .mk-end { display: none; } }
+/* See all, and the all-indices page (MarketsView.jsx) */
+.mk-pill-all .mk-badge-all { background: color-mix(in srgb, var(--accent) 22%, var(--s3)); color: var(--accent); box-shadow: none; }
+.mk-pill-all b { color: var(--accent); }
+.mk-back { display: inline-flex; align-items: center; gap: 2px; margin: 6px 0 0; padding: 4px 0; border: 0; background: none; color: var(--accent); font: inherit; font-size: 14px; cursor: pointer; }
+.mk-search { width: min(420px, 100%); height: 40px; margin: 0 0 16px; padding: 0 14px; border: 1px solid var(--bdr2); border-radius: 10px; background: var(--s2); color: var(--t1); font: inherit; font-size: 16px; }
+.mk-all { list-style: none; margin: 0; padding: 0; }
+.mk-all-head, .mk-all button { display: grid; grid-template-columns: minmax(0, 2.2fr) 1fr 0.8fr minmax(80px, 1fr) 0.8fr; align-items: center; gap: 14px; }
+.mk-all-head { padding: 0 8px 8px; font-size: 11.5px; color: var(--t3); }
+.mk-all-head span:nth-child(n+2), .mk-all button > span:nth-child(n+2) { text-align: right; justify-self: end; }
+.mk-all button { width: 100%; padding: 10px 8px; border: 0; border-top: 1px solid var(--bdr); border-radius: 8px; background: none; color: var(--t1); font: inherit; font-size: 14px; text-align: left; cursor: pointer; }
+@media (hover: hover) and (pointer: fine) { .mk-all button:hover { background: color-mix(in srgb, var(--t1) 5%, transparent); } }
+.mk-all-name { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.mk-all-name .mk-badge { width: 34px; height: 34px; font-size: 10.5px; }
+.mk-all-name b { font-weight: 550; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mk-spark { display: block; width: 100%; max-width: 140px; height: 28px; }
+@media (max-width: 640px) {
+  .mk-all-head, .mk-all button { grid-template-columns: minmax(0, 1.6fr) 1fr 0.9fr; }
+  .mk-all-head span:nth-child(n+4), .mk-all button > :nth-child(n+4) { display: none; }
+}
+.mk-all .mk-spark { justify-self: end; }

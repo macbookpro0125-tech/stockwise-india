@@ -55,6 +55,53 @@ function IndexChart({ days, closes, label }) {
   return <div ref={host} className="mk-chart" role="img" aria-label={label} />;
 }
 
+// a month as a small line, for the all-indices list
+function Spark({ values, up }) {
+  const v = (values ?? []).filter(x => x != null);
+  if (v.length < 2) return <span className="mk-spark" />;
+  const lo = Math.min(...v), hi = Math.max(...v), span = hi - lo || 1;
+  const pts = v.map((x, i) => `${((i / (v.length - 1)) * 100).toFixed(1)},${(28 - ((x - lo) / span) * 26).toFixed(1)}`).join(" ");
+  return <svg className="mk-spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><polyline points={pts} fill="none" stroke={up ? "var(--green)" : "var(--red)"} strokeWidth="1.6" vectorEffect="non-scaling-stroke" /></svg>;
+}
+
+// Every index on one page (5 Nov 2026, "see all … a page where you can see all
+// the indices"): the market's and the sectors', each with its day and its month;
+// a click charts it on Markets
+function AllIndices({ board, onPick, onBack }) {
+  const [q, setQ] = useState("");
+  const groups = [["Market", board?.market ?? []], ["Sectors", board?.sectors ?? []]];
+  const match = i => !q.trim() || i.name.toLowerCase().includes(q.trim().toLowerCase());
+  return (
+    <div className="mk">
+      <button type="button" className="mk-back" onClick={onBack}><ChevronLeft size={18} /> Markets</button>
+      <header className="mk-head">
+        <h1>All indices</h1>
+        <p>{board?.asOf ? `NSE's indices at the close on ${day(board.asOf)}. Pick one to chart it.` : "NSE's indices. Pick one to chart it."}</p>
+      </header>
+      <input className="mk-search" type="search" placeholder="Find an index" aria-label="Find an index" value={q} onChange={e => setQ(e.target.value)} />
+      {groups.map(([title, list]) => list.filter(match).length > 0 && (
+        <section key={title} className="mk-card" aria-labelledby={`mk-all-${title}`}>
+          <div className="mk-card-h"><h2 id={`mk-all-${title}`}>{title}</h2><span className="mk-note">{list.filter(match).length}</span></div>
+          <ul className="mk-all">
+            <li className="mk-all-head" aria-hidden="true"><span>Index</span><span>Last</span><span>Today</span><span>Last month</span><span>1 month</span></li>
+            {list.filter(match).map(i => (
+              <li key={i.name}>
+                <button type="button" onClick={() => onPick(i.name)}>
+                  <span className="mk-all-name"><span className="mk-badge" style={{ background: badgeColour(i.name) }}>{badge(i.name)}</span><b>{i.name}</b></span>
+                  <span className="mk-num">{num(i.close)}</span>
+                  <span className={`mk-chg ${tone(i.changePct)}`}>{pct(i.changePct)}</span>
+                  <Spark values={i.spark} up={(i.month ?? 0) >= 0} />
+                  <span className={`mk-chg ${tone(i.month)}`}>{pct(i.month)}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
+  );
+}
+
 export default function MarketsView({ onOpenStock, onOpenTab }) {
   const [board, setBoard] = useState(null);
   const [pick, setPick] = useState("Nifty 50");
@@ -64,6 +111,15 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
   const [movers, setMovers] = useState(null);
   const [mood, setMood] = useState(null);
   const [results, setResults] = useState(null);
+  // the all-indices page, as its own step in the browser's history so Back returns here
+  const [all, setAll] = useState(false);
+  useEffect(() => {
+    const back = () => setAll(!!window.history.state?.allIndices);
+    window.addEventListener("popstate", back);
+    return () => window.removeEventListener("popstate", back);
+  }, []);
+  const showAll = () => { window.history.pushState({ ...(window.history.state ?? {}), allIndices: true }, ""); setAll(true); window.scrollTo(0, 0); };
+  const closeAll = () => { if (window.history.state?.allIndices) window.history.back(); else setAll(false); };
 
   useEffect(() => {
     api.explore().then(setBoard).catch(() => setBoard({ market: [], sectors: [] }));
@@ -100,6 +156,8 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
   const rangeMove = shownDays && shownDays.closes.length > 1 ? (shownDays.closes.at(-1) / shownDays.closes[0] - 1) * 100 : null;
   const R = detail?.returns ?? {};
 
+  if (all) return <AllIndices board={board} onBack={closeAll} onPick={name => { setPick(name); closeAll(); window.scrollTo(0, 0); }} />;
+
   return (
     <div className="mk">
       <header className="mk-head">
@@ -111,6 +169,7 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
       <section className="mk-section" aria-labelledby="mk-idx">
         <div className="mk-section-h">
           <h2 id="mk-idx">Indices</h2>
+          {indices.length > 0 && <button type="button" className="mk-link" onClick={showAll}>See all {indices.length + (board?.sectors?.length ?? 0)}</button>}
         </div>
         <div className="mk-strip-wrap">
         {ends.back && <button type="button" className="mk-end back" aria-label="Earlier indices" onClick={() => scroll(-1)}><ChevronLeft size={20} /></button>}
@@ -126,6 +185,12 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
               </span>
             </button>
           ))}
+          {indices.length > 0 && (
+            <button type="button" className="mk-pill mk-pill-all" onClick={showAll}>
+              <span className="mk-badge mk-badge-all" aria-hidden="true"><ChevronRight size={20} /></span>
+              <span className="mk-pill-text"><b>See all</b><span>{indices.length + (board?.sectors?.length ?? 0)} indices</span></span>
+            </button>
+          )}
         </div>
         </div>
 
