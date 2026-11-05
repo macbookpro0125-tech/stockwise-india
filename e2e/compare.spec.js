@@ -45,3 +45,14 @@ test("P-1 the portfolio against the Nifty 500 @phone", async ({ page, account, b
   await expect(box.getByRole("img")).toBeVisible();
   if (shots) await page.screenshot({ path: `${shots}/portfolio-${test.info().project.name}.png`, fullPage: false });
 });
+
+// Each watchlist row says the price it was added at and the day (5 Nov 2026)
+test("C-3 a watchlist row shows the price and date it was added, and the change since @phone", async ({ page, account, baseURL }) => {
+  const req = page.context().request;
+  expect((await req.post(`${baseURL}/api/watchlist`, { data: { ticker: "TCS" } })).ok()).toBeTruthy();
+  await page.goto("/");
+  await openPage(page, "Watchlist");
+  const added = page.locator(".wl-added").first();
+  await expect(added).toContainText(/Added ₹[\d,]+ · \d{1,2} [A-Z][a-z]{2} \d{2}/);
+  if (shots) await page.screenshot({ path: `${shots}/watch-added-${test.info().project.name}.png` });
+});

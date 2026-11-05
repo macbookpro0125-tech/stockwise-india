@@ -142,10 +142,17 @@ function WatchRow({ item, r, price, note, leaving, onOpen, onMore }) {
           <CompanyLogo symbol={item.ticker} size={36} fallback={name} />
           <span className="wl-who">
             <span className="wl-name">{name}</span>
-            <span className="wl-sub">
-              {since != null && <>Since added <em className={since >= 0 ? "up" : "down"}>{signedPct(since)}</em></>}
-              {note && (note.tag ? <span className="wl-tag">{note.tag}</span> : <span className="wl-note" style={note.tone ? { color: note.tone } : undefined}>{since != null ? " · " : ""}{note.text}</span>)}
-            </span>
+            {item.addedAt && (
+              <span className="wl-added">
+                Added {item.addedPrice > 0 && <b>{fmtRs(item.addedPrice)}</b>}{item.addedPrice > 0 ? " · " : ""}{fmtDate(item.addedAt)}
+                {since != null && <em className={Math.abs(since) < 0.05 ? "" : since > 0 ? "up" : "down"}>{signedPct(since)}</em>}
+              </span>
+            )}
+            {note && (
+              <span className="wl-sub">
+                {note.tag ? <span className="wl-tag">{note.tag}</span> : <span className="wl-note" style={note.tone ? { color: note.tone } : undefined}>{note.text}</span>}
+              </span>
+            )}
           </span>
           <span className="wl-price">
             {price ? fmtRs(price) : "…"}

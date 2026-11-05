@@ -154,3 +154,6 @@ The `/learn` guides, IndexNow, the new tab icons, and the opening animation.
 - **1 Nov 2026 (Claude Opus):** Home's cards: a soft glow follows the mouse across each card.
 - **2 Nov 2026 (Claude Opus):** Pushed Market summary's rearrangement, card lighting, mouse glow and Safari chart fix. 137 tests passed, none failed. Owner to check the chart in Safari.
 - **2 Nov 2026 (Claude Opus):** Search Console: 5 sectors requested on 1 Nov are on Google; requested IRCTC, TITAN, ITC, then quota. Industry labels unchanged until the 16:30 IST job.
+
+## 5 Nov: watchlist rows show the added price and date
+Each row: "Added ₹2,530 · 5 Nov 26 +1.2%" under the name (the price stored when starred, server added_price); the note moves to its own line. Test C-3 in e2e/compare.spec.js.
