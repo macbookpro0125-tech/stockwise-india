@@ -3,7 +3,7 @@
 _Last updated: 6 Nov 2026, by Claude (Opus) on branch `screeners-home`._
 
 ## Committed, not pushed (6 Nov)
-- Stock lists for search went live 6 Nov at `1a16fbb` (25 pages). Since then, not pushed: 8 more lists (large/mid/small caps, high ROE, high ROCE, high promoter holding, Piotroski 8-9, penny stocks) and a Share button on list, sector and screen pages; the top bar black over the night sky in light mode (TB-2). Earlier: /lists with 25 pages (each NSE index, NSE's themes like defence and railway PSU, stocks under ₹50/100/500, debt-free, high dividend, low P/E, 52-week highs and lows), their own sitemap, in the app and linked from the footer. Test S-H6.
+- Live 6 Nov at `87b47ea` (152 passed): 8 more lists (large/mid/small caps, high ROE, high ROCE, high promoter holding, Piotroski 8-9, penny stocks) and a Share button on list, sector and screen pages; the top bar black over the night sky in light mode (TB-2). Earlier: /lists with 25 pages (each NSE index, NSE's themes like defence and railway PSU, stocks under ₹50/100/500, debt-free, high dividend, low P/E, 52-week highs and lows), their own sitemap, in the app and linked from the footer. Test S-H6.
 
 ## Live on jocularinsights.in
 
