@@ -50,6 +50,7 @@ import { countBrowserVisit, countActive, visitStats, isOwner } from "./visits.js
 import { startDigestJobs, weeklyEmailOn, setWeeklyEmail, unsubscribe } from "./digest.js";
 import { INDEXNOW_KEY, startIndexNow } from "./indexnow.js";
 import { publicScreen, publicScreens, publicResultsCalendar, screenPageHtml, screensIndexHtml, resultsCalendarHtml, homePageHtml, sectorsIndexHtml, sectorPageHtml } from "./seo-lists.js";
+import { listsIndexHtml, listPageHtml, publicListsData, publicListData } from "./seo-collections.js";
 import { publicSectors, publicSector } from "./seo-story.js";
 import { publicSubPage, isSubPagePath } from "./seo-pages.js";
 import { limits, clientIp, waitText } from "./rate-limit.js";
@@ -775,6 +776,15 @@ export function createApp() {
         const page = isSubPagePath(path) ? await publicSubPage(path) : null;
         if (!page) { sendJson(res, 404, { error: "No such page." }); return; }
         sendJson(res, 200, { path, title: page.title, body: page.body });
+        return;
+      }
+      // the index, theme and price lists (seo-collections.js, 6 Nov 2026)
+      if (url.pathname === "/api/public/lists" && req.method === "GET") { sendJson(res, 200, publicListsData()); return; }
+      const publicListRoute = url.pathname.match(/^\/api\/public\/lists\/([a-z0-9-]+)$/);
+      if (publicListRoute && req.method === "GET") {
+        const found = publicListData(publicListRoute[1]);
+        if (!found) { sendJson(res, 404, { error: "No list by that name." }); return; }
+        sendJson(res, 200, found);
         return;
       }
       const publicSectorRoute = url.pathname.match(/^\/api\/public\/sectors\/([a-z0-9-]+)$/);
@@ -1644,13 +1654,14 @@ export function createApp() {
       // search engines and anyone signed out; after the first market is in, so
       // they're never written empty
       const listPage = (req.method === "GET" || req.method === "HEAD") && existsSync(join(DIST_DIR, "index.html"))
-        && (url.pathname === "/screens" || url.pathname === "/results-calendar" || url.pathname === "/sectors" || /^\/(screens|sector)\/[a-z0-9-]+\/?$/.test(url.pathname));
+        && (url.pathname === "/screens" || url.pathname === "/results-calendar" || url.pathname === "/sectors" || url.pathname === "/lists" || /^\/(screens|sector|lists)\/[a-z0-9-]+\/?$/.test(url.pathname));
       if (listPage) {
         await marketReady();
         const template = readFileSync(join(DIST_DIR, "index.html"), "utf-8");
-        const slug = url.pathname.match(/^\/(?:screens|sector)\/([a-z0-9-]+)\/?$/)?.[1];
+        const slug = url.pathname.match(/^\/(?:screens|sector|lists)\/([a-z0-9-]+)\/?$/)?.[1];
         const html = url.pathname === "/screens" ? screensIndexHtml(template) : url.pathname === "/results-calendar" ? resultsCalendarHtml(template)
-          : url.pathname === "/sectors" ? sectorsIndexHtml(template) : url.pathname.startsWith("/sector/") ? sectorPageHtml(template, slug) : screenPageHtml(template, slug);
+          : url.pathname === "/sectors" ? sectorsIndexHtml(template) : url.pathname.startsWith("/sector/") ? sectorPageHtml(template, slug)
+          : url.pathname === "/lists" ? listsIndexHtml(template) : url.pathname.startsWith("/lists/") ? listPageHtml(template, slug) : screenPageHtml(template, slug);
         // a strategy that doesn't exist: the app (which says so), as not found
         res.writeHead(html ? 200 : 404, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache" });
         res.end(req.method === "HEAD" ? undefined : html ?? template);

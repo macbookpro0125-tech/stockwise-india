@@ -51,7 +51,7 @@ test("S-H2 robots.txt and the sitemap", async ({ request }) => {
   // an index of sitemaps since 25 Oct 2026 (pages, screens, sectors, stocks, details)
   const index = await sm.text();
   expect(index).toContain("<sitemapindex");
-  for (const part of ["pages", "screens", "sectors", "stocks", "details"]) expect(index).toContain(`<loc>https://jocularinsights.in/sitemap-${part}.xml</loc>`);
+  for (const part of ["pages", "screens", "sectors", "lists", "stocks", "details"]) expect(index).toContain(`<loc>https://jocularinsights.in/sitemap-${part}.xml</loc>`);
   const stocks = await (await request.get("/sitemap-stocks.xml")).text();
   expect((stocks.match(/<loc>/g) ?? []).length).toBeGreaterThan(2000);
   expect(stocks).toContain("<loc>https://jocularinsights.in/stock/TCS</loc>");
@@ -116,4 +116,22 @@ test("S-H5 the guides: a list, each guide its own page, and links between them s
   await page.getByRole("link", { name: "How to read a bank or finance company" }).click();
   await expect(page).toHaveURL(/\/learn\/how-to-analyse-a-bank$/);
   await expect(page.getByRole("heading", { level: 1, name: "How to read a bank or finance company" })).toBeVisible();
+});
+
+// 6 Nov 2026: lists people search for — each index's companies, NSE's
+// themes, price bands and plain filters
+test("S-H6 stock lists: an index's companies, a theme, a price band; in the sitemap; open to everyone @phone", async ({ page, request }) => {
+  const sm = await (await request.get("/sitemap-lists.xml")).text();
+  for (const slug of ["nifty-50-stocks", "defence-stocks", "stocks-under-100", "debt-free-stocks"]) expect(sm).toContain(`<loc>https://jocularinsights.in/lists/${slug}</loc>`);
+  const html = await (await request.get("/lists/nifty-50-stocks")).text();
+  expect(html).toMatch(/<title>Nifty 50 stocks list[^<]*\| Jocular Insights<\/title>/);
+  expect(html).toMatch(/<link rel="canonical" href="https:\/\/jocularinsights\.in\/lists\/nifty-50-stocks"/);
+  expect(html).toContain('href="/stock/TCS"');
+  expect((await request.get("/lists/no-such-list")).status()).toBe(404);
+  // the app's own page: the list, and a company opens its page
+  await page.goto("/lists");
+  await page.getByRole("link", { name: /^Defence stocks/ }).click();
+  await expect(page.getByRole("heading", { name: "Defence stocks" }).first()).toBeVisible();
+  await page.locator(".pl-co").first().click();
+  await expect(page).toHaveURL(/\/stock\//);
 });

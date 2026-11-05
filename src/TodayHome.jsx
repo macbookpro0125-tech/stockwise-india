@@ -220,6 +220,7 @@ const ABOUT = {
 const SITE_PAGES = [
   { id: "calendar", path: "/results-calendar", label: "Results calendar", about: "Who reports, and when", Icon: CalendarDays },
   { id: "sectors", path: "/sectors", label: "Sectors", about: "Companies by sector", Icon: Layers3 },
+  { id: "lists", path: "/lists", label: "Stock lists", about: "Nifty 50, defence, under ₹100…", Icon: Layers3 },
   { id: "guides", path: "/learn", label: "Guides", about: "How to read the numbers", Icon: BookOpen },
 ];
 

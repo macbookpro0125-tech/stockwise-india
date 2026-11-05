@@ -81,6 +81,7 @@ export function SiteFooter() {
         <SiteLink to="/stock-screener-india" style={FOOT_LINK}>Stock screener</SiteLink>
         <SiteLink to="/screens" style={FOOT_LINK}>Screens</SiteLink>
         <SiteLink to="/sectors" style={FOOT_LINK}>Sectors</SiteLink>
+        <SiteLink to="/lists" style={FOOT_LINK}>Stock lists</SiteLink>
         <SiteLink to="/results-calendar" style={FOOT_LINK}>Results calendar</SiteLink>
       </nav>
     </footer>

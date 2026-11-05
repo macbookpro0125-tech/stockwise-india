@@ -35,7 +35,7 @@ function useLoad(load, key) {
 const Wait = () => <div className="nw-skel" role="status" aria-label="Loading">{[0, 1, 2].map(i => <span key={i} />)}</div>;
 const More = () => (
   <p className="pl-more">
-    <A to="/screens">All stock screens</A> · <A to="/sectors">Sectors</A> · <A to="/results-calendar">Results calendar</A> · <A to="/methodology">How the quality score works</A> · <A to="/disclaimer">Disclaimer</A>
+    <A to="/screens">All stock screens</A> · <A to="/lists">Stock lists</A> · <A to="/sectors">Sectors</A> · <A to="/results-calendar">Results calendar</A> · <A to="/methodology">How the quality score works</A> · <A to="/disclaimer">Disclaimer</A>
   </p>
 );
 
@@ -238,6 +238,89 @@ export function SectorPage({ slug, signedIn }) {
       )}
       <More />
       {!signedIn && <JoinBar label={s?.name ?? "This sector"} why="Create a free account to see every check behind these scores." onJoin={join} />}
+      {box}
+    </PublicPage>
+  );
+}
+
+// Lists people search for (6 Nov 2026, server/seo-collections.js): each
+// NSE index's companies, NSE's themes, price bands and a few plain filters
+export function ListsIndexPage({ signedIn }) {
+  const [d, error] = useLoad(() => api.publicLists(), "lists");
+  useEffect(() => { document.title = "NSE stock lists: Nifty 50, defence, PSU, stocks under ₹100, debt-free and more | Jocular Insights"; }, []);
+  const [join, box] = useJoin();
+  return (
+    <PublicPage title="NSE stock lists" signedIn={signedIn} updated={d?.pricesDate ? `${day(d.pricesDate)} (the latest NSE close)` : "with each NSE close"} onSignIn={() => join(null, "signin")}>
+      <p className="pl-lede">Each NSE index's companies, NSE's themes such as defence and railway PSUs, stocks by price, and a few plain filters, at the last close.</p>
+      {error && <p className="nw-empty">{error}</p>}
+      {!d && !error && <Wait />}
+      {d && d.groups.map((g, gi) => (
+        <section key={g.kind}>
+          <h2 className="pl-h">{g.label}</h2>
+          <ul className="pl-screens">
+            {g.lists.map(l => (
+              <li key={l.slug}>
+                <A to={`/lists/${l.slug}`} className="pl-screen">
+                  <span className="pl-screen-name">{l.name}<ChevronRight size={16} aria-hidden="true" /></span>
+                  <span className="pl-screen-count">{l.count} companies</span>
+                </A>
+              </li>
+            ))}
+          </ul>
+          {gi === 0 && <PageAd slot="lists" />}
+        </section>
+      ))}
+      <More />
+      {!signedIn && <JoinBar label="NSE stock lists" why="Create a free account to see every company's full analysis." onJoin={join} />}
+      {box}
+    </PublicPage>
+  );
+}
+
+export function ListPage({ slug, signedIn }) {
+  const [s, error] = useLoad(() => api.publicList(slug), slug);
+  useEffect(() => { if (s) document.title = `${s.name} list: ${s.kind === "rule" ? `${s.count} NSE companies` : "the companies"} by P/E, ROE and quality | Jocular Insights`; }, [s]);
+  const [join, box] = useJoin();
+  return (
+    <PublicPage title={s?.name ?? "Stock list"} signedIn={signedIn} updated={s?.pricesDate ? `${day(s.pricesDate)} (the latest NSE close)` : "with each NSE close"} onSignIn={() => join(null, "signin")}>
+      <p className="pl-crumb"><A to="/lists">Lists</A> › {s?.name ?? "…"}</p>
+      {error && <p className="nw-empty">{error}</p>}
+      {!s && !error && <Wait />}
+      {s && (
+        <>
+          <p className="pl-lede">
+            {s.count} companies: {s.about}. Together they're worth {crore(s.totalMarketCapCr)}.
+            {s.medianPe ? ` The middle P/E among them is ${num(s.medianPe)}${s.medianRoe != null ? ` and the middle return on equity ${num(s.medianRoe)}%` : ""}.` : ""}
+            {s.best.length ? ` By quality score from their own filings, the highest are ${s.best.map(b => `${b.name} (${Math.round(b.quality)})`).join(", ")}.` : ""}
+          </p>
+          <PageAd slot="list" />
+          {!signedIn && <JoinCard title="See every check behind these scores" onJoin={join} why="Create a free account to see every check behind these scores."
+            points={["Each company's 7 questions, answered from its filings", "Its fair value, results and who owns it", "A watchlist and price alerts for the ones you follow"]} />}
+          <h2 className="pl-h">{s.count > s.companies.length ? `${s.companies.length} of ${s.count}` : `All ${s.count}`}</h2>
+          <ol className="pl-cos">
+            {s.companies.map(c => (
+              <li key={c.symbol}>
+                <A to={stockPath(c.symbol)} className="pl-co">
+                  <CompanyLogo symbol={c.symbol} size={32} fallback={c.name} />
+                  <span className="pl-co-main">
+                    <span className="pl-co-name">{c.name}</span>
+                    <span className="pl-co-figs">{[c.price != null && `₹${num(c.price, 2)}`, crore(c.marketCapCr), c.extra && s.extraLabel && `${s.extraLabel} ${c.extra}`, c.pe > 0 && `P/E ${num(c.pe)}`, c.roe != null && `ROE ${num(c.roe)}%`].filter(Boolean).join(" · ")}</span>
+                  </span>
+                  {c.quality != null && <span className="pl-co-q" title="Quality score, from the company's filings">{Math.round(c.quality)}<small>/100</small></span>}
+                </A>
+              </li>
+            ))}
+          </ol>
+          {s.missing?.length > 0 && <p className="pl-note">Also in this index, but not covered here yet: {s.missing.join(", ")}.</p>}
+          <p className="pl-note">{s.kind === "rule" ? `A plain rule on reported figures at the last close: ${s.about}. It changes with every close.` : "The companies are NSE's own list for this index; NSE reviews its indices twice a year."} {NOT_ADVICE}</p>
+          {s.others.length > 0 && <>
+            <h2 className="pl-h">More lists</h2>
+            <ul className="pl-rules">{s.others.map(x => <li key={x.slug}><A to={`/lists/${x.slug}`}>{x.name}</A> — {x.count} companies</li>)}</ul>
+          </>}
+        </>
+      )}
+      <More />
+      {!signedIn && <JoinBar label={s?.name ?? "This list"} why="Create a free account to see every check behind these scores." onJoin={join} />}
       {box}
     </PublicPage>
   );

@@ -91,6 +91,8 @@ export const api = {
   publicSectors: () => request("/api/public/sectors"),
   publicPage: path => request(`/api/public/page?path=${encodeURIComponent(path)}`),
   publicSector: slug => request(`/api/public/sectors/${encodeURIComponent(slug)}`),
+  publicLists: () => request("/api/public/lists"),
+  publicList: slug => request(`/api/public/lists/${encodeURIComponent(slug)}`),
   publicScreen: (slug) => request(`/api/public/screens/${encodeURIComponent(slug)}`),
   publicResultsCalendar: () => request("/api/public/results-calendar"),
   // As a GET the browser keeps the reply and re-checks it on the next visit

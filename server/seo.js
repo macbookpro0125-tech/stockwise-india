@@ -28,6 +28,7 @@ export const SITE = "https://jocularinsights.in";
 // (a function, read when the sitemap is made: seo-lists.js imports from here)
 import { LIST_PATHS } from "./seo-lists.js";
 import { stockStory, SECTOR_PATHS } from "./seo-story.js";
+import { LIST_PAGE_PATHS } from "./seo-collections.js";
 import { subPagePaths, stockPageLinks } from "./seo-pages.js";
 import { GUIDE_PATHS, GUIDES_UPDATED } from "./guides.js";
 const PUBLIC_PATHS = ["/", "/about", "/help", "/methodology", SCREENER_PAGE_PATH, "/privacy", "/disclaimer"];
@@ -72,7 +73,7 @@ export function robotsTxt() {
 // screens and front page the last close — not today's date on everything,
 // which teaches Google to ignore the dates. (changefreq and priority, which
 // Google ignores, are gone.)
-const SITEMAPS = ["pages", "screens", "sectors", "stocks", "details"];
+const SITEMAPS = ["pages", "screens", "sectors", "lists", "stocks", "details"];
 const urlset = entries => `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries.map(([path, lastmod]) => `<url><loc>${SITE}${path}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ""}</url>`).join("\n")}\n</urlset>\n`;
 export function sitemapXml() {
   const lastmod = loadMarketSnapshot()?.pricesDate ?? null;
@@ -84,6 +85,8 @@ export function sitemapPart(name) {
   if (name === "pages") return urlset([...PUBLIC_PATHS.map(p => [p, p === "/" ? lastmod : null]), ...GUIDE_PATHS().map(p => [p, GUIDES_UPDATED])]);
   if (name === "screens") return urlset(LIST_PATHS().map(p => [p, lastmod]));
   if (name === "sectors") return urlset(SECTOR_PATHS().map(p => [p, lastmod]));
+  // the index, theme and price lists (seo-collections.js, 6 Nov 2026)
+  if (name === "lists") return urlset(LIST_PAGE_PATHS().map(p => [p, lastmod]));
   // each company's financials, latest results and earnings calls; /explore and /news
   if (name === "details") return urlset(subPagePaths());
   if (name === "stocks") return urlset(stockEntries());

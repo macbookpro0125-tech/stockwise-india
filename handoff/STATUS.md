@@ -2,13 +2,12 @@
 
 _Last updated: 6 Nov 2026, by Claude (Opus) on branch `screeners-home`._
 
-## Committed, not pushed (5 Nov)
-- The screen chart (builder → Chart): pick any two scores (Up, Across, swap); drag a box to list the companies in that range. Test QV-1.
-- The home's news cards no longer overflow in Safari, and a filing sent twice shows once (N-H1).
-- The home's night sky is hidden once the page covers it, and unpinned, so Safari can't drop the page and show it mid-scroll (owner's recording, N-H9). Owner to check in Safari after the push.
-- Computers: a clean top bar (TopBar.jsx) replaces the left bar; the left bar stays only on a company page for its chapters. Performance, Momentum, Visitors are under the account initial; Alerts is the bell. Test TB-1.
+## Committed, not pushed (6 Nov)
+- Stock lists for search: /lists with 25 pages (each NSE index, NSE's themes like defence and railway PSU, stocks under ₹50/100/500, debt-free, high dividend, low P/E, 52-week highs and lows), their own sitemap, in the app and linked from the footer. Test S-H6.
 
 ## Live on jocularinsights.in
+
+Pushed 6 Nov 2026 at `f7550b6` (148 passed, X-H6 passed on rerun): the clean top bar (first tab Home), the score chart, the news cards fix, the sky hidden under the page; Play listing changes sent for review the same day.
 
 Pushed 5 Nov 2026 at `c8443a1` (all 146 tests passed): the Markets index row restyle and See all; the watchlist's added price and date; the left bar's Watchlist opens its page; Screen builder from another page opens the builder.
 

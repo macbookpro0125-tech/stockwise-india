@@ -43,7 +43,7 @@ const named = (load, name) => lazyPage(() => load().then(m => ({ default: m[name
 const legal = name => named(() => import("./LegalPages.jsx"), name);
 const PrivacyPage = legal("PrivacyPage"), DisclaimerPage = legal("DisclaimerPage"), HelpPage = legal("HelpPage"), AboutPage = legal("AboutPage"), MeasuresPage = legal("MeasuresPage");
 const lists = name => named(() => import("./PublicLists.jsx"), name);
-const ScreensIndexPage = lists("ScreensIndexPage"), ScreenPage = lists("ScreenPage"), ResultsCalendarPage = lists("ResultsCalendarPage"), SectorsIndexPage = lists("SectorsIndexPage"), SectorPage = lists("SectorPage");
+const ScreensIndexPage = lists("ScreensIndexPage"), ScreenPage = lists("ScreenPage"), ResultsCalendarPage = lists("ResultsCalendarPage"), SectorsIndexPage = lists("SectorsIndexPage"), SectorPage = lists("SectorPage"), ListsIndexPage = lists("ListsIndexPage"), ListPage = lists("ListPage");
 const MethodologyPage = lazyPage(() => import("./MethodologyPage.jsx"));
 const StockScreenerPage = lazyPage(() => import("./StockScreenerPage.jsx"));
 const ResetPassword = lazyPage(() => import("./ResetPassword.jsx"));
@@ -233,7 +233,7 @@ export default function App() {
           return;
         }
 
-        if (["/privacy", "/disclaimer", "/help", "/measures", "/about", "/methodology", "/reset-password", "/stock-screener-india", "/screens", "/results-calendar", "/sectors", "/explore", "/news", "/learn"].includes(currentPath) || /^\/(screens|sector|learn)\//.test(currentPath) || /^\/stock\/[^/]+\/./.test(currentPath)) {
+        if (["/privacy", "/disclaimer", "/help", "/measures", "/about", "/methodology", "/reset-password", "/stock-screener-india", "/screens", "/results-calendar", "/sectors", "/lists", "/explore", "/news", "/learn"].includes(currentPath) || /^\/(screens|sector|lists|learn)\//.test(currentPath) || /^\/stock\/[^/]+\/./.test(currentPath)) {
           if (canGoBack) window.history.back();
           else navigate("/", { replace: true });
           return;
@@ -362,6 +362,8 @@ export default function App() {
   if (path === "/results-calendar") return pub(<ResultsCalendarPage signedIn={!!account} />);
   if (/^\/screens\/[a-z0-9-]+\/?$/.test(path)) return pub(<ScreenPage slug={path.split("/")[2]} signedIn={!!account} />);
   if (path === "/sectors") return pub(<SectorsIndexPage signedIn={!!account} />);
+  if (path === "/lists") return pub(<ListsIndexPage signedIn={!!account} />);
+  if (/^\/lists\/[a-z0-9-]+\/?$/.test(path)) return pub(<ListPage slug={path.split("/")[2]} signedIn={!!account} />);
   if (isPublicHtmlPath(path)) return <PublicHtmlPage path={path} signedIn={!!account} />;
   if (/^\/sector\/[a-z0-9-]+\/?$/.test(path)) return pub(<SectorPage slug={path.split("/")[2]} signedIn={!!account} />);
   // The page a reset email links to: saving signs in, then into the app

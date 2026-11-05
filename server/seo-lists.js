@@ -182,7 +182,7 @@ ${soon.length ? `<ul>${soon.map(x => `<li>${link(`/stock/${encodeURIComponent(x.
 <p>${link("/results-calendar", "Open the results calendar")}</p>
 <h2>Browse by sector</h2>
 <ul>${publicSectors().sectors.filter(x => x.count >= 3).map(x => `<li>${link(`/sector/${x.slug}`, x.name)} — ${x.count} companies</li>`).join("")}</ul>
-<p>${link("/sectors", "All sectors")}</p>
+<p>${link("/sectors", "All sectors")} · ${link("/lists", "Stock lists: Nifty 50, defence, under ₹100 and more")}</p>
 <h2>How the quality score works</h2>
 <p>The score adds up checks in six groups — business quality, earnings quality, balance sheet, governance, growth and valuation — each from the company's own filings, with banks and cyclical businesses judged on their own tests. Every check says what it found and why it passed or failed. ${link("/methodology", "Read the full methodology")}.</p>
 <p>${link("/stock-screener-india", "About this Indian stock screener")} · ${link("/about", "About Jocular Insights")} · ${link("/help", "How the figures work")} · ${link("/disclaimer", "Disclaimer")} · ${link("/privacy", "Privacy")}</p>
@@ -200,7 +200,7 @@ export function sectorsIndexHtml(template) {
   const desc = `NSE-listed companies in ${s.sectors.length} sectors — IT, banks and financial services, pharma, FMCG, auto, capital goods and more — with each sector's companies, P/E and return on equity at the ${day(s.pricesDate) ?? "latest"} close.`;
   const items = s.sectors.map(x => `<li><h2>${link(`/sector/${x.slug}`, x.name)}</h2><p>${x.count} ${x.count === 1 ? "company" : "companies"}${x.largest.length ? `, the largest ${x.largest.map(c => esc(c.name)).join(", ")}` : ""}.</p></li>`).join("");
   const ld = { "@context": "https://schema.org", "@type": "ItemList", name: "NSE sectors", itemListElement: s.sectors.map((x, i) => ({ "@type": "ListItem", position: i + 1, name: x.name, url: `${SITE}/sector/${x.slug}` })) };
-  const body = `<main class="seo-stock seo-methodology"><p>${link("/", "Jocular Insights")} › Sectors</p><h1>NSE stocks by sector</h1><p>${esc(desc)}</p><ul>${items}</ul><p>${link("/screens", "Stock screens")} · ${link("/results-calendar", "Results calendar")} · ${link("/methodology", "How the quality score works")}</p></main>`;
+  const body = `<main class="seo-stock seo-methodology"><p>${link("/", "Jocular Insights")} › Sectors</p><h1>NSE stocks by sector</h1><p>${esc(desc)}</p><ul>${items}</ul><p>${link("/screens", "Stock screens")} · ${link("/lists", "Stock lists")} · ${link("/results-calendar", "Results calendar")} · ${link("/methodology", "How the quality score works")}</p></main>`;
   return pageHtml(template, { title, desc, canonical, ld, body });
 }
 
@@ -231,6 +231,6 @@ ${s.screens.length ? `<h2>Screens its companies pass most</h2><ul>${s.screens.ma
 <h2>Every listed ${esc(s.name)} company</h2>
 <table><thead><tr><th>#</th><th>Company</th><th>Price</th><th>Market cap</th><th>P/E</th><th>ROE</th><th>Debt/equity</th><th>Quality</th></tr></thead><tbody>${rows}</tbody></table>
 <p>Sectors are NSE's own, from its index lists; a company NSE doesn't classify is placed by its industry or its filings. ${esc(NOT_ADVICE)}</p>
-<p>${link("/sectors", "All sectors")} · ${link("/screens", "Stock screens")} · ${link("/methodology", "How the quality score works")} · ${link("/disclaimer", "Disclaimer")}</p></main>`;
+<p>${link("/sectors", "All sectors")} · ${link("/lists", "Stock lists")} · ${link("/screens", "Stock screens")} · ${link("/methodology", "How the quality score works")} · ${link("/disclaimer", "Disclaimer")}</p></main>`;
   return pageHtml(template, { title, desc, canonical, ld, body });
 }
