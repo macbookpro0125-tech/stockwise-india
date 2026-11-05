@@ -103,7 +103,7 @@ export async function openPage(page, name) {
   // taken for a computer
   await page.locator(".app-header").first().waitFor();
   // a computer: the pages are in the bar down the left (26 Oct 2026);
-  // Watchlist, Portfolio and Alerts open a peek first, whose Open goes there
+  // Portfolio and Alerts open a peek first (Watchlist goes straight there), whose Open goes there
   const rail = page.locator("nav.side-rail");
   // the Workspace tucks the bar away (31 Oct 2026): its ☰ brings it back
   const reveal = page.getByRole("button", { name: "Show the pages" });
@@ -112,7 +112,7 @@ export async function openPage(page, name) {
     // a company's page shows its chapters in the bar instead (27 Oct 2026): back first
     if (!(await rail.getByRole("button", { name: re }).count())) await page.getByRole("button", { name: /^Back to / }).first().click();
     await rail.getByRole("button", { name: re }).click();
-    if (/^(Watchlist|Portfolio|Alerts)/.test(name)) {
+    if (/^(Portfolio|Alerts)/.test(name)) {
       const peek = page.getByRole("dialog", { name: re });
       if (await peek.waitFor({ timeout: 2000 }).then(() => true, () => false)) await peek.getByRole("button", { name: /^Open / }).click();
     }

@@ -383,7 +383,7 @@ test("F03-H8 what changed recently: dated lines above the filings", async ({ pag
   await expect(card.locator("li time").first().or(card.getByText(/^Nothing new in the last six weeks/))).toBeVisible();
 });
 
-test("R-H1 a computer's left bar: Watchlist peeks over the page; Esc closes it; Open, or a second click, goes to the page; a company's page lists its chapters there", async ({ page, account, isMobile }) => {
+test("R-H1 a computer's left bar: Watchlist goes straight to its page; Alerts peeks, Esc closes it, a second click goes there; a company's page lists its chapters there", async ({ page, account, isMobile }) => {
   test.skip(isMobile, "a phone has its bottom bar");
   await page.goto("/stock/TCS");
   await page.getByRole("button", { name: "Add to watchlist" }).click();
@@ -395,23 +395,34 @@ test("R-H1 a computer's left bar: Watchlist peeks over the page; Esc closes it; 
   const rail = page.getByRole("navigation", { name: "Pages" });
   const star = rail.getByRole("button", { name: /^Watchlist/ });
   await star.click();
-  const peek = page.getByRole("dialog", { name: "Watchlist" });
-  await expect(peek.getByText(/^1 company/)).toBeVisible();
-  // (its row; it can be under Needs a look too)
-  await expect(peek.getByRole("listitem").filter({ hasText: "Tata Consultancy" }).last()).toBeVisible();
-  await expect(star).toHaveAttribute("aria-expanded", "true");
-  await page.keyboard.press("Escape");
-  await expect(peek).toBeHidden();
-  await star.click();
-  await peek.getByRole("button", { name: "Open Watchlist →" }).click();
   await expect(star).toHaveAttribute("aria-current", "page");
-  // a second click on a peek's icon goes straight to its page
+  await expect(page.getByRole("dialog", { name: "Watchlist" })).toHaveCount(0);
+  await expect(page.locator(".wl-list").getByText("Tata Consultancy")).toBeVisible();
+  // Alerts peeks first; Esc closes it; a second click goes to its page
   const alerts = rail.getByRole("button", { name: /^Alerts/ });
   await alerts.click();
-  await expect(page.getByRole("dialog", { name: "Alerts" })).toBeVisible();
+  const peek = page.getByRole("dialog", { name: "Alerts" });
+  await expect(peek).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(peek).toBeHidden();
+  await alerts.click();
   await alerts.click();
   await expect(alerts).toHaveAttribute("aria-current", "page");
-  await expect(page.getByRole("dialog", { name: "Alerts" })).toBeHidden();
+  await expect(peek).toBeHidden();
+});
+
+// From another page, Screen builder opens the builder, not the screeners (5 Nov 2026)
+test("R-H2 Screen builder picked from the Watchlist opens the builder and its address", async ({ page, account, isMobile }) => {
+  test.skip(isMobile, "a phone has no Screen builder tab");
+  await page.goto("/");
+  await openPage(page, "Watchlist");
+  await page.getByRole("navigation", { name: "Pages" }).getByRole("button", { name: /^Screen builder/ }).click();
+  await expect(page).toHaveURL(/\/builder/);
+  await page.waitForTimeout(600);
+  await expect(page).toHaveURL(/\/builder/);
+  await expect(page.locator("html")).toHaveAttribute("data-discover-step", "stocks");
+  await page.goBack();
+  await expect(page).not.toHaveURL(/\/builder/);
 });
 
 test("F03-H9 what to review in the next filing: questions without figures, each linking to its section", async ({ page, account }) => {

@@ -21,7 +21,8 @@ import { usePhone } from "./phoneTabs.js";
 // against them without leaving it; the peek's "Open" (or a second click)
 // goes to the page. A phone keeps its bottom bar (Header.jsx BottomTabBar).
 
-const PEEKS = new Set(["watchlist", "portfolio", "alerts"]);
+// (the Watchlist goes straight to its page: 5 Nov 2026, "when we press on that its not going to that watchlist page")
+const PEEKS = new Set(["portfolio", "alerts"]);
 const LOOK_ICON = { results: CalendarDays, up: TrendingUp, down: TrendingDown, value: Tag, dividend: CircleDollarSign, weight: PieChart };
 
 function Pct({ v }) {

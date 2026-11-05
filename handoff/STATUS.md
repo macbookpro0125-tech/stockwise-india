@@ -6,6 +6,7 @@ _Last updated: 5 Nov 2026, by Claude (Opus) on branch `screeners-home`._
 - `4cb414b` Markets: the index row airy and even (four across, soft pill, own badge colours, round arrows).
 - `78cd2af` Markets: See all (end of the row and by the heading) opens All indices with search; a click charts it.
 - Watchlist rows show the added price and date ("Added ₹2,530 · 5 Nov 26 +1.2%"); test C-3.
+- The left bar's Watchlist opens the page directly; Screen builder from another page opens the builder (not the screeners); tests R-H1, R-H2.
 
 ## Live on jocularinsights.in
 

@@ -287,8 +287,9 @@ export default function WatchlistView({ onOpenStock, onOpenNews }) {
     pickList(null);
   };
 
+  // after any star still saving, so one just added is on the list
   useEffect(() => {
-    api.watchlist().then(d => {
+    watchSaved().then(() => api.watchlist()).then(d => {
       setData(d);
       primeWatchLists(d.lists ?? []);
       if (d.items.length) api.currentPrices(d.items.map(i => i.ticker)).then(setLive).catch(() => {});

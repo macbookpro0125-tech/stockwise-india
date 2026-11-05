@@ -148,7 +148,14 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
   // or a shared link opens it again; a phone keeps both steps on "/"
   const builderPath = () => !window.matchMedia?.("(max-width: 640px)").matches;
   // (a computer: the address alone says which, so a reload on "/" is the screeners)
-  const [phoneStep, setPhoneStep] = useState(() => ((builderPath() ? window.location.pathname === BUILDER_PATH : window.history.state?.discoverStep === "stocks") || filtersFromLink() ? "stocks" : "strategies"));
+  // …or the Screen builder tab picked from another page (5 Nov 2026: from the
+  // Watchlist it jumped back to the screeners)
+  const [phoneStep, setPhoneStep] = useState(() => ((builderPath() ? window.location.pathname === BUILDER_PATH || page === "workspace" : window.history.state?.discoverStep === "stocks") || filtersFromLink() ? "stocks" : "strategies"));
+  // …and, opened that way, it takes its address and a history step as a tap on it would
+  useEffect(() => {
+    if (builderPath() && phoneStep === "stocks" && window.location.pathname !== BUILDER_PATH)
+      window.history.pushState({ ...(window.history.state ?? {}), discoverStep: "stocks" }, "", `${BUILDER_PATH}${window.location.search}`);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     const back = () => setPhoneStep(window.history.state?.discoverStep === "stocks" ? "stocks" : "strategies");
     window.addEventListener("popstate", back);

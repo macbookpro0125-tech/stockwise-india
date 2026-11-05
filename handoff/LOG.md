@@ -157,3 +157,9 @@ The `/learn` guides, IndexNow, the new tab icons, and the opening animation.
 
 ## 5 Nov: watchlist rows show the added price and date
 Each row: "Added ₹2,530 · 5 Nov 26 +1.2%" under the name (the price stored when starred, server added_price); the note moves to its own line. Test C-3 in e2e/compare.spec.js.
+
+## 5 Nov: Watchlist and Screen builder navigation
+- The left bar's Watchlist goes straight to its page (it opened a peek). Portfolio and Alerts still peek.
+- Screen builder picked from another page opens the builder at /builder (it jumped back to the screeners: DiscoverView started on the screeners step since the address was "/").
+- The Watchlist page waits for a star still saving, so one just added shows.
+Tests R-H1 (rewritten), R-H2 (new).
