@@ -5679,6 +5679,13 @@ html.td-night[data-theme="light"] :is(.app-header, .side-rail) .brand-mark .bm-l
    sheet covers it (TodayHome.jsx td-still): it can't be seen then */
 html.is-scrolling :is(.price-strip-track, .td-sky, .td-tints i, .td-shoot, .td-twinkle, .td-stream, .td-star-letter) { animation-play-state: paused; }
 .td-hero.td-still :is(canvas, .td-tints, .td-stream, .td-shoot, .td-twinkle, .td-star-letter) { visibility: hidden; }
+/* …and the whole sky once the sheet covers it (5 Nov 2026: "when I scroll it
+   sometimes shows the back page in between, cutting"): Safari, scrolling
+   fast, draws the sheet late in bands, and the dark sky pinned behind it
+   showed through. Hidden, there's only the page's own colour behind, and one
+   layer fewer to draw. */
+.td-hero.td-still { visibility: hidden; }
+.td-hero.td-still .td-sky { will-change: auto; animation: none; }
 
 /* Solid surfaces on a computer (4 Nov 2026: "when I'm scrolling the page behind
    shows through; it shouldn't, so it's smooth"): the top bar and the cards no

@@ -162,3 +162,21 @@ test("N-H5 starring a company from the news brings its news into My watchlist st
   await expect(page.locator(".nw-day .nw-row").first()).toBeVisible();
   await expect(page.getByText(/Star companies to follow their news here/)).toHaveCount(0);
 });
+
+// The home's night sky is pinned behind the page: once the page covers it,
+// it's hidden, so a late-drawn band shows the page's colour, not the dark
+// sky (5 Nov 2026); back at the top it shows again
+test("N-H9 the home's sky hides under the page once covered, and shows again at the top", async ({ page, account, isMobile }) => {
+  test.skip(isMobile, "the sky is a computer's");
+  await page.goto("/");
+  const hero = page.locator(".td-hero");
+  await page.locator(".app-header").first().waitFor();
+  if (!(await hero.waitFor({ timeout: 8000 }).then(() => true, () => false))) test.skip(true, "no sky on this home");
+  await expect(hero).toBeVisible();
+  await page.mouse.wheel(0, 2400);
+  await expect(hero).toHaveClass(/td-still/);
+  await expect(hero).toHaveCSS("visibility", "hidden");
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect(hero).not.toHaveClass(/td-still/);
+  await expect(hero).toHaveCSS("visibility", "visible");
+});

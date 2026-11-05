@@ -169,3 +169,6 @@ QualityValueMap.jsx: Up and Across pickers (quality, research, the five factor g
 
 ## 5 Nov: the home news cards in Safari
 Safari stretched each "What's new today" card to the panel's height (`.td-news .ap-news-item { height: 100% }`), so they spilled over Read the news and All screeners. Now height auto; the grid evens each row. The same filing sent twice (Sai Life Sciences, results at 12:12 AM and the day before) shows once. N-H1 checks both.
+
+## 5 Nov: the home sky hidden once covered
+Owner: scrolling the screeners page sometimes shows "the back page in between, cutting". The home's night sky (.td-hero) is sticky behind the sheet; Safari drew the sheet late in bands while scrolling fast and the dark sky showed through. Now `.td-hero.td-still { visibility: hidden }` (and the sky's will-change and drift off) once the sheet covers it; it returns at the top. Not checked in Safari itself (no WebKit here). Test N-H9.
