@@ -12,7 +12,9 @@ import { useWeeklyEmail } from "./weeklyEmail.js";
 // — the way to erase everything that the privacy page points to. An account
 // made with Google, Apple or a phone has no password; it confirms the delete
 // by typing DELETE.
-export default function AccountMenu({ account, onLogout, onDeleted, onTour }) {
+// (a computer's top bar, TopBar.jsx: the button is a round initial, and the
+// menu leads with the pages that aren't in the bar's tray)
+export default function AccountMenu({ account, onLogout, onDeleted, onTour, avatar = false, pages = [], onTab = null }) {
   const who = account?.email || account?.phone || null;
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -39,9 +41,15 @@ export default function AccountMenu({ account, onLogout, onDeleted, onTour }) {
 
   return (
     <div ref={ref} data-tour="account" style={{ position: "relative" }}>
-      <button className="btn-ghost" onClick={() => setOpen(o => !o)} aria-expanded={open} style={{ height: 32, fontSize: 12.5, padding: "0 10px 0 12px", whiteSpace: "nowrap", gap: 4 }}>
-        Account <ChevronDown size={14} style={{ transition: "transform 150ms", transform: open ? "rotate(180deg)" : "none" }} />
-      </button>
+      {avatar ? (
+        <button type="button" className="tb-avatar" onClick={() => setOpen(o => !o)} aria-expanded={open} aria-label="Account" title={who ?? "Account"}>
+          {(account?.name || who || "?").trim().charAt(0).toUpperCase()}
+        </button>
+      ) : (
+        <button className="btn-ghost" onClick={() => setOpen(o => !o)} aria-expanded={open} style={{ height: 32, fontSize: 12.5, padding: "0 10px 0 12px", whiteSpace: "nowrap", gap: 4 }}>
+          Account <ChevronDown size={14} style={{ transition: "transform 150ms", transform: open ? "rotate(180deg)" : "none" }} />
+        </button>
+      )}
       {open && (
         <div role="menu" className="account-menu" style={{ position: "absolute", right: 0, top: "calc(100% + 6px)", width: 240, zIndex: 200, background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 12, padding: 6, boxShadow: "var(--sh-lg)" }}>
           {who && (
@@ -49,6 +57,16 @@ export default function AccountMenu({ account, onLogout, onDeleted, onTour }) {
               <div style={{ fontSize: 11, color: "var(--t3)" }}>Signed in as</div>
               {account.name && <div style={{ fontSize: 13, fontWeight: 400, color: "var(--t1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{account.name}</div>}
               <div style={{ fontSize: 13, color: account.name ? "var(--t2)" : "var(--t1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={who}>{who}</div>
+            </div>
+          )}
+          {onTab && pages.length > 0 && (
+            <div style={{ paddingBottom: 4, marginBottom: 4, borderBottom: "1px solid var(--bdr)" }}>
+              {pages.map(p => (
+                <button key={p.id} role="menuitem" aria-current={p.on ? "page" : undefined} style={{ ...item, color: p.on ? "var(--accent)" : "var(--t1)" }} onClick={() => { setOpen(false); onTab(p.id); }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "var(--s3)"; }} onMouseLeave={e => { e.currentTarget.style.background = "none"; }}>
+                  {p.label}
+                </button>
+              ))}
             </div>
           )}
           {onTour && (

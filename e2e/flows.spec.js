@@ -162,9 +162,7 @@ test("F02-H8 back from a stock list lands on the strategies", async ({ page, acc
   await card.scrollIntoViewIfNeeded();
   await card.click();
   await expect(screenTitle(page)).toHaveText("Sound Banks");
-  // the Workspace tucks the bar away: its ☰ brings it back
-  await page.getByRole("button", { name: "Show the pages" }).click();
-  await page.locator("nav.side-rail").getByRole("button", { name: /^Screeners/ }).click();
+  await openPage(page, "Screeners");
   await expect(card).toBeInViewport();
   await page.locator("button.sc2").filter({ hasText: "Doubled in a Year" }).click();
   await expect(screenTitle(page)).toHaveText("Doubled in a Year");
@@ -383,32 +381,21 @@ test("F03-H8 what changed recently: dated lines above the filings", async ({ pag
   await expect(card.locator("li time").first().or(card.getByText(/^Nothing new in the last six weeks/))).toBeVisible();
 });
 
-test("R-H1 a computer's left bar: Watchlist goes straight to its page; Alerts peeks, Esc closes it, a second click goes there; a company's page lists its chapters there", async ({ page, account, isMobile }) => {
+test("R-H1 a computer's top bar takes you to Watchlist; a company's page lists its chapters down the left", async ({ page, account, isMobile }) => {
   test.skip(isMobile, "a phone has its bottom bar");
   await page.goto("/stock/TCS");
   await page.getByRole("button", { name: "Add to watchlist" }).click();
-  // a company's page: its chapters in the bar, each going to its part
+  // a company's page: its chapters in the bar down the left, each going to its part
   const parts = page.getByRole("navigation", { name: "Parts of this page" });
   await parts.getByRole("button", { name: "Owners" }).click();
   await expect(page.locator("#sec-holding")).toBeInViewport();
-  await page.getByRole("button", { name: /^Back to / }).first().click();
-  const rail = page.getByRole("navigation", { name: "Pages" });
-  const star = rail.getByRole("button", { name: /^Watchlist/ });
+  const tray = page.locator(".tb").getByRole("navigation", { name: "Pages" });
+  const star = tray.getByRole("button", { name: /^Watchlist/ });
   await star.click();
   await expect(star).toHaveAttribute("aria-current", "page");
-  await expect(page.getByRole("dialog", { name: "Watchlist" })).toHaveCount(0);
   await expect(page.locator(".wl-list").getByText("Tata Consultancy")).toBeVisible();
-  // Alerts peeks first; Esc closes it; a second click goes to its page
-  const alerts = rail.getByRole("button", { name: /^Alerts/ });
-  await alerts.click();
-  const peek = page.getByRole("dialog", { name: "Alerts" });
-  await expect(peek).toBeVisible();
-  await page.keyboard.press("Escape");
-  await expect(peek).toBeHidden();
-  await alerts.click();
-  await alerts.click();
-  await expect(alerts).toHaveAttribute("aria-current", "page");
-  await expect(peek).toBeHidden();
+  // off a company's page, no bar down the left
+  await expect(page.locator("nav.side-rail")).toHaveCount(0);
 });
 
 // From another page, Screen builder opens the builder, not the screeners (5 Nov 2026)
@@ -416,7 +403,7 @@ test("R-H2 Screen builder picked from the Watchlist opens the builder and its ad
   test.skip(isMobile, "a phone has no Screen builder tab");
   await page.goto("/");
   await openPage(page, "Watchlist");
-  await page.getByRole("navigation", { name: "Pages" }).getByRole("button", { name: /^Screen builder/ }).click();
+  await page.locator(".tb").getByRole("navigation", { name: "Pages" }).getByRole("button", { name: /^Screen builder/ }).click();
   await expect(page).toHaveURL(/\/builder/);
   await page.waitForTimeout(600);
   await expect(page).toHaveURL(/\/builder/);
@@ -572,8 +559,11 @@ test("F08-H1 theme and logo switches persist across a reload", async ({ page, ac
   await page.getByRole("button", { name: "Account", exact: true }).click();
   await page.getByRole("menuitemcheckbox", { name: /Company logos/ }).click();
   await expect(page.locator('img[src^="/api/logo/"]')).toHaveCount(0);
+  const themeNow = () => page.evaluate(() => document.documentElement.dataset.theme || document.documentElement.className);
+  const before = await themeNow();
   await page.getByRole("button", { name: /Switch to (light|dark) mode/ }).click();
-  const theme = await page.evaluate(() => document.documentElement.dataset.theme || document.documentElement.className);
+  await expect.poll(themeNow, "the theme switched").not.toBe(before);
+  const theme = await themeNow();
   await page.reload();
   await expect(page.locator('img[src^="/api/logo/"]')).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.dataset.theme || document.documentElement.className)).toBe(theme);

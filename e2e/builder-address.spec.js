@@ -7,7 +7,7 @@ test("B-1 Screen builder is at /builder: a reload stays, another page goes back 
   await page.goto("/");
   await openStocks(page);
   await expect(page).toHaveURL(/\/builder$/);
-  const rail = page.locator("nav.side-rail");
+  const rail = page.locator(".tb").getByRole("navigation", { name: "Pages" });
 
   // a reload stays in the builder
   await page.reload();

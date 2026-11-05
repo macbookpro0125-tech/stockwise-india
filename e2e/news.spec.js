@@ -126,7 +126,7 @@ test("N-H4 a starred company's news shows on the Watchlist, with a dot on its ta
   // last looked a week ago: anything since is new
   await page.addInitScript(() => { if (!sessionStorage.getItem("set")) { localStorage.setItem("watch-news-seen", new Date(Date.now() - 7 * 864e5).toISOString()); sessionStorage.setItem("set", "1"); } });
   // a computer's pages are in the bar down the left (26 Oct 2026); a phone's at the bottom
-  const dot = ".tab-news-dot:visible, .btb-dot-news:visible, .side-rail .sr-dot:not(.warn):visible";
+  const dot = ".tab-news-dot:visible, .btb-dot-news:visible, .tb-news:visible";
   await page.goto("/");
   await expect(page.locator(dot).first()).toBeVisible();
   await expect(page.getByRole("button", { name: /^Watchlist.*new from your companies/ }).first(), "the tab's name still leads").toBeVisible();
@@ -156,7 +156,8 @@ test("N-H5 starring a company from the news brings its news into My watchlist st
   await expect(page).toHaveURL(/\/stock\//);
   await page.getByRole("button", { name: /^Add to watchlist/ }).first().click();
   await page.getByRole("button", { name: /^Back/ }).first().click();
-  await page.getByRole("button", { name: /^News/ }).first().click().catch(() => {});
+  // the news item is open again: its page's tab, picked again, goes back to the list
+  await openPage(page, "Explore");
   await expect(kinds).toBeVisible();
   await kinds.getByRole("button", { name: /^My watchlist/ }).click();
   await expect(page.locator(".nw-day .nw-row").first()).toBeVisible();

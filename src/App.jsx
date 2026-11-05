@@ -159,6 +159,12 @@ export default function App() {
     setTab(t);
   };
   const goTab = (t) => {
+    // the page you're on, picked again: back to its start (a news item, an
+    // index or a section open on Explore closes, 6 Nov 2026)
+    if (t === tabRef.current && !open) {
+      const s = window.history.state ?? {};
+      if (s.newsItem || s.exploreIndex || s.exploreFull) { window.history.back(); return; }
+    }
     if (t !== tabRef.current) tabHistory.current.push(tabRef.current);
     if (open) navigate("/");
     setOpen(null);
@@ -436,7 +442,7 @@ export default function App() {
   return (
     <div className={`app-shell${!open && (tab === "discover" || tab === "workspace") ? " on-discover" : ""}`} style={{ minHeight: "100vh", background: "var(--bg)" }}>
       <PriceStrip onOpenStock={openSymbol} onOpenIndex={name => { setIndexOpen(name); goTab("explore"); }} />
-      <Header tab={open ? null : tab} onTab={goTab} account={account} onLogout={logout} onDeleted={accountDeleted} onSearch={openSymbol} theme={theme} onToggleTheme={toggleTheme} onTour={askForTour} />
+      <Header tab={open ? null : tab} onTab={goTab} account={account} onLogout={logout} onDeleted={accountDeleted} onSearch={openSymbol} theme={theme} onToggleTheme={toggleTheme} onTour={askForTour} onOpenIndex={() => goTab("markets")} />
       <div style={{ height: 16 }} />
       {/* A phone: the page's name in large type, as a native app's (index.css .phone-title) */}
       {!open && tab !== "discover" && tab !== "workspace" && <h2 className="phone-title phone-only" style={{ padding: "0 var(--page-x)" }}>{TABS.find(t => t.id === tab)?.label === "Performance" ? "Strategy performance" : TABS.find(t => t.id === tab)?.label}</h2>}

@@ -5739,7 +5739,7 @@ button.td-index:active, button.td-line:active { background: color-mix(in srgb, v
 .ex-tile-logo img { box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25); }
 
 /* ── Markets (MarketsView.jsx, 5 Nov 2026) ── */
-.mk { max-width: 1480px; margin: 0 auto; padding: 8px 0 40px; }
+.mk { max-width: 1480px; margin: 0 auto; padding: 8px var(--page-x) 40px; box-sizing: content-box; }
 .mk-head h1 { margin: 6px 0 4px; font-size: clamp(30px, 3.2vw, 44px); font-weight: 700; letter-spacing: -0.03em; }
 .mk-head p { margin: 0 0 22px; font-size: 14px; color: var(--t3); }
 .mk-section { margin-bottom: 18px; }
@@ -5857,3 +5857,61 @@ button.td-index:active, button.td-line:active { background: color-mix(in srgb, v
   .mk-all-head span:nth-child(n+4), .mk-all button > :nth-child(n+4) { display: none; }
 }
 .mk-all .mk-spark { justify-self: end; }
+
+/* ── A computer's top bar (TopBar.jsx, 5–6 Nov 2026) ────────────────────
+   Clean and flat, after TradingView's (6 Nov: "this looks clean, I need like
+   this for the top bar"): no box, straight on the page, edge to edge. The
+   mark, a rounded search, the pages as plain words, then the bell, light and
+   dark, and the account. The page you're on is in full white with a short
+   teal line under it. Once the page scrolls, the bar takes a quiet backing
+   and a hairline so what passes under it doesn't show through. */
+.tb-host { background: transparent !important; border: 0 !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+html .app-header.tb-host, html:not(.td-night) .app-header.tb-host, html.td-night[data-theme="light"] .app-header.tb-host { background: transparent !important; border: 0 !important; }
+.tb {
+  --tb-h: 64px; --tb-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --tb-search-bg: rgba(255, 255, 255, 0.07); --tb-search-bg-hover: rgba(255, 255, 255, 0.1);
+  --tb-backing: rgba(7, 9, 15, 0.86); --tb-line: rgba(255, 255, 255, 0.08);
+  display: flex; align-items: center; gap: 28px; height: var(--tb-h); padding: 0 var(--page-x);
+  color: var(--t1); font-family: var(--font);
+  transition: background-color 220ms ease, box-shadow 220ms ease;
+}
+[data-theme="light"] .tb { --tb-search-bg: rgba(15, 20, 36, 0.05); --tb-search-bg-hover: rgba(15, 20, 36, 0.08); --tb-backing: rgba(255, 255, 255, 0.9); --tb-line: rgba(15, 20, 36, 0.08); }
+/* over the home's night sky the bar is always on dark */
+html.td-night[data-theme="light"] .tb { --tb-search-bg: rgba(255, 255, 255, 0.07); --tb-search-bg-hover: rgba(255, 255, 255, 0.1); --tb-backing: rgba(7, 9, 15, 0.86); --tb-line: rgba(255, 255, 255, 0.08); }
+.tb.tb-scrolled { background: var(--tb-backing); box-shadow: 0 1px 0 var(--tb-line); -webkit-backdrop-filter: saturate(160%) blur(16px); backdrop-filter: saturate(160%) blur(16px); }
+.tb-logo { display: flex; align-items: center; gap: 10px; flex: none; color: inherit; text-decoration: none; border-radius: 10px; }
+.tb-mark { width: 32px; height: 32px; }
+.tb-word { font-size: 18px; font-weight: 600; letter-spacing: -0.025em; white-space: nowrap; }
+.tb-word span { font-weight: 500; color: var(--brand-wise, var(--accent)); }
+/* the search: a soft rounded field, no border */
+.tb-search { width: 250px; flex: none; }
+.tb-search :is(input, .input-base) { height: 42px !important; border-radius: 999px !important; border: 0 !important; background: var(--tb-search-bg) !important; box-shadow: none !important; font-size: 14px !important; padding-left: 40px !important; transition: background-color 140ms ease; }
+.tb-search :is(input, .input-base):focus { background: var(--tb-search-bg-hover) !important; box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent) !important; }
+/* the pages: plain words */
+.tb-nav { display: flex; align-items: center; gap: 4px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.tb-nav::-webkit-scrollbar { display: none; }
+.tb-tab { position: relative; display: flex; align-items: center; gap: 6px; height: 40px; padding: 0 12px; border: 0; border-radius: 10px; background: none; color: var(--t2); font: 500 15px/1 var(--font); letter-spacing: -0.01em; white-space: nowrap; cursor: pointer; transition: color 140ms ease; }
+.tb-tab.on { color: var(--t1); }
+.tb-tab.on::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: 3px; height: 2px; border-radius: 2px; background: var(--accent); }
+.tb-news { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.tb-space { flex: 1; min-width: 0; }
+.tb-end { display: flex; align-items: center; gap: 6px; flex: none; }
+.tb-ib { position: relative; width: 40px; height: 40px; flex: none; display: grid; place-items: center; border: 0; border-radius: 50%; background: none; color: var(--t2); cursor: pointer; transition: color 140ms ease, background-color 140ms ease; }
+.tb-ib.on { color: var(--accent); }
+.tb-search-ib { display: none; }
+.tb-dot { position: absolute; top: 9px; right: 10px; width: 7px; height: 7px; border-radius: 50%; background: var(--yellow); }
+.tb-avatar { width: 38px; height: 38px; margin-left: 6px; border: 0; border-radius: 50%; display: grid; place-items: center; font: 600 14px/1 var(--font); color: var(--bg); background: var(--t1); cursor: pointer; transition: transform 100ms ease; }
+.tb-avatar:active { transform: scale(0.96); }
+.tb :is(.tb-tab, .tb-ib, .tb-logo, .tb-avatar):focus-visible { outline: none; box-shadow: 0 0 0 2px var(--accent); }
+@media (hover: hover) and (pointer: fine) {
+  .tb-tab:not(.on):hover, .tb-ib:hover { color: var(--t1); }
+  .tb-search :is(input, .input-base):hover { background: var(--tb-search-bg-hover) !important; }
+}
+/* the search button (a narrow window) opens the field over the words */
+.tb.tb-searching .tb-search { display: block; position: absolute; z-index: 3; left: 50%; width: min(420px, 50vw); transform: translateX(-50%); }
+.tb.tb-searching .tb-nav { visibility: hidden; }
+/* narrower windows: the name first, then the search becomes a button */
+@media (max-width: 1340px) { .tb { gap: 18px; } .tb-search { width: 210px; } .tb-tab { padding: 0 9px; font-size: 14.5px; } .tb-tab.on::after { left: 9px; right: 9px; } }
+@media (max-width: 1180px) { .tb-word { display: none; } }
+@media (max-width: 1080px) { .tb-search { display: none; } .tb-search-ib { display: grid; } .tb-theme { display: none; } }
+@media (prefers-reduced-transparency: reduce) { .tb.tb-scrolled { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--bg); } }

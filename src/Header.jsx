@@ -11,6 +11,7 @@ import { useWatchNewsDot } from "./watchNews.js";
 import { usePhone } from "./phoneTabs.js";
 import { MenuButton, PlusButton } from "./PhoneChrome.jsx";
 import { createLens } from "./liquidLens.js";
+import TopBar from "./TopBar.jsx";
 
 // The original's sticky header (stock-screener src/Discovery.jsx): logo,
 // search, theme switch and account in one row, then the tabs with counts. On
@@ -95,7 +96,7 @@ export function useTabBadges() {
   };
 }
 
-export default function Header({ tab, onTab, account, onLogout, onDeleted, onSearch, theme, onToggleTheme, onTour }) {
+export default function Header({ tab, onTab, account, onLogout, onDeleted, onSearch, theme, onToggleTheme, onTour, onOpenIndex }) {
   const badges = useTabBadges();
   const phone = usePhone();
   // Discover's start page has a one-row header — no tab row (asked for 20 Oct
@@ -122,6 +123,13 @@ export default function Header({ tab, onTab, account, onLogout, onDeleted, onSea
     return () => { ro.disconnect(); window.removeEventListener("resize", measure); };
   }, []);
 
+  // a computer: the floating top bar with the pages in it (TopBar.jsx, 5 Nov 2026)
+  if (!phone) return (
+    <div ref={ref} className="app-header tb-host discovery-header-sticky" style={{ position: "sticky", top: 0, zIndex: 100 }}>
+      <TopBar tab={tab} onTab={onTab} account={account} onLogout={onLogout} onDeleted={onDeleted} onSearch={onSearch}
+        theme={theme} onToggleTheme={onToggleTheme} onTour={onTour} onOpenIndex={onOpenIndex} />
+    </div>
+  );
   return (
     <div ref={ref} className="app-header discovery-header-sticky" style={{ position: "sticky", top: 0, zIndex: 100, background: HEADER_BG[theme] ?? HEADER_BG.dark, borderBottom: "1px solid var(--bdr2)" }}>
       <div style={{ padding: "0 var(--page-x)" }}>

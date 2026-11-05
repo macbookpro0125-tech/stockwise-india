@@ -1,11 +1,12 @@
 # Status
 
-_Last updated: 5 Nov 2026, by Claude (Opus) on branch `screeners-home`._
+_Last updated: 6 Nov 2026, by Claude (Opus) on branch `screeners-home`._
 
 ## Committed, not pushed (5 Nov)
 - The screen chart (builder → Chart): pick any two scores (Up, Across, swap); drag a box to list the companies in that range. Test QV-1.
 - The home's news cards no longer overflow in Safari, and a filing sent twice shows once (N-H1).
 - The home's night sky is hidden once the page covers it, and unpinned, so Safari can't drop the page and show it mid-scroll (owner's recording, N-H9). Owner to check in Safari after the push.
+- Computers: a clean top bar (TopBar.jsx) replaces the left bar; the left bar stays only on a company page for its chapters. Performance, Momentum, Visitors are under the account initial; Alerts is the bell. Test TB-1.
 
 ## Live on jocularinsights.in
 

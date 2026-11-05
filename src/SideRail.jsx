@@ -172,16 +172,18 @@ export default function SideRail({ tab, onTab, account, theme, onToggleTheme, on
   // The Workspace gets the whole width (31 Oct 2026): there the bar hides,
   // and comes back over the page from ☰ at the top left, or the mouse at
   // the left edge, or the keyboard reaching it
-  const tucked = tab === "workspace" && !openSymbol;
+  // The pages moved to the top bar (TopBar.jsx, 5 Nov 2026): the bar here
+  // stays only on a company's page, for its chapters (StockDetail.jsx)
+  const tucked = false;
   const [shown, setShown] = useState(false);
   // the page's content moves over for the bar (index.css html.has-rail)
   useEffect(() => {
-    document.documentElement.classList.toggle("has-rail", !phone && !tucked);
+    document.documentElement.classList.toggle("has-rail", !phone && !!openSymbol);
     document.documentElement.classList.toggle("rail-tucked", !phone && tucked);
     return () => document.documentElement.classList.remove("has-rail", "rail-tucked");
-  }, [phone, tucked]);
+  }, [phone, tucked, openSymbol]);
   useEffect(() => { setPeek(null); setShown(false); }, [tab, openSymbol]);
-  if (phone) return null;
+  if (phone || !openSymbol) return null;
   const tabs = tabsFor(account);
   const go = id => { setPeek(null); onTab(id); };
   const press = id => {
@@ -221,12 +223,7 @@ export default function SideRail({ tab, onTab, account, theme, onToggleTheme, on
             );
           })}
         </div>}
-        <div className="sr-end">
-          <button type="button" className="sr-tab" onClick={onToggleTheme} aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}>
-            {theme === "dark" ? <Sun size={20} strokeWidth={1.8} aria-hidden="true" /> : <Moon size={20} strokeWidth={1.8} aria-hidden="true" />}
-            <span className="sr-tip" aria-hidden="true">{theme === "dark" ? "Light mode" : "Dark mode"}</span>
-          </button>
-        </div>
+        {/* light and dark are in the top bar (TopBar.jsx) */}
       </nav>
       {peek && <Peek id={peek} label={label(peek)} onClose={() => setPeek(null)} onOpenAll={() => go(peek)} onOpenStock={onOpenStock} />}
     </>

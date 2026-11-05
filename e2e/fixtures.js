@@ -102,7 +102,20 @@ export async function openPage(page, name) {
   // the moment a page starts loading, neither was there yet and a phone was
   // taken for a computer
   await page.locator(".app-header").first().waitFor();
-  // a computer: the pages are in the bar down the left (26 Oct 2026);
+  // a computer: the pages are in the top bar's tray (TopBar.jsx, 5 Nov 2026);
+  // Market map is "Map" there, Alerts is the bell, and Performance, Momentum
+  // and Visitors are in the account menu
+  const top = page.locator(".tb");
+  if (await top.isVisible().catch(() => false)) {
+    const tray = top.getByRole("navigation", { name: "Pages" });
+    const label = { Discover: "Screeners", "Market map": "Map" }[name] ?? name;
+    const t = tray.getByRole("button", { name: new RegExp(`^${label}`) });
+    if (await t.count()) return t.first().click();
+    if (/^Alerts/.test(name)) return top.getByRole("button", { name: /^Alerts/ }).click();
+    await page.getByRole("button", { name: "Account", exact: true }).click();
+    return page.getByRole("menuitem", { name: re }).click();
+  }
+  // (before: the pages in a bar down the left, 26 Oct 2026);
   // Portfolio and Alerts open a peek first (Watchlist goes straight there), whose Open goes there
   const rail = page.locator("nav.side-rail");
   // the Workspace tucks the bar away (31 Oct 2026): its ☰ brings it back
