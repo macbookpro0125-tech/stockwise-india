@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import CompanyLogo from "./CompanyLogo.jsx";
 import { ArrowLeft, Maximize2, Minimize2, Search, X, Plus, Minus, Scan } from "lucide-react";
 import { api } from "./api.js";
 import { niceName } from "./stockName.js";
@@ -361,7 +362,10 @@ export default function MarketMapView({ onOpenStock, onOpenIndex, screen = null,
     // a big box says more: the company's name, then its price
     const room = cut ? seen : t;
     const more = t.symbol && fit.moved && room.w >= 130 && room.h >= 84;
-    return { t, name, ...fit, move, bg, pale, at: cut ? seen : null, long: more ? niceName(t.name ?? t.symbol) : null, price: more && room.h >= 110 && t.close != null ? `₹${t.close.toLocaleString("en-IN", { maximumFractionDigits: 2 })}` : null };
+    // a box with room shows the company's logo above its name (5 Nov 2026, "add logos"):
+    // a fifth of its shorter side, 18 to 40 pixels
+    const logo = t.symbol && fit.named && room.w >= 80 && room.h >= 72 ? Math.round(Math.max(18, Math.min(40, Math.min(room.w, room.h) * 0.2))) : 0;
+    return { t, name, ...fit, move, bg, pale, logo, at: cut ? seen : null, long: more ? niceName(t.name ?? t.symbol) : null, price: more && room.h >= 110 && t.close != null ? `₹${t.close.toLocaleString("en-IN", { maximumFractionDigits: 2 })}` : null };
   }), [tiles, mode, ctx, view.x, view.y, width, height]); // eslint-disable-line react-hooks/exhaustive-deps
   const inView = zoom ? kept.filter(i => (i.sector || "Other") === zoom) : kept;
   const zoomMove = zoom ? groupMove(inView) : null;
@@ -377,7 +381,7 @@ export default function MarketMapView({ onOpenStock, onOpenIndex, screen = null,
   const firstHit = hits?.size ? tiles.find(t => hits.has(t.symbol)) : null;
 
   // the boxes don't change as the pointer moves: made once, so the card follows without redrawing 1,600 of them
-  const tileEls = useMemo(() => laid.map(({ t, name, lines, up, named, moved, size: fs, move, bg, pale, long, price, at }, k) => (
+  const tileEls = useMemo(() => laid.map(({ t, name, lines, up, named, moved, size: fs, move, bg, pale, long, price, at, logo }, k) => (
           <button key={t.symbol ?? t.index} type="button" data-tile={k} className={`ex-tile${pale ? " pale" : ""}${hits?.has(t.symbol) ? " hit" : ""}`}
             aria-label={`${t.name ? niceName(t.name) : name}, ${t.change >= 0 ? "up" : "down"} ${Math.abs(t.change).toFixed(2)}% over ${words}${mode.id !== "move" ? `; ${mode.label}: ${move}` : ""}${t.resultsOn ? `; results on ${dayMonth(t.resultsOn)}` : ""}`}
             onClick={() => { if (!dragged.current) open(t); }}
@@ -385,6 +389,7 @@ export default function MarketMapView({ onOpenStock, onOpenIndex, screen = null,
             {t.resultsOn && t.w >= 14 && t.h >= 14 && <span className="ex-tile-dot" aria-hidden="true" />}
             {named && (
               <span className={`ex-tile-in${up ? " up" : ""}${at ? " seen" : ""}`} style={at ? { left: at.x, top: at.y, width: at.w, height: at.h } : undefined}>
+                {logo > 0 && <span className="ex-tile-logo"><CompanyLogo symbol={t.symbol} size={logo} /></span>}
                 <span className="ex-tile-name" style={{ fontSize: fs }}>{lines.map((l, i) => <Fragment key={i}>{i > 0 && <br />}{l}</Fragment>)}</span>
                 {moved && <span className="ex-tile-chg" style={{ fontSize: Math.min(15, Math.max(fs * 0.8, fs >= 10 ? 8 : 0)) }}>{move}</span>}
                 {long && <span className="ex-tile-more">{long}</span>}
