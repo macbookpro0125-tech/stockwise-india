@@ -43,7 +43,7 @@ export const TABS = [
   // A computer splits Discover in two (31 Oct 2026): Screeners, the ready-made
   // screens to pick from, and Workspace, where a screen is built and studied
   // (DiscoverView's two steps). A phone keeps the one Discover tab.
-  { id: "discover", label: "Discover", wide: "Screeners", short: "Discover", Icon: GridIcon },
+  { id: "discover", label: "Discover", wide: "Home", short: "Discover", Icon: GridIcon },
   { id: "workspace", label: "Screen builder", short: "Builder", Icon: SlidersHorizontal, wideOnly: true },
   // A list walked with its chart and company beside it (DeskView.jsx, 31 Oct 2026)
   { id: "desk", label: "Desk", short: "Desk", Icon: Monitor, wideOnly: true },

@@ -5915,3 +5915,5 @@ html.td-night[data-theme="light"] .tb { --tb-search-bg: rgba(255, 255, 255, 0.07
 @media (max-width: 1180px) { .tb-word { display: none; } }
 @media (max-width: 1080px) { .tb-search { display: none; } .tb-search-ib { display: grid; } .tb-theme { display: none; } }
 @media (prefers-reduced-transparency: reduce) { .tb.tb-scrolled { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--bg); } }
+/* a narrow window: the words a little tighter, so all eight fit */
+@media (max-width: 1000px) { .tb { gap: 10px; } .tb-nav { gap: 0; } .tb-tab { padding: 0 7px; font-size: 13.5px; } .tb-tab.on::after { left: 7px; right: 7px; } }

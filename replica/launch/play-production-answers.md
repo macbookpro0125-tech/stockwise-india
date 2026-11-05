@@ -2,10 +2,10 @@
 
 **Where things stand (4 Nov 2026):**
 - **Release:** 1.3 (build 5) approved and live on Closed testing - Alpha since 3 Nov.
-- **Testers:** Play's dashboard shows 12 opted in for 11 days running, so the 14 days finish on about 7 Nov.
+- **Testers:** Play's dashboard shows 12 opted in for 12 days running on 6 Nov, so the 14 days finish on 8 Nov.
 - **Then:** Dashboard → **Apply for production**.
 
-The **[confirm]** items are all collected in "Before you paste" at the end.
+All the owner's answers are in (6 Nov 2026): see "Owner's answers" at the end.
 
 For Play Console → Dashboard → **Apply for production**, once the closed test
 has run 14 days with 12+ testers opted in (from 24 Oct 2026: about 7 Nov).
@@ -16,8 +16,8 @@ before they're pasted: nothing here may claim feedback nobody gave.
 ## Part 1: About your closed test
 
 **How easy was it to recruit testers?**
-Choose the option that's true for you. **[confirm]** (We asked friends and
-family directly; 15 addresses are on the "Jocular testers" list.)
+Choose: **Easy** (owner, 6 Nov 2026). We asked friends and family directly;
+15 addresses are on the "Jocular testers" list.
 
 **Describe the engagement you received from testers.**
 
@@ -26,8 +26,7 @@ family directly; 15 addresses are on the "Jocular testers" list.)
 > in with Google and used the watchlist, company pages, news and the
 > screeners. About five had installed it within the first day; one tester first saw "App not
 > available", which was fixed by opting in with the same Google account the
-> phone uses for Play. [confirm: how often they opened it, and anything else
-> they did or said]
+> phone uses for Play. Several testers opened it most days.
 >
 > They received three updates during the test (1.1, 1.2 and 1.3), each
 > installed through Play.
@@ -37,8 +36,8 @@ family directly; 15 addresses are on the "Jocular testers" list.)
 > Feedback came to us directly from testers (in person and by message) and to
 > the feedback email on the testing track. The most important report: on one
 > tester's Xiaomi phone the app opened to a black screen. We traced it to an
-> out-of-date Android System WebView, which the app relies on. [confirm: other
-> feedback testers gave]
+> out-of-date Android System WebView, which the app relies on. A tester also
+> told us the opening animation stuttered on their phone.
 
 ## Part 2: About your app
 
@@ -59,7 +58,7 @@ family directly; 15 addresses are on the "Jocular testers" list.)
 > shows the figures and never tells anyone what to buy or sell.
 
 **How many installs do you expect in the first year?**
-Choose a range. **[confirm]**
+Choose: **1,000 – 10,000** (owner, 6 Nov 2026).
 
 ## Part 3: Production readiness
 
@@ -80,35 +79,30 @@ Choose a range. **[confirm]**
 >   (opt-in, per screen).
 > - The opening animation was rebuilt so it no longer stutters on mid-range
 >   Android phones. It now runs from the launch logo to the app without a gap
->   or a blank screen. [confirm: whether a tester reported the stutter, or
->   only the owner]
+>   or a blank screen (a tester reported the stutter).
 > - The full-screen price chart on a phone keeps the prices in view when
 >   scrolled. It has a simpler row of controls, and its chart types are a
 >   plain list.
 > - News items now say in plain words whether that kind of announcement is
 >   usually good or bad news for a share, and why.
-> [confirm: remove any item you don't want to mention, and add any change a
-> tester asked for]
 
 **How did you decide the app is ready for production?**
 
 > Testers used it on their own phones for over two weeks, through three
-> updates [confirm: the phone brands, e.g. Xiaomi and others]. The one crash-like problem they found (the black
+> updates, on Samsung, Xiaomi, and Vivo, Oppo, Realme or OnePlus phones. The one crash-like problem they found (the black
 > screen on an old WebView) is fixed. Every release passes our automated tests:
 > unit tests for the data and calculations, and browser tests that click
 > through every main flow at phone and computer sizes. The app's privacy
 > policy, data safety form and content rating are complete.
 > The latest build (1.3) passed Google's review on 3 November 2026.
 
-## Before you paste (owner)
+## Owner's answers (6 Nov 2026)
 
-Fill these in yourself. Don't paste anything that claims feedback nobody gave:
-1. **How easy was recruiting?** Pick the option that's true. We asked friends and family directly.
-2. **How testers used it:** how often they opened it, and anything they did or said.
-3. **Other feedback testers gave,** besides the black screen on the Xiaomi phone.
-4. **Whether a tester reported the opening stutter,** or only you. If only you, delete that bullet.
-5. **The phone brands testers used.**
-6. **Installs expected in the first year:** pick a range you believe.
-7. **Remove any change you'd rather not mention.**
+All seven confirmed in chat: recruiting easy; several testers opened it most
+days; brands Samsung, Xiaomi, and Vivo/Oppo/Realme/OnePlus; no other feedback
+beyond the Xiaomi black screen; a tester reported the opening stutter; 1,000 –
+10,000 installs expected; every change kept. Ready to paste on 8 Nov.
 
-Before applying, also answer Play's **"Declare your trader status"** banner.
+Play's **"Declare your trader status"** banner is due by 1 February 2027 (Play's
+notice of 5 Nov 2026), so it doesn't hold up the application; answer it when
+you're ready. Only you can say whether you're a trader.

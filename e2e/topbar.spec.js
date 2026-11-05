@@ -11,7 +11,7 @@ test("TB-1 the top bar: pages in the tray, the rest under the account, a backing
   await page.goto("/");
   const bar = page.locator(".tb");
   const tray = bar.getByRole("navigation", { name: "Pages" });
-  await expect(tray.getByRole("button", { name: "Screeners" })).toHaveAttribute("aria-current", "page");
+  await expect(tray.getByRole("button", { name: "Home" })).toHaveAttribute("aria-current", "page");
   await expect(page.locator("nav.side-rail")).toHaveCount(0);
   if (shots) await page.screenshot({ path: `${shots}/tb-top.png`, clip: { x: 0, y: 0, width: 1280, height: 120 } });
   // everything fits, from a small laptop to a wide screen
@@ -32,7 +32,7 @@ test("TB-1 the top bar: pages in the tray, the rest under the account, a backing
   await bar.getByRole("button", { name: /^Alerts/ }).click();
   await expect(bar.getByRole("button", { name: /^Alerts/ })).toHaveClass(/on/);
   // straight on the page at the top; a quiet backing once the page scrolls under it
-  await tray.getByRole("button", { name: "Screeners" }).click();
+  await tray.getByRole("button", { name: "Home" }).click();
   await expect(bar).not.toHaveClass(/tb-scrolled/);
   await page.mouse.move(640, 600);
   await page.mouse.wheel(0, 1600);
