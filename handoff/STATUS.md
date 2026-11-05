@@ -3,12 +3,11 @@
 _Last updated: 5 Nov 2026, by Claude (Opus) on branch `screeners-home`._
 
 ## Committed, not pushed (5 Nov)
-- `4cb414b` Markets: the index row airy and even (four across, soft pill, own badge colours, round arrows).
-- `78cd2af` Markets: See all (end of the row and by the heading) opens All indices with search; a click charts it.
-- Watchlist rows show the added price and date ("Added ₹2,530 · 5 Nov 26 +1.2%"); test C-3.
-- The left bar's Watchlist opens the page directly; Screen builder from another page opens the builder (not the screeners); tests R-H1, R-H2.
+- The screen chart (builder → Chart): pick any two scores (Up, Across, swap); drag a box to list the companies in that range. Test QV-1.
 
 ## Live on jocularinsights.in
+
+Pushed 5 Nov 2026 at `c8443a1` (all 146 tests passed): the Markets index row restyle and See all; the watchlist's added price and date; the left bar's Watchlist opens its page; Screen builder from another page opens the builder.
 
 Pushed 5 Nov 2026 at `4c78350` (all 142 tests passed):
 - **Markets:** a new page (`MarketsView.jsx`, tab `markets`; phone: Settings → Markets) with the index picker and its chart, sectors, the market's trend, the biggest moves and the week's results.

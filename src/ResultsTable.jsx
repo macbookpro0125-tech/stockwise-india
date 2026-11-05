@@ -606,9 +606,9 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
                 <Info size={15} />
               </button>
             )}
-            {/* the screen's companies on a quality-against-P/E chart (QualityValueMap.jsx) */}
+            {/* the screen's companies on a chart of any two scores (QualityValueMap.jsx) */}
             {!loading && (matches?.length ?? 0) > 2 && (
-              <button type="button" onClick={() => setShowMap(v => !v)} aria-pressed={showMap} className="btn-ghost tb-btn hide-phone" title="Quality against P/E for these companies">
+              <button type="button" onClick={() => setShowMap(v => !v)} aria-pressed={showMap} className="btn-ghost tb-btn hide-phone" title="These companies on a chart: any two scores">
                 <ChartScatter size={14} aria-hidden="true" /> <span className="tb-label">Chart</span>
               </button>
             )}

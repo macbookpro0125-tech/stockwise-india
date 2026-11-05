@@ -4470,9 +4470,6 @@ html.no-blur .sr-group { box-shadow: none; }
 .qv-chart { padding: 12px 12px 8px; min-width: 0; }
 .qv-chart svg { display: block; width: 100%; height: auto; }
 .qv-zone { stroke: none; }
-.qv-hl { fill: color-mix(in srgb, var(--green) 9%, transparent); }
-.qv-hh { fill: color-mix(in srgb, var(--accent) 6%, transparent); }
-.qv-lh { fill: color-mix(in srgb, var(--red) 6%, transparent); }
 .qv-grid { stroke: var(--bdr); stroke-width: 1; }
 .qv-mid { stroke: var(--t3); stroke-width: 1; stroke-dasharray: 4 4; }
 .qv-tick { fill: var(--t3); font: 400 11px var(--font); }
@@ -4483,6 +4480,21 @@ html.no-blur .sr-group { box-shadow: none; }
 .qv-dot circle { stroke-width: 1.5; transition: stroke-width 120ms ease; }
 .qv-dot:focus-visible circle { stroke-width: 3; }
 .qv-note { margin: 6px 4px 0; font-size: 12px; line-height: 1.5; color: var(--t3); }
+.qv-one { display: block; }
+.qv-axes { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 0 4px 10px; font-size: 12.5px; color: var(--t3); }
+.qv-axes label { display: inline-flex; align-items: center; gap: 6px; }
+.qv-select { padding: 6px 28px 6px 10px; border-radius: 999px; border: 1px solid var(--bdr2); background: var(--s2); color: var(--t1); font: 500 12.5px var(--font); cursor: pointer; }
+.qv-swap { width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--bdr2); background: none; color: var(--t2); cursor: pointer; }
+.qv-hint { margin-left: auto; font-size: 12px; }
+.qv-chart svg { touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.qv-dragging { cursor: crosshair; }
+.qv-box { fill: color-mix(in srgb, var(--accent) 12%, transparent); stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 5 3; pointer-events: none; }
+.qv-dim { opacity: .22; }
+.qv-boxed { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border-radius: 12px; background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.qv-boxed span { display: flex; flex-direction: column; min-width: 0; }
+.qv-boxed b { font-size: 13px; font-weight: 600; color: var(--t1); }
+.qv-boxed small { font-size: 11.5px; color: var(--t2); }
+.qv-boxed button { flex: none; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; border: 0; background: none; color: var(--t2); cursor: pointer; }
 .qv-empty { margin: 0 0 16px; font-size: 13px; color: var(--t3); }
 .qv-side { padding: 12px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .qv-tabs { display: flex; flex-wrap: wrap; gap: 6px; }
