@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createChart, AreaSeries, ColorType } from "lightweight-charts";
 import { ChevronRight, Plus } from "lucide-react";
 import { api } from "./api.js";
+import { cardName } from "./stockName.js";
 import HowItWorks from "./HowItWorks.jsx";
 import { ScreenIcon } from "./PhoneScreens.jsx";
 import { navigate } from "./site.jsx";
@@ -372,9 +373,13 @@ export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIn
   const mine = new Set(rows.map(r => r.symbol));
   const moved = [...rows].sort((a, b) => Math.abs(b.ret1d ?? 0) - Math.abs(a.ret1d ?? 0)).slice(0, WATCH_ROWS);
   const under = rows.filter(r => r.fv25 > 0 && r.cmp > 0 && r.cmp < r.fv25).map(r => ({ r, by: (1 - r.cmp / r.fv25) * 100 })).sort((a, b) => b.by - a.by).slice(0, 3);
+  // each day's names (5 Nov 2026, "show some stocks' names"): yours first, then
+  // the biggest reporting, three at most, and how many more
   const coming = (calendar?.days ?? []).slice(0, 3).map(d => {
-    const yours = (d.companies ?? []).filter(c => mine.has(c.symbol));
-    return { date: d.date, yours, count: d.count };
+    const all = d.companies ?? [];
+    const yours = all.filter(c => mine.has(c.symbol));
+    const names = [...yours, ...all.filter(c => !mine.has(c.symbol))].slice(0, 3);
+    return { date: d.date, yours, names, more: Math.max(0, (d.count ?? all.length) - names.length) };
   });
   return (
     <>
@@ -443,7 +448,10 @@ export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIn
               <div className="td-head"><h3>Results coming</h3><button type="button" onClick={() => navigate("/results-calendar")}>Calendar</button></div>
               {coming.map(c => (
                 <button key={c.date} type="button" className="td-line" onClick={() => navigate("/results-calendar")}>
-                  <span className={c.yours.length ? undefined : "td-quiet"}>{c.yours.length ? c.yours.map(y => short(y.name)).join(", ") : `${c.count} ${c.count === 1 ? "company" : "companies"}`}</span>
+                  <span className="td-coming">
+                    <span className="td-coming-names">{c.names.map((y, i) => <span key={y.symbol}>{i > 0 && ", "}<b className={mine.has(y.symbol) ? "td-yours" : undefined}>{cardName(y.name)}</b></span>)}</span>
+                    {c.more > 0 && <small>+{c.more}</small>}
+                  </span>
                   <em>{day(c.date)}</em>
                 </button>
               ))}

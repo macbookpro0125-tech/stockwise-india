@@ -5684,3 +5684,11 @@ button.td-index { width: 100%; border: 0; border-top: 1px solid var(--bdr); back
 .td-click { cursor: pointer; }
 @media (hover: hover) and (pointer: fine) { button.td-index:hover { background: color-mix(in srgb, var(--t1) 5%, transparent); } }
 button.td-index:active, button.td-line:active { background: color-mix(in srgb, var(--t1) 8%, transparent); }
+/* results coming: each day's biggest names, yours first and marked */
+.td-coming { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.td-coming b { font-weight: 500; }
+.td-coming b.td-yours { color: var(--accent); }
+.td-coming small { color: var(--t3); font-size: 12px; }
+.td-coming { display: flex; align-items: baseline; gap: 6px; min-width: 0; overflow: visible; white-space: nowrap; }
+.td-coming-names { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.td-coming small { flex: none; }
