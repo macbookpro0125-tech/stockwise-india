@@ -15,6 +15,11 @@ import { tick } from "./haptics.js";
 const LENGTH_MS = 3150;
 const FLIGHT_MS = 885; // the logo into the page's logo (30% slower, 1 Nov 2026)
 export const APP_START_MS = 2750; // the logo has landed and settled: the app starts building (main.jsx)
+// A computer starts building sooner (5 Nov 2026, "the opening stays long, gets
+// stuck"): it took over a second to build the page after 2.75 s, so the logo sat
+// still after the film; started at 1.5 s, the page is there when the film ends.
+// A phone keeps the film to itself (the Android lag of 1 Nov).
+export const APP_START_MS_COMPUTER = 1500;
 const LAND_MS = 2230;
 const RIDE = [400, 1750], FLY = [1830, LAND_MS]; // the point of light waits at the start, where it can be seen // CSS's logo waits for FLY's end (index.css)
 
@@ -175,9 +180,11 @@ export default function Intro() {
     // (1 Nov 2026, "small lag" as the logo goes in, seen on film as a logo stopped
     // mid-screen). A page that's still drawing shows nothing but its background.
     let cancel = () => {};
-    let t = setTimeout(function wait(left = 2500) {
+    // a computer waits at most 0.6 s past the film for the page; a phone 2.5 s
+    const patience = window.matchMedia?.("(hover: hover) and (pointer: fine)").matches ? 600 : 2500;
+    let t = setTimeout(function wait(left = patience) {
       if (left <= 0) finish();
-      else if (headerLogo()) cancel = whenSteady(finish, 1200);
+      else if (headerLogo()) cancel = whenSteady(finish, patience === 600 ? 400 : 1200);
       else t = setTimeout(() => wait(left - 100), 100);
     }, LENGTH_MS);
     return () => { clearTimeout(t); cancel(); };

@@ -1,7 +1,7 @@
 import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App.jsx";
-import Intro, { APP_START_MS } from "./Intro.jsx";
+import Intro, { APP_START_MS, APP_START_MS_COMPUTER } from "./Intro.jsx";
 // Inter, served with the app rather than from Google Fonts (no third-party
 // request); the optical-size axis tightens it at heading sizes
 import "@fontsource-variable/inter/opsz.css";
@@ -76,7 +76,8 @@ function AfterOpening({ children }) {
     if (go) return undefined;
     const start = () => setGo(true);
     let t;
-    const timer = () => { t = setTimeout(start, APP_START_MS); };
+    const computer = window.matchMedia?.("(hover: hover) and (pointer: fine)").matches && !document.documentElement.classList.contains("in-app");
+    const timer = () => { t = setTimeout(start, computer ? APP_START_MS_COMPUTER : APP_START_MS); };
     if (window.__introHeld) window.addEventListener("intro-started", timer, { once: true });
     else timer();
     window.addEventListener("intro-leaving", start, { once: true });
