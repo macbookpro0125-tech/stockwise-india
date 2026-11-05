@@ -1014,7 +1014,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
           <DataNote dates={data.dataDates} />
           <WhyMoving symbol={data.symbol} />
         </div>
-        {m && <div className="dk-top-side"><WhatToWatch m={m} symbol={data.symbol} signedIn={!!account} onAlert={() => setShowAlertModal(true)} /></div>}
+        {m && <div className="dk-top-side"><WhatToWatch m={m} symbol={data.symbol} holding={data.holding} signedIn={!!account} onAlert={() => setShowAlertModal(true)} /></div>}
       </section>
 
       {/* the chapters, in the bar down the left (SideRail.jsx steps aside) */}

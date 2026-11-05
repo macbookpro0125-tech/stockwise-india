@@ -280,7 +280,9 @@ test("F03-H2 the top answers each chapter in a tile and says what to watch; the 
   // a computer's page (26 Oct 2026): the gist, a tile per chapter, what to watch
   await expect(page.getByText(/^In short\.$/)).toBeVisible();
   const watch = page.getByRole("region", { name: "What to watch" });
-  await expect(watch.getByText(/^Results (for|on|today|tomorrow)/)).toBeVisible();
+  await expect(watch.getByText(/^Results (for|on|today|tomorrow)/).first()).toBeVisible();
+  // the story so far and what is announced ahead (5 Nov 2026)
+  await expect(watch.getByRole("heading", { name: /^(Lately|Coming up)$/ }).first()).toBeVisible();
   await expect(watch.getByText(/price alerts? set|alerts? set/i)).toBeVisible();
   const tile = page.getByRole("button", { name: /^Growth: .+\. Go to the chapter$/ });
   await expect(tile).toBeVisible();

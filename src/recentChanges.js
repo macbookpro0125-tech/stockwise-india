@@ -30,8 +30,9 @@ function actionText(title) {
   return `ex-date for ${title.toLowerCase()}`;
 }
 
-export function recentChanges(m, holding, today) {
-  const since = shift(today, -WINDOW), until = shift(today, AHEAD);
+// window: how many days back count as recent (What to watch looks back further, 5 Nov 2026)
+export function recentChanges(m, holding, today, { window = WINDOW } = {}) {
+  const since = shift(today, -window), until = shift(today, AHEAD);
   const recent = [], upcoming = [];
 
   const q = m?.quarters?.[0];
@@ -63,7 +64,7 @@ export function recentChanges(m, holding, today) {
 
   const quarters = (holding?.promoterHistory ?? []).filter(h => QUARTER_END.test(h.asOfIso ?? "")).sort((a, b) => b.asOfIso.localeCompare(a.asOfIso));
   const [now, before] = quarters;
-  if (now && before && now.asOfIso >= shift(today, -HOLDING_WINDOW) && Math.abs(now.pct - before.pct) >= 0.25) {
+  if (now && before && now.asOfIso >= shift(today, -(window + 21)) && Math.abs(now.pct - before.pct) >= 0.25) {
     recent.push({ date: now.asOfIso, kind: "promoters", text: `Promoters' holding ${now.pct > before.pct ? "rose" : "fell"} ${Math.abs(now.pct - before.pct).toFixed(2)} percentage points in the quarter to ${month(now.asOfIso)}.` });
   }
 

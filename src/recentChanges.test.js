@@ -54,3 +54,13 @@ const holding = { promoterHistory: [{ asOfIso: "2026-09-30", pct: 13.82 }, { asO
   assert.equal(loss.recent[0].text, "Results for the September 2026 quarter: sales up 5.0% on a year ago, and a loss of ₹120 Cr.");
   console.log("ok: nothing older than six weeks; a loss is said plainly");
 }
+
+// What to watch looks back three months (window: 90), the phone's card six weeks
+{
+  const m = { quarters: [{ fyEnd: "2026-06-30", filed: "2026-08-10", salesYoY: 9.1, profitYoY: 20.1, profitCr: 57 }] };
+  const today = "2026-11-05";
+  if (recentChanges(m, null, today).recent.length !== 0) throw new Error("six weeks: August's results aren't recent");
+  const r = recentChanges(m, null, today, { window: 90 }).recent;
+  if (r.length !== 1 || r[0].kind !== "results") throw new Error("ninety days: August's results are there");
+  console.log("ok: a wider window for What to watch");
+}

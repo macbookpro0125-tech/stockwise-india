@@ -2,6 +2,7 @@ import { CalendarDays, CircleDollarSign, Bell, TriangleAlert, ArrowDown } from "
 import { byId, chapterScore, chapterJudgement, chapterLine, chapterFigures } from "./chapterText.js";
 import { resultsWatch, dividendWatch, cautions, keyFigures } from "./deskText.js";
 import { alertsStore } from "./stores.js";
+import { recentChanges } from "./recentChanges.js";
 import { fmtRs } from "../server/levels.js";
 
 // A company's page on a computer, laid out like a dashboard (26 Oct 2026:
@@ -38,13 +39,22 @@ export function DeskTiles({ m, fairValue, price, onGo }) {
 
 // Beside the chart: its next results and dividend, the user's alerts on it,
 // and what its own figures say to be careful of
-export function WhatToWatch({ m, symbol, onAlert, signedIn }) {
+// 5 Nov 2026 ("add the major things before, too"): the story so far, the last
+// three months' results, ex-dates, bonuses, big moves and promoter changes, and
+// what's announced ahead, from recentChanges.js like a phone's "What changed recently"
+const shortDay = iso => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" });
+export function WhatToWatch({ m, symbol, holding, onAlert, signedIn }) {
   const alerts = alertsStore.use();
   const today = TODAY();
   const mine = (signedIn ? alerts ?? [] : []).filter(a => a.ticker === symbol && a.enabled);
   const coming = [resultsWatch(m, today), dividendWatch(m, today)].filter(Boolean);
   const careful = cautions(m);
-  if (!coming.length && !careful.length) return null;
+  const { recent, upcoming } = recentChanges(m, holding, today, { window: 90 });
+  // a dividend already in the dividend line above isn't said twice
+  const lately = recent.filter(e => !(e.kind === "dividend" && coming.some(c => c.kind === "dividend"))).slice(0, 4);
+  // what's announced ahead, less the results and dividend lines already above
+  const ahead = upcoming.filter(u => !(coming.some(c => c.kind === "results") && /results|financial/i.test(u.text)) && !(coming.some(c => c.kind === "dividend") && /dividend/i.test(u.text))).slice(0, 3);
+  if (!coming.length && !careful.length && !lately.length && !ahead.length) return null;
   const Icon = { results: CalendarDays, dividend: CircleDollarSign };
   return (
     <section className="sd-card dk-watch" aria-labelledby="dk-watch-title">
@@ -59,6 +69,18 @@ export function WhatToWatch({ m, symbol, onAlert, signedIn }) {
           </div>
         </li>
       </ul>
+      {ahead.length > 0 && (
+        <>
+          <h4 className="dk-watch-sub">Coming up</h4>
+          <ol className="dk-watch-events">{ahead.map(e => <li key={`${e.kind}-${e.date}`}><time dateTime={e.date}>{shortDay(e.date)}</time><span>{e.text}</span></li>)}</ol>
+        </>
+      )}
+      {lately.length > 0 && (
+        <>
+          <h4 className="dk-watch-sub">Lately</h4>
+          <ol className="dk-watch-events">{lately.map(e => <li key={`${e.kind}-${e.date}`}><time dateTime={e.date}>{shortDay(e.date)}</time><span>{e.text}</span></li>)}</ol>
+        </>
+      )}
       {careful.length > 0 && (
         <>
           <h4 className="dk-watch-sub">From its figures</h4>
