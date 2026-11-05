@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ExternalLink, FileText, Newspaper, ChevronRight, Fuel, Globe, Landmark, ChartColumn, Rocket, IndianRupee, Gem, Scale, ChartLine, TrendingUp, TrendingDown, Minus, CircleHelp, Cpu, Building2, Car, Pill, Pickaxe, ShoppingBasket, House, Zap, Shield, Building, Tv, FlaskConical, ChartCandlestick, Construction, WashingMachine, HeartPulse, X } from "lucide-react";
 import { api } from "./api.js";
 import { explainFiling, explainHeadline, newsTone, TONE_LABEL } from "./filingTerms.js";
@@ -635,13 +635,20 @@ export function NewsTile({ onOpen, onSeeAll, perPage = TILE_SHOWN }) {
   const [page, setPage] = useState(0);
   const [held, setHeld] = useState(false);
   useEffect(() => { api.newsTop(Math.max(9, perPage * 3)).then(setData).catch(() => setData({ items: [] })); }, [perPage]);
-  const pages = Math.max(1, Math.ceil((data?.items?.length ?? 0) / perPage));
+  // the same filing made twice (a company sends its results again, an hour
+  // or a day apart: 5 Nov 2026, Sai Life Sciences) shows once, the newest
+  const items = useMemo(() => {
+    if (!data?.items) return null;
+    const seen = new Set();
+    return data.items.filter(i => { const k = `${i.symbol ?? i.publisher}|${tileLine(i)}`; if (seen.has(k)) return false; seen.add(k); return true; });
+  }, [data]);
+  const pages = Math.max(1, Math.ceil((items?.length ?? 0) / perPage));
   useEffect(() => {
     if (pages < 2 || held || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
     const t = setInterval(() => setPage(p => (p + 1) % pages), TILE_EVERY);
     return () => clearInterval(t);
   }, [pages, held]);
-  const shown = data?.items?.slice(page * perPage, page * perPage + perPage) ?? [];
+  const shown = items?.slice(page * perPage, page * perPage + perPage) ?? [];
   return (
     <Reveal as="section" delay={3} className="ap-tile ap-tile-news" aria-labelledby="ap-news-title"
       onPointerEnter={() => setHeld(true)} onPointerLeave={() => setHeld(false)} onFocus={() => setHeld(true)} onBlur={() => setHeld(false)}>
@@ -668,7 +675,7 @@ export function NewsTile({ onOpen, onSeeAll, perPage = TILE_SHOWN }) {
         <button type="button" className="ap-tile-link ap-news-link" onClick={onSeeAll}>Read the news<ChevronRight size={17} aria-hidden="true" /></button>
         {pages > 1 && (
           <span className="ap-news-dots" role="group" aria-label="More news">
-            {Array.from({ length: pages }, (_, i) => <button key={i} type="button" aria-label={`News ${i * perPage + 1} to ${Math.min((i + 1) * perPage, data.items.length)}`} aria-pressed={page === i} onClick={() => setPage(i)} />)}
+            {Array.from({ length: pages }, (_, i) => <button key={i} type="button" aria-label={`News ${i * perPage + 1} to ${Math.min((i + 1) * perPage, items.length)}`} aria-pressed={page === i} onClick={() => setPage(i)} />)}
           </span>
         )}
       </div>

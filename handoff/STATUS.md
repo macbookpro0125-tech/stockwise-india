@@ -4,6 +4,7 @@ _Last updated: 5 Nov 2026, by Claude (Opus) on branch `screeners-home`._
 
 ## Committed, not pushed (5 Nov)
 - The screen chart (builder → Chart): pick any two scores (Up, Across, swap); drag a box to list the companies in that range. Test QV-1.
+- The home's news cards no longer overflow in Safari, and a filing sent twice shows once (N-H1).
 
 ## Live on jocularinsights.in
 

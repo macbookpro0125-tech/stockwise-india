@@ -8,6 +8,16 @@ test("N-H1 the News tile (a computer) or the Explore tab (a phone) leads to the 
   const tile = page.getByRole("region", { name: "What's new today" });
   if (await tile.isVisible().catch(() => false)) {
     await expect(tile.locator(".ap-news-item").first()).toBeVisible();
+    // the cards sit inside the panel, as tall as what's in them (Safari
+    // stretched them past it: 5 Nov 2026), and the same filing shows once
+    const fit = await tile.evaluate(t => {
+      const b = t.getBoundingClientRect(), cards = [...t.querySelectorAll(".ap-news-item")];
+      return { inside: cards.every(c => c.getBoundingClientRect().bottom <= b.bottom + 1), tallest: Math.max(...cards.map(c => c.getBoundingClientRect().height)),
+        lines: cards.map(c => `${c.querySelector(".ap-news-who")?.textContent}|${c.querySelector(".ap-news-what")?.textContent}`) };
+    });
+    expect(fit.inside, "every card inside the panel").toBe(true);
+    expect(fit.tallest).toBeLessThan(320);
+    expect(new Set(fit.lines).size, "no card twice").toBe(fit.lines.length);
     await tile.getByRole("button", { name: /Read the news/ }).click();
   } else {
     await expect(page.getByRole("region", { name: "Market news" }), "the phone's Discover has no news card").toHaveCount(0);

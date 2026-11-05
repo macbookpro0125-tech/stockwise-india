@@ -166,3 +166,6 @@ Tests R-H1 (rewritten), R-H2 (new).
 
 ## 5 Nov: the screen chart takes any two scores, and a box
 QualityValueMap.jsx: Up and Across pickers (quality, research, the five factor groups, valuation, price trend, risk, P/E), a swap button, the corners named and coloured for the pair (green both at their good end; risk and P/E are better low); dragging on the chart draws a box and the side lists "In your box · N" with its ranges; X clears it. The pair is remembered on the device. Tests: qualityValueMap.test.js, e2e/scorechart.spec.js QV-1.
+
+## 5 Nov: the home news cards in Safari
+Safari stretched each "What's new today" card to the panel's height (`.td-news .ap-news-item { height: 100% }`), so they spilled over Read the news and All screeners. Now height auto; the grid evens each row. The same filing sent twice (Sai Life Sciences, results at 12:12 AM and the day before) shows once. N-H1 checks both.
