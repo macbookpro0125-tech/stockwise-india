@@ -172,3 +172,5 @@ Safari stretched each "What's new today" card to the panel's height (`.td-news .
 
 ## 5 Nov: the home sky hidden once covered
 Owner: scrolling the screeners page sometimes shows "the back page in between, cutting". The home's night sky (.td-hero) is sticky behind the sheet; Safari drew the sheet late in bands while scrolling fast and the dark sky showed through. Now `.td-hero.td-still { visibility: hidden }` (and the sky's will-change and drift off) once the sheet covers it; it returns at the top. Not checked in Safari itself (no WebKit here). Test N-H9.
+
+Follow-up (owner's screen recording, 10.38 PM): mid-scroll through the screeners Safari dropped the whole sheet for ~1.5 s and the pinned hero ("India's markets, read from the source.") filled the screen. Covered, the hero is now also `position: relative` (unpinned; same place in the flow), so Safari has no pinned layer under the page. N-H9 checks it unpins, the page scrolls on, and it pins again at the top.

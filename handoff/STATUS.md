@@ -5,7 +5,7 @@ _Last updated: 5 Nov 2026, by Claude (Opus) on branch `screeners-home`._
 ## Committed, not pushed (5 Nov)
 - The screen chart (builder → Chart): pick any two scores (Up, Across, swap); drag a box to list the companies in that range. Test QV-1.
 - The home's news cards no longer overflow in Safari, and a filing sent twice shows once (N-H1).
-- The home's night sky is hidden once the page covers it, so fast scrolling in Safari can't show it through in bands (N-H9). Owner to check in Safari after the push.
+- The home's night sky is hidden once the page covers it, and unpinned, so Safari can't drop the page and show it mid-scroll (owner's recording, N-H9). Owner to check in Safari after the push.
 
 ## Live on jocularinsights.in
 

@@ -176,7 +176,12 @@ test("N-H9 the home's sky hides under the page once covered, and shows again at 
   await page.mouse.wheel(0, 2400);
   await expect(hero).toHaveClass(/td-still/);
   await expect(hero).toHaveCSS("visibility", "hidden");
+  await expect(hero, "no longer pinned under the page").toHaveCSS("position", "relative");
+  const y = await page.evaluate(() => window.scrollY);
+  await page.mouse.wheel(0, 300);
+  await expect.poll(() => page.evaluate(() => window.scrollY), "the page scrolls on, no jump").toBeGreaterThan(y);
   await page.evaluate(() => window.scrollTo(0, 0));
   await expect(hero).not.toHaveClass(/td-still/);
   await expect(hero).toHaveCSS("visibility", "visible");
+  await expect(hero).toHaveCSS("position", "sticky");
 });

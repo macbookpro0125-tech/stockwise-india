@@ -5684,7 +5684,11 @@ html.is-scrolling :is(.price-strip-track, .td-sky, .td-tints i, .td-shoot, .td-t
    fast, draws the sheet late in bands, and the dark sky pinned behind it
    showed through. Hidden, there's only the page's own colour behind, and one
    layer fewer to draw. */
-.td-hero.td-still { visibility: hidden; }
+/* A screen recording the same day showed Safari dropping the whole sheet for
+   a second mid-scroll, the pinned sky filling the screen: once covered it's
+   no longer pinned either (it keeps its place in the page, so nothing moves),
+   and Safari has no pinned layer under the page to juggle */
+.td-hero.td-still { position: relative; visibility: hidden; }
 .td-hero.td-still .td-sky { will-change: auto; animation: none; }
 
 /* Solid surfaces on a computer (4 Nov 2026: "when I'm scrolling the page behind
