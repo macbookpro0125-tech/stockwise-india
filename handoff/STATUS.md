@@ -4,6 +4,8 @@ _Last updated: 4 Nov 2026, by Claude (Opus) on branch `screeners-home`._
 
 ## Live on jocularinsights.in
 
+Pushed 5 Nov 2026 at `e2d1eab`: the home's Market summary is wider (1,480 px), every card opens something (an index its Explore page, the Nifty 500 card its page, a results day the calendar), and Results coming names the three biggest companies each day, the watchlist's first. 140 tests passed; F03-E1 (back/forward) failed once and passed 4 of 4 on rerun: an occasional timing failure, not from this batch.
+
 Pushed 5 Nov 2026 at `37c74e9` (all 140 tests passed): solid top bar and cards on a computer, and the faster opening on a computer. `/` and `/builder` returned 502 for a few seconds during Render's switch-over, then 200 for a minute running.
 
 Pushed 4 Nov 2026 at `a0c4571`: the desktop speed fixes (no per-card blur; the strip and sky pause while scrolling; the covered sky stops drawing; the sheet's glows aren't fixed). Full tests passed: 139 plus the sweep, rerun alone after a timeout on a slow run. Owner to check on their own computer.

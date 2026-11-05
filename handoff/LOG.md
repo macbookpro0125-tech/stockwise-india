@@ -4,6 +4,7 @@ Newest first. One line per piece of work; the commit message has the detail.
 
 ## 5 Nov 2026
 
+- **5 Nov:** Pushed `37c74e9..e2d1eab` (home: wider, clickable cards, results names): live in about 100 s. Flaky test noted: F03-E1 in `e2e/edges.spec.js` (7 HDFC Bank headings for a moment after Forward).
 - **5 Nov:** Pushed `a0c4571..37c74e9` (solid surfaces, faster opening): live in about 90 s, with a brief 502 during the switch-over.
 - **5 Nov:** Play listing rewritten for "stocks"/"screener" searches and filled in Play Console as a draft (owner away; AI declaration and sending are theirs).
 - **5 Nov:** The opening "stays long, gets stuck": on a computer the logo sat about 1 s after the film waiting for the page, which only started building at 2.75 s. A computer now starts at 1.5 s (`APP_START_MS_COMPUTER`) and waits at most 0.6 s. Signed out: 5.4 → 4.4 s.
