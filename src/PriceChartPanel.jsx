@@ -239,15 +239,17 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
     return () => mo.disconnect();
   }, []);
 
+  // the window's height, for the chart's own page and for full screen (5 Nov
+  // 2026: on a company page full screen kept the window's earlier height and
+  // left an empty strip under the chart)
   useEffect(() => {
-    if (!page) return;
     const onResize = () => setVh(window.innerHeight);
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, [page]);
+  }, []);
 
   useEffect(() => {
-    const onFs = () => setFullscreen(document.fullscreenElement === cardRef.current);
+    const onFs = () => { setFullscreen(document.fullscreenElement === cardRef.current); setVh(window.innerHeight); requestAnimationFrame(() => setVh(window.innerHeight)); };
     document.addEventListener("fullscreenchange", onFs);
     return () => document.removeEventListener("fullscreenchange", onFs);
   }, []);
@@ -922,6 +924,18 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
     return bars.slice(Math.max(0, indexFrom(bars, range === "YTD" ? `${lastDate.slice(0, 4)}-01-01` : monthsBack(lastDate, r.months)) - 1));
   }, [priceBars, range]);
   const rangeChange = rangeBars && rangeBars.length > 1 ? ((rangeBars.at(-1).close - rangeBars[0].close) / rangeBars[0].close) * 100 : null;
+  // A line or an area takes the colour of its move over the range shown, green
+  // up and red down (5 Nov 2026: "whenever the stock goes down it should show
+  // red"); candles and bars keep their colour by the day. After every rebuild
+  // of the chart too, which draws it in the accent colour first.
+  const rangeUp = rangeChange == null ? null : rangeChange >= 0;
+  useEffect(() => {
+    const s = mainRef.current;
+    if (!s || rangeUp == null) return;
+    const col = cssVar(rangeUp ? "--green" : "--red");
+    if (["line", "vertex", "scatter"].includes(prefs.type)) s.applyOptions({ color: col });
+    else if (prefs.type === "area") s.applyOptions({ lineColor: col, topColor: alpha(col, 0.28), bottomColor: alpha(col, 0.02) });
+  }, [rangeUp, prefs.type, bars, prefs.ind, prefs.pivotKind, levelLines, lines, trends, themeTick, narrow, symbol, height, page, prefs.log, prefs.invert]); // eslint-disable-line react-hooks/exhaustive-deps
   const activeInd = INDICATORS.filter(i => prefs.ind[i.id]).length;
 
   const btn = (active, extra = {}) => ({
