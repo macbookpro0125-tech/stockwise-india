@@ -5663,3 +5663,19 @@ html.td-night[data-theme="light"] :is(.app-header, .side-rail) .brand-mark .bm-l
    sheet covers it (TodayHome.jsx td-still): it can't be seen then */
 html.is-scrolling :is(.price-strip-track, .td-sky, .td-tints i, .td-shoot, .td-twinkle, .td-stream, .td-star-letter) { animation-play-state: paused; }
 .td-hero.td-still :is(canvas, .td-tints, .td-stream, .td-shoot, .td-twinkle, .td-star-letter) { visibility: hidden; }
+
+/* Solid surfaces on a computer (4 Nov 2026: "when I'm scrolling the page behind
+   shows through; it shouldn't, so it's smooth"): the top bar and the cards no
+   longer let the page show through as it scrolls under them, and nothing is
+   blurred. The cards keep their edge, shine and hover glow; the top bar stays
+   clear only over the home's night sky (html.td-night), as designed. */
+@media (hover: hover) and (pointer: fine) {
+  .app-header { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+  html:not(.td-night) .app-header { background: var(--bg) !important; }
+  .md-grid .md-card, .sd-card, .sd.ap .sd-card, .sd.ap .sd-snap-card, .sd.ap .sd-metrics, .sd-snap-card, .sd-metrics, .dk-keyfigs, .desk-list, .desk-main, .desk-side, .mood, .card, .sc2, .ls, .sc2-list, .fb, .fb-card, .ex-card, .ex-map-link, .nw-list, .ex-heat, .td-box, .td-sheet :is(.td-box, .sc2, .ls, .sc2-list), .td-sheet .td-all-pages {
+    background: color-mix(in srgb, var(--card) 70%, var(--s2)) !important; }
+  [data-theme="light"] :is(.md-grid .md-card, .sd-card, .sd.ap .sd-card, .sd.ap .sd-snap-card, .sd.ap .sd-metrics, .sd-snap-card, .sd-metrics, .dk-keyfigs, .desk-list, .desk-main, .desk-side, .mood, .card, .sc2, .ls, .sc2-list, .fb, .fb-card, .ex-card, .ex-map-link, .nw-list, .ex-heat, .td-box, .td-sheet :is(.td-box, .sc2, .ls, .sc2-list), .td-sheet .td-all-pages) {
+    background: #fff !important; }
+  /* cards inside cards stay part of their card */
+  .card .card, .sd-card .card, .md-card .card, .md-card .mood, .sd-card .sd-card, .td-sheet .sc2-list :is(.sc2, .ls), .td-sheet .ls :is(.sc2, .ls) { background: transparent !important; }
+}
