@@ -4,6 +4,7 @@ Newest first. One line per piece of work; the commit message has the detail.
 
 ## 5 Nov 2026
 
+- **5 Nov:** Play listing rewritten for "stocks"/"screener" searches and filled in Play Console as a draft (owner away; AI declaration and sending are theirs).
 - **5 Nov:** The opening "stays long, gets stuck": on a computer the logo sat about 1 s after the film waiting for the page, which only started building at 2.75 s. A computer now starts at 1.5 s (`APP_START_MS_COMPUTER`) and waits at most 0.6 s. Signed out: 5.4 → 4.4 s.
 - **5 Nov:** Solid top bar and cards on a computer (the owner: the page showed through while scrolling).
 - **5 Nov:** The stars stay as they are (owner).
