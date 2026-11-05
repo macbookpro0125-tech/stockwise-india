@@ -5386,7 +5386,7 @@ body::before { content: ""; position: fixed; inset: 0; z-index: 0; pointer-event
 .chart-overlay .chart-page-foot { padding-bottom: 0; }
 
 /* A computer's home once signed in (TodayHome.jsx) */
-.td { max-width: 1180px; margin: 0 auto; padding: 26px 0 40px; color: var(--t1); }
+.td { max-width: 1480px; margin: 0 auto; padding: 26px 0 40px; color: var(--t1); }
 .td-top { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 18px; }
 .td-title { margin: 0; font-size: 32px; font-weight: 600; letter-spacing: -0.03em; }
 .td-sub { margin: 4px 0 0; font-size: 14px; color: var(--t3); }
