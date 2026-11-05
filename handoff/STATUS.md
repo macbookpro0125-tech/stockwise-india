@@ -4,6 +4,8 @@ _Last updated: 4 Nov 2026, by Claude (Opus) on branch `screeners-home`._
 
 ## Live on jocularinsights.in
 
+Pushed 5 Nov 2026 at `37c74e9` (all 140 tests passed): solid top bar and cards on a computer, and the faster opening on a computer. `/` and `/builder` returned 502 for a few seconds during Render's switch-over, then 200 for a minute running.
+
 Pushed 4 Nov 2026 at `a0c4571`: the desktop speed fixes (no per-card blur; the strip and sky pause while scrolling; the covered sky stops drawing; the sheet's glows aren't fixed). Full tests passed: 139 plus the sweep, rerun alone after a timeout on a slow run. Owner to check on their own computer.
 
 Pushed 4 Nov 2026 at `e741f7a` (live in about 90 s; `/`, `/builder` and stock pages answered):
@@ -17,8 +19,7 @@ Pushed 4 Nov 2026 at `3885578`: The phone chart's type picker is a one-column li
 
 ## Committed but NOT pushed yet
 
-- Solid top bar and cards on a computer: the page no longer shows through as it scrolls; no blur is left on a computer's pages.
-- The opening on a computer: the page starts building at 1.5 s instead of 2.75 s, and waits at most 0.6 s past the film, so the logo no longer sits still. Measured (signed out) 5.4 → 4.4 s in all. Phones are unchanged.
+Nothing.
 
 ## Open / next
 
