@@ -175,7 +175,8 @@ export function latestResults(days = 14, cap = 400) {
   const newest = rows.reduce((a, r) => (String(r.quarters[0].filed).slice(0, 10) > a ? String(r.quarters[0].filed).slice(0, 10) : a), "");
   if (!newest) return { newest: null, label: null, days: [], count: 0 };
   const from = new Date(Date.parse(`${newest}T00:00:00Z`) - days * 86400000).toISOString().slice(0, 10);
-  const recent = rows.filter(r => String(r.quarters[0].filed).slice(0, 10) >= from)
+  const all = rows.filter(r => String(r.quarters[0].filed).slice(0, 10) >= from);
+  const recent = all
     .sort((a, b) => String(b.quarters[0].filed).slice(0, 10).localeCompare(String(a.quarters[0].filed).slice(0, 10)) || (b.marketCapCr ?? 0) - (a.marketCapCr ?? 0))
     .slice(0, cap);
   const labels = new Map();
@@ -187,11 +188,11 @@ export function latestResults(days = 14, cap = 400) {
     if (!byDay.has(d)) byDay.set(d, []);
     byDay.get(d).push({ symbol: r.symbol, name: niceName(r.name), quarter: fyQuarter(q.fyEnd), slug: quarterSlug(q.fyEnd), salesCr: q.revenueCr ?? null, salesYoY: q.salesYoY ?? null, profitCr: q.profitCr ?? null, profitYoY: q.profitYoY ?? null, marketCapCr: r.marketCapCr ?? null });
   }
-  return { newest, label, count: recent.length, days: [...byDay].map(([date, companies]) => ({ date, companies })) };
+  return { newest, label, count: recent.length, total: all.length, days: [...byDay].map(([date, companies]) => ({ date, companies })) };
 }
 
 function latestResultsPage() {
-  const { newest, label, count, days } = latestResults();
+  const { newest, label, count, total, days } = latestResults();
   const q = label ?? "Quarterly";
   // a change is only a percentage between two profits; a swing into or out of a loss reads "—"
   const pctR = v => (v == null || !isFinite(v) ? "—" : Math.abs(v) >= 100 ? `${v > 0 ? "+" : "−"}${Math.round(Math.abs(v)).toLocaleString("en-IN")}%` : pct(v));
@@ -201,10 +202,10 @@ function latestResultsPage() {
   const ups = days.flatMap(d => d.companies).filter(c => c.marketCapCr >= 5000 && c.profitCr > 0 && c.profitYoY != null && isFinite(c.profitYoY)).sort((a, b) => b.profitYoY - a.profitYoY).slice(0, 5);
   return {
     title: `${q} results today: latest quarterly results of NSE companies | Jocular Insights`,
-    desc: `${count} NSE companies' ${q} results filed${newest ? ` up to ${day(newest)}` : ""}: sales and net profit against a year earlier, newest first, each linked to its full results.`,
+    desc: `${total} NSE companies' ${q} results filed${newest ? ` up to ${day(newest)}` : ""}: sales and net profit against a year earlier, newest first, each linked to its full results.`,
     canonical: `${SITE}/results`,
     body: `<main class="seo-stock seo-methodology"><p>${link("/", "Jocular Insights")} › Latest results</p><h1>Latest ${esc(q)} results</h1>
-<p>${count ? `The ${count} companies that filed their ${esc(q)} results with NSE in the two weeks to ${esc(day(newest))}, newest first, with sales and net profit against the same quarter a year earlier (YoY). Open a company for its full results.` : "No results have been read from NSE's filings yet."}</p>
+<p>${count ? `${total} companies filed their ${esc(q)} results with NSE in the two weeks to ${esc(day(newest))}. ${total > count ? `The latest ${count} are below` : "Here they are"}, newest first, with sales and net profit against the same quarter a year earlier (YoY). Open a company for its full results.` : "No results have been read from NSE's filings yet."}</p>
 ${ups.length ? `<h2>Biggest profit growth among companies worth ₹5,000 crore or more</h2><ol>${ups.map(c => `<li>${link(`/stock/${encodeURIComponent(c.symbol)}/results/${c.slug}`, c.name)}: net profit ₹${esc(crs(c.profitCr))} crore, up from ₹${esc(crs(c.profitCr / (1 + c.profitYoY / 100)))} crore a year earlier</li>`).join("")}</ol>` : ""}
 ${days.map(d => `<h2>Filed ${esc(day(d.date))} — ${d.companies.length} ${d.companies.length === 1 ? "company" : "companies"}</h2><div class="ps-table-wrap"><table class="lr-table"><thead><tr><th>Company</th><th>Sales ₹ cr</th><th><abbr title="Year on year">YoY</abbr></th><th>Profit ₹ cr</th><th><abbr title="Year on year">YoY</abbr></th></tr></thead><tbody>${d.companies.map(row).join("")}</tbody></table></div>`).join("")}
 <p>${link("/results-calendar", "Coming results: the calendar")} · ${link("/explore", "The market today")} · ${link("/news", "Company announcements")} · ${link("/learn/how-to-read-quarterly-results", "How to read quarterly results")}</p>
