@@ -8,6 +8,7 @@ import { MoodBar } from "./MoodBar.jsx";
 import { lazy, Suspense } from "react";
 const PriceChartPanel = lazy(() => import("./PriceChartPanel.jsx"));
 import { navigate } from "./site.jsx";
+import BigNum from "./BigNum.jsx";
 import { useWatchlist } from "./watchlist.js";
 import { Star } from "lucide-react";
 
@@ -704,7 +705,7 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
             <div>
               <h3>{detail?.name ?? pick}</h3>
               <div className="mk-index-price">
-                <b className="mk-num">{num(detail?.close)}</b>
+                <b className="mk-num">{detail?.close != null ? <BigNum text={num(detail.close)} /> : num(detail?.close)}</b>
                 <span className={`mk-chg ${tone(detail?.changePct)}`}>{pct(detail?.changePct)} today</span>
                 {rangeMove != null && <span className={`mk-chg ${tone(rangeMove)}`}>{pct(rangeMove)} over {range === "1Y" ? "the year" : range}</span>}
               </div>

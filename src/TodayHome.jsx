@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import BigNum from "./BigNum.jsx";
 import { createChart, AreaSeries, ColorType } from "lightweight-charts";
 import { ChevronRight, Plus } from "lucide-react";
 import { api } from "./api.js";
@@ -401,7 +402,7 @@ export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIn
           <section className="td-box td-big td-click" aria-label="Nifty 500" role="link" tabIndex={0} title="Open the Nifty 500"
             onClick={() => openIndex("Nifty 500")} onKeyDown={e => { if (e.key === "Enter") openIndex("Nifty 500"); }}>
             <div className="td-big-head">
-              <div><h3>Nifty 500</h3><b>{num(market.at(-1)[1])}</b> <i style={{ color: tone(market.at(-1)[1] - market[0][1]) }}>{pct(((market.at(-1)[1] - market[0][1]) / market[0][1]) * 100)}</i> <small>over the year</small></div>
+              <div><h3>Nifty 500</h3><b><BigNum text={num(market.at(-1)[1])} /></b> <i style={{ color: tone(market.at(-1)[1] - market[0][1]) }}>{pct(((market.at(-1)[1] - market[0][1]) / market[0][1]) * 100)}</i> <small>over the year</small></div>
             </div>
             <MarketChart closes={market} />
           </section>

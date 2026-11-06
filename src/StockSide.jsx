@@ -3,6 +3,7 @@ import { Building2, BadgeCheck, Scale, ShieldCheck, TrendingUp, Tag, Activity, F
 import CompanyLogo from "./CompanyLogo.jsx";
 import { StarIcon } from "./icons.jsx";
 import { fmtRs } from "../server/levels.js";
+import BigNum from "./BigNum.jsx";
 import { docTop } from "./motion.js";
 import { useState } from "react";
 import { useWatchLists, setInList, createList } from "./watchlist.js";
@@ -127,7 +128,7 @@ export default function StockSide({ data, m, price, priceLabel, watched, onWatch
         {price > 0 && (
           <div className="sd-price">
             <div className="sd-price-row">
-              <strong>{fmtRs(price)}</strong>
+              <strong><BigNum text={fmtRs(price)} /></strong>
               {/* the last close against the one before */}
               {m?.ret1d != null && <em className={`sd-day ${m.ret1d >= 0 ? "up" : "down"}`}>{m.ret1d >= 0 ? "+" : "−"}{Math.abs(m.ret1d).toFixed(2)}%</em>}
             </div>
