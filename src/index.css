@@ -6159,7 +6159,7 @@ html.td-night[data-theme="light"] .tb.tb-scrolled { box-shadow: 0 1px 0 rgba(255
 
 /* headline numbers (BigNum.jsx): the ₹ sign and the decimals a step smaller */
 /* (its own sizes win over a parent's "span { … }", as the price block's) */
-.bignum { font-variant-numeric: tabular-nums; white-space: nowrap; font-size: inherit !important; }
+.bignum { font-variant-numeric: tabular-nums; white-space: nowrap; font-size: inherit !important; color: inherit !important; margin: 0 !important; display: inline !important; }
 .bignum > span { display: inline !important; margin: 0 !important; font-size: 1em !important; color: inherit !important; }
 .bignum > span.bignum-cur { font-size: 0.62em !important; font-weight: 500; margin-right: 0.06em !important; vertical-align: 0.34em; opacity: 0.85; }
 .bignum > span.bignum-dec { font-size: 0.62em !important; font-weight: 500; color: var(--t2) !important; }
