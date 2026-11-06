@@ -195,3 +195,4 @@ Search Console (28 days): 5.57K impressions, 14 clicks, average position 66; "bh
 - 6 Nov: Search Console: /lists requested (Google had never seen it: "URL is unknown to Google"); /lists/defence-stocks refused twice ("Something went wrong", likely the daily limit) — try again tomorrow with the other lists, and /results once it is live.
 - 6 Nov: Saudi Arabia visits and Google clicks are the owner (confirmed); real Google visitors in 28 days ≈ 5 (India 4, US 1).
 - 6 Nov: charts leave one empty candle after the last instead of three (PriceChartPanel rightOffset and the period buttons); on a weekly chart three read as three empty weeks (owner, CUPID).
+- 6 Nov: phone charts: the price column is as wide as its longest label, so labels drop ".00" (and decimals from ₹100 up, as before) and volume reads "200M"; the column is ~14px narrower at 375px. Hiding the volume pane's scale (priceScale visible:false on pane 1) blanked the whole chart — don't.

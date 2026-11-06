@@ -474,7 +474,12 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
     // otherwise label the price axis down to −1,000 on long ranges
     // On a phone whole rupees above ₹100: ".00" on every label cost the candles
     // a fifth of the screen's width
-    const priceFormat = { type: "custom", minMove: 0.01, formatter: p => (p < 0 ? "" : narrow && Math.abs(p) >= 100 ? Math.round(p).toLocaleString("en-IN") : fmtNum(p)) };
+    // On a phone the price column is as wide as its longest label, so labels
+    // there drop what adds no information: decimals from ₹100 up, and a bare
+    // ".00" below it ("75", but "51.19" and a ₹4.35 stock keep theirs)
+    const priceFormat = { type: "custom", minMove: 0.01, formatter: p => (p < 0 ? "" : narrow && Math.abs(p) >= 100 ? Math.round(p).toLocaleString("en-IN") : narrow ? fmtNum(p).replace(/\.00$/, "") : fmtNum(p)) };
+    // volume in short form on a phone ("200M", "45K"), for the same reason
+    const volFormat = narrow ? { type: "custom", minMove: 1, formatter: v => (v < 0 ? "" : v >= 1e9 ? `${+(v / 1e9).toFixed(1)}B` : v >= 1e6 ? `${+(v / 1e6).toFixed(0)}M` : v >= 1e3 ? `${+(v / 1e3).toFixed(0)}K` : `${Math.round(v)}`) } : { type: "volume" };
     const base = { priceLineColor: c.t3, autoscaleInfoProvider, priceFormat };
 
     let main;
@@ -591,10 +596,10 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
     setPivotNow(pivotsLatest);
 
     if (volPane) {
-      const vol = chart.addSeries(HistogramSeries, { priceFormat: { type: "volume" }, priceLineVisible: false, lastValueVisible: false }, 1);
+      const vol = chart.addSeries(HistogramSeries, { priceFormat: volFormat, priceLineVisible: false, lastValueVisible: false }, 1);
       vol.setData(bars.map(b => ({ time: b.date, value: b.volume ?? 0, color: alpha(b.close >= b.open ? c.up : c.down, 0.7) })));
     } else if (withVolume) {
-      const vol = chart.addSeries(HistogramSeries, { priceFormat: { type: "volume" }, priceScaleId: "", priceLineVisible: false, lastValueVisible: false });
+      const vol = chart.addSeries(HistogramSeries, { priceFormat: volFormat, priceScaleId: "", priceLineVisible: false, lastValueVisible: false });
       vol.priceScale().applyOptions({ scaleMargins: { top: narrow ? 0.88 : 0.8, bottom: 0 } });
       vol.setData(bars.map(b => ({ time: b.date, value: b.volume ?? 0, color: alpha(b.close >= b.open ? c.up : c.down, 0.45) })));
     }
