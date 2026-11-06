@@ -141,6 +141,32 @@ function ClosedDay({ date }) {
   );
 }
 
+// A date strip: the picked date slid to its middle by moving the strip alone
+// (7 Nov 2026: scrollIntoView moved the whole page too, a jump on each press),
+// and its edges faded only where there's more to scroll to (a fade over the
+// last date read as a blur)
+function useDateStrip(dep) {
+  const strip = useRef(null);
+  const edges = () => {
+    const el = strip.current;
+    if (!el) return;
+    el.dataset.start = el.scrollLeft <= 2 ? "1" : "0";
+    el.dataset.end = el.scrollLeft + el.clientWidth >= el.scrollWidth - 2 ? "1" : "0";
+  };
+  useEffect(() => {
+    const el = strip.current, pick = el?.querySelector("[aria-pressed=true]");
+    if (el && pick) {
+      const target = pick.offsetLeft - el.offsetLeft - (el.clientWidth - pick.offsetWidth) / 2;
+      const first = !el.dataset.placed;
+      el.scrollTo({ left: Math.max(0, target), behavior: first || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+      el.dataset.placed = "1";
+    }
+    requestAnimationFrame(edges);
+  }, dep); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { window.addEventListener("resize", edges); return () => window.removeEventListener("resize", edges); }, []);
+  return [strip, edges];
+}
+
 function ResRow({ c, done, starred, onOpenStock, when }) {
   const qq = c.quarter, label = qq ? fyQ(qq.end) : null;
   const slug = label?.toLowerCase().replace(" ", "-");
@@ -196,9 +222,8 @@ function ResultsDay({ results, date, onDate, onBack, onOpenStock }) {
   const [sort, setSort] = useState("size");
   const [show, setShow] = useState("all");
   const watched = useWatchlist();
-  const strip = useRef(null);
-  // the picked day slides into view
-  useEffect(() => { strip.current?.querySelector("[aria-pressed=true]")?.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" }); }, [date, results]);
+  // the picked day slides to the strip's middle
+  const [strip, stripEdges] = useDateStrip([date, results]);
   // the week before (results already out) and the days ahead, in order
   const past = (results?.past ?? []).map(x => ({ ...x, past: true }));
   const days = [...past, ...(results?.days ?? []).filter(x => x.count > 0)];
@@ -230,7 +255,7 @@ function ResultsDay({ results, date, onDate, onBack, onOpenStock }) {
           : `${d.count} ${d.count === 1 ? "company meets" : "companies meet"} to approve ${d.count === 1 ? "its" : "their"} quarterly results${done ? `; ${done} ${done === 1 ? "has" : "have"} filed` : ""}. The largest first. Dates are the ones companies told NSE; they can change.`}</p>
       </header>
       {/* the days as one sliding strip: the week before, then the days ahead */}
-      <div className="mk-dates" role="group" aria-label="Day" ref={strip}>
+      <div className="mk-dates" role="group" aria-label="Day" ref={strip} onScroll={stripEdges}>
         <div className="mk-dates-group">
           <span className="mk-dates-label">Yours</span>
           <div className="mk-dates-row">
@@ -309,9 +334,8 @@ function MoversDay({ date, period, onDate, onPeriod, onBack, onOpenStock }) {
   const [q, setQ] = useState("");
   const [more, setMore] = useState({});
   const watched = useWatchlist();
-  const strip = useRef(null);
-  useEffect(() => { setData(null); setMore({}); api.moversDay(date, period).then(setData).catch(() => setData({ rows: [], days: [] })); }, [date, period]);
-  useEffect(() => { strip.current?.querySelector("[aria-pressed=true]")?.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" }); }, [data?.date]);
+  const [strip, stripEdges] = useDateStrip([data?.date, data?.days?.length]);
+  useEffect(() => { setMore({}); api.moversDay(date, period).then(setData).catch(() => setData({ rows: [], days: [] })); }, [date, period]);
   const match = r => (!q.trim() || `${r.name} ${r.symbol} ${r.sector ?? ""}`.toLowerCase().includes(q.trim().toLowerCase()))
     && (show === "large" ? (r.marketCapCr ?? 0) >= 20000 : show === "mine" ? watched.has(r.symbol) : true);
   const rows = (data?.rows ?? []).filter(match);
@@ -353,7 +377,7 @@ function MoversDay({ date, period, onDate, onPeriod, onBack, onOpenStock }) {
         <p>{data ? `${(data.rows ?? []).length.toLocaleString("en-IN")} NSE companies worth ₹${(data.floorCr ?? 1000).toLocaleString("en-IN")} crore or more, by their move ${OVER[period]}${data.from && period !== "1d" ? ` (from the close on ${day ? shortDay(data.from) : ""})` : ""}.` : "Reading the closing prices…"}</p>
       </header>
       <div className="mk-moves-bar">
-        <div className="mk-dates" role="group" aria-label="Trading day" ref={strip}>
+        <div className="mk-dates" role="group" aria-label="Trading day" ref={strip} onScroll={stripEdges}>
           <div className="mk-dates-group">
             <span className="mk-dates-label">Trading days</span>
             <div className="mk-dates-row">
