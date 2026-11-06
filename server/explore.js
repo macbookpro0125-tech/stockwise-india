@@ -215,7 +215,7 @@ export function resultsWeek(days = 7) {
     // its latest quarter on file: the one it is about to report on once
     // filed (newer than three months before the meeting), else the one before
     const q = r.quarters?.[0];
-    byDay.get(d).push({ symbol: r.symbol, name: r.name, marketCapCr: r.marketCapCr ?? null, sector: r.sector ?? null, lastProfitYoY: r.qProfitGrowthYoY ?? null, cmp: r.cmp ?? null,
+    byDay.get(d).push({ symbol: r.symbol, name: r.name, marketCapCr: r.marketCapCr ?? null, sector: r.sector ?? null, lastProfitYoY: r.qProfitGrowthYoY ?? null, cmp: r.cmp ?? null, ret1d: r.ret1d ?? null,
       quarter: q ? { end: q.fyEnd, filed: q.filed ?? null, salesCr: q.revenueCr ?? null, salesYoY: q.salesYoY ?? null, profitCr: q.profitCr ?? null, profitYoY: q.profitYoY ?? null } : null });
   }
   // the days before, from the results already filed (6 Nov 2026, "I should be
@@ -230,7 +230,7 @@ export function resultsWeek(days = 7) {
       const f = filedOf(r), q = r.quarters?.[0];
       if (!f || f < from || f > newest || !q || (q.revenueCr == null && q.profitCr == null)) continue;
       if (!past.has(f)) past.set(f, []);
-      past.get(f).push({ symbol: r.symbol, name: r.name, marketCapCr: r.marketCapCr ?? null, sector: r.sector ?? null, cmp: r.cmp ?? null, reported: true,
+      past.get(f).push({ symbol: r.symbol, name: r.name, marketCapCr: r.marketCapCr ?? null, sector: r.sector ?? null, cmp: r.cmp ?? null, ret1d: r.ret1d ?? null, reported: true,
         quarter: { end: q.fyEnd, filed: q.filed ?? null, salesCr: q.revenueCr ?? null, salesYoY: q.salesYoY ?? null, profitCr: q.profitCr ?? null, profitYoY: q.profitYoY ?? null } });
     }
   }

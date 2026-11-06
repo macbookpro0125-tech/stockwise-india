@@ -51,6 +51,13 @@ test("MK-2 See all lists every index; a search narrows it, a click charts it, Ba
     await out.click();
     await expect(page.getByText(/filed their quarterly results with NSE that day/)).toBeVisible();
     await expect(page.locator(".mk-resday .mk-res-tag.new").first()).toBeVisible();
+    // the day at a glance, and sorted by profit growth: largest growth first, none without a figure ahead of one
+    await expect(page.getByLabel("The day at a glance")).toContainText(/grew profit/);
+    await page.getByLabel("Sort by").selectOption("profit");
+    const growth = await page.locator(".mk-resday > li:not(.mk-resday-head)").evaluateAll(rows => rows.map(r => { const t = r.querySelectorAll(".mk-resday-n")[1]?.querySelector("small")?.textContent; return t ? Number(t.replace("−", "-").replace(/[+%,]/g, "")) : null; }));
+    const known = growth.filter(v => v != null);
+    expect(known.every((v, i) => !i || v <= known[i - 1])).toBe(true);
+    expect(growth.slice(0, known.length).every(v => v != null)).toBe(true);
     await page.goBack();
   }
 });
@@ -77,6 +84,13 @@ test("MK-3 a results day opens as a page: its companies' figures, other days, Ba
     await out.click();
     await expect(page.getByText(/filed their quarterly results with NSE that day/)).toBeVisible();
     await expect(page.locator(".mk-resday .mk-res-tag.new").first()).toBeVisible();
+    // the day at a glance, and sorted by profit growth: largest growth first, none without a figure ahead of one
+    await expect(page.getByLabel("The day at a glance")).toContainText(/grew profit/);
+    await page.getByLabel("Sort by").selectOption("profit");
+    const growth = await page.locator(".mk-resday > li:not(.mk-resday-head)").evaluateAll(rows => rows.map(r => { const t = r.querySelectorAll(".mk-resday-n")[1]?.querySelector("small")?.textContent; return t ? Number(t.replace("−", "-").replace(/[+%,]/g, "")) : null; }));
+    const known = growth.filter(v => v != null);
+    expect(known.every((v, i) => !i || v <= known[i - 1])).toBe(true);
+    expect(growth.slice(0, known.length).every(v => v != null)).toBe(true);
     await page.goBack();
   }
 });

@@ -5866,7 +5866,7 @@ button.td-index:active, button.td-line:active { background: color-mix(in srgb, v
 @media (hover: hover) and (pointer: fine) { .mk-date:not([aria-pressed=true]):hover { border-color: color-mix(in srgb, var(--accent) 55%, var(--bdr2)); } }
 .mk-dates { padding-top: 10px; }
 .mk-resday { list-style: none; margin: 0; padding: 0; }
-.mk-resday > li { display: grid; grid-template-columns: minmax(170px, 1fr) 112px 126px 112px 120px 118px; align-items: center; gap: 14px; padding: 10px 4px; border-top: 1px solid var(--bdr); font-size: 14px; font-variant-numeric: tabular-nums; }
+.mk-resday > li { display: grid; grid-template-columns: minmax(170px, 1fr) 112px 126px 112px 120px 92px 118px; align-items: center; gap: 14px; padding: 10px 4px; border-top: 1px solid var(--bdr); font-size: 14px; font-variant-numeric: tabular-nums; }
 .mk-resday > li.mk-resday-head { border-top: 0; padding-top: 0; font-size: 11.5px; color: var(--t3); }
 .mk-resday > li > span:nth-child(n+2):not(:last-child) { text-align: right; }
 .mk-resday-co { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 0; border: 0; background: none; color: var(--t1); font: inherit; text-align: left; cursor: pointer; }
@@ -5884,17 +5884,33 @@ button.td-index:active, button.td-line:active { background: color-mix(in srgb, v
 .mk-resday li.done .mk-resday-n { color: var(--t1); font-weight: 550; }
 .mk-resday li:not(.done) .mk-resday-n { color: var(--t2); }
 .mk-resday-go { justify-self: end; }
+.mk-resday-move { text-align: right; white-space: nowrap; }
+.mk-resday-move.up { color: var(--green); } .mk-resday-move.down { color: var(--red); }
+.mk-res-star { margin-left: 6px; color: #f5b83d; fill: #f5b83d; vertical-align: -1px; }
+/* the day at a glance */
+.mk-tally { margin: 0 0 14px; }
+.mk-tally-bar { display: flex; gap: 3px; height: 8px; max-width: 520px; border-radius: 999px; overflow: hidden; }
+.mk-tally-bar i { display: block; min-width: 0; }
+.mk-tally-bar i.up { background: var(--green); } .mk-tally-bar i.down { background: color-mix(in srgb, var(--red) 70%, var(--t3)); } .mk-tally-bar i.loss { background: var(--red); }
+.mk-tally p { margin: 8px 0 0; font-size: 14px; color: var(--t2); }
+.mk-tally b { font-weight: 650; } .mk-tally b.up { color: var(--green); } .mk-tally b.down, .mk-tally b.loss { color: var(--red); }
+.mk-tally span { color: var(--t3); }
+/* show, sort and find */
+.mk-res-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 0 0 14px; }
+.mk-res-sort { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--t3); }
+.mk-res-sort select { height: 34px; padding: 0 10px; border: 1px solid var(--bdr2); border-radius: 10px; background: var(--s1); color: var(--t1); font: inherit; font-size: 13px; }
+.mk-res-find { flex: 1 1 200px; max-width: 320px; margin: 0 0 0 auto !important; }
 .mk-resday-go .mk-link { display: inline-flex; align-items: center; gap: 2px; white-space: nowrap; }
 /* a narrower window: market cap goes, the figures keep their room */
 @media (max-width: 1000px) and (min-width: 761px) {
-  .mk-resday > li { grid-template-columns: minmax(150px, 1fr) 0 120px 108px 116px 110px; }
+  .mk-resday > li { grid-template-columns: minmax(150px, 1fr) 0 120px 108px 116px 84px 110px; }
   .mk-resday > li > :nth-child(2) { visibility: hidden; overflow: hidden; }
 }
 @media (max-width: 760px) {
   .mk-resday > li { grid-template-columns: minmax(0, 1fr) auto auto; gap: 4px 12px; }
   .mk-resday > li.mk-resday-head { display: none; }
   .mk-resday-co { grid-column: 1 / -1; }
-  .mk-resday-cap, .mk-resday-go { display: none; }
+  .mk-resday-cap, .mk-resday-go, .mk-resday-move { display: none; }
   .mk-resday-q { justify-content: flex-start; grid-column: 1; }
 }
 .mk-note { margin: 6px 0 0; font-size: 12px; color: var(--t3); }

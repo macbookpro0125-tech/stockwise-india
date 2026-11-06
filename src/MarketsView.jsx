@@ -6,6 +6,8 @@ import { cardName } from "./stockName.js";
 import CompanyLogo from "./CompanyLogo.jsx";
 import { MoodBar } from "./MoodBar.jsx";
 import { navigate } from "./site.jsx";
+import { useWatchlist } from "./watchlist.js";
+import { Star } from "lucide-react";
 
 // Markets, a page of its own (5 Nov 2026, "a market page, detailed"): the
 // indices in a row to pick from, the one picked charted large with its returns
@@ -117,6 +119,9 @@ const reported = (c, date) => !!c.reported || (!!c.quarter?.filed && Date.parse(
 
 function ResultsDay({ results, date, onDate, onBack, onOpenStock }) {
   const [q, setQ] = useState("");
+  const [sort, setSort] = useState("size");
+  const [show, setShow] = useState("all");
+  const watched = useWatchlist();
   const strip = useRef(null);
   // the picked day slides into view
   useEffect(() => { strip.current?.querySelector("[aria-pressed=true]")?.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" }); }, [date, results]);
@@ -126,8 +131,20 @@ function ResultsDay({ results, date, onDate, onBack, onOpenStock }) {
   const d = days.find(x => x.date === date) ?? (results?.days ?? []).find(x => x.count > 0) ?? days[days.length - 1];
   if (!d) return <div className="mk"><button type="button" className="mk-back" onClick={onBack}><ChevronLeft size={18} /> Markets</button><p className="mk-note">No results dates this week.</p></div>;
   const match = c => !q.trim() || `${c.name} ${c.symbol} ${c.sector ?? ""}`.toLowerCase().includes(q.trim().toLowerCase());
-  const list = d.companies.filter(match);
+  const keep = c => (show === "large" ? (c.marketCapCr ?? 0) >= 1000 : show === "mine" ? watched.has(c.symbol) : true);
+  const val = (c, k) => (k === "profit" ? c.quarter?.profitYoY : k === "sales" ? c.quarter?.salesYoY : k === "move" ? c.ret1d : c.marketCapCr);
+  const list = d.companies.filter(c => match(c) && keep(c))
+    .map((c, i) => [c, i]).sort((a, b) => { if (sort === "size") return a[1] - b[1]; const x = val(a[0], sort), y = val(b[0], sort); return (x == null) - (y == null) || (y ?? 0) - (x ?? 0) || a[1] - b[1]; }).map(([c]) => c);
   const done = d.companies.filter(c => reported(c, d.date)).length;
+  // the day at a glance, from the results filed (its own quarter, against a year earlier)
+  const filed = d.companies.filter(c => reported(c, d.date) && c.quarter);
+  const tally = filed.length >= 3 ? {
+    up: filed.filter(c => c.quarter.profitCr > 0 && c.quarter.profitYoY > 0).length,
+    down: filed.filter(c => c.quarter.profitCr > 0 && c.quarter.profitYoY != null && c.quarter.profitYoY <= 0).length,
+    loss: filed.filter(c => c.quarter.profitCr != null && c.quarter.profitCr < 0).length,
+    salesUp: filed.filter(c => c.quarter.salesYoY > 0).length,
+    n: filed.length,
+  } : null;
   return (
     <div className="mk">
       <button type="button" className="mk-back" onClick={onBack}><ChevronLeft size={18} /> Markets</button>
@@ -159,10 +176,31 @@ function ResultsDay({ results, date, onDate, onBack, onOpenStock }) {
           </div>
         ))}
       </div>
-      {d.count > 12 && <input className="mk-search" type="search" placeholder="Find a company" aria-label="Find a company" value={q} onChange={e => setQ(e.target.value)} />}
+      {tally && (
+        <div className="mk-tally" aria-label="The day at a glance">
+          <div className="mk-tally-bar" aria-hidden="true">
+            <i className="up" style={{ flex: tally.up }} /><i className="down" style={{ flex: tally.down }} /><i className="loss" style={{ flex: tally.loss }} />
+          </div>
+          <p><b className="up">{tally.up}</b> grew profit · <b className="down">{tally.down}</b> saw it fall · <b className="loss">{tally.loss}</b> made a loss <span>· sales up at {tally.salesUp} of {tally.n}, against a year earlier</span></p>
+        </div>
+      )}
+      <div className="mk-res-tools">
+        <div className="mk-seg" role="group" aria-label="Show">
+          {[["all", "All"], ["large", "₹1,000 cr+"], ["mine", "My watchlist"]].map(([id, label]) => <button key={id} type="button" aria-pressed={show === id} onClick={() => setShow(id)}>{label}</button>)}
+        </div>
+        <label className="mk-res-sort">Sort
+          <select value={sort} onChange={e => setSort(e.target.value)} aria-label="Sort by">
+            <option value="size">Largest first</option>
+            <option value="profit">Profit growth</option>
+            <option value="sales">Sales growth</option>
+            <option value="move">Share move today</option>
+          </select>
+        </label>
+        {d.count > 12 && <input className="mk-search mk-res-find" type="search" placeholder="Find a company" aria-label="Find a company" value={q} onChange={e => setQ(e.target.value)} />}
+      </div>
       <section className="mk-card" aria-label={`Results on ${weekday(d.date)}`}>
         <ul className="mk-resday">
-          <li className="mk-resday-head" aria-hidden="true"><span>Company</span><span>Market cap</span><span>Quarter</span><span>Sales</span><span>Net profit</span><span /></li>
+          <li className="mk-resday-head" aria-hidden="true"><span>Company</span><span>Market cap</span><span>Quarter</span><span>Sales</span><span>Net profit</span><span>Share today</span><span /></li>
           {list.map(c => {
             const qq = c.quarter, done = reported(c, d.date), label = qq ? fyQ(qq.end) : null;
             const slug = label?.toLowerCase().replace(" ", "-");
@@ -170,17 +208,18 @@ function ResultsDay({ results, date, onDate, onBack, onOpenStock }) {
               <li key={c.symbol} className={done ? "done" : ""}>
                 <button type="button" className="mk-resday-co" onClick={() => onOpenStock?.(c.symbol)} aria-label={`${cardName(c.name)}: open its page`}>
                   <CompanyLogo symbol={c.symbol} size={30} fallback={c.name} />
-                  <span><b>{cardName(c.name)}</b><small>{[c.symbol, c.sector].filter(Boolean).join(" · ")}</small></span>
+                  <span><b>{cardName(c.name)}{watched.has(c.symbol) && <Star size={12} className="mk-res-star" aria-label="on your watchlist" />}</b><small>{[c.symbol, c.sector].filter(Boolean).join(" · ")}</small></span>
                 </button>
                 <span className="mk-resday-cap">{mcap(c.marketCapCr)}</span>
                 <span className="mk-resday-q">{label ? <>{done ? <em className="mk-res-tag new">New</em> : <em className="mk-res-tag">Last</em>}{label}</> : "—"}</span>
                 <span className="mk-resday-n">{crore(qq?.salesCr)}{qq?.salesYoY != null && <small className={tone(qq.salesYoY)}>{pct1(qq.salesYoY)}</small>}</span>
                 <span className="mk-resday-n">{qq?.profitCr != null && qq.profitCr < 0 ? `Loss ${crore(qq.profitCr)}` : crore(qq?.profitCr)}{qq?.profitYoY != null && qq?.profitCr > 0 && qq.profitCr / (1 + qq.profitYoY / 100) > 0 && <small className={tone(qq.profitYoY)}>{pct1(qq.profitYoY)}</small>}</span>
+                <span className={`mk-resday-move ${tone(c.ret1d)}`}>{c.ret1d == null ? "—" : pct1(c.ret1d)}</span>
                 <span className="mk-resday-go">{slug && <button type="button" className="mk-link" onClick={() => navigate(`/stock/${encodeURIComponent(c.symbol)}/results/${slug}`)}>{done ? "See results" : "Last results"} <ChevronRight size={14} aria-hidden="true" /></button>}</span>
               </li>
             );
           })}
-          {!list.length && <li className="mk-note">No company by that name reports that day.</li>}
+          {!list.length && <li className="mk-note">{show === "mine" ? "None of your watchlist's companies report that day." : "No company by that name reports that day."}</li>}
         </ul>
       </section>
       <p className="mk-note">"Last" is the quarter before, to compare with until the new results are filed; changes are against the same quarter a year earlier. From the companies' filings with NSE. Not investment advice.</p>
