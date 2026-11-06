@@ -1,10 +1,12 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { createChart, createSeriesMarkers, AreaSeries, HistogramSeries, ColorType } from "lightweight-charts";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import { api } from "./api.js";
 import { cardName } from "./stockName.js";
 import CompanyLogo from "./CompanyLogo.jsx";
 import { MoodBar } from "./MoodBar.jsx";
+import { lazy, Suspense } from "react";
+const PriceChartPanel = lazy(() => import("./PriceChartPanel.jsx"));
 import { navigate } from "./site.jsx";
 import { useWatchlist } from "./watchlist.js";
 import { Star } from "lucide-react";
@@ -103,6 +105,19 @@ function indexSentence(d, range, rangeMove) {
   if (st?.up?.[0] && st?.down?.[0]) parts.push(`${cardName(st.up[0].name)} added the most, ${cardName(st.down[0].name)} took off the most.`);
   if (rangeMove != null) parts.push(`${rangeMove >= 0 ? "Up" : "Down"} ${Math.abs(rangeMove).toFixed(1)}% over ${range === "1Y" ? "the year" : range === "1M" ? "the month" : range === "3M" ? "three months" : "six months"}${d.pe != null ? `, it trades at ${d.pe.toFixed(1)} times its companies' earnings` : ""}.`);
   return parts.join(" ");
+}
+
+// The story, folded to one line; the arrow opens the rest (7 Nov
+// 2026, "keep it minimised; when we press the arrow it should open")
+function Story({ text }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <button type="button" className={`mk-story${open ? " open" : ""}`} aria-expanded={open} onClick={() => setOpen(o => !o)}>
+      <span className="mk-story-label">The story</span>
+      <span className="mk-story-text">{text}</span>
+      <ChevronDown size={18} className="mk-story-arrow" aria-hidden="true" />
+    </button>
+  );
 }
 
 // How many of its companies rose and fell, day by day, the last month
@@ -567,6 +582,9 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
   const [pick, setPick] = useState("Nifty 50");
   const [detail, setDetail] = useState(null);
   const [range, setRange] = useState("1Y");
+  // the index's chart: ours (the story's dots and breadth) or the full stock chart, remembered
+  const [chartMode, setChartMode] = useState(() => { try { return localStorage.getItem("mk-chart") === "full" ? "full" : "simple"; } catch { return "simple"; } });
+  const pickMode = m => { setChartMode(m); try { localStorage.setItem("mk-chart", m); } catch {} };
   const [period, setPeriod] = useState("1d");
   const [movers, setMovers] = useState(null);
   const [mood, setMood] = useState(null);
@@ -677,6 +695,9 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
         </div>
 
         <div className="mk-card mk-index">
+          <div className="mk-chart-mode mk-seg" role="group" aria-label="Chart">
+            {[["simple", "Simple"], ["full", "Full chart"]].map(([id, l]) => <button key={id} type="button" aria-pressed={chartMode === id} onClick={() => pickMode(id)}>{l}</button>)}
+          </div>
           <div className="mk-index-top">
             <div>
               <h3>{detail?.name ?? pick}</h3>
@@ -686,13 +707,22 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
                 {rangeMove != null && <span className={`mk-chg ${tone(rangeMove)}`}>{pct(rangeMove)} over {range === "1Y" ? "the year" : range}</span>}
               </div>
             </div>
-            <div className="mk-seg" role="group" aria-label="Range">
-              {RANGES.map(([id]) => <button key={id} type="button" aria-pressed={range === id} onClick={() => setRange(id)}>{id}</button>)}
-            </div>
+            {chartMode !== "full" && (
+              <div className="mk-seg" role="group" aria-label="Range">
+                {RANGES.map(([id]) => <button key={id} type="button" aria-pressed={range === id} onClick={() => setRange(id)}>{id}</button>)}
+              </div>
+            )}
           </div>
-          {detail && indexSentence(detail, range, rangeMove) && <p className="mk-story"><span>The story</span>{indexSentence(detail, range, rangeMove)}</p>}
-          {shownDays ? <IndexChart days={shownDays.days} closes={shownDays.closes} results={detail?.story?.results ?? []} breadth={detail?.story?.breadth ?? []} label={`${detail.name} over ${range}`} /> : <div className="mk-chart mk-skel" />}
-          {detail?.story?.breadth?.length > 2 && <p className="mk-note mk-chart-key"><i className="dot" />results of its five largest companies <i className="bar up" /><i className="bar down" />along the bottom: whether more of its companies rose or fell that day</p>}
+          {detail && indexSentence(detail, range, rangeMove) && <Story text={indexSentence(detail, range, rangeMove)} />}
+          {chartMode === "full" && detail?.name && (
+            <div className="mk-full-chart">
+              <Suspense fallback={<div className="mk-chart mk-skel" />}>
+                <PriceChartPanel key={detail.name} symbol={`INDEX ${detail.name}`} name={detail.name} index={detail.name} />
+              </Suspense>
+            </div>
+          )}
+          {chartMode !== "full" && (shownDays ? <IndexChart days={shownDays.days} closes={shownDays.closes} results={detail?.story?.results ?? []} breadth={detail?.story?.breadth ?? []} label={`${detail.name} over ${range}`} /> : <div className="mk-chart mk-skel" />)}
+          {chartMode !== "full" && detail?.story?.breadth?.length > 2 && <p className="mk-note mk-chart-key"><i className="dot" />results of its five largest companies <i className="bar up" /><i className="bar down" />along the bottom: whether more of its companies rose or fell that day</p>}
           <WhoMoved story={detail?.story} onOpenStock={onOpenStock} />
           <dl className="mk-stats">
             {[["1 week", R.w1], ["1 month", R.m1], ["3 months", R.m3], ["6 months", R.m6], ["1 year", R.y1], ["3 years", R.y3], ["5 years", R.y5]].map(([k, v]) => (

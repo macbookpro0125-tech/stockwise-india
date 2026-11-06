@@ -150,7 +150,10 @@ export const LEVEL_KEYS = ["target", "fv25", "p1", "p2", "p3", "stopLoss"];
 
 // page: drawn as the whole page (ChartPage.jsx) — fills the window, no card
 // compact: shorter, in a phone's Summary — the full height is a tap away (⤢)
-export default function PriceChartPanel({ symbol, name, levels, page = false, compact = false }) {
+// index: an NSE index's name, charted from its own daily bars (Markets, 7 Nov
+// 2026: "put our stock chart here with all its options"); symbol then only
+// keys its saved lines
+export default function PriceChartPanel({ symbol, name, levels, page = false, compact = false, index = null }) {
   const [prefs, setPrefs] = useState(() => {
     const p = readJson(PREFS_KEY, DEFAULT_PREFS);
     return { ...DEFAULT_PREFS, ...p, ind: { ...(p.ind ?? DEFAULT_PREFS.ind) } };
@@ -315,12 +318,12 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
   useEffect(() => {
     let cancelled = false;
     setLoading(true); setError(null);
-    api.prices(symbol, span)
+    (index ? api.indexPrices(index, span) : api.prices(symbol, span))
       .then(j => { if (!cancelled) setData(j); })
       .catch(e => { if (!cancelled) setError(e.message); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [symbol, span]);
+  }, [symbol, span, index]);
 
   // Heikin Ashi averages the bars; Renko replaces them with bricks, one per
   // box the close moves — time drops out, so a brick's day is kept as
@@ -1129,7 +1132,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
       {!narrow && (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 10 }}>
         <div style={{ fontSize: 14, fontWeight: 500, color: "var(--t1)", letterSpacing: "-0.01em" }}>
-          Share price
+          {index ? "Index level" : "Share price"}
           {data?.symbol && !narrow && <span style={{ fontSize: 11, fontWeight: 500, color: "var(--t3)", marginLeft: 8 }}>{data.symbol}</span>}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginLeft: "auto" }}>
@@ -1209,7 +1212,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
             <button type="button" onClick={() => togglePop("settings")} aria-expanded={pop === "settings"} aria-label="Chart settings" style={iconBtn(pop === "settings" || !!prefs.log || !!prefs.invert)}><Settings2 size={20} aria-hidden="true" /></button>
             <button type="button" onClick={snapshot} aria-label="Save the chart as an image" style={iconBtn(false)}><Camera size={20} aria-hidden="true" /></button>
           </div>
-          {!page && (
+          {!page && !index && (
             <a href={chartPageUrl(symbol, name, levels)} onClick={openExpanded} aria-label="Expand the chart to full screen" style={iconBtn(false, { flex: "none", textDecoration: "none" })}><Maximize2 size={16} aria-hidden="true" /></a>
           )}
         </div>

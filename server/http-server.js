@@ -62,7 +62,7 @@ import { marketNews, topNews, newsItem, newsItemFiling, newsForSymbols, watchlis
 import { portfolioVsMarket } from "./portfolio-vs-market.js";
 import { historyBars } from "./price-history.js";
 import { readIndexHistory } from "./index-history.js";
-import { exploreBoard, exploreIndex, heatmap, HEAT_SETS, topMovers, resultsWeek, resultsFor, moversOn, sectorBrief } from "./explore.js";
+import { exploreBoard, exploreIndex, heatmap, HEAT_SETS, topMovers, resultsWeek, resultsFor, moversOn, indexBars, sectorBrief } from "./explore.js";
 import { summarizeMove, aiClient } from "./ai-moves.js";
 import { summarizeCall } from "./call-summary.js";
 import { summarizeFiling } from "./filing-summary.js";
@@ -815,6 +815,14 @@ export function createApp() {
       if (url.pathname === "/api/explore" && req.method === "GET") {
         if (requireAuth(req, res) == null) return;
         sendJson(res, 200, await exploreBoard());
+        return;
+      }
+      // an index's daily bars for the full chart
+      if (url.pathname === "/api/index/prices" && req.method === "GET") {
+        if (requireAuth(req, res) == null) return;
+        const bars = await indexBars(url.searchParams.get("name") ?? "", url.searchParams.get("range") ?? "1y");
+        if (!bars) { sendJson(res, 404, { error: "Unknown index" }); return; }
+        sendJson(res, 200, bars);
         return;
       }
       // every company's move on one of the last trading days, over a day, week or month

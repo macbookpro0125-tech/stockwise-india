@@ -376,3 +376,30 @@ function indexStory(name, level, chartDays, snap, sector) {
     results: results.sort((a, b) => a.date.localeCompare(b.date)),
   };
 }
+
+// An index's daily bars, for the full chart on Markets (7 Nov 2026, "put our
+// stock chart here"): the year the board keeps, as candles where the day's
+// open, high and low are kept (the evening build keeps them from 7 Nov), else
+// a close-only bar. A copy that keeps NSE's daily files reads them afresh.
+let barsBoard = null;
+export async function indexBars(name, range = "1y") {
+  let { board: b, snap } = await board();
+  const find = bd => bd?.indices.find(x => x.name.toLowerCase() === String(name).toLowerCase());
+  let i = find(b);
+  if (i && !i.opens && snap?.pricesDate && snap.range52wFrom && existsSync(join(PRICE_DIR, `indices-${snap.pricesDate}.csv`))) {
+    if (barsBoard?.date !== snap.pricesDate) barsBoard = { date: snap.pricesDate, board: indexBoard(snap.range52wFrom, snap.pricesDate).catch(() => null) };
+    const fresh = await barsBoard.board;
+    if (find(fresh)) { b = fresh; i = find(fresh); }
+  }
+  if (!i) return null;
+  const all = b.days.map((date, k) => {
+    const c = i.closes[k];
+    if (c == null) return null;
+    const o = i.opens?.[k] ?? c, h = i.highs?.[k] ?? Math.max(o, c), l = i.lows?.[k] ?? Math.min(o, c);
+    return { date, open: o, high: Math.max(h, o, c), low: Math.min(l, o, c), close: c, volume: i.volumes?.[k] ?? null };
+  }).filter(Boolean);
+  const months = { "1mo": 1, "6mo": 6, "1y": 12 }[range];
+  let bars = all;
+  if (months && all.length) { const t = new Date(`${all[all.length - 1].date}T00:00:00Z`); t.setUTCMonth(t.getUTCMonth() - months); const from = t.toISOString().slice(0, 10); bars = all.filter(x => x.date > from); }
+  return { symbol: i.name, range, source: "NSE", keptFrom: all[0]?.date ?? null, bars, benchmark: null, candles: !!i.opens };
+}

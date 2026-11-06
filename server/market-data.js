@@ -415,7 +415,9 @@ async function indexFile(isoDate) {
       const close = Number(f[at("Closing Index Value")]);
       // NSE's own valuation of the index, where it gives one ("-" otherwise)
       const num = col => { const v = Number(f[at(col)]); return at(col) >= 0 && f[at(col)] !== "-" && isFinite(v) && v > 0 ? v : null; };
-      if (close > 0) byName.set(f[at("Index Name")], { close, change: Number(f[at("Points Change")]), changePct: Number(f[at("Change(%)")]), pe: num("P/E"), pb: num("P/B"), divYield: num("Div Yield") });
+      if (close > 0) byName.set(f[at("Index Name")], { close, change: Number(f[at("Points Change")]), changePct: Number(f[at("Change(%)")]), pe: num("P/E"), pb: num("P/B"), divYield: num("Div Yield"),
+        // the day's open, high, low and volume, for the index's candles (7 Nov 2026)
+        open: num("Open Index Value"), high: num("High Index Value"), low: num("Low Index Value"), volume: num("Volume") });
     }
   }
   indexDays.set(isoDate, byName);
@@ -510,19 +512,24 @@ export async function fnoSymbols() {
 export async function indexBoard(fromIso, toIso) {
   const names = [...BOARD.market, ...BOARD.sectors];
   const days = [], closes = Object.fromEntries(names.map(n => [n, []]));
+  const ohlv = Object.fromEntries(names.map(n => [n, { opens: [], highs: [], lows: [], volumes: [] }]));
   for (let d = new Date(`${fromIso}T00:00:00Z`); isoDay(d) <= toIso; d.setUTCDate(d.getUTCDate() + 1)) {
     if (d.getUTCDay() === 0 || d.getUTCDay() === 6) continue;
     const file = await indexFile(isoDay(d));
     if (!file?.get("Nifty 50")) continue;
     days.push(isoDay(d));
-    for (const n of names) closes[n].push(file.get(n)?.close ?? null);
+    for (const n of names) {
+      const x = file.get(n);
+      closes[n].push(x?.close ?? null);
+      ohlv[n].opens.push(x?.open ?? null); ohlv[n].highs.push(x?.high ?? null); ohlv[n].lows.push(x?.low ?? null); ohlv[n].volumes.push(x?.volume ?? null);
+    }
   }
   const last = days.length ? await indexFile(days[days.length - 1]) : null;
   return {
     days,
     indices: names.map(name => {
       const x = last?.get(name);
-      return { name, group: BOARD.market.includes(name) ? "market" : "sector", close: x?.close ?? null, change: x?.change ?? null, changePct: x?.changePct ?? null, pe: x?.pe ?? null, pb: x?.pb ?? null, divYield: x?.divYield ?? null, closes: closes[name] };
+      return { name, group: BOARD.market.includes(name) ? "market" : "sector", close: x?.close ?? null, change: x?.change ?? null, changePct: x?.changePct ?? null, pe: x?.pe ?? null, pb: x?.pb ?? null, divYield: x?.divYield ?? null, closes: closes[name], ...ohlv[name] };
     }).filter(i => i.close != null),
   };
 }

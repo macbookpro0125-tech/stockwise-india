@@ -6108,8 +6108,14 @@ html.td-night[data-theme="light"] .tb.tb-scrolled { box-shadow: 0 1px 0 rgba(255
 /* Markets' index card, ours rather than a trading terminal's (7 Nov 2026):
    a sentence, the teal line with results dots and a hover card, the month's
    breadth, and who moved it */
-.mk-story { margin: 12px 0 6px; padding: 12px 14px; border-radius: 12px; background: color-mix(in srgb, var(--accent) 7%, var(--s1)); color: var(--t1); font-size: 15px; line-height: 1.55; }
-.mk-story > span { margin-right: 8px; color: var(--accent); font-weight: 600; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; }
+.mk-story { display: flex; align-items: flex-start; gap: 10px; width: 100%; margin: 10px 0 4px; padding: 6px 0; border: 0; border-radius: 0; background: none; color: var(--t2); font: inherit; font-size: 15px; line-height: 1.55; text-align: left; cursor: pointer; }
+.mk-story:disabled { cursor: default; }
+.mk-story-label { flex: none; padding-top: 2px; color: var(--t3); font-weight: 600; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; }
+.mk-story-text { flex: 1; min-width: 0; }
+.mk-story:not(.open) .mk-story-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mk-story-arrow { flex: none; margin-top: 2px; color: var(--t3); transition: transform 200ms ease; }
+.mk-story.open .mk-story-arrow { transform: rotate(180deg); }
+@media (hover: hover) and (pointer: fine) { .mk-story:not(:disabled):hover .mk-story-arrow { color: var(--accent); } }
 .mk-chart-wrap { position: relative; }
 .mk-chart-tip { position: absolute; top: 6px; z-index: 3; display: flex; flex-direction: column; gap: 4px; width: 220px; padding: 9px 11px; border: 1px solid var(--bdr2); border-radius: 12px; background: var(--bg); box-shadow: 0 8px 22px rgba(0,0,0,0.12); font-size: 12.5px; pointer-events: none; }
 .mk-chart-tip-d { color: var(--t2); } .mk-chart-tip-d b { color: var(--t1); font-variant-numeric: tabular-nums; }
@@ -6135,3 +6141,7 @@ html.td-night[data-theme="light"] .tb.tb-scrolled { box-shadow: 0 1px 0 rgba(255
 .mk-chart-key i { display: inline-block; flex: none; }
 .mk-chart-key i.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
 .mk-chart-key i.bar { width: 4px; height: 10px; border-radius: 1px; } .mk-chart-key i.bar.up { background: var(--green); margin-left: 8px; } .mk-chart-key i.bar.down { background: var(--red); margin-right: 2px; }
+.mk-index { position: relative; }
+.mk-chart-mode { display: inline-flex; margin: 0 0 10px; }
+.mk-full-chart { margin: 8px -4px 4px; }
+.mk-full-chart > div { margin-bottom: 0 !important; border: 0 !important; padding: 0 !important; background: transparent !important; }
