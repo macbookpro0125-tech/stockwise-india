@@ -5846,6 +5846,9 @@ button.td-index:active, button.td-line:active { background: color-mix(in srgb, v
 .mk-res-dot { display: inline-block; width: 7px; height: 7px; margin-left: 6px; border-radius: 50%; background: var(--green); vertical-align: middle; }
 .mk-res-days { flex-wrap: wrap; margin: 4px 0 14px; }
 .mk-res-days button span { color: var(--t3); margin-left: 4px; }
+.mk-res-days button.past { color: var(--t2); }
+.mk-res-split { align-self: stretch; width: 1px; margin: 4px 6px; background: var(--bdr2); }
+.mk-card-links { display: inline-flex; gap: 16px; }
 .mk-resday { list-style: none; margin: 0; padding: 0; }
 .mk-resday > li { display: grid; grid-template-columns: minmax(0, 2.4fr) 1fr 0.9fr 1.1fr 1.2fr auto; align-items: center; gap: 14px; padding: 10px 4px; border-top: 1px solid var(--bdr); font-size: 14px; font-variant-numeric: tabular-nums; }
 .mk-resday > li.mk-resday-head { border-top: 0; padding-top: 0; font-size: 11.5px; color: var(--t3); }

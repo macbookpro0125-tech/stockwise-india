@@ -45,6 +45,14 @@ test("MK-2 See all lists every index; a search narrows it, a click charts it, Ba
   await expect(page.getByRole("heading", { name: "All indices", level: 1 })).toBeVisible();
   await page.goBack();
   await expect(page.getByRole("heading", { name: "Markets", level: 1 })).toBeVisible();
+  // the days before: results already out, each company's new quarter
+  const out = page.getByRole("button", { name: "Already out" });
+  if (await out.count()) {
+    await out.click();
+    await expect(page.getByText(/filed their quarterly results with NSE that day/)).toBeVisible();
+    await expect(page.locator(".mk-resday .mk-res-tag.new").first()).toBeVisible();
+    await page.goBack();
+  }
 });
 
 // 6 Nov 2026: "when I press, I should see the details on the next page"
@@ -63,4 +71,12 @@ test("MK-3 a results day opens as a page: its companies' figures, other days, Ba
   if (await days.count() > 1) { await days.nth(1).click(); await expect(days.nth(1)).toHaveAttribute("aria-pressed", "true"); }
   await page.goBack();
   await expect(page.getByRole("heading", { name: "Markets", level: 1 })).toBeVisible();
+  // the days before: results already out, each company's new quarter
+  const out = page.getByRole("button", { name: "Already out" });
+  if (await out.count()) {
+    await out.click();
+    await expect(page.getByText(/filed their quarterly results with NSE that day/)).toBeVisible();
+    await expect(page.locator(".mk-resday .mk-res-tag.new").first()).toBeVisible();
+    await page.goBack();
+  }
 });

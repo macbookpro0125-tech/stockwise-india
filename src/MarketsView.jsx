@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { createChart, AreaSeries, ColorType } from "lightweight-charts";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { api } from "./api.js";
@@ -113,12 +113,14 @@ const weekday = iso => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", 
 const shortDay = iso => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
 // filed on the meeting day or after it (or the day before, for an evening filing read late)
 const pct1 = v => `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(Math.abs(v) >= 100 ? 0 : 1)}%`;
-const reported = (c, date) => !!c.quarter?.filed && Date.parse(c.quarter.filed) >= Date.parse(date) - 86_400_000;
+const reported = (c, date) => !!c.reported || (!!c.quarter?.filed && Date.parse(c.quarter.filed) >= Date.parse(date) - 86_400_000);
 
 function ResultsDay({ results, date, onDate, onBack, onOpenStock }) {
   const [q, setQ] = useState("");
-  const days = (results?.days ?? []).filter(d => d.count > 0);
-  const d = days.find(x => x.date === date) ?? days[0];
+  // the week before (results already out) and the days ahead, in order
+  const past = (results?.past ?? []).map(x => ({ ...x, past: true }));
+  const days = [...past, ...(results?.days ?? []).filter(x => x.count > 0)];
+  const d = days.find(x => x.date === date) ?? (results?.days ?? []).find(x => x.count > 0) ?? days[days.length - 1];
   if (!d) return <div className="mk"><button type="button" className="mk-back" onClick={onBack}><ChevronLeft size={18} /> Markets</button><p className="mk-note">No results dates this week.</p></div>;
   const match = c => !q.trim() || `${c.name} ${c.symbol} ${c.sector ?? ""}`.toLowerCase().includes(q.trim().toLowerCase());
   const list = d.companies.filter(match);
@@ -128,10 +130,15 @@ function ResultsDay({ results, date, onDate, onBack, onOpenStock }) {
       <button type="button" className="mk-back" onClick={onBack}><ChevronLeft size={18} /> Markets</button>
       <header className="mk-head">
         <h1>Results on {weekday(d.date)}</h1>
-        <p>{d.count} {d.count === 1 ? "company meets" : "companies meet"} to approve {d.count === 1 ? "its" : "their"} quarterly results{done ? `; ${done} ${done === 1 ? "has" : "have"} filed` : ""}. The largest first. Dates are the ones companies told NSE; they can change.</p>
+        <p>{d.past
+          ? `${d.count} ${d.count === 1 ? "company" : "companies"} filed ${d.count === 1 ? "its" : "their"} quarterly results with NSE that day, the largest first, with sales and profit against a year earlier.`
+          : `${d.count} ${d.count === 1 ? "company meets" : "companies meet"} to approve ${d.count === 1 ? "its" : "their"} quarterly results${done ? `; ${done} ${done === 1 ? "has" : "have"} filed` : ""}. The largest first. Dates are the ones companies told NSE; they can change.`}</p>
       </header>
       <div className="mk-seg mk-res-days" role="group" aria-label="Day">
-        {days.map(x => <button key={x.date} type="button" aria-pressed={x.date === d.date} onClick={() => onDate(x.date)}>{shortDay(x.date)} <span>{x.count}</span></button>)}
+        {days.map((x, i) => <Fragment key={x.date}>
+          {i === past.length && past.length > 0 && <span className="mk-res-split" aria-hidden="true" />}
+          <button type="button" className={x.past ? "past" : ""} aria-pressed={x.date === d.date} onClick={() => onDate(x.date)} title={x.past ? "Results already out" : "Results due"}>{shortDay(x.date)} <span>{x.count}</span></button>
+        </Fragment>)}
       </div>
       {d.count > 12 && <input className="mk-search" type="search" placeholder="Find a company" aria-label="Find a company" value={q} onChange={e => setQ(e.target.value)} />}
       <section className="mk-card" aria-label={`Results on ${weekday(d.date)}`}>
@@ -354,9 +361,9 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
       </section>
 
       {/* the week's results */}
-      {results?.days?.length > 0 && (
+      {(results?.days?.length > 0 || results?.past?.length > 0) && (
         <section className="mk-card" aria-labelledby="mk-res">
-          <div className="mk-card-h"><h2 id="mk-res">Results this week</h2><button type="button" className="mk-link" onClick={() => navigate("/results-calendar")}>Calendar</button></div>
+          <div className="mk-card-h"><h2 id="mk-res">Results this week</h2><span className="mk-card-links">{results.past?.length > 0 && <button type="button" className="mk-link" onClick={() => openDay(results.past[results.past.length - 1].date)}>Already out</button>}<button type="button" className="mk-link" onClick={() => navigate("/results-calendar")}>Calendar</button></span></div>
           <div className="mk-results">
             {results.days.filter(d => d.count > 0).slice(0, 5).map(d => (
               <div key={d.date}>

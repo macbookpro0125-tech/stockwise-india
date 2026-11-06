@@ -218,9 +218,23 @@ export function resultsWeek(days = 7) {
     byDay.get(d).push({ symbol: r.symbol, name: r.name, marketCapCr: r.marketCapCr ?? null, sector: r.sector ?? null, lastProfitYoY: r.qProfitGrowthYoY ?? null, cmp: r.cmp ?? null,
       quarter: q ? { end: q.fyEnd, filed: q.filed ?? null, salesCr: q.revenueCr ?? null, salesYoY: q.salesYoY ?? null, profitCr: q.profitCr ?? null, profitYoY: q.profitYoY ?? null } : null });
   }
-  return {
-    today,
-    days: [...byDay.entries()].sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, list]) => ({ date, count: list.length, companies: list.sort((a, b) => (b.marketCapCr ?? 0) - (a.marketCapCr ?? 0)) })),
-  };
+  // the days before, from the results already filed (6 Nov 2026, "I should be
+  // able to see the previous also"): the last week of filings before today,
+  // by the day each was filed, each with the quarter it reported
+  const past = new Map();
+  const filedOf = r => String(r.quarters?.[0]?.filed ?? "").slice(0, 10);
+  const newest = allMetrics().rows.reduce((m, r) => { const f = filedOf(r); return f && f < today && f > m ? f : m; }, "");
+  if (newest) {
+    const from = new Date(Date.parse(`${newest}T00:00:00Z`) - 6 * 86_400_000).toISOString().slice(0, 10);
+    for (const r of allMetrics().rows) {
+      const f = filedOf(r), q = r.quarters?.[0];
+      if (!f || f < from || f > newest || !q || (q.revenueCr == null && q.profitCr == null)) continue;
+      if (!past.has(f)) past.set(f, []);
+      past.get(f).push({ symbol: r.symbol, name: r.name, marketCapCr: r.marketCapCr ?? null, sector: r.sector ?? null, cmp: r.cmp ?? null, reported: true,
+        quarter: { end: q.fyEnd, filed: q.filed ?? null, salesCr: q.revenueCr ?? null, salesYoY: q.salesYoY ?? null, profitCr: q.profitCr ?? null, profitYoY: q.profitYoY ?? null } });
+    }
+  }
+  const asDays = m => [...m.entries()].sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, list]) => ({ date, count: list.length, companies: list.sort((a, b) => (b.marketCapCr ?? 0) - (a.marketCapCr ?? 0)) }));
+  return { today, days: asDays(byDay), past: asDays(past) };
 }
