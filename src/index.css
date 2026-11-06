@@ -5861,10 +5861,24 @@ button.td-index:active, button.td-line:active { background: color-mix(in srgb, v
 .mk-badge { width: 44px; height: 44px; font-size: 12.5px; letter-spacing: -0.01em; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12); }
 .mk-pill-text b { font-size: 15px; }
 .mk-pill-text > span { font-size: 14px; }
-.mk-end { position: absolute; top: 50%; z-index: 2; transform: translateY(-50%); display: inline-grid; place-items: center; width: 44px; height: 44px; border: 1px solid var(--bdr2); border-radius: 50%; background: var(--bg); color: var(--t1); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.28); cursor: pointer; transition: transform 120ms ease-out; }
+/* the arrows over the index pills: glass, as Apple's (6 Nov 2026) — a
+   translucent disc that blurs what's under it, a bright top edge where the
+   light catches it, a soft shadow beneath; it presses in on touch */
+.mk-end { position: absolute; top: 50%; z-index: 2; transform: translateY(-50%); display: inline-grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; color: var(--t1); cursor: pointer;
+  background: linear-gradient(180deg, rgba(255,255,255,0.78), rgba(255,255,255,0.46));
+  -webkit-backdrop-filter: blur(18px) saturate(180%); backdrop-filter: blur(18px) saturate(180%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.95), inset 0 0 0 0.5px rgba(255,255,255,0.6), 0 0 0 0.5px rgba(0,0,0,0.08), 0 6px 18px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.08);
+  transition: transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 160ms ease-out, background 160ms ease-out; }
+.mk-end svg { width: 20px; height: 20px; stroke-width: 2.4; }
+.mk-end:hover { transform: translateY(-50%) scale(1.06); box-shadow: inset 0 1px 0 rgba(255,255,255,1), inset 0 0 0 0.5px rgba(255,255,255,0.7), 0 0 0 0.5px rgba(0,0,0,0.08), 0 10px 26px rgba(0,0,0,0.16), 0 2px 4px rgba(0,0,0,0.08); }
+.mk-end:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+:root:not([data-theme="light"]) .mk-end { color: #f4f5fb;
+  background: linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0.06));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.28), inset 0 0 0 0.5px rgba(255,255,255,0.14), 0 8px 22px rgba(0,0,0,0.45), 0 1px 3px rgba(0,0,0,0.3); }
+@media (prefers-reduced-transparency: reduce) { .mk-end { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--s1); } }
 .mk-end.next { right: -6px; }
 .mk-end.back { left: -6px; }
-.mk-end:active { transform: translateY(-50%) scale(0.94); }
+.mk-end:active { transform: translateY(-50%) scale(0.92); transition-duration: 80ms; }
 @media (max-width: 640px) { .mk-pill { flex-basis: auto; min-width: 210px; } .mk-end { display: none; } }
 /* See all, and the all-indices page (MarketsView.jsx) */
 .mk-pill-all .mk-badge-all { background: color-mix(in srgb, var(--accent) 22%, var(--s3)); color: var(--accent); box-shadow: none; }
