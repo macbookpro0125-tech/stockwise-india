@@ -1,6 +1,6 @@
 # X posts — week 1 (7–13 Nov 2026)
 
-Figures from jocularinsights.in at the 5 Nov 2026 close and companies' own filings with NSE. Each post is under 280 characters. Post the main text with the picture; put the link in **the first reply** (X shows posts with links to fewer people). Best time: 8–9 pm IST, after the market and when people scroll.
+Figures from jocularinsights.in at the 5 Nov 2026 close and companies' own filings with NSE. Each post is under 280 characters. Post the main text with its picture (in `x-images/`, made by `node scripts/x-cards.mjs`); put the link in **the first reply** (X shows posts with links to fewer people). Best time: 8–9 pm IST, after the market and when people scroll.
 
 Never write "buy", "sell", "target" or "multibagger": the app gives figures, not advice (SEBI).
 
@@ -19,7 +19,8 @@ Never write "buy", "sell", "target" or "multibagger": the app gives figures, not
 >
 > #Q2Results #StockMarketIndia #Nifty50
 
-**Picture:** a screenshot of Titan's results page.
+
+**Picture:** [x-images/day1-q2-profit-jumps.png](x-images/day1-q2-profit-jumps.png)
 
 **Reply:**
 > Every company's Q2 results, quarter by quarter, free: jocularinsights.in/stock/TITAN/results/q2-fy27
@@ -40,7 +41,8 @@ Never write "buy", "sell", "target" or "multibagger": the app gives figures, not
 >
 > #DefenceStocks #HAL #BEL
 
-**Picture:** share the defence list with the Share button. WhatsApp/X shows its card, or take a screenshot of the list.
+
+**Picture:** [x-images/day2-defence.png](x-images/day2-defence.png)
 
 **Reply:**
 > All 22 Nifty India Defence companies with P/E, ROE, debt and quality score: jocularinsights.in/lists/defence-stocks
@@ -62,6 +64,8 @@ Never write "buy", "sell", "target" or "multibagger": the app gives figures, not
 >
 > Past dividends, not a promise of future ones.
 > #DividendStocks #StockMarketIndia
+
+**Picture:** [x-images/day3-dividends.png](x-images/day3-dividends.png)
 
 **Reply:**
 > 83 high-dividend NSE stocks with P/E and quality score: jocularinsights.in/lists/high-dividend-yield-stocks
@@ -85,6 +89,8 @@ Never write "buy", "sell", "target" or "multibagger": the app gives figures, not
 
 (Tata Steel and Divi's report on Sat 7 Nov. If you post this on 10 Nov, delete those two lines, or post this one first on 7 Nov and swap it with Day 1.)
 
+**Picture:** [x-images/day4-results-week.png](x-images/day4-results-week.png)
+
 **Reply:**
 > The full calendar, 400+ companies this week: jocularinsights.in/results-calendar
 
@@ -104,6 +110,8 @@ Never write "buy", "sell", "target" or "multibagger": the app gives figures, not
 >
 > #DebtFree #StockMarketIndia
 
+**Picture:** [x-images/day5-debt-free.png](x-images/day5-debt-free.png)
+
 **Reply:**
 > All 382 debt-free stocks, sorted by quality score: jocularinsights.in/lists/debt-free-stocks
 
@@ -119,6 +127,8 @@ Never write "buy", "sell", "target" or "multibagger": the app gives figures, not
 > Up 20% from ₹21,454 cr a year ago.
 >
 > #SBI #BankingStocks #Q2Results
+
+**Picture:** [x-images/day6-sbi.png](x-images/day6-sbi.png)
 
 **Reply:**
 > SBI's results against last year and last quarter: jocularinsights.in/stock/SBIN/results/q2-fy27
@@ -137,6 +147,8 @@ Never write "buy", "sell", "target" or "multibagger": the app gives figures, not
 > Price per share tells you nothing. Profit, debt and ROE do.
 >
 > #StockMarketIndia #InvestingTips
+
+**Picture:** [x-images/day7-under-100.png](x-images/day7-under-100.png)
 
 **Reply:**
 > Every stock under ₹100 with its P/E, ROE, debt and quality score: jocularinsights.in/lists/stocks-under-100
