@@ -140,3 +140,20 @@ test("S-H6 stock lists: an index's companies, a theme, a price band; in the site
   await page.locator(".pl-co").first().click();
   await expect(page).toHaveURL(/\/stock\//);
 });
+
+test("S-H7 latest results: who just reported, with figures in the titles; in the sitemap; a company opens its results @phone", async ({ page, request }) => {
+  const html = await (await request.get("/results")).text();
+  expect(html).toMatch(/<title>Q\d FY\d\d results today: latest quarterly results of NSE companies \| Jocular Insights<\/title>/);
+  expect(html).toMatch(/<link rel="canonical" href="https:\/\/jocularinsights\.in\/results"/);
+  expect(await (await request.get("/sitemap-details.xml")).text()).toContain("<loc>https://jocularinsights.in/results</loc>");
+  // a company's results page leads with its figures (Google shows the title)
+  const tcs = await (await request.get("/stock/TCS/results/q2-fy27")).text();
+  expect(tcs).toMatch(/<title>Tata Consultancy Services Q2 FY27 results: profit (up|down) [\d.]+% to ₹[\d,]+ cr, sales (up|down) [\d.]+% \| TCS<\/title>/);
+  // the calendar points to it; in the app, a company opens its quarter
+  await page.goto("/results-calendar");
+  await page.getByRole("link", { name: "See the latest results" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: /^Latest Q\d FY\d\d results$/ })).toBeVisible();
+  await page.locator("table.lr-table tbody th a").first().click();
+  await expect(page).toHaveURL(/\/stock\/[^/]+\/results\/q\d-fy\d\d$/);
+  await expect(page.getByRole("heading", { level: 1, name: / results$/ })).toBeVisible();
+});

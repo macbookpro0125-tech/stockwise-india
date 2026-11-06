@@ -233,7 +233,7 @@ export default function App() {
           return;
         }
 
-        if (["/privacy", "/disclaimer", "/help", "/measures", "/about", "/methodology", "/reset-password", "/stock-screener-india", "/screens", "/results-calendar", "/sectors", "/lists", "/explore", "/news", "/learn"].includes(currentPath) || /^\/(screens|sector|lists|learn)\//.test(currentPath) || /^\/stock\/[^/]+\/./.test(currentPath)) {
+        if (["/privacy", "/disclaimer", "/help", "/measures", "/about", "/methodology", "/reset-password", "/stock-screener-india", "/screens", "/results-calendar", "/sectors", "/lists", "/explore", "/news", "/results", "/learn"].includes(currentPath) || /^\/(screens|sector|lists|learn)\//.test(currentPath) || /^\/stock\/[^/]+\/./.test(currentPath)) {
           if (canGoBack) window.history.back();
           else navigate("/", { replace: true });
           return;

@@ -10,7 +10,7 @@ import { useJoin, JoinCard, JoinBar } from "./PublicJoin.jsx";
 // the same. The first visit uses the copy written into the page (main.jsx
 // keeps it); moving here inside the app fetches it. Links inside stay in the
 // app.
-export const isPublicHtmlPath = path => path === "/explore" || path === "/news" || /^\/learn(\/[a-z0-9-]+)?$/.test(path) || /^\/stock\/[^/]+\/(financials|earnings-call|results\/q[1-4]-fy\d\d)$/.test(path);
+export const isPublicHtmlPath = path => path === "/explore" || path === "/news" || path === "/results" || /^\/learn(\/[a-z0-9-]+)?$/.test(path) || /^\/stock\/[^/]+\/(financials|earnings-call|results\/q[1-4]-fy\d\d)$/.test(path);
 
 export default function PublicHtmlPage({ path, signedIn }) {
   const first = typeof window !== "undefined" && window.__PUBLIC_PAGE__?.path === path ? window.__PUBLIC_PAGE__ : null;

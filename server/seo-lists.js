@@ -145,7 +145,7 @@ export function resultsCalendarHtml(template) {
   const desc = `${total} NSE companies have board meetings for results in the next two weeks — dates from NSE's calendar, the largest companies first.`;
   const days = c.days.map(d => `<section><h2>${esc(day(d.date))} — ${d.count} ${d.count === 1 ? "company" : "companies"}</h2><ul>${d.companies.slice(0, 60).map(x => `<li>${link(`/stock/${encodeURIComponent(x.symbol)}`, x.name)}${x.sector ? ` <small>${esc(x.sector)}</small>` : ""}</li>`).join("")}</ul>${d.count > 60 ? `<p>And ${d.count - 60} more.</p>` : ""}</section>`).join("");
   const ld = { "@context": "https://schema.org", "@type": "WebPage", name: title, description: desc, url: canonical };
-  const body = `<main class="seo-stock seo-methodology"><p>${link("/", "Jocular Insights")} › Results calendar</p><h1>Quarterly results calendar</h1><p>${esc(desc)}</p>${days || "<p>No results dates in the next two weeks on NSE's calendar.</p>"}<p>Dates are board meetings companies have told NSE about; they can change. ${link("/screens", "Stock screens")} · ${link("/disclaimer", "Disclaimer")}</p></main>`;
+  const body = `<main class="seo-stock seo-methodology"><p>${link("/", "Jocular Insights")} › Results calendar</p><h1>Quarterly results calendar</h1><p>${esc(desc)}</p><p>Already reported? ${link("/results", "See the latest results")}, newest first.</p>${days || "<p>No results dates in the next two weeks on NSE's calendar.</p>"}<p>Dates are board meetings companies have told NSE about; they can change. ${link("/screens", "Stock screens")} · ${link("/disclaimer", "Disclaimer")}</p></main>`;
   return pageHtml(template, { title, desc, canonical, ld, body });
 }
 
@@ -179,7 +179,7 @@ export function homePageHtml(template) {
 <h2>Results in the next two weeks</h2>
 <p>${reporting} NSE companies have told the exchange they'll meet to approve results in the next two weeks${soon.length ? ", including:" : "."}</p>
 ${soon.length ? `<ul>${soon.map(x => `<li>${link(`/stock/${encodeURIComponent(x.symbol)}`, x.name)} — ${esc(day(x.date))}</li>`).join("")}</ul>` : ""}
-<p>${link("/results-calendar", "Open the results calendar")}</p>
+<p>${link("/results-calendar", "Open the results calendar")} · ${link("/results", "Latest results")}</p>
 <h2>Browse by sector</h2>
 <ul>${publicSectors().sectors.filter(x => x.count >= 3).map(x => `<li>${link(`/sector/${x.slug}`, x.name)} — ${x.count} companies</li>`).join("")}</ul>
 <p>${link("/sectors", "All sectors")} · ${link("/lists", "Stock lists: Nifty 50, defence, under ₹100 and more")}</p>

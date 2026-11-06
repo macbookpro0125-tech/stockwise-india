@@ -48,7 +48,7 @@ function useLoad(load, key) {
 const Wait = () => <div className="nw-skel" role="status" aria-label="Loading">{[0, 1, 2].map(i => <span key={i} />)}</div>;
 const More = () => (
   <p className="pl-more">
-    <A to="/screens">All stock screens</A> · <A to="/lists">Stock lists</A> · <A to="/sectors">Sectors</A> · <A to="/results-calendar">Results calendar</A> · <A to="/methodology">How the quality score works</A> · <A to="/disclaimer">Disclaimer</A>
+    <A to="/screens">All stock screens</A> · <A to="/lists">Stock lists</A> · <A to="/sectors">Sectors</A> · <A to="/results-calendar">Results calendar</A> · <A to="/results">Latest results</A> · <A to="/methodology">How the quality score works</A> · <A to="/disclaimer">Disclaimer</A>
   </p>
 );
 
@@ -150,7 +150,7 @@ export function ResultsCalendarPage({ signedIn }) {
   const [join, box] = useJoin();
   return (
     <PublicPage title="Quarterly results calendar" signedIn={signedIn} updated={c ? `${day(c.today)}` : "daily"} onSignIn={() => join(null, "signin")}>
-      <p className="pl-lede">{c ? `${total} NSE companies have board meetings for results in the next two weeks, the largest companies first.` : "NSE companies' board meetings for results, the next two weeks."}</p>
+      <p className="pl-lede">{c ? `${total} NSE companies have board meetings for results in the next two weeks, the largest companies first.` : "NSE companies' board meetings for results, the next two weeks."} Already reported? <A to="/results">See the latest results</A>, newest first.</p>
       {error && <p className="nw-empty">{error}</p>}
       {!c && !error && <Wait />}
       {c?.days.map((d, i) => {

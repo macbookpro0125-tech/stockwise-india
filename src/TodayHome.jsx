@@ -7,7 +7,7 @@ import HowItWorks from "./HowItWorks.jsx";
 import { ScreenIcon } from "./PhoneScreens.jsx";
 import { navigate } from "./site.jsx";
 import { tabsFor } from "./Header.jsx";
-import { CalendarDays, Layers3, BookOpen } from "lucide-react";
+import { CalendarDays, Layers3, BookOpen, FileBarChart } from "lucide-react";
 
 // A computer's home once signed in (1 Nov 2026, the owner: "I want something
 // good" of the hero and its bright cards): what's happened to the market and to
@@ -219,6 +219,7 @@ const ABOUT = {
 };
 const SITE_PAGES = [
   { id: "calendar", path: "/results-calendar", label: "Results calendar", about: "Who reports, and when", Icon: CalendarDays },
+  { id: "results", path: "/results", label: "Latest results", about: "Who just reported, and how", Icon: FileBarChart },
   { id: "sectors", path: "/sectors", label: "Sectors", about: "Companies by sector", Icon: Layers3 },
   { id: "lists", path: "/lists", label: "Stock lists", about: "Nifty 50, defence, under ₹100…", Icon: Layers3 },
   { id: "guides", path: "/learn", label: "Guides", about: "How to read the numbers", Icon: BookOpen },
@@ -226,7 +227,7 @@ const SITE_PAGES = [
 
 const PAGE_GROUPS = [
   { title: "Find companies", items: ["discover", "workspace", "desk", "guides"] },
-  { title: "The market", items: ["markets", "explore", "map", "momentum", "calendar", "sectors"] },
+  { title: "The market", items: ["markets", "explore", "map", "momentum", "calendar", "results", "sectors"] },
   { title: "Your things", items: ["watchlist", "portfolio", "performance", "alerts"] },
 ];
 

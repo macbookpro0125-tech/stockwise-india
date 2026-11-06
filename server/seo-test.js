@@ -155,6 +155,22 @@ console.log("ok: every screen has its guide; joined and left are worked out agai
   assert.ok(call && (call.noindex === true || /Earnings call,/.test(call.body)), "no saved summary: left out of search");
   for (const p of [fin, res, call]) assert.ok(!/\b(null|undefined|NaN)\b/.test(p.body.replace(/<[^>]+>/g, " ")), "no null in the words");
   assert.ok(sitemapXml().includes("sitemap-details.xml") && subPagePaths().some(([p]) => p.endsWith("/financials")), "in the sitemap");
+  // a results page's title leads with the figures people search for (6 Nov 2026)
+  const { resultsTitle, latestResults } = await import("./seo-pages.js");
+  assert.equal(resultsTitle("Acme", "Q2 FY27", "ACME", { profitCr: 1540 }, 26.5, 19.7), "Acme Q2 FY27 results: profit up 19.7% to ₹1,540 cr, sales up 26.5% | ACME");
+  assert.equal(resultsTitle("Acme", "Q2 FY27", "ACME", { profitCr: -50 }, -3, null), "Acme Q2 FY27 results: net loss ₹50.0 cr, sales down 3.0% | ACME");
+  assert.match(resultsTitle("Acme", "Q2 FY27", "ACME", {}, null, null), /sales, profit and margin/);
+  assert.match(res.title, new RegExp(`^.+ ${fyQuarter(row.quarters[0].fyEnd)} results: `));
+  // /results: who filed lately, newest first, each linked to its own results page
+  const latest = latestResults();
+  assert.ok(latest.count > 0 && latest.days.every((d, i, a) => !i || a[i - 1].date > d.date), "newest day first");
+  assert.ok(isSubPagePath("/results"));
+  const lr = await publicSubPage("/results");
+  assert.ok(lr.canonical === "https://jocularinsights.in/results" && /^Q\d FY\d\d results today/.test(lr.title), lr.title);
+  const first = latest.days[0].companies[0];
+  assert.ok(lr.body.includes(`href="/stock/${first.symbol}/results/${first.slug}"`), "links each company's results page");
+  assert.ok(!/\b(null|undefined|NaN)\b/.test(lr.body.replace(/<[^>]+>/g, " ")), "no null in the words");
+  assert.ok(subPagePaths().some(([p]) => p === "/results"), "/results in the sitemap");
 }
 // NSE's own classification, only for sector names the index lists use
 {

@@ -3630,6 +3630,15 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 .public-html h3 { font-size: 15px; font-weight: 600; margin: 16px 0 6px; }
 .public-html p, .public-html li { color: var(--t2); line-height: 1.6; }
 .public-html .ps-table-wrap { overflow-x: auto; margin: 10px 0; }
+/* /results: five columns that fit a phone, the company's name wrapping */
+.public-html table.lr-table { width: 100%; }
+.public-html table.lr-table abbr { text-decoration: none; }
+@media (max-width: 600px) {
+  .public-html table.lr-table { font-size: 12px; }
+  .public-html table.lr-table th, .public-html table.lr-table td { padding: 7px 5px; }
+  .public-html table.lr-table thead th { white-space: normal; }
+  .public-html table.lr-table tbody th { white-space: normal; min-width: 90px; padding-left: 0; }
+}
 .public-html table { border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
 .public-html th, .public-html td { padding: 7px 12px; border-bottom: 1px solid var(--bdr); text-align: right; white-space: nowrap; }
 .public-html tbody th, .public-html thead th:first-child { text-align: left; font-weight: 500; color: var(--t2); position: sticky; left: 0; background: var(--bg); }

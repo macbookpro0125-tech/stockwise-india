@@ -142,11 +142,73 @@ function resultsPage(m, slug) {
   ].filter(Boolean).join(" ");
   const others = qs.slice(0, 8).filter(x => x !== q).map(x => link(`/stock/${encodeURIComponent(m.symbol)}/results/${quarterSlug(x.fyEnd)}`, `${fyQuarter(x.fyEnd)}`));
   return {
-    title: `${n} ${label} results: sales, profit and margin | ${m.symbol} | Jocular Insights`,
+    title: resultsTitle(n, label, m.symbol, q, sy, py),
     desc: lede.slice(0, 300),
     canonical: `${SITE}/stock/${encodeURIComponent(m.symbol)}/results/${slug}`,
     body: `<main class="seo-stock seo-methodology">${crumb(m, `${label} results`)}<h1>${esc(n)} ${esc(label)} results</h1><p>${esc(lede)}</p>${tableHtml}
-${others.length ? `<p>Other quarters: ${others.join(" · ")}</p>` : ""}<p>${esc(NOTE)} Quarterly figures are as filed; a company can restate them later.</p>${more(m)}</main>`,
+${others.length ? `<p>Other quarters: ${others.join(" · ")}</p>` : ""}<p>${link("/results", "Other companies' latest results")} · ${link("/results-calendar", "Results calendar")}</p><p>${esc(NOTE)} Quarterly figures are as filed; a company can restate them later.</p>${more(m)}</main>`,
+  };
+}
+
+// The title is what someone sees in Google's results, so it leads with the
+// quarter's two figures people search for (6 Nov 2026: BEL's Q2 page sat near
+// position 10 for "bharat electronics q2 fy27 results", 735 times, no click,
+// under a title that said only "sales, profit and margin")
+export function resultsTitle(n, label, symbol, q, sy, py) {
+  const move = (v, what) => (v == null || !isFinite(v) ? null : `${what} ${v >= 0 ? "up" : "down"} ${Math.abs(v).toFixed(v >= 100 || v <= -100 ? 0 : 1)}%`);
+  const loss = q.profitCr != null && q.profitCr < 0;
+  const profit = q.profitCr == null ? null
+    : loss ? `net loss ₹${crs(Math.abs(q.profitCr))} cr`
+    : py != null && isFinite(py) && q.profitCr / (1 + py / 100) > 0 ? `profit ${py >= 0 ? "up" : "down"} ${Math.abs(py).toFixed(Math.abs(py) >= 100 ? 0 : 1)}% to ₹${crs(q.profitCr)} cr`
+    : `profit ₹${crs(q.profitCr)} cr`;
+  const facts = [profit, move(sy, "sales")].filter(Boolean);
+  return facts.length ? `${n} ${label} results: ${facts.join(", ")} | ${symbol}` : `${n} ${label} results: sales, profit and margin | ${symbol} | Jocular Insights`;
+}
+
+// ── /results ─────────────────────────────────────────────────────────────
+// The companies that filed their latest quarter in the last two weeks of
+// filings, newest first, each with sales and profit against a year earlier and
+// a link to its own results page. Dated by the filings we hold, not the clock,
+// so it never claims a day's results that haven't been read yet.
+export function latestResults(days = 14, cap = 400) {
+  const rows = (allMetrics().rows ?? []).filter(r => r.name && r.quarters?.[0]?.filed && r.quarters[0].fyEnd && (r.quarters[0].revenueCr != null || r.quarters[0].profitCr != null));
+  const newest = rows.reduce((a, r) => (String(r.quarters[0].filed).slice(0, 10) > a ? String(r.quarters[0].filed).slice(0, 10) : a), "");
+  if (!newest) return { newest: null, label: null, days: [], count: 0 };
+  const from = new Date(Date.parse(`${newest}T00:00:00Z`) - days * 86400000).toISOString().slice(0, 10);
+  const recent = rows.filter(r => String(r.quarters[0].filed).slice(0, 10) >= from)
+    .sort((a, b) => String(b.quarters[0].filed).slice(0, 10).localeCompare(String(a.quarters[0].filed).slice(0, 10)) || (b.marketCapCr ?? 0) - (a.marketCapCr ?? 0))
+    .slice(0, cap);
+  const labels = new Map();
+  for (const r of recent) { const l = fyQuarter(r.quarters[0].fyEnd); labels.set(l, (labels.get(l) ?? 0) + 1); }
+  const label = [...labels].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+  const byDay = new Map();
+  for (const r of recent) {
+    const d = String(r.quarters[0].filed).slice(0, 10), q = r.quarters[0];
+    if (!byDay.has(d)) byDay.set(d, []);
+    byDay.get(d).push({ symbol: r.symbol, name: niceName(r.name), quarter: fyQuarter(q.fyEnd), slug: quarterSlug(q.fyEnd), salesCr: q.revenueCr ?? null, salesYoY: q.salesYoY ?? null, profitCr: q.profitCr ?? null, profitYoY: q.profitYoY ?? null, marketCapCr: r.marketCapCr ?? null });
+  }
+  return { newest, label, count: recent.length, days: [...byDay].map(([date, companies]) => ({ date, companies })) };
+}
+
+function latestResultsPage() {
+  const { newest, label, count, days } = latestResults();
+  const q = label ?? "Quarterly";
+  // a change is only a percentage between two profits; a swing into or out of a loss reads "—"
+  const pctR = v => (v == null || !isFinite(v) ? "—" : Math.abs(v) >= 100 ? `${v > 0 ? "+" : "−"}${Math.round(Math.abs(v)).toLocaleString("en-IN")}%` : pct(v));
+  const profitMove = c => (c.profitCr == null || c.profitYoY == null || !isFinite(c.profitYoY) || c.profitCr <= 0 || c.profitCr / (1 + c.profitYoY / 100) <= 0 ? "—" : pctR(c.profitYoY));
+  const row = c => `<tr><th>${link(`/stock/${encodeURIComponent(c.symbol)}/results/${c.slug}`, c.name)}${c.quarter !== label ? ` <small>${esc(c.quarter)}</small>` : ""}</th><td>${esc(crs(c.salesCr))}</td><td>${esc(pctR(c.salesYoY))}</td><td>${esc(c.profitCr == null ? "—" : c.profitCr < 0 ? `−${crs(Math.abs(c.profitCr))}` : crs(c.profitCr))}</td><td>${esc(profitMove(c))}</td></tr>`;
+  // ₹5,000 crore and up, so a tiny company's jump from a small base doesn't lead
+  const ups = days.flatMap(d => d.companies).filter(c => c.marketCapCr >= 5000 && c.profitCr > 0 && c.profitYoY != null && isFinite(c.profitYoY)).sort((a, b) => b.profitYoY - a.profitYoY).slice(0, 5);
+  return {
+    title: `${q} results today: latest quarterly results of NSE companies | Jocular Insights`,
+    desc: `${count} NSE companies' ${q} results filed${newest ? ` up to ${day(newest)}` : ""}: sales and net profit against a year earlier, newest first, each linked to its full results.`,
+    canonical: `${SITE}/results`,
+    body: `<main class="seo-stock seo-methodology"><p>${link("/", "Jocular Insights")} › Latest results</p><h1>Latest ${esc(q)} results</h1>
+<p>${count ? `The ${count} companies that filed their ${esc(q)} results with NSE in the two weeks to ${esc(day(newest))}, newest first, with sales and net profit against the same quarter a year earlier (YoY). Open a company for its full results.` : "No results have been read from NSE's filings yet."}</p>
+${ups.length ? `<h2>Biggest profit growth among companies worth ₹5,000 crore or more</h2><ol>${ups.map(c => `<li>${link(`/stock/${encodeURIComponent(c.symbol)}/results/${c.slug}`, c.name)}: net profit ₹${esc(crs(c.profitCr))} crore, up from ₹${esc(crs(c.profitCr / (1 + c.profitYoY / 100)))} crore a year earlier</li>`).join("")}</ol>` : ""}
+${days.map(d => `<h2>Filed ${esc(day(d.date))} — ${d.companies.length} ${d.companies.length === 1 ? "company" : "companies"}</h2><div class="ps-table-wrap"><table class="lr-table"><thead><tr><th>Company</th><th>Sales ₹ cr</th><th><abbr title="Year on year">YoY</abbr></th><th>Profit ₹ cr</th><th><abbr title="Year on year">YoY</abbr></th></tr></thead><tbody>${d.companies.map(row).join("")}</tbody></table></div>`).join("")}
+<p>${link("/results-calendar", "Coming results: the calendar")} · ${link("/explore", "The market today")} · ${link("/news", "Company announcements")} · ${link("/learn/how-to-read-quarterly-results", "How to read quarterly results")}</p>
+<p>Figures from each company's filings with NSE, in ₹ crore. An educational tool, not investment advice. A company can restate its figures later. A profit change reads "—" where either quarter was a loss, or a year-earlier quarter isn't held.</p></main>`,
   };
 }
 
@@ -195,7 +257,7 @@ ${board.market?.length ? `<h2>Market indices</h2><div class="ps-table-wrap"><tab
 ${board.sectors?.length ? `<h2>Sector indices</h2><div class="ps-table-wrap"><table><thead><tr><th>Index</th><th>Close</th><th>Day</th><th>P/E</th></tr></thead><tbody>${idx(board.sectors)}</tbody></table></div>` : ""}
 ${movers.gainers.length ? `<h2>Top gainers today</h2>${mv(movers.gainers)}` : ""}${movers.losers.length ? `<h2>Top losers today</h2>${mv(movers.losers)}` : ""}
 <h2>Results this week</h2>${week.days?.length ? week.days.map(d => `<h3>${esc(day(d.date))} — ${d.count}</h3><p>${d.companies.slice(0, 15).map(c => link(`/stock/${encodeURIComponent(c.symbol)}`, niceName(c.name))).join(", ")}${d.count > 15 ? ` and ${d.count - 15} more` : ""}</p>`).join("") : "<p>None on NSE's calendar this week.</p>"}
-<p>${link("/results-calendar", "Results calendar")} · ${link("/sectors", "Sectors")} · ${link("/screens", "Stock screens")} · ${link("/news", "Company announcements")}</p></main>`,
+<p>${link("/results", "Latest results")} · ${link("/results-calendar", "Results calendar")} · ${link("/sectors", "Sectors")} · ${link("/screens", "Stock screens")} · ${link("/news", "Company announcements")}</p></main>`,
   };
 }
 
@@ -252,6 +314,7 @@ ${g.see?.length ? `<h2>See it on real data</h2><ul>${g.see.map(([to, text]) => `
 export async function publicSubPage(path) {
   if (path === "/explore") return explorePage();
   if (path === "/news") return newsPage();
+  if (path === "/results") return latestResultsPage();
   if (path === "/learn") return learnIndexPage();
   const guide = path.match(/^\/learn\/([a-z0-9-]+)$/);
   if (guide) { const g = guideBySlug(guide[1]); return g ? guidePage(g) : null; }
@@ -263,14 +326,14 @@ export async function publicSubPage(path) {
   if (m[2] === "earnings-call") return earningsCallPage(row);
   return resultsPage(row, m[3]);
 }
-export const isSubPagePath = path => path === "/explore" || path === "/news" || /^\/learn(\/[a-z0-9-]+)?$/.test(path) || /^\/stock\/[^/]+\/(financials|earnings-call|results\/q[1-4]-fy\d\d)$/.test(path);
+export const isSubPagePath = path => path === "/explore" || path === "/news" || path === "/results" || /^\/learn(\/[a-z0-9-]+)?$/.test(path) || /^\/stock\/[^/]+\/(financials|earnings-call|results\/q[1-4]-fy\d\d)$/.test(path);
 
 // For the sitemap: each company's financials and its latest results; an
 // earnings-call page only once a summary has been written
 export function subPagePaths() {
   const rows = (allMetrics().rows ?? []).filter(r => r.name && r.history?.length);
   return [
-    ["/explore", loadMarketSnapshot()?.pricesDate ?? null], ["/news", null],
+    ["/explore", loadMarketSnapshot()?.pricesDate ?? null], ["/news", null], ["/results", latestResults().newest],
     ...rows.map(r => [`/stock/${encodeURIComponent(r.symbol)}/financials`, r.history?.[0]?.filed ?? null]),
     ...rows.filter(r => r.quarters?.[0]?.fyEnd).map(r => [`/stock/${encodeURIComponent(r.symbol)}/results/${quarterSlug(r.quarters[0].fyEnd)}`, r.quarters[0].filed ?? null]),
     ...rows.filter(r => savedCallSummaries(r.symbol).length).map(r => [`/stock/${encodeURIComponent(r.symbol)}/earnings-call`, savedCallSummaries(r.symbol)[0]?.date ?? null]),

@@ -83,6 +83,7 @@ export function SiteFooter() {
         <SiteLink to="/sectors" style={FOOT_LINK}>Sectors</SiteLink>
         <SiteLink to="/lists" style={FOOT_LINK}>Stock lists</SiteLink>
         <SiteLink to="/results-calendar" style={FOOT_LINK}>Results calendar</SiteLink>
+        <SiteLink to="/results" style={FOOT_LINK}>Latest results</SiteLink>
       </nav>
     </footer>
   );
