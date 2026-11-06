@@ -120,6 +120,27 @@ const reported = (c, date) => !!c.reported || (!!c.quarter?.filed && Date.parse(
 // One company's row on a results page: its latest quarter's figures against a
 // year earlier, today's share move, and the way to its results. when: the
 // results date shown in place of market cap on the watchlist's page
+// Between two dates in a strip: a new week starts (a divider), and any
+// weekdays with no trading between them (market holidays, shown as closed)
+const DAY_MS = 86_400_000;
+const mondayOf = iso => { const t = Date.parse(`${iso}T00:00:00Z`); const wd = (new Date(t).getUTCDay() + 6) % 7; return t - wd * DAY_MS; };
+function between(prev, cur) {
+  if (!prev) return { week: false, closed: [] };
+  const a = Date.parse(`${prev}T00:00:00Z`), b = Date.parse(`${cur}T00:00:00Z`), closed = [];
+  for (let t = a + DAY_MS; t < b; t += DAY_MS) { const wd = new Date(t).getUTCDay(); if (wd >= 1 && wd <= 5) closed.push(new Date(t).toISOString().slice(0, 10)); }
+  return { week: mondayOf(prev) !== mondayOf(cur), closed };
+}
+function ClosedDay({ date }) {
+  const t = new Date(`${date}T00:00:00Z`);
+  return (
+    <span className="mk-date mk-date-closed" title="NSE was closed" aria-label={`${weekday(date)}: market closed`}>
+      <span className="mk-date-wd">{t.toLocaleDateString("en-IN", { weekday: "short", timeZone: "UTC" })}</span>
+      <span className="mk-date-d">{t.getUTCDate()}</span>
+      <span className="mk-date-m">Closed</span>
+    </span>
+  );
+}
+
 function ResRow({ c, done, starred, onOpenStock, when }) {
   const qq = c.quarter, label = qq ? fyQ(qq.end) : null;
   const slug = label?.toLowerCase().replace(" ", "-");
@@ -222,16 +243,19 @@ function ResultsDay({ results, date, onDate, onBack, onOpenStock }) {
           <div key={label} className="mk-dates-group">
             <span className="mk-dates-label">{label}</span>
             <div className="mk-dates-row">
-              {list.map(x => {
-                const t = new Date(`${x.date}T00:00:00Z`);
+              {list.map((x, i) => {
+                const t = new Date(`${x.date}T00:00:00Z`), gap = between(list[i - 1]?.date, x.date);
                 return (
-                  <button key={x.date} type="button" className={`mk-date${x.past ? " past" : ""}`} aria-pressed={x.date === d.date} onClick={() => onDate(x.date)}
+                  <Fragment key={x.date}>
+                  {gap.week && <span className="mk-week-break" aria-hidden="true" />}
+                  <button type="button" className={`mk-date${x.past ? " past" : ""}`} aria-pressed={x.date === d.date} onClick={() => onDate(x.date)}
                     aria-label={`${weekday(x.date)}: ${x.count} ${x.count === 1 ? "company" : "companies"}`}>
                     <span className="mk-date-wd">{t.toLocaleDateString("en-IN", { weekday: "short", timeZone: "UTC" })}</span>
                     <span className="mk-date-d">{t.getUTCDate()}</span>
                     <span className="mk-date-m">{t.toLocaleDateString("en-IN", { month: "short", timeZone: "UTC" })}</span>
                     <span className="mk-date-n">{x.count}</span>
                   </button>
+                  </Fragment>
                 );
               })}
             </div>
@@ -333,14 +357,18 @@ function MoversDay({ date, period, onDate, onPeriod, onBack, onOpenStock }) {
           <div className="mk-dates-group">
             <span className="mk-dates-label">Trading days</span>
             <div className="mk-dates-row">
-              {[...(data?.days ?? [])].reverse().map(x => {
-                const t = new Date(`${x}T00:00:00Z`);
+              {[...(data?.days ?? [])].reverse().map((x, i, all) => {
+                const t = new Date(`${x}T00:00:00Z`), gap = between(all[i - 1], x);
                 return (
-                  <button key={x} type="button" className="mk-date" aria-pressed={x === day} onClick={() => onDate(x)} aria-label={weekday(x)}>
+                  <Fragment key={x}>
+                  {gap.week && <span className="mk-week-break" aria-hidden="true" />}
+                  {gap.closed.map(c => <ClosedDay key={c} date={c} />)}
+                  <button type="button" className="mk-date" aria-pressed={x === day} onClick={() => onDate(x)} aria-label={weekday(x)}>
                     <span className="mk-date-wd">{t.toLocaleDateString("en-IN", { weekday: "short", timeZone: "UTC" })}</span>
                     <span className="mk-date-d">{t.getUTCDate()}</span>
                     <span className="mk-date-m">{t.toLocaleDateString("en-IN", { month: "short", timeZone: "UTC" })}</span>
                   </button>
+                  </Fragment>
                 );
               })}
             </div>

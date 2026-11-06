@@ -5863,6 +5863,11 @@ button.td-index:active, button.td-line:active { background: color-mix(in srgb, v
 .mk-date[aria-pressed=true] .mk-date-wd, .mk-date[aria-pressed=true] .mk-date-m, .mk-date[aria-pressed=true] .mk-date-d { color: #04211c; }
 .mk-date[aria-pressed=true] .mk-date-n { background: #04211c; border-color: #04211c; color: #fff; }
 .mk-date:active { transform: scale(0.96); }
+/* a new week: a thin line and a little more room; a market holiday: a quiet dashed card */
+.mk-week-break { flex: none; align-self: stretch; width: 1px; margin: 6px 6px; background: var(--bdr2); }
+.mk-date-closed { width: 52px; border-style: dashed; background: transparent; cursor: default; opacity: 0.6; }
+.mk-date-closed .mk-date-d { font-size: 17px; color: var(--t3); }
+.mk-date-closed .mk-date-m { font-size: 10.5px; color: var(--t3); }
 .mk-date-mine { align-content: center; gap: 6px; height: 100%; min-height: 78px; color: #f5b83d; }
 .mk-date-mine .mk-date-m { color: var(--t2); }
 .mk-date-mine svg { fill: currentColor; }
