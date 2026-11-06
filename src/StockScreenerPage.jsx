@@ -8,7 +8,7 @@ import {
   SCREENER_PAGE_SECTIONS,
 } from "./screener-page-content.js";
 
-const heading = { fontSize: 16, fontWeight: 450, color: "var(--t1)", margin: "30px 0 8px", letterSpacing: "-0.01em" };
+const heading = { fontSize: 16, fontWeight: 400, color: "var(--t1)", margin: "30px 0 8px", letterSpacing: "-0.01em" };
 const paragraph = { fontSize: 14, lineHeight: 1.7, color: "var(--t2)", margin: "0 0 12px" };
 
 export default function StockScreenerPage({ signedIn }) {

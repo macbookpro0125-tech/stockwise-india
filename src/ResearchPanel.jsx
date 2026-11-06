@@ -49,7 +49,7 @@ function Headline({ label, value, unit = "/100", word, sub, tone, title, details
       <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
         <span style={{ fontSize: 28, fontWeight: 500, color: value == null ? "var(--t3)" : "var(--t1)", letterSpacing: "-0.03em", lineHeight: 1, ...MONO }}>{n(value)}</span>
         {value != null && <span style={{ fontSize: 13, color: "var(--t3)", ...MONO }}>{unit}</span>}
-        {word && <span style={{ fontSize: 13, fontWeight: 450, color: tone.color, marginLeft: 2 }}>{word}</span>}
+        {word && <span style={{ fontSize: 13, fontWeight: 400, color: tone.color, marginLeft: 2 }}>{word}</span>}
       </div>
       {sub && <div style={{ fontSize: 12, color: "var(--t3)", marginTop: 6, lineHeight: 1.45 }}>{sub}</div>}
     </div>
@@ -69,7 +69,7 @@ function GroupCard({ g, word }) {
           <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 7, flexWrap: "wrap" }}>
             <span style={{ fontSize: 20, fontWeight: 500, color: g.score == null ? "var(--t3)" : tone.color, ...MONO }}>{n(g.score)}</span>
             {g.score != null && <span style={{ fontSize: 12, color: "var(--t3)", ...MONO }}>/100</span>}
-            {word && g.score != null && <span style={{ fontSize: 12, fontWeight: 450, color: tone.color, marginLeft: 4 }}>{word}</span>}
+            {word && g.score != null && <span style={{ fontSize: 12, fontWeight: 400, color: tone.color, marginLeft: 4 }}>{word}</span>}
           </div>
           <Bar value={g.score} color={tone.color} />
           <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "2px 8px", fontSize: 11, color: "var(--t3)", marginTop: 7, ...MONO }}>
@@ -89,7 +89,7 @@ function LensCard({ title, score, word, note, tone, details }) {
       <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
         <span style={{ fontSize: 20, fontWeight: 500, color: score == null ? "var(--t3)" : "var(--t1)", ...MONO }}>{n(score)}</span>
         {score != null && <span style={{ fontSize: 12, color: "var(--t3)", ...MONO }}>/100</span>}
-        <span style={{ fontSize: 13, fontWeight: 450, color: tone }}>{word}</span>
+        <span style={{ fontSize: 13, fontWeight: 400, color: tone }}>{word}</span>
       </div>
       <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 5, lineHeight: 1.45 }}>{note}</div>
     </div>

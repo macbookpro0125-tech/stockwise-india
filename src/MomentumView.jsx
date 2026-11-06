@@ -33,7 +33,7 @@ function ResultsDate({ row, known }) {
   if (!row.nextResults) return <span style={{ color: "var(--t3)" }} title="No results meeting announced on NSE yet">Not announced</span>;
   if (row.resultsSoon) {
     return (
-      <span title="Results come out before a one-month exit — the price can jump either way on the day" style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "var(--red)", fontWeight: 450, whiteSpace: "nowrap" }}>
+      <span title="Results come out before a one-month exit — the price can jump either way on the day" style={{ display: "inline-flex", alignItems: "center", gap: 4, color: "var(--red)", fontWeight: 400, whiteSpace: "nowrap" }}>
         <TriangleAlert size={12} strokeWidth={2.4} />{dayLabel(row.nextResults)} · event risk
       </span>
     );
@@ -65,7 +65,7 @@ function PositionCalculator({ row, config, onClose }) {
   const out = (label, value, color) => (
     <div style={{ padding: "10px 12px", borderRadius: 10, background: "var(--s1)", border: "1px solid var(--bdr)", minWidth: 0 }}>
       <div style={{ fontSize: 11, color: "var(--t3)", marginBottom: 3 }}>{label}</div>
-      <div style={{ fontSize: 16, fontWeight: 450, color: color ?? "var(--t1)", ...MONO }}>{value}</div>
+      <div style={{ fontSize: 16, fontWeight: 400, color: color ?? "var(--t1)", ...MONO }}>{value}</div>
     </div>
   );
   return (
@@ -73,7 +73,7 @@ function PositionCalculator({ row, config, onClose }) {
       <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 12 }}>
         <Calculator size={18} style={{ color: "var(--accent)", marginTop: 2, flexShrink: 0 }} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 14, fontWeight: 450, color: "var(--t1)" }}>Position calculator — {row.name}</div>
+          <div style={{ fontSize: 14, fontWeight: 400, color: "var(--t1)" }}>Position calculator — {row.name}</div>
           <div style={{ fontSize: 12, color: "var(--t3)", marginTop: 2 }}>Your numbers: price defaults to NSE's last close ({rs(row.close)}), not a live price.</div>
         </div>
         <button type="button" onClick={onClose} aria-label="Close the calculator" className="btn-ghost" style={{ height: 32, width: 32, padding: 0, justifyContent: "center", flexShrink: 0 }}><X size={15} /></button>
@@ -233,7 +233,7 @@ export default function MomentumView({ onOpenStock }) {
 
       {data && !error && !data.available && (
         <div role="status" style={{ textAlign: "center", padding: "40px 20px", border: "1px dashed var(--bdr2)", borderRadius: 14, background: "var(--s1)" }}>
-          <div style={{ fontSize: 16, fontWeight: 450, color: "var(--t1)", marginBottom: 6 }}>Momentum figures aren't in yet</div>
+          <div style={{ fontSize: 16, fontWeight: 400, color: "var(--t1)", marginBottom: 6 }}>Momentum figures aren't in yet</div>
           <p style={{ fontSize: 13, color: "var(--t2)", margin: "0 auto", maxWidth: 520, lineHeight: 1.6 }}>They're worked out with each evening's prices. Check back after the next update.</p>
         </div>
       )}
@@ -241,7 +241,7 @@ export default function MomentumView({ onOpenStock }) {
       {/* No passers is an answer, not an error — the checks aren't loosened */}
       {data && !error && data.available && passers.length === 0 && (
         <div role="status" style={{ textAlign: "center", padding: "40px 20px", border: "1px dashed var(--bdr2)", borderRadius: 14, background: "var(--s1)" }}>
-          <div style={{ fontSize: 16, fontWeight: 450, color: "var(--t1)", marginBottom: 6 }}>No confirmed uptrends today</div>
+          <div style={{ fontSize: 16, fontWeight: 400, color: "var(--t1)", marginBottom: 6 }}>No confirmed uptrends today</div>
           <p style={{ fontSize: 13, color: "var(--t2)", margin: "0 auto", maxWidth: 520, lineHeight: 1.6 }}>
             Nothing passes every check on NSE's close of {dayLabel(data.asOf)}. That's the screen's answer for today: no setup. The checks aren't loosened to fill the list{changed ? " — your settings differ from the defaults" : ""}.
           </p>
@@ -254,16 +254,16 @@ export default function MomentumView({ onOpenStock }) {
             <div key={r.symbol} className="phone-row" onClick={() => onOpenStock(r.symbol)}
               style={{ padding: "12px 12px 12px 14px", borderTop: i ? "1px solid var(--bdr)" : "none", cursor: "pointer" }}>
               <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", columnGap: 10, alignItems: "baseline" }}>
-                <button type="button" className="stock-link" onClick={e => { e.stopPropagation(); onOpenStock(r.symbol); }} style={{ display: "block", minWidth: 0, padding: 0, border: 0, background: "none", fontFamily: "inherit", textAlign: "left", fontSize: 14, fontWeight: 450, color: "var(--t1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{i + 1}. {r.name}</button>
-                <div style={{ fontSize: 14, fontWeight: 450, color: "var(--t1)", ...MONO }}>{rs(r.close)}</div>
+                <button type="button" className="stock-link" onClick={e => { e.stopPropagation(); onOpenStock(r.symbol); }} style={{ display: "block", minWidth: 0, padding: 0, border: 0, background: "none", fontFamily: "inherit", textAlign: "left", fontSize: 14, fontWeight: 400, color: "var(--t1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{i + 1}. {r.name}</button>
+                <div style={{ fontSize: 14, fontWeight: 400, color: "var(--t1)", ...MONO }}>{rs(r.close)}</div>
                 <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.symbol}{r.sector ? ` · ${r.sector}` : ""}</div>
-                <div style={{ fontSize: 12, color: "var(--accent)", fontWeight: 450, marginTop: 3, ...MONO }}>Score {num(r.score)}</div>
+                <div style={{ fontSize: 12, color: "var(--accent)", fontWeight: 400, marginTop: 3, ...MONO }}>Score {num(r.score)}</div>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 6, marginTop: 10 }}>
                 {[["From high", pct(r.pctFromHigh)], ["RSI", num(r.rsi14)], ["1M", pct(r.ret1m, 1, true)], ["Volume", `${num(r.volRatio, 1)}×`]].map(([l, v]) => (
                   <div key={l} style={{ minWidth: 0 }}>
                     <div style={{ fontSize: 11, color: "var(--t3)", marginBottom: 2 }}>{l}</div>
-                    <div style={{ fontSize: 13, fontWeight: 450, color: "var(--t1)", ...MONO }}>{v}</div>
+                    <div style={{ fontSize: 13, fontWeight: 400, color: "var(--t1)", ...MONO }}>{v}</div>
                   </div>
                 ))}
               </div>
@@ -291,7 +291,7 @@ export default function MomentumView({ onOpenStock }) {
                 <tr key={r.symbol} style={{ background: calcFor?.symbol === r.symbol ? "color-mix(in srgb, var(--accent) 7%, transparent)" : undefined }}>
                   <td style={{ ...cell, textAlign: "right", color: "var(--t3)", ...MONO }}>{i + 1}</td>
                   <td style={{ ...cell, maxWidth: 260 }}>
-                    <button type="button" className="stock-link" onClick={() => onOpenStock(r.symbol)} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontWeight: 450, fontSize: 13, textAlign: "left", maxWidth: 250, overflow: "hidden", textOverflow: "ellipsis", display: "block", fontFamily: "inherit" }}>{r.name}</button>
+                    <button type="button" className="stock-link" onClick={() => onOpenStock(r.symbol)} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", fontWeight: 400, fontSize: 13, textAlign: "left", maxWidth: 250, overflow: "hidden", textOverflow: "ellipsis", display: "block", fontFamily: "inherit" }}>{r.name}</button>
                     <span style={{ fontSize: 11, color: "var(--t3)" }}>{r.symbol}{r.sector ? ` · ${r.sector}` : ""}</span>
                   </td>
                   <td style={{ ...cell, textAlign: "right", fontWeight: 400, ...MONO }}>{rs(r.close)}</td>

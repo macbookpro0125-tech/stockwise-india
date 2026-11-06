@@ -959,10 +959,10 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
   // plain icons, no box round each (3 Nov 2026: the boxed row "looks cheap"); the one in use is tinted
   const iconBtn = (active, extra = {}) => btn(active, { width: 40, height: 36, padding: 0, gap: 2, justifyContent: "center", border: 0, borderRadius: 9, width: 44, height: 40, background: active ? "color-mix(in srgb, var(--accent) 14%, transparent)" : "transparent", color: active ? "var(--accent)" : "var(--t1)", ...extra });
   const seg = active => ({
-    minWidth: 30, height: 30, padding: "0 6px", border: 0, borderRadius: 7, fontFamily: "inherit", fontSize: 12, fontWeight: 450, cursor: "pointer",
+    minWidth: 30, height: 30, padding: "0 6px", border: 0, borderRadius: 7, fontFamily: "inherit", fontSize: 12, fontWeight: 400, cursor: "pointer",
     background: active ? "color-mix(in srgb, var(--accent) 18%, transparent)" : "transparent", color: active ? "var(--accent)" : "var(--t2)",
   });
-  const sheetLabel = { margin: "0 0 6px 2px", fontSize: 11, fontWeight: 450, letterSpacing: "0.02em", textTransform: "uppercase", color: "var(--t3)" };
+  const sheetLabel = { margin: "0 0 6px 2px", fontSize: 11, fontWeight: 400, letterSpacing: "0.02em", textTransform: "uppercase", color: "var(--t3)" };
   const basisWord = (PIVOT_BASES[prefs.interval] ?? PIVOT_BASES.D).find(([id]) => id === pivotBasis)?.[1] ?? "month";
   // Every indicator, in its group; pivot points open their own settings
   const q = indQuery.trim().toLowerCase();
@@ -1029,7 +1029,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
           <div aria-label="Pivot points" style={{ display: "flex", flexWrap: "wrap", gap: "2px 12px", alignItems: "baseline", margin: "0 0 8px", fontSize: 12, color: "var(--t2)", ...MONO }}>
             <span style={{ color: "var(--t3)", fontFamily: "inherit" }}>{PIVOT_KINDS.find(([id]) => id === prefs.pivotKind)?.[1] ?? "Classic"} pivots, from the last {basisWord}:</span>
             {PIVOT_LEVELS.map(L => (
-              <span key={L} style={{ whiteSpace: "nowrap" }}><b style={{ color: PIVOT_COLORS[L[0]], fontWeight: 450 }}>{L}</b> {narrow && Math.abs(pivotNow[L]) >= 100 ? Math.round(pivotNow[L]).toLocaleString("en-IN") : fmtNum(pivotNow[L])}</span>
+              <span key={L} style={{ whiteSpace: "nowrap" }}><b style={{ color: PIVOT_COLORS[L[0]], fontWeight: 400 }}>{L}</b> {narrow && Math.abs(pivotNow[L]) >= 100 ? Math.round(pivotNow[L]).toLocaleString("en-IN") : fmtNum(pivotNow[L])}</span>
             ))}
           </div>
         )}
@@ -1308,7 +1308,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
                     <>
                       <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                         <span style={{ color: "var(--t1)", fontWeight: 400 }}>{new Date(`${b.realDate ?? b.date}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "2-digit", timeZone: "UTC" })}</span>{" "}
-                        {ohlc && <>O {n(b.open)} H {n(b.high)} L {n(b.low)} </>}C <b style={{ color: "var(--t1)", fontWeight: 450 }}>{fmtNum(b.close)}</b> {pct}
+                        {ohlc && <>O {n(b.open)} H {n(b.high)} L {n(b.low)} </>}C <b style={{ color: "var(--t1)", fontWeight: 400 }}>{fmtNum(b.close)}</b> {pct}
                       </div>
                       {extras.length > 0 && (
                         <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>

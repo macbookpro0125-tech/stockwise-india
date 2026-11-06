@@ -138,13 +138,13 @@ export default function NewsPanel({ symbol }) {
             );
             const reviewBlock = tab === "filings" && a.review && <>
                 <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap", marginTop: 6 }}>
-                  <span style={{ fontSize: 10, fontWeight: 450, padding: "2px 7px", borderRadius: 999, color: a.review.priority === "Review promptly" ? "var(--red)" : a.review.priority === "Read for context" ? "var(--yellow)" : "var(--t3)", background: a.review.priority === "Review promptly" ? "var(--red-dim)" : a.review.priority === "Read for context" ? "var(--yellow-dim)" : "var(--s3)" }}>{a.review.priority}</span>
+                  <span style={{ fontSize: 10, fontWeight: 400, padding: "2px 7px", borderRadius: 999, color: a.review.priority === "Review promptly" ? "var(--red)" : a.review.priority === "Read for context" ? "var(--yellow)" : "var(--t3)", background: a.review.priority === "Review promptly" ? "var(--red-dim)" : a.review.priority === "Read for context" ? "var(--yellow-dim)" : "var(--s3)" }}>{a.review.priority}</span>
                   <span style={{ fontSize: 11, color: "var(--t3)" }}>{a.review.category} · Matched: “{a.review.matchedText}”</span>
                 </div>
                 <div style={{ fontSize: 11, color: "var(--t2)", lineHeight: 1.5, marginTop: 4 }}>{a.review.reviewPrompt}{a.review.extractedAmounts?.length ? ` Amounts stated in notice: ${a.review.extractedAmounts.join(", ")}.` : ""}</div>
               </>;
             const docBlock = tab === "filings" && a.url && <>
-              <button type="button" className="tap" onClick={() => readAttachment(a.index)} style={{ marginTop: 8, padding: "5px 10px", borderRadius: 7, border: "1px solid var(--bdr2)", background: "var(--s3)", color: "var(--accent)", fontSize: 11, fontWeight: 450, cursor: "pointer" }}>
+              <button type="button" className="tap" onClick={() => readAttachment(a.index)} style={{ marginTop: 8, padding: "5px 10px", borderRadius: 7, border: "1px solid var(--bdr2)", background: "var(--s3)", color: "var(--accent)", fontSize: 11, fontWeight: 400, cursor: "pointer" }}>
                 {doc?.loading ? "Reading filing…" : openSummary === summaryKey && doc ? "Hide document summary" : doc ? "Show document summary" : "Read full filing"}
               </button>
               {openSummary === summaryKey && doc && <div style={{ marginTop: 8, padding: 11, borderRadius: 9, border: "1px solid var(--bdr2)", background: "var(--s3)" }}>

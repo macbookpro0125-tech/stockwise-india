@@ -660,7 +660,7 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
           const continueCard = activeCount > 0 && (
             <button type="button" onClick={showStocks} className="phone-continue glow" style={{ margin: isPhone ? "12px 0 0" : "28px 0 0" }}>
               <span>
-                <span style={{ display: "block", fontSize: 14, fontWeight: 450, color: "var(--t1)" }}>Continue with your filters</span>
+                <span style={{ display: "block", fontSize: 14, fontWeight: 400, color: "var(--t1)" }}>Continue with your filters</span>
                 <span style={{ display: "block", fontSize: 13, color: "var(--t3)", marginTop: 2 }}>
                   {`${activeCount} filter${activeCount === 1 ? "" : "s"}${matched != null ? ` · ${matched.toLocaleString("en-IN")} stocks` : ""}`}
                 </span>

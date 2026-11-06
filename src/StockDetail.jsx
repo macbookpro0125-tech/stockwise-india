@@ -207,7 +207,7 @@ function CompanyProfile({ symbol, m }) {
   return (
     <div style={{ border: "1px solid var(--bdr2)", borderRadius: 12, padding: "16px 18px", marginBottom: 14, background: "var(--s2)" }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
-        <h3 style={{ fontSize: 16, fontWeight: 450, margin: 0, color: "var(--t1)" }}>About the company</h3>
+        <h3 style={{ fontSize: 16, fontWeight: 400, margin: 0, color: "var(--t1)" }}>About the company</h3>
         {p?.report?.fy && <span style={{ fontSize: 12, color: "var(--t3)" }}>From its {p.report.fy} business responsibility report{p.report.filed ? `, filed ${longDate(p.report.filed)}` : ""}</span>}
       </div>
       {d == null ? (
@@ -387,7 +387,7 @@ function MyNotes({ symbol, bare = false }) {
       </div>
       {saved && !editing ? (
         <div>
-          <div style={{ display: "inline-block", fontSize: 12, fontWeight: 450, padding: "4px 12px", borderRadius: 20, background: VERDICT_META[saved.verdict]?.bg, color: VERDICT_META[saved.verdict]?.color, border: `1px solid ${VERDICT_META[saved.verdict]?.border}` }}>
+          <div style={{ display: "inline-block", fontSize: 12, fontWeight: 400, padding: "4px 12px", borderRadius: 20, background: VERDICT_META[saved.verdict]?.bg, color: VERDICT_META[saved.verdict]?.color, border: `1px solid ${VERDICT_META[saved.verdict]?.border}` }}>
             <Dot color={VERDICT_META[saved.verdict]?.color} />{VERDICT_META[saved.verdict]?.label}
           </div>
           {saved.text && <p style={{ fontSize: 13, color: "var(--t2)", margin: "8px 0 4px", lineHeight: 1.5 }}>{saved.text}</p>}

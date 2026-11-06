@@ -37,7 +37,7 @@
 .am-india { fill: #8282A0; font-weight: 500; }
 .auth-visual-line {
   position: absolute; left: 0; right: 0; top: 9%; margin: 0; padding: 0 24px; text-align: center;
-  font-family: var(--ap-font, var(--font)); font-size: clamp(26px, 2.6vw, 40px); font-weight: 700;
+  font-family: var(--ap-font, var(--font)); font-size: clamp(26px, 2.6vw, 40px); font-weight: 600;
   line-height: 1.12; letter-spacing: -0.03em; color: #F5F5F7; text-shadow: 0 2px 30px rgba(0, 0, 0, 0.55);
 }
 /* What's inside: three glass tiles low on the sky */
@@ -84,7 +84,7 @@
 .auth-brand { display: flex; justify-content: center; margin-bottom: 30px; }
 
 .auth-step { width: min(380px, 100%); }
-.auth-title { margin: 0 0 6px; text-align: center; font-size: 28px; font-weight: 700; line-height: 1.15; letter-spacing: -0.03em; color: var(--t1); }
+.auth-title { margin: 0 0 6px; text-align: center; font-size: 28px; font-weight: 600; line-height: 1.15; letter-spacing: -0.03em; color: var(--t1); }
 .auth-sub { margin: 0 0 26px; text-align: center; font-size: 14px; line-height: 1.5; color: var(--t3); }
 .auth-choices { display: flex; flex-direction: column; gap: 10px; }
 .auth-choice {
@@ -140,7 +140,7 @@
 .reset-brand { display: inline-flex; margin: 0 0 24px; text-decoration: none; }
 .reset-card { padding: clamp(22px, 6vw, 32px); border: 1px solid var(--bdr2); border-radius: 20px; background: var(--s2); box-shadow: var(--sh-lg); }
 .reset-icon { width: 44px; height: 44px; display: grid; place-items: center; margin-bottom: 18px; border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--bdr)); border-radius: 14px; color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--s1)); }
-.reset-title { margin: 0 0 8px; color: var(--t1); font-size: 24px; font-weight: 700; line-height: 1.2; letter-spacing: -.03em; }
+.reset-title { margin: 0 0 8px; color: var(--t1); font-size: 24px; font-weight: 600; line-height: 1.2; letter-spacing: -.03em; }
 .reset-copy { margin: 0 0 22px; color: var(--t3); font-size: 14px; line-height: 1.55; }
 .reset-form { display: flex; flex-direction: column; gap: 16px; }
 .reset-form .input-base { height: 48px; border-radius: 12px; font-size: 16px; }

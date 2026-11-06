@@ -224,3 +224,4 @@ Owner: "the news is not understandable". Looked at 10 apps (Inshorts' one-line c
 - 7 Nov: the story folds away to its label ("THE STORY  Read it ⌄"); the arrow opens the sentence.
 - 7 Nov: the simple index chart is green when the range rose, red when it fell (owner: "not showing red when down"); results dots stay in the accent colour.
 - 7 Nov: typography step 1, a type scale (owner rated it against 10 apps: ~6.5/10, 30+ sizes): every font size from 10.5px up snapped to 11 12 13 14 16 18 20 24 28 32 40 (502 sizes in 39 files: 11.5→12, 12.5→13, 13.5/14.5→14, 15–17→16, 17.5→18, 19/21→20, 22–25→24, 26/30→28, 34/36→32, 42/44→40; --fs-xl 20, --fs-price 32). Sizes under 11px left for step 3, weights for step 2. Unit + sweep/mobile/topbar/markets e2e passed (52).
+- 7 Nov: typography step 2, three weights: every 450 → 400, 520/530/550 → 500, 650/700/750 → 600 (139 in 23 files, plus two stray 420/430), b and strong at 600. Left: 400, 500, 600 only.

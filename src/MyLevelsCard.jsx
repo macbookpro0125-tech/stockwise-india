@@ -63,7 +63,7 @@ export default function MyLevelsCard({ symbol, fv, levels, price, priceLabel, fv
     <div style={card} data-tour="levels">
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
         <Layers size={16} style={{ color: "var(--accent)" }} />
-        <span style={{ fontSize: 14, fontWeight: 450, color: "var(--t1)" }}>Your price levels</span>
+        <span style={{ fontSize: 14, fontWeight: 400, color: "var(--t1)" }}>Your price levels</span>
         {levels && <span style={{ fontSize: 11, color: "var(--t3)" }}>{own ? "· set by hand" : `· ${settings.mos}% margin · ${settings.step}% gaps · stop ${settings.stop}% · upper ${settings.upper}%`}</span>}
       </div>
 

@@ -34,7 +34,7 @@ export function PublicPage({ title, signedIn, updated = UPDATED, children, onSig
   );
 }
 
-const H = ({ children }) => <h2 style={{ fontSize: 16, fontWeight: 450, color: "var(--t1)", margin: "30px 0 8px", letterSpacing: "-0.01em" }}>{children}</h2>;
+const H = ({ children }) => <h2 style={{ fontSize: 16, fontWeight: 400, color: "var(--t1)", margin: "30px 0 8px", letterSpacing: "-0.01em" }}>{children}</h2>;
 const P = ({ children }) => <p style={{ fontSize: 14, lineHeight: 1.7, color: "var(--t2)", margin: "0 0 12px" }}>{children}</p>;
 const LI = ({ children }) => <li style={{ fontSize: 14, lineHeight: 1.7, color: "var(--t2)", marginBottom: 8 }}>{children}</li>;
 const UL = ({ children }) => <ul style={{ margin: "0 0 12px", paddingLeft: 20 }}>{children}</ul>;

@@ -16,7 +16,7 @@
 .cinematic-track .story-nav a:focus-visible, .cinematic-track .story-brand:focus-visible, .cinematic-track .story-nav button:focus-visible, .cinematic-track .story-cta:focus-visible, .cinematic-track .story-link:focus-visible { outline: 2px solid #85DECF; }
 .cinematic-track .story-eyebrow { color: #9797B3; }
 .cinematic-track .story-eyebrow i { background: #77D2C3; box-shadow: 0 0 0 4px rgba(119,210,195,.09); }
-.cinematic-track .story-copy h2 { color: #EDEDFA; font-family: inherit; font-weight: 700; letter-spacing: -0.035em; line-height: 1.04; }
+.cinematic-track .story-copy h2 { color: #EDEDFA; font-family: inherit; font-weight: 600; letter-spacing: -0.035em; line-height: 1.04; }
 .cinematic-track .story-cta { color: #07070E; background: #00E0BE; border: 1px solid #00E0BE; }
 .cinematic-track .story-cta:hover { background: #33E8CC; }
 .cinematic-track .story-link { color: #DFDFE8; }
@@ -46,7 +46,7 @@
 .cinematic-track .story-screener { border: 1px solid rgba(223,223,232,.15); background: linear-gradient(140deg,rgba(14,14,27,.97),rgba(9,9,17,.98)); }
 .cinematic-track .story-kicker { color: #8D8DAC; }
 .cinematic-track .story-kicker svg { color: #ACACC3; }
-.cinematic-track .story-screen-heading strong { color: #E5E5F9; font-family: inherit; font-weight: 650; }
+.cinematic-track .story-screen-heading strong { color: #E5E5F9; font-family: inherit; font-weight: 600; }
 .cinematic-track .story-screen-stat { color: #7C7CA0; }
 .cinematic-track .story-screen-stat b { color: #D8D8E2; }
 .cinematic-track .story-universe-head span { color: #8282A0; }
@@ -97,7 +97,7 @@
 .cinematic-track .story-workflow-footer svg { color: #90CCC2; }
 .cinematic-track .story-final-caption { background: linear-gradient(transparent,rgba(4,4,9,.95)); }
 .cinematic-track .story-final-caption span { color: #C3C3D3; }
-.cinematic-track .story-final-caption strong { color: #EDEDFA; font-family: inherit; font-weight: 650; }
+.cinematic-track .story-final-caption strong { color: #EDEDFA; font-family: inherit; font-weight: 600; }
 .cinematic-track .story-final-caption small { color: #ACACC3; }
 /* The opening chart's gradients (stop colours set in the markup; CSS wins) */
 .cinematic-track #story-chart-area stop { stop-color: #00E0BE; }

@@ -12,7 +12,7 @@ export default function MethodologyPage({ signedIn }) {
     <PublicPage title={METHODOLOGY_TITLE} signedIn={signedIn} updated="23 October 2026">
       {METHODOLOGY_SECTIONS.map(section => (
         <section key={section.title}>
-          <h2 style={{ fontSize: 16, fontWeight: 450, color: "var(--t1)", margin: "30px 0 8px", letterSpacing: "-0.01em" }}>{section.title}</h2>
+          <h2 style={{ fontSize: 16, fontWeight: 400, color: "var(--t1)", margin: "30px 0 8px", letterSpacing: "-0.01em" }}>{section.title}</h2>
           {section.paragraphs.map((paragraph, index) => (
             <p key={index} style={{ fontSize: 14, lineHeight: 1.7, color: "var(--t2)", margin: "0 0 12px" }}>{paragraph}</p>
           ))}
@@ -24,7 +24,7 @@ export default function MethodologyPage({ signedIn }) {
         </section>
       ))}
       <section>
-        <h2 style={{ fontSize: 16, fontWeight: 450, color: "var(--t1)", margin: "30px 0 8px", letterSpacing: "-0.01em" }}>Worked company examples</h2>
+        <h2 style={{ fontSize: 16, fontWeight: 400, color: "var(--t1)", margin: "30px 0 8px", letterSpacing: "-0.01em" }}>Worked company examples</h2>
         <p style={{ fontSize: 14, lineHeight: 1.7, color: "var(--t2)", margin: "0 0 12px" }}>See how recent reported figures can be read in company-specific context:</p>
         <ul style={{ margin: "0 0 12px", paddingLeft: 20 }}>{ANALYSIS_EXAMPLES.map(item => <li key={item.symbol} style={{ fontSize: 14, lineHeight: 1.7, color: "var(--t2)", marginBottom: 8 }}><SiteLink to={`/stock/${item.symbol}`}>{item.name}</SiteLink></li>)}</ul>
       </section>

@@ -240,7 +240,7 @@ export default function InvestmentBriefView({ stocks, onClose }) {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8, marginTop: 14 }}>
             {portfolioCases.map(test => <div key={test.name} style={{ padding: 12, borderRadius: 9, background: "var(--s1)", border: "1px solid var(--bdr)" }}>
               <div style={{ fontSize: 11, color: "var(--t3)" }}>{test.name} case · {years} {years === 1 ? "year" : "years"}</div>
-              <div style={{ fontSize: 20, fontWeight: 550, color: test.name === "Bull" ? "var(--green)" : test.name === "Bear" ? "var(--red)" : "var(--t1)", marginTop: 3, ...MONO }}>{test.value == null ? "—" : money(test.value)}</div>
+              <div style={{ fontSize: 20, fontWeight: 500, color: test.name === "Bull" ? "var(--green)" : test.name === "Bear" ? "var(--red)" : "var(--t1)", marginTop: 3, ...MONO }}>{test.value == null ? "—" : money(test.value)}</div>
               <div style={{ fontSize: 11, color: "var(--t2)", marginTop: 2 }}>{test.value == null ? (test.missing?.length ? "Combined estimate unavailable; see the reason below." : "Waiting for stock data.") : `Illustrative ${test.changePct < 0 ? "loss" : "gain"}: ${money(Math.abs(test.value - capital))} (${pct(test.changePct)})`}</div>
             </div>)}
           </div>
@@ -274,7 +274,7 @@ export default function InvestmentBriefView({ stocks, onClose }) {
                     <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 3 }}>{metrics?.sector ?? item.stock.sector ?? "NSE listed company"}{metrics?.lender ? " · Lender" : ""}{metrics?.cyclical ? " · Cyclical" : ""}</div>
                   </div>
                   <div style={{ textAlign: "right", minWidth: 90 }}>
-                    <div style={{ fontSize: 24, lineHeight: 1.1, fontWeight: 550, color: overall?.score != null ? (overall.score >= 65 ? "var(--green)" : overall.score >= 45 ? "var(--yellow)" : "var(--red)") : "var(--t3)", ...MONO }}>{score == null ? "—" : `${Math.round(score)}/100`}</div>
+                    <div style={{ fontSize: 24, lineHeight: 1.1, fontWeight: 500, color: overall?.score != null ? (overall.score >= 65 ? "var(--green)" : overall.score >= 45 ? "var(--yellow)" : "var(--red)") : "var(--t3)", ...MONO }}>{score == null ? "—" : `${Math.round(score)}/100`}</div>
                     <div style={{ fontSize: 9.5, color: "var(--t3)" }}>{overall?.stance ?? "Not rated"}</div>
                   </div>
                 </div>
@@ -290,11 +290,11 @@ export default function InvestmentBriefView({ stocks, onClose }) {
                     ["Valuation", metrics?.research?.valuation?.label ?? item.stock.research?.valuationLabel ?? "Not rated"],
                     ["Risk", metrics?.research?.risk?.label ?? item.stock.research?.riskLabel ?? "Unavailable"],
                     ["Dividend yield", metrics?.divYield == null ? "Not reported" : `${metrics.divYield.toFixed(2)}%`],
-                  ].map(([label, value]) => <div key={label} style={{ padding: "8px 9px", borderRadius: 8, background: "var(--s1)" }}><div style={{ fontSize: 9.5, color: "var(--t3)" }}>{label}</div><div style={{ fontSize: 12, fontWeight: 450, color: "var(--t1)", marginTop: 3, ...MONO }}>{value}</div></div>)}
+                  ].map(([label, value]) => <div key={label} style={{ padding: "8px 9px", borderRadius: 8, background: "var(--s1)" }}><div style={{ fontSize: 9.5, color: "var(--t3)" }}>{label}</div><div style={{ fontSize: 12, fontWeight: 400, color: "var(--t1)", marginTop: 3, ...MONO }}>{value}</div></div>)}
                 </div>
 
                 <details style={{ marginTop: 12 }}>
-                  <summary style={{ cursor: "pointer", fontSize: 12, fontWeight: 450, color: "var(--accent)" }}>Illustrative {years}-year price scenarios</summary>
+                  <summary style={{ cursor: "pointer", fontSize: 12, fontWeight: 400, color: "var(--accent)" }}>Illustrative {years}-year price scenarios</summary>
                   {cases ? <>
                     <div className="brief-case-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 7, marginTop: 9 }}>
                       {cases.map(test => <div key={test.name} className="brief-case" style={{ padding: 9, borderRadius: 8, background: "var(--s1)", border: "1px solid var(--bdr)" }}>
@@ -319,7 +319,7 @@ export default function InvestmentBriefView({ stocks, onClose }) {
                     <div style={{ fontSize: 11, fontWeight: 500, color: "var(--t1)" }}>Annual financials · ₹ crore</div>
                     <FinancialBars history={metrics?.history} />
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 4, marginTop: 7, fontSize: 9.5, color: "var(--t3)" }}>
-                      {[["Revenue", latest?.revenueCr], ["Operating profit", latest?.operatingProfitCr], ["Net profit", latest?.profitCr]].map(([label, value]) => <div key={label}><span>{label}</span><div style={{ fontSize: 10, color: "var(--t2)", fontWeight: 450, ...MONO }}>{cr(value)}</div></div>)}
+                      {[["Revenue", latest?.revenueCr], ["Operating profit", latest?.operatingProfitCr], ["Net profit", latest?.profitCr]].map(([label, value]) => <div key={label}><span>{label}</span><div style={{ fontSize: 10, color: "var(--t2)", fontWeight: 400, ...MONO }}>{cr(value)}</div></div>)}
                     </div>
                     <div style={{ fontSize: 9.5, color: "var(--t3)", marginTop: 4 }}>{latest?.fyEnd ? `Latest filed year ended ${dateLabel(latest.fyEnd)} · ${latest.scope ?? "scope not stated"}` : "Annual filing data unavailable."}</div>
                   </div>
