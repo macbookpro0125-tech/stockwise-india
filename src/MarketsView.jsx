@@ -117,6 +117,9 @@ const reported = (c, date) => !!c.reported || (!!c.quarter?.filed && Date.parse(
 
 function ResultsDay({ results, date, onDate, onBack, onOpenStock }) {
   const [q, setQ] = useState("");
+  const strip = useRef(null);
+  // the picked day slides into view
+  useEffect(() => { strip.current?.querySelector("[aria-pressed=true]")?.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" }); }, [date, results]);
   // the week before (results already out) and the days ahead, in order
   const past = (results?.past ?? []).map(x => ({ ...x, past: true }));
   const days = [...past, ...(results?.days ?? []).filter(x => x.count > 0)];
@@ -134,11 +137,27 @@ function ResultsDay({ results, date, onDate, onBack, onOpenStock }) {
           ? `${d.count} ${d.count === 1 ? "company" : "companies"} filed ${d.count === 1 ? "its" : "their"} quarterly results with NSE that day, the largest first, with sales and profit against a year earlier.`
           : `${d.count} ${d.count === 1 ? "company meets" : "companies meet"} to approve ${d.count === 1 ? "its" : "their"} quarterly results${done ? `; ${done} ${done === 1 ? "has" : "have"} filed` : ""}. The largest first. Dates are the ones companies told NSE; they can change.`}</p>
       </header>
-      <div className="mk-seg mk-res-days" role="group" aria-label="Day">
-        {days.map((x, i) => <Fragment key={x.date}>
-          {i === past.length && past.length > 0 && <span className="mk-res-split" aria-hidden="true" />}
-          <button type="button" className={x.past ? "past" : ""} aria-pressed={x.date === d.date} onClick={() => onDate(x.date)} title={x.past ? "Results already out" : "Results due"}>{shortDay(x.date)} <span>{x.count}</span></button>
-        </Fragment>)}
+      {/* the days as one sliding strip: the week before, then the days ahead */}
+      <div className="mk-dates" role="group" aria-label="Day" ref={strip}>
+        {[["Already out", days.filter(x => x.past)], ["Coming", days.filter(x => !x.past)]].map(([label, list]) => list.length > 0 && (
+          <div key={label} className="mk-dates-group">
+            <span className="mk-dates-label">{label}</span>
+            <div className="mk-dates-row">
+              {list.map(x => {
+                const t = new Date(`${x.date}T00:00:00Z`);
+                return (
+                  <button key={x.date} type="button" className={`mk-date${x.past ? " past" : ""}`} aria-pressed={x.date === d.date} onClick={() => onDate(x.date)}
+                    aria-label={`${weekday(x.date)}: ${x.count} ${x.count === 1 ? "company" : "companies"}`}>
+                    <span className="mk-date-wd">{t.toLocaleDateString("en-IN", { weekday: "short", timeZone: "UTC" })}</span>
+                    <span className="mk-date-d">{t.getUTCDate()}</span>
+                    <span className="mk-date-m">{t.toLocaleDateString("en-IN", { month: "short", timeZone: "UTC" })}</span>
+                    <span className="mk-date-n">{x.count}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
       {d.count > 12 && <input className="mk-search" type="search" placeholder="Find a company" aria-label="Find a company" value={q} onChange={e => setQ(e.target.value)} />}
       <section className="mk-card" aria-label={`Results on ${weekday(d.date)}`}>
