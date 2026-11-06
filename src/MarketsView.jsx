@@ -150,9 +150,36 @@ function useDateStrip(dep) {
   const edges = () => {
     const el = strip.current;
     if (!el) return;
-    el.dataset.start = el.scrollLeft <= 2 ? "1" : "0";
-    el.dataset.end = el.scrollLeft + el.clientWidth >= el.scrollWidth - 2 ? "1" : "0";
+    const start = el.scrollLeft <= 2 ? "1" : "0", end = el.scrollLeft + el.clientWidth >= el.scrollWidth - 2 ? "1" : "0";
+    for (const n of [el, el.parentElement]) if (n) { n.dataset.start = start; n.dataset.end = end; }
   };
+  // a mouse (7 Nov 2026, "if I use a mouse, how do I scroll left and right"):
+  // its wheel turns the strip, and a press-and-drag pulls it; a drag isn't a click
+  useEffect(() => {
+    const el = strip.current;
+    if (!el) return;
+    const wheel = e => {
+      if (el.scrollWidth <= el.clientWidth || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+      const before = el.scrollLeft;
+      el.scrollLeft += e.deltaY;
+      if (el.scrollLeft !== before) e.preventDefault();
+    };
+    let drag = null;
+    const down = e => { if (e.pointerType !== "mouse" || e.button !== 0) return; drag = { x: e.clientX, left: el.scrollLeft, moved: false }; };
+    const move = e => {
+      if (!drag) return;
+      const dx = e.clientX - drag.x;
+      if (!drag.moved && Math.abs(dx) < 5) return;
+      drag.moved = true; el.classList.add("dragging");
+      el.scrollLeft = drag.left - dx;
+    };
+    const up = () => { if (drag?.moved) { const stop = ev => { ev.stopPropagation(); ev.preventDefault(); }; el.addEventListener("click", stop, { capture: true, once: true }); setTimeout(() => el.removeEventListener("click", stop, { capture: true }), 0); } drag = null; el.classList.remove("dragging"); };
+    el.addEventListener("wheel", wheel, { passive: false });
+    el.addEventListener("pointerdown", down);
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    return () => { el.removeEventListener("wheel", wheel); el.removeEventListener("pointerdown", down); window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
+  }, []);
   useEffect(() => {
     const el = strip.current, pick = el?.querySelector("[aria-pressed=true]");
     if (el && pick) {
@@ -164,7 +191,15 @@ function useDateStrip(dep) {
     requestAnimationFrame(edges);
   }, dep); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { window.addEventListener("resize", edges); return () => window.removeEventListener("resize", edges); }, []);
-  return [strip, edges];
+  const nudge = dir => strip.current?.scrollBy({ left: dir * (strip.current.clientWidth * 0.7), behavior: "smooth" });
+  return [strip, edges, nudge];
+}
+// the strip's arrows, for a mouse: glass, shown only towards more dates
+function StripArrows({ nudge }) {
+  return <>
+    <button type="button" className="mk-end back mk-strip-end" aria-label="Earlier dates" onClick={() => nudge(-1)}><ChevronLeft size={20} /></button>
+    <button type="button" className="mk-end next mk-strip-end" aria-label="Later dates" onClick={() => nudge(1)}><ChevronRight size={20} /></button>
+  </>;
 }
 
 function ResRow({ c, done, starred, onOpenStock, when }) {
@@ -223,7 +258,7 @@ function ResultsDay({ results, date, onDate, onBack, onOpenStock }) {
   const [show, setShow] = useState("all");
   const watched = useWatchlist();
   // the picked day slides to the strip's middle
-  const [strip, stripEdges] = useDateStrip([date, results]);
+  const [strip, stripEdges, nudge] = useDateStrip([date, results]);
   // the week before (results already out) and the days ahead, in order
   const past = (results?.past ?? []).map(x => ({ ...x, past: true }));
   const days = [...past, ...(results?.days ?? []).filter(x => x.count > 0)];
@@ -255,6 +290,8 @@ function ResultsDay({ results, date, onDate, onBack, onOpenStock }) {
           : `${d.count} ${d.count === 1 ? "company meets" : "companies meet"} to approve ${d.count === 1 ? "its" : "their"} quarterly results${done ? `; ${done} ${done === 1 ? "has" : "have"} filed` : ""}. The largest first. Dates are the ones companies told NSE; they can change.`}</p>
       </header>
       {/* the days as one sliding strip: the week before, then the days ahead */}
+      <div className="mk-dates-wrap">
+      <StripArrows nudge={nudge} />
       <div className="mk-dates" role="group" aria-label="Day" ref={strip} onScroll={stripEdges}>
         <div className="mk-dates-group">
           <span className="mk-dates-label">Yours</span>
@@ -286,6 +323,7 @@ function ResultsDay({ results, date, onDate, onBack, onOpenStock }) {
             </div>
           </div>
         ))}
+      </div>
       </div>
       {mineMode && <WatchResults onOpenStock={onOpenStock} />}
       {!mineMode && tally && (
@@ -334,7 +372,7 @@ function MoversDay({ date, period, onDate, onPeriod, onBack, onOpenStock }) {
   const [q, setQ] = useState("");
   const [more, setMore] = useState({});
   const watched = useWatchlist();
-  const [strip, stripEdges] = useDateStrip([data?.date, data?.days?.length]);
+  const [strip, stripEdges, nudge] = useDateStrip([data?.date, data?.days?.length]);
   useEffect(() => { setMore({}); api.moversDay(date, period).then(setData).catch(() => setData({ rows: [], days: [] })); }, [date, period]);
   const match = r => (!q.trim() || `${r.name} ${r.symbol} ${r.sector ?? ""}`.toLowerCase().includes(q.trim().toLowerCase()))
     && (show === "large" ? (r.marketCapCr ?? 0) >= 20000 : show === "mine" ? watched.has(r.symbol) : true);
@@ -377,6 +415,8 @@ function MoversDay({ date, period, onDate, onPeriod, onBack, onOpenStock }) {
         <p>{data ? `${(data.rows ?? []).length.toLocaleString("en-IN")} NSE companies worth ₹${(data.floorCr ?? 1000).toLocaleString("en-IN")} crore or more, by their move ${OVER[period]}${data.from && period !== "1d" ? ` (from the close on ${day ? shortDay(data.from) : ""})` : ""}.` : "Reading the closing prices…"}</p>
       </header>
       <div className="mk-moves-bar">
+        <div className="mk-dates-wrap">
+        <StripArrows nudge={nudge} />
         <div className="mk-dates" role="group" aria-label="Trading day" ref={strip} onScroll={stripEdges}>
           <div className="mk-dates-group">
             <span className="mk-dates-label">Trading days</span>
@@ -397,6 +437,7 @@ function MoversDay({ date, period, onDate, onPeriod, onBack, onOpenStock }) {
               })}
             </div>
           </div>
+        </div>
         </div>
         <div className="mk-seg" role="group" aria-label="Over">
           {[["1d", "Day"], ["1w", "Week"], ["1m", "Month"]].map(([id, l]) => <button key={id} type="button" aria-pressed={period === id} onClick={() => onPeriod(id)}>{l}</button>)}

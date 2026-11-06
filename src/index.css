@@ -5851,6 +5851,16 @@ button.td-index:active, button.td-line:active { background: color-mix(in srgb, v
 /* a fade only on a side with more to scroll to */
 .mk-dates[data-start="0"] { --fade-l: 28px; }
 .mk-dates[data-end="0"] { --fade-r: 28px; }
+/* the strip's arrows (a mouse): over its ends, only towards more dates; a
+   finger swipes, so a touch screen doesn't get them */
+.mk-dates-wrap { position: relative; min-width: 0; }
+.mk-strip-end { top: calc(50% + 10px); width: 38px; height: 38px; opacity: 0; pointer-events: none; transition: opacity 160ms ease-out, transform 220ms cubic-bezier(0.34, 1.4, 0.64, 1); }
+.mk-strip-end.back { left: -4px; } .mk-strip-end.next { right: -4px; }
+@media (hover: hover) and (pointer: fine) {
+  .mk-dates-wrap[data-start="0"] .mk-strip-end.back, .mk-dates-wrap[data-end="0"] .mk-strip-end.next { opacity: 1; pointer-events: auto; }
+}
+.mk-dates.dragging { cursor: grabbing; user-select: none; }
+.mk-dates.dragging .mk-date { pointer-events: none; }
 .mk-dates::-webkit-scrollbar { display: none; }
 .mk-dates-group { display: flex; flex-direction: column; gap: 8px; flex: none; }
 .mk-dates-group + .mk-dates-group { padding-left: 22px; border-left: 1px solid var(--bdr2); }
@@ -5905,7 +5915,8 @@ button.td-index:active, button.td-line:active { background: color-mix(in srgb, v
 .mk-tally-bar i { display: block; min-width: 0; }
 .mk-tally-bar i.up { background: var(--green); } .mk-tally-bar i.flat { background: var(--bdr2); }
 .mk-moves-bar { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 18px; }
-.mk-moves-bar .mk-dates { flex: 1 1 420px; min-width: 0; margin-bottom: 12px; }
+.mk-moves-bar .mk-dates-wrap { flex: 1 1 420px; min-width: 0; margin-bottom: 12px; }
+.mk-moves-bar .mk-dates { margin-bottom: 0; }
 .mk-moves-bar > .mk-seg { margin-bottom: 18px; }
 .mk-card-links { align-items: center; } .mk-tally-bar i.down { background: color-mix(in srgb, var(--red) 70%, var(--t3)); } .mk-tally-bar i.loss { background: var(--red); }
 .mk-tally p { margin: 8px 0 0; font-size: 14px; color: var(--t2); }
