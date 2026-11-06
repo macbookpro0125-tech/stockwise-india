@@ -46,3 +46,21 @@ test("MK-2 See all lists every index; a search narrows it, a click charts it, Ba
   await page.goBack();
   await expect(page.getByRole("heading", { name: "Markets", level: 1 })).toBeVisible();
 });
+
+// 6 Nov 2026: "when I press, I should see the details on the next page"
+test("MK-3 a results day opens as a page: its companies' figures, other days, Back returns @phone", async ({ page, account }) => {
+  await page.goto("/");
+  await openPage(page, "Markets");
+  const more = page.getByRole("button", { name: /See the figures/ }).first();
+  await expect(more).toBeVisible({ timeout: 45_000 });
+  await more.click();
+  await expect(page.getByRole("heading", { name: /^Results on \w+day, \d+ \w+$/, level: 1 })).toBeVisible();
+  const rows = page.locator(".mk-resday > li:not(.mk-resday-head)");
+  await expect(rows.first()).toBeVisible();
+  await expect(rows.first()).toContainText(/₹/);
+  // another day from the row of days
+  const days = page.getByRole("group", { name: "Day" }).getByRole("button");
+  if (await days.count() > 1) { await days.nth(1).click(); await expect(days.nth(1)).toHaveAttribute("aria-pressed", "true"); }
+  await page.goBack();
+  await expect(page.getByRole("heading", { name: "Markets", level: 1 })).toBeVisible();
+});

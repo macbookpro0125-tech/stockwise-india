@@ -5839,6 +5839,39 @@ button.td-index:active, button.td-line:active { background: color-mix(in srgb, v
 .mk-results button { padding: 4px 0; border: 0; background: none; color: var(--t1); font: inherit; font-size: 13px; cursor: pointer; text-align: left; }
 @media (hover: hover) and (pointer: fine) { .mk-results button:hover { color: var(--accent); } }
 .mk-results small { font-size: 12px; color: var(--t3); }
+/* a results day opens a page of its own (6 Nov 2026) */
+.mk-res-day { display: inline-flex; align-items: center; gap: 4px; padding: 0 !important; font-size: 14px !important; font-weight: 600; color: var(--t2) !important; }
+.mk-res-day span { color: var(--t3); font-weight: 400; }
+.mk-res-more { display: inline-flex; align-items: center; gap: 3px; margin-top: 4px; color: var(--accent) !important; font-size: 12.5px !important; }
+.mk-res-dot { display: inline-block; width: 7px; height: 7px; margin-left: 6px; border-radius: 50%; background: var(--green); vertical-align: middle; }
+.mk-res-days { flex-wrap: wrap; margin: 4px 0 14px; }
+.mk-res-days button span { color: var(--t3); margin-left: 4px; }
+.mk-resday { list-style: none; margin: 0; padding: 0; }
+.mk-resday > li { display: grid; grid-template-columns: minmax(0, 2.4fr) 1fr 0.9fr 1.1fr 1.2fr auto; align-items: center; gap: 14px; padding: 10px 4px; border-top: 1px solid var(--bdr); font-size: 14px; font-variant-numeric: tabular-nums; }
+.mk-resday > li.mk-resday-head { border-top: 0; padding-top: 0; font-size: 11.5px; color: var(--t3); }
+.mk-resday > li > span:nth-child(n+2):not(:last-child) { text-align: right; }
+.mk-resday-co { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 0; border: 0; background: none; color: var(--t1); font: inherit; text-align: left; cursor: pointer; }
+.mk-resday-co > span { display: flex; flex-direction: column; min-width: 0; }
+.mk-resday-co b { font-weight: 550; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mk-resday-co small { font-size: 12px; color: var(--t3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (hover: hover) and (pointer: fine) { .mk-resday-co:hover b { color: var(--accent); } }
+.mk-resday-cap { color: var(--t2); white-space: nowrap; }
+.mk-resday-q { display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px; color: var(--t2); white-space: nowrap; }
+.mk-res-tag { padding: 1px 6px; border-radius: 6px; background: var(--s2); color: var(--t3); font-size: 10.5px; font-style: normal; font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; }
+.mk-res-tag.new { background: color-mix(in srgb, var(--green) 18%, transparent); color: var(--green); }
+.mk-resday-n { display: flex; flex-direction: column; align-items: flex-end; }
+.mk-resday-n small { font-size: 12px; }
+.mk-resday-n small.up { color: var(--green); } .mk-resday-n small.down { color: var(--red); }
+.mk-resday li.done .mk-resday-n { color: var(--t1); font-weight: 550; }
+.mk-resday li:not(.done) .mk-resday-n { color: var(--t2); }
+.mk-resday-go .mk-link { display: inline-flex; align-items: center; gap: 2px; white-space: nowrap; }
+@media (max-width: 760px) {
+  .mk-resday > li { grid-template-columns: minmax(0, 1fr) auto auto; gap: 4px 12px; }
+  .mk-resday > li.mk-resday-head { display: none; }
+  .mk-resday-co { grid-column: 1 / -1; }
+  .mk-resday-cap, .mk-resday-go { display: none; }
+  .mk-resday-q { justify-content: flex-start; grid-column: 1; }
+}
 .mk-note { margin: 6px 0 0; font-size: 12px; color: var(--t3); }
 .mk-skel { display: block; border-radius: 12px; background: color-mix(in srgb, var(--t1) 6%, transparent); }
 .mk-pill.mk-skel { height: 68px; min-width: 250px; }

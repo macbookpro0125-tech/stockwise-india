@@ -212,7 +212,11 @@ export function resultsWeek(days = 7) {
     const d = r.nextResults;
     if (!d || d < today || d > end) continue;
     if (!byDay.has(d)) byDay.set(d, []);
-    byDay.get(d).push({ symbol: r.symbol, name: r.name, marketCapCr: r.marketCapCr ?? null, sector: r.sector ?? null, lastProfitYoY: r.qProfitGrowthYoY ?? null });
+    // its latest quarter on file: the one it is about to report on once
+    // filed (newer than three months before the meeting), else the one before
+    const q = r.quarters?.[0];
+    byDay.get(d).push({ symbol: r.symbol, name: r.name, marketCapCr: r.marketCapCr ?? null, sector: r.sector ?? null, lastProfitYoY: r.qProfitGrowthYoY ?? null, cmp: r.cmp ?? null,
+      quarter: q ? { end: q.fyEnd, filed: q.filed ?? null, salesCr: q.revenueCr ?? null, salesYoY: q.salesYoY ?? null, profitCr: q.profitCr ?? null, profitYoY: q.profitYoY ?? null } : null });
   }
   return {
     today,

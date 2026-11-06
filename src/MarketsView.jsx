@@ -102,6 +102,66 @@ function AllIndices({ board, onPick, onBack }) {
   );
 }
 
+// A results day in full (6 Nov 2026: "when I press, I should see the details
+// on the next page"): every company with a board meeting for its results that
+// day, the largest first. Once it has filed, its new quarter's figures and a
+// link to them; until then, the quarter before, to compare with.
+const fyQ = end => { const [y, m] = String(end).split("-").map(Number); return y && m ? `Q${m >= 4 ? Math.ceil((m - 3) / 3) : 4} FY${String(m >= 4 ? y + 1 : y).slice(2)}` : null; };
+const crore = v => (v == null ? "—" : `₹${Math.abs(v).toLocaleString("en-IN", { maximumFractionDigits: Math.abs(v) >= 100 ? 0 : 1 })} cr`);
+const mcap = v => (v == null ? "" : v >= 100000 ? `₹${(v / 100000).toFixed(1)} lakh cr` : `₹${Math.round(v).toLocaleString("en-IN")} cr`);
+const weekday = iso => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
+const shortDay = iso => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
+// filed on the meeting day or after it (or the day before, for an evening filing read late)
+const pct1 = v => `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(Math.abs(v) >= 100 ? 0 : 1)}%`;
+const reported = (c, date) => !!c.quarter?.filed && Date.parse(c.quarter.filed) >= Date.parse(date) - 86_400_000;
+
+function ResultsDay({ results, date, onDate, onBack, onOpenStock }) {
+  const [q, setQ] = useState("");
+  const days = (results?.days ?? []).filter(d => d.count > 0);
+  const d = days.find(x => x.date === date) ?? days[0];
+  if (!d) return <div className="mk"><button type="button" className="mk-back" onClick={onBack}><ChevronLeft size={18} /> Markets</button><p className="mk-note">No results dates this week.</p></div>;
+  const match = c => !q.trim() || `${c.name} ${c.symbol} ${c.sector ?? ""}`.toLowerCase().includes(q.trim().toLowerCase());
+  const list = d.companies.filter(match);
+  const done = d.companies.filter(c => reported(c, d.date)).length;
+  return (
+    <div className="mk">
+      <button type="button" className="mk-back" onClick={onBack}><ChevronLeft size={18} /> Markets</button>
+      <header className="mk-head">
+        <h1>Results on {weekday(d.date)}</h1>
+        <p>{d.count} {d.count === 1 ? "company meets" : "companies meet"} to approve {d.count === 1 ? "its" : "their"} quarterly results{done ? `; ${done} ${done === 1 ? "has" : "have"} filed` : ""}. The largest first. Dates are the ones companies told NSE; they can change.</p>
+      </header>
+      <div className="mk-seg mk-res-days" role="group" aria-label="Day">
+        {days.map(x => <button key={x.date} type="button" aria-pressed={x.date === d.date} onClick={() => onDate(x.date)}>{shortDay(x.date)} <span>{x.count}</span></button>)}
+      </div>
+      {d.count > 12 && <input className="mk-search" type="search" placeholder="Find a company" aria-label="Find a company" value={q} onChange={e => setQ(e.target.value)} />}
+      <section className="mk-card" aria-label={`Results on ${weekday(d.date)}`}>
+        <ul className="mk-resday">
+          <li className="mk-resday-head" aria-hidden="true"><span>Company</span><span>Market cap</span><span>Quarter</span><span>Sales</span><span>Net profit</span><span /></li>
+          {list.map(c => {
+            const qq = c.quarter, done = reported(c, d.date), label = qq ? fyQ(qq.end) : null;
+            const slug = label?.toLowerCase().replace(" ", "-");
+            return (
+              <li key={c.symbol} className={done ? "done" : ""}>
+                <button type="button" className="mk-resday-co" onClick={() => onOpenStock?.(c.symbol)} aria-label={`${cardName(c.name)}: open its page`}>
+                  <CompanyLogo symbol={c.symbol} size={30} fallback={c.name} />
+                  <span><b>{cardName(c.name)}</b><small>{[c.symbol, c.sector].filter(Boolean).join(" · ")}</small></span>
+                </button>
+                <span className="mk-resday-cap">{mcap(c.marketCapCr)}</span>
+                <span className="mk-resday-q">{label ? <>{done ? <em className="mk-res-tag new">New</em> : <em className="mk-res-tag">Last</em>}{label}</> : "—"}</span>
+                <span className="mk-resday-n">{crore(qq?.salesCr)}{qq?.salesYoY != null && <small className={tone(qq.salesYoY)}>{pct1(qq.salesYoY)}</small>}</span>
+                <span className="mk-resday-n">{qq?.profitCr != null && qq.profitCr < 0 ? `Loss ${crore(qq.profitCr)}` : crore(qq?.profitCr)}{qq?.profitYoY != null && qq?.profitCr > 0 && qq.profitCr / (1 + qq.profitYoY / 100) > 0 && <small className={tone(qq.profitYoY)}>{pct1(qq.profitYoY)}</small>}</span>
+                <span className="mk-resday-go">{slug && <button type="button" className="mk-link" onClick={() => navigate(`/stock/${encodeURIComponent(c.symbol)}/results/${slug}`)}>{done ? "See results" : "Last results"} <ChevronRight size={14} aria-hidden="true" /></button>}</span>
+              </li>
+            );
+          })}
+          {!list.length && <li className="mk-note">No company by that name reports that day.</li>}
+        </ul>
+      </section>
+      <p className="mk-note">"Last" is the quarter before, to compare with until the new results are filed; changes are against the same quarter a year earlier. From the companies' filings with NSE. Not investment advice.</p>
+    </div>
+  );
+}
+
 export default function MarketsView({ onOpenStock, onOpenTab }) {
   const [board, setBoard] = useState(null);
   const [pick, setPick] = useState("Nifty 50");
@@ -119,6 +179,16 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
     return () => window.removeEventListener("popstate", back);
   }, []);
   const showAll = () => { window.history.pushState({ ...(window.history.state ?? {}), allIndices: true }, ""); setAll(true); window.scrollTo(0, 0); };
+  // a results day as its own page, the same way
+  const [resDay, setResDay] = useState(() => window.history.state?.resultsDay ?? null);
+  useEffect(() => {
+    const back = () => setResDay(window.history.state?.resultsDay ?? null);
+    window.addEventListener("popstate", back);
+    return () => window.removeEventListener("popstate", back);
+  }, []);
+  const openDay = date => { window.history.pushState({ ...(window.history.state ?? {}), resultsDay: date }, ""); setResDay(date); window.scrollTo(0, 0); };
+  const pickDay = date => { window.history.replaceState({ ...(window.history.state ?? {}), resultsDay: date }, ""); setResDay(date); };
+  const closeDay = () => { if (window.history.state?.resultsDay) window.history.back(); else setResDay(null); };
   const closeAll = () => { if (window.history.state?.allIndices) window.history.back(); else setAll(false); };
 
   useEffect(() => {
@@ -156,6 +226,7 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
   const rangeMove = shownDays && shownDays.closes.length > 1 ? (shownDays.closes.at(-1) / shownDays.closes[0] - 1) * 100 : null;
   const R = detail?.returns ?? {};
 
+  if (resDay) return <ResultsDay results={results} date={resDay} onDate={pickDay} onBack={closeDay} onOpenStock={onOpenStock} />;
   if (all) return <AllIndices board={board} onBack={closeAll} onPick={name => { setPick(name); closeAll(); window.scrollTo(0, 0); }} />;
 
   return (
@@ -289,11 +360,11 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
           <div className="mk-results">
             {results.days.filter(d => d.count > 0).slice(0, 5).map(d => (
               <div key={d.date}>
-                <h3>{new Date(`${d.date}T00:00:00Z`).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" })} <span>{d.count}</span></h3>
+                <h3><button type="button" className="mk-res-day" onClick={() => openDay(d.date)} aria-label={`Results on ${weekday(d.date)}: all ${d.count}`}>{shortDay(d.date)} <span>{d.count}</span><ChevronRight size={14} aria-hidden="true" /></button></h3>
                 <ul>
-                  {d.companies.slice(0, 6).map(c => <li key={c.symbol}><button type="button" onClick={() => onOpenStock?.(c.symbol)}>{cardName(c.name)}</button></li>)}
+                  {d.companies.slice(0, 6).map(c => <li key={c.symbol}><button type="button" onClick={() => onOpenStock?.(c.symbol)}>{cardName(c.name)}{reported(c, d.date) && <em className="mk-res-dot" title="Results filed" aria-label="results filed" />}</button></li>)}
                 </ul>
-                {d.count > 6 && <small>+{d.count - 6} more</small>}
+                <button type="button" className="mk-res-more" onClick={() => openDay(d.date)}>{d.count > 6 ? `+${d.count - 6} more · ` : ""}See the figures <ChevronRight size={13} aria-hidden="true" /></button>
               </div>
             ))}
           </div>
