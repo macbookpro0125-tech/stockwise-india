@@ -2558,6 +2558,19 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 .nw-kind.k-deals { background: color-mix(in srgb, var(--accent2) 14%, transparent); color: var(--accent2); }
 .nw-kind.k-people { background: var(--yellow-dim); color: var(--yellow); }
 .nw-kind.k-legal { background: var(--red-dim); color: var(--red); }
+/* the news in plain words (newsPlain.js, 6 Nov 2026): the line is the story,
+   the kind a small label under it; what matters most a touch bolder */
+.nw-plain-line { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; font-size: var(--fs-sm); line-height: 1.45; color: var(--t1); font-weight: 500; }
+.nw-plain-line.big { font-weight: 600; }
+.nw-plain-head { margin: 4px 0 6px; font-size: clamp(18px, 2vw, 22px); line-height: 1.35; font-weight: 600; color: var(--t1); letter-spacing: -0.01em; }
+.nw-day-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.nw-day-more { display: inline-flex; align-items: center; gap: 2px; border: 0; background: none; padding: 4px 0; color: var(--accent); font: inherit; font-size: var(--fs-xs); letter-spacing: 0; text-transform: none; cursor: pointer; }
+.nw-fold { margin-top: 6px; }
+.nw-fold > summary { list-style: none; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 6px 12px; border: 1px solid var(--bdr2); border-radius: 999px; color: var(--t2); font-size: var(--fs-xs); cursor: pointer; }
+.nw-fold > summary::-webkit-details-marker { display: none; }
+.nw-fold > summary::before { content: "+"; font-weight: 600; color: var(--t3); }
+.nw-fold[open] > summary::before { content: "−"; }
+.nw-fold[open] > .nw-list { margin-top: 8px; opacity: 0.85; }
 .nw-subject { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-sm); color: var(--t2); }
 .nw-text, .nw-headline { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; font-size: var(--fs-sm); line-height: 1.45; color: var(--t2); }
 .nw-headline { -webkit-line-clamp: 3; font-size: var(--fs-md); color: var(--t1); }

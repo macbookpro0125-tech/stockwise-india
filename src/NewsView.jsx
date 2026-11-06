@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ExternalLink, FileText, Newspaper, ChevronRight, Fuel, Globe, Landmark, ChartColumn, Rocket, IndianRupee, Gem, Scale, ChartLine, TrendingUp, TrendingDown, Minus, CircleHelp, Cpu, Building2, Car, Pill, Pickaxe, ShoppingBasket, House, Zap, Shield, Building, Tv, FlaskConical, ChartCandlestick, Construction, WashingMachine, HeartPulse, X } from "lucide-react";
 import { api } from "./api.js";
 import { explainFiling, explainHeadline, newsTone, TONE_LABEL } from "./filingTerms.js";
 import { compareResults } from "./resultsCompare.js";
+import { plainNews } from "./newsPlain.js";
 import { resultsTable } from "./resultsTable.js";
 import CompanyLogo from "./CompanyLogo.jsx";
 import { niceName } from "./stockName.js";
@@ -18,11 +19,15 @@ import Reveal from "./Reveal.jsx";
 // about it; for a headline, the companies it names. The item is its own
 // history entry, so Back returns to the list where it was.
 
-const FILTERS = [
+const KINDS = [
   ["all", "All"], ["watchlist", "My watchlist"], ["results", "Results"], ["dividends", "Dividends & splits"],
   ["deals", "Orders & deals"], ["people", "Management"], ["legal", "Ratings & legal"], ["updates", "Company updates"], ["headlines", "Headlines"], ["regulators", "RBI & SEBI"],
 ];
-export const KIND_LABEL = Object.fromEntries(FILTERS.filter(([id]) => id !== "all" && id !== "watchlist").map(([id, label]) => [id, id === "headlines" ? "Headline" : label]));
+export const KIND_LABEL = Object.fromEntries(KINDS.filter(([id]) => id !== "all" && id !== "watchlist").map(([id, label]) => [id, id === "headlines" ? "Headline" : label]));
+// The kinds to pick from (6 Nov 2026: ten buttons before the first story was
+// too many). Management, ratings and other updates stay in All, sorted by how
+// much they matter (newsPlain.js); RBI and SEBI sit with the headlines.
+const FILTERS = [["all", "All"], ["watchlist", "My watchlist"], ["results", "Results"], ["deals", "Orders & deals"], ["dividends", "Dividends"], ["headlines", "Headlines"]];
 
 // A headline's picture (24 Oct 2026, "like others show"): never the
 // publisher's photo — the company it names, or an icon for its topic
@@ -88,8 +93,9 @@ const when = (iso, dated, compact) => { const day = dated ? dayLabel(iso) : "Tod
 
 export function NewsRow({ item, onOpen, asOf, compact = false, dated = true }) {
   const filing = item.type === "filing";
+  const plain = filing ? plainNews(item) : null;
   return (
-    <button type="button" className={`nw-row${compact ? " compact" : ""}`} onClick={() => onOpen(item.id)} aria-label={filing ? `${niceName(item.company)}: ${item.title}` : `${item.publisher ?? "Headline"}: ${item.title}`}>
+    <button type="button" className={`nw-row${compact ? " compact" : ""}`} onClick={() => onOpen(item.id)} aria-label={filing ? `${niceName(item.company)}: ${plain.line}` : `${item.publisher ?? "Headline"}: ${item.title}`}>
       <span className="nw-mark" aria-hidden="true">
         {filing ? <CompanyLogo symbol={item.symbol} size={36} fallback={item.company} /> : <HeadlineThumb item={item} />}
       </span>
@@ -102,10 +108,9 @@ export function NewsRow({ item, onOpen, asOf, compact = false, dated = true }) {
         </span>
         {filing
           ? <>
-            <span className="nw-kind-line"><span className={`nw-kind k-${item.kind}`}>{KIND_LABEL[item.kind]}</span><ToneChip item={item} /><span className="nw-subject">{item.numbers ? `${fyQuarter(item.numbers.quarter)} results` : compact && item.summary ? item.summary : item.title}</span></span>
-            {item.numbers ? <Figures n={item.numbers} quarter={false} /> : item.summary && !compact && <span className="nw-text">{item.summary}</span>}
-            {/* the same news filed again that day (its record date, its press release) */}
-            {item.also?.length > 0 && !compact && !item.numbers && item.also.map(a => <span key={a.id} className="nw-also">{a.summary ?? a.title}</span>)}
+            {/* what happened, in plain words (newsPlain.js); the filing's own words are on its page */}
+            <span className={`nw-plain-line${plain.weight === "big" ? " big" : ""}`}>{plain.line}</span>
+            <span className="nw-kind-line"><span className={`nw-kind k-${item.kind}`}>{KIND_LABEL[item.kind]}</span><ToneChip item={item} /></span>
           </>
           : <>
             <span className="nw-headline">{item.title}</span>
@@ -145,7 +150,7 @@ function TalkedAbout({ topics, topic, onPick }) {
 }
 
 // limit: the first few only (a phone's Explore page, whose arrow by the title opens the rest)
-function List({ kind, size, onOpen, onCounts, refresh = 0, limit = 0 }) {
+function List({ kind, size, onOpen, onCounts, refresh = 0, limit = 0, onKind }) {
   // the starred companies: a star or unstar anywhere reloads the list (its
   // My watchlist, and every kind's count of it), once the change is saved
   const watched = useWatchlist();
@@ -172,26 +177,65 @@ function List({ kind, size, onOpen, onCounts, refresh = 0, limit = 0 }) {
   useEffect(() => { if (first.current) { first.current = false; return; } load(null); }, [watchKey, refresh]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!data) return <div className="nw-skel" role="status" aria-label="Loading the news">{[0, 1, 2, 3, 4].map(i => <span key={i} />)}</div>;
+  // All: your companies first, the market's headlines in a block of their own,
+  // then each day's company news — what matters first, the paperwork folded
+  const everything = kind === "all" && !limit;
+  const weightOf = it => (it.type === "filing" ? plainNews(it).weight : "normal");
+  const RANK = { big: 0, normal: 1, minor: 2 };
+  const pool = limit ? data.items.slice(0, limit) : data.items;
+  const mine = everything ? pool.filter(it => it.type === "filing" && watched.has(it.symbol)).slice(0, 6) : [];
+  const headlines = everything ? pool.filter(it => it.type !== "filing").slice(0, 5) : [];
+  const rest = everything ? pool.filter(it => it.type === "filing" && !mine.includes(it)) : pool;
   const groups = [];
-  for (const item of limit ? data.items.slice(0, limit) : data.items) {
+  for (const item of rest) {
     const label = dayLabel(item.time);
     if (groups[groups.length - 1]?.label !== label) groups.push({ label, items: [] });
     groups[groups.length - 1].items.push(item);
   }
+  for (const g of groups) {
+    g.items = g.items.map((it, i) => [it, i]).sort((a, b) => RANK[weightOf(a[0])] - RANK[weightOf(b[0])] || a[1] - b[1]).map(([it]) => it);
+    g.shown = limit ? g.items : g.items.filter(it => weightOf(it) !== "minor");
+    g.folded = limit ? [] : g.items.filter(it => weightOf(it) === "minor");
+  }
+  // the market's headlines after the latest day's company news
+  const headlinesBlock = (
+headlines.length > 0 && (
+        <section className="nw-day nw-block" aria-label="Market headlines">
+          <h3 className="nw-day-head">Market headlines{onKind && <button type="button" className="nw-day-more" onClick={() => onKind("headlines")}>All headlines <ChevronRight size={14} aria-hidden="true" /></button>}</h3>
+          <div className="nw-list">{headlines.map(item => <NewsRow key={item.id} item={item} onOpen={onOpen} asOf={data.asOf} />)}</div>
+        </section>
+      )
+  );
   return (
     <>
       {error && <p className="nw-note nw-error">{error}</p>}
       {data.unread?.length > 0 && <p className="nw-note">{`Couldn't reach ${data.unread.join(" or ")} just now; showing the rest.`}</p>}
-      {!limit && data.topics?.length > 0 && <TalkedAbout topics={data.topics} topic={topic} onPick={setTopic} />}
+      {!limit && kind === "headlines" && data.topics?.length > 0 && <TalkedAbout topics={data.topics} topic={topic} onPick={setTopic} />}
       {!data.items.length && !error && (
         <p className="nw-empty">{kind === "watchlist" ? "Nothing from your watchlist's companies in the last few days. Star companies to follow their news here." : "Nothing of this kind in the last few days."}</p>
       )}
-      {groups.map(g => (
-        <section key={g.label} className="nw-day" aria-label={g.label}>
-          <h3 className="nw-day-head">{g.label}</h3>
-          <div className="nw-list">{g.items.map(item => <NewsRow key={item.id} item={item} onOpen={onOpen} asOf={data.asOf} dated={false} />)}</div>
+      {mine.length > 0 && (
+        <section className="nw-day nw-block" aria-label="Your companies">
+          <h3 className="nw-day-head">Your companies</h3>
+          <div className="nw-list">{mine.map(item => <NewsRow key={item.id} item={item} onOpen={onOpen} asOf={data.asOf} />)}</div>
         </section>
+      )}
+      {groups.map((g, gi) => (
+        <Fragment key={g.label}>
+        {gi === 1 && headlinesBlock}
+        <section className="nw-day" aria-label={g.label}>
+          <h3 className="nw-day-head">{everything ? `Company news · ${g.label}` : g.label}</h3>
+          {g.shown.length > 0 && <div className="nw-list">{g.shown.map(item => <NewsRow key={item.id} item={item} onOpen={onOpen} asOf={data.asOf} dated={false} />)}</div>}
+          {g.folded.length > 0 && (
+            <details className="nw-fold">
+              <summary>{g.folded.length} routine {g.folded.length === 1 ? "filing" : "filings"}: board changes, rating notes, paperwork</summary>
+              <div className="nw-list">{g.folded.map(item => <NewsRow key={item.id} item={item} onOpen={onOpen} asOf={data.asOf} dated={false} />)}</div>
+            </details>
+          )}
+        </section>
+        </Fragment>
       ))}
+      {groups.length < 2 && headlinesBlock}
       {!limit && data.next && <button type="button" className="btn-ghost nw-more" disabled={busy} onClick={() => load(data.next)}>{busy ? "Loading…" : "Show more"}</button>}
     </>
   );
@@ -450,7 +494,8 @@ function Detail({ id, onBack, onOpen, onOpenStock }) {
       {back}
       <p className="nw-eyebrow"><span className={`nw-kind k-${item.kind}`}>{KIND_LABEL[item.kind]}</span><span>{fullTime(item.time)}</span></p>
       <h2 className="nw-title">{niceName(item.company)}</h2>
-      <p className="nw-byline">{item.title} · announced to NSE</p>
+      <p className="nw-plain-head">{plainNews(item).line}</p>
+      <p className="nw-byline">NSE's title: {item.title} · announced to NSE</p>
       <Tone item={item} />
       {/* results: the table across the page when the quarter on file is this one */}
       {item.kind === "results" && item.numbers && data.quarters?.[0]?.end === item.numbers.quarter && <ResultsTable quarters={data.quarters} valuation={data.valuation} />}
@@ -623,7 +668,7 @@ function tileLine(item) {
     const n = item.numbers;
     return <>{fyQuarter(n.quarter)} results · {n.profitCr < 0 ? "Loss" : "Profit"} {crore(n.profitCr ?? 0)} <Change value={n.profitYoY} /></>;
   }
-  return item.summary ?? item.title;
+  return plainNews(item)?.line ?? item.summary ?? item.title;
 }
 // It moves, as the price strip does: nine items, three at a time, the next
 // three every 6 s; still while a pointer or focus is on it, or with reduced
@@ -770,7 +815,7 @@ export default function NewsView({ onOpenStock, openId = null, onOpened, embedde
               <div className="ph-chips nw-filters" role="group" aria-label="Kinds of news">
                 {FILTERS.map(([id, label]) => <button key={id} type="button" className="ph-chip" aria-pressed={kind === id} onClick={() => pickKind(id)}>{label}</button>)}
               </div>
-              <List kind={kind} size={size} onOpen={open} onCounts={setCounts} refresh={refresh} limit={preview ? 4 : 0} />
+              <List kind={kind} size={size} onOpen={open} onCounts={setCounts} refresh={refresh} limit={preview ? 4 : 0} onKind={pickKind} />
             </div>
           </div>
         </>}
