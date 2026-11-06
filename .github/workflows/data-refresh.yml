@@ -173,3 +173,24 @@ jobs:
           # newer than the pack beside it
           gh release upload data-latest market-data.tar.gz jobs-state.json --clobber
           gh release upload data-latest manifest.json --clobber
+
+      # A dated copy once a week, the last 8 kept (6 Nov 2026): data-latest is
+      # replaced every evening, so a bad run would leave nothing to go back to.
+      # Made when the newest weekly copy is 6 or more days older than today's
+      # prices — Fridays normally, the next trading day after a Friday holiday.
+      # Never marked "latest"; the server only reads data-latest by name.
+      - name: Weekly copy
+        if: steps.refresh.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          day=$(node -e 'console.log(JSON.parse(require("fs").readFileSync("manifest.json","utf8")).pricesDate)')
+          weekly=$(gh release list --limit 100 --json tagName -q '.[].tagName' | grep -E '^data-[0-9]{4}-[0-9]{2}-[0-9]{2}$' | sort -r || true)
+          newest=$(echo "$weekly" | head -1 | sed 's/^data-//')
+          due=$(node -e 'const [d, n] = process.argv.slice(1); console.log(!n || (Date.parse(d) - Date.parse(n)) / 864e5 >= 6 ? "yes" : "no")' "$day" "$newest")
+          echo "prices $day, newest weekly copy ${newest:-none}: due $due"
+          if [ "$due" = "yes" ] && ! echo "$weekly" | grep -qx "data-$day"; then
+            gh release create "data-$day" market-data.tar.gz manifest.json --prerelease --latest=false --title "Market data, week to $day" --notes "A weekly copy of data-latest at the $day close, kept for 8 weeks to roll back to. The live site reads data-latest, never this."
+            weekly=$(printf '%s\n%s\n' "data-$day" "$weekly" | grep . | sort -r)
+          fi
+          echo "$weekly" | tail -n +9 | while read -r old; do [ -n "$old" ] && gh release delete "$old" --yes --cleanup-tag && echo "removed $old"; done
