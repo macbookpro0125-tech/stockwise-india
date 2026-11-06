@@ -273,6 +273,110 @@ function ResultsDay({ results, date, onDate, onBack, onOpenStock }) {
   );
 }
 
+// The biggest moves as a page of their own (6 Nov 2026, "the same for this,
+// and the previous ones"): any of the last ten trading days, over a day, a
+// week or a month; how many rose and fell and which sectors led; every
+// company worth ₹1,000 crore or more, not ten
+const OVER = { "1d": "on the day", "1w": "over the week", "1m": "over the month" };
+const MOVES_SHOWN = 25;
+function MoversDay({ date, period, onDate, onPeriod, onBack, onOpenStock }) {
+  const [data, setData] = useState(null);
+  const [show, setShow] = useState("all");
+  const [q, setQ] = useState("");
+  const [more, setMore] = useState({});
+  const watched = useWatchlist();
+  const strip = useRef(null);
+  useEffect(() => { setData(null); setMore({}); api.moversDay(date, period).then(setData).catch(() => setData({ rows: [], days: [] })); }, [date, period]);
+  useEffect(() => { strip.current?.querySelector("[aria-pressed=true]")?.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" }); }, [data?.date]);
+  const match = r => (!q.trim() || `${r.name} ${r.symbol} ${r.sector ?? ""}`.toLowerCase().includes(q.trim().toLowerCase()))
+    && (show === "large" ? (r.marketCapCr ?? 0) >= 20000 : show === "mine" ? watched.has(r.symbol) : true);
+  const rows = (data?.rows ?? []).filter(match);
+  const up = rows.filter(r => r.change > 0.05).sort((a, b) => b.change - a.change);
+  const down = rows.filter(r => r.change < -0.05).sort((a, b) => a.change - b.change);
+  const flat = rows.length - up.length - down.length;
+  // sectors by their companies' average move (five companies or more)
+  const sectors = useMemo(() => {
+    const m = new Map();
+    for (const r of data?.rows ?? []) if (r.sector) { const x = m.get(r.sector) ?? { n: 0, sum: 0 }; x.n++; x.sum += r.change; m.set(r.sector, x); }
+    const list = [...m].filter(([, x]) => x.n >= 5).map(([name, x]) => ({ name, avg: x.sum / x.n, n: x.n })).sort((a, b) => b.avg - a.avg);
+    return { best: list.slice(0, 3), worst: list.slice(-3).reverse() };
+  }, [data]);
+  const day = data?.date;
+  const list = (title, items, key) => (
+    <div>
+      <h3>{title} <span className="mk-note">{items.length}</span></h3>
+      <ul>
+        {items.slice(0, more[key] ? undefined : MOVES_SHOWN).map(r => (
+          <li key={r.symbol}>
+            <button type="button" onClick={() => onOpenStock?.(r.symbol)}>
+              <CompanyLogo symbol={r.symbol} size={26} fallback={r.name} />
+              <span className="mk-who"><b>{cardName(r.name)}{watched.has(r.symbol) && <Star size={12} className="mk-res-star" aria-label="on your watchlist" />}</b><small>{r.symbol}{r.sector ? ` · ${r.sector}` : ""}</small></span>
+              <span className="mk-num">₹{num(r.close)}</span>
+              <span className={`mk-chg ${tone(r.change)}`}>{pct(r.change)}</span>
+            </button>
+          </li>
+        ))}
+        {!items.length && <li className="mk-note">{show === "mine" ? "None of your watchlist's companies." : "None."}</li>}
+      </ul>
+      {items.length > MOVES_SHOWN && !more[key] && <button type="button" className="mk-res-more" onClick={() => setMore(m => ({ ...m, [key]: true }))}>Show all {items.length} <ChevronRight size={13} aria-hidden="true" /></button>}
+    </div>
+  );
+  return (
+    <div className="mk">
+      <button type="button" className="mk-back" onClick={onBack}><ChevronLeft size={18} /> Markets</button>
+      <header className="mk-head">
+        <h1>{day ? `Biggest moves ${period === "1d" ? "on" : "to"} ${weekday(day)}` : "Biggest moves"}</h1>
+        <p>{data ? `${(data.rows ?? []).length.toLocaleString("en-IN")} NSE companies worth ₹${(data.floorCr ?? 1000).toLocaleString("en-IN")} crore or more, by their move ${OVER[period]}${data.from && period !== "1d" ? ` (from the close on ${day ? shortDay(data.from) : ""})` : ""}.` : "Reading the closing prices…"}</p>
+      </header>
+      <div className="mk-moves-bar">
+        <div className="mk-dates" role="group" aria-label="Trading day" ref={strip}>
+          <div className="mk-dates-group">
+            <span className="mk-dates-label">Trading days</span>
+            <div className="mk-dates-row">
+              {[...(data?.days ?? [])].reverse().map(x => {
+                const t = new Date(`${x}T00:00:00Z`);
+                return (
+                  <button key={x} type="button" className="mk-date" aria-pressed={x === day} onClick={() => onDate(x)} aria-label={weekday(x)}>
+                    <span className="mk-date-wd">{t.toLocaleDateString("en-IN", { weekday: "short", timeZone: "UTC" })}</span>
+                    <span className="mk-date-d">{t.getUTCDate()}</span>
+                    <span className="mk-date-m">{t.toLocaleDateString("en-IN", { month: "short", timeZone: "UTC" })}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+        <div className="mk-seg" role="group" aria-label="Over">
+          {[["1d", "Day"], ["1w", "Week"], ["1m", "Month"]].map(([id, l]) => <button key={id} type="button" aria-pressed={period === id} onClick={() => onPeriod(id)}>{l}</button>)}
+        </div>
+      </div>
+      {!data && <div className="mk-card"><span className="mk-skel mk-row-skel" /></div>}
+      {data && rows.length > 0 && (
+        <div className="mk-tally" aria-label="The day at a glance">
+          <div className="mk-tally-bar" aria-hidden="true"><i className="up" style={{ flex: up.length }} /><i className="flat" style={{ flex: flat }} /><i className="loss" style={{ flex: down.length }} /></div>
+          <p><b className="up">{up.length}</b> rose · <b className="loss">{down.length}</b> fell{flat > 0 ? ` · ${flat} unchanged` : ""}
+            {sectors.best.length > 0 && show === "all" && !q && <span> · best sectors {sectors.best.map(x => `${x.name} ${pct1(x.avg)}`).join(", ")} · weakest {sectors.worst.map(x => `${x.name} ${pct1(x.avg)}`).join(", ")} (their companies' average)</span>}
+          </p>
+        </div>
+      )}
+      {data && (
+        <div className="mk-res-tools">
+          <div className="mk-seg" role="group" aria-label="Show">
+            {[["all", "All"], ["large", "₹20,000 cr+"], ["mine", "My watchlist"]].map(([id, label]) => <button key={id} type="button" aria-pressed={show === id} onClick={() => setShow(id)}>{label}</button>)}
+          </div>
+          <input className="mk-search mk-res-find" type="search" placeholder="Find a company" aria-label="Find a company" value={q} onChange={e => setQ(e.target.value)} />
+        </div>
+      )}
+      {data && (
+        <section className="mk-card" aria-label="Rises and falls">
+          <div className="mk-movers">{list("Gainers", up, "up")}{list("Losers", down, "down")}</div>
+        </section>
+      )}
+      <p className="mk-note">NSE closing prices, adjusted for splits and bonuses. A reading of the past, not advice.</p>
+    </div>
+  );
+}
+
 export default function MarketsView({ onOpenStock, onOpenTab }) {
   const [board, setBoard] = useState(null);
   const [pick, setPick] = useState("Nifty 50");
@@ -300,6 +404,16 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
   const openDay = date => { window.history.pushState({ ...(window.history.state ?? {}), resultsDay: date }, ""); setResDay(date); window.scrollTo(0, 0); };
   const pickDay = date => { window.history.replaceState({ ...(window.history.state ?? {}), resultsDay: date }, ""); setResDay(date); };
   const closeDay = () => { if (window.history.state?.resultsDay) window.history.back(); else setResDay(null); };
+  // the biggest moves as a page, the same way: { date, period }
+  const [movesPage, setMovesPage] = useState(() => window.history.state?.movesPage ?? null);
+  useEffect(() => {
+    const back = () => setMovesPage(window.history.state?.movesPage ?? null);
+    window.addEventListener("popstate", back);
+    return () => window.removeEventListener("popstate", back);
+  }, []);
+  const openMoves = m => { window.history.pushState({ ...(window.history.state ?? {}), movesPage: m }, ""); setMovesPage(m); window.scrollTo(0, 0); };
+  const setMoves = m => { window.history.replaceState({ ...(window.history.state ?? {}), movesPage: m }, ""); setMovesPage(m); };
+  const closeMoves = () => { if (window.history.state?.movesPage) window.history.back(); else setMovesPage(null); };
   const closeAll = () => { if (window.history.state?.allIndices) window.history.back(); else setAll(false); };
 
   useEffect(() => {
@@ -337,6 +451,7 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
   const rangeMove = shownDays && shownDays.closes.length > 1 ? (shownDays.closes.at(-1) / shownDays.closes[0] - 1) * 100 : null;
   const R = detail?.returns ?? {};
 
+  if (movesPage) return <MoversDay date={movesPage.date ?? null} period={movesPage.period ?? "1d"} onDate={d => setMoves({ ...movesPage, date: d })} onPeriod={p => setMoves({ ...movesPage, period: p })} onBack={closeMoves} onOpenStock={onOpenStock} />;
   if (resDay) return <ResultsDay results={results} date={resDay} onDate={pickDay} onBack={closeDay} onOpenStock={onOpenStock} />;
   if (all) return <AllIndices board={board} onBack={closeAll} onPick={name => { setPick(name); closeAll(); window.scrollTo(0, 0); }} />;
 
@@ -437,9 +552,12 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
       <section className="mk-card" aria-labelledby="mk-mov">
         <div className="mk-card-h">
           <h2 id="mk-mov">Biggest moves</h2>
-          <div className="mk-seg" role="group" aria-label="Over">
-            {[["1d", "Day"], ["1w", "Week"], ["1m", "Month"]].map(([id, l]) => <button key={id} type="button" aria-pressed={period === id} onClick={() => setPeriod(id)}>{l}</button>)}
-          </div>
+          <span className="mk-card-links">
+            <div className="mk-seg" role="group" aria-label="Over">
+              {[["1d", "Day"], ["1w", "Week"], ["1m", "Month"]].map(([id, l]) => <button key={id} type="button" aria-pressed={period === id} onClick={() => setPeriod(id)}>{l}</button>)}
+            </div>
+            <button type="button" className="mk-link" onClick={() => openMoves({ date: null, period })}>See all · earlier days</button>
+          </span>
         </div>
         <div className="mk-movers">
           {[["Gainers", movers?.gainers], ["Losers", movers?.losers]].map(([title, list]) => (
@@ -461,7 +579,7 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
             </div>
           ))}
         </div>
-        {movers?.floorCr && <p className="mk-note">Companies worth ₹{movers.floorCr.toLocaleString("en-IN")} crore or more.</p>}
+        {movers?.floorCr && <p className="mk-note">Companies worth ₹{movers.floorCr.toLocaleString("en-IN")} crore or more. <button type="button" className="mk-link" onClick={() => openMoves({ date: null, period })}>Every company, and earlier days ›</button></p>}
       </section>
 
       {/* the week's results */}

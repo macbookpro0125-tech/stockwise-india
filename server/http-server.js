@@ -62,7 +62,7 @@ import { marketNews, topNews, newsItem, newsItemFiling, newsForSymbols, watchlis
 import { portfolioVsMarket } from "./portfolio-vs-market.js";
 import { historyBars } from "./price-history.js";
 import { readIndexHistory } from "./index-history.js";
-import { exploreBoard, exploreIndex, heatmap, HEAT_SETS, topMovers, resultsWeek, resultsFor, sectorBrief } from "./explore.js";
+import { exploreBoard, exploreIndex, heatmap, HEAT_SETS, topMovers, resultsWeek, resultsFor, moversOn, sectorBrief } from "./explore.js";
 import { summarizeMove, aiClient } from "./ai-moves.js";
 import { summarizeCall } from "./call-summary.js";
 import { summarizeFiling } from "./filing-summary.js";
@@ -815,6 +815,13 @@ export function createApp() {
       if (url.pathname === "/api/explore" && req.method === "GET") {
         if (requireAuth(req, res) == null) return;
         sendJson(res, 200, await exploreBoard());
+        return;
+      }
+      // every company's move on one of the last trading days, over a day, week or month
+      if (url.pathname === "/api/explore/movers/day" && req.method === "GET") {
+        if (requireAuth(req, res) == null) return;
+        const d = url.searchParams.get("date");
+        sendJson(res, 200, moversOn(/^\d{4}-\d{2}-\d{2}$/.test(d ?? "") ? d : null, url.searchParams.get("period") ?? "1d"));
         return;
       }
       if (url.pathname === "/api/explore/movers" && req.method === "GET") {

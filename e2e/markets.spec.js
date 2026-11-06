@@ -107,3 +107,24 @@ test("MK-4 the watchlist's results, past and coming, on one page @phone", async 
   await expect(page.locator(".mk-resday.mine").first()).toContainText(/TCS|RELIANCE/);
   await expect(page.getByRole("button", { name: /My watchlist: its results/ })).toHaveAttribute("aria-pressed", "true");
 });
+
+// 6 Nov 2026: the biggest moves as a page: every company, earlier days, day/week/month
+test("MK-5 the biggest moves open as a page: an earlier day, a week, rose and fell @phone", async ({ page, account }) => {
+  test.setTimeout(90_000);
+  await page.goto("/");
+  await openPage(page, "Markets");
+  await page.getByRole("button", { name: /earlier days/ }).first().click();
+  await expect(page.getByRole("heading", { name: /^Biggest moves on \w+day, \d+ \w+$/, level: 1 })).toBeVisible({ timeout: 45_000 });
+  await expect(page.getByLabel("The day at a glance")).toContainText(/\d+ rose · \d+ fell/);
+  const days = page.getByRole("group", { name: "Trading day" }).getByRole("button");
+  expect(await days.count()).toBeGreaterThan(3);
+  const first = await days.first().getAttribute("aria-label");
+  await days.first().click();
+  await expect(page.locator(".mk-head h1")).toContainText(first.split(",")[1].trim());
+  await page.getByRole("group", { name: "Over" }).getByRole("button", { name: "Week" }).click();
+  await expect(page.getByRole("heading", { name: /^Biggest moves to /, level: 1 })).toBeVisible({ timeout: 30_000 });
+  const gainers = page.locator(".mk-movers > div").first().locator(".mk-chg");
+  await expect(gainers.first()).toHaveText(/^\+/);
+  await page.goBack();
+  await expect(page.getByRole("heading", { name: "Markets", level: 1 })).toBeVisible();
+});

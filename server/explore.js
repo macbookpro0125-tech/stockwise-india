@@ -8,6 +8,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { loadMarketSnapshot, indexBoard, indexMembers, HEATMAP_LISTS } from "./market-data.js";
 import { allMetrics } from "./screen.js";
+import { historyBars } from "./price-history.js";
 import { PRICE_DIR } from "./paths.js";
 import { SECTOR_INDEX } from "./sector-indices.js";
 
@@ -257,4 +258,55 @@ export function resultsFor(symbols = []) {
       };
     }),
   };
+}
+
+// The biggest moves on any of the last trading days (6 Nov 2026, "the same
+// for this, and the previous ones"): from each company's kept daily prices,
+// on today's share basis, so a split day isn't read as a fall. Read once per
+// market build: the last 35 closes of every company worth ₹1,000 crore or
+// more (about a thousand small files).
+let moverCache = null;
+const MOVER_SPAN = { "1d": 1, "1w": 5, "1m": 21 };
+function moverCloses() {
+  const snap = loadMarketSnapshot();
+  const key = snap?.builtAt ?? snap?.pricesDate ?? "none";
+  if (moverCache?.key === key) return moverCache;
+  const rows = allMetrics().rows.filter(r => r.marketCapCr >= MOVER_FLOOR_CR);
+  const dates = new Set(), closes = new Map(), info = new Map();
+  for (const r of rows) {
+    const bars = historyBars(r.symbol, snap).slice(-35);
+    if (bars.length < 2) continue;
+    const m = new Map(bars.map(b => [b.date, b.close]));
+    closes.set(r.symbol, m);
+    info.set(r.symbol, { symbol: r.symbol, name: r.name, marketCapCr: r.marketCapCr ?? null, sector: r.sector ?? null });
+    for (const b of bars) dates.add(b.date);
+  }
+  // trading days most companies traded on (a stray date from one file isn't a day)
+  const count = new Map();
+  for (const m of closes.values()) for (const d of m.keys()) count.set(d, (count.get(d) ?? 0) + 1);
+  const days = [...dates].filter(d => count.get(d) >= closes.size * 0.5).sort();
+  moverCache = { key, days, closes, info };
+  return moverCache;
+}
+
+export function moversOn(date, period = "1d") {
+  const { days, closes, info } = moverCloses();
+  const span = MOVER_SPAN[period] ?? 1;
+  const at = date && days.includes(date) ? days.indexOf(date) : days.length - 1;
+  const from = days[at - span];
+  if (at < 0 || !from) return { date: days[at] ?? null, period, days: days.slice(-10).reverse(), floorCr: MOVER_FLOOR_CR, rows: [] };
+  const rows = [];
+  // the latest day reads the same figures as Markets' card (topMovers), so
+  // the two never disagree; the days before, from the kept closes
+  const [key] = PERIOD[period] ?? PERIOD["1d"];
+  if (at === days.length - 1) {
+    for (const r of allMetrics().rows) if (r.marketCapCr >= MOVER_FLOOR_CR && r[key] != null && r.cmp != null) rows.push({ symbol: r.symbol, name: r.name, marketCapCr: r.marketCapCr ?? null, sector: r.sector ?? null, close: r.cmp, change: r[key] });
+  } else {
+    for (const [sym, m] of closes) {
+      const a = m.get(from), b = m.get(days[at]);
+      if (!(a > 0) || !(b > 0)) continue;
+      rows.push({ ...info.get(sym), close: b, change: (b / a - 1) * 100 });
+    }
+  }
+  return { date: days[at], from, period, days: days.slice(-10).reverse(), floorCr: MOVER_FLOOR_CR, rows };
 }

@@ -5895,7 +5895,11 @@ button.td-index:active, button.td-line:active { background: color-mix(in srgb, v
 .mk-tally { margin: 0 0 14px; }
 .mk-tally-bar { display: flex; gap: 3px; height: 8px; max-width: 520px; border-radius: 999px; overflow: hidden; }
 .mk-tally-bar i { display: block; min-width: 0; }
-.mk-tally-bar i.up { background: var(--green); } .mk-tally-bar i.down { background: color-mix(in srgb, var(--red) 70%, var(--t3)); } .mk-tally-bar i.loss { background: var(--red); }
+.mk-tally-bar i.up { background: var(--green); } .mk-tally-bar i.flat { background: var(--bdr2); }
+.mk-moves-bar { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 18px; }
+.mk-moves-bar .mk-dates { flex: 1 1 420px; min-width: 0; margin-bottom: 12px; }
+.mk-moves-bar > .mk-seg { margin-bottom: 18px; }
+.mk-card-links { align-items: center; } .mk-tally-bar i.down { background: color-mix(in srgb, var(--red) 70%, var(--t3)); } .mk-tally-bar i.loss { background: var(--red); }
 .mk-tally p { margin: 8px 0 0; font-size: 14px; color: var(--t2); }
 .mk-tally b { font-weight: 650; } .mk-tally b.up { color: var(--green); } .mk-tally b.down, .mk-tally b.loss { color: var(--red); }
 .mk-tally span { color: var(--t3); }
