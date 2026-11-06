@@ -107,14 +107,15 @@ function indexSentence(d, range, rangeMove) {
   return parts.join(" ");
 }
 
-// The story, folded to one line; the arrow opens the rest (7 Nov
+// The story, folded away to its label (7 Nov 2026, "I'm still seeing it");
+// the arrow opens it (7 Nov
 // 2026, "keep it minimised; when we press the arrow it should open")
 function Story({ text }) {
   const [open, setOpen] = useState(false);
   return (
     <button type="button" className={`mk-story${open ? " open" : ""}`} aria-expanded={open} onClick={() => setOpen(o => !o)}>
       <span className="mk-story-label">The story</span>
-      <span className="mk-story-text">{text}</span>
+      {open ? <span className="mk-story-text">{text}</span> : <span className="mk-story-hint">Read it</span>}
       <ChevronDown size={18} className="mk-story-arrow" aria-hidden="true" />
     </button>
   );

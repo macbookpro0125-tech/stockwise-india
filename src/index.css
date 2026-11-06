@@ -6108,10 +6108,12 @@ html.td-night[data-theme="light"] .tb.tb-scrolled { box-shadow: 0 1px 0 rgba(255
 /* Markets' index card, ours rather than a trading terminal's (7 Nov 2026):
    a sentence, the teal line with results dots and a hover card, the month's
    breadth, and who moved it */
-.mk-story { display: flex; align-items: flex-start; gap: 10px; width: 100%; margin: 10px 0 4px; padding: 6px 0; border: 0; border-radius: 0; background: none; color: var(--t2); font: inherit; font-size: 15px; line-height: 1.55; text-align: left; cursor: pointer; }
+.mk-story { display: inline-flex; align-items: flex-start; gap: 8px; width: auto; max-width: 100%; margin: 10px 0 4px; padding: 6px 0; border: 0; border-radius: 0; background: none; color: var(--t2); font: inherit; font-size: 15px; line-height: 1.55; text-align: left; cursor: pointer; }
 .mk-story:disabled { cursor: default; }
 .mk-story-label { flex: none; padding-top: 2px; color: var(--t3); font-weight: 600; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; }
 .mk-story-text { flex: 1; min-width: 0; }
+.mk-story.open { display: flex; width: 100%; }
+.mk-story-hint { color: var(--t3); font-size: 13px; padding-top: 1px; }
 .mk-story:not(.open) .mk-story-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mk-story-arrow { flex: none; margin-top: 2px; color: var(--t3); transition: transform 200ms ease; }
 .mk-story.open .mk-story-arrow { transform: rotate(180deg); }
