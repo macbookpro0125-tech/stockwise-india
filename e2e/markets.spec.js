@@ -94,3 +94,16 @@ test("MK-3 a results day opens as a page: its companies' figures, other days, Ba
     await page.goBack();
   }
 });
+
+// 6 Nov 2026: "how can I see all the watchlist's results — not only on a specific date, previous and future ones"
+test("MK-4 the watchlist's results, past and coming, on one page @phone", async ({ page, account }) => {
+  await page.goto("/");
+  for (const t of ["TCS", "RELIANCE"]) await page.request.post("/api/watchlist", { data: { ticker: t } });
+  await openPage(page, "Markets");
+  await page.getByRole("button", { name: "My watchlist", exact: true }).first().click();
+  await expect(page.getByRole("heading", { name: "Your watchlist's results", level: 1 })).toBeVisible();
+  const rows = page.locator(".mk-resday.mine > li:not(.mk-resday-head)");
+  await expect(rows).toHaveCount(2, { timeout: 30_000 });
+  await expect(page.locator(".mk-resday.mine").first()).toContainText(/TCS|RELIANCE/);
+  await expect(page.getByRole("button", { name: /My watchlist: its results/ })).toHaveAttribute("aria-pressed", "true");
+});

@@ -117,6 +117,59 @@ const shortDay = iso => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN",
 const pct1 = v => `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(Math.abs(v) >= 100 ? 0 : 1)}%`;
 const reported = (c, date) => !!c.reported || (!!c.quarter?.filed && Date.parse(c.quarter.filed) >= Date.parse(date) - 86_400_000);
 
+// One company's row on a results page: its latest quarter's figures against a
+// year earlier, today's share move, and the way to its results. when: the
+// results date shown in place of market cap on the watchlist's page
+function ResRow({ c, done, starred, onOpenStock, when }) {
+  const qq = c.quarter, label = qq ? fyQ(qq.end) : null;
+  const slug = label?.toLowerCase().replace(" ", "-");
+  return (
+    <li className={done ? "done" : ""}>
+      <button type="button" className="mk-resday-co" onClick={() => onOpenStock?.(c.symbol)} aria-label={`${cardName(c.name)}: open its page`}>
+        <CompanyLogo symbol={c.symbol} size={30} fallback={c.name} />
+        <span><b>{cardName(c.name)}{starred && <Star size={12} className="mk-res-star" aria-label="on your watchlist" />}</b><small>{[c.symbol, c.sector].filter(Boolean).join(" · ")}</small></span>
+      </button>
+      <span className="mk-resday-cap">{when ?? mcap(c.marketCapCr)}</span>
+      <span className="mk-resday-q">{label ? <>{done ? <em className="mk-res-tag new">New</em> : <em className="mk-res-tag">Last</em>}{label}</> : "—"}</span>
+      <span className="mk-resday-n">{crore(qq?.salesCr)}{qq?.salesYoY != null && <small className={tone(qq.salesYoY)}>{pct1(qq.salesYoY)}</small>}</span>
+      <span className="mk-resday-n">{qq?.profitCr != null && qq.profitCr < 0 ? `Loss ${crore(qq.profitCr)}` : crore(qq?.profitCr)}{qq?.profitYoY != null && qq?.profitCr > 0 && qq.profitCr / (1 + qq.profitYoY / 100) > 0 && <small className={tone(qq.profitYoY)}>{pct1(qq.profitYoY)}</small>}</span>
+      <span className={`mk-resday-move ${tone(c.ret1d)}`}>{c.ret1d == null ? "—" : pct1(c.ret1d)}</span>
+      <span className="mk-resday-go">{slug && <button type="button" className="mk-link" onClick={() => navigate(`/stock/${encodeURIComponent(c.symbol)}/results/${slug}`)}>{done ? "See results" : "Last results"} <ChevronRight size={14} aria-hidden="true" /></button>}</span>
+    </li>
+  );
+}
+
+// The watchlist's results, whatever the day: the ones coming, by date, then
+// the ones already out, the newest first
+function WatchResults({ onOpenStock }) {
+  const [data, setData] = useState(null);
+  useEffect(() => { api.resultsWatchlist().then(setData).catch(() => setData({ companies: [] })); }, []);
+  if (!data) return <div className="mk-card"><p className="mk-note">Loading your watchlist's results…</p></div>;
+  if (!data.companies.length) return <div className="mk-card"><p className="mk-note">Your watchlist is empty. Star companies to follow their results here, past and coming.</p></div>;
+  const coming = data.companies.filter(c => c.next).sort((a, b) => a.next.localeCompare(b.next));
+  const out = data.companies.filter(c => !c.next).sort((a, b) => String(b.quarter?.filed ?? "").localeCompare(String(a.quarter?.filed ?? "")));
+  // filed within the last 45 days: this season's results
+  const fresh = c => c.quarter?.filed && Date.parse(data.today) - Date.parse(c.quarter.filed) <= 45 * 86_400_000;
+  const head = first => <li className="mk-resday-head" aria-hidden="true"><span>Company</span><span>{first}</span><span>Quarter</span><span>Sales</span><span>Net profit</span><span>Share today</span><span /></li>;
+  return (
+    <>
+      {coming.length > 0 && (
+        <section className="mk-card" aria-label="Your watchlist: results coming">
+          <div className="mk-card-h"><h2>Coming</h2><span className="mk-note">{coming.length}</span></div>
+          <ul className="mk-resday mine">{head("Results on")}{coming.map(c => <ResRow key={c.symbol} c={c} done={false} onOpenStock={onOpenStock} when={shortDay(c.next)} />)}</ul>
+        </section>
+      )}
+      {out.length > 0 && (
+        <section className="mk-card" aria-label="Your watchlist: results already out">
+          <div className="mk-card-h"><h2>Already out</h2><span className="mk-note">{out.length}</span></div>
+          <ul className="mk-resday mine">{head("Filed")}{out.map(c => <ResRow key={c.symbol} c={c} done={fresh(c)} onOpenStock={onOpenStock} when={c.quarter?.filed ? shortDay(String(c.quarter.filed).slice(0, 10)) : "—"} />)}</ul>
+        </section>
+      )}
+      <p className="mk-note">"Coming": a results date the company has told NSE, with its last quarter to compare with. "Already out": its latest quarter on file ("New" when filed in the last 45 days). Figures against the same quarter a year earlier.</p>
+    </>
+  );
+}
+
 function ResultsDay({ results, date, onDate, onBack, onOpenStock }) {
   const [q, setQ] = useState("");
   const [sort, setSort] = useState("size");
@@ -128,7 +181,8 @@ function ResultsDay({ results, date, onDate, onBack, onOpenStock }) {
   // the week before (results already out) and the days ahead, in order
   const past = (results?.past ?? []).map(x => ({ ...x, past: true }));
   const days = [...past, ...(results?.days ?? []).filter(x => x.count > 0)];
-  const d = days.find(x => x.date === date) ?? (results?.days ?? []).find(x => x.count > 0) ?? days[days.length - 1];
+  const mineMode = date === "mine";
+  const d = mineMode ? { date: "mine", count: 0, companies: [] } : days.find(x => x.date === date) ?? (results?.days ?? []).find(x => x.count > 0) ?? days[days.length - 1];
   if (!d) return <div className="mk"><button type="button" className="mk-back" onClick={onBack}><ChevronLeft size={18} /> Markets</button><p className="mk-note">No results dates this week.</p></div>;
   const match = c => !q.trim() || `${c.name} ${c.symbol} ${c.sector ?? ""}`.toLowerCase().includes(q.trim().toLowerCase());
   const keep = c => (show === "large" ? (c.marketCapCr ?? 0) >= 1000 : show === "mine" ? watched.has(c.symbol) : true);
@@ -149,13 +203,21 @@ function ResultsDay({ results, date, onDate, onBack, onOpenStock }) {
     <div className="mk">
       <button type="button" className="mk-back" onClick={onBack}><ChevronLeft size={18} /> Markets</button>
       <header className="mk-head">
-        <h1>Results on {weekday(d.date)}</h1>
-        <p>{d.past
+        <h1>{mineMode ? "Your watchlist's results" : `Results on ${weekday(d.date)}`}</h1>
+        <p>{mineMode ? "Every company you follow: the results coming, by date, and the ones already out." : d.past
           ? `${d.count} ${d.count === 1 ? "company" : "companies"} filed ${d.count === 1 ? "its" : "their"} quarterly results with NSE that day, the largest first, with sales and profit against a year earlier.`
           : `${d.count} ${d.count === 1 ? "company meets" : "companies meet"} to approve ${d.count === 1 ? "its" : "their"} quarterly results${done ? `; ${done} ${done === 1 ? "has" : "have"} filed` : ""}. The largest first. Dates are the ones companies told NSE; they can change.`}</p>
       </header>
       {/* the days as one sliding strip: the week before, then the days ahead */}
       <div className="mk-dates" role="group" aria-label="Day" ref={strip}>
+        <div className="mk-dates-group">
+          <span className="mk-dates-label">Yours</span>
+          <div className="mk-dates-row">
+            <button type="button" className="mk-date mk-date-mine" aria-pressed={mineMode} onClick={() => onDate("mine")} aria-label="My watchlist: its results, past and coming">
+              <Star size={18} aria-hidden="true" /><span className="mk-date-m">Watchlist</span>
+            </button>
+          </div>
+        </div>
         {[["Already out", days.filter(x => x.past)], ["Coming", days.filter(x => !x.past)]].map(([label, list]) => list.length > 0 && (
           <div key={label} className="mk-dates-group">
             <span className="mk-dates-label">{label}</span>
@@ -176,7 +238,8 @@ function ResultsDay({ results, date, onDate, onBack, onOpenStock }) {
           </div>
         ))}
       </div>
-      {tally && (
+      {mineMode && <WatchResults onOpenStock={onOpenStock} />}
+      {!mineMode && tally && (
         <div className="mk-tally" aria-label="The day at a glance">
           <div className="mk-tally-bar" aria-hidden="true">
             <i className="up" style={{ flex: tally.up }} /><i className="down" style={{ flex: tally.down }} /><i className="loss" style={{ flex: tally.loss }} />
@@ -184,7 +247,7 @@ function ResultsDay({ results, date, onDate, onBack, onOpenStock }) {
           <p><b className="up">{tally.up}</b> grew profit · <b className="down">{tally.down}</b> saw it fall · <b className="loss">{tally.loss}</b> made a loss <span>· sales up at {tally.salesUp} of {tally.n}, against a year earlier</span></p>
         </div>
       )}
-      <div className="mk-res-tools">
+      {!mineMode && <><div className="mk-res-tools">
         <div className="mk-seg" role="group" aria-label="Show">
           {[["all", "All"], ["large", "₹1,000 cr+"], ["mine", "My watchlist"]].map(([id, label]) => <button key={id} type="button" aria-pressed={show === id} onClick={() => setShow(id)}>{label}</button>)}
         </div>
@@ -201,28 +264,11 @@ function ResultsDay({ results, date, onDate, onBack, onOpenStock }) {
       <section className="mk-card" aria-label={`Results on ${weekday(d.date)}`}>
         <ul className="mk-resday">
           <li className="mk-resday-head" aria-hidden="true"><span>Company</span><span>Market cap</span><span>Quarter</span><span>Sales</span><span>Net profit</span><span>Share today</span><span /></li>
-          {list.map(c => {
-            const qq = c.quarter, done = reported(c, d.date), label = qq ? fyQ(qq.end) : null;
-            const slug = label?.toLowerCase().replace(" ", "-");
-            return (
-              <li key={c.symbol} className={done ? "done" : ""}>
-                <button type="button" className="mk-resday-co" onClick={() => onOpenStock?.(c.symbol)} aria-label={`${cardName(c.name)}: open its page`}>
-                  <CompanyLogo symbol={c.symbol} size={30} fallback={c.name} />
-                  <span><b>{cardName(c.name)}{watched.has(c.symbol) && <Star size={12} className="mk-res-star" aria-label="on your watchlist" />}</b><small>{[c.symbol, c.sector].filter(Boolean).join(" · ")}</small></span>
-                </button>
-                <span className="mk-resday-cap">{mcap(c.marketCapCr)}</span>
-                <span className="mk-resday-q">{label ? <>{done ? <em className="mk-res-tag new">New</em> : <em className="mk-res-tag">Last</em>}{label}</> : "—"}</span>
-                <span className="mk-resday-n">{crore(qq?.salesCr)}{qq?.salesYoY != null && <small className={tone(qq.salesYoY)}>{pct1(qq.salesYoY)}</small>}</span>
-                <span className="mk-resday-n">{qq?.profitCr != null && qq.profitCr < 0 ? `Loss ${crore(qq.profitCr)}` : crore(qq?.profitCr)}{qq?.profitYoY != null && qq?.profitCr > 0 && qq.profitCr / (1 + qq.profitYoY / 100) > 0 && <small className={tone(qq.profitYoY)}>{pct1(qq.profitYoY)}</small>}</span>
-                <span className={`mk-resday-move ${tone(c.ret1d)}`}>{c.ret1d == null ? "—" : pct1(c.ret1d)}</span>
-                <span className="mk-resday-go">{slug && <button type="button" className="mk-link" onClick={() => navigate(`/stock/${encodeURIComponent(c.symbol)}/results/${slug}`)}>{done ? "See results" : "Last results"} <ChevronRight size={14} aria-hidden="true" /></button>}</span>
-              </li>
-            );
-          })}
+          {list.map(c => <ResRow key={c.symbol} c={c} done={reported(c, d.date)} starred={watched.has(c.symbol)} onOpenStock={onOpenStock} />)}
           {!list.length && <li className="mk-note">{show === "mine" ? "None of your watchlist's companies report that day." : "No company by that name reports that day."}</li>}
         </ul>
       </section>
-      <p className="mk-note">"Last" is the quarter before, to compare with until the new results are filed; changes are against the same quarter a year earlier. From the companies' filings with NSE. Not investment advice.</p>
+      <p className="mk-note">"Last" is the quarter before, to compare with until the new results are filed; changes are against the same quarter a year earlier. From the companies' filings with NSE. Not investment advice.</p></>}
     </div>
   );
 }
@@ -421,7 +467,7 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
       {/* the week's results */}
       {(results?.days?.length > 0 || results?.past?.length > 0) && (
         <section className="mk-card" aria-labelledby="mk-res">
-          <div className="mk-card-h"><h2 id="mk-res">Results this week</h2><span className="mk-card-links">{results.past?.length > 0 && <button type="button" className="mk-link" onClick={() => openDay(results.past[results.past.length - 1].date)}>Already out</button>}<button type="button" className="mk-link" onClick={() => navigate("/results-calendar")}>Calendar</button></span></div>
+          <div className="mk-card-h"><h2 id="mk-res">Results this week</h2><span className="mk-card-links"><button type="button" className="mk-link" onClick={() => openDay("mine")}>My watchlist</button>{results.past?.length > 0 && <button type="button" className="mk-link" onClick={() => openDay(results.past[results.past.length - 1].date)}>Already out</button>}<button type="button" className="mk-link" onClick={() => navigate("/results-calendar")}>Calendar</button></span></div>
           <div className="mk-results">
             {results.days.filter(d => d.count > 0).slice(0, 5).map(d => (
               <div key={d.date}>

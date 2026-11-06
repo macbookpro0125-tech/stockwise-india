@@ -119,6 +119,7 @@ export const api = {
   exploreIndex: name => request(`/api/explore/index?name=${encodeURIComponent(name)}`),
   movers: period => request(`/api/explore/movers?period=${period}`),
   resultsWeek: () => request("/api/explore/results"),
+  resultsWatchlist: () => request("/api/explore/results/watchlist"),
   heatmap: (set, period, symbols = null, group = null) => request(`/api/explore/heatmap?set=${encodeURIComponent(set)}&period=${period}${symbols ? `&symbols=${encodeURIComponent(symbols.join(","))}` : ""}${group?.industry ? `&industry=${encodeURIComponent(group.industry)}` : ""}${group?.sector ? `&sector=${encodeURIComponent(group.sector)}` : ""}`),
   compareRows: symbols => request(`/api/compare?symbols=${symbols.map(encodeURIComponent).join(",")}`),
   portfolioVsMarket: () => request("/api/portfolio/vs-market"),

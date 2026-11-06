@@ -238,3 +238,23 @@ export function resultsWeek(days = 7) {
     .map(([date, list]) => ({ date, count: list.length, companies: list.sort((a, b) => (b.marketCapCr ?? 0) - (a.marketCapCr ?? 0)) }));
   return { today, days: asDays(byDay), past: asDays(past) };
 }
+
+// A list of companies' results, whatever the day (6 Nov 2026, "all the
+// watchlist results, not only on a specific date — previous and future"):
+// each one's next results date if it has told NSE, and its latest quarter on
+// file with its figures; unknown symbols are left out
+export function resultsFor(symbols = []) {
+  const by = new Map(allMetrics().rows.map(r => [r.symbol, r]));
+  const today = new Date(Date.now() + 5.5 * 3600_000).toISOString().slice(0, 10);
+  return {
+    today,
+    companies: [...new Set(symbols)].map(sym => by.get(sym)).filter(Boolean).map(r => {
+      const q = r.quarters?.[0];
+      return {
+        symbol: r.symbol, name: r.name, marketCapCr: r.marketCapCr ?? null, sector: r.sector ?? null, ret1d: r.ret1d ?? null,
+        next: r.nextResults && r.nextResults >= today ? r.nextResults : null,
+        quarter: q ? { end: q.fyEnd, filed: q.filed ?? null, salesCr: q.revenueCr ?? null, salesYoY: q.salesYoY ?? null, profitCr: q.profitCr ?? null, profitYoY: q.profitYoY ?? null } : null,
+      };
+    }),
+  };
+}

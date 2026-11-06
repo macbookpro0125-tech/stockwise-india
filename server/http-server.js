@@ -62,7 +62,7 @@ import { marketNews, topNews, newsItem, newsItemFiling, newsForSymbols, watchlis
 import { portfolioVsMarket } from "./portfolio-vs-market.js";
 import { historyBars } from "./price-history.js";
 import { readIndexHistory } from "./index-history.js";
-import { exploreBoard, exploreIndex, heatmap, HEAT_SETS, topMovers, resultsWeek, sectorBrief } from "./explore.js";
+import { exploreBoard, exploreIndex, heatmap, HEAT_SETS, topMovers, resultsWeek, resultsFor, sectorBrief } from "./explore.js";
 import { summarizeMove, aiClient } from "./ai-moves.js";
 import { summarizeCall } from "./call-summary.js";
 import { summarizeFiling } from "./filing-summary.js";
@@ -820,6 +820,13 @@ export function createApp() {
       if (url.pathname === "/api/explore/movers" && req.method === "GET") {
         if (requireAuth(req, res) == null) return;
         sendJson(res, 200, topMovers(url.searchParams.get("period") ?? "1d"));
+        return;
+      }
+      // the signed-in person's watchlist companies' results, past and coming
+      if (url.pathname === "/api/explore/results/watchlist" && req.method === "GET") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        sendJson(res, 200, resultsFor(listWatchlist(userId).map(i => i.ticker)));
         return;
       }
       if (url.pathname === "/api/explore/results" && req.method === "GET") {

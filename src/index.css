@@ -5863,6 +5863,10 @@ button.td-index:active, button.td-line:active { background: color-mix(in srgb, v
 .mk-date[aria-pressed=true] .mk-date-wd, .mk-date[aria-pressed=true] .mk-date-m, .mk-date[aria-pressed=true] .mk-date-d { color: #04211c; }
 .mk-date[aria-pressed=true] .mk-date-n { background: #04211c; border-color: #04211c; color: #fff; }
 .mk-date:active { transform: scale(0.96); }
+.mk-date-mine { align-content: center; gap: 6px; height: 100%; min-height: 78px; color: #f5b83d; }
+.mk-date-mine .mk-date-m { color: var(--t2); }
+.mk-date-mine svg { fill: currentColor; }
+.mk-date-mine[aria-pressed=true] svg { color: #04211c; }
 @media (hover: hover) and (pointer: fine) { .mk-date:not([aria-pressed=true]):hover { border-color: color-mix(in srgb, var(--accent) 55%, var(--bdr2)); } }
 .mk-dates { padding-top: 10px; }
 .mk-resday { list-style: none; margin: 0; padding: 0; }
@@ -5903,14 +5907,18 @@ button.td-index:active, button.td-line:active { background: color-mix(in srgb, v
 .mk-resday-go .mk-link { display: inline-flex; align-items: center; gap: 2px; white-space: nowrap; }
 /* a narrower window: market cap goes, the figures keep their room */
 @media (max-width: 1000px) and (min-width: 761px) {
-  .mk-resday > li { grid-template-columns: minmax(150px, 1fr) 0 120px 108px 116px 84px 110px; }
+  .mk-resday > li { grid-template-columns: minmax(140px, 1fr) 0 108px 98px 108px 70px 100px; gap: 10px; }
   .mk-resday > li > :nth-child(2) { visibility: hidden; overflow: hidden; }
+  /* the watchlist's page keeps its dates */
+  .mk-resday.mine > li { grid-template-columns: minmax(104px, 1fr) 84px 98px 92px 98px 56px 90px; }
+  .mk-resday.mine > li > :nth-child(2) { visibility: visible; }
 }
 @media (max-width: 760px) {
   .mk-resday > li { grid-template-columns: minmax(0, 1fr) auto auto; gap: 4px 12px; }
   .mk-resday > li.mk-resday-head { display: none; }
   .mk-resday-co { grid-column: 1 / -1; }
   .mk-resday-cap, .mk-resday-go, .mk-resday-move { display: none; }
+  .mk-resday.mine .mk-resday-cap { display: block; grid-column: 2 / -1; justify-self: end; color: var(--t1); font-weight: 550; }
   .mk-resday-q { justify-content: flex-start; grid-column: 1; }
 }
 .mk-note { margin: 6px 0 0; font-size: 12px; color: var(--t3); }
