@@ -66,6 +66,7 @@ export async function exploreIndex(name) {
   const mover = r => ({ symbol: r.symbol, name: r.name, close: r.cmp ?? null, change1d: r.ret1d, marketCapCr: r.marketCapCr ?? null });
   const byMove = [...members].sort((a, b2) => b2.ret1d - a.ret1d);
   return {
+    story: indexStory(name, i.close, pairs.map(([d]) => d), snap, sector),
     asOf: pairs[pairs.length - 1]?.[0] ?? null,
     name, group: i.group, close: i.close, change: i.change, changePct: i.changePct,
     pe: i.pe, pb: i.pb, divYield: i.divYield,
@@ -278,7 +279,8 @@ function moverCloses() {
   const dates = new Set(), closes = new Map(), info = new Map();
   for (const r of rows) {
     // a month of days to show, and a month before the oldest for its Month view
-    const bars = historyBars(r.symbol, snap).slice(-48);
+    // a year and a bit: the strip's month, its Month view, and an index chart's breadth for a year
+    const bars = historyBars(r.symbol, snap).slice(-270);
     if (bars.length < 2) continue;
     const m = new Map(bars.map(b => [b.date, b.close]));
     closes.set(r.symbol, m);
@@ -313,4 +315,64 @@ export function moversOn(date, period = "1d") {
     }
   }
   return { date: days[at], from, period, days: days.slice(-MOVER_DAYS).reverse(), floorCr: MOVER_FLOOR_CR, rows };
+}
+
+// What's inside an index, for the Markets page (7 Nov 2026: "this looks an
+// exact copy of TradingView"): its companies' moves today (how many rose and
+// fell), who moved it most — each company's share of the index by market
+// value times its move, in index points (approximate: NSE weights by the
+// shares freely traded, which we don't hold) — how many rose and fell on each
+// of the chart's days, and the results its five largest companies filed
+// within the chart's dates. Only the companies we hold figures for.
+function membersOf(name, snap, sector) {
+  const lists = { ...(snap?.screenIndices ?? {}), ...(snap?.indexMembers ?? {}) };
+  const key = Object.keys(lists).find(k => k.toLowerCase() === String(name).toLowerCase());
+  if (key) return lists[key];
+  if (sector) return allMetrics().rows.filter(r => r.sectorIndex === name).map(r => r.symbol);
+  return null;
+}
+const FY_Q = end => { const [y, m] = String(end).split("-").map(Number); return y && m ? `Q${m >= 4 ? Math.ceil((m - 3) / 3) : 4} FY${String(m >= 4 ? y + 1 : y).slice(2)}` : null; };
+function indexStory(name, level, chartDays, snap, sector) {
+  const syms = membersOf(name, snap, sector);
+  if (!syms?.length) return null;
+  const by = new Map(allMetrics().rows.map(r => [r.symbol, r]));
+  const rows = syms.map(x => by.get(x)).filter(r => r && r.marketCapCr > 0);
+  const moved = rows.filter(r => r.ret1d != null);
+  if (moved.length < 3) return null;
+  const total = moved.reduce((a, r) => a + r.marketCapCr, 0);
+  const pts = moved.map(r => ({ symbol: r.symbol, name: r.name, change: r.ret1d, points: level ? level * (r.marketCapCr / total) * (r.ret1d / 100) : null }))
+    .sort((a, b) => b.points - a.points);
+  // the last month's breadth, from the kept closes (members worth ₹1,000 crore or more)
+  let breadth = [];
+  try {
+    const { days, closes } = moverCloses();
+    const inIdx = syms.filter(x => closes.has(x));
+    const want = new Set(chartDays);
+    breadth = days.filter(d => want.has(d)).map(d => {
+      const k = days.indexOf(d), prev = days[k - 1];
+      let rose = 0, fell = 0;
+      for (const x of inIdx) { const a = closes.get(x).get(prev), b = closes.get(x).get(d); if (!(a > 0 && b > 0)) continue; if (b > a * 1.0005) rose++; else if (b < a * 0.9995) fell++; }
+      return { date: d, rose, fell };
+    }).filter(x => x.rose + x.fell > 0);
+  } catch { breadth = []; }
+  // results its ten largest companies filed within the chart's dates
+  const first = chartDays[0], last = chartDays[chartDays.length - 1];
+  const results = [];
+  for (const r of [...rows].sort((a, b) => b.marketCapCr - a.marketCapCr).slice(0, 5)) {
+    for (const q of (r.quarters ?? []).slice(0, 5)) {
+      const f = String(q.filed ?? "").slice(0, 10);
+      if (!f || f < first || f > last) continue;
+      const on = chartDays.find(d => d >= f) ?? last;
+      results.push({ date: on, filed: f, symbol: r.symbol, name: r.name, quarter: FY_Q(q.fyEnd), profitYoY: q.profitYoY ?? null, salesYoY: q.salesYoY ?? null, profitCr: q.profitCr ?? null });
+    }
+  }
+  return {
+    members: moved.length,
+    rose: moved.filter(r => r.ret1d > 0.05).length,
+    fell: moved.filter(r => r.ret1d < -0.05).length,
+    up: pts.filter(x => x.points > 0).slice(0, 5),
+    down: pts.filter(x => x.points < 0).reverse().slice(0, 5),
+    breadth,
+    results: results.sort((a, b) => a.date.localeCompare(b.date)),
+  };
 }

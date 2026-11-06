@@ -6104,3 +6104,34 @@ html.td-night[data-theme="light"] .tb { --tb-search-bg: rgba(255, 255, 255, 0.07
    "the colour of top bar" — clear, it showed the light page behind pale words) */
 html.td-night[data-theme="light"] .tb, html.td-night[data-theme="light"] .tb.tb-scrolled { background: #000; box-shadow: none; }
 html.td-night[data-theme="light"] .tb.tb-scrolled { box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08); }
+
+/* Markets' index card, ours rather than a trading terminal's (7 Nov 2026):
+   a sentence, the teal line with results dots and a hover card, the month's
+   breadth, and who moved it */
+.mk-story { margin: 12px 0 6px; padding: 12px 14px; border-radius: 12px; background: color-mix(in srgb, var(--accent) 7%, var(--s1)); color: var(--t1); font-size: 15px; line-height: 1.55; }
+.mk-story > span { margin-right: 8px; color: var(--accent); font-weight: 600; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; }
+.mk-chart-wrap { position: relative; }
+.mk-chart-tip { position: absolute; top: 6px; z-index: 3; display: flex; flex-direction: column; gap: 4px; width: 220px; padding: 9px 11px; border: 1px solid var(--bdr2); border-radius: 12px; background: var(--bg); box-shadow: 0 8px 22px rgba(0,0,0,0.12); font-size: 12.5px; pointer-events: none; }
+.mk-chart-tip-d { color: var(--t2); } .mk-chart-tip-d b { color: var(--t1); font-variant-numeric: tabular-nums; }
+.mk-chart-tip-r { display: flex; gap: 7px; align-items: baseline; color: var(--t1); }
+.mk-chart-tip-r i { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); transform: translateY(-1px); }
+.mk-breadth-days { margin: 6px 0 4px; }
+.mk-breadth-bars { display: flex; align-items: flex-end; gap: 3px; height: 34px; }
+.mk-breadth-bars > span { flex: 1; display: flex; flex-direction: column; min-height: 4px; border-radius: 3px; overflow: hidden; }
+.mk-breadth-bars i { display: block; min-height: 0; }
+.mk-breadth-bars i.up { background: var(--green); } .mk-breadth-bars i.down { background: color-mix(in srgb, var(--red) 80%, transparent); }
+.mk-breadth-days .mk-note { margin: 6px 0 0; }
+.mk-breadth-days .mk-note .up { color: var(--green); } .mk-breadth-days .mk-note .down { color: var(--red); }
+.mk-whomoved { margin: 14px 0 6px; padding-top: 14px; border-top: 1px solid var(--bdr); }
+.mk-whomoved h4 { margin: 0 0 8px; font-size: 15px; font-weight: 600; }
+.mk-whomoved-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 4px 24px; }
+.mk-whomoved ul { list-style: none; margin: 0; padding: 0; }
+.mk-whomoved button { display: grid; grid-template-columns: 22px minmax(0, 1fr) 64px 70px; align-items: center; gap: 10px; width: 100%; padding: 6px 4px; border: 0; border-top: 1px solid var(--bdr); background: none; color: var(--t1); font: inherit; font-size: 13.5px; text-align: left; cursor: pointer; }
+.mk-whomoved .mk-chg, .mk-pts { text-align: right; font-variant-numeric: tabular-nums; }
+.mk-pts { font-weight: 600; } .mk-pts.up { color: var(--green); } .mk-pts.down { color: var(--red); }
+@media (hover: hover) and (pointer: fine) { .mk-whomoved button:hover b { color: var(--accent); } }
+.mk-chart-tip-b { color: var(--t2); } .mk-chart-tip-b .up { color: var(--green); } .mk-chart-tip-b .down { color: var(--red); }
+.mk-chart-key { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 2px 0 0; }
+.mk-chart-key i { display: inline-block; flex: none; }
+.mk-chart-key i.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+.mk-chart-key i.bar { width: 4px; height: 10px; border-radius: 1px; } .mk-chart-key i.bar.up { background: var(--green); margin-left: 8px; } .mk-chart-key i.bar.down { background: var(--red); margin-right: 2px; }

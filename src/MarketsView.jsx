@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { createChart, AreaSeries, ColorType } from "lightweight-charts";
+import { createChart, createSeriesMarkers, AreaSeries, HistogramSeries, ColorType } from "lightweight-charts";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { api } from "./api.js";
 import { cardName } from "./stockName.js";
@@ -31,30 +31,121 @@ const BADGE_COLOURS = ["#c2273a", "#1f7fb5", "#2c9ad1", "#5b1a3a", "#0f8a72", "#
 const badgeColour = name => BADGE_COLOURS[[...String(name)].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % BADGE_COLOURS.length];
 const RANGES = [["1M", 21], ["3M", 63], ["6M", 126], ["1Y", Infinity]];
 
-function IndexChart({ days, closes, label }) {
+// The index's line in our teal (7 Nov 2026: it read as TradingView's), no
+// price tag on the axis; a dot on each day its largest companies filed
+// results, and a card under the pointer with the day, the level and those
+// results
+function IndexChart({ days, closes, label, results = [], breadth = [] }) {
   const host = useRef(null);
+  const [tip, setTip] = useState(null);
   useEffect(() => {
     if (!host.current || !(closes?.length > 1)) return undefined;
     const css = getComputedStyle(document.documentElement), v = n => css.getPropertyValue(n).trim();
-    const up = closes.at(-1) >= closes[0], line = v(up ? "--green" : "--red");
+    const raw = v("--accent"), line = /^#[0-9a-f]{6}$/i.test(raw) ? raw : "#14b8a6";
+    const n = parseInt(line.slice(1), 16), rgba = a => `rgba(${n >> 16}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
     const chart = createChart(host.current, {
       autoSize: true,
       layout: { background: { type: ColorType.Solid, color: "rgba(0, 0, 0, 0)" }, textColor: v("--t3"), fontFamily: getComputedStyle(document.body).fontFamily, attributionLogo: false },
       grid: { vertLines: { visible: false }, horzLines: { color: v("--bdr") } },
       rightPriceScale: { borderVisible: false }, timeScale: { borderVisible: false },
+      crosshair: { horzLine: { visible: false, labelVisible: false }, vertLine: { labelVisible: false, style: 3, color: v("--bdr2") } },
       localization: { locale: "en-IN", priceFormatter: p => Math.round(p).toLocaleString("en-IN") },
       handleScroll: false, handleScale: false,
     });
-    const m = /^#([0-9a-f]{6})$/i.exec(line), n = m ? parseInt(m[1], 16) : 0x808080;
-    const rgba = a => `rgba(${n >> 16}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
-    const series = chart.addSeries(AreaSeries, { lineColor: line, lineWidth: 2, topColor: rgba(0.24), bottomColor: rgba(0), priceLineVisible: true });
+    const series = chart.addSeries(AreaSeries, { lineColor: line, lineWidth: 2, topColor: rgba(0.22), bottomColor: rgba(0), priceLineVisible: false, lastValueVisible: false, crosshairMarkerBorderColor: line, crosshairMarkerBackgroundColor: /^#/.test(v("--bg")) ? v("--bg") : "#ffffff" });
     series.setData(days.map((time, i) => ({ time, value: closes[i] })));
+    // breadth along the bottom, under its own day: how many more of its
+    // companies rose than fell (green) or fell than rose (red)
+    const brd = new Map(breadth.map(b => [b.date, b]));
+    if (brd.size > 2) {
+      const css2 = getComputedStyle(document.documentElement), g = css2.getPropertyValue("--green").trim() || "#16a34a", r = css2.getPropertyValue("--red").trim() || "#dc2626";
+      const hist = chart.addSeries(HistogramSeries, { priceScaleId: "breadth", priceLineVisible: false, lastValueVisible: false, base: 0 });
+      chart.priceScale("breadth").applyOptions({ scaleMargins: { top: 0.84, bottom: 0 }, visible: false });
+      hist.setData(days.filter(d => brd.has(d)).map(time => { const b = brd.get(time), net = b.rose - b.fell; return { time, value: Math.abs(net) || 0.2, color: net >= 0 ? g : r }; }));
+      series.priceScale().applyOptions({ scaleMargins: { top: 0.08, bottom: 0.2 } });
+    }
+    const shown = new Set(days);
+    const byDay = new Map();
+    for (const r of results) if (shown.has(r.date)) byDay.set(r.date, [...(byDay.get(r.date) ?? []), r]);
+    createSeriesMarkers(series, [...byDay.keys()].sort().map(time => ({ time, position: "inBar", shape: "circle", color: line, size: 1 })));
+    chart.subscribeCrosshairMove(p => {
+      if (!p?.time || !p.point || p.point.x < 0) { setTip(null); return; }
+      const i = days.indexOf(p.time);
+      setTip({ x: p.point.x, date: p.time, value: closes[i], results: byDay.get(p.time) ?? [], breadth: brd.get(p.time) });
+    });
     chart.timeScale().fitContent();
     const ro = new ResizeObserver(() => chart.timeScale().fitContent());
     ro.observe(host.current);
     return () => { ro.disconnect(); chart.remove(); };
-  }, [days, closes]);
-  return <div ref={host} className="mk-chart" role="img" aria-label={label} />;
+  }, [days, closes, results, breadth]);
+  const w = host.current?.clientWidth ?? 0;
+  return (
+    <div className="mk-chart-wrap">
+      <div ref={host} className="mk-chart" role="img" aria-label={label} />
+      {tip && (
+        <div className="mk-chart-tip" style={{ left: Math.min(Math.max(tip.x - 110, 0), Math.max(0, w - 230)) }}>
+          <span className="mk-chart-tip-d">{day(tip.date)} · <b>{num(tip.value)}</b></span>
+          {tip.breadth && <span className="mk-chart-tip-b"><span className="up">{tip.breadth.rose} rose</span> · <span className="down">{tip.breadth.fell} fell</span></span>}
+          {tip.results.map(r => <span key={r.symbol + r.quarter} className="mk-chart-tip-r"><i />{cardName(r.name)} {r.quarter} results{r.profitYoY != null && r.profitCr > 0 ? ` · profit ${pct1(r.profitYoY)}` : r.profitCr < 0 ? " · a loss" : ""}</span>)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// The index in a sentence, from its own figures and its companies' moves
+function indexSentence(d, range, rangeMove) {
+  const st = d?.story;
+  if (d?.changePct == null) return null;
+  const n = String(d.name);
+  const parts = [`${n} ${d.changePct > 0.05 ? "rose" : d.changePct < -0.05 ? "fell" : "was flat"}${Math.abs(d.changePct) > 0.05 ? ` ${Math.abs(d.changePct).toFixed(1)}%` : ""} today.`];
+  if (st?.members) parts.push(st.fell > st.rose ? `${st.fell} of its ${st.members} companies fell, ${st.rose} rose.` : `${st.rose} of its ${st.members} companies rose, ${st.fell} fell.`);
+  if (st?.up?.[0] && st?.down?.[0]) parts.push(`${cardName(st.up[0].name)} added the most, ${cardName(st.down[0].name)} took off the most.`);
+  if (rangeMove != null) parts.push(`${rangeMove >= 0 ? "Up" : "Down"} ${Math.abs(rangeMove).toFixed(1)}% over ${range === "1Y" ? "the year" : range === "1M" ? "the month" : range === "3M" ? "three months" : "six months"}${d.pe != null ? `, it trades at ${d.pe.toFixed(1)} times its companies' earnings` : ""}.`);
+  return parts.join(" ");
+}
+
+// How many of its companies rose and fell, day by day, the last month
+function Breadth({ rows }) {
+  if (!(rows?.length > 2)) return null;
+  const top = Math.max(...rows.map(r => r.rose + r.fell));
+  return (
+    <div className="mk-breadth-days" aria-label="How many of its companies rose and fell each day">
+      <div className="mk-breadth-bars">
+        {rows.map(r => (
+          <span key={r.date} title={`${day(r.date)}: ${r.rose} rose, ${r.fell} fell`} style={{ height: `${((r.rose + r.fell) / top) * 100}%` }}>
+            <i className="up" style={{ flex: r.rose }} /><i className="down" style={{ flex: r.fell }} />
+          </span>
+        ))}
+      </div>
+      <p className="mk-note">Its companies, day by day over the last month: <span className="up">rose</span> and <span className="down">fell</span>.</p>
+    </div>
+  );
+}
+
+// The companies that moved the index most today, in index points
+function WhoMoved({ story, onOpenStock }) {
+  if (!story?.up?.length && !story?.down?.length) return null;
+  const row = x => (
+    <li key={x.symbol}>
+      <button type="button" onClick={() => onOpenStock?.(x.symbol)}>
+        <CompanyLogo symbol={x.symbol} size={22} fallback={x.name} />
+        <span className="mk-who"><b>{cardName(x.name)}</b></span>
+        <span className={`mk-chg ${tone(x.change)}`}>{pct(x.change)}</span>
+        <span className={`mk-pts ${tone(x.points)}`}>{x.points >= 0 ? "+" : "−"}{Math.abs(Math.round(x.points))} pts</span>
+      </button>
+    </li>
+  );
+  return (
+    <div className="mk-whomoved">
+      <h4>Who moved it today</h4>
+      <div className="mk-whomoved-cols">
+        <ul aria-label="Added to it">{story.up.map(row)}</ul>
+        <ul aria-label="Took off it">{story.down.map(row)}</ul>
+      </div>
+      <p className="mk-note">Points are approximate: each company's share of the index by market value, times its move.</p>
+    </div>
+  );
 }
 
 // a month as a small line, for the all-indices list
@@ -599,7 +690,10 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
               {RANGES.map(([id]) => <button key={id} type="button" aria-pressed={range === id} onClick={() => setRange(id)}>{id}</button>)}
             </div>
           </div>
-          {shownDays ? <IndexChart days={shownDays.days} closes={shownDays.closes} label={`${detail.name} over ${range}`} /> : <div className="mk-chart mk-skel" />}
+          {detail && indexSentence(detail, range, rangeMove) && <p className="mk-story"><span>The story</span>{indexSentence(detail, range, rangeMove)}</p>}
+          {shownDays ? <IndexChart days={shownDays.days} closes={shownDays.closes} results={detail?.story?.results ?? []} breadth={detail?.story?.breadth ?? []} label={`${detail.name} over ${range}`} /> : <div className="mk-chart mk-skel" />}
+          {detail?.story?.breadth?.length > 2 && <p className="mk-note mk-chart-key"><i className="dot" />results of its five largest companies <i className="bar up" /><i className="bar down" />along the bottom: whether more of its companies rose or fell that day</p>}
+          <WhoMoved story={detail?.story} onOpenStock={onOpenStock} />
           <dl className="mk-stats">
             {[["1 week", R.w1], ["1 month", R.m1], ["3 months", R.m3], ["6 months", R.m6], ["1 year", R.y1], ["3 years", R.y3], ["5 years", R.y5]].map(([k, v]) => (
               <div key={k}><dt>{k}</dt><dd className={`mk-num ${tone(v)}`}>{pct(v)}</dd></div>
