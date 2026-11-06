@@ -373,9 +373,15 @@ export default function App() {
     // Keep a crawlable company's summary visible while the session check is in
     // flight. main.jsx reads the JSON beside the server-written HTML before
     // React replaces the root; a signed-in visitor moves into the full app.
+    // Someone this browser knows as signed in waits for their own page
+    // instead: the public one flashed for a moment on every refresh of a
+    // company page (7 Nov 2026, the owner's recording). Only a hint — a
+    // visitor or a crawler, with none, still gets the public summary.
+    let signedInHint = false;
+    try { signedInHint = localStorage.getItem(SIGNED_IN_HINT) === "1"; } catch {}
     const publicSymbol = stockFromPath(path);
     const initialPublicStock = window.__PUBLIC_STOCK__;
-    if (publicSymbol && initialPublicStock?.symbol === publicSymbol) return <PublicStock symbol={publicSymbol} initial={initialPublicStock} onAuthed={intoAppHere} />;
+    if (!signedInHint && publicSymbol && initialPublicStock?.symbol === publicSymbol) return <PublicStock symbol={publicSymbol} initial={initialPublicStock} onAuthed={intoAppHere} />;
     return null; // avoid a front-page flash while the session check is in flight
   }
 
