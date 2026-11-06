@@ -5861,21 +5861,41 @@ button.td-index:active, button.td-line:active { background: color-mix(in srgb, v
 .mk-badge { width: 44px; height: 44px; font-size: 12.5px; letter-spacing: -0.01em; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12); }
 .mk-pill-text b { font-size: 15px; }
 .mk-pill-text > span { font-size: 14px; }
-/* the arrows over the index pills: glass, as Apple's (6 Nov 2026) — a
-   translucent disc that blurs what's under it, a bright top edge where the
-   light catches it, a soft shadow beneath; it presses in on touch */
-.mk-end { position: absolute; top: 50%; z-index: 2; transform: translateY(-50%); display: inline-grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%; color: var(--t1); cursor: pointer;
-  background: linear-gradient(180deg, rgba(255,255,255,0.78), rgba(255,255,255,0.46));
-  -webkit-backdrop-filter: blur(18px) saturate(180%); backdrop-filter: blur(18px) saturate(180%);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.95), inset 0 0 0 0.5px rgba(255,255,255,0.6), 0 0 0 0.5px rgba(0,0,0,0.08), 0 6px 18px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.08);
-  transition: transform 160ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 160ms ease-out, background 160ms ease-out; }
-.mk-end svg { width: 20px; height: 20px; stroke-width: 2.4; }
-.mk-end:hover { transform: translateY(-50%) scale(1.06); box-shadow: inset 0 1px 0 rgba(255,255,255,1), inset 0 0 0 0.5px rgba(255,255,255,0.7), 0 0 0 0.5px rgba(0,0,0,0.08), 0 10px 26px rgba(0,0,0,0.16), 0 2px 4px rgba(0,0,0,0.08); }
+/* the arrows over the index pills: Apple's liquid glass (6 Nov 2026, "not
+   frosted — like water"). Clear, not milky: barely any blur, so what is under
+   it still shows, bent a little brighter; light caught on the rim — strong at
+   the top, a fainter glint at the bottom — and a small bright spot, as on a
+   drop of water; a soft shadow under it. It swells under the pointer and
+   presses in on a tap. */
+.mk-end { position: absolute; top: 50%; z-index: 2; transform: translateY(-50%); display: inline-grid; place-items: center; width: 46px; height: 46px; padding: 0; border: 0; border-radius: 50%; color: var(--t1); cursor: pointer; isolation: isolate; overflow: hidden;
+  background:
+    radial-gradient(60% 38% at 50% 12%, rgba(255,255,255,0.75), rgba(255,255,255,0) 70%),
+    radial-gradient(70% 45% at 50% 100%, rgba(255,255,255,0.28), rgba(255,255,255,0) 70%),
+    rgba(255,255,255,0.10);
+  -webkit-backdrop-filter: blur(1.5px) saturate(170%) brightness(1.08) contrast(1.05); backdrop-filter: blur(1.5px) saturate(170%) brightness(1.08) contrast(1.05);
+  box-shadow:
+    inset 0 1.5px 0.5px rgba(255,255,255,0.95),
+    inset 0 -1px 1px rgba(255,255,255,0.55),
+    inset 1px 0 1px rgba(255,255,255,0.35), inset -1px 0 1px rgba(255,255,255,0.35),
+    inset 0 -6px 12px rgba(255,255,255,0.12),
+    0 0 0 0.5px rgba(0,0,0,0.10),
+    0 8px 20px rgba(0,0,0,0.14), 0 2px 5px rgba(0,0,0,0.10);
+  transition: transform 220ms cubic-bezier(0.34, 1.4, 0.64, 1), box-shadow 200ms ease-out; }
+/* the small bright glint, high on the left, as light on a drop */
+.mk-end::before { content: ""; position: absolute; top: 7px; left: 11px; width: 12px; height: 7px; border-radius: 50%; background: radial-gradient(closest-side, rgba(255,255,255,0.95), rgba(255,255,255,0)); transform: rotate(-24deg); pointer-events: none; }
+.mk-end svg { position: relative; width: 20px; height: 20px; stroke-width: 2.5; filter: drop-shadow(0 1px 0.5px rgba(255,255,255,0.6)); }
+.mk-end:hover { transform: translateY(-50%) scale(1.08); box-shadow: inset 0 1.5px 0.5px rgba(255,255,255,1), inset 0 -1px 1px rgba(255,255,255,0.65), inset 1px 0 1px rgba(255,255,255,0.4), inset -1px 0 1px rgba(255,255,255,0.4), inset 0 -6px 12px rgba(255,255,255,0.16), 0 0 0 0.5px rgba(0,0,0,0.10), 0 12px 28px rgba(0,0,0,0.18), 0 3px 6px rgba(0,0,0,0.10); }
 .mk-end:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 :root:not([data-theme="light"]) .mk-end { color: #f4f5fb;
-  background: linear-gradient(180deg, rgba(255,255,255,0.16), rgba(255,255,255,0.06));
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.28), inset 0 0 0 0.5px rgba(255,255,255,0.14), 0 8px 22px rgba(0,0,0,0.45), 0 1px 3px rgba(0,0,0,0.3); }
+  background:
+    radial-gradient(60% 38% at 50% 12%, rgba(255,255,255,0.32), rgba(255,255,255,0) 70%),
+    radial-gradient(70% 45% at 50% 100%, rgba(255,255,255,0.12), rgba(255,255,255,0) 70%),
+    rgba(255,255,255,0.04);
+  box-shadow: inset 0 1.5px 0.5px rgba(255,255,255,0.55), inset 0 -1px 1px rgba(255,255,255,0.25), inset 1px 0 1px rgba(255,255,255,0.16), inset -1px 0 1px rgba(255,255,255,0.16), inset 0 -6px 12px rgba(255,255,255,0.06), 0 0 0 0.5px rgba(255,255,255,0.08), 0 10px 24px rgba(0,0,0,0.5), 0 2px 5px rgba(0,0,0,0.35); }
+:root:not([data-theme="light"]) .mk-end::before { background: radial-gradient(closest-side, rgba(255,255,255,0.6), rgba(255,255,255,0)); }
+:root:not([data-theme="light"]) .mk-end svg { filter: drop-shadow(0 1px 1px rgba(0,0,0,0.5)); }
 @media (prefers-reduced-transparency: reduce) { .mk-end { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--s1); } }
+@media (prefers-reduced-motion: reduce) { .mk-end, .mk-end:hover { transition: none; transform: translateY(-50%); } }
 .mk-end.next { right: -6px; }
 .mk-end.back { left: -6px; }
 .mk-end:active { transform: translateY(-50%) scale(0.92); transition-duration: 80ms; }
