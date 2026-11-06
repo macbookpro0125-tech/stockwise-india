@@ -5415,7 +5415,10 @@ body::before { content: ""; position: fixed; inset: 0; z-index: 0; pointer-event
 .chart-overlay .chart-page-foot { padding-bottom: 0; }
 
 /* A computer's home once signed in (TodayHome.jsx) */
-.td { max-width: 1480px; margin: 0 auto; padding: 26px 0 40px; color: var(--t1); }
+/* As wide as the window, less the page's side margin (6 Nov 2026: a 1480px
+   cap left wide screens with empty bands either side); a cap only for very
+   wide monitors, where lines would get too long to read */
+.td { max-width: 2400px; margin: 0 auto; padding: 26px 0 40px; color: var(--t1); }
 .td-top { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 18px; }
 .td-title { margin: 0; font-size: 32px; font-weight: 600; letter-spacing: -0.03em; }
 .td-sub { margin: 4px 0 0; font-size: 14px; color: var(--t3); }
@@ -5752,7 +5755,7 @@ button.td-index:active, button.td-line:active { background: color-mix(in srgb, v
 .ex-tile-logo img { box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25); }
 
 /* ── Markets (MarketsView.jsx, 5 Nov 2026) ── */
-.mk { max-width: 1480px; margin: 0 auto; padding: 8px var(--page-x) 40px; box-sizing: content-box; }
+.mk { max-width: 2400px; margin: 0 auto; padding: 8px var(--page-x) 40px; box-sizing: content-box; }
 .mk-head h1 { margin: 6px 0 4px; font-size: clamp(30px, 3.2vw, 44px); font-weight: 700; letter-spacing: -0.03em; }
 .mk-head p { margin: 0 0 22px; font-size: 14px; color: var(--t3); }
 .mk-section { margin-bottom: 18px; }
