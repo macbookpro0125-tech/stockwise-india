@@ -290,17 +290,17 @@ function ResultsDay({ results, date, onDate, onBack, onOpenStock }) {
           : `${d.count} ${d.count === 1 ? "company meets" : "companies meet"} to approve ${d.count === 1 ? "its" : "their"} quarterly results${done ? `; ${done} ${done === 1 ? "has" : "have"} filed` : ""}. The largest first. Dates are the ones companies told NSE; they can change.`}</p>
       </header>
       {/* the days as one sliding strip: the week before, then the days ahead */}
+      {/* the watchlist's card stays put beside the sliding days */}
+      <div className="mk-strip-row">
+      <div className="mk-dates-group mk-mine-fixed">
+        <span className="mk-dates-label">Yours</span>
+        <button type="button" className="mk-date mk-date-mine" aria-pressed={mineMode} onClick={() => onDate("mine")} aria-label="My watchlist: its results, past and coming">
+          <Star size={18} aria-hidden="true" /><span className="mk-date-m">Watchlist</span>
+        </button>
+      </div>
       <div className="mk-dates-wrap">
       <StripArrows nudge={nudge} />
       <div className="mk-dates" role="group" aria-label="Day" ref={strip} onScroll={stripEdges}>
-        <div className="mk-dates-group">
-          <span className="mk-dates-label">Yours</span>
-          <div className="mk-dates-row">
-            <button type="button" className="mk-date mk-date-mine" aria-pressed={mineMode} onClick={() => onDate("mine")} aria-label="My watchlist: its results, past and coming">
-              <Star size={18} aria-hidden="true" /><span className="mk-date-m">Watchlist</span>
-            </button>
-          </div>
-        </div>
         {[["Already out", days.filter(x => x.past)], ["Coming", days.filter(x => !x.past)]].map(([label, list]) => list.length > 0 && (
           <div key={label} className="mk-dates-group">
             <span className="mk-dates-label">{label}</span>
@@ -323,6 +323,7 @@ function ResultsDay({ results, date, onDate, onBack, onOpenStock }) {
             </div>
           </div>
         ))}
+      </div>
       </div>
       </div>
       {mineMode && <WatchResults onOpenStock={onOpenStock} />}

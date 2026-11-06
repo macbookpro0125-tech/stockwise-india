@@ -5853,7 +5853,14 @@ button.td-index:active, button.td-line:active { background: color-mix(in srgb, v
 .mk-dates[data-end="0"] { --fade-r: 28px; }
 /* the strip's arrows (a mouse): over its ends, only towards more dates; a
    finger swipes, so a touch screen doesn't get them */
-.mk-dates-wrap { position: relative; min-width: 0; }
+.mk-dates-wrap { position: relative; min-width: 0; flex: 1 1 auto; }
+/* the results page: the watchlist's card fixed on the left, the days sliding beside it */
+.mk-strip-row { display: flex; align-items: flex-end; gap: 16px; margin: 6px 0 18px; }
+.mk-strip-row .mk-dates { margin: 0; }
+.mk-mine-fixed { flex: none; padding: 10px 16px 6px 0; border-right: 1px solid var(--bdr2); }
+/* a group's label stays in view while its dates slide under it */
+.mk-dates-label { position: sticky; left: 0; align-self: flex-start; padding-right: 8px; }
+@media (hover: hover) and (pointer: fine) { .mk-dates-wrap[data-start="0"] .mk-dates-label { left: 44px; } }
 /* centred on the date cards (not the label above them), over the faded edge */
 .mk-dates-wrap .mk-end.mk-strip-end { top: auto; bottom: 47px; transform: translateY(50%); width: 36px; height: 36px; opacity: 0; pointer-events: none; transition: opacity 160ms ease-out, transform 220ms cubic-bezier(0.34, 1.4, 0.64, 1); }
 .mk-dates-wrap .mk-end.mk-strip-end:hover { transform: translateY(50%) scale(1.08); }
@@ -5888,7 +5895,7 @@ button.td-index:active, button.td-line:active { background: color-mix(in srgb, v
 .mk-date-closed { width: 52px; border-style: dashed; background: transparent; cursor: default; opacity: 0.6; }
 .mk-date-closed .mk-date-d { font-size: 17px; color: var(--t3); }
 .mk-date-closed .mk-date-m { font-size: 10.5px; color: var(--t3); }
-.mk-date-mine { align-content: center; gap: 6px; height: 100%; min-height: 78px; color: #f5b83d; }
+.mk-date-mine { align-content: center; gap: 6px; min-height: 78px; color: #f5b83d; }
 .mk-date-mine .mk-date-m { color: var(--t2); }
 .mk-date-mine svg { fill: currentColor; }
 .mk-date-mine[aria-pressed=true] svg { color: #04211c; }
