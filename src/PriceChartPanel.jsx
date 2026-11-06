@@ -403,7 +403,8 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
     if (!r || id === "All" || BRICKS.has(prefs.type)) { chart.timeScale().fitContent(); return; }
     const lastDate = bars[last].date;
     const from = id === "YTD" ? `${lastDate.slice(0, 4)}-01-01` : monthsBack(lastDate, r.months);
-    chart.timeScale().setVisibleLogicalRange({ from: indexFrom(bars, from) - 0.5, to: last + 3 });
+    // one candle's room after the last (was three: on a weekly chart that read as three empty weeks, 6 Nov 2026)
+    chart.timeScale().setVisibleLogicalRange({ from: indexFrom(bars, from) - 0.5, to: last + 1 });
   };
 
   // Build the chart. It's rebuilt whole when the data, type or overlays change
@@ -431,7 +432,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
       grid: { vertLines: { color: c.grid }, horzLines: { color: c.grid } },
       crosshair: { mode: CrosshairMode.Normal },
       rightPriceScale: { borderColor: c.border },
-      timeScale: { borderColor: c.border, rightOffset: 3, minBarSpacing: 0.5, visible: !isBrick },
+      timeScale: { borderColor: c.border, rightOffset: 1, minBarSpacing: 0.5, visible: !isBrick },
       localization: { locale: "en-IN" },
       kineticScroll: { touch: !reducedMotion(), mouse: false },
       // An up-or-down swipe over the chart scrolls the page, as on any other
