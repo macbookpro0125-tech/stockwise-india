@@ -1,14 +1,16 @@
 // The Explore page (23 Oct 2026): the indices at their last close, each
-// opening in full, and the news under them.
+// opening in full, and the news under them. Since 6 Nov 2026 a computer's
+// Explore is the news alone ("News" in the top bar; the market is on Markets);
+// a phone keeps the market's indices, the map and the way to Markets above it.
 import { test, expect, openPage, openStocks, openChapter } from "./fixtures.js";
 
-test("X-H1 the indices: cards with the day's change; one opens with its year, returns and valuation; Back returns @phone", async ({ page, account }) => {
+test("X-H1 the indices: cards with the day's change; one opens with its year, returns and valuation; Back returns @phone", async ({ page, account, isMobile }) => {
+  test.skip(!isMobile, "a computer's indices are on Markets (6 Nov 2026)");
   await page.goto("/");
   await openPage(page, "Explore");
-  const market = page.getByRole("region", { name: "Market" });
+  const market = page.getByRole("region", { name: "Market", exact: true });
   const nifty = market.getByRole("button", { name: /^NIFTY 50: [\d,]+\.\d\d, (up|down) [\d.]+% on / });
   await expect(nifty).toBeVisible({ timeout: 45_000 });
-  await expect(page.getByRole("region", { name: "Sectors" }).getByRole("button", { name: /^IT: / })).toBeVisible();
   // the news is below them
   await expect(page.getByRole("group", { name: "Kinds of news" })).toBeVisible();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
@@ -26,16 +28,22 @@ test("X-H1 the indices: cards with the day's change; one opens with its year, re
   await expect(nifty).toBeVisible();
 });
 
-test("X-H2 a sector opens with its companies' biggest moves", async ({ page, account }) => {
+test("X-H2 a sector opens with its companies' biggest moves; a computer's News page has no market board", async ({ page, account }) => {
   await page.goto("/");
+  // a computer: the news alone, under the top bar's News
   await openPage(page, "Explore");
-  const it = page.getByRole("region", { name: "Sectors" }).getByRole("button", { name: /^IT: / });
-  await expect(it).toBeVisible({ timeout: 45_000 });
-  await it.click();
+  await expect(page.getByRole("heading", { name: "News", level: 2 })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Market", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Top movers" })).toHaveCount(0);
+  // a sector from the price strip opens in full
+  const strip = page.getByRole("region", { name: /^Closing prices/ });
+  const itBtn = strip.getByRole("button", { name: /^NIFTY IT/ }).first();
+  await expect(itBtn).toBeAttached({ timeout: 30_000 });
+  await itBtn.dispatchEvent("click");
   const index = page.getByRole("article", { name: "IT" });
-  await expect(index.getByRole("region", { name: "Biggest moves" })).toContainText("Information Technology companies");
-  await index.getByRole("button", { name: /Explore/ }).click();
-  await expect(it).toBeVisible();
+  await expect(index.getByRole("region", { name: "Biggest moves" })).toContainText("Information Technology companies", { timeout: 45_000 });
+  await index.getByRole("button", { name: "Back" }).click();
+  await expect(index).toHaveCount(0);
 });
 
 test("X-H3 the heat map: an index's companies by size and move; another index, period and the sectors; a box opens its company @phone", async ({ page, account }) => {
@@ -100,11 +108,12 @@ test("X-H6 the heat map groups by sector; All NSE, equal boxes, one sector, and 
 });
 
 // 31 Oct 2026: "I want this map in a separate page, not in Explore"
-test("X-H9 the map is a page of its own; Explore's card opens it @phone", async ({ page, account }) => {
+test("X-H9 the map is a page of its own; Explore's card opens it @phone", async ({ page, account, isMobile }) => {
+  test.skip(!isMobile, "a computer has Map in its top bar");
   await page.goto("/");
   await openPage(page, "Explore");
   await expect(page.locator(".ex-tile")).toHaveCount(0);
-  await page.locator(".ex-map-link").click();
+  await page.locator(".ex-map-link:not(.ex-markets-link)").click();
   const map = page.getByRole("region", { name: "Market map" });
   await expect(map.locator(".ex-tile").first()).toBeVisible({ timeout: 45_000 });
 });
@@ -280,25 +289,14 @@ test("X-H5 a computer's company page names where Back goes, and Esc goes back", 
   await expect(heat).toBeInViewport();
 });
 
-test("X-H6 top movers by day, week or month, and the week's results by day @phone", async ({ page, account }) => {
+test("X-H6 the biggest moves and the week's results are on Markets; a phone's Explore leads there @phone", async ({ page, account, isMobile }) => {
   await page.goto("/");
-  await openPage(page, "Explore");
-  const movers = page.getByRole("region", { name: "Top movers" });
-  const rows = movers.locator(".ex-movers-list li");
-  await expect(rows.first()).toBeVisible({ timeout: 45_000 });
-  const changes = async () => (await movers.locator(".ex-pill").allTextContents()).map(t => Number(t.replace("−", "-").replace(/[+%]/g, "")));
-  const up = await changes();
-  expect(up.every(v => v > 0) && up.every((v, i) => i === 0 || v <= up[i - 1]), "gainers, largest first").toBe(true);
-  await movers.getByRole("button", { name: "Losers" }).click();
-  await expect.poll(async () => (await changes()).every(v => v < 0)).toBe(true);
-  await movers.getByRole("button", { name: "1W" }).click();
-  await expect(movers).toContainText("over the week");
-  await rows.first().getByRole("button").click();
-  await expect(page).toHaveURL(/\/stock\//);
-  await page.goBack();
-  const results = page.getByRole("region", { name: "Results this week" });
-  await expect(results.or(page.getByText("never shown")).first()).toBeAttached();
-  if (await results.count()) await expect(results.locator(".ex-day").first()).toContainText(/compan/);
+  if (isMobile) {
+    await openPage(page, "Explore");
+    await page.getByRole("button", { name: /^Markets/ }).click();
+  } else await openPage(page, "Markets");
+  await expect(page.getByRole("heading", { name: "Markets", level: 1 })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Biggest moves" })).toBeVisible({ timeout: 45_000 });
 });
 
 // 23 Oct 2026: "when I press on NIFTY 50 or another Nifty, it should open that"
@@ -313,29 +311,18 @@ test("X-H7 an index in the price strip opens it on Explore (a computer; a phone 
   await expect(index.getByRole("region", { name: "Returns" })).toBeVisible();
 });
 
-test("X-H8 a phone shows each section's first few, and See all opens the rest as a page; Back returns @phone", async ({ page, account, isMobile }) => {
-  test.skip(!isMobile, "a computer shows each section whole");
+test("X-H8 a phone shows the first few news, and See all opens the rest as a page; Back returns @phone", async ({ page, account, isMobile }) => {
+  test.skip(!isMobile, "a computer shows the news whole");
   await page.goto("/");
   await openPage(page, "Explore");
-  const movers = page.getByRole("region", { name: "Top movers" });
-  await expect(movers.locator(".ex-movers-list li").first()).toBeVisible({ timeout: 45_000 });
-  expect(await movers.locator(".ex-movers-list li").count()).toBeLessThanOrEqual(4);
-  await movers.getByRole("button", { name: "Losers" }).click();
-  await movers.getByRole("button", { name: /^See all \d+ losers/ }).click();
-  // the whole list, as a page of its own, still the losers
-  const page2 = page.locator(".ex-full");
-  await expect(page2.getByRole("button", { name: "Losers" })).toHaveAttribute("aria-pressed", "true");
-  expect(await page2.locator(".ex-movers-list li").count()).toBeGreaterThan(4);
-  await expect(page.locator(".ex-map-link")).toBeHidden();
-  await page.goBack();
-  await expect(page.locator(".ex-map-link")).toBeVisible();
-
+  await expect(page.locator(".ex-map-link").first()).toBeVisible();
   // the news: four, then all of it
   const news = page.locator(".nw-page");
   await expect(news.locator(".nw-row").first()).toBeVisible({ timeout: 45_000 });
   expect(await news.locator(".nw-row").count()).toBeLessThanOrEqual(4);
   await page.getByRole("button", { name: "See all the news" }).click();
   await expect(page.locator(".ex-full .nw-row").nth(4)).toBeVisible();
+  await expect(page.locator(".ex-map-link").first()).toBeHidden();
   await page.locator(".ex-full").getByRole("button", { name: "Explore", exact: true }).click();
-  await expect(page.locator(".ex-map-link")).toBeVisible();
+  await expect(page.locator(".ex-map-link").first()).toBeVisible();
 });

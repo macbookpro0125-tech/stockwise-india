@@ -14,7 +14,8 @@ import AccountMenu from "./AccountMenu.jsx";
 // account menu. A phone keeps its own top bar and bottom tabs (Header.jsx).
 
 const PAGES = ["discover", "workspace", "desk", "markets", "explore", "map", "watchlist", "portfolio"];
-const LABEL = { map: "Map" };
+// Explore is the news alone on a computer (6 Nov 2026); a phone keeps "Explore"
+const LABEL = { map: "Map", explore: "News" };
 const MORE = ["performance", "momentum", "visitors"];
 
 export default function TopBar({ tab, onTab, account, onLogout, onDeleted, onSearch, theme, onToggleTheme, onTour }) {

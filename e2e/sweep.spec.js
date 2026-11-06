@@ -30,7 +30,7 @@ test("every tab opens", async ({ page, account }) => {
     await page.waitForLoadState("networkidle");
     await expect(rail, "every page keeps the bar").toBeVisible();
     // in the tray its tab is lit (Market map is "Map"); Alerts is the bell; the rest leave none lit
-    const inTray = { Explore: "Explore", "Market map": "Map", Desk: "Desk", Watchlist: "Watchlist", Portfolio: "Portfolio" }[tab];
+    const inTray = { Explore: "News", "Market map": "Map", Desk: "Desk", Watchlist: "Watchlist", Portfolio: "Portfolio" }[tab];
     if (inTray) await expect(rail.getByRole("button", { name: new RegExp(`^${inTray}`) })).toHaveAttribute("aria-current", "page");
     else if (tab === "Alerts") await expect(top.getByRole("button", { name: /^Alerts/ })).toHaveClass(/on/);
     else await expect(rail.locator("[aria-current=page]")).toHaveCount(0);

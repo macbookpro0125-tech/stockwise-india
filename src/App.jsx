@@ -462,7 +462,7 @@ export default function App() {
         {!open && tab === "alerts" && <AlertsView onOpenStock={openSymbol} />}
         {/* Kept mounted (hidden) under a company page too, as Discover is: Back
             returns to the heat map or the news where they were */}
-        {tab === "explore" && <div hidden={!!open}><ExploreView onOpenStock={openSymbol} openId={newsOpen} onOpened={() => setNewsOpen(null)} openIndexName={indexOpen} onIndexOpened={() => setIndexOpen(null)} onOpenMap={() => goTab("map")} /></div>}
+        {tab === "explore" && <div hidden={!!open}><ExploreView onOpenStock={openSymbol} openId={newsOpen} onOpened={() => setNewsOpen(null)} openIndexName={indexOpen} onIndexOpened={() => setIndexOpen(null)} onOpenMap={() => goTab("map")} onOpenMarkets={() => goTab("markets")} /></div>}
         {/* Kept mounted under a company page too: Back returns to the map as it was */}
         {tab === "desk" && <div hidden={!!open}><DeskView onOpenStock={openSymbol} /></div>}
         {tab === "markets" && <div hidden={!!open}><MarketsView onOpenStock={openSymbol} onOpenTab={goTab} /></div>}

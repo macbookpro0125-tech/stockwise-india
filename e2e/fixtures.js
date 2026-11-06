@@ -108,7 +108,8 @@ export async function openPage(page, name) {
   const top = page.locator(".tb");
   if (await top.isVisible().catch(() => false)) {
     const tray = top.getByRole("navigation", { name: "Pages" });
-    const label = { Discover: "Home", Screeners: "Home", "Market map": "Map" }[name] ?? name;
+    // Explore is "News" there (6 Nov 2026: the market moved to Markets)
+    const label = { Discover: "Home", Screeners: "Home", "Market map": "Map", Explore: "News" }[name] ?? name;
     const t = tray.getByRole("button", { name: new RegExp(`^${label}`) });
     if (await t.count()) return t.first().click();
     if (/^Alerts/.test(name)) return top.getByRole("button", { name: /^Alerts/ }).click();

@@ -129,7 +129,7 @@ function IndexDetail({ name, onBack, onOpenStock, onOpenNews }) {
   const [error, setError] = useState("");
   const [range, setRange] = useState("1Y");
   useEffect(() => { setD(null); api.exploreIndex(name).then(setD).catch(e => setError(e.message)); window.scrollTo(0, 0); }, [name]);
-  const back = <button type="button" className="nw-back" onClick={onBack}><ArrowLeft size={17} aria-hidden="true" /> Explore</button>;
+  const back = <button type="button" className="nw-back" onClick={onBack}><ArrowLeft size={17} aria-hidden="true" /> Back</button>;
   if (error) return <div className="ex-detail">{back}<p className="nw-empty">{error}</p></div>;
   if (!d) return <div className="ex-detail">{back}<div className="nw-skel" role="status" aria-label="Loading">{[0, 1, 2].map(i => <span key={i} />)}</div></div>;
   const n = RANGES.find(([r]) => r === range)[1];
@@ -353,7 +353,11 @@ function ResultsWeek({ onOpenStock, preview = false, onSeeAll }) {
   );
 }
 
-export default function ExploreView({ onOpenStock, openId = null, onOpened, openIndexName = null, onIndexOpened, onOpenMap }) {
+// 6 Nov 2026: the Markets tab shows the indices, sectors, biggest moves and
+// the week's results in full, so a computer's Explore is the news alone (its
+// tab is called News there). A phone has no Markets tab: it keeps the
+// market's indices in one row, the map, and the way to Markets, above the news.
+export default function ExploreView({ onOpenStock, openId = null, onOpened, openIndexName = null, onIndexOpened, onOpenMap, onOpenMarkets }) {
   const [board, setBoard] = useState(null);
   const [index, setIndex] = useState(() => window.history.state?.newsItem ? null : window.history.state?.exploreIndex ?? null);
   const indexRef = useRef(null);
@@ -408,7 +412,8 @@ export default function ExploreView({ onOpenStock, openId = null, onOpened, open
   return (
     <div className="ex-page">
       {index && <IndexDetail name={index} onBack={() => window.history.back()} onOpenStock={onOpenStock} onOpenNews={openNewsFromIndex} />}
-      {full && !index && (
+      {/* a section's See all is a phone's: a computer shows the news whole */}
+      {full && phone && !index && (
         <div className="ex-full">
           {!newsItem && <button type="button" className="nw-back" onClick={() => window.history.back()}><ArrowLeft size={17} aria-hidden="true" /> Explore</button>}
           {full.kind === "movers" && <TopMovers onOpenStock={onOpenStock} start={full} />}
@@ -416,28 +421,32 @@ export default function ExploreView({ onOpenStock, openId = null, onOpened, open
           {full.kind === "news" && <NewsView embedded onOpenStock={onOpenStock} onItemChange={setNewsItem} />}
         </div>
       )}
-      <div hidden={!!index || !!full}>
-        {!newsItem && (
+      <div hidden={!!index || (!!full && phone)}>
+        {!newsItem && phone && (
           <>
             <div className="nw-head">
-              <h2 className="nw-page-title hide-phone">Explore</h2>
               <p className="nw-lede">{board?.asOf ? `The market's indices at their close on ${shortDate(board.asOf)}, and the news.` : "The market's indices and the news."}</p>
             </div>
             {board == null
               ? <div className="ex-row ex-skel" role="status" aria-label="Loading the indices">{[0, 1, 2, 3].map(i => <span key={i} />)}</div>
               : board.pending
                 ? <p className="nw-note">The indices arrive with the evening data update.</p>
-                : <>
-                  <Row id="ex-market" title="Market" items={board.market} asOf={board.asOf} onOpen={openIndex} />
-                  <Row id="ex-sectors" title="Sectors" items={board.sectors} asOf={board.asOf} onOpen={openIndex} />
-                  {onOpenMap && <MapLink onOpen={onOpenMap} />}
-                </>}
-            {/* from the companies' own figures: there even before the indices are */}
-            <TopMovers onOpenStock={onOpenStock} preview={phone} onSeeAll={f => openFull({ kind: "movers", ...f })} />
-            <ResultsWeek onOpenStock={onOpenStock} preview={phone} onSeeAll={() => openFull({ kind: "results" })} />
+                : <Row id="ex-market" title="Market" items={board.market} asOf={board.asOf} onOpen={openIndex} />}
+            {onOpenMap && <MapLink onOpen={onOpenMap} />}
+            {onOpenMarkets && (
+              <section className="ex-section" aria-labelledby="ex-markets-link">
+                <button type="button" className="ex-map-link ex-markets-link" onClick={onOpenMarkets}>
+                  <span className="ex-map-link-text">
+                    <span className="ex-map-link-title" id="ex-markets-link">Markets</span>
+                    <span className="ex-map-link-sub">Sectors, the biggest moves and this week's results</span>
+                  </span>
+                  <ChevronRight size={20} aria-hidden="true" />
+                </button>
+              </section>
+            )}
           </>
         )}
-        {!full && <NewsView embedded preview={phone} onSeeAll={() => openFull({ kind: "news" })} onOpenStock={onOpenStock} openId={newsOpen ?? openId} onOpened={() => { setNewsOpen(null); onOpened?.(); }} onItemChange={setNewsItem} />}
+        {!(full && phone) && <NewsView embedded={phone} preview={phone} onSeeAll={() => openFull({ kind: "news" })} onOpenStock={onOpenStock} openId={newsOpen ?? openId} onOpened={() => { setNewsOpen(null); onOpened?.(); }} onItemChange={setNewsItem} />}
       </div>
     </div>
   );
