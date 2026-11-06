@@ -40,7 +40,7 @@ export default function ChartPage({ symbol }) {
         <a href={stockPath(symbol)} onClick={e => { e.preventDefault(); navigate(stockPath(symbol)); }} aria-label={`Back to ${symbol}'s stock page`} style={barBtn}>
           <ArrowLeft size={16} aria-hidden="true" />
         </a>
-        <h1 style={{ flex: 1, minWidth: 0, margin: 0, fontSize: 15, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <h1 style={{ flex: 1, minWidth: 0, margin: 0, fontSize: 16, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {symbol}{name && <span style={{ fontWeight: 500, color: "var(--t3)", fontSize: 13 }}> · {name}</span>}
         </h1>
         <button type="button" onClick={close} aria-label="Close the chart" style={barBtn}>

@@ -29,7 +29,7 @@ export default function HowItWorks({ label = "How it works", style, plain = fals
       {plain ? (
         <button type="button" className="ap-link" onClick={() => setOpen(true)} style={style}>{label}<ChevronRight size={18} aria-hidden="true" /></button>
       ) : (
-        <button type="button" className="btn-ghost" onClick={() => setOpen(true)} style={{ height: 30, fontSize: 12.5, padding: "0 12px", ...style }}>
+        <button type="button" className="btn-ghost" onClick={() => setOpen(true)} style={{ height: 30, fontSize: 13, padding: "0 12px", ...style }}>
           <Play size={12} fill="currentColor" strokeWidth={0} /> {label}
         </button>
       )}
@@ -41,7 +41,7 @@ export default function HowItWorks({ label = "How it works", style, plain = fals
           <div style={{ width: "min(1100px, 100%)", animation: "fadeUp 200ms cubic-bezier(0,0,0.2,1) backwards" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 10 }}>
               <span style={{ fontSize: 14, fontWeight: 400, color: "#fff" }}>How Jocular Insights works · 2 min</span>
-              <button type="button" onClick={() => setOpen(false)} className="btn-ghost" style={{ height: 32, fontSize: 12.5 }}><X size={14} /> Close</button>
+              <button type="button" onClick={() => setOpen(false)} className="btn-ghost" style={{ height: 32, fontSize: 13 }}><X size={14} /> Close</button>
             </div>
             <video src="/how-it-works.webm" controls autoPlay playsInline style={{ display: "block", width: "100%", borderRadius: 12, background: "#000", aspectRatio: "16 / 10" }} />
           </div>

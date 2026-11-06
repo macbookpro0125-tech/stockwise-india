@@ -980,7 +980,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
             {onNow.map(i => (
               <span key={i.id} className="chart-chip"><span>{i.label.replace(/ \(.*\)$/, "")}</span><button type="button" onClick={() => toggleInd(i.id)} aria-label="Turn off" title="Turn off"><X size={12} aria-hidden="true" /></button></span>
             ))}
-            <button type="button" onClick={() => setPrefs(p => ({ ...p, ind: {} }))} style={btn(false, { height: 28, fontSize: 11.5 })}>Clear all</button>
+            <button type="button" onClick={() => setPrefs(p => ({ ...p, ind: {} }))} style={btn(false, { height: 28, fontSize: 12 })}>Clear all</button>
           </div>
         </div>
       )}
@@ -1001,15 +1001,15 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
             <div style={{ display: "grid", gap: 6, margin: "4px 0 2px 8px" }}>
               <div role="group" aria-label="Pivot type" style={compact ? { display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 4 } : { display: "flex", gap: 4, flexWrap: "wrap" }}>
                 {PIVOT_KINDS.map(([id, label]) => (
-                  <button key={id} type="button" onClick={() => setPref({ pivotKind: id })} aria-pressed={prefs.pivotKind === id} style={btn(prefs.pivotKind === id, { height: compact ? 34 : 28, fontSize: 11.5, justifyContent: "center", ...(compact ? { padding: 0 } : {}) })}>{label}</button>
+                  <button key={id} type="button" onClick={() => setPref({ pivotKind: id })} aria-pressed={prefs.pivotKind === id} style={btn(prefs.pivotKind === id, { height: compact ? 34 : 28, fontSize: 12, justifyContent: "center", ...(compact ? { padding: 0 } : {}) })}>{label}</button>
                 ))}
               </div>
               <div role="group" aria-label="Pivots from the previous" style={compact
-                ? { display: "grid", gridTemplateColumns: `auto repeat(${(PIVOT_BASES[prefs.interval] ?? PIVOT_BASES.D).length}, minmax(0, 1fr))`, gap: 4, alignItems: "center", fontSize: 11.5, color: "var(--t3)" }
-                : { display: "flex", gap: 4, flexWrap: "wrap", alignItems: "center", fontSize: 11.5, color: "var(--t3)" }}>
+                ? { display: "grid", gridTemplateColumns: `auto repeat(${(PIVOT_BASES[prefs.interval] ?? PIVOT_BASES.D).length}, minmax(0, 1fr))`, gap: 4, alignItems: "center", fontSize: 12, color: "var(--t3)" }
+                : { display: "flex", gap: 4, flexWrap: "wrap", alignItems: "center", fontSize: 12, color: "var(--t3)" }}>
                 <span>{compact ? "From" : "From the last"}</span>
                 {(PIVOT_BASES[prefs.interval] ?? PIVOT_BASES.D).map(([id, label]) => (
-                  <button key={id} type="button" onClick={() => setPref({ pivotBasis: id })} aria-pressed={pivotBasis === id} aria-label={`From the last ${label}`} style={btn(pivotBasis === id, { height: compact ? 34 : 28, fontSize: 11.5, justifyContent: "center", ...(compact ? { padding: 0 } : {}) })}>{label}</button>
+                  <button key={id} type="button" onClick={() => setPref({ pivotBasis: id })} aria-pressed={pivotBasis === id} aria-label={`From the last ${label}`} style={btn(pivotBasis === id, { height: compact ? 34 : 28, fontSize: 12, justifyContent: "center", ...(compact ? { padding: 0 } : {}) })}>{label}</button>
                 ))}
               </div>
             </div>
@@ -1043,7 +1043,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
     <div role="group" aria-label="Chart type" style={narrow ? { display: "grid", gap: 2, maxHeight: "45vh", overflowY: "auto", overscrollBehavior: "contain" } : { display: "grid", gridTemplateColumns: "repeat(8, minmax(0, 1fr))", gap: 4 }}>
       {TYPES.map(({ id, label, Icon }) => (
         <button key={id} type="button" onClick={() => { setPref({ type: id }); setPop(null); }} aria-pressed={prefs.type === id}
-          style={narrow ? btn(prefs.type === id, { height: 44, gap: 12, padding: "0 12px", border: 0, fontSize: 15, justifyContent: "flex-start", background: prefs.type === id ? "color-mix(in srgb, var(--accent) 14%, transparent)" : "transparent", color: prefs.type === id ? "var(--accent)" : "var(--t1)" }) : tileBtn(prefs.type === id)}>
+          style={narrow ? btn(prefs.type === id, { height: 44, gap: 12, padding: "0 12px", border: 0, fontSize: 16, justifyContent: "flex-start", background: prefs.type === id ? "color-mix(in srgb, var(--accent) 14%, transparent)" : "transparent", color: prefs.type === id ? "var(--accent)" : "var(--t1)" }) : tileBtn(prefs.type === id)}>
           <Icon size={18} aria-hidden="true" />{label}
         </button>
       ))}
@@ -1200,9 +1200,9 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
           {/* One row that slides sideways, so every tool has a proper finger's width */}
           <div className="chart-tools-row">
             <button type="button" onClick={() => togglePop("type")} aria-expanded={pop === "type"} aria-label={`Chart type: ${TYPES.find(t => t.id === prefs.type)?.label}`} style={iconBtn(pop === "type")}><ChartCandlestick size={20} aria-hidden="true" /></button>
-            <button type="button" onClick={() => togglePop("interval")} aria-expanded={pop === "interval"} aria-label={`Bars: ${INTERVALS.find(i => i.id === prefs.interval)?.title}`} style={iconBtn(pop === "interval", { fontSize: 15, fontWeight: 500, width: 44 })}>1{prefs.interval}</button>
+            <button type="button" onClick={() => togglePop("interval")} aria-expanded={pop === "interval"} aria-label={`Bars: ${INTERVALS.find(i => i.id === prefs.interval)?.title}`} style={iconBtn(pop === "interval", { fontSize: 16, fontWeight: 500, width: 44 })}>1{prefs.interval}</button>
             <button type="button" onClick={() => { setPop(null); setMenuOpen(o => !o); }} aria-expanded={menuOpen} aria-controls={`chart-options-${symbol}${page ? "-page" : ""}`} aria-label={`Indicators${activeInd > 0 ? `, ${activeInd} on` : ""}`} style={iconBtn(menuOpen || activeInd > 0)}>
-              <span aria-hidden="true" style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontStyle: "italic", fontSize: 19, fontWeight: 400 }}>ƒx</span>
+              <span aria-hidden="true" style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontStyle: "italic", fontSize: 20, fontWeight: 400 }}>ƒx</span>
               {activeInd > 0 && <span aria-hidden="true" style={{ fontSize: 10, fontWeight: 500, ...MONO }}>{activeInd}</span>}
             </button>
             <button type="button" onClick={() => togglePop("draw")} aria-expanded={pop === "draw"} aria-label="Draw on the chart" style={iconBtn(pop === "draw" || drawing || !!trendFrom || !!tool)}><Pencil size={20} aria-hidden="true" /></button>
@@ -1239,7 +1239,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
             <span key={`${d.k}-${d.t1}-${i}`} className="chart-chip"><span>{d.k === "note" ? d.text : toolLabel(d.k)}</span><button type="button" onClick={() => saveDraws(draws.filter((_, j) => j !== i))} aria-label={`Remove this ${toolLabel(d.k)}`}><X size={12} aria-hidden="true" /></button></span>
           ))}
           <button type="button" onClick={() => saveDraws(draws.slice(0, -1))} aria-label="Undo the last drawing" style={btn(false, { height: 28 })}><Undo2 size={13} aria-hidden="true" /></button>
-          {draws.length > 1 && <button type="button" onClick={() => saveDraws([])} style={btn(false, { height: 28, fontSize: 11.5 })}>Clear drawings</button>}
+          {draws.length > 1 && <button type="button" onClick={() => saveDraws([])} style={btn(false, { height: 28, fontSize: 12 })}>Clear drawings</button>}
         </div>
       )}
       {/* Trend lines: what to click while drawing, and each one drawn, removable */}
@@ -1424,7 +1424,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
       <div style={{ display: "flex", gap: 6, marginTop: 10, flexWrap: "wrap", alignItems: "center" }}>
         <div role="group" aria-label="Date range" style={narrow ? { display: "grid", gridTemplateColumns: `repeat(${RANGES.length}, minmax(0, 1fr))`, gap: 4, width: "100%" } : group}>
           {RANGES.map(r => (
-            <button key={r.id} type="button" onClick={() => pickRange(r.id)} aria-pressed={range === r.id} style={btn(range === r.id, narrow ? { minWidth: 0, padding: 0, justifyContent: "center", fontSize: 11.5 } : { minWidth: 38, justifyContent: "center" })}>{r.id}</button>
+            <button key={r.id} type="button" onClick={() => pickRange(r.id)} aria-pressed={range === r.id} style={btn(range === r.id, narrow ? { minWidth: 0, padding: 0, justifyContent: "center", fontSize: 12 } : { minWidth: 38, justifyContent: "center" })}>{r.id}</button>
           ))}
         </div>
         <span style={{ marginLeft: narrow ? 0 : "auto", fontSize: 10, color: "var(--t3)" }}>

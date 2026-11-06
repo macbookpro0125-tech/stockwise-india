@@ -507,7 +507,7 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
                   {p.name}
                 </span>
 
-                <span className="preset-desc" style={{ fontSize: 11.5, color: "var(--t3)", lineHeight: 1.45, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                <span className="preset-desc" style={{ fontSize: 12, color: "var(--t3)", lineHeight: 1.45, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
                   {p.description}
                 </span>
                 {!stacked && p.newMatches > 0 && <span className="strategy-new-count" title="New stocks since your last check" style={{ margin: "8px 0 0" }}>{p.newMatches} new matches</span>}

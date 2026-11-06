@@ -10,8 +10,8 @@ import { useMyLevels, saveLevelSettings, setStockLevels, clearStockLevels } from
 // export, alerts and the position worksheet.
 
 const card = { border: "1px solid var(--bdr2)", borderRadius: 12, padding: 18, marginBottom: 12, background: "var(--s2)", boxShadow: "var(--sh-xs)" };
-const input = { width: "100%", height: 38, padding: "0 12px", border: "1px solid var(--bdr2)", borderRadius: 8, fontSize: 13.5, outline: "none", background: "var(--s1)", color: "var(--t1)", boxSizing: "border-box", fontFamily: "inherit", fontVariantNumeric: "tabular-nums" };
-const label = { fontSize: 11.5, color: "var(--t2)", marginBottom: 5, display: "block", fontWeight: 500 };
+const input = { width: "100%", height: 38, padding: "0 12px", border: "1px solid var(--bdr2)", borderRadius: 8, fontSize: 14, outline: "none", background: "var(--s1)", color: "var(--t1)", boxSizing: "border-box", fontFamily: "inherit", fontVariantNumeric: "tabular-nums" };
+const label = { fontSize: 12, color: "var(--t2)", marginBottom: 5, display: "block", fontWeight: 500 };
 const note = { fontSize: 12, color: "var(--t2)", margin: "0 0 12px", lineHeight: 1.55 };
 
 const SETTINGS = [
@@ -51,11 +51,11 @@ export default function MyLevelsCard({ symbol, fv, levels, price, priceLabel, fv
 
   const buttons = (
     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
-      {fv && <button type="button" className={levels || settings.enabled ? "btn-ghost" : "btn-primary"} style={{ height: 32, fontSize: 12.5 }} onClick={() => open("settings")}>
+      {fv && <button type="button" className={levels || settings.enabled ? "btn-ghost" : "btn-primary"} style={{ height: 32, fontSize: 13 }} onClick={() => open("settings")}>
         <SlidersHorizontal size={14} /> {settings.enabled ? "Change my settings" : "Turn on my levels"}
       </button>}
-      <button type="button" className="btn-ghost" style={{ height: 32, fontSize: 12.5 }} onClick={() => open("hand")}><PencilLine size={14} /> {own ? "Edit this stock's levels" : "Set this stock by hand"}</button>
-      {own && <button type="button" className="btn-ghost" style={{ height: 32, fontSize: 12.5 }} disabled={busy} onClick={() => run(() => clearStockLevels(symbol))}>{settings.enabled && fv ? "Use my settings instead" : "Clear this stock's levels"}</button>}
+      <button type="button" className="btn-ghost" style={{ height: 32, fontSize: 13 }} onClick={() => open("hand")}><PencilLine size={14} /> {own ? "Edit this stock's levels" : "Set this stock by hand"}</button>
+      {own && <button type="button" className="btn-ghost" style={{ height: 32, fontSize: 13 }} disabled={busy} onClick={() => run(() => clearStockLevels(symbol))}>{settings.enabled && fv ? "Use my settings instead" : "Clear this stock's levels"}</button>}
     </div>
   );
 
@@ -75,20 +75,20 @@ export default function MyLevelsCard({ symbol, fv, levels, price, priceLabel, fv
               <label key={k} style={{ display: "block", minWidth: 0 }}>
                 <span style={label}>{name} %</span>
                 <input type="number" inputMode="decimal" min={LEVEL_LIMITS[k][0]} max={LEVEL_LIMITS[k][1]} step="0.5" aria-label={`${name} %`} value={draft[k] ?? ""} onChange={e => setDraft(d => ({ ...d, [k]: e.target.value }))} style={input} />
-                <span style={{ display: "block", fontSize: 10.5, color: "var(--t3)", marginTop: 3 }}>{hint} ({LEVEL_LIMITS[k][0]}–{LEVEL_LIMITS[k][1]}%)</span>
+                <span style={{ display: "block", fontSize: 11, color: "var(--t3)", marginTop: 3 }}>{hint} ({LEVEL_LIMITS[k][0]}–{LEVEL_LIMITS[k][1]}%)</span>
               </label>
             ))}
           </div>
           {preview && (
-            <p style={{ fontSize: 11.5, color: "var(--t3)", margin: "10px 0 0", fontVariantNumeric: "tabular-nums" }}>
+            <p style={{ fontSize: 12, color: "var(--t3)", margin: "10px 0 0", fontVariantNumeric: "tabular-nums" }}>
               For this stock: upper {fmtRs(preview.target)} · level 1 {fmtRs(preview.p1)} · level 2 {fmtRs(preview.p2)} · level 3 {fmtRs(preview.p3)} · stop {fmtRs(preview.stopLoss)}
             </p>
           )}
           {error && <p role="alert" style={{ fontSize: 12, color: "var(--red)", margin: "8px 0 0" }}>{error}</p>}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
-            <button type="button" className="btn-primary" style={{ height: 32, fontSize: 12.5 }} disabled={busy} onClick={() => run(() => saveLevelSettings({ ...draft, enabled: true }))}>{settings.enabled ? "Save" : "Save and turn on"}</button>
-            {settings.enabled && <button type="button" className="btn-ghost" style={{ height: 32, fontSize: 12.5 }} disabled={busy} onClick={() => run(() => saveLevelSettings({ ...settings, enabled: false }))}>Turn off my levels</button>}
-            <button type="button" className="btn-ghost" style={{ height: 32, fontSize: 12.5 }} disabled={busy} onClick={() => setMode(null)}>Cancel</button>
+            <button type="button" className="btn-primary" style={{ height: 32, fontSize: 13 }} disabled={busy} onClick={() => run(() => saveLevelSettings({ ...draft, enabled: true }))}>{settings.enabled ? "Save" : "Save and turn on"}</button>
+            {settings.enabled && <button type="button" className="btn-ghost" style={{ height: 32, fontSize: 13 }} disabled={busy} onClick={() => run(() => saveLevelSettings({ ...settings, enabled: false }))}>Turn off my levels</button>}
+            <button type="button" className="btn-ghost" style={{ height: 32, fontSize: 13 }} disabled={busy} onClick={() => setMode(null)}>Cancel</button>
           </div>
         </>
       ) : mode === "hand" ? (
@@ -104,8 +104,8 @@ export default function MyLevelsCard({ symbol, fv, levels, price, priceLabel, fv
           </div>
           {error && <p role="alert" style={{ fontSize: 12, color: "var(--red)", margin: "8px 0 0" }}>{error}</p>}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
-            <button type="button" className="btn-primary" style={{ height: 32, fontSize: 12.5 }} disabled={busy} onClick={() => run(() => setStockLevels(symbol, Object.fromEntries(HAND.map(([k]) => [k, Number(draft[k])]))))}>Save</button>
-            <button type="button" className="btn-ghost" style={{ height: 32, fontSize: 12.5 }} disabled={busy} onClick={() => setMode(null)}>Cancel</button>
+            <button type="button" className="btn-primary" style={{ height: 32, fontSize: 13 }} disabled={busy} onClick={() => run(() => setStockLevels(symbol, Object.fromEntries(HAND.map(([k]) => [k, Number(draft[k])]))))}>Save</button>
+            <button type="button" className="btn-ghost" style={{ height: 32, fontSize: 13 }} disabled={busy} onClick={() => setMode(null)}>Cancel</button>
           </div>
         </>
       ) : levels ? (

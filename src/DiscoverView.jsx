@@ -69,7 +69,7 @@ function BrowserLeftovers() {
   if (!left) return null;
   const what = [left.strategyCount && `${left.strategyCount} saved strateg${left.strategyCount === 1 ? "y" : "ies"}`, left.noteCount && `${left.noteCount} stock note${left.noteCount === 1 ? "" : "s"}`].filter(Boolean).join(" and ");
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "10px 14px", borderRadius: 10, marginBottom: 16, background: "color-mix(in srgb, var(--accent) 7%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 25%, transparent)", fontSize: 12.5, color: "var(--t1)", lineHeight: 1.5 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "10px 14px", borderRadius: 10, marginBottom: 16, background: "color-mix(in srgb, var(--accent) 7%, transparent)", border: "1px solid color-mix(in srgb, var(--accent) 25%, transparent)", fontSize: 13, color: "var(--t1)", lineHeight: 1.5 }}>
       <span style={{ flex: "1 1 260px" }}>This browser has {what} from before they were kept with accounts. Move them to your account so they show on every device?</span>
       <button className="btn-primary" disabled={busy} onClick={async () => { setBusy(true); await moveLeftovers(); setLeft(null); }} style={{ height: 30, padding: "0 12px", fontSize: 12 }}>{busy ? "Moving…" : "Move to my account"}</button>
       <button className="btn-ghost" disabled={busy} onClick={() => { discardLeftovers(); setLeft(null); }} style={{ height: 30, padding: "0 12px", fontSize: 12 }}>They're not mine — discard</button>
@@ -596,13 +596,13 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
     <div className="screener-page" style={{ padding: "var(--page-top, 24px) var(--page-x) 16px" }}>
       {showSaveModal && (
         <Modal onClose={() => setShowSaveModal(false)}>
-          <div style={{ fontSize: 17, fontWeight: 500, color: "var(--t1)", marginBottom: 6, letterSpacing: "-0.02em" }}>Save as a strategy</div>
+          <div style={{ fontSize: 16, fontWeight: 500, color: "var(--t1)", marginBottom: 6, letterSpacing: "-0.02em" }}>Save as a strategy</div>
           <div style={{ fontSize: 13, color: "var(--t3)", marginBottom: 20 }}>{activeCount} filter{activeCount === 1 ? "" : "s"} will be saved to your account</div>
           <input
             autoFocus type="text" placeholder="e.g. My pharma screen"
             value={savePresetName} onChange={e => setSavePresetName(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter") confirmSavePreset(); if (e.key === "Escape") setShowSaveModal(false); }}
-            className="input-base" style={{ marginBottom: 12, fontSize: 15 }}
+            className="input-base" style={{ marginBottom: 12, fontSize: 16 }}
           />
           <label className="save-notify">
             <input type="checkbox" checked={saveNotify} onChange={e => setSaveNotify(e.target.checked)} />
@@ -617,7 +617,7 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
 
       {showImportModal && (
         <Modal onClose={() => { setShowImportModal(false); setImportError(""); }} width={440}>
-          <div style={{ fontSize: 17, fontWeight: 500, color: "var(--t1)", marginBottom: 6, letterSpacing: "-0.02em" }}>Import filters</div>
+          <div style={{ fontSize: 16, fontWeight: 500, color: "var(--t1)", marginBottom: 6, letterSpacing: "-0.02em" }}>Import filters</div>
           <div style={{ fontSize: 13, color: "var(--t3)", marginBottom: 16 }}>Paste a share link, or filters exported from this app</div>
           <textarea
             autoFocus value={importText}
@@ -661,7 +661,7 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
             <button type="button" onClick={showStocks} className="phone-continue glow" style={{ margin: isPhone ? "12px 0 0" : "28px 0 0" }}>
               <span>
                 <span style={{ display: "block", fontSize: 14, fontWeight: 450, color: "var(--t1)" }}>Continue with your filters</span>
-                <span style={{ display: "block", fontSize: 12.5, color: "var(--t3)", marginTop: 2 }}>
+                <span style={{ display: "block", fontSize: 13, color: "var(--t3)", marginTop: 2 }}>
                   {`${activeCount} filter${activeCount === 1 ? "" : "s"}${matched != null ? ` · ${matched.toLocaleString("en-IN")} stocks` : ""}`}
                 </span>
               </span>
@@ -895,7 +895,7 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
               filtersButton={null}
               phoneFilters={isPhone ? (
                 <button data-tour="filters" className="btn-ghost" onClick={() => setSheetOpen(true)} style={{ height: 36, fontSize: 13 }}>
-                  <SlidersHorizontal size={14} /> Filters{activeCount > 0 && <span style={{ marginLeft: 2, fontSize: 10.5, padding: "0 7px", borderRadius: 999, fontWeight: 500, background: "var(--accent)", color: "var(--on-accent)" }}>{activeCount}</span>}
+                  <SlidersHorizontal size={14} /> Filters{activeCount > 0 && <span style={{ marginLeft: 2, fontSize: 11, padding: "0 7px", borderRadius: 999, fontWeight: 500, background: "var(--accent)", color: "var(--on-accent)" }}>{activeCount}</span>}
                 </button>
               ) : null}
               meta={meta}

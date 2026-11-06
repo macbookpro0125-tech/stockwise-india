@@ -46,7 +46,7 @@ export default function AccountMenu({ account, onLogout, onDeleted, onTour, avat
           {(account?.name || who || "?").trim().charAt(0).toUpperCase()}
         </button>
       ) : (
-        <button className="btn-ghost" onClick={() => setOpen(o => !o)} aria-expanded={open} style={{ height: 32, fontSize: 12.5, padding: "0 10px 0 12px", whiteSpace: "nowrap", gap: 4 }}>
+        <button className="btn-ghost" onClick={() => setOpen(o => !o)} aria-expanded={open} style={{ height: 32, fontSize: 13, padding: "0 10px 0 12px", whiteSpace: "nowrap", gap: 4 }}>
           Account <ChevronDown size={14} style={{ transition: "transform 150ms", transform: open ? "rotate(180deg)" : "none" }} />
         </button>
       )}
@@ -150,7 +150,7 @@ export function DeleteAccountModal({ who, hasPassword, onClose, onDeleted }) {
       style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>
       <form onSubmit={submit} style={{ background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 18, padding: 26, width: 420, maxWidth: "100%", boxShadow: "var(--sh-lg)" }}>
         <h3 style={{ fontSize: 18, fontWeight: 500, color: "var(--t1)", margin: "0 0 10px", letterSpacing: "-0.02em" }}>Delete your account?</h3>
-        <p style={{ fontSize: 13.5, lineHeight: 1.6, color: "var(--t2)", margin: "0 0 10px" }}>
+        <p style={{ fontSize: 14, lineHeight: 1.6, color: "var(--t2)", margin: "0 0 10px" }}>
           This permanently deletes <strong style={{ color: "var(--t1)" }}>{who || "your account"}</strong> and everything saved with it:
           your watchlist and its notes, your price alerts and your portfolio. It can't be undone.
         </p>

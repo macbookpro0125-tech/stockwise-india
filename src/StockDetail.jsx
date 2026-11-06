@@ -67,11 +67,11 @@ const Dot = ({ color }) => <span style={{ display: "inline-block", width: 7, hei
 
 const MONO = { fontVariantNumeric: "tabular-nums" };
 const card = { border: "1px solid var(--bdr2)", borderRadius: 12, padding: 18, marginBottom: 12, background: "var(--s2)", boxShadow: "var(--sh-xs)" };
-const inputStyle = { width: "100%", height: 40, padding: "0 14px", border: "1px solid var(--bdr2)", borderRadius: 8, fontSize: 13.5, outline: "none", background: "var(--s1)", color: "var(--t1)", boxSizing: "border-box", fontFamily: "inherit", fontVariantNumeric: "tabular-nums" };
+const inputStyle = { width: "100%", height: 40, padding: "0 14px", border: "1px solid var(--bdr2)", borderRadius: 8, fontSize: 14, outline: "none", background: "var(--s1)", color: "var(--t1)", boxSizing: "border-box", fontFamily: "inherit", fontVariantNumeric: "tabular-nums" };
 const labelStyle = { fontSize: 12, color: "var(--t2)", marginBottom: 6, display: "block", fontWeight: 500 };
 // A section's heading inside a card, with its icon
 const SectionTitle = ({ icon: Icon, children, color = "var(--t1)", style }) => (
-  <h3 style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15, fontWeight: 400, margin: "0 0 14px", color, letterSpacing: "-0.01em", ...style }}>
+  <h3 style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 16, fontWeight: 400, margin: "0 0 14px", color, letterSpacing: "-0.01em", ...style }}>
     {Icon && <Icon size={17} strokeWidth={2} style={{ color: "var(--t3)", flexShrink: 0 }} />}{children}
   </h3>
 );
@@ -86,7 +86,7 @@ const fyLabel = (fyEnd, plus = 0) => `FY${String(Number(fyEnd.slice(0, 4)) + plu
 
 function PeHistoryTable({ m }) {
   const cell = { padding: "7px 10px", fontSize: 12, borderBottom: "1px solid var(--bdr)", textAlign: "right" };
-  const head = { ...cell, fontSize: 11.5, fontWeight: 500, color: "var(--t3)" };
+  const head = { ...cell, fontSize: 12, fontWeight: 500, color: "var(--t3)" };
   const fy = iso => new Date(`${iso}T00:00:00Z`).toLocaleString("en-IN", { month: "short", year: "numeric", timeZone: "UTC" });
   return (
     <div style={{ marginTop: 16, borderTop: "1px solid var(--bdr)", paddingTop: 14 }}>
@@ -207,24 +207,24 @@ function CompanyProfile({ symbol, m }) {
   return (
     <div style={{ border: "1px solid var(--bdr2)", borderRadius: 12, padding: "16px 18px", marginBottom: 14, background: "var(--s2)" }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
-        <h3 style={{ fontSize: 15, fontWeight: 450, margin: 0, color: "var(--t1)" }}>About the company</h3>
-        {p?.report?.fy && <span style={{ fontSize: 11.5, color: "var(--t3)" }}>From its {p.report.fy} business responsibility report{p.report.filed ? `, filed ${longDate(p.report.filed)}` : ""}</span>}
+        <h3 style={{ fontSize: 16, fontWeight: 450, margin: 0, color: "var(--t1)" }}>About the company</h3>
+        {p?.report?.fy && <span style={{ fontSize: 12, color: "var(--t3)" }}>From its {p.report.fy} business responsibility report{p.report.filed ? `, filed ${longDate(p.report.filed)}` : ""}</span>}
       </div>
       {d == null ? (
         <div style={{ fontSize: 13, color: "var(--t3)" }}>Loading company details…</div>
       ) : (
         <>
-          {description && <p style={{ fontSize: 13.5, color: "var(--t2)", lineHeight: 1.6, margin: "0 0 12px" }}>{description}</p>}
+          {description && <p style={{ fontSize: 14, color: "var(--t2)", lineHeight: 1.6, margin: "0 0 12px" }}>{description}</p>}
           {p?.businessLines?.some(b => b.length > 70) && (
             <ul style={{ margin: "0 0 12px", padding: "0 0 0 18px", fontSize: 13, color: "var(--t2)", lineHeight: 1.55 }}>
               {p.businessLines.filter(b => b.length > 70).map(b => <li key={b}>{b}</li>)}
             </ul>
           )}
-          {!description && <p style={{ fontSize: 12.5, color: "var(--t3)", lineHeight: 1.55, margin: "0 0 10px" }}>No business description on NSE: the company doesn't file a business responsibility report (only the top ~1,000 listed companies must), and its results name no business lines. The basics below are from its listing and results.</p>}
+          {!description && <p style={{ fontSize: 13, color: "var(--t3)", lineHeight: 1.55, margin: "0 0 10px" }}>No business description on NSE: the company doesn't file a business responsibility report (only the top ~1,000 listed companies must), and its results name no business lines. The basics below are from its listing and results.</p>}
           <div className="company-facts">
             {shown.map(([label, value]) => (
               <div key={label} style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 11.5, color: "var(--t3)", marginBottom: 2 }}>{label}</div>
+                <div style={{ fontSize: 12, color: "var(--t3)", marginBottom: 2 }}>{label}</div>
                 <div style={{ fontSize: 13, color: "var(--t1)", fontWeight: 400, overflowWrap: "anywhere" }}>{value}</div>
               </div>
             ))}
@@ -236,13 +236,13 @@ function CompanyProfile({ symbol, m }) {
                 <div className="company-facts" style={{ marginTop: 10 }}>
                   {extra.map(([label, value]) => (
                     <div key={label} style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 11.5, color: "var(--t3)", marginBottom: 2 }}>{label}</div>
+                      <div style={{ fontSize: 12, color: "var(--t3)", marginBottom: 2 }}>{label}</div>
                       <div style={{ fontSize: 13, color: "var(--t1)", overflowWrap: "anywhere", lineHeight: 1.5 }}>{value}</div>
                     </div>
                   ))}
                   {p?.report?.pdf && (
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 11.5, color: "var(--t3)", marginBottom: 2 }}>Source</div>
+                      <div style={{ fontSize: 12, color: "var(--t3)", marginBottom: 2 }}>Source</div>
                       <a href={p.report.pdf} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: "var(--accent)" }}>Business responsibility report (PDF) ↗</a>
                     </div>
                   )}
@@ -377,7 +377,7 @@ function MyNotes({ symbol, bare = false }) {
   return (
     <div style={bare ? undefined : { border: "1px solid var(--bdr2)", borderRadius: 10, padding: 16, marginBottom: 16, background: "var(--s2)" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: bare && !(saved && !editing) ? 0 : 12 }}>
-        {!bare && <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 15, fontWeight: 400, color: "var(--t1)" }}><NotebookPen size={17} style={{ color: "var(--t3)" }} /> My Notes</span>}
+        {!bare && <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 16, fontWeight: 400, color: "var(--t1)" }}><NotebookPen size={17} style={{ color: "var(--t3)" }} /> My Notes</span>}
         {saved && !editing && (
           <div style={{ display: "flex", gap: 8 }}>
             <button className="tap" onClick={() => setEditing(true)} style={{ fontSize: 12, padding: "3px 10px", borderRadius: 6, border: "1px solid var(--accent)", background: "color-mix(in srgb, var(--accent) 8%, transparent)", color: "var(--accent)", cursor: "pointer" }}>Edit</button>
@@ -421,7 +421,7 @@ function PiotroskiCard({ m }) {
   return (
     <div style={card}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
-        <h3 style={{ fontSize: 15, fontWeight: 400, margin: 0, color: "var(--t1)" }}>Piotroski Score</h3>
+        <h3 style={{ fontSize: 16, fontWeight: 400, margin: 0, color: "var(--t1)" }}>Piotroski Score</h3>
         <span style={{ fontSize: 13, fontWeight: 500, color, ...MONO }}>{m.piotroski}/9</span>
         <span style={{ fontSize: 11, color: "var(--t3)" }}>this year against last · 7+ = strong and improving</span>
       </div>
@@ -452,7 +452,7 @@ function KeyNumbers({ data, m }) {
   ];
   return (
     <div style={card}>
-      <h3 style={{ fontSize: 15, fontWeight: 400, margin: "0 0 12px", color: "var(--t1)" }}>More figures</h3>
+      <h3 style={{ fontSize: 16, fontWeight: 400, margin: "0 0 12px", color: "var(--t1)" }}>More figures</h3>
       <div className="ss-grid-4">
         {stats.map(([label, value]) => (
           <div key={label} style={{ background: "var(--s1)", borderRadius: 8, padding: "10px 12px", border: "1px solid var(--bdr)" }}>
@@ -861,7 +861,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
         <span style={{ fontSize: 14, color: "var(--t2)", fontWeight: 500 }}>₹</span>
         <input type="number" aria-label="Price to test" value={actionPrice} onChange={e => { setActionPrice(e.target.value); setPriceLabel("Your price"); }} placeholder="Current price"
-          style={{ flex: "1 1 140px", minWidth: 120, maxWidth: 320, height: 42, padding: "0 14px", border: "1px solid var(--accent)", borderRadius: 8, fontSize: 15, fontWeight: 500, outline: "none", background: "var(--s1)", color: "var(--t1)" }} />
+          style={{ flex: "1 1 140px", minWidth: 120, maxWidth: 320, height: 42, padding: "0 14px", border: "1px solid var(--accent)", borderRadius: 8, fontSize: 16, fontWeight: 500, outline: "none", background: "var(--s1)", color: "var(--t1)" }} />
         {data.quote && String(data.quote.cmp) !== actionPrice && (
           <button type="button" onClick={() => { setActionPrice(String(data.quote.cmp)); setPriceLabel(quoteLabel(data.quote)); }}
             style={{ height: 42, padding: "0 12px", borderRadius: 8, border: "1px solid var(--accent)", background: "var(--s1)", fontSize: 12, cursor: "pointer", color: "var(--accent)" }}>
@@ -939,7 +939,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
                 </span>
                 <div>
                   <div style={{ fontSize: 12, color: "var(--t3)", fontWeight: 500 }}>Where the price sits</div>
-                  <div style={{ fontSize: 19, fontWeight: 500, color: positionTone, letterSpacing: "-0.02em" }}>{position.label}</div>
+                  <div style={{ fontSize: 20, fontWeight: 500, color: positionTone, letterSpacing: "-0.02em" }}>{position.label}</div>
                 </div>
               </div>
               <p style={{ fontSize: 13, color: "var(--t1)", margin: 0, lineHeight: 1.6 }}>{position.gist || position.detail}</p>
@@ -966,7 +966,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
                 ].map(fc => (
                   <div key={fc.label} style={{ background: "var(--s1)", borderRadius: 8, padding: 12, border: fc.hi ? "1px solid var(--green)" : "1px solid var(--bdr)" }}>
                     <div style={{ fontSize: 11, color: "var(--t3)", marginBottom: 4 }}>{fc.label}</div>
-                    <div style={{ fontSize: 17, fontWeight: 400, color: fc.hi ? "var(--accent)" : "var(--t1)" }}>{fc.val}</div>
+                    <div style={{ fontSize: 16, fontWeight: 400, color: fc.hi ? "var(--accent)" : "var(--t1)" }}>{fc.val}</div>
                     <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 2 }}>{fc.sub}</div>
                   </div>
                 ))}

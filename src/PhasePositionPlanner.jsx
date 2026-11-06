@@ -50,11 +50,11 @@ export default function PhasePositionPlanner({ levels }) {
 
   const field = (label, value, set, hint) => (
     <label style={{ display: "block", minWidth: 0 }}>
-      <span style={{ display: "block", fontSize: 11.5, color: "var(--t3)", marginBottom: 4 }}>{label}</span>
+      <span style={{ display: "block", fontSize: 12, color: "var(--t3)", marginBottom: 4 }}>{label}</span>
       <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <input type="number" inputMode="decimal" min="0" step="1000" value={value} onChange={event => set(event.target.value)} className="input-base" style={{ height: 38, fontSize: 13.5, minWidth: 0, width: "100%", boxSizing: "border-box", fontVariantNumeric: "tabular-nums" }} />
+        <input type="number" inputMode="decimal" min="0" step="1000" value={value} onChange={event => set(event.target.value)} className="input-base" style={{ height: 38, fontSize: 14, minWidth: 0, width: "100%", boxSizing: "border-box", fontVariantNumeric: "tabular-nums" }} />
       </span>
-      {hint && <span style={{ display: "block", fontSize: 10.5, color: "var(--t3)", marginTop: 3 }}>{hint}</span>}
+      {hint && <span style={{ display: "block", fontSize: 11, color: "var(--t3)", marginTop: 3 }}>{hint}</span>}
     </label>
   );
 
@@ -65,8 +65,8 @@ export default function PhasePositionPlanner({ levels }) {
       <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 12 }}>
         <Calculator size={18} style={{ color: "var(--accent)", marginTop: 2, flexShrink: 0 }} />
         <div>
-          <h3 id="phase-position-title" style={{ fontSize: 14.5, fontWeight: 450, color: "var(--t1)", margin: 0 }}>Position sizing worksheet</h3>
-          <p style={{ fontSize: 11.5, lineHeight: 1.5, color: "var(--t3)", margin: "3px 0 0" }}>Arithmetic on your own levels (set in Your price levels below): your capital, split across your three levels the way you choose, and the loss if your stop were reached.</p>
+          <h3 id="phase-position-title" style={{ fontSize: 14, fontWeight: 450, color: "var(--t1)", margin: 0 }}>Position sizing worksheet</h3>
+          <p style={{ fontSize: 12, lineHeight: 1.5, color: "var(--t3)", margin: "3px 0 0" }}>Arithmetic on your own levels (set in Your price levels below): your capital, split across your three levels the way you choose, and the loss if your stop were reached.</p>
         </div>
       </div>
 
@@ -75,7 +75,7 @@ export default function PhasePositionPlanner({ levels }) {
         {field("Your maximum planned loss (₹)", lossLimit, setLossLimit, "Optional. Share counts shrink if the loss at your stop exceeds this amount.")}
       </div>
       <div style={{ marginTop: 10 }}>
-        <span style={{ display: "block", fontSize: 11.5, color: "var(--t3)", marginBottom: 4 }}>Your split across levels 1, 2 and 3 (parts)</span>
+        <span style={{ display: "block", fontSize: 12, color: "var(--t3)", marginBottom: 4 }}>Your split across levels 1, 2 and 3 (parts)</span>
         <div style={{ display: "flex", gap: 8 }}>
           {entries.map((_, i) => (
             <input key={i} type="number" inputMode="decimal" min="0" step="1" aria-label={`Part at level ${i + 1}`} value={split[i]} onChange={event => setSplit(prev => prev.map((v, j) => (j === i ? event.target.value : v)))} className="input-base" style={{ height: 34, fontSize: 13, width: 72, boxSizing: "border-box", ...mono }} />
@@ -86,7 +86,7 @@ export default function PhasePositionPlanner({ levels }) {
       {result && (
         <>
           <div style={{ overflowX: "auto", marginTop: 12 }}>
-            <table style={{ width: "100%", minWidth: 360, borderCollapse: "collapse", fontSize: 11.5 }}>
+            <table style={{ width: "100%", minWidth: 360, borderCollapse: "collapse", fontSize: 12 }}>
               <thead><tr>{["Your level", "Cash budget", "Illustrative shares", "Amount used"].map((label, index) => <th key={label} style={{ textAlign: index === 0 ? "left" : "right", padding: "7px 6px", color: "var(--t3)", fontWeight: 400, borderBottom: "1px solid var(--bdr2)", whiteSpace: "nowrap" }}>{label}</th>)}</tr></thead>
               <tbody>{result.tranches.map((row, index) => (
                 <tr key={index}>
@@ -103,14 +103,14 @@ export default function PhasePositionPlanner({ levels }) {
               ["Total modeled amount", money(result.invested), "var(--t1)"],
               ["Cash left unallocated", money(result.reserve), "var(--t1)"],
               ["Estimated loss at your stop", result.lossAtStop == null ? "—" : `−${money(result.lossAtStop)}`, "var(--red)"],
-            ].map(([label, value, color]) => <div key={label} style={{ padding: "9px 10px", border: "1px solid var(--bdr)", borderRadius: 8, background: "var(--s1)" }}><div style={{ fontSize: 10.5, color: "var(--t3)" }}>{label}</div><div style={{ fontSize: 13.5, fontWeight: 450, color, marginTop: 3, ...mono }}>{value}</div></div>)}
+            ].map(([label, value, color]) => <div key={label} style={{ padding: "9px 10px", border: "1px solid var(--bdr)", borderRadius: 8, background: "var(--s1)" }}><div style={{ fontSize: 11, color: "var(--t3)" }}>{label}</div><div style={{ fontSize: 14, fontWeight: 450, color, marginTop: 3, ...mono }}>{value}</div></div>)}
           </div>
           {result.scaled && <p style={{ fontSize: 11, color: "var(--yellow)", margin: "8px 0 0", lineHeight: 1.5 }}>The share counts were reduced to fit your chosen loss limit.</p>}
           {maxLoss > 0 && result.lossAtStop != null && result.lossAtStop > maxLoss && <p style={{ fontSize: 11, color: "var(--yellow)", margin: "8px 0 0", lineHeight: 1.5 }}>Rounding leaves the estimate slightly above your chosen limit; lower the limit or review the share counts.</p>}
         </>
       )}
 
-      <p style={{ fontSize: 10.5, color: "var(--t3)", lineHeight: 1.5, margin: "10px 0 0" }}>Hypothetical arithmetic on the numbers you entered, not a recommendation. Assumes all three levels fill and your stop is executed exactly; gaps, slippage, fees and taxes can change the result. It does not account for your existing holdings or portfolio exposure.</p>
+      <p style={{ fontSize: 11, color: "var(--t3)", lineHeight: 1.5, margin: "10px 0 0" }}>Hypothetical arithmetic on the numbers you entered, not a recommendation. Assumes all three levels fill and your stop is executed exactly; gaps, slippage, fees and taxes can change the result. It does not account for your existing holdings or portfolio exposure.</p>
     </section>
   );
 }

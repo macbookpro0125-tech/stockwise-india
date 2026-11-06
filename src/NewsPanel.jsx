@@ -101,7 +101,7 @@ export default function NewsPanel({ symbol }) {
 
       {tab === "reports" && (
         <div style={{ paddingTop: 8 }}>
-          <div style={{ fontSize: 11.5, fontWeight: 400, color: "var(--t3)", marginBottom: 6 }}>Annual reports</div>
+          <div style={{ fontSize: 12, fontWeight: 400, color: "var(--t3)", marginBottom: 6 }}>Annual reports</div>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {reports.slice(0, expanded ? reports.length : 8).map(r => (
               <a key={r.url} href={r.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, fontWeight: 400, textDecoration: "none", padding: "3px 9px", borderRadius: 999, border: "1px solid var(--bdr2)", background: "var(--s3)", color: "var(--t2)", whiteSpace: "nowrap", ...MONO }}>
@@ -139,7 +139,7 @@ export default function NewsPanel({ symbol }) {
             const reviewBlock = tab === "filings" && a.review && <>
                 <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap", marginTop: 6 }}>
                   <span style={{ fontSize: 10, fontWeight: 450, padding: "2px 7px", borderRadius: 999, color: a.review.priority === "Review promptly" ? "var(--red)" : a.review.priority === "Read for context" ? "var(--yellow)" : "var(--t3)", background: a.review.priority === "Review promptly" ? "var(--red-dim)" : a.review.priority === "Read for context" ? "var(--yellow-dim)" : "var(--s3)" }}>{a.review.priority}</span>
-                  <span style={{ fontSize: 10.5, color: "var(--t3)" }}>{a.review.category} · Matched: “{a.review.matchedText}”</span>
+                  <span style={{ fontSize: 11, color: "var(--t3)" }}>{a.review.category} · Matched: “{a.review.matchedText}”</span>
                 </div>
                 <div style={{ fontSize: 11, color: "var(--t2)", lineHeight: 1.5, marginTop: 4 }}>{a.review.reviewPrompt}{a.review.extractedAmounts?.length ? ` Amounts stated in notice: ${a.review.extractedAmounts.join(", ")}.` : ""}</div>
               </>;

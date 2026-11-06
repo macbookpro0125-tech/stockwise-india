@@ -21,7 +21,7 @@ const AppleLogo = () => (
 );
 
 const errorBox = { fontSize: 12, color: "var(--red)", background: "var(--red-dim)", border: "1px solid var(--red-bdr)", borderRadius: 8, padding: "8px 12px", lineHeight: 1.5 };
-const label = { display: "block", margin: "0 0 6px", fontSize: 12.5, fontWeight: 500, color: "var(--t2)" };
+const label = { display: "block", margin: "0 0 6px", fontSize: 13, fontWeight: 500, color: "var(--t2)" };
 
 // Sign in with a phone number: the number, then the 6-digit SMS code
 function PhoneSignIn({ config, onAuthed, onBack }) {
@@ -58,7 +58,7 @@ function PhoneSignIn({ config, onAuthed, onBack }) {
               <span className="input-base" style={{ width: 64, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--t2)" }}>+91</span>
               <input className="input-base" type="tel" inputMode="tel" placeholder="Mobile number" autoComplete="tel-national" value={phone} onChange={e => setPhone(e.target.value)} required autoFocus />
             </div>
-            <span style={{ fontSize: 11.5, color: "var(--t3)", marginTop: -4 }}>Outside India? Type the full number with its + code.</span>
+            <span style={{ fontSize: 12, color: "var(--t3)", marginTop: -4 }}>Outside India? Type the full number with its + code.</span>
             {error && <div style={errorBox}>{error}</div>}
             <button id="phone-send" type="submit" className="btn-primary" disabled={busy}>{busy ? "Sending…" : "Send code"}</button>
           </form>
@@ -72,7 +72,7 @@ function PhoneSignIn({ config, onAuthed, onBack }) {
             {error && <div style={errorBox}>{error}</div>}
             <button type="submit" className="btn-primary" disabled={busy || code.length !== 6}>{busy ? "Checking…" : "Verify and continue"}</button>
             <button type="button" onClick={() => { setPending(null); setError(""); }}
-              style={{ background: "none", border: "none", padding: 0, fontSize: 12.5, color: "var(--accent)", cursor: "pointer", fontFamily: "inherit" }}>
+              style={{ background: "none", border: "none", padding: 0, fontSize: 13, color: "var(--accent)", cursor: "pointer", fontFamily: "inherit" }}>
               Wrong number, or no SMS? Start again
             </button>
           </form>
@@ -117,10 +117,10 @@ function EmailCode({ email, onAuthed, onBack }) {
         <input className="input-base" inputMode="numeric" autoComplete="one-time-code" aria-label="6-digit code" placeholder="6-digit code" maxLength={6} pattern="\d{6}"
           value={code} onChange={e => { setCode(e.target.value.replace(/\D/g, "")); if (error) setError(""); }} required autoFocus style={{ letterSpacing: code ? "0.3em" : 0, fontSize: 18, textAlign: "center" }} />
         {error && <div role="alert" style={errorBox}>{error}</div>}
-        {resent && !error && <div role="status" style={{ fontSize: 12.5, color: "var(--t2)" }}>A new code is on its way.</div>}
+        {resent && !error && <div role="status" style={{ fontSize: 13, color: "var(--t2)" }}>A new code is on its way.</div>}
         <button type="submit" className="btn-primary" disabled={busy || code.length !== 6}>{busy ? "Checking…" : "Create my account"}</button>
         <button type="button" onClick={resend} disabled={wait > 0}
-          style={{ background: "none", border: "none", padding: 0, fontSize: 12.5, color: wait > 0 ? "var(--t3)" : "var(--accent)", cursor: wait > 0 ? "default" : "pointer", fontFamily: "inherit" }}>
+          style={{ background: "none", border: "none", padding: 0, fontSize: 13, color: wait > 0 ? "var(--t3)" : "var(--accent)", cursor: wait > 0 ? "default" : "pointer", fontFamily: "inherit" }}>
           {wait > 0 ? `No email? Send a new code in ${wait}s` : "No email? Send a new code"}
         </button>
         <p style={{ fontSize: 12, color: "var(--t3)", margin: 0, lineHeight: 1.5 }}>It can take a minute, and sometimes lands in spam or promotions.</p>

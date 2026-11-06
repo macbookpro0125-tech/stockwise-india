@@ -69,7 +69,7 @@ export default function ImportHoldingsModal({ onClose, onImported }) {
           <div style={{ fontSize: 16, fontWeight: 500, color: "var(--t1)" }}>Import from a broker file</div>
           <button type="button" onClick={onClose} aria-label="Close" className="btn-ghost" style={{ height: 30, width: 30, padding: 0, justifyContent: "center" }}><X size={15} /></button>
         </div>
-        <p style={{ fontSize: 12.5, color: "var(--t2)", lineHeight: 1.6, margin: "0 0 12px" }}>
+        <p style={{ fontSize: 13, color: "var(--t2)", lineHeight: 1.6, margin: "0 0 12px" }}>
           Download your holdings from your broker as CSV or Excel — Zerodha (Console → Portfolio → Holdings → Download, or Kite's holdings download), Groww, Upstox, Angel One or any other — and choose the file here. It's read in your browser: only each stock, its quantity and average price are sent. No broker account is linked.
         </p>
         <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, height: 44, borderRadius: 10, border: "1px dashed var(--bdr3, var(--bdr2))", background: "var(--s1)", color: "var(--t1)", fontSize: 13, cursor: busy ? "wait" : "pointer" }}>
@@ -82,7 +82,7 @@ export default function ImportHoldingsModal({ onClose, onImported }) {
 
         {parsed && preview && (
           <>
-            <div style={{ fontSize: 11.5, color: "var(--t3)", margin: "12px 0 8px", lineHeight: 1.5 }}>
+            <div style={{ fontSize: 12, color: "var(--t3)", margin: "12px 0 8px", lineHeight: 1.5 }}>
               {preview.rows.length} rows from {parsed.sheetName ? `“${parsed.sheetName}”` : "the file"} — using {Object.entries(parsed.used).map(([f, h]) => `“${h}” for ${{ symbol: "the symbol", isin: "the ISIN", name: "the name", qty: "quantity", avgPrice: "average price" }[f]}`).join(", ")}.
               {" "}{ready.length} will be added at their average price, without a buy date.
             </div>
@@ -97,7 +97,7 @@ export default function ImportHoldingsModal({ onClose, onImported }) {
                     <tr key={r.row}>
                       <td style={{ padding: "7px 10px", borderBottom: "1px solid var(--bdr)", minWidth: 0 }}>
                         <div style={{ color: "var(--t1)", fontWeight: 400 }}>{r.symbol ?? r.from}</div>
-                        {r.name && <div style={{ fontSize: 10.5, color: "var(--t3)" }}>{r.name}</div>}
+                        {r.name && <div style={{ fontSize: 11, color: "var(--t3)" }}>{r.name}</div>}
                       </td>
                       <td style={{ padding: "7px 10px", borderBottom: "1px solid var(--bdr)", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{fmt(r.qty)}</td>
                       <td style={{ padding: "7px 10px", borderBottom: "1px solid var(--bdr)", textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{r.avgPrice ? `₹${fmt(r.avgPrice)}` : "—"}</td>

@@ -137,7 +137,7 @@ export default function StockSearchBar({ onAnalyze, placeholder = "Search any st
           aria-activedescendant={items.length > 0 && highlightIdx >= 0 ? `${listId}-${highlightIdx}` : undefined}
           autoComplete="off"
           className={`input-base${lead ? " ssb-round" : ""}`}
-          style={lead ? undefined : { width: "100%", paddingLeft: 36, paddingRight: 34, height: 38, fontSize: 13.5, borderRadius: 8 }}
+          style={lead ? undefined : { width: "100%", paddingLeft: 36, paddingRight: 34, height: 38, fontSize: 14, borderRadius: 8 }}
         />
         {!query && (
           <kbd aria-hidden="true" className="hide-phone" title='Press "/" to search' style={{ position: "absolute", right: 10, fontSize: 11, color: "var(--t3)", border: "1px solid var(--bdr2)", borderRadius: 5, padding: "0 6px", lineHeight: "18px", fontFamily: "inherit", pointerEvents: "none" }}>/</kbd>

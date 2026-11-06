@@ -55,7 +55,7 @@
 .auth-point-icon { flex: 0 0 40px; height: 40px; display: grid; place-items: center; border-radius: 11px; background: rgba(255, 255, 255, 0.06); }
 .auth-point-icon svg { width: 28px; height: 28px; }
 .auth-points b { display: block; font: 600 14.5px var(--ap-font, var(--font)); letter-spacing: -0.01em; color: #F5F5F7; }
-.auth-points li > span:last-child > span { display: block; margin-top: 2px; font-size: 12.5px; line-height: 1.4; color: rgba(235, 235, 245, 0.66); }
+.auth-points li > span:last-child > span { display: block; margin-top: 2px; font-size: 13px; line-height: 1.4; color: rgba(235, 235, 245, 0.66); }
 /* a short window: the tiles keep their titles only */
 @media (max-height: 800px) {
   .auth-points li { padding: 9px 14px; }
@@ -84,8 +84,8 @@
 .auth-brand { display: flex; justify-content: center; margin-bottom: 30px; }
 
 .auth-step { width: min(380px, 100%); }
-.auth-title { margin: 0 0 6px; text-align: center; font-size: 30px; font-weight: 700; line-height: 1.15; letter-spacing: -0.03em; color: var(--t1); }
-.auth-sub { margin: 0 0 26px; text-align: center; font-size: 14.5px; line-height: 1.5; color: var(--t3); }
+.auth-title { margin: 0 0 6px; text-align: center; font-size: 28px; font-weight: 700; line-height: 1.15; letter-spacing: -0.03em; color: var(--t1); }
+.auth-sub { margin: 0 0 26px; text-align: center; font-size: 14px; line-height: 1.5; color: var(--t3); }
 .auth-choices { display: flex; flex-direction: column; gap: 10px; }
 .auth-choice {
   display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; height: 48px;
@@ -98,7 +98,7 @@
 .auth-choice-primary:hover:not(:disabled) { border-color: transparent; box-shadow: none; background: color-mix(in srgb, var(--t1) 88%, var(--bg)); }
 .auth-choice:active:not(:disabled) { transform: scale(0.985); }
 .auth-choice:disabled { opacity: 0.6; cursor: progress; }
-.auth-or { display: flex; align-items: center; gap: 12px; margin: 8px 0; font-size: 12.5px; color: var(--t3); }
+.auth-or { display: flex; align-items: center; gap: 12px; margin: 8px 0; font-size: 13px; color: var(--t3); }
 .auth-or span { flex: 1; height: 1px; background: var(--bdr2); }
 
 .auth-back {
@@ -107,7 +107,7 @@
 }
 .auth-back:hover { color: var(--t1); }
 .auth-form { display: flex; flex-direction: column; gap: 16px; }
-.auth-form .input-base { height: 46px; border-radius: 12px; font-size: 15px; }
+.auth-form .input-base { height: 46px; border-radius: 12px; font-size: 16px; }
 .auth-password { position: relative; }
 .auth-password .input-base { padding-right: 46px; }
 .auth-eye {
@@ -126,7 +126,7 @@
 .auth-sent .auth-sub { margin-bottom: 10px; }
 .auth-sent strong { color: var(--t1); overflow-wrap: anywhere; }
 .auth-help { margin: 0; color: var(--t3); font-size: 13px; line-height: 1.55; }
-.auth-submit { height: 48px !important; margin-top: 4px; border-radius: 12px !important; font-size: 15px !important; }
+.auth-submit { height: 48px !important; margin-top: 4px; border-radius: 12px !important; font-size: 16px !important; }
 .auth-legal { margin: 18px 0 0; text-align: center; font-size: 12px; line-height: 1.6; color: var(--t3); }
 .auth-legal a { color: var(--t2); text-decoration: underline; text-underline-offset: 2px; }
 .auth-switch { margin: 22px 0 0; padding-top: 18px; border-top: 1px solid var(--bdr); text-align: center; font-size: 14px; color: var(--t2); }
@@ -143,9 +143,9 @@
 .reset-title { margin: 0 0 8px; color: var(--t1); font-size: 24px; font-weight: 700; line-height: 1.2; letter-spacing: -.03em; }
 .reset-copy { margin: 0 0 22px; color: var(--t3); font-size: 14px; line-height: 1.55; }
 .reset-form { display: flex; flex-direction: column; gap: 16px; }
-.reset-form .input-base { height: 48px; border-radius: 12px; font-size: 15px; }
+.reset-form .input-base { height: 48px; border-radius: 12px; font-size: 16px; }
 .reset-form .auth-password .input-base { padding-right: 48px; }
-.reset-submit { width: 100%; min-height: 48px; margin-top: 4px; border-radius: 12px !important; font-size: 15px !important; }
+.reset-submit { width: 100%; min-height: 48px; margin-top: 4px; border-radius: 12px !important; font-size: 16px !important; }
 .reset-back { display: flex; justify-content: center; width: 100%; margin-top: 14px; padding: 8px; border: 0; border-radius: 8px; background: none; color: var(--accent); font: 600 14px var(--font); cursor: pointer; text-decoration: none; }
 .reset-back:hover { text-decoration: underline; text-underline-offset: 3px; }
 
@@ -155,7 +155,7 @@
   .auth-dialog { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(150px, 1fr) auto; padding: 0; }
   .auth-visual { border-radius: 0; }
   .auth-visual::before { inset: auto 0 0 0; height: 70%; background: linear-gradient(to top, rgba(3,4,10,.82), rgba(3,4,10,0)); }
-  .auth-visual-line { top: auto; bottom: 48px; right: auto; max-width: 100%; padding: 0 22px; text-align: left; font-size: 26px; }
+  .auth-visual-line { top: auto; bottom: 48px; right: auto; max-width: 100%; padding: 0 22px; text-align: left; font-size: 28px; }
   .auth-mark { left: auto; right: 0; top: 10%; width: auto; height: 58%; transform: translate(var(--px), var(--py)); }
   .auth-points { display: none; }
   /* the name beside the sky's J crowds the line on a phone; the sheet below shows it */

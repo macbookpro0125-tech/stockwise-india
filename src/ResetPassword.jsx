@@ -45,7 +45,7 @@ export default function ResetPassword({ onDone }) {
               <p className="reset-copy">Use at least 8 characters. We'll sign out any other devices when you save it.</p>
               <form onSubmit={submit} className="reset-form">
                 <div>
-                  <label htmlFor="reset-password" style={{ display: "block", margin: "0 0 6px", fontSize: 12.5, fontWeight: 500, color: "var(--t2)" }}>New password</label>
+                  <label htmlFor="reset-password" style={{ display: "block", margin: "0 0 6px", fontSize: 13, fontWeight: 500, color: "var(--t2)" }}>New password</label>
                   <div className="auth-password">
                     <input id="reset-password" className="input-base" type={showPasswords ? "text" : "password"} placeholder="At least 8 characters" autoComplete="new-password" minLength={8} value={password} onChange={e => { setPassword(e.target.value); if (error) setError(""); }} required autoFocus />
                     <button type="button" className="auth-eye" onClick={() => setShowPasswords(v => !v)} aria-label={showPasswords ? "Hide passwords" : "Show passwords"} aria-pressed={showPasswords}>
@@ -54,7 +54,7 @@ export default function ResetPassword({ onDone }) {
                   </div>
                 </div>
                 <div>
-                  <label htmlFor="reset-confirm" style={{ display: "block", margin: "0 0 6px", fontSize: 12.5, fontWeight: 500, color: "var(--t2)" }}>Confirm new password</label>
+                  <label htmlFor="reset-confirm" style={{ display: "block", margin: "0 0 6px", fontSize: 13, fontWeight: 500, color: "var(--t2)" }}>Confirm new password</label>
                   <input id="reset-confirm" className="input-base" type={showPasswords ? "text" : "password"} placeholder="Enter it again" autoComplete="new-password" minLength={8} value={confirm} onChange={e => { setConfirm(e.target.value); if (error) setError(""); }} required />
                 </div>
                 {error && <div role="alert" style={{ fontSize: 12, color: "var(--red)", background: "var(--red-dim)", border: "1px solid var(--red-bdr)", borderRadius: 8, padding: "8px 12px", lineHeight: 1.5 }}>{error}</div>}

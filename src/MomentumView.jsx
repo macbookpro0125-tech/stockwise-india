@@ -55,9 +55,9 @@ function PositionCalculator({ row, config, onClose }) {
   const stop = ok ? p * (1 - sp) : null, target = ok ? p * (1 + sp * r) : null;
   const field = (label, value, set, unit, step) => (
     <label style={{ display: "block", minWidth: 0 }}>
-      <span style={{ display: "block", fontSize: 11.5, color: "var(--t3)", marginBottom: 4 }}>{label}</span>
+      <span style={{ display: "block", fontSize: 12, color: "var(--t3)", marginBottom: 4 }}>{label}</span>
       <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <input type="number" inputMode="decimal" step={step} value={value} onChange={e => set(e.target.value)} className="input-base" style={{ height: 36, fontSize: 13.5, minWidth: 0 }} />
+        <input type="number" inputMode="decimal" step={step} value={value} onChange={e => set(e.target.value)} className="input-base" style={{ height: 36, fontSize: 14, minWidth: 0 }} />
         {unit && <span style={{ fontSize: 12, color: "var(--t3)", whiteSpace: "nowrap" }}>{unit}</span>}
       </span>
     </label>
@@ -65,7 +65,7 @@ function PositionCalculator({ row, config, onClose }) {
   const out = (label, value, color) => (
     <div style={{ padding: "10px 12px", borderRadius: 10, background: "var(--s1)", border: "1px solid var(--bdr)", minWidth: 0 }}>
       <div style={{ fontSize: 11, color: "var(--t3)", marginBottom: 3 }}>{label}</div>
-      <div style={{ fontSize: 15, fontWeight: 450, color: color ?? "var(--t1)", ...MONO }}>{value}</div>
+      <div style={{ fontSize: 16, fontWeight: 450, color: color ?? "var(--t1)", ...MONO }}>{value}</div>
     </div>
   );
   return (
@@ -73,7 +73,7 @@ function PositionCalculator({ row, config, onClose }) {
       <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 12 }}>
         <Calculator size={18} style={{ color: "var(--accent)", marginTop: 2, flexShrink: 0 }} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 14.5, fontWeight: 450, color: "var(--t1)" }}>Position calculator — {row.name}</div>
+          <div style={{ fontSize: 14, fontWeight: 450, color: "var(--t1)" }}>Position calculator — {row.name}</div>
           <div style={{ fontSize: 12, color: "var(--t3)", marginTop: 2 }}>Your numbers: price defaults to NSE's last close ({rs(row.close)}), not a live price.</div>
         </div>
         <button type="button" onClick={onClose} aria-label="Close the calculator" className="btn-ghost" style={{ height: 32, width: 32, padding: 0, justifyContent: "center", flexShrink: 0 }}><X size={15} /></button>
@@ -95,9 +95,9 @@ function PositionCalculator({ row, config, onClose }) {
           {out("Reward : risk", `${num(r, 2)} : 1`)}
         </div>
       ) : (
-        <div style={{ marginTop: 12, fontSize: 12.5, color: "var(--yellow)" }}>Enter an amount, a price, a stop between 0 and 100% and a target above 0.</div>
+        <div style={{ marginTop: 12, fontSize: 13, color: "var(--yellow)" }}>Enter an amount, a price, a stop between 0 and 100% and a target above 0.</div>
       )}
-      <p style={{ fontSize: 11.5, color: "var(--t3)", lineHeight: 1.55, margin: "12px 0 0" }}>
+      <p style={{ fontSize: 12, color: "var(--t3)", lineHeight: 1.55, margin: "12px 0 0" }}>
         Gains on shares held under a year are taxed as short-term capital gains (20%), and brokerage, STT and other charges come off both ways — on small moves they take a real share. A stop can fill below its level when a price gaps down.
       </p>
     </div>
@@ -160,7 +160,7 @@ export default function MomentumView({ onOpenStock }) {
   return (
     <div style={{ padding: "var(--page-top, 24px) var(--page-x) 16px", animation: "fadeUp 280ms cubic-bezier(0,0,0.2,1) backwards" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 6 }}>
-        <h2 style={{ fontSize: 19, fontWeight: 500, color: "var(--t1)", margin: 0, letterSpacing: "-0.02em", display: "flex", alignItems: "center", gap: 8 }}>
+        <h2 style={{ fontSize: 20, fontWeight: 500, color: "var(--t1)", margin: 0, letterSpacing: "-0.02em", display: "flex", alignItems: "center", gap: 8 }}>
           <Zap size={18} style={{ color: "var(--yellow)" }} /> Momentum
         </h2>
         <span style={{ fontSize: 11, fontWeight: 500, padding: "3px 9px", borderRadius: 999, background: "var(--yellow-dim)", color: "var(--yellow)", border: "1px solid var(--yellow-bdr)" }}>Short-term · speculative</span>
@@ -174,11 +174,11 @@ export default function MomentumView({ onOpenStock }) {
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
-        <button type="button" className="btn-ghost" onClick={() => setShowSettings(v => !v)} aria-expanded={showSettings} style={{ height: 34, fontSize: 12.5 }}>
-          <SlidersHorizontal size={14} /> Settings{changed && <span style={{ fontSize: 10.5, padding: "0 7px", borderRadius: 999, fontWeight: 500, background: "var(--accent)", color: "var(--on-accent)" }}>changed</span>}
+        <button type="button" className="btn-ghost" onClick={() => setShowSettings(v => !v)} aria-expanded={showSettings} style={{ height: 34, fontSize: 13 }}>
+          <SlidersHorizontal size={14} /> Settings{changed && <span style={{ fontSize: 11, padding: "0 7px", borderRadius: 999, fontWeight: 500, background: "var(--accent)", color: "var(--on-accent)" }}>changed</span>}
         </button>
         {data && !loading && data.available && (
-          <span style={{ fontSize: 12.5, color: "var(--t2)" }}>
+          <span style={{ fontSize: 13, color: "var(--t2)" }}>
             <strong style={{ color: "var(--t1)" }}>{data.counts.passed}</strong> of {data.counts.screened.toLocaleString("en-IN")} companies pass
             {data.counts.insufficient > 0 && <span style={{ color: "var(--t3)" }}> · {data.counts.insufficient} have under 210 sessions of history</span>}
           </span>
@@ -186,8 +186,8 @@ export default function MomentumView({ onOpenStock }) {
         <span style={{ flex: 1 }} />
         {passers.length > 0 && (
           <>
-            <button type="button" className="btn-ghost hide-phone" onClick={exportExcel} disabled={exporting} style={{ height: 32, fontSize: 12.5 }}>{exporting ? "Exporting…" : "Excel"}</button>
-            <button type="button" className="btn-ghost hide-phone" onClick={exportCsv} style={{ height: 32, fontSize: 12.5 }}>CSV</button>
+            <button type="button" className="btn-ghost hide-phone" onClick={exportExcel} disabled={exporting} style={{ height: 32, fontSize: 13 }}>{exporting ? "Exporting…" : "Excel"}</button>
+            <button type="button" className="btn-ghost hide-phone" onClick={exportCsv} style={{ height: 32, fontSize: 13 }}>CSV</button>
           </>
         )}
       </div>
@@ -200,19 +200,19 @@ export default function MomentumView({ onOpenStock }) {
           <div className="momentum-settings">
             {[...SETTINGS, { key: "stopPct", label: "Calculator: stop", unit: "%", step: 0.5 }, { key: "targetR", label: "Calculator: target", unit: "× stop", step: 0.25 }].map(s => (
               <label key={s.key} title={s.about} style={{ display: "block", minWidth: 0 }}>
-                <span style={{ display: "block", fontSize: 11.5, color: "var(--t3)", marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.label}</span>
+                <span style={{ display: "block", fontSize: 12, color: "var(--t3)", marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.label}</span>
                 <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <input type="number" inputMode="decimal" step={s.step} value={draft[s.key] ?? ""} placeholder={String(defaults[s.key])}
                     onChange={e => setDraft(d => ({ ...d, [s.key]: e.target.value }))} onKeyDown={e => { if (e.key === "Enter") apply(); }}
                     className="input-base" style={{ height: 34, fontSize: 13, minWidth: 0 }} />
-                  {s.unit && <span style={{ fontSize: 11.5, color: "var(--t3)", whiteSpace: "nowrap" }}>{s.unit}</span>}
+                  {s.unit && <span style={{ fontSize: 12, color: "var(--t3)", whiteSpace: "nowrap" }}>{s.unit}</span>}
                 </span>
               </label>
             ))}
           </div>
           <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-            <button type="button" className="btn-primary" onClick={apply} style={{ height: 34, fontSize: 12.5, padding: "0 16px" }}>Apply</button>
-            <button type="button" className="btn-ghost" onClick={reset} style={{ height: 34, fontSize: 12.5 }}>Back to defaults</button>
+            <button type="button" className="btn-primary" onClick={apply} style={{ height: 34, fontSize: 13, padding: "0 16px" }}>Apply</button>
+            <button type="button" className="btn-ghost" onClick={reset} style={{ height: 34, fontSize: 13 }}>Back to defaults</button>
           </div>
         </div>
       )}
@@ -233,7 +233,7 @@ export default function MomentumView({ onOpenStock }) {
 
       {data && !error && !data.available && (
         <div role="status" style={{ textAlign: "center", padding: "40px 20px", border: "1px dashed var(--bdr2)", borderRadius: 14, background: "var(--s1)" }}>
-          <div style={{ fontSize: 15, fontWeight: 450, color: "var(--t1)", marginBottom: 6 }}>Momentum figures aren't in yet</div>
+          <div style={{ fontSize: 16, fontWeight: 450, color: "var(--t1)", marginBottom: 6 }}>Momentum figures aren't in yet</div>
           <p style={{ fontSize: 13, color: "var(--t2)", margin: "0 auto", maxWidth: 520, lineHeight: 1.6 }}>They're worked out with each evening's prices. Check back after the next update.</p>
         </div>
       )}
@@ -241,7 +241,7 @@ export default function MomentumView({ onOpenStock }) {
       {/* No passers is an answer, not an error — the checks aren't loosened */}
       {data && !error && data.available && passers.length === 0 && (
         <div role="status" style={{ textAlign: "center", padding: "40px 20px", border: "1px dashed var(--bdr2)", borderRadius: 14, background: "var(--s1)" }}>
-          <div style={{ fontSize: 15, fontWeight: 450, color: "var(--t1)", marginBottom: 6 }}>No confirmed uptrends today</div>
+          <div style={{ fontSize: 16, fontWeight: 450, color: "var(--t1)", marginBottom: 6 }}>No confirmed uptrends today</div>
           <p style={{ fontSize: 13, color: "var(--t2)", margin: "0 auto", maxWidth: 520, lineHeight: 1.6 }}>
             Nothing passes every check on NSE's close of {dayLabel(data.asOf)}. That's the screen's answer for today: no setup. The checks aren't loosened to fill the list{changed ? " — your settings differ from the defaults" : ""}.
           </p>
@@ -257,17 +257,17 @@ export default function MomentumView({ onOpenStock }) {
                 <button type="button" className="stock-link" onClick={e => { e.stopPropagation(); onOpenStock(r.symbol); }} style={{ display: "block", minWidth: 0, padding: 0, border: 0, background: "none", fontFamily: "inherit", textAlign: "left", fontSize: 14, fontWeight: 450, color: "var(--t1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{i + 1}. {r.name}</button>
                 <div style={{ fontSize: 14, fontWeight: 450, color: "var(--t1)", ...MONO }}>{rs(r.close)}</div>
                 <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.symbol}{r.sector ? ` · ${r.sector}` : ""}</div>
-                <div style={{ fontSize: 11.5, color: "var(--accent)", fontWeight: 450, marginTop: 3, ...MONO }}>Score {num(r.score)}</div>
+                <div style={{ fontSize: 12, color: "var(--accent)", fontWeight: 450, marginTop: 3, ...MONO }}>Score {num(r.score)}</div>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 6, marginTop: 10 }}>
                 {[["From high", pct(r.pctFromHigh)], ["RSI", num(r.rsi14)], ["1M", pct(r.ret1m, 1, true)], ["Volume", `${num(r.volRatio, 1)}×`]].map(([l, v]) => (
                   <div key={l} style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 10.5, color: "var(--t3)", marginBottom: 2 }}>{l}</div>
-                    <div style={{ fontSize: 12.5, fontWeight: 450, color: "var(--t1)", ...MONO }}>{v}</div>
+                    <div style={{ fontSize: 11, color: "var(--t3)", marginBottom: 2 }}>{l}</div>
+                    <div style={{ fontSize: 13, fontWeight: 450, color: "var(--t1)", ...MONO }}>{v}</div>
                   </div>
                 ))}
               </div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 10, fontSize: 11.5 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 10, fontSize: 12 }}>
                 <span style={{ color: "var(--t3)" }}>Next results: <ResultsDate row={r} known={data.resultsKnown} /></span>
                 <button type="button" className="btn-ghost tap" onClick={e => { e.stopPropagation(); setCalcFor(r); window.scrollTo({ top: 0, behavior: "smooth" }); }} style={{ height: 30, fontSize: 12, padding: "0 10px" }}><Calculator size={13} /> Calculate</button>
               </div>
@@ -278,11 +278,11 @@ export default function MomentumView({ onOpenStock }) {
 
       {passers.length > 0 && !isMobile && (
         <div style={{ borderRadius: 12, border: "1px solid var(--bdr2)", overflow: "auto", background: "var(--s2)", boxShadow: "var(--sh-xs)" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead>
               <tr style={{ background: "var(--s3)" }}>
                 {["#", "Company", "Close", "Score", "From 52w high", "RSI 14", "1M return", "SMA 20", "SMA 50", "SMA 200", "Traded ₹ Cr/day", "Volume × avg", "Next results", ""].map(h => (
-                  <th key={h} style={{ ...cell, textAlign: h === "Company" ? "left" : "right", fontSize: 11.5, fontWeight: 400, color: "var(--t2)" }}>{h}</th>
+                  <th key={h} style={{ ...cell, textAlign: h === "Company" ? "left" : "right", fontSize: 12, fontWeight: 400, color: "var(--t2)" }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -306,7 +306,7 @@ export default function MomentumView({ onOpenStock }) {
                   <td style={{ ...cell, textAlign: "right", ...MONO }}>{num(r.volRatio, 2)}×</td>
                   <td style={{ ...cell, textAlign: "right" }}><ResultsDate row={r} known={data.resultsKnown} /></td>
                   <td style={{ ...cell, textAlign: "right" }}>
-                    <button type="button" className="btn-ghost" onClick={() => { setCalcFor(r); window.scrollTo({ top: 0, behavior: "smooth" }); }} style={{ height: 28, fontSize: 11.5, padding: "0 10px" }}><Calculator size={12} /> Calculate</button>
+                    <button type="button" className="btn-ghost" onClick={() => { setCalcFor(r); window.scrollTo({ top: 0, behavior: "smooth" }); }} style={{ height: 28, fontSize: 12, padding: "0 10px" }}><Calculator size={12} /> Calculate</button>
                   </td>
                 </tr>
               ))}
@@ -316,7 +316,7 @@ export default function MomentumView({ onOpenStock }) {
       )}
 
       {data && (
-        <p style={{ display: "flex", gap: 6, fontSize: 11.5, color: "var(--t3)", lineHeight: 1.6, marginTop: 16, maxWidth: 820 }}>
+        <p style={{ display: "flex", gap: 6, fontSize: 12, color: "var(--t3)", lineHeight: 1.6, marginTop: 16, maxWidth: 820 }}>
           <Info size={13} style={{ flexShrink: 0, marginTop: 3 }} />
           <span>
             Passes only when every check holds: price over its 20-day average, over its 50-day, over its 200-day; ₹{config.minPrice}+; ₹{config.minAvgValueCr} Cr+ traded a day; within {config.nearHighPct}% of its 52-week high; last session's volume {config.volSurge}× its 20-day average or more; RSI {config.rsiMin}–{config.rsiMax}. Score = (50 − % under the high) + (RSI − 50) + 10 × volume multiple (up to 3×) + 10. Results dates are NSE's announced board meetings; "event risk" = within 30 days.

@@ -56,7 +56,7 @@ function EditAlertModal({ alert, onSave, onClose }) {
   return (
     <div onClick={e => { if (e.target === e.currentTarget) onClose(); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>
       <div style={{ background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 18, padding: 28, width: 380, maxWidth: "90vw", boxShadow: "var(--sh-lg)", animation: "fadeUp 200ms cubic-bezier(0,0,0.2,1) backwards" }}>
-        <div style={{ fontSize: 17, fontWeight: 500, color: "var(--t1)", marginBottom: 4, letterSpacing: "-0.02em" }}>Edit Alert</div>
+        <div style={{ fontSize: 16, fontWeight: 500, color: "var(--t1)", marginBottom: 4, letterSpacing: "-0.02em" }}>Edit Alert</div>
         <div style={{ fontSize: 13, color: "var(--t3)", marginBottom: 20 }}>{alert.name || alert.ticker}</div>
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 12, fontWeight: 400, color: "var(--t3)", marginBottom: 8 }}>Condition</div>
@@ -168,7 +168,7 @@ function TelegramCard({ onStatus }) {
     return (
       <div style={{ ...box, boxShadow: "none", background: "var(--s1)" }}>
         {icon}
-        <div style={{ fontSize: 12.5, color: "var(--t2)", lineHeight: 1.5 }}>Telegram alerts aren't set up on this server yet, so alerts only show on this page.</div>
+        <div style={{ fontSize: 13, color: "var(--t2)", lineHeight: 1.5 }}>Telegram alerts aren't set up on this server yet, so alerts only show on this page.</div>
       </div>
     );
   }
@@ -186,8 +186,8 @@ function TelegramCard({ onStatus }) {
           </div>
         </div>
         <div style={{ display: "flex", gap: 6 }}>
-          <button onClick={test} className="btn-ghost" style={{ height: 32, fontSize: 12.5 }}>Send test</button>
-          <button onClick={disconnect} className="btn-ghost" style={{ height: 32, fontSize: 12.5, color: "var(--t2)" }}>Disconnect</button>
+          <button onClick={test} className="btn-ghost" style={{ height: 32, fontSize: 13 }}>Send test</button>
+          <button onClick={disconnect} className="btn-ghost" style={{ height: 32, fontSize: 13, color: "var(--t2)" }}>Disconnect</button>
         </div>
       </div>
     );
@@ -289,7 +289,7 @@ export default function AlertsView({ onOpenStock }) {
       ) : alerts.length === 0 ? (
         <div style={{ textAlign: "center", padding: "48px 20px", color: "var(--t3)", border: "1px dashed var(--bdr2)", borderRadius: 14, background: "var(--s1)" }}>
           <Bell size={38} strokeWidth={1.5} style={{ marginBottom: 12, opacity: 0.3 }} />
-          <p style={{ fontSize: 15, color: "var(--t2)", fontWeight: 400, marginBottom: 6 }}>No alerts yet</p>
+          <p style={{ fontSize: 16, color: "var(--t2)", fontWeight: 400, marginBottom: 6 }}>No alerts yet</p>
           <p style={{ fontSize: 12, maxWidth: 300, margin: "0 auto", lineHeight: 1.6 }}>
             Use the <Bell size={13} style={{ verticalAlign: "-2px" }} /> button on any stock in results, your watchlist, or its page to set a price alert.
           </p>
@@ -298,12 +298,12 @@ export default function AlertsView({ onOpenStock }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {groups.map(group => (
             <div key={group.key} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6, fontSize: 11.5, fontWeight: 400, color: group.color }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6, fontSize: 12, fontWeight: 400, color: group.color }}>
                 <span>{group.label}</span>
                 <span style={{ color: "var(--t3)", fontWeight: 400 }}>{group.items.length}</span>
                 <span style={{ flex: 1, height: 1, background: "var(--bdr)" }} />
               </div>
-              {group.hint && <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: -4, lineHeight: 1.5 }}>{group.hint}</div>}
+              {group.hint && <div style={{ fontSize: 11, color: "var(--t3)", marginTop: -4, lineHeight: 1.5 }}>{group.hint}</div>}
               {group.items.map(a => (
                 <AlertCard key={a.id} a={a}
                   onView={() => onOpenStock(a.ticker)}

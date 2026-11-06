@@ -92,7 +92,7 @@ function Merged({ p, onOpenStock }) {
           </div>
         );
       })}
-      <p style={{ fontSize: 10.5, color: "var(--t3)", margin: "8px 0 0", lineHeight: 1.5 }}>Each company once, from the first snapshot it was in: its close that day, NSE's latest close, and the return since.</p>
+      <p style={{ fontSize: 11, color: "var(--t3)", margin: "8px 0 0", lineHeight: 1.5 }}>Each company once, from the first snapshot it was in: its close that day, NSE's latest close, and the return since.</p>
     </div>
   );
 }
@@ -150,7 +150,7 @@ export default function PerformanceView({ onOpenStock, onOpenScreen }) {
             </div>
           )}
         </div>
-        <button onClick={takeSnapshot} disabled={snapping} className="btn-ghost" style={{ height: 32, padding: "0 14px", fontSize: 12.5, fontWeight: 500, opacity: snapping ? 0.6 : 1, cursor: snapping ? "wait" : "pointer" }}>
+        <button onClick={takeSnapshot} disabled={snapping} className="btn-ghost" style={{ height: 32, padding: "0 14px", fontSize: 13, fontWeight: 500, opacity: snapping ? 0.6 : 1, cursor: snapping ? "wait" : "pointer" }}>
           {snapping ? "Recording…" : <><Camera size={14} /> {study?.cohortCount || study?.recording === false ? "Take snapshot now" : "Record baseline"}</>}
         </button>
       </div>
@@ -179,12 +179,12 @@ export default function PerformanceView({ onOpenStock, onOpenScreen }) {
         <section style={{ border: "1px solid var(--bdr2)", borderRadius: 14, background: "var(--s2)", padding: 15, marginBottom: 18 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap", marginBottom: 8 }}>
             <div>
-              <div style={{ fontSize: 15, fontWeight: 500, color: "var(--t1)" }}>Prospective research-score study</div>
-              <div style={{ fontSize: 11.5, color: "var(--t2)", marginTop: 4, lineHeight: 1.5 }}>
+              <div style={{ fontSize: 16, fontWeight: 500, color: "var(--t1)" }}>Prospective research-score study</div>
+              <div style={{ fontSize: 12, color: "var(--t2)", marginTop: 4, lineHeight: 1.5 }}>
                 Frozen monthly score cohorts compared with the NIFTY 500. {study.cohortCount} cohort{study.cohortCount === 1 ? "" : "s"} recorded · latest prices {fmtDate(study.asOf)}.
               </div>
             </div>
-            <span style={{ fontSize: 10.5, color: "var(--t3)", border: "1px solid var(--bdr2)", borderRadius: 99, padding: "4px 8px" }}>Forward tracking · not a backtest</span>
+            <span style={{ fontSize: 11, color: "var(--t3)", border: "1px solid var(--bdr2)", borderRadius: 99, padding: "4px 8px" }}>Forward tracking · not a backtest</span>
           </div>
           {study.cohorts.slice().reverse().map(cohort => {
             const expanded = studyOpen === cohort.date;
@@ -201,7 +201,7 @@ export default function PerformanceView({ onOpenStock, onOpenScreen }) {
                 </button>
                 {expanded && (
                   <div style={{ overflowX: "auto", paddingBottom: 4 }}>
-                    <table style={{ width: "100%", minWidth: 560, borderCollapse: "collapse", fontSize: 11.5 }}>
+                    <table style={{ width: "100%", minWidth: 560, borderCollapse: "collapse", fontSize: 12 }}>
                       <thead><tr style={{ color: "var(--t3)", textAlign: "right" }}>
                         {["Score band", "Score range", "Priced / cohort", ...(early ? [] : ["Mean return", "Excess vs NIFTY 500"])].map((label, i) => <th key={label} style={{ textAlign: i === 0 ? "left" : "right", fontWeight: 500, padding: "7px 5px", borderBottom: "1px solid var(--bdr2)" }}>{label}</th>)}
                       </tr></thead>
@@ -216,7 +216,7 @@ export default function PerformanceView({ onOpenStock, onOpenScreen }) {
                         </tr>;
                       })}</tbody>
                     </table>
-                    <div style={{ fontSize: 10.5, color: "var(--t3)", lineHeight: 1.5, marginTop: 8 }}>
+                    <div style={{ fontSize: 11, color: "var(--t3)", lineHeight: 1.5, marginTop: 8 }}>
                       Recorded {fmtDate(cohort.date)}; currently held {daysHeld ?? 0} days.{early ? ` Returns are shown from ${readyOn(cohort.date)}, once the cohort is three months old.` : ""} Company figures are equal-weighted, split-adjusted price returns; dividends are excluded. Unpriced names remain visible in the cohort denominator and are not counted as zero-return. Benchmark is the NIFTY 500 price index. This is a prospective study of current eligible listings; it needs longer follow-up and does not establish predictive ability.
                     </div>
                   </div>
@@ -224,7 +224,7 @@ export default function PerformanceView({ onOpenStock, onOpenScreen }) {
               </div>
             );
           })}
-          <div style={{ fontSize: 10.5, color: "var(--t3)", lineHeight: 1.5, marginTop: 8 }}>
+          <div style={{ fontSize: 11, color: "var(--t3)", lineHeight: 1.5, marginTop: 8 }}>
             A new frozen score cohort is recorded monthly. Existing cohorts keep their original score version and membership; missing prices are reported as coverage gaps.
           </div>
         </section>
@@ -277,7 +277,7 @@ export default function PerformanceView({ onOpenStock, onOpenScreen }) {
               const early = !isBaseline && tooEarly(held);
               return (
                 <div key={snap.date} style={{ borderTop: "1px solid var(--bdr)", padding: "10px 16px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, fontSize: 11.5, color: "var(--t3)", marginBottom: 8 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, fontSize: 12, color: "var(--t3)", marginBottom: 8 }}>
                     <span>
                       Picked {fmtDate(snap.date)}
                       {isBaseline ? " · baseline, no return yet" : <> · held {held} day{held === 1 ? "" : "s"} · avg <RetBadge pct={snap.avgReturnPct} />{early && " · early"}</>}

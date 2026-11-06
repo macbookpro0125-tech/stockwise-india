@@ -111,7 +111,7 @@ function TrendBars({ cols, rowKey, kind, yearly = true, before = [] }) {
     const then = j >= back ? all[j - back]?.[rowKey] : null;
     return then != null && isFinite(then) ? pts[i].v - then : null;
   };
-  if (pts.length < 2) return <div style={{ fontSize: 11.5, color: "var(--t3)", padding: "8px 0" }}>Not enough years to chart.</div>;
+  if (pts.length < 2) return <div style={{ fontSize: 12, color: "var(--t3)", padding: "8px 0" }}>Not enough years to chart.</div>;
   const hi = Math.max(0, ...pts.map(p => p.v)), lo = Math.min(0, ...pts.map(p => p.v));
   const span = hi - lo || 1;
   const first = pts.find(p => !String(p.label).includes("TTM")), last = [...pts].reverse().find(p => !String(p.label).includes("TTM"));
@@ -203,7 +203,7 @@ function StatementTable({ history, rows, note, extraCols = [], yearly = true }) 
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, minWidth: 520 }}>
         <thead>
           <tr>
-            <th className="fin-sticky" style={{ textAlign: "left", padding: "8px 10px", fontSize: 11.5, color: "var(--t3)", borderBottom: "1px solid var(--bdr2)", position: "sticky", left: 0, background: "var(--s2)", zIndex: 2 }}>Item</th>
+            <th className="fin-sticky" style={{ textAlign: "left", padding: "8px 10px", fontSize: 12, color: "var(--t3)", borderBottom: "1px solid var(--bdr2)", position: "sticky", left: 0, background: "var(--s2)", zIndex: 2 }}>Item</th>
             {years.map(y => (
               <th key={y.label ?? y.fyEnd} style={{ textAlign: "right", padding: "8px 10px", fontSize: 10, color: y.ttm ? "var(--accent)" : "var(--t3)", whiteSpace: "nowrap", borderBottom: "1px solid var(--bdr2)", background: y.ttm ? "color-mix(in srgb, var(--accent) 6%, transparent)" : undefined }} title={y.ttm ? `The last four quarters, to ${periodLabel(y.fyEnd)}` : undefined}>{y.label ?? periodLabel(y.fyEnd)}</th>
             ))}

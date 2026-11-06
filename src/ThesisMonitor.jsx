@@ -85,7 +85,7 @@ export default function ThesisMonitor({ metrics: m, account, review = true, bare
   const editStyle = { width: "100%", minHeight: 62, resize: "vertical", boxSizing: "border-box", border: "1px solid var(--bdr2)", borderRadius: 8, background: "var(--s1)", color: "var(--t1)", padding: "8px 10px", font: "inherit", fontSize: 12, lineHeight: 1.5 };
   return (
     <section style={bare ? undefined : card} aria-labelledby="thesis-monitor-title">
-      <h3 id="thesis-monitor-title" hidden={bare} style={{ fontSize: 15, fontWeight: 450, margin: "0 0 4px", color: "var(--t1)" }}>{review ? <>Investment case &amp; what to monitor</> : "Your investment thesis"}</h3>
+      <h3 id="thesis-monitor-title" hidden={bare} style={{ fontSize: 16, fontWeight: 450, margin: "0 0 4px", color: "var(--t1)" }}>{review ? <>Investment case &amp; what to monitor</> : "Your investment thesis"}</h3>
       {review && <div style={{ fontSize: 11, color: "var(--t3)", marginBottom: 13, lineHeight: 1.5 }}>Questions to take to each new filing; the figures are in the sections linked. These are not forecasts or automatic thesis-break signals.</div>}
       {/* The strengths and things to watch are At a glance's, at the top of
           the page (StockGlance.jsx); a second list here disagreed with it */}
@@ -101,7 +101,7 @@ export default function ThesisMonitor({ metrics: m, account, review = true, bare
             ["marketGap", "What might the market be missing?", "Write the evidence that supports your differentiated view."],
             ["breakers", "What would change your view?", "Set measurable conditions to review, based on this company."],
           ].map(([key, label, placeholder]) => (
-            <label key={key} style={{ fontSize: 11.5, color: "var(--t2)" }}>{label}<textarea maxLength={4000} value={thesis[key]} disabled={!ready} onChange={e => setThesis(s => ({ ...s, [key]: e.target.value }))} placeholder={placeholder} style={{ ...editStyle, display: "block", marginTop: 5, opacity: ready ? 1 : 0.6 }} /></label>
+            <label key={key} style={{ fontSize: 12, color: "var(--t2)" }}>{label}<textarea maxLength={4000} value={thesis[key]} disabled={!ready} onChange={e => setThesis(s => ({ ...s, [key]: e.target.value }))} placeholder={placeholder} style={{ ...editStyle, display: "block", marginTop: 5, opacity: ready ? 1 : 0.6 }} /></label>
           ))}
         </div>
         <div role="status" style={{ fontSize: 10, color: saveState === "offline" || saveState === "unavailable" ? "var(--yellow)" : "var(--t3)", marginTop: 7 }}>{saveState === "loading" ? "Loading your saved thesis…" : saveState === "saving" ? "Saving to your account…" : saveState === "offline" ? "Couldn't save to your account. Your edits are kept in this browser and saved the next time you open this stock." : saveState === "unavailable" ? "Couldn't load your saved thesis. Reload the page to try again." : "Saved to your account."}</div>

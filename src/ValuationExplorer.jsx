@@ -87,21 +87,21 @@ export default function ValuationExplorer({ metrics: m, price, levels, epsInput,
     <div style={{ padding: 12, background: "var(--s1)", border: `1px solid ${rerated ? "var(--accent)" : "var(--bdr)"}`, borderRadius: 9 }}>
       <div style={{ fontSize: 11, color: "var(--t3)" }}>EPS growth implied by current price</div>
       <div style={{ marginTop: 4, fontSize: 18, color: "var(--t1)", fontWeight: 500, ...mono }}>{impliedGrowth == null ? "—" : pct(impliedGrowth)}</div>
-      <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 4 }}>5-year EPS CAGR needed for price ₹{Number(price || 0).toLocaleString("en-IN")} to equal FY+5 EPS × {basePe}× exit P/E; dividends excluded</div>
+      <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 4 }}>5-year EPS CAGR needed for price ₹{Number(price || 0).toLocaleString("en-IN")} to equal FY+5 EPS × {basePe}× exit P/E; dividends excluded</div>
     </div>
   );
   return (
     <section style={panel} aria-labelledby="valuation-explorer-title">
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
         <div>
-          <h3 id="valuation-explorer-title" style={{ fontSize: 15, fontWeight: 450, margin: 0, color: "var(--t1)" }}>Valuation methods &amp; scenarios</h3>
+          <h3 id="valuation-explorer-title" style={{ fontSize: 16, fontWeight: 450, margin: 0, color: "var(--t1)" }}>Valuation methods &amp; scenarios</h3>
           <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 4 }}>Model outputs from reported figures and editable assumptions. Estimates are not price targets.</div>
         </div>
         <button type="button" onClick={() => setExpanded(v => !v)} className="btn-ghost" style={{ height: 30, padding: "0 10px", fontSize: 11 }}>{expanded ? "Hide assumptions" : "Show assumptions"}</button>
       </div>
 
       {rerated && (
-        <div style={{ fontSize: 11.5, color: "var(--t2)", background: "var(--s1)", border: "1px solid var(--bdr)", borderRadius: 8, padding: "9px 11px", marginTop: 12, lineHeight: 1.5 }}>
+        <div style={{ fontSize: 12, color: "var(--t2)", background: "var(--s1)", border: "1px solid var(--bdr)", borderRadius: 8, padding: "9px 11px", marginTop: 12, lineHeight: 1.5 }}>
           <strong style={{ color: "var(--t1)" }}>Re-rated compounder.</strong> Its P/E rose from about {rerated.from}× to {rerated.to}× over the years on file, and the market still pays {rerated.now}×. Its own 5-year median ({rerated.median}×) is historical context; price levels use {m.valuationMultipleBasis ?? "the available valuation multiple"}. The growth today's price implies still deserves scrutiny.
         </div>
       )}
@@ -110,25 +110,25 @@ export default function ValuationExplorer({ metrics: m, price, levels, epsInput,
         <div style={{ padding: 12, background: "var(--s1)", border: "1px solid var(--bdr)", borderRadius: 9 }}>
           <div style={{ fontSize: 11, color: "var(--t3)" }}>Today's fair value</div>
           <div style={{ marginTop: 4, fontSize: 18, color: "var(--t1)", fontWeight: 500, ...mono }}>{money(levels?.fv25)}</div>
-          <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 4 }}>₹{eps.toFixed(2)} normalized EPS × {historicalPe.toFixed(1)}×</div>
-          <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 3 }}>{m.valuationMultipleBasis ?? (m.medianPe != null ? `5-year median annual P/E (${m.peYears} usable years)` : "P/E reference")}</div>
+          <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 4 }}>₹{eps.toFixed(2)} normalized EPS × {historicalPe.toFixed(1)}×</div>
+          <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 3 }}>{m.valuationMultipleBasis ?? (m.medianPe != null ? `5-year median annual P/E (${m.peYears} usable years)` : "P/E reference")}</div>
         </div>
         <div style={{ padding: 12, background: "var(--s1)", border: "1px solid var(--bdr)", borderRadius: 9 }}>
           <div style={{ fontSize: 11, color: "var(--t3)" }}>Reported free-cash-flow yield</div>
           <div style={{ marginTop: 4, fontSize: 18, color: "var(--t1)", fontWeight: 500, ...mono }}>{m.fcfYieldPct != null ? pct(m.fcfYieldPct) : "—"}</div>
-          <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 4 }}>Latest-year CFO − capex ÷ market value; unavailable for lenders or missing cash-flow data</div>
+          <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 4 }}>Latest-year CFO − capex ÷ market value; unavailable for lenders or missing cash-flow data</div>
         </div>
         <div style={{ padding: 12, background: "var(--s1)", border: "1px solid var(--bdr)", borderRadius: 9 }}>
           <div style={{ fontSize: 11, color: "var(--t3)" }}>Simplified 5Y cash-flow DCF</div>
           <div style={{ marginTop: 4, fontSize: 18, color: "var(--t1)", fontWeight: 500, ...mono }}>{money(dcf)}</div>
-          <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 4 }}>{dcf != null ? `${fcfBasis} FCF/share ₹${fcfPerShare.toFixed(2)} · ${dcfFcfGrowth}% FCF growth · ${discountRate}% discount · ${terminalGrowth}% terminal`
+          <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 4 }}>{dcf != null ? `${fcfBasis} FCF/share ₹${fcfPerShare.toFixed(2)} · ${dcfFcfGrowth}% FCF growth · ${discountRate}% discount · ${terminalGrowth}% terminal`
             : fcfBase != null && fcfBase <= 0 ? `Free cash flow was below zero on a ${fcfBasis.toLowerCase()} basis (heavy investment), so a cash-flow model can't value it`
               : "Needs positive reported FCF and a discount rate above terminal growth"}</div>
-          {heavyInvestment && dcf != null && <div style={{ fontSize: 10.5, color: "var(--yellow)", marginTop: 4 }}>Cash flow is well under profit (heavy investment), so this model undervalues a company still building capacity.</div>}
+          {heavyInvestment && dcf != null && <div style={{ fontSize: 11, color: "var(--yellow)", marginTop: 4 }}>Cash flow is well under profit (heavy investment), so this model undervalues a company still building capacity.</div>}
         </div>
         {!rerated && impliedCard}
       </div>
-      <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 9, lineHeight: 1.5 }}>
+      <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 9, lineHeight: 1.5 }}>
         Source: {reportSource?.source ?? "NSE financial filings"}, {reportSource?.scope ?? "scope not stated"} results for FY ending {reportSource?.period ?? m.fyEnd ?? "—"}{reportSource?.filedAt ? ` (filed ${reportSource.filedAt})` : ""}. Price: {priceSource?.source ?? "available market price"}{priceSource?.date ? ` dated ${priceSource.date}` : ""}. Historical P/E uses {m.provenance?.historicalPe?.usableYears ?? m.peYears ?? 0} usable years.
       </div>
 
@@ -142,7 +142,7 @@ export default function ValuationExplorer({ metrics: m, price, levels, epsInput,
           </div>
           <div style={{ fontSize: 11, color: "var(--t3)", marginBottom: 8, lineHeight: 1.5 }}>Future EPS = ₹{eps.toFixed(2)} × (1 + growth)^{years}. Future price = future EPS × terminal P/E. CAGR excludes dividends. The default Bear / stress case assumes no EPS growth (or 25 percentage points below reported growth, capped at −30%) and half the selected valuation multiple ({historicalPe.toFixed(1)}×). Base growth defaults use {growthSource}. Edit every assumption; these cases are scenarios, not forecasts.</div>
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", minWidth: 700, borderCollapse: "collapse", fontSize: 11.5 }}>
+            <table style={{ width: "100%", minWidth: 700, borderCollapse: "collapse", fontSize: 12 }}>
               <thead><tr>{["Case", "EPS growth p.a.", "Terminal P/E", `FY+${years} EPS`, "Scenario price", "Price CAGR"].map((h, i) => <th key={h} style={{ textAlign: i < 1 ? "left" : "right", padding: "7px 8px", borderBottom: "1px solid var(--bdr2)", color: "var(--t3)", fontWeight: 400 }}>{h}</th>)}</tr></thead>
               <tbody>
                 <ScenarioRow name="Bear / stress" color="var(--red)" growth={bearGrowth} multiple={bearPe} onGrowth={setBearGrowth} onMultiple={setBearPe} eps={eps} price={price} years={years} />
@@ -151,7 +151,7 @@ export default function ValuationExplorer({ metrics: m, price, levels, epsInput,
               </tbody>
             </table>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", margin: "12px 0 6px", fontSize: 11.5, color: "var(--t2)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", margin: "12px 0 6px", fontSize: 12, color: "var(--t2)" }}>
             <label>FCF growth <input type="number" min="-50" max="100" step="0.5" value={dcfFcfGrowth} onChange={e => setDcfFcfGrowth(clamp(finite(e.target.value) ?? 5, -50, 100))} style={field} /> %</label>
             <label>Discount rate <input type="number" min="1" max="40" step="0.5" value={discountRate} onChange={e => setDiscountRate(clamp(finite(e.target.value) ?? 12, 1, 40))} style={field} /> %</label>
             <label>Terminal growth <input type="number" min="0" max="20" step="0.5" value={terminalGrowth} onChange={e => setTerminalGrowth(clamp(finite(e.target.value) ?? 4, 0, 20))} style={field} /> %</label>
@@ -159,12 +159,12 @@ export default function ValuationExplorer({ metrics: m, price, levels, epsInput,
           </div>
           <div style={{ overflowX: "auto", marginTop: 14 }}>
             <div style={{ fontSize: 12, fontWeight: 450, color: "var(--t1)", marginBottom: 6 }}>{years}-year price sensitivity · ₹ per share</div>
-            <table style={{ width: "100%", minWidth: 470, borderCollapse: "collapse", fontSize: 11.5 }}>
+            <table style={{ width: "100%", minWidth: 470, borderCollapse: "collapse", fontSize: 12 }}>
               <thead><tr><th style={{ textAlign: "left", padding: 7, color: "var(--t3)" }}>EPS growth ↓ / exit P/E →</th>{multiples.map((v, i) => <th key={`${i}-${v}`} style={{ textAlign: "right", padding: 7, color: "var(--t3)" }}>{["Stress", "Base", "Bull"][i]} · {v}×</th>)}</tr></thead>
               <tbody>{sensitivity.map(row => <tr key={row.label}><th style={{ textAlign: "left", padding: 7, borderTop: "1px solid var(--bdr)", color: "var(--t2)", fontWeight: 400 }}>{row.label}</th>{multiples.map((multiple, i) => <td key={`${row.label}-${i}`} style={{ textAlign: "right", padding: 7, borderTop: "1px solid var(--bdr)", color: "var(--t1)", ...mono }}>{money(eps > 0 ? eps * (1 + row.growth / 100) ** years * multiple : null)}</td>)}</tr>)}</tbody>
             </table>
           </div>
-          <div style={{ fontSize: 10.5, color: "var(--t3)", lineHeight: 1.55, marginTop: 10 }}>The DCF grows the last three years' average FCF/share for five years and adds a terminal value. It is highly sensitive to assumptions and is omitted when FCF is zero/negative or unavailable. It is not included in the research score. FCF is CFO less capex; capital structure and future reinvestment needs are not forecast.</div>
+          <div style={{ fontSize: 11, color: "var(--t3)", lineHeight: 1.55, marginTop: 10 }}>The DCF grows the last three years' average FCF/share for five years and adds a terminal value. It is highly sensitive to assumptions and is omitted when FCF is zero/negative or unavailable. It is not included in the research score. FCF is CFO less capex; capital structure and future reinvestment needs are not forecast.</div>
         </div>
       )}
     </section>

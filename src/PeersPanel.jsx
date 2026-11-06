@@ -93,7 +93,7 @@ export default function PeersPanel({ symbol, onAnalyze }) {
         {[
           ["Peer median EV/EBITDA", data.benchmark.evToEbitda != null ? `${num(data.benchmark.evToEbitda)}× · ${data.benchmark.evToEbitdaN} peers` : `Not enough peers (${data.benchmark.evToEbitdaN}/5)`],
           ["Peer median FCF yield", data.benchmark.fcfYieldPct != null ? `${pct(data.benchmark.fcfYieldPct)} · ${data.benchmark.fcfYieldN} peers` : `Not enough peers (${data.benchmark.fcfYieldN}/5)`],
-        ].map(([label, value]) => <div key={label} style={{ minWidth: 150, padding: "8px 10px", borderRadius: 8, border: "1px solid var(--bdr)", background: "var(--s1)" }}><div style={{ fontSize: 10.5, color: "var(--t3)" }}>{label}</div><div style={{ fontSize: 12, color: "var(--t1)", fontWeight: 450, marginTop: 3 }}>{value}</div></div>)}
+        ].map(([label, value]) => <div key={label} style={{ minWidth: 150, padding: "8px 10px", borderRadius: 8, border: "1px solid var(--bdr)", background: "var(--s1)" }}><div style={{ fontSize: 11, color: "var(--t3)" }}>{label}</div><div style={{ fontSize: 12, color: "var(--t1)", fontWeight: 450, marginTop: 3 }}>{value}</div></div>)}
       </div>}
 
 

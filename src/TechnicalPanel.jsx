@@ -28,7 +28,7 @@ function Sparkline({ prices }) {
 function Stat({ label, value, color }) {
   return (
     <div style={{ textAlign: "center" }}>
-      <div style={{ fontSize: 11.5, color: "var(--t3)", marginBottom: 2 }}>{label}</div>
+      <div style={{ fontSize: 12, color: "var(--t3)", marginBottom: 2 }}>{label}</div>
       <div style={{ fontSize: 13, fontWeight: 500, color: color || "var(--t1)" }}>{value ?? "—"}</div>
     </div>
   );
@@ -185,18 +185,18 @@ function BreakoutLevels({ data }) {
       <div style={{ fontSize: 11, color: verdictColor, marginBottom: 10, fontWeight: 400, lineHeight: 1.5 }}>{verdict}</div>
 
       {/* Key levels */}
-      <div style={{ fontSize: 11.5, fontWeight: 400, color: "var(--t3)", marginBottom: 4 }}>Short-term averages and pivots</div>
+      <div style={{ fontSize: 12, fontWeight: 400, color: "var(--t3)", marginBottom: 4 }}>Short-term averages and pivots</div>
       <BreakoutLevel label="SMA 20 (trend)" price={sma20} cmp={price} type="short" />
       {pivots && <BreakoutLevel label="R1 (first resistance)" price={pivots.r1} cmp={price} type="short" />}
       {pivots && <BreakoutLevel label="R2 (strong resistance)" price={pivots.r2} cmp={price} type="short" />}
 
-      <div style={{ fontSize: 11.5, fontWeight: 400, color: "var(--t3)", marginTop: 10, marginBottom: 4 }}>Long-term averages</div>
+      <div style={{ fontSize: 12, fontWeight: 400, color: "var(--t3)", marginTop: 10, marginBottom: 4 }}>Long-term averages</div>
       <BreakoutLevel label="SMA 50 (medium trend)" price={sma50} cmp={price} type="long" />
       <BreakoutLevel label="SMA 200 (major trend)" price={sma200} cmp={price} type="long" />
 
       {/* Checklist */}
       <div style={{ marginTop: 12, padding: "8px 10px", borderRadius: 6, background: "var(--card)" }}>
-        <div style={{ fontSize: 11.5, fontWeight: 400, color: "var(--t3)", marginBottom: 6 }}>Trend checks</div>
+        <div style={{ fontSize: 12, fontWeight: 400, color: "var(--t3)", marginBottom: 6 }}>Trend checks</div>
         {checks.map((c, i) => (
           <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: c.met ? "var(--green)" : "var(--t3)", marginBottom: 3 }}>
             <span style={{ fontSize: 13 }}>{c.met ? "✓" : "✗"}</span>

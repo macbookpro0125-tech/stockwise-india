@@ -60,8 +60,8 @@ export function BankValuation({ m, growthInput, costOfEquity, onCostOfEquity }) 
   const fair = atBaseline ? v.fairValue : pb != null ? pb * v.adjustedBvps : null;
   const trend = m.bank?.trend ?? [];
   const row = (label, children, sub) => (
-    <div style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "7px 0", borderTop: "1px solid var(--bdr)", fontSize: 12.5 }}>
-      <span style={{ color: "var(--t2)" }}>{label}{sub && <span style={{ display: "block", fontSize: 10.5, color: "var(--t3)", marginTop: 2 }}>{sub}</span>}</span>
+    <div style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "7px 0", borderTop: "1px solid var(--bdr)", fontSize: 13 }}>
+      <span style={{ color: "var(--t2)" }}>{label}{sub && <span style={{ display: "block", fontSize: 11, color: "var(--t3)", marginTop: 2 }}>{sub}</span>}</span>
       <span style={{ color: "var(--t1)", fontWeight: 400, textAlign: "right", ...MONO }}>{children}</span>
     </div>
   );
@@ -75,10 +75,10 @@ export function BankValuation({ m, growthInput, costOfEquity, onCostOfEquity }) 
         : row("Through-cycle return on equity", pct(v.roe), `Median of the last ${v.roeYears} years, bad years included — ${v.nnpaPct != null ? `net NPA is still ${pct(v.nnpaPct)}` : "net NPA isn't on file"}`)}
       {row("Growth retained earnings support", <>{pct(v.growthRaw)}{v.growthRaw > v.growth + 0.05 && <span style={{ color: "var(--t3)", fontWeight: 400 }}> → {pct(v.growth)}</span>}</>,
         `ROE × (1 − ${pct(v.payoutPct, 0)} paid out)${v.growthRaw > v.growth + 0.05 ? `, capped at ${pct(v.growth, 0)} — and kept 4 points under the cost of equity` : ""}. Edit "Book growth" above to change it.`)}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "7px 0", borderTop: "1px solid var(--bdr)", fontSize: 12.5 }}>
-        <span style={{ color: "var(--t2)" }}>Cost of equity<span style={{ display: "block", fontSize: 10.5, color: "var(--t3)", marginTop: 2 }}>{v.psu ? "12%, a point more for a government bank" : "12%, as the cash-flow model uses"}</span></span>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "7px 0", borderTop: "1px solid var(--bdr)", fontSize: 13 }}>
+        <span style={{ color: "var(--t2)" }}>Cost of equity<span style={{ display: "block", fontSize: 11, color: "var(--t3)", marginTop: 2 }}>{v.psu ? "12%, a point more for a government bank" : "12%, as the cash-flow model uses"}</span></span>
         <input aria-label="Cost of equity %" type="number" step="0.5" min="6" max="25" value={costOfEquity} onChange={e => onCostOfEquity(Number(e.target.value))}
-          style={{ width: 80, height: 32, padding: "0 8px", border: "1px solid var(--bdr2)", borderRadius: 7, background: "var(--s1)", color: "var(--t1)", fontSize: 12.5, textAlign: "right", ...MONO }} />
+          style={{ width: 80, height: 32, padding: "0 8px", border: "1px solid var(--bdr2)", borderRadius: 7, background: "var(--s1)", color: "var(--t1)", fontSize: 13, textAlign: "right", ...MONO }} />
       </div>
       {row("Justified P/B", pb == null ? "—" : `${pb.toFixed(2)}×`, `(ROE − growth) ÷ (cost of equity − growth)${costOfEquity - g < 4 ? " · under 4 points apart, the multiple gets fragile" : ""}`)}
       {row("Book less net bad loans", <>{rs(v.adjustedBvps)}<span style={{ color: "var(--t3)", fontWeight: 400 }}> a share</span></>,
@@ -98,7 +98,7 @@ export function BankValuation({ m, growthInput, costOfEquity, onCostOfEquity }) 
           <tbody>{v.grid.map(r => (
             <tr key={r.label}>
               <td style={{ padding: "7px 6px", color: "var(--t2)", borderBottom: "1px solid var(--bdr)" }}>{pct(r.cells[0].g)} <span style={{ color: "var(--t3)" }}>({r.label})</span></td>
-              {r.cells.map(c => <td key={c.ke} style={{ padding: "7px 6px", textAlign: "right", borderBottom: "1px solid var(--bdr)", ...MONO }}>{c.pb == null ? <span style={{ color: "var(--t3)", fontSize: 11 }}>no finite value</span> : <><strong style={{ color: "var(--t1)" }}>{rs(c.value)}</strong><span style={{ display: "block", fontSize: 10.5, color: "var(--t3)" }}>P/B {c.pb.toFixed(2)}</span></>}</td>)}
+              {r.cells.map(c => <td key={c.ke} style={{ padding: "7px 6px", textAlign: "right", borderBottom: "1px solid var(--bdr)", ...MONO }}>{c.pb == null ? <span style={{ color: "var(--t3)", fontSize: 11 }}>no finite value</span> : <><strong style={{ color: "var(--t1)" }}>{rs(c.value)}</strong><span style={{ display: "block", fontSize: 11, color: "var(--t3)" }}>P/B {c.pb.toFixed(2)}</span></>}</td>)}
             </tr>
           ))}</tbody>
         </table>
@@ -123,7 +123,7 @@ export function BankValuation({ m, growthInput, costOfEquity, onCostOfEquity }) 
               ))}</tbody>
             </table>
           </div>
-          <div style={{ fontSize: 10.5, color: "var(--t3)", marginTop: 6, lineHeight: 1.5 }}>From each quarter's standalone results on NSE. Total capital adequacy (CRAR) isn't in those filings, so Tier 1 capital is shown.</div>
+          <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 6, lineHeight: 1.5 }}>From each quarter's standalone results on NSE. Total capital adequacy (CRAR) isn't in those filings, so Tier 1 capital is shown.</div>
         </>
       )}
     </div>
@@ -145,7 +145,7 @@ export function CycleGauge({ cycle }) {
       <div style={{ position: "relative", height: 8, borderRadius: 99, background: "linear-gradient(90deg, color-mix(in srgb, var(--accent) 35%, transparent) 0 35%, var(--s3) 35% 65%, color-mix(in srgb, var(--yellow) 40%, transparent) 65% 100%)" }}>
         <span style={{ position: "absolute", left: `${at}%`, top: -3, width: 4, height: 14, marginLeft: -2, borderRadius: 2, background: "var(--t1)" }} />
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10.5, color: "var(--t3)", marginTop: 4 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--t3)", marginTop: 4 }}>
         <span>Trough</span><span>Mid-cycle</span><span>Peak</span>
       </div>
       <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 4, lineHeight: 1.5 }}>
@@ -162,8 +162,8 @@ export function CyclicalValuation({ m, epsInput, multipleInput }) {
   const atBaseline = Math.abs(Number(epsInput) - v.normalizedEps) < 0.005 && Math.abs(Number(multipleInput) - v.multiple) < 0.05;
   const fair = atBaseline ? v.fairValue : Number(epsInput) * Number(multipleInput);
   const row = (label, children, sub) => (
-    <div style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "7px 0", borderTop: "1px solid var(--bdr)", fontSize: 12.5 }}>
-      <span style={{ color: "var(--t2)" }}>{label}{sub && <span style={{ display: "block", fontSize: 10.5, color: "var(--t3)", marginTop: 2 }}>{sub}</span>}</span>
+    <div style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "7px 0", borderTop: "1px solid var(--bdr)", fontSize: 13 }}>
+      <span style={{ color: "var(--t2)" }}>{label}{sub && <span style={{ display: "block", fontSize: 11, color: "var(--t3)", marginTop: 2 }}>{sub}</span>}</span>
       <span style={{ color: "var(--t1)", fontWeight: 400, textAlign: "right", ...MONO }}>{children}</span>
     </div>
   );
@@ -197,7 +197,7 @@ export function NoFairValue({ m }) {
         <div style={{ marginTop: 12, padding: "10px 12px", borderRadius: 8, background: "var(--s1)", border: "1px solid var(--bdr)", fontSize: 12, color: "var(--t2)", lineHeight: 1.55 }}>
           <strong style={{ color: "var(--t1)", ...MONO }}>EV/Sales {m.evToSales.toFixed(2)}×</strong>
           {ctx ? <> against a median of <strong style={{ color: "var(--t1)", ...MONO }}>{ctx.median.toFixed(2)}×</strong> across {ctx.n} {ctx.sector} companies.</> : "."}
-          <span style={{ display: "block", fontSize: 10.5, color: "var(--t3)", marginTop: 3 }}>Enterprise value (market value plus net debt) over the latest year's revenue. Context only — not a fair value.</span>
+          <span style={{ display: "block", fontSize: 11, color: "var(--t3)", marginTop: 3 }}>Enterprise value (market value plus net debt) over the latest year's revenue. Context only — not a fair value.</span>
         </div>
       )}
     </div>

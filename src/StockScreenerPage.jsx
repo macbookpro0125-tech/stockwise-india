@@ -8,8 +8,8 @@ import {
   SCREENER_PAGE_SECTIONS,
 } from "./screener-page-content.js";
 
-const heading = { fontSize: 17, fontWeight: 450, color: "var(--t1)", margin: "30px 0 8px", letterSpacing: "-0.01em" };
-const paragraph = { fontSize: 14.5, lineHeight: 1.7, color: "var(--t2)", margin: "0 0 12px" };
+const heading = { fontSize: 16, fontWeight: 450, color: "var(--t1)", margin: "30px 0 8px", letterSpacing: "-0.01em" };
+const paragraph = { fontSize: 14, lineHeight: 1.7, color: "var(--t2)", margin: "0 0 12px" };
 
 export default function StockScreenerPage({ signedIn }) {
   useEffect(() => { document.title = `${SCREENER_PAGE_TITLE} | Jocular Insights`; }, []);
@@ -28,7 +28,7 @@ export default function StockScreenerPage({ signedIn }) {
       <section>
         <h2 style={heading}>Frequently asked questions</h2>
         {SCREENER_PAGE_FAQS.map(item => <div key={item.question}>
-          <h3 style={{ ...heading, margin: "18px 0 6px", fontSize: 15 }}>{item.question}</h3>
+          <h3 style={{ ...heading, margin: "18px 0 6px", fontSize: 16 }}>{item.question}</h3>
           <p style={paragraph}>{item.answer}</p>
         </div>)}
       </section>

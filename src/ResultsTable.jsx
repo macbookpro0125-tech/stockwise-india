@@ -693,7 +693,7 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
             <select value={value} onChange={e => set(Number(e.target.value))} aria-label={label}
               style={{
                 height: 40, padding: "0 10px", borderRadius: 8, minWidth: 0,
-                border: `1px solid ${value > 0 ? "var(--green-bdr)" : "var(--bdr2)"}`, fontSize: 12.5,
+                border: `1px solid ${value > 0 ? "var(--green-bdr)" : "var(--bdr2)"}`, fontSize: 13,
                 background: value > 0 ? "var(--green-dim)" : "var(--s2)",
                 color: value > 0 ? "var(--green)" : "var(--t1)",
                 cursor: "pointer", outline: "none", fontFamily: "inherit",
@@ -707,7 +707,7 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
           {watchlist.size > 0 && (
             <button type="button" aria-pressed={watchOnly} onClick={() => setWatchOnly(v => !v)} className="score-watch"
               title="Run these filters on your watchlist only"
-              style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 40, padding: "0 12px", borderRadius: 8, fontSize: 12.5, fontFamily: "inherit", cursor: "pointer",
+              style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 40, padding: "0 12px", borderRadius: 8, fontSize: 13, fontFamily: "inherit", cursor: "pointer",
                 border: `1px solid ${watchOnly ? "var(--accent)" : "var(--bdr2)"}`, background: watchOnly ? "var(--accent-glow)" : "var(--s2)", color: watchOnly ? "var(--accent)" : "var(--t2)", fontWeight: watchOnly ? 600 : 500 }}>
               <Star size={13} fill={watchOnly ? "currentColor" : "none"} /> Watchlist only <span style={{ ...MONO, opacity: 0.8 }}>({watchedMatches})</span>
             </button>
@@ -920,11 +920,11 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
                       <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
                         <CompanyLogo symbol={stock.symbol} size={28} fallback={stock.name} />
                         <div style={{ minWidth: 0, flex: "1 1 auto" }}>
-                          <button type="button" title={stock.name} aria-label={stock.name} onClick={() => onAnalyze(stock.symbol)} className="stock-link" style={{ display: "block", maxWidth: "100%", padding: 0, border: 0, background: "none", fontFamily: "inherit", textAlign: "left", fontWeight: 400, fontSize: 13.5, letterSpacing: "-0.01em", marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shortName(stock.name)}</button>
+                          <button type="button" title={stock.name} aria-label={stock.name} onClick={() => onAnalyze(stock.symbol)} className="stock-link" style={{ display: "block", maxWidth: "100%", padding: 0, border: 0, background: "none", fontFamily: "inherit", textAlign: "left", fontWeight: 400, fontSize: 14, letterSpacing: "-0.01em", marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shortName(stock.name)}</button>
                           <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
                             <span className="ticker-chip">{stock.symbol}</span>
                             <NcavBadge stock={stock} />
-                            {stock.sector && <span title={stock.sector} style={{ fontSize: 10.5, color: "var(--t3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{stock.sector}</span>}
+                            {stock.sector && <span title={stock.sector} style={{ fontSize: 11, color: "var(--t3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{stock.sector}</span>}
                           </div>
                         </div>
                         {/* Watch, alert and NSE beside the name (31 Oct 2026: the
@@ -998,7 +998,7 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
       {noData && (
         <div style={{ textAlign: "center", padding: "64px 0", color: "var(--t3)" }}>
           <SearchX size={40} strokeWidth={1.5} style={{ marginBottom: 14, opacity: 0.4 }} />
-          <p style={{ fontSize: 15, color: "var(--t2)", marginBottom: 6, fontWeight: 500 }}>{emptyTitle}</p>
+          <p style={{ fontSize: 16, color: "var(--t2)", marginBottom: 6, fontWeight: 500 }}>{emptyTitle}</p>
           <p style={{ fontSize: 13, color: "var(--t3)" }}>{emptyHint}</p>
         </div>
       )}
