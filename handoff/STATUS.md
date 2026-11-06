@@ -3,6 +3,7 @@
 _Last updated: 6 Nov 2026, by Claude (Opus) on branch `screeners-home`._
 
 ## Committed, not pushed (6 Nov)
+- Live 6 Nov (152 passed): news in plain words (src/newsPlain.js, no AI: one sentence per filing, what matters first, routine filings folded, six filters); Explore is "News" on a computer (the market is on Markets), a phone keeps one market row and a Markets card; Home and Markets use the full width; /results counts every company that filed; a dated weekly copy of the market data on GitHub (last 8 kept).
 - Live 6 Nov (154 passed): /results (latest results, newest first) and results titles that lead with the figures; charts end one candle after the last; phone charts' shorter labels; X posts and pictures for 7–13 Nov in replica/launch.
 - Live 6 Nov at `78ba3c4` (152 passed): share pictures for every list, sector and screen (scripts/og-cards.mjs; re-run after adding a list) and 7 more lists (PSU, F&O, high FII, high DII, profit growth, sales growth, cash-rich): 40 lists.
 - Live 6 Nov at `87b47ea` (152 passed): 8 more lists (large/mid/small caps, high ROE, high ROCE, high promoter holding, Piotroski 8-9, penny stocks) and a Share button on list, sector and screen pages; the top bar black over the night sky in light mode (TB-2). Earlier: /lists with 25 pages (each NSE index, NSE's themes like defence and railway PSU, stocks under ₹50/100/500, debt-free, high dividend, low P/E, 52-week highs and lows), their own sitemap, in the app and linked from the footer. Test S-H6.
