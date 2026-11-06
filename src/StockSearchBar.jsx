@@ -152,7 +152,7 @@ export default function StockSearchBar({ onAnalyze, placeholder = "Search any st
           {showingHistory && (
             <div style={{ padding: "8px 14px 4px", fontSize: 12, color: "var(--t3)", fontWeight: 500, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span>Recent searches</span>
-              <button onPointerDown={e => { e.preventDefault(); try { localStorage.removeItem(HISTORY_KEY); } catch {} setHistory([]); setShowSuggestions(false); }} style={{ background: "none", border: "none", color: "var(--t3)", cursor: "pointer", fontSize: 10, padding: 0 }}>Clear all</button>
+              <button onPointerDown={e => { e.preventDefault(); try { localStorage.removeItem(HISTORY_KEY); } catch {} setHistory([]); setShowSuggestions(false); }} style={{ background: "none", border: "none", color: "var(--t3)", cursor: "pointer", fontSize: 11, padding: 0 }}>Clear all</button>
             </div>
           )}
           {items.map((s, idx) => (

@@ -104,7 +104,7 @@ export default function ThesisMonitor({ metrics: m, account, review = true, bare
             <label key={key} style={{ fontSize: 12, color: "var(--t2)" }}>{label}<textarea maxLength={4000} value={thesis[key]} disabled={!ready} onChange={e => setThesis(s => ({ ...s, [key]: e.target.value }))} placeholder={placeholder} style={{ ...editStyle, display: "block", marginTop: 5, opacity: ready ? 1 : 0.6 }} /></label>
           ))}
         </div>
-        <div role="status" style={{ fontSize: 10, color: saveState === "offline" || saveState === "unavailable" ? "var(--yellow)" : "var(--t3)", marginTop: 7 }}>{saveState === "loading" ? "Loading your saved thesis…" : saveState === "saving" ? "Saving to your account…" : saveState === "offline" ? "Couldn't save to your account. Your edits are kept in this browser and saved the next time you open this stock." : saveState === "unavailable" ? "Couldn't load your saved thesis. Reload the page to try again." : "Saved to your account."}</div>
+        <div role="status" style={{ fontSize: 11, color: saveState === "offline" || saveState === "unavailable" ? "var(--yellow)" : "var(--t3)", marginTop: 7 }}>{saveState === "loading" ? "Loading your saved thesis…" : saveState === "saving" ? "Saving to your account…" : saveState === "offline" ? "Couldn't save to your account. Your edits are kept in this browser and saved the next time you open this stock." : saveState === "unavailable" ? "Couldn't load your saved thesis. Reload the page to try again." : "Saved to your account."}</div>
       </div>
     </section>
   );

@@ -132,7 +132,7 @@ export default function PeersPanel({ symbol, onAnalyze }) {
               {showAll ? `Show top ${TOP}` : `Show all ${rows.length}`}
             </button>
           )}
-          <p style={{ fontSize: 10, color: "var(--t3)", marginTop: 8 }}>Profit and sales for the latest full year. Amounts in ₹ Crore.</p>
+          <p style={{ fontSize: 11, color: "var(--t3)", marginTop: 8 }}>Profit and sales for the latest full year. Amounts in ₹ Crore.</p>
         </>
       )}
     </div>

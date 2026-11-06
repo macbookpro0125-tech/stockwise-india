@@ -205,7 +205,7 @@ function StatementTable({ history, rows, note, extraCols = [], yearly = true }) 
           <tr>
             <th className="fin-sticky" style={{ textAlign: "left", padding: "8px 10px", fontSize: 12, color: "var(--t3)", borderBottom: "1px solid var(--bdr2)", position: "sticky", left: 0, background: "var(--s2)", zIndex: 2 }}>Item</th>
             {years.map(y => (
-              <th key={y.label ?? y.fyEnd} style={{ textAlign: "right", padding: "8px 10px", fontSize: 10, color: y.ttm ? "var(--accent)" : "var(--t3)", whiteSpace: "nowrap", borderBottom: "1px solid var(--bdr2)", background: y.ttm ? "color-mix(in srgb, var(--accent) 6%, transparent)" : undefined }} title={y.ttm ? `The last four quarters, to ${periodLabel(y.fyEnd)}` : undefined}>{y.label ?? periodLabel(y.fyEnd)}</th>
+              <th key={y.label ?? y.fyEnd} style={{ textAlign: "right", padding: "8px 10px", fontSize: 11, color: y.ttm ? "var(--accent)" : "var(--t3)", whiteSpace: "nowrap", borderBottom: "1px solid var(--bdr2)", background: y.ttm ? "color-mix(in srgb, var(--accent) 6%, transparent)" : undefined }} title={y.ttm ? `The last four quarters, to ${periodLabel(y.fyEnd)}` : undefined}>{y.label ?? periodLabel(y.fyEnd)}</th>
             ))}
           </tr>
         </thead>
@@ -238,7 +238,7 @@ function StatementTable({ history, rows, note, extraCols = [], yearly = true }) 
           })}
         </tbody>
       </table>
-      <p style={{ fontSize: 10, color: "var(--t3)", marginTop: 8 }}>
+      <p style={{ fontSize: 11, color: "var(--t3)", marginTop: 8 }}>
         Figures in ₹ Crore unless marked. Tap a line to see it as a chart.{extraCols.some(c => c.ttm) ? " TTM is the last four quarters added up." : ""} {years.at(-1)?.scope ? `${years.at(-1).scope} results` : "Results"} from NSE filings; EPS on today's share count.{note ? ` ${note}` : ""}
       </p>
     </div>
@@ -362,7 +362,7 @@ function FinancialsChart({ points }) {
 
       {showMargin && layout && <MarginChart points={points} width={width} band={layout.band} />}
 
-      <div style={{ display: "flex", gap: 16, fontSize: 10, color: "var(--t3)", marginTop: 2, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: 16, fontSize: 11, color: "var(--t3)", marginTop: 2, flexWrap: "wrap" }}>
         {[["Revenue", "var(--fc-revenue, var(--green))"], ["Profit", "var(--accent)"], ...(showMargin ? [["Operating margin", "var(--fc-margin, var(--yellow))"]] : [])].map(([l, c]) => (
           <span key={l} style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
             <span style={{ width: 9, height: 9, borderRadius: 2, background: c }} />{l}
@@ -383,7 +383,7 @@ function MarginChart({ points, width, band }) {
   const drawn = points.map((p, i) => ({ ...p, cx: i * band + band / 2 })).filter(p => p.margin != null);
   return (
     <>
-      <div style={{ fontSize: 10, color: "var(--t3)", margin: "6px 0 0 54px" }}>Operating margin %</div>
+      <div style={{ fontSize: 11, color: "var(--t3)", margin: "6px 0 0 54px" }}>Operating margin %</div>
       <svg width={width} height={h} style={{ display: "block", overflow: "visible" }}>
         <g transform={`translate(${MARGIN.left},${top})`}>
           {t.map(v => (

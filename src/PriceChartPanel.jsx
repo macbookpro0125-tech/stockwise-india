@@ -1203,7 +1203,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
             <button type="button" onClick={() => togglePop("interval")} aria-expanded={pop === "interval"} aria-label={`Bars: ${INTERVALS.find(i => i.id === prefs.interval)?.title}`} style={iconBtn(pop === "interval", { fontSize: 16, fontWeight: 500, width: 44 })}>1{prefs.interval}</button>
             <button type="button" onClick={() => { setPop(null); setMenuOpen(o => !o); }} aria-expanded={menuOpen} aria-controls={`chart-options-${symbol}${page ? "-page" : ""}`} aria-label={`Indicators${activeInd > 0 ? `, ${activeInd} on` : ""}`} style={iconBtn(menuOpen || activeInd > 0)}>
               <span aria-hidden="true" style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontStyle: "italic", fontSize: 20, fontWeight: 400 }}>ƒx</span>
-              {activeInd > 0 && <span aria-hidden="true" style={{ fontSize: 10, fontWeight: 500, ...MONO }}>{activeInd}</span>}
+              {activeInd > 0 && <span aria-hidden="true" style={{ fontSize: 11, fontWeight: 500, ...MONO }}>{activeInd}</span>}
             </button>
             <button type="button" onClick={() => togglePop("draw")} aria-expanded={pop === "draw"} aria-label="Draw on the chart" style={iconBtn(pop === "draw" || drawing || !!trendFrom || !!tool)}><Pencil size={20} aria-hidden="true" /></button>
             <button type="button" onClick={() => togglePop("views")} aria-expanded={pop === "views"} aria-label="Saved views" style={iconBtn(pop === "views")}><Eye size={20} aria-hidden="true" /></button>
@@ -1427,7 +1427,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
             <button key={r.id} type="button" onClick={() => pickRange(r.id)} aria-pressed={range === r.id} style={btn(range === r.id, narrow ? { minWidth: 0, padding: 0, justifyContent: "center", fontSize: 12 } : { minWidth: 38, justifyContent: "center" })}>{r.id}</button>
           ))}
         </div>
-        <span style={{ marginLeft: narrow ? 0 : "auto", fontSize: 10, color: "var(--t3)" }}>
+        <span style={{ marginLeft: narrow ? 0 : "auto", fontSize: 11, color: "var(--t3)" }}>
           {data?.stale ? `${data.staleReason} · ` : ""}{INTERVALS.find(i => i.id === prefs.interval)?.title} bars · NSE closes{data?.keptFrom ? ` from ${new Date(`${data.keptFrom}T00:00:00Z`).toLocaleDateString("en-IN", { month: "short", year: "numeric", timeZone: "UTC" })}` : ""} · {narrow ? "drag sideways to pan, pinch to zoom, tap a candle for its figures" : "drag to pan, scroll to zoom, click a candle for its figures"}
           {" · "}<a href="https://www.tradingview.com/" target="_blank" rel="noopener" style={{ color: "inherit" }}>Chart by TradingView</a>
         </span>

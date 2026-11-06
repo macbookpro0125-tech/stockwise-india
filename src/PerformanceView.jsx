@@ -52,7 +52,7 @@ function TooEarly({ days }) {
   return <span style={{ fontSize: 11, color: "var(--t3)", whiteSpace: "nowrap" }}>Too early — {days} day{days === 1 ? "" : "s"} tracked</span>;
 }
 function EarlyTag({ days }) {
-  return <span title="Under three months: mostly day-to-day noise, not a result yet" style={{ fontSize: 10, color: "var(--t3)", border: "1px solid var(--bdr2)", borderRadius: 999, padding: "1px 6px", whiteSpace: "nowrap" }}>early · {days} day{days === 1 ? "" : "s"}</span>;
+  return <span title="Under three months: mostly day-to-day noise, not a result yet" style={{ fontSize: 11, color: "var(--t3)", border: "1px solid var(--bdr2)", borderRadius: 999, padding: "1px 6px", whiteSpace: "nowrap" }}>early · {days} day{days === 1 ? "" : "s"}</span>;
 }
 
 // Name · entry · current · return, shared by the header and every pick row
@@ -158,7 +158,7 @@ export default function PerformanceView({ onOpenStock, onOpenScreen }) {
       {error && (
         <div style={{ border: "1px solid var(--red-bdr)", background: "var(--red-dim)", borderRadius: 10, padding: "10px 14px", fontSize: 12, marginBottom: 12, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
           <span style={{ color: "var(--red)" }}>{error}</span>
-          <button onClick={load} className="btn-ghost" style={{ height: 26, padding: "0 12px", fontSize: 10, borderRadius: 7, flexShrink: 0 }}>Retry</button>
+          <button onClick={load} className="btn-ghost" style={{ height: 26, padding: "0 12px", fontSize: 11, borderRadius: 7, flexShrink: 0 }}>Retry</button>
         </div>
       )}
 
@@ -249,7 +249,7 @@ export default function PerformanceView({ onOpenStock, onOpenScreen }) {
             <div onClick={() => setOpen(isOpen ? null : p.presetId)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "13px 16px", cursor: "pointer" }}>
               <div style={{ textAlign: "left", minWidth: 0 }}>
                 <button type="button" className="pf-screen-name" onClick={e => { e.stopPropagation(); onOpenScreen?.(p.presetId); }}>{p.presetName}</button>
-                <div style={{ fontSize: 10, color: "var(--t3)", marginTop: 2 }}>
+                <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 2 }}>
                   {/* The headline % is the oldest cohort's return, not a blend of all snapshots */}
                   {p.snapshots.length} snapshot{p.snapshots.length === 1 ? "" : "s"} · first picks {fmtDate(p.sinceDate)} · the figure tracks those
                 </div>
@@ -306,7 +306,7 @@ export default function PerformanceView({ onOpenStock, onOpenScreen }) {
       })}
 
       {!empty && !loading && (
-        <p style={{ fontSize: 10, color: "var(--t3)", lineHeight: 1.6, marginTop: 14 }}>
+        <p style={{ fontSize: 11, color: "var(--t3)", lineHeight: 1.6, marginTop: 14 }}>
           Returns compare each pick's close on the snapshot day with NSE's latest close{data?.pricesDate ? ` (${fmtDate(data.pricesDate)})` : ""}, adjusted for splits and bonuses since.
           A new snapshot is taken automatically every 3 days. Returns under three months old are marked early — shorter moves are mostly noise — and strategies are ranked only from three months. Past picks, not advice.
         </p>

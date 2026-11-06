@@ -94,7 +94,7 @@ function PivotLevels({ pivots, price }) {
           const pct = ((l.value - min) / range) * 100;
           return (
             <div key={l.label} style={{ position: "absolute", left: `${pct}%`, top: 0, transform: "translateX(-50%)", textAlign: "center" }}>
-              <div style={{ fontSize: 10, fontWeight: 500, color: l.type === "support" ? "var(--red)" : "var(--green)", lineHeight: 1 }}>{l.label}</div>
+              <div style={{ fontSize: 11, fontWeight: 500, color: l.type === "support" ? "var(--red)" : "var(--green)", lineHeight: 1 }}>{l.label}</div>
               <div style={{ width: 2, height: 8, background: l.type === "support" ? "var(--red)" : "var(--green)", margin: "1px auto 0", borderRadius: 1, opacity: 0.6 }} />
             </div>
           );
@@ -109,7 +109,7 @@ function PivotLevels({ pivots, price }) {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
         {levels.filter(l => l.type === "support").map(l => (
           <div key={l.label} style={{ textAlign: "center", padding: "6px 4px", borderRadius: 6, background: "var(--red-dim)" }}>
-            <div style={{ fontSize: 10, fontWeight: 500, color: "var(--red)", marginBottom: 2 }}>{l.label}</div>
+            <div style={{ fontSize: 11, fontWeight: 500, color: "var(--red)", marginBottom: 2 }}>{l.label}</div>
             <div style={{ fontSize: 12, fontWeight: 400, color: "var(--t1)" }}>{l.value.toLocaleString("en-IN")}</div>
           </div>
         ))}
@@ -117,7 +117,7 @@ function PivotLevels({ pivots, price }) {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, marginTop: 6 }}>
         {levels.filter(l => l.type === "resistance").map(l => (
           <div key={l.label} style={{ textAlign: "center", padding: "6px 4px", borderRadius: 6, background: "var(--green-dim)" }}>
-            <div style={{ fontSize: 10, fontWeight: 500, color: "var(--green)", marginBottom: 2 }}>{l.label}</div>
+            <div style={{ fontSize: 11, fontWeight: 500, color: "var(--green)", marginBottom: 2 }}>{l.label}</div>
             <div style={{ fontSize: 12, fontWeight: 400, color: "var(--t1)" }}>{l.value.toLocaleString("en-IN")}</div>
           </div>
         ))}
@@ -142,7 +142,7 @@ function BreakoutLevel({ label, price, cmp, type }) {
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <span style={{ fontSize: 13, fontWeight: 500, color: "var(--t1)" }}>₹{price.toLocaleString("en-IN")}</span>
-        <span style={{ fontSize: 10, fontWeight: 400, padding: "2px 8px", borderRadius: 12, background: above ? "var(--green-dim)" : atLevel ? "var(--yellow-dim)" : "var(--surf)", color: statusColor }}>
+        <span style={{ fontSize: 11, fontWeight: 400, padding: "2px 8px", borderRadius: 12, background: above ? "var(--green-dim)" : atLevel ? "var(--yellow-dim)" : "var(--surf)", color: statusColor }}>
           {icon} {statusText}
         </span>
       </div>
@@ -176,7 +176,7 @@ function BreakoutLevels({ data }) {
     <div style={{ padding: "12px 14px", borderRadius: 8, background: "var(--surf)", marginBottom: 14 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
         <span style={{ fontSize: 12, fontWeight: 400, color: "var(--t1)" }}>Price against its averages and pivots</span>
-        <span style={{ fontSize: 10, fontWeight: 500, padding: "3px 10px", borderRadius: 20, background: verdictBg, color: "var(--accent)" }}>
+        <span style={{ fontSize: 11, fontWeight: 500, padding: "3px 10px", borderRadius: 20, background: verdictBg, color: "var(--accent)" }}>
           {metCount}/4 met
         </span>
       </div>
@@ -220,7 +220,7 @@ function SignalRow({ label, signal, crossText }) {
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         {crossText && (
-          <span style={{ fontSize: 10, fontWeight: 400, padding: "2px 8px", borderRadius: 12, background: bg, color }}>{crossText}</span>
+          <span style={{ fontSize: 11, fontWeight: 400, padding: "2px 8px", borderRadius: 12, background: bg, color }}>{crossText}</span>
         )}
         <span style={{ fontSize: 12, fontWeight: 500, color, minWidth: 50, textAlign: "right" }}>{text}</span>
       </div>
@@ -305,7 +305,7 @@ export default function TechnicalPanel({ ticker }) {
           <Stat label="Return 60D" value={data.return60d != null ? `${data.return60d > 0 ? "+" : ""}${data.return60d}%` : "—"} color={data.return60d > 0 ? "var(--green)" : "var(--red)"} />
         </div>
         <div>
-          <div style={{ fontSize: 10, color: "var(--t3)", marginBottom: 3, textAlign: "right" }}>60-day price</div>
+          <div style={{ fontSize: 11, color: "var(--t3)", marginBottom: 3, textAlign: "right" }}>60-day price</div>
           <Sparkline prices={data.sparkline} />
         </div>
       </div>

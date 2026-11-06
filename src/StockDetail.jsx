@@ -339,7 +339,7 @@ function ShareholdingPanel({ symbol }) {
           </table>
         </div>
       )}
-      <div style={{ fontSize: 10, color: "var(--t3)", marginTop: 8 }}>From the company's quarterly shareholding filings to NSE.</div>
+      <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 8 }}>From the company's quarterly shareholding filings to NSE.</div>
     </div>
   );
 }
@@ -461,7 +461,7 @@ function KeyNumbers({ data, m }) {
           </div>
         ))}
       </div>
-      <div style={{ fontSize: 10, color: "var(--t3)", marginTop: 10 }}>The other key figures are in the Overview; debt and cash in Financial health; payout in Dividends; who owns it in Holdings.</div>
+      <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 10 }}>The other key figures are in the Overview; debt and cash in Financial health; payout in Dividends; who owns it in Holdings.</div>
     </div>
   );
 }
@@ -775,7 +775,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
   const positionTone = { red: "var(--red)", yellow: "var(--yellow)", green: "var(--green)", neutral: "var(--accent)" }[position?.tone] ?? "var(--accent)";
 
   const hint = (ok, good, neutral, color = "var(--green)") => (
-    <div style={{ fontSize: 10, color: ok ? color : "var(--t2)", marginTop: 3, fontWeight: ok ? 500 : 400 }}>{ok ? good : neutral}</div>
+    <div style={{ fontSize: 11, color: ok ? color : "var(--t2)", marginTop: 3, fontWeight: ok ? 500 : 400 }}>{ok ? good : neutral}</div>
   );
 
   // Value's inputs: first on a computer; on a phone, folded under the answer
@@ -805,7 +805,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
               {onBook ? hint(parseFloat(eps) > 0, "✓ From the filings", "Owners' equity − net NPA, per share")
                 : onCycle ? hint(parseFloat(eps) > 0, "✓ Revenue a share × through-cycle margin", "")
                 : usualEpsShown
-                  ? <div style={{ fontSize: 10, color: "var(--yellow)", marginTop: 3, fontWeight: 400 }}>{fyLabel(m.fyEnd)} was ₹{m.epsJump.eps.toFixed(2)} — see note above</div>
+                  ? <div style={{ fontSize: 11, color: "var(--yellow)", marginTop: 3, fontWeight: 400 }}>{fyLabel(m.fyEnd)} was ₹{m.epsJump.eps.toFixed(2)} — see note above</div>
                   : hint(parseFloat(eps) > 0, "✓ EPS loaded", "From the annual results")}
             </div>
             <div>

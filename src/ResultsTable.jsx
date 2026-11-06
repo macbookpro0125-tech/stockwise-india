@@ -187,7 +187,7 @@ function NcavBadge({ stock }) {
     <span
       title={`NCAV ₹${fmtCr(ncav)} Cr vs Mkt Cap ₹${fmtCr(mcap)} Cr — buying at ${pct}% of net current asset value${graham ? " · ≥33% Graham margin of safety" : ""}`}
       style={{
-        fontSize: 10, padding: "1px 7px", borderRadius: 5, fontWeight: 500, ...MONO,
+        fontSize: 11, padding: "1px 7px", borderRadius: 5, fontWeight: 500, ...MONO,
         border: `1px solid ${graham ? "var(--green-bdr)" : "var(--yellow-bdr)"}`,
         background: graham ? "var(--green-dim)" : "var(--yellow-dim)",
         color: graham ? "var(--green)" : "var(--yellow)",
@@ -252,7 +252,7 @@ function FvCell({ stock }) {
       ) : (
         <div style={{ color: "var(--t3)" }} title={[v?.as && `No fair value: ${v.as}.`, v?.reason].filter(Boolean).join(" ") || undefined}>{v?.model === "needs-data" ? "Needs more data" : "No fair value"}</div>
       )}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 3, color: "var(--t3)", fontSize: 10, whiteSpace: "nowrap" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 3, color: "var(--t3)", fontSize: 11, whiteSpace: "nowrap" }}>
         <MiniRange low={stock.low52w} high={stock.high52w} cmp={cmp} />
         {fairValue ? <span>{fvLabel} {fairValue.toLocaleString("en-IN")}</span> : null}
         {notes.length > 0 && (

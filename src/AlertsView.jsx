@@ -100,7 +100,7 @@ function AlertCard({ a, onView, onEdit, onDelete, onToggle }) {
             <span style={{ color: a.condition === "below" ? "var(--red)" : "var(--green)", fontWeight: 400 }}>{a.condition === "above" ? "▲" : "▼"}</span>
             {" "}Price {a.condition} <strong style={{ color: "var(--t1)" }}>{fmtRs(a.threshold)}</strong>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", fontSize: 10, color: "var(--t3)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", fontSize: 11, color: "var(--t3)" }}>
             <span style={MONO}>{a.cmp != null ? `${priceBasis(a.priceSource)} ${fmtRs(a.cmp)}${a.priceDate ? ` · ${fmtDate(a.priceDate)}` : ""}` : "No recent price"}</span>
             {a.triggered === false && away != null && <span>· {Math.abs(away).toFixed(1)}% away</span>}
             {a.created_at && <span>· added {timeAgo(a.created_at)}</span>}

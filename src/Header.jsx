@@ -181,10 +181,10 @@ export default function Header({ tab, onTab, account, onLogout, onDeleted, onSea
                 {t.label}
                 {b.news && <><span className="tab-news-dot" aria-hidden="true" /><span className="sr-only">, new from your companies</span></>}
                 {b.count > 0 && (
-                  <span style={{ fontSize: 10, fontWeight: 500, lineHeight: "15px", padding: "0 6px", borderRadius: 999, background: "var(--s3)", border: "1px solid var(--bdr2)", color: active ? "var(--t1)" : "var(--t2)", fontVariantNumeric: "tabular-nums" }}>{b.count}</span>
+                  <span style={{ fontSize: 11, fontWeight: 500, lineHeight: "15px", padding: "0 6px", borderRadius: 999, background: "var(--s3)", border: "1px solid var(--bdr2)", color: active ? "var(--t1)" : "var(--t2)", fontVariantNumeric: "tabular-nums" }}>{b.count}</span>
                 )}
                 {b.badge != null && (
-                  <span style={{ fontSize: 9, fontWeight: 500, padding: "1px 5px", borderRadius: 999, lineHeight: "14px", background: b.badgeColor, color: "var(--on-accent)" }}>{b.badge}</span>
+                  <span style={{ fontSize: 11, fontWeight: 500, padding: "1px 5px", borderRadius: 999, lineHeight: "14px", background: b.badgeColor, color: "var(--on-accent)" }}>{b.badge}</span>
                 )}
               </button>
             );
