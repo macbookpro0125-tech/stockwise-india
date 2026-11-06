@@ -6163,3 +6163,8 @@ html.td-night[data-theme="light"] .tb.tb-scrolled { box-shadow: 0 1px 0 rgba(255
 .bignum > span { display: inline !important; margin: 0 !important; font-size: 1em !important; color: inherit !important; }
 .bignum > span.bignum-cur { font-size: 0.62em !important; font-weight: 500; margin-right: 0.06em !important; vertical-align: 0.34em; opacity: 0.85; }
 .bignum > span.bignum-dec { font-size: 0.62em !important; font-weight: 500; color: var(--t2) !important; }
+
+/* a chart legend's indicator: its colour as a dot, its name in readable grey
+   (the light theme's paler line colours fell to 3.5:1 as text, 7 Nov 2026) */
+.chart-lg-key { color: var(--t2); white-space: nowrap; }
+.chart-lg-key::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 4px; border-radius: 50%; background: var(--k); vertical-align: 1px; }

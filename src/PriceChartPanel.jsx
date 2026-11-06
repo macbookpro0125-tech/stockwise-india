@@ -1312,7 +1312,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
                       </div>
                       {extras.length > 0 && (
                         <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                          {extras.map((x, k) => <span key={x.label}>{k > 0 && " "}<span style={{ color: x.color }}>{x.label}</span> {x.text}</span>)}
+                          {extras.map((x, k) => <span key={x.label}>{k > 0 && " "}<span className="chart-lg-key" style={{ "--k": x.color }}>{x.label}</span> {x.text}</span>)}
                         </div>
                       )}
                     </>
@@ -1356,12 +1356,12 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
                 })()}
                 {legend.extra.filter(x => !x.pane).length > 0 && (
                   <div className={narrow ? "chart-row" : undefined} style={narrow ? { gap: 10 } : { display: "flex", gap: 10, flexWrap: "wrap" }}>
-                    {legend.extra.filter(x => !x.pane).map(x => <span key={x.label}><span style={{ color: x.color }}>{x.label}</span> {x.text}</span>)}
+                    {legend.extra.filter(x => !x.pane).map(x => <span key={x.label}><span className="chart-lg-key" style={{ "--k": x.color }}>{x.label}</span> {x.text}</span>)}
                   </div>
                 )}
                 {legend.extra.filter(x => x.pane).length > 0 && (
                   <div className={narrow ? "chart-row" : undefined} style={narrow ? { gap: 10 } : { display: "flex", gap: 10, flexWrap: "wrap" }}>
-                    {legend.extra.filter(x => x.pane).map(x => <span key={x.label}><span style={{ color: x.color }}>{x.label}</span> {x.text}</span>)}
+                    {legend.extra.filter(x => x.pane).map(x => <span key={x.label}><span className="chart-lg-key" style={{ "--k": x.color }}>{x.label}</span> {x.text}</span>)}
                   </div>
                 )}
               </div>

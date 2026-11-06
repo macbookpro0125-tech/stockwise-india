@@ -30,7 +30,8 @@ const badge = name => {
   return (words.length > 1 ? words.map(w => w[0]).join("") : rest.slice(0, 4)).toUpperCase().slice(0, 4);
 };
 // each index its own steady colour, like a logo (not the day's red or green)
-const BADGE_COLOURS = ["#c2273a", "#1f7fb5", "#2c9ad1", "#5b1a3a", "#0f8a72", "#7b4fd6", "#c06414", "#3657c9", "#8a2c7a", "#2f7d3a"];
+// each dark enough for its white letters to read (4.5:1 or more, 7 Nov 2026)
+const BADGE_COLOURS = ["#c2273a", "#1a6c9b", "#1d6f9c", "#5b1a3a", "#0b7461", "#7b4fd6", "#a3530f", "#3657c9", "#8a2c7a", "#2f7d3a"];
 const badgeColour = name => BADGE_COLOURS[[...String(name)].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % BADGE_COLOURS.length];
 const RANGES = [["1M", 21], ["3M", 63], ["6M", 126], ["1Y", Infinity]];
 
