@@ -220,13 +220,14 @@ export function resultsWeek(days = 7) {
       quarter: q ? { end: q.fyEnd, filed: q.filed ?? null, salesCr: q.revenueCr ?? null, salesYoY: q.salesYoY ?? null, profitCr: q.profitCr ?? null, profitYoY: q.profitYoY ?? null } : null });
   }
   // the days before, from the results already filed (6 Nov 2026, "I should be
-  // able to see the previous also"): the last week of filings before today,
+  // able to see the previous also"): the last month of filings before today,
   // by the day each was filed, each with the quarter it reported
   const past = new Map();
   const filedOf = r => String(r.quarters?.[0]?.filed ?? "").slice(0, 10);
   const newest = allMetrics().rows.reduce((m, r) => { const f = filedOf(r); return f && f < today && f > m ? f : m; }, "");
   if (newest) {
-    const from = new Date(Date.parse(`${newest}T00:00:00Z`) - 6 * 86_400_000).toISOString().slice(0, 10);
+    // a month of filings (7 Nov 2026, "one month back")
+    const from = new Date(Date.parse(`${newest}T00:00:00Z`) - 30 * 86_400_000).toISOString().slice(0, 10);
     for (const r of allMetrics().rows) {
       const f = filedOf(r), q = r.quarters?.[0];
       if (!f || f < from || f > newest || !q || (q.revenueCr == null && q.profitCr == null)) continue;
@@ -260,13 +261,15 @@ export function resultsFor(symbols = []) {
   };
 }
 
-// The biggest moves on any of the last trading days (6 Nov 2026, "the same
+// The biggest moves on any of the last month's trading days (6 Nov 2026, "the same
 // for this, and the previous ones"): from each company's kept daily prices,
 // on today's share basis, so a split day isn't read as a fall. Read once per
 // market build: the last 35 closes of every company worth ₹1,000 crore or
 // more (about a thousand small files).
 let moverCache = null;
 const MOVER_SPAN = { "1d": 1, "1w": 5, "1m": 21 };
+// a month of trading days to pick from (7 Nov 2026: "can we go one month back")
+const MOVER_DAYS = 23;
 function moverCloses() {
   const snap = loadMarketSnapshot();
   const key = snap?.builtAt ?? snap?.pricesDate ?? "none";
@@ -274,7 +277,8 @@ function moverCloses() {
   const rows = allMetrics().rows.filter(r => r.marketCapCr >= MOVER_FLOOR_CR);
   const dates = new Set(), closes = new Map(), info = new Map();
   for (const r of rows) {
-    const bars = historyBars(r.symbol, snap).slice(-35);
+    // a month of days to show, and a month before the oldest for its Month view
+    const bars = historyBars(r.symbol, snap).slice(-48);
     if (bars.length < 2) continue;
     const m = new Map(bars.map(b => [b.date, b.close]));
     closes.set(r.symbol, m);
@@ -294,7 +298,7 @@ export function moversOn(date, period = "1d") {
   const span = MOVER_SPAN[period] ?? 1;
   const at = date && days.includes(date) ? days.indexOf(date) : days.length - 1;
   const from = days[at - span];
-  if (at < 0 || !from) return { date: days[at] ?? null, period, days: days.slice(-10).reverse(), floorCr: MOVER_FLOOR_CR, rows: [] };
+  if (at < 0 || !from) return { date: days[at] ?? null, period, days: days.slice(-MOVER_DAYS).reverse(), floorCr: MOVER_FLOOR_CR, rows: [] };
   const rows = [];
   // the latest day reads the same figures as Markets' card (topMovers), so
   // the two never disagree; the days before, from the kept closes
@@ -308,5 +312,5 @@ export function moversOn(date, period = "1d") {
       rows.push({ ...info.get(sym), close: b, change: (b / a - 1) * 100 });
     }
   }
-  return { date: days[at], from, period, days: days.slice(-10).reverse(), floorCr: MOVER_FLOOR_CR, rows };
+  return { date: days[at], from, period, days: days.slice(-MOVER_DAYS).reverse(), floorCr: MOVER_FLOOR_CR, rows };
 }
