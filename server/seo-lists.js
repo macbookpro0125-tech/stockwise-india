@@ -14,7 +14,7 @@ import { PRESETS } from "./presets.js";
 import { screen, allMetrics } from "./screen.js";
 import { resultsWeek } from "./explore.js";
 import { loadMarketSnapshot } from "./market-data.js";
-import { SITE, esc, crore, num, day, pageHtml } from "./seo.js";
+import { SITE, esc, crore, num, day, pageHtml, ogCard } from "./seo.js";
 
 import { niceName } from "../src/stockName.js";
 import { publicSectors, publicSector } from "./seo-story.js";
@@ -123,7 +123,7 @@ ${s.changes ? `<h2>What changed since ${esc(day(s.changes.since))}</h2><p>${s.ch
 <table><thead><tr><th>#</th><th>Company</th><th>Price</th><th>Market cap</th><th>P/E</th><th>ROE</th><th>Quality</th></tr></thead><tbody>${rows}</tbody></table>
 <p>${esc(NOT_ADVICE)}</p>
 <p>${link("/screens", "All stock screens")} · ${link("/results-calendar", "Results calendar")} · ${link("/methodology", "How the quality score works")} · ${link("/disclaimer", "Disclaimer")}</p></main>`;
-  return pageHtml(template, { title, desc, canonical, ld, body });
+  return pageHtml(template, { title, desc, canonical, ld, body, image: ogCard("screens", slug) });
 }
 
 export function screensIndexHtml(template) {
@@ -232,5 +232,5 @@ ${s.screens.length ? `<h2>Screens its companies pass most</h2><ul>${s.screens.ma
 <table><thead><tr><th>#</th><th>Company</th><th>Price</th><th>Market cap</th><th>P/E</th><th>ROE</th><th>Debt/equity</th><th>Quality</th></tr></thead><tbody>${rows}</tbody></table>
 <p>Sectors are NSE's own, from its index lists; a company NSE doesn't classify is placed by its industry or its filings. ${esc(NOT_ADVICE)}</p>
 <p>${link("/sectors", "All sectors")} · ${link("/lists", "Stock lists")} · ${link("/screens", "Stock screens")} · ${link("/methodology", "How the quality score works")} · ${link("/disclaimer", "Disclaimer")}</p></main>`;
-  return pageHtml(template, { title, desc, canonical, ld, body });
+  return pageHtml(template, { title, desc, canonical, ld, body, image: ogCard("sector", slug) });
 }

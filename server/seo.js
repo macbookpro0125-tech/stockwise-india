@@ -12,6 +12,7 @@
 // The summary is figures at the last close; the fair value, charts and the
 // scorecard's checks stay for members.
 
+import { existsSync } from "node:fs";
 import { allMetrics } from "./screen.js";
 import { loadMarketSnapshot } from "./market-data.js";
 import { METHODOLOGY_DESCRIPTION, METHODOLOGY_SECTIONS, METHODOLOGY_TITLE } from "../src/methodology-content.js";
@@ -45,7 +46,14 @@ const fyQuarter = iso => { const [y, m] = String(iso).split("-").map(Number); re
 // The app's page with a page's own head (title, description, canonical, social
 // cards, structured data) and its content written into the root for search
 // engines; the app replaces the content when it starts
-export function pageHtml(template, { title, desc, canonical, ld, body }) {
+// A page's own link-preview picture (scripts/og-cards.mjs: lists, sectors
+// and screens, 6 Nov 2026), when one was made for it; else the default card
+const OG_DIR = new URL("../dist/og/", import.meta.url);
+export function ogCard(dir, slug) {
+  const rel = `${dir}/${slug}.jpg`;
+  try { return existsSync(new URL(rel, OG_DIR)) ? { url: `${SITE}/og/${rel}` } : null; } catch { return null; }
+}
+export function pageHtml(template, { title, desc, canonical, ld, body, image = null }) {
   const head = `<title>${esc(title)}</title>
 <meta name="description" content="${esc(desc)}" />
 <link rel="canonical" href="${esc(canonical)}" />
@@ -53,12 +61,14 @@ export function pageHtml(template, { title, desc, canonical, ld, body }) {
 <meta property="og:title" content="${esc(title)}" />
 <meta property="og:description" content="${esc(desc)}" />
 <meta property="og:url" content="${esc(canonical)}" />
+${image ? `<meta property="og:image" content="${esc(image.url)}" />\n<meta property="og:image:alt" content="${esc(title)}" />\n<meta name="twitter:image" content="${esc(image.url)}" />` : ""}
 <script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\\u003c")}</script>`;
   return template
     .replace(/<title>[\s\S]*?<\/title>/, "")
     .replace(/<meta name="description"[^>]*>/, "")
     .replace(/<link rel="canonical"[^>]*>/, "")
     .replace(/<meta property="og:(title|description|url|type)"[^>]*>/g, "")
+    .replace(image ? /<meta property="og:image(:alt)?" [^>]*>/g : /$^/, "")
     .replace("</head>", `${head}\n</head>`)
     .replace(/<div id="root">\s*<\/div>/, `<div id="root">${body}</div>`);
 }

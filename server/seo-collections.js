@@ -9,7 +9,7 @@
 // the page — never our pick. A list with too few companies isn't published.
 import { allMetrics } from "./screen.js";
 import { loadMarketSnapshot } from "./market-data.js";
-import { SITE, esc, crore, num, day, pageHtml } from "./seo.js";
+import { SITE, esc, crore, num, day, pageHtml, ogCard } from "./seo.js";
 import { niceName } from "../src/stockName.js";
 
 const NOT_ADVICE = "A list of companies on reported figures at the last close, as a starting point for research — not a recommendation to buy or sell. Check each company's filings before deciding anything.";
@@ -63,6 +63,14 @@ export const LISTS = [
   rule("high-promoter-holding-stocks", "High promoter holding stocks", m => m.promoterPct >= 70 && m.marketCapCr >= 500, "high promoter holding stocks", "NSE companies whose founders or parent (the promoters) own 70% or more, worth ₹500 crore or more", { label: "Promoters own", get: m => `${num(m.promoterPct, 1)}%` }, (a, b) => b.promoterPct - a.promoterPct),
   rule("piotroski-score-stocks", "Piotroski score 8 and 9 stocks", m => m.piotroski >= 8 && m.marketCapCr >= 500, "Piotroski score stocks India", "NSE companies passing 8 or all 9 of Piotroski's checks of financial strength in their latest results, worth ₹500 crore or more", { label: "Piotroski", get: m => `${m.piotroski}/9` }),
   rule("penny-stocks", "Penny stocks under ₹10", m => m.cmp < 10 && m.marketCapCr >= 50, "penny stocks India", "NSE companies whose share closed under ₹10, worth ₹50 crore or more — shares this cheap are often small, thinly traded and can swing hard"),
+  // (6 Nov 2026, more again) NSE's own flags and ownership, growth and cash
+  rule("psu-stocks", "PSU stocks", m => m.governmentOwned === true, "PSU stocks list India", "NSE companies the government owns: half or more of the shares held by the central or a state government, or in NSE's PSE index", null, byCap),
+  rule("fno-stocks", "F&O stocks", m => m.fno === true, "F&O stocks list NSE", "the NSE companies with futures and options traded on them — NSE's own F&O list", null, byCap),
+  rule("high-fii-holding-stocks", "High FII holding stocks", m => m.fiiPct >= 30 && m.marketCapCr >= 1000, "high FII holding stocks India", "NSE companies where foreign institutions own 30% or more, worth ₹1,000 crore or more", { label: "FIIs own", get: m => `${num(m.fiiPct, 1)}%` }, (a, b) => b.fiiPct - a.fiiPct),
+  rule("high-mutual-fund-holding-stocks", "High mutual fund and DII holding stocks", m => m.diiPct >= 25 && m.marketCapCr >= 1000, "mutual fund holding stocks India", "NSE companies where Indian institutions — mutual funds, insurers and banks — own 25% or more, worth ₹1,000 crore or more", { label: "DIIs own", get: m => `${num(m.diiPct, 1)}%` }, (a, b) => b.diiPct - a.diiPct),
+  rule("profit-growth-stocks", "Fast profit growth stocks", m => m.profitGrowth3y >= 25 && m.marketCapCr >= 1000, "high profit growth stocks India", "NSE companies whose profit grew 25% a year or faster over the last three years, worth ₹1,000 crore or more", { label: "Profit growth, 3 years", get: m => `${num(m.profitGrowth3y, 1)}% a year` }, (a, b) => b.profitGrowth3y - a.profitGrowth3y),
+  rule("sales-growth-stocks", "Fast sales growth stocks", m => m.salesGrowth3y >= 20 && m.marketCapCr >= 1000, "high sales growth stocks India", "NSE companies whose sales grew 20% a year or faster over the last three years, worth ₹1,000 crore or more", { label: "Sales growth, 3 years", get: m => `${num(m.salesGrowth3y, 1)}% a year` }, (a, b) => b.salesGrowth3y - a.salesGrowth3y),
+  rule("cash-rich-stocks", "Cash-rich stocks", m => !m.lender && m.netDebtCr < 0 && -m.netDebtCr >= 0.15 * m.marketCapCr && m.marketCapCr >= 500, "cash rich companies India", "NSE companies (not banks or lenders) holding more cash and liquid investments than all their debt, the surplus 15% or more of their market value, worth ₹500 crore or more", { label: "Net cash", get: m => crore(-m.netDebtCr) }, (a, b) => (-b.netDebtCr / b.marketCapCr) - (-a.netDebtCr / a.marketCapCr)),
   rule("52-week-low-stocks", "Stocks at a 52-week low", m => m.low52w > 0 && m.cmp <= m.low52w * 1.02 && m.marketCapCr >= 500, "52 week low stocks NSE", "NSE companies that closed within 2% of their lowest price of the past year, worth ₹500 crore or more", { label: "52-week low", get: m => `₹${num(m.low52w, 2)}` }, byCap),
 ];
 
@@ -162,7 +170,7 @@ ${gone.length ? `<p>Also in this index, but not covered here yet: ${esc(gone.joi
 <p>${esc(source)} Prices are NSE's closing prices of ${esc(when)}. ${esc(NOT_ADVICE)}</p>
 ${others.length ? `<h2>More lists</h2><ul>${others.map(x => `<li>${link(`/lists/${x.def.slug}`, x.def.name)} — ${x.list.length} companies</li>`).join("")}</ul>` : ""}
 <p>${link("/lists", "All lists")} · ${link("/screens", "Stock screens")} · ${link("/sectors", "Sectors")} · ${link("/methodology", "How the quality score works")} · ${link("/disclaimer", "Disclaimer")}</p></main>`;
-  return pageHtml(template, { title, desc, canonical, ld, body });
+  return pageHtml(template, { title, desc, canonical, ld, body, image: ogCard("lists", slug) });
 }
 
 // The same lists for the app (PublicLists.jsx: ListsIndexPage, ListPage),

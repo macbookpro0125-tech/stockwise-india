@@ -122,11 +122,14 @@ test("S-H5 the guides: a list, each guide its own page, and links between them s
 // themes, price bands and plain filters
 test("S-H6 stock lists: an index's companies, a theme, a price band; in the sitemap; open to everyone @phone", async ({ page, request }) => {
   const sm = await (await request.get("/sitemap-lists.xml")).text();
-  for (const slug of ["nifty-50-stocks", "defence-stocks", "stocks-under-100", "debt-free-stocks", "large-cap-stocks", "high-roe-stocks", "piotroski-score-stocks"]) expect(sm).toContain(`<loc>https://jocularinsights.in/lists/${slug}</loc>`);
+  for (const slug of ["nifty-50-stocks", "defence-stocks", "stocks-under-100", "debt-free-stocks", "large-cap-stocks", "high-roe-stocks", "piotroski-score-stocks", "psu-stocks", "fno-stocks", "cash-rich-stocks"]) expect(sm).toContain(`<loc>https://jocularinsights.in/lists/${slug}</loc>`);
   const html = await (await request.get("/lists/nifty-50-stocks")).text();
   expect(html).toMatch(/<title>Nifty 50 stocks list[^<]*\| Jocular Insights<\/title>/);
   expect(html).toMatch(/<link rel="canonical" href="https:\/\/jocularinsights\.in\/lists\/nifty-50-stocks"/);
   expect(html).toContain('href="/stock/TCS"');
+  // its own picture when shared (scripts/og-cards.mjs)
+  expect(html).toContain('<meta property="og:image" content="https://jocularinsights.in/og/lists/nifty-50-stocks.jpg"');
+  expect((await request.get("/og/lists/nifty-50-stocks.jpg")).headers()["content-type"]).toContain("image/jpeg");
   expect((await request.get("/lists/no-such-list")).status()).toBe(404);
   // the app's own page: the list, and a company opens its page
   await page.goto("/lists");

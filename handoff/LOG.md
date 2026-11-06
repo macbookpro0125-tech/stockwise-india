@@ -186,3 +186,6 @@ Large/mid/small caps by SEBI's size bands (top 100, next 150, the rest), high RO
 
 ## 6 Nov: top bar colour over the night sky (light theme)
 Owner's Safari screenshot: on the home in light mode the bar was clear, showing the light page behind the dark theme's pale words (td-night gives the header dark variables). Now black there, joining the sky; past the sky the normal light bar. Test TB-2.
+
+## 6 Nov: share pictures and 7 more lists
+scripts/og-cards.mjs makes a 1200x630 card per list, sector and screen (86) into public/og/{lists,sector,screens}/<slug>.jpg from a running server's public API, in the style of og/default.png; no figures on the cards (the panel's bars are a drawing). seo.js ogCard() + pageHtml image: those pages' og:image/twitter:image point at their card when it exists, else the default. Re-run the script after adding a list. New lists: PSU (NSE flag/govt 50%+), F&O (NSE list), high FII (30%+), high DII/mutual funds (25%+), profit growth (25%+/yr 3y), sales growth (20%+/yr 3y), cash-rich (net cash 15%+ of value). 40 lists. S-H6 checks the picture.
