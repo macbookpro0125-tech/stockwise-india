@@ -5854,10 +5854,17 @@ button.td-index:active, button.td-line:active { background: color-mix(in srgb, v
 /* the strip's arrows (a mouse): over its ends, only towards more dates; a
    finger swipes, so a touch screen doesn't get them */
 .mk-dates-wrap { position: relative; min-width: 0; }
-.mk-strip-end { top: calc(50% + 10px); width: 38px; height: 38px; opacity: 0; pointer-events: none; transition: opacity 160ms ease-out, transform 220ms cubic-bezier(0.34, 1.4, 0.64, 1); }
-.mk-strip-end.back { left: -4px; } .mk-strip-end.next { right: -4px; }
+/* centred on the date cards (not the label above them), over the faded edge */
+.mk-dates-wrap .mk-end.mk-strip-end { top: auto; bottom: 47px; transform: translateY(50%); width: 36px; height: 36px; opacity: 0; pointer-events: none; transition: opacity 160ms ease-out, transform 220ms cubic-bezier(0.34, 1.4, 0.64, 1); }
+.mk-dates-wrap .mk-end.mk-strip-end:hover { transform: translateY(50%) scale(1.08); }
+.mk-dates-wrap .mk-end.mk-strip-end:active { transform: translateY(50%) scale(0.92); }
+.mk-dates-wrap .mk-end.mk-strip-end svg { width: 18px; height: 18px; }
+.mk-strip-end.back { left: 2px; } .mk-strip-end.next { right: 2px; }
 @media (hover: hover) and (pointer: fine) {
   .mk-dates-wrap[data-start="0"] .mk-strip-end.back, .mk-dates-wrap[data-end="0"] .mk-strip-end.next { opacity: 1; pointer-events: auto; }
+  /* a wider fade where an arrow sits, so it floats over fading dates, not on one */
+  .mk-dates[data-start="0"] { --fade-l: 64px; }
+  .mk-dates[data-end="0"] { --fade-r: 64px; }
 }
 .mk-dates.dragging { cursor: grabbing; user-select: none; }
 .mk-dates.dragging .mk-date { pointer-events: none; }
