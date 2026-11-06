@@ -33,7 +33,7 @@ const BADGE_COLOURS = ["#c2273a", "#1f7fb5", "#2c9ad1", "#5b1a3a", "#0f8a72", "#
 const badgeColour = name => BADGE_COLOURS[[...String(name)].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % BADGE_COLOURS.length];
 const RANGES = [["1M", 21], ["3M", 63], ["6M", 126], ["1Y", Infinity]];
 
-// The index's line in our teal (7 Nov 2026: it read as TradingView's), no
+// The index's line, green or red by the range's move, no
 // price tag on the axis; a dot on each day its largest companies filed
 // results, and a card under the pointer with the day, the level and those
 // results
@@ -43,7 +43,8 @@ function IndexChart({ days, closes, label, results = [], breadth = [] }) {
   useEffect(() => {
     if (!host.current || !(closes?.length > 1)) return undefined;
     const css = getComputedStyle(document.documentElement), v = n => css.getPropertyValue(n).trim();
-    const raw = v("--accent"), line = /^#[0-9a-f]{6}$/i.test(raw) ? raw : "#14b8a6";
+    // green when the range rose, red when it fell (7 Nov 2026: "not showing red when it is down")
+    const up = closes.at(-1) >= closes[0], raw = v(up ? "--green" : "--red"), line = /^#[0-9a-f]{6}$/i.test(raw) ? raw : up ? "#16a34a" : "#dc2626";
     const n = parseInt(line.slice(1), 16), rgba = a => `rgba(${n >> 16}, ${(n >> 8) & 255}, ${n & 255}, ${a})`;
     const chart = createChart(host.current, {
       autoSize: true,
@@ -69,7 +70,7 @@ function IndexChart({ days, closes, label, results = [], breadth = [] }) {
     const shown = new Set(days);
     const byDay = new Map();
     for (const r of results) if (shown.has(r.date)) byDay.set(r.date, [...(byDay.get(r.date) ?? []), r]);
-    createSeriesMarkers(series, [...byDay.keys()].sort().map(time => ({ time, position: "inBar", shape: "circle", color: line, size: 1 })));
+    createSeriesMarkers(series, [...byDay.keys()].sort().map(time => ({ time, position: "inBar", shape: "circle", color: /^#[0-9a-f]{6}$/i.test(v("--accent")) ? v("--accent") : "#2563eb", size: 1 })));
     chart.subscribeCrosshairMove(p => {
       if (!p?.time || !p.point || p.point.x < 0) { setTip(null); return; }
       const i = days.indexOf(p.time);
