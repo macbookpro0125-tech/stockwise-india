@@ -21,6 +21,7 @@ import { publicSectors, publicSector } from "./seo-story.js";
 import { SCREEN_GUIDES } from "./screen-guides.js";
 import { loadSnapshots } from "./performance.js";
 import { updatedLine } from "./updated-line.js";
+import { termsHtml } from "../src/jargonTerms.js";
 
 // as the app shows names: "Limited" off, capitals as words ("TATA CONSUMER PRODUCTS" → "Tata Consumer Products")
 const plain = name => niceName(name);
@@ -119,7 +120,7 @@ export function screenPageHtml(template, slug) {
   };
   const body = `<main class="seo-stock seo-methodology"><p>${link("/", "Jocular Insights")} › ${link("/screens", "Stock screens")} › ${esc(s.name)}</p>
 <h1>${g ? `${esc(g.search)} — ${esc(s.name)}` : `${esc(s.name)}: NSE companies that match today`}</h1>${updatedLine()}
-<p>${esc(sentence(s.description))} ${s.matched} of ${s.total} companies pass at the ${esc(day(s.pricesDate) ?? "latest")} close.</p>
+<p>${termsHtml(esc(sentence(s.description)))} ${s.matched} of ${s.total} companies pass at the ${esc(day(s.pricesDate) ?? "latest")} close.</p>
 ${g ? `<h2>What this screen looks for</h2><p>${esc(g.lookFor)}</p><h2>Who it may suit</h2><p>${esc(g.suits)} It is a starting point for research, not a list of recommendations.</p>` : ""}
 <h2>The filters</h2><ul>${s.rules.map(r => `<li>${esc(r)}</li>`).join("")}</ul>
 ${g ? `<h2>Limitations</h2><p>${esc(g.limits)}</p>` : ""}
@@ -136,7 +137,7 @@ export function screensIndexHtml(template) {
   const canonical = `${SITE}/screens`;
   const title = "Indian stock screens: NSE companies by quality, value, dividends and growth | Jocular Insights";
   const desc = `${s.screens.length} ready-made screens of NSE companies — quality compounders, dividend payers, undervalued growth and more — with the companies that match at the ${day(s.pricesDate) ?? "latest"} close.`;
-  const items = s.screens.map(x => `<li><h2>${link(`/screens/${x.slug}`, x.name)}</h2><p>${esc(sentence(x.description))} ${x.matched} companies match${x.first.length ? `, including ${x.first.slice(0, 3).map(c => esc(c.name)).join(", ")}` : ""}.</p></li>`).join("");
+  const items = s.screens.map(x => `<li><h2>${link(`/screens/${x.slug}`, x.name)}</h2><p>${termsHtml(esc(sentence(x.description)))} ${x.matched} companies match${x.first.length ? `, including ${x.first.slice(0, 3).map(c => esc(c.name)).join(", ")}` : ""}.</p></li>`).join("");
   const ld = { "@context": "https://schema.org", "@type": "ItemList", name: "Stock screens", itemListElement: s.screens.map((x, i) => ({ "@type": "ListItem", position: i + 1, name: x.name, url: `${SITE}/screens/${x.slug}` })) };
   const body = `<main class="seo-stock seo-methodology"><p>${link("/", "Jocular Insights")} › Stock screens</p><h1>Indian stock screens</h1>${updatedLine()}<p>${esc(desc)}</p><ul>${items}</ul><p>${esc(NOT_ADVICE)}</p></main>`;
   return pageHtml(template, { title, desc, canonical, ld, body });
@@ -179,7 +180,7 @@ export function homePageHtml(template) {
 <p>Prices are NSE's daily closes, at the ${esc(day(s.pricesDate) ?? "latest")} close. It is a research tool: it shows what the filings say, it doesn't tell anyone what to buy or sell.</p>
 <h2>Ready-made stock screens</h2>
 <p>Each screen is a set of filters on reported figures. These are the NSE companies that pass each one today:</p>
-<ul>${s.screens.map(x => `<li>${link(`/screens/${x.slug}`, x.name)} — ${x.matched} ${x.matched === 1 ? "company" : "companies"}${x.description ? `. ${esc(sentence(x.description))}` : ""}</li>`).join("")}</ul>
+<ul>${s.screens.map(x => `<li>${link(`/screens/${x.slug}`, x.name)} — ${x.matched} ${x.matched === 1 ? "company" : "companies"}${x.description ? `. ${termsHtml(esc(sentence(x.description)))}` : ""}</li>`).join("")}</ul>
 <p>${link("/screens", "See all stock screens")}</p>
 <h2>Results in the next two weeks</h2>
 <p>${reporting} NSE companies have told the exchange they'll meet to approve results in the next two weeks${soon.length ? ", including:" : "."}</p>

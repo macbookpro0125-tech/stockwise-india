@@ -10,6 +10,7 @@ import StrategyMark, { markColor } from "./StrategyMarks.jsx";
 import StrategyCard from "./StrategyCard.jsx";
 import { strategiesStore } from "./accountData.js";
 import { AdCard, useAdFeed } from "./ads.jsx";
+import { withTerms } from "./jargon.jsx";
 
 // Ported from stock-screener's src/components/PresetCards.jsx. The strategy
 // list comes from the server (the original 13 presets and Up on Every Timeframe); the user's own are saved to
@@ -384,7 +385,7 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
                       <span className="ph-mark" aria-hidden="true"><StrategyMark preset={p} size={26} /></span>
                       <span className="ph-card-text">
                         <span className="ph-card-name">{p.name}</span>
-                        <span className="ph-card-about">{p.description}</span>
+                        <span className="ph-card-about">{withTerms(p.description)}</span>
                       </span>
                       <ChevronRight className="ph-card-go" size={20} aria-hidden="true" />
                     </span>
@@ -508,7 +509,7 @@ export default function PresetCards({ onSelect, activePresetId, onSavePreset, on
                 </span>
 
                 <span className="preset-desc" style={{ fontSize: 12, color: "var(--t3)", lineHeight: 1.45, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                  {p.description}
+                  {withTerms(p.description)}
                 </span>
                 {!stacked && p.newMatches > 0 && <span className="strategy-new-count" title="New stocks since your last check" style={{ margin: "8px 0 0" }}>{p.newMatches} new matches</span>}
                 {/* A phone's list: how many match, by the arrow */}

@@ -6448,3 +6448,9 @@ html.td-night[data-theme="light"] .tb.tb-scrolled { box-shadow: 0 1px 0 rgba(255
 }
 @media (max-width: 420px) { .pub-btn { height: 34px; padding: 0 10px; font-size: 12px; } .pub-acts { gap: 6px; } }
 .public-html .seo-updated, .seo-updated { margin: 2px 0 14px; font-size: 12px; color: var(--t3); }
+/* Jargon explained (jargon.jsx) */
+.jg { position: relative; text-decoration: underline dotted color-mix(in srgb, currentColor 55%, transparent); text-underline-offset: 3px; cursor: help; outline: none; }
+.jg::after { content: attr(data-tip); position: absolute; z-index: 80; left: -6px; bottom: calc(100% + 8px); width: max-content; max-width: 260px; padding: 8px 10px; border-radius: 10px; background: var(--t1); color: var(--bg); font-size: 12px; font-weight: 400; line-height: 1.45; letter-spacing: 0; text-transform: none; white-space: normal; text-align: left; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2); opacity: 0; pointer-events: none; transform: translateY(4px); transition: opacity 120ms, transform 120ms; }
+.jg:hover::after, .jg:focus::after, .jg:focus-visible::after { opacity: 1; transform: none; }
+.jg:focus-visible { border-radius: 3px; box-shadow: 0 0 0 2px var(--accent); }
+.preset-desc .jg::after, .ph-card-about .jg::after { display: none; }

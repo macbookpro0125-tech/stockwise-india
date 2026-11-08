@@ -9,6 +9,7 @@ import { navigate, stockPath } from "./site.jsx";
 import CompanyLogo from "./CompanyLogo.jsx";
 import { AdCard } from "./ads.jsx";
 import { useJoin, JoinCard, JoinBar } from "./PublicJoin.jsx";
+import { withTerms } from "./jargon.jsx";
 
 // One ad card partway down each public page (26 Oct 2026): the pages people
 // arrive at from a search, signed out. Marked "Ad", never a banner (ads.jsx);
@@ -76,8 +77,8 @@ export function ScreensIndexPage({ signedIn }) {
           {d.screens.map((s, i) => [i === 3 && <ListAd key="ad" slot="screens" />,
             <li key={s.slug}>
               <A to={`/screens/${s.slug}`} className="pl-screen">
-                <span className="pl-screen-name">{s.name}<ChevronRight size={16} aria-hidden="true" /></span>
-                {s.description && <span className="pl-screen-desc">{s.description}</span>}
+                <span className="pl-screen-name"><span>{withTerms(s.name)}</span><ChevronRight size={16} aria-hidden="true" /></span>
+                {s.description && <span className="pl-screen-desc">{withTerms(s.description)}</span>}
                 <span className="pl-screen-count">{s.matched} {s.matched === 1 ? "company matches" : "companies match"}{s.first.length ? `: ${s.first.slice(0, 3).map(c => c.name).join(", ")}…` : ""}</span>
               </A>
             </li>]
@@ -103,7 +104,7 @@ export function ScreenPage({ slug, signedIn }) {
       {!s && !error && <Wait />}
       {s && (
         <>
-          <p className="pl-lede">{s.description}{s.description && !/[.!?]$/.test(s.description) ? "." : ""} <b>{s.matched}</b> of {s.total.toLocaleString("en-IN")} companies pass.</p>
+          <p className="pl-lede">{withTerms(s.description)}{s.description && !/[.!?]$/.test(s.description) ? "." : ""} <b>{s.matched}</b> of {s.total.toLocaleString("en-IN")} companies pass.</p>
           {s.guide && <>
             <h2 className="pl-h">What this screen looks for</h2>
             <p className="pl-lede">{s.guide.lookFor}</p>
