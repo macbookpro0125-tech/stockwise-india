@@ -240,3 +240,4 @@ Owner: "the news is not understandable". Looked at 10 apps (Inshorts' one-line c
 - 8 Nov: pushed bac7d54: News opens on "In the news" with companies starred; home summary on Nifty 50. N-H4 failed on a new NSE listing missing from test data; it now stars a filing with a price.
 - 8 Nov: built the owner's six changes (Map controls, sector page, results page, screen table star/scroll/pop-up, Export, Scores tab and Then by) plus the News side column. Full suite 158 passed. Not pushed.
 - 8 Nov: pushed 1f03acc (the six changes and the News column); live results page checked.
+- 8 Nov evening: the review's fixes (public header with search and sign-up, screen renames with redirects, updated times, jargon tips) and results rows opening the results page on a phone. 158 passed. Not pushed.
