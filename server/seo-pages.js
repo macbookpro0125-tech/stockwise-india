@@ -21,6 +21,7 @@ import { loadMarketSnapshot } from "./market-data.js";
 import { DATA_DIR } from "./paths.js";
 import { niceName } from "../src/stockName.js";
 import { GUIDES, GUIDES_UPDATED, guideBySlug } from "./guides.js";
+import { updatedLine } from "./updated-line.js";
 
 const SITE = "https://jocularinsights.in";
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -266,7 +267,7 @@ function latestResultsPage() {
     title: `${q} results today: latest quarterly results of NSE companies | Jocular Insights`,
     desc: `${total} NSE companies' ${q} results filed${newest ? ` up to ${day(newest)}` : ""}: sales and net profit against a year earlier, newest first, each linked to its full results.`,
     canonical: `${SITE}/results`,
-    body: `<main class="seo-stock seo-methodology"><p>${link("/", "Jocular Insights")} › Latest results</p><h1>Latest ${esc(q)} results</h1>
+    body: `<main class="seo-stock seo-methodology"><p>${link("/", "Jocular Insights")} › Latest results</p><h1>Latest ${esc(q)} results</h1>${updatedLine()}
 <p>${count ? `${total} companies filed their ${esc(q)} results with NSE in the two weeks to ${esc(day(newest))}. ${total > count ? `The latest ${count} are below` : "Here they are"}, newest first, with sales and net profit against the same quarter a year earlier (YoY). Open a company for its full results.` : "No results have been read from NSE's filings yet."}</p>
 ${ups.length ? `<h2>Biggest profit growth among companies worth ₹5,000 crore or more</h2><ol>${ups.map(c => `<li>${link(`/stock/${encodeURIComponent(c.symbol)}/results/${c.slug}`, c.name)}: net profit ₹${esc(crs(c.profitCr))} crore, up from ₹${esc(crs(c.profitCr / (1 + c.profitYoY / 100)))} crore a year earlier</li>`).join("")}</ol>` : ""}
 ${days.map(d => `<h2>Filed ${esc(day(d.date))} — ${d.companies.length} ${d.companies.length === 1 ? "company" : "companies"}</h2><div class="ps-table-wrap"><table class="lr-table"><thead><tr><th>Company</th><th>Sales ₹ cr</th><th><abbr title="Year on year">YoY</abbr></th><th>Profit ₹ cr</th><th><abbr title="Year on year">YoY</abbr></th></tr></thead><tbody>${d.companies.map(row).join("")}</tbody></table></div>`).join("")}

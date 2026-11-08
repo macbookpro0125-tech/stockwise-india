@@ -11,6 +11,7 @@ import { allMetrics } from "./screen.js";
 import { loadMarketSnapshot } from "./market-data.js";
 import { SITE, esc, crore, num, day, pageHtml, ogCard } from "./seo.js";
 import { niceName } from "../src/stockName.js";
+import { updatedLine } from "./updated-line.js";
 
 const NOT_ADVICE = "A list of companies on reported figures at the last close, as a starting point for research — not a recommendation to buy or sell. Check each company's filings before deciding anything.";
 const link = (path, text) => `<a href="${esc(path)}">${esc(text)}</a>`;
@@ -122,7 +123,7 @@ export function listsIndexHtml(template) {
     return items.length ? `<h2>${esc(label)}</h2><ul>${items.map(x => `<li>${link(`/lists/${x.def.slug}`, x.def.name)} — ${x.list.length} companies</li>`).join("")}</ul>` : "";
   }).join("");
   const ld = { "@context": "https://schema.org", "@type": "ItemList", name: "NSE stock lists", itemListElement: all.map((x, i) => ({ "@type": "ListItem", position: i + 1, name: x.def.name, url: `${SITE}/lists/${x.def.slug}` })) };
-  const body = `<main class="seo-stock seo-methodology"><p>${link("/", "Jocular Insights")} › Lists</p><h1>NSE stock lists</h1><p>${esc(desc)}</p>${groups}<p>${link("/screens", "Stock screens")} · ${link("/sectors", "Sectors")} · ${link("/results-calendar", "Results calendar")} · ${link("/methodology", "How the quality score works")}</p></main>`;
+  const body = `<main class="seo-stock seo-methodology"><p>${link("/", "Jocular Insights")} › Lists</p><h1>NSE stock lists</h1>${updatedLine()}<p>${esc(desc)}</p>${groups}<p>${link("/screens", "Stock screens")} · ${link("/sectors", "Sectors")} · ${link("/results-calendar", "Results calendar")} · ${link("/methodology", "How the quality score works")}</p></main>`;
   return pageHtml(template, { title, desc, canonical, ld, body });
 }
 
@@ -162,7 +163,7 @@ export function listPageHtml(template, slug) {
     ],
   };
   const body = `<main class="seo-stock seo-methodology"><p>${link("/", "Jocular Insights")} › ${link("/lists", "Lists")} › ${esc(def.name)}</p>
-<h1>${esc(def.name)}</h1>
+<h1>${esc(def.name)}</h1>${updatedLine()}
 <p>${esc(intro)}</p>
 <h2>${list.length > SHOWN ? `The ${SHOWN} ${order === "largest first" ? "largest" : "highest-scoring"} of ${list.length}` : `All ${list.length}`}, ${esc(order)}</h2>
 <table><thead><tr><th>#</th><th>Company</th><th>Price</th><th>Market cap</th>${def.extra ? `<th>${esc(def.extra.label)}</th>` : ""}<th>P/E</th><th>ROE</th><th>Debt/equity</th><th>Quality</th></tr></thead><tbody>${rows}</tbody></table>
@@ -178,7 +179,7 @@ ${others.length ? `<h2>More lists</h2><ul>${others.map(x => `<li>${link(`/lists/
 const row = m => ({ symbol: m.symbol, name: niceName(m.name), price: m.cmp ?? null, marketCapCr: m.marketCapCr ?? null, pe: m.pe > 0 ? m.pe : null, roe: m.roe ?? null, debtToEquity: m.lender ? null : m.debtToEquity ?? null, quality: quality(m) });
 export function publicListsData() {
   return {
-    pricesDate: loadMarketSnapshot()?.pricesDate ?? null,
+    pricesDate: loadMarketSnapshot()?.pricesDate ?? null, builtAt: loadMarketSnapshot()?.builtAt ?? null,
     groups: Object.entries(KIND).map(([kind, label]) => ({ kind, label, lists: publicLists().filter(x => x.def.kind === kind).map(x => ({ slug: x.def.slug, name: x.def.name, count: x.list.length })) })).filter(g => g.lists.length),
   };
 }
@@ -188,7 +189,7 @@ export function publicListData(slug) {
   if (!def || !list || list.length < MIN) return null;
   const best = list.filter(m => quality(m) != null).sort(byQuality).slice(0, 5);
   return {
-    slug, name: def.name, kind: def.kind, about: def.about, pricesDate: loadMarketSnapshot()?.pricesDate ?? null,
+    slug, name: def.name, kind: def.kind, about: def.about, pricesDate: loadMarketSnapshot()?.pricesDate ?? null, builtAt: loadMarketSnapshot()?.builtAt ?? null,
     count: list.length, totalMarketCapCr: list.reduce((t, m) => t + (m.marketCapCr ?? 0), 0),
     medianPe: median(list.map(m => (m.pe > 0 ? m.pe : null))), medianRoe: median(list.map(m => m.roe)),
     best: best.map(m => ({ symbol: m.symbol, name: niceName(m.name), quality: quality(m) })),

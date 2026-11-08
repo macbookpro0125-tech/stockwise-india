@@ -118,7 +118,7 @@ export function stockStory(symbol) {
 export function publicSectors() {
   const c = context();
   return {
-    pricesDate: loadMarketSnapshot()?.pricesDate ?? null,
+    pricesDate: loadMarketSnapshot()?.pricesDate ?? null, builtAt: loadMarketSnapshot()?.builtAt ?? null,
     sectors: [...c.bySector].map(([name, list]) => ({ name, slug: sectorSlug(name), count: list.length, largest: [...list].sort((a, b) => (b.marketCapCr ?? 0) - (a.marketCapCr ?? 0)).slice(0, 3).map(r => ({ symbol: r.symbol, name: niceName(r.name) })) }))
       .sort((a, b) => b.count - a.count),
   };
@@ -135,7 +135,7 @@ export function publicSector(slug) {
   const counts = new Map();
   for (const r of list) for (const s of c.screens.get(r.symbol) ?? []) counts.set(s.slug, { ...s, count: (counts.get(s.slug)?.count ?? 0) + 1 });
   return {
-    name, slug, pricesDate: loadMarketSnapshot()?.pricesDate ?? null, count: list.length,
+    name, slug, pricesDate: loadMarketSnapshot()?.pricesDate ?? null, builtAt: loadMarketSnapshot()?.builtAt ?? null, count: list.length,
     medianPe: median(list.map(r => (r.pe > 0 ? r.pe : null))), medianRoe: median(list.map(r => r.roe)),
     medianRoce: median(list.filter(r => !r.lender).map(r => r.roce)),
     totalMarketCapCr: list.reduce((t, r) => t + (r.marketCapCr ?? 0), 0),

@@ -20,6 +20,7 @@ import { niceName } from "../src/stockName.js";
 import { publicSectors, publicSector } from "./seo-story.js";
 import { SCREEN_GUIDES } from "./screen-guides.js";
 import { loadSnapshots } from "./performance.js";
+import { updatedLine } from "./updated-line.js";
 
 // as the app shows names: "Limited" off, capitals as words ("TATA CONSUMER PRODUCTS" → "Tata Consumer Products")
 const plain = name => niceName(name);
@@ -68,7 +69,7 @@ export function publicScreen(slug) {
     slug, id: p.id, name: p.name, description: p.description ?? null,
     rules: String(res.queryUsed ?? "").split(" · ").filter(Boolean),
     matched: res.matched, total: res.total,
-    pricesDate: loadMarketSnapshot()?.pricesDate ?? null,
+    pricesDate: loadMarketSnapshot()?.pricesDate ?? null, builtAt: loadMarketSnapshot()?.builtAt ?? null,
     companies: (res.results ?? []).slice(0, SHOWN).map(r => ({
       symbol: r.symbol, name: plain(r.name), sector: r.sector ?? null,
       price: r.cmp ?? null, marketCapCr: r.marketCapCr ?? null, pe: r.pe ?? null, roe: r.roe ?? null, roce: r.roce ?? null,
@@ -82,7 +83,7 @@ export function publicScreen(slug) {
 
 export function publicScreens() {
   return {
-    pricesDate: loadMarketSnapshot()?.pricesDate ?? null,
+    pricesDate: loadMarketSnapshot()?.pricesDate ?? null, builtAt: loadMarketSnapshot()?.builtAt ?? null,
     screens: PRESETS.map(p => {
       const res = run(p);
       return { slug: screenSlug(p.id), name: p.name, description: p.description ?? null, matched: res.matched, first: (res.results ?? []).slice(0, 5).map(r => ({ symbol: r.symbol, name: plain(r.name) })) };
@@ -92,7 +93,7 @@ export function publicScreens() {
 
 export function publicResultsCalendar() {
   const w = resultsWeek(14);
-  return { today: w.today, days: w.days.map(d => ({ date: d.date, count: d.count, companies: d.companies.map(c => ({ symbol: c.symbol, name: plain(c.name), sector: c.sector, marketCapCr: c.marketCapCr })) })) };
+  return { today: w.today, builtAt: loadMarketSnapshot()?.builtAt ?? null, days: w.days.map(d => ({ date: d.date, count: d.count, companies: d.companies.map(c => ({ symbol: c.symbol, name: plain(c.name), sector: c.sector, marketCapCr: c.marketCapCr })) })) };
 }
 
 export const LIST_PATHS = () => ["/screens", "/results-calendar", ...PRESETS.map(p => `/screens/${screenSlug(p.id)}`)];
@@ -117,7 +118,7 @@ export function screenPageHtml(template, slug) {
     itemListElement: s.companies.map((c, i) => ({ "@type": "ListItem", position: i + 1, name: c.name, url: `${SITE}/stock/${encodeURIComponent(c.symbol)}` })),
   };
   const body = `<main class="seo-stock seo-methodology"><p>${link("/", "Jocular Insights")} › ${link("/screens", "Stock screens")} › ${esc(s.name)}</p>
-<h1>${g ? `${esc(g.search)} — ${esc(s.name)}` : `${esc(s.name)}: NSE companies that match today`}</h1>
+<h1>${g ? `${esc(g.search)} — ${esc(s.name)}` : `${esc(s.name)}: NSE companies that match today`}</h1>${updatedLine()}
 <p>${esc(sentence(s.description))} ${s.matched} of ${s.total} companies pass at the ${esc(day(s.pricesDate) ?? "latest")} close.</p>
 ${g ? `<h2>What this screen looks for</h2><p>${esc(g.lookFor)}</p><h2>Who it may suit</h2><p>${esc(g.suits)} It is a starting point for research, not a list of recommendations.</p>` : ""}
 <h2>The filters</h2><ul>${s.rules.map(r => `<li>${esc(r)}</li>`).join("")}</ul>
@@ -137,7 +138,7 @@ export function screensIndexHtml(template) {
   const desc = `${s.screens.length} ready-made screens of NSE companies — quality compounders, dividend payers, undervalued growth and more — with the companies that match at the ${day(s.pricesDate) ?? "latest"} close.`;
   const items = s.screens.map(x => `<li><h2>${link(`/screens/${x.slug}`, x.name)}</h2><p>${esc(sentence(x.description))} ${x.matched} companies match${x.first.length ? `, including ${x.first.slice(0, 3).map(c => esc(c.name)).join(", ")}` : ""}.</p></li>`).join("");
   const ld = { "@context": "https://schema.org", "@type": "ItemList", name: "Stock screens", itemListElement: s.screens.map((x, i) => ({ "@type": "ListItem", position: i + 1, name: x.name, url: `${SITE}/screens/${x.slug}` })) };
-  const body = `<main class="seo-stock seo-methodology"><p>${link("/", "Jocular Insights")} › Stock screens</p><h1>Indian stock screens</h1><p>${esc(desc)}</p><ul>${items}</ul><p>${esc(NOT_ADVICE)}</p></main>`;
+  const body = `<main class="seo-stock seo-methodology"><p>${link("/", "Jocular Insights")} › Stock screens</p><h1>Indian stock screens</h1>${updatedLine()}<p>${esc(desc)}</p><ul>${items}</ul><p>${esc(NOT_ADVICE)}</p></main>`;
   return pageHtml(template, { title, desc, canonical, ld, body });
 }
 
@@ -149,7 +150,7 @@ export function resultsCalendarHtml(template) {
   const desc = `${total} NSE companies have board meetings for results in the next two weeks — dates from NSE's calendar, the largest companies first.`;
   const days = c.days.map(d => `<section><h2>${esc(day(d.date))} — ${d.count} ${d.count === 1 ? "company" : "companies"}</h2><ul>${d.companies.slice(0, 60).map(x => `<li>${link(`/stock/${encodeURIComponent(x.symbol)}`, x.name)}${x.sector ? ` <small>${esc(x.sector)}</small>` : ""}</li>`).join("")}</ul>${d.count > 60 ? `<p>And ${d.count - 60} more.</p>` : ""}</section>`).join("");
   const ld = { "@context": "https://schema.org", "@type": "WebPage", name: title, description: desc, url: canonical };
-  const body = `<main class="seo-stock seo-methodology"><p>${link("/", "Jocular Insights")} › Results calendar</p><h1>Quarterly results calendar</h1><p>${esc(desc)}</p><p>Already reported? ${link("/results", "See the latest results")}, newest first.</p>${days || "<p>No results dates in the next two weeks on NSE's calendar.</p>"}<p>Dates are board meetings companies have told NSE about; they can change. ${link("/screens", "Stock screens")} · ${link("/disclaimer", "Disclaimer")}</p></main>`;
+  const body = `<main class="seo-stock seo-methodology"><p>${link("/", "Jocular Insights")} › Results calendar</p><h1>Quarterly results calendar</h1>${updatedLine()}<p>${esc(desc)}</p><p>Already reported? ${link("/results", "See the latest results")}, newest first.</p>${days || "<p>No results dates in the next two weeks on NSE's calendar.</p>"}<p>Dates are board meetings companies have told NSE about; they can change. ${link("/screens", "Stock screens")} · ${link("/disclaimer", "Disclaimer")}</p></main>`;
   return pageHtml(template, { title, desc, canonical, ld, body });
 }
 
@@ -173,7 +174,7 @@ export function homePageHtml(template) {
     ],
   };
   const body = `<main class="seo-stock seo-methodology seo-home">
-<h1>Indian stock market screener with quality scores from NSE company filings</h1>
+<h1>Indian stock market screener with quality scores from NSE company filings</h1>${updatedLine()}
 <p>Jocular Insights covers every company listed on the National Stock Exchange of India. Each one gets a quality score out of 100, worked out from its own quarterly and annual filings with NSE, with every check shown and explained: return on capital, debt, cash flow, growth, governance and more. Its results are drawn as pictures — how sales became profit, what it owns and owes, where the cash came from and went — beside the full tables.</p>
 <p>Prices are NSE's daily closes, at the ${esc(day(s.pricesDate) ?? "latest")} close. It is a research tool: it shows what the filings say, it doesn't tell anyone what to buy or sell.</p>
 <h2>Ready-made stock screens</h2>
@@ -204,7 +205,7 @@ export function sectorsIndexHtml(template) {
   const desc = `NSE-listed companies in ${s.sectors.length} sectors — IT, banks and financial services, pharma, FMCG, auto, capital goods and more — with each sector's companies, P/E and return on equity at the ${day(s.pricesDate) ?? "latest"} close.`;
   const items = s.sectors.map(x => `<li><h2>${link(`/sector/${x.slug}`, x.name)}</h2><p>${x.count} ${x.count === 1 ? "company" : "companies"}${x.largest.length ? `, the largest ${x.largest.map(c => esc(c.name)).join(", ")}` : ""}.</p></li>`).join("");
   const ld = { "@context": "https://schema.org", "@type": "ItemList", name: "NSE sectors", itemListElement: s.sectors.map((x, i) => ({ "@type": "ListItem", position: i + 1, name: x.name, url: `${SITE}/sector/${x.slug}` })) };
-  const body = `<main class="seo-stock seo-methodology"><p>${link("/", "Jocular Insights")} › Sectors</p><h1>NSE stocks by sector</h1><p>${esc(desc)}</p><ul>${items}</ul><p>${link("/screens", "Stock screens")} · ${link("/lists", "Stock lists")} · ${link("/results-calendar", "Results calendar")} · ${link("/methodology", "How the quality score works")}</p></main>`;
+  const body = `<main class="seo-stock seo-methodology"><p>${link("/", "Jocular Insights")} › Sectors</p><h1>NSE stocks by sector</h1>${updatedLine()}<p>${esc(desc)}</p><ul>${items}</ul><p>${link("/screens", "Stock screens")} · ${link("/lists", "Stock lists")} · ${link("/results-calendar", "Results calendar")} · ${link("/methodology", "How the quality score works")}</p></main>`;
   return pageHtml(template, { title, desc, canonical, ld, body });
 }
 
@@ -229,7 +230,7 @@ export function sectorPageHtml(template, slug) {
     ],
   };
   const body = `<main class="seo-stock seo-methodology"><p>${link("/", "Jocular Insights")} › ${link("/sectors", "Sectors")} › ${esc(s.name)}</p>
-<h1>${esc(s.name)} stocks on NSE</h1>
+<h1>${esc(s.name)} stocks on NSE</h1>${updatedLine()}
 <p>${esc(intro)}</p>
 ${s.screens.length ? `<h2>Screens its companies pass most</h2><ul>${s.screens.map(x => `<li>${link(`/screens/${x.slug}`, x.name)} — ${x.count} ${s.name} ${x.count === 1 ? "company" : "companies"}</li>`).join("")}</ul>` : ""}
 <h2>Every listed ${esc(s.name)} company</h2>
