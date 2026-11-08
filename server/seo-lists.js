@@ -170,7 +170,7 @@ export function homePageHtml(template) {
     "@context": "https://schema.org",
     "@graph": [
       { "@type": "WebSite", "@id": `${SITE}/#website`, name: "Jocular Insights", alternateName: "Jocular", url: `${SITE}/`, inLanguage: "en-IN", publisher: { "@id": `${SITE}/#org` } },
-      { "@type": "Organization", "@id": `${SITE}/#org`, name: "Jocular Insights", url: `${SITE}/`, logo: `${SITE}/icons/icon-512.png`, email: "jocularinsights@gmail.com" },
+      { "@type": "Organization", "@id": `${SITE}/#org`, name: "Jocular Insights", url: `${SITE}/`, sameAs: ["https://x.com/JocularInsights"], logo: `${SITE}/icons/icon-512.png`, email: "jocularinsights@gmail.com" },
       { "@type": "WebApplication", name: "Jocular Insights", url: `${SITE}/`, applicationCategory: "FinanceApplication", operatingSystem: "Web, Android", offers: { "@type": "Offer", price: "0", priceCurrency: "INR" }, description: "NSE stock screener with quality scores from company filings." },
     ],
   };
