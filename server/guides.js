@@ -9,7 +9,7 @@
 //
 // Each section's text is our own HTML, written here (not from any input).
 
-export const GUIDES_UPDATED = "2026-11-03";
+export const GUIDES_UPDATED = "2026-11-08";
 
 export const GUIDES = [
   {
@@ -436,6 +436,95 @@ export const GUIDES = [
       ["Reading a defensive company's numbers", `<p>Steady businesses usually trade at higher P/E ratios, because their profits are easier to predict. The question for them is less about the cycle and more about growth: whether volumes, not just prices, are rising, and whether margins are holding. Our <a href="/sectors">sector pages</a> show how each sector's companies have done.</p>`],
     ],
     see: [["/sectors", "All sectors"], ["/learn/profit-margins", "Profit margins"]],
+  },
+  // 8 Nov 2026: four more, for what people search and the AI answers quote
+  {
+    slug: "fair-value-explained",
+    title: "Fair value: what a share might be worth, and its limits",
+    desc: "What a fair value (or intrinsic value) estimate is, how it is usually worked out from earnings or book value, and why it is a model to question rather than a price to expect.",
+    sections: [
+      ["Price and value are different things", `<p>The share price is what the last buyer and seller agreed on. A <b>fair value</b>, sometimes called intrinsic value, is an estimate of what the business behind each share is worth, worked out from its own figures. The two can be far apart for years: prices move on news, mood and money flows, while a business's value changes more slowly, with its profits and its balance sheet.</p>`],
+      ["Common ways to estimate it", `<ul>
+<li><b>Earnings times a multiple</b>: take a normal year's earnings per share and multiply by a P/E the business has usually traded at, or that similar companies trade at. Simple, and only as good as the "normal" earnings chosen.</li>
+<li><b>Discounted cash flow</b> (DCF): forecast the cash the business will produce for many years and work out what that is worth today. Thorough, but small changes to the growth or discount rate change the answer a lot.</li>
+<li><b>Book value</b>: for banks and lenders, whose assets are mostly loans, what shareholders' equity is worth on the books, adjusted for how well the bank earns on it.</li>
+</ul>`],
+      ["How Jocular Insights does it", `<p>Our fair value uses each company's normalized earnings (smoothing out one-off years) and its own usual P/E, capped at twice its sector's, so one exuberant year can't set the bar. Banks and lenders are valued on book value instead. Each step, and what is left out, is in the <a href="/methodology">methodology</a>. The figure is a reference point for research, not a target price.</p>`],
+      ["Why every fair value can be wrong", `<ul>
+<li><b>The future isn't the past.</b> A model built on past earnings can't see a new competitor, a lost licence or a product that takes off.</li>
+<li><b>Cyclical earnings mislead.</b> Profits at the top of a cycle make a fair value too high; at the bottom, too low. See <a href="/learn/cyclical-and-defensive-sectors">cyclical and defensive sectors</a>.</li>
+<li><b>Accounting choices matter.</b> One-off gains, changes in how revenue is booked, or a large acquisition can all shift "normal" earnings.</li>
+</ul>
+<p>A useful habit: treat a fair value as a question ("what would have to be true for the price to be right?") rather than an answer.</p>`],
+      ["The margin of safety", `<p>Because any estimate can be wrong, many value investors only consider a share when its price is well below their estimate, leaving room for error. How large that gap should be depends on how predictable the business is: a steady consumer company needs less room than a cyclical or heavily indebted one.</p>`],
+    ],
+    see: [["/methodology", "How our fair value is worked out"], ["/learn/pe-ratio-explained", "The P/E ratio, explained"]],
+  },
+  {
+    slug: "eps-explained",
+    title: "EPS: earnings per share, basic and diluted",
+    desc: "What earnings per share means, the difference between basic and diluted EPS, and why EPS growth can differ from profit growth when a company issues or buys back shares.",
+    sections: [
+      ["What EPS is", `<p><b>Earnings per share</b> is a company's net profit for shareholders divided by the number of its shares. If a company earns ₹100 crore and has 10 crore shares, its EPS is ₹10. It turns a company's total profit into what each share earned, which is what a shareholder actually owns.</p>`],
+      ["Basic and diluted", `<ul>
+<li><b>Basic EPS</b> divides profit by the shares in issue on average over the period.</li>
+<li><b>Diluted EPS</b> also counts shares that could soon exist: employee stock options, convertible bonds or warrants. It is usually a little lower, and it is the more cautious number to use.</li>
+</ul>
+<p>Indian results filings show both, for the quarter and the year so far.</p>`],
+      ["Why EPS growth and profit growth can differ", `<ul>
+<li><b>New shares</b> from a fund-raise (a QIP, a rights issue or a preferential allotment) spread the same profit over more shares, so EPS grows slower than profit, or falls.</li>
+<li><b>A buyback</b> cancels shares, so EPS can grow faster than profit.</li>
+<li><b>Bonus issues and splits</b> multiply the number of shares without changing the business; past EPS is restated so the years stay comparable. See <a href="/learn/bonus-split-buyback-rights">bonus, split, buyback and rights</a>.</li>
+</ul>`],
+      ["Using EPS well", `<ul>
+<li>Look at EPS over several years, not one quarter: steady growth says more than a single jump.</li>
+<li>Check whether a jump came from the business or from an exceptional item such as selling an asset.</li>
+<li>EPS is the "E" in the P/E ratio, so anything that distorts EPS distorts P/E too. See <a href="/learn/pe-ratio-explained">the P/E ratio, explained</a>.</li>
+</ul>`],
+    ],
+    see: [["/learn/how-to-read-quarterly-results", "How to read quarterly results"], ["/stock/TCS/financials", "A company's EPS over the years"]],
+  },
+  {
+    slug: "ev-ebitda-explained",
+    title: "EV/EBITDA: valuing a company with its debt included",
+    desc: "What enterprise value and EBITDA are, why EV/EBITDA compares companies with different amounts of debt more fairly than P/E, and where it doesn't work.",
+    sections: [
+      ["Enterprise value", `<p>A company's <b>market cap</b> is what its shares are worth. Its <b>enterprise value</b> (EV) is what the whole business would cost a buyer: the market cap, plus its debt, minus the cash it holds. Two companies with the same market cap are not the same price if one also carries large borrowings: whoever owns it owns the debt too.</p>`],
+      ["EBITDA", `<p><b>EBITDA</b> is earnings before interest, tax, depreciation and amortisation: roughly the operating profit of the business before how it is financed and before the wear on its assets. In Indian results it is close to the operating profit line. See <a href="/learn/profit-margins">profit margins</a>.</p>`],
+      ["Why divide one by the other", `<p>EV/EBITDA asks how many years of operating profit the whole business costs. Because EV includes debt and EBITDA comes before interest, it compares a company that borrows heavily with one that doesn't on a more equal footing than P/E, which only sees the profit left after interest. It is widely used for capital-heavy industries: telecom, power, cement, metals, infrastructure.</p>`],
+      ["Where it misleads", `<ul>
+<li><b>Banks and lenders</b>: debt is their raw material, not a choice of financing, so EV/EBITDA doesn't apply. Book value is used instead. See <a href="/learn/how-to-analyse-a-bank">how to analyse a bank</a>.</li>
+<li><b>Heavy capital spending</b>: EBITDA leaves out depreciation, so a business that must keep spending on plant and equipment can look cheaper than it is. Check its <a href="/learn/free-cash-flow">free cash flow</a> too.</li>
+<li><b>Leases</b>: since accounting rules changed in 2019, lease rents are partly treated as interest and depreciation, which raises EBITDA for retailers, airlines and hotels compared with older years.</li>
+</ul>`],
+    ],
+    see: [["/learn/debt-to-equity", "Debt to equity"], ["/learn/free-cash-flow", "Free cash flow"]],
+  },
+  {
+    slug: "red-flags-in-financial-statements",
+    title: "Warning signs in a company's financial statements",
+    desc: "Ten things in an Indian company's filings that deserve a closer look: profit without cash, rising receivables, pledged shares, auditor changes, related-party dealings and more.",
+    sections: [
+      ["Why look for warning signs", `<p>Most companies' figures are what they seem. But a few patterns show up again and again before trouble: they don't prove anything is wrong, they're reasons to read the filings more carefully. Each of these can be checked from public NSE filings and the annual report.</p>`],
+      ["In the profit and cash", `<ul>
+<li><b>Profit without cash.</b> Net profit rising for years while cash from operations stays flat or negative. Profit is an accounting figure; cash is harder to invent. See <a href="/learn/cash-flow-statement">the cash flow statement</a>.</li>
+<li><b>Receivables growing faster than sales.</b> Customers taking longer and longer to pay, or sales booked that may never be collected. See <a href="/learn/working-capital">working capital</a>.</li>
+<li><b>Inventory piling up.</b> Stock growing much faster than sales can mean goods that aren't selling.</li>
+<li><b>Profit propped up by other income</b> or exceptional gains, quarter after quarter.</li>
+</ul>`],
+      ["In the balance sheet", `<ul>
+<li><b>Debt rising while profits don't</b>, or interest taking a growing share of operating profit. See <a href="/learn/debt-to-equity">debt to equity</a>.</li>
+<li><b>Large loans to, or deals with, related parties</b>: group companies or businesses owned by the promoters. The annual report lists them.</li>
+<li><b>Contingent liabilities</b>, such as guarantees or disputed tax demands, that are large next to the company's equity.</li>
+</ul>`],
+      ["In the people and the paperwork", `<ul>
+<li><b>Promoters pledging their shares</b>, especially if the pledged share keeps rising. See <a href="/learn/promoter-pledge">promoter pledge</a>.</li>
+<li><b>An auditor resigning mid-term</b>, or a qualified audit opinion. Companies must tell the exchange; see <a href="/learn/reading-company-announcements">reading company announcements</a>.</li>
+<li><b>Frequent changes in the CFO or company secretary</b>, or results filed late.</li>
+</ul>`],
+      ["Using this list", `<p>One sign alone often has an innocent explanation: a big order that customers will pay for next quarter, or a pledge taken for a promoter's other business. Several together, over several years, are worth taking seriously. The quality score in Jocular Insights checks some of these from the filings (cash behind profits, debt, pledging, dilution, the audit opinion and auditor resignations); the <a href="/methodology">methodology</a> lists them.</p>`],
+    ],
+    see: [["/methodology", "What the quality score checks"], ["/learn/cash-flow-statement", "The cash flow statement"]],
   },
 ];
 
