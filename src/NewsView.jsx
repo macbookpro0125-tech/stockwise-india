@@ -804,6 +804,75 @@ function CompanyNews({ onOpenStock, onKind, limit = 0 }) {
   );
 }
 
+// A wide computer screen (8 Nov 2026, "how can we utilise the space"): a
+// column beside the feed with what the feed isn't showing — your companies
+// in the news, the market's headlines, what they're about. Each opens its own
+// kind, or the item.
+function NewsSide({ kind, onKind }) {
+  const watched = useWatchlist();
+  const watchKey = [...watched].sort().join(",");
+  const showCos = kind !== "companies" && watched.size > 0;
+  const showHeads = kind !== "headlines";
+  const showTalk = kind !== "headlines";
+  const [cos, setCos] = useState(null);
+  const [heads, setHeads] = useState(null);
+  useEffect(() => { if (showCos) api.newsCompanies().then(setCos).catch(() => setCos(null)); }, [showCos, watchKey]);
+  useEffect(() => { if (showHeads || showTalk) api.news({ kind: "headlines" }).then(setHeads).catch(() => setHeads(null)); }, [showHeads || showTalk]); // eslint-disable-line react-hooks/exhaustive-deps
+  const cards = [];
+  if (showCos && cos?.companies?.length) cards.push(
+    <section key="cos" className="nw-side-card" aria-label="Your companies in the news">
+      <h3 className="nw-side-h">Your companies in the news<button type="button" className="nw-side-more" onClick={() => onKind("companies")}>See all <ChevronRight size={14} aria-hidden="true" /></button></h3>
+      <ul className="nw-side-list">
+        {cos.companies.slice(0, 4).map(({ quote: q, news }) => (
+          <li key={q.symbol}>
+            <a className="nw-side-co" href={news[0].url} target="_blank" rel="noopener noreferrer">
+              <span className="nw-side-co-top"><CompanyLogo symbol={q.symbol} size={22} fallback={q.name} /><b>{niceName(q.name)}</b><Change value={q.change1d} /></span>
+              <span className="nw-side-co-line">{news[0].title}</span>
+              <small>{news[0].publisher ?? "News"} · {ago(news[0].date)}</small>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>);
+  // straight to the publisher's site (8 Nov 2026: "more news from the other
+  // sites … it redirects to their websites"), the same story elsewhere beneath
+  const headItems = (heads?.items ?? []).filter(it => it.type !== "filing" && it.url).slice(kind === "all" ? 5 : 0, kind === "all" ? 13 : 8); // All shows the first five itself
+  if (showHeads && headItems.length) cards.push(
+    <section key="heads" className="nw-side-card" aria-label="From news sites">
+      <h3 className="nw-side-h">From news sites<button type="button" className="nw-side-more" onClick={() => onKind("headlines")}>See all <ChevronRight size={14} aria-hidden="true" /></button></h3>
+      <ul className="nw-side-list">
+        {headItems.map(item => (
+          <li key={item.id}>
+            <a className="nw-side-co" href={item.url} target="_blank" rel="noopener noreferrer">
+              <span className="nw-side-co-line">{item.title}</span>
+              <small>{item.publisher ?? "News"} · {ago(item.time)}{item.others?.length > 0 && ` · also on ${item.others.length} other ${item.others.length === 1 ? "site" : "sites"}`}<ExternalLink size={11} aria-hidden="true" className="nw-side-out" /></small>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>);
+  if (showTalk && heads?.topics?.length) cards.push(
+    <section key="talk" className="nw-side-card" aria-label="Talked about today">
+      <h3 className="nw-side-h">Talked about today</h3>
+      <ul className="nw-side-topics">
+        {heads.topics.slice(0, 6).map(t => {
+          const Icon = TOPIC_ICON[t.index ?? t.key] ?? Newspaper;
+          return (
+            <li key={t.key}>
+              <button type="button" className={`nw-side-topic t-${topicTone(t)}`} onClick={() => onKind("headlines")}>
+                <span className="nw-talk-icon" aria-hidden="true"><Icon size={15} /></span>
+                <span className="nw-side-topic-label">{t.label}</span>
+                <span className="nw-side-topic-sub">{t.count} {t.count === 1 ? "story" : "stories"}{t.move && <> · <Change value={t.move.changePct} /></>}</span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </section>);
+  if (!cards.length) return null;
+  return <aside className="nw-side" aria-label="More news">{cards}</aside>;
+}
+
 export default function NewsView({ onOpenStock, openId = null, onOpened, embedded = false, onItemChange, preview = false, onSeeAll }) {
   // the watchlist's companies in the news first, once there are any starred
   // (the watchlist loads after the page); with none, everything, as before
@@ -864,7 +933,7 @@ export default function NewsView({ onOpenStock, openId = null, onOpened, embedde
               Only companies over ₹1,000 crore
             </button>}
           </div>
-          <div className="nw-layout">
+          <div className={`nw-layout${preview || embedded ? "" : " has-side"}`}>
             {/* a computer: the kinds down the side with how many of each; a
                 phone: one row of chips to swipe */}
             <div className="nw-rail" role="group" aria-label="Kinds of news">
@@ -882,6 +951,7 @@ export default function NewsView({ onOpenStock, openId = null, onOpened, embedde
                 ? <CompanyNews key={refresh} onOpenStock={onOpenStock} onKind={pickKind} limit={preview ? 2 : 0} />
                 : <List kind={kind} size={size} onOpen={open} onCounts={setCounts} refresh={refresh} limit={preview ? 4 : 0} onKind={pickKind} />}
             </div>
+            {!preview && !embedded && <NewsSide kind={kind} onKind={pickKind} />}
           </div>
         </>}
     </div>
