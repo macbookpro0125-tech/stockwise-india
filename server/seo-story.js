@@ -22,6 +22,7 @@ const ord = n => `${n}${n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd
 const dayText = iso => (iso ? new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : null);
 const quality = m => m.research?.quality ?? null;
 // "Infosys'", "TCS's"
+const fyLabel = iso => { const [y, mo] = String(iso).split("-").map(Number); return `Q${mo >= 4 ? Math.ceil((mo - 3) / 3) : 4} FY${String(mo >= 4 ? y + 1 : y).slice(2)}`; };
 const poss = n => (/s$/i.test(n) && !/ss$/i.test(n) ? `${n}'` : `${n}'s`);
 const mini = m => ({ symbol: m.symbol, name: niceName(m.name), price: m.cmp ?? null, marketCapCr: m.marketCapCr ?? null, pe: m.pe > 0 ? m.pe : null, roe: m.roe ?? null, roce: m.lender ? null : m.roce ?? null, debtToEquity: m.lender ? null : m.debtToEquity ?? null, quality: quality(m) });
 
@@ -102,6 +103,17 @@ export function stockStory(symbol) {
     !m.lender && m.debtToEquity != null && { q: `Is ${n} debt-free?`, a: m.debtToEquity < 0.01 ? `Yes — its latest balance sheet shows no meaningful borrowings.` : m.debtToEquity < 0.05 ? `Almost: its debt is only ${f2(m.debtToEquity)} times its equity in the latest balance sheet.` : `No. Its debt is ${f2(m.debtToEquity)} times its equity in the latest balance sheet.` },
     { q: `When are ${poss(n)} next results?`, a: m.nextResults ? `Its board meets to approve results on ${dayText(m.nextResults)}, as told to NSE.` : `No results date has been announced to NSE yet${latestFiled ? `; its latest results were filed on ${dayText(latestFiled)}` : ""}.` },
     q != null && { q: `What is ${poss(n)} quality score?`, a: `${Math.round(q)} out of 100, from checks on its business, earnings, balance sheet, governance, growth and valuation in its own filings. The methodology explains each check.` },
+    // 8 Nov 2026 (AI search answers questions in a line): its price and size,
+    // its latest results, and who owns it
+    m.cmp != null && { q: `What is ${poss(n)} share price?`, a: `₹${f2(m.cmp)} at the ${dayText(loadMarketSnapshot()?.pricesDate) ?? "latest"} NSE close${m.ret1y != null ? `, ${m.ret1y >= 0 ? "up" : "down"} ${f1(Math.abs(m.ret1y))}% over a year` : ""}${m.marketCapCr ? `, a market value of ₹${Math.round(m.marketCapCr).toLocaleString("en-IN")} crore` : ""}.` },
+    m.quarters?.[0]?.revenueCr != null && (() => {
+      const k = m.quarters[0];
+      const sales = `Sales of ₹${Math.round(k.revenueCr).toLocaleString("en-IN")} crore${k.salesYoY != null ? `, ${k.salesYoY >= 0 ? "up" : "down"} ${f1(Math.abs(k.salesYoY))}% on a year earlier` : ""}`;
+      const profit = k.profitCr == null ? "" : `; net ${k.profitCr < 0 ? "loss" : "profit"} of ₹${Math.round(Math.abs(k.profitCr)).toLocaleString("en-IN")} crore${k.profitCr > 0 && k.profitYoY != null ? ` (${k.profitYoY >= 0 ? "up" : "down"} ${f1(Math.abs(k.profitYoY))}%)` : ""}`;
+      const filed = k.filed ? `, filed with NSE on ${dayText(String(k.filed).slice(0, 10))}` : "";
+      return { q: `How were ${poss(n)} ${fyLabel(k.fyEnd)} results?`, a: `${sales}${profit}${filed}.` };
+    })(),
+    m.promoterPct != null && { q: `How much of ${n} do its promoters own?`, a: `${f1(m.promoterPct)}% at the latest shareholding filing${m.pledgedPct > 0 ? `, with ${f1(m.pledgedPct)}% of that pledged` : m.pledgedPct === 0 ? `, none of it pledged` : ""}.` },
     { q: `Does ${n} pay dividends?`, a: m.divYield > 0 ? `Yes. Its dividends over the last year come to a ${f2(m.divYield)}% yield at the latest close.` : `It has paid no dividend in the last year.` },
   ].filter(Boolean);
 

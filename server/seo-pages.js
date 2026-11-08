@@ -196,16 +196,32 @@ function resultsPage(m, slug) {
   const table2 = `<div class="ps-table-wrap rq-table"><table><caption>${esc(n)} ${esc(label)} results against a year earlier and the quarter before (₹ crore)</caption><thead><tr><th>Item</th><th>${esc(label)}</th>${yearAgo ? `<th>${esc(fyQuarter(yearAgo.fyEnd))}</th><th>Year on year</th>` : ""}${prev ? `<th>${esc(fyQuarter(prev.fyEnd))}</th><th>Quarter on quarter</th>` : ""}</tr></thead><tbody>${tableRows}</tbody></table></div>`;
   const quarters = qs.slice(0, 8).map(x => (x === q ? `<span class="rq-q now" aria-current="page">${esc(fyQuarter(x.fyEnd))}</span>` : `<a class="rq-q" href="/stock/${sym}/results/${quarterSlug(x.fyEnd)}">${esc(fyQuarter(x.fyEnd))}</a>`)).join("");
   const sales8 = bars(h => h.revenueCr, true), profit8 = bars(h => h.profitCr, true);
+  // plain questions and answers (8 Nov 2026, for AI search), also as FAQ data
+  const cr = v => `₹${crs(Math.abs(v))} crore`;
+  const nn = /s$/i.test(n) && !/ss$/i.test(n) ? `${n}'` : `${n}'s`;
+  const updown = v => (v == null ? "—" : `${v >= 0 ? "up" : "down"} ${Math.abs(v).toFixed(1)}%`);
+  const qa = [
+    { q: `How were ${nn} ${label} results?`, a: lede.replace(/^.*?\)( on [^.]*)?\. /, "") || lede },
+    q.revenueCr != null && { q: `What were ${nn} sales in ${label}?`, a: `${cr(q.revenueCr)}${sy != null ? `, ${sy >= 0 ? "up" : "down"} ${Math.abs(sy).toFixed(1)}% on ${fyQuarter(yearAgo.fyEnd)}` : ""}${prev?.revenueCr ? ` and ${updown(change(q.revenueCr, prev.revenueCr))} on the quarter before` : ""}.` },
+    q.profitCr != null && { q: `What was ${nn} ${q.profitCr < 0 ? "loss" : "profit"} in ${label}?`, a: `A net ${q.profitCr < 0 ? "loss" : "profit"} of ${cr(q.profitCr)}${py != null && q.profitCr > 0 ? `, ${py >= 0 ? "up" : "down"} ${Math.abs(py).toFixed(1)}% on a year earlier` : ""}${q.eps != null ? `; earnings per share ₹${num(q.eps, 2)}` : ""}.` },
+    q.opm != null && { q: `What was ${nn} operating margin in ${label}?`, a: `${num(q.opm)}%${yearAgo?.opm != null ? `, against ${num(yearAgo.opm)}% a year earlier` : ""}.` },
+    { q: `When did ${n} report ${label} results?`, a: q.filed ? `It filed them with NSE on ${day(q.filed)}, for the quarter to ${day(q.fyEnd)}.` : `For the quarter to ${day(q.fyEnd)}.` },
+  ].filter(Boolean);
   return {
     title: resultsTitle(n, label, m.symbol, q, sy, py),
     desc: lede.slice(0, 300),
     canonical: `${SITE}/stock/${sym}/results/${slug}`,
+    ld: { "@context": "https://schema.org", "@graph": [
+      { "@type": "WebPage", name: resultsTitle(n, label, m.symbol, q, sy, py), description: lede, url: `${SITE}/stock/${sym}/results/${slug}`, dateModified: q.filed ? String(q.filed).slice(0, 10) : undefined },
+      { "@type": "FAQPage", mainEntity: qa.map(x => ({ "@type": "Question", name: x.q, acceptedAnswer: { "@type": "Answer", text: x.a } })) },
+    ] },
     body: `<main class="seo-stock seo-methodology rq">${crumb(m, `${label} results`).replace("<p>", '<p class="rq-crumb">')}
 <header class="rq-head"><div><span class="rq-eyebrow">${esc(label)} results · quarter to ${esc(day(q.fyEnd))}${q.filed ? ` · filed ${esc(day(q.filed))}` : ""}</span><h1>${esc(n)} ${esc(label)} results</h1></div>${price}</header>
 <p class="rq-lede">${esc(lede)}</p>
 ${cards ? `<section class="rq-cards" aria-label="The quarter's figures">${cards}</section><p class="rq-note">Small bars: the last ${span.length} quarters, this one darkest.</p>` : ""}
 ${said.length ? `<section class="rq-box" aria-label="What changed"><h2>What changed</h2><ul class="rq-said">${said.map(x => `<li>${x}</li>`).join("")}</ul><p class="rq-note">Read from the filed figures against the same quarter a year earlier. Figures, not a view on the shares.</p></section>` : ""}
 ${sales8 || profit8 ? `<section class="rq-grid2" aria-label="Quarter by quarter">${sales8 ? `<div class="rq-box"><h2>Sales, quarter by quarter</h2><p class="rq-note">₹ crore</p>${sales8}</div>` : ""}${profit8 ? `<div class="rq-box"><h2>Net profit, quarter by quarter</h2><p class="rq-note">₹ crore</p>${profit8}</div>` : ""}</section>` : ""}
+${qa.length ? `<section class="rq-box" aria-label="Questions"><h2>Questions about these results</h2>${qa.map(x => `<h3>${esc(x.q)}</h3><p>${esc(x.a)}</p>`).join("")}</section>` : ""}
 <section class="rq-box" aria-label="The full results"><h2>The full results</h2>${table2}</section>
 ${qs.length > 1 ? `<nav class="rq-quarters" aria-label="Other quarters"><span>Other quarters</span>${quarters}</nav>` : ""}
 <nav class="rq-links" aria-label="More">${[[`/stock/${sym}`, `${niceName(m.name)} overview`], ...stockPageLinks(m).filter(([p]) => !p.includes("/results/")), ["/results", "Other companies' latest results"], ["/results-calendar", "Results calendar"]].map(([p, t]) => link(p, t)).join("")}</nav>

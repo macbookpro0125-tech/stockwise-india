@@ -352,6 +352,8 @@ export function stockPageHtml(template, symbol) {
         ...(s.story?.sector ? [{ "@type": "ListItem", position: 2, name: s.story.sector.name, item: `${SITE}/sector/${s.story.sector.slug}` }] : []),
         { "@type": "ListItem", position: s.story?.sector ? 3 : 2, name: n, item: canonical },
       ] },
+      // its plain answers as questions and answers (8 Nov 2026, for AI search)
+      ...(s.story?.qa?.length ? [{ "@type": "FAQPage", mainEntity: s.story.qa.map(x => ({ "@type": "Question", name: x.q, acceptedAnswer: { "@type": "Answer", text: x.a } })) }] : []),
     ],
   };
   const head = `<title>${esc(title)}</title>
