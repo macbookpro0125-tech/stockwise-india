@@ -805,12 +805,16 @@ function CompanyNews({ onOpenStock, onKind, limit = 0 }) {
 }
 
 export default function NewsView({ onOpenStock, openId = null, onOpened, embedded = false, onItemChange, preview = false, onSeeAll }) {
-  // the watchlist's companies in the news first, everywhere the news is shown
-  const [kind, setKind] = useState("companies");
+  // the watchlist's companies in the news first, once there are any starred
+  // (the watchlist loads after the page); with none, everything, as before
+  const watched = useWatchlist();
+  const [kind, setKind] = useState(() => (watched.size ? "companies" : "all"));
+  const picked = useRef(false);
+  useEffect(() => { if (!picked.current) setKind(watched.size ? "companies" : "all"); }, [watched.size > 0]); // eslint-disable-line react-hooks/exhaustive-deps
   const [counts, setCounts] = useState(null);
   // pressing the kind already shown loads it again
   const [refresh, setRefresh] = useState(0);
-  const pickKind = id => { if (id === kind) setRefresh(n => n + 1); else setKind(id); };
+  const pickKind = id => { picked.current = true; if (id === kind) setRefresh(n => n + 1); else setKind(id); };
   // Companies over ₹1,000 crore only, unless switched off; kept for the visit
   const [size, setSize] = useState(() => { try { return sessionStorage.getItem("news-size") === "all" ? "all" : "large"; } catch { return "large"; } });
   const pickSize = next => { setSize(next); try { sessionStorage.setItem("news-size", next); } catch {} };

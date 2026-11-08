@@ -41,7 +41,7 @@ Pushed 4 Nov 2026 at `3885578`: The phone chart's type picker is a one-column li
 
 ## Committed but NOT pushed yet
 
-- **News "In the news"** (8 Nov): the News page and Explore's news open on the watchlist's companies in the news: each company with its price and its latest 3 headlines from news sites (Google News, last 14 days, tips and quote pages out, only headlines that name the company), opening on the publisher's site. `/api/news/companies`, `companiesInNews` in server/market-news.js. Filings are under All and the other filters.
+- **News "In the news"** (8 Nov): the News page and Explore's news open on the watchlist's companies in the news when any are starred (else on All, as before): each company with its price and its latest 3 headlines from news sites (Google News, last 14 days, tips and quote pages out, only headlines that name the company), opening on the publisher's site. `/api/news/companies`, `companiesInNews` in server/market-news.js. Filings are under All and the other filters.
 - **Home Market summary is the Nifty 50**, not the Nifty 500 (computer and phone), from `/api/explore/index`.
 
 ## Open / next

@@ -24,9 +24,7 @@ test("N-H1 the News tile (a computer) or the Explore tab (a phone) leads to the 
     await openPage(page, "Explore");
   }
   const kinds = page.getByRole("group", { name: "Kinds of news" });
-  // the News page opens on the watchlist's companies in the news (8 Nov 2026); All has the filings
-  await expect(kinds.getByRole("button", { name: /^In the news/ })).toHaveAttribute("aria-pressed", "true");
-  await kinds.getByRole("button", { name: /^All/ }).click();
+  // an empty watchlist: the news opens on All (with companies starred, on In the news, 8 Nov 2026)
   await expect(kinds.getByRole("button", { name: /^All/ })).toHaveAttribute("aria-pressed", "true");
   const row = page.locator(".nw-day .nw-row").first();
   await expect(row).toBeVisible();
