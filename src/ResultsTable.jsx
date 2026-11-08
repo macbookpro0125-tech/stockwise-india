@@ -543,11 +543,15 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
       ...extraColumns.map(def => { const v = colValue(s, def.id); return v == null ? "" : Math.round(v * 100) / 100; }),
     ]);
     const csv = [cols.join(","), ...rows.map(r => r.join(","))].join("\n");
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
-    a.download = "stockwise-india-discover.csv";
+    // 8 Nov 2026 ("Export isn't working"): the link in the page while it's
+    // clicked, and its file kept a while, or some browsers drop the download;
+    // a byte-order mark so Excel reads ₹ and names right
+    const url = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" }));
+    const a = Object.assign(document.createElement("a"), { href: url, download: `jocular-insights-screen${snapshot?.pricesDate ? `-${snapshot.pricesDate}` : ""}.csv` });
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(a.href);
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 30_000);
   };
 
   const exportExcel = async () => {
@@ -557,8 +561,9 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
       const sortLabel = `${sortOptions.find(([id]) => id === sortBy)?.[1] ?? "Quality score"}, ${dirLabel.toLowerCase()}`;
       const { exportDiscoverExcel } = await import("./exportExcel.js");
       await exportDiscoverExcel(sorted, { pricesDate: snapshot?.pricesDate, extraColumns, screen: queryUsed || "", sortLabel });
-    } catch {
-      setExportError("Excel export failed — try again");
+    } catch (e) {
+      // a tab opened before an update can't load the export's code any more
+      setExportError(/dynamically imported module|Importing a module|Failed to fetch/i.test(String(e?.message)) ? "The app was updated. Reload the page, then export again." : "Excel export failed. Try again, or pick .csv.");
     } finally {
       setExporting(false);
     }
@@ -624,7 +629,7 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
                 <input type="text" placeholder="Find a company…" value={search} onChange={e => setSearch(e.target.value)} aria-label="Filter by name or ticker" />
               </label>
             )}
-            {exportError && <span style={{ fontSize: 11, color: "var(--red)" }}>{exportError}</span>}
+            {exportError && <span role="alert" style={{ fontSize: 12, color: "var(--red)" }}>{exportError}{/reload/i.test(exportError) && <> <button type="button" className="btn-ghost" style={{ height: 26, fontSize: 12, marginLeft: 6 }} onClick={() => window.location.reload()}>Reload</button></>}</span>}
             {selected.size >= 2 && (
               <button onClick={() => setShowCompare(true)} className="btn-primary tb-btn">
                 Compare {selected.size}
