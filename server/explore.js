@@ -77,7 +77,24 @@ export async function exploreIndex(name) {
     gainers: byMove.filter(r => r.ret1d > 0).slice(0, 5).map(mover),
     losers: byMove.filter(r => r.ret1d < 0).reverse().slice(0, 5).map(mover),
     symbols: members.map(r => r.symbol),
+    // 8 Nov 2026 ("go deep and add useful things"): the Nifty 50's returns
+    // beside its own, and a sector's companies in a table to sort
+    benchmark: benchmarkReturns(b, snap, name),
+    table: sector ? allMetrics().rows.filter(r => r.sectorIndex === name && r.marketCapCr > 0).sort((a, b2) => b2.marketCapCr - a.marketCapCr).slice(0, 120).map(r => ({
+      symbol: r.symbol, name: r.name, industry: r.industry ?? null, close: r.cmp ?? null, marketCapCr: r.marketCapCr,
+      d1: r.ret1d ?? null, m1: r.ret1m ?? null, y1: r.ret1y ?? null, pe: (r.peTtm ?? r.pe) > 0 ? r.peTtm ?? r.pe : null,
+      roe: r.roe ?? null, quality: r.research?.quality ?? null, down52: r.downFrom52wHigh ?? null,
+    })) : [],
   };
+}
+
+// The Nifty 50's own returns over the same spans, to set an index against
+function benchmarkReturns(b, snap, name) {
+  const n = b?.indices.find(x => x.name === "Nifty 50" || x.name === "NIFTY 50");
+  if (!n || n.name === name) return null;
+  const closes = n.closes.filter(c => c != null);
+  const long = snap?.indexReturns?.[n.name] ?? {};
+  return { w1: over(closes, 5), m1: over(closes, 21), m3: over(closes, 63), m6: over(closes, 126), y1: closes.length > 240 ? over(closes, closes.length - 1) : null, y3: long.y3 ?? null, y5: long.y5 ?? null };
 }
 
 // The heat map: an index's companies, each sized by its market value and

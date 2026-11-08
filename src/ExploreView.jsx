@@ -123,12 +123,129 @@ function IndexChart({ days, closes, range, onRange }) {
   );
 }
 
+// The index's figures in one strip: NSE's valuation, and a sector's size
+function IndexStats({ d, brief }) {
+  const cells = [
+    d.pe && ["P/E", d.pe.toFixed(1), "NSE's, for the index"],
+    d.pb && ["P/B", d.pb.toFixed(2), null],
+    d.divYield && ["Dividend yield", `${d.divYield.toFixed(2)}%`, null],
+    brief && ["Companies", brief.count.toLocaleString("en-IN"), d.sector],
+    brief && ["Worth together", crShort(brief.marketCapCr), "market value"],
+    brief?.medianPe && ["Middle company P/E", brief.medianPe.toFixed(1), "half above, half below"],
+  ].filter(Boolean);
+  if (!cells.length) return null;
+  return (
+    <section className="ix-stats" aria-label="Valuation">
+      {cells.map(([l, v, sub]) => <div key={l}><span>{l}</span><b>{v}</b>{sub && <small>{sub}</small>}</div>)}
+    </section>
+  );
+}
+
+// Returns over each span, beside the Nifty 50's, and how far ahead or behind
+function IndexReturns({ d }) {
+  const b = d.benchmark;
+  const scale = Math.max(1, ...RETURNS.flatMap(([k]) => [Math.abs(d.returns[k] ?? 0), Math.abs(b?.[k] ?? 0)]));
+  return (
+    <section className="ix-card" aria-label="Returns">
+      <h3 className="ix-h">Returns{b && <span className="ix-h-sub">against the Nifty 50</span>}</h3>
+      <div className={`ix-rets${b ? " vs" : ""}`}>
+        <span className="ix-rets-head" aria-hidden="true"><span /><span /><span>{label(d.name)}</span>{b && <><span>Nifty 50</span><span>Ahead by</span></>}</span>
+        {RETURNS.map(([k, l]) => {
+          const v = d.returns[k], n = b?.[k], gap = v != null && n != null ? v - n : null;
+          return (
+            <div key={k} className="ix-ret">
+              <span className="ex-ret-label">{l}</span>
+              <span className="ex-ret-track" aria-hidden="true">{v != null && <span className={`ex-ret-bar ${tone(v)}`} style={{ "--w": `${(Math.abs(v) / scale) * 50}%` }} />}</span>
+              {v != null ? <Change value={v} /> : <span className="ex-na">—</span>}
+              {b && <span className="ix-muted">{n != null ? `${n > 0 ? "+" : n < 0 ? "−" : ""}${Math.abs(n).toFixed(1)}%` : "—"}</span>}
+              {b && <span className={`ix-gap ${gap == null ? "" : gap >= 0 ? "up" : "down"}`}>{gap == null ? "—" : `${gap >= 0 ? "+" : "−"}${Math.abs(gap).toFixed(1)} pts`}</span>}
+            </div>
+          );
+        })}
+      </div>
+      <p className="nw-note">Price returns from NSE's closes, without dividends; 3 and 5 years are a year on average.</p>
+    </section>
+  );
+}
+
+// The sector's middle P/E at each year-end, and now
+function PeYears({ brief }) {
+  const list = [...brief.peYears.map(y => ({ l: `Mar ${y.year.slice(2)}`, pe: y.pe })), ...(brief.medianPe ? [{ l: "Now", pe: brief.medianPe, now: true }] : [])];
+  const max = Math.max(...list.map(y => y.pe));
+  const past = brief.peYears.map(y => y.pe);
+  const avg = past.reduce((t, v) => t + v, 0) / past.length;
+  const vs = brief.medianPe ? (brief.medianPe / avg - 1) * 100 : null;
+  return (
+    <section className="ix-card" aria-label="P/E over the years">
+      <h3 className="ix-h">Middle P/E over the years</h3>
+      <div className="ix-pe" role="img" aria-label={list.map(y => `${y.l} ${y.pe.toFixed(1)}`).join(", ")}>
+        {list.map(y => (
+          <span key={y.l} className={`ix-pe-col${y.now ? " now" : ""}`}>
+            <span className="ix-pe-v">{y.pe.toFixed(0)}</span>
+            <span className="ix-pe-bar" style={{ height: `${Math.max(8, (y.pe / max) * 120)}px` }} />
+            <span className="ix-pe-l">{y.l}</span>
+          </span>
+        ))}
+      </div>
+      {vs != null && <p className="ix-pe-say">Now <b>{Math.abs(vs).toFixed(0)}% {vs >= 0 ? "above" : "below"}</b> its average of {avg.toFixed(1)} over these year-ends.</p>}
+      <p className="nw-note">Each year the middle of its companies' own P/Es at the year-end price. A figure, not a call on the shares.</p>
+    </section>
+  );
+}
+
+// The sector's companies, largest first; a column's title sorts by it
+const CO_COLS = [["name", "Company"], ["close", "Price"], ["d1", "1D"], ["m1", "1M"], ["y1", "1Y"], ["down52", "Off 52w high"], ["pe", "P/E"], ["roe", "ROE"], ["quality", "Quality"], ["marketCapCr", "Market value"]];
+function IndexCompanies({ rows, onOpenStock, sector }) {
+  const [sort, setSort] = useState(["marketCapCr", -1]);
+  const [all, setAll] = useState(false);
+  const sorted = useMemo(() => {
+    const [k, dir] = sort;
+    return [...rows].sort((a, b) => k === "name" ? dir * niceName(a.name).localeCompare(niceName(b.name)) : (a[k] == null) - (b[k] == null) || dir * ((a[k] ?? 0) - (b[k] ?? 0)));
+  }, [rows, sort]);
+  const shown = all ? sorted : sorted.slice(0, 15);
+  const pctCell = v => (v == null ? <span className="ex-na">—</span> : <Change value={v} />);
+  const cell = (r, k) => {
+    if (k === "close") return r.close != null ? `₹${r.close.toLocaleString("en-IN", { maximumFractionDigits: 2 })}` : "—";
+    if (k === "d1" || k === "m1" || k === "y1") return pctCell(r[k]);
+    if (k === "down52") return r.down52 != null ? `${r.down52.toFixed(1)}%` : "—";
+    if (k === "pe") return r.pe != null ? r.pe.toFixed(1) : "—";
+    if (k === "roe") return r.roe != null ? `${r.roe.toFixed(1)}%` : "—";
+    if (k === "quality") return r.quality != null ? Math.round(r.quality) : "—";
+    if (k === "marketCapCr") return crShort(r.marketCapCr);
+    return null;
+  };
+  return (
+    <section className="ix-card ix-cos" aria-label={`${sector} companies`}>
+      <h3 className="ix-h">Its companies<span className="ix-h-sub">{rows.length} measured against this index · tap a title to sort</span></h3>
+      <div className="ix-table-wrap">
+        <table className="ix-table">
+          <thead><tr>{CO_COLS.map(([k, l]) => (
+            <th key={k} scope="col" aria-sort={sort[0] === k ? (sort[1] > 0 ? "ascending" : "descending") : undefined}>
+              <button type="button" onClick={() => setSort(([sk, sd]) => [k, sk === k ? -sd : k === "name" || k === "pe" || k === "down52" ? 1 : -1])}>{l}{sort[0] === k && <span aria-hidden="true">{sort[1] > 0 ? " ↑" : " ↓"}</span>}</button>
+            </th>
+          ))}</tr></thead>
+          <tbody>{shown.map(r => (
+            <tr key={r.symbol} onClick={() => onOpenStock(r.symbol)}>
+              <th scope="row"><button type="button" onClick={e => { e.stopPropagation(); onOpenStock(r.symbol); }}><CompanyLogo symbol={r.symbol} size={22} fallback={r.name} /><span><b>{niceName(r.name)}</b><small>{r.industry ?? r.symbol}</small></span></button></th>
+              {CO_COLS.slice(1).map(([k]) => <td key={k}>{cell(r, k)}</td>)}
+            </tr>
+          ))}</tbody>
+        </table>
+      </div>
+      {rows.length > 15 && <button type="button" className="ix-more" onClick={() => setAll(a => !a)}>{all ? "Show the first 15" : `Show all ${rows.length}`}</button>}
+    </section>
+  );
+}
+
 // An index in full
 function IndexDetail({ name, onBack, onOpenStock, onOpenNews }) {
   const [d, setD] = useState(null);
   const [error, setError] = useState("");
   const [range, setRange] = useState("1Y");
   useEffect(() => { setD(null); api.exploreIndex(name).then(setD).catch(e => setError(e.message)); window.scrollTo(0, 0); }, [name]);
+  // a sector's brief: its value, middle P/E over the years, industries, results due
+  const [brief, setBrief] = useState(null);
+  useEffect(() => { setBrief(null); if (d?.sector) api.sectorBrief(d.sector, "1m").then(setBrief).catch(() => {}); }, [d?.sector]);
   const back = <button type="button" className="nw-back" onClick={onBack}><ArrowLeft size={17} aria-hidden="true" /> Back</button>;
   if (error) return <div className="ex-detail">{back}<p className="nw-empty">{error}</p></div>;
   if (!d) return <div className="ex-detail">{back}<div className="nw-skel" role="status" aria-label="Loading">{[0, 1, 2].map(i => <span key={i} />)}</div></div>;
@@ -137,8 +254,6 @@ function IndexDetail({ name, onBack, onOpenStock, onOpenNews }) {
   const days = n === Infinity ? d.days : d.days.slice(-(n + 1));
   const vix = name === "India VIX";
   const dayDir = tone(d.changePct);
-  // the returns' bars share one scale, so the longest is the biggest move
-  const scale = Math.max(1, ...RETURNS.map(([k]) => Math.abs(d.returns[k] ?? 0)));
   return (
     <article className="ex-detail" aria-label={label(name)}>
       {back}
@@ -148,74 +263,63 @@ function IndexDetail({ name, onBack, onOpenStock, onOpenNews }) {
         <p className="ex-big">{points(d.close)} <span className={`ex-daychg ${dayDir}`}>{signed(d.change)}{points(Math.abs(d.change))} ({signed(d.changePct)}{Math.abs(d.changePct).toFixed(2)}%)</span><span className="ex-big-on">on the day</span></p>
       </header>
       {vix && <p className="nw-note">India VIX is how much the market expects prices to swing over the next 30 days, from NIFTY options: higher means more nervous. It isn't a price.</p>}
-      {/* a wide screen: the chart on the left, its returns and valuation beside it */}
-      <div className="dt-cols">
-      <div className="dt-main">
+      {/* 8 Nov 2026 ("charts are not full width … go deep and add useful
+          things"): the chart across the page, its figures in a strip, then
+          returns against the Nifty 50, the P/E over the years, the companies
+          to sort, and what's moving, by industry and coming up */}
       <IndexChart days={days} closes={closes} range={range} onRange={setRange} />
-      {(d.pe || d.pb || d.divYield) && (
-        <section className="nw-section" aria-label="Valuation">
-          <h3 className="nw-section-head">Valuation</h3>
-          <div className="ex-stats">
-            {d.pe && <div><span>P/E</span><b>{d.pe.toFixed(1)}</b></div>}
-            {d.pb && <div><span>P/B</span><b>{d.pb.toFixed(2)}</b></div>}
-            {d.divYield && <div><span>Dividend yield</span><b>{d.divYield.toFixed(2)}%</b></div>}
-          </div>
-          <p className="nw-note">NSE's figures for the index on {shortDate(d.asOf)}.</p>
-        </section>
-      )}
+      <IndexStats d={d} brief={brief} />
+      <div className="ix-grid">
+        {!vix && <IndexReturns d={d} />}
+        {brief?.peYears?.length > 1 && <PeYears brief={brief} />}
       </div>
-      <div className="dt-side">
-      {!vix && (
-        <section className="nw-section" aria-label="Returns">
-          <h3 className="nw-section-head">Returns</h3>
-          <div className="ex-returns">
-            {RETURNS.map(([k, l]) => {
-              const v = d.returns[k];
-              return (
-                <div key={k} className="ex-ret">
-                  <span className="ex-ret-label">{l}</span>
-                  <span className="ex-ret-track" aria-hidden="true">{v != null && <span className={`ex-ret-bar ${tone(v)}`} style={{ "--w": `${(Math.abs(v) / scale) * 50}%` }} />}</span>
-                  {v != null ? <Change value={v} /> : <span className="ex-na">—</span>}
-                </div>
-              );
-            })}
-          </div>
-          <p className="nw-note">Price returns from NSE's closes, without dividends; 3 and 5 years are a year on average.</p>
-        </section>
-      )}
-      </div>
-      </div>
-      {/* a wide screen: the movers and the news side by side under them */}
-      <div className="dt-below">
-      {(d.gainers.length > 0 || d.losers.length > 0) && (
-        <section className="nw-section" aria-label="Biggest moves">
-          <h3 className="nw-section-head">Biggest moves on {shortDate(d.asOf)}</h3>
-          <p className="nw-note">{d.sector} companies over ₹1,000 crore ({d.companies}).</p>
-          <div className="ex-movers">
+      {d.table?.length > 0 && <IndexCompanies rows={d.table} onOpenStock={onOpenStock} sector={d.sector} />}
+      <div className="ix-grid three">
+        {(d.gainers.length > 0 || d.losers.length > 0) && (
+          <section className="ix-card" aria-label="Biggest moves">
+            <h3 className="ix-h">Biggest moves on {shortDate(d.asOf)}</h3>
             {[["Up", d.gainers], ["Down", d.losers]].map(([t, list]) => list.length > 0 && (
-              <div key={t} className="ex-movers-col">
+              <div key={t}>
                 <p className={`ex-movers-h ${t === "Up" ? "up" : "down"}`}>{t === "Up" ? "Rose most" : "Fell most"}</p>
-                <div className="nw-list">
-                {list.map(m => (
-                  <button key={m.symbol} type="button" className="nw-row compact" onClick={() => onOpenStock(m.symbol)}>
-                    <span className="nw-mark"><CompanyLogo symbol={m.symbol} size={36} fallback={m.name} /></span>
-                    <span className="nw-main"><span className="nw-top"><span className="nw-who">{niceName(m.name)}</span><span className="nw-spacer" /><Change value={m.change1d} /></span>
-                      <span className="nw-subject">₹{m.close?.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</span></span>
-                  </button>
-                ))}
-                </div>
+                <ul className="ix-list">
+                  {list.map(m => (
+                    <li key={m.symbol}><button type="button" onClick={() => onOpenStock(m.symbol)}>
+                      <CompanyLogo symbol={m.symbol} size={24} fallback={m.name} /><span className="ix-list-name">{niceName(m.name)}</span><Change value={m.change1d} />
+                    </button></li>
+                  ))}
+                </ul>
               </div>
             ))}
-          </div>
-        </section>
-      )}
+          </section>
+        )}
+        {brief?.industries?.length > 1 && (
+          <section className="ix-card" aria-label="Its industries">
+            <h3 className="ix-h">Its industries, over the month</h3>
+            <ul className="ix-list">
+              {brief.industries.slice(0, 10).map(i => (
+                <li key={i.name}><span className="ix-list-row"><span className="ix-list-name">{i.name}</span><small>{i.count}</small>{i.change != null ? <Change value={i.change} /> : <span className="ex-na">—</span>}</span></li>
+              ))}
+            </ul>
+            <p className="nw-note">Each industry's move weighted by market value; the number is how many companies.</p>
+          </section>
+        )}
+        {brief && (
+          <section className="ix-card" aria-label="Results coming up">
+            <h3 className="ix-h">Results in the next two weeks</h3>
+            {brief.results.length ? <ul className="ix-list">{brief.results.map(r => (
+              <li key={r.symbol}><button type="button" onClick={() => onOpenStock(r.symbol)}>
+                <span className="ix-date">{shortDate(r.date)}</span><span className="ix-list-name">{niceName(r.name)}</span><ChevronRight size={14} aria-hidden="true" />
+              </button></li>
+            ))}</ul> : <p className="nw-note">None on NSE's calendar.</p>}
+          </section>
+        )}
+      </div>
       {d.news?.length > 0 && (
         <section className="nw-section" aria-label={`${label(name)} news`}>
           <h3 className="nw-section-head">{label(name)} news</h3>
           <div className="nw-list">{d.news.map(item => <NewsRow key={item.id} item={item} onOpen={onOpenNews} />)}</div>
         </section>
       )}
-      </div>
     </article>
   );
 }

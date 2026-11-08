@@ -6252,3 +6252,60 @@ html.td-night[data-theme="light"] .tb.tb-scrolled { box-shadow: 0 1px 0 rgba(255
 .mm-filters-pop .ex-heat-sector { max-width: none; width: 100%; }
 .mm-filters-clear { justify-self: start; height: 30px; padding: 0 4px; border: 0; background: none; color: var(--accent); font: inherit; font-size: var(--fs-sm); cursor: pointer; }
 @media (min-width: 900px) { .ex-heat-opts { flex: 1 1 100%; } .ex-heat-opts .mm-find { margin-left: auto; } }
+
+/* An index in full (8 Nov 2026): the chart across the page, a strip of its
+   figures, then cards two or three across */
+@media (min-width: 900px) { .ex-detail > .ex-chart .ex-plot svg { height: 340px !important; } }
+.ix-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; margin-top: 16px; border: 1px solid var(--bdr); border-radius: 16px; background: var(--bdr); overflow: hidden; }
+.ix-stats > div { display: grid; gap: 2px; padding: 12px 16px; background: var(--s1); }
+.ix-stats span { font-size: var(--fs-xs); color: var(--t3); }
+.ix-stats b { font-size: var(--fs-xl); font-weight: 600; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; color: var(--t1); }
+.ix-stats small { font-size: var(--fs-2xs); color: var(--t3); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ix-grid { display: grid; gap: 16px; margin-top: 16px; }
+@media (min-width: 900px) { .ix-grid { grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); } .ix-grid.three { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); } }
+.ix-card { min-width: 0; padding: 16px 18px 12px; border: 1px solid var(--bdr); border-radius: 16px; background: var(--s1); }
+.ix-card .nw-note { margin-top: 10px; }
+.ix-h { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 0 0 10px; font-size: var(--fs-md); font-weight: 600; color: var(--t1); }
+.ix-h-sub { font-size: var(--fs-xs); font-weight: 400; color: var(--t3); }
+.ix-rets { display: grid; }
+.ix-rets-head, .ix-ret { display: grid; grid-template-columns: 110px minmax(40px, 1fr) 64px; align-items: center; gap: 10px; }
+.ix-rets.vs .ix-rets-head, .ix-rets.vs .ix-ret { grid-template-columns: 104px minmax(30px, 1fr) 62px 62px 72px; }
+.ix-rets-head { padding-bottom: 4px; font-size: var(--fs-2xs); color: var(--t3); text-align: right; }
+.ix-ret { min-height: 40px; border-top: 1px solid var(--bdr); font-variant-numeric: tabular-nums; }
+.ix-ret > :nth-child(n+3) { text-align: right; justify-self: end; }
+.ix-muted { font-size: var(--fs-sm); color: var(--t3); }
+.ix-gap { font-size: var(--fs-sm); font-weight: 500; color: var(--t3); }
+.ix-gap.up { color: var(--green); } .ix-gap.down { color: var(--red); }
+@media (max-width: 520px) { .ix-rets.vs .ix-rets-head, .ix-rets.vs .ix-ret { grid-template-columns: 1fr 58px 58px 64px; } .ix-rets.vs .ex-ret-track, .ix-rets.vs .ix-rets-head > :nth-child(2) { display: none; } }
+.ix-pe { display: flex; align-items: flex-end; justify-content: space-around; gap: 8px; height: 170px; padding-top: 8px; }
+.ix-pe-col { display: grid; justify-items: center; gap: 4px; flex: 1; max-width: 64px; }
+.ix-pe-v { font-size: var(--fs-sm); font-weight: 600; font-variant-numeric: tabular-nums; color: var(--t2); }
+.ix-pe-bar { width: 100%; max-width: 36px; border-radius: 6px 6px 2px 2px; background: color-mix(in srgb, var(--accent) 30%, var(--s2)); }
+.ix-pe-col.now .ix-pe-bar { background: var(--accent); }
+.ix-pe-col.now .ix-pe-v { color: var(--accent); }
+.ix-pe-l { font-size: var(--fs-2xs); color: var(--t3); white-space: nowrap; }
+.ix-pe-say { margin: 10px 0 0; font-size: var(--fs-sm); color: var(--t2); }
+.ix-list { list-style: none; margin: 0; padding: 0; }
+.ix-list li + li { border-top: 1px solid var(--bdr); }
+.ix-list button, .ix-list-row { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 6px 0; border: 0; background: none; color: var(--t1); font: inherit; font-size: var(--fs-sm); text-align: left; cursor: pointer; }
+.ix-list-row { cursor: default; }
+.ix-list-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ix-list small { color: var(--t3); font-size: var(--fs-xs); }
+.ix-date { min-width: 52px; font-size: var(--fs-xs); font-weight: 600; color: var(--accent); }
+@media (hover: hover) and (pointer: fine) { .ix-list button:hover .ix-list-name { color: var(--accent); } }
+.ix-cos { margin-top: 16px; padding-bottom: 6px; }
+.ix-table-wrap { overflow-x: auto; margin: 0 -18px; padding: 0 18px; scrollbar-width: thin; }
+.ix-table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
+.ix-table th, .ix-table td { padding: 0 10px; height: 48px; border-top: 1px solid var(--bdr); text-align: right; white-space: nowrap; }
+.ix-table thead th { height: 36px; border-top: 0; }
+.ix-table thead button { padding: 0; border: 0; background: none; color: var(--t3); font: inherit; font-size: var(--fs-xs); font-weight: 500; cursor: pointer; }
+.ix-table thead th[aria-sort] button { color: var(--accent); }
+.ix-table th:first-child { position: sticky; left: 0; z-index: 1; padding-left: 0; text-align: left; background: var(--s1); }
+.ix-table tbody th button { display: flex; align-items: center; gap: 10px; max-width: 240px; padding: 0; border: 0; background: none; color: var(--t1); font: inherit; text-align: left; cursor: pointer; }
+.ix-table tbody th span { display: grid; min-width: 0; }
+.ix-table tbody th b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
+.ix-table tbody th small { font-size: var(--fs-2xs); color: var(--t3); overflow: hidden; text-overflow: ellipsis; }
+.ix-table tbody tr { cursor: pointer; }
+@media (hover: hover) and (pointer: fine) { .ix-table tbody tr:hover > * { background: var(--s2); } }
+.ix-more { height: 40px; margin-top: 6px; padding: 0 4px; border: 0; background: none; color: var(--accent); font: inherit; font-size: var(--fs-sm); font-weight: 500; cursor: pointer; }
+@media (min-width: 1280px) { .ex-detail { max-width: 1520px; } }
