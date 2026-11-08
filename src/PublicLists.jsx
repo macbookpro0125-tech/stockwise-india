@@ -57,7 +57,7 @@ export function ScreensIndexPage({ signedIn }) {
   useEffect(() => { document.title = "Indian stock screens: NSE companies by quality, value, dividends and growth | Jocular Insights"; }, []);
   const [join, box] = useJoin();
   return (
-    <PublicPage title="Indian stock screens" signedIn={signedIn} updated={d?.pricesDate ? `${day(d.pricesDate)} (the latest NSE close)` : "with each NSE close"} onSignIn={() => join(null, "signin")}>
+    <PublicPage title="Indian stock screens" signedIn={signedIn} updated={d?.pricesDate ? `${day(d.pricesDate)} (the latest NSE close)` : "with each NSE close"} onSignIn={() => join(null, "signin")} onJoin={() => join(null)}>
       <p className="pl-lede">Ready-made screens of NSE companies, each a set of filters on reported figures, with the companies that pass them today.</p>
       {error && <p className="nw-empty">{error}</p>}
       {!d && !error && <Wait />}
@@ -87,7 +87,7 @@ export function ScreenPage({ slug, signedIn }) {
   useEffect(() => { if (s) document.title = s.guide ? `${s.guide.search}: ${s.matched} today | Jocular Insights` : `${s.name}: ${s.matched} NSE stocks that match today | Jocular Insights`; }, [s]);
   const [join, box] = useJoin();
   return (
-    <PublicPage title={s ? `${s.name}: NSE companies that match today` : "Stock screen"} signedIn={signedIn} updated={s?.pricesDate ? `${day(s.pricesDate)} (the latest NSE close)` : "with each NSE close"} onSignIn={() => join(null, "signin")}>
+    <PublicPage title={s ? `${s.name}: NSE companies that match today` : "Stock screen"} signedIn={signedIn} updated={s?.pricesDate ? `${day(s.pricesDate)} (the latest NSE close)` : "with each NSE close"} onSignIn={() => join(null, "signin")} onJoin={() => join(null)}>
       <p className="pl-crumb"><A to="/screens">Stock screens</A> › {s?.name ?? "…"}{s && <ShareButton path={`/screens/${slug}`} text={`${s.name}: the NSE companies that pass it today, with their quality scores`} />}</p>
       {error && <p className="nw-empty">{error}</p>}
       {!s && !error && <Wait />}
@@ -149,7 +149,7 @@ export function ResultsCalendarPage({ signedIn }) {
   const total = c?.days.reduce((n, d) => n + d.count, 0) ?? 0;
   const [join, box] = useJoin();
   return (
-    <PublicPage title="Quarterly results calendar" signedIn={signedIn} updated={c ? `${day(c.today)}` : "daily"} onSignIn={() => join(null, "signin")}>
+    <PublicPage title="Quarterly results calendar" signedIn={signedIn} updated={c ? `${day(c.today)}` : "daily"} onSignIn={() => join(null, "signin")} onJoin={() => join(null)}>
       <p className="pl-lede">{c ? `${total} NSE companies have board meetings for results in the next two weeks, the largest companies first.` : "NSE companies' board meetings for results, the next two weeks."} Already reported? <A to="/results">See the latest results</A>, newest first.</p>
       {error && <p className="nw-empty">{error}</p>}
       {!c && !error && <Wait />}
@@ -185,7 +185,7 @@ export function SectorsIndexPage({ signedIn }) {
   useEffect(() => { document.title = "NSE stocks by sector: every listed company, sector by sector | Jocular Insights"; }, []);
   const [join, box] = useJoin();
   return (
-    <PublicPage title="NSE stocks by sector" signedIn={signedIn} updated={d?.pricesDate ? `${day(d.pricesDate)} (the latest NSE close)` : "with each NSE close"} onSignIn={() => join(null, "signin")}>
+    <PublicPage title="NSE stocks by sector" signedIn={signedIn} updated={d?.pricesDate ? `${day(d.pricesDate)} (the latest NSE close)` : "with each NSE close"} onSignIn={() => join(null, "signin")} onJoin={() => join(null)}>
       <p className="pl-lede">Every NSE-listed company NSE classifies, sector by sector, with each sector's companies and figures.</p>
       {error && <p className="nw-empty">{error}</p>}
       {!d && !error && <Wait />}
@@ -213,7 +213,7 @@ export function SectorPage({ slug, signedIn }) {
   useEffect(() => { if (s) document.title = `${s.name} stocks on NSE: ${s.count} companies by P/E, ROE and quality | Jocular Insights`; }, [s]);
   const [join, box] = useJoin();
   return (
-    <PublicPage title={s ? `${s.name} stocks on NSE` : "Sector"} signedIn={signedIn} updated={s?.pricesDate ? `${day(s.pricesDate)} (the latest NSE close)` : "with each NSE close"} onSignIn={() => join(null, "signin")}>
+    <PublicPage title={s ? `${s.name} stocks on NSE` : "Sector"} signedIn={signedIn} updated={s?.pricesDate ? `${day(s.pricesDate)} (the latest NSE close)` : "with each NSE close"} onSignIn={() => join(null, "signin")} onJoin={() => join(null)}>
       <p className="pl-crumb"><A to="/sectors">Sectors</A> › {s?.name ?? "…"}{s && <ShareButton path={`/sector/${slug}`} text={`${s.name} stocks on NSE: all ${s.count}, with their P/E and quality scores`} />}</p>
       {error && <p className="nw-empty">{error}</p>}
       {!s && !error && <Wait />}
@@ -263,7 +263,7 @@ export function ListsIndexPage({ signedIn }) {
   useEffect(() => { document.title = "NSE stock lists: Nifty 50, defence, PSU, stocks under ₹100, debt-free and more | Jocular Insights"; }, []);
   const [join, box] = useJoin();
   return (
-    <PublicPage title="NSE stock lists" signedIn={signedIn} updated={d?.pricesDate ? `${day(d.pricesDate)} (the latest NSE close)` : "with each NSE close"} onSignIn={() => join(null, "signin")}>
+    <PublicPage title="NSE stock lists" signedIn={signedIn} updated={d?.pricesDate ? `${day(d.pricesDate)} (the latest NSE close)` : "with each NSE close"} onSignIn={() => join(null, "signin")} onJoin={() => join(null)}>
       <p className="pl-lede">Each NSE index's companies, NSE's themes such as defence and railway PSUs, stocks by price, and a few plain filters, at the last close.</p>
       {error && <p className="nw-empty">{error}</p>}
       {!d && !error && <Wait />}
@@ -295,7 +295,7 @@ export function ListPage({ slug, signedIn }) {
   useEffect(() => { if (s) document.title = `${s.name} list: ${s.kind === "rule" ? `${s.count} NSE companies` : "the companies"} by P/E, ROE and quality | Jocular Insights`; }, [s]);
   const [join, box] = useJoin();
   return (
-    <PublicPage title={s?.name ?? "Stock list"} signedIn={signedIn} updated={s?.pricesDate ? `${day(s.pricesDate)} (the latest NSE close)` : "with each NSE close"} onSignIn={() => join(null, "signin")}>
+    <PublicPage title={s?.name ?? "Stock list"} signedIn={signedIn} updated={s?.pricesDate ? `${day(s.pricesDate)} (the latest NSE close)` : "with each NSE close"} onSignIn={() => join(null, "signin")} onJoin={() => join(null)}>
       <p className="pl-crumb"><A to="/lists">Lists</A> › {s?.name ?? "…"}{s && <ShareButton path={`/lists/${slug}`} text={`${s.name}: all ${s.count}, with their P/E and quality scores`} />}</p>
       {error && <p className="nw-empty">{error}</p>}
       {!s && !error && <Wait />}

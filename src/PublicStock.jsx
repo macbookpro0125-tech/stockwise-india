@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Star, Bell, ChevronRight, Building2, TrendingUp, ShieldCheck, Users, Scale, ChartCandlestick, Newspaper } from "lucide-react";
 import { CHAPTERS } from "./chapterText.js";
 import { api } from "./api.js";
-import { BrandMark } from "./site.jsx";
+import { PublicHeader } from "./site.jsx";
 import CompanyLogo from "./CompanyLogo.jsx";
 import { AdCard } from "./ads.jsx";
 import AuthDialog from "./AuthDialog.jsx";
@@ -124,10 +124,7 @@ export default function PublicStock({ symbol, onAuthed, initial = null }) {
   const analysisRevenueLabel = s?.symbol === "HDFCBANK" ? "reported revenue line" : "reported revenue";
   return (
     <div className="ps-page">
-      <header className="ps-head">
-        <a href="/" className="ps-brand"><BrandMark size={34} /><span>Jocular <b>Insights</b></span></a>
-        <button type="button" className="btn-primary ps-signin" onClick={() => ask(null, "signin")}>Sign in</button>
-      </header>
+      <PublicHeader signedIn={false} onSignIn={() => ask(null, "signin")} onJoin={() => ask(null)} />
       <main className="ps-main">
         {error && <p className="nw-empty">{error}</p>}
         {!s && !error && <div className="nw-skel" role="status" aria-label="Loading">{[0, 1, 2].map(i => <span key={i} />)}</div>}

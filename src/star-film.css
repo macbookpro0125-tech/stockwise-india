@@ -245,3 +245,16 @@
   .hs { margin: 18px 0 0; width: 100%; }
   .hs-try { text-align: left; }
 }
+
+/* The bar's pages and a sign-up button (8 Nov 2026) */
+.sf-nav { display: none; }
+.sf-bar-acts { display: flex; align-items: center; gap: 8px; }
+.sf-join { display: none; }
+@media (min-width: 900px) {
+  .sf-nav { display: flex; gap: 2px; margin-right: auto; margin-left: 12px; }
+  .sf-nav a { display: inline-flex; align-items: center; height: 34px; padding: 0 10px; border-radius: 8px; font: 500 14px/1 var(--font); color: var(--t3); text-decoration: none; transition: color .2s ease; }
+  .sf-nav a:hover { color: var(--t1); }
+  .sf-join { display: inline-flex; border-color: transparent; background: var(--accent); color: #fff; }
+  .sf-join:hover, .sf-bar-page .sf-join:hover { background: color-mix(in srgb, var(--accent) 85%, #000) !important; }
+  .sf-bar-page .sf-join { border-color: transparent; background: var(--accent); color: #fff; }
+}

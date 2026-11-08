@@ -1,4 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
+// lazily: HeroSearch imports navigate from here
+const HeroSearchLazy = lazy(() => import("./HeroSearch.jsx"));
 
 // The pages with their own web address: the front page, /privacy,
 // /disclaimer and each stock page (/stock/TCS) — so they can be linked to,
@@ -102,6 +104,36 @@ export function BrandMark({ size = 32, theme, className = "" }) {
       <img className="bm-dark" src="/jocular-insights-dark.png" alt="" />
       <img className="bm-light" src="/jocular-insights-light.png" alt="" />
     </span>
+  );
+}
+
+// The public pages' header (8 Nov 2026, a review: "a stock site needs a
+// search box at the top … no sign-up button"): the logo, the site's main
+// pages, a company search, and Sign in / Create free account (or back to
+// the app when signed in). A phone: the logo and the buttons, then the
+// search, then the pages as a row to swipe.
+const PUB_NAV = [["/screens", "Screens"], ["/sectors", "Sectors"], ["/results", "Results"], ["/lists", "Stock lists"], ["/learn", "Learn"]];
+export function PublicHeader({ signedIn, onSignIn, onJoin }) {
+  const here = typeof window !== "undefined" ? window.location.pathname : "";
+  const go = to => e => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); navigate(to); window.scrollTo(0, 0); };
+  return (
+    <header className="pub-head">
+      <div className="pub-head-in">
+        <a href="/" onClick={go("/")} className="pub-logo" aria-label="Jocular Insights, home"><Logo /></a>
+        <nav className="pub-nav" aria-label="Main pages">
+          {PUB_NAV.map(([to, label]) => <a key={to} href={to} onClick={go(to)} aria-current={here === to || here.startsWith(`${to}/`) ? "page" : undefined}>{label}</a>)}
+        </nav>
+        <Suspense fallback={<span className="pub-search" />}><HeroSearchLazy className="pub-search" compact /></Suspense>
+        <div className="pub-acts">
+          {signedIn
+            ? <button type="button" className="btn-ghost pub-btn" onClick={() => navigate("/")}>Back to the app</button>
+            : <>
+              <button type="button" className="btn-ghost pub-btn" onClick={() => (onSignIn ? onSignIn() : navigate("/?auth=login"))}>Sign in</button>
+              <button type="button" className="btn-primary pub-btn" onClick={() => (onJoin ? onJoin() : navigate("/?auth=signup"))}><span className="pub-long">Create free account</span><span className="pub-short">Join free</span></button>
+            </>}
+        </div>
+      </div>
+    </header>
   );
 }
 

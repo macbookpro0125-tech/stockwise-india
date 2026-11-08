@@ -69,7 +69,8 @@ function fmtDate(iso) {
 
 export default function Landing({ onAuthed, notice }) {
   // The sign-in dialog: "login", "signup", or closed
-  const [auth, setAuth] = useState(() => new URLSearchParams(window.location.search).get("auth") === "login" ? "login" : null);
+  // (?auth=login or ?auth=signup: a public page's header buttons, 8 Nov 2026)
+  const [auth, setAuth] = useState(() => { const a = new URLSearchParams(window.location.search).get("auth"); return a === "login" || a === "signup" ? a : null; });
   const [stats, setStats] = useState(null);
   useEffect(() => { api.stats().then(setStats).catch(() => {}); }, []);
 

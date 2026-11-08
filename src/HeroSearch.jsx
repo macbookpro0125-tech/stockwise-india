@@ -8,7 +8,7 @@ import { navigate } from "./site.jsx";
 const TRY = [["RELIANCE", "Reliance"], ["TCS", "TCS"], ["HDFCBANK", "HDFC Bank"], ["INFY", "Infosys"]];
 const open = symbol => navigate(`/stock/${encodeURIComponent(symbol)}`);
 
-export default function HeroSearch({ className = "" }) {
+export default function HeroSearch({ className = "", compact = false }) {
   const [q, setQ] = useState("");
   const [list, setList] = useState([]);
   const [active, setActive] = useState(-1);
@@ -43,7 +43,7 @@ export default function HeroSearch({ className = "" }) {
     <div className={`hs ${className}`} ref={box}>
       <form role="search" onSubmit={submit} className="hs-form">
         <svg className="hs-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
-        <input type="search" value={q} onChange={e => setQ(e.target.value)} onKeyDown={onKey} placeholder="Search any NSE company" aria-label="Search any NSE company"
+        <input type="search" value={q} onChange={e => setQ(e.target.value)} onKeyDown={onKey} placeholder={compact ? "Search a company or symbol" : "Search any NSE company"} aria-label="Search any NSE company"
           role="combobox" aria-expanded={list.length > 0} aria-controls="hs-list" aria-autocomplete="list" autoComplete="off" autoCorrect="off" autoCapitalize="none" spellCheck={false} enterKeyHint="search" />
       </form>
       {list.length > 0 && (
@@ -55,7 +55,7 @@ export default function HeroSearch({ className = "" }) {
           ))}
         </ul>
       )}
-      <p className="hs-try">Try{TRY.map(([s, name], i) => <span key={s}>{i ? " · " : " "}<a href={`/stock/${s}`} onClick={e => { e.preventDefault(); open(s); }}>{name}</a></span>)}</p>
+      {!compact && <p className="hs-try">Try{TRY.map(([s, name], i) => <span key={s}>{i ? " · " : " "}<a href={`/stock/${s}`} onClick={e => { e.preventDefault(); open(s); }}>{name}</a></span>)}</p>}
     </div>
   );
 }

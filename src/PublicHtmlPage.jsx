@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "./api.js";
-import { Logo, SiteFooter, navigate } from "./site.jsx";
+import { SiteFooter, navigate, PublicHeader } from "./site.jsx";
 import { useJoin, JoinCard, JoinBar } from "./PublicJoin.jsx";
 
 // The server-written public pages (server/seo-pages.js: a company's
@@ -35,12 +35,7 @@ export default function PublicHtmlPage({ path, signedIn }) {
   };
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
-      <header style={{ borderBottom: "1px solid var(--bdr)" }}>
-        <div style={{ maxWidth: 1240, margin: "0 auto", padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-          <a href="/" onClick={e => { e.preventDefault(); navigate("/"); }} style={{ textDecoration: "none" }}><Logo /></a>
-          <button className="btn-ghost" onClick={() => (signedIn ? navigate("/") : join(null, "signin"))} style={{ height: 34, fontSize: 12 }}>{signedIn ? "← Back to the app" : "Sign in"}</button>
-        </div>
-      </header>
+      <PublicHeader signedIn={signedIn} onSignIn={() => join(null, "signin")} onJoin={() => join(null)} />
       {error && <p className="nw-empty" style={{ padding: 20 }}>{error}</p>}
       {!page && !error && <div className="nw-skel" role="status" aria-label="Loading" style={{ padding: 20 }}>{[0, 1, 2].map(i => <span key={i} />)}</div>}
       {/* the server's own HTML (every value escaped there: seo-pages.js) */}

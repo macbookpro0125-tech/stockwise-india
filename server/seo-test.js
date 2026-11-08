@@ -82,7 +82,7 @@ assert.equal((html.match(/<meta name="description"/g) ?? []).length, 1, "one des
 assert.doesNotMatch(html, /content="generic"/);
 assert.match(html, new RegExp(`<link rel="canonical" href="https://jocularinsights.in/stock/${encodeURIComponent(sym)}"`));
 assert.match(html, /"@type":"Corporation"/);
-assert.match(html, /<div id="root"><main class="seo-stock">[\s\S]*<h1>/, "the summary is in the page itself");
+assert.match(html, /<div id="root"><header class="seo-nav">[\s\S]*?<\/header><main class="seo-stock">[\s\S]*<h1>/, "the summary is in the page itself, under the site's links");
 assert.equal(stockPageHtml(template, "NOT-A-COMPANY"), null);
 // a company name can't break out of the page
 assert.doesNotMatch(html.replace(/<script type="application\/ld\+json">[\s\S]*?<\/script>/, ""), /<script>(?!)/);

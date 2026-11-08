@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useScreenerMeta } from "./screener/meta.js";
 import { Definition } from "./screener/MetricInfo.jsx";
-import { SiteLink, SiteFooter, Logo, navigate } from "./site.jsx";
+import { SiteLink, SiteFooter, Logo, navigate, PublicHeader } from "./site.jsx";
 import { problemMailto } from "./help.js";
 
 // /privacy, /disclaimer and /help. Every statement here has to stay true to what
@@ -13,17 +13,10 @@ const UPDATED = "18 October 2026";
 const CONTACT_EMAIL = "jocularinsights@gmail.com";
 
 // onSignIn: the page's own sign-in box (PublicJoin.jsx), else the front page
-export function PublicPage({ title, signedIn, updated = UPDATED, children, onSignIn = null }) {
+export function PublicPage({ title, signedIn, updated = UPDATED, children, onSignIn = null, onJoin = null }) {
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
-      <header style={{ borderBottom: "1px solid var(--bdr)" }}>
-        <div style={{ maxWidth: 1240, margin: "0 auto", padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-          <a href="/" onClick={e => { e.preventDefault(); navigate("/"); }} style={{ textDecoration: "none" }}><Logo /></a>
-          <button className="btn-ghost" onClick={() => (!signedIn && onSignIn ? onSignIn() : navigate("/"))} style={{ height: 34, fontSize: 12 }}>
-            {signedIn ? "← Back to the app" : "Sign in"}
-          </button>
-        </div>
-      </header>
+      <PublicHeader signedIn={signedIn} onSignIn={onSignIn} onJoin={onJoin} />
       <main style={{ flex: 1, width: "100%", maxWidth: 760, margin: "0 auto", padding: "40px 20px 0", boxSizing: "border-box" }}>
         <h1 style={{ fontSize: 28, fontWeight: 500, letterSpacing: "-0.03em", color: "var(--t1)", margin: "0 0 6px" }}>{title}</h1>
         <p style={{ fontSize: 12, color: "var(--t3)", margin: "0 0 28px" }}>Last updated {updated}</p>

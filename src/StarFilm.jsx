@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronRight, MousePointer2 } from "lucide-react";
-import { Logo } from "./site.jsx";
+import { Logo, navigate } from "./site.jsx";
 import StrategyMark, { markColor } from "./StrategyMarks.jsx";
 import { createStarScene } from "./starScene.js";
 import DomeFilm from "./DomeFilm.jsx";
@@ -273,7 +273,16 @@ export default function StarFilm({ onJoin, onLogin, stats }) {
 
         <div ref={barRef} className="sf-bar">
           <Logo />
-          <button type="button" className="sf-signin" onClick={onLogin}>Sign in</button>
+          {/* the site's main pages (8 Nov 2026, a review: "no top navigation"); a computer's only */}
+          <nav className="sf-nav" aria-label="Main pages">
+            {[["/screens", "Screens"], ["/sectors", "Sectors"], ["/results", "Results"], ["/lists", "Stock lists"], ["/learn", "Learn"]].map(([to, l]) => (
+              <a key={to} href={to} onClick={e => { if (e.metaKey || e.ctrlKey) return; e.preventDefault(); navigate(to); window.scrollTo(0, 0); }}>{l}</a>
+            ))}
+          </nav>
+          <span className="sf-bar-acts">
+            <button type="button" className="sf-signin" onClick={onLogin}>Sign in</button>
+            <button type="button" className="sf-signin sf-join" onClick={onJoin}>Create free account</button>
+          </span>
         </div>
 
         <div ref={cap(0)} className="sf-cap sf-sky sf-open" data-in="-0.05" data-hold="0.02" data-out="0.10"><div className="sf-ci">

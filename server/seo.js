@@ -32,6 +32,11 @@ import { stockStory, SECTOR_PATHS } from "./seo-story.js";
 import { LIST_PAGE_PATHS } from "./seo-collections.js";
 import { subPagePaths, stockPageLinks } from "./seo-pages.js";
 import { GUIDE_PATHS, GUIDES_UPDATED } from "./guides.js";
+
+// Every server-written page opens with the site's main pages and a way to
+// sign up (8 Nov 2026, a review that read the HTML: "no top navigation …
+// no sign-up button"). The app replaces it with its own header once loaded.
+const SITE_NAV = `<header class="seo-nav"><a href="/">Jocular Insights</a> <nav aria-label="Main pages"><a href="/screens">Stock screens</a> · <a href="/sectors">Sectors</a> · <a href="/results">Latest results</a> · <a href="/results-calendar">Results calendar</a> · <a href="/lists">Stock lists</a> · <a href="/learn">Learn</a></nav> <a href="/?auth=signup">Create a free account</a></header>`;
 const PUBLIC_PATHS = ["/", "/about", "/help", "/methodology", SCREENER_PAGE_PATH, "/privacy", "/disclaimer"];
 
 export const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -70,7 +75,7 @@ ${image ? `<meta property="og:image" content="${esc(image.url)}" />\n<meta prope
     .replace(/<meta property="og:(title|description|url|type)"[^>]*>/g, "")
     .replace(image ? /<meta property="og:image(:alt)?" [^>]*>/g : /$^/, "")
     .replace("</head>", `${head}\n</head>`)
-    .replace(/<div id="root">\s*<\/div>/, `<div id="root">${body}</div>`);
+    .replace(/<div id="root">\s*<\/div>/, `<div id="root">${SITE_NAV}${body}</div>`);
 }
 
 export function robotsTxt() {
@@ -281,7 +286,7 @@ export function methodologyPageHtml(template) {
     .replace(/<link rel="canonical"[^>]*>/, "")
     .replace(/<meta property="og:(title|description|url|type)"[^>]*>/g, "")
     .replace("</head>", `${head}\n</head>`)
-    .replace(/<div id="root">\s*<\/div>/, `<div id="root">${body}</div>`);
+    .replace(/<div id="root">\s*<\/div>/, `<div id="root">${SITE_NAV}${body}</div>`);
 }
 
 // A crawlable answer to the category question "which stock screener for
@@ -316,7 +321,7 @@ export function stockScreenerPageHtml(template) {
     .replace(/<link rel="canonical"[^>]*>/, "")
     .replace(/<meta property="og:(title|description|url|type)"[^>]*>/g, "")
     .replace("</head>", `${head}\n</head>`)
-    .replace(/<div id="root">\s*<\/div>/, `<div id="root">${body}</div>`);
+    .replace(/<div id="root">\s*<\/div>/, `<div id="root">${SITE_NAV}${body}</div>`);
 }
 
 // The app's page, made the company's own: title, description, canonical,
@@ -354,7 +359,7 @@ ${s.story?.sparse ? `<meta name="robots" content="noindex" />\n` : ""}
     .replace(/<link rel="canonical"[^>]*>/, "")
     .replace(/<meta property="og:(title|description|url|type)"[^>]*>/g, "")
     .replace("</head>", `${head}\n</head>`)
-    .replace(/<div id="root">\s*<\/div>/, `<div id="root">${summaryHtml(s)}<script id="public-stock-data" type="application/json">${JSON.stringify(s).replace(/</g, "\\u003c")}</script></div>`);
+    .replace(/<div id="root">\s*<\/div>/, `<div id="root">${SITE_NAV}${summaryHtml(s)}<script id="public-stock-data" type="application/json">${JSON.stringify(s).replace(/</g, "\\u003c")}</script></div>`);
 }
 
 // /about: who runs the site, where the data comes from and how to reach us —
