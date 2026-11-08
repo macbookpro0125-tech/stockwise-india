@@ -2,6 +2,10 @@
 
 Newest first. One line per piece of work; the commit message has the detail.
 
+## 8 Nov 2026
+
+- **8 Nov:** Applied for Play production access at 8:14 AM (all three closed-test criteria met). Answers as entered are in `replica/launch/play-production-answers.md`. Google says 7 days or less; it emails jocularinsights@gmail.com.
+
 ## 5 Nov 2026
 
 - **5 Nov:** Pushed `11d1e3b..4c78350`: Markets page, What to watch timeline, full-width news, map logos, coloured results bars. Live in about 80 s.
