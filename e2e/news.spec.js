@@ -121,7 +121,8 @@ test("N-H3 results show their figures; an announcement's filing is read for its 
 test("N-H4 a starred company's news shows on the Watchlist, with a dot on its tab until opened @phone", async ({ page, account, baseURL, isMobile }) => {
   const ctx = page.context().request;
   const feed = await (await ctx.get(`${baseURL}/api/news?kind=all&size=all`)).json();
-  const filing = feed.items.find(i => i.type === "filing");
+  // one with a price: a company new to NSE may not be in the test's data yet
+  const filing = feed.items.find(i => i.type === "filing" && i.quote?.price != null);
   test.skip(!filing, "no announcements in the feed just now");
   expect((await ctx.post(`${baseURL}/api/watchlist`, { data: { ticker: filing.symbol } })).ok()).toBeTruthy();
   // last looked a week ago: anything since is new
