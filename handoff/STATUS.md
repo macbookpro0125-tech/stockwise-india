@@ -65,7 +65,7 @@ Pushed 4 Nov 2026 at `3885578`: The phone chart's type picker is a one-column li
 - **3D glass logo for the opening:** `git stash` "3D opening logo (glow)". The owner chose the plain version.
 - **Chapter sidebar on the company page:** `git stash`, "not wanted".
 
-## Built 8 Nov, not pushed yet (158 passed)
+## Pushed 8 Nov 2026 at `1f03acc` (158 passed)
 - News: a third column on wide screens (NewsSide): your companies in the news, headlines straight to news sites, talked about today.
 - Map: two rows of controls: the indices | your lists; joined bars for period and box size; Colour; a Filters button (companies, sector) that closes after a pick; search at the end.
 - Sector index page (ExploreView IndexDetail): full-width chart, a figures strip, returns against the Nifty 50 (`benchmark` from /api/explore/index), middle P/E by year (sectorBrief), a sortable table of its companies (`table`), moves, industries, results due.
