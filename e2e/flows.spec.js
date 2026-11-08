@@ -48,7 +48,7 @@ test("F01-H3 Open screen on the front page signs up into that strategy", async (
   // asked the moment the page loaded, it wasn't there yet)
   await page.locator(".sf-track").waitFor({ state: "attached" });
   await page.evaluate(() => { const t = document.querySelector(".sf-track"), s = document.querySelector(".sf-stage"); window.scrollTo(0, t.offsetTop + (t.offsetHeight - s.clientHeight) * 0.84); });
-  const open = page.getByRole("button", { name: /^Open (Dividend Aristocrats|High Quality Compounders|Undervalued Growth)$/ });
+  const open = page.getByRole("button", { name: /^Open (Dividend Payers with Strong Finances|High Quality Compounders|Undervalued Growth)$/ });
   await expect(open).toBeVisible();
   await page.waitForTimeout(1200);
   const name = (await open.getAttribute("aria-label")).replace(/^Open /, "");

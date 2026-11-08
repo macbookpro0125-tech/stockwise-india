@@ -49,7 +49,7 @@ import { niceName } from "../src/stockName.js";
 import { countBrowserVisit, countActive, visitStats, isOwner } from "./visits.js";
 import { startDigestJobs, weeklyEmailOn, setWeeklyEmail, unsubscribe } from "./digest.js";
 import { INDEXNOW_KEY, startIndexNow } from "./indexnow.js";
-import { publicScreen, publicScreens, publicResultsCalendar, screenPageHtml, screensIndexHtml, resultsCalendarHtml, homePageHtml, sectorsIndexHtml, sectorPageHtml } from "./seo-lists.js";
+import { OLD_SCREEN_SLUGS, publicScreen, publicScreens, publicResultsCalendar, screenPageHtml, screensIndexHtml, resultsCalendarHtml, homePageHtml, sectorsIndexHtml, sectorPageHtml } from "./seo-lists.js";
 import { listsIndexHtml, listPageHtml, publicListsData, publicListData } from "./seo-collections.js";
 import { publicSectors, publicSector } from "./seo-story.js";
 import { publicSubPage, isSubPagePath } from "./seo-pages.js";
@@ -1630,6 +1630,7 @@ export function createApp() {
         const lower = p.match(/^\/stock\/([^/]+?)\/?$/);
         const to = p === "/index.html" ? "/"
           : lower && (decodePathSegment(lower[1]) !== decodePathSegment(lower[1]).toUpperCase() || p.endsWith("/")) ? `/stock/${encodeURIComponent(decodePathSegment(lower[1]).toUpperCase())}`
+          : /^\/screens\/[a-z0-9-]+\/?$/.test(p) && OLD_SCREEN_SLUGS[p.split("/")[2]] ? `/screens/${OLD_SCREEN_SLUGS[p.split("/")[2]]}`
           : /^\/(screens\/[a-z0-9-]+|sector\/[a-z0-9-]+|screens|sectors|results-calendar|methodology|about|help|learn|learn\/[a-z0-9-]+|privacy|disclaimer|stock-screener-india)\/$/.test(p) ? p.slice(0, -1)
           : null;
         if (to && to !== p) {

@@ -17,9 +17,11 @@ export const PRESETS = [
   },
   {
     id: "dividend_aristocrats",
-    name: "Dividend Aristocrats",
+    // 8 Nov 2026 (a review: "Aristocrats" means years of rising dividends,
+    // which this doesn't check): named for what it does check; the id stays
+    name: "Dividend Payers with Strong Finances",
     icon: "💰",
-    description: "Consistent dividend payers with stable cash flows",
+    description: "A dividend yield of 1.5% or more from large, profitable companies with moderate debt",
     criteria: {
       dividend_yield_min: 1.5,   // relaxed from 2.5 — 2.5% is rare among quality mid/large caps
       roe_min: 12,
@@ -55,9 +57,10 @@ export const PRESETS = [
   {
     id: "small_cap_multibaggers",
     // 25 Oct 2026: describes what it looks for, not a return it promises
-    name: "Small Caps with Multibagger Traits",
+    // 8 Nov 2026: "multibagger" is a promise; plain words instead (the id stays)
+    name: "Small Caps Growing Fast",
     icon: "🚀",
-    description: "High-growth small caps with strong fundamentals",
+    description: "Small companies growing sales 15% a year or more, with high returns on capital and little debt",
     criteria: {
       market_cap_min: 500,
       market_cap_max: 5000,

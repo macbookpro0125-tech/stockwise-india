@@ -25,7 +25,11 @@ import { loadSnapshots } from "./performance.js";
 const plain = name => niceName(name);
 // a sentence ends with a stop before the next one
 const sentence = t => { const x = String(t ?? "").trim(); return x && !/[.!?]$/.test(x) ? `${x}.` : x; };
-export const screenSlug = id => String(id).replace(/_/g, "-");
+// A screen's address is its id, unless renamed (8 Nov 2026): the old
+// addresses redirect (http-server.js, OLD_SCREEN_SLUGS)
+const SLUG_FOR = { ofss_style_filter: "high-margin-low-debt", dividend_aristocrats: "dividend-payers-strong-finances", small_cap_multibaggers: "small-caps-growing-fast" };
+export const OLD_SCREEN_SLUGS = { "ofss-style-filter": "high-margin-low-debt", "dividend-aristocrats": "dividend-payers-strong-finances", "small-cap-multibaggers": "small-caps-growing-fast" };
+export const screenSlug = id => SLUG_FOR[id] ?? String(id).replace(/_/g, "-");
 const bySlug = slug => PRESETS.find(p => screenSlug(p.id) === slug) ?? null;
 const SHOWN = 50;
 // a company's name, for one that has left a screen (so isn't in its results)

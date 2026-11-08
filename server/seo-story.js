@@ -13,7 +13,7 @@ import { peerKey } from "./sector-compare.js";
 import { loadMarketSnapshot } from "./market-data.js";
 import { niceName } from "../src/stockName.js";
 
-const SITE_SCREEN_SLUG = id => String(id).replace(/_/g, "-");
+import { screenSlug as SITE_SCREEN_SLUG } from "./seo-lists.js";
 export const sectorSlug = name => String(name ?? "").toLowerCase().replace(/&/g, " and ").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 const median = list => { const v = list.filter(x => Number.isFinite(x)).sort((a, b) => a - b); return v.length ? (v.length % 2 ? v[v.length >> 1] : (v[v.length / 2 - 1] + v[v.length / 2]) / 2) : null; };
 const f1 = v => Number(v).toLocaleString("en-IN", { maximumFractionDigits: 1, minimumFractionDigits: 1 });

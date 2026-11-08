@@ -33,7 +33,7 @@ export const SCREEN_GUIDES = {
     search: "Small cap stocks India with strong growth and low debt",
     lookFor: "Smaller companies (₹500–5,000 Cr) growing sales by 15% or more a year, with a return on capital of at least 15%, low debt and promoters who own more than half.",
     suits: "People researching small companies with the traits that past large winners shared early on — growth, returns on capital, little debt, owners with skin in the game.",
-    limits: "Most small companies with these traits don't become multibaggers. Small caps trade thinly, swing hard, and their filings deserve extra checking. The name describes traits, not a return anyone can expect.",
+    limits: "Most small companies with these traits don't go on to multiply in value. Small caps trade thinly, swing hard, and their filings deserve extra checking. The name describes what it checks, not a return anyone can expect.",
   },
   ofss_style_filter: {
     search: "Debt free stocks India with high margins and ROE",

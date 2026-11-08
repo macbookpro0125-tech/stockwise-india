@@ -5,7 +5,7 @@ import { groupStrategies, describeRules } from "./strategyAbout.js";
 
 const presets = [
   { id: "high_quality_compounders", name: "High Quality Compounders" },
-  { id: "dividend_aristocrats", name: "Dividend Aristocrats" },
+  { id: "dividend_aristocrats", name: "Dividend Payers with Strong Finances" },
   { id: "sound_banks", name: "Sound Banks" },
   { id: "momentum_growth", name: "Momentum Growth" },
   { id: "s-1", name: "My banks", custom: true },

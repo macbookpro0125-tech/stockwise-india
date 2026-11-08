@@ -86,7 +86,7 @@ function Gauge() {
 // card turns away and the next comes forward; a glass card offers it, and
 // the pointer taps "Open screen". No figures.
 const PICK = [
-  { id: "dividend_aristocrats", name: "Dividend Aristocrats", description: "Consistent dividend payers with stable cash flows" },
+  { id: "dividend_aristocrats", name: "Dividend Payers with Strong Finances", description: "A dividend yield of 1.5% or more from large, profitable companies with moderate debt" },
   { id: "high_quality_compounders", name: "High Quality Compounders", description: "Buffett-style: durable businesses with strong moats" },
   { id: "undervalued_growth", name: "Undervalued Growth", description: "Growing companies trading below fair value" },
 ];

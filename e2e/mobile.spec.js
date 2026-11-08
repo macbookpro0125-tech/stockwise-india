@@ -270,7 +270,7 @@ test("M-H11 a stock card's figures fit a small phone @phone", async ({ page, acc
   test.skip(!isMobile, "the phone layout");
   await page.setViewportSize({ width: 360, height: 740 });
   await page.goto("/?strategy=dividend_aristocrats");
-  await expect(page.getByRole("option", { name: "Dividend Aristocrats", selected: true })).toBeVisible();
+  await expect(page.getByRole("option", { name: "Dividend Payers with Strong Finances", selected: true })).toBeVisible();
   await page.waitForLoadState("networkidle");
   const values = page.locator(".ph-stat-v");
   await expect(values.first()).toBeVisible();
@@ -471,7 +471,7 @@ test("M-H22 the favourite screeners swipe natively and snap @phone", async ({ pa
   await page.getByRole("button", { name: "Add High Quality Compounders to favourites" }).click();
   // the next from All screeners: with a favourite, Screeners' own list has no stars
   await page.getByRole("button", { name: "See all" }).click();
-  await page.getByRole("button", { name: "Add Dividend Aristocrats to favourites" }).click();
+  await page.getByRole("button", { name: "Add Dividend Payers with Strong Finances to favourites" }).click();
   await page.goBack();
   const rail = page.getByRole("group", { name: "Your favourite screeners" });
   await expect(rail.getByRole("button")).toHaveCount(2);
