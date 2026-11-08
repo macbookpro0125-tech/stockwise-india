@@ -11,7 +11,7 @@ _Last updated: 6 Nov 2026, by Claude (Opus) on branch `screeners-home`._
 
 ## Live on jocularinsights.in
 
-Pushed 6 Nov 2026 at `f7550b6` (148 passed, X-H6 passed on rerun): the clean top bar (first tab Home), the score chart, the news cards fix, the sky hidden under the page; Play listing changes sent for review the same day.
+Pushed 8 Nov 2026 at `375f206` (158 passed): Markets' line for an index with closes only, and the Go deeper card and page buttons. Pushed 6 Nov 2026 at `f7550b6` (148 passed, X-H6 passed on rerun): the clean top bar (first tab Home), the score chart, the news cards fix, the sky hidden under the page; Play listing changes sent for review the same day.
 
 Pushed 5 Nov 2026 at `c8443a1` (all 146 tests passed): the Markets index row restyle and See all; the watchlist's added price and date; the left bar's Watchlist opens its page; Screen builder from another page opens the builder.
 
@@ -41,7 +41,8 @@ Pushed 4 Nov 2026 at `3885578`: The phone chart's type picker is a one-column li
 
 ## Committed but NOT pushed yet
 
-Markets (8 Nov): an index charted from closes only (the live pack of 6 Nov has no opens; `candles: false`) draws a line instead of flat dashes, and its table leaves open, high and low as "—"; a "Go deeper" card under the market's trend and buttons under the title for Biggest moves, Results, Sectors, Market map and Stock lists. The live pack gets index opens from the next data job that publishes (Friday 7 Nov's evening runs didn't happen; the last pack is 6 Nov).
+- **News "In the news"** (8 Nov): the News page and Explore's news open on the watchlist's companies in the news: each company with its price and its latest 3 headlines from news sites (Google News, last 14 days, tips and quote pages out, only headlines that name the company), opening on the publisher's site. `/api/news/companies`, `companiesInNews` in server/market-news.js. Filings are under All and the other filters.
+- **Home Market summary is the Nifty 50**, not the Nifty 500 (computer and phone), from `/api/explore/index`.
 
 ## Open / next
 

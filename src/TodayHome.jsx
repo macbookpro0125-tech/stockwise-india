@@ -181,7 +181,7 @@ function StarField() {
 }
 
 // The market's last year, large, as the first thing in the summary. Our own
-// index history: the Nifty 500's closes, kept with any company's prices.
+// index history: the Nifty 50's closes, from the Markets index data.
 function MarketChart({ closes }) {
   const host = useRef(null);
   useEffect(() => {
@@ -207,7 +207,7 @@ function MarketChart({ closes }) {
     ro.observe(host.current);
     return () => { ro.disconnect(); chart.remove(); };
   }, [closes]);
-  return <div ref={host} className="td-chart" role="img" aria-label="The Nifty 500 over the last year" />;
+  return <div ref={host} className="td-chart" role="img" aria-label="The Nifty 50 over the last year" />;
 }
 
 // Every part of the app from one place (1 Nov 2026, the owner: "every option in
@@ -353,7 +353,7 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onOp
 }
 
 // The Market summary (4 Nov 2026: shared with a phone's home, PhoneScreens.jsx):
-// the Nifty 500's year, the major indices, the watchlist's biggest moves, what
+// the Nifty 50's year, the major indices, the watchlist's biggest moves, what
 // sits under its fair value, and the results coming up
 export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIndex }) {
   // 5 Nov 2026 ("when I click on those cards it's not working"): every card
@@ -366,7 +366,8 @@ export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIn
   useEffect(() => {
     api.marketStrip().then(setStrip).catch(() => {});
     api.publicResultsCalendar().then(setCalendar).catch(() => {});
-    api.prices("RELIANCE", "1y").then(d => setMarket(d?.benchmark?.closes ?? null)).catch(() => {});
+    // the Nifty 50's year (8 Nov 2026: "I want Nifty 50 here, not 500, it makes it confusing")
+    api.exploreIndex("Nifty 50").then(d => setMarket(d?.days?.length ? d.days.map((day, k) => [day, d.closes[k]]).filter(([, c]) => c != null) : null)).catch(() => {});
   }, []);
   // again on coming back: a company may have been starred on its page
   useEffect(() => {
@@ -399,10 +400,10 @@ export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIn
 
       <div className="td-grid td-summary">
         {market?.length > 1 && (
-          <section className="td-box td-big td-click" aria-label="Nifty 500" role="link" tabIndex={0} title="Open the Nifty 500"
-            onClick={() => openIndex("Nifty 500")} onKeyDown={e => { if (e.key === "Enter") openIndex("Nifty 500"); }}>
+          <section className="td-box td-big td-click" aria-label="Nifty 50" role="link" tabIndex={0} title="Open the Nifty 50"
+            onClick={() => openIndex("Nifty 50")} onKeyDown={e => { if (e.key === "Enter") openIndex("Nifty 50"); }}>
             <div className="td-big-head">
-              <div><h3>Nifty 500</h3><b><BigNum text={num(market.at(-1)[1])} /></b> <i style={{ color: tone(market.at(-1)[1] - market[0][1]) }}>{pct(((market.at(-1)[1] - market[0][1]) / market[0][1]) * 100)}</i> <small>over the year</small></div>
+              <div><h3>Nifty 50</h3><b><BigNum text={num(market.at(-1)[1])} /></b> <i style={{ color: tone(market.at(-1)[1] - market[0][1]) }}>{pct(((market.at(-1)[1] - market[0][1]) / market[0][1]) * 100)}</i> <small>over the year</small></div>
             </div>
             <MarketChart closes={market} />
           </section>

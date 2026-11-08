@@ -127,6 +127,7 @@ export const api = {
   portfolioVsMarket: () => request("/api/portfolio/vs-market"),
   sectorBrief: (name, period) => request(`/api/explore/sector?name=${encodeURIComponent(name)}&period=${period}`),
   newsItem: id => request(`/api/news/item/${encodeURIComponent(id)}`),
+  newsCompanies: () => request("/api/news/companies"),
   newsFilingLines: id => request(`/api/news/item/${encodeURIComponent(id)}/read`),
   currentPrices: (symbols) => request(`/api/prices?symbols=${symbols.map(encodeURIComponent).join(",")}`),
   watchlist: () => request("/api/watchlist"),

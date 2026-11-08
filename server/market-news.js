@@ -129,7 +129,7 @@ function announcements() {
 // Search results that are a price page or a comparison tool, not a story
 // ("RAYMONDREL Stock Price and Chart", "Compare CHOKHANI BUS with", 23 Oct 2026)
 const PRICE_PAGE = /stock price and chart|^compare\b.*\bwith\b|share price (today|live)|\bstock quote\b|price chart|\b(ltd|limited)? ?news\s*[—-]\s*(nse|bse):/i;
-const TIPS = /trade setup|['‘’"]?\bbuy['‘’"]? (rating|call|initiation)|initiates? (coverage|with a buy)|\bupside\b|\bto buy\b|stocks? to (buy|watch|pick)|buy or sell|target price|top picks|should you buy|technical picks|intraday|trading ideas|stock recommendations?|stocks? under ₹|share price (today|live)|stock price live|\blive (updates|blog)\b/i;
+const TIPS = /trade setup|['‘’"]?\bbuy['‘’"]? (rating|call|initiation)|initiates? (coverage|with a buy)|\bupside\b|\bto buy\b|stocks? to (buy|watch|pick)|buy or sell|target price|price targets?|top picks|should you buy|technical picks|intraday|trading ideas|stock recommendations?|stocks? under ₹|share price (today|live)|stock price live|\blive (updates|blog)\b/i;
 const STOP_WORDS = new Set("the a an and or of in on for to as at by with from is are its it this that over amid after says say".split(" "));
 const words = t => new Set(String(t).toLowerCase().replace(/[^a-z0-9₹%.\s]/g, " ").split(/\s+/).filter(w => w.length > 2 && !STOP_WORDS.has(w)));
 // Six sites report the same close in nearly the same words; the first is kept
@@ -492,6 +492,29 @@ export async function newsItemFiling(id) {
 
 // One item in full, with what's around it: the company's price and other
 // announcements, and headlines that name it; for a headline, the companies
+// The watchlist's companies in the news (8 Nov 2026, "this is news I
+// understand", of a phone app's journalists' headlines by company): each
+// company with its price and its latest headlines from the last two weeks,
+// tips and quote pages left out. Headline, publisher and link only, never the
+// article. Companies with fresh news first; the rest named as quiet.
+export async function companiesInNews(symbols, perCompany = 3) {
+  const { bySymbol, asOf } = await feed();
+  const rows = [...symbols].map(s => bySymbol.get(s)).filter(Boolean).slice(0, 15);
+  const all = await Promise.all(rows.map(async row => {
+    const news = await companyNews(row.name, 10).then(r => r.news ?? []).catch(() => []);
+    // only headlines that name the company (its first word, or its symbol): a
+    // day's "top gainers and losers" round-up isn't news about it
+    const first = plainName(row.name).split(" ")[0];
+    const esc = w => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const names = new RegExp(`\\b(${[first.length >= 3 ? first : null, row.symbol].filter(Boolean).map(esc).join("|")})`, "i");
+    const recent = news.filter(n => n.date && Date.now() - Date.parse(n.date) <= 14 * DAY && !TIPS.test(n.title) && !PRICE_PAGE.test(n.title) && names.test(n.title))
+      .sort((a, b) => b.date.localeCompare(a.date)).slice(0, perCompany);
+    return { quote: quoteOf(row), news: recent };
+  }));
+  const companies = all.filter(c => c.news.length).sort((a, b) => b.news[0].date.localeCompare(a.news[0].date));
+  return { asOf, companies, quiet: all.filter(c => !c.news.length).map(c => c.quote) };
+}
+
 // it names and their latest announcements
 export async function newsItem(id) {
   const { items, filings, bySymbol, asOf } = await feed();

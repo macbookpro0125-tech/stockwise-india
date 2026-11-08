@@ -27,7 +27,7 @@ export const KIND_LABEL = Object.fromEntries(KINDS.filter(([id]) => id !== "all"
 // The kinds to pick from (6 Nov 2026: ten buttons before the first story was
 // too many). Management, ratings and other updates stay in All, sorted by how
 // much they matter (newsPlain.js); RBI and SEBI sit with the headlines.
-const FILTERS = [["all", "All"], ["watchlist", "My watchlist"], ["results", "Results"], ["deals", "Orders & deals"], ["dividends", "Dividends"], ["headlines", "Headlines"]];
+const FILTERS = [["companies", "In the news"], ["all", "All"], ["watchlist", "My watchlist"], ["results", "Results"], ["deals", "Orders & deals"], ["dividends", "Dividends"], ["headlines", "Headlines"]];
 
 // A headline's picture (24 Oct 2026, "like others show"): never the
 // publisher's photo — the company it names, or an icon for its topic
@@ -746,8 +746,67 @@ export function MarketNewsCard({ onOpen, onSeeAll }) {
   );
 }
 
+
+// Your companies in the news (8 Nov 2026, "I want that kind of news", of a
+// phone app's journalists' headlines by company): each watchlist company, its
+// price, and its latest headlines, which open on the publisher's own site.
+// Headline, publisher and time only; filings stay under Filings.
+function ago(iso, now = Date.now()) {
+  const m = Math.max(0, Math.round((now - Date.parse(iso)) / 60000));
+  if (m < 60) return `${m || 1}m ago`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.round(h / 24);
+  return d < 7 ? `${d}d ago` : `${Math.round(d / 7)}w ago`;
+}
+function CompanyNews({ onOpenStock, onKind, limit = 0 }) {
+  const watched = useWatchlist();
+  const watchKey = [...watched].sort().join(",");
+  const [data, setData] = useState(null);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    setData(null); setError("");
+    api.newsCompanies().then(setData).catch(e => setError(e.message));
+  }, [watchKey]);
+  if (error) return <p className="nw-empty">{error}</p>;
+  if (!data) return <div className="nw-skel" role="status" aria-label="Loading the news">{[0, 1, 2].map(i => <span key={i} />)}</div>;
+  if (!data.companies.length) return (
+    <div className="nw-empty">
+      <p>{data.quiet.length ? "No news about your watchlist's companies in the last two weeks." : "Star companies to see their news here."}</p>
+      <button type="button" className="nw-see-all" onClick={() => onKind("headlines")}>The market's headlines <ChevronRight size={16} aria-hidden="true" /></button>
+    </div>
+  );
+  return (
+    <div className="nw-cos">
+      {(limit ? data.companies.slice(0, limit) : data.companies).map(({ quote: q, news }) => (
+        <section key={q.symbol} className="nw-co" aria-label={`${niceName(q.name)} in the news`}>
+          <button type="button" className="nw-co-head" onClick={() => onOpenStock?.(q.symbol)}>
+            <CompanyLogo symbol={q.symbol} size={32} fallback={q.name} />
+            <span className="nw-co-name"><b>{niceName(q.name)}</b><small>{q.symbol}</small></span>
+            <span className="nw-co-price">{q.price != null && <b>₹{q.price.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</b>}<Change value={q.change1d} /></span>
+          </button>
+          <ul className="nw-co-news">
+            {news.map(n => (
+              <li key={n.url}>
+                <a href={n.url} target="_blank" rel="noopener noreferrer">
+                  <small>{n.publisher ?? "News"}</small>
+                  <b>{n.title}</b>
+                  <small>{ago(n.date)}</small>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+      {!limit && data.quiet.length > 0 && <p className="nw-note">No news in the last two weeks: {data.quiet.map(q => niceName(q.name)).join(", ")}.</p>}
+      {!limit && <p className="nw-foot">Headlines from Google News, each opening on its publisher's site. We leave out buy and sell tips.</p>}
+    </div>
+  );
+}
+
 export default function NewsView({ onOpenStock, openId = null, onOpened, embedded = false, onItemChange, preview = false, onSeeAll }) {
-  const [kind, setKind] = useState("all");
+  // the watchlist's companies in the news first, everywhere the news is shown
+  const [kind, setKind] = useState("companies");
   const [counts, setCounts] = useState(null);
   // pressing the kind already shown loads it again
   const [refresh, setRefresh] = useState(0);
@@ -795,8 +854,8 @@ export default function NewsView({ onOpenStock, openId = null, onOpened, embedde
                 {preview && <button type="button" className="ex-h-more" aria-label="See all the news" title="See all the news" onClick={onSeeAll}><ChevronRight size={20} aria-hidden="true" /></button>}
               </div>
               : <h2 className="nw-page-title hide-phone">News</h2>}
-            <p className="nw-lede">{preview ? "The latest from listed companies and the market's headlines." : "What listed companies told NSE over the last few days, and the market's headlines. Updated through the day."}</p>
-            {!preview && <button type="button" role="switch" aria-checked={size === "large"} className="nw-size" onClick={() => pickSize(size === "large" ? "all" : "large")}>
+            <p className="nw-lede">{kind === "companies" ? "The latest headlines about the companies on your watchlist, from news sites." : preview ? "The latest from listed companies and the market's headlines." : "What listed companies told NSE over the last few days, and the market's headlines. Updated through the day."}</p>
+            {!preview && kind !== "companies" && <button type="button" role="switch" aria-checked={size === "large"} className="nw-size" onClick={() => pickSize(size === "large" ? "all" : "large")}>
               <span className="st-switch nw-switch" data-on={size === "large"} aria-hidden="true"><span /></span>
               Only companies over ₹1,000 crore
             </button>}
@@ -815,7 +874,9 @@ export default function NewsView({ onOpenStock, openId = null, onOpened, embedde
               <div className="ph-chips nw-filters" role="group" aria-label="Kinds of news">
                 {FILTERS.map(([id, label]) => <button key={id} type="button" className="ph-chip" aria-pressed={kind === id} onClick={() => pickKind(id)}>{label}</button>)}
               </div>
-              <List kind={kind} size={size} onOpen={open} onCounts={setCounts} refresh={refresh} limit={preview ? 4 : 0} onKind={pickKind} />
+              {kind === "companies"
+                ? <CompanyNews key={refresh} onOpenStock={onOpenStock} onKind={pickKind} limit={preview ? 2 : 0} />
+                : <List kind={kind} size={size} onOpen={open} onCounts={setCounts} refresh={refresh} limit={preview ? 4 : 0} onKind={pickKind} />}
             </div>
           </div>
         </>}

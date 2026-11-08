@@ -58,7 +58,7 @@ import { startBackups } from "./backup.js";
 import { fetchTechnicals } from "./technicals.js";
 import { shareholdingHistory, companyFilings, companyNews, sectorPeers, companyProfile, insiderTrades } from "./company-extras.js";
 import { stockMoves } from "./moves.js";
-import { marketNews, topNews, newsItem, newsItemFiling, newsForSymbols, watchlistLatest, KINDS as NEWS_KINDS } from "./market-news.js";
+import { marketNews, topNews, newsItem, newsItemFiling, newsForSymbols, watchlistLatest, KINDS as NEWS_KINDS, companiesInNews } from "./market-news.js";
 import { portfolioVsMarket } from "./portfolio-vs-market.js";
 import { historyBars } from "./price-history.js";
 import { readIndexHistory } from "./index-history.js";
@@ -914,6 +914,13 @@ export function createApp() {
         if (req.method === "POST") savePushToken(userId, token, platform === "ios" ? "ios" : "android");
         else removePushToken(userId, token);
         sendJson(res, 200, { ok: true });
+        return;
+      }
+      // the watchlist's companies in the news: journalists' headlines, by company
+      if (url.pathname === "/api/news/companies" && req.method === "GET") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        sendJson(res, 200, await companiesInNews(listWatchlist(userId).map(w => w.ticker)));
         return;
       }
       if (url.pathname === "/api/news/watchlist-latest" && req.method === "GET") {

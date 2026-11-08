@@ -24,6 +24,9 @@ test("N-H1 the News tile (a computer) or the Explore tab (a phone) leads to the 
     await openPage(page, "Explore");
   }
   const kinds = page.getByRole("group", { name: "Kinds of news" });
+  // the News page opens on the watchlist's companies in the news (8 Nov 2026); All has the filings
+  await expect(kinds.getByRole("button", { name: /^In the news/ })).toHaveAttribute("aria-pressed", "true");
+  await kinds.getByRole("button", { name: /^All/ }).click();
   await expect(kinds.getByRole("button", { name: /^All/ })).toHaveAttribute("aria-pressed", "true");
   const row = page.locator(".nw-day .nw-row").first();
   await expect(row).toBeVisible();
@@ -69,10 +72,10 @@ test("N-H2 Discover's News tile and the News tab on a computer; a headline opens
   await expect(page.getByText(/Star companies to follow their news here/)).toBeVisible();
 
   // larger companies by default; the switch brings in the rest, and the counts grow
-  const size = page.getByRole("switch", { name: /Only companies over/ });
-  await expect(size).toHaveAttribute("aria-checked", "true");
   const all = kinds.getByRole("button", { name: /^All/ });
   await all.click();
+  const size = page.getByRole("switch", { name: /Only companies over/ });
+  await expect(size).toHaveAttribute("aria-checked", "true");
   const count = async () => Number((await all.locator(".nw-count").textContent()).replace(/\D/g, ""));
   await expect.poll(count).toBeGreaterThan(0);
   const large = await count();
