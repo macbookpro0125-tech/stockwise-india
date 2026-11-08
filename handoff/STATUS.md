@@ -65,8 +65,11 @@ Pushed 4 Nov 2026 at `3885578`: The phone chart's type picker is a one-column li
 - **3D glass logo for the opening:** `git stash` "3D opening logo (glow)". The owner chose the plain version.
 - **Chapter sidebar on the company page:** `git stash`, "not wanted".
 
-## Owner's change list (8 Nov, wait for "start")
-1. Map controls: group the two rows (indices | watchlist/portfolio; segmented period and size, Colour and Filters buttons, search at the end).
-2. Sector index page (e.g. Nifty IT): full-width chart, go deeper, more useful content.
-3. Results page (/stock/X/results/q2-fy27): "2/10", total redesign.
-Uncommitted in the tree: a third News column on wide screens (NewsSide: your companies, headlines straight to publishers' sites, talked about) — not yet checked in a browser.
+## Built 8 Nov, not pushed yet (158 passed)
+- News: a third column on wide screens (NewsSide): your companies in the news, headlines straight to news sites, talked about today.
+- Map: two rows of controls: the indices | your lists; joined bars for period and box size; Colour; a Filters button (companies, sector) that closes after a pick; search at the end.
+- Sector index page (ExploreView IndexDetail): full-width chart, a figures strip, returns against the Nifty 50 (`benchmark` from /api/explore/index), middle P/E by year (sectorBrief), a sortable table of its companies (`table`), moves, industries, results due.
+- Results page (/stock/X/results/q, server/seo-pages.js): four figure cards with 8-quarter bars, "What changed" in plain words, sales and profit by quarter, the full table, quarter chips.
+- Screen table: a small star by the symbol when watched (no overlay); drag and floating arrows to scroll sideways; the "saved" card in the bottom-right on a computer.
+- Export: CSV kept by the browser (link in the page, file kept 30s, BOM); an old tab gets "Reload the page".
+- Screen builder: a Scores view tab, and "Then by" (up to three more sorts; scores out of 100 level within 5 points; or best across all by average rank).
