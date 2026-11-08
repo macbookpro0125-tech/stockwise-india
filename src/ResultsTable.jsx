@@ -3,7 +3,7 @@ import { lazyPage } from "./lazyPage.js";
 import CompanyLogo from "./CompanyLogo.jsx";
 import { headOf, periodsOf } from "./columnHeads.js";
 import { cardName, splitUnit } from "./stockName.js";
-import { ArrowDown, ArrowUp, Check, Info, Columns3, Search, ArrowUpRight, SearchX, Star, ChevronDown, ChevronLeft, ChevronRight, Funnel, Download, ChartScatter } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, Info, Columns3, Search, ArrowUpRight, SearchX, Star, ChevronDown, ChevronLeft, ChevronRight, Funnel, Download, ChartScatter, X } from "lucide-react";
 import QualityValueMap from "./QualityValueMap.jsx";
 import { StarIcon, BellIcon, actionButtonStyle } from "./icons.jsx";
 import { useWatchlist, toggleWatch } from "./watchlist.js";
@@ -99,6 +99,59 @@ function ExportMenu({ onExcel, onCsv, busy }) {
           <button type="button" role="menuitem" onClick={pick(onExcel)}>Excel workbook <em>.xlsx</em></button>
           <button type="button" role="menuitem" onClick={pick(onCsv)}>Spreadsheet text <em>.csv</em></button>
         </span>
+      )}
+    </span>
+  );
+}
+
+// "Then by": up to three more sorts after the main one, in a small panel
+function ThenByMenu({ options, main, thenBy, onChange, band, onBand, blend, onBlend }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!open) return;
+    const away = e => { if (!ref.current?.contains(e.target)) setOpen(false); };
+    const key = e => { if (e.key === "Escape") setOpen(false); };
+    document.addEventListener("pointerdown", away); document.addEventListener("keydown", key);
+    return () => { document.removeEventListener("pointerdown", away); document.removeEventListener("keydown", key); };
+  }, [open]);
+  const labelOf = id => options.find(([o]) => o === id)?.[1] ?? id;
+  const setAt = (i, id) => onChange(thenBy.map((k, j) => (j === i ? id : k)).filter(Boolean));
+  const free = options.filter(([id]) => !thenBy.includes(id));
+  return (
+    <span ref={ref} className="tb-then">
+      <button type="button" className={`btn-ghost tb-btn${thenBy.length ? " on" : ""}`} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(o => !o)}
+        title={thenBy.length ? `${blend ? "Best across" : "Then by"} ${thenBy.map(labelOf).join(", ")}` : "Sort by more than one thing"}>
+        {thenBy.length ? (blend ? "Best across all" : `Then by ${thenBy.length}`) : "Then by"}
+      </button>
+      {open && (
+        <div className="tb-then-pop" role="dialog" aria-label="Sort by more than one thing">
+          <p className="tb-then-h">Sort by <b>{main}</b>, then:</p>
+          {thenBy.map((k, i) => (
+            <div key={k} className="tb-then-row">
+              <span className="tb-then-n">{i + 2}</span>
+              <select className="tb-select" aria-label={`Then by, ${i + 2}`} value={k} onChange={e => setAt(i, e.target.value)}>
+                {[[k, labelOf(k)], ...free].map(([id, l]) => <option key={id} value={id}>{l}</option>)}
+              </select>
+              <button type="button" className="tb-then-x" aria-label={`Remove ${labelOf(k)}`} onClick={() => onChange(thenBy.filter(x => x !== k))}><X size={14} /></button>
+            </div>
+          ))}
+          {thenBy.length < 3 && free.length > 0 && (
+            <select className="tb-select tb-then-add" aria-label="Add a sort" value="" onChange={e => e.target.value && onChange([...thenBy, e.target.value])}>
+              <option value="">+ Add {thenBy.length ? "another" : "a score"}</option>
+              {free.map(([id, l]) => <option key={id} value={id}>{l}</option>)}
+            </select>
+          )}
+          {thenBy.length > 0 && (
+            <div className="tb-then-opts">
+              <label><input type="radio" name="then-mode" checked={!blend} onChange={() => onBlend(false)} /> <span><b>In order</b><small>{band ? "Scores out of 100 within 5 points count as level, so the next one decides" : "Only exact ties go to the next one"}</small></span></label>
+              {!blend && <label className="tb-then-band"><input type="checkbox" checked={band} onChange={e => onBand(e.target.checked)} /> Count close scores as level</label>}
+              <label><input type="radio" name="then-mode" checked={blend} onChange={() => onBlend(true)} /> <span><b>Best across all</b><small>Each company's rank on every one of these, averaged</small></span></label>
+              <button type="button" className="tb-then-clear" onClick={() => { onChange([]); onBlend(false); }}>Clear</button>
+            </div>
+          )}
+          <p className="tb-then-note">The Scores tab puts every score in the table, ready to pick here.</p>
+        </div>
       )}
     </span>
   );
@@ -293,6 +346,12 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
   );
   const [sortBy, setSortBy] = useState("quality");
   const [sortDir, setSortDir] = useState("desc");
+  // Then by (8 Nov 2026): up to three more scores in order, scores out of 100
+  // within 5 points counted level so the next one decides; or the best across
+  // all of them, by each company's average rank
+  const [thenBy, setThenBy] = useState([]);
+  const [band, setBand] = useState(true);
+  const [blend, setBlend] = useState(false);
   // A column's ▾ menu: sort to a set direction, or set the column's filter —
   // the same { id, min, max } the sidebar edits (none when both are empty)
   const menuFor = (col, filterId, label) => {
@@ -454,6 +513,8 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
     setSortBy(sortTo.sort ?? "quality");
     setSortDir("desc");
   }, [sortTo?.n]); // eslint-disable-line react-hooks/exhaustive-deps
+  const thenKnown = thenBy.filter(k => k !== sortBy && sortOptions.some(([id]) => id === k));
+  const blendOn = blend && thenKnown.length > 0;
   const dirLabel = sortBy === "name" ? (sortDir === "asc" ? "A to Z" : "Z to A") : (sortDir === "desc" ? "Highest first" : "Lowest first");
 
   const handleSort = col => {
@@ -496,9 +557,25 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
   // Compared as shown: two companies that both read Quality 93 are level,
   // and the next score decides between them (below)
   const shownDecimals = key => (key === "quality" || key === "overall" ? 0 : columns.find(d => d.id === key)?.decimals ?? null);
+  // a score out of 100 (Quality, Research, the group scores)
+  const outOf100 = key => key === "quality" || key === "overall" || columns.find(d => d.id === key)?.unit === "/100";
+  // lower is better for these: a Then-by puts the lowest first
+  const LOW_BETTER = new Set(["riskScore", "pe", "peTtm", "peFy", "peg", "priceToBook", "evToEbitda", "debtToEquity", "pledgedPct", "netDebtToEbitda", "volatility1y"]);
+  const shown = (key, v) => { const d = shownDecimals(key); return typeof v === "number" && Number.isFinite(v) && d != null ? Number(v.toFixed(d)) : v; };
   const sortVal = s => {
-    const v = valueFor(s, sortBy), d = shownDecimals(sortBy);
-    return typeof v === "number" && Number.isFinite(v) && d != null ? Number(v.toFixed(d)) : v;
+    const v = shown(sortBy, valueFor(s, sortBy));
+    // with Then-by on, a score out of 100 counts in bands of 5 (86 and 88 level)
+    return thenKnown.length && band && !blendOn && typeof v === "number" && Number.isFinite(v) && outOf100(sortBy) ? Math.floor(v / 5) : v;
+  };
+  const thenCompare = (a, b) => {
+    for (const key of thenKnown) {
+      let av = shown(key, valueFor(a, key)), bv = shown(key, valueFor(b, key));
+      if (band && outOf100(key) && thenKnown[thenKnown.length - 1] !== key) { av = av == null ? av : Math.floor(av / 5); bv = bv == null ? bv : Math.floor(bv / 5); }
+      if (av == null && bv == null) continue;
+      if (av == null || bv == null) return av == null ? 1 : -1;
+      if (av !== bv) return LOW_BETTER.has(key) ? av - bv : bv - av;
+    }
+    return 0;
   };
   // Level on the sort: Quality first, then Research, then Piotroski — so
   // "Quality, highest first" lists the 93s by their research score, and a
@@ -516,12 +593,26 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
 
   // Blanks go last whichever way a column sorts: as -Infinity they led every
   // ascending sort — ~300 loss-makers with no P/E above the cheapest stock
+  // Best across all: each company's rank on every chosen score, averaged
+  const blendRank = useMemo(() => {
+    if (!blendOn) return null;
+    const keys = [sortBy, ...thenKnown];
+    const total = new Map(filtered.map(s => [s.symbol, { sum: 0, n: 0 }]));
+    for (const key of keys) {
+      const have = filtered.filter(s => { const v = valueFor(s, key); return typeof v === "number" && Number.isFinite(v); });
+      const low = LOW_BETTER.has(key) || (key === sortBy && sortDir === "asc");
+      have.sort((a, b) => (low ? valueFor(a, key) - valueFor(b, key) : valueFor(b, key) - valueFor(a, key)));
+      have.forEach((s, i) => { const t = total.get(s.symbol); t.sum += have.length > 1 ? i / (have.length - 1) : 0; t.n++; });
+    }
+    return new Map([...total].map(([sym, t]) => [sym, t.n ? t.sum / t.n + (keys.length - t.n) : Infinity]));
+  }, [blendOn, filtered, sortBy, sortDir, thenKnown.join()]); // eslint-disable-line react-hooks/exhaustive-deps
   const sorted = [...filtered].sort((a, b) => {
+    if (blendRank) return blendRank.get(a.symbol) - blendRank.get(b.symbol) || breakTie(a, b);
     const av = sortVal(a), bv = sortVal(b);
     const aBlank = av == null || (typeof av === "number" && !Number.isFinite(av) && sortBy !== "ncavPct");
     const bBlank = bv == null || (typeof bv === "number" && !Number.isFinite(bv) && sortBy !== "ncavPct");
     if (aBlank || bBlank) return aBlank === bBlank ? 0 : aBlank ? 1 : -1;
-    if (av === bv) return breakTie(a, b);
+    if (av === bv) return thenCompare(a, b) || breakTie(a, b);
     return sortDir === "asc" ? (av > bv ? 1 : -1) : (av < bv ? 1 : -1);
   });
 
@@ -648,6 +739,8 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
                 <button type="button" onClick={() => setSortDir(d => (d === "asc" ? "desc" : "asc"))} title={dirLabel} aria-label={`${dirLabel} — tap to reverse`} className="btn-ghost tb-btn tb-icon">
                   {sortDir === "desc" ? <ArrowDown size={15} /> : <ArrowUp size={15} />}
                 </button>
+                <ThenByMenu options={sortOptions.filter(([id]) => id !== "name" && id !== sortBy)} main={sortOptions.find(([id]) => id === sortBy)?.[1] ?? "Quality score"}
+                  thenBy={thenKnown} onChange={setThenBy} band={band} onBand={setBand} blend={blend} onBlend={setBlend} />
               </div>
             )}
             {onEditColumns && (

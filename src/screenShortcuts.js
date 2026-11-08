@@ -26,6 +26,9 @@ export const signalCounts = (rows = [], now = Date.now()) => Object.fromEntries(
 // Each set: the table's columns for one kind of question
 export const COLUMN_SETS = [
   { id: "overview", label: "Overview", columns: DEFAULT_COLUMNS },
+  // 8 Nov 2026 ("select the quality score and res score and Piotroski …
+  // so I can sort which is better in all"): every score side by side
+  { id: "scores", label: "Scores", columns: ["piotroski", "businessScore", "earningsScore", "balanceScore", "growthScore", "governanceScore", "valuationScore", "technicalScore", "riskScore"] },
   { id: "value", label: "Value", columns: ["pe", "peg", "priceToBook", "evToEbitda", "vsFairValue", "marketCapCr"] },
   { id: "growth", label: "Growth", columns: ["salesGrowth1y", "salesGrowth3y", "salesGrowth5y", "profitGrowth3y", "epsGrowth3y", "peg"] },
   { id: "quality", label: "Quality", columns: ["roce", "roe", "opm", "debtToEquity", "piotroski", "profitGrowth5y"] },
