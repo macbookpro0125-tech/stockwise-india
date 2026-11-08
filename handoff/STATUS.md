@@ -11,7 +11,7 @@ _Last updated: 6 Nov 2026, by Claude (Opus) on branch `screeners-home`._
 
 ## Live on jocularinsights.in
 
-Pushed 8 Nov 2026 at `375f206` (158 passed): Markets' line for an index with closes only, and the Go deeper card and page buttons. Pushed 6 Nov 2026 at `f7550b6` (148 passed, X-H6 passed on rerun): the clean top bar (first tab Home), the score chart, the news cards fix, the sky hidden under the page; Play listing changes sent for review the same day.
+Pushed 8 Nov 2026 at `bac7d54` (156 passed; N-H4 fixed to star a company with a price, news e2e 8 passed): News "In the news" and the home's Nifty 50 summary. Pushed 8 Nov 2026 at `375f206` (158 passed): Markets' line for an index with closes only, and the Go deeper card and page buttons. Pushed 6 Nov 2026 at `f7550b6` (148 passed, X-H6 passed on rerun): the clean top bar (first tab Home), the score chart, the news cards fix, the sky hidden under the page; Play listing changes sent for review the same day.
 
 Pushed 5 Nov 2026 at `c8443a1` (all 146 tests passed): the Markets index row restyle and See all; the watchlist's added price and date; the left bar's Watchlist opens its page; Screen builder from another page opens the builder.
 
@@ -64,3 +64,9 @@ Pushed 4 Nov 2026 at `3885578`: The phone chart's type picker is a one-column li
 
 - **3D glass logo for the opening:** `git stash` "3D opening logo (glow)". The owner chose the plain version.
 - **Chapter sidebar on the company page:** `git stash`, "not wanted".
+
+## Owner's change list (8 Nov, wait for "start")
+1. Map controls: group the two rows (indices | watchlist/portfolio; segmented period and size, Colour and Filters buttons, search at the end).
+2. Sector index page (e.g. Nifty IT): full-width chart, go deeper, more useful content.
+3. Results page (/stock/X/results/q2-fy27): "2/10", total redesign.
+Uncommitted in the tree: a third News column on wide screens (NewsSide: your companies, headlines straight to publishers' sites, talked about) — not yet checked in a browser.
