@@ -4,6 +4,7 @@ Newest first. One line per piece of work; the commit message has the detail.
 
 ## 8 Nov 2026
 
+- **8 Nov:** Pushed `f60a3fa` (no public-page flash on a signed-in refresh) at `8d038ba`; 158 passed. Search Console: 7 requests accepted (guides, /learn, /lists/defence-stocks).
 - **8 Nov:** Applied for Play production access at 8:14 AM (all three closed-test criteria met). Answers as entered are in `replica/launch/play-production-answers.md`. Google says 7 days or less; it emails jocularinsights@gmail.com.
 
 ## 5 Nov 2026
