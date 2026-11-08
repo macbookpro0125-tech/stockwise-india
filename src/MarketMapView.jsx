@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import CompanyLogo from "./CompanyLogo.jsx";
-import { ArrowLeft, Maximize2, Minimize2, Search, X, Plus, Minus, Scan } from "lucide-react";
+import { ArrowLeft, Maximize2, Minimize2, Search, X, Plus, Minus, Scan, SlidersHorizontal, ChevronDown } from "lucide-react";
 import { api } from "./api.js";
 import { niceName } from "./stockName.js";
 import { breadth, groupMove, layoutHeat } from "./heatLayout.js";
@@ -19,7 +19,7 @@ import { crShort, label, shortDate } from "./ExploreView.jsx";
 // results in the coming week, and F&O, PSU and theme filters. And a real
 // zoom ("when I zoom in, the details it doesn't show should show"): the map is
 // laid out again at the zoomed size, so a box too small for its name gets one.
-const HEAT_SETS = [["Nifty 50", "NIFTY 50"], ["Nifty Bank", "Bank Nifty"], ["Nifty Next 50", "Next 50"], ["NIFTY Midcap 100", "Midcap 100"], ["NIFTY Smallcap 100", "Smallcap 100"], ["NIFTY 500", "Nifty 500"], ["all", "All NSE"], ["sectors", "Sectors"], ["watchlist", "My watchlist"], ["portfolio", "My portfolio"]];
+const HEAT_SETS = [["Nifty 50", "Nifty 50"], ["Nifty Bank", "Bank Nifty"], ["Nifty Next 50", "Next 50"], ["NIFTY Midcap 100", "Midcap 100"], ["NIFTY Smallcap 100", "Smallcap 100"], ["NIFTY 500", "Nifty 500"], ["all", "All NSE"], ["sectors", "Sectors"], ["watchlist", "My watchlist"], ["portfolio", "My portfolio"]];
 const MINE = new Set(["watchlist", "portfolio", "screen"]);
 // The quick filters: everything, F&O stocks, government-owned, or one theme ("theme:Defence")
 const ONLY = [["", "All companies"], ["fno", "F&O stocks"], ["psu", "PSUs"]];
@@ -508,6 +508,18 @@ export default function MarketMapView({ onOpenStock, onOpenIndex, screen = null,
   };
   const open = t => { setFull(false); t.symbol ? onOpenStock(t.symbol) : onOpenIndex(t.index); };
 
+  // the Filters button's small panel: closes on a click outside or Esc
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const filtersRef = useRef(null);
+  useEffect(() => {
+    if (!filtersOpen) return;
+    const off = e => { if (!filtersRef.current?.contains(e.target)) setFiltersOpen(false); };
+    const esc = e => { if (e.key === "Escape") setFiltersOpen(false); };
+    document.addEventListener("pointerdown", off);
+    document.addEventListener("keydown", esc);
+    return () => { document.removeEventListener("pointerdown", off); document.removeEventListener("keydown", esc); };
+  }, [filtersOpen]);
+  const filterCount = (set !== "sectors" && onlyNow ? 1 : 0) + (zoom ? 1 : 0);
   return (
     <section className={`mm-page${full ? " ex-heat-fullscreen" : ""}`} aria-labelledby="mm-title" role={full ? "dialog" : undefined} aria-modal={full || undefined}>
       <div className="ex-heat-title">
@@ -519,19 +531,65 @@ export default function MarketMapView({ onOpenStock, onOpenIndex, screen = null,
           {full ? <Minimize2 size={17} aria-hidden="true" /> : <Maximize2 size={17} aria-hidden="true" />}
         </button>
       </div>
+      {/* 8 Nov 2026 ("how can we improve this"): row one is which companies —
+          the indices, then your own lists; row two is how the map is drawn,
+          as joined bars and two small buttons, the search at the end */}
       <div className="ex-heat-bar">
         <div className="ph-chips ex-heat-sets" role="group" aria-label="Which companies">
-          {HEAT_SETS.map(([id, l]) => <button key={id} type="button" className="ph-chip" aria-pressed={set === id} onClick={() => { setSet(id); setFocus(null); }}>{l}</button>)}
+          {HEAT_SETS.map(([id, l], i) => (
+            <Fragment key={id}>
+              {i === 7 && <span className="mm-sets-gap" aria-hidden="true" />}
+              <button type="button" className="ph-chip" aria-pressed={set === id} onClick={() => { setSet(id); setFocus(null); }}>{l}</button>
+            </Fragment>
+          ))}
           {screen?.symbols?.length > 0 && <button type="button" className="ph-chip" aria-pressed={set === "screen"} onClick={() => { setSet("screen"); setFocus(null); }}>Screen: {screen.name}</button>}
         </div>
         <div className="ex-heat-opts">
-          <div className="ex-ranges ex-heat-periods" role="group" aria-label="Over">
-            {HEAT_PERIODS.map(([p, l]) => <button key={p} type="button" className="ex-range" aria-pressed={period === p} onClick={() => setPeriod(p)}>{l}</button>)}
+          <div className="mm-seg" role="group" aria-label="Over">
+            {HEAT_PERIODS.map(([p, l]) => <button key={p} type="button" aria-pressed={period === p} onClick={() => setPeriod(p)}>{l}</button>)}
           </div>
           {grouped && (
-            <div className="ex-ranges ex-heat-size" role="group" aria-label="Box size">
-              <button type="button" className="ex-range" aria-pressed={size === "cap"} onClick={() => setSize("cap")}>By value</button>
-              <button type="button" className="ex-range" aria-pressed={size === "equal"} onClick={() => setSize("equal")}>Equal</button>
+            <div className="mm-seg" role="group" aria-label="Box size">
+              <span className="mm-seg-label" aria-hidden="true">Size</span>
+              <button type="button" aria-pressed={size === "cap"} onClick={() => setSize("cap")}>By value</button>
+              <button type="button" aria-pressed={size === "equal"} onClick={() => setSize("equal")}>Equal</button>
+            </div>
+          )}
+          {set !== "sectors" && (
+            <label className="mm-pick">
+              <span aria-hidden="true">Colour</span>
+              <select aria-label="Colour by" value={mode.id} onChange={e => setColour(e.target.value)}>
+                {modes.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}
+              </select>
+              <ChevronDown size={14} aria-hidden="true" />
+            </label>
+          )}
+          {(set !== "sectors" || (grouped && sectors.length > 1)) && (
+            <div className="mm-filters" ref={filtersRef}>
+              <button type="button" className={`mm-pick mm-filters-btn${filterCount ? " on" : ""}`} aria-expanded={filtersOpen} onClick={() => setFiltersOpen(o => !o)}>
+                <SlidersHorizontal size={14} aria-hidden="true" />Filters{filterCount > 0 && <b>{filterCount}</b>}
+              </button>
+              {filtersOpen && (
+                <div className="mm-filters-pop" role="group" aria-label="Filters">
+                  {set !== "sectors" && (
+                    <label><span>Companies</span>
+                      <select className="ex-heat-sector" aria-label="Show" value={onlyNow} onChange={e => { setOnly(e.target.value); setFocus(null); }}>
+                        {ONLY.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                        {themes.length > 0 && <optgroup label="Themes">{themes.map(t => <option key={t} value={`theme:${t}`}>{t}</option>)}</optgroup>}
+                      </select>
+                    </label>
+                  )}
+                  {grouped && sectors.length > 1 && (
+                    <label><span>Sector</span>
+                      <select className="ex-heat-sector" aria-label="Sector" value={zoom ?? ""} onChange={e => setFocus(e.target.value || null)}>
+                        <option value="">All sectors</option>
+                        {sectors.map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </label>
+                  )}
+                  {filterCount > 0 && <button type="button" className="mm-filters-clear" onClick={() => { setOnly(""); setFocus(null); }}>Clear filters</button>}
+                </div>
+              )}
             </div>
           )}
           {set !== "sectors" && (
@@ -541,23 +599,6 @@ export default function MarketMapView({ onOpenStock, onOpenIndex, screen = null,
                 onKeyDown={e => { if (e.key === "Enter" && firstHit) open(firstHit); if (e.key === "Escape") setFind(""); }} />
               {find && <button type="button" aria-label="Clear" onClick={() => setFind("")}><X size={14} aria-hidden="true" /></button>}
             </label>
-          )}
-          {set !== "sectors" && (
-            <select className="ex-heat-sector" aria-label="Show" value={onlyNow} onChange={e => { setOnly(e.target.value); setFocus(null); }}>
-              {ONLY.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-              {themes.length > 0 && <optgroup label="Themes">{themes.map(t => <option key={t} value={`theme:${t}`}>{t}</option>)}</optgroup>}
-            </select>
-          )}
-          {set !== "sectors" && (
-            <select className="ex-heat-sector" aria-label="Colour by" value={mode.id} onChange={e => setColour(e.target.value)}>
-              {modes.map(m => <option key={m.id} value={m.id}>Colour: {m.label}</option>)}
-            </select>
-          )}
-          {grouped && sectors.length > 1 && (
-            <select className="ex-heat-sector" aria-label="Sector" value={zoom ?? ""} onChange={e => setFocus(e.target.value || null)}>
-              <option value="">All sectors</option>
-              {sectors.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
           )}
         </div>
       </div>

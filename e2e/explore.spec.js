@@ -66,7 +66,7 @@ test("X-H3 the heat map: an index's companies by size and move; another index, p
   await expect(heat).toContainText("over the week");
   await heat.getByRole("group", { name: "Which companies" }).getByRole("button", { name: "Sectors" }).click();
   await expect(heat).toContainText("Each sector's index");
-  await heat.getByRole("group", { name: "Which companies" }).getByRole("button", { name: "NIFTY 50", exact: true }).click();
+  await heat.getByRole("group", { name: "Which companies" }).getByRole("button", { name: "Nifty 50", exact: true }).click();
   await tiles.first().click();
   await expect(page).toHaveURL(/\/stock\//);
 });
@@ -87,13 +87,17 @@ test("X-H6 the heat map groups by sector; All NSE, equal boxes, one sector, and 
   const first = heat.locator(".ex-heat-head").first();
   const sector = (await first.locator(".ex-heat-head-name").textContent()).trim();
   await first.click();
+  // the sector is a filter now, under the Filters button (8 Nov 2026)
+  await expect(heat.getByRole("button", { name: /^Filters/ })).toContainText("1");
+  await heat.getByRole("button", { name: /^Filters/ }).click();
   await expect(heat.getByRole("combobox", { name: "Sector" })).toHaveValue(sector);
+  await heat.getByRole("button", { name: /^Filters/ }).click();
   const few = await tiles.count();
   expect(few).toBeLessThan(500);
   await heat.getByRole("button", { name: "All sectors" }).click();
   await expect.poll(() => tiles.count()).toBeGreaterThan(few);
   // equal boxes: all about the same size within a block
-  await heat.getByRole("group", { name: "Which companies" }).getByRole("button", { name: "NIFTY 50", exact: true }).click();
+  await heat.getByRole("group", { name: "Which companies" }).getByRole("button", { name: "Nifty 50", exact: true }).click();
   await heat.getByRole("group", { name: "Box size" }).getByRole("button", { name: "Equal" }).click();
   await expect(heat).toContainText("Size: all the same");
   // a longer period
@@ -171,6 +175,7 @@ test("X-H11 the map: find a company, filter to F&O or a theme, and results marks
   await expect(map).toContainText("Nothing here matches");
   await find.fill("");
   // F&O only: fewer boxes; a theme: fewer still
+  await map.getByRole("button", { name: /^Filters/ }).click();
   const show = map.getByRole("combobox", { name: "Show" });
   await show.selectOption("fno");
   await expect.poll(() => tiles.count()).toBeLessThan(all);
@@ -221,6 +226,7 @@ test("X-H14 a sector opened on the map: its rises and falls, its P/E by year, re
   const map = page.getByRole("region", { name: "Market map" });
   await map.getByRole("group", { name: "Which companies" }).getByRole("button", { name: "All NSE" }).click();
   await expect.poll(() => map.locator(".ex-tile").count(), { timeout: 45_000 }).toBeGreaterThan(500);
+  await map.getByRole("button", { name: /^Filters/ }).click();
   await map.getByRole("combobox", { name: "Sector" }).selectOption("Information Technology");
   const brief = page.getByRole("region", { name: "Information Technology in brief" });
   await expect(brief).toContainText(/\d+ companies, worth ₹/);

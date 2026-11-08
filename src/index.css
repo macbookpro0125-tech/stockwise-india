@@ -6227,3 +6227,28 @@ html.td-night[data-theme="light"] .tb.tb-scrolled { box-shadow: 0 1px 0 rgba(255
 .nw-side-topic.t-gold { --tint: #eab308; } .nw-side-topic.t-sebi { --tint: #fb923c; } .nw-side-topic.t-sector { --tint: #4f9cf9; }
 @media (hover: hover) and (pointer: fine) { .nw-side-topic:hover .nw-side-topic-label { color: var(--accent); } }
 .nw-side-out { margin-left: 4px; vertical-align: -1px; opacity: 0.7; }
+
+/* The map's controls (8 Nov 2026): a gap between the indices and your own
+   lists; joined bars for the period and the box size; Colour and Filters as
+   small buttons; the search at the end */
+.mm-sets-gap { flex: 0 0 1px; align-self: stretch; margin: 6px 4px; background: var(--bdr2); }
+.ex-heat-sets .ph-chip { text-transform: none; }
+.mm-seg { display: inline-flex; align-items: center; gap: 2px; height: 34px; padding: 2px; border-radius: 10px; background: var(--s2); }
+.mm-seg-label { padding: 0 6px 0 8px; font-size: var(--fs-xs); color: var(--t3); }
+.mm-seg button { height: 30px; padding: 0 11px; border: 0; border-radius: 8px; background: none; color: var(--t2); font: inherit; font-size: var(--fs-sm); font-weight: 500; cursor: pointer; touch-action: manipulation; transition: background 120ms, color 120ms; }
+@media (hover: hover) and (pointer: fine) { .mm-seg button:hover { color: var(--t1); } }
+.mm-seg button[aria-pressed="true"] { background: var(--s1); color: var(--t1); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), 0 0 0 1px var(--bdr); }
+.mm-seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.mm-pick { position: relative; display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 10px; border: 1px solid var(--bdr2); border-radius: 10px; background: var(--s1); color: var(--t3); font: inherit; font-size: var(--fs-sm); cursor: pointer; }
+.mm-pick select { appearance: none; -webkit-appearance: none; field-sizing: content; height: auto; min-width: 0; border: 0; padding: 0 2px 0 0; background: transparent none !important; color: var(--t1); font: inherit; font-weight: 500; cursor: pointer; outline: none; }
+.mm-pick:focus-within { border-color: var(--accent); }
+@media (pointer: coarse) { .mm-pick select { font-size: 16px; } }
+.mm-filters { position: relative; }
+.mm-filters-btn { color: var(--t1); font-weight: 500; }
+.mm-filters-btn b { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--accent); color: #fff; font-size: 11px; }
+.mm-filters-btn.on { border-color: color-mix(in srgb, var(--accent) 50%, var(--bdr2)); }
+.mm-filters-pop { position: absolute; z-index: 30; top: calc(100% + 6px); left: 0; display: grid; gap: 10px; width: 260px; padding: 12px; border: 1px solid var(--bdr); border-radius: 14px; background: var(--s1); box-shadow: 0 12px 32px rgba(0, 0, 0, 0.14); }
+.mm-filters-pop label { display: grid; gap: 4px; font-size: var(--fs-xs); color: var(--t3); }
+.mm-filters-pop .ex-heat-sector { max-width: none; width: 100%; }
+.mm-filters-clear { justify-self: start; height: 30px; padding: 0 4px; border: 0; background: none; color: var(--accent); font: inherit; font-size: var(--fs-sm); cursor: pointer; }
+@media (min-width: 900px) { .ex-heat-opts { flex: 1 1 100%; } .ex-heat-opts .mm-find { margin-left: auto; } }
