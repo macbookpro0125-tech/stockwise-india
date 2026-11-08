@@ -65,7 +65,7 @@ Pushed 4 Nov 2026 at `3885578`: The phone chart's type picker is a one-column li
 - **3D glass logo for the opening:** `git stash` "3D opening logo (glow)". The owner chose the plain version.
 - **Chapter sidebar on the company page:** `git stash`, "not wanted".
 
-## Built 8 Nov evening, not pushed (158 passed; Markets e2e 8 passed after the last change)
+## Pushed 8 Nov 2026 evening at `0bf8d11` (158 passed)
 - Public pages: PublicHeader (site.jsx): company search, Screens · Sectors · Results · Stock lists · Learn, Sign in and Create free account; the front page bar has the links and the button; every server-written page opens with a plain link bar (seo.js SITE_NAV). /?auth=signup opens the sign-up box.
 - Screens renamed with redirects (seo-lists.js OLD_SCREEN_SLUGS): ofss-style-filter → high-margin-low-debt; Dividend Aristocrats → Dividend Payers with Strong Finances (dividend-payers-strong-finances; no yearly dividend history in the data to tighten it); Small Caps with Multibagger Traits → Small Caps Growing Fast. Ids unchanged.
 - "Updated 23 Oct 2026, 8:12 pm IST · prices to the NSE close on …" from the snapshot's builtAt on screens, lists, sectors, calendar and their raw pages (server/updated-line.js).
