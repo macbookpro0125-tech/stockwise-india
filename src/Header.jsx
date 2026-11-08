@@ -223,6 +223,18 @@ export function BottomTabBar({ tab, onTab }) {
   }, []);
   // A new tab opens with the bar open
   useEffect(open, [tab]);
+  // Typing, the keyboard takes the bottom of the screen: the bar steps out
+  // of its way, and comes back when the field is let go (8 Nov 2026)
+  const [typing, setTyping] = useState(false);
+  useEffect(() => {
+    const field = el => !!el?.matches?.("textarea, [contenteditable='true'], input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=button]):not([type=submit]):not([type=file]):not([type=color])");
+    let t = 0;
+    const check = () => setTyping(field(document.activeElement));
+    const later = () => { clearTimeout(t); t = setTimeout(check, 0); };
+    document.addEventListener("focusin", check);
+    document.addEventListener("focusout", later);
+    return () => { clearTimeout(t); document.removeEventListener("focusin", check); document.removeEventListener("focusout", later); };
+  }, []);
   const isOn = t => tab === t.id || (t.id === "settings" && ["performance", "momentum", "alerts", "visitors"].includes(tab));
   // The one left showing when folded (Discover on a page that isn't a tab's)
   const kept = (phoneTabs.find(isOn) ?? phoneTabs[0]).id;
@@ -321,12 +333,12 @@ export function BottomTabBar({ tab, onTab }) {
   // inside the drop: the tabs again, in colour, which it magnifies
   const copy = phoneTabs.map(t => (
     <span key={t.id} className="btb-lens-tab">
-      <span className="btb-icon">{t.Icon === GridIcon ? <GridIcon size={22} strokeWidth={1.9} filled /> : <t.Icon size={21} strokeWidth={2.3} />}</span>
+      <span className="btb-icon">{t.Icon === GridIcon ? <GridIcon size={23} strokeWidth={1.9} filled /> : <t.Icon size={23} strokeWidth={2.2} />}</span>
       <span className="btb-label">{t.short}</span>
     </span>
   ));
   return (
-    <nav ref={navRef} className={`bottom-tab-bar${collapsed ? " collapsed" : ""}${drag ? " sliding" : ""}`} data-tour="tabs" aria-label="Pages"
+    <nav ref={navRef} className={`bottom-tab-bar${collapsed ? " collapsed" : ""}${drag ? " sliding" : ""}${typing ? " typing" : ""}`} data-tour="tabs" aria-label="Pages"
       onPointerDown={onDown} onPointerMove={onMove} onPointerUp={e => finish(e, false)} onPointerCancel={e => finish(e, true)}>
       <span ref={lensRef} className="btb-lens" aria-hidden="true">
         <span className="btb-lens-rest" />
@@ -348,8 +360,8 @@ export function BottomTabBar({ tab, onTab }) {
             }}>
             <span className="btb-icon">
               {t.Icon === GridIcon
-                ? <GridIcon size={22} strokeWidth={1.9} filled={i === at} aria-hidden="true" />
-                : <t.Icon size={21} strokeWidth={i === at ? 2.3 : 2} aria-hidden="true" />}
+                ? <GridIcon size={23} strokeWidth={1.9} filled={i === at} aria-hidden="true" />
+                : <t.Icon size={23} strokeWidth={i === at ? 2.2 : 1.9} aria-hidden="true" />}
               {(t.id === "alerts" || t.id === "settings") && reached && <span className="btb-dot" aria-hidden="true" />}
               {t.id === "watchlist" && badges.watchlist.news && <span className="btb-dot btb-dot-news" aria-hidden="true" />}
             </span>

@@ -8,24 +8,46 @@
 // like jelly when it stops; let go, it springs onto the tab and turns back
 // into the capsule. Its shape stays a capsule throughout.
 //
+// Moved by springs (8 Nov 2026, "iOS 26 liquid glass" brief): one for where
+// it is, one for how much of a drop it is, one for its stretch. A new tab
+// mid-trip only moves the target, so it turns from where it is at the speed
+// it has — tapped fast across the bar it never jumps or restarts — and a
+// finger's slide hands its speed on when let go. How clear it is follows how
+// far it still has to go, so it lifts as it leaves and settles as it lands.
+//
 // Drawn frame by frame here rather than by CSS transitions: the copy inside
 // must stay aligned with the tabs under it at every point of a trip, and the
 // stretch follows the drop's speed.
 
-const ease = k => 1 - Math.pow(1 - k, 3);
-// eases out past the end a touch, then settles
-const springy = k => 1 + 2.2 * Math.pow(k - 1, 3) + 1.2 * Math.pow(k - 1, 2);
 const reduced = () => typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+// Apple's two numbers for a spring: response (s, how quickly it gets there)
+// and damping (1 = no overshoot)
+const spring = (response, damping) => ({ k: (2 * Math.PI / response) ** 2, c: 4 * Math.PI * damping / response });
+const MOVE = spring(0.3, 0.82); // the trip: ~250–300 ms, a hair of overshoot
+const CLEAR = spring(0.2, 1); // capsule ↔ drop
+const STRETCH = spring(0.24, 0.55); // the jelly
+
+function step(s, target, cfg, dt) {
+  const a = -cfg.k * (s.x - target) - cfg.c * s.v;
+  s.v += a * dt;
+  s.x += s.v * dt;
+}
 
 export function createLens(nav, lens) {
   const rest = lens.querySelector(".btb-lens-rest");
   const glass = lens.querySelector(".btb-lens-glass");
   const copies = [...lens.querySelectorAll(".btb-lens-row")];
   const tabs = () => [...nav.querySelectorAll(".btb-tab")];
-  const cur = { cx: null, g: 0 };
-  const sp = { s: 0, v: 0, lastCx: null, lastT: 0, loop: 0, following: false };
-  let anim = 0;
+  const pos = { x: null, v: 0 }; // its centre, px from the bar's left; px/s
+  const clear = { x: 0, v: 0 }; // 0 the capsule, 1 the drop
+  const st = { x: 0, v: 0 }; // stretch
+  let to = null; // the tab's centre it's going to
+  let trip = 1; // how far this trip is, for how clear it is on the way
+  let held = false; // a finger is down: a drop whatever its distance
+  let following = false; // a finger is sliding it
   let hidden = false;
+  let loop = 0, last = 0;
 
   const pad = () => parseFloat(getComputedStyle(nav).paddingTop) || 0;
   const centreOf = i => { const t = tabs()[i]; return t ? t.offsetLeft + t.offsetWidth / 2 : 0; };
@@ -33,10 +55,11 @@ export function createLens(nav, lens) {
 
   function draw() {
     const all = tabs();
-    if (!all.length || cur.cx == null) return;
-    const W = all[0].offsetWidth, H = nav.clientHeight, p = pad(), g = cur.g, st = sp.s;
-    const w = W + 26 * g + 38 * st, h = H - 2 * p + 18 * g - 9 * st, top = (H - h) / 2, left = cur.cx - w / 2;
-    lens.style.transform = `translate(${left}px, ${top}px)`;
+    if (!all.length || pos.x == null) return;
+    const W = all[0].offsetWidth, H = nav.clientHeight, p = pad();
+    const g = Math.max(0, Math.min(1, clear.x)), s = Math.max(-0.4, Math.min(1, st.x));
+    const w = W + 24 * g + 30 * s, h = H - 2 * p + 16 * g - 7 * s, top = (H - h) / 2, left = pos.x - w / 2;
+    lens.style.transform = `translate3d(${left}px, ${top}px, 0)`;
     lens.style.width = `${w}px`;
     lens.style.height = `${h}px`;
     lens.style.zIndex = g > 0.02 ? "2" : "0";
@@ -49,7 +72,7 @@ export function createLens(nav, lens) {
       c.style.height = `${H}px`;
       c.style.left = `${-left}px`;
       c.style.top = `${-top}px`;
-      c.style.transformOrigin = `${cur.cx}px ${H / 2}px`;
+      c.style.transformOrigin = `${pos.x}px ${H / 2}px`;
       c.style.transform = `scale(${1 + (n ? 0.34 : 0.16) * g})`;
     });
     // the real tabs under the drop are seen only through it
@@ -61,72 +84,90 @@ export function createLens(nav, lens) {
     }
   }
 
-  // the stretch: a spring fed by how fast the drop moves, overshooting a little
-  function wobble(now) {
-    const dt = Math.max(1, now - (sp.lastT || now - 16));
-    sp.lastT = now;
-    const speed = sp.lastCx == null ? 0 : Math.abs(cur.cx - sp.lastCx) / dt;
-    sp.lastCx = cur.cx;
-    const target = Math.min(1, speed / 1.4) * cur.g;
-    sp.v += (target - sp.s) * 0.22;
-    sp.v *= 0.72;
-    sp.s += sp.v;
-    draw();
-    if (sp.following || Math.abs(sp.v) > 0.0015 || Math.abs(sp.s) > 0.0015 || speed > 0.01) sp.loop = requestAnimationFrame(wobble);
-    else { sp.loop = 0; sp.s = 0; sp.v = 0; sp.lastCx = null; draw(); }
-  }
-  const kick = () => { if (!reduced() && !sp.loop) { sp.lastT = 0; sp.loop = requestAnimationFrame(wobble); } };
+  // how much of a drop it should be now: all of one under a finger, else
+  // as much as it has still to travel (a short hop stays mostly capsule)
+  const clearTarget = () => {
+    if (held || following) return 1;
+    if (to == null) return 0;
+    const W = tabs()[0]?.offsetWidth || 1;
+    return Math.min(1, Math.abs(to - pos.x) / Math.min(trip, W * 0.55)) * Math.min(1, trip / (W * 0.5));
+  };
 
-  function animate(toCx, gAt, ms, path = springy) {
-    cancelAnimationFrame(anim);
-    if (reduced() || cur.cx == null) { cur.cx = toCx; cur.g = gAt(1); draw(); return; }
-    const from = cur.cx, t0 = performance.now();
-    const step = now => {
-      const k = Math.min(1, (now - t0) / ms);
-      cur.cx = from + (toCx - from) * path(k);
-      cur.g = gAt(k);
+  function frame(now) {
+    const dt = Math.min(0.05, (now - (last || now - 16)) / 1000);
+    last = now;
+    // small fixed steps keep the springs steady on a slow frame
+    for (let n = Math.ceil(dt / 0.004), h = dt / n; n > 0; n--) {
+      if (!following && to != null) step(pos, to, MOVE, h);
+      step(clear, clearTarget(), CLEAR, h);
+      step(st, Math.min(1, Math.abs(pos.v) / 1500) * Math.max(0, clear.x), STRETCH, h);
+    }
+    draw();
+    const settled = !following && (to == null || (Math.abs(pos.x - to) < 0.3 && Math.abs(pos.v) < 4))
+      && Math.abs(clear.x - clearTarget()) < 0.002 && Math.abs(clear.v) < 0.02 && Math.abs(st.x) < 0.002 && Math.abs(st.v) < 0.02;
+    if (settled) {
+      if (to != null) pos.x = to;
+      pos.v = 0; clear.x = clearTarget(); clear.v = 0; st.x = 0; st.v = 0;
       draw();
-      kick();
-      if (k < 1) anim = requestAnimationFrame(step);
-    };
-    anim = requestAnimationFrame(step);
+      loop = 0; last = 0;
+      return;
+    }
+    loop = requestAnimationFrame(frame);
   }
+  const run = () => {
+    if (reduced()) {
+      // no travel: it's simply there, as the capsule
+      if (to != null) pos.x = to;
+      pos.v = 0; clear.x = held || following ? 1 : 0; clear.v = 0; st.x = 0; st.v = 0;
+      draw();
+      return;
+    }
+    if (!loop) { last = 0; loop = requestAnimationFrame(frame); }
+  };
+  const aim = i => {
+    const t = centreOf(i);
+    if (pos.x == null) pos.x = t;
+    // a new trip measures from where it is now, not where it set off
+    if (t !== to) trip = Math.max(1, Math.abs(t - pos.x));
+    to = t;
+  };
 
   return {
     // placed under a tab with no movement (first draw, a resize, unfolding)
-    place(i) { cancelAnimationFrame(anim); hidden = i < 0; if (i >= 0) cur.cx = centreOf(i); cur.g = 0; sp.s = 0; draw(); },
-    // a finger down on a tab: the drop lifts there
-    lift(i) {
-      hidden = false;
-      const g0 = cur.g;
-      animate(centreOf(i), k => g0 + (1 - g0) * ease(k), 220, cur.cx == null ? ease : springy);
-    },
-    // held and slid: it follows the finger exactly
-    follow(x) {
-      cancelAnimationFrame(anim);
-      hidden = false;
-      sp.following = true;
-      cur.cx = clamp(x);
-      cur.g = 1;
+    place(i) {
+      cancelAnimationFrame(loop); loop = 0;
+      hidden = i < 0; held = following = false;
+      if (i >= 0) { to = pos.x = centreOf(i); }
+      pos.v = 0; clear.x = clear.v = 0; st.x = st.v = 0;
       draw();
-      kick();
     },
-    // let go, or the tab changed: it springs onto the tab and turns back into
-    // the capsule — clear on the way if it has far to go
+    // a finger down on a tab: the drop lifts there
+    lift(i) { hidden = false; held = true; following = false; aim(i); run(); },
+    // held and slid: it follows the finger exactly, and keeps its speed
+    follow(x) {
+      hidden = false; held = true;
+      const now = performance.now(), nx = clamp(x);
+      if (following && pos.x != null && this._t) {
+        const dt = Math.max(0.008, (now - this._t) / 1000);
+        pos.v = pos.v * 0.4 + ((nx - pos.x) / dt) * 0.6;
+      } else pos.v = 0;
+      this._t = now;
+      following = true;
+      pos.x = nx; to = nx;
+      run();
+    },
+    // let go, or the tab changed: it springs onto the tab — carrying the
+    // finger's speed — and turns back into the capsule as it lands
     drop(i) {
-      sp.following = false;
+      following = false; held = false; this._t = 0;
       if (i < 0) { hidden = true; draw(); return; }
       hidden = false;
-      const to = centreOf(i), g0 = cur.g;
-      if (cur.cx == null) { this.place(i); return; }
-      const far = Math.abs(to - cur.cx) > 4;
-      if (!far && g0 < 0.02) { this.place(i); return; }
-      animate(to, g0 > 0.5 || !far
-        ? k => g0 * (1 - ease(Math.max(0, (k - 0.35) / 0.65)))
-        : k => (k < 0.12 ? g0 + (1 - g0) * (k / 0.12) : k < 0.7 ? 1 : 1 - ease((k - 0.7) / 0.3)), 460);
+      if (pos.x == null) { this.place(i); return; }
+      aim(i);
+      run();
     },
-    hide() { hidden = true; cancelAnimationFrame(anim); cur.g = 0; draw(); },
+    hide() { hidden = true; held = following = false; cancelAnimationFrame(loop); loop = 0; clear.x = clear.v = 0; st.x = st.v = 0; draw(); },
     redraw: draw,
-    destroy() { cancelAnimationFrame(anim); cancelAnimationFrame(sp.loop); for (const t of tabs()) t.style.maskImage = t.style.webkitMaskImage = ""; },
+    destroy() { cancelAnimationFrame(loop); loop = 0; for (const t of tabs()) t.style.maskImage = t.style.webkitMaskImage = ""; },
   };
 }
