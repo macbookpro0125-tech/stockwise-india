@@ -2,8 +2,8 @@
 
 _Last updated: 8 Nov 2026, by Claude (Opus) on branch `screeners-home`._
 
-## Committed, not pushed (8 Nov)
-- The phone tab bar as iOS 26 liquid glass: a floating capsule 90% wide (max 420px), 64px tall, 10px above the home bar, with a lit hairline rim instead of a border. The lens (src/liquidLens.js) now moves on springs: it carries its speed when tapped again mid-trip, takes about 220ms with under 2px of overshoot, and is clear while travelling. Bigger icons (23px); tabs not open sit quieter. The bar steps out of the keyboard's way while a field is focused. Checked at 320/375/390/430 in dark and light: the lens sits 0px off every tab's centre. Not yet checked on a real phone.
+## Live (8 Nov)
+- Pushed 8 Nov at `97687c8` (158 passed): the phone tab bar as iOS 26 liquid glass: a floating capsule 90% wide (max 420px), 64px tall, 10px above the home bar, with a lit hairline rim instead of a border. The lens (src/liquidLens.js) now moves on springs: it carries its speed when tapped again mid-trip, takes about 220ms with under 2px of overshoot, and is clear while travelling. Bigger icons (23px); tabs not open sit quieter. The bar steps out of the keyboard's way while a field is focused. Checked at 320/375/390/430 in dark and light: the lens sits 0px off every tab's centre. Not yet checked on a real phone.
 
 ## Committed, not pushed (6 Nov)
 - Live 7 Nov (158 passed): results pages (by day, a month back, your watchlist's past and coming, the day at a glance, sort and filters); Biggest moves as a page (every company, the last 23 trading days, day/week/month); date strips (sticky labels, arrows, wheel and drag, week breaks, holidays); Markets index card (the story, results dots, breadth, who moved it; Simple/Full chart with index candles — candles live after the next evening build); typography (one scale, three weights, nothing under 11px, BigNum headline numbers, readable legend and badges); News tab on a computer; plain-English news; weekly data copy; watchlist-news check once a load.

@@ -245,3 +245,4 @@ Owner: "the news is not understandable". Looked at 10 apps (Inshorts' one-line c
 - 8 Nov night: pushed FAQ data (FAQPage) for company pages (8 questions incl. share price, latest results, promoters) and results pages (5 questions, a Questions block); X profile as sameAs on the front page. IndexNow already ran since 30 Oct (server/indexnow.js) — don't rebuild it.
 - 8 Nov night: four Learn guides (fair-value-explained, eps-explained, ev-ebitda-explained, red-flags-in-financial-statements), 26 in all. Pushed; sent to Bing (98 that day). Request them on Google next.
 - 8 Nov 2026: phone tab bar redone as iOS 26 liquid glass (floating 90%/420px capsule, 64px, lit rim; spring-driven lens with velocity carry; hides while typing). src/liquidLens.js, Header.jsx BottomTabBar, index.css end block.
+- 8 Nov 2026: pushed 97687c8 (liquid glass tab bar); live, pages answer 200.
