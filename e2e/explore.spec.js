@@ -179,8 +179,10 @@ test("X-H11 the map: find a company, filter to F&O or a theme, and results marks
   const show = map.getByRole("combobox", { name: "Show" });
   await show.selectOption("fno");
   await expect.poll(() => tiles.count()).toBeLessThan(all);
+  await map.getByRole("button", { name: /^Filters/ }).click();
   await show.selectOption({ label: "Defence" });
   await expect.poll(() => tiles.count()).toBeLessThan(60);
+  await map.getByRole("button", { name: /^Filters/ }).click();
   await show.selectOption("");
   await expect.poll(() => tiles.count()).toBe(all);
 });
@@ -327,7 +329,8 @@ test("X-H8 a phone shows the first few news, and See all opens the rest as a pag
   await expect(news.locator(".nw-row").first()).toBeVisible({ timeout: 45_000 });
   expect(await news.locator(".nw-row").count()).toBeLessThanOrEqual(4);
   await page.getByRole("button", { name: "See all the news" }).click();
-  await expect(page.locator(".ex-full .nw-row").nth(4)).toBeVisible();
+  // more than the four (a quiet day folds its routine filings away)
+  await expect(page.locator(".ex-full .nw-row:visible").nth(4)).toBeVisible();
   await expect(page.locator(".ex-map-link").first()).toBeHidden();
   await page.locator(".ex-full").getByRole("button", { name: "Explore", exact: true }).click();
   await expect(page.locator(".ex-map-link").first()).toBeVisible();

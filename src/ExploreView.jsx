@@ -278,6 +278,7 @@ function IndexDetail({ name, onBack, onOpenStock, onOpenNews }) {
         {(d.gainers.length > 0 || d.losers.length > 0) && (
           <section className="ix-card" aria-label="Biggest moves">
             <h3 className="ix-h">Biggest moves on {shortDate(d.asOf)}</h3>
+            <p className="nw-note">{d.sector} companies over ₹1,000 crore ({d.companies}).</p>
             {[["Up", d.gainers], ["Down", d.losers]].map(([t, list]) => list.length > 0 && (
               <div key={t}>
                 <p className={`ex-movers-h ${t === "Up" ? "up" : "down"}`}>{t === "Up" ? "Rose most" : "Fell most"}</p>

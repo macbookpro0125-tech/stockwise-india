@@ -573,7 +573,7 @@ export default function MarketMapView({ onOpenStock, onOpenIndex, screen = null,
                 <div className="mm-filters-pop" role="group" aria-label="Filters">
                   {set !== "sectors" && (
                     <label><span>Companies</span>
-                      <select className="ex-heat-sector" aria-label="Show" value={onlyNow} onChange={e => { setOnly(e.target.value); setFocus(null); }}>
+                      <select className="ex-heat-sector" aria-label="Show" value={onlyNow} onChange={e => { setOnly(e.target.value); setFocus(null); setFiltersOpen(false); }}>
                         {ONLY.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                         {themes.length > 0 && <optgroup label="Themes">{themes.map(t => <option key={t} value={`theme:${t}`}>{t}</option>)}</optgroup>}
                       </select>
@@ -581,7 +581,7 @@ export default function MarketMapView({ onOpenStock, onOpenIndex, screen = null,
                   )}
                   {grouped && sectors.length > 1 && (
                     <label><span>Sector</span>
-                      <select className="ex-heat-sector" aria-label="Sector" value={zoom ?? ""} onChange={e => setFocus(e.target.value || null)}>
+                      <select className="ex-heat-sector" aria-label="Sector" value={zoom ?? ""} onChange={e => { setFocus(e.target.value || null); setFiltersOpen(false); }}>
                         <option value="">All sectors</option>
                         {sectors.map(s => <option key={s} value={s}>{s}</option>)}
                       </select>
