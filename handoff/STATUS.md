@@ -41,7 +41,7 @@ Pushed 4 Nov 2026 at `3885578`: The phone chart's type picker is a one-column li
 
 ## Committed but NOT pushed yet
 
-Nothing.
+Markets (8 Nov): an index charted from closes only (the live pack of 6 Nov has no opens; `candles: false`) draws a line instead of flat dashes, and its table leaves open, high and low as "—"; a "Go deeper" card under the market's trend and buttons under the title for Biggest moves, Results, Sectors, Market map and Stock lists. The live pack gets index opens from the next data job that publishes (Friday 7 Nov's evening runs didn't happen; the last pack is 6 Nov).
 
 ## Open / next
 

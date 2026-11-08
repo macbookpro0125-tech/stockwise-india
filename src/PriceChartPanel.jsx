@@ -34,6 +34,8 @@ const DRAW_KEY = "stockwise-india-chart-draw";
 // your saved set of chart settings, by name
 const VIEWS_KEY = "stockwise-india-chart-views";
 
+// the types that need a day's open, high and low, not just its close
+const OHLC_TYPES = new Set(["candles", "bars", "heikin", "hollow", "hlc"]);
 const TYPES = [
   { id: "candles", label: "Candles", Icon: ChartCandlestick },
   { id: "bars", label: "Bars", Icon: ChartNoAxesColumn },
@@ -154,7 +156,7 @@ export const LEVEL_KEYS = ["target", "fv25", "p1", "p2", "p3", "stopLoss"];
 // 2026: "put our stock chart here with all its options"); symbol then only
 // keys its saved lines
 export default function PriceChartPanel({ symbol, name, levels, page = false, compact = false, index = null }) {
-  const [prefs, setPrefs] = useState(() => {
+  const [savedPrefs, setPrefs] = useState(() => {
     const p = readJson(PREFS_KEY, DEFAULT_PREFS);
     return { ...DEFAULT_PREFS, ...p, ind: { ...(p.ind ?? DEFAULT_PREFS.ind) } };
   });
@@ -162,6 +164,12 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
   const [range, setRange] = useState(() => (page && typeof window !== "undefined" && window.innerWidth < 560 ? "3M" : "1Y"));
   const [span, setSpan] = useState("5y");       // how much history is loaded
   const [data, setData] = useState(null);
+  // An index whose days carry only a close (the server says candles: false)
+  // would draw every candle as a flat dash with open = high = low = close
+  // (8 Nov 2026, "the chart is not showing the candles"): those charts draw a
+  // line instead, and the table leaves open, high and low out
+  const closesOnly = !!index && data?.candles === false;
+  const prefs = closesOnly && OHLC_TYPES.has(savedPrefs.type) ? { ...savedPrefs, type: "line" } : savedPrefs;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lines, setLines] = useState(() => readJson(LINES_KEY, {})[symbol] ?? []);
@@ -219,7 +227,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
   const keepView = useRef(null);   // the zoom to restore when only overlays change
   drawingRef.current = drawing;
 
-  useEffect(() => { writeJson(PREFS_KEY, prefs); }, [prefs]);
+  useEffect(() => { writeJson(PREFS_KEY, savedPrefs); }, [savedPrefs]);
   useEffect(() => { setPicked(null); }, [symbol, prefs.interval, prefs.type]);
   useEffect(() => {
     if (!pop && !tableOpen) return undefined;
@@ -1117,7 +1125,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
   );
   const tableBars = tableOpen ? [...priceBars].reverse().slice(0, 500) : [];
   const copyTable = () => {
-    const text = ["Date\tOpen\tHigh\tLow\tClose\tVolume", ...[...tableBars].map(b => `${b.date}\t${b.open}\t${b.high}\t${b.low}\t${b.close}\t${b.volume ?? ""}`)].join("\n");
+    const text = ["Date\tOpen\tHigh\tLow\tClose\tVolume", ...[...tableBars].map(b => `${b.date}\t${closesOnly ? "" : b.open}\t${closesOnly ? "" : b.high}\t${closesOnly ? "" : b.low}\t${b.close}\t${b.volume ?? ""}`)].join("\n");
     navigator.clipboard?.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1600); }).catch(() => {});
   };
 
@@ -1449,7 +1457,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
                 <tbody>
                   {tableBars.map((b, i) => {
                     const prev = tableBars[i + 1], pct = prev?.close ? ((b.close - prev.close) / prev.close) * 100 : null;
-                    return <tr key={b.date}><td>{new Date(`${b.date}T00:00:00Z`).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "2-digit", timeZone: "UTC" })}</td><td>{fmtNum(b.open)}</td><td>{fmtNum(b.high)}</td><td>{fmtNum(b.low)}</td><td>{fmtNum(b.close)}</td><td style={{ color: pct == null ? undefined : pct >= 0 ? "var(--green)" : "var(--red)" }}>{pct == null ? "—" : `${pct >= 0 ? "+" : "−"}${Math.abs(pct).toFixed(2)}%`}</td><td>{fmtVol(b.volume)}</td></tr>;
+                    return <tr key={b.date}><td>{new Date(`${b.date}T00:00:00Z`).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "2-digit", timeZone: "UTC" })}</td><td>{closesOnly ? "—" : fmtNum(b.open)}</td><td>{closesOnly ? "—" : fmtNum(b.high)}</td><td>{closesOnly ? "—" : fmtNum(b.low)}</td><td>{fmtNum(b.close)}</td><td style={{ color: pct == null ? undefined : pct >= 0 ? "var(--green)" : "var(--red)" }}>{pct == null ? "—" : `${pct >= 0 ? "+" : "−"}${Math.abs(pct).toFixed(2)}%`}</td><td>{fmtVol(b.volume)}</td></tr>;
                   })}
                 </tbody>
               </table>

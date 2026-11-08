@@ -658,6 +658,17 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
   const rangeMove = shownDays && shownDays.closes.length > 1 ? (shownDays.closes.at(-1) / shownDays.closes[0] - 1) * 100 : null;
   const R = detail?.returns ?? {};
 
+  const topGain = movers?.gainers?.[0], topSector = sectors[0];
+  const resultsDay = results?.past?.length ? results.past[results.past.length - 1].date : results?.days?.find(d => d.count > 0)?.date;
+  const resultsCount = (results?.past ?? []).reduce((n, d) => n + (d.count ?? 0), 0);
+  const goTo = [
+    { id: "moves", label: "Biggest moves", line: topGain ? `${cardName(topGain.name)} led, ${pct(topGain.change)}; every company, day by day` : "Every company's rise or fall, day by day", open: () => openMoves({ date: null, period }) },
+    { id: "results", label: "Results", line: resultsCount ? `${resultsCount} companies reported in the last month; the figures, day by day` : "Who reports when, and the figures once they're out", open: () => (resultsDay ? openDay(resultsDay) : navigate("/results-calendar")) },
+    { id: "sectors", label: "Sectors", line: topSector ? `${topSector.name.replace(/^Nifty\s*/i, "")} led today, ${pct(topSector.changePct)}; every sector's companies` : "Every sector and its companies", open: () => navigate("/sectors") },
+    { id: "map", label: "Market map", line: "Every company in one picture, coloured by its move", open: () => onOpenTab?.("map") },
+    { id: "lists", label: "Stock lists", line: "Ready lists: index members, debt-free, high dividend and more", open: () => navigate("/lists") },
+  ];
+
   if (movesPage) return <MoversDay date={movesPage.date ?? null} period={movesPage.period ?? "1d"} onDate={d => setMoves({ ...movesPage, date: d })} onPeriod={p => setMoves({ ...movesPage, period: p })} onBack={closeMoves} onOpenStock={onOpenStock} />;
   if (resDay) return <ResultsDay results={results} date={resDay} onDate={pickDay} onBack={closeDay} onOpenStock={onOpenStock} />;
   if (all) return <AllIndices board={board} onBack={closeAll} onPick={name => { setPick(name); closeAll(); window.scrollTo(0, 0); }} />;
@@ -667,6 +678,9 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
       <header className="mk-head">
         <h1>Markets</h1>
         <p>{board?.asOf ? `NSE's indices, sectors and biggest moves at the close on ${day(board.asOf)}` : "NSE's indices, sectors and biggest moves"}</p>
+        <nav className="mk-jump" aria-label="Market pages">
+          {goTo.map(g => <button key={g.id} type="button" onClick={g.open}>{g.label}</button>)}
+        </nav>
       </header>
 
       {/* the indices: pick one, and it's charted below */}
@@ -756,6 +770,7 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
           </ul>
         </section>
 
+        <div className="mk-col">
         {/* the market's mood: how many are in each stage of their trend */}
         <section className="mk-card" aria-labelledby="mk-mood">
           <div className="mk-card-h"><h2 id="mk-mood">The market's trend</h2><button type="button" className="mk-link" onClick={() => onOpenTab?.("desk")}>Desk</button></div>
@@ -768,6 +783,24 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
             </dl>
           )}
         </section>
+
+        {/* the market's own pages, each with what's on it now (8 Nov 2026:
+            the space under the trend was empty, and Markets should lead to
+            the moves, sectors and results) */}
+        <section className="mk-card" aria-labelledby="mk-go">
+          <div className="mk-card-h"><h2 id="mk-go">Go deeper</h2></div>
+          <ul className="mk-go">
+            {goTo.map(g => (
+              <li key={g.id}>
+                <button type="button" onClick={g.open}>
+                  <span><b>{g.label}</b><small>{g.line}</small></span>
+                  <ChevronRight size={18} aria-hidden="true" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+        </div>
       </div>
 
       {/* the biggest moves */}

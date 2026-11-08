@@ -5817,6 +5817,19 @@ button.td-index:active, button.td-line:active { background: color-mix(in srgb, v
 .mk-stats dd { margin: 3px 0 0; font-size: 16px; font-weight: 600; color: var(--t1); }
 .mk-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 16px; align-items: start; }
 .mk-grid > .mk-card { margin-bottom: 16px; }
+.mk-col { display: grid; gap: 16px; margin-bottom: 16px; min-width: 0; }
+.mk-go { list-style: none; margin: 0; padding: 0; display: grid; }
+.mk-go li + li { border-top: 1px solid var(--bdr); }
+.mk-go button { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 8px 2px; border: 0; background: none; color: var(--t1); font: inherit; text-align: left; cursor: pointer; }
+.mk-go button > span { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.mk-go b { font-size: 15px; font-weight: 500; }
+.mk-go small { font-size: 13px; color: var(--t3); }
+.mk-go svg { flex: none; color: var(--t3); }
+@media (hover: hover) and (pointer: fine) { .mk-go button:hover b { color: var(--accent); } }
+.mk-jump { display: flex; gap: 8px; margin: -8px 0 22px; overflow-x: auto; scrollbar-width: none; }
+.mk-jump::-webkit-scrollbar { display: none; }
+.mk-jump button { flex: none; height: 36px; padding: 0 14px; border: 1px solid var(--bdr2); border-radius: 999px; background: var(--s2); color: var(--t1); font: inherit; font-size: 13px; cursor: pointer; }
+@media (hover: hover) and (pointer: fine) { .mk-jump button:hover { border-color: var(--accent); color: var(--accent); } }
 @media (max-width: 1000px) { .mk-grid { grid-template-columns: minmax(0, 1fr); } }
 .mk-link { padding: 0; border: 0; background: none; color: var(--accent); font: inherit; font-size: 13px; cursor: pointer; }
 .mk-sectors { list-style: none; margin: 0; padding: 0; }
