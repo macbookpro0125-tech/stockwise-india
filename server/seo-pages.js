@@ -140,13 +140,75 @@ function resultsPage(m, slug) {
     q.revenueCr != null && `Sales were ₹${crs(q.revenueCr)} crore${sy != null ? `, ${sy >= 0 ? "up" : "down"} ${Math.abs(sy).toFixed(1)}% on a year earlier` : ""}.`,
     q.profitCr != null && `Net ${q.profitCr < 0 ? "loss" : "profit"} was ₹${crs(Math.abs(q.profitCr))} crore${py != null ? `, ${py >= 0 ? "up" : "down"} ${Math.abs(py).toFixed(1)}%` : ""}${q.opm != null ? `, and the operating margin ${num(q.opm)}%` : ""}.`,
   ].filter(Boolean).join(" ");
-  const others = qs.slice(0, 8).filter(x => x !== q).map(x => link(`/stock/${encodeURIComponent(m.symbol)}/results/${quarterSlug(x.fyEnd)}`, `${fyQuarter(x.fyEnd)}`));
+  const sym = encodeURIComponent(m.symbol);
+  // 8 Nov 2026 ("this is a 2/10 page, I want a total update"): the quarter's
+  // four figures as cards with eight quarters of bars, what changed in plain
+  // words, the quarters as charts, then the full table
+  const tone = v => (v == null || !isFinite(v) ? "" : v > 0.05 ? " up" : v < -0.05 ? " down" : "");
+  const chip = (v, unit = "%") => (v == null || !isFinite(v) ? "" : `<span class="rq-chip${tone(v)}">${v > 0 ? "▲" : v < 0 ? "▼" : ""}${Math.abs(v).toFixed(1)}${unit}</span>`);
+  const span = qs.slice(i, i + 8).reverse(); // oldest first, ending at this quarter
+  const bars = (f, big = false) => {
+    const v = span.map(f);
+    const max = Math.max(...v.filter(x => x != null).map(Math.abs), 0);
+    if (!max) return "";
+    return `<div class="rq-bars${big ? " big" : ""}" aria-hidden="true">${span.map((x, k) => {
+      const val = v[k];
+      const h = val == null ? 0 : Math.max(3, Math.round((Math.abs(val) / max) * 100));
+      return `<span class="rq-bar-col${x === q ? " now" : ""}">${big ? `<span class="rq-bar-v">${val == null ? "—" : esc(crs(val))}</span>` : ""}<span class="rq-bar${val != null && val < 0 ? " neg" : ""}" style="height:${h}%"></span>${big ? `<span class="rq-bar-l">${esc(fyQuarter(x.fyEnd))}</span>` : ""}</span>`;
+    }).join("")}</div>`;
+  };
+  const card = (title, f, fmt) => {
+    const v = f(q);
+    if (v == null) return "";
+    const yy = change(v, f(yearAgo ?? {})), qq = change(v, f(prev ?? {}));
+    return `<div class="rq-card"><span class="rq-card-l">${esc(title)}</span><b class="rq-card-v">${esc(fmt(v))}</b><span class="rq-card-chg">${yy != null ? `${chip(yy)} <small>on a year earlier</small>` : "<small>no year-earlier quarter on file</small>"}</span>${qq != null ? `<span class="rq-card-sub">${esc(pct(qq))} on the quarter before</span>` : ""}${bars(f)}</div>`;
+  };
+  const cards = [
+    card("Sales", h => h.revenueCr, v => `₹${crs(v)} cr`),
+    card("Operating profit", h => h.operatingProfitCr, v => `₹${crs(v)} cr`),
+    card(q.profitCr != null && q.profitCr < 0 ? "Net loss" : "Net profit", h => h.profitCr, v => `₹${crs(v)} cr`),
+    card("EPS", h => h.eps, v => `₹${num(v, 2)}`),
+  ].join("");
+  // what changed, in plain words, from the figures alone
+  const said = [];
+  const cy = change(opCosts(q), opCosts(yearAgo ?? {}));
+  if (sy != null) said.push(`Sales ${sy >= 0 ? "grew" : "fell"} <b>${Math.abs(sy).toFixed(1)}%</b> on a year earlier${cy != null ? `, and operating costs ${cy >= 0 ? "rose" : "fell"} ${Math.abs(cy).toFixed(1)}%` : ""}.`);
+  if (q.opm != null && yearAgo?.opm != null) {
+    const d = q.opm - yearAgo.opm;
+    said.push(Math.abs(d) < 0.3 ? `The operating margin held at <b>${num(q.opm)}%</b>.` : `So the operating margin ${d > 0 ? "widened" : "narrowed"} to <b>${num(q.opm)}%</b> from ${num(yearAgo.opm)}%, ${Math.abs(d).toFixed(1)} points ${d > 0 ? "better" : "lower"}${cy != null && sy != null ? ` (costs ${cy > sy ? "grew faster than" : "grew slower than"} sales)` : ""}.`);
+  }
+  for (const [what, f] of [["Other income", h => h.otherIncomeCr], ["Interest", h => h.financeCostsCr], ["Depreciation", h => h.depreciationCr]]) {
+    const c = change(f(q), f(yearAgo ?? {}));
+    if (c != null && Math.abs(c) >= 15 && f(q) >= Math.abs(q.revenueCr ?? 0) * 0.005) said.push(`${what} ${c >= 0 ? "rose" : "fell"} ${Math.abs(c).toFixed(0)}% to ₹${crs(f(q))} crore.`);
+  }
+  const rate = h => (h?.taxCr != null && h?.pbtCr > 0 ? (h.taxCr / h.pbtCr) * 100 : null);
+  if (rate(q) != null && rate(yearAgo) != null && Math.abs(rate(q) - rate(yearAgo)) >= 2) said.push(`Tax took ${rate(q).toFixed(0)}% of profit before tax, against ${rate(yearAgo).toFixed(0)}% a year earlier.`);
+  if (py != null) said.push(`Net ${q.profitCr < 0 ? "loss" : "profit"} ended ${py >= 0 ? "up" : "down"} <b>${Math.abs(py).toFixed(1)}%</b> at ₹${crs(Math.abs(q.profitCr))} crore${q.revenueCr > 0 ? `, ${num((q.profitCr / q.revenueCr) * 100)}% of sales` : ""}.`);
+  const price = m.cmp != null ? `<span class="rq-price">₹${esc(num(m.cmp, 2))}${m.ret1d != null ? ` <span class="rq-chip${tone(m.ret1d)}">${m.ret1d > 0 ? "▲" : m.ret1d < 0 ? "▼" : ""}${Math.abs(m.ret1d).toFixed(2)}%</span>` : ""}<small>share price, last close</small></span>` : "";
+  const tableRows = kept.map(([l, f, fmt = crs]) => {
+    const isPct = l.endsWith("%");
+    const diffV = (a, bb) => (isPct ? (a != null && bb != null ? a - bb : null) : change(a, bb));
+    const diff = (a, bb) => { const v = diffV(a, bb); return v == null ? "—" : `<span class="rq-d${tone(v)}">${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(1)}${isPct ? " pts" : "%"}</span>`; };
+    const key = ["Sales", "Operating profit", "Net profit", "EPS (₹)"].includes(l);
+    return `<tr${key ? ' class="rq-key"' : ""}><th>${esc(l)}</th><td>${esc(fmt(f(q)))}</td>${yearAgo ? `<td>${esc(fmt(f(yearAgo)))}</td><td>${diff(f(q), f(yearAgo))}</td>` : ""}${prev ? `<td>${esc(fmt(f(prev)))}</td><td>${diff(f(q), f(prev))}</td>` : ""}</tr>`;
+  }).join("");
+  const table2 = `<div class="ps-table-wrap rq-table"><table><caption>${esc(n)} ${esc(label)} results against a year earlier and the quarter before (₹ crore)</caption><thead><tr><th>Item</th><th>${esc(label)}</th>${yearAgo ? `<th>${esc(fyQuarter(yearAgo.fyEnd))}</th><th>Year on year</th>` : ""}${prev ? `<th>${esc(fyQuarter(prev.fyEnd))}</th><th>Quarter on quarter</th>` : ""}</tr></thead><tbody>${tableRows}</tbody></table></div>`;
+  const quarters = qs.slice(0, 8).map(x => (x === q ? `<span class="rq-q now" aria-current="page">${esc(fyQuarter(x.fyEnd))}</span>` : `<a class="rq-q" href="/stock/${sym}/results/${quarterSlug(x.fyEnd)}">${esc(fyQuarter(x.fyEnd))}</a>`)).join("");
+  const sales8 = bars(h => h.revenueCr, true), profit8 = bars(h => h.profitCr, true);
   return {
     title: resultsTitle(n, label, m.symbol, q, sy, py),
     desc: lede.slice(0, 300),
-    canonical: `${SITE}/stock/${encodeURIComponent(m.symbol)}/results/${slug}`,
-    body: `<main class="seo-stock seo-methodology">${crumb(m, `${label} results`)}<h1>${esc(n)} ${esc(label)} results</h1><p>${esc(lede)}</p>${tableHtml}
-${others.length ? `<p>Other quarters: ${others.join(" · ")}</p>` : ""}<p>${link("/results", "Other companies' latest results")} · ${link("/results-calendar", "Results calendar")}</p><p>${esc(NOTE)} Quarterly figures are as filed; a company can restate them later.</p>${more(m)}</main>`,
+    canonical: `${SITE}/stock/${sym}/results/${slug}`,
+    body: `<main class="seo-stock seo-methodology rq">${crumb(m, `${label} results`).replace("<p>", '<p class="rq-crumb">')}
+<header class="rq-head"><div><span class="rq-eyebrow">${esc(label)} results · quarter to ${esc(day(q.fyEnd))}${q.filed ? ` · filed ${esc(day(q.filed))}` : ""}</span><h1>${esc(n)} ${esc(label)} results</h1></div>${price}</header>
+<p class="rq-lede">${esc(lede)}</p>
+${cards ? `<section class="rq-cards" aria-label="The quarter's figures">${cards}</section><p class="rq-note">Small bars: the last ${span.length} quarters, this one darkest.</p>` : ""}
+${said.length ? `<section class="rq-box" aria-label="What changed"><h2>What changed</h2><ul class="rq-said">${said.map(x => `<li>${x}</li>`).join("")}</ul><p class="rq-note">Read from the filed figures against the same quarter a year earlier. Figures, not a view on the shares.</p></section>` : ""}
+${sales8 || profit8 ? `<section class="rq-grid2" aria-label="Quarter by quarter">${sales8 ? `<div class="rq-box"><h2>Sales, quarter by quarter</h2><p class="rq-note">₹ crore</p>${sales8}</div>` : ""}${profit8 ? `<div class="rq-box"><h2>Net profit, quarter by quarter</h2><p class="rq-note">₹ crore</p>${profit8}</div>` : ""}</section>` : ""}
+<section class="rq-box" aria-label="The full results"><h2>The full results</h2>${table2}</section>
+${qs.length > 1 ? `<nav class="rq-quarters" aria-label="Other quarters"><span>Other quarters</span>${quarters}</nav>` : ""}
+<nav class="rq-links" aria-label="More">${[[`/stock/${sym}`, `${niceName(m.name)} overview`], ...stockPageLinks(m).filter(([p]) => !p.includes("/results/")), ["/results", "Other companies' latest results"], ["/results-calendar", "Results calendar"]].map(([p, t]) => link(p, t)).join("")}</nav>
+<p class="rq-note">${esc(NOTE)} Quarterly figures are as filed; a company can restate them later.</p></main>`,
   };
 }
 
