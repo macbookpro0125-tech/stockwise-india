@@ -243,4 +243,4 @@ Owner: "the news is not understandable". Looked at 10 apps (Inshorts' one-line c
 - 8 Nov evening: the review's fixes (public header with search and sign-up, screen renames with redirects, updated times, jargon tips) and results rows opening the results page on a phone. 158 passed. Not pushed.
 - 8 Nov evening: pushed 0bf8d11 (public header, screen renames with redirects, updated times, jargon tips, phone results rows, 160-character descriptions). Bing: 91 pages submitted, see memory bing-webmaster.
 - 8 Nov night: pushed FAQ data (FAQPage) for company pages (8 questions incl. share price, latest results, promoters) and results pages (5 questions, a Questions block); X profile as sameAs on the front page. IndexNow already ran since 30 Oct (server/indexnow.js) — don't rebuild it.
-- 8 Nov night: four Learn guides (fair-value-explained, eps-explained, ev-ebitda-explained, red-flags-in-financial-statements), 26 in all. Not pushed.
+- 8 Nov night: four Learn guides (fair-value-explained, eps-explained, ev-ebitda-explained, red-flags-in-financial-statements), 26 in all. Pushed; sent to Bing (98 that day). Request them on Google next.
