@@ -3,7 +3,7 @@ import { lazyPage } from "./lazyPage.js";
 import CompanyLogo from "./CompanyLogo.jsx";
 import { headOf, periodsOf } from "./columnHeads.js";
 import { cardName, splitUnit } from "./stockName.js";
-import { ArrowDown, ArrowUp, Check, Info, Columns3, Search, ArrowUpRight, SearchX, Star, ChevronDown, Funnel, Download, ChartScatter } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, Info, Columns3, Search, ArrowUpRight, SearchX, Star, ChevronDown, ChevronLeft, ChevronRight, Funnel, Download, ChartScatter } from "lucide-react";
 import QualityValueMap from "./QualityValueMap.jsx";
 import { StarIcon, BellIcon, actionButtonStyle } from "./icons.jsx";
 import { useWatchlist, toggleWatch } from "./watchlist.js";
@@ -344,6 +344,55 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
     ask();
     return () => { window.removeEventListener("scroll", ask); window.removeEventListener("resize", ask); cancelAnimationFrame(frame); };
   });
+  // Sideways with a mouse (8 Nov 2026: "I can't scroll left side with the
+  // mouse"): the table's scrollbar sits under its last row, out of sight, so
+  // dragging the table moves it sideways, and two arrows float at the
+  // bottom of the screen while it's in view and wider than the screen
+  const [side, setSide] = useState({ show: false, left: false, right: false });
+  useEffect(() => {
+    const wrap = tableWrap.current;
+    if (!wrap) return;
+    let seen = false;
+    const update = () => setSide(prev => {
+      const over = wrap.scrollWidth - wrap.clientWidth > 4;
+      const next = { show: seen && over, left: wrap.scrollLeft > 2, right: wrap.scrollLeft < wrap.scrollWidth - wrap.clientWidth - 2 };
+      return prev.show === next.show && prev.left === next.left && prev.right === next.right ? prev : next;
+    });
+    const io = new IntersectionObserver(([e]) => { seen = e.isIntersecting; update(); });
+    io.observe(wrap);
+    const ro = new ResizeObserver(update);
+    ro.observe(wrap);
+    wrap.addEventListener("scroll", update, { passive: true });
+    // drag to move: a mouse only, not from a button, link or box
+    let drag = null;
+    const down = e => {
+      if (e.pointerType !== "mouse" || e.button !== 0 || e.target.closest("button, a, input, select, label, [role=button]")) return;
+      drag = { x: e.clientX, left: wrap.scrollLeft, moved: false };
+    };
+    const move = e => {
+      if (!drag) return;
+      const dx = e.clientX - drag.x;
+      if (!drag.moved && Math.abs(dx) < 6) return;
+      drag.moved = true;
+      wrap.classList.add("rt-dragging");
+      wrap.scrollLeft = drag.left - dx;
+    };
+    const up = () => {
+      if (drag?.moved) {
+        // the drag isn't a click on the row
+        const eat = ev => { ev.stopPropagation(); ev.preventDefault(); };
+        wrap.addEventListener("click", eat, { capture: true, once: true });
+        setTimeout(() => wrap.removeEventListener("click", eat, { capture: true }), 0);
+      }
+      drag = null;
+      wrap.classList.remove("rt-dragging");
+    };
+    wrap.addEventListener("pointerdown", down);
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    return () => { io.disconnect(); ro.disconnect(); wrap.removeEventListener("scroll", update); wrap.removeEventListener("pointerdown", down); window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
+  }, []);
+  const nudge = dir => tableWrap.current?.scrollBy({ left: dir * Math.round(tableWrap.current.clientWidth * 0.6), behavior: "smooth" });
   useEffect(() => {
     const handler = () => setIsMobile(window.innerWidth < 640);
     window.addEventListener("resize", handler);
@@ -841,6 +890,12 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
           {/* Open on the page, not in a box with its own scrollbars (31 Oct
               2026): the page scrolls down; only a table wider than the
               screen scrolls sideways */}
+          {side.show && !isMobile && (
+            <div className="rt-side-arrows" role="group" aria-label="Scroll the table sideways">
+              <button type="button" aria-label="Scroll left" disabled={!side.left} onClick={() => nudge(-1)}><ChevronLeft size={18} aria-hidden="true" /></button>
+              <button type="button" aria-label="Scroll right" disabled={!side.right} onClick={() => nudge(1)}><ChevronRight size={18} aria-hidden="true" /></button>
+            </div>
+          )}
           <div className="rt-open-scroll" ref={tableWrap}>
             <table className="data-table" style={{ minWidth: 640 + columns.length * 80 }}>
               <thead ref={tableHead} className="rt-thead">
@@ -916,12 +971,13 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
                       </div>
                     </td>
 
-                    <td style={{ ...cell, minWidth: 200, width: 240, maxWidth: 260, position: "sticky", left: RANK_W, background: rowBg, zIndex: 1, boxShadow: "inset -1px 0 0 var(--bdr)", "--row-bg": "var(--s2)" }}>
+                    <td style={{ ...cell, minWidth: 200, width: 240, maxWidth: 260, position: "sticky", left: RANK_W, background: rowBg, zIndex: 1, boxShadow: "inset -1px 0 0 var(--bdr)", "--row-bg": isSelected ? "color-mix(in srgb, var(--accent) 6%, var(--s2))" : "var(--s2)" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
                         <CompanyLogo symbol={stock.symbol} size={28} fallback={stock.name} />
                         <div style={{ minWidth: 0, flex: "1 1 auto" }}>
                           <button type="button" title={stock.name} aria-label={stock.name} onClick={() => onAnalyze(stock.symbol)} className="stock-link" style={{ display: "block", maxWidth: "100%", padding: 0, border: 0, background: "none", fontFamily: "inherit", textAlign: "left", fontWeight: 400, fontSize: 14, letterSpacing: "-0.01em", marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shortName(stock.name)}</button>
                           <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+                            {watchlist.has(stock.symbol) && <Star size={11} className="row-starred" fill="currentColor" aria-label="On your watchlist" />}
                             <span className="ticker-chip">{stock.symbol}</span>
                             <NcavBadge stock={stock} />
                             {stock.sector && <span title={stock.sector} style={{ fontSize: 11, color: "var(--t3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{stock.sector}</span>}

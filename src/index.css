@@ -4693,9 +4693,6 @@ html.rail-tucked .app-header a[aria-label="Jocular Insights home"] { margin-left
 .row-acts { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); display: flex; gap: 4px; padding-left: 18px; opacity: 0; transition: opacity 120ms;
   background: linear-gradient(to right, transparent, var(--row-bg, var(--s2)) 16px); pointer-events: none; }
 tr:hover .row-acts, tr:focus-within .row-acts { pointer-events: auto; }
-.row-acts[data-watched] { pointer-events: auto; }
-.row-acts[data-watched] { opacity: 1; }
-.row-acts[data-watched] > :not(:first-child) { opacity: 0; transition: opacity 120ms; }
 tr:hover .row-acts, tr:focus-within .row-acts, tr:hover .row-acts > *, tr:focus-within .row-acts > * { opacity: 1; }
 .row-nse { width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border-radius: 7px; border: 1px solid var(--bdr2); color: var(--t3); text-decoration: none; }
 @media (hover: none) { .row-acts, .row-acts > * { opacity: 1 !important; } }
@@ -6379,4 +6376,20 @@ html.td-night[data-theme="light"] .tb.tb-scrolled { box-shadow: 0 1px 0 rgba(255
   .rq-bar-v, .rq-bar-l { font-size: 10px; }
   .rq-price { justify-items: start; }
   .rq-box { padding: 14px 14px 12px; }
+}
+
+/* The screen's table (8 Nov 2026): a starred company has a small star by its
+   symbol, the buttons only on hover; arrows and dragging move it sideways;
+   the "saved" card in a corner on a computer, off the table */
+.row-starred { flex-shrink: 0; color: var(--yellow); }
+.rt-open-scroll { cursor: default; }
+.rt-open-scroll.rt-dragging { cursor: grabbing; user-select: none; }
+.rt-side-arrows { position: fixed; z-index: 40; right: 24px; bottom: 24px; display: flex; gap: 2px; padding: 3px; border: 1px solid var(--bdr2); border-radius: 999px; background: color-mix(in srgb, var(--s1) 88%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16); }
+.rt-side-arrows button { display: grid; place-items: center; width: 38px; height: 38px; border: 0; border-radius: 999px; background: none; color: var(--t1); cursor: pointer; }
+.rt-side-arrows button:hover:not(:disabled) { background: var(--s2); }
+.rt-side-arrows button:disabled { color: var(--t3); opacity: 0.4; cursor: default; }
+@media (min-width: 900px) {
+  .stl { left: auto; right: 24px; bottom: 80px; width: 360px; margin: 0; padding: 10px 12px 12px; }
+  .stl-row { flex-wrap: wrap; overflow: visible; }
+  .stl-chip { height: 30px; padding: 0 11px; }
 }
