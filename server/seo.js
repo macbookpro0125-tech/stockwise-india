@@ -36,6 +36,16 @@ import { GUIDE_PATHS, GUIDES_UPDATED } from "./guides.js";
 // Every server-written page opens with the site's main pages and a way to
 // sign up (8 Nov 2026, a review that read the HTML: "no top navigation …
 // no sign-up button"). The app replaces it with its own header once loaded.
+// Search engines show about 160 characters (8 Nov 2026: Bing flagged every
+// page's description as too long): cut at a word, ending with "…"
+export const shortDesc = (text, max = 158) => {
+  const t = String(text ?? "").replace(/\s+/g, " ").trim();
+  if (t.length <= max) return t;
+  const cut = t.slice(0, max - 1);
+  const at = cut.lastIndexOf(" ");
+  return `${(at > 80 ? cut.slice(0, at) : cut).replace(/[\s,;:·—-]+$/, "")}…`;
+};
+
 const SITE_NAV = `<header class="seo-nav"><a href="/">Jocular Insights</a> <nav aria-label="Main pages"><a href="/screens">Stock screens</a> · <a href="/sectors">Sectors</a> · <a href="/results">Latest results</a> · <a href="/results-calendar">Results calendar</a> · <a href="/lists">Stock lists</a> · <a href="/learn">Learn</a></nav> <a href="/?auth=signup">Create a free account</a></header>`;
 const PUBLIC_PATHS = ["/", "/about", "/help", "/methodology", SCREENER_PAGE_PATH, "/privacy", "/disclaimer"];
 
@@ -60,7 +70,7 @@ export function ogCard(dir, slug) {
 }
 export function pageHtml(template, { title, desc, canonical, ld, body, image = null }) {
   const head = `<title>${esc(title)}</title>
-<meta name="description" content="${esc(desc)}" />
+<meta name="description" content="${esc(shortDesc(desc))}" />
 <link rel="canonical" href="${esc(canonical)}" />
 <meta property="og:type" content="website" />
 <meta property="og:title" content="${esc(title)}" />
@@ -271,7 +281,7 @@ export function methodologyPageHtml(template) {
     publisher: { "@type": "Organization", name: "Jocular Insights", url: SITE },
   };
   const head = `<title>${esc(METHODOLOGY_TITLE)} | Jocular Insights</title>
-<meta name="description" content="${esc(METHODOLOGY_DESCRIPTION)}" />
+<meta name="description" content="${esc(shortDesc(METHODOLOGY_DESCRIPTION))}" />
 <link rel="canonical" href="${esc(canonical)}" />
 <meta property="og:type" content="website" />
 <meta property="og:title" content="${esc(METHODOLOGY_TITLE)} | Jocular Insights" />
@@ -307,7 +317,7 @@ export function stockScreenerPageHtml(template) {
     publisher: { "@type": "Organization", name: "Jocular Insights", url: SITE },
   };
   const head = `<title>${esc(SCREENER_PAGE_TITLE)} | Jocular Insights</title>
-<meta name="description" content="${esc(SCREENER_PAGE_DESCRIPTION)}" />
+<meta name="description" content="${esc(shortDesc(SCREENER_PAGE_DESCRIPTION))}" />
 <link rel="canonical" href="${esc(canonical)}" />
 <meta property="og:type" content="website" />
 <meta property="og:title" content="${esc(SCREENER_PAGE_TITLE)} | Jocular Insights" />
@@ -345,7 +355,7 @@ export function stockPageHtml(template, symbol) {
     ],
   };
   const head = `<title>${esc(title)}</title>
-<meta name="description" content="${esc(desc)}" />
+<meta name="description" content="${esc(shortDesc(desc))}" />
 <link rel="canonical" href="${esc(canonical)}" />
 <meta property="og:type" content="website" />
 <meta property="og:title" content="${esc(`${n} (${s.symbol}): ${[s.quality != null && `quality score ${Math.round(s.quality)}/100`, s.pe > 0 && `P/E ${num(s.pe)}`].filter(Boolean).join(", ") || "results and figures"}`)}" />
