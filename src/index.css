@@ -6454,3 +6454,8 @@ html.td-night[data-theme="light"] .tb.tb-scrolled { box-shadow: 0 1px 0 rgba(255
 .jg:hover::after, .jg:focus::after, .jg:focus-visible::after { opacity: 1; transform: none; }
 .jg:focus-visible { border-radius: 3px; box-shadow: 0 0 0 2px var(--accent); }
 .preset-desc .jg::after, .ph-card-about .jg::after { display: none; }
+/* A results row's quarter and figures open its results page (8 Nov 2026) */
+.mk-resday-qbtn { display: inline-flex; align-items: center; gap: inherit; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+.mk-resday-qgo { display: none; color: var(--t3); }
+.mk-resday-n.tap { cursor: pointer; }
+@media (max-width: 760px) { .mk-resday-qgo { display: inline; } .mk-resday-qbtn { min-height: 40px; } }

@@ -315,6 +315,7 @@ function StripArrows({ nudge }) {
 function ResRow({ c, done, starred, onOpenStock, when }) {
   const qq = c.quarter, label = qq ? fyQ(qq.end) : null;
   const slug = label?.toLowerCase().replace(" ", "-");
+  const openRes = slug ? () => navigate(`/stock/${encodeURIComponent(c.symbol)}/results/${slug}`) : undefined;
   return (
     <li className={done ? "done" : ""}>
       <button type="button" className="mk-resday-co" onClick={() => onOpenStock?.(c.symbol)} aria-label={`${cardName(c.name)}: open its page`}>
@@ -322,9 +323,15 @@ function ResRow({ c, done, starred, onOpenStock, when }) {
         <span><b>{cardName(c.name)}{starred && <Star size={12} className="mk-res-star" aria-label="on your watchlist" />}</b><small>{[c.symbol, c.sector].filter(Boolean).join(" · ")}</small></span>
       </button>
       <span className="mk-resday-cap">{when ?? mcap(c.marketCapCr)}</span>
-      <span className="mk-resday-q">{label ? <>{done ? <em className="mk-res-tag new">New</em> : <em className="mk-res-tag">Last</em>}{label}</> : "—"}</span>
-      <span className="mk-resday-n">{crore(qq?.salesCr)}{qq?.salesYoY != null && <small className={tone(qq.salesYoY)}>{pct1(qq.salesYoY)}</small>}</span>
-      <span className="mk-resday-n">{qq?.profitCr != null && qq.profitCr < 0 ? `Loss ${crore(qq.profitCr)}` : crore(qq?.profitCr)}{qq?.profitYoY != null && qq?.profitCr > 0 && qq.profitCr / (1 + qq.profitYoY / 100) > 0 && <small className={tone(qq.profitYoY)}>{pct1(qq.profitYoY)}</small>}</span>
+      {/* the quarter and its figures open its results page (8 Nov 2026: "how to
+          check results on the phone?", where the See results column is hidden) */}
+      <span className="mk-resday-q">{label ? (
+        <button type="button" className="mk-resday-qbtn" disabled={!slug} onClick={openRes} aria-label={`${cardName(c.name)} ${label} results`}>
+          {done ? <em className="mk-res-tag new">New</em> : <em className="mk-res-tag">Last</em>}{label}<ChevronRight size={15} className="mk-resday-qgo" aria-hidden="true" />
+        </button>
+      ) : "—"}</span>
+      <span className={`mk-resday-n${slug ? " tap" : ""}`} onClick={openRes}>{crore(qq?.salesCr)}{qq?.salesYoY != null && <small className={tone(qq.salesYoY)}>{pct1(qq.salesYoY)}</small>}</span>
+      <span className={`mk-resday-n${slug ? " tap" : ""}`} onClick={openRes}>{qq?.profitCr != null && qq.profitCr < 0 ? `Loss ${crore(qq.profitCr)}` : crore(qq?.profitCr)}{qq?.profitYoY != null && qq?.profitCr > 0 && qq.profitCr / (1 + qq.profitYoY / 100) > 0 && <small className={tone(qq.profitYoY)}>{pct1(qq.profitYoY)}</small>}</span>
       <span className={`mk-resday-move ${tone(c.ret1d)}`}>{c.ret1d == null ? "—" : pct1(c.ret1d)}</span>
       <span className="mk-resday-go">{slug && <button type="button" className="mk-link" onClick={() => navigate(`/stock/${encodeURIComponent(c.symbol)}/results/${slug}`)}>{done ? "See results" : "Last results"} <ChevronRight size={14} aria-hidden="true" /></button>}</span>
     </li>

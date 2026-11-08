@@ -91,6 +91,11 @@ test("MK-3 a results day opens as a page: its companies' figures, other days, Ba
     const known = growth.filter(v => v != null);
     expect(known.every((v, i) => !i || v <= known[i - 1])).toBe(true);
     expect(growth.slice(0, known.length).every(v => v != null)).toBe(true);
+    // 8 Nov 2026: a row's quarter opens its results page, a phone's way there too
+    await page.locator(".mk-resday .mk-resday-qbtn:not([disabled])").first().click();
+    await expect(page).toHaveURL(/\/stock\/[^/]+\/results\/q\d-fy\d\d$/);
+    await expect(page.getByRole("heading", { level: 1, name: / results$/ })).toBeVisible();
+    await page.goBack();
     await page.goBack();
   }
 });
