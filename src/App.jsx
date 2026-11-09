@@ -1,4 +1,4 @@
-import { Suspense, useState, useEffect, useRef, useCallback } from "react";
+import { Suspense, useState, useEffect, useLayoutEffect, useRef, useCallback, startTransition } from "react";
 import { setLogosSignedIn } from "./CompanyLogo.jsx";
 import { flushSync } from "react-dom";
 import { lazyPage } from "./lazyPage.js";
@@ -58,6 +58,12 @@ const VisitorsView = lazyPage(() => import("./VisitorsView.jsx"));
 const SettingsView = lazyPage(() => import("./SettingsView.jsx"));
 const StockDetail = lazyPage(() => import("./StockDetail.jsx"));
 const ChartPage = lazyPage(() => import("./ChartPage.jsx"));
+
+// A finger down on a phone tab: that page's code is fetched then, not when
+// the finger lifts, so its page is ready to be made by the time it's wanted
+// (the page waits for it in the background — App's goTab)
+const TAB_PAGES = { watchlist: () => import("./WatchlistView.jsx"), explore: () => import("./ExploreView.jsx"), portfolio: () => import("./PortfolioView.jsx") };
+const fetchTabPage = id => { TAB_PAGES[id]?.().catch(() => {}); };
 
 // Dark by default, as the original; the choice is remembered in this browser
 function useTheme() {
@@ -140,7 +146,9 @@ export default function App() {
       window.history.replaceState(state, "", `/${window.location.search}`);
     }
   }, [tab]);
-  tabRef.current = tab;
+  // the tab shown, kept in step — when it changes, not on every render, so a
+  // page still being made in the background (goTab) isn't forgotten meanwhile
+  useLayoutEffect(() => { tabRef.current = tab; }, [tab]);
 
   // Ratings on Play, in the Android app (rateApp.js): each day it's used,
   // and each company page left — the pause when Play's card may come
@@ -158,20 +166,38 @@ export default function App() {
     tabRef.current = t;
     setTab(t);
   };
-  const goTab = (t) => {
+  const goTab = (t, { glide = false } = {}) => {
     // the page you're on, picked again: back to its start (a news item, an
     // index or a section open on Explore closes, 6 Nov 2026)
     if (t === tabRef.current && !open) {
       const s = window.history.state ?? {};
       if (s.newsItem || s.exploreIndex || s.exploreFull) { window.history.back(); return; }
     }
-    if (t !== tabRef.current) tabHistory.current.push(tabRef.current);
+    const moving = t !== tabRef.current;
+    if (moving) tabHistory.current.push(tabRef.current);
+    tabRef.current = t;
+    // From the phone's tab bar, to another page: built in the background, a
+    // slice at a time, so the bar's drop keeps gliding while it's made (9 Nov
+    // 2026, "not that smooth, it looks laggy": built in one go, it held the
+    // drop still for 3–6 frames on every tap). It shows, at its top, as soon
+    // as it's ready. (Back to the page still showing before another was
+    // ready: that one is dropped, and this one goes to its top now.)
+    if (glide && moving && !open) {
+      scrollOnTab.current = t !== tab;
+      if (t === tab) window.scrollTo(0, 0);
+      startTransition(() => setTab(t));
+      return;
+    }
     if (open) navigate("/");
     setOpen(null);
-    tabRef.current = t;
     setTab(t);
     window.scrollTo(0, 0);
   };
+  // the new page in place: at its top
+  const scrollOnTab = useRef(false);
+  useLayoutEffect(() => {
+    if (scrollOnTab.current) { scrollOnTab.current = false; window.scrollTo(0, 0); }
+  }, [tab]);
 
   // A tapped phone notification (push.js) opens what it's about: an alert's
   // company, a news item, or the Watchlist for several
@@ -479,7 +505,7 @@ export default function App() {
       </Suspense>
       <SiteFooter />
       {/* On a company page too: the tab it was opened from stays lit */}
-      <BottomTabBar tab={tab} onTab={goTab} />
+      <BottomTabBar tab={tab} onTab={t => goTab(t, { glide: true })} onIntent={fetchTabPage} />
       {/* A computer: the pages in a slim bar down the left, with peeks */}
       <SideRail tab={tab} onTab={goTab} account={account} theme={theme} onToggleTheme={toggleTheme} onOpenStock={openSymbol} openSymbol={open?.symbol ?? null} />
       {/* A phone's top bar: the menu and + float once it's scrolled past, the

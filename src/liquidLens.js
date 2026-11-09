@@ -23,8 +23,27 @@
 // colour at its rim — and the real tabs are cut away beneath it. Drawn here
 // rather than by CSS transitions so that copy stays aligned with the tabs at
 // every point of a trip.
+//
+// Each frame has to be cheap, or the drop stutters (9 Nov 2026, "not that
+// smooth, it looks laggy": a phone-speed frame took ~18ms of the 16.7 it
+// has). So a frame never asks the page where anything is (the tabs' places
+// are measured once, in layout()), writes a style only when its value
+// changes, and cuts away only the tabs the drop is over; the rim is worked
+// out by the graphics chip (rimLens.js).
 
 import { createRimLens } from "./rimLens.js";
+
+// a style written only when it changes: a frame's unchanged values cost nothing
+const written = new WeakMap();
+function put(el, prop, value) {
+  let was = written.get(el);
+  if (!was) written.set(el, (was = {}));
+  if (was[prop] === value) return;
+  was[prop] = value;
+  el.style.setProperty(prop, value);
+}
+// after the frame loop has stopped: work that would cost a moving drop a frame
+const later = f => (typeof window.requestIdleCallback === "function" ? window.requestIdleCallback(f, { timeout: 400 }) : setTimeout(f, 60));
 
 const reduced = () => typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
@@ -69,16 +88,26 @@ const pulseAt = t => (t <= 0 ? 0 : t < 65 ? easeOut(t / 65) : t < 215 ? 0.5 * (1
 export function createLens(nav, lens, top) {
   const rest = lens.querySelector(".btb-lens-rest");
   const glass = lens.querySelector(".btb-lens-glass");
+  const shine = top.querySelector(".btb-lens-shine");
   const rows = [...top.querySelectorAll(".btb-lens-row")];
   const tabs = () => [...nav.querySelectorAll(".btb-tab")];
   const now = () => performance.now();
-  // the rim's lens (rimLens.js): drawn again when the open tab or the theme changes
+  // the rim's lens (rimLens.js): its picture of the tabs is drawn again when
+  // the open tab changes (at once: it's cheap) and when the layout or theme
+  // changes (once the drop is still: it measures the page)
   const canvas = top.querySelector(".btb-lens-canvas");
   const rim = canvas ? createRimLens(nav, canvas) : null;
-  const theme = typeof MutationObserver !== "undefined" ? new MutationObserver(() => rim?.build()) : null;
+  let stale = false, waiting = 0;
+  const rebuild = () => {
+    stale = true;
+    if ((loop && rim?.ready()) || waiting) return; // the frame loop asks again when it stops
+    waiting = later(() => { waiting = 0; if (loop && rim?.ready()) return; stale = false; rim?.build(); });
+  };
+  const theme = typeof MutationObserver !== "undefined" ? new MutationObserver(() => { rim?.invalidate(); rebuild(); }) : null;
   theme?.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme", "class"] });
 
   let geo = null; // { W, H, centres[], caps[], slot }
+  let faces = []; // each tab's drawing: { el, x, y, w } on the bar, measured in layout()
   const pos = { x: null, v: 0 };
   const lift = { x: 0, v: 0 };
   const sw = { x: null, v: 0 }, sh = { x: null, v: 0 }; // the lens's width and height, px
@@ -95,20 +124,29 @@ export function createLens(nav, lens, top) {
     const W = nav.clientWidth, H = nav.clientHeight;
     const slot = (W - 2 * EDGE) / all.length;
     const centres = [], caps = [];
+    const shifts = [];
     all.forEach((t, i) => {
       const label = t.querySelector(".btb-label");
       const lw = label ? label.scrollWidth : 0;
       const cap = Math.max(slot + CAP_MIN, lw + CAP_PAD);
       const home = EDGE + slot * (i + 0.5);
       const c = Math.min(W - EDGE - cap / 2, Math.max(EDGE + cap / 2, home));
-      centres.push(c); caps.push(cap);
+      centres.push(c); caps.push(cap); shifts.push(c - home);
       const shift = `${(c - home).toFixed(2)}px 0`;
       t.style.translate = shift;
       for (const r of rows) { const copy = r.children[i]; if (copy) copy.style.translate = shift; }
     });
     for (const r of rows) { r.style.width = `${W}px`; r.style.height = `${H}px`; }
+    // where each tab's drawing sits on the bar (a translate moves it without
+    // changing its offsets, so that's added): read here, never in a frame
+    faces = all.map((t, i) => {
+      const el = t.querySelector(".btb-face") || t;
+      const inner = el === t ? { x: 0, y: 0 } : { x: el.offsetLeft, y: el.offsetTop };
+      return { el, x: t.offsetLeft + shifts[i] + inner.x, y: inner.y, w: el.offsetWidth };
+    });
     geo = { W, H, centres, caps, slot };
-    rim?.build();
+    rim?.size(W, H);
+    rebuild();
   }
   const capAt = x => {
     const { centres, caps } = geo;
@@ -128,47 +166,44 @@ export function createLens(nav, lens, top) {
     // pinned against an end, it squashes rather than leave the bar
     const L = Math.max(EDGE, pos.x - w / 2), R = Math.min(W - EDGE, pos.x + w / 2);
     const y = (H - h) / 2;
+    const width = `${Math.max(0, R - L)}px`, height = `${h}px`;
     // the capsule and the drop's glass under the tabs; its view of the tabs
     // over them — placed by left/top, not on a layer of its own, so it lines
     // up with the real tabs to the pixel
-    lens.style.transform = `translate3d(${L}px, ${y}px, 0)`;
-    for (const el of [lens, top]) { el.style.width = `${Math.max(0, R - L)}px`; el.style.height = `${h}px`; }
-    top.style.left = `${L}px`;
-    top.style.top = `${y}px`;
+    put(lens, "transform", `translate3d(${L}px, ${y}px, 0)`);
+    put(lens, "width", width); put(lens, "height", height);
+    put(top, "width", width); put(top, "height", height);
+    put(top, "left", `${L}px`);
+    put(top, "top", `${y}px`);
     // (nearly landed, the bending is too slight to see: the real tabs again)
     const up = !hidden && g >= 0.06;
-    lens.style.opacity = hidden ? "0" : "1";
+    put(lens, "opacity", hidden ? "0" : "1");
     // as it shrinks it greys back toward the capsule, before it lands (the
     // recording's drop is grey through the middle by ~235ms)
-    rest.style.opacity = String(Math.max(1 - g, settleNow));
-    glass.style.opacity = String(g * (1 - 0.6 * settleNow));
+    put(rest, "opacity", Math.max(1 - g, settleNow).toFixed(3));
+    put(glass, "opacity", (g * (1 - 0.6 * settleNow)).toFixed(3));
     // milky white while it's moving fast, clearing as it slows so the page
     // shows faintly through it (the recording: white to ~135ms, the page
     // coming through from ~165ms)
-    const frost = Math.min(1, 0.15 + 1.5 * speedNow);
-    glass.style.setProperty("--frost", frost.toFixed(3));
+    put(glass, "--frost", Math.min(1, 0.15 + 1.5 * speedNow).toFixed(3));
     // lifted, the tabs under the drop are drawn by it: in place at its middle
     // and bent outward toward its rim (each colour a little more than the
     // last), so the real ones are cut away there
-    top.style.visibility = up ? "visible" : "hidden";
-    top.style.setProperty("--g", g.toFixed(3));
+    put(top, "visibility", up ? "visible" : "hidden");
+    if (shine) put(shine, "opacity", g.toFixed(3));
     if (up) rim?.draw(L, R, y, h, g);
-    const cx = (L + R) / 2;
-    for (const r of rows) {
-      r.style.left = `${-L}px`;
-      r.style.top = `${-y}px`;
-      r.style.transformOrigin = `${cx}px ${H / 2}px`;
-      r.style.transform = `scale(${1 + (Number(r.dataset.k) || 0) * g})`;
-    }
+    for (const r of rows) { put(r, "left", `${-L}px`); put(r, "top", `${-y}px`); }
     // (the tab's drawing only: the button itself stays whole, so a finger
-    // lifted over the drop still taps it)
+    // lifted over the drop still taps it; a tab the drop isn't over is left
+    // whole too)
+    // (and only once the drop can draw them: before its picture of them is
+    // ready, the real tabs show through it as they are)
+    const cut = up && !!rim?.ready();
     const rr = h / 2;
-    for (const t of tabs()) {
-      const face = t.querySelector(".btb-face") || t;
-      if (!up) { if (face.style.clipPath) face.style.clipPath = ""; continue; }
-      const off = t.offsetLeft + (parseFloat(t.style.translate) || 0) + face.offsetLeft;
-      const a = L - off, b = R - off, yy = y - face.offsetTop;
-      face.style.clipPath = `path(evenodd, 'M-999 -999H999V999H-999Z M${(a + rr).toFixed(2)} ${yy.toFixed(2)}H${(b - rr).toFixed(2)}A${rr.toFixed(2)} ${rr.toFixed(2)} 0 0 1 ${(b - rr).toFixed(2)} ${(yy + h).toFixed(2)}H${(a + rr).toFixed(2)}A${rr.toFixed(2)} ${rr.toFixed(2)} 0 0 1 ${(a + rr).toFixed(2)} ${yy.toFixed(2)}Z')`;
+    for (const f of faces) {
+      if (!cut || R <= f.x - 4 || L >= f.x + f.w + 4) { put(f.el, "clip-path", ""); continue; }
+      const a = L - f.x, b = R - f.x, yy = y - f.y;
+      put(f.el, "clip-path", `path(evenodd, 'M-999 -999H999V999H-999Z M${(a + rr).toFixed(2)} ${yy.toFixed(2)}H${(b - rr).toFixed(2)}A${rr.toFixed(2)} ${rr.toFixed(2)} 0 0 1 ${(b - rr).toFixed(2)} ${(yy + h).toFixed(2)}H${(a + rr).toFixed(2)}A${rr.toFixed(2)} ${rr.toFixed(2)} 0 0 1 ${(a + rr).toFixed(2)} ${yy.toFixed(2)}Z')`);
     }
   }
 
@@ -204,7 +239,7 @@ export function createLens(nav, lens, top) {
     // the bar swells as the drop lifts, then settles
     const since = lastPress == null ? 1e9 : t - lastPress - 35;
     const p = since < 260 ? pulseAt(since) : 0;
-    nav.style.scale = p > 0.001 ? String(1 + PULSE * p) : "";
+    put(nav, "scale", p > 0.001 ? (1 + PULSE * p).toFixed(4) : "");
     draw();
     const settled = pressedAt == null && !following
       && (to == null || (Math.abs(pos.x - to) < 0.2 && Math.abs(pos.v) < 3))
@@ -214,9 +249,10 @@ export function createLens(nav, lens, top) {
     if (settled) {
       if (to != null) pos.x = to;
       pos.v = 0; lift.x = gT; lift.v = 0; sw.x = sh.x = null; sw.v = sh.v = 0; speedNow = 0; settleNow = 0;
-      nav.style.scale = "";
+      put(nav, "scale", "");
       draw();
       loop = 0; last = 0;
+      if (stale) rebuild();
       return;
     }
     loop = requestAnimationFrame(frame);
@@ -227,7 +263,7 @@ export function createLens(nav, lens, top) {
     if (reduced()) {
       if (to != null) pos.x = to;
       pos.v = 0; lift.x = following ? 1 : 0; lift.v = 0; sw.x = sh.x = null; sw.v = sh.v = 0;
-      nav.style.scale = "";
+      put(nav, "scale", "");
       draw();
       return;
     }
@@ -250,8 +286,9 @@ export function createLens(nav, lens, top) {
       hidden = i < 0; pressedAt = releasedAt = null; following = false;
       if (i >= 0 && geo) to = pos.x = geo.centres[i];
       pos.v = 0; lift.x = lift.v = 0; sw.x = sh.x = null; sw.v = sh.v = 0;
-      nav.style.scale = "";
+      put(nav, "scale", "");
       draw();
+      if (stale) rebuild();
     },
     // a finger down on a tab: off it goes, lifting into the drop on the way
     press(i) {
@@ -289,13 +326,14 @@ export function createLens(nav, lens, top) {
       if (pos.x == null) { this.place(i); return; }
       aim(i); run();
     },
-    hide() { hidden = true; pressedAt = null; following = false; cancelAnimationFrame(loop); loop = 0; lift.x = lift.v = 0; sw.x = sh.x = null; sw.v = sh.v = 0; nav.style.scale = ""; draw(); },
+    hide() { hidden = true; pressedAt = null; following = false; cancelAnimationFrame(loop); loop = 0; lift.x = lift.v = 0; sw.x = sh.x = null; sw.v = sh.v = 0; put(nav, "scale", ""); draw(); if (stale) rebuild(); },
     redraw: draw,
     destroy() {
       cancelAnimationFrame(loop); loop = 0;
+      if (waiting) { (window.cancelIdleCallback ?? clearTimeout)(waiting); waiting = 0; }
       theme?.disconnect();
-      nav.style.scale = "";
-      for (const t of tabs()) { t.style.translate = ""; const face = t.querySelector(".btb-face"); if (face) face.style.clipPath = ""; }
+      put(nav, "scale", "");
+      for (const t of tabs()) { t.style.translate = ""; const face = t.querySelector(".btb-face"); if (face) put(face, "clip-path", ""); }
     },
   };
 }

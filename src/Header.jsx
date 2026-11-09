@@ -231,7 +231,7 @@ function TabGlyph({ id, filled }) {
 // the bottom left (as Reddit's app does, asked for 20 Oct 2026); scrolling
 // back up, reaching the top, or tapping that button opens it again
 // (tabBarScroll.js).
-export function BottomTabBar({ tab, onTab }) {
+export function BottomTabBar({ tab, onTab, onIntent }) {
   const badges = useTabBadges();
   const reached = badges.alerts.badgeColor === "var(--yellow)";
   const [collapsed, setCollapsed] = useState(false);
@@ -325,6 +325,7 @@ export function BottomTabBar({ tab, onTab }) {
     const g = geometry(), i = tabAt(e.clientX, g);
     gesture.current = { id: e.pointerId, startX: e.clientX, moved: false, i, g };
     lens.current?.press(i);
+    onIntent?.(phoneTabs[i].id); // its page's code, fetched while the finger is down
   };
   const onMove = e => {
     const st = gesture.current;

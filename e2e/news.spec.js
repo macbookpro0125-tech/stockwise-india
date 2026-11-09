@@ -113,7 +113,9 @@ test("N-H3 results show their figures; an announcement's filing is read for its 
   }
   const lines = item.getByRole("region", { name: "From the filing" });
   await lines.getByRole("button", { name: /Read its key lines/ }).click();
-  await expect(lines.locator(".nw-lines li").first().or(lines.getByText(/No lines stood out|Couldn't read|no readable text|no NSE attachment/))).toBeVisible({ timeout: 45_000 });
+  // (or why not: a filing over the app's size limit is one, 9 Nov 2026 — a
+  // 15.65 MB board meeting outcome was the newest result that day)
+  await expect(lines.locator(".nw-lines li").first().or(lines.getByText(/No lines stood out|Couldn't read|no readable text|no NSE attachment|too large to read/))).toBeVisible({ timeout: 45_000 });
 });
 
 // 23 Oct 2026: news from the watchlist's companies, and a dot on the Watchlist

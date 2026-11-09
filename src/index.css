@@ -6588,7 +6588,7 @@ html.td-night[data-theme="light"] .tb.tb-scrolled { box-shadow: 0 1px 0 rgba(255
    (brightest along the top), a faint shade low inside, and the light split a
    little into colour within the band */
 .btb-lens-shine {
-  position: absolute; inset: 0; z-index: 3; border-radius: inherit; opacity: var(--g, 0);
+  position: absolute; inset: 0; z-index: 3; border-radius: inherit; opacity: 0; /* set each frame (liquidLens.js) */
   box-shadow:
     inset 0 0 0 0.67px var(--btb-edge-line),
     inset 0 0 0 1.6px var(--btb-edge-band),
