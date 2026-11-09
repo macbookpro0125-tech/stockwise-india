@@ -246,3 +246,7 @@ Owner: "the news is not understandable". Looked at 10 apps (Inshorts' one-line c
 - 8 Nov night: four Learn guides (fair-value-explained, eps-explained, ev-ebitda-explained, red-flags-in-financial-statements), 26 in all. Pushed; sent to Bing (98 that day). Request them on Google next.
 - 8 Nov 2026: phone tab bar redone as iOS 26 liquid glass (floating 90%/420px capsule, 64px, lit rim; spring-driven lens with velocity carry; hides while typing). src/liquidLens.js, Header.jsx BottomTabBar, index.css end block.
 - 8 Nov 2026: pushed 97687c8 (liquid glass tab bar); live, pages answer 200.
+- 9 Nov 2026: phone tab bar matched to the owner's iOS 26 recording (frame-by-frame fit: layout, sizes, colours, spring, drop, swell); monochrome icons filled when open. Tooling in the session's scratchpad (Swift frame extractor, manual-clock filming).
+- 9 Nov 2026 (later): the drop made clear liquid glass after the owner's side-by-side ("ours is plain"); bar blur matched to the recording's text haze.
+- 9 Nov 2026 (later still): the drop's rim redrawn as a per-pixel lens in a canvas (src/rimLens.js) with colour split; frost follows speed; greys before landing; capsule an opaque light grey (rgba 220,220,224,.76) so text behind it is as faint as in the recording.
+- 9 Nov 2026 (evening): capsule and drop now blur the page under them (bar glass moved to .btb-bg so they can see past it); thick glass edge on the drop; overlay placed by left/top so the rim copy lines up to the pixel.

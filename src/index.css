@@ -3831,30 +3831,6 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 /* the glass reaches a little past the bar, as Apple's does (folded, it clips) */
 @media (max-width: 640px) { .bottom-tab-bar:not(.collapsed) { overflow: visible; } }
 
-/* The lens (Header.jsx BottomTabBar, drawn by liquidLens.js, 26 Oct 2026):
-   a glossy capsule at rest; a clear drop when pressed, held or travelling —
-   no fill, a thick soft bright edge, light caught at the top, the tabs under
-   it magnified (more toward the rim). Nothing painted on it in colour. */
-.btb-lens { position: absolute; left: 0; top: 0; z-index: 0; border-radius: 999px; pointer-events: none; will-change: transform; }
-.btb-lens-rest { position: absolute; inset: 0; border-radius: inherit; background: linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.07)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42), inset 0 -1px 0 rgba(255, 255, 255, 0.08); }
-.btb-lens-glass { position: absolute; inset: 0; border-radius: inherit; overflow: hidden; opacity: 0;
-  background: radial-gradient(120% 140% at 50% 50%, rgba(255, 255, 255, 0) 55%, rgba(255, 255, 255, 0.1) 80%, rgba(255, 255, 255, 0.22) 100%), linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02) 50%, rgba(255, 255, 255, 0.07));
-  -webkit-backdrop-filter: blur(4px) brightness(1.18) saturate(1.5); backdrop-filter: blur(4px) brightness(1.18) saturate(1.5);
-  box-shadow: inset 0 0 0 0.75px rgba(255, 255, 255, 0.55), inset 0 2px 3px rgba(255, 255, 255, 0.75), inset 0 -3px 5px rgba(255, 255, 255, 0.3), inset 0 0 14px rgba(0, 0, 0, 0.18), 0 14px 30px rgba(0, 0, 0, 0.42); }
-.btb-lens-glass::after { content: ""; position: absolute; inset: 0; z-index: 2; border-radius: inherit; pointer-events: none;
-  background: radial-gradient(48% 30% at 32% 16%, rgba(255, 255, 255, 0.55), transparent 72%), radial-gradient(36% 24% at 72% 92%, rgba(255, 255, 255, 0.2), transparent 70%); }
-.btb-lens-mag, .btb-lens-rim { position: absolute; inset: 0; }
-.btb-lens-mag { -webkit-mask: radial-gradient(farthest-side, #000 70%, transparent 94%); mask: radial-gradient(farthest-side, #000 70%, transparent 94%); }
-.btb-lens-rim { -webkit-mask: radial-gradient(farthest-side, transparent 70%, #000 94%); mask: radial-gradient(farthest-side, transparent 70%, #000 94%); }
-.btb-lens-row { position: absolute; display: flex; box-sizing: border-box; padding: 4px; color: var(--accent); }
-.btb-lens-tab { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
-[data-theme="light"] .btb-lens-rest { background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(118, 124, 146, 0.14)); box-shadow: inset 0 1px 0 #fff, 0 1px 3px rgba(16, 24, 40, 0.08); }
-[data-theme="light"] .btb-lens-glass {
-  background: radial-gradient(120% 140% at 50% 50%, rgba(255, 255, 255, 0.35) 55%, rgba(255, 255, 255, 0.6) 85%, rgba(255, 255, 255, 0.85) 100%);
-  -webkit-backdrop-filter: blur(4px) brightness(1.04) saturate(1.4); backdrop-filter: blur(4px) brightness(1.04) saturate(1.4);
-  box-shadow: inset 0 0 0 0.75px rgba(16, 24, 40, 0.12), inset 0 2px 3px #fff, inset 0 -3px 5px rgba(255, 255, 255, 0.8), inset 0 0 12px rgba(16, 24, 40, 0.06), 0 10px 24px rgba(16, 24, 40, 0.18); }
-@media (max-width: 640px) { .bottom-tab-bar.collapsed .btb-lens { opacity: 0 !important; } }
-@media (prefers-reduced-transparency: reduce) { .btb-lens-glass { -webkit-backdrop-filter: none; backdrop-filter: none; } }
 
 /* Screeners on a phone, as the approved design (26 Oct 2026: "this is not
    exactly the same"): soft glows behind the page so the glass reads as glass,
@@ -6460,80 +6436,189 @@ html.td-night[data-theme="light"] .tb.tb-scrolled { box-shadow: 0 1px 0 rgba(255
 .mk-resday-n.tap { cursor: pointer; }
 @media (max-width: 760px) { .mk-resday-qgo { display: inline; } .mk-resday-qbtn { min-height: 40px; } }
 
-/* The tab bar as iOS 26's liquid glass (8 Nov 2026 brief): a floating
-   capsule 90% of the screen's width (at most 420px), 64px tall, 10px above
-   the home indicator. The glass: the page through a strong blur, a faint
-   sheen across its top, and a hairline rim that catches the light at the top
-   left and bottom right instead of a border; one soft shadow under it. The
-   lens (liquidLens.js) is a smaller piece of the same glass, so it reads as
-   part of the bar. */
+/* The phone tab bar, matched to a screen recording of iOS 26's own tab bar
+   (9 Nov 2026, "do it until it matches exactly"), measured at 3x:
+   - the bar: 63px tall, 20.5px from the screen's sides and its bottom;
+     clear glass — what's under it shows through, faint and barely softened —
+     with a hairline rim, darker at the rounded ends, and no shadow;
+   - the tabs: equal slots 4.3px in from the ends (liquidLens.js lays them out
+     as iOS does); icons 26px centred 24.3px down, black (white in dark),
+     filled when open; names in the system font, 11px semibold, baseline
+     48.4px down;
+   - the capsule under the open tab: soft grey, 3.9px in from the bar's edge;
+   - the drop it lifts into: clear glass, the page showing through, frosting
+     over at speed; a bright edge, and the tabs under its rim pushed outward
+     and split into colour. */
 @media (max-width: 640px) {
-  :root { --btb-side: max(5vw, calc((100vw - 420px) / 2), calc(8px + env(safe-area-inset-left, 0px))); --btb-h: 64px; }
-  .bottom-tab-bar {
-    left: var(--btb-side); right: var(--btb-side);
-    bottom: calc(10px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)));
-    padding: 4px; gap: 0; border: 0; border-radius: 999px;
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0) 45%),
-      color-mix(in srgb, var(--s2) 40%, transparent);
-    box-shadow: inset 0 -10px 18px rgba(0, 0, 0, 0.1), 0 10px 28px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.14);
-    -webkit-backdrop-filter: blur(28px) saturate(190%);
-    backdrop-filter: blur(28px) saturate(190%);
-    transition: right 280ms var(--ease-out, cubic-bezier(0.2, 0.8, 0.2, 1)), gap 280ms, transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 200ms;
+  :root {
+    --btb-h: 63px;
+    --btb-side: max(20.5px, calc((100vw - 420px) / 2), calc(8px + env(safe-area-inset-left, 0px)));
+    --btb-bottom: max(20.5px, calc(var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px)) - 13.5px));
   }
-  /* the rim: a 1px ring, bright where the light falls, nearly gone between */
-  .bottom-tab-bar::before {
-    content: ""; position: absolute; inset: 0; z-index: 0; border-radius: inherit; padding: 1px; pointer-events: none;
-    background: linear-gradient(155deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.1) 30%, rgba(255, 255, 255, 0.04) 60%, rgba(255, 255, 255, 0.2));
-    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
-    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  .bottom-tab-bar {
+    --btb-ink: #fff;
+    --btb-glass: rgba(34, 34, 38, 0.62);
+    --btb-rim-end: rgba(255, 255, 255, 0.3);
+    --btb-rim-mid: rgba(255, 255, 255, 0.11);
+    --btb-cap: rgba(150, 150, 160, 0.22);
+    --btb-frost-rgb: 255, 255, 255;
+    --btb-frost-min: 0.06;
+    --btb-frost-span: 0.16;
+    --btb-drop-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+    --btb-edge-hi: rgba(255, 255, 255, 0.6);
+    --btb-edge-glow: rgba(255, 255, 255, 0.16);
+    --btb-edge-band: rgba(255, 255, 255, 0.14);
+    --btb-edge-shade: rgba(0, 0, 0, 0.25);
+    --btb-cap-glow: rgba(255, 255, 255, 0.05);
+    --btb-iris: 0.35;
+    --btb-edge-line: rgba(255, 255, 255, 0.2);
+    --btb-edge-line-end: rgba(255, 255, 255, 0.38);
+    --btb-bar-glow: rgba(255, 255, 255, 0.05);
+    --btb-shadow: 0 8px 26px rgba(0, 0, 0, 0.32);
   }
   [data-theme="light"] .bottom-tab-bar {
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 50%),
-      rgba(255, 255, 255, 0.46);
-    box-shadow: inset 0 0 0 0.5px rgba(16, 24, 40, 0.07), 0 10px 28px rgba(16, 24, 40, 0.14), 0 1px 3px rgba(16, 24, 40, 0.06);
+    --btb-ink: #000;
+    --btb-glass: rgba(251, 251, 251, 0.76);
+    --btb-rim-end: rgba(0, 0, 0, 0.17);
+    --btb-rim-mid: rgba(0, 0, 0, 0.075);
+    --btb-cap: rgba(118, 118, 128, 0.17);
+    --btb-frost-rgb: 255, 255, 255;
+    --btb-frost-min: 0.2;
+    --btb-frost-span: 0.74;
+    --btb-drop-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
+    --btb-edge-hi: #fff;
+    --btb-edge-glow: rgba(255, 255, 255, 0.9);
+    --btb-edge-band: rgba(255, 255, 255, 0.85);
+    --btb-edge-shade: rgba(0, 0, 0, 0.07);
+    --btb-cap-glow: rgba(255, 255, 255, 0.35);
+    --btb-iris: 0.3;
+    --btb-edge-line: rgba(0, 0, 0, 0.13);
+    --btb-edge-line-end: rgba(0, 0, 0, 0.24);
+    --btb-bar-glow: rgba(255, 255, 255, 0.75);
+    --btb-shadow: none;
   }
-  [data-theme="light"] .bottom-tab-bar::before { background: linear-gradient(155deg, #fff, rgba(255, 255, 255, 0.6) 30%, rgba(255, 255, 255, 0.3) 60%, rgba(255, 255, 255, 0.85)); }
-  .bottom-tab-bar .btb-tab { min-height: calc(var(--btb-h) - 8px); gap: 3px; }
-  .bottom-tab-bar .btb-label { font-size: 11px; letter-spacing: 0; }
-  /* the tabs not open, quieter; the open one fully there, its icon a touch larger */
-  .bottom-tab-bar .btb-tab .btb-icon, .bottom-tab-bar .btb-tab .btb-label { opacity: 0.74; transition: opacity 180ms ease-out, transform 200ms cubic-bezier(0.3, 1.3, 0.5, 1); }
-  .bottom-tab-bar .btb-tab.lit .btb-icon, .bottom-tab-bar .btb-tab.lit .btb-label { opacity: 1; }
-  .bottom-tab-bar .btb-tab.lit .btb-icon { transform: scale(1.06); }
-  .bottom-tab-bar .btb-tab.lit .btb-label { font-weight: 600; }
-  .bottom-tab-bar .btb-tab:active { transform: none; }
-  .bottom-tab-bar.collapsed { right: calc(100% - var(--btb-side) - var(--btb-h)); }
+  .bottom-tab-bar, [data-theme="light"] .bottom-tab-bar {
+    left: var(--btb-side); right: var(--btb-side); bottom: var(--btb-bottom);
+    height: var(--btb-h); box-sizing: border-box;
+    padding: 0 4.3px; gap: 0; border: 0; border-radius: 999px;
+    background: transparent;
+    box-shadow: var(--btb-shadow);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    transform-origin: 50% 50%;
+    transition: right 280ms var(--ease-out, cubic-bezier(0.2, 0.8, 0.2, 1)), gap 280ms, transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 200ms;
+  }
+  /* the glass itself, its own layer (Header.jsx .btb-bg): with the bar not
+     filtering what's behind it, the capsule and the drop can too */
+  .bottom-tab-bar .btb-bg {
+    position: absolute; inset: 0; z-index: 0; border-radius: inherit; pointer-events: none;
+    background: var(--btb-glass);
+    -webkit-backdrop-filter: blur(1.6px) saturate(180%);
+    backdrop-filter: blur(1.6px) saturate(180%);
+  }
+  /* the rim: a hairline, darker where the glass curves away at the ends
+     (an inset shadow, so it lands on the screen's own pixels) */
+  .bottom-tab-bar::before, .bottom-tab-bar::after {
+    content: ""; position: absolute; inset: 0; z-index: 3; border-radius: inherit; pointer-events: none;
+  }
+  .bottom-tab-bar::before { box-shadow: inset 0 0 0 0.67px var(--btb-rim-mid), inset 0 0 9px 1px var(--btb-bar-glow); }
+  .bottom-tab-bar::after {
+    box-shadow: inset 0 0 0 0.67px var(--btb-rim-end);
+    -webkit-mask: linear-gradient(90deg, #000, transparent 31px, transparent calc(100% - 31px), #000);
+    mask: linear-gradient(90deg, #000, transparent 31px, transparent calc(100% - 31px), #000);
+  }
+  .bottom-tab-bar .btb-tab, .btb-lens-tab {
+    flex: 1 1 0; min-width: 0; height: 100%; min-height: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 0;
+    padding: 11.33px 0 0; border: 0; border-radius: 0; background: transparent;
+    color: var(--btb-ink); transition: none;
+  }
+  /* a tab's drawing fills its button, laid out as the button was */
+  .bottom-tab-bar .btb-tab { padding: 0; }
+  .bottom-tab-bar .btb-face {
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+    width: 100%; height: 100%; box-sizing: border-box; padding-top: 11.33px;
+  }
+  .bottom-tab-bar .btb-tab.lit, .bottom-tab-bar .btb-tab:active { color: var(--btb-ink); transform: none; background: transparent; }
+  .bottom-tab-bar .btb-icon, .btb-lens-tab .btb-icon { display: block; width: 26px; height: 26px; flex: none; opacity: 1; transform: none; transition: none; }
+  .bottom-tab-bar .btb-icon svg, .btb-lens-tab .btb-icon svg { display: block; }
+  .bottom-tab-bar.sliding .btb-tab.lit .btb-icon { transform: none; }
+  .bottom-tab-bar .btb-label, .btb-lens-tab .btb-label, .bottom-tab-bar .btb-tab.lit .btb-label {
+    margin-top: 0.09px; font-size: 11px; font-weight: 600; line-height: 13px; letter-spacing: normal;
+    white-space: nowrap; color: var(--btb-ink); opacity: 1;
+  }
+  .bottom-tab-bar .btb-dot { box-shadow: 0 0 0 2px var(--btb-glass); }
+  /* folded while reading down: one round button, its icon in the middle */
+  .bottom-tab-bar.collapsed { right: calc(100% - var(--btb-side) - var(--btb-h)); padding: 0; }
+  .bottom-tab-bar.collapsed .btb-tab { justify-content: center; padding-top: 0; translate: none !important; }
+  .bottom-tab-bar.collapsed .btb-face { justify-content: center; padding-top: 0; }
+  .bottom-tab-bar.collapsed .btb-kept.lit { background: var(--btb-cap); }
   /* typing: out of the keyboard's way */
   .bottom-tab-bar.typing { transform: translateY(calc(100% + 24px)); opacity: 0; pointer-events: none; }
-  body { padding-bottom: calc(var(--btb-h) + 22px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))); }
-  /* the lens's copy of the tabs keeps to the same measure */
-  .btb-lens-tab { gap: 3px; }
-  .btb-lens-tab .btb-label { font-weight: 600; }
+  body { padding-bottom: calc(var(--btb-h) + var(--btb-bottom) + 12px); }
 }
-/* the lens at rest: a glass capsule — lighter than the bar, a bright top
-   edge, light caught at its upper left, a little depth beneath */
-.btb-lens-rest {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.17), rgba(255, 255, 255, 0.06));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), inset 0 -1px 0 rgba(255, 255, 255, 0.07), inset 0 0 0 0.5px rgba(255, 255, 255, 0.12), 0 2px 8px rgba(0, 0, 0, 0.16);
-  -webkit-backdrop-filter: brightness(1.12) saturate(1.35); backdrop-filter: brightness(1.12) saturate(1.35);
+/* the lens: the capsule at rest and the drop's glass under the tabs; over
+   them, while lifted, the drop's own view of the tabs and its edge
+   (liquidLens.js). The drop is glass, as in the recording: milky white while
+   it moves fast, clearing as it slows so the page shows through; its edge is
+   bright on the inside, a hairline on the outside, and only what its rim
+   bends takes on colour (rimLens.js). */
+.btb-lens, .btb-lens-top { position: absolute; left: 0; top: 0; border-radius: 999px; pointer-events: none; }
+.btb-lens { z-index: 0; will-change: transform; }
+.btb-lens-top { z-index: 2; visibility: hidden; overflow: hidden; }
+/* the capsule: grey glass with a soft lens of its own, so what's under it
+   shows as blurred shapes, as through the recording's (not a flat fill) */
+.btb-lens-rest { position: absolute; inset: 0; border-radius: inherit; background: var(--btb-cap); box-shadow: inset 0 0 6px var(--btb-cap-glow); -webkit-backdrop-filter: blur(3.5px) saturate(140%); backdrop-filter: blur(3.5px) saturate(140%); }
+.btb-lens-rest::after { content: none; }
+.btb-lens-glass, [data-theme="light"] .btb-lens-glass {
+  position: absolute; inset: 0; border-radius: inherit; opacity: 0;
+  background: rgba(var(--btb-frost-rgb), calc(var(--btb-frost-min) + var(--frost, 0) * var(--btb-frost-span)));
+  -webkit-backdrop-filter: blur(2.5px) brightness(1.06) saturate(150%); backdrop-filter: blur(2.5px) brightness(1.06) saturate(150%);
+  box-shadow: var(--btb-drop-shadow);
 }
-.btb-lens-rest::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: radial-gradient(60% 55% at 28% 12%, rgba(255, 255, 255, 0.22), transparent 70%); }
-[data-theme="light"] .btb-lens-rest {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.15)), rgba(118, 128, 152, 0.16);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95), inset 0 0 0 0.5px rgba(16, 24, 40, 0.07), 0 2px 6px rgba(16, 24, 40, 0.08);
+.btb-lens-glass::before, .btb-lens-glass::after { content: none; }
+/* the middle of the drop shows the tabs as they are; its rim, the 11px in
+   from its edge, is drawn bent by rimLens.js into the canvas */
+.btb-lens-mid { position: absolute; inset: 0; clip-path: inset(11px round 999px); }
+.btb-lens-canvas { position: absolute; left: 0; top: 0; display: block; }
+.btb-lens-row { position: absolute; display: flex; box-sizing: border-box; padding: 0 4.3px; color: var(--btb-ink); }
+/* its edge, as thick glass: a hairline outside, a bright soft band inside it
+   (brightest along the top), a faint shade low inside, and the light split a
+   little into colour within the band */
+.btb-lens-shine {
+  position: absolute; inset: 0; z-index: 3; border-radius: inherit; opacity: var(--g, 0);
+  box-shadow:
+    inset 0 0 0 0.67px var(--btb-edge-line),
+    inset 0 0 0 1.6px var(--btb-edge-band),
+    inset 0 0 5px 1.5px var(--btb-edge-glow),
+    inset 0 2px 2px -1px var(--btb-edge-hi),
+    inset 0 -5px 7px -5px var(--btb-edge-shade);
 }
-[data-theme="light"] .btb-lens-rest::after { background: radial-gradient(60% 55% at 28% 12%, rgba(255, 255, 255, 0.9), transparent 70%); }
-@media (max-width: 640px) and (prefers-reduced-motion: reduce) {
-  .bottom-tab-bar { transition: opacity 160ms; }
-  .bottom-tab-bar .btb-tab.lit .btb-icon { transform: none; }
+.btb-lens-shine::before {
+  content: ""; position: absolute; inset: 1px; border-radius: inherit; padding: 2.5px; opacity: var(--btb-iris);
+  background: conic-gradient(from 200deg, rgba(255, 120, 200, 0.9), rgba(255, 200, 120, 0.7) 12%, transparent 22%, transparent 40%, rgba(120, 190, 255, 0.85) 52%, rgba(180, 130, 255, 0.7) 62%, transparent 72%, transparent 86%, rgba(255, 120, 200, 0.9));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  filter: blur(1.5px);
 }
+/* its outline darker at the ends, as the bar's */
+.btb-lens-shine::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  box-shadow: inset 0 0 0 0.67px var(--btb-edge-line-end);
+  -webkit-mask: linear-gradient(90deg, #000, transparent 30%, transparent 70%, #000);
+  mask: linear-gradient(90deg, #000, transparent 30%, transparent 70%, #000);
+}
+@media (max-width: 640px) { .bottom-tab-bar.collapsed .btb-lens, .bottom-tab-bar.collapsed .btb-lens-top { opacity: 0 !important; } }
 @media (prefers-reduced-transparency: reduce) {
-  .btb-lens-rest { -webkit-backdrop-filter: none; backdrop-filter: none; }
-  .bottom-tab-bar::before { display: none; }
+  .btb-lens-glass, [data-theme="light"] .btb-lens-glass, .btb-lens-rest { -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .bottom-tab-bar .btb-bg { background: var(--s2); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 @media (max-width: 640px) and (prefers-contrast: more) {
-  .bottom-tab-bar { background: var(--s2); }
-  .bottom-tab-bar::before { background: var(--bdr2); }
-  .bottom-tab-bar .btb-tab .btb-icon, .bottom-tab-bar .btb-tab .btb-label { opacity: 1; }
+  .bottom-tab-bar, [data-theme="light"] .bottom-tab-bar { background: var(--s2); }
+  .bottom-tab-bar::before { box-shadow: inset 0 0 0 1px var(--bdr2); }
+}
+@media (max-width: 640px) and (prefers-reduced-motion: reduce) {
+  .bottom-tab-bar, [data-theme="light"] .bottom-tab-bar { transition: opacity 160ms; }
 }
