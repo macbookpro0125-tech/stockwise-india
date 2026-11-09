@@ -372,6 +372,19 @@ export function createApp() {
     res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
     if (req.headers["x-forwarded-proto"] === "https") res.setHeader("Strict-Transport-Security", "max-age=15552000");
     if (url.pathname.startsWith("/api/")) res.setHeader("X-Request-Id", requestId);
+    // the public data pages' JSON may be fetched by search engines (robots.txt
+    // lets it through, for rendering) but never listed itself
+    if (url.pathname.startsWith("/api/public/")) res.setHeader("X-Robots-Tag", "noindex");
+    // One address for the site (9 Nov 2026, the SEO audit): Render's own name
+    // for the service, stockwise-india.onrender.com, served every page as a
+    // second copy of jocularinsights.in. A page asked for there moves to the
+    // same path on the site; the API stays (Render's health check calls it)
+    const host = String(req.headers.host ?? "").toLowerCase().replace(/:\d+$/, "");
+    if (host.endsWith(".onrender.com") && (req.method === "GET" || req.method === "HEAD") && !url.pathname.startsWith("/api/")) {
+      res.writeHead(301, { Location: `${SITE}${url.pathname}${url.search}`, "Cache-Control": "public, max-age=86400" });
+      res.end();
+      return;
+    }
     try {
       // Anything that reads the market waits for one to exist (built in
       // slices, screen.js) — never sign-in, and never the health check, which

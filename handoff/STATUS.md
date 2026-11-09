@@ -2,6 +2,17 @@
 
 _Last updated: 9 Nov 2026, by Claude (Opus) on branch `screeners-home`._
 
+## SEO sprint 1, batch 1 (9 Nov, late night): steps 2 and 3 of the audit
+- The audit is the Claude Doc https://claude.ai/artifact/H7a8tXmVbW2MFVS7qAytPe ("Jocular Insights SEO audit — Sprint 1"). The owner approved steps 1–8 and said "push it" (push each batch once every test passes). Step 1 was done in Cloudflare on 9 Nov: the "WWW to main domain" redirect's target was `https://jocularinsights.in${1}`, sending inner www pages to hosts like `jocularinsights.instock`. It's now `https://jocularinsights.in/${1}`, checked live.
+- **Step 2.** Google's renderer saw the screen, sector and list pages and the results calendar nearly empty: 80–120 words, with headings like "Stock list". The app replaced the server's page, then fetched its data from `/api/public/`, which robots.txt kept Google out of. Now:
+    - each page carries its data beside its HTML (`server/seo.js` `listData`, used in `seo-lists.js` and `seo-collections.js`), as company pages already did;
+    - `src/main.jsx` reads it, and `src/PublicLists.jsx` starts from it when kind and key match;
+    - it is left in place rather than taken once, because a second early drawing had fallen back to the API;
+    - robots.txt now allows `/api/public/`, with `X-Robots-Tag: noindex` on those answers.
+    
+    New test S-H8 draws all seven page types with `/api/` refused.
+- **Step 3.** `stockwise-india.onrender.com` served a second copy of the site. A page asked for there now 301s to the same path on jocularinsights.in (`server/http-server.js`). `/api/` stays, since Render's health check uses it.
+
 ## Pushed (9 Nov, night; no change to the site)
 - The tab bar's measuring tools kept in `scripts/tabbar/` (README.md there): frames from the iOS recording (Swift), our bar filmed on a manual clock, side by side and pixel diffs, the recording's bubble tracked and its springs fitted, real-time frame timing and traces on a slowed phone-sized Chrome, layout and hold checks. They write to /tmp/stockwise-tabbar and start their own private copy of the app; each was run from its new place.
 

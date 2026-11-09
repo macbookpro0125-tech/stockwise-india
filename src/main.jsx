@@ -43,6 +43,9 @@ try {
   // and a company's financials, results or call page, /explore or /news (PublicHtmlPage.jsx)
   const page = document.getElementById("public-page-data");
   if (page) window.__PUBLIC_PAGE__ = JSON.parse(page.textContent);
+  // and a screen's, sector's or list's page (PublicLists.jsx, server/seo.js listData)
+  const list = document.getElementById("public-list-data");
+  if (list) window.__PUBLIC_LIST__ = JSON.parse(list.textContent);
 } catch {}
 
 // The installed app's frame (public/sw.js) — built copies only: the dev server

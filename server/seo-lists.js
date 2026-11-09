@@ -14,7 +14,7 @@ import { PRESETS } from "./presets.js";
 import { screen, allMetrics } from "./screen.js";
 import { resultsWeek } from "./explore.js";
 import { loadMarketSnapshot } from "./market-data.js";
-import { SITE, esc, crore, num, day, pageHtml, ogCard } from "./seo.js";
+import { SITE, esc, crore, num, day, pageHtml, ogCard, listData } from "./seo.js";
 
 import { niceName } from "../src/stockName.js";
 import { publicSectors, publicSector } from "./seo-story.js";
@@ -129,7 +129,7 @@ ${s.changes ? `<h2>What changed since ${esc(day(s.changes.since))}</h2><p>${s.ch
 <table><thead><tr><th>#</th><th>Company</th><th>Price</th><th>Market cap</th><th>P/E</th><th>ROE</th><th>Quality</th></tr></thead><tbody>${rows}</tbody></table>
 <p>${esc(NOT_ADVICE)}</p>
 <p>${link("/screens", "All stock screens")} · ${link("/results-calendar", "Results calendar")} · ${link("/methodology", "How the quality score works")} · ${link("/disclaimer", "Disclaimer")}</p></main>`;
-  return pageHtml(template, { title, desc, canonical, ld, body, image: ogCard("screens", slug) });
+  return pageHtml(template, { title, desc, canonical, ld, body: body + listData("screen", slug, s), image: ogCard("screens", slug) });
 }
 
 export function screensIndexHtml(template) {
@@ -140,7 +140,7 @@ export function screensIndexHtml(template) {
   const items = s.screens.map(x => `<li><h2>${link(`/screens/${x.slug}`, x.name)}</h2><p>${termsHtml(esc(sentence(x.description)))} ${x.matched} companies match${x.first.length ? `, including ${x.first.slice(0, 3).map(c => esc(c.name)).join(", ")}` : ""}.</p></li>`).join("");
   const ld = { "@context": "https://schema.org", "@type": "ItemList", name: "Stock screens", itemListElement: s.screens.map((x, i) => ({ "@type": "ListItem", position: i + 1, name: x.name, url: `${SITE}/screens/${x.slug}` })) };
   const body = `<main class="seo-stock seo-methodology"><p>${link("/", "Jocular Insights")} › Stock screens</p><h1>Indian stock screens</h1>${updatedLine()}<p>${esc(desc)}</p><ul>${items}</ul><p>${esc(NOT_ADVICE)}</p></main>`;
-  return pageHtml(template, { title, desc, canonical, ld, body });
+  return pageHtml(template, { title, desc, canonical, ld, body: body + listData("screens", "all", s) });
 }
 
 export function resultsCalendarHtml(template) {
@@ -152,7 +152,7 @@ export function resultsCalendarHtml(template) {
   const days = c.days.map(d => `<section><h2>${esc(day(d.date))} — ${d.count} ${d.count === 1 ? "company" : "companies"}</h2><ul>${d.companies.slice(0, 60).map(x => `<li>${link(`/stock/${encodeURIComponent(x.symbol)}`, x.name)}${x.sector ? ` <small>${esc(x.sector)}</small>` : ""}</li>`).join("")}</ul>${d.count > 60 ? `<p>And ${d.count - 60} more.</p>` : ""}</section>`).join("");
   const ld = { "@context": "https://schema.org", "@type": "WebPage", name: title, description: desc, url: canonical };
   const body = `<main class="seo-stock seo-methodology"><p>${link("/", "Jocular Insights")} › Results calendar</p><h1>Quarterly results calendar</h1>${updatedLine()}<p>${esc(desc)}</p><p>Already reported? ${link("/results", "See the latest results")}, newest first.</p>${days || "<p>No results dates in the next two weeks on NSE's calendar.</p>"}<p>Dates are board meetings companies have told NSE about; they can change. ${link("/screens", "Stock screens")} · ${link("/disclaimer", "Disclaimer")}</p></main>`;
-  return pageHtml(template, { title, desc, canonical, ld, body });
+  return pageHtml(template, { title, desc, canonical, ld, body: body + listData("calendar", "cal", c) });
 }
 
 // The front page as search engines and link previews read it (25 Oct 2026:
@@ -207,7 +207,7 @@ export function sectorsIndexHtml(template) {
   const items = s.sectors.map(x => `<li><h2>${link(`/sector/${x.slug}`, x.name)}</h2><p>${x.count} ${x.count === 1 ? "company" : "companies"}${x.largest.length ? `, the largest ${x.largest.map(c => esc(c.name)).join(", ")}` : ""}.</p></li>`).join("");
   const ld = { "@context": "https://schema.org", "@type": "ItemList", name: "NSE sectors", itemListElement: s.sectors.map((x, i) => ({ "@type": "ListItem", position: i + 1, name: x.name, url: `${SITE}/sector/${x.slug}` })) };
   const body = `<main class="seo-stock seo-methodology"><p>${link("/", "Jocular Insights")} › Sectors</p><h1>NSE stocks by sector</h1>${updatedLine()}<p>${esc(desc)}</p><ul>${items}</ul><p>${link("/screens", "Stock screens")} · ${link("/lists", "Stock lists")} · ${link("/results-calendar", "Results calendar")} · ${link("/methodology", "How the quality score works")}</p></main>`;
-  return pageHtml(template, { title, desc, canonical, ld, body });
+  return pageHtml(template, { title, desc, canonical, ld, body: body + listData("sectors", "sectors", s) });
 }
 
 export function sectorPageHtml(template, slug) {
@@ -238,5 +238,5 @@ ${s.screens.length ? `<h2>Screens its companies pass most</h2><ul>${s.screens.ma
 <table><thead><tr><th>#</th><th>Company</th><th>Price</th><th>Market cap</th><th>P/E</th><th>ROE</th><th>Debt/equity</th><th>Quality</th></tr></thead><tbody>${rows}</tbody></table>
 <p>Sectors are NSE's own, from its index lists; a company NSE doesn't classify is placed by its industry or its filings. ${esc(NOT_ADVICE)}</p>
 <p>${link("/sectors", "All sectors")} · ${link("/lists", "Stock lists")} · ${link("/screens", "Stock screens")} · ${link("/methodology", "How the quality score works")} · ${link("/disclaimer", "Disclaimer")}</p></main>`;
-  return pageHtml(template, { title, desc, canonical, ld, body, image: ogCard("sector", slug) });
+  return pageHtml(template, { title, desc, canonical, ld, body: body + listData("sector", slug, s), image: ogCard("sector", slug) });
 }

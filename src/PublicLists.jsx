@@ -50,11 +50,28 @@ function ShareButton({ text, path }) {
 const go = path => e => { e.preventDefault(); navigate(path); window.scrollTo(0, 0); };
 const A = ({ to, children, className }) => <a href={to} onClick={go(to)} className={className}>{children}</a>;
 
-function useLoad(load, key) {
-  const [d, setD] = useState(null);
-  const [error, setError] = useState("");
-  useEffect(() => { setD(null); setError(""); load().then(setD).catch(e => setError(e.message)); }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
-  return [d, error];
+// The page's own data, when the server wrote it into the page (server/seo.js
+// listData, read by main.jsx): used by the page it was written for — the
+// kind and key must match — so the page draws at once and the same as the
+// server's, and Google's renderer, which doesn't load /api/, sees the
+// companies too (9 Nov 2026, the SEO audit). Left in place, not taken once:
+// the app may draw a page twice as it starts (around the sign-in check), and
+// a second drawing that found it gone fell back to the API. Any other page
+// asks /api/public.
+function written(kind, key) {
+  const w = window.__PUBLIC_LIST__;
+  return w && w.kind === kind && w.key === key && w.data != null ? w.data : null;
+}
+function useLoad(load, key, kind) {
+  const [state, setState] = useState(() => ({ key, d: written(kind, key), error: "" }));
+  useEffect(() => {
+    if (state.key === key && state.d) return; // written into the page
+    let live = true;
+    setState({ key, d: null, error: "" });
+    load().then(d => { if (live) setState({ key, d, error: "" }); }).catch(e => { if (live) setState({ key, d: null, error: e.message }); });
+    return () => { live = false; };
+  }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
+  return [state.key === key ? state.d : null, state.key === key ? state.error : ""];
 }
 const Wait = () => <div className="nw-skel" role="status" aria-label="Loading">{[0, 1, 2].map(i => <span key={i} />)}</div>;
 const More = () => (
@@ -64,7 +81,7 @@ const More = () => (
 );
 
 export function ScreensIndexPage({ signedIn }) {
-  const [d, error] = useLoad(() => api.publicScreens(), "all");
+  const [d, error] = useLoad(() => api.publicScreens(), "all", "screens");
   useEffect(() => { document.title = "Indian stock screens: NSE companies by quality, value, dividends and growth | Jocular Insights"; }, []);
   const [join, box] = useJoin();
   return (
@@ -94,7 +111,7 @@ export function ScreensIndexPage({ signedIn }) {
 }
 
 export function ScreenPage({ slug, signedIn }) {
-  const [s, error] = useLoad(() => api.publicScreen(slug), slug);
+  const [s, error] = useLoad(() => api.publicScreen(slug), slug, "screen");
   useEffect(() => { if (s) document.title = s.guide ? `${s.guide.search}: ${s.matched} today | Jocular Insights` : `${s.name}: ${s.matched} NSE stocks that match today | Jocular Insights`; }, [s]);
   const [join, box] = useJoin();
   return (
@@ -154,7 +171,7 @@ export function ScreenPage({ slug, signedIn }) {
 }
 
 export function ResultsCalendarPage({ signedIn }) {
-  const [c, error] = useLoad(() => api.publicResultsCalendar(), "cal");
+  const [c, error] = useLoad(() => api.publicResultsCalendar(), "cal", "calendar");
   const [open, setOpen] = useState({});
   useEffect(() => { document.title = "Quarterly results calendar: NSE companies announcing results this week | Jocular Insights"; }, []);
   const total = c?.days.reduce((n, d) => n + d.count, 0) ?? 0;
@@ -192,7 +209,7 @@ export function ResultsCalendarPage({ signedIn }) {
 // /sectors and /sector/<slug> (server/seo-story.js): every listed company in a
 // sector, the sector's middle P/E and ROE, its highest quality names
 export function SectorsIndexPage({ signedIn }) {
-  const [d, error] = useLoad(() => api.publicSectors(), "sectors");
+  const [d, error] = useLoad(() => api.publicSectors(), "sectors", "sectors");
   useEffect(() => { document.title = "NSE stocks by sector: every listed company, sector by sector | Jocular Insights"; }, []);
   const [join, box] = useJoin();
   return (
@@ -220,7 +237,7 @@ export function SectorsIndexPage({ signedIn }) {
 }
 
 export function SectorPage({ slug, signedIn }) {
-  const [s, error] = useLoad(() => api.publicSector(slug), slug);
+  const [s, error] = useLoad(() => api.publicSector(slug), slug, "sector");
   useEffect(() => { if (s) document.title = `${s.name} stocks on NSE: ${s.count} companies by P/E, ROE and quality | Jocular Insights`; }, [s]);
   const [join, box] = useJoin();
   return (
@@ -270,7 +287,7 @@ export function SectorPage({ slug, signedIn }) {
 // Lists people search for (6 Nov 2026, server/seo-collections.js): each
 // NSE index's companies, NSE's themes, price bands and a few plain filters
 export function ListsIndexPage({ signedIn }) {
-  const [d, error] = useLoad(() => api.publicLists(), "lists");
+  const [d, error] = useLoad(() => api.publicLists(), "lists", "lists");
   useEffect(() => { document.title = "NSE stock lists: Nifty 50, defence, PSU, stocks under ₹100, debt-free and more | Jocular Insights"; }, []);
   const [join, box] = useJoin();
   return (
@@ -302,7 +319,7 @@ export function ListsIndexPage({ signedIn }) {
 }
 
 export function ListPage({ slug, signedIn }) {
-  const [s, error] = useLoad(() => api.publicList(slug), slug);
+  const [s, error] = useLoad(() => api.publicList(slug), slug, "list");
   useEffect(() => { if (s) document.title = `${s.name} list: ${s.kind === "rule" ? `${s.count} NSE companies` : "the companies"} by P/E, ROE and quality | Jocular Insights`; }, [s]);
   const [join, box] = useJoin();
   return (

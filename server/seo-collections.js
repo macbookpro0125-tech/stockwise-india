@@ -9,7 +9,7 @@
 // the page — never our pick. A list with too few companies isn't published.
 import { allMetrics } from "./screen.js";
 import { loadMarketSnapshot } from "./market-data.js";
-import { SITE, esc, crore, num, day, pageHtml, ogCard } from "./seo.js";
+import { SITE, esc, crore, num, day, pageHtml, ogCard, listData } from "./seo.js";
 import { niceName } from "../src/stockName.js";
 import { updatedLine } from "./updated-line.js";
 
@@ -124,7 +124,7 @@ export function listsIndexHtml(template) {
   }).join("");
   const ld = { "@context": "https://schema.org", "@type": "ItemList", name: "NSE stock lists", itemListElement: all.map((x, i) => ({ "@type": "ListItem", position: i + 1, name: x.def.name, url: `${SITE}/lists/${x.def.slug}` })) };
   const body = `<main class="seo-stock seo-methodology"><p>${link("/", "Jocular Insights")} › Lists</p><h1>NSE stock lists</h1>${updatedLine()}<p>${esc(desc)}</p>${groups}<p>${link("/screens", "Stock screens")} · ${link("/sectors", "Sectors")} · ${link("/results-calendar", "Results calendar")} · ${link("/methodology", "How the quality score works")}</p></main>`;
-  return pageHtml(template, { title, desc, canonical, ld, body });
+  return pageHtml(template, { title, desc, canonical, ld, body: body + listData("lists", "lists", publicListsData()) });
 }
 
 export function listPageHtml(template, slug) {
@@ -171,7 +171,7 @@ ${gone.length ? `<p>Also in this index, but not covered here yet: ${esc(gone.joi
 <p>${esc(source)} Prices are NSE's closing prices of ${esc(when)}. ${esc(NOT_ADVICE)}</p>
 ${others.length ? `<h2>More lists</h2><ul>${others.map(x => `<li>${link(`/lists/${x.def.slug}`, x.def.name)} — ${x.list.length} companies</li>`).join("")}</ul>` : ""}
 <p>${link("/lists", "All lists")} · ${link("/screens", "Stock screens")} · ${link("/sectors", "Sectors")} · ${link("/methodology", "How the quality score works")} · ${link("/disclaimer", "Disclaimer")}</p></main>`;
-  return pageHtml(template, { title, desc, canonical, ld, body, image: ogCard("lists", slug) });
+  return pageHtml(template, { title, desc, canonical, ld, body: body + listData("list", slug, publicListData(slug)), image: ogCard("lists", slug) });
 }
 
 // The same lists for the app (PublicLists.jsx: ListsIndexPage, ListPage),

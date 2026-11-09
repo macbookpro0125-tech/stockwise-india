@@ -6,6 +6,8 @@ const { publicSubPage, isSubPagePath } = await import("./seo-pages.js");
 const { allMetrics } = await import("./screen.js");
 
 assert.match(robotsTxt(), /Disallow: \/api\//);
+// the public pages' data may be fetched for rendering (seo.js robotsTxt)
+assert.match(robotsTxt(), /Allow: \/api\/public\/\nDisallow: \/api\//);
 assert.match(robotsTxt(), /Sitemap: https:\/\/jocularinsights\.in\/sitemap\.xml/);
 
 // an index of three sitemaps, which together list every page once

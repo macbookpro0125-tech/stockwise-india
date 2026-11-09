@@ -88,8 +88,22 @@ ${image ? `<meta property="og:image" content="${esc(image.url)}" />\n<meta prope
     .replace(/<div id="root">\s*<\/div>/, `<div id="root">${SITE_NAV}${body}</div>`);
 }
 
+// A screen's, sector's or list's own data, written beside its HTML for the
+// app to start from (PublicLists.jsx, through main.jsx), as a company page's
+// is (public-stock-data). Without it the app fetched the data from /api/,
+// which robots.txt keeps Google from loading, so Google's renderer saw these
+// pages all but empty (9 Nov 2026, the SEO audit: 80–120 words and a heading
+// of "Stock list" where the HTML had thousands). `kind` and `key` say which
+// page it is for, so it is used by that page only.
+export const listData = (kind, key, data) =>
+  data == null ? "" : `<script id="public-list-data" type="application/json">${JSON.stringify({ kind, key, data }).replace(/</g, "\\u003c")}</script>`;
+
+// /api/public/ is let through (9 Nov 2026, the SEO audit): the pages' own
+// data, which Google's renderer needs to draw a page the app asks for after
+// it starts; its answers carry X-Robots-Tag: noindex, so the JSON itself is
+// never listed (http-server.js). The rest of the API stays out.
 export function robotsTxt() {
-  return `User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: ${SITE}/sitemap.xml\n`;
+  return `User-agent: *\nAllow: /\nAllow: /api/public/\nDisallow: /api/\n\nSitemap: ${SITE}/sitemap.xml\n`;
 }
 
 // The sitemap is an index of four (25 Oct 2026), so Search Console reports

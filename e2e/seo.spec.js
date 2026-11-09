@@ -157,3 +157,31 @@ test("S-H7 latest results: who just reported, with figures in the titles; in the
   await expect(page).toHaveURL(/\/stock\/[^/]+\/results\/q\d-fy\d\d$/);
   await expect(page.getByRole("heading", { level: 1, name: / results$/ })).toBeVisible();
 });
+
+// Google's renderer runs the app but loads nothing robots.txt keeps out, and
+// for years that was all of /api/: these pages, drawn from /api/public/ after
+// the app started, came out as a bare "Stock list" heading and no companies
+// (9 Nov 2026, the SEO audit). They now start from the data the server writes
+// into them (seo.js listData), so they draw whole with the API out of reach.
+test("S-H8 screens, sectors, lists and the calendar draw their companies with /api/ out of reach, as Google renders them @phone", async ({ page }) => {
+  // refused, as robots.txt refuses Google (a 4xx the app handles, not a dropped connection)
+  await page.route("**/api/**", route => route.fulfill({ status: 403, contentType: "application/json", body: JSON.stringify({ error: "Not for robots" }) }));
+  // each page, its heading, and links that only its data can draw
+  for (const [path, heading, links] of [
+    ["/screens", /^Indian stock screens$/, 'a[href^="/screens/"]'],
+    ["/screens/high-quality-compounders", /^High Quality Compounders/, 'a[href^="/stock/"]'],
+    ["/sectors", /^NSE stocks by sector$/, 'a[href^="/sector/"]'],
+    ["/sector/information-technology", /^Information Technology stocks on NSE$/, 'a[href^="/stock/"]'],
+    ["/lists", /^NSE stock lists$/, 'a[href^="/lists/"]'],
+    ["/lists/nifty-50-stocks", /Nifty 50/, 'a[href^="/stock/"]'],
+    ["/results-calendar", /^Quarterly results calendar$/, null],
+  ]) {
+    await page.goto(path);
+    // the app's own page, once it has replaced the server's (main.seo-stock)
+    const app = page.locator("main:not(.seo-stock)");
+    await expect(app.getByRole("heading", { level: 1, name: heading }), path).toBeVisible();
+    // not the placeholder a page shows while it waits for its data
+    await expect(app.getByRole("heading", { level: 1, name: /^(Stock list|Sector|Stock screen)$/ }), path).toHaveCount(0);
+    if (links) await expect.poll(() => app.locator(links).count(), { message: path }).toBeGreaterThan(5);
+  }
+});
