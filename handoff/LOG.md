@@ -250,3 +250,4 @@ Owner: "the news is not understandable". Looked at 10 apps (Inshorts' one-line c
 - 9 Nov 2026 (later): the drop made clear liquid glass after the owner's side-by-side ("ours is plain"); bar blur matched to the recording's text haze.
 - 9 Nov 2026 (later still): the drop's rim redrawn as a per-pixel lens in a canvas (src/rimLens.js) with colour split; frost follows speed; greys before landing; capsule an opaque light grey (rgba 220,220,224,.76) so text behind it is as faint as in the recording.
 - 9 Nov 2026 (evening): capsule and drop now blur the page under them (bar glass moved to .btb-bg so they can see past it); thick glass edge on the drop; overlay placed by left/top so the rim copy lines up to the pixel.
+- 9 Nov 2026: pushed 08fc36c (tab bar matched to the iOS recording; liquid drop); live after GitHub's webhook outage. Google: 11 pages requested (4 guides, 7 lists), quota hit at large-cap-stocks.
