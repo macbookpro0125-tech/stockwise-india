@@ -2,7 +2,17 @@
 
 _Last updated: 10 Nov 2026, by Claude (Opus) on branch `screeners-home`._
 
-## SEO sprint 1, batch 2 (10 Nov, early morning): steps 4–8 of the audit
+## Live (10 Nov, 06:43 IST): SEO sprint 1, batch 2, steps 4–8 of the audit
+- Pushed at `bbcd93e` (165 passed, 29 skipped; unit tests passed); live at 06:43 IST, about 100 s after the push.
+- Checked live, signed out:
+    - 404 and noindex on unknown addresses, with "Page not found" drawn by the app;
+    - titles;
+    - `/privacy` and `/disclaimer` with their own addresses;
+    - no public page scrolls sideways on a phone (14 checked);
+    - the header's sign-up opens over a screen page with its reason, and fits a phone;
+    - the list pages still drawn whole with `/api/` refused.
+- Before pushing, all 6,918 sitemap addresses answered 200 on a local copy.
+- The audit doc has a progress note, with steps 1–5, 7 and 8 ticked (6 is in part).
 - **Step 4: real 404s, and the legal pages written for Google.**
     - Any address that isn't a page answered 200 with the front page, a "soft 404" to Google. It now answers 404 with a "Page not found" page: noindex, with links to the main pages (`server/seo.js` `notFoundPageHtml`, `src/LegalPages.jsx` `NotFoundPage`). `src/App.jsx` keeps that page while the visitor stays on the address.
     - The app's own addresses (`/`, `/builder`, `/measures`, `/reset-password`, `/chart/…`) still get the app. Unknown companies, screens, sectors, lists, guides and company sub-pages get the same 404 page.
