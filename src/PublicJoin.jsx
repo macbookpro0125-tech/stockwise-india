@@ -3,7 +3,9 @@
 // what a free account adds, a slim bar on a phone once the top has scrolled
 // by, and the sign-up box right on the page, saying why it opened — as a
 // company's public page does (PublicStock.jsx). Signed in, none of it shows.
-// After signing in or up, the app.
+// After signing in or up, the same page, now signed in (9 Nov 2026, the SEO
+// audit: it went to the front page, and the visitor lost the page they came
+// for).
 import { useEffect, useState } from "react";
 import { Check } from "lucide-react";
 import AuthDialog from "./AuthDialog.jsx";
@@ -14,7 +16,7 @@ export function useJoin() {
   const open = (why = null, mode = "signup") => setAuth({ why, mode });
   const box = auth && (
     <AuthDialog mode={auth.mode} onModeChange={mode => setAuth(a => ({ ...a, mode }))} reason={auth.why}
-      onAuthed={() => window.location.assign("/")} onClose={() => setAuth(null)} />
+      onAuthed={() => window.location.reload()} onClose={() => setAuth(null)} />
   );
   return [open, box];
 }

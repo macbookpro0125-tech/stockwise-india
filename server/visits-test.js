@@ -8,7 +8,7 @@ process.env.STOCKWISE_DB = DB_PATH; // never the real app.db
 for (const f of [DB_PATH, `${DB_PATH}-wal`, `${DB_PATH}-shm`]) if (existsSync(f)) unlinkSync(f);
 delete process.env.TRUST_PROXY;
 
-const { countPageLoad, countActive, visitStats, isOwner, isPageLoad, istWeek } = await import("./visits.js");
+const { countPageLoad, countActive, countSignup, visitStats, isOwner, isPageLoad, istWeek } = await import("./visits.js");
 const { db } = await import("./db.js");
 
 function assert(cond, msg) {
@@ -109,6 +109,21 @@ assert(!isOwner("someone@example.com", { OWNER_EMAILS: "owner@example.com" }) &&
 
 // counting never stops a page
 assert(countPageLoad({ method: "GET", headers: null, socket: {} }, "/", T) === false, "a broken request is skipped, not thrown");
+
+// sign-ups, by the page their visit began on and where it came from (9 Nov 2026)
+countSignup({ landing: "/lists/debt-free-stocks?x=1", referrer: "https://www.google.com/" }, T);
+countSignup({ landing: "/lists/debt-free-stocks", referrer: "https://www.google.co.in/search" }, T + H);
+countSignup({ landing: "/stock/tcs", referrer: "" }, T + H);
+countSignup(null, T + H);
+{
+  const signups = visitStats(T + 2 * H).detail.today;
+  const page = Object.fromEntries((signups.signup_page ?? []).map(r => [r.key, r.visitors]));
+  const source = Object.fromEntries((signups.signup_source ?? []).map(r => [r.key, r.visitors]));
+  assert(page["/lists/debt-free-stocks"] === 2 && page["/stock/TCS"] === 1 && page["Not known"] === 1, "sign-ups counted by the page their visit began on (a list's page kept apart)");
+  assert(source.Google === 2 && source["Typed, bookmark or app"] === 1 && source["Not known"] === 1, "and by the site that visit came from");
+  assert(db.prepare("PRAGMA table_info(visit_parts)").all().map(c => c.name).join() === "day,kind,key,visitors,page_loads", "kept as day totals, tied to no account");
+}
+assert(countSignup({ landing: 42, referrer: { evil: true } }, T) === true && countSignup(undefined, T) === true, "a sign-up's odd or missing visit never throws");
 
 db.close();
 for (const f of [DB_PATH, `${DB_PATH}-wal`, `${DB_PATH}-shm`]) if (existsSync(f)) unlinkSync(f);

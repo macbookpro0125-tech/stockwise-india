@@ -11,6 +11,7 @@ import { PositionIcon } from "./icons.jsx";
 import ResearchPanel from "./ResearchPanel.jsx";
 import { useWatchlist, toggleWatch } from "./watchlist.js";
 import { notesStore } from "./accountData.js";
+import { askedAfterSignup, doneAfterSignup } from "./afterSignup.js";
 import CreateAlertModal from "./CreateAlertModal.jsx";
 import PriceChartPanel from "./PriceChartPanel.jsx";
 import FinancialsPanel from "./FinancialsPanel.jsx";
@@ -652,7 +653,9 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       if (window.scrollY > top) window.scrollTo(0, top);
     });
   };
-  const [showAlertModal, setShowAlertModal] = useState(false);
+  // open from the start when "Set a price alert" on the public page led to
+  // this account (afterSignup.js); done once the form has shown
+  const [showAlertModal, setShowAlertModal] = useState(() => askedAfterSignup("alert", symbol));
   // Esc goes back on a computer, as the Back button says — not while typing,
   // nor while a dialog or the expanded chart is open (they close on Esc first)
   useEffect(() => {
@@ -667,6 +670,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
   }, [onBack, showAlertModal]);
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
+  useEffect(() => { if (showAlertModal && data) doneAfterSignup(); }, [showAlertModal, data]);
   // A computer: once the company's card has scrolled away, a slim bar says
   // which company this is (27 Oct 2026: "when I go down I should see which
   // stock I am seeing")

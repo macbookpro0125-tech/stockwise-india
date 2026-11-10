@@ -1,3 +1,4 @@
+import { pageTitle } from "./pageTitle.js";
 import { useEffect } from "react";
 import { METHODOLOGY_SECTIONS, METHODOLOGY_TITLE } from "./methodology-content.js";
 import { PublicPage } from "./LegalPages.jsx";
@@ -6,7 +7,7 @@ import { ANALYSIS_EXAMPLES } from "./company-analysis.js";
 
 export default function MethodologyPage({ signedIn }) {
   useEffect(() => {
-    document.title = `${METHODOLOGY_TITLE} | Jocular Insights`;
+    document.title = pageTitle(METHODOLOGY_TITLE);
   }, []);
   return (
     <PublicPage title={METHODOLOGY_TITLE} signedIn={signedIn} updated="23 October 2026">

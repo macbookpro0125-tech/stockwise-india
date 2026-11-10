@@ -160,9 +160,10 @@ export function signInWithFirebase(claims) {
     if (!email && !phone) throw unauthorized("That sign-in didn't come with a verified email or phone number.");
     const result = db.prepare("INSERT INTO users (email, phone, firebase_uid, display_name, created_at, email_verified_at) VALUES (?, ?, ?, ?, ?, ?)")
       .run(email, phone, uid, name, now, email ? now : null);
-    user = { id: result.lastInsertRowid };
+    user = { id: result.lastInsertRowid, created: true };
   }
-  return createSession(Number(user.id));
+  // created: a new account, for counting where sign-ups come from (visits.js)
+  return { ...createSession(Number(user.id)), created: !!user.created };
 }
 
 function createSession(userId) {

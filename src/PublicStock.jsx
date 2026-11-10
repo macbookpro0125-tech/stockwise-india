@@ -5,7 +5,9 @@ import { api } from "./api.js";
 import { PublicHeader } from "./site.jsx";
 import CompanyLogo from "./CompanyLogo.jsx";
 import { AdCard } from "./ads.jsx";
+import { askAfterSignup } from "./afterSignup.js";
 import AuthDialog from "./AuthDialog.jsx";
+import { stockTitle } from "./pageTitle.js";
 import { niceName } from "./stockName.js";
 import { ANALYSIS_EXAMPLES, companyAnalysisFor } from "./company-analysis.js";
 
@@ -75,10 +77,11 @@ export default function PublicStock({ symbol, onAuthed, initial = null }) {
   const short = s ? niceName(s.name) : symbol;
   const ask = (why, mode = "signup") => setAuth({ mode, why });
   const askWatch = () => setAuth({ mode: "signup", why: `Create a free account to add ${short} to your watchlist.`, watch: true });
-  const askAlert = () => ask(`Create a free account to set a price alert for ${short}.`);
+  const askAlert = () => setAuth({ mode: "signup", why: `Create a free account to set a price alert for ${short}.`, alert: true });
   const askFull = () => ask(`Create a free account to see ${short}'s full analysis.`);
   const authed = async () => {
     if (auth?.watch) await api.addWatch(symbol, s?.close).catch(() => {});
+    if (auth?.alert) askAfterSignup("alert", symbol);
     onAuthed?.();
   };
   // a phone: a slim bar into the full analysis once the top has scrolled by
@@ -90,7 +93,7 @@ export default function PublicStock({ symbol, onAuthed, initial = null }) {
   }, []);
   useEffect(() => {
     let active = true;
-    const title = x => `${niceName(x.name)} share price, P/E, results & quality score | ${x.symbol} | Jocular Insights`;
+    const title = x => stockTitle(niceName(x.name), x.symbol);
     if (initial?.symbol === symbol) {
       setS(initial);
       document.title = title(initial);
@@ -124,7 +127,7 @@ export default function PublicStock({ symbol, onAuthed, initial = null }) {
   const analysisRevenueLabel = s?.symbol === "HDFCBANK" ? "reported revenue line" : "reported revenue";
   return (
     <div className="ps-page">
-      <PublicHeader signedIn={false} onSignIn={() => ask(null, "signin")} onJoin={() => ask(null)} />
+      <PublicHeader signedIn={false} onSignIn={() => ask(null, "signin")} onJoin={askFull} />
       <main className="ps-main">
         {error && <p className="nw-empty">{error}</p>}
         {!s && !error && <div className="nw-skel" role="status" aria-label="Loading">{[0, 1, 2].map(i => <span key={i} />)}</div>}

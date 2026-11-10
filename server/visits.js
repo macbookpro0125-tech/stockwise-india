@@ -110,7 +110,7 @@ const FIXED = new Set(["/", "/about", "/help", "/methodology", "/privacy", "/dis
 export function pageKey(pathname) {
   const p = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
   if (FIXED.has(p)) return p;
-  const m = /^\/(stock|sector|screens|learn)\/([A-Za-z0-9&_.%-]{1,60})$/.exec(p);
+  const m = /^\/(stock|sector|screens|learn|lists)\/([A-Za-z0-9&_.%-]{1,60})$/.exec(p);
   if (m) return `/${m[1]}/${m[1] === "stock" ? decodeURIComponent(m[2]).toUpperCase() : m[2].toLowerCase()}`;
   return "Other";
 }
@@ -192,6 +192,26 @@ export function countBrowserVisit(req, { path, referrer } = {}, now = Date.now()
   delete headers.referer;
   if (typeof referrer === "string" && /^https?:\/\//.test(referrer) && referrer.length <= 500) headers.referer = referrer;
   return countPageLoad({ method: "GET", headers, socket: req.socket }, path.split(/[?#]/)[0], now);
+}
+
+// A new account, counted by the page its visit began on and the site that
+// visit came from (9 Nov 2026, the SEO audit: which pages bring sign-ups).
+// Day totals only, like the visits — nothing tied to the account. `visit` is
+// what the browser noted when the visit began (main.jsx): its first address
+// and document.referrer. Never throws: counting must not stop a sign-up.
+export function countSignup(visit, now = Date.now()) {
+  try {
+    const landing = typeof visit?.landing === "string" && visit.landing.startsWith("/") && visit.landing.length <= 300 ? visit.landing.split(/[?#]/)[0] : null;
+    const referrer = typeof visit?.referrer === "string" && /^https?:\/\//.test(visit.referrer) && visit.referrer.length <= 500 ? visit.referrer : "";
+    const day = istDay(now);
+    const add = db.prepare("INSERT INTO visit_parts (day, kind, key, visitors, page_loads) VALUES (?, ?, ?, 1, 1) ON CONFLICT(day, kind, key) DO UPDATE SET visitors = visitors + 1, page_loads = page_loads + 1");
+    add.run(day, "signup_page", landing ? pageKey(landing) : "Not known");
+    add.run(day, "signup_source", landing ? sourceOf({ headers: referrer ? { referer: referrer, host: "jocularinsights.in" } : { host: "jocularinsights.in" } }) : "Not known");
+    return true;
+  } catch (e) {
+    console.error(`[visits] sign-up: ${e.message}`);
+    return false;
+  }
 }
 
 // A signed-in account opening the app: once a day each

@@ -10,6 +10,7 @@ import CompanyLogo from "./CompanyLogo.jsx";
 import { AdCard } from "./ads.jsx";
 import { useJoin, JoinCard, JoinBar } from "./PublicJoin.jsx";
 import { withTerms } from "./jargon.jsx";
+import { SCREENS_TITLE, CALENDAR_TITLE, SECTORS_TITLE, LISTS_TITLE, screenTitle, sectorTitle, listTitle } from "./pageTitle.js";
 
 // One ad card partway down each public page (26 Oct 2026): the pages people
 // arrive at from a search, signed out. Marked "Ad", never a banner (ads.jsx);
@@ -82,10 +83,10 @@ const More = () => (
 
 export function ScreensIndexPage({ signedIn }) {
   const [d, error] = useLoad(() => api.publicScreens(), "all", "screens");
-  useEffect(() => { document.title = "Indian stock screens: NSE companies by quality, value, dividends and growth | Jocular Insights"; }, []);
+  useEffect(() => { document.title = SCREENS_TITLE; }, []);
   const [join, box] = useJoin();
   return (
-    <PublicPage title="Indian stock screens" signedIn={signedIn} updated={fresh(d?.pricesDate, d?.builtAt)} onSignIn={() => join(null, "signin")} onJoin={() => join(null)}>
+    <PublicPage title="Indian stock screens" signedIn={signedIn} updated={fresh(d?.pricesDate, d?.builtAt)} onSignIn={() => join(null, "signin")} onJoin={() => join("Create a free account to run every screen and save your own.")}>
       <p className="pl-lede">Ready-made screens of NSE companies, each a set of filters on reported figures, with the companies that pass them today.</p>
       {error && <p className="nw-empty">{error}</p>}
       {!d && !error && <Wait />}
@@ -112,10 +113,10 @@ export function ScreensIndexPage({ signedIn }) {
 
 export function ScreenPage({ slug, signedIn }) {
   const [s, error] = useLoad(() => api.publicScreen(slug), slug, "screen");
-  useEffect(() => { if (s) document.title = s.guide ? `${s.guide.search}: ${s.matched} today | Jocular Insights` : `${s.name}: ${s.matched} NSE stocks that match today | Jocular Insights`; }, [s]);
+  useEffect(() => { if (s) document.title = screenTitle(s); }, [s]);
   const [join, box] = useJoin();
   return (
-    <PublicPage title={s ? `${s.name}: NSE companies that match today` : "Stock screen"} signedIn={signedIn} updated={fresh(s?.pricesDate, s?.builtAt)} onSignIn={() => join(null, "signin")} onJoin={() => join(null)}>
+    <PublicPage title={s ? `${s.name}: NSE companies that match today` : "Stock screen"} signedIn={signedIn} updated={fresh(s?.pricesDate, s?.builtAt)} onSignIn={() => join(null, "signin")} onJoin={() => join("Create a free account to save this screen and see each company's full analysis.")}>
       <p className="pl-crumb"><A to="/screens">Stock screens</A> › {s?.name ?? "…"}{s && <ShareButton path={`/screens/${slug}`} text={`${s.name}: the NSE companies that pass it today, with their quality scores`} />}</p>
       {error && <p className="nw-empty">{error}</p>}
       {!s && !error && <Wait />}
@@ -160,6 +161,9 @@ export function ScreenPage({ slug, signedIn }) {
               </li>
             ))}
           </ol>
+          {/* a long list: the way in again at its end (9 Nov 2026, the SEO audit) */}
+          {!signedIn && s.companies.length > 20 && <JoinCard title="Keep track of these companies" onJoin={join} why="Create a free account to keep track of these companies."
+            points={["A watchlist and price alerts for the ones you pick", "Each company's fair value and 7 questions, from its filings", "Your own screens, kept, with word when a company joins"]} />}
         </>
       )}
       <p className="pl-note">{NOT_ADVICE}</p>
@@ -173,11 +177,11 @@ export function ScreenPage({ slug, signedIn }) {
 export function ResultsCalendarPage({ signedIn }) {
   const [c, error] = useLoad(() => api.publicResultsCalendar(), "cal", "calendar");
   const [open, setOpen] = useState({});
-  useEffect(() => { document.title = "Quarterly results calendar: NSE companies announcing results this week | Jocular Insights"; }, []);
+  useEffect(() => { document.title = CALENDAR_TITLE; }, []);
   const total = c?.days.reduce((n, d) => n + d.count, 0) ?? 0;
   const [join, box] = useJoin();
   return (
-    <PublicPage title="Quarterly results calendar" signedIn={signedIn} updated={c ? (c.builtAt ? fresh(null, c.builtAt) : day(c.today)) : "daily"} onSignIn={() => join(null, "signin")} onJoin={() => join(null)}>
+    <PublicPage title="Quarterly results calendar" signedIn={signedIn} updated={c ? (c.builtAt ? fresh(null, c.builtAt) : day(c.today)) : "daily"} onSignIn={() => join(null, "signin")} onJoin={() => join("Create a free account to follow your companies' results.")}>
       <p className="pl-lede">{c ? `${total} NSE companies have board meetings for results in the next two weeks, the largest companies first.` : "NSE companies' board meetings for results, the next two weeks."} Already reported? <A to="/results">See the latest results</A>, newest first.</p>
       {error && <p className="nw-empty">{error}</p>}
       {!c && !error && <Wait />}
@@ -210,10 +214,10 @@ export function ResultsCalendarPage({ signedIn }) {
 // sector, the sector's middle P/E and ROE, its highest quality names
 export function SectorsIndexPage({ signedIn }) {
   const [d, error] = useLoad(() => api.publicSectors(), "sectors", "sectors");
-  useEffect(() => { document.title = "NSE stocks by sector: every listed company, sector by sector | Jocular Insights"; }, []);
+  useEffect(() => { document.title = SECTORS_TITLE; }, []);
   const [join, box] = useJoin();
   return (
-    <PublicPage title="NSE stocks by sector" signedIn={signedIn} updated={fresh(d?.pricesDate, d?.builtAt)} onSignIn={() => join(null, "signin")} onJoin={() => join(null)}>
+    <PublicPage title="NSE stocks by sector" signedIn={signedIn} updated={fresh(d?.pricesDate, d?.builtAt)} onSignIn={() => join(null, "signin")} onJoin={() => join("Create a free account to see every company's full analysis.")}>
       <p className="pl-lede">Every NSE-listed company NSE classifies, sector by sector, with each sector's companies and figures.</p>
       {error && <p className="nw-empty">{error}</p>}
       {!d && !error && <Wait />}
@@ -238,10 +242,10 @@ export function SectorsIndexPage({ signedIn }) {
 
 export function SectorPage({ slug, signedIn }) {
   const [s, error] = useLoad(() => api.publicSector(slug), slug, "sector");
-  useEffect(() => { if (s) document.title = `${s.name} stocks on NSE: ${s.count} companies by P/E, ROE and quality | Jocular Insights`; }, [s]);
+  useEffect(() => { if (s) document.title = sectorTitle(s); }, [s]);
   const [join, box] = useJoin();
   return (
-    <PublicPage title={s ? `${s.name} stocks on NSE` : "Sector"} signedIn={signedIn} updated={fresh(s?.pricesDate, s?.builtAt)} onSignIn={() => join(null, "signin")} onJoin={() => join(null)}>
+    <PublicPage title={s ? `${s.name} stocks on NSE` : "Sector"} signedIn={signedIn} updated={fresh(s?.pricesDate, s?.builtAt)} onSignIn={() => join(null, "signin")} onJoin={() => join("Create a free account to see every check behind these scores.")}>
       <p className="pl-crumb"><A to="/sectors">Sectors</A> › {s?.name ?? "…"}{s && <ShareButton path={`/sector/${slug}`} text={`${s.name} stocks on NSE: all ${s.count}, with their P/E and quality scores`} />}</p>
       {error && <p className="nw-empty">{error}</p>}
       {!s && !error && <Wait />}
@@ -274,6 +278,9 @@ export function SectorPage({ slug, signedIn }) {
               </li>
             ))}
           </ol>
+          {/* a long list: the way in again at its end (9 Nov 2026, the SEO audit) */}
+          {!signedIn && s.companies.length > 20 && <JoinCard title="Keep track of these companies" onJoin={join} why="Create a free account to keep track of these companies."
+            points={["A watchlist and price alerts for the ones you pick", "Each company's fair value and 7 questions, from its filings", "Your own screens, kept, with word when a company joins"]} />}
           <p className="pl-note">Sectors are NSE's own, from its index lists; a company NSE doesn't classify is placed by its industry or its filings. {NOT_ADVICE}</p>
         </>
       )}
@@ -288,10 +295,10 @@ export function SectorPage({ slug, signedIn }) {
 // NSE index's companies, NSE's themes, price bands and a few plain filters
 export function ListsIndexPage({ signedIn }) {
   const [d, error] = useLoad(() => api.publicLists(), "lists", "lists");
-  useEffect(() => { document.title = "NSE stock lists: Nifty 50, defence, PSU, stocks under ₹100, debt-free and more | Jocular Insights"; }, []);
+  useEffect(() => { document.title = LISTS_TITLE; }, []);
   const [join, box] = useJoin();
   return (
-    <PublicPage title="NSE stock lists" signedIn={signedIn} updated={fresh(d?.pricesDate, d?.builtAt)} onSignIn={() => join(null, "signin")} onJoin={() => join(null)}>
+    <PublicPage title="NSE stock lists" signedIn={signedIn} updated={fresh(d?.pricesDate, d?.builtAt)} onSignIn={() => join(null, "signin")} onJoin={() => join("Create a free account to see every company's full analysis.")}>
       <p className="pl-lede">Each NSE index's companies, NSE's themes such as defence and railway PSUs, stocks by price, and a few plain filters, at the last close.</p>
       {error && <p className="nw-empty">{error}</p>}
       {!d && !error && <Wait />}
@@ -320,10 +327,10 @@ export function ListsIndexPage({ signedIn }) {
 
 export function ListPage({ slug, signedIn }) {
   const [s, error] = useLoad(() => api.publicList(slug), slug, "list");
-  useEffect(() => { if (s) document.title = `${s.name} list: ${s.kind === "rule" ? `${s.count} NSE companies` : "the companies"} by P/E, ROE and quality | Jocular Insights`; }, [s]);
+  useEffect(() => { if (s) document.title = listTitle(s); }, [s]);
   const [join, box] = useJoin();
   return (
-    <PublicPage title={s?.name ?? "Stock list"} signedIn={signedIn} updated={fresh(s?.pricesDate, s?.builtAt)} onSignIn={() => join(null, "signin")} onJoin={() => join(null)}>
+    <PublicPage title={s?.name ?? "Stock list"} signedIn={signedIn} updated={fresh(s?.pricesDate, s?.builtAt)} onSignIn={() => join(null, "signin")} onJoin={() => join("Create a free account to see every check behind these scores.")}>
       <p className="pl-crumb"><A to="/lists">Lists</A> › {s?.name ?? "…"}{s && <ShareButton path={`/lists/${slug}`} text={`${s.name}: all ${s.count}, with their P/E and quality scores`} />}</p>
       {error && <p className="nw-empty">{error}</p>}
       {!s && !error && <Wait />}
@@ -352,6 +359,9 @@ export function ListPage({ slug, signedIn }) {
               </li>
             ))}
           </ol>
+          {/* a long list: the way in again at its end (9 Nov 2026, the SEO audit) */}
+          {!signedIn && s.companies.length > 20 && <JoinCard title="Keep track of these companies" onJoin={join} why="Create a free account to keep track of these companies."
+            points={["A watchlist and price alerts for the ones you pick", "Each company's fair value and 7 questions, from its filings", "Your own screens, kept, with word when a company joins"]} />}
           {s.missing?.length > 0 && <p className="pl-note">Also in this index, but not covered here yet: {s.missing.join(", ")}.</p>}
           <p className="pl-note">{s.kind === "rule" ? `A plain rule on reported figures at the last close: ${s.about}. It changes with every close.` : "The companies are NSE's own list for this index; NSE reviews its indices twice a year."} {NOT_ADVICE}</p>
           {s.others.length > 0 && <>

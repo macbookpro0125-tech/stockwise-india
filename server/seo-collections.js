@@ -12,6 +12,7 @@ import { loadMarketSnapshot } from "./market-data.js";
 import { SITE, esc, crore, num, day, pageHtml, ogCard, listData } from "./seo.js";
 import { niceName } from "../src/stockName.js";
 import { updatedLine } from "./updated-line.js";
+import { LISTS_TITLE, listTitle } from "../src/pageTitle.js";
 
 const NOT_ADVICE = "A list of companies on reported figures at the last close, as a starting point for research — not a recommendation to buy or sell. Check each company's filings before deciding anything.";
 const link = (path, text) => `<a href="${esc(path)}">${esc(text)}</a>`;
@@ -116,7 +117,7 @@ export function listsIndexHtml(template) {
   const all = publicLists();
   const pricesDate = loadMarketSnapshot()?.pricesDate ?? null;
   const canonical = `${SITE}/lists`;
-  const title = "NSE stock lists: Nifty 50, defence, PSU, stocks under ₹100, debt-free and more | Jocular Insights";
+  const title = LISTS_TITLE;
   const desc = `${all.length} lists of NSE companies at the ${day(pricesDate) ?? "latest"} close: each index's companies, NSE's themes such as defence and railway PSUs, stocks under ₹50, ₹100 and ₹500, debt-free companies, high dividend yields and 52-week highs and lows.`;
   const groups = Object.entries(KIND).map(([k, label]) => {
     const items = all.filter(x => x.def.kind === k);
@@ -140,7 +141,7 @@ export function listPageHtml(template, slug) {
   const medRoe = median(list.map(m => m.roe));
   const total = list.reduce((t, m) => t + (m.marketCapCr ?? 0), 0);
   const gone = missing(def, list);
-  const title = `${def.name} list: ${def.kind === "rule" ? `${list.length} NSE companies` : "the companies"} by P/E, ROE and quality (${when}) | Jocular Insights`;
+  const title = listTitle({ name: def.name, kind: def.kind, count: list.length });
   const desc = `${def.name} at the ${when} close: ${list.length} companies, ${def.about}. Each with its price, market value, P/E, return on equity, debt and quality score.`;
   const intro = [
     `${list.length} companies: ${def.about}. Together they're worth ${crore(total)}.`,

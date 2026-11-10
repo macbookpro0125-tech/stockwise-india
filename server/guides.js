@@ -10,6 +10,37 @@
 // Each section's text is our own HTML, written here (not from any input).
 
 export const GUIDES_UPDATED = "2026-11-08";
+// The day each guide went up, from the commit that added it (for the guides'
+// Article markup, seo-pages.js; 9 Nov 2026, the SEO audit). A new guide adds
+// its own line; one without falls back to GUIDES_UPDATED.
+export const GUIDE_PUBLISHED = {
+  "how-to-read-quarterly-results": "2026-10-30",
+  "pe-ratio-explained": "2026-10-30",
+  "roe-and-roce": "2026-10-30",
+  "debt-to-equity": "2026-10-30",
+  "reading-a-balance-sheet": "2026-10-30",
+  "cash-flow-statement": "2026-10-30",
+  "shareholding-pattern": "2026-10-30",
+  "how-to-analyse-a-bank": "2026-10-30",
+  "results-calendar-and-board-meetings": "2026-10-30",
+  "dividends-record-date": "2026-10-30",
+  "how-to-use-a-stock-screener": "2026-10-30",
+  "profit-margins": "2026-11-03",
+  "free-cash-flow": "2026-11-03",
+  "price-to-book": "2026-11-03",
+  "large-mid-small-cap": "2026-11-03",
+  "bonus-split-buyback-rights": "2026-11-03",
+  "promoter-pledge": "2026-11-03",
+  "working-capital": "2026-11-03",
+  "piotroski-f-score": "2026-11-03",
+  "reading-company-announcements": "2026-11-03",
+  "credit-ratings": "2026-11-03",
+  "cyclical-and-defensive-sectors": "2026-11-03",
+  "fair-value-explained": "2026-11-08",
+  "eps-explained": "2026-11-08",
+  "ev-ebitda-explained": "2026-11-08",
+  "red-flags-in-financial-statements": "2026-11-08",
+};
 
 export const GUIDES = [
   {

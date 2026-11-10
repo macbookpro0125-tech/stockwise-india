@@ -3,6 +3,7 @@ import { useScreenerMeta } from "./screener/meta.js";
 import { Definition } from "./screener/MetricInfo.jsx";
 import { SiteLink, SiteFooter, Logo, navigate, PublicHeader } from "./site.jsx";
 import { problemMailto } from "./help.js";
+import { useJoin } from "./PublicJoin.jsx";
 
 // /privacy, /disclaimer and /help. Every statement here has to stay true to what
 // the code does — check them when changing what's stored, adding analytics
@@ -12,14 +13,19 @@ const UPDATED = "18 October 2026";
 // Shown once set: a privacy policy needs a way to reach you
 const CONTACT_EMAIL = "jocularinsights@gmail.com";
 
-// onSignIn: the page's own sign-in box (PublicJoin.jsx), else the front page
+// onSignIn, onJoin: the page's own sign-in box (PublicJoin.jsx); a page that
+// brings none gets one here, so the header's buttons open the box over the
+// page rather than leaving for the front page (9 Nov 2026, the SEO audit: a
+// visitor who signed up from the header lost the page they came for)
 export function PublicPage({ title, signedIn, updated = UPDATED, children, onSignIn = null, onJoin = null }) {
+  const [join, box] = useJoin();
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
-      <PublicHeader signedIn={signedIn} onSignIn={onSignIn} onJoin={onJoin} />
+      <PublicHeader signedIn={signedIn} onSignIn={onSignIn ?? (() => join(null, "signin"))} onJoin={onJoin ?? (() => join(null))} />
+      {box}
       <main style={{ flex: 1, width: "100%", maxWidth: 760, margin: "0 auto", padding: "40px 20px 0", boxSizing: "border-box" }}>
         <h1 style={{ fontSize: 28, fontWeight: 500, letterSpacing: "-0.03em", color: "var(--t1)", margin: "0 0 6px" }}>{title}</h1>
-        <p style={{ fontSize: 12, color: "var(--t3)", margin: "0 0 28px" }}>Last updated {updated}</p>
+        {updated ? <p style={{ fontSize: 12, color: "var(--t3)", margin: "0 0 28px" }}>Last updated {updated}</p> : <div style={{ height: 22 }} />}
         {children}
       </main>
       <SiteFooter />
@@ -33,9 +39,29 @@ const LI = ({ children }) => <li style={{ fontSize: 14, lineHeight: 1.7, color: 
 const UL = ({ children }) => <ul style={{ margin: "0 0 12px", paddingLeft: 20 }}>{children}</ul>;
 const B = ({ children }) => <strong style={{ color: "var(--t1)", fontWeight: 400 }}>{children}</strong>;
 
+// An address that isn't a page (9 Nov 2026, the SEO audit: every unknown
+// address had answered 200 with the front page — "soft 404s" to Google). The
+// server answers 404 with this page written in (seo.js notFoundPageHtml) and
+// the app keeps it (App.jsx), so it says so and offers the way on.
+export function NotFoundPage({ signedIn }) {
+  return (
+    <PublicPage title="Page not found" signedIn={signedIn} updated={null}>
+      <P>There's no page at this address. It may have moved, or the link may have a typing mistake.</P>
+      <P>Search any NSE company from the box at the top, or start from one of these:</P>
+      <UL>
+        <LI><SiteLink to="/">The front page</SiteLink></LI>
+        <LI><SiteLink to="/screens">Stock screens</SiteLink>: ready-made screens and the companies that pass them today</LI>
+        <LI><SiteLink to="/sectors">Sectors</SiteLink> and <SiteLink to="/lists">stock lists</SiteLink>: every NSE company, grouped</LI>
+        <LI><SiteLink to="/results">Latest results</SiteLink> and the <SiteLink to="/results-calendar">results calendar</SiteLink></LI>
+        <LI><SiteLink to="/learn">Learn</SiteLink>: plain-English guides to reading a company</LI>
+      </UL>
+    </PublicPage>
+  );
+}
+
 export function PrivacyPage({ signedIn }) {
   return (
-    <PublicPage title="Privacy policy" signedIn={signedIn} updated="28 October 2026">
+    <PublicPage title="Privacy policy" signedIn={signedIn} updated="10 November 2026">
       <P>
         This page explains what Jocular Insights keeps about you, why, and how to delete it. In short: we use your
         account and saved data to provide the service, and we don't sell your personal data. The website uses no analytics
@@ -51,7 +77,7 @@ export function PrivacyPage({ signedIn }) {
         <LI><B>What you save:</B> your watchlist (with the price when you added each stock and your notes on it), your price alerts, your portfolio holdings (buy price, quantity, date and notes), the investment thesis and the notes you write on a company's page, and the strategies you save on Discover.</LI>
         <LI><B>Phone notifications, only if you turn them on</B> (in the Android app): a token from Google's Firebase Cloud Messaging that lets us send notifications to that phone — your watchlist companies' news, a reminder the evening before one of them announces its results, and your price alerts. The notification goes through Google; its text is the company's news or your alert. Turning notifications off, or signing out, deletes the token.</LI>
         <LI><B>The weekly email, only if you turn it on</B> (Settings or the Account menu): we use your account's email address to send, on Sunday mornings, your starred companies' week, their news and their coming results, through our email provider (Resend). Every email has a link that turns it off at once, without signing in; we also keep when it was last sent.</LI>
-        <LI><B>Visit counts, anonymous:</B> how many people loaded our pages each day and week, how many signed-in accounts opened the app each day, and the number of page loads — totals only, also split by the page you arrived on, the name of the site a link came from (such as Google or Reddit, never the full address), the kind of device (phone, computer or our app), the hour, and the country, looked up from your connection's address on our own server (using MaxMind's GeoLite2 data) — only the country is kept. To count each visitor once, your connection's address and browser are turned into a code with a secret that is deleted at the end of each day (and week), so the code can't identify you or follow you across days. No cookie is used, and no address is stored.</LI>
+        <LI><B>Visit counts, anonymous:</B> how many people loaded our pages each day and week, how many signed-in accounts opened the app each day, how many new accounts were made, and the number of page loads — totals only, also split by the page you arrived on, the name of the site a link came from (such as Google or Reddit, never the full address), the kind of device (phone, computer or our app), the hour, and the country, looked up from your connection's address on our own server (using MaxMind's GeoLite2 data) — only the country is kept. To count each visitor once, your connection's address and browser are turned into a code with a secret that is deleted at the end of each day (and week), so the code can't identify you or follow you across days. No cookie is used, and no address is stored.</LI>
         <LI><B>Telegram, only if you connect it:</B> your Telegram chat ID and the name on your Telegram account, so your alerts reach you, and when each alert was last sent. Not your phone number — Telegram doesn't give it to us. Disconnecting (on the Alerts tab, or sending /stop to the bot) removes them.</LI>
       </UL>
 
@@ -59,7 +85,11 @@ export function PrivacyPage({ signedIn }) {
       <P>
         Your light/dark setting, whether company logos are shown, your last filters, your recent searches and which guided tours you've seen are kept in
         your own browser. They never reach our server. A
-        thesis you're editing is also kept here until it's saved to your account. You can clear all of this in your
+        thesis you're editing is also kept here until it's saved to your account. For the browser tab you're using,
+        the address your visit began on and the page that linked to it are kept too: they're sent to our server only
+        if you create an account in that tab, where only the page and the linking site's name are counted, as totals
+        (above), never with your account. A price alert you ask for before you have an account is kept in that tab
+        for two minutes, so its form can open once the account is made. You can clear all of this in your
         browser's settings for this site.
       </P>
 

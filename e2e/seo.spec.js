@@ -5,7 +5,7 @@ import { test, expect } from "./fixtures.js";
 
 test("S-H1 a company's page is readable without signing in, with its own title; its ways in open the sign-up box on the page @phone", async ({ page, request }) => {
   const html = await (await request.get("/stock/TCS")).text();
-  expect(html).toMatch(/<title>Tata Consultancy Services share price[^<]*\| TCS \| Jocular Insights<\/title>/);
+  expect(html).toMatch(/<title>Tata Consultancy Services share price[^<]*\| TCS(?: \| Jocular Insights)?<\/title>/);
   expect(html).toMatch(/<link rel="canonical" href="https:\/\/jocularinsights\.in\/stock\/TCS"/);
   expect(html).toMatch(/<main class="seo-stock">[\s\S]*Quality score/);
   await page.goto("/stock/TCS");
@@ -44,6 +44,56 @@ test("S-H4 Add to watchlist on a company's public page signs up there, then show
   await expect(page.getByRole("button", { name: /In watchlist/ }).filter({ visible: true }).first()).toBeVisible();
 });
 
+// 9 Nov 2026, the SEO audit's step 8: each way in finishes what it began
+async function signUpInBox(dialog, prefix) {
+  await dialog.getByRole("button", { name: "Continue with email" }).click();
+  await dialog.getByLabel("Email").fill(`${prefix}-${Date.now()}@example.test`);
+  await dialog.getByLabel("Password", { exact: true }).fill(randomUUID());
+  await dialog.getByRole("button", { name: "Create free account" }).click();
+}
+
+test("S-H9 Set a price alert on a company's public page signs up there, then opens the alert form on the company, before any tour @phone", async ({ page }) => {
+  await page.setExtraHTTPHeaders({ "x-forwarded-for": `10.45.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}` });
+  await page.goto("/stock/TCS");
+  await page.getByRole("button", { name: "Set a price alert" }).click();
+  const box = page.getByRole("dialog");
+  await expect(box.getByText("Create a free account to set a price alert for Tata Consultancy Services.")).toBeVisible();
+  await signUpInBox(box, "alert");
+  const form = page.getByRole("dialog", { name: "Set Alert" });
+  await expect(form).toBeVisible({ timeout: 15000 });
+  await expect(page).toHaveURL(/\/stock\/TCS/);
+  // the company's tour waits for the form
+  await page.waitForTimeout(1500);
+  await expect(page.getByRole("button", { name: "Skip tour" })).toHaveCount(0);
+  await form.getByRole("button", { name: "Cancel" }).click();
+  await expect(form).toHaveCount(0);
+  // and once (a reload doesn't open it again)
+  await page.reload();
+  const skip = page.getByRole("button", { name: "Skip tour" });
+  if (await skip.isVisible({ timeout: 8000 }).catch(() => false)) await skip.click();
+  await expect(page.getByRole("button", { name: /Set an alert/ }).first()).toBeAttached({ timeout: 15000 });
+  await expect(page.getByRole("dialog", { name: "Set Alert" })).toHaveCount(0);
+});
+
+test("S-H10 the header's sign-up on a public page opens the box there, saying why, and the visitor stays on the page @phone", async ({ page }) => {
+  await page.setExtraHTTPHeaders({ "x-forwarded-for": `10.46.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}` });
+  // a page that brings no box of its own: the frame's, over the page
+  await page.goto("/privacy");
+  await page.locator(".pub-acts .btn-ghost").click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page).toHaveURL(/\/privacy$/);
+  await page.getByRole("dialog").getByRole("button", { name: "Close" }).click();
+  // a list's page: its own reason, and back on the same page, signed in
+  await page.goto("/screens");
+  await page.locator(".pub-acts .btn-primary").click();
+  const box = page.getByRole("dialog");
+  await expect(box.getByText("Create a free account to run every screen and save your own.")).toBeVisible();
+  await signUpInBox(box, "header");
+  await expect(page.locator(".pub-acts").getByRole("button", { name: "Back to the app" })).toBeVisible({ timeout: 15000 });
+  await expect(page).toHaveURL(/\/screens$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Indian stock screens" })).toBeVisible();
+});
+
 test("S-H2 robots.txt and the sitemap", async ({ request }) => {
   expect(await (await request.get("/robots.txt")).text()).toContain("Sitemap: https://jocularinsights.in/sitemap.xml");
   const sm = await request.get("/sitemap.xml");
@@ -66,7 +116,7 @@ test("S-H2 robots.txt and the sitemap", async ({ request }) => {
 test("S-H3 a strategy's page and the results calendar are open to everyone; a company opens its page @phone", async ({ page, request }) => {
   const html = await (await request.get("/screens/high-quality-compounders")).text();
   // the title in the words people search for (25 Oct 2026), with today's count
-  expect(html).toMatch(/<title>[^<]+: \d+ today \| Jocular Insights<\/title>/);
+  expect(html).toMatch(/<title>[^<]+: \d+ today(?: \| Jocular Insights)?<\/title>/);
   expect(html).toMatch(/<h1>[^<]*High Quality Compounders<\/h1>/);
   expect(html).toMatch(/<link rel="canonical" href="https:\/\/jocularinsights\.in\/screens\/high-quality-compounders"/);
   expect(html).toMatch(/href="\/stock\/[A-Z0-9&%-]+"/);
@@ -143,7 +193,7 @@ test("S-H6 stock lists: an index's companies, a theme, a price band; in the site
 
 test("S-H7 latest results: who just reported, with figures in the titles; in the sitemap; a company opens its results @phone", async ({ page, request }) => {
   const html = await (await request.get("/results")).text();
-  expect(html).toMatch(/<title>Q\d FY\d\d results today: latest quarterly results of NSE companies \| Jocular Insights<\/title>/);
+  expect(html).toMatch(/<title>Q\d FY\d\d results today: latest NSE company results(?: \| Jocular Insights)?<\/title>/);
   expect(html).toMatch(/<link rel="canonical" href="https:\/\/jocularinsights\.in\/results"/);
   expect(await (await request.get("/sitemap-details.xml")).text()).toContain("<loc>https://jocularinsights.in/results</loc>");
   // a company's results page leads with its figures (Google shows the title)
@@ -183,5 +233,19 @@ test("S-H8 screens, sectors, lists and the calendar draw their companies with /a
     // not the placeholder a page shows while it waits for its data
     await expect(app.getByRole("heading", { level: 1, name: /^(Stock list|Sector|Stock screen)$/ }), path).toHaveCount(0);
     if (links) await expect.poll(() => app.locator(links).count(), { message: path }).toBeGreaterThan(5);
+  }
+});
+
+// 9 Nov 2026: a hidden term tip ("moats", near the right edge) widened the
+// screens' pages on a phone; the page scrolled sideways and the sign-up box
+// stretched past the screen. (Against the page's own width: on a phone the
+// window widens with the page, so innerWidth can't tell.)
+test("S-H11 the public pages fit a phone's screen: nothing scrolls sideways @phone", async ({ page, isMobile }) => {
+  test.skip(!isMobile, "a phone's width");
+  for (const path of ["/", "/screens", "/screens/high-quality-compounders", "/sectors", "/sector/information-technology", "/lists", "/lists/nifty-50-stocks", "/results-calendar", "/results", "/learn", "/stock/TCS", "/privacy"]) {
+    await page.goto(path);
+    await page.waitForLoadState("networkidle");
+    const over = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(over, `${path} scrolls sideways`).toBeLessThanOrEqual(1);
   }
 });

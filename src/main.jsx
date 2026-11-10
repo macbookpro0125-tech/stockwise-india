@@ -46,6 +46,9 @@ try {
   // and a screen's, sector's or list's page (PublicLists.jsx, server/seo.js listData)
   const list = document.getElementById("public-list-data");
   if (list) window.__PUBLIC_LIST__ = JSON.parse(list.textContent);
+  // an address that isn't a page: the server answered 404 (seo.js notFoundPageHtml)
+  const missing = document.getElementById("not-found");
+  if (missing) window.__NOT_FOUND__ = JSON.parse(missing.textContent);
 } catch {}
 
 // The installed app's frame (public/sw.js) — built copies only: the dev server
@@ -107,4 +110,8 @@ window.__appStarted = true;
 try {
   fetch("/api/visit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path: location.pathname, referrer: document.referrer }), keepalive: true, credentials: "omit" }).catch(() => {});
 } catch {}
+// The page this visit began on and the link it came from, kept for this tab
+// only, and sent only with a sign-up: so the owner's page can count which
+// pages bring new accounts (server/visits.js countSignup, 9 Nov 2026)
+try { if (!sessionStorage.getItem("ji-visit")) sessionStorage.setItem("ji-visit", JSON.stringify({ landing: location.pathname, referrer: document.referrer || "" })); } catch {}
 document.getElementById("boot-guard")?.remove();

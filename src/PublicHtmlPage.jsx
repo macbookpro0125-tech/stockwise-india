@@ -35,7 +35,7 @@ export default function PublicHtmlPage({ path, signedIn }) {
   };
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
-      <PublicHeader signedIn={signedIn} onSignIn={() => join(null, "signin")} onJoin={() => join(null)} />
+      <PublicHeader signedIn={signedIn} onSignIn={() => join(null, "signin")} onJoin={() => join("Create a free account to see each company's full analysis.")} />
       {error && <p className="nw-empty" style={{ padding: 20 }}>{error}</p>}
       {!page && !error && <div className="nw-skel" role="status" aria-label="Loading" style={{ padding: 20 }}>{[0, 1, 2].map(i => <span key={i} />)}</div>}
       {/* the server's own HTML (every value escaped there: seo-pages.js) */}

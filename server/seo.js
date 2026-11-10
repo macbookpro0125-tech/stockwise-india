@@ -26,6 +26,8 @@ import {
 } from "../src/screener-page-content.js";
 
 export const SITE = "https://jocularinsights.in";
+import { pageTitle, stockTitle } from "../src/pageTitle.js";
+import { niceName } from "../src/stockName.js";
 // (a function, read when the sitemap is made: seo-lists.js imports from here)
 import { LIST_PATHS } from "./seo-lists.js";
 import { stockStory, SECTOR_PATHS } from "./seo-story.js";
@@ -294,11 +296,11 @@ export function methodologyPageHtml(template) {
     url: canonical,
     publisher: { "@type": "Organization", name: "Jocular Insights", url: SITE },
   };
-  const head = `<title>${esc(METHODOLOGY_TITLE)} | Jocular Insights</title>
+  const head = `<title>${esc(pageTitle(METHODOLOGY_TITLE))}</title>
 <meta name="description" content="${esc(shortDesc(METHODOLOGY_DESCRIPTION))}" />
 <link rel="canonical" href="${esc(canonical)}" />
 <meta property="og:type" content="website" />
-<meta property="og:title" content="${esc(METHODOLOGY_TITLE)} | Jocular Insights" />
+<meta property="og:title" content="${esc(pageTitle(METHODOLOGY_TITLE))}" />
 <meta property="og:description" content="${esc(METHODOLOGY_DESCRIPTION)}" />
 <meta property="og:url" content="${esc(canonical)}" />
 <script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\\u003c")}</script>`;
@@ -330,11 +332,11 @@ export function stockScreenerPageHtml(template) {
     about: { "@type": "SoftwareApplication", name: "Jocular Insights", applicationCategory: "FinanceApplication", operatingSystem: "Web" },
     publisher: { "@type": "Organization", name: "Jocular Insights", url: SITE },
   };
-  const head = `<title>${esc(SCREENER_PAGE_TITLE)} | Jocular Insights</title>
+  const head = `<title>${esc(pageTitle(SCREENER_PAGE_TITLE))}</title>
 <meta name="description" content="${esc(shortDesc(SCREENER_PAGE_DESCRIPTION))}" />
 <link rel="canonical" href="${esc(canonical)}" />
 <meta property="og:type" content="website" />
-<meta property="og:title" content="${esc(SCREENER_PAGE_TITLE)} | Jocular Insights" />
+<meta property="og:title" content="${esc(pageTitle(SCREENER_PAGE_TITLE))}" />
 <meta property="og:description" content="${esc(SCREENER_PAGE_DESCRIPTION)}" />
 <meta property="og:url" content="${esc(canonical)}" />
 <script type="application/ld+json">${JSON.stringify(ld).replace(/</g, "\\u003c")}</script>`;
@@ -354,7 +356,7 @@ export function stockPageHtml(template, symbol) {
   const s = publicStock(symbol);
   if (!s) return null;
   const n = plain(s.name);
-  const title = `${n} share price, fair value, P/E & results | ${s.symbol} | Jocular Insights`;
+  const title = stockTitle(niceName(s.name), s.symbol);
   const desc = describe(s);
   const canonical = `${SITE}/stock/${encodeURIComponent(s.symbol)}`;
   const ld = {
@@ -435,4 +437,51 @@ export function aboutPageHtml(template) {
 <h2>Contact</h2>
 <p>Write to <a href="mailto:jocularinsights@gmail.com">jocularinsights@gmail.com</a> — for a figure that looks wrong, a question, or anything else.</p></main>`;
   return pageHtml(template, { title: `${ABOUT_TITLE} | Indian stock market research`, desc: ABOUT_DESCRIPTION, canonical, ld, body });
+}
+
+// /privacy and /disclaimer, written for search engines (9 Nov 2026, the SEO
+// audit: both were the empty app under the front page's title, with no
+// canonical address). The page's own title, description, address, heading
+// and opening words; the app draws the full text from LegalPages.jsx, which
+// needs no data, so the whole page is there once it starts. Keep the opening
+// words the same as LegalPages.jsx's.
+const legalPage = (template, { path, name, desc, updated, opening, more }) => {
+  const canonical = `${SITE}${path}`;
+  const ld = { "@context": "https://schema.org", "@type": "WebPage", name, description: desc, url: canonical };
+  const body = `<main class="seo-stock seo-methodology"><p><a href="/">Jocular Insights</a> › ${esc(name)}</p>
+<h1>${esc(name)}</h1>${updated ? `<p>Last updated ${esc(updated)}</p>` : ""}
+${opening.map(p => `<p>${p}</p>`).join("\n")}
+<p>${more}</p>
+<p><a href="/privacy">Privacy policy</a> · <a href="/disclaimer">Disclaimer</a> · <a href="/about">About</a> · <a href="/help">How the figures work</a> · <a href="/methodology">Methodology</a></p></main>`;
+  return pageHtml(template, { title: pageTitle(name), desc, canonical, ld, body });
+};
+export function privacyPageHtml(template) {
+  return legalPage(template, {
+    path: "/privacy", name: "Privacy policy", updated: "10 November 2026",
+    desc: "What Jocular Insights keeps about you, why, and how to delete it. No personal data sold; visits counted on our own server, without cookies.",
+    opening: ["This page explains what Jocular Insights keeps about you, why, and how to delete it. In short: we use your account and saved data to provide the service, and we don't sell your personal data. The website uses no analytics services — we only count visits anonymously on our own server, without cookies. The website may show ads from Google AdSense and the mobile apps ads from Google AdMob, which process ad-related information as explained below. We don't send Google your account or saved investing data."],
+    more: "The full policy covers what we keep on our server and why, how long we keep it, how ads work, and how to delete your account and everything in it.",
+  });
+}
+export function disclaimerPageHtml(template) {
+  return legalPage(template, {
+    path: "/disclaimer", name: "Disclaimer", updated: null,
+    desc: "Jocular Insights is an educational research tool, not investment advice. We are not registered with SEBI as an investment adviser or research analyst.",
+    opening: ["<strong>Jocular Insights is an educational research tool.</strong> Nothing on this site is investment advice, a research report, or a recommendation to buy, sell or hold any security.", "We are <strong>not registered with SEBI</strong> (the Securities and Exchange Board of India) as an investment adviser or a research analyst."],
+    more: "The full disclaimer explains how the numbers are made, where the data comes from and its limits, and what to check before relying on any figure.",
+  });
+}
+
+// An address that isn't a page: answered 404 (http-server.js), never with the
+// front page under a 200 — a "soft 404" to Google (9 Nov 2026, the SEO audit).
+// A way on for the person, noindex for search engines, and the address it was
+// for, so the app keeps saying so (main.jsx, App.jsx NotFoundPage).
+export function notFoundPageHtml(template, path) {
+  const body = `<main class="seo-stock seo-methodology"><h1>Page not found</h1>
+<p>There's no page at this address. It may have moved, or the link may have a typing mistake.</p>
+<ul><li><a href="/">The front page</a></li><li><a href="/screens">Stock screens</a></li><li><a href="/sectors">Sectors</a> and <a href="/lists">stock lists</a></li><li><a href="/results">Latest results</a> and the <a href="/results-calendar">results calendar</a></li><li><a href="/learn">Learn</a></li></ul></main><script id="not-found" type="application/json">${JSON.stringify(String(path ?? "")).replace(/</g, "\\u003c")}</script>`;
+  return pageHtml(template, { title: "Page not found | Jocular Insights", desc: "There's no page at this address on Jocular Insights.", canonical: `${SITE}/`, ld: { "@context": "https://schema.org", "@type": "WebPage", name: "Page not found" }, body })
+    .replace(/<link rel="canonical"[^>]*>\n?/, "")
+    .replace(/<meta property="og:url"[^>]*>\n?/, "")
+    .replace("</head>", '<meta name="robots" content="noindex" />\n</head>');
 }

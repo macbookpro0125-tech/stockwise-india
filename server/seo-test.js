@@ -79,7 +79,7 @@ assert.equal(publicStock("NOT-A-COMPANY"), null);
 const template = `<!doctype html><html><head><title>Jocular Insights — NSE stock screener</title><meta name="description" content="generic" /></head><body><div id="root"></div></body></html>`;
 const html = stockPageHtml(template, sym);
 assert.equal((html.match(/<title>/g) ?? []).length, 1, "one title, the company's");
-assert.match(html, new RegExp(`<title>[^<]*\\| ${sym} \\| Jocular Insights</title>`));
+assert.match(html, new RegExp(`<title>[^<]*\\| ${sym}(?: \\| Jocular Insights)?</title>`));
 assert.equal((html.match(/<meta name="description"/g) ?? []).length, 1, "one description, the company's");
 assert.doesNotMatch(html, /content="generic"/);
 assert.match(html, new RegExp(`<link rel="canonical" href="https://jocularinsights.in/stock/${encodeURIComponent(sym)}"`));
@@ -95,7 +95,7 @@ assert.ok(hqc.companies.every((c, i, a) => i === 0 || (a[i - 1].quality ?? -1) >
 const sp = screenPageHtml(template, "high-quality-compounders");
 assert.equal((sp.match(/<title>/g) ?? []).length, 1);
 // titled in the words people search for it (screen-guides.js), the name in the heading
-assert.match(sp, /<title>High quality stocks India with high ROCE and low debt: \d+ today \| Jocular Insights<\/title>/);
+assert.match(sp, /<title>High quality stocks India with high ROCE and low debt: \d+ today(?: \| Jocular Insights)?<\/title>/);
 assert.match(sp, /<h1>[^<]*High Quality Compounders<\/h1>/);
 assert.match(sp, /<h2>Limitations<\/h2>/);
 assert.match(sp, /<link rel="canonical" href="https:\/\/jocularinsights\.in\/screens\/high-quality-compounders"/);
@@ -183,3 +183,24 @@ console.log("ok: every screen has its guide; joined and left are worked out agai
   assert.equal(nseClassification({}, known), null);
 }
 console.log("ok: financials, results and call pages; NSE's classification");
+
+// An address that isn't a page, and the two legal pages, written for search
+// engines (9 Nov 2026, the SEO audit's step 4)
+{
+  const template = '<html><head><title>x</title></head><body><div id="root"></div></body></html>';
+  const { notFoundPageHtml, privacyPageHtml, disclaimerPageHtml } = await import("./seo.js");
+  const nf = notFoundPageHtml(template, "/blog</script><script>alert(1)</script>");
+  assert.match(nf, /<title>Page not found \| Jocular Insights<\/title>/);
+  assert.match(nf, /<meta name="robots" content="noindex" \/>/);
+  assert.ok(!/rel="canonical"|og:url/.test(nf), "a missing page names no address of its own");
+  assert.ok(!nf.includes("</script><script>alert(1)"), "the address can't close the script it's written in");
+  assert.ok(nf.includes('<script id="not-found" type="application/json">"/blog\\u003c/script>'), "the address, for the app");
+  assert.ok((nf.match(/<a href="\/[a-z-]*">/g) ?? []).length >= 6, "a way on: the main pages");
+  for (const [html, path, name] of [[privacyPageHtml(template), "/privacy", "Privacy policy"], [disclaimerPageHtml(template), "/disclaimer", "Disclaimer"]]) {
+    assert.match(html, new RegExp(`<link rel="canonical" href="https://jocularinsights\\.in${path}"`));
+    assert.match(html, new RegExp(`<title>${name}(?: \\| Jocular Insights)?</title>`));
+    assert.ok(html.includes(`<h1>${name}</h1>`) && !/noindex/.test(html), `${path}: its heading, and open to search engines`);
+    assert.ok(/not registered with SEBI|don't sell your personal data/.test(html), `${path}: its opening words`);
+  }
+}
+console.log("Not-found and legal page checks passed.");

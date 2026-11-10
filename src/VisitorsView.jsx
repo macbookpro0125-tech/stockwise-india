@@ -13,7 +13,7 @@ const weekName = d => `Week of ${new Intl.DateTimeFormat("en-IN", { day: "numeri
 // A page's address, as words
 const PAGE_NAMES = { "/": "Front page", "/about": "About", "/help": "Help", "/methodology": "Methodology", "/privacy": "Privacy policy", "/disclaimer": "Disclaimer", "/stock-screener-india": "Stock screener (guide)", "/screens": "All screens", "/sectors": "All sectors", "/lists": "All lists", "/results-calendar": "Results calendar", "/results": "Latest results", "/explore": "Explore", "/news": "News", "/learn": "Guides", "/reset-password": "Reset password", Other: "Other addresses" };
 const words = slug => { const t = slug.replace(/-/g, " "); return t.charAt(0).toUpperCase() + t.slice(1); };
-const pageName = k => PAGE_NAMES[k] ?? k.replace(/^\/stock\//, "Company · ").replace(/^\/(sector|screens|learn)\/(.+)$/, (_, kind, slug) => `${{ sector: "Sector", screens: "Screen", learn: "Guide" }[kind]} · ${words(slug)}`);
+const pageName = k => PAGE_NAMES[k] ?? k.replace(/^\/stock\//, "Company · ").replace(/^\/(sector|screens|learn|lists)\/(.+)$/, (_, kind, slug) => `${{ sector: "Sector", screens: "Screen", learn: "Guide", lists: "List" }[kind]} · ${words(slug)}`);
 // A country's name from its two-letter code
 const countryNames = (() => { try { return new Intl.DisplayNames(["en"], { type: "region" }); } catch { return null; } })();
 const countryName = c => (c === "Unknown" ? "Unknown" : countryNames?.of(c) ?? c);
@@ -24,7 +24,8 @@ const hourName = h => { const n = Number(h); return `${n % 12 || 12} ${n < 12 ? 
 // (country, device, hour), the visits from before the list began counting
 // are shown as one row, so the list adds up to the total (28 Oct 2026)
 const EARLIER = "Before this list started";
-function Breakdown({ id, title, note, rows: given = [], name = k => k, first = 8, total = null }) {
+// unit: what's counted (sign-ups have one count, not visitors and page loads)
+function Breakdown({ id, title, note, rows: given = [], name = k => k, first = 8, total = null, unit = null }) {
   const [all, setAll] = useState(false);
   const counted = given.reduce((n, r) => n + r.visitors, 0);
   const rows = total != null && total > counted ? [...given, { key: EARLIER, visitors: total - counted, pageLoads: null }] : given;
@@ -36,12 +37,12 @@ function Breakdown({ id, title, note, rows: given = [], name = k => k, first = 8
       <h3 className="ex-h" id={id}>{title}</h3>
       {note && <p className="vs-note">{note}</p>}
       <table className="vs-table">
-        <thead><tr><th>{title.split(" ")[0] === "Pages" ? "Page" : "Name"}</th><th>Visitors</th><th>Page loads</th></tr></thead>
+        <thead><tr><th>{title.split(" ")[0] === "Pages" ? "Page" : "Name"}</th><th>{unit ?? "Visitors"}</th>{!unit && <th>Page loads</th>}</tr></thead>
         <tbody>{shown.map(r => (
           <tr key={r.key}>
             <th className={r.key === EARLIER ? "vs-earlier" : undefined}>{r.key === EARLIER ? EARLIER : name(r.key)}</th>
             <td><span className="vs-bar" style={{ width: `${(r.visitors / max) * 100}%` }} aria-hidden="true" />{fmt(r.visitors)}</td>
-            <td>{r.pageLoads == null ? "—" : fmt(r.pageLoads)}</td>
+            {!unit && <td>{r.pageLoads == null ? "—" : fmt(r.pageLoads)}</td>}
           </tr>
         ))}</tbody>
       </table>
@@ -127,6 +128,9 @@ export default function VisitorsView() {
           {Object.keys(s.detail[period] ?? {}).length === 0 && <p className="nw-empty">No detail yet{s.detailSince ? "" : " — it starts with the next visit"}.</p>}
           <Breakdown id="vs-pages" title="Pages people arrived on" note="The page a visit started on, from Google, a link or a typed address. Someone who opened two pages counts on both, so this adds up to more than the visitors." rows={s.detail[period]?.page} name={pageName} />
           <Breakdown id="vs-sources" title="Where they came from" note="The site a link was on. Typed, bookmark or app: no link, as when the address is typed, saved, or opened in our app." rows={s.detail[period]?.source} />
+          {/* which pages and sites bring new accounts (visits.js countSignup, 9 Nov 2026) */}
+          <Breakdown id="vs-signup-pages" title="Pages that brought sign-ups" note="The page a new account's visit started on: where the people who signed up first arrived. Not known: sign-ups from before 9 Nov 2026, or without that first page." rows={s.detail[period]?.signup_page} name={k => (k === "Not known" ? k : pageName(k))} unit="Sign-ups" />
+          <Breakdown id="vs-signup-sources" title="Where sign-ups came from" note="The site that visit's link was on, as above." rows={s.detail[period]?.signup_source} unit="Sign-ups" />
           <Breakdown id="vs-countries" title="Country" note="From each visitor's internet address, looked up on our server; only the country is kept." rows={s.detail[period]?.country} name={countryName} total={sum("visitors")} />
           <Breakdown id="vs-devices" title="Device" rows={s.detail[period]?.device} total={sum("visitors")} />
           <Hours rows={s.detail[period]?.hour} />

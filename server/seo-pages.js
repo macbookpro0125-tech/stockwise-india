@@ -14,13 +14,14 @@
 // Facts from filings and NSE's prices only: no fair value, nothing about
 // buying or selling. Publisher headlines aren't turned into pages (their words
 // aren't ours to republish); announcements are the companies' own filings.
+import { pageTitle } from "../src/pageTitle.js";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { allMetrics } from "./screen.js";
 import { loadMarketSnapshot } from "./market-data.js";
 import { DATA_DIR } from "./paths.js";
 import { niceName } from "../src/stockName.js";
-import { GUIDES, GUIDES_UPDATED, guideBySlug } from "./guides.js";
+import { GUIDES, GUIDES_UPDATED, GUIDE_PUBLISHED, guideBySlug } from "./guides.js";
 import { updatedLine } from "./updated-line.js";
 
 const SITE = "https://jocularinsights.in";
@@ -102,7 +103,7 @@ function financialsPage(m) {
     m.salesGrowth5y != null && `Sales grew ${num(m.salesGrowth5y)}% a year over five years${m.profitGrowth5y != null ? `, profit ${num(m.profitGrowth5y)}% a year` : ""}.`,
   ].filter(Boolean).join(" ");
   return {
-    title: `${n} balance sheet, profit & loss and cash flow | ${m.symbol} | Jocular Insights`,
+    title: pageTitle(`${n} balance sheet, profit & loss, cash flow | ${m.symbol}`),
     desc: `${n} (NSE: ${m.symbol}) financial statements: profit and loss, balance sheet and cash flow for ${heads[0]}–${heads[heads.length - 1]}, from its NSE filings.`,
     canonical: `${SITE}/stock/${encodeURIComponent(m.symbol)}/financials`,
     body: `<main class="seo-stock seo-methodology">${crumb(m, "Financials")}<h1>${esc(n)} financial statements</h1><p>${esc(lede)}</p>
@@ -241,7 +242,7 @@ export function resultsTitle(n, label, symbol, q, sy, py) {
     : py != null && isFinite(py) && q.profitCr / (1 + py / 100) > 0 ? `profit ${py >= 0 ? "up" : "down"} ${Math.abs(py).toFixed(Math.abs(py) >= 100 ? 0 : 1)}% to ₹${crs(q.profitCr)} cr`
     : `profit ₹${crs(q.profitCr)} cr`;
   const facts = [profit, move(sy, "sales")].filter(Boolean);
-  return facts.length ? `${n} ${label} results: ${facts.join(", ")} | ${symbol}` : `${n} ${label} results: sales, profit and margin | ${symbol} | Jocular Insights`;
+  return facts.length ? `${n} ${label} results: ${facts.join(", ")} | ${symbol}` : pageTitle(`${n} ${label} results: sales, profit and margin | ${symbol}`);
 }
 
 // ── /results ─────────────────────────────────────────────────────────────
@@ -280,7 +281,7 @@ function latestResultsPage() {
   // ₹5,000 crore and up, so a tiny company's jump from a small base doesn't lead
   const ups = days.flatMap(d => d.companies).filter(c => c.marketCapCr >= 5000 && c.profitCr > 0 && c.profitYoY != null && isFinite(c.profitYoY)).sort((a, b) => b.profitYoY - a.profitYoY).slice(0, 5);
   return {
-    title: `${q} results today: latest quarterly results of NSE companies | Jocular Insights`,
+    title: pageTitle(`${q} results today: latest NSE company results`),
     desc: `${total} NSE companies' ${q} results filed${newest ? ` up to ${day(newest)}` : ""}: sales and net profit against a year earlier, newest first, each linked to its full results.`,
     canonical: `${SITE}/results`,
     body: `<main class="seo-stock seo-methodology"><p>${link("/", "Jocular Insights")} › Latest results</p><h1>Latest ${esc(q)} results</h1>${updatedLine()}
@@ -308,7 +309,7 @@ function earningsCallPage(m) {
   ].join(" ");
   const section = c => `<h2>Earnings call, ${esc(day(c.date) ?? "")}</h2><ul>${c.points.map(p => `<li>${esc(p.text)}${p.page ? ` <small>(page ${esc(p.page)})</small>` : ""}</li>`).join("")}</ul>${c.url ? `<p>${link(c.url, "The transcript on NSE")}</p>` : ""}`;
   return {
-    title: `${n} earnings call${latest ? ` highlights, ${day(latest.date)}` : ""} and next results date | ${m.symbol} | Jocular Insights`,
+    title: pageTitle(`${n} earnings call${latest ? ` highlights, ${day(latest.date)}` : ""} and next results date | ${m.symbol}`),
     desc: lede.slice(0, 300),
     canonical: `${SITE}/stock/${encodeURIComponent(m.symbol)}/earnings-call`,
     // nothing written yet: a page search engines should skip
@@ -328,7 +329,7 @@ async function explorePage() {
   const mv = list => `<ol>${list.map(r => `<li>${link(`/stock/${encodeURIComponent(r.symbol)}`, niceName(r.name))} ${esc(pct(r.change))} <small>₹${esc(num(r.close, 2))}</small></li>`).join("")}</ol>`;
   const asOf = day(movers.asOf);
   return {
-    title: "Indian stock market today: Nifty, sector indices and top movers | Jocular Insights",
+    title: pageTitle("Indian stock market today: Nifty, sectors, top movers"),
     desc: `The NSE market at the ${asOf ?? "latest"} close: Nifty 50, Bank, Midcap and every sector index; the day's biggest gainers and losers; and the companies reporting results this week.`,
     canonical: `${SITE}/explore`,
     body: `<main class="seo-stock seo-methodology"><p>${link("/", "Jocular Insights")} › Explore</p><h1>The market at the ${esc(asOf ?? "latest")} close</h1>
@@ -349,7 +350,7 @@ async function newsPage() {
   const byDay = new Map();
   for (const f of filings) { const d = String(f.time).slice(0, 10); (byDay.get(d) ?? byDay.set(d, []).get(d)).push(f); }
   return {
-    title: "NSE company announcements today: results, dividends, orders | Jocular Insights",
+    title: pageTitle("NSE company announcements today: results, dividends"),
     desc: "The latest announcements listed companies filed with NSE — results, dividends and splits, orders and deals, management changes — each linked to the company's figures.",
     canonical: `${SITE}/news`,
     // NSE didn't answer: nothing worth indexing this time
@@ -365,7 +366,7 @@ ${[...byDay].map(([d, list]) => `<h2>${esc(day(d))}</h2><ul>${list.map(f => `<li
 // The guides' own HTML, written in guides.js; the titles and descriptions escaped
 function learnIndexPage() {
   return {
-    title: "Learn to read Indian stocks: plain-English guides | Jocular Insights",
+    title: pageTitle("Learn: plain-English guides to Indian stocks"),
     desc: "Short guides to reading an Indian company's results, balance sheet, cash flow and shareholding, and what P/E, ROE, ROCE and debt to equity really tell you.",
     canonical: `${SITE}/learn`,
     body: `<main class="seo-stock seo-methodology"><p>${link("/", "Jocular Insights")} › Learn</p><h1>Learn to read a company's figures</h1>
@@ -377,10 +378,10 @@ function learnIndexPage() {
 function guidePage(g) {
   const i = GUIDES.indexOf(g), next = GUIDES[(i + 1) % GUIDES.length];
   return {
-    title: `${g.title} | Jocular Insights`,
+    title: pageTitle(g.title),
     desc: g.desc,
     canonical: `${SITE}/learn/${g.slug}`,
-    ld: { "@context": "https://schema.org", "@type": "Article", headline: g.title, description: g.desc, dateModified: GUIDES_UPDATED, author: { "@type": "Organization", name: "Jocular Insights" }, publisher: { "@type": "Organization", name: "Jocular Insights", url: `${SITE}/` }, mainEntityOfPage: `${SITE}/learn/${g.slug}` },
+    ld: { "@context": "https://schema.org", "@type": "Article", headline: g.title, description: g.desc, image: `${SITE}/og/default.png`, datePublished: GUIDE_PUBLISHED[g.slug] ?? GUIDES_UPDATED, dateModified: GUIDES_UPDATED, author: { "@type": "Organization", name: "Jocular Insights" }, publisher: { "@type": "Organization", name: "Jocular Insights", url: `${SITE}/` }, mainEntityOfPage: `${SITE}/learn/${g.slug}` },
     body: `<main class="seo-stock seo-methodology"><p>${link("/", "Jocular Insights")} › ${link("/learn", "Learn")}</p><article><h1>${esc(g.title)}</h1>
 <p><b>${esc(g.desc)}</b></p>
 ${g.sections.map(([h, html]) => `<h2>${esc(h)}</h2>${html}`).join("\n")}

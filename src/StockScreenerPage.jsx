@@ -1,3 +1,4 @@
+import { pageTitle } from "./pageTitle.js";
 import { useEffect } from "react";
 import { PublicPage } from "./LegalPages.jsx";
 import { SiteLink } from "./site.jsx";
@@ -12,7 +13,7 @@ const heading = { fontSize: 16, fontWeight: 400, color: "var(--t1)", margin: "30
 const paragraph = { fontSize: 14, lineHeight: 1.7, color: "var(--t2)", margin: "0 0 12px" };
 
 export default function StockScreenerPage({ signedIn }) {
-  useEffect(() => { document.title = `${SCREENER_PAGE_TITLE} | Jocular Insights`; }, []);
+  useEffect(() => { document.title = pageTitle(SCREENER_PAGE_TITLE); }, []);
   return (
     <PublicPage title={SCREENER_PAGE_TITLE} signedIn={signedIn} updated="23 October 2026">
       <p style={paragraph}>{SCREENER_PAGE_DESCRIPTION}</p>

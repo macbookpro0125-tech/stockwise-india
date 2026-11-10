@@ -1,8 +1,44 @@
 # Status
 
-_Last updated: 9 Nov 2026, by Claude (Opus) on branch `screeners-home`._
+_Last updated: 10 Nov 2026, by Claude (Opus) on branch `screeners-home`._
 
-## SEO sprint 1, batch 1 (9 Nov, late night): steps 2 and 3 of the audit
+## SEO sprint 1, batch 2 (10 Nov, early morning): steps 4–8 of the audit
+- **Step 4: real 404s, and the legal pages written for Google.**
+    - Any address that isn't a page answered 200 with the front page, a "soft 404" to Google. It now answers 404 with a "Page not found" page: noindex, with links to the main pages (`server/seo.js` `notFoundPageHtml`, `src/LegalPages.jsx` `NotFoundPage`). `src/App.jsx` keeps that page while the visitor stays on the address.
+    - The app's own addresses (`/`, `/builder`, `/measures`, `/reset-password`, `/chart/…`) still get the app. Unknown companies, screens, sectors, lists, guides and company sub-pages get the same 404 page.
+    - `/privacy` and `/disclaimer` are now written by the server (title, description, address, opening paragraphs), as `/help` and `/about` already were.
+    - `server/seo-test.js` checks the 404 page: noindex, no address of its own, and the visited address escaped so it can't break out of its script. It also checks the two legal pages.
+- **Step 5: titles.** Page titles now come from one place, `src/pageTitle.js`, shared by the server and the app so the two always match.
+    - The words people search come first. The site's name follows only when both fit in about 64 characters; a longer title keeps its own words instead.
+    - Company pages: "<name> share price, fair value, P/E & results | <SYMBOL>", the server's existing order (`server/seo-test.js` refuses "fair value &" in a title).
+    - Guides now carry the date each was first published (from git) and a picture in their Article markup.
+- **Step 6: speed.** AdSense's script (~300 KB) now loads after the page has loaded and gone quiet, not with it (`src/ads.jsx`). The `google-adsense-account` tag stays in the page head for the AdSense review.
+    - Not done: keeping pages in memory. First byte is ~0.4 s even for robots.txt, so it's the distance to Singapore, not page building.
+    - Not done: a small stylesheet for the public pages (see "For the owner").
+- **Step 7: which pages bring sign-ups.** A sign-up now carries the page its visit began on and the site it came from. These are kept for the browser tab (sessionStorage `ji-visit`) and sent only with a sign-up.
+    - The Visitors page shows "Pages that brought sign-ups" and "Where sign-ups came from" (`server/visits.js` `countSignup`).
+    - Covers email, phone and Google sign-ups. Counts only: nothing ties them to an account. The plan said to keep both on the account; totals answer the same question without storing anything new with an account.
+    - The privacy policy now says so (updated 10 November 2026). New accounts are among the counted totals. The browser tab keeps the visit's first page and the page that linked to it, sent only with a sign-up. A price alert asked for before signing up is kept in the tab for two minutes (step 8).
+- **Step 8: sign-up.**
+    - The header's "Create free account" opens the sign-up box over the page, with that page's reason, on every public page. It used to go to the front page. A page without a box of its own gets the frame's (`LegalPages.jsx` `PublicPage`).
+    - Signing up or in from a list, screen, sector or guide page now keeps the visitor on that page, signed in (`src/PublicJoin.jsx`).
+    - "Set a price alert" on a company's public page: once the account is made, the alert form opens on the company (`src/afterSignup.js`, `StockDetail.jsx`). The company's guided tour waits until it's closed.
+    - Lists of more than 20 companies get a second sign-up box after the list.
+- **Found and fixed on the way (live since 8 Nov):** on a phone, the screens' pages scrolled sideways, and the sign-up box stretched past the screen. The cause was the jargon tips added on 8 Nov: a hidden tip ("moats", near the right edge) still took room beside the page. Hidden tips now take no room, and a shown tip is kept on the screen (`index.css` `.jg::after`, `src/jargon.jsx`).
+- **Tests:** S-H9 (the alert form after sign-up), S-H10 (the header's sign-up keeps the visitor on the page) and S-H11 (no public page scrolls sideways on a phone). S-H11 fails without the fix. `server/seo-test.js` and `server/visits-test.js` updated.
+- **For the owner:**
+    - Please read the privacy policy's two new sentences ("How many new accounts were made" under visit counts, and the end of "What stays in your browser").
+    - The doc's open comment: must AdSense stay on every public page during Google's review? It stays for now, loaded once the page is quiet. If the `google-adsense-account` tag is enough for the review, dropping the script from public pages until approval would save ~300 KB a visit.
+    - The public pages still load the app's whole 461 KB stylesheet. A small one of their own is the biggest speed step left. It's a larger job (vite.config, index.css), best done as its own step.
+    - Optional: Cloudflare could cache the server-written pages at the edge, nearer visitors than Singapore. It's a dashboard setting, and the cache would need clearing at each evening's data update.
+
+## Live (10 Nov, 02:40 IST): SEO sprint 1, batch 1, steps 2 and 3 of the audit
+- Pushed at `a9c14f1` (160 passed, 28 skipped); live at 02:40 IST, 90 s after the push.
+- Checked live:
+    - robots.txt;
+    - the Render address's 301, with the query kept;
+    - `/api/public/` answers with noindex;
+    - the seven page types, drawn whole on a computer and a phone with `/api/` refused (133 company links on the IT sector page).
 - The audit is the Claude Doc https://claude.ai/artifact/H7a8tXmVbW2MFVS7qAytPe ("Jocular Insights SEO audit — Sprint 1"). The owner approved steps 1–8 and said "push it" (push each batch once every test passes). Step 1 was done in Cloudflare on 9 Nov: the "WWW to main domain" redirect's target was `https://jocularinsights.in${1}`, sending inner www pages to hosts like `jocularinsights.instock`. It's now `https://jocularinsights.in/${1}`, checked live.
 - **Step 2.** Google's renderer saw the screen, sector and list pages and the results calendar nearly empty: 80–120 words, with headings like "Stock list". The app replaced the server's page, then fetched its data from `/api/public/`, which robots.txt kept Google out of. Now:
     - each page carries its data beside its HTML (`server/seo.js` `listData`, used in `seo-lists.js` and `seo-collections.js`), as company pages already did;

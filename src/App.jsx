@@ -41,7 +41,7 @@ const DeskView = lazyPage(() => import("./DeskView.jsx"));
 const MarketsView = lazyPage(() => import("./MarketsView.jsx"));
 const named = (load, name) => lazyPage(() => load().then(m => ({ default: m[name] })));
 const legal = name => named(() => import("./LegalPages.jsx"), name);
-const PrivacyPage = legal("PrivacyPage"), DisclaimerPage = legal("DisclaimerPage"), HelpPage = legal("HelpPage"), AboutPage = legal("AboutPage"), MeasuresPage = legal("MeasuresPage");
+const PrivacyPage = legal("PrivacyPage"), DisclaimerPage = legal("DisclaimerPage"), HelpPage = legal("HelpPage"), AboutPage = legal("AboutPage"), MeasuresPage = legal("MeasuresPage"), NotFoundPage = legal("NotFoundPage");
 const lists = name => named(() => import("./PublicLists.jsx"), name);
 const ScreensIndexPage = lists("ScreensIndexPage"), ScreenPage = lists("ScreenPage"), ResultsCalendarPage = lists("ResultsCalendarPage"), SectorsIndexPage = lists("SectorsIndexPage"), SectorPage = lists("SectorPage"), ListsIndexPage = lists("ListsIndexPage"), ListPage = lists("ListPage");
 const MethodologyPage = lazyPage(() => import("./MethodologyPage.jsx"));
@@ -353,6 +353,8 @@ export default function App() {
     const started = Date.now();
     let timer;
     const check = () => {
+      // Not over the alert form a sign-up asked for (afterSignup.js): after it
+      if (document.getElementById("alert-dialog-title")) { timer = setTimeout(check, 300); return; }
       // A company with no scores never gets its tour; Discover's waits ~10 s
       if (document.querySelector(ready) || (want === "app" && Date.now() - started > 10000)) { setTourAsked(null); setTour(want); }
       else timer = setTimeout(check, 300);
@@ -375,6 +377,9 @@ export default function App() {
   // Signed in from a company's public page: into the app, on that company
   const intoAppHere = () => { setNotice(null); tabHistory.current = []; tabRef.current = "discover"; setTab("discover"); loadAccount(); };
 
+  // An address the server answered 404 for (main.jsx, seo.js notFoundPageHtml):
+  // the page says so, for as long as the visitor stays on that address
+  if (window.__NOT_FOUND__ && window.__NOT_FOUND__ === path) return pub(<NotFoundPage signedIn={!!account} />);
   // /privacy, /disclaimer and /help are for everyone, signed in or not
   if (path === "/privacy") return pub(<PrivacyPage signedIn={!!account} />);
   if (path === "/disclaimer") return pub(<DisclaimerPage signedIn={!!account} />);

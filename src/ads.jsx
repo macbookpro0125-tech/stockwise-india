@@ -64,16 +64,27 @@ function adsSetup() {
   return setup;
 }
 
-// The website's AdSense, when the server has it on: Google's script, once
+// The website's AdSense, when the server has it on: Google's script, once —
+// after the page has loaded and gone quiet (9 Nov 2026, the SEO audit: about
+// 300 KB of ad script loading with every public page held up a phone's first
+// view and kept its main thread busy). Cards asked for before then wait in
+// window.adsbygoogle, and Google fills them when its script arrives.
+const whenQuiet = run => {
+  const go = () => (typeof window.requestIdleCallback === "function" ? window.requestIdleCallback(run, { timeout: 4000 }) : setTimeout(run, 2000));
+  if (document.readyState === "complete") go(); else window.addEventListener("load", go, { once: true });
+};
 function webSetup(w) {
   if (!w || (w.mode !== "test" && w.mode !== "live") || !/^ca-pub-\d+$/.test(w.client ?? "") || !/^\d+$/.test(w.slot ?? "")) return null;
   if (!document.querySelector("script[data-adsense]")) {
-    const s = document.createElement("script");
-    s.async = true;
-    s.crossOrigin = "anonymous";
-    s.dataset.adsense = "";
-    s.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(w.client)}`;
-    document.head.appendChild(s);
+    whenQuiet(() => {
+      if (document.querySelector("script[data-adsense]")) return;
+      const s = document.createElement("script");
+      s.async = true;
+      s.crossOrigin = "anonymous";
+      s.dataset.adsense = "";
+      s.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(w.client)}`;
+      document.head.appendChild(s);
+    });
   }
   web = { client: w.client, slot: w.slot, testing: w.mode === "test" };
   return { web: true };

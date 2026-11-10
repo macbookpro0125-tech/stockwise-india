@@ -22,6 +22,7 @@ import { SCREEN_GUIDES } from "./screen-guides.js";
 import { loadSnapshots } from "./performance.js";
 import { updatedLine } from "./updated-line.js";
 import { termsHtml } from "../src/jargonTerms.js";
+import { HOME_TITLE, SCREENS_TITLE, CALENDAR_TITLE, SECTORS_TITLE, screenTitle, sectorTitle } from "../src/pageTitle.js";
 
 // as the app shows names: "Limited" off, capitals as words ("TATA CONSUMER PRODUCTS" → "Tata Consumer Products")
 const plain = name => niceName(name);
@@ -108,7 +109,7 @@ export function screenPageHtml(template, slug) {
   const canonical = `${SITE}/screens/${slug}`;
   // short enough for a search result (about 60 characters); the rules are in the description
   const g = s.guide;
-  const title = g ? `${g.search}: ${s.matched} today | Jocular Insights` : `${s.name}: ${s.matched} NSE stocks that match today | Jocular Insights`;
+  const title = screenTitle(s);
   const desc = `${s.matched} NSE companies match ${s.name} at the ${day(s.pricesDate) ?? "latest"} close: ${s.rules.join(", ")}. ${sentence(s.description)}`.trim();
   const rows = s.companies.map((c, i) => `<tr><td>${i + 1}</td><td>${link(`/stock/${encodeURIComponent(c.symbol)}`, c.name)} <small>${esc(c.symbol)}</small></td><td>${c.price == null ? "—" : `₹${esc(num(c.price, 2))}`}</td><td>${esc(crore(c.marketCapCr) ?? "—")}</td><td>${c.pe > 0 ? esc(num(c.pe)) : "—"}</td><td>${c.roe == null ? "—" : `${esc(num(c.roe))}%`}</td><td>${c.quality == null ? "—" : `${c.quality}/100`}</td></tr>`).join("");
   const ld = {
@@ -135,7 +136,7 @@ ${s.changes ? `<h2>What changed since ${esc(day(s.changes.since))}</h2><p>${s.ch
 export function screensIndexHtml(template) {
   const s = publicScreens();
   const canonical = `${SITE}/screens`;
-  const title = "Indian stock screens: NSE companies by quality, value, dividends and growth | Jocular Insights";
+  const title = SCREENS_TITLE;
   const desc = `${s.screens.length} ready-made screens of NSE companies — quality compounders, dividend payers, undervalued growth and more — with the companies that match at the ${day(s.pricesDate) ?? "latest"} close.`;
   const items = s.screens.map(x => `<li><h2>${link(`/screens/${x.slug}`, x.name)}</h2><p>${termsHtml(esc(sentence(x.description)))} ${x.matched} companies match${x.first.length ? `, including ${x.first.slice(0, 3).map(c => esc(c.name)).join(", ")}` : ""}.</p></li>`).join("");
   const ld = { "@context": "https://schema.org", "@type": "ItemList", name: "Stock screens", itemListElement: s.screens.map((x, i) => ({ "@type": "ListItem", position: i + 1, name: x.name, url: `${SITE}/screens/${x.slug}` })) };
@@ -147,7 +148,7 @@ export function resultsCalendarHtml(template) {
   const c = publicResultsCalendar();
   const canonical = `${SITE}/results-calendar`;
   const total = c.days.reduce((n, d) => n + d.count, 0);
-  const title = "Quarterly results calendar: NSE companies announcing results this week | Jocular Insights";
+  const title = CALENDAR_TITLE;
   const desc = `${total} NSE companies have board meetings for results in the next two weeks — dates from NSE's calendar, the largest companies first.`;
   const days = c.days.map(d => `<section><h2>${esc(day(d.date))} — ${d.count} ${d.count === 1 ? "company" : "companies"}</h2><ul>${d.companies.slice(0, 60).map(x => `<li>${link(`/stock/${encodeURIComponent(x.symbol)}`, x.name)}${x.sector ? ` <small>${esc(x.sector)}</small>` : ""}</li>`).join("")}</ul>${d.count > 60 ? `<p>And ${d.count - 60} more.</p>` : ""}</section>`).join("");
   const ld = { "@context": "https://schema.org", "@type": "WebPage", name: title, description: desc, url: canonical };
@@ -164,7 +165,7 @@ export function homePageHtml(template) {
   const c = publicResultsCalendar();
   const reporting = c.days.reduce((n, d) => n + d.count, 0);
   const soon = c.days.flatMap(d => d.companies.map(x => ({ ...x, date: d.date }))).sort((a, b) => (b.marketCapCr ?? 0) - (a.marketCapCr ?? 0)).slice(0, 12);
-  const title = "Indian Stock Market Screener & Quality Scores (NSE) | Jocular Insights";
+  const title = HOME_TITLE;
   const desc = "Screen every NSE-listed company with ready-made strategies, a quality score out of 100 from each company's own filings with every check explained, and results dates as they're announced. Free during early access.";
   const ld = {
     "@context": "https://schema.org",
@@ -202,7 +203,7 @@ ${soon.length ? `<ul>${soon.map(x => `<li>${link(`/stock/${encodeURIComponent(x.
 export function sectorsIndexHtml(template) {
   const s = publicSectors();
   const canonical = `${SITE}/sectors`;
-  const title = "NSE stocks by sector: every listed company, sector by sector | Jocular Insights";
+  const title = SECTORS_TITLE;
   const desc = `NSE-listed companies in ${s.sectors.length} sectors — IT, banks and financial services, pharma, FMCG, auto, capital goods and more — with each sector's companies, P/E and return on equity at the ${day(s.pricesDate) ?? "latest"} close.`;
   const items = s.sectors.map(x => `<li><h2>${link(`/sector/${x.slug}`, x.name)}</h2><p>${x.count} ${x.count === 1 ? "company" : "companies"}${x.largest.length ? `, the largest ${x.largest.map(c => esc(c.name)).join(", ")}` : ""}.</p></li>`).join("");
   const ld = { "@context": "https://schema.org", "@type": "ItemList", name: "NSE sectors", itemListElement: s.sectors.map((x, i) => ({ "@type": "ListItem", position: i + 1, name: x.name, url: `${SITE}/sector/${x.slug}` })) };
@@ -214,7 +215,7 @@ export function sectorPageHtml(template, slug) {
   const s = publicSector(slug);
   if (!s) return null;
   const canonical = `${SITE}/sector/${slug}`;
-  const title = `${s.name} stocks on NSE: ${s.count} companies by P/E, ROE and quality | Jocular Insights`;
+  const title = sectorTitle(s);
   const desc = `All ${s.count} NSE-listed ${s.name} companies at the ${day(s.pricesDate) ?? "latest"} close${s.medianPe ? `: median P/E ${num(s.medianPe)}` : ""}${s.medianRoe != null ? `, median return on equity ${num(s.medianRoe)}%` : ""}, with each company's price, P/E, ROE, debt and quality score.`;
   const intro = [
     `${s.count} companies listed on NSE are in ${s.name}, together worth ${crore(s.totalMarketCapCr)}.`,

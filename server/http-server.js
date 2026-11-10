@@ -46,7 +46,7 @@ import { savePushToken, removePushToken, pushReady, pushToUser } from "./push.js
 import { startNewsPush } from "./news-push.js";
 import { startScreenAlerts } from "./screen-alerts.js";
 import { niceName } from "../src/stockName.js";
-import { countBrowserVisit, countActive, visitStats, isOwner } from "./visits.js";
+import { countBrowserVisit, countActive, countSignup, visitStats, isOwner } from "./visits.js";
 import { startDigestJobs, weeklyEmailOn, setWeeklyEmail, unsubscribe } from "./digest.js";
 import { INDEXNOW_KEY, startIndexNow } from "./indexnow.js";
 import { OLD_SCREEN_SLUGS, publicScreen, publicScreens, publicResultsCalendar, screenPageHtml, screensIndexHtml, resultsCalendarHtml, homePageHtml, sectorsIndexHtml, sectorPageHtml } from "./seo-lists.js";
@@ -69,7 +69,7 @@ import { summarizeFiling } from "./filing-summary.js";
 import { logoFor } from "./logos.js";
 import { PRESETS } from "./presets.js";
 import { DIST_DIR } from "./paths.js";
-import { robotsTxt, sitemapXml, sitemapPart, changedPageEntries, SITE, publicStock, stockPageHtml, methodologyPageHtml, stockScreenerPageHtml, aboutPageHtml, helpPageHtml, pageHtml } from "./seo.js";
+import { robotsTxt, sitemapXml, sitemapPart, changedPageEntries, SITE, publicStock, stockPageHtml, methodologyPageHtml, stockScreenerPageHtml, aboutPageHtml, helpPageHtml, pageHtml, privacyPageHtml, disclaimerPageHtml, notFoundPageHtml } from "./seo.js";
 import { HttpError, badRequest, payloadTooLarge } from "./http-errors.js";
 import { companyVideos } from "./videos.js";
 import { searchName } from "../src/webLinks.js";
@@ -132,6 +132,13 @@ const CONTENT_TYPES = {
 // The website's AdSense publisher (not secret: it's in every page's head)
 const ADSENSE_PUB = /^pub-\d+$/.test(process.env.ADSENSE_PUBLISHER_ID ?? "") ? process.env.ADSENSE_PUBLISHER_ID : "pub-4001463380481442";
 
+// The addresses the app itself draws that aren't written by the server first
+// (App.jsx): the front page, the Screen builder, the measures glossary, the
+// password reset a link opens, and a chart on its own page. Every page the
+// server writes is answered before serveStatic is reached.
+const APP_PATHS = new Set(["/", "/builder", "/measures", "/reset-password"]);
+const isAppPath = path => APP_PATHS.has(path) || /^\/chart\/[^/]+\/?$/.test(path);
+
 function serveStatic(req, pathname, res) {
   if (!existsSync(DIST_DIR)) return false;
   let decoded;
@@ -147,7 +154,15 @@ function serveStatic(req, pathname, res) {
       res.end("Not found");
       return true;
     }
-    // Anything else that isn't a file is the app itself (it has no other pages)
+    // Anything else that isn't a file is the app itself — at the addresses the
+    // app has. Any other address is answered 404 with a page that says so (9
+    // Nov 2026, the SEO audit: every unknown address had answered 200 with the
+    // empty app under the front page's title, a "soft 404" to Google)
+    if (!isAppPath(decoded)) {
+      res.writeHead(404, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
+      res.end(req.method === "HEAD" ? undefined : notFoundPageHtml(readFileSync(join(DIST_DIR, "index.html"), "utf-8"), pathname));
+      return true;
+    }
     file = join(DIST_DIR, "index.html");
   }
   const size = statSync(file).size;
@@ -408,10 +423,10 @@ export function createApp() {
           android: { native: "ca-app-pub-3940256099942544/2247696110", rewarded: "ca-app-pub-3940256099942544/5224354917" },
           ios: { native: "ca-app-pub-3940256099942544/3986624511", rewarded: "ca-app-pub-3940256099942544/1712485313" },
         } : {};
-        // The website's ads (AdSense, 26 Oct 2026): WEB_ADS=off (the
-        // default), test (Google's test ads, which earn nothing) or live,
-        // shown only with an ad unit (ADSENSE_SLOT) — and never in the app,
-        // which has AdMob (src/ads.jsx)
+        // The website's ads (AdSense, 26 Oct 2026): WEB_ADS=live (the
+        // default, below), test (Google's test ads, which earn nothing) or
+        // off, shown only with an ad unit (ADSENSE_SLOT) — and never in the
+        // app, which has AdMob (src/ads.jsx)
         // Live from 26 Oct 2026, ahead of Google's review: a card stays
         // folded until AdSense fills it (index.css .ad-web), so nothing shows
         // until the site is approved. WEB_ADS=off turns them off.
@@ -423,7 +438,8 @@ export function createApp() {
         return;
       }
       if (url.pathname === "/api/auth/signup" && req.method === "POST") {
-        const { email, password } = await readJsonBody(req);
+        const body = await readJsonBody(req);
+        const { email, password } = body;
         const ip = `ip:${clientIp(req)}`;
         const wait = limits.signupIp.blockedFor(ip);
         if (wait) return tooMany(res, wait, "Too many sign-up attempts from this connection.");
@@ -450,6 +466,7 @@ export function createApp() {
           return;
         }
         const { token, userId } = signup(email, password);
+        countSignup(body.visit);
         setSessionCookie(req, res, token);
         sendJson(res, 200, { userId });
         return;
@@ -460,7 +477,8 @@ export function createApp() {
         const ip = `ip:${clientIp(req)}`;
         const wait = limits.wrongPasswordIp.blockedFor(ip);
         if (wait) return tooMany(res, wait, "Too many attempts.");
-        const { email, code } = await readJsonBody(req);
+        const body = await readJsonBody(req);
+        const { email, code } = body;
         let session;
         try {
           session = finishSignup(email, code);
@@ -468,6 +486,7 @@ export function createApp() {
           limits.wrongPasswordIp.hit(ip);
           throw e;
         }
+        countSignup(body.visit);
         setSessionCookie(req, res, session.token);
         sendJson(res, 200, { userId: session.userId });
         return;
@@ -535,7 +554,8 @@ export function createApp() {
           sendJson(res, 401, { error: e.reason ? e.message : "That sign-in couldn't be confirmed. Please try again." });
           return;
         }
-        const { token, userId } = signInWithFirebase(claims);
+        const { token, userId, created } = signInWithFirebase(claims);
+        if (created) countSignup(body.visit);
         setSessionCookie(req, res, token);
         sendJson(res, 200, { userId });
         return;
@@ -1661,7 +1681,7 @@ export function createApp() {
         const template = readFileSync(join(DIST_DIR, "index.html"), "utf-8");
         if (!page) {
           res.writeHead(404, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
-          res.end(req.method === "HEAD" ? undefined : template);
+          res.end(req.method === "HEAD" ? undefined : notFoundPageHtml(template, url.pathname));
           return;
         }
         const data = `<script id="public-page-data" type="application/json">${JSON.stringify({ path: url.pathname, title: page.title, body: page.body }).replace(/</g, "\\u003c")}</script>`;
@@ -1677,6 +1697,15 @@ export function createApp() {
         if (url.pathname === "/") await marketReady();
         const template = readFileSync(join(DIST_DIR, "index.html"), "utf-8");
         const html = url.pathname === "/" ? homePageHtml(template) : aboutPageHtml(template);
+        res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache" });
+        res.end(req.method === "HEAD" ? undefined : html);
+        return;
+      }
+      // /privacy and /disclaimer too (9 Nov 2026, the SEO audit: both were the
+      // empty app, under the front page's title)
+      if ((url.pathname === "/privacy" || url.pathname === "/disclaimer") && (req.method === "GET" || req.method === "HEAD") && existsSync(join(DIST_DIR, "index.html"))) {
+        const template = readFileSync(join(DIST_DIR, "index.html"), "utf-8");
+        const html = url.pathname === "/privacy" ? privacyPageHtml(template) : disclaimerPageHtml(template);
         res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache" });
         res.end(req.method === "HEAD" ? undefined : html);
         return;
@@ -1705,9 +1734,10 @@ export function createApp() {
         const html = url.pathname === "/screens" ? screensIndexHtml(template) : url.pathname === "/results-calendar" ? resultsCalendarHtml(template)
           : url.pathname === "/sectors" ? sectorsIndexHtml(template) : url.pathname.startsWith("/sector/") ? sectorPageHtml(template, slug)
           : url.pathname === "/lists" ? listsIndexHtml(template) : url.pathname.startsWith("/lists/") ? listPageHtml(template, slug) : screenPageHtml(template, slug);
-        // a strategy that doesn't exist: the app (which says so), as not found
+        // a screen, sector or list that doesn't exist: not found, with the
+        // page that says so (9 Nov 2026, as for any other unknown address)
         res.writeHead(html ? 200 : 404, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache" });
-        res.end(req.method === "HEAD" ? undefined : html ?? template);
+        res.end(req.method === "HEAD" ? undefined : html ?? notFoundPageHtml(template, url.pathname));
         return;
       }
       if (url.pathname === "/stock-screener-india" && (req.method === "GET" || req.method === "HEAD") && existsSync(join(DIST_DIR, "index.html"))) {
@@ -1724,8 +1754,9 @@ export function createApp() {
           res.end(req.method === "HEAD" ? undefined : html);
           return;
         }
-        res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" });
-        res.end(req.method === "HEAD" ? undefined : "Not found");
+        // no such company: the page that says so, with the ways on
+        res.writeHead(404, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
+        res.end(req.method === "HEAD" ? undefined : notFoundPageHtml(readFileSync(join(DIST_DIR, "index.html"), "utf-8"), url.pathname));
         return;
       }
       if ((req.method === "GET" || req.method === "HEAD") && serveStatic(req, url.pathname, res)) return;

@@ -51,14 +51,17 @@ export async function request(path, options = {}) {
   }
 }
 
+// Where this visit began (main.jsx), sent with a sign-up only (visits.js countSignup)
+const visitStart = () => { try { return JSON.parse(sessionStorage.getItem("ji-visit") ?? "null"); } catch { return null; } };
+
 export const api = {
   me: () => request("/api/auth/me"),
   // A company's public summary, for someone not signed in (PublicStock.jsx)
   publicStock: symbol => request(`/api/public/stock/${encodeURIComponent(symbol)}`),
-  signup: (email, password) => request("/api/auth/signup", { method: "POST", body: JSON.stringify({ email, password }) }),
+  signup: (email, password) => request("/api/auth/signup", { method: "POST", body: JSON.stringify({ email, password, visit: visitStart() }) }),
   login: (email, password) => request("/api/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }),
   // Sign-up's emailed code (when the server can send email)
-  signupVerify: (email, code) => request("/api/auth/signup/verify", { method: "POST", body: JSON.stringify({ email, code }) }),
+  signupVerify: (email, code) => request("/api/auth/signup/verify", { method: "POST", body: JSON.stringify({ email, code, visit: visitStart() }) }),
   signupResend: (email) => request("/api/auth/signup/resend", { method: "POST", body: JSON.stringify({ email }) }),
   logout: () => request("/api/auth/logout", { method: "POST" }),
   // The Android app's notification token (src/push.js)
@@ -69,7 +72,7 @@ export const api = {
   // Password reset: offered only when the server can send email
   authOptions: () => request("/api/auth/options"),
   // A Google / Apple / phone sign-in Firebase confirmed (src/socialSignIn.js)
-  firebaseSignIn: (idToken) => request("/api/auth/firebase", { method: "POST", body: JSON.stringify({ idToken }) }),
+  firebaseSignIn: (idToken) => request("/api/auth/firebase", { method: "POST", body: JSON.stringify({ idToken, visit: visitStart() }) }),
   forgotPassword: (email) => request("/api/auth/forgot", { method: "POST", body: JSON.stringify({ email }) }),
   resetPassword: (token, password) => request("/api/auth/reset", { method: "POST", body: JSON.stringify({ token, password }) }),
   presets: () => request("/api/presets"),
