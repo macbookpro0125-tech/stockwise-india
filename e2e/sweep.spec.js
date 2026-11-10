@@ -66,7 +66,9 @@ test("legal pages @phone", async ({ page }) => {
   for (const path of ["/privacy", "/disclaimer"]) {
     await page.goto(path);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    // against the page's own width: on a phone the window widens with the
+    // page, so innerWidth can't tell (10 Nov 2026, seo.spec.js S-H11)
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, `${path} scrolls sideways`).toBeLessThanOrEqual(1);
   }
 });
@@ -91,7 +93,9 @@ test("phone: tabs and a company page fit the screen @phone", async ({ page, acco
   for (const path of ["/", "/stock/HDFCBANK", "/stock/TCS"]) {
     await page.goto(path);
     await page.waitForLoadState("networkidle");
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    // against the page's own width: on a phone the window widens with the
+    // page, so innerWidth can't tell (10 Nov 2026, seo.spec.js S-H11)
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, `${path} scrolls sideways`).toBeLessThanOrEqual(1);
   }
 });

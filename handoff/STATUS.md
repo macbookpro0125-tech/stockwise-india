@@ -2,6 +2,9 @@
 
 _Last updated: 10 Nov 2026, by Claude (Opus) on branch `screeners-home`._
 
+## Committed, not pushed (10 Nov, morning; tests only)
+- `e2e/sweep.spec.js`: the two "scrolls sideways" checks (legal pages; tabs and a company page) now measure against the page's own width, as S-H11 does. They compared with `innerWidth`, which widens with the page on a phone, so they could never fail. All four runs pass. Goes out with the next push.
+
 ## Live (10 Nov, 06:43 IST): SEO sprint 1, batch 2, steps 4–8 of the audit
 - Pushed at `bbcd93e` (165 passed, 29 skipped; unit tests passed); live at 06:43 IST, about 100 s after the push.
 - Checked live, signed out:
