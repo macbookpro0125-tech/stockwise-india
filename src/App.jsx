@@ -515,7 +515,7 @@ export default function App() {
       <SideRail tab={tab} onTab={goTab} account={account} theme={theme} onToggleTheme={toggleTheme} onOpenStock={openSymbol} openSymbol={open?.symbol ?? null} />
       {/* A phone's top bar: the menu and + float once it's scrolled past, the
           menu opens Settings from the left, + what can be made (PhoneChrome.jsx) */}
-      <PhoneChromeHost account={account} theme={theme} onToggleTheme={toggleTheme} onTab={goTab} onLogout={logout} onDeleted={accountDeleted} onTour={askForTour} stockOpen={!!open} />
+      <PhoneChromeHost account={account} theme={theme} onToggleTheme={toggleTheme} onTab={goTab} onLogout={logout} onDeleted={accountDeleted} onTour={askForTour} stockOpen={!!open} tab={tab} stock={open?.symbol ?? null} />
       {tour && <Tour key={tour} steps={tour === "app" ? APP_TOUR : STOCK_TOUR} onFinish={finishTour} />}
       {/* the Android app: once, after the first star, its notifications offered */}
       <PushAsk />
@@ -525,14 +525,14 @@ export default function App() {
 }
 
 // Settings from the left, the + sheet and the floating top buttons, on a phone
-function PhoneChromeHost({ account, theme, onToggleTheme, onTab, onLogout, onDeleted, onTour, stockOpen }) {
+function PhoneChromeHost({ account, theme, onToggleTheme, onTab, onLogout, onDeleted, onTour, stockOpen, tab = null, stock = null }) {
   const badges = useTabBadges();
   // A row in Settings that opens a page: the panel slides away first
   const toTab = t => { chrome.close(); setTimeout(() => onTab(t), 60); };
   return (
     <>
       <PhoneFloatingBar dot={badges.alerts.badgeColor === "var(--yellow)"} hidden={stockOpen} />
-      <CreateSheet onTab={onTab} />
+      <CreateSheet onTab={onTab} tab={tab} stock={stock} />
       <SettingsDrawer>
         <SettingsView account={account} theme={theme} onToggleTheme={onToggleTheme} onTab={toTab} onLogout={onLogout} onDeleted={onDeleted} onTour={onTour && (() => { chrome.close(); setTimeout(onTour, 60); })} />
       </SettingsDrawer>

@@ -86,8 +86,16 @@ const PORTFOLIO = [
   { id: "import", Icon: FileUp, hue: "#A08BFF", title: "Import from your broker", about: "Zerodha, Groww, Upstox, Angel One or any CSV or Excel file" },
 ];
 
+// What the page you're on is about comes first (11 Nov 2026: "need to utilise
+// that + everywhere, like each page"): on a company's page, that company —
+// watch it, an alert on it, add it to your portfolio; on Watchlist, adding to
+// it; on Portfolio, a holding and an import; on Alerts, an alert.
+const FIRST = { watchlist: "watch", alerts: "alert", discover: "screen", workspace: "screen" };
+const firstOf = (list, id) => (id ? [...list.filter(o => o.id === id), ...list.filter(o => o.id !== id)] : list);
+const shortName = s => String(s ?? "").replace(/\s+(Limited|Ltd\.?)$/i, "");
+
 // + : everything that can be made, in one sheet from the bottom
-export function CreateSheet({ onTab }) {
+export function CreateSheet({ onTab, tab = null, stock = null }) {
   const panel = usePanel();
   const [shown, closing] = useClosing(panel === "create");
   const [step, setStep] = useState(null); // null | "alert" | "watch" — picking a company
@@ -95,10 +103,30 @@ export function CreateSheet({ onTab }) {
   const [toast, setToast] = useState("");
   const watched = useWatchlist();
   useEffect(() => { if (panel !== "create") setStep(null); }, [panel]);
+  // the company whose page is open: its name and price, once the sheet opens
+  const [here, setHere] = useState(null);
+  useEffect(() => {
+    if (panel !== "create" || !stock) return;
+    if (here?.symbol === stock) return;
+    setHere({ symbol: stock, name: stock, cmp: null });
+    let live = true;
+    api.stock(stock).then(d => { if (live) setHere({ symbol: stock, name: d.name ?? stock, cmp: d.cmp ?? d.price ?? d.close?.price ?? null }); }).catch(() => {});
+    return () => { live = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [panel, stock]);
+  const company = stock && here?.symbol === stock ? here : null;
   useEffect(() => { if (!toast) return; const t = setTimeout(() => setToast(""), 2600); return () => clearTimeout(t); }, [toast]);
 
   const choose = id => {
     tick();
+    if (id === "here-watch") {
+      chrome.close();
+      if (!watched.has(company.symbol)) toggleWatch(company.symbol, company.cmp).then(() => setToast(`${shortName(company.name)} is on your watchlist`)).catch(() => {});
+      else setToast(`${shortName(company.name)} is already on your watchlist`);
+      return;
+    }
+    if (id === "here-alert") { chrome.close(); setModal({ kind: "alert", stock: company }); return; }
+    if (id === "here-holding") { chrome.close(); setModal({ kind: "holding", initial: { ticker: company.symbol, name: company.name, buyPrice: company.cmp ?? "" } }); return; }
     if (id === "screen") { chrome.close(); onTab("discover"); setTimeout(() => window.dispatchEvent(new Event(NEW_SCREEN_EVENT)), 60); }
     else if (id === "alert" || id === "watch") setStep(id);
     else { chrome.close(); setModal({ kind: id }); }
@@ -106,7 +134,7 @@ export function CreateSheet({ onTab }) {
   const picked = async symbol => {
     const kind = step;
     let stock = { symbol, name: symbol, cmp: null };
-    try { const d = await api.stock(symbol); stock = { symbol, name: d.name ?? symbol, cmp: d.cmp ?? d.price ?? null }; } catch {}
+    try { const d = await api.stock(symbol); stock = { symbol, name: d.name ?? symbol, cmp: d.cmp ?? d.price ?? d.close?.price ?? null }; } catch {}
     chrome.close();
     if (kind === "alert") setModal({ kind: "alert", stock });
     else {
@@ -139,16 +167,37 @@ export function CreateSheet({ onTab }) {
               <div className="pc-pick"><StockSearchBar key={step} onAnalyze={picked} placeholder="Search a company" /></div>
             ) : (
               <>
-                <div className="pc-box">{OPTIONS.map(row)}</div>
-                <p className="pc-label">Portfolio</p>
-                <div className="pc-box">{PORTFOLIO.map(row)}</div>
+                {company && (
+                  <>
+                    <p className="pc-label">{shortName(company.name)}</p>
+                    <div className="pc-box">{[
+                      { id: "here-watch", Icon: Star, hue: "#F5C451", title: watched.has(company.symbol) ? "On your watchlist" : "Add to watchlist", about: "Its results and news, in one place" },
+                      { id: "here-alert", Icon: BellPlus, hue: "#F5C451", title: "Set a price alert", about: company.cmp != null ? `Now ₹${company.cmp.toLocaleString("en-IN", { maximumFractionDigits: company.cmp < 100 ? 2 : 0 })}` : "Get told when it hits your price" },
+                      { id: "here-holding", Icon: BriefcaseBusiness, hue: "#5AA9FF", title: "Add to your portfolio", about: "You own it: your quantity and price" },
+                    ].map(row)}</div>
+                    <p className="pc-label">Anything else</p>
+                    <div className="pc-box">{[OPTIONS[0], PORTFOLIO[1]].map(row)}</div>
+                  </>
+                )}
+                {company ? null : tab === "portfolio" ? (
+                  <>
+                    <div className="pc-box">{PORTFOLIO.map(row)}</div>
+                    <div className="pc-box">{OPTIONS.map(row)}</div>
+                  </>
+                ) : (
+                  <>
+                    <div className="pc-box">{firstOf(OPTIONS, FIRST[tab]).map(row)}</div>
+                    <p className="pc-label">Portfolio</p>
+                    <div className="pc-box">{PORTFOLIO.map(row)}</div>
+                  </>
+                )}
               </>
             )}
           </div>
         </div>,
         document.body,
       )}
-      {modal?.kind === "holding" && <AddHoldingModal onClose={() => setModal(null)} onSave={async h => { await api.addHolding(h); setModal(null); portfolioStore.refresh(); onTab("portfolio"); }} />}
+      {modal?.kind === "holding" && <AddHoldingModal prefill={modal.initial ?? null} onClose={() => setModal(null)} onSave={async h => { await api.addHolding(h); setModal(null); portfolioStore.refresh(); onTab("portfolio"); }} />}
       {modal?.kind === "import" && <Suspense fallback={null}><ImportHoldingsModal onClose={() => setModal(null)} onImported={() => { setModal(null); portfolioStore.refresh(); onTab("portfolio"); }} /></Suspense>}
       {modal?.kind === "alert" && <CreateAlertModal stock={modal.stock} onClose={made => { setModal(null); if (made) setToast(`Alert set on ${modal.stock.name}`); }} />}
       {toast && createPortal(<div className="pc-toast" role="status">{toast}</div>, document.body)}

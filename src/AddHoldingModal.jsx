@@ -5,13 +5,15 @@ import { useState } from "react";
 
 const MONO = { fontVariantNumeric: "tabular-nums" };
 
-export default function AddHoldingModal({ onSave, onClose, initial = null }) {
-  const [ticker, setTicker] = useState(initial?.ticker || "");
-  const [name, setName] = useState(initial?.name || "");
-  const [buyPrice, setBuyPrice] = useState(initial?.buyPrice ?? "");
-  const [qty, setQty] = useState(initial?.qty ?? "");
-  const [buyDate, setBuyDate] = useState(initial?.buyDate || "");
-  const [notes, setNotes] = useState(initial?.notes || "");
+// prefill: a new holding started from a company's page (its ticker, name and price)
+export default function AddHoldingModal({ onSave, onClose, initial = null, prefill = null }) {
+  const start = initial ?? prefill;
+  const [ticker, setTicker] = useState(start?.ticker || "");
+  const [name, setName] = useState(start?.name || "");
+  const [buyPrice, setBuyPrice] = useState(start?.buyPrice ?? "");
+  const [qty, setQty] = useState(start?.qty ?? "");
+  const [buyDate, setBuyDate] = useState(start?.buyDate || "");
+  const [notes, setNotes] = useState(start?.notes || "");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -52,7 +54,7 @@ export default function AddHoldingModal({ onSave, onClose, initial = null }) {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
           <div>
             <label htmlFor="h-ticker" style={labelStyle}>Ticker *</label>
-            <input id="h-ticker" value={ticker} onChange={e => setTicker(e.target.value)} placeholder="e.g. TCS" style={{ ...inputStyle, ...MONO }} autoFocus disabled={!!initial} />
+            <input id="h-ticker" value={ticker} onChange={e => setTicker(e.target.value)} placeholder="e.g. TCS" style={{ ...inputStyle, ...MONO }} autoFocus={!prefill} disabled={!!initial} />
           </div>
           <div>
             <label htmlFor="h-name" style={labelStyle}>Company Name</label>
@@ -67,7 +69,7 @@ export default function AddHoldingModal({ onSave, onClose, initial = null }) {
           </div>
           <div>
             <label htmlFor="h-qty" style={labelStyle}>Quantity *</label>
-            <input id="h-qty" type="number" value={qty} onChange={e => setQty(e.target.value)} placeholder="0" min="1" step="1" style={{ ...inputStyle, ...MONO }} />
+            <input id="h-qty" type="number" value={qty} onChange={e => setQty(e.target.value)} placeholder="0" min="1" step="1" style={{ ...inputStyle, ...MONO }} autoFocus={!!prefill} />
           </div>
         </div>
 

@@ -6637,3 +6637,4 @@ html.td-night[data-theme="light"] .tb.tb-scrolled { box-shadow: 0 1px 0 rgba(255
 .ps-change-go { width: 100%; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; border-radius: 10px; }
 .ps-change-go:active { background: var(--pg-line); }
 .ps-change .ps-price { margin: 0; }
+.pc-box + .pc-box { margin-top: 12px; }
