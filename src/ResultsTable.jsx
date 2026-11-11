@@ -924,10 +924,11 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
               // showed market cap instead (22 Oct 2026)
               ...[...columns.filter(def => def.id === sortBy), ...columns.filter(def => def.id !== sortBy && filteredIds.includes(def.id)), ...columns.filter(def => def.id !== sortBy && !filteredIds.includes(def.id))].slice(0, 1).map(def => {
                 const v = colValue(stock, def.id);
-                // One decimal (none from 100 on: "+622.5%" showed as "+622.…"),
+                // One decimal under 10, none from 10 on ("+50.2%" showed as
+                // "+50.…" on a phone, 11 Nov 2026; "+622.5%" as "+622.…"),
                 // and the unit set small as "/100" is, so it fits a third of a
                 // small phone ("71.23%" showed as "71.…")
-                const [figure, unit] = splitUnit(formatValue({ ...def, decimals: Math.abs(v ?? 0) >= 100 ? 0 : Math.min(def.decimals ?? 1, 1) }, v));
+                const [figure, unit] = splitUnit(formatValue({ ...def, decimals: Math.abs(v ?? 0) >= 10 ? 0 : Math.min(def.decimals ?? 1, 1) }, v));
                 // Coloured as the table's cells are (strong ROCE, Piotroski 7+ green)
                 // a short name for a phone's column ("P/E TTM/FY" → "P/E")
                 return [def.short.replace(/\s+TTM\/FY$/, ""), <span key={def.id} style={{ color: valueColor(def, v) }}>{figure}</span>, unit];
