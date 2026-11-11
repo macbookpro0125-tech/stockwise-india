@@ -656,18 +656,9 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
         {phoneStep === "strategies" && (() => {
           const newScreen = () => { changeFilters([]); setActivePresetName("New screen"); setFiltersOpen(false); showStocks(); };
           newScreenRef.current = newScreen;
-          // The screen already set comes first
-          const continueCard = activeCount > 0 && (
-            <button type="button" onClick={showStocks} className="phone-continue glow" style={{ margin: isPhone ? "12px 0 0" : "28px 0 0" }}>
-              <span>
-                <span style={{ display: "block", fontSize: 14, fontWeight: 400, color: "var(--t1)" }}>Continue with your filters</span>
-                <span style={{ display: "block", fontSize: 13, color: "var(--t3)", marginTop: 2 }}>
-                  {`${activeCount} filter${activeCount === 1 ? "" : "s"}${matched != null ? ` · ${matched.toLocaleString("en-IN")} stocks` : ""}`}
-                </span>
-              </span>
-              <ChevronRight size={18} aria-hidden="true" />
-            </button>
-          );
+          // (the "Continue with your filters" card at the top is gone, 11 Nov
+          // 2026: "remove the continue with filter from top"; the screener
+          // last opened is under Recently opened)
           const cards = (
             <div data-tour="strategies">
               <PresetCards
@@ -686,7 +677,7 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
           // A phone: Screeners — favourites, recently opened, the rest
           // (PhoneScreens.jsx, 26 Oct 2026)
           if (isPhone) return (
-            <PhoneScreens theme={theme} continueCard={continueCard || null} onNewScreen={newScreen} onOpenStock={onOpenStock} onOpenTab={onOpenTab} onOpenIndex={onOpenIndex}
+            <PhoneScreens theme={theme} onNewScreen={newScreen} onOpenStock={onOpenStock} onOpenTab={onOpenTab} onOpenIndex={onOpenIndex}
               onSelect={preset => { applyPreset(preset); setFiltersOpen(false); showStocks(); }} />
           );
           // The screener's home: a hero, three ways in, then the strategies as
@@ -700,7 +691,7 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
               account={account}
               onPickScreen={preset => { applyPreset(preset); setFiltersOpen(false); showStocks(); }}
               onCreate={newScreen}
-              continueCard={continueCard || null}
+             
               newsTile={onOpenNews ? <Suspense fallback={null}><NewsTile perPage={typeof window !== "undefined" && window.innerWidth >= 1400 ? 8 : 6} onOpen={id => onOpenNews(id)} onSeeAll={() => onOpenNews(null)} /></Suspense> : null}
             >{cards}</TodayHome>
           );
