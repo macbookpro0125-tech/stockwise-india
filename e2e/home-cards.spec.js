@@ -2,7 +2,7 @@
 // Market summary opens what each card shows
 import { test, expect } from "./fixtures.js";
 
-test("H-1 the home's cards open their pages: an index, the Nifty 500, the results calendar", async ({ page, account, isMobile }) => {
+test("H-1 the home's cards open their pages: an index, the Nifty 500, a results day in the app", async ({ page, account, isMobile }) => {
   test.skip(isMobile, "a computer's home");
   await page.goto("/");
   const indices = page.getByRole("region", { name: "The market" });
@@ -23,6 +23,8 @@ test("H-1 the home's cards open their pages: an index, the Nifty 500, the result
   const results = page.getByRole("region", { name: "Results coming" }).getByRole("button").first();
   if (await results.count()) {
     await results.click();
-    await expect(page).toHaveURL(/results-calendar/);
+    // inside the app: Markets' results day, not the website's calendar (11 Nov 2026)
+    await expect(page.getByRole("heading", { name: /^Results on / })).toBeVisible({ timeout: 20_000 });
+    await expect(page).not.toHaveURL(/results-calendar/);
   }
 });

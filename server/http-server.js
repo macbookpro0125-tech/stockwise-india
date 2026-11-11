@@ -879,7 +879,8 @@ export function createApp() {
       }
       if (url.pathname === "/api/explore/results" && req.method === "GET") {
         if (requireAuth(req, res) == null) return;
-        sendJson(res, 200, resultsWeek());
+        // two weeks ahead, as the website's calendar shows (11 Nov 2026)
+        sendJson(res, 200, resultsWeek(14));
         return;
       }
       // Each user's own Desk layout (desk-layout.js)

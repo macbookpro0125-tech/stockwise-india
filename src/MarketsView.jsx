@@ -380,8 +380,9 @@ function ResultsDay({ results, date, onDate, onBack, onOpenStock }) {
   const past = (results?.past ?? []).map(x => ({ ...x, past: true }));
   const days = [...past, ...(results?.days ?? []).filter(x => x.count > 0)];
   const mineMode = date === "mine";
-  const d = mineMode ? { date: "mine", count: 0, companies: [] } : days.find(x => x.date === date) ?? (results?.days ?? []).find(x => x.count > 0) ?? days[days.length - 1];
-  if (!d) return <div className="mk"><button type="button" className="mk-back" onClick={onBack}><ChevronLeft size={18} /> Markets</button><p className="mk-note">No results dates this week.</p></div>;
+  // "latest": the newest day already out; "next", or a day not held: the next to come
+  const d = mineMode ? { date: "mine", count: 0, companies: [] } : (date === "latest" && past.length ? past[past.length - 1] : null) ?? days.find(x => x.date === date) ?? (results?.days ?? []).find(x => x.count > 0) ?? days[days.length - 1];
+  if (!d) return <div className="mk"><button type="button" className="mk-back" onClick={onBack}><ChevronLeft size={18} /> Markets</button><p className="mk-note">No results dates in the next two weeks.</p></div>;
   const match = c => !q.trim() || `${c.name} ${c.symbol} ${c.sector ?? ""}`.toLowerCase().includes(q.trim().toLowerCase());
   const keep = c => (show === "large" ? (c.marketCapCr ?? 0) >= 1000 : show === "mine" ? watched.has(c.symbol) : true);
   const val = (c, k) => (k === "profit" ? c.quarter?.profitYoY : k === "sales" ? c.quarter?.salesYoY : k === "move" ? c.ret1d : c.marketCapCr);
@@ -670,7 +671,7 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
   const resultsCount = (results?.past ?? []).reduce((n, d) => n + (d.count ?? 0), 0);
   const goTo = [
     { id: "moves", label: "Biggest moves", line: topGain ? `${cardName(topGain.name)} led, ${pct(topGain.change)}; every company, day by day` : "Every company's rise or fall, day by day", open: () => openMoves({ date: null, period }) },
-    { id: "results", label: "Results", line: resultsCount ? `${resultsCount} companies reported in the last month; the figures, day by day` : "Who reports when, and the figures once they're out", open: () => (resultsDay ? openDay(resultsDay) : navigate("/results-calendar")) },
+    { id: "results", label: "Results", line: resultsCount ? `${resultsCount} companies reported in the last month; the figures, day by day` : "Who reports when, and the figures once they're out", open: () => openDay(resultsDay ?? "next") },
     { id: "sectors", label: "Sectors", line: topSector ? `${topSector.name.replace(/^Nifty\s*/i, "")} led today, ${pct(topSector.changePct)}; every sector's companies` : "Every sector and its companies", open: () => navigate("/sectors") },
     { id: "map", label: "Market map", line: "Every company in one picture, coloured by its move", open: () => onOpenTab?.("map") },
     { id: "lists", label: "Stock lists", line: "Ready lists: index members, debt-free, high dividend and more", open: () => navigate("/lists") },
@@ -847,7 +848,7 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
       {/* the week's results */}
       {(results?.days?.length > 0 || results?.past?.length > 0) && (
         <section className="mk-card" aria-labelledby="mk-res">
-          <div className="mk-card-h"><h2 id="mk-res">Results this week</h2><span className="mk-card-links"><button type="button" className="mk-link" onClick={() => openDay("mine")}>My watchlist</button>{results.past?.length > 0 && <button type="button" className="mk-link" onClick={() => openDay(results.past[results.past.length - 1].date)}>Already out</button>}<button type="button" className="mk-link" onClick={() => navigate("/results-calendar")}>Calendar</button></span></div>
+          <div className="mk-card-h"><h2 id="mk-res">Results coming</h2><span className="mk-card-links"><button type="button" className="mk-link" onClick={() => openDay("mine")}>My watchlist</button>{results.past?.length > 0 && <button type="button" className="mk-link" onClick={() => openDay(results.past[results.past.length - 1].date)}>Already out</button>}<button type="button" className="mk-link" onClick={() => openDay("next")}>Calendar</button></span></div>
           <div className="mk-results">
             {results.days.filter(d => d.count > 0).slice(0, 5).map(d => (
               <div key={d.date}>

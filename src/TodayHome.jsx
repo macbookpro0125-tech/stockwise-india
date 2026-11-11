@@ -226,6 +226,16 @@ const SITE_PAGES = [
   { id: "guides", path: "/learn", label: "Guides", about: "How to read the numbers", Icon: BookOpen },
 ];
 
+// A results day in the app's Markets, not the website's calendar page (11 Nov
+// 2026: "from the home screen when I press calendar, where am I going" — it
+// left the app for the public page). date: a day, "next" or "latest".
+export function openResults(onOpenTab, date = "next") {
+  if (!onOpenTab) { navigate(date === "latest" ? "/results" : "/results-calendar"); return; }
+  window.history.pushState({ ...(window.history.state ?? {}), resultsDay: date }, "");
+  onOpenTab("markets");
+}
+const IN_APP = { calendar: "next", results: "latest" };
+
 const PAGE_GROUPS = [
   { title: "Find companies", items: ["discover", "workspace", "desk", "guides"] },
   { title: "The market", items: ["markets", "explore", "map", "momentum", "calendar", "results", "sectors"] },
@@ -329,7 +339,7 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onOp
               if (!tab && !site) return null; // a page this account doesn't have
               const Icon = (tab ?? site).Icon;
               return (
-                <button key={id} type="button" onClick={() => (site ? navigate(site.path) : id === "discover" ? seeAll() : onOpenTab?.(id))}>
+                <button key={id} type="button" onClick={() => (IN_APP[id] && onOpenTab ? openResults(onOpenTab, IN_APP[id]) : site ? navigate(site.path) : id === "discover" ? seeAll() : onOpenTab?.(id))}>
                   <Icon size={18} strokeWidth={1.8} aria-hidden="true" />
                   <span>{(tab ?? site).label}<small>{tab ? ABOUT[id] : site.about}</small></span>
                 </button>
@@ -449,9 +459,9 @@ export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIn
           )}
           {coming.length > 0 && (
             <section className="td-box" aria-label="Results coming">
-              <div className="td-head"><h3>Results coming</h3><button type="button" onClick={() => navigate("/results-calendar")}>Calendar</button></div>
+              <div className="td-head"><h3>Results coming</h3><button type="button" onClick={() => openResults(onOpenTab)}>Calendar</button></div>
               {coming.map(c => (
-                <button key={c.date} type="button" className="td-line" onClick={() => navigate("/results-calendar")}>
+                <button key={c.date} type="button" className="td-line" onClick={() => openResults(onOpenTab, c.date)}>
                   <span className="td-coming">
                     <span className="td-coming-names">{c.names.map((y, i) => <span key={y.symbol}>{i > 0 && ", "}<b className={mine.has(y.symbol) ? "td-yours" : undefined}>{cardName(y.name)}</b></span>)}</span>
                     {c.more > 0 && <small>+{c.more}</small>}
