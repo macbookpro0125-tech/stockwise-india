@@ -113,96 +113,50 @@ const changeBadge = ch => (ch?.joinedCount > 0
   ? <span className="ps-new">{ch.joinedCount} new</span>
   : null);
 
-// A starred screener: its name and size; what joined or left since it was
-// last opened, only when something did; then its day, every day (26 Oct
-// 2026: "is that useful then?") — how its companies moved at the last close,
-// the best and the worst, and which report results in the coming week
 const pct = v => `${v > 0 ? "+" : v < 0 ? "−" : ""}${Math.abs(v).toFixed(1)}%`;
 const tone = v => (v > 0.05 ? "up" : v < -0.05 ? "down" : "flat");
-const weekday = iso => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", timeZone: "UTC" });
 
 const rupees = v => `₹${v.toLocaleString("en-IN", { maximumFractionDigits: v < 100 ? 2 : 0 })}`;
 
-// Results this week, two at a time (26 Oct 2026: "more becomes clumsy"), moving on by itself every few seconds
-// (26 Oct 2026: "these should change automatically and the price also")
-const SHOWN = 2;
-function ResultsTicker({ results, total }) {
-  const [at, setAt] = useState(0);
-  const pages = Math.ceil(results.length / SHOWN);
-  useEffect(() => {
-    if (pages < 2 || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const t = setInterval(() => setAt(i => (i + 1) % pages), 4000);
-    return () => clearInterval(t);
-  }, [pages]);
-  const page = results.slice(at * SHOWN, at * SHOWN + SHOWN);
-  return (
-    <span className="ps-fav-results">
-      <span className="ps-fav-since">
-        Results this week{total > 1 ? ` · ${total}` : ""}
-        {pages > 1 && <span className="ps-tick-dots" aria-hidden="true">{Array.from({ length: pages }, (_, i) => <i key={i} className={i === at ? "on" : ""} />)}</span>}
-      </span>
-      <span className="ps-results-list" key={at}>
-        {page.map(r => (
-          <span key={r.symbol} className="ps-result">
-            <span className="ps-change-name">{cardName(r.name || r.symbol)} <small>{weekday(r.date)}</small></span>
-            {r.cmp != null && <span className="ps-price">{rupees(r.cmp)}</span>}
-            {r.ret1d != null && <em className={`ps-move ${tone(r.ret1d)}`}>{pct(r.ret1d)}</em>}
-          </span>
-        ))}
-      </span>
-    </span>
-  );
-}
-
-function FavouriteCard({ p, count, change, day, closeDate, onOpen }) {
-  const changed = (change?.joinedCount ?? 0) + (change?.leftCount ?? 0);
-  const rows = [...(change?.joined ?? []).slice(0, 2).map(c => ({ ...c, how: "Joined" })), ...(change?.left ?? []).slice(0, 2).map(c => ({ ...c, how: "Left" }))].slice(0, 3);
-  const more = changed - rows.length;
-  const since = dateOf(change?.seenAt);
+// 11 Nov 2026 ("favourites has too much data, and when I click on the stock
+// it should open that stock"): the name and count, one line of how it did and
+// what changed, and its best and worst company, each opening its own page;
+// the rest of the card opens the screener. (The joined/left list and the
+// results ticker are gone from here: the screener has them.)
+function FavouriteCard({ p, count, change, day, closeDate, onOpen, onOpenStock }) {
+  const joined = change?.joinedCount ?? 0, left = change?.leftCount ?? 0;
   const movers = day ? [day.best && { ...day.best, way: "best" }, day.worst && { ...day.worst, way: "worst" }].filter(Boolean) : [];
+  const changes = [joined > 0 && `${n(joined)} joined`, left > 0 && `${n(left)} left`].filter(Boolean).join(" · ");
+  const openCard = () => onOpen(p);
   return (
-    <button type="button" className="ps-fav" onClick={() => onOpen(p)} aria-label={`Open ${p.name}`}>
+    <div className="ps-fav" role="group" aria-label={p.name} onClick={openCard}>
       {/* one line: the name, two of its companies' logos and how many
           (26 Oct 2026: "can't we make all this in one line, to save space") */}
-      <span className="ps-fav-head">
+      <button type="button" className="ps-fav-head" onClick={e => { e.stopPropagation(); openCard(); }} aria-label={`Open ${p.name}`}>
         <span className="ps-fav-name">{p.name}</span>
         <span className="ps-fav-count" title={companies(count) ?? undefined}>
           <Logos top={count?.top?.slice(0, 2)} size={22} />
           {count?.matched != null && <span>{n(count.matched)}</span>}
         </span>
-      </span>
-      {changed > 0 && (
-        <span className="ps-fav-changes">
-          <span className="ps-fav-since">Since you opened it{since ? `, ${since}` : ""}</span>
-          {rows.map(c => (
-            <span key={c.how + c.symbol} className="ps-change">
-              <CompanyLogo symbol={c.symbol} size={22} fallback={c.name} />
-              <span className="ps-change-name">{cardName(c.name || c.symbol)}</span>
-              <em className={c.how === "Joined" ? "joined" : "left"}>{c.how}</em>
-            </span>
-          ))}
-          {more > 0 && <span className="ps-fav-since">and {more} more</span>}
-        </span>
-      )}
-      {day && (
+      </button>
+      {(day?.avg1d != null || changes) && (
         <span className="ps-fav-changes ps-fav-day">
-          {day.avg1d != null && (
-            <span className="ps-fav-since">
-              <em className={`ps-move ${tone(day.avg1d)}`}>{pct(day.avg1d)}</em> on average{closeDate ? ` at the ${closeDate} close` : " at the last close"}
-            </span>
-          )}
+          <span className="ps-fav-since">
+            {day?.avg1d != null && <><em className={`ps-move ${tone(day.avg1d)}`}>{pct(day.avg1d)}</em> on average{closeDate ? ` at the ${closeDate} close` : " at the last close"}</>}
+            {changes && <>{day?.avg1d != null ? " · " : ""}{changes}</>}
+          </span>
           {movers.map(m => (
-            <span key={m.way} className="ps-change">
+            <button key={m.way} type="button" className="ps-change ps-change-go" aria-label={`Open ${m.name || m.symbol}`}
+              onClick={e => { e.stopPropagation(); if (onOpenStock) onOpenStock(m.symbol); else openCard(); }}>
               <CompanyLogo symbol={m.symbol} size={22} fallback={m.name} />
               <span className="ps-change-name">{cardName(m.name || m.symbol)}</span>
               {m.cmp != null && <span className="ps-price">{rupees(m.cmp)}</span>}
               <em className={`ps-move ${tone(m.ret1d)}`}>{pct(m.ret1d)}</em>
-            </span>
+            </button>
           ))}
-          {day.resultsCount > 0 && <ResultsTicker results={day.results} total={day.resultsCount} />}
         </span>
       )}
-    </button>
+    </div>
   );
 }
 
@@ -309,7 +263,7 @@ export default function PhoneScreens({ onSelect, onNewScreen, continueCard = nul
       {favs.length ? (
         <>
           <div className="ps-favs" ref={railRef} onScroll={onRail} role="group" aria-label="Your favourite screeners">
-            {favs.map(p => <FavouriteCard key={p.id} p={p} count={counts[p.id]} change={changes[p.id]} day={today[p.id]} closeDate={dateOf(closeIso ?? pricesDate)} onOpen={open} />)}
+            {favs.map(p => <FavouriteCard key={p.id} p={p} count={counts[p.id]} change={changes[p.id]} day={today[p.id]} closeDate={dateOf(closeIso ?? pricesDate)} onOpen={open} onOpenStock={onOpenStock} />)}
           </div>
           {favs.length > 1 && <div className="ps-dots" aria-hidden="true">{favs.map((p, i) => <i key={p.id} className={i === Math.min(favAt, favs.length - 1) ? "on" : ""} />)}</div>}
         </>

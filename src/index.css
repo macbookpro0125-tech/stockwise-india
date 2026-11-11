@@ -6629,3 +6629,11 @@ html.td-night[data-theme="light"] .tb.tb-scrolled { box-shadow: 0 1px 0 rgba(255
 @media (max-width: 640px) and (prefers-reduced-motion: reduce) {
   .bottom-tab-bar, [data-theme="light"] .bottom-tab-bar { transition: opacity 160ms; }
 }
+
+/* The favourite card (11 Nov 2026): the head and each company are their own
+   buttons; the company's price sits on the line (.ps-price's 18px top margin,
+   meant for a stock page's price, pushed it below its name) */
+.ps-fav-head { width: 100%; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.ps-change-go { width: 100%; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; border-radius: 10px; }
+.ps-change-go:active { background: var(--pg-line); }
+.ps-change .ps-price { margin: 0; }
