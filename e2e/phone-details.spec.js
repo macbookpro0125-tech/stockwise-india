@@ -14,7 +14,8 @@ test("PD-2 a company on a phone: the overall score, what it does, the quarters @
   test.skip(!isMobile, "a phone's company page");
   await page.goto("/stock/TCS");
   const short = page.getByRole("region", { name: "In short" });
-  await expect(short.getByLabel(/^Overall quality \d+ of 100/)).toBeVisible({ timeout: 45_000 });
+  await expect(short.getByLabel(/^Overall score \d+ of 100/)).toBeVisible({ timeout: 45_000 });
+  await expect(short).toContainText(/Data confidence: (High|Medium|Low)/);
   const about = page.getByRole("region", { name: "What it does" });
   await expect(about).toContainText(/TCS|Tata Consultancy/);
   await expect(about).toContainText(/Sales in the year to/);
