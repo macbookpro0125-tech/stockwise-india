@@ -9,7 +9,7 @@ const num = v => v != null && Number.isFinite(v);
 // better: which end is the good one ("high", or "low" for P/E and risk)
 export const AXES = [
   { id: "quality", label: "Quality score", short: "quality", better: "high", get: s => s.research?.quality },
-  { id: "overall", label: "Research score", short: "research score", better: "high", get: s => s.research?.overall },
+  { id: "overall", label: "Overall score", short: "overall score", better: "high", get: s => s.research?.overall },
   { id: "business", label: "Business quality", short: "business", better: "high", get: s => s.research?.groups?.business },
   { id: "earnings", label: "Earnings quality", short: "earnings", better: "high", get: s => s.research?.groups?.earnings },
   { id: "balance", label: "Balance sheet", short: "balance sheet", better: "high", get: s => s.research?.groups?.balance },

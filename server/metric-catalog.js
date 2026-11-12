@@ -7,26 +7,26 @@
 // category metric, { id, values: [...] }. A company whose value is unknown is
 // left out once a filter on that metric applies, and the screen says how many.
 
-export const CATEGORIES = ["Research score", "Valuation", "Profitability", "Growth", "Quarterly results", "Price & returns", "Volume & technicals", "Ownership", "Financial health", "Banks", "Cash flow", "Income statement", "Balance sheet", "Size"];
+export const CATEGORIES = ["Scores", "Valuation", "Profitability", "Growth", "Quarterly results", "Price & returns", "Volume & technicals", "Ownership", "Financial health", "Banks", "Cash flow", "Income statement", "Balance sheet", "Size"];
 
 const NO_LENDERS = " Not shown for banks and other lenders.";
 // The research score (research.js) and its groups
 const groupScore = id => m => m.research?.groups.find(g => g.id === id)?.score ?? null;
 
 export const METRICS = [
-  // ── Research score ──
-  { id: "quality", label: "Quality score", short: "Quality", category: "Research score", unit: "/100", decimals: 0, get: m => m.research?.quality ?? null, about: "Out of 100 across six groups: business, earnings, balance sheet, governance, growth and valuation. Checks the filings can't show are left out, never guessed." },
-  { id: "qualityOnly", label: "Quality without valuation", short: "Quality ex-val", category: "Research score", unit: "/100", decimals: 0, get: m => m.research?.qualityOnly ?? null, about: "The five business groups only — how good the company is, whatever its price." },
-  { id: "researchScore", label: "Overall research score", short: "Research", category: "Research score", unit: "/100", decimals: 0, get: m => m.research?.overall.score ?? null, about: "Quality (70%) and valuation (30%) blended, trimmed for price swings and data gaps. A research summary, not a buy or sell signal." },
-  { id: "businessScore", label: "Business quality score", short: "Business", category: "Research score", unit: "/100", decimals: 0, get: groupScore("business"), about: "Returns on capital, margin stability, steady sales and returns on new investment." },
-  { id: "earningsScore", label: "Earnings quality score", short: "Earnings", category: "Research score", unit: "/100", decimals: 0, get: groupScore("earnings"), about: "Cash behind the profits, accruals, free cash flow, steady EPS and EPS growth." },
-  { id: "balanceScore", label: "Balance sheet score", short: "Balance", category: "Research score", unit: "/100", decimals: 0, get: groupScore("balance"), about: "Net debt, interest cover, liquidity, working capital and debt to equity." + NO_LENDERS },
-  { id: "governanceScore", label: "Governance score", short: "Governance", category: "Research score", unit: "/100", decimals: 0, get: groupScore("governance"), about: "Promoter holding changes, pledging, dilution, the audit opinion and auditor resignations. Related-party deals aren't checked yet." },
-  { id: "growthScore", label: "Growth score", short: "Growth", category: "Research score", unit: "/100", decimals: 0, get: groupScore("growth"), about: "3- and 5-year sales growth and 3-year EPS growth." },
-  { id: "valuationScore", label: "Valuation score", short: "Valuation", category: "Research score", unit: "/100", decimals: 0, get: groupScore("valuation"), about: "Higher means cheaper: against its own usual P/E, sector peers, free cash flow and simple multiples, at the last close." },
-  { id: "technicalScore", label: "Technical setup", short: "Technical", category: "Research score", unit: "/100", decimals: 0, get: m => m.research?.technical.score ?? null, about: "Price trend, strength against NIFTY 50, momentum, liquidity and swings. Kept out of the quality and research scores." },
-  { id: "riskScore", label: "Risk score", short: "Risk", category: "Research score", unit: "/100", decimals: 0, get: m => m.research?.risk.score ?? null, about: "Higher means riskier: debt, cyclicality, governance, price swings, valuation and data gaps." },
-  { id: "confidence", label: "Data quality", short: "Data quality", category: "Research score", unit: "/100", decimals: 0, get: m => m.research?.confidence ?? null, about: "A data-quality measure based on checks covered, filing recency and price freshness; it does not predict the stock's outcome." },
+  // ── Scores ──
+  { id: "quality", label: "Quality score", short: "Quality", category: "Scores", unit: "/100", decimals: 0, get: m => m.research?.quality ?? null, about: "Out of 100 across six groups: business, earnings, balance sheet, governance, growth and valuation. Checks the filings can't show are left out, never guessed." },
+  { id: "qualityOnly", label: "Quality without valuation", short: "Quality ex-val", category: "Scores", unit: "/100", decimals: 0, get: m => m.research?.qualityOnly ?? null, about: "The five business groups only — how good the company is, whatever its price." },
+  { id: "researchScore", label: "Overall score", short: "Overall", category: "Scores", unit: "/100", decimals: 0, get: m => m.research?.overall.score ?? null, about: "Quality (70%) and valuation (30%) blended, trimmed for price swings and data gaps. A research summary, not a buy or sell signal." },
+  { id: "businessScore", label: "Business quality score", short: "Business", category: "Scores", unit: "/100", decimals: 0, get: groupScore("business"), about: "Returns on capital, margin stability, steady sales and returns on new investment." },
+  { id: "earningsScore", label: "Earnings quality score", short: "Earnings", category: "Scores", unit: "/100", decimals: 0, get: groupScore("earnings"), about: "Cash behind the profits, accruals, free cash flow, steady EPS and EPS growth." },
+  { id: "balanceScore", label: "Balance sheet score", short: "Balance", category: "Scores", unit: "/100", decimals: 0, get: groupScore("balance"), about: "Net debt, interest cover, liquidity, working capital and debt to equity." + NO_LENDERS },
+  { id: "governanceScore", label: "Governance score", short: "Governance", category: "Scores", unit: "/100", decimals: 0, get: groupScore("governance"), about: "Promoter holding changes, pledging, dilution, the audit opinion and auditor resignations. Related-party deals aren't checked yet." },
+  { id: "growthScore", label: "Growth score", short: "Growth", category: "Scores", unit: "/100", decimals: 0, get: groupScore("growth"), about: "3- and 5-year sales growth and 3-year EPS growth." },
+  { id: "valuationScore", label: "Valuation score", short: "Valuation", category: "Scores", unit: "/100", decimals: 0, get: groupScore("valuation"), about: "Higher means cheaper: against its own usual P/E, sector peers, free cash flow and simple multiples, at the last close." },
+  { id: "technicalScore", label: "Technical setup", short: "Technical", category: "Scores", unit: "/100", decimals: 0, get: m => m.research?.technical.score ?? null, about: "Price trend, strength against NIFTY 50, momentum, liquidity and swings. Kept out of the quality and research scores." },
+  { id: "riskScore", label: "Risk score", short: "Risk", category: "Scores", unit: "/100", decimals: 0, get: m => m.research?.risk.score ?? null, about: "Higher means riskier: debt, cyclicality, governance, price swings, valuation and data gaps." },
+  { id: "confidence", label: "Data quality", short: "Data quality", category: "Scores", unit: "/100", decimals: 0, get: m => m.research?.confidence ?? null, about: "A data-quality measure based on checks covered, filing recency and price freshness; it does not predict the stock's outcome." },
 
   // ── Valuation ──
   { id: "pe", label: "P/E (TTM, else latest FY)", short: "P/E TTM/FY", category: "Valuation", unit: "x", decimals: 1, about: "Today's price ÷ EPS over the latest four consecutive quarters. If four consecutive quarters aren't available, it uses the latest audited year's EPS; P/E FY shows that figure separately." },
@@ -288,7 +288,7 @@ const BASIS = {
   marketCapCr: "close", sharesCr: "holding", faceValue: "fy",
 };
 const CATEGORY_BASIS = {
-  "Research score": "scores", Valuation: "close-fy", Profitability: "fy", Growth: "growth", "Price & returns": "close",
+  "Scores": "scores", Valuation: "close-fy", Profitability: "fy", Growth: "growth", "Price & returns": "close",
   "Volume & technicals": "daily", Ownership: "holding", "Financial health": "fy", "Cash flow": "fy",
   "Income statement": "fy", "Balance sheet": "fy-end", Banks: "bank",
 };

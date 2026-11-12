@@ -94,7 +94,7 @@ export default function FilterBoard({ meta, filters, onChange, onMore, onUndo = 
   const common = groupsNow.flatMap(g => g.items);
   const layoutNow = () => Object.fromEntries(groupsNow.map(g => [g.id, g.items.map(i => i.id)]));
   const takeOff = id => { const l = layoutNow(); for (const k of Object.keys(l)) l[k] = l[k].filter(x => x !== id); setLayout(l); };
-  const GROUP_OF_KIND = { Valuation: "value", Profitability: "quality", "Financial health": "quality", "Research score": "quality", Banks: "quality", "Cash flow": "quality", "Income statement": "quality", "Balance sheet": "quality", Growth: "growth", "Quarterly results": "growth", Ownership: "owners", "Price & returns": "price", "Volume & technicals": "price", Size: "company" };
+  const GROUP_OF_KIND = { Valuation: "value", Profitability: "quality", "Financial health": "quality", Scores: "quality", Banks: "quality", "Cash flow": "quality", "Income statement": "quality", "Balance sheet": "quality", Growth: "growth", "Quarterly results": "growth", Ownership: "owners", "Price & returns": "price", "Volume & technicals": "price", Size: "company" };
   // editing: true (Customise, each filter to the card for its kind) or a
   // card's id (✎ on that card: what's ticked goes into it)
   const toggleOn = id => {

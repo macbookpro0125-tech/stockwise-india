@@ -34,7 +34,7 @@ const scored = (v, word, color = "var(--t3)") => (v == null
 const GROUP_ROWS = [["business", "Business quality"], ["earnings", "Earnings quality"], ["balance", "Balance sheet"], ["governance", "Governance"], ["growth", "Growth"]];
 const RESEARCH_ROWS = [
   { key: "quality", label: "Quality score", fmt: s => <QualityBadge research={s.research} /> },
-  { key: "overall", label: "Overall research score", fmt: s => scored(s.research?.overall, s.research?.stance, overallTone(s.research?.overall).color) },
+  { key: "overall", label: "Overall score", fmt: s => scored(s.research?.overall, s.research?.stance, overallTone(s.research?.overall).color) },
   ...GROUP_ROWS.map(([id, label]) => ({
     key: id, label,
     fmt: s => (id === "balance" && s.lender ? <span style={{ color: "var(--t3)", fontWeight: 500, fontSize: 12 }}>Not scored for lenders</span> : scored(s.research?.groups?.[id], "/100")),
@@ -124,7 +124,7 @@ export default function CompareView({ stocks, pricesDate, onClose }) {
               ))}
             </div>
 
-            <div style={section}>Research score</div>
+            <div style={section}>Overall score</div>
             {RESEARCH_ROWS.map(row => (
               <div key={row.key} style={{ display: "grid", gridTemplateColumns: cols, borderBottom: "1px solid var(--bdr)" }}>
                 <div style={{ padding: "10px 16px", fontSize: 12, color: "var(--t2)", display: "flex", alignItems: "center" }}>{row.label}</div>

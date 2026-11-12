@@ -180,7 +180,7 @@ function MenuButton({ label, menu }) {
 
 // Quality, Research and CMP when they're columns like the rest: their
 // headings, units and the sort each stands for
-const FIXED_HEAD = { quality: { label: "Quality", unit: "of 100", col: "quality" }, researchScore: { label: "Res", unit: "of 100", col: "overall" }, cmp: { label: "CMP", unit: "₹", col: "cmp" } };
+const FIXED_HEAD = { quality: { label: "Quality", unit: "of 100", col: "quality" }, researchScore: { label: "Overall", unit: "of 100", col: "overall" }, cmp: { label: "CMP", unit: "₹", col: "cmp" } };
 
 // Units as a heading's short tail: "Quality /100", "ROCE %"
 const UNIT_SHORT = { "of 100": "/100", "of 9": "/9" };
@@ -495,7 +495,7 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
   // "Sort by" beside the count — the only way to sort on a phone, where
   // there are no column headers; on a computer it follows header clicks
   const sortOptions = [
-    ["quality", "Quality score"], ["overall", "Research score"],
+    ["quality", "Quality score"], ["overall", "Overall score"],
     ...(netNet ? [["ncavPct", "Discount to NCAV"]] : []),
     ...columns.map(def => [def.id, def.short ?? def.label]),
     ["cmp", "Price"], ["ret1d", "1-day change"], ["name", "Name"],
@@ -826,7 +826,7 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
           </div>
           {(scoreBoxes || isMobile) && [
             ["Minimum quality score", minQuality, setMinQuality, "Any quality", MIN_QUALITY.map(n => [n, `Quality ${n}+`]), "Quality"],
-            ["Minimum research score", minResearch, setMinResearch, "Any research", MIN_RESEARCH.map(n => [n, `Research ${n}+`]), "Research"],
+            ["Minimum overall score", minResearch, setMinResearch, "Any overall", MIN_RESEARCH.map(n => [n, `Overall ${n}+`]), "Overall"],
             ["Minimum Piotroski score", minPiotroski, setMinPiotroski, "Any Piotroski", MIN_PIOTROSKI.map(n => [n, n === 9 ? "Piotroski 9" : `Piotroski ${n}+`]), "Piotroski"],
           ].map(([label, value, set, any, options, short]) => (
             // On a phone the box is a small label ("Quality ▾", or the chosen
@@ -914,8 +914,8 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
             const missingResearch = overall == null ? researchMissingText(stock.research) : null;
             // Coloured as the pills and stance words on a computer
             const cells = [
+              ["Overall", <span key="r" title={researchTitle(stock.research)} aria-label={missingResearch ?? `Overall score ${Math.round(overall)} — ${stock.research?.stance ?? "rated"}`} style={{ color: overallTone(overall).color }}>{overall == null ? "—" : Math.round(overall)}</span>, overall == null ? null : "/100"],
               ["Quality", <span key="q" title={researchTitle(stock.research)} style={{ color: qualityTone(quality).color }}>{quality == null ? "—" : Math.round(quality)}</span>, quality == null ? null : "/100"],
-              ["Research", <span key="r" title={researchTitle(stock.research)} aria-label={missingResearch ?? `Research score ${Math.round(overall)} — ${stock.research?.stance ?? "rated"}`} style={{ color: overallTone(overall).color }}>{overall == null ? "—" : Math.round(overall)}</span>, overall == null ? null : "/100"],
               // (an unrated one is a dash: the note under the card says why —
               // a word there was cut off on a small phone, "qual…")
               // What the list is sorted by, else what's being filtered on: one
@@ -1009,7 +1009,7 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
                   </th>
                   {!fixedInColumns && (<>
                   <SortTh label="Quality" unit="of 100" title="Quality score out of 100 — business, earnings, balance sheet, governance, growth and valuation" col="quality" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} menu={menuFor("quality", "quality")} info={<MetricInfo def={meta?.byId.get("quality")} meta={meta} />} />
-                  <SortTh label="Res" unit="of 100" title="Research score. Overall research score: quality and valuation blended, trimmed for price swings and data gaps. Not a buy or sell signal." col="overall" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} menu={menuFor("overall", "researchScore")} info={<MetricInfo def={meta?.byId.get("researchScore")} meta={meta} />} />
+                  <SortTh label="Overall" unit="of 100" title="Overall score: quality and valuation blended, trimmed for price swings and data gaps. Not a buy or sell signal." col="overall" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} menu={menuFor("overall", "researchScore")} info={<MetricInfo def={meta?.byId.get("researchScore")} meta={meta} />} />
                   <SortTh label="CMP" unit="₹" col="cmp"         sortBy={sortBy} sortDir={sortDir} onSort={handleSort} menu={menuFor("cmp", "cmp")} info={<MetricInfo def={meta?.byId.get("cmp")} meta={meta} />} />
                   </>)}
                   {columns.map((def, ci) => (

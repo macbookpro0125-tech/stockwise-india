@@ -98,7 +98,7 @@ export function ResearchBar({ research }) {
   const v = research?.overall ?? null;
   const stance = research?.stance ?? "Not rated";
   return (
-    <span aria-label={`Research score ${v == null ? "not rated" : `${Math.round(v)} of 100`}, ${stance}`}>
+    <span aria-label={`Overall score ${v == null ? "not rated" : `${Math.round(v)} of 100`}, ${stance}`}>
       <ScoreBar value={v} tone={overallTone(v)} title={`${stance}. ${researchTitle(research)}`} />
     </span>
   );

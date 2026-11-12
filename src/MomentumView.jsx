@@ -166,7 +166,7 @@ export default function MomentumView({ onOpenStock }) {
         <span style={{ fontSize: 11, fontWeight: 500, padding: "3px 9px", borderRadius: 999, background: "var(--yellow-dim)", color: "var(--yellow)", border: "1px solid var(--yellow-bdr)" }}>Short-term · speculative</span>
       </div>
       <p style={{ fontSize: 13, color: "var(--t2)", margin: "0 0 12px", lineHeight: 1.55, maxWidth: 820 }}>
-        Companies in a confirmed uptrend near their 52-week high, on heavier volume — a screen for moves of about a month. Price and volume only: it's separate from Discover's Quality and Research scores, and a company can rank high here and low there.
+        Companies in a confirmed uptrend near their 52-week high, on heavier volume — a screen for moves of about a month. Price and volume only: it's separate from Discover's Quality and Overall scores, and a company can rank high here and low there.
       </p>
       <div style={{ display: "flex", gap: 8, alignItems: "flex-start", padding: "10px 12px", borderRadius: 10, background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", fontSize: 12, color: "var(--t2)", lineHeight: 1.55, marginBottom: 14, maxWidth: 820 }}>
         <TriangleAlert size={14} style={{ color: "var(--yellow)", flexShrink: 0, marginTop: 2 }} />

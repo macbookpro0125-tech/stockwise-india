@@ -20,7 +20,7 @@ export const APP_TOUR = [
 
 export const STOCK_TOUR = [
   { target: "stock-actions", title: "The company's page", body: "Everything about one company. Watch adds it to your Watchlist; Alert tells you when the price reaches a level you set." },
-  { target: "research", title: "Research scores", body: "Quality: how strong the business is, out of 100. Overall research score: quality and valuation together. Open \"Why this score?\" to see every check and its reason." },
+  { target: "research", title: "Scores", body: "Overall: the headline score, out of 100: quality and valuation together, trimmed for price swings and data gaps. Quality: how strong the business is. Open \"Why this score?\" to see every check and its reason." },
   { target: "override", title: "Check or change the numbers", body: "EPS, P/E and growth come from the company's NSE filings. Type your own to test a view — the fair value on this page follows. The research score always uses the filings." },
   { target: "valuation", title: "Ways to value it", body: "Valuation methods worked out from reported figures. Show assumptions lets you change each one. These are estimates, not price targets." },
   { target: "thesis", title: "What to watch", body: "Strengths and cautions from the filings, what to check in the next results, and your own notes — saved to your account." },
