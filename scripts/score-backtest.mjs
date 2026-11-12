@@ -291,6 +291,8 @@ for (const day of DATES) {
   // companies: above 0, higher on that part came before higher returns
   const parts = Object.fromEntries(["score", "quality", "value", "steadiness"].map(k => [k, { r6: spearman(scored, k, "r6"), r12: spearman(scored, k, "r12") }]));
   cohorts.push({
+    // every company's figures that day, for checks outside this script (--json)
+    rows: scored.map(({ symbol, score, quality, businessQuality, value, strength, fscore, lender, capCr, r6, r12 }) => ({ symbol, score, quality, businessQuality, value, strength, fscore, lender, capCr, r6: r1(r6), r12: r1(r12) })),
     variants: variantRows,
     fStats,
     large: { top: stat(big.slice(0, half)), bottom: stat(big.slice(half)), all: stat(big) },
