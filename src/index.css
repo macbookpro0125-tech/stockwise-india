@@ -6277,7 +6277,10 @@ html.td-night[data-theme="light"] .tb.tb-scrolled { box-shadow: 0 1px 0 rgba(255
 .ix-table thead button { padding: 0; border: 0; background: none; color: var(--t3); font: inherit; font-size: var(--fs-xs); font-weight: 500; cursor: pointer; }
 .ix-table thead th[aria-sort] button { color: var(--accent); }
 .ix-table th:first-child { position: sticky; left: 0; z-index: 1; padding-left: 0; text-align: left; background: var(--s1); }
-.ix-table tbody th button { display: flex; align-items: center; gap: 10px; max-width: 240px; padding: 0; border: 0; background: none; color: var(--t1); font: inherit; text-align: left; cursor: pointer; }
+/* the name keeps room for itself; the figures scroll sideways beside it (a
+   phone squeezed the names to one letter, 13 Nov 2026) */
+.ix-table tbody th { min-width: 160px; }
+.ix-table tbody th button { display: flex; align-items: center; gap: 10px; width: 100%; max-width: 240px; padding: 0; border: 0; background: none; color: var(--t1); font: inherit; text-align: left; cursor: pointer; }
 .ix-table tbody th span { display: grid; min-width: 0; }
 .ix-table tbody th b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; }
 .ix-table tbody th small { font-size: var(--fs-2xs); color: var(--t3); overflow: hidden; text-overflow: ellipsis; }
