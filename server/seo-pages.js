@@ -208,9 +208,22 @@ function resultsPage(m, slug) {
     q.opm != null && { q: `What was ${nn} operating margin in ${label}?`, a: `${num(q.opm)}%${yearAgo?.opm != null ? `, against ${num(yearAgo.opm)}% a year earlier` : ""}.` },
     { q: `When did ${n} report ${label} results?`, a: q.filed ? `It filed them with NSE on ${day(q.filed)}, for the quarter to ${day(q.fyEnd)}.` : `For the quarter to ${day(q.fyEnd)}.` },
   ].filter(Boolean);
+  // In short (11 Nov 2026, the results pages bring 8 of 9 Google clicks but
+  // few for how often they show): one plain line, the first thing on the page
+  // and the start of Google's snippet — the two figures, and where the quarter
+  // stands among the ones on file
+  const short = inShort(q, span, sy, py);
+  // other companies' results (same sector, then the same filing day), so a
+  // visitor and Google find the next page
+  const also = alsoReported(m, q);
+  // the next results, by email: the results reminder goes out the evening
+  // before a watched company's board meeting (digest.js)
+  const today = new Date(Date.now() + 5.5 * 3600_000).toISOString().slice(0, 10);
+  const next = m.nextResults && String(m.nextResults).slice(0, 10) >= today ? String(m.nextResults).slice(0, 10) : null;
+  const notify = `<section class="rq-box rq-notify" aria-label="The next results"><div><h2>${next ? `${esc(n)} reports next on ${esc(day(next))}` : `${esc(nn)} next results`}</h2><p>${next ? "Its board meets to approve the results that day." : `${esc(n)} hasn't told NSE its next results date yet.`} Get an email the evening before it reports.</p></div><button type="button" class="rq-notify-btn" data-watch="${esc(m.symbol)}" data-name="${esc(n)}">Email me before its next results</button></section>`;
   return {
     title: resultsTitle(n, label, m.symbol, q, sy, py),
-    desc: lede.slice(0, 300),
+    desc: `${short ? `${short} ` : ""}${lede}`.slice(0, 300),
     canonical: `${SITE}/stock/${sym}/results/${slug}`,
     ld: { "@context": "https://schema.org", "@graph": [
       { "@type": "WebPage", name: resultsTitle(n, label, m.symbol, q, sy, py), description: lede, url: `${SITE}/stock/${sym}/results/${slug}`, dateModified: q.filed ? String(q.filed).slice(0, 10) : undefined },
@@ -218,16 +231,65 @@ function resultsPage(m, slug) {
     ] },
     body: `<main class="seo-stock seo-methodology rq">${crumb(m, `${label} results`).replace("<p>", '<p class="rq-crumb">')}
 <header class="rq-head"><div><span class="rq-eyebrow">${esc(label)} results · quarter to ${esc(day(q.fyEnd))}${q.filed ? ` · filed ${esc(day(q.filed))}` : ""}</span><h1>${esc(n)} ${esc(label)} results</h1></div>${price}</header>
+${short ? `<p class="rq-short"><b>In short:</b> ${esc(short)}</p>` : ""}
 <p class="rq-lede">${esc(lede)}</p>
+${notify}
 ${cards ? `<section class="rq-cards" aria-label="The quarter's figures">${cards}</section><p class="rq-note">Small bars: the last ${span.length} quarters, this one darkest.</p>` : ""}
 ${said.length ? `<section class="rq-box" aria-label="What changed"><h2>What changed</h2><ul class="rq-said">${said.map(x => `<li>${x}</li>`).join("")}</ul><p class="rq-note">Read from the filed figures against the same quarter a year earlier. Figures, not a view on the shares.</p></section>` : ""}
 ${sales8 || profit8 ? `<section class="rq-grid2" aria-label="Quarter by quarter">${sales8 ? `<div class="rq-box"><h2>Sales, quarter by quarter</h2><p class="rq-note">₹ crore</p>${sales8}</div>` : ""}${profit8 ? `<div class="rq-box"><h2>Net profit, quarter by quarter</h2><p class="rq-note">₹ crore</p>${profit8}</div>` : ""}</section>` : ""}
 ${qa.length ? `<section class="rq-box" aria-label="Questions"><h2>Questions about these results</h2>${qa.map(x => `<h3>${esc(x.q)}</h3><p>${esc(x.a)}</p>`).join("")}</section>` : ""}
 <section class="rq-box" aria-label="The full results"><h2>The full results</h2>${table2}</section>
+${also.length ? `<section class="rq-box rq-also" aria-label="Other companies' results"><h2>Other companies' results</h2>${also.map(g => `<h3>${esc(g.title)}</h3><ul>${g.items.map(x => `<li><a href="${x.href}">${esc(x.name)} ${esc(x.label)}</a><span>${esc(x.line)}</span></li>`).join("")}</ul>`).join("")}</section>` : ""}
 ${qs.length > 1 ? `<nav class="rq-quarters" aria-label="Other quarters"><span>Other quarters</span>${quarters}</nav>` : ""}
 <nav class="rq-links" aria-label="More">${[[`/stock/${sym}`, `${niceName(m.name)} overview`], ...stockPageLinks(m).filter(([p]) => !p.includes("/results/")), ["/results", "Other companies' latest results"], ["/results-calendar", "Results calendar"]].map(([p, t]) => link(p, t)).join("")}</nav>
 <p class="rq-note">${esc(NOTE)} Quarterly figures are as filed; a company can restate them later.</p></main>`,
   };
+}
+
+// One plain line on a quarter: profit and sales against a year earlier, and
+// where it stands among the quarters on file (a record, a first loss, back to
+// profit). Nothing that isn't in the figures.
+export function inShort(q, span, sy, py) {
+  const f1 = v => Math.abs(v).toFixed(Math.abs(v) >= 100 ? 0 : 1);
+  const loss = q.profitCr != null && q.profitCr < 0;
+  const parts = [];
+  // a jump from a small base reads as "-fold" ("profit up 12825%" → "129-fold")
+  const by = v => (v >= 200 ? `up ${Math.round(1 + v / 100)}-fold` : `${v >= 0 ? "up" : "down"} ${f1(v)}%`);
+  if (q.profitCr != null) parts.push(loss ? "a net loss" : py != null && isFinite(py) && q.profitCr / (1 + py / 100) > 0 ? `profit ${by(py)}` : "a net profit");
+  if (sy != null && isFinite(sy)) parts.push(`sales ${by(sy)}`);
+  if (!parts.length) return null;
+  let line = `${parts.join(" and ")} on a year earlier`;
+  const before = span.slice(0, -1); // the quarters on file before this one, oldest first
+  const prof = before.map(x => x.profitCr).filter(v => v != null);
+  const sales = before.map(x => x.revenueCr).filter(v => v != null);
+  const k = before.length + 1;
+  if (!loss && q.profitCr != null && prof.length >= 3 && q.profitCr > Math.max(...prof)) line += `, the highest quarterly profit of the last ${k} quarters on file`;
+  else if (q.revenueCr != null && sales.length >= 3 && q.revenueCr > Math.max(...sales)) line += `, the highest quarterly sales of the last ${k} quarters on file`;
+  else if (loss && prof.length >= 3 && prof.every(v => v > 0)) line += `, its first loss in the last ${k} quarters on file`;
+  else if (!loss && q.profitCr != null && prof.length && prof[prof.length - 1] < 0) line += ", back to profit after a loss the quarter before";
+  else if (!loss && q.profitCr != null && prof.length >= 3 && q.profitCr < Math.min(...prof)) line += `, the lowest quarterly profit of the last ${k} quarters on file`;
+  return `${line[0].toUpperCase()}${line.slice(1)}.`;
+}
+
+// Up to six companies in the same sector that filed the same quarter, then up
+// to six others filed the same day, the largest first, each with its line
+function alsoReported(m, q) {
+  const label = fyQuarter(q.fyEnd), filed = String(q.filed ?? "").slice(0, 10);
+  const rows = (allMetrics().rows ?? []).filter(r => r.symbol !== m.symbol && r.name && r.quarters?.[0]?.fyEnd && fyQuarter(r.quarters[0].fyEnd) === label && (r.quarters[0].revenueCr != null || r.quarters[0].profitCr != null))
+    .sort((a, b) => (b.marketCapCr ?? 0) - (a.marketCapCr ?? 0));
+  const item = r => {
+    const x = r.quarters[0];
+    const bits = [x.profitCr != null && x.profitCr < 0 ? "net loss" : x.profitYoY != null && isFinite(x.profitYoY) ? `profit ${x.profitYoY >= 0 ? "up" : "down"} ${Math.abs(x.profitYoY).toFixed(Math.abs(x.profitYoY) >= 100 ? 0 : 1)}%` : null,
+      x.salesYoY != null && isFinite(x.salesYoY) ? `sales ${x.salesYoY >= 0 ? "up" : "down"} ${Math.abs(x.salesYoY).toFixed(1)}%` : null].filter(Boolean);
+    return { href: `/stock/${encodeURIComponent(r.symbol)}/results/${quarterSlug(x.fyEnd)}`, name: niceName(r.name), label, line: bits.join(", ") };
+  };
+  const sector = m.sector ? rows.filter(r => r.sector === m.sector).slice(0, 6) : [];
+  const shown = new Set(sector.map(r => r.symbol));
+  const sameDay = filed ? rows.filter(r => !shown.has(r.symbol) && String(r.quarters[0].filed ?? "").slice(0, 10) === filed).slice(0, 6) : [];
+  return [
+    sector.length && { title: `${m.sector}, ${label}`, items: sector.map(item) },
+    sameDay.length && { title: `Also filed on ${day(filed)}`, items: sameDay.map(item) },
+  ].filter(Boolean);
 }
 
 // The title is what someone sees in Google's results, so it leads with the

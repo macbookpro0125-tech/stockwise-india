@@ -6638,3 +6638,20 @@ html.td-night[data-theme="light"] .tb.tb-scrolled { box-shadow: 0 1px 0 rgba(255
 .ps-change-go:active { background: var(--pg-line); }
 .ps-change .ps-price { margin: 0; }
 .pc-box + .pc-box { margin-top: 12px; }
+
+/* Results pages (11 Nov 2026): In short, the next results by email, and other
+   companies' results */
+.rq .rq-short { max-width: 72ch; margin: 14px 0 0; padding: 12px 16px; border-left: 3px solid var(--accent); border-radius: 0 12px 12px 0; background: color-mix(in srgb, var(--accent) 8%, var(--s1)); font-size: 16px; line-height: 1.5; color: var(--t1); }
+.rq .rq-short b { font-weight: 600; }
+.rq-notify { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; }
+.rq-notify > div { flex: 1 1 280px; min-width: 0; }
+.public-html .rq-notify h2 { margin: 0 0 4px; }
+.rq-notify p { margin: 0; color: var(--t2); font-size: 14px; }
+.rq-notify-btn { flex: none; min-height: 44px; padding: 0 18px; border: 0; border-radius: 12px; background: var(--accent); color: var(--on-accent); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+.rq-notify-btn:hover { filter: brightness(1.06); }
+@media (max-width: 560px) { .rq-notify-btn { width: 100%; } }
+.public-html .rq-also h3 { margin: 14px 0 6px; font-size: 14px; font-weight: 600; color: var(--t2); }
+.rq-also ul { list-style: none; margin: 0; padding: 0; }
+.rq-also li { display: flex; flex-direction: column; gap: 2px; padding: 8px 0; border-top: 1px solid var(--bdr); font-size: 14px; }
+.rq-also li:first-child { border-top: 0; }
+.rq-also li span { color: var(--t3); }

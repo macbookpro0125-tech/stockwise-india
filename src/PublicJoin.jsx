@@ -10,13 +10,14 @@ import { useEffect, useState } from "react";
 import { Check } from "lucide-react";
 import AuthDialog from "./AuthDialog.jsx";
 
-// [open(why, mode), the box] — one per page
+// [open(why, mode, after), the box] — one per page; after: what to do once
+// signed in, before the page reloads (watch the company the visitor asked about)
 export function useJoin() {
   const [auth, setAuth] = useState(null);
-  const open = (why = null, mode = "signup") => setAuth({ why, mode });
+  const open = (why = null, mode = "signup", after = null) => setAuth({ why, mode, after });
   const box = auth && (
     <AuthDialog mode={auth.mode} onModeChange={mode => setAuth(a => ({ ...a, mode }))} reason={auth.why}
-      onAuthed={() => window.location.reload()} onClose={() => setAuth(null)} />
+      onAuthed={async () => { try { await auth.after?.(); } catch {} window.location.reload(); }} onClose={() => setAuth(null)} />
   );
   return [open, box];
 }

@@ -24,8 +24,27 @@ export default function PublicHtmlPage({ path, signedIn }) {
     api.publicPage(path).then(p => { if (live) { setPage(p); document.title = p.title; } }).catch(e => { if (live) setError(e.message); });
     return () => { live = false; };
   }, [path]); // eslint-disable-line react-hooks/exhaustive-deps
-  // a link to another of the site's pages opens in the app
+  // "Email me before X's next results" (results pages, 11 Nov 2026): signed
+  // in, the company goes on the watchlist (the results reminder goes out the
+  // evening before its board meeting); signed out, the sign-up box, then the same
+  const [watched, setWatched] = useState(null);
+  useEffect(() => { if (!watched) return; const t = setTimeout(() => setWatched(null), 3500); return () => clearTimeout(t); }, [watched]);
   const onClick = e => {
+    const w = e.target.closest?.("[data-watch]");
+    if (w) {
+      const symbol = w.getAttribute("data-watch"), name = w.getAttribute("data-name") || symbol;
+      // on the watchlist, and the results email on (an account without an
+      // email address — a phone sign-up — gets the watchlist only)
+      const add = async () => {
+        await api.addWatch(symbol);
+        const mail = await api.setResultsEmail(true).then(r => r.on).catch(() => false);
+        setWatched({ name, mail });
+      };
+      if (signedIn) add().catch(() => {});
+      else join(`Create a free account and we'll email you the evening before ${name}'s next results.`, "signup", add);
+      return;
+    }
+    // a link to another of the site's pages opens in the app
     const a = e.target.closest?.("a");
     const href = a?.getAttribute("href");
     if (!href || !href.startsWith("/") || e.metaKey || e.ctrlKey || e.shiftKey || e.button > 0) return;
@@ -47,6 +66,7 @@ export default function PublicHtmlPage({ path, signedIn }) {
         </div>
       )}
       {!signedIn && <JoinBar label="Jocular Insights" why="Create a free account to see each company's full analysis." onJoin={join} />}
+      {watched && <div className="pc-toast" role="status">{watched.mail ? `${watched.name} is on your watchlist. We'll email you the evening before its next results.` : `${watched.name} is on your watchlist.`}</div>}
       {box}
       <SiteFooter />
     </div>

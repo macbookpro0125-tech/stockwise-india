@@ -163,6 +163,17 @@ console.log("ok: every screen has its guide; joined and left are worked out agai
   assert.equal(resultsTitle("Acme", "Q2 FY27", "ACME", { profitCr: -50 }, -3, null), "Acme Q2 FY27 results: net loss ₹50.0 cr, sales down 3.0% | ACME");
   assert.match(resultsTitle("Acme", "Q2 FY27", "ACME", {}, null, null), /sales, profit and margin/);
   assert.match(res.title, new RegExp(`^.+ ${fyQuarter(row.quarters[0].fyEnd)} results: `));
+  // In short, the next results by email, other companies' results (11 Nov 2026)
+  const { inShort } = await import("./seo-pages.js");
+  const qx = (p, s) => ({ profitCr: p, revenueCr: s });
+  assert.equal(inShort(qx(150, 1000), [qx(100, 800), qx(110, 850), qx(120, 900), qx(150, 1000)], 25, 30), "Profit up 30.0% and sales up 25.0% on a year earlier, the highest quarterly profit of the last 4 quarters on file.");
+  assert.equal(inShort(qx(-20, 700), [qx(100, 800), qx(110, 850), qx(120, 900), qx(-20, 700)], -12.5, null), "A net loss and sales down 12.5% on a year earlier, its first loss in the last 4 quarters on file.");
+  assert.equal(inShort(qx(40, 900), [qx(100, 800), qx(-10, 850), qx(40, 900)], 5, null), "A net profit and sales up 5.0% on a year earlier, back to profit after a loss the quarter before.");
+  assert.equal(inShort({}, [{}], null, null), null);
+  assert.match(inShort(qx(517, 2529), [qx(4, 1032), qx(517, 2529)], 144.6, 12825), /^Profit up 129-fold and sales up 145% on a year earlier/);
+  assert.ok(res.body.includes('class="rq-short"') && res.desc.startsWith(res.body.match(/<b>In short:<\/b> ([^<]+)<\/p>/)[1].replace(/&#39;/g, "'").slice(0, 20)), "In short, first on the page and in the description");
+  assert.ok(res.body.includes(`data-watch="${row.symbol}"`), "the next results by email");
+  assert.ok(/class="rq-box rq-also"[\s\S]*href="\/stock\/[^"]+\/results\/q[1-4]-fy\d\d"/.test(res.body), "links other companies' results");
   // /results: who filed lately, newest first, each linked to its own results page
   const latest = latestResults();
   assert.ok(latest.count > 0 && latest.days.every((d, i, a) => !i || a[i - 1].date > d.date), "newest day first");
