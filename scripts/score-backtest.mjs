@@ -159,6 +159,15 @@ const MIXES = [
   ["value 30%, trim 50%", 0.3, 0.5],
   ["value 10%, trim 60%", 0.1, 0.6],
 ];
+const BLENDS = [
+  ["rank: today's score", { score: 1 }],
+  ["rank: trend alone", { trend: 1 }],
+  ["rank: calm alone", { calm: 1 }],
+  ["rank: quality + calm", { quality: 0.5, calm: 0.5 }],
+  ["rank: quality + trend", { quality: 0.5, trend: 0.5 }],
+  ["rank: quality + calm + trend", { quality: 1 / 3, calm: 1 / 3, trend: 1 / 3 }],
+  ["rank: score + trend", { score: 0.5, trend: 0.5 }],
+];
 const rankOf = vals => { const idx = vals.map((v, i) => [v, i]).sort((a, b) => a[0] - b[0]); const r = new Array(vals.length); idx.forEach(([, i], k) => { r[i] = k; }); return r; };
 function spearman(rows, x, y) {
   const both = rows.filter(r => r[x] != null && r[y] != null);
@@ -192,6 +201,9 @@ for (const day of DATES) {
       // the score's parts, to see which of them came before better returns
       quality: m.research.qualityOnly ?? null, value: m.research.valuation?.score ?? null, steadiness: m.research.risk?.overlay != null ? -m.research.risk.overlay : null,
       overlay: m.research.risk?.overlay ?? 0, status: m.research.overall.status,
+      // known market factors, from the prices up to that day: the past year's
+      // move against the Nifty (trend) and the year's price swings
+      trend: m.ret1yVsNifty ?? null, calm: m.volatility1y != null ? -m.volatility1y : null,
     }))
     .sort((a, b) => b.score - a.score);
   const bench = { r6: indexForward(day, 6), r12: indexForward(day, 12) };
@@ -218,6 +230,24 @@ for (const day of DATES) {
       top25: stat(rows.slice(0, TOP_N)), bigTop: stat(bigN.slice(0, LARGE_N / 2)), bigBottom: stat(bigN.slice(LARGE_N / 2)),
     }];
   }));
+  // Blends by rank (each part 0–1 within the day's companies, averaged):
+  // quality with calm and/or trend — the factors with the longest records
+  const pct = (rows, k) => { const have = rows.filter(r => r[k] != null); const rk = rankOf(have.map(r => r[k])); const out = new Map(); have.forEach((r, i) => out.set(r, rk[i] / Math.max(have.length - 1, 1))); return out; };
+  const P = Object.fromEntries(["score", "quality", "calm", "trend", "value"].map(k => [k, pct(scored, k)]));
+  const blendRows = Object.fromEntries(BLENDS.map(([name, w]) => {
+    const rows = scored.filter(r => Object.keys(w).every(k => P[k].has(r)) && r.status !== "review-required")
+      .map(r => ({ ...r, score: Object.entries(w).reduce((t, [k, wt]) => t + wt * P[k].get(r), 0) }))
+      .sort((a, b) => b.score - a.score);
+    const fifthN = Math.ceil(rows.length / 5);
+    const bigN = [...rows].sort((a, b) => b.capCr - a.capCr).slice(0, LARGE_N).sort((a, b) => b.score - a.score);
+    return [name, {
+      corr: { r6: spearman(rows, "score", "r6"), r12: spearman(rows, "score", "r12") },
+      topFifth: stat(rows.slice(0, fifthN)), bottomFifth: stat(rows.slice(-fifthN)),
+      top25: stat(rows.slice(0, TOP_N)), bigTop: stat(bigN.slice(0, LARGE_N / 2)), bigBottom: stat(bigN.slice(LARGE_N / 2)),
+      names: rows.slice(0, 10).map(r => r.symbol),
+    }];
+  }));
+  Object.assign(variantRows, blendRows);
   // The 100 largest companies that day, split in half by score: like with
   // like against the Nifty 50, with no hindsight about who is in the index
   const big = [...scored].sort((a, b) => b.capCr - a.capCr).slice(0, LARGE_N).sort((a, b) => b.score - a.score);
@@ -281,7 +311,7 @@ for (const horizon of ["r12", "r6"]) {
   const avgOf = pick => mean(used.map(pick).filter(v => v != null));
   console.log(`\n=== Mixes compared, ${label} later (average over ${used.length} dates) ===`);
   console.log(`mix                          corr  (>0)  | top fifth − bottom (wins) | top 25 | top 25 − Nifty (wins) | 100 largest: top half − bottom (wins)`);
-  for (const [name] of MIXES) {
+  for (const [name] of [...MIXES, ...BLENDS]) {
     const v = c => c.variants[name];
     const gap = c => v(c).topFifth[horizon].avg - v(c).bottomFifth[horizon].avg;
     const big = c => v(c).bigTop[horizon].avg - v(c).bigBottom[horizon].avg;
