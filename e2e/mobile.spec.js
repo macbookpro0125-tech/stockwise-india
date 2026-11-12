@@ -111,10 +111,10 @@ test.describe("the phone layout", () => {
   test("M-H23 Screeners: a star puts a screener in Favourites, and + offers what can be made @phone", async ({ page, account }) => {
     await page.goto("/");
     await expect(page.getByRole("button", { name: /Star a screener to keep it here/ })).toBeVisible();
-    await page.getByRole("button", { name: "Add Defensive Bluechips to favourites" }).click();
-    await expect(page.getByRole("group", { name: "Your favourite screeners" }).getByText("Defensive Bluechips")).toBeVisible();
+    await page.getByRole("button", { name: "Add Undervalued Growth to favourites" }).click();
+    await expect(page.getByRole("group", { name: "Your favourite screeners" }).getByText("Undervalued Growth")).toBeVisible();
     await page.reload();
-    await expect(page.getByRole("group", { name: "Your favourite screeners" }).getByText("Defensive Bluechips"), "kept with the account").toBeVisible();
+    await expect(page.getByRole("group", { name: "Your favourite screeners" }).getByText("Undervalued Growth"), "kept with the account").toBeVisible();
     await page.getByRole("button", { name: "Create" }).first().click();
     const sheet = page.getByRole("dialog", { name: "Create" });
     for (const name of ["New screener", "Price alert", "Add to watchlist", "Add a holding", "Import from your broker"]) await expect(sheet.getByRole("button", { name: new RegExp(name) })).toBeVisible();

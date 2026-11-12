@@ -100,7 +100,7 @@ test("F02-H5 a computer's home: the market, your watchlist, and a screener opene
   await expect(page.getByRole("heading", { name: "Market summary" })).toBeVisible();
   await expect(page.getByRole("region", { name: "The market" })).toContainText("NIFTY 50");
   await expect(page.getByRole("region", { name: "Your watchlist" })).toContainText("Nothing here yet");
-  await page.getByRole("region", { name: "Screeners" }).getByRole("button", { name: /^High Quality Compounders/ }).click();
+  await page.getByRole("region", { name: "Screeners" }).getByRole("button", { name: /^High Quality Compounders/ }).first().click();
   await expect(page.getByRole("heading", { name: "High Quality Compounders" })).toBeVisible();
   await page.goto("/stock/TCS");
   const saved = page.waitForResponse(r => r.url().endsWith("/api/watchlist") && r.request().method() === "POST");
