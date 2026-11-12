@@ -229,7 +229,7 @@ async function yearOfDays(toIso, splits) {
 // RSI (Wilder, 14 days), price vs its 20-day EMA and 50- and 200-day SMAs,
 // yearly volatility, the year's worst fall from a high, and beta against
 // NIFTY 50. Each is left out when there aren't enough days for it.
-function technicals(days, nifty) {
+export function technicals(days, nifty) {
   const n = days.length;
   if (n < 2) return null;
   const r2 = v => (v == null || !Number.isFinite(v) ? null : Math.round(v * 100) / 100);

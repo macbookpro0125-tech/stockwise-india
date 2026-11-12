@@ -68,6 +68,22 @@ function marketVersion() {
 // restarted. So the work is a generator that yields between companies:
 // buildInSlices runs it ~25 ms at a time and lets requests in between, while
 // the last market keeps answering until the new one is swapped in whole.
+// Companies still filing: the latest audited year within ~18 months of the
+// newest in the data. Shared with the score's backtest
+// (scripts/score-backtest.mjs), which scores the market as it stood on past dates.
+export function freshRows(rows) {
+  const newest = Math.max(...rows.map(r => new Date(r.fyEnd).getTime()));
+  return rows.filter(r => newest - new Date(r.fyEnd).getTime() <= STALE_AFTER_DAYS * 86400000);
+}
+
+// The sector and industry P/E medians the score compares against, with each
+// company's historical multiples capped against them
+export function marketPeers(fresh) {
+  const peers = { sectors: sectorPeMedians(fresh), industries: industryPeMedians(fresh) };
+  capHistoricalMultiples(fresh, peers);
+  return peers;
+}
+
 function* buildSteps(version) {
   const snap = loadMarketSnapshot();
   const rows = [];
@@ -78,15 +94,13 @@ function* buildSteps(version) {
     if (m) rows.push(m);
     yield;
   }
-  const newest = Math.max(...rows.map(r => new Date(r.fyEnd).getTime()));
-  const fresh = rows.filter(r => newest - new Date(r.fyEnd).getTime() <= STALE_AFTER_DAYS * 86400000);
+  const fresh = freshRows(rows);
   // The research score compares each P/E with its sector's median, so it
   // waits for the whole market: medians first, then every company's score.
   // The stock page reuses the same medians (research.js keeps them) — set
   // only when this market is swapped in, so a page served mid-build still
   // matches the market it sits beside.
-  const peers = { sectors: sectorPeMedians(fresh), industries: industryPeMedians(fresh) };
-  capHistoricalMultiples(fresh, peers);
+  const peers = marketPeers(fresh);
   yield;
   for (const m of fresh) { m.research = computeResearch(m, { peers }); yield; }
   rankByOverall(fresh);
