@@ -345,4 +345,19 @@ export const PRESETS = [
       { id: "roaPct", min: 1, max: null },
     ],
   },
+  {
+    // The one pairing that held up when the market was re-scored on past
+    // dates (scripts/score-backtest.mjs, 12 Nov 2026): a strong business and a
+    // share price stronger than most. The desk's "Strong price + business"
+    // cut-offs (70 and 70), set before any test, kept as they were.
+    id: "strong_business_rising_price",
+    name: "Strong Business, Rising Price",
+    icon: "📶",
+    description: "A quality score of 70+ and a price strength of 70+, worth ₹500 crore or more: the pairing that held up when we tested our scores on past prices",
+    filters: [
+      { id: "quality", min: 70, max: null },
+      { id: "priceStrength", min: 70, max: null },
+      { id: "marketCapCr", min: 500, max: null },
+    ],
+  },
 ];

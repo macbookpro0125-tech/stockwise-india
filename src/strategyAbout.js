@@ -4,7 +4,7 @@
 
 // The kinds, in the strategy grid's order (PresetCards.jsx shows the same)
 export const KINDS = [
-  ["quality", "Quality & growth", ["highest_overall", "high_quality_compounders", "undervalued_growth", "small_cap_multibaggers", "ofss_style_filter", "debt_paydown", "sound_banks"]],
+  ["quality", "Quality & growth", ["highest_overall", "strong_business_rising_price", "high_quality_compounders", "undervalued_growth", "small_cap_multibaggers", "ofss_style_filter", "debt_paydown", "sound_banks"]],
   ["value", "Value", ["turnaround_plays", "psu_value", "net_net_value", "fallen_quality"]],
   ["income", "Income & safety", ["dividend_aristocrats", "dividend_growth", "defensive_bluechips"]],
   ["momentum", "Momentum", ["top_gainers", "momentum_growth", "up_every_timeframe", "near_highs_cheap", "doubled_in_year", "beating_market", "pullback_50dma", "breaking_out"]],

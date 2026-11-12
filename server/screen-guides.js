@@ -9,7 +9,13 @@ export const SCREEN_GUIDES = {
     search: "Top rated stocks India by score",
     lookFor: "Every NSE company worth ₹500 crore or more that has an overall score, ranked from highest to lowest. The score weighs how good the business is from its filings (returns on capital, cash behind profits, balance sheet, governance and growth: 70%) against how cheap the share is against its own usual P/E, its peers and its cash flow (30%), trimmed for big price swings and missing data.",
     suits: "People who want one place to start: the companies our method scores highest, to study further.",
-    limits: "The weights are our own starting point and haven't been tested against later share prices, so a high score isn't a forecast. Banks and lenders are scored without their key tests (bad loans, capital), and a cheap share can be cheap for a reason.",
+    limits: "When we re-scored the market on past dates (2024–26), the top fifth did better than the bottom fifth a year later on 6 of 7 dates, but not better than the Nifty 50, so a high score describes the business and isn't a forecast. Banks and lenders are scored without some of their key tests, and a cheap share can be cheap for a reason.",
+  },
+  strong_business_rising_price: {
+    search: "Quality momentum stocks India: strong business and rising share price",
+    lookFor: "Companies worth ₹500 crore or more with a quality score of 70 or more (from the filings: returns, cash behind profits, balance sheet, governance, growth and price) and a price strength of 70 or more, meaning the share has done better than at least 70% of NSE companies over the last 3 to 12 months.",
+    suits: "People who want businesses that are both sound on paper and already being rewarded by the market, rather than either one alone.",
+    limits: "When we re-scored the market on nine past dates (Feb 2024 to Feb 2026, using only results filed by each date), this group did better than the average company a year later on 7 of 7 dates, by about 4 points a year, and was about level with the Nifty 50; neither measure alone did. Two and a half years is short, delisted companies are missing from the data, and a rising price can turn. Past results don't predict future returns.",
   },
   high_quality_compounders: {
     search: "High quality stocks India with high ROCE and low debt",
