@@ -1,6 +1,8 @@
 // Pictures for the week's X posts (replica/launch/x-posts-week-1.md), 6 Nov 2026.
 // Every figure is typed in from the live site at the 5 Nov close and the
 // companies' filings; change them here for a new week. node scripts/x-cards.mjs
+// (week 1), node scripts/x-cards.mjs week2 (12 Nov 2026: three results posts,
+// figures from the live results pages)
 import { readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -44,7 +46,7 @@ ${legend ? `<div class="legend">${legend}</div>` : ""}
 const L = (now, then, max) => [now / max, then / max];
 const profit = [["Indian Oil", 22503, 8217], ["Reliance", 29550, 21010], ["ONGC", 18535, 11938], ["Bharti Airtel", 10710, 8184], ["Titan", 2393, 1119]];
 const pmax = 29550;
-const cards = {
+const week1 = {
   "day1-q2-profit-jumps": { kicker: "Q2 FY27 results", title: "Big profit jumps<br>this results season", legend: `<span><i style="background:#00e0be"></i>Q2 FY27 net profit</span><span><i style="background:rgba(169,175,196,.55)"></i>A year earlier</span>`,
     rows: profit.map(([n, a, b]) => [n, `₹${a.toLocaleString("en-IN")} cr<small>from ₹${b.toLocaleString("en-IN")} cr</small>`, ...L(a, b, pmax)]),
     foot: "Net profit, July–September 2026 against July–September 2025, as filed with NSE. Not investment advice." },
@@ -67,7 +69,19 @@ const cards = {
     rows: [["Stocks under ₹100", "Median ROE 6.8%", 6.8 / 15, null], ["Debt-free stocks", "Median ROE 14.0%", 14 / 15, null]],
     foot: "523 NSE stocks worth ₹100 cr+ closed under ₹100; 382 worth ₹500 cr+ have debt under 5% of equity. Price per share says nothing about value. Not investment advice." },
 };
+const week2 = {
+  "w2-banks": { kicker: "Q2 FY27 · Private banks", title: "HDFC Bank earns more.<br>ICICI grows faster.", legend: `<span><i style="background:#00e0be"></i>Q2 FY27 net profit</span><span><i style="background:rgba(169,175,196,.55)"></i>A year earlier</span>`,
+    rows: [["HDFC Bank", "₹20,700 cr<small>from ₹19,611 cr, up 5.6%</small>", 20700 / 21500, 19611 / 21500], ["ICICI Bank", "₹17,312 cr<small>from ₹14,256 cr, up 21.4%</small>", 17312 / 21500, 14256 / 21500]],
+    foot: "Net profit, July–September 2026 against July–September 2025, as filed with NSE. Not investment advice." },
+  "w2-bel": { kicker: "Bharat Electronics · Q2 FY27", title: "Sales up 26.5%,<br>costs up 29.3%", legend: `<span><i style="background:#00e0be"></i>Q2 FY27</span><span><i style="background:rgba(169,175,196,.55)"></i>A year earlier</span>`,
+    rows: [["Sales", "₹7,328 cr<small>from ₹5,792 cr</small>", 7328 / 7600, 5792 / 7600], ["Operating margin", "27.9%<small>from 29.4%</small>", 27.9 / 31, 29.4 / 31], ["Net profit", "₹1,540 cr<small>from ₹1,287 cr, up 19.7%</small>", 1540 / 1600, 1287 / 1600]],
+    foot: "July–September 2026 against a year earlier, as filed with NSE. Costs grew faster than sales, so the margin narrowed. Not investment advice." },
+  "w2-sterlite": { kicker: "Sterlite Technologies · Q2 FY27", title: "Margin from 12.5%<br>to 32.1%", legend: `<span><i style="background:#00e0be"></i>Q2 FY27</span><span><i style="background:rgba(169,175,196,.55)"></i>A year earlier</span>`,
+    rows: [["Sales", "₹2,529 cr<small>from ₹1,034 cr, up 145%</small>", 2529 / 2600, 1034 / 2600], ["Operating margin", "32.1%<small>from 12.5%</small>", 32.1 / 34, 12.5 / 34], ["Net profit", "₹517 cr<small>from ₹4 cr</small>", 517 / 540, 4 / 540]],
+    foot: "July–September 2026 against a year earlier, as filed with NSE. One quarter; a jump from a small base. Not investment advice." },
+};
+const cards = process.argv[2] === "week2" ? week2 : week1;
 const browser = await chromium.launch({ channel: "chrome" });
 const page = await browser.newPage({ viewport: { width: 1200, height: 1200 } });
-for (const [name, c] of Object.entries(cards)) { await page.setContent(card(c), { waitUntil: "load" }); await page.setViewportSize({ width: 1200, height: 675 }); const h = await page.evaluate(() => document.querySelector('.wrap').scrollHeight); await page.setViewportSize({ width: 1200, height: h }); await page.screenshot({ path: join(OUT, `${name}.png`) }); }
+for (const [name, c] of Object.entries(cards)) { await page.setContent(card(c), { waitUntil: "load" }); await page.setViewportSize({ width: 1200, height: 675 }); const h = await page.evaluate(() => document.querySelector('.wrap').scrollHeight); await page.setViewportSize({ width: 1200, height: h }); await page.waitForTimeout(150); await page.locator(".wrap").screenshot({ path: join(OUT, `${name}.png`) }); }
 await browser.close(); console.log("ok");
