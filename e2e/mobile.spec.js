@@ -474,7 +474,9 @@ test("M-H22 the favourite screeners swipe natively and snap @phone", async ({ pa
   await page.getByRole("button", { name: "Add Dividend Payers with Strong Finances to favourites" }).click();
   await page.goBack();
   const rail = page.getByRole("group", { name: "Your favourite screeners" });
-  await expect(rail.getByRole("button")).toHaveCount(2);
+  // each card is a group: its head opens the screener, its companies their pages (11 Nov 2026)
+  await expect(rail.locator(".ps-fav")).toHaveCount(2);
+  await expect(rail.getByRole("button", { name: /^Open High Quality Compounders$/ })).toBeVisible();
   expect(await rail.evaluate(r => getComputedStyle(r).scrollSnapType)).toMatch(/x mandatory/);
   await rail.evaluate(r => r.scrollBy({ left: 200 }));
   await expect.poll(() => rail.evaluate(r => r.scrollLeft)).toBeGreaterThan(0);
