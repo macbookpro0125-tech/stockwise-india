@@ -150,6 +150,18 @@ function groupStats(rows, key, bench) {
   };
 }
 
+const LARGE_N = 100;
+const rankOf = vals => { const idx = vals.map((v, i) => [v, i]).sort((a, b) => a[0] - b[0]); const r = new Array(vals.length); idx.forEach(([, i], k) => { r[i] = k; }); return r; };
+function spearman(rows, x, y) {
+  const both = rows.filter(r => r[x] != null && r[y] != null);
+  if (both.length < 30) return null;
+  const a = rankOf(both.map(r => r[x])), b = rankOf(both.map(r => r[y]));
+  const ma = mean(a), mb = mean(b);
+  let cov = 0, va = 0, vb = 0;
+  for (let i = 0; i < a.length; i++) { cov += (a[i] - ma) * (b[i] - mb); va += (a[i] - ma) ** 2; vb += (b[i] - mb) ** 2; }
+  return Math.round((cov / Math.sqrt(va * vb)) * 100) / 100;
+}
+
 const cohorts = [];
 for (const day of DATES) {
   const snap = snapshotAsOf(day);
@@ -169,6 +181,8 @@ for (const day of DATES) {
     .map(m => ({
       symbol: m.symbol, score: m.research.overall.score, lender: !!m.lender, sector: m.sector ?? null,
       capCr: Math.round(m.marketCapCr), r6: forward(m.symbol, day, 6), r12: forward(m.symbol, day, 12),
+      // the score's parts, to see which of them came before better returns
+      quality: m.research.qualityOnly ?? null, value: m.research.valuation?.score ?? null, steadiness: m.research.risk?.overlay != null ? -m.research.risk.overlay : null,
     }))
     .sort((a, b) => b.score - a.score);
   const bench = { r6: indexForward(day, 6), r12: indexForward(day, 12) };
@@ -177,7 +191,16 @@ for (const day of DATES) {
   const stat = rows => ({ r6: groupStats(rows, "r6", bench.r6), r12: groupStats(rows, "r12", bench.r12), scores: rows.length ? `${rows.at(-1).score}–${rows[0].score}` : null });
   const notLenders = scored.filter(r => !r.lender);
   const lenders = scored.filter(r => r.lender);
+  // The 100 largest companies that day, split in half by score: like with
+  // like against the Nifty 50, with no hindsight about who is in the index
+  const big = [...scored].sort((a, b) => b.capCr - a.capCr).slice(0, LARGE_N).sort((a, b) => b.score - a.score);
+  const half = Math.ceil(big.length / 2);
+  // Each part's rank correlation with the later return (Spearman), all
+  // companies: above 0, higher on that part came before higher returns
+  const parts = Object.fromEntries(["score", "quality", "value", "steadiness"].map(k => [k, { r6: spearman(scored, k, "r6"), r12: spearman(scored, k, "r12") }]));
   cohorts.push({
+    large: { top: stat(big.slice(0, half)), bottom: stat(big.slice(half)), all: stat(big) },
+    parts,
     day, companies: scored.length, bench: { r6: r1(bench.r6), r12: r1(bench.r12) },
     all: stat(scored),
     quintiles: quintiles.map(stat),
@@ -192,6 +215,7 @@ for (const day of DATES) {
 }
 
 const f = v => (v == null ? "  –  " : `${v > 0 ? "+" : ""}${v.toFixed(1)}`.padStart(6));
+const f2 = v => (v == null ? "  –  " : `${v > 0 ? "+" : ""}${v.toFixed(2)}`.padStart(6));
 for (const horizon of ["r12", "r6"]) {
   const label = horizon === "r12" ? "12 months" : "6 months";
   const used = cohorts.filter(c => c.bench[horizon] != null);
@@ -207,6 +231,21 @@ for (const horizon of ["r12", "r6"]) {
   const topWins = used.filter(c => c.quintiles[0][horizon].avg > c.quintiles[4][horizon].avg).length;
   console.log(`top fifth ahead of bottom fifth in ${topWins} of ${used.length} dates`);
   console.log(`lenders: all ${f(avgOf(c => c.lendersAll[horizon].avg))}, their top fifth ${f(avgOf(c => c.topLenders[horizon].avg))}; share of the top ${TOP_N} that are lenders ${avgOf(c => c.lenderShareOfTop)}%`);
+}
+for (const horizon of ["r12", "r6"]) {
+  const label = horizon === "r12" ? "12 months" : "6 months";
+  const used = cohorts.filter(c => c.bench[horizon] != null);
+  const avgOf = pick => r1(mean(used.map(pick).filter(v => v != null)));
+  console.log(`\n=== The ${LARGE_N} largest companies, ${label} later: higher-scoring half against lower ===`);
+  console.log(`date        Nifty 50 | top half (median, % beat) | bottom half (median, % beat) | all ${LARGE_N}`);
+  for (const c of used) console.log(`${c.day}  ${f(c.bench[horizon])}  | ${f(c.large.top[horizon].avg)} (${f(c.large.top[horizon].median)}, ${c.large.top[horizon].beatPct}%) | ${f(c.large.bottom[horizon].avg)} (${f(c.large.bottom[horizon].median)}, ${c.large.bottom[horizon].beatPct}%) | ${f(c.large.all[horizon].avg)}`);
+  console.log(`average     ${f(avgOf(c => c.bench[horizon]))}  | ${f(avgOf(c => c.large.top[horizon].avg))} (${f(avgOf(c => c.large.top[horizon].median))}, ${avgOf(c => c.large.top[horizon].beatPct)}%) | ${f(avgOf(c => c.large.bottom[horizon].avg))} (${f(avgOf(c => c.large.bottom[horizon].median))}, ${avgOf(c => c.large.bottom[horizon].beatPct)}%) | ${f(avgOf(c => c.large.all[horizon].avg))}`);
+  console.log(`top half ahead of bottom half in ${used.filter(c => c.large.top[horizon].avg > c.large.bottom[horizon].avg).length} of ${used.length}; ahead of the Nifty 50 in ${used.filter(c => c.large.top[horizon].avg > c.bench[horizon]).length} of ${used.length}`);
+  console.log(`\n=== Which part came before better returns (${label}, rank correlation, all companies; 0 = none) ===`);
+  console.log(`date        score  quality  value  steadiness`);
+  for (const c of used) console.log(`${c.day}  ${["score", "quality", "value", "steadiness"].map(k => f2(c.parts[k][horizon])).join("  ")}`);
+  console.log(`average     ${["score", "quality", "value", "steadiness"].map(k => f2(mean(used.map(c => c.parts[k][horizon]).filter(v => v != null)))).join("  ")}`);
+  console.log(`above 0 on  ${["score", "quality", "value", "steadiness"].map(k => `${used.filter(c => c.parts[k][horizon] > 0).length}/${used.length}`.padStart(6)).join("  ")}`);
 }
 console.log(`\nCompanies worth ₹${MIN_CAP_CR} Cr+ on each date, equal weight. Price return only (no dividends). Only companies listed today are in the data, which flatters every group.`);
 
