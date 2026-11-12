@@ -11,6 +11,7 @@ import { WATCH_ADDED, useWatchLists, setInList, createList } from "./watchlist.j
 import { ListNameDialog } from "./WatchLists.jsx";
 import { canPush, pushOn } from "./push.js";
 import { shouldAskPush, pushAsked } from "./pushAsk.js";
+import { willAskEmail } from "./EmailAsk.jsx";
 
 const STAY = 7000;
 
@@ -25,7 +26,7 @@ export default function SaveToList() {
   const restart = () => { clearTimeout(timer.current); timer.current = setTimeout(close, STAY); };
   useEffect(() => {
     const onAdded = e => {
-      if (shouldAskPush({ canPush: canPush(), on: pushOn(), asked: pushAsked() })) return;
+      if (shouldAskPush({ canPush: canPush(), on: pushOn(), asked: pushAsked() }) || willAskEmail()) return;
       setSymbol(e.detail?.symbol ?? null);
       restart();
     };

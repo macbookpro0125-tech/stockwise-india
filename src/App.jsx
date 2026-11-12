@@ -19,6 +19,8 @@ import { useAdPause } from "./ads.jsx";
 import { noteAppOpened, companyPageClosed } from "./rateApp.js";
 import { onPushTap, refreshPush, forgetPush } from "./push.js";
 import PushAsk from "./PushAsk.jsx";
+import EmailAsk from "./EmailAsk.jsx";
+import { rememberStock } from "./recentStocks.js";
 import SaveToList from "./SaveToList.jsx";
 import { SettingsDrawer, CreateSheet, PhoneFloatingBar } from "./PhoneChrome.jsx";
 import { chrome } from "./phoneChrome.js";
@@ -332,6 +334,7 @@ export default function App() {
     // the page's own title is more useful than the app's generic one.
     if (account === undefined || (account === null && pathStock)) return;
     document.title = open ? `${open.symbol} · Jocular Insights` : TITLE;
+    if (open) rememberStock(open.symbol);
   }, [open?.symbol, account, pathStock]);
 
   // The store app's ad cards sit over the page: hidden while a company page
@@ -519,6 +522,7 @@ export default function App() {
       {tour && <Tour key={tour} steps={tour === "app" ? APP_TOUR : STOCK_TOUR} onFinish={finishTour} />}
       {/* the Android app: once, after the first star, its notifications offered */}
       <PushAsk />
+      <EmailAsk />
       <SaveToList />
     </div>
   );

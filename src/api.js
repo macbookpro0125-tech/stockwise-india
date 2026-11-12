@@ -89,6 +89,8 @@ export const api = {
   // The weekly email about the starred companies (weeklyEmail.js)
   weeklyEmail: () => request("/api/account/weekly-email"),
   setWeeklyEmail: (on) => request("/api/account/weekly-email", { method: "POST", body: JSON.stringify({ on }) }),
+  // A few companies' names and last prices (the empty watchlist's suggestions)
+  stocksBrief: symbols => request(`/api/stocks/brief?symbols=${encodeURIComponent(symbols.join(","))}`),
   // The results email: the evening before a watched company's results
   resultsEmail: () => request("/api/account/results-email"),
   setResultsEmail: (on) => request("/api/account/results-email", { method: "POST", body: JSON.stringify({ on }) }),

@@ -12,7 +12,8 @@ import { nextEvent, todayIst } from "./watchEvents.js";
 import { NewsRow } from "./NewsView.jsx";
 import { markWatchNewsSeen } from "./watchNews.js";
 import { ListTabs, ListNameDialog, EmptyList } from "./WatchLists.jsx";
-import { cardName } from "./stockName.js";
+import { cardName, niceName } from "./stockName.js";
+import { recentStocks } from "./recentStocks.js";
 import { summaryLine, needsALook, rowNote, sinceAdded, signedPct } from "./watchlistText.js";
 
 // The open list (its tab) is remembered on this device
@@ -243,6 +244,37 @@ function ComparePicker({ items, nameOf, onCompare, onClose }) {
   );
 }
 
+// An empty watchlist (12 Nov 2026: most new accounts never came back): the
+// companies this browser opened lately, else a few of the largest, each with
+// its price and a Follow button
+const START_WITH = ["RELIANCE", "HDFCBANK", "TCS", "BHARTIARTL", "ICICIBANK", "INFY"];
+function StartWatching({ onOpen, onAdded }) {
+  const recent = recentStocks().slice(0, 6);
+  const [stocks, setStocks] = useState(null);
+  const [busy, setBusy] = useState("");
+  useEffect(() => { api.stocksBrief(recent.length ? recent : START_WITH).then(d => setStocks(d.stocks ?? [])).catch(() => setStocks([])); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!stocks?.length) return null;
+  const follow = async st => { setBusy(st.symbol); await toggleWatch(st.symbol, st.cmp).catch(() => {}); setBusy(""); onAdded?.(); };
+  return (
+    <section className="wl-start" aria-labelledby="wl-start-h">
+      <h3 id="wl-start-h">{recent.length ? "Companies you looked at" : "Some to start with"}</h3>
+      <ul>
+        {stocks.map(st => (
+          <li key={st.symbol}>
+            <button type="button" className="wl-start-name" onClick={() => onOpen?.(st.symbol)}>
+              <CompanyLogo symbol={st.symbol} size={28} fallback={st.name} />
+              <span><b>{niceName(st.name)}</b><small>{st.symbol}{st.cmp != null ? ` · ₹${st.cmp.toLocaleString("en-IN", { maximumFractionDigits: st.cmp < 100 ? 2 : 0 })}` : ""}{st.ret1d != null ? <em className={st.ret1d >= 0 ? "up" : "down"}>{` ${st.ret1d >= 0 ? "+" : "−"}${Math.abs(st.ret1d).toFixed(2)}%`}</em> : null}</small></span>
+            </button>
+            <button type="button" className="btn-ghost wl-start-go" disabled={busy === st.symbol} onClick={() => follow(st)} aria-label={`Follow ${niceName(st.name)}`}>
+              <Star size={15} aria-hidden="true" /> {busy === st.symbol ? "Adding…" : "Follow"}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 export default function WatchlistView({ onOpenStock, onOpenNews }) {
   const [picking, setPicking] = useState(false);
   const [comparing, setComparing] = useState(null);
@@ -287,14 +319,16 @@ export default function WatchlistView({ onOpenStock, onOpenNews }) {
     pickList(null);
   };
 
-  // after any star still saving, so one just added is on the list
+  // after any star still saving, so one just added is on the list (again
+  // after one is followed from the empty list's suggestions)
+  const [reload, setReload] = useState(0);
   useEffect(() => {
     watchSaved().then(() => api.watchlist()).then(d => {
       setData(d);
       primeWatchLists(d.lists ?? []);
       if (d.items.length) api.currentPrices(d.items.map(i => i.ticker)).then(setLive).catch(() => {});
     }).catch(e => setError(e.message));
-  }, []);
+  }, [reload]);
 
   const saveNote = async (ticker, text) => {
     await api.setWatchNote(ticker, text);
@@ -339,11 +373,14 @@ export default function WatchlistView({ onOpenStock, onOpenNews }) {
   if (!data) return wrap(<div style={{ textAlign: "center", padding: "32px 0", fontSize: 12, color: "var(--t3)" }}>Loading watchlist…</div>);
   if (starredItems.length === 0) {
     return wrap(
-      <div style={{ textAlign: "center", padding: "56px 0", color: "var(--t3)", border: "1px dashed var(--bdr2)", borderRadius: 14, background: "var(--s1)" }}>
-        <Star size={36} strokeWidth={1.5} style={{ marginBottom: 12, opacity: 0.3 }} />
-        <p style={{ fontSize: 14, color: "var(--t2)", fontWeight: 500, marginBottom: 4 }}>Watchlist is empty</p>
-        <p style={{ fontSize: 12 }}>Star any stock in results or on its page to save it here</p>
-      </div>
+      <>
+        <div style={{ textAlign: "center", padding: "40px 0", color: "var(--t3)", border: "1px dashed var(--bdr2)", borderRadius: 14, background: "var(--s1)" }}>
+          <Star size={36} strokeWidth={1.5} style={{ marginBottom: 12, opacity: 0.3 }} />
+          <p style={{ fontSize: 14, color: "var(--t2)", fontWeight: 500, marginBottom: 4 }}>Watchlist is empty</p>
+          <p style={{ fontSize: 12 }}>Star any stock in results or on its page to save it here</p>
+        </div>
+        <StartWatching onOpen={onOpenStock} onAdded={() => setReload(n => n + 1)} />
+      </>
     );
   }
 

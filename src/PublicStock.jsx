@@ -1,3 +1,4 @@
+import { rememberStock } from "./recentStocks.js";
 import { useEffect, useState } from "react";
 import { Star, Bell, ChevronRight, Building2, TrendingUp, ShieldCheck, Users, Scale, ChartCandlestick, Newspaper } from "lucide-react";
 import { CHAPTERS } from "./chapterText.js";
@@ -91,6 +92,7 @@ export default function PublicStock({ symbol, onAuthed, initial = null }) {
     on(); window.addEventListener("scroll", on, { passive: true });
     return () => window.removeEventListener("scroll", on);
   }, []);
+  useEffect(() => { rememberStock(symbol); }, [symbol]);
   useEffect(() => {
     let active = true;
     const title = x => stockTitle(niceName(x.name), x.symbol);

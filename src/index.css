@@ -6655,3 +6655,17 @@ html.td-night[data-theme="light"] .tb.tb-scrolled { box-shadow: 0 1px 0 rgba(255
 .rq-also li { display: flex; flex-direction: column; gap: 2px; padding: 8px 0; border-top: 1px solid var(--bdr); font-size: 14px; }
 .rq-also li:first-child { border-top: 0; }
 .rq-also li span { color: var(--t3); }
+
+/* An empty watchlist's suggestions (12 Nov 2026) */
+.wl-start { margin-top: 16px; padding: 16px 16px 8px; border: 1px solid var(--bdr); border-radius: 14px; background: var(--s1); }
+.wl-start h3 { margin: 0 0 6px; font-size: 15px; font-weight: 600; color: var(--t1); }
+.wl-start ul { list-style: none; margin: 0; padding: 0; }
+.wl-start li { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-top: 1px solid var(--bdr); }
+.wl-start li:first-child { border-top: 0; }
+.wl-start-name { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.wl-start-name > span { display: flex; flex-direction: column; min-width: 0; }
+.wl-start-name b { font-size: 14px; font-weight: 500; color: var(--t1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wl-start-name small { font-size: 12px; color: var(--t3); font-variant-numeric: tabular-nums; }
+.wl-start-name em { font-style: normal; }
+.wl-start-name em.up { color: var(--green); } .wl-start-name em.down { color: var(--red); }
+.wl-start-go { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; font-size: 13px; }
