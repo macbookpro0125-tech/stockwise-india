@@ -6679,3 +6679,7 @@ html.td-night[data-theme="light"] .tb.tb-scrolled { box-shadow: 0 1px 0 rgba(255
 .sd-head-score { display: block; margin-top: 6px; font-size: 13px; color: var(--t3); }
 .sd-head-score b { font-size: 15px; font-weight: 600; }
 .sd-head-score b.sd-tone-good { color: var(--green); } .sd-head-score b.sd-tone-mid { color: var(--yellow, #F5C451); } .sd-head-score b.sd-tone-bad { color: var(--red); }
+
+/* The public pages' confirmation (12 Nov 2026): solid, at the bottom, readable
+   in either theme (the app's .pc-toast leaned on tokens public pages lack) */
+.pj-toast { position: fixed; z-index: 1100; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); width: max-content; max-width: calc(100% - 32px); padding: 12px 18px; border-radius: 14px; background: #fff; color: #101828; border: 1px solid rgba(16, 24, 40, 0.12); font-size: 14px; font-weight: 500; line-height: 1.4; text-align: center; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4); animation: pc-fade 200ms ease-out; }

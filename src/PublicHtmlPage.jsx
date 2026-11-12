@@ -66,7 +66,7 @@ export default function PublicHtmlPage({ path, signedIn }) {
         </div>
       )}
       {!signedIn && <JoinBar label="Jocular Insights" why="Create a free account to see each company's full analysis." onJoin={join} />}
-      {watched && <div className="pc-toast" role="status">{watched.mail ? `${watched.name} is on your watchlist. We'll email you the evening before its next results.` : `${watched.name} is on your watchlist.`}</div>}
+      {watched && <div className="pj-toast" role="status">{watched.mail ? `${watched.name} is on your watchlist. We'll email you the evening before its next results.` : `${watched.name} is on your watchlist.`}</div>}
       {box}
       <SiteFooter />
     </div>
