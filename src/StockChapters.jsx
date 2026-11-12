@@ -1,3 +1,4 @@
+import { rankLine } from "./overallRank.js";
 import { Check, Minus, X, TriangleAlert, Eye, Info } from "lucide-react";
 import { CHAPTERS, byId, WORD, band, chapterScore, chapterLine, chapterJudgement, chapterFigures, gistLine, watchFor } from "./chapterText.js";
 
@@ -40,6 +41,11 @@ export function VerdictLines({ m, fairValue, price, onGo }) {
         </span>
       </div>
       {gist && <p className="sd-gist">{gist}</p>}
+      {rankLine(m?.overallRank) && (
+        <p className="sd-rank" title="Its place among NSE companies by overall score, from their filings: a ranking by our method, not a recommendation">
+          Ranked <b>{rankLine(m.overallRank)}</b> by overall score · <a href="/lists/highest-rated-stocks">See the highest</a>
+        </p>
+      )}
       {confWord && (
         <p className={`sd-conf sd-conf-${confWord.toLowerCase()}`} title="How complete and recent the filed figures behind the scores are: not a forecast, and not confidence in the company">
           Data confidence: <b>{confWord}</b>{r?.coverage?.total ? ` · ${r.coverage.checked} of ${r.coverage.total} checks have figures` : ""}

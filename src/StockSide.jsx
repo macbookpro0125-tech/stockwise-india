@@ -1,3 +1,4 @@
+import { rankLine } from "./overallRank.js";
 import { revealPart } from "./phoneTabs.js";
 import { Building2, BadgeCheck, Scale, ShieldCheck, TrendingUp, Tag, Activity, Flag, ChevronRight, Bell } from "lucide-react";
 import CompanyLogo from "./CompanyLogo.jsx";
@@ -157,6 +158,7 @@ export default function StockSide({ data, m, price, priceLabel, watched, onWatch
             {m?.research?.overall?.score != null && (
               <span className="sd-head-score">
                 Overall <b className={`sd-tone-${band(m.research.overall.score)}`}>{Math.round(m.research.overall.score)}</b>/100 · {WORD[band(m.research.overall.score)]}
+                {rankLine(m.overallRank) && <> · Ranked {rankLine(m.overallRank)}</>}
                 {m.research.confidence != null && <> · Data confidence {m.research.confidence >= 80 ? "high" : m.research.confidence >= 60 ? "medium" : "low"}{m.research.coverage?.total ? ` (${m.research.coverage.checked} of ${m.research.coverage.total} checks have figures)` : ""}</>}
               </span>
             )}

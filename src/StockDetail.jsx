@@ -994,7 +994,10 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         {m?.sector && <span>{m.sector}</span>}
         <span>{cardName(data.name)}</span>
       </nav>
-      <div className={`dk-mini${mini ? " on" : ""}`} aria-hidden={!mini}>
+      {/* Back stays in reach however far down (12 Nov 2026, "the back
+          button should always be there"): the pinned strip has it too */}
+      <div className={`dk-mini${mini ? " on" : ""}`} inert={!mini}>
+        <button type="button" onClick={onBack} className="dk-mini-back" title={`Back to ${backTo} (Esc)`}><ArrowLeft size={16} aria-hidden="true" /> Back to {backTo}</button>
         <CompanyLogo symbol={data.symbol} size={28} />
         <span className="dk-mini-name"><b>{cardName(data.name)}</b><small>{data.symbol}{m?.sector ? ` · ${m.sector}` : ""}</small></span>
         {price > 0 && <span className="dk-mini-px"><b>{fmtRs(price)}</b>{m?.ret1d != null && <em className={m.ret1d >= 0 ? "up" : "down"}>{m.ret1d >= 0 ? "+" : "−"}{Math.abs(m.ret1d).toFixed(2)}%</em>}</span>}
