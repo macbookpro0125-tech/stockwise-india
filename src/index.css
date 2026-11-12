@@ -6669,3 +6669,13 @@ html.td-night[data-theme="light"] .tb.tb-scrolled { box-shadow: 0 1px 0 rgba(255
 .wl-start-name em { font-style: normal; }
 .wl-start-name em.up { color: var(--green); } .wl-start-name em.down { color: var(--red); }
 .wl-start-go { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 12px; font-size: 13px; }
+
+/* The company page's data confidence, under the gist (12 Nov 2026) */
+.sd-conf { margin: 8px 0 0; font-size: 12px; color: var(--t3); }
+.sd-conf b { font-weight: 600; }
+.sd-conf-high b { color: var(--green); }
+.sd-conf-medium b { color: var(--yellow, #F5C451); }
+.sd-conf-low b { color: var(--red); }
+.sd-head-score { display: block; margin-top: 6px; font-size: 13px; color: var(--t3); }
+.sd-head-score b { font-size: 15px; font-weight: 600; }
+.sd-head-score b.sd-tone-good { color: var(--green); } .sd-head-score b.sd-tone-mid { color: var(--yellow, #F5C451); } .sd-head-score b.sd-tone-bad { color: var(--red); }

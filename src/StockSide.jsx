@@ -97,7 +97,8 @@ export function Scorecard({ r }) {
     <section className="sd-card" aria-label="Scorecard">
       <div className="sd-card-titlerow">
         <h3 className="sd-card-title">Scorecard</h3>
-        {r.quality != null && <span className="sd-muted">Quality {Math.round(r.quality)}/100</span>}
+        {/* the headline score, as the lists and a phone's In short show it (12 Nov 2026) */}
+        {r.overall?.score != null ? <span className="sd-muted">Overall {Math.round(r.overall.score)}/100</span> : r.quality != null && <span className="sd-muted">Quality {Math.round(r.quality)}/100</span>}
       </div>
       <ul className="sd-scores">
         {rows.map(row => <Row key={row.id} {...row} />)}
@@ -150,7 +151,17 @@ export default function StockSide({ data, m, price, priceLabel, watched, onWatch
           {watched && <ListPicker ticker={data.symbol} name={data.name} lists={lists} label="Lists" onToggle={setInList} onNew={() => setNaming(true)} />}
           <button type="button" className="sd-action sd-action-link" onClick={onAlert}><Bell className="sd-action-bell" size={17} aria-hidden="true" />Set an alert<ChevronRight className="sd-action-chev" size={17} aria-hidden="true" /></button>
         </div>
-        {variant === "head" && gist && <p className="sd-head-gist"><b>In short.</b> {gist}</p>}
+        {variant === "head" && gist && (
+          <p className="sd-head-gist"><b>In short.</b> {gist}
+            {/* the overall score and how complete its figures are (12 Nov 2026) */}
+            {m?.research?.overall?.score != null && (
+              <span className="sd-head-score">
+                Overall <b className={`sd-tone-${band(m.research.overall.score)}`}>{Math.round(m.research.overall.score)}</b>/100 · {WORD[band(m.research.overall.score)]}
+                {m.research.confidence != null && <> · Data confidence {m.research.confidence >= 80 ? "high" : m.research.confidence >= 60 ? "medium" : "low"}{m.research.coverage?.total ? ` (${m.research.coverage.checked} of ${m.research.coverage.total} checks have figures)` : ""}</>}
+              </span>
+            )}
+          </p>
+        )}
       </section>
       {variant !== "head" && <div className="sd-side-scores"><Scorecard r={m?.research} /></div>}
       {naming && (

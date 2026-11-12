@@ -20,18 +20,31 @@ export function VerdictLines({ m, fairValue, price, onGo }) {
     .filter(x => x.s);
   const gist = gistLine(m, { fairValue, price });
   if (!rows.length && !gist) return null;
-  // the company's overall quality score, top right (4 Nov 2026: "show the overall score")
-  const overall = r?.quality != null ? { score: Math.round(r.quality), tone: band(r.quality) } : null;
+  // the company's overall score, top right (4 Nov 2026: "show the overall score").
+  // 12 Nov 2026: the research model's overall score — quality and valuation
+  // blended, trimmed for price swings and data gaps — the same number the
+  // lists call Overall (it showed the quality score, labelled "overall")
+  const o = r?.overall?.score;
+  const overall = o != null && Number.isFinite(o) ? { score: Math.round(o), tone: band(o) } : null;
+  // how complete the figures behind it are (research.js confidence: coverage,
+  // source, recency, freshness), in a word
+  const conf = r?.confidence;
+  const confWord = conf == null ? null : conf >= 80 ? "High" : conf >= 60 ? "Medium" : "Low";
   return (
     <section className="sd-card sd-verdict" aria-labelledby="verdict-title">
       <div className="sd-chapter-qrow">
         <h3 id="verdict-title" className="sd-verdict-h">In short</h3>
         <span className="sd-verdict-overall">
-          {overall && <span className={`sd-chapter-score sd-tone-${overall.tone}`} aria-label={`Overall quality ${overall.score} of 100, ${WORD[overall.tone]}`}><b>{overall.score}</b>{WORD[overall.tone]} overall</span>}
+          {overall && <span className={`sd-chapter-score sd-tone-${overall.tone}`} aria-label={`Overall score ${overall.score} of 100, ${WORD[overall.tone]}`}><b>{overall.score}</b>{WORD[overall.tone]} overall</span>}
           <NotesToggle />
         </span>
       </div>
       {gist && <p className="sd-gist">{gist}</p>}
+      {confWord && (
+        <p className={`sd-conf sd-conf-${confWord.toLowerCase()}`} title="How complete and recent the filed figures behind the scores are: not a forecast, and not confidence in the company">
+          Data confidence: <b>{confWord}</b>{r?.coverage?.total ? ` · ${r.coverage.checked} of ${r.coverage.total} checks have figures` : ""}
+        </p>
+      )}
       <ul className="sd-verdict-list">
         {rows.map(({ c, s }) => (
           <li key={c.id}>
