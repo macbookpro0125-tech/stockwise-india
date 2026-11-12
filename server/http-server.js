@@ -47,7 +47,7 @@ import { startNewsPush } from "./news-push.js";
 import { startScreenAlerts } from "./screen-alerts.js";
 import { niceName } from "../src/stockName.js";
 import { countBrowserVisit, countActive, countSignup, visitStats, isOwner } from "./visits.js";
-import { startDigestJobs, weeklyEmailOn, setWeeklyEmail, unsubscribe } from "./digest.js";
+import { startDigestJobs, weeklyEmailOn, setWeeklyEmail, resultsEmailOn, setResultsEmail, unsubscribe } from "./digest.js";
 import { INDEXNOW_KEY, startIndexNow } from "./indexnow.js";
 import { OLD_SCREEN_SLUGS, publicScreen, publicScreens, publicResultsCalendar, screenPageHtml, screensIndexHtml, resultsCalendarHtml, homePageHtml, sectorsIndexHtml, sectorPageHtml } from "./seo-lists.js";
 import { listsIndexHtml, listPageHtml, publicListsData, publicListData } from "./seo-collections.js";
@@ -636,13 +636,28 @@ export function createApp() {
         sendJson(res, 200, { on: weeklyEmailOn(userId), available: emailConfigured() && !!accountInfo(userId)?.email });
         return;
       }
+      // The results email (digest.js): the evening before a watched company's
+      // board meeting, off until asked for
+      if (url.pathname === "/api/account/results-email" && (req.method === "GET" || req.method === "POST")) {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        if (req.method === "POST") {
+          const { on } = await readJsonBody(req);
+          if (!accountInfo(userId)?.email && on) { sendJson(res, 400, { error: "The results email needs an email address on the account." }); return; }
+          setResultsEmail(userId, !!on);
+        }
+        sendJson(res, 200, { on: resultsEmailOn(userId), available: emailConfigured() && !!accountInfo(userId)?.email });
+        return;
+      }
       // Its unsubscribe link, no sign-in needed: GET from the email, POST from
       // a mail app's own one-click button (List-Unsubscribe-Post)
       if (url.pathname === "/unsubscribe" && (req.method === "GET" || req.method === "POST")) {
-        const done = unsubscribe(url.searchParams.get("t"));
+        const results = url.searchParams.get("what") === "results";
+        const done = unsubscribe(url.searchParams.get("t"), results ? "results" : "weekly");
+        const which = results ? "results email" : "weekly email";
         if (req.method === "POST") { res.writeHead(done ? 200 : 404).end(); return; }
         res.writeHead(done ? 200 : 404, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
-        res.end(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Weekly email</title></head><body style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:480px;margin:60px auto;padding:0 20px;color:#101828;line-height:1.6"><h1 style="font-size:22px">${done ? "You won't get the weekly email any more" : "That link didn't match an account"}</h1><p>${done ? "You can turn it back on any time in Settings." : "It may already have been used. You can turn the weekly email off in Settings."}</p><p><a href="/" style="color:#0b7a68">Open Jocular Insights</a></p></body></html>`);
+        res.end(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${results ? "Results email" : "Weekly email"}</title></head><body style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:480px;margin:60px auto;padding:0 20px;color:#101828;line-height:1.6"><h1 style="font-size:22px">${done ? `You won't get the ${which} any more` : "That link didn't match an account"}</h1><p>${done ? "You can turn it back on any time in Settings." : `It may already have been used. You can turn the ${which} off in Settings.`}</p><p><a href="/" style="color:#0b7a68">Open Jocular Insights</a></p></body></html>`);
         return;
       }
 

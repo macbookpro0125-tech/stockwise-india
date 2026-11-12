@@ -8,7 +8,7 @@ process.env.STOCKWISE_DB = DB_PATH; // never the real app.db
 for (const f of [DB_PATH, `${DB_PATH}-wal`, `${DB_PATH}-shm`]) if (existsSync(f)) unlinkSync(f);
 process.env.APP_URL = "https://jocularinsights.in";
 
-const { reminderPush, sendResultsReminders, weeklyEmail, sendWeeklyEmails, setWeeklyEmail, weeklyEmailOn, unsubscribe, emailToken } = await import("./digest.js");
+const { reminderPush, sendResultsReminders, weeklyEmail, sendWeeklyEmails, setWeeklyEmail, weeklyEmailOn, unsubscribe, emailToken, sendResultsEmails, setResultsEmail, resultsEmailOn } = await import("./digest.js");
 const { db } = await import("./db.js");
 const { allMetrics } = await import("./screen.js");
 
@@ -61,6 +61,22 @@ assert(m.headers["List-Unsubscribe"] === `<https://jocularinsights.in/unsubscrib
 assert(/not advice/.test(m.text), "says it isn't advice");
 await sendWeeklyEmails({ send, now: now + 60 * 60_000 });
 assert(sent.length === 1, "once a week");
+
+// the results email (11 Nov 2026): off until asked for; the evening before,
+// the watched company that reports, once; its own unsubscribe
+const mails = [];
+const mail = async x => { mails.push(x); };
+await sendResultsEmails({ send: mail, now });
+assert(mails.length === 0 && !resultsEmailOn(userId), "results email: off unless asked for");
+setResultsEmail(userId, true);
+await sendResultsEmails({ send: mail, now });
+assert(mails.length === 1 && mails[0].to === "d@example.com", "asked for: sent the evening before");
+const rm = mails[0];
+assert(rm.subject === `${niceName(reporting.name)} reports results tomorrow` && rm.text.includes(niceName(reporting.name)) && !rm.text.includes(niceName(other.name)), "names the company that reports, not the other");
+assert(rm.headers["List-Unsubscribe"] === `<https://jocularinsights.in/unsubscribe?t=${token}&what=results>` && /not advice/.test(rm.text), "its own one-click unsubscribe; says it isn't advice");
+await sendResultsEmails({ send: mail, now: now + 15 * 60_000 });
+assert(mails.length === 1, "results email: once, not every 15 minutes");
+assert(unsubscribe(token, "results") === true && !resultsEmailOn(userId) && weeklyEmailOn(userId), "its link turns off the results email only");
 
 assert(unsubscribe(token) === true && !weeklyEmailOn(userId), "the link turns it off");
 assert(unsubscribe("not-a-token") === false && unsubscribe("") === false, "a wrong link changes nothing");

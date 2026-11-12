@@ -3,6 +3,10 @@
 //   a results reminder   the evening before a starred company's board meeting
 //                        for results (NSE's calendar), a phone notification —
 //                        one for all of an account's companies that day, once
+//   a results email      the evening before a watched company's board meeting
+//                        (11 Nov 2026), for accounts that asked for it: from a
+//                        results page's "Email me before…" or Settings; once
+//                        per company and meeting, with a one-click unsubscribe
 //   a weekly email       Sunday morning: each starred company's week (price
 //                        move), its news, and who reports results in the coming
 //                        week. Only for accounts that turned it on (Settings),
@@ -35,6 +39,16 @@ function addColumn(table, column, type) {
 addColumn("users", "weekly_email", "INTEGER NOT NULL DEFAULT 0");
 addColumn("users", "weekly_email_sent", "TEXT");
 addColumn("users", "email_token", "TEXT");
+// the results email: off until the account asks for it
+addColumn("users", "results_email", "INTEGER NOT NULL DEFAULT 0");
+db.exec(`
+  CREATE TABLE IF NOT EXISTS results_emails (
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    symbol TEXT NOT NULL,
+    meeting TEXT NOT NULL,
+    PRIMARY KEY (user_id, symbol, meeting)
+  );
+`);
 
 const DAY = 86_400_000;
 const ist = now => new Date(now + 330 * 60_000);
@@ -96,10 +110,78 @@ export function setWeeklyEmail(userId, on) {
   db.prepare("UPDATE users SET weekly_email = ? WHERE id = ?").run(on ? 1 : 0, userId);
   if (on) emailToken(userId);
 }
-// The unsubscribe link: off, by its token; true if it matched an account
-export function unsubscribe(token) {
+export const resultsEmailOn = userId => !!db.prepare("SELECT results_email FROM users WHERE id = ?").get(userId)?.results_email;
+export function setResultsEmail(userId, on) {
+  db.prepare("UPDATE users SET results_email = ? WHERE id = ?").run(on ? 1 : 0, userId);
+  if (on) emailToken(userId);
+}
+// The unsubscribe link: that email off ("weekly" or "results"), by its token;
+// true if it matched an account
+export function unsubscribe(token, what = "weekly") {
   if (!token || typeof token !== "string" || token.length > 100) return false;
-  return db.prepare("UPDATE users SET weekly_email = 0 WHERE email_token = ?").run(token).changes > 0;
+  const column = what === "results" ? "results_email" : "weekly_email";
+  return db.prepare(`UPDATE users SET ${column} = 0 WHERE email_token = ?`).run(token).changes > 0;
+}
+
+// ---- The results email ------------------------------------------------------
+
+// The email for an account's companies whose board meets tomorrow for results
+export function resultsEmail(userId, companies, meeting) {
+  if (!companies.length) return null;
+  const site = appUrl() || "https://jocularinsights.in";
+  const unsub = `${site}/unsubscribe?t=${encodeURIComponent(emailToken(userId))}&what=results`;
+  const names = companies.map(c => niceName(c.name || c.symbol));
+  const subject = companies.length === 1
+    ? `${names[0]} reports results tomorrow`
+    : `${companies.length} of your companies report results tomorrow`;
+  const lastQ = c => {
+    const q = c.quarters?.[0];
+    if (!q) return null;
+    const bits = [q.revenueCr != null && `sales ${rs(q.revenueCr)} cr${q.salesYoY != null && isFinite(q.salesYoY) ? ` (${move(q.salesYoY)} on a year earlier)` : ""}`,
+      q.profitCr != null && `${q.profitCr < 0 ? "net loss" : "net profit"} ${rs(Math.abs(q.profitCr))} cr${q.profitYoY != null && isFinite(q.profitYoY) && q.profitCr > 0 ? ` (${move(q.profitYoY)})` : ""}`].filter(Boolean);
+    return bits.length ? `Last quarter: ${bits.join(", ")}.` : null;
+  };
+  const stockUrl = sym => `${site}/stock/${encodeURIComponent(sym)}`;
+  const text = [
+    `Board meetings for quarterly results on ${longDay(meeting)}, on NSE's calendar:`,
+    "",
+    ...companies.flatMap((c, i) => [`${names[i]}${c.cmp != null ? `, ${rs(c.cmp)} at the last close` : ""}`, ...(lastQ(c) ? [lastQ(c)] : []), stockUrl(c.symbol), ""]),
+    "The figures are on each company's page once they're filed with NSE.",
+    "",
+    "Figures and filings, not advice.",
+    `Stop these emails: ${unsub}`,
+  ].join("\n");
+  const html = `<div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;font-size:15px;line-height:1.55;color:#101828;max-width:560px">
+<p style="font-size:18px;font-weight:600;margin:0 0 4px">${esc(subject)}</p>
+<p style="color:#475467;margin:0 0 16px">Board meetings for quarterly results on ${esc(longDay(meeting))}, on NSE's calendar.</p>
+${companies.map((c, i) => `<div style="padding:10px 0;border-bottom:1px solid #eaecf0"><a href="${esc(stockUrl(c.symbol))}" style="color:#0b7a68;font-weight:600;text-decoration:none">${esc(names[i])}</a>${c.cmp != null ? ` <span style="color:#475467">· ${esc(rs(c.cmp))} at the last close</span>` : ""}${lastQ(c) ? `<div style="color:#475467;font-size:14px">${esc(lastQ(c))}</div>` : ""}</div>`).join("")}
+<p style="margin:18px 0 0">The figures are on each company's page once they're filed with NSE.</p>
+<p style="color:#667085;font-size:12px;margin-top:24px">Figures and filings, not advice. You get this because you asked to be emailed before results. <a href="${esc(unsub)}" style="color:#667085">Stop these emails</a>.</p>
+</div>`;
+  return { subject, text, html, headers: { "List-Unsubscribe": `<${unsub}>`, "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } };
+}
+
+// The evening before, each account that asked for it, once per company and
+// meeting. send: (message) => Promise, injectable for the tests
+export async function sendResultsEmails({ send = sendEmail, now = Date.now(), log = console.error } = {}) {
+  const tomorrow = istDay(now + DAY);
+  const rows = rowsBySymbol();
+  const users = db.prepare("SELECT id, email FROM users WHERE results_email = 1 AND email IS NOT NULL").all();
+  let sent = 0;
+  for (const u of users) {
+    const due = watchlistOf(u.id).map(sym => rows.get(sym)).filter(r => r?.nextResults === tomorrow)
+      .filter(r => !db.prepare("SELECT 1 FROM results_emails WHERE user_id = ? AND symbol = ? AND meeting = ?").get(u.id, r.symbol, tomorrow));
+    if (!due.length) continue;
+    try {
+      const message = resultsEmail(u.id, due, tomorrow);
+      if (message) { await send({ to: u.email, ...message }); sent++; }
+      for (const r of due) db.prepare("INSERT OR IGNORE INTO results_emails (user_id, symbol, meeting) VALUES (?, ?, ?)").run(u.id, r.symbol, tomorrow);
+    } catch (e) {
+      log(`[results-email] account ${u.id}: ${e.message}`);
+    }
+  }
+  db.prepare("DELETE FROM results_emails WHERE meeting < ?").run(istDay(now - 30 * DAY));
+  return { users: users.length, sent };
 }
 
 // The email for an account: its starred companies' week, their news, and the
@@ -166,7 +248,7 @@ export async function sendWeeklyEmails({ send = sendEmail, now = Date.now(), log
   return { users: users.length, sent };
 }
 
-// Every 15 minutes: the reminders from 6 pm IST, the email Sunday from 9 am
+// Every 15 minutes: the reminders and results emails from 6 pm IST, the email Sunday from 9 am
 export function startDigestJobs({ everyMs = 15 * 60_000, log = console.error } = {}) {
   const tick = async () => {
     const t = ist(Date.now()), h = t.getUTCHours();
@@ -174,6 +256,10 @@ export function startDigestJobs({ everyMs = 15 * 60_000, log = console.error } =
       if (pushReady() && h >= 18 && h < 22) {
         const { sent } = await sendResultsReminders({ log });
         if (sent) log(`[results-reminder] sent to ${sent} account${sent === 1 ? "" : "s"}`);
+      }
+      if (emailConfigured() && h >= 18 && h < 22) {
+        const { sent } = await sendResultsEmails({ log });
+        if (sent) log(`[results-email] sent ${sent}`);
       }
       if (emailConfigured() && t.getUTCDay() === 0 && h >= 9 && h < 12) {
         const { sent } = await sendWeeklyEmails({ log });

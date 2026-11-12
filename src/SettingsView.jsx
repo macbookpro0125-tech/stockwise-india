@@ -13,7 +13,7 @@ import { supportAdsAvailable, useAdsOn, watchSupportAd } from "./ads.jsx";
 import { showStrategiesOfKind } from "./PresetCards.jsx";
 import { canRate, openStorePage } from "./rateApp.js";
 import { canPush, pushOn, turnPushOn, turnPushOff } from "./push.js";
-import { useWeeklyEmail } from "./weeklyEmail.js";
+import { useWeeklyEmail, useResultsEmail } from "./weeklyEmail.js";
 
 // A phone's Settings tab (17 Oct 2026): the account, the theme and the pages
 // that don't fit the five-tab bar, as grouped lists — the Account menu's
@@ -82,6 +82,7 @@ export default function SettingsView({ account, theme, onToggleTheme, onTab, onL
     }
   };
   const weekly = useWeeklyEmail();
+  const resultsMail = useResultsEmail();
   const adsOn = useAdsOn();
   const [support, setSupport] = useState(null); // null | "loading" | "thanks" | "closed" | error text
 
@@ -132,6 +133,8 @@ export default function SettingsView({ account, theme, onToggleTheme, onTab, onL
             detail={pushNote ?? "News from your watchlist's companies, results reminders, and alerts when a price is reached"} />}
           {weekly.available && <Switch on={weekly.on} label="Weekly email" onChange={weekly.set} icon={<Mail size={19} strokeWidth={1.75} />} tint="#6366F1"
             detail={weekly.note ?? "Sunday mornings: your watchlist's week, its news, and results coming up"} />}
+          {resultsMail.available && <Switch on={resultsMail.on} label="Results email" onChange={resultsMail.set} icon={<Mail size={19} strokeWidth={1.75} />} tint="#14B892"
+            detail={resultsMail.note ?? "The evening before your watchlist's companies report results"} />}
         </Group>
       )}
 

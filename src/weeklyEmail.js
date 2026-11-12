@@ -16,3 +16,18 @@ export function useWeeklyEmail() {
   };
   return { ...state, set, note };
 }
+
+// The results email's switch, the same way (11 Nov 2026): off until turned on
+// here or from a results page's "Email me before…"
+export function useResultsEmail() {
+  const [state, setState] = useState({ on: false, available: false });
+  const [note, setNote] = useState(null);
+  useEffect(() => { api.resultsEmail().then(setState).catch(() => {}); }, []);
+  const set = async on => {
+    setNote(null);
+    setState(s => ({ ...s, on }));
+    try { setState(await api.setResultsEmail(on)); }
+    catch (e) { setState(s => ({ ...s, on: !on })); setNote(e.message || "Couldn't change it just now."); }
+  };
+  return { ...state, set, note };
+}

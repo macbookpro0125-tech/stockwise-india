@@ -89,6 +89,9 @@ export const api = {
   // The weekly email about the starred companies (weeklyEmail.js)
   weeklyEmail: () => request("/api/account/weekly-email"),
   setWeeklyEmail: (on) => request("/api/account/weekly-email", { method: "POST", body: JSON.stringify({ on }) }),
+  // The results email: the evening before a watched company's results
+  resultsEmail: () => request("/api/account/results-email"),
+  setResultsEmail: (on) => request("/api/account/results-email", { method: "POST", body: JSON.stringify({ on }) }),
   // The strategies' and the results calendar's public pages (PublicLists.jsx)
   publicScreens: () => request("/api/public/screens"),
   publicSectors: () => request("/api/public/sectors"),
