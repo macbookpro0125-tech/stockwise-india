@@ -359,7 +359,7 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
       <BellIcon />
     </button>
   );
-  const [sortBy, setSortBy] = useState("quality");
+  const [sortBy, setSortBy] = useState("overall"); // the headline score first (12 Nov 2026)
   const [sortDir, setSortDir] = useState("desc");
   // Then by (8 Nov 2026): up to three more scores in order, scores out of 100
   // within 5 points counted level so the next one decides; or the best across
@@ -390,7 +390,7 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
   // so the deepest Graham bargains surface above shallower net-nets.
   useEffect(() => {
     if (netNet) { setSortBy("ncavPct"); setSortDir("asc"); }
-    else if (sortBy === "ncavPct") { setSortBy("quality"); setSortDir("desc"); }
+    else if (sortBy === "ncavPct") { setSortBy("overall"); setSortDir("desc"); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [netNet, matches]);
 
@@ -533,7 +533,7 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
   // "Sort by" beside the count — the only way to sort on a phone, where
   // there are no column headers; on a computer it follows header clicks
   const sortOptions = [
-    ["quality", "Quality score"], ["overall", "Overall score"],
+    ["overall", "Overall score"], ["quality", "Quality score"],
     ...(netNet ? [["ncavPct", "Discount to NCAV"]] : []),
     ...columns.map(def => [def.id, def.short ?? def.label]),
     ["cmp", "Price"], ["ret1d", "1-day change"], ["name", "Name"],
@@ -541,14 +541,14 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
   const pickSort = col => { setSortBy(col); setSortDir(col === "name" ? "asc" : "desc"); };
   // Sorted by a column that has since been taken off: back to Quality
   const sortKnown = sortOptions.some(([id]) => id === sortBy);
-  useEffect(() => { if (!sortKnown) { setSortBy("quality"); setSortDir("desc"); } }, [sortKnown]);
+  useEffect(() => { if (!sortKnown) { setSortBy("overall"); setSortDir("desc"); } }, [sortKnown]);
   // A strategy that ranks by a measure lists by it, highest first (Top
   // Gainers by its gain); opening any other strategy goes back to quality.
   // After the line above: a new period takes the old period's column away,
   // and that reset mustn't win (1 week → 1 day fell back to Quality)
   useEffect(() => {
     if (!sortTo?.n) return;
-    setSortBy(sortTo.sort ?? "quality");
+    setSortBy(sortTo.sort === "researchScore" ? "overall" : sortTo.sort ?? "overall");
     setSortDir("desc");
   }, [sortTo?.n]); // eslint-disable-line react-hooks/exhaustive-deps
   const thenKnown = thenBy.filter(k => k !== sortBy && sortOptions.some(([id]) => id === k));

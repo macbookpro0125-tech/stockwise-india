@@ -89,6 +89,7 @@ function* buildSteps(version) {
   capHistoricalMultiples(fresh, peers);
   yield;
   for (const m of fresh) { m.research = computeResearch(m, { peers }); yield; }
+  rankByOverall(fresh);
   // A company without a fair value shows EV/Sales beside its sector's, as
   // context only
   const evSales = sectorEvSalesMedians(fresh);
@@ -389,6 +390,30 @@ function mostCommon(values) {
 
 // The research score's headline numbers — the table, watchlist, compare and
 // peers show these; only the stock page gets every item and reason
+// Each company's place by overall score (12 Nov 2026, "one score we rank the
+// stocks on"): in the whole market and in its sector, as "#12 of 2,263".
+// Companies on the same whole-number score share a place; an unscored
+// company has none.
+export function rankByOverall(rows) {
+  const score = m => (m.research?.overall?.score != null ? Math.round(m.research.overall.score) : null);
+  const place = list => {
+    const sorted = list.map(score).sort((a, b) => b - a);
+    const first = new Map();
+    sorted.forEach((v, i) => { if (!first.has(v)) first.set(v, i + 1); });
+    return m => first.get(score(m));
+  };
+  const scored = rows.filter(m => score(m) != null);
+  const inMarket = place(scored);
+  const bySector = new Map();
+  for (const m of scored) if (m.sector) (bySector.get(m.sector) ?? bySector.set(m.sector, []).get(m.sector)).push(m);
+  const inSector = new Map([...bySector].map(([k, list]) => [k, { of: list.length, at: place(list) }]));
+  for (const m of rows) {
+    if (score(m) == null) { m.overallRank = null; continue; }
+    const sec = m.sector ? inSector.get(m.sector) : null;
+    m.overallRank = { rank: inMarket(m), of: scored.length, ...(sec && sec.of >= 3 && { sector: m.sector, sectorRank: sec.at(m), sectorOf: sec.of }) };
+  }
+}
+
 export function researchBrief(r) {
   if (!r) return null;
   return {
@@ -423,7 +448,7 @@ function tableRow(m, columns = [], sizes = null) {
     valuationPeBasis: m.valuationPeBasis, valuationMultipleBasis: m.valuationMultipleBasis,
     epsCorrection: m.epsCorrection, epsMismatch: m.epsMismatch,
     auditorResignations: m.auditorResignations,
-    epsJump: m.epsJump, research: researchBrief(m.research),
+    epsJump: m.epsJump, research: researchBrief(m.research), overallRank: m.overallRank ?? null,
     // Which model priced it, or why nothing did (metrics.js valuation)
     valuation: m.valuation ? { model: m.valuation.model, as: m.valuation.as, reason: m.valuation.reason ?? null, positionLabel: m.valuation.positionLabel ?? null, partialCycle: !!m.valuation.partialCycle } : null,
     governmentOwned: !!m.governmentOwned,
@@ -456,14 +481,15 @@ export function screen(request = {}) {
   const columns = (Array.isArray(request.columns) ? request.columns : [])
     .filter(id => metricById(id) && !metricById(id).options && id !== "sector").slice(0, 40);
   const matches = rows.filter(m => matchesFilters(m, filters, sizes));
-  // Quality score first (unscored companies last), then ROCE — or, for a
+  // Overall score first (12 Nov 2026: the one headline score), then the
+  // quality score (unscored companies last), then ROCE — or, for a
   // strategy that ranks by a measure (sort: "ret1y", Top Gainers), that
   // measure, highest first, companies without it last
   const by = request.sort && metricById(request.sort) && !metricById(request.sort).options ? metricById(request.sort) : null;
   const value = m => (by ? valueOf(by, m) : null);
   matches.sort(by
     ? (a, b) => (value(b) ?? -Infinity) - (value(a) ?? -Infinity)
-    : (a, b) => (b.research?.quality ?? -1) - (a.research?.quality ?? -1) || (b.roce ?? -Infinity) - (a.roce ?? -Infinity));
+    : (a, b) => (b.research?.overall?.score ?? -1) - (a.research?.overall?.score ?? -1) || (b.research?.quality ?? -1) - (a.research?.quality ?? -1) || (b.roce ?? -Infinity) - (a.roce ?? -Infinity));
   // countOnly: how many match, for the strategy cards on Discover's first page;
   // with top: N, also the N best (symbol, name, score, and the measure ranked by)
   if (request.countOnly) {

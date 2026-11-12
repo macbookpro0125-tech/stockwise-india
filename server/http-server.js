@@ -1129,6 +1129,8 @@ export function createApp() {
           metrics.sectorCompare = market.sectorStats ? sectorComparison(metrics, market.sectorStats) : [];
           // its share of the listed sector's sales (sector-share.js)
           metrics.sectorShare = market.rows ? sectorShare(metrics, market.rows) : null;
+          // its place by overall score in the market and its sector
+          metrics.overallRank = market.rows?.find(r => r.symbol === metrics.symbol)?.overallRank ?? null;
         }
 
         sendJson(res, 200, {
