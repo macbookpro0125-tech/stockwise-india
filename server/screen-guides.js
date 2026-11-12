@@ -5,6 +5,12 @@
 // filters, never as advice about the companies: a screen lists companies that
 // pass a set of figures; it says nothing about whether to buy them.
 export const SCREEN_GUIDES = {
+  highest_overall: {
+    search: "Top rated stocks India by score",
+    lookFor: "Every NSE company worth ₹500 crore or more that has an overall score, ranked from highest to lowest. The score weighs how good the business is from its filings (returns on capital, cash behind profits, balance sheet, governance and growth: 70%) against how cheap the share is against its own usual P/E, its peers and its cash flow (30%), trimmed for big price swings and missing data.",
+    suits: "People who want one place to start: the companies our method scores highest, to study further.",
+    limits: "The weights are our own starting point and haven't been tested against later share prices, so a high score isn't a forecast. Banks and lenders are scored without their key tests (bad loans, capital), and a cheap share can be cheap for a reason.",
+  },
   high_quality_compounders: {
     search: "High quality stocks India with high ROCE and low debt",
     lookFor: "Businesses that have grown sales by at least 10% a year for three years while earning high returns on equity and capital, with wide operating margins, little debt, owners who hold a large stake without pledging it, and a P/E that isn't extreme.",

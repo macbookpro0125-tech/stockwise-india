@@ -4,7 +4,7 @@
 
 // The kinds, in the strategy grid's order (PresetCards.jsx shows the same)
 export const KINDS = [
-  ["quality", "Quality & growth", ["high_quality_compounders", "undervalued_growth", "small_cap_multibaggers", "ofss_style_filter", "debt_paydown", "sound_banks"]],
+  ["quality", "Quality & growth", ["highest_overall", "high_quality_compounders", "undervalued_growth", "small_cap_multibaggers", "ofss_style_filter", "debt_paydown", "sound_banks"]],
   ["value", "Value", ["turnaround_plays", "psu_value", "net_net_value", "fallen_quality"]],
   ["income", "Income & safety", ["dividend_aristocrats", "dividend_growth", "defensive_bluechips"]],
   ["momentum", "Momentum", ["top_gainers", "momentum_growth", "up_every_timeframe", "near_highs_cheap", "doubled_in_year", "beating_market", "pullback_50dma", "breaking_out"]],
@@ -18,6 +18,7 @@ const OVER = { ret1d: "a day", ret1w: "a week", ret1m: "a month", ret6m: "six mo
 const signed = (v, unit) => (v == null ? null : `${v > 0 ? "+" : ""}${Math.round(v)}${unit}`);
 // Strategies that rank by something other than a gain (31 Oct 2026)
 const RANKED_BY = {
+  researchScore: { label: "Highest overall", head: "Highest overall scores", figure: c => (c.value == null ? null : Math.round(c.value)) },
   volVsAvg50: { label: "Most traded", head: "Most traded against a usual day", figure: c => (c.value == null ? null : `${c.value.toFixed(1)}×`) },
   deliveryJump: { label: "Biggest jump", head: "Biggest jump in delivery %", figure: c => signed(c.value, " pts") },
   ret3mVsNifty: { label: "Furthest ahead", head: "Furthest ahead of the NIFTY 50 over three months", figure: c => signed(c.value, " pts") },

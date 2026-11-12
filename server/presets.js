@@ -1,4 +1,18 @@
 export const PRESETS = [
+  // 12 Nov 2026 ("one score we rank the stocks on"): every company of ₹500
+  // crore or more, by the overall score, highest first — our method's
+  // ranking, not a pick
+  {
+    id: "highest_overall",
+    name: "Highest Overall Scores",
+    icon: "🏅",
+    description: "Every company worth ₹500 crore or more, ranked by the overall score: business quality and price, from the filings",
+    filters: [
+      { id: "researchScore", min: 1, max: null },
+      { id: "marketCapCr", min: 500, max: null },
+    ],
+    sort: "researchScore",
+  },
   {
     id: "high_quality_compounders",
     name: "High Quality Compounders",
