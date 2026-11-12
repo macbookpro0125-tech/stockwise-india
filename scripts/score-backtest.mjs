@@ -29,6 +29,7 @@ const { computeMetrics } = await import("../server/metrics.js");
 const { computeResearch } = await import("../server/research.js");
 const { freshRows, marketPeers, rankByOverall } = await import("../server/screen.js");
 const { loadMarketSnapshot, technicals } = await import("../server/market-data.js");
+const { priceStrengthRanks } = await import("../server/price-strength.js");
 
 const MIN_CAP_CR = 500; // as the "Highest Overall Scores" strategy
 const TOP_N = 25;
@@ -102,7 +103,7 @@ function snapshotAsOf(day) {
     const closes = year.map(d => d.close);
     if (closes.length) range52w[sym] = { low: Math.min(...closes), high: Math.max(...closes) };
     const ret = {};
-    for (const [key, months] of [["m3", 3], ["m6", 6], ["y1", 12]]) {
+    for (const [key, months] of [["m3", 3], ["m6", 6], ["m9", 9], ["y1", 12]]) {
       const thenDay = addMonths(day, -months), then = closeOn(bars, thenDay);
       if (!then || then.date < bars[0][0]) continue;
       const r = (at.close / (then.close / factorBetween(sym, then.date, day)) - 1) * 100;
@@ -191,6 +192,8 @@ for (const day of DATES) {
   }
   const fresh = freshRows(rows);
   const peers = marketPeers(fresh);
+  // Price strength (price-strength.js) as it stood that day
+  const strength = priceStrengthRanks(snap.returns);
   for (const m of fresh) m.research = computeResearch(m, { peers, now: Date.parse(`${day}T12:00:00Z`) });
   rankByOverall(fresh);
   const scored = fresh
@@ -203,6 +206,7 @@ for (const day of DATES) {
       overlay: m.research.risk?.overlay ?? 0, status: m.research.overall.status,
       // known market factors, from the prices up to that day: the past year's
       // move against the Nifty (trend) and the year's price swings
+      strength: strength.get(m.symbol) ?? null, businessQuality: m.research.quality ?? null,
       fscore: m.piotroski ?? null, pb: m.priceToBook ?? null,
       trend: m.ret1yVsNifty ?? null, calm: m.volatility1y != null ? -m.volatility1y : null,
     }))
@@ -266,6 +270,18 @@ for (const day of DATES) {
     "score top fifth, F 7–9": withF.filter(r => topFifthSyms.has(r.symbol) && r.fscore >= 7),
     "score top fifth, F 0–4": withF.filter(r => topFifthSyms.has(r.symbol) && r.fscore <= 4),
   };
+  // Price strength alone and with the business (the desk's "Strong price +
+  // business": strength 70+ and quality 70+)
+  const withS = scored.filter(r => r.strength != null);
+  Object.assign(fGroups, {
+    "strength 90–99": withS.filter(r => r.strength >= 90),
+    "strength 80–99": withS.filter(r => r.strength >= 80),
+    "strength 1–20": withS.filter(r => r.strength <= 20),
+    "strength 70+ & quality 70+": withS.filter(r => r.strength >= 70 && r.businessQuality >= 70),
+    "strength 80+ & quality 70+": withS.filter(r => r.strength >= 80 && r.businessQuality >= 70),
+    "strength 70+ & score top fifth": withS.filter(r => r.strength >= 70 && topFifthSyms.has(r.symbol)),
+    "strength 1–30 & quality <50": withS.filter(r => r.strength <= 30 && r.businessQuality != null && r.businessQuality < 50),
+  });
   const fStats = Object.fromEntries(Object.entries(fGroups).map(([k, rows]) => [k, stat(rows)]));
   // The 100 largest companies that day, split in half by score: like with
   // like against the Nifty 50, with no hindsight about who is in the index
@@ -344,7 +360,7 @@ for (const horizon of ["r12", "r6"]) {
   const label = horizon === "r12" ? "12 months" : "6 months";
   const used = cohorts.filter(c => c.bench[horizon] != null);
   const avgOf = pick => mean(used.map(pick).filter(v => v != null));
-  console.log(`\n=== Piotroski F-score, ${label} later (average over ${used.length} dates; Nifty 50 ${f(avgOf(c => c.bench[horizon]))}) ===`);
+  console.log(`\n=== Piotroski F-score and price strength, ${label} later (average over ${used.length} dates; Nifty 50 ${f(avgOf(c => c.bench[horizon]))}) ===`);
   console.log(`group                        companies  average  median  % beat Nifty  ahead of Nifty on`);
   for (const k of Object.keys(used[0].fStats)) {
     const st = c => c.fStats[k][horizon];
