@@ -328,6 +328,21 @@ function StarButton({ symbol, price, watched, size = 30 }) {
   );
 }
 
+// The star beside each company's name on a computer (12 Nov 2026, "the
+// watchlist star should stay, I can't see it once added"): always there, at
+// the end of the pinned name column, so it stays in view sideways too; gold
+// when the company is on the watchlist
+function RowStar({ symbol, name, price, watched }) {
+  return (
+    <button type="button" className="row-star" data-on={watched || undefined} aria-pressed={watched}
+      aria-label={watched ? `Remove ${name} from watchlist` : `Add ${name} to watchlist`}
+      title={watched ? "On your watchlist · click to remove" : "Add to watchlist"}
+      onClick={e => { e.stopPropagation(); toggleWatch(symbol, price); }}>
+      <StarIcon filled={watched} size={17} />
+    </button>
+  );
+}
+
 export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, totalMatches, hideCountOnPhone = false, universe = null, filters = null, onFiltersChange = null, phoneFilters = null, filtersButton = null, updating = false, queryUsed, unsupported = [], notes = [], executionTime, snapshot, netNet = false, noun = "stocks", emptyTitle = "No stocks matched your criteria", emptyHint = "Try relaxing some filters", columns = [], onEditColumns = null, filteredIds = [], meta = null, theme = "dark", sortTo = null, scoreBoxes = true, lead = null, onMoveColumn = null, onStepColumn = null, onRemoveColumn = null, onSwapColumn = null, fixedInColumns = false }) {
   const watchlist = useWatchlist();
   // Each row with the user's own levels (myLevels.js) — none while they're off
@@ -408,6 +423,29 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
   // dragging the table moves it sideways, and two arrows float at the
   // bottom of the screen while it's in view and wider than the screen
   const [side, setSide] = useState({ show: false, left: false, right: false });
+  const arrowsRef = useRef(null);
+  // where the edge arrows sit: the table's visible edges and the middle of
+  // what's on screen, set straight on the element each frame (no re-render)
+  useEffect(() => {
+    let frame = 0;
+    const place = () => {
+      frame = 0;
+      const wrap = tableWrap.current, box = arrowsRef.current;
+      if (!wrap || !box) return;
+      const r = wrap.getBoundingClientRect();
+      const top = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--header-h")) || 0;
+      const pinned = wrap.querySelector("thead th:nth-child(2)")?.getBoundingClientRect().right ?? r.left;
+      const y = (Math.max(r.top, top) + Math.min(r.bottom, window.innerHeight)) / 2;
+      box.style.setProperty("--edge-l", `${Math.round(pinned + 10)}px`);
+      box.style.setProperty("--edge-r", `${Math.round(window.innerWidth - r.right + 10)}px`);
+      box.style.setProperty("--edge-y", `${Math.round(y)}px`);
+    };
+    const ask = () => { if (!frame) frame = requestAnimationFrame(place); };
+    ask();
+    window.addEventListener("scroll", ask, { passive: true });
+    window.addEventListener("resize", ask);
+    return () => { window.removeEventListener("scroll", ask); window.removeEventListener("resize", ask); cancelAnimationFrame(frame); };
+  });
   useEffect(() => {
     const wrap = tableWrap.current;
     if (!wrap) return;
@@ -989,10 +1027,14 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
           {/* Open on the page, not in a box with its own scrollbars (31 Oct
               2026): the page scrolls down; only a table wider than the
               screen scrolls sideways */}
+          {/* Big arrows on the table's two edges (12 Nov 2026, "I need a left
+              right arrow to see the right side"): left just past the pinned
+              name column, right at the table's edge, halfway down what's on
+              screen; each shows only when there's more that way */}
           {side.show && !isMobile && (
-            <div className="rt-side-arrows" role="group" aria-label="Scroll the table sideways">
-              <button type="button" aria-label="Scroll left" disabled={!side.left} onClick={() => nudge(-1)}><ChevronLeft size={18} aria-hidden="true" /></button>
-              <button type="button" aria-label="Scroll right" disabled={!side.right} onClick={() => nudge(1)}><ChevronRight size={18} aria-hidden="true" /></button>
+            <div ref={arrowsRef} className="rt-edge-arrows" role="group" aria-label="Scroll the table sideways">
+              {side.left && <button type="button" className="rt-edge rt-edge-left" aria-label="Scroll left, to earlier columns" title="Earlier columns" onClick={() => nudge(-1)}><ChevronLeft size={22} strokeWidth={2.4} aria-hidden="true" /></button>}
+              {side.right && <button type="button" className="rt-edge rt-edge-right" aria-label="Scroll right, to more columns" title="More columns" onClick={() => nudge(1)}><ChevronRight size={22} strokeWidth={2.4} aria-hidden="true" /></button>}
             </div>
           )}
           <div className="rt-open-scroll" ref={tableWrap}>
@@ -1076,20 +1118,19 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
                         <div style={{ minWidth: 0, flex: "1 1 auto" }}>
                           <button type="button" title={stock.name} aria-label={stock.name} onClick={() => onAnalyze(stock.symbol)} className="stock-link" style={{ display: "block", maxWidth: "100%", padding: 0, border: 0, background: "none", fontFamily: "inherit", textAlign: "left", fontWeight: 400, fontSize: 14, letterSpacing: "-0.01em", marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shortName(stock.name)}</button>
                           <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
-                            {watchlist.has(stock.symbol) && <Star size={11} className="row-starred" fill="currentColor" aria-label="On your watchlist" />}
                             <span className="ticker-chip">{stock.symbol}</span>
                             <NcavBadge stock={stock} />
                             {stock.sector && <span title={stock.sector} style={{ fontSize: 11, color: "var(--t3)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", minWidth: 0 }}>{stock.sector}</span>}
                           </div>
                         </div>
-                        {/* Watch, alert and NSE beside the name (31 Oct 2026: the
-                            Actions column went, for room) — on hover or focus;
-                            a starred one keeps its star */}
-                        <div className="row-acts" data-watched={watchlist.has(stock.symbol) || undefined} data-tour={i === 0 ? "row-actions" : undefined}>
-                          <StarButton symbol={stock.symbol} price={stock.cmp} watched={watchlist.has(stock.symbol)} size={26} />
+                        {/* Alert and NSE beside the name on hover or focus (31
+                            Oct 2026: the Actions column went, for room); the
+                            star is always there */}
+                        <div className="row-acts" data-tour={i === 0 ? "row-actions" : undefined}>
                           {bell(stock, 26)}
                           <a href={nseUrl(stock.symbol)} target="_blank" rel="noreferrer" title="Open on NSE" aria-label="Open on NSE" className="row-nse"><ArrowUpRight size={13} /></a>
                         </div>
+                        <RowStar symbol={stock.symbol} name={shortName(stock.name)} price={stock.cmp} watched={watchlist.has(stock.symbol)} />
                       </div>
                     </td>
 
