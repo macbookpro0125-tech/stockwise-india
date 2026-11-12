@@ -113,6 +113,12 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
   useEffect(() => { setSignal(null); }, [activePresetId]);
   const [activePresetName, setActivePresetName] = useState(null);
   const [activePresetAbout, setActivePresetAbout] = useState(null);
+  // The strategy your own filters started from (12 Nov 2026, "Untitled
+  // screen, why? it should be whole market or a strategy"): changing a rule
+  // keeps its name, marked as changed, until you save it as your own
+  const [editedFrom, setEditedFrom] = useState(null);
+  const presetNameNow = useRef(null);
+  presetNameNow.current = activePresetName;
   // A strategy that ranks by a measure (Top Gainers, 22 Oct 2026): what the
   // list is sorted by, the periods its switch offers, and n — bumped on each
   // pick, so the table re-sorts even when the same measure comes again
@@ -406,6 +412,8 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
   const [, setHistoryTick] = useState(0);
   const setOwn = useCallback(next => {
     setFilters(next); setActivePresetId(null); setActivePresetName(null); setActivePresetAbout(null);
+    const from = presetNameNow.current;
+    setEditedFrom(prev => ((next ?? []).some(isActiveFilter) ? from ?? prev ?? "Whole market" : null));
     setRanking(r => (r.periods ? { ...r, periods: null } : r)); // your own filters now: the list keeps its order
   }, []);
   const changeFilters = useCallback(next => {
@@ -438,6 +446,7 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
     // however it was opened — search, a link, the Continue card — it is recent
     if (preset.id) noteRecent(preset.id);
     setActivePresetId(preset.id);
+    setEditedFrom(null);
     setActivePresetName(preset.name ?? null);
     setActivePresetAbout(preset.description ?? null);
     setRanking(r => ({ sort: preset.sort ?? null, periods: preset.periods ?? null, n: r.n + 1 }));
@@ -465,10 +474,10 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
   // the saved screen open now, if one is
   const activeSaved = activePresetId ? ownStrategies.find(p => p.id === activePresetId) ?? null : null;
   const wheelItems = useMemo(() => [
-    ...(yours ? [{ id: "__yours", label: "Your filters" }] : []),
+    ...(yours ? [{ id: "__yours", label: `${editedFrom ?? "Whole market"} · changed` }] : []),
     { id: "__all", label: "Whole market" },
     ...wheelPresets.map(p => ({ id: p.id, label: p.name })),
-  ], [yours, wheelPresets]);
+  ], [yours, wheelPresets, editedFrom]);
   const wheelValue = activePresetId ?? (yours ? "__yours" : "__all");
   const pickFromWheel = id => {
     if (id === "__yours") return;
@@ -714,10 +723,10 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
                 {/* A computer: the name is the strategy wheel itself — the
                     strategy on its pill, the others above and below to
                     scroll to (one name, in one place) */}
-                {(isPhone || wheelItems.length <= 1) && <h2 className={`screen-title${wheelItems.length > 1 ? " sr-only" : ""}`}>{activePresetName ?? (activeCount > 0 ? "Your filters" : "Whole market")}</h2>}
+                {(isPhone || wheelItems.length <= 1) && <h2 className={`screen-title${wheelItems.length > 1 ? " sr-only" : ""}`}>{activePresetName ?? (activeCount > 0 ? editedFrom ?? "Whole market" : "Whole market")}</h2>}
                 {wheelItems.length > 1 && (
                   <StrategyPicker presets={wheelPresets} items={wheelItems} value={wheelValue} onPick={pickFromWheel}
-                    meta={meta} filters={filters} phone={isPhone}
+                    meta={meta} filters={filters} phone={isPhone} editedFrom={editedFrom}
                     stats={{ matched: results?.matched ?? null, universe: results?.total ?? null, pricesDate: results?.snapshot?.pricesDate ?? null }}
                     onEditRules={() => (isPhone ? setSheetOpen(true) : setFiltersOpen(true))} />
                 )}
@@ -741,7 +750,7 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
                   {/* the screen's companies on the market map (31 Oct 2026) */}
                   {onShowMap && results?.results?.length > 0 && (
                     <button type="button" className="btn-ghost tb-btn" title="See this screen's companies on the market map, by sector"
-                      onClick={() => onShowMap(wheelPresets.find(p => p.id === wheelValue)?.name ?? (activeCount ? "Untitled screen" : "Whole market"), results.results.map(r => r.symbol))}>
+                      onClick={() => onShowMap(wheelPresets.find(p => p.id === wheelValue)?.name ?? (activeCount ? editedFrom ?? "Whole market" : "Whole market"), results.results.map(r => r.symbol))}>
                       <MapIcon size={14} aria-hidden="true" /> Show as map
                     </button>
                   )}

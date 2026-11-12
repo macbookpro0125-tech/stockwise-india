@@ -22,7 +22,7 @@ import { recentScreenIds } from "./screensHome.js";
 //   stats     { matched, universe, pricesDate, notes } for that page
 const ALL = "__all", YOURS = "__yours";
 
-export default function StrategyPicker({ presets, items, value, onPick, meta, filters, onEditRules, phone = false, stats = null }) {
+export default function StrategyPicker({ presets, items, value, onPick, meta, filters, onEditRules, phone = false, stats = null, editedFrom = null }) {
   const [panel, setPanel] = useState(null); // "list" | "about" | null
   const wrap = useRef(null);
   const listBtn = useRef(null), aboutBtn = useRef(null);
@@ -58,7 +58,7 @@ export default function StrategyPicker({ presets, items, value, onPick, meta, fi
         </button>
       </div>
       {panel === "about" && (
-        <StrategyInfoPage preset={current} value={value} meta={meta} filters={filters} stats={stats}
+        <StrategyInfoPage preset={current} value={value} editedFrom={editedFrom} meta={meta} filters={filters} stats={stats}
           onClose={() => { setPanel(null); aboutBtn.current?.focus(); }}
           onEditRules={() => { setPanel(null); onEditRules?.(); }} />
       )}
@@ -71,9 +71,10 @@ export default function StrategyPicker({ presets, items, value, onPick, meta, fi
   // make sense"): its name, a line saying what it is, and a labelled button
   // to switch — the rules are on the board, so no ⓘ here
   const own = (filters ?? []).filter(f => (f.values?.length ?? 0) > 0 || f.min != null || f.max != null).length;
-  const name = current?.name ?? (value === ALL || !own ? "Whole market" : "Untitled screen");
+  // never "Untitled": the strategy it started from, or the whole market
+  const name = current?.name ?? (value === ALL || !own ? "Whole market" : editedFrom ?? "Whole market");
   const line = current?.description
-    ?? (value === ALL || !own ? "Every NSE company, no filters" : `${own} filter${own === 1 ? "" : "s"} you've set · not saved yet`);
+    ?? (value === ALL || !own ? "Every NSE company, no filters" : `Changed · ${own} filter${own === 1 ? "" : "s"} · not saved yet`);
   return (
     <div ref={wrap} className="screen-wheel-wrap sp-plain">
       <div className="sp-name-row">
@@ -150,7 +151,7 @@ function StrategyList({ presets, value, onPick, hasYours }) {
 // (the button, the browser's, Android's) closes it
 const dateOf = iso => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 
-function StrategyInfoPage({ preset, value, meta, filters, stats, onClose, onEditRules }) {
+function StrategyInfoPage({ preset, value, meta, filters, stats, onClose, onEditRules, editedFrom = null }) {
   const heading = useRef(null);
   useEffect(() => {
     window.history.pushState({ ...(window.history.state ?? {}), strategyInfo: true }, "");
@@ -163,8 +164,8 @@ function StrategyInfoPage({ preset, value, meta, filters, stats, onClose, onEdit
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const back = () => { if (window.history.state?.strategyInfo) window.history.back(); else onClose(); };
-  const name = preset?.name ?? (value === YOURS ? "Your filters" : "Whole market");
-  const description = preset?.description ?? (value === YOURS ? "The filters you've set yourself." : "Every NSE company screened here — no rules yet. Pick a strategy, or add filters of your own.");
+  const name = preset?.name ?? (value === YOURS ? `${editedFrom ?? "Whole market"} · changed` : "Whole market");
+  const description = preset?.description ?? (value === YOURS ? "Its rules as you've changed them. Save it to keep it as your own." : "Every NSE company screened here — no rules yet. Pick a strategy, or add filters of your own.");
   const rules = describeRules(preset ? preset.filters : value === YOURS ? filters : [], meta);
   return createPortal(
     <div className="sip" role="dialog" aria-modal="true" aria-labelledby="sip-title">
