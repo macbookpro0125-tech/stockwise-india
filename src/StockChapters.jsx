@@ -1,4 +1,4 @@
-import { rankLine } from "./overallRank.js";
+import { rankLine, pairing } from "./overallRank.js";
 import { Check, Minus, X, TriangleAlert, Eye, Info } from "lucide-react";
 import { CHAPTERS, byId, WORD, band, chapterScore, chapterLine, chapterJudgement, chapterFigures, gistLine, watchFor } from "./chapterText.js";
 
@@ -44,6 +44,11 @@ export function VerdictLines({ m, fairValue, price, onGo }) {
       {rankLine(m?.overallRank) && (
         <p className="sd-rank" title="Its place among NSE companies by overall score, from their filings: a ranking by our method, not a recommendation">
           Ranked <b>{rankLine(m.overallRank)}</b> by overall score · <a href="/lists/highest-rated-stocks">See the highest</a>
+        </p>
+      )}
+      {pairing(m) && (
+        <p className={`sd-pair sd-pair-${pairing(m).tone}`} title={pairing(m).text}>
+          <b>{pairing(m).label}</b> · {pairing(m).tone === "good" ? "this pairing beat the average company in our tests" : "this pairing did worst in our tests"} · <a href={pairing(m).href}>{pairing(m).tone === "good" ? "See them all" : "How we tested"}</a>
         </p>
       )}
       {confWord && (
