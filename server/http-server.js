@@ -47,6 +47,7 @@ import { startNewsPush } from "./news-push.js";
 import { startScreenAlerts } from "./screen-alerts.js";
 import { niceName } from "../src/stockName.js";
 import { countBrowserVisit, countActive, countSignup, visitStats, isOwner } from "./visits.js";
+import { sendWelcome } from "./welcome.js";
 import { startDigestJobs, weeklyEmailOn, setWeeklyEmail, resultsEmailOn, setResultsEmail, unsubscribe } from "./digest.js";
 import { INDEXNOW_KEY, startIndexNow } from "./indexnow.js";
 import { OLD_SCREEN_SLUGS, publicScreen, publicScreens, publicResultsCalendar, screenPageHtml, screensIndexHtml, resultsCalendarHtml, homePageHtml, sectorsIndexHtml, sectorPageHtml } from "./seo-lists.js";
@@ -467,6 +468,7 @@ export function createApp() {
         }
         const { token, userId } = signup(email, password);
         countSignup(body.visit);
+        sendWelcome(userId);
         setSessionCookie(req, res, token);
         sendJson(res, 200, { userId });
         return;
@@ -487,6 +489,7 @@ export function createApp() {
           throw e;
         }
         countSignup(body.visit);
+        sendWelcome(session.userId);
         setSessionCookie(req, res, session.token);
         sendJson(res, 200, { userId: session.userId });
         return;
@@ -555,7 +558,7 @@ export function createApp() {
           return;
         }
         const { token, userId, created } = signInWithFirebase(claims);
-        if (created) countSignup(body.visit);
+        if (created) { countSignup(body.visit); sendWelcome(userId); }
         setSessionCookie(req, res, token);
         sendJson(res, 200, { userId });
         return;
@@ -634,6 +637,14 @@ export function createApp() {
           setWeeklyEmail(userId, !!on);
         }
         sendJson(res, 200, { on: weeklyEmailOn(userId), available: emailConfigured() && !!accountInfo(userId)?.email });
+        return;
+      }
+      // A few companies' names and last prices (the empty watchlist's
+      // suggestions): at most 12, from the day's figures
+      if (url.pathname === "/api/stocks/brief" && req.method === "GET") {
+        const want = String(url.searchParams.get("symbols") ?? "").split(",").map(x => x.trim().toUpperCase()).filter(Boolean).slice(0, 12);
+        const bySym = new Map((allMetrics().rows ?? []).map(r => [r.symbol, r]));
+        sendJson(res, 200, { stocks: want.map(x => bySym.get(x)).filter(r => r?.name).map(r => ({ symbol: r.symbol, name: r.name, cmp: r.cmp ?? null, ret1d: r.ret1d ?? null })) });
         return;
       }
       // The results email (digest.js): the evening before a watched company's
