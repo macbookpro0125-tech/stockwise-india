@@ -203,6 +203,7 @@ for (const day of DATES) {
       overlay: m.research.risk?.overlay ?? 0, status: m.research.overall.status,
       // known market factors, from the prices up to that day: the past year's
       // move against the Nifty (trend) and the year's price swings
+      fscore: m.piotroski ?? null, pb: m.priceToBook ?? null,
       trend: m.ret1yVsNifty ?? null, calm: m.volatility1y != null ? -m.volatility1y : null,
     }))
     .sort((a, b) => b.score - a.score);
@@ -248,6 +249,24 @@ for (const day of DATES) {
     }];
   }));
   Object.assign(variantRows, blendRows);
+  // Piotroski's F-score (metrics.js, 0–9, not for lenders), alone and as he
+  // used it: inside the cheapest fifth by price to book
+  const withF = scored.filter(r => r.fscore != null);
+  const byPb = withF.filter(r => r.pb > 0).sort((a, b) => a.pb - b.pb);
+  const cheap = byPb.slice(0, Math.ceil(byPb.length / 5));
+  const topFifthSyms = new Set(scored.slice(0, Math.ceil(scored.length / 5)).map(r => r.symbol));
+  const fGroups = {
+    "all with an F-score": withF,
+    "F 8–9": withF.filter(r => r.fscore >= 8),
+    "F 7–9": withF.filter(r => r.fscore >= 7),
+    "F 0–3": withF.filter(r => r.fscore <= 3),
+    "cheapest fifth (P/B)": cheap,
+    "cheapest fifth, F 8–9": cheap.filter(r => r.fscore >= 8),
+    "cheapest fifth, F 0–3": cheap.filter(r => r.fscore <= 3),
+    "score top fifth, F 7–9": withF.filter(r => topFifthSyms.has(r.symbol) && r.fscore >= 7),
+    "score top fifth, F 0–4": withF.filter(r => topFifthSyms.has(r.symbol) && r.fscore <= 4),
+  };
+  const fStats = Object.fromEntries(Object.entries(fGroups).map(([k, rows]) => [k, stat(rows)]));
   // The 100 largest companies that day, split in half by score: like with
   // like against the Nifty 50, with no hindsight about who is in the index
   const big = [...scored].sort((a, b) => b.capCr - a.capCr).slice(0, LARGE_N).sort((a, b) => b.score - a.score);
@@ -257,6 +276,7 @@ for (const day of DATES) {
   const parts = Object.fromEntries(["score", "quality", "value", "steadiness"].map(k => [k, { r6: spearman(scored, k, "r6"), r12: spearman(scored, k, "r12") }]));
   cohorts.push({
     variants: variantRows,
+    fStats,
     large: { top: stat(big.slice(0, half)), bottom: stat(big.slice(half)), all: stat(big) },
     parts,
     day, companies: scored.length, bench: { r6: r1(bench.r6), r12: r1(bench.r12) },
@@ -318,6 +338,17 @@ for (const horizon of ["r12", "r6"]) {
     const vsN = c => v(c).top25[horizon].avg - c.bench[horizon];
     const wins = fn => used.filter(c => fn(c) > 0).length;
     console.log(`${name.padEnd(28)} ${f2(avgOf(c => v(c).corr[horizon]))} (${wins(c => v(c).corr[horizon])}/${used.length}) | ${f(avgOf(gap))} (${wins(gap)}/${used.length})            | ${f(avgOf(c => v(c).top25[horizon].avg))} | ${f(avgOf(vsN))} (${wins(vsN)}/${used.length})          | ${f(avgOf(big))} (${wins(big)}/${used.length})`);
+  }
+}
+for (const horizon of ["r12", "r6"]) {
+  const label = horizon === "r12" ? "12 months" : "6 months";
+  const used = cohorts.filter(c => c.bench[horizon] != null);
+  const avgOf = pick => mean(used.map(pick).filter(v => v != null));
+  console.log(`\n=== Piotroski F-score, ${label} later (average over ${used.length} dates; Nifty 50 ${f(avgOf(c => c.bench[horizon]))}) ===`);
+  console.log(`group                        companies  average  median  % beat Nifty  ahead of Nifty on`);
+  for (const k of Object.keys(used[0].fStats)) {
+    const st = c => c.fStats[k][horizon];
+    console.log(`${k.padEnd(28)} ${String(Math.round(avgOf(c => st(c).n))).padStart(6)}   ${f(avgOf(c => st(c).avg))}  ${f(avgOf(c => st(c).median))}   ${f(avgOf(c => st(c).beatPct))}%       ${used.filter(c => st(c).avg > c.bench[horizon]).length}/${used.length}`);
   }
 }
 console.log(`\nCompanies worth ₹${MIN_CAP_CR} Cr+ on each date, equal weight. Price return only (no dividends). Only companies listed today are in the data, which flatters every group.`);
