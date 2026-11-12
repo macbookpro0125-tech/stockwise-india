@@ -22,5 +22,5 @@ export const LISTS_TITLE = pageTitle("NSE stock lists: Nifty 50, PSU, defence, u
 export const screenTitle = ({ name, matched, guide }) => pageTitle(guide?.search ? `${guide.search}: ${matched} today` : `${name}: ${matched} NSE stocks match today`);
 export const sectorTitle = ({ name, count }) => pageTitle(`${name} stocks on NSE: ${count} companies by P/E, ROE`);
 // a rule's list counts its companies; an index or a theme is the companies NSE lists
-export const listTitle = ({ name, kind, count }) => pageTitle(`${name} list: ${kind === "rule" ? `${count} NSE companies` : "companies"} by P/E, ROE`);
+export const listTitle = ({ name, kind, count, group }) => group === "score" ? pageTitle(`${name}: NSE companies ranked by overall score`) : pageTitle(`${name} list: ${kind === "rule" ? `${count} NSE companies` : "companies"} by P/E, ROE`);
 export const stockTitle = (name, symbol) => pageTitle(`${name} share price, fair value, P/E & results | ${symbol}`);

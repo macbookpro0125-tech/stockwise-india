@@ -154,9 +154,11 @@ export function ScreenPage({ slug, signedIn }) {
                   <CompanyLogo symbol={c.symbol} size={32} fallback={c.name} />
                   <span className="pl-co-main">
                     <span className="pl-co-name">{c.name}</span>
-                    <span className="pl-co-figs">{[c.price != null && `₹${num(c.price, 2)}`, crore(c.marketCapCr), c.pe > 0 && `P/E ${num(c.pe)}`, c.roe != null && `ROE ${num(c.roe)}%`].filter(Boolean).join(" · ")}</span>
+                    <span className="pl-co-figs">{[c.price != null && `₹${num(c.price, 2)}`, crore(c.marketCapCr), c.pe > 0 && `P/E ${num(c.pe)}`, c.roe != null && `ROE ${num(c.roe)}%`, c.overall != null && c.quality != null && `Quality ${c.quality}`].filter(Boolean).join(" · ")}</span>
                   </span>
-                  {c.quality != null && <span className="pl-co-q" title="Quality score, from the company's filings">{c.quality}<small>/100</small></span>}
+                  {c.overall != null
+                    ? <span className="pl-co-q" title="Overall score: quality and valuation, from the company's filings">{c.overall}<small>/100</small></span>
+                    : c.quality != null && <span className="pl-co-q" title="Quality score, from the company's filings">{c.quality}<small>/100</small></span>}
                 </A>
               </li>
             ))}
@@ -339,8 +341,9 @@ export function ListPage({ slug, signedIn }) {
           <p className="pl-lede">
             {s.count} companies: {s.about}. Together they're worth {crore(s.totalMarketCapCr)}.
             {s.medianPe ? ` The middle P/E among them is ${num(s.medianPe)}${s.medianRoe != null ? ` and the middle return on equity ${num(s.medianRoe)}%` : ""}.` : ""}
-            {s.best.length ? ` By quality score from their own filings, the highest are ${s.best.map(b => `${b.name} (${Math.round(b.quality)})`).join(", ")}.` : ""}
+            {s.best.length && !s.method ? ` By quality score from their own filings, the highest are ${s.best.map(b => `${b.name} (${Math.round(b.quality)})`).join(", ")}.` : ""}
           </p>
+          {s.method && <p className="pl-note">{s.method} <A to="/methodology">How the scores work</A>.</p>}
           <PageAd slot="list" />
           {!signedIn && <JoinCard title="See every check behind these scores" onJoin={join} why="Create a free account to see every check behind these scores."
             points={["Each company's 7 questions, answered from its filings", "Its fair value, results and who owns it", "A watchlist and price alerts for the ones you follow"]} />}
@@ -352,9 +355,11 @@ export function ListPage({ slug, signedIn }) {
                   <CompanyLogo symbol={c.symbol} size={32} fallback={c.name} />
                   <span className="pl-co-main">
                     <span className="pl-co-name">{c.name}</span>
-                    <span className="pl-co-figs">{[c.price != null && `₹${num(c.price, 2)}`, crore(c.marketCapCr), c.extra && s.extraLabel && `${s.extraLabel} ${c.extra}`, c.pe > 0 && `P/E ${num(c.pe)}`, c.roe != null && `ROE ${num(c.roe)}%`].filter(Boolean).join(" · ")}</span>
+                    <span className="pl-co-figs">{[c.price != null && `₹${num(c.price, 2)}`, crore(c.marketCapCr), !s.method && c.extra && s.extraLabel && `${s.extraLabel} ${c.extra}`, c.pe > 0 && `P/E ${num(c.pe)}`, c.roe != null && `ROE ${num(c.roe)}%`].filter(Boolean).join(" · ")}</span>
                   </span>
-                  {c.quality != null && <span className="pl-co-q" title="Quality score, from the company's filings">{Math.round(c.quality)}<small>/100</small></span>}
+                  {s.method
+                    ? c.overall != null && <span className="pl-co-q" title="Overall score: quality and valuation, from the company's filings">{Math.round(c.overall)}<small>/100</small></span>
+                    : c.quality != null && <span className="pl-co-q" title="Quality score, from the company's filings">{Math.round(c.quality)}<small>/100</small></span>}
                 </A>
               </li>
             ))}

@@ -61,8 +61,8 @@ export function screenChanges(presetId, nowSymbols, names, snaps = loadSnapshots
   return { since: then.date, joined: nowSymbols.filter(x => !before.has(x)).slice(0, 15).map(named), left: then.members.filter(x => !now.has(x)).slice(0, 15).map(named), joinedCount: nowSymbols.filter(x => !before.has(x)).length, leftCount: then.members.filter(x => !now.has(x)).length };
 }
 
-// One strategy: its rules in words and the companies that match, the best
-// quality first (or, for one that ranks by a measure, by that measure)
+// One strategy: its rules in words and the companies that match, the highest
+// overall score first (12 Nov 2026; quality before then) (or, for one that ranks by a measure, by that measure)
 export function publicScreen(slug) {
   const p = bySlug(slug);
   if (!p) return null;
@@ -76,6 +76,7 @@ export function publicScreen(slug) {
       symbol: r.symbol, name: plain(r.name), sector: r.sector ?? null,
       price: r.cmp ?? null, marketCapCr: r.marketCapCr ?? null, pe: r.pe ?? null, roe: r.roe ?? null, roce: r.roce ?? null,
       quality: r.research?.quality == null ? null : Math.round(r.research.quality),
+      overall: r.research?.overall == null ? null : Math.round(r.research.overall),
     })),
     // what people search it by, what it looks for, who it may suit, its limits
     guide: SCREEN_GUIDES[p.id] ?? null,
@@ -111,7 +112,7 @@ export function screenPageHtml(template, slug) {
   const g = s.guide;
   const title = screenTitle(s);
   const desc = `${s.matched} NSE companies match ${s.name} at the ${day(s.pricesDate) ?? "latest"} close: ${s.rules.join(", ")}. ${sentence(s.description)}`.trim();
-  const rows = s.companies.map((c, i) => `<tr><td>${i + 1}</td><td>${link(`/stock/${encodeURIComponent(c.symbol)}`, c.name)} <small>${esc(c.symbol)}</small></td><td>${c.price == null ? "—" : `₹${esc(num(c.price, 2))}`}</td><td>${esc(crore(c.marketCapCr) ?? "—")}</td><td>${c.pe > 0 ? esc(num(c.pe)) : "—"}</td><td>${c.roe == null ? "—" : `${esc(num(c.roe))}%`}</td><td>${c.quality == null ? "—" : `${c.quality}/100`}</td></tr>`).join("");
+  const rows = s.companies.map((c, i) => `<tr><td>${i + 1}</td><td>${link(`/stock/${encodeURIComponent(c.symbol)}`, c.name)} <small>${esc(c.symbol)}</small></td><td>${c.price == null ? "—" : `₹${esc(num(c.price, 2))}`}</td><td>${esc(crore(c.marketCapCr) ?? "—")}</td><td>${c.pe > 0 ? esc(num(c.pe)) : "—"}</td><td>${c.roe == null ? "—" : `${esc(num(c.roe))}%`}</td><td>${c.overall == null ? "—" : `${c.overall}/100`}</td><td>${c.quality == null ? "—" : `${c.quality}/100`}</td></tr>`).join("");
   const ld = {
     "@context": "https://schema.org",
     "@type": "ItemList",
@@ -127,7 +128,7 @@ ${g ? `<h2>What this screen looks for</h2><p>${esc(g.lookFor)}</p><h2>Who it may
 ${g ? `<h2>Limitations</h2><p>${esc(g.limits)}</p>` : ""}
 ${s.changes ? `<h2>What changed since ${esc(day(s.changes.since))}</h2><p>${s.changes.joinedCount} ${s.changes.joinedCount === 1 ? "company" : "companies"} joined and ${s.changes.leftCount} left.</p>${s.changes.joined.length ? `<p>Joined: ${s.changes.joined.map(c => link(`/stock/${encodeURIComponent(c.symbol)}`, c.name)).join(", ")}${s.changes.joinedCount > s.changes.joined.length ? " and more" : ""}.</p>` : ""}${s.changes.left.length ? `<p>Left: ${s.changes.left.map(c => link(`/stock/${encodeURIComponent(c.symbol)}`, c.name)).join(", ")}${s.changes.leftCount > s.changes.left.length ? " and more" : ""}.</p>` : ""}` : ""}
 <h2>Companies that match${s.matched > s.companies.length ? ` (the first ${s.companies.length})` : ""}</h2>
-<table><thead><tr><th>#</th><th>Company</th><th>Price</th><th>Market cap</th><th>P/E</th><th>ROE</th><th>Quality</th></tr></thead><tbody>${rows}</tbody></table>
+<table><thead><tr><th>#</th><th>Company</th><th>Price</th><th>Market cap</th><th>P/E</th><th>ROE</th><th>Overall</th><th>Quality</th></tr></thead><tbody>${rows}</tbody></table>
 <p>${esc(NOT_ADVICE)}</p>
 <p>${link("/screens", "All stock screens")} · ${link("/results-calendar", "Results calendar")} · ${link("/methodology", "How the quality score works")} · ${link("/disclaimer", "Disclaimer")}</p></main>`;
   return pageHtml(template, { title, desc, canonical, ld, body: body + listData("screen", slug, s), image: ogCard("screens", slug) });

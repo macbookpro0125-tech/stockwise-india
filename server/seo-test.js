@@ -91,7 +91,7 @@ assert.doesNotMatch(html.replace(/<script type="application\/ld\+json">[\s\S]*?<
 // a strategy's page: its own title (short enough for a search result), canonical, rules, and its companies linked
 const hqc = publicScreen("high-quality-compounders");
 assert.ok(hqc && hqc.rules.length >= 3 && hqc.matched === hqc.companies.length + Math.max(0, hqc.matched - 50), "a strategy: its rules and its companies");
-assert.ok(hqc.companies.every((c, i, a) => i === 0 || (a[i - 1].quality ?? -1) >= (c.quality ?? -1)), "the best quality first");
+assert.ok(hqc.companies.every((c, i, a) => i === 0 || (a[i - 1].overall ?? -1) >= (c.overall ?? -1)), "the highest overall score first");
 const sp = screenPageHtml(template, "high-quality-compounders");
 assert.equal((sp.match(/<title>/g) ?? []).length, 1);
 // titled in the words people search for it (screen-guides.js), the name in the heading
