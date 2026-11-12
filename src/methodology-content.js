@@ -33,6 +33,15 @@ export const METHODOLOGY_SECTIONS = [
     ]
   },
   {
+    title: "Tested against later share prices",
+    paragraphs: [
+      "In November 2026 we re-scored the market as it stood on nine past dates from February 2024 to February 2026, using only results filed with NSE by each date and prices up to it, and looked at each company's share price 6 and 12 months later. Companies worth ₹500 crore or more, each counted equally, price change only (no dividends).",
+      "Overall score: after 12 months the top fifth did better than the bottom fifth on 6 of 7 dates (the typical company fell 1.6% against 7.5%), but on average it did not beat the Nifty 50. The score sorts stronger businesses from weaker ones; it does not pick shares that beat the market.",
+      "A quality score of 70 or more together with a price strength of 70 or more: this group did better than the average company after 12 months on 7 of 7 dates, by about 4 percentage points a year, and was about level with the Nifty 50. Neither measure did on its own, and a weak business with a weak share price did worst. The app shows this pairing as the Strong Business, Rising Price strategy and on company pages.",
+      "Limits: only companies still listed today are in the data, which flatters every group; quarterly results are on file from late 2023, so the earliest dates use fewer quarters; two and a half years is a short period, and several combinations were tried. Past results do not predict future returns. The strategy's picks are recorded every week from now on, so its record going forward can be checked."
+    ]
+  },
+  {
     title: "Fair value for most companies",
     paragraphs: [
       "For companies with a profit in the latest year, the usual earnings-based value requires at least five years of annual results and three usable historical P/E observations. The reference fair value is normalized earnings per share multiplied by the company's median historical P/E. When at least five sector or industry peers have usable P/Es, the multiple is capped at twice the peer median. If one year's earnings are unusually high compared with its own history, the model can use median historical earnings per share instead.",
