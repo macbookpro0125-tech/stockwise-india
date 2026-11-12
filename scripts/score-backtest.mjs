@@ -151,6 +151,14 @@ function groupStats(rows, key, bench) {
 }
 
 const LARGE_N = 100;
+// [name, valuation's share of the blend, price-swing trim at the full overlay]
+const MIXES = [
+  ["today (value 30%, trim 35%)", 0.3, 0.35],
+  ["value 15%, trim 35%", 0.15, 0.35],
+  ["value 15%, trim 50%", 0.15, 0.5],
+  ["value 30%, trim 50%", 0.3, 0.5],
+  ["value 10%, trim 60%", 0.1, 0.6],
+];
 const rankOf = vals => { const idx = vals.map((v, i) => [v, i]).sort((a, b) => a[0] - b[0]); const r = new Array(vals.length); idx.forEach(([, i], k) => { r[i] = k; }); return r; };
 function spearman(rows, x, y) {
   const both = rows.filter(r => r[x] != null && r[y] != null);
@@ -183,6 +191,7 @@ for (const day of DATES) {
       capCr: Math.round(m.marketCapCr), r6: forward(m.symbol, day, 6), r12: forward(m.symbol, day, 12),
       // the score's parts, to see which of them came before better returns
       quality: m.research.qualityOnly ?? null, value: m.research.valuation?.score ?? null, steadiness: m.research.risk?.overlay != null ? -m.research.risk.overlay : null,
+      overlay: m.research.risk?.overlay ?? 0, status: m.research.overall.status,
     }))
     .sort((a, b) => b.score - a.score);
   const bench = { r6: indexForward(day, 6), r12: indexForward(day, 12) };
@@ -191,6 +200,24 @@ for (const day of DATES) {
   const stat = rows => ({ r6: groupStats(rows, "r6", bench.r6), r12: groupStats(rows, "r12", bench.r12), scores: rows.length ? `${rows.at(-1).score}–${rows[0].score}` : null });
   const notLenders = scored.filter(r => !r.lender);
   const lenders = scored.filter(r => r.lender);
+  // Other mixes of the same parts, to compare against today's (research.js:
+  // value's share of the blend, and how hard price swings trim it); the same
+  // caps (59 provisional, 39 on a red flag)
+  const variantRows = Object.fromEntries(MIXES.map(([name, valueShare, trim]) => {
+    const rows = scored.filter(r => r.quality != null && r.value != null).map(r => {
+      let v = Math.exp((1 - valueShare) * Math.log(Math.max(r.quality, 1)) + valueShare * Math.log(Math.max(r.value, 1))) * (1 - trim * (r.overlay / 100));
+      if (r.status === "provisional") v = Math.min(v, 59);
+      if (r.status === "review-required") v = Math.min(v, 39);
+      return { ...r, score: v };
+    }).sort((a, b) => b.score - a.score);
+    const fifthN = Math.ceil(rows.length / 5);
+    const bigN = [...rows].sort((a, b) => b.capCr - a.capCr).slice(0, LARGE_N).sort((a, b) => b.score - a.score);
+    return [name, {
+      corr: { r6: spearman(rows, "score", "r6"), r12: spearman(rows, "score", "r12") },
+      topFifth: stat(rows.slice(0, fifthN)), bottomFifth: stat(rows.slice(-fifthN)),
+      top25: stat(rows.slice(0, TOP_N)), bigTop: stat(bigN.slice(0, LARGE_N / 2)), bigBottom: stat(bigN.slice(LARGE_N / 2)),
+    }];
+  }));
   // The 100 largest companies that day, split in half by score: like with
   // like against the Nifty 50, with no hindsight about who is in the index
   const big = [...scored].sort((a, b) => b.capCr - a.capCr).slice(0, LARGE_N).sort((a, b) => b.score - a.score);
@@ -199,6 +226,7 @@ for (const day of DATES) {
   // companies: above 0, higher on that part came before higher returns
   const parts = Object.fromEntries(["score", "quality", "value", "steadiness"].map(k => [k, { r6: spearman(scored, k, "r6"), r12: spearman(scored, k, "r12") }]));
   cohorts.push({
+    variants: variantRows,
     large: { top: stat(big.slice(0, half)), bottom: stat(big.slice(half)), all: stat(big) },
     parts,
     day, companies: scored.length, bench: { r6: r1(bench.r6), r12: r1(bench.r12) },
@@ -246,6 +274,21 @@ for (const horizon of ["r12", "r6"]) {
   for (const c of used) console.log(`${c.day}  ${["score", "quality", "value", "steadiness"].map(k => f2(c.parts[k][horizon])).join("  ")}`);
   console.log(`average     ${["score", "quality", "value", "steadiness"].map(k => f2(mean(used.map(c => c.parts[k][horizon]).filter(v => v != null)))).join("  ")}`);
   console.log(`above 0 on  ${["score", "quality", "value", "steadiness"].map(k => `${used.filter(c => c.parts[k][horizon] > 0).length}/${used.length}`.padStart(6)).join("  ")}`);
+}
+for (const horizon of ["r12", "r6"]) {
+  const label = horizon === "r12" ? "12 months" : "6 months";
+  const used = cohorts.filter(c => c.bench[horizon] != null);
+  const avgOf = pick => mean(used.map(pick).filter(v => v != null));
+  console.log(`\n=== Mixes compared, ${label} later (average over ${used.length} dates) ===`);
+  console.log(`mix                          corr  (>0)  | top fifth − bottom (wins) | top 25 | top 25 − Nifty (wins) | 100 largest: top half − bottom (wins)`);
+  for (const [name] of MIXES) {
+    const v = c => c.variants[name];
+    const gap = c => v(c).topFifth[horizon].avg - v(c).bottomFifth[horizon].avg;
+    const big = c => v(c).bigTop[horizon].avg - v(c).bigBottom[horizon].avg;
+    const vsN = c => v(c).top25[horizon].avg - c.bench[horizon];
+    const wins = fn => used.filter(c => fn(c) > 0).length;
+    console.log(`${name.padEnd(28)} ${f2(avgOf(c => v(c).corr[horizon]))} (${wins(c => v(c).corr[horizon])}/${used.length}) | ${f(avgOf(gap))} (${wins(gap)}/${used.length})            | ${f(avgOf(c => v(c).top25[horizon].avg))} | ${f(avgOf(vsN))} (${wins(vsN)}/${used.length})          | ${f(avgOf(big))} (${wins(big)}/${used.length})`);
+  }
 }
 console.log(`\nCompanies worth ₹${MIN_CAP_CR} Cr+ on each date, equal weight. Price return only (no dividends). Only companies listed today are in the data, which flatters every group.`);
 
