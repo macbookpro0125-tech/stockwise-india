@@ -21,6 +21,7 @@ import { publicSectors, publicSector } from "./seo-story.js";
 import { SCREEN_GUIDES } from "./screen-guides.js";
 import { loadSnapshots } from "./performance.js";
 import { updatedLine } from "./updated-line.js";
+import { latestResults } from "./seo-pages.js";
 import { termsHtml } from "../src/jargonTerms.js";
 import { HOME_TITLE, SCREENS_TITLE, CALENDAR_TITLE, SECTORS_TITLE, screenTitle, sectorTitle } from "../src/pageTitle.js";
 
@@ -161,6 +162,25 @@ export function resultsCalendarHtml(template) {
 // it was an empty app shell — nine words, no heading). What the site is, every
 // screen with today's count, the largest companies reporting results soon, and
 // the pages that explain the numbers. The app replaces it when it starts.
+// Links to the latest results pages (13 Nov 2026): Search Console shows the
+// results pages are the ones on Google's first page, yet the front page and
+// the sector pages linked to none of them. The largest that reported in the
+// last two weeks, each with its figures as in the page's title.
+function recentResults(keep = () => true, n = 12) {
+  const r = latestResults();
+  const list = r.days.flatMap(d => d.companies).filter(keep).sort((a, b) => (b.marketCapCr ?? 0) - (a.marketCapCr ?? 0)).slice(0, n);
+  return { label: r.label, list };
+}
+const pctMove = v => `${v >= 0 ? "up" : "down"} ${Math.abs(v).toFixed(Math.abs(v) >= 100 ? 0 : 1)}%`;
+function resultLine(c) {
+  const parts = [];
+  if (c.profitCr != null && c.profitCr < 0) parts.push("a net loss");
+  else if (c.profitCr > 0 && c.profitYoY != null && isFinite(c.profitYoY) && c.profitCr / (1 + c.profitYoY / 100) > 0) parts.push(`profit ${pctMove(c.profitYoY)}`);
+  if (c.salesYoY != null && isFinite(c.salesYoY)) parts.push(`sales ${pctMove(c.salesYoY)}`);
+  return parts.join(", ");
+}
+const resultsList = list => `<ul>${list.map(c => { const line = resultLine(c); return `<li>${link(`/stock/${encodeURIComponent(c.symbol)}/results/${c.slug}`, `${c.name} ${c.quarter} results`)}${line ? ` — ${esc(line)}` : ""}</li>`; }).join("")}</ul>`;
+
 export function homePageHtml(template) {
   const s = publicScreens();
   const c = publicResultsCalendar();
@@ -184,6 +204,9 @@ export function homePageHtml(template) {
 <p>Each screen is a set of filters on reported figures. These are the NSE companies that pass each one today:</p>
 <ul>${s.screens.map(x => `<li>${link(`/screens/${x.slug}`, x.name)} — ${x.matched} ${x.matched === 1 ? "company" : "companies"}${x.description ? `. ${termsHtml(esc(sentence(x.description)))}` : ""}</li>`).join("")}</ul>
 <p>${link("/screens", "See all stock screens")}</p>
+${(() => { const r = recentResults(); return r.list.length ? `<h2>Latest results</h2>
+<p>The largest NSE companies that reported${r.label ? ` ${esc(r.label)}` : ""} results in the last two weeks, against the same quarter a year earlier:</p>
+${resultsList(r.list)}` : ""; })()}
 <h2>Results in the next two weeks</h2>
 <p>${reporting} NSE companies have told the exchange they'll meet to approve results in the next two weeks${soon.length ? ", including:" : "."}</p>
 ${soon.length ? `<ul>${soon.map(x => `<li>${link(`/stock/${encodeURIComponent(x.symbol)}`, x.name)} — ${esc(day(x.date))}</li>`).join("")}</ul>` : ""}
@@ -235,6 +258,7 @@ export function sectorPageHtml(template, slug) {
   const body = `<main class="seo-stock seo-methodology"><p>${link("/", "Jocular Insights")} › ${link("/sectors", "Sectors")} › ${esc(s.name)}</p>
 <h1>${esc(s.name)} stocks on NSE</h1>${updatedLine()}
 <p>${esc(intro)}</p>
+${(() => { const mine = new Set(s.companies.map(c => c.symbol)); const r = recentResults(c => mine.has(c.symbol), 10); return r.list.length ? `<h2>Latest ${esc(s.name)} results</h2>${resultsList(r.list)}<p>${link("/results", "All the latest results")}</p>` : ""; })()}
 ${s.screens.length ? `<h2>Screens its companies pass most</h2><ul>${s.screens.map(x => `<li>${link(`/screens/${x.slug}`, x.name)} — ${x.count} ${s.name} ${x.count === 1 ? "company" : "companies"}</li>`).join("")}</ul>` : ""}
 <h2>Every listed ${esc(s.name)} company</h2>
 <table><thead><tr><th>#</th><th>Company</th><th>Price</th><th>Market cap</th><th>P/E</th><th>ROE</th><th>Debt/equity</th><th>Quality</th></tr></thead><tbody>${rows}</tbody></table>
