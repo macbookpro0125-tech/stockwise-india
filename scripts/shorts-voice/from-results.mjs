@@ -31,6 +31,7 @@ const head = rows.get("Item");
 const num = s => (s == null || s === "—" ? null : Number(s.replace(/[,%₹ ]/g, "").replace("−", "-").replace("pts", "")));
 const get = item => { const r = rows.get(item); return r ? { now: num(r[1]), then: num(r[2]), nowTxt: r[1], thenTxt: r[2], chg: num(r[3]), chgTxt: r[3] } : null; };
 const sales = get("Sales"), costs = get("Operating costs"), margin = get("Operating margin %"), profit = get("Net profit");
+const opProfit = get("Operating profit"), otherIncome = get("Other income"), pbt = get("Profit before tax"), eps = get("EPS (₹)");
 if (!head || !sales || !profit || head[2] == null) throw new Error(`${url}: no year-earlier quarter in the table`);
 if (!(profit.now > 0) || !(profit.then > 0)) throw new Error(`${symbol}: a loss in one of the two quarters — not a two-figure story; pick another`);
 // a profit that grew more than threefold came from a small base: said as
@@ -96,6 +97,21 @@ if (smallBase) L(`Net profit: ${sayCr(profit.now)}, against ${sayCr(profit.then)
 else L(`Net profit: ${sayCr(profit.now)}, ${upDown(profit.chg)} ${sayPct(profit.chg)}.`, `Net profit: *₹${profit.nowTxt} crore*, ${upDown(profit.chg)} ${tone(profit.chg)}${Math.abs(profit.chg).toFixed(1)}%${tone(profit.chg)}.`, { type: "card", symbol, card: "results", circle: "profit" });
 if (ret != null) L(`The share price: ${upDown(ret)} ${sayPct(ret)} in a year.`, `The share price: ${upDown(ret)} ${tone(ret)}${Math.abs(ret).toFixed(1)}%${tone(ret)} in a year.`, { type: "card", symbol, card: "ret", tone: ret >= 0 ? "teal" : "red" });
 const close = { squeeze: ["Growth is good. Watch what it costs.", "Growth is good. *Watch what it costs.*"], jump: ["One strong quarter is a start. Check that it lasts.", "One strong quarter is a start. *Check that it lasts.*"], leverage: ["When profit outruns sales, check why.", "When profit outruns sales, *check why*."], fall: hasMargin && margin.now >= margin.then - 0.5 ? ["The margin held, so look further down: interest, depreciation, tax and one-offs.", "The margin held, so look *further down*: interest, depreciation, tax, one-offs."] : ["Check the costs, before the headline.", "Check the *costs*, before the headline."], steady: ["Check the whole quarter, not just the headline.", "Check the *whole quarter*, not just the headline."] }[story];
+// Where the profit came from (14 Nov 2026, the competitor check: viewers ask
+// it): other income — interest, dividends, gains — as a share of profit before tax
+const otherShare = otherIncome?.now > 0 && pbt?.now > 0 ? (otherIncome.now / pbt.now) * 100 : null;
+if (otherShare != null && otherShare >= 30) L(`Note: other income, money not from the main business, was ${words(Math.round(otherShare))} percent of its profit before tax.`, `Other income was ~${Math.round(otherShare)}%~ of profit before tax: money *not from the main business*.`, { type: "big", text: `${Math.round(otherShare)}%`, sub: "of profit before tax came from other income", tone: "gold" });
+// The verdict viewers ask for ("results are good or bad?"), said as a count of
+// filed measures against a year earlier — a fact, not advice
+const measures = [["Sales", sales], ["Operating profit", opProfit], ["Margin", margin], ["Net profit", profit], ["EPS", eps]]
+  .filter(([, m]) => m && m.chg != null && isFinite(m.chg) && (m.now != null) && !(m === opProfit && !(opProfit.now > 0 && opProfit.then > 0)));
+const better = measures.filter(([, m]) => m.chg > 0);
+if (measures.length >= 3) {
+  const names = better.map(([n]) => (n === "EPS" ? "earnings per share" : n.toLowerCase()));
+  const list = names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : names[0] ?? "";
+  L(`Against a year earlier, it's better on ${words(better.length)} of ${words(measures.length)} measures${better.length ? `: ${list}` : ""}.`, `Better than a year ago on *${better.length} of ${measures.length}* measures.`,
+    { type: "pills", items: measures.map(([n, m]) => ({ text: `${m.chg > 0 ? "✓" : "✗"} ${n}`, tone: m.chg > 0 ? "" : "red" })) });
+}
 L(close[0], close[1], { type: "pills", items: [{ text: "✓ Sales" }, { text: "✓ Costs" }, { text: "✓ Profit" }] });
 L("Save this, for the next results season.", "*Save this* for the next results season.", { type: "save" });
 L("Jocular Insights. Every number tells a story.", "*Jocular Insights*. Every number tells a story.", { type: "brand" });
@@ -109,7 +125,10 @@ writeFileSync(join(DIR, "spec.json"), JSON.stringify(spec, null, 1));
 
 // the post text: every figure as on the live page
 const hook = lines[0].show.replace(/[*~]/g, "");
-const title = `${name} ${label}: ${hook}`.slice(0, 100);
+// What people type (the competitor check, 14 Nov 2026: "TCS Q2 Results 2027 | TCS Results Today" drew 80K views)
+const qLabel = label.replace(/^(Q\d) (FY\d\d)$/, "$1 Results $2");
+const profitBit = smallBase ? `Profit ₹${profit.thenTxt} → ₹${profit.nowTxt} Cr` : `Profit ${profit.chg >= 0 ? "+" : "−"}${rp(profit.chg)}%`;
+const title = [`${name} ${qLabel}: ${profitBit}, Sales ${sales.chg >= 0 ? "+" : "−"}${rp(sales.chg)}% | ${name} Share News`, `${name} ${qLabel}: ${profitBit}, Sales ${sales.chg >= 0 ? "+" : "−"}${rp(sales.chg)}%`, `${name} ${qLabel}: ${profitBit}`].find(t => t.length <= 100) ?? `${name} ${qLabel}`.slice(0, 100);
 const bullets = [
   `• Sales ₹${sales.nowTxt} crore, ${sales.chgTxt} (₹${sales.thenTxt} crore a year earlier)`,
   hasMargin ? `• Operating costs ${costs.chgTxt}` : null,
@@ -119,8 +138,9 @@ const bullets = [
   ret != null ? `• Share price ${ret >= 0 ? "+" : "−"}${Math.abs(ret).toFixed(1)}% in a year (to ${day(st.closeDate)})` : null,
 ].filter(Boolean).join("\n");
 const tag = "#" + name.replace(/[^A-Za-z0-9]/g, "");
-const body = `${name}'s ${label} (quarter to ${day(st.quarter.end)}, filed with NSE on ${day(st.quarter.filed)}):\n${bullets}\n\n${close[0]}`;
+const ask = "Which company's results should we explain next? Tell us in the comments.";
+const body = `${hook}\n\n${name}'s ${label} (quarter to ${day(st.quarter.end)}, filed with NSE on ${day(st.quarter.filed)}):\n${bullets}\n\n${close[0]}`;
 writeFileSync(join(DIR, "post.txt"),
-  `YOUTUBE TITLE\n${title}\n\nYOUTUBE DESCRIPTION\n${body}\n\nThe full quarter, line by line: ${url}\n\nFigures as filed with NSE; prices and scores at the ${day(st.closeDate)} close. Educational content, not investment advice.\n\n${tag} #${symbol} #${label.replace(" ", "")}Results #IndianStockMarket #StockMarketIndia #Shorts\n\n` +
-  `INSTAGRAM CAPTION\n${name}, ${label}: ${hook}\n\n${bullets}\n\n${close[0]}\n\nFull results, free: jocularinsights.in\n\nEducational content, not investment advice.\n\n${tag} #${symbol} #IndianStockMarket #StockMarketIndia #Q${label[1]}Results #Investing\n`);
+  `YOUTUBE TITLE\n${title}\n\nYOUTUBE DESCRIPTION\n${body}\n\n${ask}\n\nThe full quarter, line by line: ${url}\n\nFigures as filed with NSE; prices and scores at the ${day(st.closeDate)} close. Educational content, not investment advice.\n\n${tag} #${symbol} #${label.replace(" ", "")}Results #IndianStockMarket #StockMarketIndia #Shorts\n\n` +
+  `INSTAGRAM CAPTION\n${name}, ${label}: ${hook}\n\n${bullets}\n\n${close[0]}\n\n${ask}\n\nFull results, free: jocularinsights.in\n\nEducational content, not investment advice.\n\n${tag} #${symbol} #IndianStockMarket #StockMarketIndia #Q${label[1]}Results #Investing\n`);
 console.log(JSON.stringify({ story, lines: lines.length, spec: join(DIR, "spec.json"), post: join(DIR, "post.txt") }, null, 2));

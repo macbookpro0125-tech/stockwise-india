@@ -48,10 +48,12 @@ const google = all.filter(c => !googleDone.has(c.url)).slice(0, GOOGLE_PER_DAY).
 const bing = all.filter(c => !bingDone.has(c.url)).slice(0, BING_PER_DAY).map(c => c.url);
 // Shorts (two a day since 13 Nov): from each filing day's ten largest, newest day
 // first, the ones with a profit both years and a clear move (a story in two
-// figures), not already made; the biggest moves first. A few spares are listed
+// figures), not already made; the largest companies first. A few spares are listed
 // in case one turns out to be a loss quarter on its results page.
 const ok = c => !shortDone.has(c.symbol) && c.profit > 0 && c.profitYoY != null && c.salesYoY != null;
 const move = c => Math.abs(c.profitYoY) + Math.abs(c.salesYoY);
-const shorts = days.slice(0, 3).flatMap(d => d.companies.slice(0, 10).filter(ok).sort((a, b) => move(b) - move(a))).slice(0, 4);
+// largest companies first (the page lists each day largest first): the names people search for, which drew
+// the most views in the competitor check of 14 Nov 2026 (TCS 80K, smaller companies ~25K)
+const shorts = days.slice(0, 3).flatMap(d => d.companies.slice(0, 10).filter(ok)).slice(0, 4);
 const short = shorts[0] ?? null;
 console.log(JSON.stringify({ newestDay: days[0]?.date ?? null, companiesListed: all.length, google, bing, short, shorts }, null, 2));
