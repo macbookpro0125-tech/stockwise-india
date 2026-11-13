@@ -84,7 +84,7 @@ else L(`Profit ${upDown(profit.chg)} ${sayPct(profit.chg)} in the ${month} quart
 // search viewers come for the company: its name leads the first line (14 Nov 2026, the top results videos)
 lines[0].say = `${name}. ${lines[0].say}`;
 lines[0].show = `*${name}*: ${lines[0].show.charAt(0).toLowerCase()}${lines[0].show.slice(1)}`;
-L(`Here are its ${month} quarter results, as filed.`, `Its *${month} quarter* results, as filed.`, { type: "page", symbol });
+L(`Here are its ${month} quarter results, as filed.`, `Its *${month} quarter* results, as filed.`, { type: "card", symbol, card: "results", circle: "none" }); // the results themselves, not the page header (owner, 14 Nov)
 L(`Quality score: ${words(q)} out of a hundred.`, `Quality score: ${band === "red" ? "~" : "*"}${q} out of 100${band === "red" ? "~" : "*"}.`, { type: "card", symbol, card: "quality", tone: band === "red" ? "red" : "teal" });
 L(`${month} quarter sales: ${sayCr(sales.now)}, ${upDown(sales.chg)} ${sayPct(sales.chg)}.`, `Sales: *₹${sales.nowTxt} crore*, ${upDown(sales.chg)} ${tone(sales.chg)}${Math.abs(sales.chg).toFixed(1)}%${tone(sales.chg)}.`, { type: "card", symbol, card: "results", circle: "sales" });
 if (hasMargin) {
