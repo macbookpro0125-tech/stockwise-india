@@ -117,6 +117,15 @@ const qm = metricsOf(withQuarters(), snapshot());
 assert(qm.quarters.length === 8 && near(qm.qSalesGrowthYoY, 10, 0.01) && near(qm.qProfitGrowthYoY, 10, 0.01), "the latest quarter is compared with the same quarter a year earlier");
 assert(near(qm.qSalesGrowthQoQ, (1 / 0.98 - 1) * 100, 0.01), "…and with the quarter before");
 assert(near(qm.ttmEps, qm.quarters.slice(0, 4).reduce((a, q) => a + q.eps, 0), 1e-9) && near(qm.peTtm, qm.cmp / qm.ttmEps, 1e-9), "P/E on the last four quarters uses their EPS added up");
+assert(qm.ttmOneOff == null, "steady quarters have no one-off");
+// One quarter's profit above its own sales (a debt written off): its P/E stays
+// as filed, the score values the other three quarters, a year's worth
+const spiked = withQuarters();
+spiked.quarters[2] = { ...spiked.quarters[2], profit: 400 * CR, pbt: 420 * CR, eps: 40 };
+const sm = metricsOf(spiked, snapshot());
+const otherEps = [0, 1, 3].reduce((a, i) => a + sm.quarters[i].eps, 0) * 4 / 3;
+assert(sm.ttmOneOff?.quarter === "2025-12-31" && near(sm.ttmOneOff.epsWithout, otherEps, 1e-9) && near(sm.peTtm, sm.cmp / sm.ttmEps, 1e-9), "a quarter with profit above its sales is a one-off; the P/E shown stays as filed");
+assert(/one-off/.test(itemOf(sm.research, "valuation", "peers")?.reason ?? "") || itemOf(sm.research, "valuation", "peers")?.score == null, "the peer check values the other three quarters and says why");
 const gappy = metricsOf(withQuarters(["2026-06-30", "2026-03-31", "2025-09-30", "2025-06-30", "2025-03-31"]), snapshot());
 assert(gappy.ttmEps == null && gappy.peTtm == null, "a missing quarter (Dec 2025) means no trailing-twelve-month figure rather than three quarters passed off as four");
 assert(metricsOf(company(), snapshot()).quarters.length === 0 && metricsOf(company(), snapshot()).qSalesGrowthYoY == null, "a company with no quarterly data has no quarterly figures, not zeros");

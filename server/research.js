@@ -21,7 +21,7 @@
 // Weights and bands are a stated starting point, not a fitted model — the
 // proposal says so too. Change them here and RESEARCH_VERSION together.
 
-export const RESEARCH_VERSION = "1.11"; // 1.11: peer P/E allows for growth above 10% a year; free cash flow yield left out while a company builds new capacity; 1.10: 1.10: P/E on the last four quarters; fair value's multiple capped at twice the sector's median P/E; a quarter's EPS filed as the year's corrected, other EPS disagreements shown; auditor notices keep their filing link and scope; 1.8: banks with net NPA under 2% priced on their last three years' ROE
+export const RESEARCH_VERSION = "1.12"; // 1.12: a one-off quarter (profit above its sales) left out of the P/E the score values on; 1.11: peer P/E allows for growth above 10% a year; free cash flow yield left out while a company builds new capacity; 1.10: 1.10: P/E on the last four quarters; fair value's multiple capped at twice the sector's median P/E; a quarter's EPS filed as the year's corrected, other EPS disagreements shown; auditor notices keep their filing link and scope; 1.8: banks with net NPA under 2% priced on their last three years' ROE
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -530,9 +530,10 @@ const GROWTH = {
 
 // Valued at NSE's last close. P/E on the usual EPS when one year's profit
 // jumped on a one-off (metrics.js valuationEps), as the fair value is.
-const closePe = m => (m.close > 0 && (m.ttmEps > 0 || m.valuationEps > 0)
-  ? m.close / (m.ttmEps > 0 ? m.ttmEps : m.valuationEps)
-  : null);
+// A one-off quarter in the last four (metrics.js ttmOneOff): the other three,
+// a year's worth; none left in profit, no P/E to value on
+const valuedEps = m => (m.ttmOneOff ? m.ttmOneOff.epsWithout : m.ttmEps > 0 ? m.ttmEps : m.valuationEps);
+const closePe = m => (m.close > 0 && valuedEps(m) > 0 ? m.close / valuedEps(m) : null);
 const closeMcapCr = m => (m.close > 0 && m.shares > 0 ? (m.close * m.shares) / 1e7 : null);
 // A bank is valued on its book (bank-valuation.js): the price-to-book its
 // through-cycle return on equity can support, (ROE − g) ÷ (cost of equity −
@@ -558,7 +559,7 @@ const VALUATION = {
         if (!cohort) return missing("Sector isn't known for this company — it's needed to compare with peers.");
         if (!s || s.n < 5) return missing(`Fewer than 5 ${cohort} companies with a P/E to compare.`);
         const pe = closePe(m);
-        if (pe == null) return missing("Loss-making — no P/E to compare.");
+        if (pe == null) return missing(m.ttmOneOff ? "Its profit came from a one-off quarter; without it there's no profit to put a P/E on." : "Loss-making — no P/E to compare.");
         const ratio = pe / s.median;
         // A fast grower earns a higher P/E (13 Nov 2026: Acme Solar, growing
         // its profit 46% a year at 1.5× its sector's P/E, scored 2 here). Each
@@ -569,7 +570,8 @@ const VALUATION = {
         const allowance = growth != null && growth > 10 ? 1 + (growth - 10) * 0.015 : 1;
         const score = band(ratio / allowance, [[0.6, 100], [0.8, 75], [1, 50], [1.25, 25], [1.6, 0]]);
         const growthNote = allowance > 1 ? ` Its EPS grew ${pct(finite(m.epsGrowth3y) ? m.epsGrowth3y : m.ttmEpsGrowth)} a year${finite(m.epsGrowth3y) ? " over three years" : " over the last year"}, so up to ${Math.round((allowance - 1) * 100)}% more than the median counts as in line.` : "";
-        return checked(score, ratio, `${pe.toFixed(1)} vs ${s.median.toFixed(1)}`, `P/E of ${pe.toFixed(1)} against a median of ${s.median.toFixed(1)} for ${s.n} ${cohort} companies — ${ratio < 0.95 ? "cheaper than" : ratio > 1.05 ? "dearer than" : "in line with"} peers.${growthNote}`);
+        const oneOffNote = m.ttmOneOff ? ` ${m.ttmOneOff.quarters > 1 ? `${m.ttmOneOff.quarters} of the last four quarters look like one-offs; the biggest, to` : "The quarter to"} ${m.ttmOneOff.quarter} (₹${Math.round(m.ttmOneOff.profitCr).toLocaleString("en-IN")} crore profit on ₹${Math.round(m.ttmOneOff.revenueCr).toLocaleString("en-IN")} crore of sales)${m.ttmOneOff.quarters > 1 ? "" : " looks like a one-off"}, so the P/E is on the ${m.ttmOneOff.quarters > 1 ? "other quarters" : "other three quarters"}, a year's worth.` : "";
+        return checked(score, ratio, `${pe.toFixed(1)} vs ${s.median.toFixed(1)}`, `P/E of ${pe.toFixed(1)} against a median of ${s.median.toFixed(1)} for ${s.n} ${cohort} companies — ${ratio < 0.95 ? "cheaper than" : ratio > 1.05 ? "dearer than" : "in line with"} peers.${growthNote}${oneOffNote}`);
       },
     },
     {

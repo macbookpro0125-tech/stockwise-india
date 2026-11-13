@@ -506,6 +506,34 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
   const ttm = { revenueCr: sum4("revenueCr"), profitCr: sum4("profitCr"), eps: sum4("eps") };
   const peTtm = cmp != null && ttm.eps > 0 ? cmp / ttm.eps : null;
   const pe = peTtm ?? peFy;
+  // A one-off quarter among the four (13 Nov 2026): a profit larger than the
+  // quarter's own sales, or over half of them and over 4× a usual quarter's —
+  // a debt written off, an asset sold (MB Engineering ₹3,810 Cr on ₹18 Cr of
+  // sales, Ashoka Buildcon ₹2,111 Cr in a ₹1,827 Cr quarter). P/E stays as
+  // filed for display; the score values the other three quarters, a year's
+  // worth, instead (research.js closePe), as the yearly EPS already does with
+  // a one-off year (epsJump above).
+  const ttmOneOff = (() => {
+    if (!ttm.eps || lender) return null;
+    // far above its usual quarter (the median of the eight, itself left
+    // out), so a holding company whose profit always tops its sales (its
+    // share of other companies' profits — Bajaj Holdings) isn't caught
+    const usualOf = q => median(quarters.slice(0, 8).filter(o => o !== q).map(o => Math.abs(o.profitCr ?? 0)));
+    // also a profit after a loss before tax: a gain below that line
+    // (discontinued operations, a tax credit — Reliance Infrastructure's ₹1,640 Cr after a ₹1,762 Cr loss)
+    const oneOff = q => {
+      if (!(q.profitCr > 0) || q.revenueCr == null) return false;
+      if (q.pbtCr != null && q.pbtCr < 0) return q.profitCr > 0.05 * q.revenueCr;
+      const usual = usualOf(q);
+      return usual > 0 && q.profitCr > 4 * usual && q.profitCr > 0.5 * Math.max(q.revenueCr, 0);
+    };
+    const hits = last4.filter(oneOff);
+    if (!hits.length) return null;
+    const others = last4.filter(q => !hits.includes(q));
+    const eps = others.length >= 2 && others.every(q => q.eps != null) ? (others.reduce((a, q) => a + q.eps, 0) * 4) / others.length : null;
+    const biggest = hits.reduce((a, q) => (q.profitCr > a.profitCr ? q : a));
+    return { quarter: biggest.fyEnd, quarters: hits.length, profitCr: biggest.profitCr, revenueCr: biggest.revenueCr, epsWithout: eps };
+  })();
   // …and the four before them, for growth over the last twelve months — what
   // a company listed too recently for 3 years of annual results is judged on
   const last8 = quarters.slice(0, 8);
@@ -732,7 +760,7 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     qSalesGrowthQoQ: quarters[0]?.salesQoQ ?? null,
     qProfitGrowthQoQ: quarters[0]?.profitQoQ ?? null,
     qOpm: quarters[0]?.opm ?? null,
-    ttmRevenueCr: ttm.revenueCr, ttmProfitCr: ttm.profitCr, ttmEps: ttm.eps,
+    ttmRevenueCr: ttm.revenueCr, ttmProfitCr: ttm.profitCr, ttmEps: ttm.eps, ttmOneOff,
     peTtm,
     ttmSalesGrowth: ttm.revenueCr != null && ttmPrev.revenueCr > 0 ? (ttm.revenueCr / ttmPrev.revenueCr - 1) * 100 : null,
     ttmEpsGrowth: ttm.eps > 0 && ttmPrev.eps > 0 ? (ttm.eps / ttmPrev.eps - 1) * 100 : null,

@@ -50,7 +50,7 @@ const CHECKS = [
   ["stale", 1, (m, r) => (r.flags?.some(f => f.id === "annualStale") && r.overall?.score >= 60 ? `Latest annual results ${m.fyEnd}; overall ${r1(r.overall.score)}` : null)],
   // Figures that disagree with each other or can hardly be true
   ["epsMismatch", 2, m => (m.epsMismatch ? `Filed EPS ₹${r1(m.epsMismatch.reportedEps)} against ₹${r1(m.epsMismatch.correctedEps)} from profit ÷ shares` : null)],
-  ["oddPe", 3, m => (fin(m.peTtm ?? m.peFy) && (m.peTtm ?? m.peFy) > 0 && (m.peTtm ?? m.peFy) < 2 ? `P/E ${r1(m.peTtm ?? m.peFy)}: profit or share count likely wrong` : null)],
+  ["oddPe", 3, m => (!m.ttmOneOff && fin(m.peTtm ?? m.peFy) && (m.peTtm ?? m.peFy) > 0 && (m.peTtm ?? m.peFy) < 2 ? `P/E ${r1(m.peTtm ?? m.peFy)}: profit or share count likely wrong` : null)],
   ["oddRoe", 2, m => (!m.lender && fin(m.roe) && m.roe > 100 ? `ROE ${r1(m.roe)}%` : null)],
   ["oddMargin", 1, m => (!m.lender && !m.utility && fin(m.opm) && m.opm > 90 ? `Operating margin ${r1(m.opm)}%` : null)],
   ["oddGrowth", 2, m => (fin(m.ttmSalesGrowth) && (m.ttmSalesGrowth > 500 || m.ttmSalesGrowth < -90) ? `Sales over the last four quarters ${m.ttmSalesGrowth > 0 ? "up" : "down"} ${r1(Math.abs(m.ttmSalesGrowth))}%: a unit slip?` : null)],
