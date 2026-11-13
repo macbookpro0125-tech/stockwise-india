@@ -5,6 +5,7 @@ _Last updated: 13 Nov 2026._
 ## The channel
 - **Jocular Insights**, handle **@JocularInsights**, channel ID `UCVHkaaLuIO_qr2fu2zLPMfw`, owned by **jocularinsights@gmail.com**.
 - Studio: https://studio.youtube.com/channel/UCVHkaaLuIO_qr2fu2zLPMfw · public: https://www.youtube.com/@JocularInsights
+- **If Claude in Chrome says "not connected"** after switching Claude accounts: the owner opens the Claude side panel in the Jocular window and signs in to the same Claude account as the app (13 Nov).
 - **How Claude reaches it:** Claude in Chrome, in the owner's Chrome profile **"Jocular"** (Chrome `Profile 7`, signed in as jocularinsights@gmail.com). The Claude extension there must be signed in to the **same Claude account as the desktop app**, and claude.ai in that profile too (on 13 Nov it was signed in as macbookpro0125 and had to be switched). Open that profile with: `open -na "Google Chrome" --args --profile-directory="Profile 7"`. If the extension isn't connected, ask the owner to open the Claude side panel in that window.
 - Never type a password; the owner signs in.
 
@@ -21,6 +22,7 @@ _Last updated: 13 Nov 2026._
 | HDFC Bank vs ICICI Bank Q2 FY27 | `JHS1c0BlAWQ` | live 13 Nov | Corporation Motivation (Audionautix, CC BY 4.0 — **credit line added to its description**) |
 | BEL Q2 FY27: sales up 26.5%, costs faster | `E8XZebgjgbc` | scheduled 14 Nov, 3:30 pm GMT+3 = 6 pm IST | Beat Your Competition (no attribution) |
 | Sterlite Technologies Q2 FY27: margin 12.5% → 32.1% | `CdmEs6rpAYs` | scheduled 15 Nov, same time | Above and Beyond (no attribution) |
+| TCS: Great Company, Falling Stock? (v2 style, Michael voice, new site cards) | `7MsCPGB1pJU` | live 13 Nov (public) | its own soft beat under the voice; no library track |
 
 BEL and Sterlite were made **before** the layout fix (their headline sits under YouTube's top bar on phones); the owner was asked whether to rebuild and replace them.
 
@@ -31,15 +33,15 @@ BEL and Sterlite were made **before** the layout fix (their headline sits under 
 - Optional voice-over: macOS voice **Rishi** (Indian English), built into shorts.mjs when a spec has `voice`. The owner chose **YouTube library music** instead (13 Nov), so daily Shorts are silent files with music added on YouTube.
 
 ## The style the owner liked (13 Nov): "TCS falling stock" v2
-- Folder `~/Projects/files/Jocular_Insights_TCS_Short/v2/` (outside the repo): `script.json` (each line: what Michael says, what's shown with *highlights*, which visual), `voice.py` (narration), `shoot.mjs` (real phone-size screenshots of the live company page), `scene.html` + `build.mjs` (`STILLS=1` for test stills; full render ~12 min), output `TCS_falling_stock_v2.mp4` + `.srt`. Not uploaded yet.
+- Folder `~/Projects/files/Jocular_Insights_TCS_Short/v2/` (outside the repo): `script.json` (each line: what Michael says, what's shown with *highlights*, which visual), `voice.py` (narration), `shoot.mjs` (real phone-size screenshots of the live company page), `scene.html` + `build.mjs` (`STILLS=1` for test stills; full render ~12 min), output `TCS_falling_stock_v2.mp4` + `.srt`. Uploaded 13 Nov (`7MsCPGB1pJU`), with screenshots of the redesigned company-page cards (`shoot-cards.mjs` → `shots/card-*.png`).
 - Style: a question hook; the words in the middle appearing as they're spoken (teal good, red bad); real screenshots of jocularinsights.in in a big phone frame with the figures circled; big tiles/bars/cards; "Save this" before the end; soft beat and pad ducked under the voice; −14 LUFS. Owner: "I liked it, we improve later."
 - **Voice: Kokoro (free, local), voice `am_michael`** (owner's pick of 9). Installed in `~/Projects/files/tts/` (Python 3.12 venv `.venv`, `kokoro-v1.0.onnx`, `voices-v1.0.bin`; `say.py`). Needs Python 3.12 (Homebrew `python@3.12`): onnxruntime has no wheels for Intel Macs on 3.14/3.15. Word timings are estimated from syllables (Kokoro gives none).
 - The first premium version (Rishi voice, documentary style) is in the parent folder `Jocular_Insights_TCS_Short/` with `data-verification.md`.
-- Site inconsistency found while making it: TCS's company-page summary shows Q2 profit **+15.0%**, its results table **+14.9%** (one is probably owners' profit or EPS growth) — worth fixing.
+- The +15.0% / +14.9% profit mismatch on TCS's page was fixed on 13 Nov (both 14.9%).
 
 ## Uploading (Claude in Chrome)
 1. Files must be inside the session folder to upload: copy the mp4 to `~/Projects/files/shorts-upload/`, delete afterwards.
-2. Studio → Upload videos → use the hidden **file input** (find it, then `file_upload`; never click "Select files").
+2. Studio → Upload videos → use the hidden **file input** (find it, then `file_upload`; never click "Select files"). Don't put a #hashtag at the end of the title (its pop-up swallows the next click), and never press Escape in the upload window: it closes it (the video is kept as a draft; Shorts tab → Edit draft).
 3. Title, description (from the .txt), "No, it's not made for kids", Next ×3, Visibility: Public now, or **Schedule 3:30 PM default time zone (GMT+3) = 6 pm IST**. One a day.
 4. Music: Content → Shorts → the video → **Editor** → Get started → **Audio** → filter **Attribution not required** + mood Bright/Uplifting → pick a track not used before → **Add** (use the row's "Add" button ref, not the heart) → Save → tick "I acknowledge…" → Confirm changes. Processing takes minutes to hours. If a credit dialog appears, add the credit to the description (select all and retype; Cmd+End doesn't reach the end of the box).
 5. Leaving Studio after Publish can show a stale "Leave site?" dialog; if Publish/Cancel are greyed, it's saved: navigate with force.
