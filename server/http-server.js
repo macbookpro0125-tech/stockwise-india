@@ -46,6 +46,7 @@ import { savePushToken, removePushToken, pushReady, pushToUser } from "./push.js
 import { startNewsPush } from "./news-push.js";
 import { startScreenAlerts } from "./screen-alerts.js";
 import { niceName } from "../src/stockName.js";
+import { loadAudit, auditSummary } from "./score-audit.js";
 import { countBrowserVisit, countActive, countSignup, visitStats, isOwner } from "./visits.js";
 import { sendWelcome } from "./welcome.js";
 import { startDigestJobs, weeklyEmailOn, setWeeklyEmail, resultsEmailOn, setResultsEmail, unsubscribe } from "./digest.js";
@@ -679,6 +680,18 @@ export function createApp() {
         if (userId == null) return;
         if (!isOwner(accountInfo(userId)?.email)) { sendJson(res, 404, { error: "Not found" }); return; }
         sendJson(res, 200, visitStats());
+        return;
+      }
+
+      // The nightly score check (score-audit.js), for the owner and the
+      // weekly review: ?date=YYYY-MM-DD for an earlier night
+      if (url.pathname === "/api/owner/score-audit" && req.method === "GET") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        if (!isOwner(accountInfo(userId)?.email)) { sendJson(res, 404, { error: "Not found" }); return; }
+        const date = url.searchParams.get("date");
+        const audit = loadAudit(date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : null);
+        sendJson(res, audit ? 200 : 404, audit ? auditSummary(audit) : { error: "No score check yet: it runs after each evening's prices" });
         return;
       }
 

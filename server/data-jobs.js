@@ -14,6 +14,8 @@ import { fetchEquityList } from "./equity-list.js";
 import { fetchCompanies, needsSummary, needsBusiness, needsDetail, readStored, withRetry } from "./fetch-market.js";
 import { buildMarketSnapshot, loadMarketSnapshot, clearSnapshotCache } from "./market-data.js";
 import { fiscalYearEnds } from "./build-snapshot.js";
+import { marketReady, marketCurrent } from "./screen.js";
+import { hasAudit, saveAudit } from "./score-audit.js";
 import { takeSnapshots, takeResearchCohort, loadResearchCohorts, daysSinceNewestSnapshot, SNAPSHOT_INTERVAL_DAYS } from "./performance.js";
 
 const STATE_PATH = join(DATA_DIR, "jobs-state.json");
@@ -216,6 +218,16 @@ function tick() {
         if (result.created) console.error(`[study] recorded ${result.companies} companies for ${result.month} at score version ${result.scoreVersion}`);
       });
     }
+  }
+  // The nightly check of every company's scores (score-audit.js), once the
+  // market built from this close's prices is the one in hand
+  if (companyFiles().length >= 100 && snap?.pricesDate && !hasAudit(snap.pricesDate)) {
+    enqueue("score audit", async () => {
+      const market = await marketReady();
+      if (!marketCurrent() || market.snapshot?.pricesDate !== snap.pricesDate) return; // next hour's tick
+      const audit = saveAudit(market.rows, snap.pricesDate);
+      console.error(`[audit] ${snap.pricesDate}: ${audit.flagged} of ${audit.companies} companies flagged`);
+    });
   }
   const state = readState();
   const filingCheckDue = !state.lastFilingsCheck || Date.now() - Date.parse(state.lastFilingsCheck) > FILINGS_EVERY;
