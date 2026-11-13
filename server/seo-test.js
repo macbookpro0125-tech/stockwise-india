@@ -215,3 +215,24 @@ console.log("ok: financials, results and call pages; NSE's classification");
   }
 }
 console.log("Not-found and legal page checks passed.");
+
+// Profit growth on the results page table's terms (profit-growth.js, 13 Nov
+// 2026): Oil India's Q2 FY27 read +61.6% on /results — the owners' share's
+// growth stored in profitYoY — against +53.4% net profit on its results page
+const { profitGrowth } = await import("./profit-growth.js");
+const oilQs = [{ fyEnd: "2026-09-30", profitCr: 2520.87, profitYoY: 61.6 }, { fyEnd: "2026-06-30", profitCr: 4026.83 }, { fyEnd: "2026-03-31", profitCr: 2424.46 }, { fyEnd: "2025-12-31", profitCr: 1435.89 }, { fyEnd: "2025-09-30", profitCr: 1643.81, profitYoY: -29.1 }];
+assert.equal(profitGrowth(oilQs, 0).toFixed(1), "53.4", "net profit against the same quarter a year earlier");
+assert.equal(profitGrowth(oilQs, 4), -29.1, "no year-ago quarter on file: the stored figure");
+assert.equal(profitGrowth([{ fyEnd: "2026-09-30", profitCr: 50, profitYoY: 400 }, { fyEnd: "2025-09-30", profitCr: -10 }], 0), 400, "a year-ago loss: the stored figure");
+// every company on /results shows the growth its own results page table shows
+{
+  const strip = h => h.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ");
+  const n = s => parseFloat(s.replace("−", "-").replace(/,/g, ""));
+  const rows = [...(await publicSubPage("/results")).body.matchAll(/<tr><th><a href="(\/stock\/[^"]+\/results\/[^"]+)"[^>]*>[^<]*<\/a>.*?<\/tr>/g)].slice(0, 60);
+  for (const [row, href] of rows) {
+    const listPct = [...row.matchAll(/<td>([^<]*)<\/td>/g)].map(x => x[1])[3];
+    const tablePct = strip((await publicSubPage(href)).body.match(/<tr[^>]*><th>Net profit<\/th>.*?<\/tr>/)?.[0] ?? "").split(" ").find(x => /%$/.test(x));
+    if (listPct && listPct !== "—" && tablePct) assert.ok(Math.abs(n(listPct) - n(tablePct)) <= (Math.abs(n(tablePct)) >= 100 ? 0.5 : 0.05), `${href}: /results ${listPct}, its table ${tablePct}`);
+  }
+}
+console.log("Profit growth checks passed.");

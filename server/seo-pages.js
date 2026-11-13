@@ -20,6 +20,7 @@ import { join } from "node:path";
 import { allMetrics } from "./screen.js";
 import { loadMarketSnapshot } from "./market-data.js";
 import { DATA_DIR } from "./paths.js";
+import { profitGrowth } from "./profit-growth.js";
 import { niceName } from "../src/stockName.js";
 import { GUIDES, GUIDES_UPDATED, GUIDE_PUBLISHED, guideBySlug } from "./guides.js";
 import { updatedLine } from "./updated-line.js";
@@ -278,8 +279,8 @@ function alsoReported(m, q) {
   const rows = (allMetrics().rows ?? []).filter(r => r.symbol !== m.symbol && r.name && r.quarters?.[0]?.fyEnd && fyQuarter(r.quarters[0].fyEnd) === label && (r.quarters[0].revenueCr != null || r.quarters[0].profitCr != null))
     .sort((a, b) => (b.marketCapCr ?? 0) - (a.marketCapCr ?? 0));
   const item = r => {
-    const x = r.quarters[0];
-    const bits = [x.profitCr != null && x.profitCr < 0 ? "net loss" : x.profitYoY != null && isFinite(x.profitYoY) ? `profit ${x.profitYoY >= 0 ? "up" : "down"} ${Math.abs(x.profitYoY).toFixed(Math.abs(x.profitYoY) >= 100 ? 0 : 1)}%` : null,
+    const x = r.quarters[0], py = profitGrowth(r.quarters, 0);
+    const bits = [x.profitCr != null && x.profitCr < 0 ? "net loss" : py != null && isFinite(py) ? `profit ${py >= 0 ? "up" : "down"} ${Math.abs(py).toFixed(Math.abs(py) >= 100 ? 0 : 1)}%` : null,
       x.salesYoY != null && isFinite(x.salesYoY) ? `sales ${x.salesYoY >= 0 ? "up" : "down"} ${Math.abs(x.salesYoY).toFixed(1)}%` : null].filter(Boolean);
     return { href: `/stock/${encodeURIComponent(r.symbol)}/results/${quarterSlug(x.fyEnd)}`, name: niceName(r.name), label, line: bits.join(", ") };
   };
@@ -328,7 +329,7 @@ export function latestResults(days = 14, cap = 400) {
   for (const r of recent) {
     const d = String(r.quarters[0].filed).slice(0, 10), q = r.quarters[0];
     if (!byDay.has(d)) byDay.set(d, []);
-    byDay.get(d).push({ symbol: r.symbol, name: niceName(r.name), quarter: fyQuarter(q.fyEnd), slug: quarterSlug(q.fyEnd), salesCr: q.revenueCr ?? null, salesYoY: q.salesYoY ?? null, profitCr: q.profitCr ?? null, profitYoY: q.profitYoY ?? null, marketCapCr: r.marketCapCr ?? null });
+    byDay.get(d).push({ symbol: r.symbol, name: niceName(r.name), quarter: fyQuarter(q.fyEnd), slug: quarterSlug(q.fyEnd), salesCr: q.revenueCr ?? null, salesYoY: q.salesYoY ?? null, profitCr: q.profitCr ?? null, profitYoY: profitGrowth(r.quarters, 0), marketCapCr: r.marketCapCr ?? null });
   }
   return { newest, label, count: recent.length, total: all.length, days: [...byDay].map(([date, companies]) => ({ date, companies })) };
 }

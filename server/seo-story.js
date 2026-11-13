@@ -12,6 +12,7 @@ import { PRESETS } from "./presets.js";
 import { peerKey } from "./sector-compare.js";
 import { loadMarketSnapshot } from "./market-data.js";
 import { niceName } from "../src/stockName.js";
+import { profitGrowth } from "./profit-growth.js";
 
 import { screenSlug as SITE_SCREEN_SLUG } from "./seo-lists.js";
 export const sectorSlug = name => String(name ?? "").toLowerCase().replace(/&/g, " and ").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -107,9 +108,9 @@ export function stockStory(symbol) {
     // its latest results, and who owns it
     m.cmp != null && { q: `What is ${poss(n)} share price?`, a: `₹${f2(m.cmp)} at the ${dayText(loadMarketSnapshot()?.pricesDate) ?? "latest"} NSE close${m.ret1y != null ? `, ${m.ret1y >= 0 ? "up" : "down"} ${f1(Math.abs(m.ret1y))}% over a year` : ""}${m.marketCapCr ? `, a market value of ₹${Math.round(m.marketCapCr).toLocaleString("en-IN")} crore` : ""}.` },
     m.quarters?.[0]?.revenueCr != null && (() => {
-      const k = m.quarters[0];
+      const k = m.quarters[0], py = profitGrowth(m.quarters, 0);
       const sales = `Sales of ₹${Math.round(k.revenueCr).toLocaleString("en-IN")} crore${k.salesYoY != null ? `, ${k.salesYoY >= 0 ? "up" : "down"} ${f1(Math.abs(k.salesYoY))}% on a year earlier` : ""}`;
-      const profit = k.profitCr == null ? "" : `; net ${k.profitCr < 0 ? "loss" : "profit"} of ₹${Math.round(Math.abs(k.profitCr)).toLocaleString("en-IN")} crore${k.profitCr > 0 && k.profitYoY != null ? ` (${k.profitYoY >= 0 ? "up" : "down"} ${f1(Math.abs(k.profitYoY))}%)` : ""}`;
+      const profit = k.profitCr == null ? "" : `; net ${k.profitCr < 0 ? "loss" : "profit"} of ₹${Math.round(Math.abs(k.profitCr)).toLocaleString("en-IN")} crore${k.profitCr > 0 && py != null ? ` (${py >= 0 ? "up" : "down"} ${f1(Math.abs(py))}%)` : ""}`;
       const filed = k.filed ? `, filed with NSE on ${dayText(String(k.filed).slice(0, 10))}` : "";
       return { q: `How were ${poss(n)} ${fyLabel(k.fyEnd)} results?`, a: `${sales}${profit}${filed}.` };
     })(),

@@ -16,6 +16,7 @@ import { existsSync } from "node:fs";
 import { allMetrics } from "./screen.js";
 import { loadMarketSnapshot } from "./market-data.js";
 import { historyBars } from "./price-history.js";
+import { profitGrowth } from "./profit-growth.js";
 import { METHODOLOGY_DESCRIPTION, METHODOLOGY_SECTIONS, METHODOLOGY_TITLE } from "../src/methodology-content.js";
 import { ANALYSIS_EXAMPLES, companyAnalysisFor } from "../src/company-analysis.js";
 import {
@@ -152,12 +153,10 @@ export function publicStock(symbol) {
   const r = (allMetrics().rows ?? []).find(x => x.symbol === symbol);
   if (!r?.name) return null;
   const q = r.quarters?.[0] ?? null;
-  // the quarter's profit growth on the same profit the card shows (13 Nov 2026:
-  // TCS showed ₹13,934 cr "+15.0%" here, the owners' share's growth, against
-  // +14.9% for that profit on its results page)
-  const yearAgo = r.quarters?.[4];
-  const profitYoY = q?.profitCr != null && yearAgo?.profitCr > 0 && q.profitCr > 0 && Math.abs(Date.parse(q.fyEnd) - Date.parse(yearAgo.fyEnd) - 365 * 86400000) < 20 * 86400000
-    ? (q.profitCr / yearAgo.profitCr - 1) * 100 : q?.profitYoY ?? null;
+  // the quarter's profit growth on the same profit the card shows, as its
+  // results page table has it (13 Nov 2026: TCS showed ₹13,934 cr "+15.0%",
+  // the owners' share's growth, against +14.9% on its results page)
+  const profitYoY = q ? profitGrowth(r.quarters, 0) : null;
   // the last year's closes, about weekly, for the 1-year card's line
   const snap = loadMarketSnapshot();
   let spark = null;
@@ -172,7 +171,7 @@ export function publicStock(symbol) {
     // how far the price is from today's fair value, in percent; the value itself stays in the app
     vsFairValue: Number.isFinite(r.vsFairValue) ? r.vsFairValue : null,
     quarter: q ? { end: q.fyEnd, filed: q.filed ?? null, label: fyQuarter(q.fyEnd), salesCr: q.revenueCr ?? null, salesYoY: q.salesYoY ?? null, profitCr: q.profitCr ?? null, profitYoY, opm: q.opm ?? null, eps: q.eps ?? null } : null,
-    recentQuarters: (r.quarters ?? []).slice(0, 8).map(x => ({ end: x.fyEnd, filed: x.filed ?? null, label: fyQuarter(x.fyEnd), salesCr: x.revenueCr ?? null, salesYoY: x.salesYoY ?? null, profitCr: x.profitCr ?? null, profitYoY: x.profitYoY ?? null, opm: x.opm ?? null, eps: x.eps ?? null })),
+    recentQuarters: (r.quarters ?? []).slice(0, 8).map((x, i) => ({ end: x.fyEnd, filed: x.filed ?? null, label: fyQuarter(x.fyEnd), salesCr: x.revenueCr ?? null, salesYoY: x.salesYoY ?? null, profitCr: x.profitCr ?? null, profitYoY: profitGrowth(r.quarters, i), opm: x.opm ?? null, eps: x.eps ?? null })),
     nextResults: r.nextResults ?? null,
     // what the page says in words: summary, trend, peers, screens, Q&A (seo-story.js)
     story: stockStory(symbol),
