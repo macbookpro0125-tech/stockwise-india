@@ -33,6 +33,9 @@ const get = item => { const r = rows.get(item); return r ? { now: num(r[1]), the
 const sales = get("Sales"), costs = get("Operating costs"), margin = get("Operating margin %"), profit = get("Net profit");
 if (!head || !sales || !profit || head[2] == null) throw new Error(`${url}: no year-earlier quarter in the table`);
 if (!(profit.now > 0) || !(profit.then > 0)) throw new Error(`${symbol}: a loss in one of the two quarters — not a two-figure story; pick another`);
+// a profit that grew more than threefold came from a small base: said as
+// "from ₹4.1 crore to ₹58.3 crore", never as "+1334%" (14 Nov 2026)
+const smallBase = Math.abs(profit.chg) >= 200;
 const hasMargin = margin && margin.now > 0 && margin.then > 0 && costs && costs.chg != null;
 
 // numbers as Michael should say them
@@ -72,6 +75,7 @@ else story = "steady";
 
 if (story === "squeeze") L(`Sales ${upDown(sales.chg)} ${sayPct(sales.chg)}. So why did the margin shrink?`, `Sales up *${rp(sales.chg)}%*. So why did the ~margin shrink?~`, { type: "big", text: pc(sales.chg), sub: `Sales, ${label} vs a year earlier` });
 else if (story === "jump") L(`Its operating margin jumped, from ${sayMargin(margin.then)}, to ${sayMargin(margin.now)}.`, `Its operating margin jumped from ${margin.thenTxt} to *${margin.nowTxt}*.`, { type: "big", text: `${margin.thenTxt} → ${margin.nowTxt}`, sub: `Operating margin, a year earlier → ${label}` });
+else if (story === "leverage" && smallBase) L(`Profit went from ${sayCr(profit.then)}, to ${sayCr(profit.now)}, while sales grew ${sayPct(sales.chg)}.`, `Profit went from ₹${profit.thenTxt} crore to *₹${profit.nowTxt} crore*.`, { type: "big", text: `₹${profit.thenTxt} → ₹${profit.nowTxt} cr`, sub: `Net profit, a year earlier → ${label}` });
 else if (story === "leverage") L(`Profit grew much faster than sales: up ${sayPct(profit.chg)}.`, `Profit grew much faster than sales: *up ${rp(profit.chg)}%*.`, { type: "big", text: pc(profit.chg), sub: `Net profit, ${label} vs a year earlier` });
 else if (story === "fall") L(`Sales ${upDown(sales.chg)} ${sayPct(sales.chg)}. But profit fell ${sayPct(profit.chg)}.`, `Sales ${upDown(sales.chg)} ${tone(sales.chg)}${rp(sales.chg)}%${tone(sales.chg)}. But profit fell ~${rp(profit.chg)}%~.`, { type: "big", text: pc(profit.chg), sub: `Net profit, ${label} vs a year earlier`, tone: "red" });
 else L(`Profit ${upDown(profit.chg)} ${sayPct(profit.chg)} in the ${month} quarter.`, `Profit ${upDown(profit.chg)} *${rp(profit.chg)}%* in the ${month} quarter.`, { type: "big", text: pc(profit.chg), sub: `Net profit, ${label} vs a year earlier` });
@@ -85,7 +89,8 @@ if (hasMargin) {
     { type: "bars", bars: [{ label: "Operating costs", value: costs.chg, prefix: costs.chg >= 0 ? "+" : "−", suffix: "%", dec: 1, tone: faster ? "red" : "teal" }, { label: "Sales", value: sales.chg, prefix: sales.chg >= 0 ? "+" : "−", suffix: "%", dec: 1, tone: "grey" }] });
   if (story !== "jump") { const better = margin.now >= margin.then; L(`So the operating margin went from ${sayMargin(margin.then)}, to ${sayMargin(margin.now)}.`, `So the operating margin went from ${margin.thenTxt} to ${better ? "*" : "~"}${margin.nowTxt}${better ? "*" : "~"}.`, { type: "big", text: `${margin.thenTxt} → ${margin.nowTxt}`, sub: `Operating margin, a year earlier → ${label}`, tone: better ? "teal" : "red" }); }
 }
-L(`Net profit: ${sayCr(profit.now)}, ${upDown(profit.chg)} ${sayPct(profit.chg)}.`, `Net profit: *₹${profit.nowTxt} crore*, ${upDown(profit.chg)} ${tone(profit.chg)}${Math.abs(profit.chg).toFixed(1)}%${tone(profit.chg)}.`, { type: "card", symbol, card: "results", circle: "profit" });
+if (smallBase) L(`Net profit: ${sayCr(profit.now)}, against ${sayCr(profit.then)} a year earlier. A small base, so check what changed.`, `Net profit: *₹${profit.nowTxt} crore*, from ₹${profit.thenTxt} crore a year earlier.`, { type: "card", symbol, card: "results", circle: "profit" });
+else L(`Net profit: ${sayCr(profit.now)}, ${upDown(profit.chg)} ${sayPct(profit.chg)}.`, `Net profit: *₹${profit.nowTxt} crore*, ${upDown(profit.chg)} ${tone(profit.chg)}${Math.abs(profit.chg).toFixed(1)}%${tone(profit.chg)}.`, { type: "card", symbol, card: "results", circle: "profit" });
 if (ret != null) L(`The share price: ${upDown(ret)} ${sayPct(ret)} in a year.`, `The share price: ${upDown(ret)} ${tone(ret)}${Math.abs(ret).toFixed(1)}%${tone(ret)} in a year.`, { type: "card", symbol, card: "ret", tone: ret >= 0 ? "teal" : "red" });
 const close = { squeeze: ["Growth is good. Watch what it costs.", "Growth is good. *Watch what it costs.*"], jump: ["One strong quarter is a start. Check that it lasts.", "One strong quarter is a start. *Check that it lasts.*"], leverage: ["When profit outruns sales, check why.", "When profit outruns sales, *check why*."], fall: ["Check the costs, before the headline.", "Check the *costs*, before the headline."], steady: ["Check the whole quarter, not just the headline.", "Check the *whole quarter*, not just the headline."] }[story];
 L(close[0], close[1], { type: "pills", items: [{ text: "✓ Sales" }, { text: "✓ Costs" }, { text: "✓ Profit" }] });
