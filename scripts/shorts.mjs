@@ -89,23 +89,23 @@ const page = (s, p) => {
 html,body{width:1080px;height:1920px;overflow:hidden}
 body{font-family:-apple-system,"SF Pro Display","Helvetica Neue",Inter,sans-serif;-webkit-font-smoothing:antialiased;color:#f4f5fb;
 background:radial-gradient(900px 700px at 100% 0%,rgba(0,224,190,.20),transparent 62%),radial-gradient(900px 700px at 0% 100%,rgba(62,121,255,.16),transparent 60%),#07080f}
-/* inside the Shorts safe area: YouTube covers the bottom ~440px and the right edge */
-.wrap{position:absolute;inset:0;padding:100px 170px 450px 84px;display:flex;flex-direction:column}
+/* inside the Shorts safe area: YouTube covers the top ~300px (its Shorts header and Subscriptions/Live/Lens bar, seen on an iPhone 13 Nov 2026), the bottom ~420px and the right edge */
+.wrap{position:absolute;inset:0;padding:322px 170px 420px 84px;display:flex;flex-direction:column}
 .brand{display:flex;align-items:center;gap:20px;font-size:40px;font-weight:600;letter-spacing:-.02em}
 .brand img{width:72px;height:72px;border-radius:18px}.brand span{color:#00e0be}
-.kicker{margin-top:60px;font-size:30px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#00e0be}
-h1{margin-top:16px;font-size:80px;line-height:1.04;font-weight:700;letter-spacing:-.04em}
-.rows{margin-top:44px;display:flex;flex-direction:column;gap:22px}
-.row{padding:22px 30px;border-radius:26px;background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 2px rgba(255,255,255,.08)}
-.name{font-size:32px;color:#a9afc4;font-weight:500}
-.val{margin-top:4px;font-size:62px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
-.note{font-size:28px;color:#a9afc4;margin-top:2px}
-.bar{margin-top:16px;height:16px;border-radius:8px;background:rgba(255,255,255,.08);overflow:hidden}
-.bar+.bar{margin-top:10px}
+.kicker{margin-top:34px;font-size:30px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#00e0be}
+h1{margin-top:12px;font-size:74px;line-height:1.04;font-weight:700;letter-spacing:-.04em}
+.rows{margin-top:24px;display:flex;flex-direction:column;gap:16px}
+.row{padding:13px 28px;border-radius:26px;background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 2px rgba(255,255,255,.08)}
+.name{font-size:30px;color:#a9afc4;font-weight:500}
+.val{margin-top:0;font-size:52px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.note{font-size:26px;color:#a9afc4;margin-top:2px}
+.bar{margin-top:12px;height:14px;border-radius:8px;background:rgba(255,255,255,.08);overflow:hidden}
+.bar+.bar{margin-top:8px}
 .bar b{display:block;height:100%;border-radius:9px;background:#00e0be;transform-origin:left center}
 .bar.then b{background:rgba(169,175,196,.55)}
-.line{margin-top:36px;font-size:42px;line-height:1.25;font-weight:600;letter-spacing:-.01em}
-.foot{margin-top:20px;font-size:24px;color:#7d84a0;line-height:1.4}
+.line{margin-top:20px;font-size:38px;line-height:1.25;font-weight:600;letter-spacing:-.01em}
+.foot{margin-top:12px;font-size:24px;color:#7d84a0;line-height:1.4}
 .end{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px;text-align:center;padding:0 170px 300px 90px;background:#07080f}
 .end img{width:200px;height:200px;border-radius:46px}
 .end h2{font-size:70px;line-height:1.08;letter-spacing:-.035em}
