@@ -22,9 +22,10 @@ _Last updated: 13 Nov 2026._
 | HDFC Bank vs ICICI Bank Q2 FY27 | `JHS1c0BlAWQ` | live 13 Nov | Corporation Motivation (Audionautix, CC BY 4.0 — **credit line added to its description**) |
 | BEL Q2 FY27: sales up 26.5%, so why did the margin shrink? (voiced, new style) | `fJoCz-z0X20` | scheduled 14 Nov, 3:30 pm GMT+3 = 6 pm IST | its own soft beat under the voice |
 | Sterlite Technologies: up 500%+ in a year. One great quarter, or a track record? (voiced) | `u8tVRoLcy_M` | scheduled 15 Nov, same time | its own soft beat |
+| HDFC Bank vs ICICI Bank: same quality, one grew profit almost 4x faster (voiced; an extra beside the older silent one) | `bRxf7SVmszU` | scheduled 14 Nov, 10:00 GMT+3 = 12:30 pm IST | its own soft beat |
 | TCS: Great Company, Falling Stock? (v2 style, Michael voice, new site cards) | `7MsCPGB1pJU` | live 13 Nov (public) | its own soft beat under the voice; no library track |
 
-13 Nov: the old silent BEL (`E8XZebgjgbc`) and Sterlite (`CdmEs6rpAYs`) Shorts were deleted at the owner's request and replaced by voiced versions made with `scripts/shorts-voice/` (specs in `~/Projects/files/shorts-v2/`). A voiced HDFC vs ICICI is made (`shorts-v2/hdfc-icici/`) but not uploaded: the old one is live with views; the owner hasn't decided.
+13 Nov: the old silent BEL (`E8XZebgjgbc`) and Sterlite (`CdmEs6rpAYs`) Shorts were deleted at the owner's request and replaced by voiced versions made with `scripts/shorts-voice/` (specs in `~/Projects/files/shorts-v2/`). The voiced HDFC vs ICICI was posted as an extra on 14 Nov (owner's word), the old silent one left up.
 
 ## Making a Short
 - From a company's **live results page** (figures read from the page's own table, never typed): `node scripts/short-from-results.mjs SYMBOL [q2-fy27]` → `replica/launch/shorts/auto-<symbol>.mp4` + `.txt` (title, description). Check a frame against the live page before uploading.
@@ -64,5 +65,6 @@ _Last updated: 13 Nov 2026._
 - Account **@jocular_insights**, signed in on Chrome **Profile 7 "Jocular"** (the owner signs in; Claude never types the password).
 - Profile (13 Nov): silver JI picture; bio "NSE company results and quality scores, explained in 40 seconds. Figures as filed with NSE. Free research: jocularinsights.in · Not investment advice". The website link can only be added in the Instagram phone app (the web form has it disabled) — owner to add https://jocularinsights.in there.
 - **Two a day** (owner, 13 Nov): `daily-results-push` (09:00 GMT+3) makes two voiced Shorts, schedules them on YouTube for 6 pm and 9 pm IST, posts the 6 pm one to Instagram in the morning and queues the other in `~/Projects/files/shorts-v2/instagram-queue.json`; `instagram-evening` (18:35 GMT+3 ≈ 9 pm IST, prompt copy `handoff/instagram-evening-task.md`) posts it. BEL (14 Nov) and Sterlite (15 Nov) are queued as those days' morning Reels.
+- HDFC vs ICICI Reel posted 14 Nov: https://www.instagram.com/jocular_insights/reel/Dfso4zTybLg/
 - Reels so far: TCS "great company, falling stock?" — https://www.instagram.com/jocular_insights/reel/DfsPboguAlN/ (13 Nov), the same video as the YouTube Short.
 - How to post (Claude in Chrome): left bar **+ Create** → hidden file input → `file_upload` the mp4 (from `~/Projects/files/shorts-upload/`) → OK on "Video posts are now shared as reels" → crop icon bottom-left → **Original** (otherwise it's cut square) → Next → cover: **Select From Computer** with a still from the video (the first frame is blank) → Next → caption (links aren't clickable; write "jocularinsights.in"; "Educational content, not investment advice.") → **Add AI label ON** (the voice is Kokoro, AI-made) → Share; wait ~30 s for "Your reel has been shared".
