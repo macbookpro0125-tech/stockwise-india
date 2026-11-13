@@ -39,8 +39,8 @@ background:radial-gradient(1100px 700px at 78% 50%,rgba(0,224,190,.16),transpare
   <div class="badge"><img src="${mark}" alt=""></div>
   <div>
     <div class="name">Jocular <span>Insights</span></div>
-    <div class="line">Every NSE company's results, quarter by quarter</div>
-    <div class="small"><span class="url">jocularinsights.in</span><span class="dot"></span><span>Figures as filed with NSE</span><span class="dot"></span><span>Free</span></div>
+    <div class="line">Indian stock market results, quarter by quarter</div>
+    <div class="small"><span class="url">jocularinsights.in</span><span class="dot"></span><span>From company filings</span><span class="dot"></span><span>Free</span></div>
   </div>
 </div>
 </body></html>`;
