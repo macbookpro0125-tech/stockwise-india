@@ -48,7 +48,7 @@ _Last updated: 13 Nov 2026._
 5. Leaving Studio after Publish can show a stale "Leave site?" dialog; if Publish/Cancel are greyed, it's saved: navigate with force.
 
 ## Automation
-- **Daily results push** (scheduled task `daily-results-push`, 09:00 GMT+3; prompt copy `handoff/daily-results-push-task.md`): picks the day's Short with `scripts/results-day.mjs`, builds, uploads, schedules for 6 pm IST, adds a new library track, records it in `handoff/indexing-state.json` (`shorts`), and logs the track used.
+- **Daily results push** (scheduled task `daily-results-push`, 09:00 GMT+3; prompt copy `handoff/daily-results-push-task.md`): picks the day's company with `scripts/results-day.mjs`; since 13 Nov writes the voiced script with `scripts/shorts-voice/from-results.mjs SYMBOL` (story chosen from the figures: margin squeeze, margin jump, profit outrunning sales, profit fall, or steady), checks it, builds with `scripts/shorts-voice/build.mjs`, uploads and schedules for 6 pm IST (no library music), and records it in `handoff/indexing-state.json` (`shorts`).
 
 ## Still to do (owner)
 - **Verify the channel** (Studio → Settings → Channel → Feature eligibility, phone code) so links in descriptions become clickable.
