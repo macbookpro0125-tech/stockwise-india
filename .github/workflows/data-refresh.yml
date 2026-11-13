@@ -163,8 +163,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # history: each company's daily prices from NSE (price-history.js), once there are any
-          tar -czf market-data.tar.gz -C data market logos market-snapshot.json performance-snapshots.json research-score-cohorts.json shareholding $( [ -d data/history ] && echo history )
+          # history: each company's daily prices from NSE (price-history.js), once there are any;
+          # score-audit: the nightly score check (scripts/refresh-data.mjs), read by /api/owner/score-audit
+          tar -czf market-data.tar.gz -C data market logos market-snapshot.json performance-snapshots.json research-score-cohorts.json shareholding $( [ -d data/history ] && echo history ) $( [ -d data/score-audit ] && echo score-audit )
           node -e 'const fs = require("fs"); const s = JSON.parse(fs.readFileSync("data/market-snapshot.json", "utf8")); console.log(JSON.stringify({ builtAt: s.builtAt, pricesDate: s.pricesDate, companies: fs.readdirSync("data/market").length, packedAt: new Date().toISOString() }))' > manifest.json
           cat manifest.json
           cp data/jobs-state.json jobs-state.json 2>/dev/null || echo '{}' > jobs-state.json

@@ -17,6 +17,8 @@ import { startDataJobs, jobStatus } from "../server/data-jobs.js";
 import { backfillHistory } from "../server/history-backfill.js";
 import { buildMarketSnapshot, loadMarketSnapshot, clearSnapshotCache } from "../server/market-data.js";
 import { fiscalYearEnds } from "../server/build-snapshot.js";
+import { marketReady, marketCurrent } from "../server/screen.js";
+import { saveAudit } from "../server/score-audit.js";
 
 // Don't repeat a successful 16:30 refresh at 07:00 the next morning. The
 // morning run takes over only if the published snapshot is older than this.
@@ -88,6 +90,23 @@ const timer = setInterval(async () => {
   if (rebuilt && Number(process.env.HISTORY_BACKFILL_DAYS) > 0) {
     try { await backfillHistory({ years: Number(process.env.HISTORY_YEARS) || 5, maxDays: Number(process.env.HISTORY_BACKFILL_DAYS), log: m => console.log(m) }); }
     catch (e) { annotate("warning", "Price history backfill failed", e.message); }
+  }
+  // The nightly score check (score-audit.js) on the market just built. The live
+  // site doesn't run data jobs — it pulls this run's pack — so the check is made
+  // here and packed (data/score-audit), or it would never reach the site (13 Nov 2026).
+  if (rebuilt) {
+    try {
+      const pricesDate = loadMarketSnapshot()?.pricesDate;
+      let market = await marketReady();
+      for (let i = 0; i < 120 && (!marketCurrent() || market.snapshot?.pricesDate !== pricesDate); i++) {
+        await new Promise(r => setTimeout(r, 5000));
+        market = await marketReady();
+      }
+      if (market.snapshot?.pricesDate === pricesDate) {
+        const audit = saveAudit(market.rows, pricesDate);
+        console.log(`Score check ${pricesDate}: ${audit.flagged} of ${audit.companies} companies flagged`);
+      } else annotate("warning", "Score check skipped", "the market wasn't rebuilt for the new prices within 10 minutes");
+    } catch (e) { annotate("warning", "Score check failed", e.stack || e.message); }
   }
   console.log(rebuilt ? `Snapshot rebuilt: ${after} (prices ${loadMarketSnapshot()?.pricesDate})` : "The snapshot wasn't rebuilt — nothing to publish.");
   output("publish", String(rebuilt));

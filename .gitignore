@@ -60,3 +60,4 @@ android/app/google-services.json
 # with links that name it: research kept on this computer, not published
 replica/reviews.csv
 .x-out/
+data/score-audit/
