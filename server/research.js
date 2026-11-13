@@ -21,7 +21,7 @@
 // Weights and bands are a stated starting point, not a fitted model — the
 // proposal says so too. Change them here and RESEARCH_VERSION together.
 
-export const RESEARCH_VERSION = "1.10"; // 1.10: P/E on the last four quarters; fair value's multiple capped at twice the sector's median P/E; a quarter's EPS filed as the year's corrected, other EPS disagreements shown; auditor notices keep their filing link and scope; 1.8: banks with net NPA under 2% priced on their last three years' ROE
+export const RESEARCH_VERSION = "1.11"; // 1.11: peer P/E allows for growth above 10% a year; free cash flow yield left out while a company builds new capacity; 1.10: 1.10: P/E on the last four quarters; fair value's multiple capped at twice the sector's median P/E; a quarter's EPS filed as the year's corrected, other EPS disagreements shown; auditor notices keep their filing link and scope; 1.8: banks with net NPA under 2% priced on their last three years' ROE
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -560,8 +560,16 @@ const VALUATION = {
         const pe = closePe(m);
         if (pe == null) return missing("Loss-making — no P/E to compare.");
         const ratio = pe / s.median;
-        const score = band(ratio, [[0.6, 100], [0.8, 75], [1, 50], [1.25, 25], [1.6, 0]]);
-        return checked(score, ratio, `${pe.toFixed(1)} vs ${s.median.toFixed(1)}`, `P/E of ${pe.toFixed(1)} against a median of ${s.median.toFixed(1)} for ${s.n} ${cohort} companies — ${ratio < 0.95 ? "cheaper than" : ratio > 1.05 ? "dearer than" : "in line with"} peers.`);
+        // A fast grower earns a higher P/E (13 Nov 2026: Acme Solar, growing
+        // its profit 46% a year at 1.5× its sector's P/E, scored 2 here). Each
+        // point of growth above 10% a year allows 1.5% more P/E, up to 30%
+        // growth (+30%): three years' EPS growth, else the last year's capped
+        // at 25%, as one year can be a rebound.
+        const growth = finite(m.epsGrowth3y) ? Math.min(m.epsGrowth3y, 30) : finite(m.ttmEpsGrowth) ? Math.min(m.ttmEpsGrowth, 25) : null;
+        const allowance = growth != null && growth > 10 ? 1 + (growth - 10) * 0.015 : 1;
+        const score = band(ratio / allowance, [[0.6, 100], [0.8, 75], [1, 50], [1.25, 25], [1.6, 0]]);
+        const growthNote = allowance > 1 ? ` Its EPS grew ${pct(finite(m.epsGrowth3y) ? m.epsGrowth3y : m.ttmEpsGrowth)} a year${finite(m.epsGrowth3y) ? " over three years" : " over the last year"}, so up to ${Math.round((allowance - 1) * 100)}% more than the median counts as in line.` : "";
+        return checked(score, ratio, `${pe.toFixed(1)} vs ${s.median.toFixed(1)}`, `P/E of ${pe.toFixed(1)} against a median of ${s.median.toFixed(1)} for ${s.n} ${cohort} companies — ${ratio < 0.95 ? "cheaper than" : ratio > 1.05 ? "dearer than" : "in line with"} peers.${growthNote}`);
       },
     },
     {
@@ -592,6 +600,14 @@ const VALUATION = {
         const mcap = closeMcapCr(m);
         if (rows.length < 2 || mcap == null) return missing("Needs 2 years of cash flow and capital spending.");
         const fcfs = rows.map(h => h.ocfCr - h.capexCr);
+        // Building new capacity (13 Nov 2026): a company whose business brings
+        // in cash every year but spends far more on new plant — over 1.5× that
+        // cash and over twice its wear and tear — has negative free cash flow
+        // because it's growing, not because its price is high. Left out then.
+        const building = fcfs.some(v => v < 0) && rows.every(h => h.ocfCr > 0)
+          && rows.reduce((a, h) => a + h.capexCr, 0) > 1.5 * rows.reduce((a, h) => a + h.ocfCr, 0)
+          && rows.every(h => !finite(h.depreciationCr) || h.capexCr > 2 * h.depreciationCr);
+        if (building) return notApplicable(`Spending on new capacity (₹${Math.round(rows[0].capexCr).toLocaleString("en-IN")} crore last year) is far above the cash its business brings in (₹${Math.round(rows[0].ocfCr).toLocaleString("en-IN")} crore), so free cash flow is negative while it builds — not a measure of its price.`);
         const y = (avg(fcfs) / mcap) * 100;
         const negative = fcfs.some(v => v < 0);
         // Volatile or negative free cash flow isn't a yield to lean on
