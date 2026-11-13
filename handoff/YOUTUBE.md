@@ -58,3 +58,8 @@ BEL and Sterlite were made **before** the layout fix (their headline sits under 
 - Figures exactly as filed / as on the live results page; no buy, sell, target or "multibagger" (SEBI). "Not investment advice." in every description.
 - Publish only the agreed Short; never change account settings.
 - Views come from: a clear hook in the first second, company names people search, posting on the day of results, one a day.
+
+## Instagram (from 13 Nov 2026)
+- Account **@jocular_insights**, signed in on Chrome **Profile 7 "Jocular"** (the owner signs in; Claude never types the password).
+- Reels so far: TCS "great company, falling stock?" — https://www.instagram.com/jocular_insights/reel/DfsPboguAlN/ (13 Nov), the same video as the YouTube Short.
+- How to post (Claude in Chrome): left bar **+ Create** → hidden file input → `file_upload` the mp4 (from `~/Projects/files/shorts-upload/`) → OK on "Video posts are now shared as reels" → crop icon bottom-left → **Original** (otherwise it's cut square) → Next → cover: **Select From Computer** with a still from the video (the first frame is blank) → Next → caption (links aren't clickable; write "jocularinsights.in"; "Educational content, not investment advice.") → **Add AI label ON** (the voice is Kokoro, AI-made) → Share; wait ~30 s for "Your reel has been shared".
