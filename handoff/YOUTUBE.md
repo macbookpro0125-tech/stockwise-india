@@ -62,6 +62,6 @@ _Last updated: 13 Nov 2026._
 
 ## Instagram (from 13 Nov 2026)
 - Account **@jocular_insights**, signed in on Chrome **Profile 7 "Jocular"** (the owner signs in; Claude never types the password).
-- Daily: since 13 Nov the `daily-results-push` task posts the day's voiced Short to Instagram too (step 4f), and BEL (14 Nov) and Sterlite (15 Nov) Reels are queued in step 4g.
+- **Two a day** (owner, 13 Nov): `daily-results-push` (09:00 GMT+3) makes two voiced Shorts, schedules them on YouTube for 6 pm and 9 pm IST, posts the 6 pm one to Instagram in the morning and queues the other in `~/Projects/files/shorts-v2/instagram-queue.json`; `instagram-evening` (18:35 GMT+3 ≈ 9 pm IST, prompt copy `handoff/instagram-evening-task.md`) posts it. BEL (14 Nov) and Sterlite (15 Nov) are queued as those days' morning Reels.
 - Reels so far: TCS "great company, falling stock?" — https://www.instagram.com/jocular_insights/reel/DfsPboguAlN/ (13 Nov), the same video as the YouTube Short.
 - How to post (Claude in Chrome): left bar **+ Create** → hidden file input → `file_upload` the mp4 (from `~/Projects/files/shorts-upload/`) → OK on "Video posts are now shared as reels" → crop icon bottom-left → **Original** (otherwise it's cut square) → Next → cover: **Select From Computer** with a still from the video (the first frame is blank) → Next → caption (links aren't clickable; write "jocularinsights.in"; "Educational content, not investment advice.") → **Add AI label ON** (the voice is Kokoro, AI-made) → Share; wait ~30 s for "Your reel has been shared".
