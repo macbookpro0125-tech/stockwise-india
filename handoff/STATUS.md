@@ -1,6 +1,20 @@
 # Status
 
-_Last updated: 10 Nov 2026, by Claude (Opus) on branch `screeners-home`._
+_Last updated: 13 Nov 2026, by Claude (Opus) on branch `screeners-home`._
+
+## Read first: standing jobs another session or account must not miss (13 Nov)
+- **Nightly score check** (`server/score-audit.js`): every evening, after the day's prices, the server checks all ~2,263 companies' scores and lists the odd ones (day jumps with no new results, a fast grower marked nearly as dear as possible, P/E under 2, sales +500%, high score on little data, EPS against profit ÷ shares…). Kept 21 nights in `data/score-audit/`. Owner-only page: `https://jocularinsights.in/api/owner/score-audit` (anyone else gets 404). Locally: `node scripts/score-audit.mjs` (`--json`, `--save`). Live only after the next push.
+- **Weekly score review, Sundays 10:00 (IST)**: a scheduled task in the Claude desktop app, `weekly-score-review`, run on the owner's Claude plan (no API bill). It reads that list, reviews the top ~30, fixes the rule or the data (never one company's score by hand), writes `handoff/score-reviews/<date>.md`, commits, never pushes. **The task lives in this Mac's Claude app (`~/.claude/scheduled-tasks/weekly-score-review/`), not in the repo. If the owner signs in with another Claude account, or the task is missing from the app's "Scheduled" list, recreate it from `handoff/weekly-score-review-task.md` (the same prompt; cron `0 10 * * 0`).** Click "Run now" once after creating it so its tools are approved.
+- **Past-price test of the score**: `node scripts/score-backtest.mjs` (`--json FILE`). Its results are quoted on the methodology page (`src/methodology-content.js`, "Tested against later share prices"); re-run it whenever a score rule changes and update those figures.
+- **Score decisions (12–13 Nov, the owner's word)**: one headline score, the Overall (quality ex-valuation 70% + valuation 30%, trimmed for price swings), unchanged by the tests; ranked market-wide and by sector. The test showed it sorts strong from weak but doesn't beat the Nifty 50, so it is called a ranking, never a forecast. The pairing that held up (quality 70+ with price strength 70+) is the strategy "Strong Business, Rising Price" and the company-page tag. Valuation 1.11: growth allowance against peers, free cash flow left out while a company builds capacity (Acme Solar).
+- **AI checking**: costed (Haiku ~$10–15/month on changed companies only) and tried locally (this Intel Mac: 5+ min a company, poor answers). Not built; the owner hasn't named it, so it stays held.
+
+## Committed, not pushed (12–13 Nov, ~38 commits; suites passed 13 Nov)
+- Screen builder: arrows on the table's edges, the watchlist star always beside each name, no "Untitled screen".
+- One headline score: rank on company pages, "Highest Overall Scores" strategy and 4 public lists, Overall the default order; Back pinned on company pages.
+- Score backtest script; methodology section "Tested against later share prices"; strategy "Strong Business, Rising Price" with company-page tags.
+- Valuation 1.11 (growers and builders); index pages' company names on a phone; the nightly score check.
+- Details, day by day: `handoff/LOG.md` (12–13 Nov entries).
 
 ## Committed, not pushed (10 Nov, morning; tests only)
 - `e2e/sweep.spec.js`: the two "scrolls sideways" checks (legal pages; tabs and a company page) now measure against the page's own width, as S-H11 does. They compared with `innerWidth`, which widens with the page on a phone, so they could never fail. All four runs pass. Goes out with the next push.
