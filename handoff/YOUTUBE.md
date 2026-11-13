@@ -62,5 +62,6 @@ _Last updated: 13 Nov 2026._
 
 ## Instagram (from 13 Nov 2026)
 - Account **@jocular_insights**, signed in on Chrome **Profile 7 "Jocular"** (the owner signs in; Claude never types the password).
+- Daily: since 13 Nov the `daily-results-push` task posts the day's voiced Short to Instagram too (step 4f), and BEL (14 Nov) and Sterlite (15 Nov) Reels are queued in step 4g.
 - Reels so far: TCS "great company, falling stock?" — https://www.instagram.com/jocular_insights/reel/DfsPboguAlN/ (13 Nov), the same video as the YouTube Short.
 - How to post (Claude in Chrome): left bar **+ Create** → hidden file input → `file_upload` the mp4 (from `~/Projects/files/shorts-upload/`) → OK on "Video posts are now shared as reels" → crop icon bottom-left → **Original** (otherwise it's cut square) → Next → cover: **Select From Computer** with a still from the video (the first frame is blank) → Next → caption (links aren't clickable; write "jocularinsights.in"; "Educational content, not investment advice.") → **Add AI label ON** (the voice is Kokoro, AI-made) → Share; wait ~30 s for "Your reel has been shared".
