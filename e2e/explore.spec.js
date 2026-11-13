@@ -42,7 +42,7 @@ test("X-H2 a sector opens with its companies' biggest moves; a computer's News p
   await itBtn.dispatchEvent("click");
   const index = page.getByRole("article", { name: "IT" });
   await expect(index.getByRole("region", { name: "Biggest moves" })).toContainText("Information Technology companies", { timeout: 45_000 });
-  await index.getByRole("button", { name: "Back" }).click();
+  await index.getByRole("button", { name: "Back", exact: true }).click();
   await expect(index).toHaveCount(0);
 });
 
