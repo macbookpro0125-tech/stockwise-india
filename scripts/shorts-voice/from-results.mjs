@@ -29,7 +29,7 @@ const table = html.slice(html.indexOf("rq-table"));
 const rows = new Map([...table.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)].map(m => [...m[1].matchAll(/<t[hd][^>]*>([\s\S]*?)<\/t[hd]>/g)].map(c => text(c[1]))).filter(r => r.length >= 4).map(r => [r[0], r]));
 const head = rows.get("Item");
 const num = s => (s == null || s === "—" ? null : Number(s.replace(/[,%₹ ]/g, "").replace("−", "-").replace("pts", "")));
-const get = item => { const r = rows.get(item); return r ? { now: num(r[1]), then: num(r[2]), nowTxt: r[1], thenTxt: r[2], chg: num(r[3]), chgTxt: r[3] } : null; };
+const get = item => { const r = rows.get(item); return r ? { now: num(r[1]), then: num(r[2]), nowTxt: r[1], thenTxt: r[2], chg: num(r[3]), chgTxt: r[3], prevTxt: r[4] ?? null, qoq: num(r[5] ?? null) } : null; };
 const sales = get("Sales"), costs = get("Operating costs"), margin = get("Operating margin %"), profit = get("Net profit");
 const opProfit = get("Operating profit"), otherIncome = get("Other income"), pbt = get("Profit before tax"), eps = get("EPS (₹)");
 if (!head || !sales || !profit || head[2] == null) throw new Error(`${url}: no year-earlier quarter in the table`);
@@ -81,7 +81,10 @@ else if (story === "leverage") L(`Profit grew much faster than sales: up ${sayPc
 else if (story === "fall") L(`Sales ${upDown(sales.chg)} ${sayPct(sales.chg)}. But profit fell ${sayPct(profit.chg)}.`, `Sales ${upDown(sales.chg)} ${tone(sales.chg)}${rp(sales.chg)}%${tone(sales.chg)}. But profit fell ~${rp(profit.chg)}%~.`, { type: "big", text: pc(profit.chg), sub: `Net profit, ${label} vs a year earlier`, tone: "red" });
 else L(`Profit ${upDown(profit.chg)} ${sayPct(profit.chg)} in the ${month} quarter.`, `Profit ${upDown(profit.chg)} *${rp(profit.chg)}%* in the ${month} quarter.`, { type: "big", text: pc(profit.chg), sub: `Net profit, ${label} vs a year earlier` });
 
-L(`Look at ${name}.`, `Look at *${name}*.`, { type: "page", symbol });
+// search viewers come for the company: its name leads the first line (14 Nov 2026, the top results videos)
+lines[0].say = `${name}. ${lines[0].say}`;
+lines[0].show = `*${name}*: ${lines[0].show.charAt(0).toLowerCase()}${lines[0].show.slice(1)}`;
+L(`Here are its ${month} quarter results, as filed.`, `Its *${month} quarter* results, as filed.`, { type: "page", symbol });
 L(`Quality score: ${words(q)} out of a hundred.`, `Quality score: ${band === "red" ? "~" : "*"}${q} out of 100${band === "red" ? "~" : "*"}.`, { type: "card", symbol, card: "quality", tone: band === "red" ? "red" : "teal" });
 L(`${month} quarter sales: ${sayCr(sales.now)}, ${upDown(sales.chg)} ${sayPct(sales.chg)}.`, `Sales: *₹${sales.nowTxt} crore*, ${upDown(sales.chg)} ${tone(sales.chg)}${Math.abs(sales.chg).toFixed(1)}%${tone(sales.chg)}.`, { type: "card", symbol, card: "results", circle: "sales" });
 if (hasMargin) {
@@ -95,6 +98,13 @@ if (hasMargin) {
 }
 if (smallBase) L(`Net profit: ${sayCr(profit.now)}, against ${sayCr(profit.then)} a year earlier. A small base, so check what changed.`, `Net profit: *₹${profit.nowTxt} crore*, from ₹${profit.thenTxt} crore a year earlier.`, { type: "card", symbol, card: "results", circle: "profit" });
 else L(`Net profit: ${sayCr(profit.now)}, ${upDown(profit.chg)} ${sayPct(profit.chg)}.`, `Net profit: *₹${profit.nowTxt} crore*, ${upDown(profit.chg)} ${tone(profit.chg)}${Math.abs(profit.chg).toFixed(1)}%${tone(profit.chg)}.`, { type: "card", symbol, card: "results", circle: "profit" });
+// and against the quarter before, as the top results videos show both
+if (profit.qoq != null && isFinite(profit.qoq) && profit.prevTxt && num(profit.prevTxt) > 0 && !smallBase) {
+  const pq = new Date(st.quarter.end + "T00:00:00Z"); pq.setUTCDate(1); pq.setUTCMonth(pq.getUTCMonth() - 3);
+  const prevMonth = pq.toLocaleDateString("en-GB", { month: "long", timeZone: "UTC" });
+  L(`Against the ${prevMonth} quarter, profit was ${upDown(profit.qoq)} ${sayPct(profit.qoq)}.`, `Against the ${prevMonth} quarter: profit ${upDown(profit.qoq)} ${tone(profit.qoq)}${Math.abs(profit.qoq).toFixed(1)}%${tone(profit.qoq)}.`,
+    { type: "tiles", tiles: [{ label: `vs ${month.slice(0, 3)} last year`, value: Math.abs(profit.chg), prefix: profit.chg >= 0 ? "+" : "−", suffix: "%", dec: 1, sub: "net profit", tone: profit.chg >= 0 ? "teal" : "red" }, { label: `vs ${prevMonth.slice(0, 3)} quarter`, value: Math.abs(profit.qoq), prefix: profit.qoq >= 0 ? "+" : "−", suffix: "%", dec: 1, sub: "net profit", tone: profit.qoq >= 0 ? "teal" : "red" }] });
+}
 if (ret != null) L(`The share price: ${upDown(ret)} ${sayPct(ret)} in a year.`, `The share price: ${upDown(ret)} ${tone(ret)}${Math.abs(ret).toFixed(1)}%${tone(ret)} in a year.`, { type: "card", symbol, card: "ret", tone: ret >= 0 ? "teal" : "red" });
 const close = { squeeze: ["Growth is good. Watch what it costs.", "Growth is good. *Watch what it costs.*"], jump: ["One strong quarter is a start. Check that it lasts.", "One strong quarter is a start. *Check that it lasts.*"], leverage: ["When profit outruns sales, check why.", "When profit outruns sales, *check why*."], fall: hasMargin && margin.now >= margin.then - 0.5 ? ["The margin held, so look further down: interest, depreciation, tax and one-offs.", "The margin held, so look *further down*: interest, depreciation, tax, one-offs."] : ["Check the costs, before the headline.", "Check the *costs*, before the headline."], steady: ["Check the whole quarter, not just the headline.", "Check the *whole quarter*, not just the headline."] }[story];
 // Where the profit came from (14 Nov 2026, the competitor check: viewers ask
@@ -112,7 +122,8 @@ if (measures.length >= 3) {
   L(`Against a year earlier, it's better on ${words(better.length)} of ${words(measures.length)} measures${better.length ? `: ${list}` : ""}.`, `Better than a year ago on *${better.length} of ${measures.length}* measures.`,
     { type: "pills", items: measures.map(([n, m]) => ({ text: `${m.chg > 0 ? "✓" : "✗"} ${n}`, tone: m.chg > 0 ? "" : "red" })) });
 }
-L(close[0], close[1], { type: "pills", items: [{ text: "✓ Sales" }, { text: "✓ Costs" }, { text: "✓ Profit" }] });
+// the verdict already sums it up; the general closing line only when there is no verdict
+if (measures.length < 3) L(close[0], close[1], { type: "pills", items: [{ text: "✓ Sales" }, { text: "✓ Costs" }, { text: "✓ Profit" }] });
 L("Save this, for the next results season.", "*Save this* for the next results season.", { type: "save" });
 L("Jocular Insights. Every number tells a story.", "*Jocular Insights*. Every number tells a story.", { type: "brand" });
 

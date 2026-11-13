@@ -40,7 +40,7 @@ body{font-family:-apple-system,"SF Pro Display","Helvetica Neue",Inter,sans-seri
 .cp{padding:56px 34px;border-radius:32px;background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 2px rgba(255,255,255,.08);text-align:center}
 .cp .i{font-size:170px;font-weight:900;line-height:1.1}.cp .t{margin-top:14px;font-size:52px;font-weight:800}.cp .s{margin-top:10px;font-size:34px;color:var(--ink2)}
 .pills{text-align:center}.pill{display:inline-flex;align-items:center;gap:16px;font-size:70px;font-weight:800;padding:30px 52px;border-radius:999px;background:rgba(46,230,196,.12);color:var(--teal);margin:12px}
-.pill.red{background:rgba(255,93,108,.12)}.pill.gold{background:rgba(226,191,114,.12)}
+.pill.red{background:rgba(255,93,108,.12)}.pills.many .pill{font-size:52px;padding:18px 40px;margin:8px}.pill.gold{background:rgba(226,191,114,.12)}
 .brandv{flex-direction:column;text-align:center}
 .brandv .badge{width:300px;height:300px;border-radius:50%;background:#fff;display:grid;place-items:center;box-shadow:0 0 0 6px rgba(46,230,196,.3),0 30px 90px rgba(0,0,0,.6)}.brandv .badge img{width:260px}
 .brandv .url{margin-top:40px;font-size:60px;font-weight:900;color:var(--teal)}
@@ -109,7 +109,7 @@ function build(g, n) {
   } else if (v.type === "pair") {
     el.innerHTML = `<div class="cardpair">${v.items.map(x => `<div class="cp"><div class="i ${x.tone ?? "teal"}">${x.icon}</div><div class="t">${x.title}</div><div class="s">${x.sub ?? ""}</div></div>`).join("")}</div>`;
   } else if (v.type === "pills") {
-    el.innerHTML = `<div class="pills">${v.items.map(x => `<span class="pill ${x.tone ?? ""}">${x.text}</span>`).join("<br>")}</div>`;
+    el.innerHTML = `<div class="pills${v.items.length > 3 ? " many" : ""}">${v.items.map(x => `<span class="pill ${x.tone ?? ""}">${x.text}</span>`).join("<br>")}</div>`;
   } else if (v.type === "save") {
     el.innerHTML = `<svg viewBox="0 0 240 300" style="width:400px;height:500px"><path class="bm" d="M30 20 h180 a10 10 0 0 1 10 10 v250 l-100 -70 l-100 70 v-250 a10 10 0 0 1 10 -10 z" fill="#2ee6c4" style="transform-origin:120px 150px"/></svg>`;
   } else if (v.type === "brand") {

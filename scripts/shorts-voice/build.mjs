@@ -102,6 +102,7 @@ const html = readFileSync(join(HERE, "scene.html"), "utf-8")
 const tab = await browser.newPage({ viewport: { width: 1080, height: 1920 } });
 await tab.setContent(html, { waitUntil: "load" });
 if (STILLS) {
+  rmSync(join(DIR, "stills"), { recursive: true, force: true }); // no frames left from an older version
   mkdirSync(join(DIR, "stills"), { recursive: true });
   for (const l of lines) { await tab.evaluate(y => window.render(y), l.end - 0.1); await tab.screenshot({ path: join(DIR, "stills", `${l.id}.jpg`), type: "jpeg", quality: 80 }); }
   await browser.close(); console.log(`${LENGTH} s · stills in ${join(DIR, "stills")}`); process.exit(0);
