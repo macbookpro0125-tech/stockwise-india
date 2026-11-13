@@ -56,7 +56,7 @@ function Headline({ label, value, unit = "/100", word, sub, tone, title, details
   );
 }
 
-// word: shown after the score (the valuation group's "Inexpensive" … "Expensive")
+// word: the valuation group's "Inexpensive" … "Very expensive", shown before its score
 function GroupCard({ g, word }) {
   const tone = qualityTone(g.score);
   return (
@@ -67,9 +67,14 @@ function GroupCard({ g, word }) {
       ) : (
         <>
           <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 7, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 20, fontWeight: 500, color: g.score == null ? "var(--t3)" : tone.color, ...MONO }}>{n(g.score)}</span>
-            {g.score != null && <span style={{ fontSize: 12, color: "var(--t3)", ...MONO }}>/100</span>}
-            {word && g.score != null && <span style={{ fontSize: 12, fontWeight: 400, color: tone.color, marginLeft: 4 }}>{word}</span>}
+            {/* the valuation's word leads (13 Nov 2026: "0" read as worthless; it means very expensive) */}
+            {word && g.score != null ? <>
+              <span style={{ fontSize: 17, fontWeight: 500, color: tone.color }}>{word}</span>
+              <span style={{ fontSize: 12, color: "var(--t3)", marginLeft: 4, ...MONO }}>{n(g.score)}/100</span>
+            </> : <>
+              <span style={{ fontSize: 20, fontWeight: 500, color: g.score == null ? "var(--t3)" : tone.color, ...MONO }}>{n(g.score)}</span>
+              {g.score != null && <span style={{ fontSize: 12, color: "var(--t3)", ...MONO }}>/100</span>}
+            </>}
           </div>
           <Bar value={g.score} color={tone.color} />
           <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "2px 8px", fontSize: 11, color: "var(--t3)", marginTop: 7, ...MONO }}>
@@ -244,7 +249,7 @@ export default function ResearchPanel({ research: r }) {
         <div id="why-this-score" className="research-expand" style={{ fontSize: 13, fontWeight: 400, color: "var(--t1)", margin: "6px 0 2px" }}>Why this score?</div>
         {r.groups.map(g => (
           <Expand key={g.id} id={`why-${g.id}`} title={g.label}
-            right={!g.applicable ? "doesn't apply" : g.score == null ? `not enough data · ${g.checked} of ${g.total} checked` : `${n(g.score)}/100 · ${g.checked} of ${g.total} checked`}>
+            right={!g.applicable ? "doesn't apply" : g.score == null ? `not enough data · ${g.checked} of ${g.total} checked` : `${g.id === "valuation" ? `${r.valuation.label} · ` : ""}${n(g.score)}/100 · ${g.checked} of ${g.total} checked`}>
             {!g.applicable && <div style={{ fontSize: 12, color: "var(--t3)", padding: "6px 0" }}>{g.items[0]?.na}</div>}
             {/* A test for another kind of company (a bank's, on a manufacturer) isn't listed */}
             {g.applicable && g.items.filter(item => !item.hide).map(item => <ItemRow key={item.id} item={item} weight={item.weight} />)}

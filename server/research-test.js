@@ -5,7 +5,7 @@
 // gates hold, the overall formula is what's stated, and the price trend never
 // moves the quality or overall score.
 import { computeMetrics } from "./metrics.js";
-import { band, GROUPS, computeResearch } from "./research.js";
+import { band, GROUPS, computeResearch, peCohort, FIN_BANKS, FIN_LENDERS, FIN_NON_LENDERS } from "./research.js";
 import { justifiedPb, sustainableGrowth, bankValuation, costOfEquity } from "./bank-valuation.js";
 import { pricePosition, calculateLevels, fairValues, levelsFromFairValue, userLevels, fairValueOnly, cleanLevelSettings, DEFAULT_LEVEL_SETTINGS, LEVEL_KEYS } from "./levels.js";
 import { classifyAnnouncement } from "./company-extras.js";
@@ -455,5 +455,14 @@ assert(fewPeers.m.levels === fewPeers.before.levels && /no peer group/.test(fewP
   const seed = JSON.parse((await import("node:fs")).readFileSync(new URL("./index-lists-seed.json", import.meta.url), "utf8"));
   assert(seed.screenIndices["Nifty 50"].length >= 45 && seed.themes.Defence.length >= 5 && seed.fno.length >= 150 && seed.savedOn, "the saved lists are whole and dated");
 }
+
+// Financial Services' P/E peers, three ways (13 Nov 2026): a stock exchange
+// isn't priced against banks, nor a finance company against government banks
+assert(peCohort({ peerSector: "Financial Services", lender: true, bank: true }) === FIN_BANKS, "a bank against banks");
+assert(peCohort({ peerSector: "Financial Services", lender: true, bank: false }) === FIN_LENDERS, "a finance company against other lenders");
+assert(peCohort({ peerSector: "Financial Services", lender: false }) === FIN_NON_LENDERS, "an exchange or fund manager against non-lenders");
+assert(peCohort({ peerSector: "Information Technology", lender: false }) === "Information Technology", "other sectors unchanged");
+assert(peCohort({ peerSector: null }) === null, "no sector, no group");
+console.log("ok: Financial Services P/E peers split into banks, other lenders and the rest");
 
 console.log("\nAll research-score checks passed.");

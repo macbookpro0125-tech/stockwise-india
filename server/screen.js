@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { badRequest } from "./http-errors.js";
 import { computeMetrics } from "./metrics.js";
 import { calculateLevels } from "./levels.js";
-import { computeResearch, setResearchPeers } from "./research.js";
+import { computeResearch, setResearchPeers, peCohort } from "./research.js";
 import { loadMarketSnapshot } from "./market-data.js";
 import { MARKET_DIR } from "./paths.js";
 import { buildSectorStats } from "./sector-compare.js";
@@ -193,9 +193,10 @@ function sectorPeMedians(rows) {
   const bySector = new Map();
   for (const m of rows) {
     const epsTtm = m.ttmEps;
-    if (!m.peerSector || !(m.close > 0) || !(epsTtm > 0)) continue;
-    if (!bySector.has(m.peerSector)) bySector.set(m.peerSector, []);
-    bySector.get(m.peerSector).push(m.close / epsTtm);
+    const cohort = peCohort(m);
+    if (!cohort || !(m.close > 0) || !(epsTtm > 0)) continue;
+    if (!bySector.has(cohort)) bySector.set(cohort, []);
+    bySector.get(cohort).push(m.close / epsTtm);
   }
   const out = new Map();
   for (const [sector, pes] of bySector) {
@@ -298,9 +299,9 @@ export function capHistoricalMultiples(rows, peers = peerMultiples) {
   for (const m of rows) {
     const model = m.valuation?.model;
     if (model !== "earnings" && model !== "cyclical") continue;
-    const sector = m.peerSector ? peers.sectors.get(m.peerSector) : null;
+    const sector = m.peerSector ? peers.sectors.get(peCohort(m)) : null;
     const industry = m.industry ? peers.industries.get(m.industry) : null;
-    const cohort = sector?.n >= 5 ? { ...sector, label: m.peerSector }
+    const cohort = sector?.n >= 5 ? { ...sector, label: peCohort(m) }
       : industry?.n >= 5 ? { ...industry, label: `NSE industry ${m.industry}` }
         : null;
     const originalMultiple = model === "cyclical" ? m.valuation.multiple : m.medianPe;

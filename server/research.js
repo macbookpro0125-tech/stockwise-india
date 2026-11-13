@@ -21,7 +21,7 @@
 // Weights and bands are a stated starting point, not a fitted model — the
 // proposal says so too. Change them here and RESEARCH_VERSION together.
 
-export const RESEARCH_VERSION = "1.12"; // 1.12: a one-off quarter (profit above its sales) left out of the P/E the score values on; 1.11: peer P/E allows for growth above 10% a year; free cash flow yield left out while a company builds new capacity; 1.10: 1.10: P/E on the last four quarters; fair value's multiple capped at twice the sector's median P/E; a quarter's EPS filed as the year's corrected, other EPS disagreements shown; auditor notices keep their filing link and scope; 1.8: banks with net NPA under 2% priced on their last three years' ROE
+export const RESEARCH_VERSION = "1.13"; // 1.13: Financial Services P/E peers split into banks, other lenders and the rest; valuation under 15 labelled "Very expensive"; 1.12: a one-off quarter (profit above its sales) left out of the P/E the score values on; 1.11: peer P/E allows for growth above 10% a year; free cash flow yield left out while a company builds new capacity; 1.10: 1.10: P/E on the last four quarters; fair value's multiple capped at twice the sector's median P/E; a quarter's EPS filed as the year's corrected, other EPS disagreements shown; auditor notices keep their filing link and scope; 1.8: banks with net NPA under 2% priced on their last three years' ROE
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -533,6 +533,16 @@ const GROWTH = {
 // A one-off quarter in the last four (metrics.js ttmOneOff): the other three,
 // a year's worth; none left in profit, no P/E to value on
 const valuedEps = m => (m.ttmOneOff ? m.ttmOneOff.epsWithout : m.ttmEps > 0 ? m.ttmEps : m.valuationEps);
+// The P/E group a company is compared with: its NSE sector, except that
+// Financial Services is split three ways (13 Nov 2026), whose median P/Es
+// differ threefold: banks (35 with a P/E, median 9.9), other lenders (46,
+// 14.3) and the rest — exchanges, fund managers, brokers, insurers, fintech
+// (55, 32.5). As one group (median 15.8) BSE at 47 and HDFC AMC at 32 scored
+// near 0 against the banks.
+export const FIN_BANKS = "Financial Services (banks)";
+export const FIN_LENDERS = "Financial Services (lenders other than banks)";
+export const FIN_NON_LENDERS = "Financial Services (not lenders)";
+export const peCohort = m => (m.peerSector !== "Financial Services" ? m.peerSector : m.bank ? FIN_BANKS : m.lender ? FIN_LENDERS : FIN_NON_LENDERS);
 const closePe = m => (m.close > 0 && valuedEps(m) > 0 ? m.close / valuedEps(m) : null);
 const closeMcapCr = m => (m.close > 0 && m.shares > 0 ? (m.close * m.shares) / 1e7 : null);
 // A bank is valued on its book (bank-valuation.js): the price-to-book its
@@ -552,7 +562,7 @@ const VALUATION = {
         const peers = ctx.peers ?? PEERS;
         // NSE's sector only — a sector read from the company's name is for
         // finding companies, not for pricing them against peers
-        const sector = m.peerSector !== undefined ? m.peerSector : m.sector;
+        const sector = m.peerSector !== undefined ? peCohort(m) : m.sector;
         const bySector = sector ? (peers instanceof Map ? peers.get(sector) ?? peers.get(`sector:${sector}`) : peers.sectors?.get(sector)) : null;
         const byIndustry = isPeerIndustry(m.industry) ? (peers instanceof Map ? peers.get(`industry:${m.industry}`) : peers.industries?.get(m.industry)) : null;
         const [cohort, s] = bySector?.n >= 5 ? [sector, bySector] : byIndustry?.n >= 5 ? [`NSE industry ${m.industry}`, byIndustry] : [sector, bySector];
@@ -769,7 +779,9 @@ const BANDS_ORS = [
   [35, "Challenged", "Evidence is challenged"],
   [0, "Weak", "Significant unresolved concerns"],
 ];
-const valuationLabel = v => (v >= 75 ? "Inexpensive" : v >= 60 ? "Reasonable" : v >= 45 ? "Fair" : v >= 30 ? "Moderately expensive" : "Expensive");
+// Under 15 (13 Nov 2026): a 0 read as "worthless"; it means the price is far
+// above every measure of what the company earns
+const valuationLabel = v => (v >= 75 ? "Inexpensive" : v >= 60 ? "Reasonable" : v >= 45 ? "Fair" : v >= 30 ? "Moderately expensive" : v >= 15 ? "Expensive" : "Very expensive");
 const riskLabel = r => (r >= 75 ? "High" : r >= 50 ? "Elevated" : r >= 25 ? "Moderate" : "Low");
 
 function riskProfile(m, groups, tech, confidence) {
