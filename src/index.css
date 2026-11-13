@@ -3133,6 +3133,27 @@ button, [role="button"], [role="switch"] { -webkit-user-select: none; user-selec
 .ps-score b { font-size: 32px; font-weight: 600; }
 .ps-score b small { font-size: var(--fs-md); color: var(--t3); font-weight: 400; }
 .ps-score em { font-style: normal; font-size: var(--fs-sm); color: var(--t2); }
+/* the top cards, clearer (13 Nov 2026): ring, coloured year, bold quarter */
+.ps-quality, .ps-year { flex-direction: row; align-items: center; justify-content: space-between; gap: 16px; }
+.ps-quality { justify-content: flex-start; }
+.ps-quality > div, .ps-year > div { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ps-ring { flex: none; }
+.ps-ring-bg { stroke: var(--s3, rgba(255,255,255,.08)); }
+.ps-ring-n { font-size: 26px; font-weight: 700; fill: var(--t1); font-variant-numeric: tabular-nums; }
+.ps-good .ps-ring-fg { stroke: var(--green); } .ps-mid .ps-ring-fg { stroke: var(--yellow); } .ps-bad .ps-ring-fg { stroke: var(--red); }
+.ps-word { font-style: normal; font-size: var(--fs-lg, 18px); font-weight: 700; padding: 4px 14px; border-radius: 999px; display: inline-block; }
+.ps-word.ps-good { color: var(--green); background: color-mix(in srgb, var(--green) 14%, transparent); }
+.ps-word.ps-mid { color: var(--yellow); background: color-mix(in srgb, var(--yellow) 14%, transparent); }
+.ps-word.ps-bad { color: var(--red); background: color-mix(in srgb, var(--red) 14%, transparent); }
+.ps-year b.up { color: var(--green); } .ps-year b.down { color: var(--red); }
+.ps-spark { flex: none; } .ps-spark.up path { stroke: var(--green); } .ps-spark.down path { stroke: var(--red); }
+.ps-quarter { grid-column: 1 / -1; }
+.ps-q2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 6px; }
+.ps-q2 > div { display: flex; flex-direction: column; gap: 2px; }
+.ps-q2 b { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.ps-move { font-size: var(--fs-sm); font-weight: 600; } .ps-move.up { color: var(--green); } .ps-move.down { color: var(--red); }
+.ps-chip { padding: 2px 10px; border-radius: 999px; font-size: var(--fs-md) !important; }
+.ps-chip.up { background: color-mix(in srgb, var(--green) 14%, transparent); } .ps-chip.down { background: color-mix(in srgb, var(--red) 14%, transparent); }
 .ps-facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin: 0; }
 .ps-facts > div { padding: 12px; border: 1px solid var(--bdr); border-radius: 12px; background: var(--s1); }
 .ps-facts dt { font-size: var(--fs-xs); color: var(--t3); }

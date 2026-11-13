@@ -15,6 +15,7 @@
 import { existsSync } from "node:fs";
 import { allMetrics } from "./screen.js";
 import { loadMarketSnapshot } from "./market-data.js";
+import { historyBars } from "./price-history.js";
 import { METHODOLOGY_DESCRIPTION, METHODOLOGY_SECTIONS, METHODOLOGY_TITLE } from "../src/methodology-content.js";
 import { ANALYSIS_EXAMPLES, companyAnalysisFor } from "../src/company-analysis.js";
 import {
@@ -151,7 +152,18 @@ export function publicStock(symbol) {
   const r = (allMetrics().rows ?? []).find(x => x.symbol === symbol);
   if (!r?.name) return null;
   const q = r.quarters?.[0] ?? null;
+  // the quarter's profit growth on the same profit the card shows (13 Nov 2026:
+  // TCS showed ₹13,934 cr "+15.0%" here, the owners' share's growth, against
+  // +14.9% for that profit on its results page)
+  const yearAgo = r.quarters?.[4];
+  const profitYoY = q?.profitCr != null && yearAgo?.profitCr > 0 && q.profitCr > 0 && Math.abs(Date.parse(q.fyEnd) - Date.parse(yearAgo.fyEnd) - 365 * 86400000) < 20 * 86400000
+    ? (q.profitCr / yearAgo.profitCr - 1) * 100 : q?.profitYoY ?? null;
+  // the last year's closes, about weekly, for the 1-year card's line
+  const snap = loadMarketSnapshot();
+  let spark = null;
+  try { const from = new Date(Date.parse(`${r.closeDate ?? snap?.pricesDate}T00:00:00Z`) - 365 * 86400000).toISOString().slice(0, 10); const bars = historyBars(r.symbol, snap).filter(b => b.date >= from); spark = bars.length > 20 ? bars.filter((_, i) => i % 5 === 0 || i === bars.length - 1).map(b => Math.round(b.close * 100) / 100) : null; } catch { spark = null; }
   return {
+    spark,
     symbol: r.symbol, name: r.name, sector: r.sector ?? null, industry: r.industry ?? null,
     close: r.close ?? r.cmp ?? null, closeDate: r.closeDate ?? r.cmpDate ?? null, change1d: r.ret1d ?? null, change1y: r.ret1y ?? null,
     low52w: r.low52w ?? null, high52w: r.high52w ?? null, marketCapCr: r.marketCapCr ?? null,
@@ -159,7 +171,7 @@ export function publicStock(symbol) {
     quality: r.research?.quality ?? null,
     // how far the price is from today's fair value, in percent; the value itself stays in the app
     vsFairValue: Number.isFinite(r.vsFairValue) ? r.vsFairValue : null,
-    quarter: q ? { end: q.fyEnd, filed: q.filed ?? null, label: fyQuarter(q.fyEnd), salesCr: q.revenueCr ?? null, salesYoY: q.salesYoY ?? null, profitCr: q.profitCr ?? null, profitYoY: q.profitYoY ?? null, opm: q.opm ?? null, eps: q.eps ?? null } : null,
+    quarter: q ? { end: q.fyEnd, filed: q.filed ?? null, label: fyQuarter(q.fyEnd), salesCr: q.revenueCr ?? null, salesYoY: q.salesYoY ?? null, profitCr: q.profitCr ?? null, profitYoY, opm: q.opm ?? null, eps: q.eps ?? null } : null,
     recentQuarters: (r.quarters ?? []).slice(0, 8).map(x => ({ end: x.fyEnd, filed: x.filed ?? null, label: fyQuarter(x.fyEnd), salesCr: x.revenueCr ?? null, salesYoY: x.salesYoY ?? null, profitCr: x.profitCr ?? null, profitYoY: x.profitYoY ?? null, opm: x.opm ?? null, eps: x.eps ?? null })),
     nextResults: r.nextResults ?? null,
     // what the page says in words: summary, trend, peers, screens, Q&A (seo-story.js)

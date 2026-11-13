@@ -64,6 +64,29 @@ function Story({ s }) {
   );
 }
 
+// The top cards (13 Nov 2026, "the screenshots don't look good"): the score in
+// a ring coloured by its band, the year's move in red or green with its line,
+// the quarter's two figures bold with their change
+const band = q => (q >= 70 ? "good" : q >= 50 ? "mid" : "bad");
+const BAND_WORD = { good: "Strong", mid: "Fair", bad: "Weak" };
+function ScoreRing({ value }) {
+  const r = 34, c = 2 * Math.PI * r, b = band(value);
+  return (
+    <svg className={`ps-ring ps-${b}`} viewBox="0 0 84 84" width="84" height="84" aria-hidden="true">
+      <circle cx="42" cy="42" r={r} fill="none" strokeWidth="8" className="ps-ring-bg" />
+      <circle cx="42" cy="42" r={r} fill="none" strokeWidth="8" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - Math.max(0, Math.min(100, value)) / 100)} transform="rotate(-90 42 42)" className="ps-ring-fg" />
+      <text x="42" y="49" textAnchor="middle" className="ps-ring-n">{Math.round(value)}</text>
+    </svg>
+  );
+}
+function Spark({ values, up }) {
+  if (!values?.length) return null;
+  const w = 120, h = 40, mx = Math.max(...values), mn = Math.min(...values);
+  const d = values.map((v, i) => `${i ? "L" : "M"}${(i * w / (values.length - 1)).toFixed(1)} ${(h - 3 - ((v - mn) / (mx - mn || 1)) * (h - 6)).toFixed(1)}`).join(" ");
+  return <svg className={`ps-spark ${up ? "up" : "down"}`} viewBox={`0 0 ${w} ${h}`} width={w} height={h} aria-hidden="true"><path d={d} fill="none" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" /></svg>;
+}
+const move = v => (v == null || !isFinite(v) ? null : <span className={`ps-move ${v >= 0 ? "up" : "down"}`}>{v >= 0 ? "▲" : "▼"} {Math.abs(v).toFixed(1)}%</span>);
+
 // What the full page answers, by chapter (an account opens them)
 const ICONS = { business: Building2, growth: TrendingUp, safety: ShieldCheck, owners: Users, value: Scale, price: ChartCandlestick, news: Newspaper };
 
@@ -113,7 +136,6 @@ export default function PublicStock({ symbol, onAuthed, initial = null }) {
   const facts = s ? [
     ["Market cap", crore(s.marketCapCr)],
     ["52-week range", s.low52w != null && s.high52w != null ? `₹${num(s.low52w, 2)} – ₹${num(s.high52w, 2)}` : null],
-    ["1-year return", pct(s.change1y)],
     ["P/E", s.pe > 0 ? num(s.pe) : null],
     ["P/B", s.pb > 0 ? num(s.pb, 2) : null],
     ["ROE", s.roe != null ? `${num(s.roe)}%` : null],
@@ -144,7 +166,7 @@ export default function PublicStock({ symbol, onAuthed, initial = null }) {
               </div>
             </div>
             {s.close != null && (
-              <p className="ps-price">₹{num(s.close, 2)} <span className={s.change1d >= 0 ? "up" : "down"}>{pct(s.change1d, 2)}</span><small>close on {day(s.closeDate)}</small></p>
+              <p className="ps-price">₹{num(s.close, 2)} <span className={`ps-chip ${s.change1d >= 0 ? "up" : "down"}`}>{pct(s.change1d, 2)}</span><small>close on {day(s.closeDate)}</small></p>
             )}
             <div className="ps-acts">
               <button type="button" className="ps-act" onClick={askWatch}><Star size={16} aria-hidden="true" /> Add to watchlist</button>
@@ -153,12 +175,17 @@ export default function PublicStock({ symbol, onAuthed, initial = null }) {
             </div>
             <div className="ps-cards">
               {s.quality != null && (
-                <div className="ps-score"><span>Quality score</span><b>{Math.round(s.quality)}<small>/100</small></b><em>From its own filings</em></div>
+                <div className="ps-score ps-quality"><ScoreRing value={s.quality} /><div><span>Quality score</span><b><i className={`ps-word ps-${band(s.quality)}`}>{BAND_WORD[band(s.quality)]}</i></b><em>Out of 100, from its own filings</em></div></div>
+              )}
+              {s.change1y != null && (
+                <div className="ps-score ps-year"><div><span>1-year return</span><b className={s.change1y >= 0 ? "up" : "down"}>{pct(s.change1y)}</b><em>Share price, last 12 months</em></div><Spark values={s.spark} up={s.change1y >= 0} /></div>
               )}
               {s.quarter && (s.quarter.salesCr != null || s.quarter.profitCr != null) && (
-                <div className="ps-score"><span>{s.quarter.label} results</span>
-                  {s.quarter.salesCr != null && <em>Sales ₹{Math.round(s.quarter.salesCr).toLocaleString("en-IN")} cr {pct(s.quarter.salesYoY)}</em>}
-                  {s.quarter.profitCr != null && <em>{s.quarter.profitCr < 0 ? "Loss" : "Profit"} ₹{Math.round(Math.abs(s.quarter.profitCr)).toLocaleString("en-IN")} cr {pct(s.quarter.profitYoY)}</em>}
+                <div className="ps-score ps-quarter"><span>{s.quarter.label} results · vs a year earlier</span>
+                  <div className="ps-q2">
+                    {s.quarter.salesCr != null && <div><em>Sales</em><b>₹{Math.round(s.quarter.salesCr).toLocaleString("en-IN")} cr</b>{move(s.quarter.salesYoY)}</div>}
+                    {s.quarter.profitCr != null && <div><em>{s.quarter.profitCr < 0 ? "Loss" : "Profit"}</em><b>₹{Math.round(Math.abs(s.quarter.profitCr)).toLocaleString("en-IN")} cr</b>{s.quarter.profitCr > 0 ? move(s.quarter.profitYoY) : null}</div>}
+                  </div>
                 </div>
               )}
             </div>
