@@ -16,3 +16,8 @@ Findings: search by company name drives results views; big names win; same-day s
 Our angle (keep): filed figures + quality score + costs vs sales + where profit came from, no buy/target words (SEBI).
 
 Proposed: (1) search-shaped titles; (2) picker prefers the largest companies that reported, not the biggest % move; (3) factual "better than a year ago on N of 5 measures"; (4) "where the profit came from" (other income share); (5) pinned comment asking which company next; (6) later tests: 2–3 min long version, Hindi version.
+
+## Transcripts (14 Nov 2026)
+- The Engineer's Trade, TCS Q2 (80K, 3.5 min, Hindi): opens "TCS has released its Q2 numbers, let's see" (no hook: viewers came by search), then the dividend and record date, then the filed table on screen — this quarter, last quarter, last year, YoY and QoQ — against market estimates, the why (currency; last year's one-off restructuring loss), EPS, margin, verdict "in line, as management guided", like and subscribe. Sells a ₹299 WhatsApp group for estimates.
+- Share Market Analysis, HDFC Bank Q2 (19K, ~5 min, Hindi): greeting, recap of ICICI with buy/hold views (not for us), estimates beat/miss, why profit lagged (treasury gains fell, provisions rose), positives vs negatives, verdict "neutral".
+Applied: company name in the first line; previous-quarter change beside the year-on-year one; verdict and ✓/✗ list; other income share. Not applied: estimates (no data; never invented), buy/hold views (SEBI). To test later: dividend line, Hindi version, 2–3 min version.
