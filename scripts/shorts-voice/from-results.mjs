@@ -1,4 +1,5 @@
-// The daily results Short in the voiced style (13 Nov 2026): reads a company's live
+// The daily results Short in the voiced style (13 Nov 2026; "Indian" in the
+// words and tags, NSE only as the source of the figures, 14 Nov): reads a company's live
 // results page (the "full results" table, exactly what the link in the description
 // shows) and its public data (quality score, 1-year return), picks the story the
 // figures tell, and writes a spec for build.mjs plus the YouTube/Instagram text.
@@ -112,6 +113,6 @@ const bullets = [
 const tag = "#" + name.replace(/[^A-Za-z0-9]/g, "");
 const body = `${name}'s ${label} (quarter to ${day(st.quarter.end)}, filed with NSE on ${day(st.quarter.filed)}):\n${bullets}\n\n${close[0]}`;
 writeFileSync(join(DIR, "post.txt"),
-  `YOUTUBE TITLE\n${title}\n\nYOUTUBE DESCRIPTION\n${body}\n\nThe full quarter, line by line: ${url}\n\nFigures as filed with NSE; prices and scores at the ${day(st.closeDate)} close. Educational content, not investment advice.\n\n${tag} #${symbol} #${label.replace(" ", "")}Results #StockMarketIndia #NSE #Shorts\n\n` +
-  `INSTAGRAM CAPTION\n${name}, ${label}: ${hook}\n\n${bullets}\n\n${close[0]}\n\nFull results, free: jocularinsights.in\n\nEducational content, not investment advice.\n\n${tag} #${symbol} #StockMarketIndia #NSE #Q${label[1]}Results #Investing\n`);
+  `YOUTUBE TITLE\n${title}\n\nYOUTUBE DESCRIPTION\n${body}\n\nThe full quarter, line by line: ${url}\n\nFigures as filed with NSE; prices and scores at the ${day(st.closeDate)} close. Educational content, not investment advice.\n\n${tag} #${symbol} #${label.replace(" ", "")}Results #IndianStockMarket #StockMarketIndia #Shorts\n\n` +
+  `INSTAGRAM CAPTION\n${name}, ${label}: ${hook}\n\n${bullets}\n\n${close[0]}\n\nFull results, free: jocularinsights.in\n\nEducational content, not investment advice.\n\n${tag} #${symbol} #IndianStockMarket #StockMarketIndia #Q${label[1]}Results #Investing\n`);
 console.log(JSON.stringify({ story, lines: lines.length, spec: join(DIR, "spec.json"), post: join(DIR, "post.txt") }, null, 2));

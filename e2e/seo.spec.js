@@ -198,7 +198,10 @@ test("S-H7 latest results: who just reported, with figures in the titles; in the
   expect(await (await request.get("/sitemap-details.xml")).text()).toContain("<loc>https://jocularinsights.in/results</loc>");
   // a company's results page leads with its figures (Google shows the title)
   const tcs = await (await request.get("/stock/TCS/results/q2-fy27")).text();
-  expect(tcs).toMatch(/<title>Tata Consultancy Services Q2 FY27 results: profit (up|down) [\d.]+% to ₹[\d,]+ cr, sales (up|down) [\d.]+% \| TCS<\/title>/);
+  // (14 Nov 2026) at most 70 characters: long ones drop the symbol, then use "+14.9%", then the sales figure
+  const title = tcs.match(/<title>([^<]*)<\/title>/)?.[1] ?? "";
+  expect(title).toMatch(/^Tata Consultancy Services Q2 FY27 results: profit (up |down |\+|−)[\d.]+% to ₹[\d,]+ cr/);
+  expect(title.length).toBeLessThanOrEqual(70);
   // the calendar points to it; in the app, a company opens its quarter
   await page.goto("/results-calendar");
   await page.getByRole("link", { name: "See the latest results" }).click();
