@@ -1,0 +1,174 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#05070f}
+body{font-family:-apple-system,"SF Pro Display","Helvetica Neue",Inter,sans-serif;-webkit-font-smoothing:antialiased;color:#f5f6fa;font-feature-settings:"tnum" 1}
+:root{--teal:#2ee6c4;--gold:#e2bf72;--red:#ff5d6c;--grey:#8a91ad;--ink2:#a7aec4}
+#bg{position:absolute;inset:0;background:radial-gradient(900px 800px at 85% 15%,rgba(46,230,196,.16),transparent 62%),radial-gradient(900px 900px at 10% 85%,rgba(70,110,255,.16),transparent 62%),#05070f}
+#dots{position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.07) 1.6px,transparent 1.8px);background-size:44px 44px}
+#progress{position:absolute;left:0;top:0;height:7px;background:var(--teal);box-shadow:0 0 18px rgba(46,230,196,.8)}
+#brand{position:absolute;left:80px;top:336px;display:flex;align-items:center;gap:14px;font-size:30px;font-weight:600}
+#brand .b{width:52px;height:52px;border-radius:50%;background:#fff;display:grid;place-items:center;overflow:hidden}#brand .b img{width:46px}
+#brand span{color:var(--teal)}
+/* the visual area sits between YouTube's top bar and the words, clear of the right-hand buttons */
+.vis{position:absolute;left:56px;right:134px;top:410px;height:700px;display:flex;align-items:center;justify-content:center;opacity:0}
+#text{position:absolute;left:60px;right:130px;top:1130px;height:350px;display:flex;align-items:center;justify-content:center;text-align:center}
+#line{font-size:78px;font-weight:800;letter-spacing:-.035em;line-height:1.08}
+#line .w{display:inline-block;margin:0 .11em;opacity:0}
+#line .w.t{color:var(--teal);text-shadow:0 0 30px rgba(46,230,196,.35)}
+#line .w.r{color:var(--red);text-shadow:0 0 30px rgba(255,93,108,.35)}
+#src{position:absolute;left:60px;right:134px;top:1112px;font-size:21px;color:#6b7390;text-align:center;opacity:0}
+.teal{color:var(--teal)}.red{color:var(--red)}.gold{color:var(--gold)}.grey{color:var(--grey)}
+/* page and lifted card */
+.phone{width:890px;height:700px;border-radius:48px;background:#0b0e1a;box-shadow:0 0 0 3px rgba(255,255,255,.12),0 40px 100px rgba(0,0,0,.6);overflow:hidden;position:relative}
+.phone img{position:absolute;left:25px;top:0;width:840px}
+.lift{position:absolute;left:50%;top:50%;width:890px;transform-origin:50% 50%}
+.lift img{display:block;width:890px;border-radius:34px}
+.lift svg{position:absolute;left:0;top:0;width:890px;overflow:visible}
+.lift.teal img{box-shadow:0 0 0 3px rgba(46,230,196,.55),0 0 80px rgba(46,230,196,.25),0 40px 120px rgba(0,0,0,.8)}
+.lift.red img{box-shadow:0 0 0 3px rgba(255,93,108,.6),0 0 80px rgba(255,93,108,.25),0 40px 120px rgba(0,0,0,.8)}
+.lift.gold img{box-shadow:0 0 0 3px rgba(226,191,114,.6),0 0 80px rgba(226,191,114,.25),0 40px 120px rgba(0,0,0,.8)}
+/* tiles, bars, big, pairs, pills */
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:26px;width:100%}
+.tile{padding:44px 36px;border-radius:32px;background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 2px rgba(255,255,255,.08)}
+.tile .l{font-size:40px;color:var(--ink2);font-weight:600}.tile .v{margin-top:10px;font-size:112px;font-weight:900;letter-spacing:-.05em;white-space:nowrap}
+.tile .s{margin-top:8px;font-size:32px;color:var(--ink2)}
+.bars{width:100%}.bar{margin-bottom:44px}.bar .k{display:flex;justify-content:space-between;font-size:54px;font-weight:800}
+.trk{margin-top:16px;height:58px;border-radius:29px;background:rgba(255,255,255,.08);overflow:hidden}.trk b{display:block;height:100%;width:0;border-radius:29px}
+.note{font-size:46px;font-weight:800;margin-top:10px}
+.bigw{text-align:center}.big{font-size:170px;font-weight:900;letter-spacing:-.06em;line-height:1}.bigs{margin-top:34px;font-size:44px;color:var(--ink2);font-weight:600}
+.cardpair{display:grid;grid-template-columns:1fr 1fr;gap:26px;width:100%}
+.cp{padding:56px 34px;border-radius:32px;background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 2px rgba(255,255,255,.08);text-align:center}
+.cp .i{font-size:170px;font-weight:900;line-height:1.1}.cp .t{margin-top:14px;font-size:52px;font-weight:800}.cp .s{margin-top:10px;font-size:34px;color:var(--ink2)}
+.pills{text-align:center}.pill{display:inline-flex;align-items:center;gap:16px;font-size:70px;font-weight:800;padding:30px 52px;border-radius:999px;background:rgba(46,230,196,.12);color:var(--teal);margin:12px}
+.pill.red{background:rgba(255,93,108,.12)}.pill.gold{background:rgba(226,191,114,.12)}
+.brandv{flex-direction:column;text-align:center}
+.brandv .badge{width:300px;height:300px;border-radius:50%;background:#fff;display:grid;place-items:center;box-shadow:0 0 0 6px rgba(46,230,196,.3),0 30px 90px rgba(0,0,0,.6)}.brandv .badge img{width:260px}
+.brandv .url{margin-top:40px;font-size:60px;font-weight:900;color:var(--teal)}
+</style></head><body>
+<div id="bg"></div><div id="dots"></div>
+<div id="brand"><div class="b"><img src="__LOGO__" alt=""></div>Jocular <span>Insights</span></div>
+<div id="stage"></div>
+<div id="src"></div>
+<div id="text"><div id="line"></div></div>
+<div id="progress"></div>
+<script>
+const { lines, LENGTH, source, live, shots } = __DATA__;
+const $ = id => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const span = (t, a, b) => clamp((t - a) / (b - a));
+const spring = (t, a, resp = .4) => { if (t <= a) return 0; const w = 2 * Math.PI / resp, x = t - a; return 1 - (1 + w * x) * Math.exp(-w * x); };
+const eio = x => (x = clamp(x), x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const TONE = { teal: "#2ee6c4", red: "#ff5d6c", gold: "#e2bf72", grey: "#8a91ad" };
+const fmt = (v, d = {}) => (d.prefix ?? "") + Number(v).toLocaleString("en-IN", { minimumFractionDigits: d.dec ?? 0, maximumFractionDigits: d.dec ?? 0 }) + (d.suffix ?? "");
+const day = s => new Date(s + "T00:00:00Z").toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+$("src").textContent = source;
+
+// consecutive lines with the same visual share one element, animated from the first line's start
+const groups = [];
+lines.forEach((l, i) => { const k = JSON.stringify(l.visual); const g = groups[groups.length - 1]; if (g && g.key === k) { g.to = i; } else groups.push({ key: k, v: l.visual, from: i, to: i, at: l.at }); l.g = groups.length - 1; });
+
+function build(g, n) {
+  const v = g.v, el = document.createElement("div"); el.className = "vis"; el.id = "g" + n;
+  const tone = v.tone ?? "teal";
+  if (v.type === "chart") {
+    // one company: its price; two: each one's % change over the year
+    const series = v.series ?? [{ symbol: v.symbol, tone: live[v.symbol].change1y >= 0 ? "teal" : "red" }];
+    const two = series.length > 1;
+    const vals = series.map(s => { const sp = live[s.symbol].spark; return two ? sp.map(x => (x / sp[0] - 1) * 100) : sp; });
+    const all = vals.flat(), mx = Math.max(...all), mn = Math.min(...all);
+    const X = (i, n) => 20 + i * (two ? 540 : 860) / (n - 1), Y = x => 40 + (1 - (x - mn) / (mx - mn || 1)) * 400;
+    let svg = '<svg viewBox="0 0 900 520" style="width:890px;height:680px;overflow:visible"><defs>' + series.map((s, k) => `<linearGradient id="gf${n}${k}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${TONE[s.tone]}" stop-opacity=".28"/><stop offset="1" stop-color="${TONE[s.tone]}" stop-opacity="0"/></linearGradient>`).join("") + "</defs>";
+    vals.forEach((vs, k) => {
+      const d = vs.map((x, i) => (i ? "L" : "M") + X(i, vs.length).toFixed(1) + " " + Y(x).toFixed(1)).join(" ");
+      if (!two) svg += `<path class="ca" d="${d} L880 460 L20 460 Z" fill="url(#gf${n}${k})" opacity="0"/>`;
+      svg += `<path class="cl" d="${d}" fill="none" stroke="${TONE[series[k].tone]}" stroke-width="9" stroke-linejoin="round" stroke-linecap="round"/>`;
+      if (two) { const c = live[series[k].symbol].change1y; svg += `<text class="cend" x="${X(vs.length - 1, vs.length) + 20}" y="${Y(vs[vs.length - 1]) + 14}" font-size="40" font-weight="900" fill="${TONE[series[k].tone]}" opacity="0">${series[k].label ?? series[k].symbol} ${c >= 0 ? "+" : "−"}${Math.abs(c).toFixed(1)}%</text>`; }
+    });
+    if (two) svg += `<line x1="20" y1="${Y(0)}" x2="560" y2="${Y(0)}" stroke="rgba(255,255,255,.18)" stroke-width="3" stroke-dasharray="10 10"/>`;
+    if (v.mark) svg += `<text class="cq" x="760" y="200" font-size="220" font-weight="900" fill="${TONE[tone]}" opacity="0">${v.mark}</text>`;
+    const d0 = live[series[0].symbol].closeDate, from = new Date(Date.parse(d0 + "T00:00:00Z") - 365 * 864e5).toISOString().slice(0, 10);
+    svg += `<text x="20" y="510" font-size="26" fill="#6b7390">${two ? "Share price change" : live[v.symbol].name.replace(/ Limited$/, "") + " share price"} · ${day(from)} – ${day(d0)} (NSE)</text></svg>`;
+    el.innerHTML = svg;
+  } else if (v.type === "page" || v.type === "card") {
+    const s = shots[v.symbol];
+    el.innerHTML = `<div class="phone"><img src="${s.top}" alt=""></div>`;
+    if (v.type === "card") {
+      const c = s.cards[v.card], k = 890 / c.w, b = c[v.circle ?? (v.card === "quality" ? "ring" : v.card === "ret" ? "ret" : "profit")];
+      const pad = 7;
+      el.innerHTML += `<div class="lift ${tone}" style="height:${c.h * k}px;margin:${-c.h * k / 2}px 0 0 -445px"><img src="${c.img}" alt=""><svg viewBox="0 0 ${c.w} ${c.h}" style="height:${c.h * k}px">${b ? `<ellipse cx="${b.x + b.w / 2}" cy="${b.y + b.h / 2}" rx="${b.w / 2 + pad}" ry="${b.h / 2 + pad}" fill="none" stroke="${TONE[v.ring ?? (tone === "teal" ? "gold" : tone)]}" stroke-width="${8 / k}"/>` : ""}</svg></div>`;
+    }
+  } else if (v.type === "tiles") {
+    el.innerHTML = `<div class="tiles">${v.tiles.map(x => `<div class="tile"><div class="l">${x.label}</div><div class="v ${x.tone ?? "teal"}">${fmt(0, x)}</div><div class="s">${x.sub ?? ""}</div></div>`).join("")}</div>`;
+  } else if (v.type === "bars") {
+    const max = v.max ?? Math.max(...v.bars.map(b => Math.abs(b.value))) * 1.15;
+    el.innerHTML = `<div class="bars">${v.bars.map(b => `<div class="bar"><div class="k"><span>${b.label}</span><span class="${b.tone ?? "teal"}">${fmt(0, b)}</span></div><div class="trk"><b style="background:${TONE[b.tone ?? "teal"]}"></b></div></div>`).join("")}${v.note ? `<div class="note ${v.noteTone ?? ""}">${v.note}</div>` : ""}</div>`;
+    el.dataset.max = max;
+  } else if (v.type === "big") {
+    const parts = v.text.split("→").map(x => x.trim());
+    el.innerHTML = `<div class="bigw"><div class="big ${tone}"${parts.length > 1 ? ' style="font-size:120px;white-space:nowrap"' : ""}>${parts.length > 1 ? `<span class="grey">${parts[0]}</span> → ${parts[1]}` : v.text}</div>${v.sub ? `<div class="bigs">${v.sub}</div>` : ""}</div>`;
+  } else if (v.type === "pair") {
+    el.innerHTML = `<div class="cardpair">${v.items.map(x => `<div class="cp"><div class="i ${x.tone ?? "teal"}">${x.icon}</div><div class="t">${x.title}</div><div class="s">${x.sub ?? ""}</div></div>`).join("")}</div>`;
+  } else if (v.type === "pills") {
+    el.innerHTML = `<div class="pills">${v.items.map(x => `<span class="pill ${x.tone ?? ""}">${x.text}</span>`).join("<br>")}</div>`;
+  } else if (v.type === "save") {
+    el.innerHTML = `<svg viewBox="0 0 240 300" style="width:400px;height:500px"><path class="bm" d="M30 20 h180 a10 10 0 0 1 10 10 v250 l-100 -70 l-100 70 v-250 a10 10 0 0 1 10 -10 z" fill="#2ee6c4" style="transform-origin:120px 150px"/></svg>`;
+  } else if (v.type === "brand") {
+    el.className += " brandv";
+    el.innerHTML = `<div class="badge"><img src="__LOGO__" alt=""></div><div style="margin-top:36px;font-size:84px;font-weight:900;letter-spacing:-.04em">Jocular <span style="color:var(--teal)">Insights</span></div><div class="url">jocularinsights.in</div>`;
+  }
+  $("stage").appendChild(el);
+  // path lengths for drawing
+  el.querySelectorAll(".cl, ellipse").forEach(p => { const L = p.getTotalLength(); p.style.strokeDasharray = L; p.dataset.l = L; p.style.strokeDashoffset = L; });
+  return el;
+}
+const els = groups.map(build);
+
+function animate(g, el, u) {
+  const v = g.v;
+  if (v.type === "chart") {
+    el.querySelectorAll(".cl").forEach(p => p.style.strokeDashoffset = p.dataset.l * (1 - eio(span(u, 0, 1.4))));
+    el.querySelectorAll(".ca").forEach(p => p.setAttribute("opacity", eio(span(u, 1.2, 1.7))));
+    el.querySelectorAll(".cend").forEach(p => p.setAttribute("opacity", eio(span(u, 1.3, 1.7))));
+    el.querySelectorAll(".cq").forEach(p => p.setAttribute("opacity", spring(u, .5, .4)));
+  } else if (v.type === "card") {
+    const p = spring(u, -.1, .45);
+    const ph = el.querySelector(".phone"); ph.style.filter = `blur(${(p * 7).toFixed(1)}px) brightness(${(1 - .6 * p).toFixed(2)})`;
+    const lf = el.querySelector(".lift"); lf.style.opacity = p; lf.style.transform = `scale(${(.85 + .15 * p).toFixed(3)}) translateY(${((1 - p) * 30).toFixed(1)}px)`;
+    el.querySelectorAll("ellipse").forEach(e => e.style.strokeDashoffset = e.dataset.l * (1 - eio(span(u, .6, 1.2))));
+  } else if (v.type === "tiles") {
+    const p = eio(span(u, .2, 1.4));
+    el.querySelectorAll(".v").forEach((x, k) => x.textContent = fmt(v.tiles[k].value * p, v.tiles[k]));
+  } else if (v.type === "bars") {
+    const p = eio(span(u, .3, 1.6)), max = +el.dataset.max;
+    el.querySelectorAll(".trk b").forEach((x, k) => x.style.width = (Math.abs(v.bars[k].value) / max * 100 * p) + "%");
+    el.querySelectorAll(".k span:last-child").forEach((x, k) => x.textContent = fmt(v.bars[k].value * p, v.bars[k]));
+  } else if (v.type === "big") {
+    const p = spring(u, .05, .4); el.querySelector(".big").style.transform = `scale(${(.7 + .3 * p).toFixed(3)})`;
+  } else if (v.type === "pair" || v.type === "pills") {
+    el.querySelectorAll(".cp, .pill").forEach((x, k) => { const p = spring(u, .1 + k * .35, .4); x.style.opacity = p; x.style.transform = `translateY(${((1 - p) * 30).toFixed(1)}px)`; });
+  } else if (v.type === "save") {
+    el.querySelector(".bm").style.transform = `scale(${(.6 + .4 * spring(u, .1, .35)).toFixed(3)})`;
+  }
+}
+
+let shown = null;
+window.render = t => {
+  $("progress").style.width = clamp(t / LENGTH) * 1080 + "px";
+  let i = lines.findIndex((l, k) => t >= l.at && (k === lines.length - 1 || t < lines[k + 1].at));
+  if (i < 0) i = 0;
+  const L = lines[i], gi = L.g;
+  groups.forEach((g, n) => {
+    const el = els[n];
+    if (n === gi) { const p = spring(t, g.at - .25, .45); el.style.opacity = p; el.style.transform = `translateY(${((1 - p) * 40).toFixed(1)}px) scale(${(.96 + .04 * p).toFixed(3)})`; animate(g, el, t - g.at); }
+    else if (n === gi - 1 && t < L.at + .15 && L.at === groups[gi].at) { el.style.opacity = 1 - eio(span(t, L.at - .25, L.at + .15)); animate(g, el, t - g.at); }
+    else el.style.opacity = 0;
+  });
+  if (shown !== i) { $("line").style.fontSize = L.show.length > 70 ? "64px" : L.show.length > 52 ? "70px" : "78px"; $("line").innerHTML = L.words.map(w => `<span class="w${w.tone ? " " + w.tone : ""}">${w.text}</span>`).join(""); shown = i; }
+  const spans = $("line").children;
+  L.words.forEach((w, k) => { const p = spring(t, w.at - .06, .28); spans[k].style.opacity = p; spans[k].style.transform = `translateY(${((1 - p) * 26).toFixed(1)}px) scale(${(w.tone ? 1 + .12 * (1 - p) : 1).toFixed(3)})`; });
+  const type = L.visual.type;
+  $("src").style.opacity = type === "save" || type === "brand" || type === "pair" || type === "pills" ? 0 : 1;
+  $("brand").style.opacity = type === "brand" ? 0 : 1;
+};
+render(0);
+</script></body></html>
