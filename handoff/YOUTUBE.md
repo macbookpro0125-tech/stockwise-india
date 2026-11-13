@@ -20,11 +20,11 @@ _Last updated: 13 Nov 2026._
 | Short | ID | Status | Music (YouTube Audio Library) |
 |---|---|---|---|
 | HDFC Bank vs ICICI Bank Q2 FY27 | `JHS1c0BlAWQ` | live 13 Nov | Corporation Motivation (Audionautix, CC BY 4.0 — **credit line added to its description**) |
-| BEL Q2 FY27: sales up 26.5%, costs faster | `E8XZebgjgbc` | scheduled 14 Nov, 3:30 pm GMT+3 = 6 pm IST | Beat Your Competition (no attribution) |
-| Sterlite Technologies Q2 FY27: margin 12.5% → 32.1% | `CdmEs6rpAYs` | scheduled 15 Nov, same time | Above and Beyond (no attribution) |
+| BEL Q2 FY27: sales up 26.5%, so why did the margin shrink? (voiced, new style) | `fJoCz-z0X20` | scheduled 14 Nov, 3:30 pm GMT+3 = 6 pm IST | its own soft beat under the voice |
+| Sterlite Technologies: up 500%+ in a year. One great quarter, or a track record? (voiced) | `u8tVRoLcy_M` | scheduled 15 Nov, same time | its own soft beat |
 | TCS: Great Company, Falling Stock? (v2 style, Michael voice, new site cards) | `7MsCPGB1pJU` | live 13 Nov (public) | its own soft beat under the voice; no library track |
 
-BEL and Sterlite were made **before** the layout fix (their headline sits under YouTube's top bar on phones); the owner was asked whether to rebuild and replace them.
+13 Nov: the old silent BEL (`E8XZebgjgbc`) and Sterlite (`CdmEs6rpAYs`) Shorts were deleted at the owner's request and replaced by voiced versions made with `scripts/shorts-voice/` (specs in `~/Projects/files/shorts-v2/`). A voiced HDFC vs ICICI is made (`shorts-v2/hdfc-icici/`) but not uploaded: the old one is live with views; the owner hasn't decided.
 
 ## Making a Short
 - From a company's **live results page** (figures read from the page's own table, never typed): `node scripts/short-from-results.mjs SYMBOL [q2-fy27]` → `replica/launch/shorts/auto-<symbol>.mp4` + `.txt` (title, description). Check a frame against the live page before uploading.
@@ -33,6 +33,7 @@ BEL and Sterlite were made **before** the layout fix (their headline sits under 
 - Optional voice-over: macOS voice **Rishi** (Indian English), built into shorts.mjs when a spec has `voice`. The owner chose **YouTube library music** instead (13 Nov), so daily Shorts are silent files with music added on YouTube.
 
 ## The style the owner liked (13 Nov): "TCS falling stock" v2
+- **Now general:** `node scripts/shorts-voice/build.mjs <spec.json> [--stills]` makes this style for any company from a short script (see `scripts/shorts-voice/README.md`). Use it for new Shorts; the owner asked for "all other in this format".
 - Folder `~/Projects/files/Jocular_Insights_TCS_Short/v2/` (outside the repo): `script.json` (each line: what Michael says, what's shown with *highlights*, which visual), `voice.py` (narration), `shoot.mjs` (real phone-size screenshots of the live company page), `scene.html` + `build.mjs` (`STILLS=1` for test stills; full render ~12 min), output `TCS_falling_stock_v2.mp4` + `.srt`. Uploaded 13 Nov (`7MsCPGB1pJU`), with screenshots of the redesigned company-page cards (`shoot-cards.mjs` → `shots/card-*.png`).
 - Style: a question hook; the words in the middle appearing as they're spoken (teal good, red bad); real screenshots of jocularinsights.in in a big phone frame with the figures circled; big tiles/bars/cards; "Save this" before the end; soft beat and pad ducked under the voice; −14 LUFS. Owner: "I liked it, we improve later."
 - **Voice: Kokoro (free, local), voice `am_michael`** (owner's pick of 9). Installed in `~/Projects/files/tts/` (Python 3.12 venv `.venv`, `kokoro-v1.0.onnx`, `voices-v1.0.bin`; `say.py`). Needs Python 3.12 (Homebrew `python@3.12`): onnxruntime has no wheels for Intel Macs on 3.14/3.15. Word timings are estimated from syllables (Kokoro gives none).
