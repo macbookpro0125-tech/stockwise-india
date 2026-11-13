@@ -15,6 +15,7 @@ import { niceName } from "../src/stockName.js";
 import { profitGrowth } from "./profit-growth.js";
 
 import { screenSlug as SITE_SCREEN_SLUG } from "./seo-lists.js";
+import { listMembership } from "./seo-collections.js";
 export const sectorSlug = name => String(name ?? "").toLowerCase().replace(/&/g, " and ").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 const median = list => { const v = list.filter(x => Number.isFinite(x)).sort((a, b) => a - b); return v.length ? (v.length % 2 ? v[v.length >> 1] : (v[v.length / 2 - 1] + v[v.length / 2]) / 2) : null; };
 const f1 = v => Number(v).toLocaleString("en-IN", { maximumFractionDigits: 1, minimumFractionDigits: 1 });
@@ -98,6 +99,8 @@ export function stockStory(symbol) {
   const trend = trendParts.length ? `${trendParts[0].charAt(0).toUpperCase()}${trendParts[0].slice(1)}${trendParts.length > 1 ? `; ${trendParts.slice(1).join("; ")}` : ""}.` : null;
 
   const screens = c.screens.get(m.symbol) ?? [];
+  // the stock lists it is in (14 Nov 2026), the most specific — fewest companies — first
+  const lists = [...(listMembership().get(m.symbol) ?? [])].sort((a, b) => a.count - b.count).slice(0, 10).map(({ slug, name }) => ({ slug, name }));
   const latestFiled = m.quarters?.[0]?.filed ?? null;
   const qa = [
     m.pe > 0 && { q: `What is ${poss(n)} P/E ratio?`, a: `${f1(m.pe)} at the ${dayText(loadMarketSnapshot()?.pricesDate) ?? "latest"} close${sectorPe && sectorName && group.length >= 5 ? `, against a median of ${f1(sectorPe)} for listed ${sectorName} companies` : ""}.` },
@@ -122,7 +125,7 @@ export function stockStory(symbol) {
   const sparse = !m.quarters?.length && !(m.history?.length) && q == null;
   return {
     sector: sectorName ? { name: sectorName, slug: sectorSlug(sectorName) } : null,
-    summary: sentences, trend, peers, peersIn, screens, qa, sparse,
+    summary: sentences, trend, peers, peersIn, screens, lists, qa, sparse,
     sectorMedians: { pe: sectorPe, roe: sectorRoe, companies: group.length },
   };
 }
@@ -147,12 +150,16 @@ export function publicSector(slug) {
   // the screens most of its companies pass
   const counts = new Map();
   for (const r of list) for (const s of c.screens.get(r.symbol) ?? []) counts.set(s.slug, { ...s, count: (counts.get(s.slug)?.count ?? 0) + 1 });
+  // and the stock lists most of them are in (14 Nov 2026)
+  const lists = new Map(), member = listMembership();
+  for (const r of list) for (const l of member.get(r.symbol) ?? []) lists.set(l.slug, { slug: l.slug, name: l.name, count: (lists.get(l.slug)?.count ?? 0) + 1 });
   return {
     name, slug, pricesDate: loadMarketSnapshot()?.pricesDate ?? null, builtAt: loadMarketSnapshot()?.builtAt ?? null, count: list.length,
     medianPe: median(list.map(r => (r.pe > 0 ? r.pe : null))), medianRoe: median(list.map(r => r.roe)),
     medianRoce: median(list.filter(r => !r.lender).map(r => r.roce)),
     totalMarketCapCr: list.reduce((t, r) => t + (r.marketCapCr ?? 0), 0),
     best, companies, screens: [...counts.values()].sort((a, b) => b.count - a.count).slice(0, 4),
+    lists: [...lists.values()].sort((a, b) => b.count - a.count).slice(0, 6),
   };
 }
 export const SECTOR_PATHS = () => ["/sectors", ...publicSectors().sectors.map(s => `/sector/${s.slug}`)];

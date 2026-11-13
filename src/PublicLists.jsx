@@ -77,7 +77,7 @@ function useLoad(load, key, kind) {
 const Wait = () => <div className="nw-skel" role="status" aria-label="Loading">{[0, 1, 2].map(i => <span key={i} />)}</div>;
 const More = () => (
   <p className="pl-more">
-    <A to="/screens">All stock screens</A> · <A to="/lists">Stock lists</A> · <A to="/sectors">Sectors</A> · <A to="/results-calendar">Results calendar</A> · <A to="/results">Latest results</A> · <A to="/methodology">How the quality score works</A> · <A to="/disclaimer">Disclaimer</A>
+    <A to="/screens">All stock screens</A> · <A to="/lists">Stock lists</A> · <A to="/lists/penny-stocks">Penny stocks</A> · <A to="/lists/stocks-under-100">Stocks under ₹100</A> · <A to="/lists/fno-stocks">F&amp;O stocks</A> · <A to="/lists/nifty-50-stocks">Nifty 50 stocks</A> · <A to="/sectors">Sectors</A> · <A to="/results-calendar">Results calendar</A> · <A to="/results">Latest results</A> · <A to="/methodology">How the quality score works</A> · <A to="/disclaimer">Disclaimer</A>
   </p>
 );
 
@@ -258,6 +258,10 @@ export function SectorPage({ slug, signedIn }) {
             {s.medianPe ? ` The middle P/E among them is ${num(s.medianPe)}${s.medianRoe != null ? ` and the middle return on equity ${num(s.medianRoe)}%` : ""}.` : ""}
             {s.best.length ? ` By quality score from their own filings, the highest are ${s.best.map(b => `${b.name} (${Math.round(b.quality)})`).join(", ")}.` : ""}
           </p>
+          {s.lists?.length > 0 && <>
+            <h2 className="pl-h">Stock lists its companies are in</h2>
+            <ul className="pl-rules">{s.lists.map(x => <li key={x.slug}><A to={`/lists/${x.slug}`}>{x.name}</A> — {x.count} {x.count === 1 ? "company" : "companies"}</li>)}</ul>
+          </>}
           {s.screens.length > 0 && <>
             <h2 className="pl-h">Screens its companies pass most</h2>
             <ul className="pl-rules">{s.screens.map(x => <li key={x.slug}><A to={`/screens/${x.slug}`}>{x.name}</A> — {x.count} {x.count === 1 ? "company" : "companies"}</li>)}</ul>

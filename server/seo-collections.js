@@ -122,6 +122,19 @@ function missing(def, list) {
 export function publicLists() {
   return LISTS.map(def => ({ def, list: members(def) })).filter(x => x.list && x.list.length >= MIN);
 }
+// Which published lists each company is in (14 Nov 2026): Search Console
+// found the list pages crawled but not indexed, with no page on the site
+// linking to them but the /lists index. Company and sector pages now do.
+// Worked out once per market build.
+let membership = null;
+export function listMembership() {
+  const market = allMetrics();
+  if (membership?.market === market) return membership.map;
+  const map = new Map();
+  for (const { def, list } of publicLists()) for (const m of list) (map.get(m.symbol) ?? map.set(m.symbol, []).get(m.symbol)).push({ slug: def.slug, name: def.name, count: list.length });
+  membership = { market, map };
+  return map;
+}
 export const LIST_PAGE_PATHS = () => ["/lists", ...publicLists().map(x => `/lists/${x.def.slug}`)];
 
 const KIND = { score: "Highest scores", index: "NSE indices", theme: "Themes", rule: "Price and filters" };

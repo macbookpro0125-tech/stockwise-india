@@ -18,6 +18,7 @@ import { SITE, esc, crore, num, day, pageHtml, ogCard, listData } from "./seo.js
 
 import { niceName } from "../src/stockName.js";
 import { publicSectors, publicSector } from "./seo-story.js";
+import { publicLists } from "./seo-collections.js";
 import { SCREEN_GUIDES } from "./screen-guides.js";
 import { loadSnapshots } from "./performance.js";
 import { updatedLine } from "./updated-line.js";
@@ -213,7 +214,17 @@ ${soon.length ? `<ul>${soon.map(x => `<li>${link(`/stock/${encodeURIComponent(x.
 <p>${link("/results-calendar", "Open the results calendar")} · ${link("/results", "Latest results")}</p>
 <h2>Browse by sector</h2>
 <ul>${publicSectors().sectors.filter(x => x.count >= 3).map(x => `<li>${link(`/sector/${x.slug}`, x.name)} — ${x.count} companies</li>`).join("")}</ul>
-<p>${link("/sectors", "All sectors")} · ${link("/lists", "Stock lists: Nifty 50, defence, under ₹100 and more")}</p>
+<p>${link("/sectors", "All sectors")}</p>
+${(() => {
+  // the lists people search for, linked from the front page (14 Nov 2026:
+  // Google crawled them but, with nothing linking to them, left them out)
+  const POPULAR = ["penny-stocks", "stocks-under-50", "stocks-under-100", "fno-stocks", "nifty-50-stocks", "large-cap-stocks", "mid-cap-stocks", "small-cap-stocks", "debt-free-stocks", "high-dividend-yield-stocks", "psu-stocks", "defence-stocks", "highest-rated-stocks"];
+  const have = new Map(publicLists().map(x => [x.def.slug, x]));
+  const shown = POPULAR.map(slug => have.get(slug)).filter(Boolean);
+  return shown.length ? `<h2>Popular stock lists</h2>
+<ul>${shown.map(x => `<li>${link(`/lists/${x.def.slug}`, x.def.name)} — ${x.list.length} companies</li>`).join("")}</ul>
+<p>${link("/lists", "All stock lists: indices, themes, price bands and more")}</p>` : `<p>${link("/lists", "Stock lists: Nifty 50, defence, under ₹100 and more")}</p>`;
+})()}
 <h2>How the quality score works</h2>
 <p>The score adds up checks in six groups — business quality, earnings quality, balance sheet, governance, growth and valuation — each from the company's own filings, with banks and cyclical businesses judged on their own tests. Every check says what it found and why it passed or failed. ${link("/methodology", "Read the full methodology")}.</p>
 <p>${link("/stock-screener-india", "About this Indian stock screener")} · ${link("/about", "About Jocular Insights")} · ${link("/help", "How the figures work")} · ${link("/disclaimer", "Disclaimer")} · ${link("/privacy", "Privacy")}</p>
@@ -259,6 +270,7 @@ export function sectorPageHtml(template, slug) {
 <h1>${esc(s.name)} stocks on NSE</h1>${updatedLine()}
 <p>${esc(intro)}</p>
 ${(() => { const mine = new Set(s.companies.map(c => c.symbol)); const r = recentResults(c => mine.has(c.symbol), 10); return r.list.length ? `<h2>Latest ${esc(s.name)} results</h2>${resultsList(r.list)}<p>${link("/results", "All the latest results")}</p>` : ""; })()}
+${s.lists?.length ? `<h2>Stock lists its companies are in</h2><ul>${s.lists.map(x => `<li>${link(`/lists/${x.slug}`, x.name)} — ${x.count} ${s.name} ${x.count === 1 ? "company" : "companies"}</li>`).join("")}</ul>` : ""}
 ${s.screens.length ? `<h2>Screens its companies pass most</h2><ul>${s.screens.map(x => `<li>${link(`/screens/${x.slug}`, x.name)} — ${x.count} ${s.name} ${x.count === 1 ? "company" : "companies"}</li>`).join("")}</ul>` : ""}
 <h2>Every listed ${esc(s.name)} company</h2>
 <table><thead><tr><th>#</th><th>Company</th><th>Price</th><th>Market cap</th><th>P/E</th><th>ROE</th><th>Debt/equity</th><th>Quality</th></tr></thead><tbody>${rows}</tbody></table>

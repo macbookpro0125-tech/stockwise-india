@@ -249,6 +249,7 @@ function storyHtml(s) {
 ${t.summary.length || t.trend ? `<h2>${esc(n)} in short</h2>${t.summary.length ? `<p>${esc(t.summary.join(" "))}</p>` : ""}${t.trend ? `<p>${esc(t.trend)}</p>` : ""}` : ""}
 ${t.peers.length ? `<h2>${esc(n)} against similar companies</h2><div class="ps-table-wrap"><table><caption>Listed ${esc(t.peersIn ?? t.sector?.name ?? "")} companies closest in size, at the last close</caption><thead><tr><th>Company</th><th>Price</th><th>P/E</th><th>ROE</th><th>ROCE</th><th>Debt/equity</th><th>Quality</th></tr></thead><tbody>${peerRows}</tbody></table></div>${t.sector ? `<p><a href="/sector/${esc(t.sector.slug)}">Every listed ${esc(t.sector.name)} company</a></p>` : ""}` : ""}
 <h2>Stock screens ${esc(n)} passes</h2>${t.screens.length ? `<ul>${t.screens.map(x => `<li><a href="/screens/${esc(x.slug)}">${esc(x.name)}</a></li>`).join("")}</ul>` : `<p>It passes none of the ready-made screens today. <a href="/screens">See every screen</a>.</p>`}
+${t.lists?.length ? `<h2>Stock lists ${esc(n)} is in</h2><ul>${t.lists.map(x => `<li><a href="/lists/${esc(x.slug)}">${esc(x.name)}</a></li>`).join("")}</ul>` : ""}
 <h2>Questions about ${esc(n)}</h2>${t.qa.map(x => `<h3>${esc(x.q)}</h3><p>${esc(x.a)}</p>`).join("")}
 ${s.links?.length ? `<h2>More on ${esc(n)}</h2><ul>${s.links.map(l => `<li><a href="${esc(l.path)}">${esc(l.label)}</a></li>`).join("")}</ul>` : ""}
 </section>`;
