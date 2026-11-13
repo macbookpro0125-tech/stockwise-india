@@ -6,7 +6,7 @@
 //   node scripts/shorts.mjs            all of them
 //   node scripts/shorts.mjs w2-bel     one
 // Writes replica/launch/shorts/<name>.mp4 (needs ffmpeg).
-import { readFileSync, mkdirSync, rmSync } from "node:fs";
+import { readFileSync, mkdirSync, rmSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
@@ -27,6 +27,12 @@ const SHORTS = {
       ["ICICI Bank", "₹17,312 cr", "profit · up 21.4% from ₹14,256 cr", 17312 / 21500, 14256 / 21500]],
     line: "ICICI's profit grew almost 4× as fast.",
     foot: "July–September 2026 against a year earlier, as filed with NSE. Not investment advice.",
+    voice: {
+      intro: "HDFC Bank or ICICI Bank. Who grew profit faster this quarter?",
+      rows: ["HDFC Bank's profit: twenty thousand seven hundred crore. Up five point six percent.", "ICICI Bank's: seventeen thousand three hundred and twelve crore. Up twenty one point four percent."],
+      line: "HDFC still earns more, but ICICI's profit grew almost four times as fast.",
+      end: "Every company's results, free, on Jocular Insights dot in.",
+    },
   },
   "w2-bel": {
     kicker: "Bharat Electronics · Q2 FY27", title: "Sales up 26.5%.<br>Costs up 29.3%.",
@@ -35,6 +41,12 @@ const SHORTS = {
       ["Net profit", "₹1,540 cr", "up 19.7% from ₹1,287 cr", 1540 / 1600, 1287 / 1600]],
     line: "Costs grew faster than sales, so the margin narrowed.",
     foot: "July–September 2026 against a year earlier, as filed with NSE. Not investment advice.",
+    voice: {
+      intro: "Bharat Electronics. Second quarter results.",
+      rows: ["Sales: seven thousand three hundred and twenty eight crore. Up twenty six and a half percent.", "Operating margin: twenty seven point nine percent, down from twenty nine point four.", "Net profit: fifteen hundred and forty crore. Up nineteen point seven percent."],
+      line: "Costs grew faster than sales, so the margin narrowed.",
+      end: "Every company's results, free, on Jocular Insights dot in.",
+    },
   },
   "w2-sterlite": {
     kicker: "Sterlite Technologies · Q2 FY27", title: "Margin from 12.5%<br>to 32.1%",
@@ -43,17 +55,35 @@ const SHORTS = {
       ["Net profit", "₹517 cr", "from ₹4 cr a year ago", 517 / 540, 4 / 540]],
     line: "One quarter, from a small base. Will the margin hold?",
     foot: "July–September 2026 against a year earlier, as filed with NSE. Not investment advice.",
+    voice: {
+      intro: "Sterlite Technologies. A margin that went from twelve to thirty two percent.",
+      rows: ["Sales: two thousand five hundred and twenty nine crore. Up from one thousand and thirty four, a year ago.", "Operating margin: thirty two point one percent, from twelve point five.", "Net profit: five hundred and seventeen crore, from just four crore."],
+      line: "One quarter, from a small base. Will the margin hold?",
+      end: "Every company's results, free, on Jocular Insights dot in.",
+    },
   },
 };
 
-// the timeline, in seconds: title, then each row, the line, the end card
-const INTRO = 2.2, ROW = 2.8, LINE = 3.2, END = 4.2;
-const length = s => INTRO + s.rows.length * ROW + LINE + END;
+// the timeline, in seconds: title, then each row, the line, the end card.
+// With a voice-over (13 Nov 2026: silent Shorts get swiped away) each part
+// lasts at least as long as its sentence, read by macOS's Indian English
+// voice (Rishi), with a soft tick as each figure lands.
+const INTRO = 2.2, ROW = 2.8, LINE = 3.2, END = 4.2, BREATH = 0.45;
+const VOICE = "Rishi";
+const plan = (s, said = null) => {
+  const fit = (min, i) => Math.max(min, said ? said[i] + BREATH : 0);
+  const intro = fit(INTRO, 0);
+  const rows = s.rows.map((_, i) => fit(ROW, 1 + i));
+  const line = fit(LINE, 1 + s.rows.length), end = fit(END, 2 + s.rows.length) + 0.4;
+  const rowAt = rows.map((_, i) => intro + rows.slice(0, i).reduce((a, b) => a + b, 0));
+  const lineAt = intro + rows.reduce((a, b) => a + b, 0);
+  return { rowAt, lineAt, endAt: lineAt + line, total: lineAt + line + end, starts: [0.15, ...rowAt.map(t => t + 0.2), lineAt + 0.2, lineAt + line + 0.3] };
+};
 
-const page = s => {
-  const rowAt = i => INTRO + i * ROW;
-  const lineAt = rowAt(s.rows.length);
-  const endAt = lineAt + LINE;
+const page = (s, p) => {
+  const rowAt = i => p.rowAt[i];
+  const lineAt = p.lineAt;
+  const endAt = p.endAt;
   return `<!doctype html><html><head><meta charset="utf-8"><style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:1080px;height:1920px;overflow:hidden}
@@ -111,17 +141,40 @@ for (const name of names) {
   const frames = join(tmpdir(), `short-${name}-${process.pid}`);
   rmSync(frames, { recursive: true, force: true });
   mkdirSync(frames, { recursive: true });
-  await tab.setContent(page(s), { waitUntil: "load" });
+  // the voice-over first, so the timeline can fit it
+  let said = null, clips = null;
+  if (s.voice) {
+    const parts = [s.voice.intro, ...s.voice.rows, s.voice.line, s.voice.end];
+    clips = parts.map((text, i) => join(frames, `voice-${i}.aiff`));
+    parts.forEach((text, i) => execFileSync("say", ["-v", VOICE, "-r", "178", "-o", clips[i], text]));
+    said = clips.map(f => Number(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", f]).toString()));
+  }
+  const p = plan(s, said);
+  await tab.setContent(page(s, p), { waitUntil: "load" });
   await tab.evaluate(() => document.fonts?.ready);
-  const total = Math.round(length(s) * FPS);
+  const total = Math.round(p.total * FPS);
   for (let f = 0; f < total; f++) {
     const ms = (f / FPS) * 1000;
     await tab.evaluate(t => { for (const a of document.getAnimations()) { a.pause(); a.currentTime = t; } }, ms);
     await tab.screenshot({ path: join(frames, `${String(f).padStart(5, "0")}.png`) });
   }
   const file = join(OUT, `${name}.mp4`);
-  execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-framerate", String(FPS), "-i", join(frames, "%05d.png"),
-    "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", "-preset", "slow", "-movflags", "+faststart", file]);
+  const video = ["-framerate", String(FPS), "-i", join(frames, "%05d.png")];
+  const enc = ["-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", "-preset", "slow", "-movflags", "+faststart"];
+  if (clips) {
+    // each sentence at its part's start; a short soft tick as each row lands
+    const ticks = p.rowAt.map(t => t + 0.35);
+    const inputs = [...clips.flatMap(f => ["-i", f]), ...ticks.flatMap(() => ["-f", "lavfi", "-i", "sine=frequency=1320:duration=0.06"])];
+    const delayed = [
+      ...clips.map((_, i) => `[${i + 1}:a]adelay=${Math.round(p.starts[i] * 1000)}:all=1,volume=1.15[v${i}]`),
+      ...ticks.map((t, j) => `[${clips.length + 1 + j}:a]afade=t=out:st=0.01:d=0.05,volume=0.25,adelay=${Math.round(t * 1000)}:all=1[t${j}]`),
+    ];
+    const mix = `${clips.map((_, i) => `[v${i}]`).join("")}${ticks.map((_, j) => `[t${j}]`).join("")}amix=inputs=${clips.length + ticks.length}:normalize=0,apad,atrim=0:${p.total.toFixed(2)},alimiter=limit=0.89[a]`;
+    execFileSync("ffmpeg", ["-y", "-loglevel", "error", ...video, ...inputs, "-filter_complex", [...delayed, mix].join(";"),
+      "-map", "0:v", "-map", "[a]", ...enc, "-c:a", "aac", "-b:a", "160k", "-shortest", file]);
+  } else {
+    execFileSync("ffmpeg", ["-y", "-loglevel", "error", ...video, ...enc, file]);
+  }
   rmSync(frames, { recursive: true, force: true });
   console.log(`${file} · ${(total / FPS).toFixed(1)} s`);
 }
