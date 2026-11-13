@@ -30,6 +30,13 @@ BEL and Sterlite were made **before** the layout fix (their headline sits under 
 - **Safe area** (fixed 13 Nov from an iPhone screenshot): YouTube covers the top ~320 px (Shorts header, Subscriptions/Live/Lens), the bottom ~420 px (channel, title, nav) and the right ~150 px (like/comment buttons). The layout keeps everything inside.
 - Optional voice-over: macOS voice **Rishi** (Indian English), built into shorts.mjs when a spec has `voice`. The owner chose **YouTube library music** instead (13 Nov), so daily Shorts are silent files with music added on YouTube.
 
+## The style the owner liked (13 Nov): "TCS falling stock" v2
+- Folder `~/Projects/files/Jocular_Insights_TCS_Short/v2/` (outside the repo): `script.json` (each line: what Michael says, what's shown with *highlights*, which visual), `voice.py` (narration), `shoot.mjs` (real phone-size screenshots of the live company page), `scene.html` + `build.mjs` (`STILLS=1` for test stills; full render ~12 min), output `TCS_falling_stock_v2.mp4` + `.srt`. Not uploaded yet.
+- Style: a question hook; the words in the middle appearing as they're spoken (teal good, red bad); real screenshots of jocularinsights.in in a big phone frame with the figures circled; big tiles/bars/cards; "Save this" before the end; soft beat and pad ducked under the voice; −14 LUFS. Owner: "I liked it, we improve later."
+- **Voice: Kokoro (free, local), voice `am_michael`** (owner's pick of 9). Installed in `~/Projects/files/tts/` (Python 3.12 venv `.venv`, `kokoro-v1.0.onnx`, `voices-v1.0.bin`; `say.py`). Needs Python 3.12 (Homebrew `python@3.12`): onnxruntime has no wheels for Intel Macs on 3.14/3.15. Word timings are estimated from syllables (Kokoro gives none).
+- The first premium version (Rishi voice, documentary style) is in the parent folder `Jocular_Insights_TCS_Short/` with `data-verification.md`.
+- Site inconsistency found while making it: TCS's company-page summary shows Q2 profit **+15.0%**, its results table **+14.9%** (one is probably owners' profit or EPS growth) — worth fixing.
+
 ## Uploading (Claude in Chrome)
 1. Files must be inside the session folder to upload: copy the mp4 to `~/Projects/files/shorts-upload/`, delete afterwards.
 2. Studio → Upload videos → use the hidden **file input** (find it, then `file_upload`; never click "Select files").
