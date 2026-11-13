@@ -16,7 +16,7 @@ import { chromium } from "@playwright/test";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = join(ROOT, "replica/launch/shorts");
 const SITE = "https://jocularinsights.in";
-const FPS = 30, LENGTH = 21;
+const FPS = 30, LENGTH = 31;
 const [symbol, slug = "q2-fy27"] = process.argv.slice(2);
 if (!symbol) { console.error("usage: node scripts/shorts-v2.mjs SYMBOL [q2-fy27]"); process.exit(1); }
 
@@ -43,6 +43,16 @@ const logo = existsSync(logoFile) && logoMeta?.type?.startsWith("image/") ? `dat
 const mark = `data:image/svg+xml;base64,${readFileSync(join(ROOT, "public/jocular-insights-mark.svg")).toString("base64")}`;
 
 const data = { name, label, yearAgo, sales, margin, profit, qVals, qLabels, logo, mark, initials: name.split(/\s+/).map(w => w[0]).join("").slice(0, 3) };
+
+// the summary, as the first style shows it: each figure now and a year ago, with bars
+const crTxt = v => `₹${Math.round(v).toLocaleString("en-IN")} cr`;
+function glance(d) {
+  const row = (nm, vl, nt, now, then) => { const m = Math.max(now, then) * 1.04; return `<div class="row"><div class="nm">${nm}</div><div class="vl">${vl}</div><div class="nt">${nt}</div><div class="bar"><b class="gb" data-w="${(now / m * 100).toFixed(1)}"></b></div><div class="bar then"><b class="gb" data-w="${(then / m * 100).toFixed(1)}"></b></div></div>`; };
+  const pc = c => c.replace("+", "up ").replace("−", "down ");
+  return [row("Sales", crTxt(d.sales.now), `${pc(d.sales.change)} from ${crTxt(d.sales.then)}`, d.sales.now, d.sales.then),
+    d.margin && d.margin.now > 0 && d.margin.then > 0 ? row("Operating margin", `${d.margin.now}%`, `from ${d.margin.then}%`, d.margin.now, d.margin.then) : "",
+    row("Net profit", crTxt(d.profit.now), `${pc(d.profit.change)} from ${crTxt(d.profit.then)}`, d.profit.now, d.profit.then)].join("");
+}
 
 // ── the page: every element placed by render(t) ──
 const page = `<!doctype html><html><head><meta charset="utf-8"><style>
@@ -73,6 +83,12 @@ body{font-family:-apple-system,"SF Pro Display","Helvetica Neue",Inter,sans-seri
 .chart{position:relative}
 .chart svg{width:100%;height:640px;overflow:visible}
 .ql{font-size:24px;fill:#7d84a0}.qv{font-size:30px;font-weight:700;fill:#f4f5fb}
+.glance h3{font-size:34px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#00e0be;margin-bottom:22px}
+.row{padding:18px 28px;border-radius:24px;background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 2px rgba(255,255,255,.08);margin-bottom:14px}
+.row .nm{font-size:30px;color:#a9afc4;font-weight:500}.row .vl{font-size:58px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.row .nt{font-size:27px;color:#a9afc4}
+.bar{margin-top:10px;height:14px;border-radius:7px;background:rgba(255,255,255,.08);overflow:hidden}.bar+.bar{margin-top:7px}
+.bar b{display:block;height:100%;border-radius:7px;background:#00e0be;transform-origin:left center}.bar.then b{background:rgba(169,175,196,.55)}
 .line{margin-top:10px;font-size:52px;line-height:1.2;font-weight:700;letter-spacing:-.02em}
 .foot{margin-top:26px;font-size:28px;color:#7d84a0;line-height:1.4}
 .end{align-items:center;text-align:center}
@@ -86,7 +102,7 @@ body{font-family:-apple-system,"SF Pro Display","Helvetica Neue",Inter,sans-seri
 <section class="scene" id="s2"><div class="kick">Net profit vs a year ago</div><div class="stamp ${data.profit.now >= data.profit.then ? "up" : "down"}" id="stamp">0%</div><div class="fromto" id="fromto"></div></section>
 <section class="scene" id="s3"><div class="card"><div class="l">Sales</div><div class="v" id="salesV">₹0 cr</div><span class="chip ${data.sales.now >= data.sales.then ? "up" : "down"}" id="salesC">${data.sales.change} vs ${data.yearAgo}</span></div>${data.margin && data.margin.now != null ? `<div class="card"><div class="l">Operating margin</div><div class="v" id="marV">0%</div><span class="chip ${data.margin.now >= data.margin.then ? "up" : "down"}">from ${data.margin.then}%</span></div>` : ""}</section>
 <section class="scene" id="s4"><div class="kick">Net profit, last ${data.qVals.length} quarters (₹ cr)</div><div class="chart"><svg viewBox="0 0 826 640" id="chart"></svg></div></section>
-<section class="scene" id="s5"><div class="line" id="verdict"></div><div class="foot">${data.label} against ${data.yearAgo}, as filed with NSE. Not investment advice.</div></section>
+<section class="scene glance" id="s5"><h3>${data.label} at a glance</h3>${glance(data)}<div class="line" id="verdict" style="font-size:40px;margin-top:14px"></div><div class="foot" style="margin-top:12px">${data.label} against ${data.yearAgo}, as filed with NSE. Not investment advice.</div></section>
 <section class="scene end" id="s6"><img src="${data.mark}" alt=""><h2>Every company's results,<br>free</h2><p>Quarter by quarter, from their own filings</p><div class="url">jocularinsights.in</div></section>
 </div><div id="flash"></div><div id="progress"></div>
 <script>
@@ -100,7 +116,7 @@ const fmt = v => Math.round(v).toLocaleString("en-IN");
 const pctTxt = v => (v >= 0 ? "+" : "−") + Math.abs(v).toFixed(1) + "%";
 const $ = id => document.getElementById(id);
 // scenes: [id, in, out]
-const S = [["s1", 0.2, 3.0], ["s2", 3.0, 7.6], ["s3", 7.6, 11.8], ["s4", 11.8, 16.4], ["s5", 16.4, 18.4], ["s6", 18.4, LEN + 1]];
+const S = [["s1", 0.2, 3.2], ["s2", 3.2, 8.7], ["s3", 8.7, 14.2], ["s4", 14.2, 19.7], ["s5", 19.7, 27.7], ["s6", 27.7, LEN + 1]];
 const profitPct = (D.profit.now / D.profit.then - 1) * 100;
 // the chart, drawn once; its line revealed by dash offset
 const W = 826, H = 640, P = { l: 10, r: 10, t: 60, b: 70 };
@@ -119,7 +135,7 @@ $("ln").style.strokeDasharray = LL;
 $("verdict").textContent = "Profit " + (profitPct >= 0 ? "up " : "down ") + Math.abs(profitPct).toFixed(1) + "%, sales " + (D.sales.change.startsWith("−") ? "down " : "up ") + D.sales.change.replace(/^[+−]/, "") + " on a year earlier.";
 window.render = t => {
   $("progress").style.width = (clamp(t / LEN) * 1080) + "px";
-  $("brand").style.opacity = t < 18.4 ? ease(span(t, 0, .5)) : 1 - ease(span(t, 18.4, 18.8));
+  $("brand").style.opacity = t < 27.7 ? ease(span(t, 0, .5)) : 1 - ease(span(t, 27.7, 28.1));
   for (const [id, a, b] of S) {
     const el = $(id), inn = ease(span(t, a, a + .45)), out = ease(span(t, b - .35, b));
     el.style.opacity = inn * (1 - out);
@@ -128,23 +144,25 @@ window.render = t => {
   // scene 1: the logo pops
   const lp = back(span(t, .3, 1.0)); $("logo").style.transform = "scale(" + (.4 + .6 * lp) + ") rotate(" + ((1 - lp) * -8) + "deg)";
   // scene 2: the profit change counted up, a flash when it lands, a slow push-in
-  const cu = ease(span(t, 3.2, 4.9));
+  const cu = ease(span(t, 3.4, 4.8));
   $("stamp").textContent = pctTxt(profitPct * cu);
-  $("stamp").style.transform = "scale(" + (1 + .08 * back(span(t, 4.9, 5.3)) - .08 * span(t, 5.3, 5.6)) + ")";
+  $("stamp").style.transform = "scale(" + (1 + .08 * back(span(t, 4.8, 5.2)) - .08 * span(t, 5.2, 5.5)) + ")";
   $("fromto").innerHTML = "₹" + fmt(D.profit.then) + " cr → ₹" + fmt(D.profit.then + (D.profit.now - D.profit.then) * cu) + " cr<small>" + D.yearAgo + " → " + D.label + "</small>";
-  $("flash").style.opacity = .35 * (span(t, 4.9, 5.0) - span(t, 5.0, 5.5));
+  $("flash").style.opacity = .35 * (span(t, 4.8, 4.9) - span(t, 4.9, 5.4));
   // scene 3: sales and margin counted up
-  const c3 = ease(span(t, 7.8, 9.4));
+  const c3 = ease(span(t, 8.9, 10.1));
   $("salesV").textContent = "₹" + fmt(D.sales.now * c3) + " cr";
-  if ($("marV")) $("marV").textContent = (D.margin.now * ease(span(t, 8.4, 9.9))).toFixed(1) + "%";
+  if ($("marV")) $("marV").textContent = (D.margin.now * ease(span(t, 9.4, 10.6))).toFixed(1) + "%";
   // scene 4: the line drawn left to right, dots as it passes, the last one labelled
-  const dr = ease(span(t, 12.1, 14.6));
+  const dr = ease(span(t, 14.5, 16.5));
   $("ln").style.strokeDashoffset = LL * (1 - dr);
-  $("area").setAttribute("opacity", ease(span(t, 14.2, 14.9)));
+  $("area").setAttribute("opacity", ease(span(t, 16.2, 16.9)));
   vals.forEach((_, i) => $("dot" + i).setAttribute("opacity", dr >= i / (vals.length - 1) - .001 ? 1 : 0));
-  $("lastv").setAttribute("opacity", ease(span(t, 14.6, 15.0)));
+  $("lastv").setAttribute("opacity", ease(span(t, 16.5, 16.9)));
+  // the summary's bars grow in, one after another
+  document.querySelectorAll(".gb").forEach((b, i) => { b.style.width = b.dataset.w + "%"; b.style.transform = "scaleX(" + ease(span(t, 20.0 + i * .15, 20.9 + i * .15)) + ")"; });
   // the camera: a slow push-in on each scene
-  const z = t < 3 ? span(t, 0, 3) : t < 7.6 ? span(t, 3, 7.6) : t < 11.8 ? span(t, 7.6, 11.8) : t < 16.4 ? span(t, 11.8, 16.4) : span(t, 16.4, LEN);
+  const z = t < 3.2 ? span(t, 0, 3.2) : t < 8.7 ? span(t, 3.2, 8.7) : t < 14.2 ? span(t, 8.7, 14.2) : t < 19.7 ? span(t, 14.2, 19.7) : t < 27.7 ? span(t, 19.7, 27.7) * .3 : span(t, 27.7, LEN);
   $("cam").style.transform = "scale(" + (1 + .035 * z) + ")";
 };
 render(0);
