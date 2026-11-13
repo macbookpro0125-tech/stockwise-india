@@ -130,7 +130,14 @@ h1{margin-top:16px;font-size:80px;line-height:1.04;font-weight:700;letter-spacin
 </body></html>`;
 };
 
-const want = process.argv.slice(2);
+// --spec FILE: Shorts described in a JSON file ({ name: spec }), as
+// scripts/short-from-results.mjs writes from a live results page
+let want = process.argv.slice(2);
+const specAt = want.indexOf("--spec");
+if (specAt >= 0) {
+  Object.assign(SHORTS, JSON.parse(readFileSync(want[specAt + 1], "utf-8")));
+  want = want.filter((_, i) => i !== specAt && i !== specAt + 1);
+}
 const names = want.length ? want : Object.keys(SHORTS);
 mkdirSync(OUT, { recursive: true });
 const browser = await chromium.launch({ channel: "chrome" });
