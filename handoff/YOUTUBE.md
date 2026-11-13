@@ -1,0 +1,51 @@
+# YouTube: everything a new session needs
+
+_Last updated: 13 Nov 2026._
+
+## The channel
+- **Jocular Insights**, handle **@JocularInsights**, channel ID `UCVHkaaLuIO_qr2fu2zLPMfw`, owned by **jocularinsights@gmail.com**.
+- Studio: https://studio.youtube.com/channel/UCVHkaaLuIO_qr2fu2zLPMfw · public: https://www.youtube.com/@JocularInsights
+- **How Claude reaches it:** Claude in Chrome, in the owner's Chrome profile **"Jocular"** (Chrome `Profile 7`, signed in as jocularinsights@gmail.com). The Claude extension there must be signed in to the **same Claude account as the desktop app**, and claude.ai in that profile too (on 13 Nov it was signed in as macbookpro0125 and had to be switched). Open that profile with: `open -na "Google Chrome" --args --profile-directory="Profile 7"`. If the extension isn't connected, ask the owner to open the Claude side panel in that window.
+- Never type a password; the owner signs in.
+
+## Branding (set 13 Nov, published)
+- Picture: `brand/social-final/youtube-profile-1024.png` (the final silver JI on white, padded for the round crop).
+- Banner: `brand/social-final/youtube-banner-2560x1440.png`, made by `node scripts/youtube-banner.mjs`; everything inside the 1546×423 strip all devices show.
+- Watermark: `brand/social-final/youtube-watermark-300.png`, shown for the **entire** video.
+- Description: what each Short shows, what's free on the site, "Figures as filed with NSE. Not investment advice."
+- Links: jocularinsights.in · Latest results (/results) · Results calendar (/results-calendar). Contact email left empty (owner's call).
+
+## Videos so far
+| Short | ID | Status | Music (YouTube Audio Library) |
+|---|---|---|---|
+| HDFC Bank vs ICICI Bank Q2 FY27 | `JHS1c0BlAWQ` | live 13 Nov | Corporation Motivation (Audionautix, CC BY 4.0 — **credit line added to its description**) |
+| BEL Q2 FY27: sales up 26.5%, costs faster | `E8XZebgjgbc` | scheduled 14 Nov, 3:30 pm GMT+3 = 6 pm IST | Beat Your Competition (no attribution) |
+| Sterlite Technologies Q2 FY27: margin 12.5% → 32.1% | `CdmEs6rpAYs` | scheduled 15 Nov, same time | Above and Beyond (no attribution) |
+
+BEL and Sterlite were made **before** the layout fix (their headline sits under YouTube's top bar on phones); the owner was asked whether to rebuild and replace them.
+
+## Making a Short
+- From a company's **live results page** (figures read from the page's own table, never typed): `node scripts/short-from-results.mjs SYMBOL [q2-fy27]` → `replica/launch/shorts/auto-<symbol>.mp4` + `.txt` (title, description). Check a frame against the live page before uploading.
+- Hand-written ones: `scripts/shorts.mjs` (the `SHORTS` list; `--spec file.json` for others). 1080×1920, ~18 s silent (~31 s with voice).
+- **Safe area** (fixed 13 Nov from an iPhone screenshot): YouTube covers the top ~320 px (Shorts header, Subscriptions/Live/Lens), the bottom ~420 px (channel, title, nav) and the right ~150 px (like/comment buttons). The layout keeps everything inside.
+- Optional voice-over: macOS voice **Rishi** (Indian English), built into shorts.mjs when a spec has `voice`. The owner chose **YouTube library music** instead (13 Nov), so daily Shorts are silent files with music added on YouTube.
+
+## Uploading (Claude in Chrome)
+1. Files must be inside the session folder to upload: copy the mp4 to `~/Projects/files/shorts-upload/`, delete afterwards.
+2. Studio → Upload videos → use the hidden **file input** (find it, then `file_upload`; never click "Select files").
+3. Title, description (from the .txt), "No, it's not made for kids", Next ×3, Visibility: Public now, or **Schedule 3:30 PM default time zone (GMT+3) = 6 pm IST**. One a day.
+4. Music: Content → Shorts → the video → **Editor** → Get started → **Audio** → filter **Attribution not required** + mood Bright/Uplifting → pick a track not used before → **Add** (use the row's "Add" button ref, not the heart) → Save → tick "I acknowledge…" → Confirm changes. Processing takes minutes to hours. If a credit dialog appears, add the credit to the description (select all and retype; Cmd+End doesn't reach the end of the box).
+5. Leaving Studio after Publish can show a stale "Leave site?" dialog; if Publish/Cancel are greyed, it's saved: navigate with force.
+
+## Automation
+- **Daily results push** (scheduled task `daily-results-push`, 09:00 GMT+3; prompt copy `handoff/daily-results-push-task.md`): picks the day's Short with `scripts/results-day.mjs`, builds, uploads, schedules for 6 pm IST, adds a new library track, records it in `handoff/indexing-state.json` (`shorts`), and logs the track used.
+
+## Still to do (owner)
+- **Verify the channel** (Studio → Settings → Channel → Feature eligibility, phone code) so links in descriptions become clickable.
+- Decide on the contact email.
+- Add the Play Store link once the app is approved (release sent for review 13 Nov).
+
+## Rules
+- Figures exactly as filed / as on the live results page; no buy, sell, target or "multibagger" (SEBI). "Not investment advice." in every description.
+- Publish only the agreed Short; never change account settings.
+- Views come from: a clear hook in the first second, company names people search, posting on the day of results, one a day.
