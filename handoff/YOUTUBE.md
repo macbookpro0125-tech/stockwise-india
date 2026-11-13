@@ -51,7 +51,7 @@ _Last updated: 13 Nov 2026._
 - **Daily results push** (scheduled task `daily-results-push`, 09:00 GMT+3; prompt copy `handoff/daily-results-push-task.md`): picks the day's company with `scripts/results-day.mjs`; since 13 Nov writes the voiced script with `scripts/shorts-voice/from-results.mjs SYMBOL` (story chosen from the figures: margin squeeze, margin jump, profit outrunning sales, profit fall, or steady), checks it, builds with `scripts/shorts-voice/build.mjs`, uploads and schedules for 6 pm IST (no library music), and records it in `handoff/indexing-state.json` (`shorts`).
 
 ## Still to do (owner)
-- **Verify the channel** (Studio → Settings → Channel → Feature eligibility, phone code) so links in descriptions become clickable.
+- ~~Verify the channel~~ Done 13 Nov (phone verified). Note: links in **Shorts** descriptions are never clickable (YouTube removed them in 2023 for every channel); the clickable path to the site is the channel page's link, and on Instagram the bio link.
 - Decide on the contact email.
 - Add the Play Store link once the app is approved (release sent for review 13 Nov).
 
