@@ -159,8 +159,11 @@ console.log("ok: every screen has its guide; joined and left are worked out agai
   assert.ok(sitemapXml().includes("sitemap-details.xml") && subPagePaths().some(([p]) => p.endsWith("/financials")), "in the sitemap");
   // a results page's title leads with the figures people search for (6 Nov 2026)
   const { resultsTitle, latestResults } = await import("./seo-pages.js");
-  assert.equal(resultsTitle("Acme", "Q2 FY27", "ACME", { profitCr: 1540 }, 26.5, 19.7), "Acme Q2 FY27 results: profit up 19.7% to ₹1,540 cr, sales up 26.5% | ACME");
+  assert.equal(resultsTitle("Acme", "Q2 FY27", "ACME", { profitCr: 1540 }, 26.5, 19.7), "Acme Q2 FY27 results: profit up 19.7% to ₹1,540 cr, sales up 26.5%"); // over 70 with the symbol, so without it
   assert.equal(resultsTitle("Acme", "Q2 FY27", "ACME", { profitCr: -50 }, -3, null), "Acme Q2 FY27 results: net loss ₹50.0 cr, sales down 3.0% | ACME");
+  // long names shrink to 70 characters or under, keeping the name, "results" and profit
+  assert.equal(resultsTitle("Bharat Electronics", "Q2 FY27", "BEL", { profitCr: 1540 }, 26.5, 19.7), "Bharat Electronics Q2 FY27 results: profit +19.7% to ₹1,540 cr");
+  assert.equal(resultsTitle("Oil India", "Q2 FY27", "OIL", { profitCr: 2521 }, 29.9, 53.4), "Oil India Q2 FY27 results: profit +53.4% to ₹2,521 cr, sales +29.9%");
   assert.match(resultsTitle("Acme", "Q2 FY27", "ACME", {}, null, null), /sales, profit and margin/);
   assert.match(res.title, new RegExp(`^.+ ${fyQuarter(row.quarters[0].fyEnd)} results: `));
   // In short, the next results by email, other companies' results (11 Nov 2026)

@@ -305,7 +305,13 @@ export function resultsTitle(n, label, symbol, q, sy, py) {
     : py != null && isFinite(py) && q.profitCr / (1 + py / 100) > 0 ? `profit ${py >= 0 ? "up" : "down"} ${Math.abs(py).toFixed(Math.abs(py) >= 100 ? 0 : 1)}% to ₹${crs(q.profitCr)} cr`
     : `profit ₹${crs(q.profitCr)} cr`;
   const facts = [profit, move(sy, "sales")].filter(Boolean);
-  return facts.length ? `${n} ${label} results: ${facts.join(", ")} | ${symbol}` : pageTitle(`${n} ${label} results: sales, profit and margin | ${symbol}`);
+  if (!facts.length) return pageTitle(`${n} ${label} results: sales, profit and margin | ${symbol}`);
+  // Under 70 characters where it can be (14 Nov 2026: Bing flagged "title too
+  // long" on BEL's, 88): the symbol goes first, then the figures shrink to
+  // "+19.7%", then the sales figure goes — the name, "results" and profit stay
+  const plus = t => t.replace(/ (up|down) ([\d.]+)%/g, (_, d, v) => ` ${d === "up" ? "+" : "−"}${v}%`);
+  const tries = [`${n} ${label} results: ${facts.join(", ")} | ${symbol}`, `${n} ${label} results: ${facts.join(", ")}`, plus(`${n} ${label} results: ${facts.join(", ")}`), plus(`${n} ${label} results: ${facts[0]}`)];
+  return tries.find(t => t.length <= 70) ?? tries[tries.length - 1];
 }
 
 // ── /results ─────────────────────────────────────────────────────────────

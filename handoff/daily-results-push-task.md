@@ -1,6 +1,6 @@
 ---
 name: daily-results-push
-description: Each day in results season: request Google indexing for the 10 largest new results pages, submit up to 100 to Bing, and publish two voiced Shorts a day on YouTube (6 pm and 9 pm IST) and the morning Reel on Instagram
+description: Each day in results season: request Google indexing for the 10 largest new results pages, send new pages to Bing by IndexNow, and publish two voiced Shorts a day on YouTube (6 pm and 9 pm IST) and the morning Reel on Instagram
 ---
 
 Daily results push for Jocular Insights (NSE stock research site jocularinsights.in; code in ~/Projects/stockwise-india, branch screeners-home). Read the last 20 lines of handoff/LOG.md first. Why: Search Console shows company results pages are the pages that reach Google's first page, so each day's new results pages are pushed while people search for them.
@@ -9,7 +9,7 @@ Daily results push for Jocular Insights (NSE stock research site jocularinsights
 
 2. Google (built-in browser, the jocularinsights@gmail.com Search Console, already signed in; never type a password; if a sign-in page appears, stop this step and say so): open https://search.google.com/search-console?resource_id=https%3A%2F%2Fjocularinsights.in%2F. For each URL in `google`: click the search icon at the top, select all, type the URL, Enter, wait ~10 s; if it says "URL is on Google" skip it; otherwise click REQUEST INDEXING and wait 20–40 s for "Indexing requested", then Dismiss and wait 2 s before the next (clicking too soon re-requests the previous page). Stop at "Quota Exceeded" (about 10 per rolling 24 h). Record the ones accepted: `node scripts/results-day.mjs --mark google URL…`.
 
-3. Bing (built-in browser): open https://www.bing.com/webmasters/submiturl?siteUrl=https://jocularinsights.in/, click "Submit URLs", click into the box and type the `bing` URLs one per line (check the box's line count with JavaScript before submitting), click Submit, confirm they appear as submitted today. Record: `node scripts/results-day.mjs --mark bing URL…`.
+3. Bing and the other IndexNow engines (since 14 Nov; no browser): `node scripts/indexnow.mjs --results-day` sends the day's `bing` URLs to IndexNow and records them as sent. If it says the key file isn't live, say so (the push that adds it hasn't happened). Once a week (Mondays) also run `node scripts/indexnow.mjs --sitemap lists screens sectors pages` so changed list and screen pages are recrawled.
 
 4. Two Shorts a day (the owner asked on 13 Nov), in the voiced style (Michael's voice, live site cards, see scripts/shorts-voice/README.md). Slots on YouTube: **A = 6 pm IST (3:30 PM in Studio's default GMT+3)** and **B = 9 pm IST (6:30 PM GMT+3)**. On 14 and 15 Nov 2026, slot A is already taken (BEL, Sterlite), so make one new Short for slot B those days; otherwise make two, using the first entries of `shorts` (spares below them if one fails).
    For each new Short:
