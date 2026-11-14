@@ -1,4 +1,4 @@
-# Michael (Kokoro am_michael) reads each line of a Short's spec → <dir>/voice/<id>.wav,
+# Michael (Kokoro am_michael) reads each line of a Short's spec → <dir>/voice/<id>.wav (a spec may set "voice" and "lang": the Hindi Shorts use hm_psi, "hi"),
 # plus voice/timing.json: each clip's length and where the speech starts and ends.
 #   ~/Projects/files/tts/.venv/bin/python voice.py path/to/spec.json
 import json, os, sys
@@ -14,7 +14,7 @@ k = Kokoro(f"{TTS}/kokoro-v1.0.onnx", f"{TTS}/voices-v1.0.bin")
 os.makedirs(out_dir, exist_ok=True)
 out = {}
 for line in spec["lines"]:
-    samples, rate = k.create(line["say"], voice=spec.get("voice", "am_michael"), speed=spec.get("speed", 1.06), lang="en-us")
+    samples, rate = k.create(line["say"], voice=spec.get("voice", "am_michael"), speed=spec.get("speed", 1.06), lang=spec.get("lang", "en-us"))
     samples = np.asarray(samples, dtype=np.float32)
     loud = np.where(np.abs(samples) > 0.02)[0]
     start, end = (loud[0] / rate, loud[-1] / rate) if len(loud) else (0, len(samples) / rate)
