@@ -59,7 +59,7 @@ Every English Short also gets a Hindi version for the **Jocular Insights Hindi**
 1. Copy the English spec to `~/Projects/files/shorts-v2/hi-<key>/spec.json` with key `hi-<key>`. Keep every `visual` and every figure.
 2. Rewrite each line's `say` and `show` in **everyday Hindi** (the owner's rule: not formal). Use English money words written in Devanagari: रिज़ल्ट, प्रॉफ़िट, सेल्स, क्वार्टर, मार्जिन, परसेंट, शेयर, सेक्टर. Company names go in Devanagari in `say` (आयशर मोटर्स); in `show` either script is fine.
 3. In `say`, write figures as digits. `node scripts/shorts-voice/hi-numbers.mjs <spec>` turns them into spoken Hindi and sets `"voice":"hm_psi","lang":"hi","speed":1.0`. `show` keeps its digits.
-4. In `show`, don't end a highlight with "*।": it leaves a stray "*". Drop the danda after a highlight.
+4. In `show`, a highlight right before a danda ("*…*।") leaves a stray "*"; hi-numbers.mjs drops that danda for you.
 5. Translate on-screen labels in `visual` where they are words (tile labels, pills). Leave symbols, numbers and company names as they are.
 6. Add `"source": "<English source> · निवेश सलाह नहीं"`.
 7. Write `post.txt` (YOUTUBE TITLE / YOUTUBE DESCRIPTION) in everyday Hindi with the same figures. Include a links block and "सिर्फ़ जानकारी के लिए, निवेश सलाह नहीं।"

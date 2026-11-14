@@ -34,7 +34,8 @@ export const hiSay = s => s
 
 if (process.argv[2]) {
   const p = process.argv[2], spec = JSON.parse(readFileSync(p, "utf8"));
-  for (const l of spec.lines) l.say = hiSay(l.say);
+  // a highlight closed right before a danda ("*…*।") shows a stray "*": drop the danda
+  for (const l of spec.lines) { l.say = hiSay(l.say); l.show = l.show.replace(/([*~])\s*।/g, "$1"); }
   spec.voice ??= "hm_psi"; spec.lang ??= "hi"; spec.speed ??= 1.0;
   writeFileSync(p, JSON.stringify(spec, null, 1));
   for (const l of spec.lines) console.log(l.id, l.say);
