@@ -85,9 +85,11 @@ else L(`Profit ${upDown(profit.chg)} ${sayPct(profit.chg)} in the ${month} quart
 lines[0].say = `${name}. ${lines[0].say}`;
 lines[0].show = `*${name}*: ${lines[0].show.charAt(0).toLowerCase()}${lines[0].show.slice(1)}`;
 L(`Here are its ${month} quarter results, as filed.`, `Its *${month} quarter* results, as filed.`, { type: "card", symbol, card: "results", circle: "none" }); // the results themselves, not the page header (owner, 14 Nov)
-L(`Quality score: ${words(q)} out of a hundred.`, `Quality score: ${band === "red" ? "~" : "*"}${q} out of 100${band === "red" ? "~" : "*"}.`, { type: "card", symbol, card: "quality", tone: band === "red" ? "red" : "teal" });
+// story-led (owner, 14 Nov 2026: "every video looks same"): a scene only when it says something
+const marginMoved = hasMargin && Math.abs(margin.now - margin.then) >= 1;
+if (q >= 75 || q < 45) L(`Quality score: ${words(q)} out of a hundred.`, `Quality score: ${band === "red" ? "~" : "*"}${q} out of 100${band === "red" ? "~" : "*"}.`, { type: "card", symbol, card: "quality", tone: band === "red" ? "red" : "teal" });
 L(`${month} quarter sales: ${sayCr(sales.now)}, ${upDown(sales.chg)} ${sayPct(sales.chg)}.`, `Sales: *₹${sales.nowTxt} crore*, ${upDown(sales.chg)} ${tone(sales.chg)}${Math.abs(sales.chg).toFixed(1)}%${tone(sales.chg)}.`, { type: "card", symbol, card: "results", circle: "sales" });
-if (hasMargin) {
+if (hasMargin && (marginMoved || story === "squeeze" || story === "jump" || Math.abs(costs.chg - sales.chg) >= 3)) {
   // costs growing faster than sales is bad; when costs fall, falling more than sales is good (FACT, 14 Nov 2026)
   const faster = costs.chg > sales.chg;
   const vs = costs.chg >= 0 ? (faster ? "faster than sales" : "slower than sales") : (faster ? "less than sales" : "more than sales");
@@ -105,7 +107,7 @@ if (profit.qoq != null && isFinite(profit.qoq) && profit.prevTxt && num(profit.p
   L(`Against the ${prevMonth} quarter, profit was ${upDown(profit.qoq)} ${sayPct(profit.qoq)}.`, `Against the ${prevMonth} quarter: profit ${upDown(profit.qoq)} ${tone(profit.qoq)}${Math.abs(profit.qoq).toFixed(1)}%${tone(profit.qoq)}.`,
     { type: "tiles", tiles: [{ label: `vs ${month.slice(0, 3)} last year`, value: Math.abs(profit.chg), prefix: profit.chg >= 0 ? "+" : "−", suffix: "%", dec: 1, sub: "net profit", tone: profit.chg >= 0 ? "teal" : "red" }, { label: `vs ${prevMonth.slice(0, 3)} quarter`, value: Math.abs(profit.qoq), prefix: profit.qoq >= 0 ? "+" : "−", suffix: "%", dec: 1, sub: "net profit", tone: profit.qoq >= 0 ? "teal" : "red" }] });
 }
-if (ret != null) L(`The share price: ${upDown(ret)} ${sayPct(ret)} in a year.`, `The share price: ${upDown(ret)} ${tone(ret)}${Math.abs(ret).toFixed(1)}%${tone(ret)} in a year.`, { type: "card", symbol, card: "ret", tone: ret >= 0 ? "teal" : "red" });
+if (ret != null && Math.abs(ret) >= 20) L(`The share price: ${upDown(ret)} ${sayPct(ret)} in a year.`, `The share price: ${upDown(ret)} ${tone(ret)}${Math.abs(ret).toFixed(1)}%${tone(ret)} in a year.`, { type: "card", symbol, card: "ret", tone: ret >= 0 ? "teal" : "red" });
 const close = { squeeze: ["Growth is good. Watch what it costs.", "Growth is good. *Watch what it costs.*"], jump: ["One strong quarter is a start. Check that it lasts.", "One strong quarter is a start. *Check that it lasts.*"], leverage: ["When profit outruns sales, check why.", "When profit outruns sales, *check why*."], fall: hasMargin && margin.now >= margin.then - 0.5 ? ["The margin held, so look further down: interest, depreciation, tax and one-offs.", "The margin held, so look *further down*: interest, depreciation, tax, one-offs."] : ["Check the costs, before the headline.", "Check the *costs*, before the headline."], steady: ["Check the whole quarter, not just the headline.", "Check the *whole quarter*, not just the headline."] }[story];
 // Where the profit came from (14 Nov 2026, the competitor check: viewers ask
 // it): other income — interest, dividends, gains — as a share of profit before tax
@@ -123,7 +125,7 @@ if (measures.length >= 3) {
     { type: "pills", items: measures.map(([n, m]) => ({ text: `${m.chg > 0 ? "✓" : "✗"} ${n}`, tone: m.chg > 0 ? "" : "red" })) });
 }
 // the verdict already sums it up; the general closing line only when there is no verdict
-if (measures.length < 3) L(close[0], close[1], { type: "pills", items: [{ text: "✓ Sales" }, { text: "✓ Costs" }, { text: "✓ Profit" }] });
+if (measures.length < 3 || story === "fall") L(close[0], close[1], { type: "pills", items: [{ text: "✓ Sales" }, { text: "✓ Costs" }, { text: "✓ Profit" }] });
 L("Save this, for the next results season.", "*Save this* for the next results season.", { type: "save" });
 L("Jocular Insights. Every number tells a story.", "*Jocular Insights*. Every number tells a story.", { type: "brand" });
 
