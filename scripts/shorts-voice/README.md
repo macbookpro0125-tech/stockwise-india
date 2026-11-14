@@ -51,3 +51,17 @@ Examples: `~/Projects/files/shorts-v2/{bel,sterlite,hdfc-icici}/spec.json`.
 | `from-weekly.mjs` | the week's roundup (Saturdays): Nifty 50 week heat map, the week's gainers (₹1,000 crore+) and fallers (Nifty 500), sectors, next week's results | /api/public/lists/top-gainers-this-week, nifty-500-stocks, nifty-50-stocks; /api/public/results-calendar |
 
 `JI_SITE=http://127.0.0.1:8790` points any of them at a local copy for testing. Visuals: big, tiles, bars, chart, page, card, pair, pills, rank, heatmap, save, brand.
+
+## Hindi versions (14 Nov 2026)
+
+Every English Short also gets a Hindi version for the **Jocular Insights Hindi** channel (@JocularInsightsHindi). To make one:
+
+1. Copy the English spec to `~/Projects/files/shorts-v2/hi-<key>/spec.json` with key `hi-<key>`. Keep every `visual` and every figure.
+2. Rewrite each line's `say` and `show` in **everyday Hindi** (the owner's rule: not formal). Use English money words written in Devanagari: रिज़ल्ट, प्रॉफ़िट, सेल्स, क्वार्टर, मार्जिन, परसेंट, शेयर, सेक्टर. Company names go in Devanagari in `say` (आयशर मोटर्स); in `show` either script is fine.
+3. In `say`, write figures as digits. `node scripts/shorts-voice/hi-numbers.mjs <spec>` turns them into spoken Hindi and sets `"voice":"hm_psi","lang":"hi","speed":1.0`. `show` keeps its digits.
+4. In `show`, don't end a highlight with "*।": it leaves a stray "*". Drop the danda after a highlight.
+5. Translate on-screen labels in `visual` where they are words (tile labels, pills). Leave symbols, numbers and company names as they are.
+6. Add `"source": "<English source> · निवेश सलाह नहीं"`.
+7. Write `post.txt` (YOUTUBE TITLE / YOUTUBE DESCRIPTION) in everyday Hindi with the same figures. Include a links block and "सिर्फ़ जानकारी के लिए, निवेश सलाह नहीं।"
+
+The first Hindi spec is ~/Projects/files/shorts-v2/hi-eichermot-q2-fy27/spec.json; use it as the model.
