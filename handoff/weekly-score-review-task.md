@@ -5,6 +5,8 @@ description: Review the companies the nightly score check flagged, fix wrong rul
 
 Weekly review of Jocular Insights' scores. The app is the NSE stock research site jocularinsights.in; its code is in ~/Projects/stockwise-india (branch screeners-home; live from main on Render). Read handoff/STATUS.md and the last 30 lines of handoff/LOG.md there first.
 
+Run once a week, whichever Claude account runs it (the owner switches Claude accounts: Sundays to another, back on Thursdays; both may hold this task, on this same Mac). If the file ~/Projects/files/shorts-v2/runs/score-review-<today as YYYY-MM-DD> exists, stop at once and say "already done today". If not, create it now (`mkdir -p ~/Projects/files/shorts-v2/runs && date > ~/Projects/files/shorts-v2/runs/score-review-YYYY-MM-DD`) before anything else.
+
 Background: every evening the server checks every company's scores (server/score-audit.js) and lists the ones that look wrong: day jumps without new results (jump), a fast grower marked nearly as dear as possible (growerMarkedDear), very cheap against its sector with a high score (tooCheap), a high score on little data (thinData), overdue results (stale), filed EPS disagreeing with profit ÷ shares (epsMismatch), P/E under 2 (oddPe), ROE over 100% (oddRoe), operating margin over 90% (oddMargin), sales change over +500% or under −90% (oddGrowth), price over 100× sales (oddPriceToSales). Scores are fixed rules applied to filed figures, so a wrong score means a wrong rule or wrong data. The goal is to find those and fix the rule or the data so every similar company is right. Never change one company's score by hand.
 
 Steps:
@@ -15,6 +17,6 @@ Steps:
 5. Run `npm test` and `npm run build`; run `npx playwright test --workers=1` only if something the pages show changed. Never build while tests run.
 6. Before committing: `git fetch` and `git status`; other tools (ChatGPT, other Claude sessions) also edit this repo, so commit only your own changes, each fix in its own commit, ending each message with "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>". Never push, never deploy, never touch handoff/COSTS.md, environment variables or secrets.
 7. Write handoff/score-reviews/<today's date>.md: the check's date and counts; each company looked at, with its verdict (fair / rule fixed / data fixed / for the owner); what changed and how many companies' scores moved; anything needing the owner's decision. Add one line to handoff/LOG.md. Commit both.
-8. Finish with a short plain-English summary for the owner (simple words; he reads on his phone): how many flagged, how many fixed, what changed, what he needs to decide. Do not ask him to push.
+8. Finish with a short plain-English summary for the owner (simple words; they read on their phone): how many flagged, how many fixed, what changed, what they need to decide. Do not ask them to push.
 
 Rules: never invent figures; quote only what the data shows. No buy/sell/target language anywhere (SEBI). Don't release community or new AI features. Keep the app's look.
