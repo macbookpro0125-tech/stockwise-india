@@ -48,5 +48,6 @@ Examples: `~/Projects/files/shorts-v2/{bel,sterlite,hdfc-icici}/spec.json`.
 | `from-pair.mjs A B` / `--auto` | head-to-head of two rivals' quarters | /api/public/stock for both; --auto pairs the two largest recent filers in one industry |
 | `from-penny.mjs` | penny stocks (under ₹10) whose profit grew (₹5 cr+ profit, ₹1 cr+ a year earlier) | /lists/penny-stocks + each company |
 | `from-calendar.mjs` | results next week (Sundays) | /api/public/results-calendar |
+| `from-weekly.mjs` | the week's roundup (Saturdays): Nifty 50 week heat map, the week's gainers (₹1,000 crore+) and fallers (Nifty 500), sectors, next week's results | /api/public/lists/top-gainers-this-week, nifty-500-stocks, nifty-50-stocks; /api/public/results-calendar |
 
 `JI_SITE=http://127.0.0.1:8790` points any of them at a local copy for testing. Visuals: big, tiles, bars, chart, page, card, pair, pills, rank, heatmap, save, brand.
