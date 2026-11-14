@@ -154,6 +154,6 @@ const tag = "#" + name.replace(/[^A-Za-z0-9]/g, "");
 const ask = "Which company's results should we explain next? Tell us in the comments.";
 const body = `${hook}\n\n${name}'s ${label} (quarter to ${day(st.quarter.end)}, filed with NSE on ${day(st.quarter.filed)}):\n${bullets}\n\n${close[0]}`;
 writeFileSync(join(DIR, "post.txt"),
-  `YOUTUBE TITLE\n${title}\n\nYOUTUBE DESCRIPTION\n${body}\n\n${ask}\n\nThe full quarter, line by line: ${url}\n\nFigures as filed with NSE; prices and scores at the ${day(st.closeDate)} close. Educational content, not investment advice.\n\n${tag} #${symbol} #${label.replace(" ", "")}Results #IndianStockMarket #StockMarketIndia #Shorts\n\n` +
+  `YOUTUBE TITLE\n${title}\n\nYOUTUBE DESCRIPTION\n${body}\n\n${ask}\n\nThe Jocular app on Android: https://play.google.com/store/apps/details?id=com.jocularinsights.app\n\nThe full quarter, line by line: ${url}\n\nFigures as filed with NSE; prices and scores at the ${day(st.closeDate)} close. Educational content, not investment advice.\n\n${tag} #${symbol} #${label.replace(" ", "")}Results #IndianStockMarket #StockMarketIndia #Shorts\n\n` +
   `INSTAGRAM CAPTION\n${name}, ${label}: ${hook}\n\n${bullets}\n\n${close[0]}\n\n${ask}\n\nFull results, free: jocularinsights.in\n\nEducational content, not investment advice.\n\n${tag} #${symbol} #IndianStockMarket #StockMarketIndia #Q${label[1]}Results #Investing\n`);
 console.log(JSON.stringify({ story, lines: lines.length, spec: join(DIR, "spec.json"), post: join(DIR, "post.txt") }, null, 2));

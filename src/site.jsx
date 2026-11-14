@@ -1,4 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from "react";
+import { Capacitor } from "@capacitor/core";
 // lazily: HeroSearch imports navigate from here
 const HeroSearchLazy = lazy(() => import("./HeroSearch.jsx"));
 
@@ -67,9 +68,19 @@ export function SiteLink({ to, newTab = false, style, children }) {
 // two quiet rows: the help and legal pages, and the site's public pages (which
 // the app's own tabs cover, so the app leaves that row out: index.css)
 const FOOT_LINK = { color: "var(--t3)", textDecoration: "none" };
+// The app on Google Play (live from 14 Nov 2026): a link in the website's footer, and a card for
+// visitors browsing on an Android phone — never inside the app itself
+export const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=com.jocularinsights.app";
+const onAndroidWeb = () => { try { return /Android/i.test(navigator.userAgent) && !Capacitor.isNativePlatform(); } catch { return false; } };
 export function SiteFooter() {
   return (
     <footer className="site-foot">
+      {onAndroidWeb() && (
+        <a className="site-foot-app" href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer"
+          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, margin: "0 auto 14px", padding: "10px 16px", maxWidth: 360, borderRadius: 12, border: "1px solid var(--bdr2, var(--bdr))", color: "var(--t1)", textDecoration: "none", fontSize: 14 }}>
+          <span aria-hidden="true" style={{ fontSize: 18 }}>▶</span> Get the Jocular app on Google Play
+        </a>
+      )}
       <p className="site-foot-line">Not investment advice. Consult a SEBI-registered adviser · Data from NSE filings and daily closes</p>
       <nav className="site-foot-links" aria-label="About Jocular Insights">
         <SiteLink to="/help" style={FOOT_LINK}>Help</SiteLink>
@@ -86,6 +97,7 @@ export function SiteFooter() {
         <SiteLink to="/lists" style={FOOT_LINK}>Stock lists</SiteLink>
         <SiteLink to="/results-calendar" style={FOOT_LINK}>Results calendar</SiteLink>
         <SiteLink to="/results" style={FOOT_LINK}>Latest results</SiteLink>
+        <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer" style={FOOT_LINK}>Android app</a>
       </nav>
     </footer>
   );

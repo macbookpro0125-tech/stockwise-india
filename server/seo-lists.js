@@ -227,6 +227,7 @@ ${(() => {
 })()}
 <h2>How the quality score works</h2>
 <p>The score adds up checks in six groups — business quality, earnings quality, balance sheet, governance, growth and valuation — each from the company's own filings, with banks and cyclical businesses judged on their own tests. Every check says what it found and why it passed or failed. ${link("/methodology", "Read the full methodology")}.</p>
+<p>On an Android phone? <a href="https://play.google.com/store/apps/details?id=com.jocularinsights.app">Get the Jocular app on Google Play</a>.</p>
 <p>${link("/stock-screener-india", "About this Indian stock screener")} · ${link("/about", "About Jocular Insights")} · ${link("/help", "How the figures work")} · ${link("/disclaimer", "Disclaimer")} · ${link("/privacy", "Privacy")}</p>
 </main>`;
   return pageHtml(template, { title, desc, canonical: `${SITE}/`, ld, body });
