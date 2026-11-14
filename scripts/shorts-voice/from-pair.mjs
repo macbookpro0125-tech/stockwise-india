@@ -23,7 +23,8 @@ if (a === "--auto") {
   const seen = new Set(), bySector = new Map();
   for (const sym of [...new Set(recent)].slice(0, 60)) {
     if (seen.has(sym)) continue; seen.add(sym);
-    try { const s = await data(decodeURIComponent(sym)); if (!s.sector || !(s.quarter?.profitCr > 0) || s.quarter.profitYoY == null) continue; (bySector.get(s.sector) ?? bySector.set(s.sector, []).get(s.sector)).push(s); } catch { /* skip */ }
+    try { const s = await data(decodeURIComponent(sym)); const k = s.industry ?? null; // the narrower industry, so rivals meet (not a carmaker and a parts maker)
+    if (!k || !(s.quarter?.profitCr > 0) || s.quarter.profitYoY == null) continue; (bySector.get(k) ?? bySector.set(k, []).get(k)).push(s); } catch { /* skip */ }
   }
   const pairs = [...bySector.values()].filter(l => l.length >= 2).map(l => l.sort((x, y) => y.marketCapCr - x.marketCapCr).slice(0, 2)).sort((x, y) => y[1].marketCapCr - x[1].marketCapCr);
   if (!pairs.length) throw new Error("no sector with two recent filers");
