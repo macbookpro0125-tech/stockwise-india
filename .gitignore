@@ -61,3 +61,4 @@ android/app/google-services.json
 replica/reviews.csv
 .x-out/
 data/score-audit/
+replica/launch/play/tall/

@@ -17,7 +17,11 @@ import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const OUT = join(ROOT, "replica/launch/play");
+// PLAY_TALL=1: iPhone-shaped shots (360 × 736: an iPhone screen under its status bar) for the framed pictures, scripts/play-frames.mjs (14 Nov 2026)
+const TALL = process.env.PLAY_TALL === "1";
+// PLAY_THEME=light: the app in its light theme (14 Nov 2026, owner: "show me in light mode")
+const THEME = process.env.PLAY_THEME === "light" ? "light" : "dark";
+const OUT = join(ROOT, TALL ? `replica/launch/play/tall${THEME === "light" ? "-light" : ""}` : "replica/launch/play");
 mkdirSync(OUT, { recursive: true });
 
 const port = await new Promise(res => { const s = createServer().listen(0, () => { const p = s.address().port; s.close(() => res(p)); }); });
@@ -32,10 +36,10 @@ for (let i = 0; i < 200; i++) { try { if ((await fetch(`${base}/api/health`)).ok
 
 const browser = await chromium.launch({ channel: "chrome" });
 // 360 × 640 CSS pixels at 3× = 1080 × 1920
-const ctx = await browser.newContext({ viewport: { width: 360, height: 640 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true, colorScheme: "dark", extraHTTPHeaders: { "x-forwarded-for": "10.77.1.1" } });
+const ctx = await browser.newContext({ viewport: { width: 360, height: TALL ? 736 : 640 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true, colorScheme: THEME, extraHTTPHeaders: { "x-forwarded-for": "10.77.1.1" } });
 // Company logos off (the app's own setting): each company shows its letters,
 // so the store listing carries no other company's logo (22 Oct 2026)
-await ctx.addInitScript(() => { try { localStorage.setItem("stockwise-india-theme", "dark"); localStorage.setItem("stockwise-india-logos", "off"); } catch {} });
+await ctx.addInitScript(t => { try { localStorage.setItem("stockwise-india-theme", t); localStorage.setItem("stockwise-india-logos", "off"); } catch {} }, THEME);
 // a throwaway database each run, so a plain address (it shows on Settings)
 const email = "you@example.com";
 const signup = await ctx.request.post(`${base}/api/auth/signup`, { data: { email, password: randomUUID() } });
@@ -48,29 +52,44 @@ const page = await ctx.newPage();
 const settle = async (ms = 1500) => { await page.waitForLoadState("networkidle").catch(() => {}); await page.waitForTimeout(ms); };
 const shot = async name => { await page.screenshot({ path: join(OUT, name) }); console.log(`  ${name}`); };
 
-await page.goto(`${base}/`); await page.locator(".ph-card").first().waitFor(); await settle(2500);
-await shot("1-strategies.png");
-// a name short enough to fit the wheel on a phone
-await page.goto(`${base}/?strategy=dividend_aristocrats`); await page.locator('[data-tour="row"]').first().waitFor(); await settle();
-await shot("2-strategy-stocks.png");
-await page.goto(`${base}/stock/TCS`); await page.getByRole("heading", { level: 2 }).first().waitFor(); await settle(3000);
+// (14 Nov 2026) the home is now Screeners: star two first, so Favourites shows cards
+await page.goto(`${base}/`); await page.getByRole("heading", { name: "Screeners" }).waitFor(); await settle();
+await page.locator(".ps-fav-hint").click(); await settle(800);
+for (let i = 0; i < 2; i++) { await page.locator('[aria-label^="Add "][aria-label$="to favourites"]').first().click(); await page.waitForTimeout(400); }
+await page.getByRole("button", { name: "Screeners" }).first().click(); await page.getByRole("heading", { name: "Screeners", exact: true }).waitFor(); await settle(2500);
+await shot("1-screeners.png");
+// (14 Nov 2026, owner: the news instead of a screener's stocks) Explore → the news in full
+await page.getByRole("navigation", { name: "Pages" }).getByRole("button", { name: "Explore" }).click(); await settle(2500);
+// the news on its "Results" tab: companies' own announcements only, no outside headlines
+await page.locator(":text-is(\"In the news\"):visible").first().scrollIntoViewIfNeeded(); await settle(1500);
+await page.locator("button:text-is(\"Results\"):visible").first().click().catch(() => {}); await settle(4000);
+await page.locator(":text-is(\"In the news\"):visible").first().evaluate(e => { const y = e.getBoundingClientRect().top + scrollY - 250; scrollTo(0, y); }); await settle(2000);
+await shot("2-news.png");
+// (14 Nov 2026) a company up over the year with a strong overall score (SBIN: 71, +13.2% at the 13 Nov close), so the store doesn't open on a fall
+await page.goto(`${base}/stock/SBIN`); await page.getByRole("heading", { level: 2 }).first().waitFor(); await settle(3000);
 await shot("3-company.png");
-// a phone shows one tab of the company page at a time (20 Oct 2026); the
-// scorecard, not the valuation tab — its price levels open on a warning
-// ("below the stop-loss level") that reads as a trade call in a store
-await page.getByRole("navigation", { name: "Parts of this page" }).getByRole("button", { name: "Scorecard" }).click(); await settle(1500);
+// (14 Nov 2026) the page's tabs are Summary, Business, Growth, Safety…: the
+// summary's score card, further down (not valuation: its price levels read as a trade call)
+await page.locator(":text-matches('^in short$', 'i'):visible").first().evaluate(e => scrollTo(0, e.getBoundingClientRect().top + scrollY - 240)); await settle(1500);
 await shot("4-scorecard.png");
-await page.goto(`${base}/`); await page.getByRole("navigation", { name: "Pages" }).getByRole("button", { name: "Watchlist" }).click(); await settle(2500);
-await shot("5-watchlist.png");
-await page.getByRole("navigation", { name: "Pages" }).getByRole("button", { name: "Settings" }).click(); await settle();
-await shot("6-settings.png");
+// (14 Nov 2026) the market map itself, full screen: every sector and company coloured by its move
+await page.goto(`${base}/`); await page.getByRole("navigation", { name: "Pages" }).getByRole("button", { name: "Explore" }).click(); await settle(3000);
+await page.locator(":text-is('Market map'):visible").first().click(); await settle(4000);
+// its 1-month view (a period the map offers; shown on the map), full screen
+await page.locator("button:text-is('1M'):visible").first().click(); await settle(2500);
+await page.getByRole("button", { name: "Full screen" }).click(); await settle(3000);
+await shot("5-explore.png");
+await page.getByRole("button", { name: "Leave full screen" }).click().catch(() => {});
+await page.goto(`${base}/`); await settle(1500);
+await page.getByRole("navigation", { name: "Pages" }).getByRole("button", { name: "Watchlist" }).click(); await settle(2500);
+await shot("6-watchlist.png");
 
 // The feature graphic: the mark, the name and one line, on the app's sky
 const art = join(tmpdir(), `play-feature-${Date.now()}.html`);
 writeFileSync(art, `<!doctype html><html><body style="margin:0;width:1024px;height:500px;overflow:hidden;font-family:-apple-system,'Inter',Segoe UI,Roboto,sans-serif;background:radial-gradient(120% 120% at 70% 20%, #1b2550 0%, #0b0d1c 55%, #080810 100%);color:#F4F4FF;display:flex;align-items:center;gap:44px;padding:0 84px;box-sizing:border-box">
 <img src="file://${join(ROOT, "public/jocular-insights-icon.svg")}" style="width:168px;height:168px;border-radius:38px;box-shadow:0 18px 50px rgba(0,0,0,.45)">
 <div><div style="font-size:66px;font-weight:750;letter-spacing:-2px;line-height:1">Jocular <span style="color:#6FA0FF">Insights</span></div>
-<div style="margin-top:18px;font-size:27px;color:#A8A8C0;line-height:1.3;white-space:nowrap">NSE stock research from each company's own filings</div>
+<div style="margin-top:18px;font-size:27px;color:#A8A8C0;line-height:1.3;white-space:nowrap">Research for the Indian stock market, from company filings</div>
 <div style="margin-top:22px;font-size:22px;color:#00E0BE;font-weight:600">Strategies · Quality scores · Fair values</div></div></body></html>`);
 const fg = await browser.newPage({ viewport: { width: 1024, height: 500 }, deviceScaleFactor: 1 });
 await fg.goto(`file://${art}`); await fg.waitForTimeout(800);

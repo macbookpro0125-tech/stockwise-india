@@ -6,6 +6,21 @@ remakes them). Wording rules: research language only — no "multibagger
 picks", "sure-shot", "target price", returns or buy/sell calls; Jocular
 Insights is not SEBI-registered, so the listing says it's educational.
 
+## 14 Nov 2026 draft: "Indian stock market", NSE only as the source (owner: "it says NSE not indian stock market")
+
+**Short description** (75): `Indian stock market research: stock screener, quality scores and fair value`
+
+**Full description** — the 5 Nov text below with these changes:
+- first paragraph: `Jocular Insights is a stock screener for the Indian stock market. Research every listed company from its own filings, screen the whole market in seconds, and see which stocks fit what you look for.`
+- "the company's own announcements to NSE" → "the company's own announcements to the stock exchange"
+- "a market map of every NSE stock" → "a market map of every listed stock"
+- "THE INDIAN SHARE MARKET AT A GLANCE" → "THE INDIAN STOCK MARKET AT A GLANCE"
+- "Prices are NSE daily closing prices" → "Prices are daily closing prices from the National Stock Exchange (NSE)" (the source, kept)
+
+**Pictures, sent 14 Nov 2026** (`replica/launch/play/framed-first/`, made by `PLAY_TALL=1 node scripts/play-assets.mjs` then `PLAY_BG=first node scripts/play-frames.mjs`, on the 13 Nov close): a headline over the app in an iPhone-shaped frame (the owner's choice, though it is an Android app), on the navy-to-black background, with the key part of each screen lifted out as a glowing card. 1 "27 ready-made screeners" · 2 "Results, the day they're filed" (news, Results tab: companies' own announcements only) · 3 "Every company on one page" (SBIN: +13.2% a year) · 4 "A quality score out of 100" (SBIN 71, Strong overall) · 5 "The whole market at a glance" (the market map, full screen, 1-month view) · 6 "Your watchlist, kept for you". Feature graphic line: "Research for the Indian stock market, from company filings".
+
+**Sent for review 14 Nov 2026** (owner: "Send"): 4 changes (short description, full description, phone screenshots, feature graphic) → Publishing overview → "Changes in review". The "AI asset declaration" on the listing's Review step was left unanswered (Claude was blocked from choosing; the pictures are real app screens composed by script, not AI-made: the owner may set "Don't label assets").
+
 ## Store listing
 
 **5 Nov 2026, for searches on "stocks" and "screener" (the owner's aim).**
