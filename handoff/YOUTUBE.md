@@ -75,3 +75,9 @@ _Last updated: 13 Nov 2026._
 - Reels reach the Page by: Instagram's "Share your reels to Facebook" (phone: Settings → Sharing to Facebook → Reels), and/or the "Share to Facebook" switch on the posting screen, which the daily and evening tasks turn on when it's there.
 - Instagram shows "Established presence" under Partner Monetization Policies: a new account can't use monetization tools yet; it doesn't affect posting. Don't request a review (once per 90 days) until the account is older.
 - Wording (owner, 14 Nov): "Indian stock market" in bios, banners and captions; "NSE" only as the source of the figures. YouTube banner and description, Instagram and Facebook bios updated.
+
+## Google Play app links (14 Nov 2026, app live)
+- YouTube channel links: "Android app (Google Play)"; every new video description (all from-*.mjs writers) has the Play link.
+- Facebook Page links: "Android app on Google Play".
+- Instagram: second bio link to be added by the owner on the phone (web disallows link edits).
+- Website: footer "Android app" link, a "Get the Jocular app on Google Play" card for Android web visitors (not in the app), and on the front page (goes live with the next push).
