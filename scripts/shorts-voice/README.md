@@ -48,6 +48,7 @@ Examples: `~/Projects/files/shorts-v2/{bel,sterlite,hdfc-icici}/spec.json`.
 | `from-pair.mjs A B` / `--auto` | head-to-head of two rivals' quarters | /api/public/stock for both; --auto pairs the two largest recent filers in one industry |
 | `from-penny.mjs` | penny stocks (under ₹10) whose profit grew (₹5 cr+ profit, ₹1 cr+ a year earlier) | /lists/penny-stocks + each company |
 | `from-calendar.mjs` | results next week (Sundays) | /api/public/results-calendar |
+| `from-sectors.mjs` | sector scorecard: each sector's total profit and sales growth for the latest quarter (Nifty 500 filers, 5+ per sector) | /api/public/lists/nifty-500-stocks + /api/public/stock for each |
 | `from-weekly.mjs` | the week's roundup (Saturdays): Nifty 50 week heat map, the week's gainers (₹1,000 crore+) and fallers (Nifty 500), sectors, next week's results | /api/public/lists/top-gainers-this-week, nifty-500-stocks, nifty-50-stocks; /api/public/results-calendar |
 
 `JI_SITE=http://127.0.0.1:8790` points any of them at a local copy for testing. Visuals: big, tiles, bars, chart, page, card, pair, pills, rank, heatmap, save, brand.
@@ -58,7 +59,7 @@ Every English Short also gets a Hindi version for the **Jocular Insights Hindi**
 
 1. Copy the English spec to `~/Projects/files/shorts-v2/hi-<key>/spec.json` with key `hi-<key>`. Keep every `visual` and every figure.
 2. Rewrite each line's `say` and `show` in **everyday Hindi** (the owner's rule: not formal). Use English money words written in Devanagari: रिज़ल्ट, प्रॉफ़िट, सेल्स, क्वार्टर, मार्जिन, परसेंट, शेयर, सेक्टर. Company names go in Devanagari in `say` (आयशर मोटर्स); in `show` either script is fine.
-3. In `say`, write figures as digits. `node scripts/shorts-voice/hi-numbers.mjs <spec>` turns them into spoken Hindi and sets `"voice":"hm_psi","lang":"hi","speed":1.0`. `show` keeps its digits.
+3. In `say`, write figures as digits, but for percentages of 10 and over write the whole number the English `say` speaks (56.47% → 56, not 56.5 → 57). `node scripts/shorts-voice/hi-numbers.mjs <spec>` turns them into spoken Hindi and sets `"voice":"hm_psi","lang":"hi","speed":1.0`. `show` keeps its digits.
 4. In `show`, a highlight right before a danda ("*…*।") leaves a stray "*"; hi-numbers.mjs drops that danda for you.
 5. Translate on-screen labels in `visual` where they are words (tile labels, pills). Leave symbols, numbers and company names as they are.
 6. Add `"source": "<English source> · निवेश सलाह नहीं"`.

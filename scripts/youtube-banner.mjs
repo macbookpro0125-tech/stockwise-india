@@ -4,13 +4,18 @@
 // teal, with the final silver JI (scripts/brand/ji-original.png) as on the
 // channel's picture.
 //   node scripts/youtube-banner.mjs → brand/social-final/youtube-banner-2560x1440.png
+//   node scripts/youtube-banner.mjs --hi → brand/social-final/youtube-banner-hindi-2560x1440.png (Jocular Insights Hindi, 15 Nov 2026)
 import { readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "@playwright/test";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const OUT = join(ROOT, "brand/social-final/youtube-banner-2560x1440.png");
+const HI = process.argv.includes("--hi");
+const OUT = join(ROOT, `brand/social-final/youtube-banner${HI ? "-hindi" : ""}-2560x1440.png`);
+const T = HI
+  ? { tag: `<span class="tag">हिंदी</span>`, line: "शेयर बाज़ार के रिज़ल्ट, आसान हिंदी में", src: "कंपनियों की अपनी फ़ाइलिंग से", free: "फ़्री" }
+  : { tag: "", line: "Indian stock market results, quarter by quarter", src: "From company filings", free: "Free" };
 const mark = `data:image/png;base64,${readFileSync(join(ROOT, "scripts/brand/ji-original.png")).toString("base64")}`;
 
 // Faint figures beyond the safe strip: texture on a TV, never needed
@@ -31,6 +36,7 @@ background:radial-gradient(1100px 700px at 78% 50%,rgba(0,224,190,.16),transpare
 .line{margin-top:22px;font-size:46px;font-weight:500;letter-spacing:-.01em;color:#d6dae8;line-height:1.2}
 .small{margin-top:26px;display:flex;gap:28px;align-items:center;font-size:32px;color:#a9afc4}
 .url{color:#00e0be;font-weight:700}
+.tag{margin-left:22px;font-size:58px;letter-spacing:0;padding:6px 26px;border-radius:20px;background:rgba(0,224,190,.14);color:#00e0be;vertical-align:middle;font-weight:600}
 .dot{width:8px;height:8px;border-radius:50%;background:#3b4266}
 </style></head><body>
 <div class="tape t1">${tape.concat(tape).join("   ·   ")}</div>
@@ -38,9 +44,9 @@ background:radial-gradient(1100px 700px at 78% 50%,rgba(0,224,190,.16),transpare
 <div class="safe">
   <div class="badge"><img src="${mark}" alt=""></div>
   <div>
-    <div class="name">Jocular <span>Insights</span></div>
-    <div class="line">Indian stock market results, quarter by quarter</div>
-    <div class="small"><span class="url">jocularinsights.in</span><span class="dot"></span><span>From company filings</span><span class="dot"></span><span>Free</span></div>
+    <div class="name">Jocular <span>Insights</span>${T.tag}</div>
+    <div class="line">${T.line}</div>
+    <div class="small"><span class="url">jocularinsights.in</span><span class="dot"></span><span>${T.src}</span><span class="dot"></span><span>${T.free}</span></div>
   </div>
 </div>
 </body></html>`;
