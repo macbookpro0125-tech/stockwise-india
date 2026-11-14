@@ -9,6 +9,7 @@ export const words = n => {
   if (lakh) parts.push(w999(lakh) + " lakh"); if (th) parts.push(w99(th) + " thousand"); if (rest) parts.push((parts.length && rest < 100 ? "and " : "") + w999(rest));
   return parts.join(" ");
 };
-export const sayPct = x => { const a = Math.abs(x); return a >= 10 ? `${words(a)} percent` : `${words(Math.floor(a))} point ${ONES[Math.round((a % 1) * 10) % 10]} percent`; };
+export const sayPct = x => { const a = Math.abs(x), t = Math.round((a % 1) * 10) % 10; return a >= 10 || t === 0 ? `${words(a)} percent` : `${words(Math.floor(a))} point ${ONES[t]} percent`; };
 // "The Jammu & Kashmir Bank" → "Jammu and Kashmir Bank"
-export const sayName = n => n.replace(/&/g, " and ").replace(/\s+/g, " ").replace(/^The /, "").trim();
+// a word with no vowels (Mstc, Nhpc) is an acronym: spelled out, "M S T C"
+export const sayName = n => n.replace(/&/g, " and ").replace(/\s+/g, " ").replace(/^The /, "").trim().split(" ").map(w => (/^[A-Za-z]{2,6}$/.test(w) && !/[aeiouyAEIOUY]/.test(w) ? w.toUpperCase().split("").join(" ") : w)).join(" ");
