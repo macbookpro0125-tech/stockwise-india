@@ -32,7 +32,7 @@ test("N-H1 the News tile (a computer) or the Explore tab (a phone) leads to the 
   const item = page.getByRole("article");
   await expect(item).toBeVisible();
   // a filing, a headline, or an RBI or SEBI notice (the newest are often these)
-  await expect(item.getByRole("link", { name: /Open the filing|Read the story|Read it on (RBI|SEBI)'s website/ }).or(item.getByText(/no summary/)).first()).toBeVisible();
+  await expect(item.getByRole("link", { name: /Open the filing|Read the story|Read it on (RBI|SEBI)'s website/ }).or(item.getByText(/no summary|no filing attached yet/)).first()).toBeVisible();
   await page.goBack();
   await expect(kinds).toBeVisible();
   await expect(item).toHaveCount(0);
@@ -110,6 +110,12 @@ test("N-H3 results show their figures; an announcement's filing is read for its 
     const compare = item.getByRole("region", { name: "How the results compare" });
     await expect(compare).toContainText(/How the Q\d FY\d\d results compare/i);
     await expect(compare).toContainText(/(Sales|Profit) ₹[\d,.]+ crore|A loss of ₹/);
+  }
+  // a notice NSE posted before its attachment has no filing to read yet (15 Nov 2026)
+  await expect(item.getByRole("region", { name: "Good or bad news" })).toBeVisible();
+  if (await item.getByText(/no filing attached yet/).isVisible().catch(() => false)) {
+    test.info().annotations.push({ type: "filing lines", description: "the newest result had no attachment yet" });
+    return;
   }
   const lines = item.getByRole("region", { name: "From the filing" });
   await lines.getByRole("button", { name: /Read its key lines/ }).click();

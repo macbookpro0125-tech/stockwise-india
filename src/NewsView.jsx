@@ -517,6 +517,8 @@ function Detail({ id, onBack, onOpen, onOpenStock }) {
       <div className="nw-actions">
         {item.url && <a className="btn-primary nw-btn" href={item.url} target="_blank" rel="noopener noreferrer"><FileText size={16} aria-hidden="true" /> Open the filing{item.fileSize ? ` · ${item.fileSize}` : ""}</a>}
       </div>
+      {/* a notice NSE posted before its attachment (15 Nov 2026: Kaynes, 12:15 am) */}
+      {!item.url && <p className="nw-note">NSE's notice has no filing attached yet.</p>}
       {item.url && <FilingLines id={item.id} auto={!item.summary} />}
       </div>
       <div className="dt-side">
