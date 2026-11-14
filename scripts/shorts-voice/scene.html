@@ -41,6 +41,12 @@ body{font-family:-apple-system,"SF Pro Display","Helvetica Neue",Inter,sans-seri
 .cp .i{font-size:170px;font-weight:900;line-height:1.1}.cp .t{margin-top:14px;font-size:52px;font-weight:800}.cp .s{margin-top:10px;font-size:34px;color:var(--ink2)}
 .pills{text-align:center}.pill{display:inline-flex;align-items:center;gap:16px;font-size:70px;font-weight:800;padding:30px 52px;border-radius:999px;background:rgba(46,230,196,.12);color:var(--teal);margin:12px}
 .pill.red{background:rgba(255,93,108,.12)}.pills.many .pill{font-size:52px;padding:18px 40px;margin:8px}.pill.gold{background:rgba(226,191,114,.12)}
+.rank{width:100%}.rk{display:grid;grid-template-columns:56px 1fr auto;align-items:center;gap:6px 16px;margin:6px 0;opacity:0}
+.rk .n{font-size:38px;font-weight:800;color:var(--ink2);text-align:right}.rk .nm{font-size:40px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:560px}
+.rk .sb{font-size:24px;color:var(--ink2);font-weight:600}.rk .v{font-size:48px;font-weight:900;font-variant-numeric:tabular-nums}
+.rk .bar{grid-column:2/4;height:12px;border-radius:6px;background:rgba(255,255,255,.07);overflow:hidden}.rk .bar b{display:block;height:100%;width:0;border-radius:6px}
+.heat{position:relative;width:890px;height:680px}.hc{position:absolute;border:3px solid #05070f;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;opacity:0;color:#fff;text-align:center;line-height:1.05}
+.hc .s{font-weight:800}.hc .p{font-weight:700;opacity:.92}
 .brandv{flex-direction:column;text-align:center}
 .brandv .badge{width:300px;height:300px;border-radius:50%;background:#fff;display:grid;place-items:center;box-shadow:0 0 0 6px rgba(46,230,196,.3),0 30px 90px rgba(0,0,0,.6)}.brandv .badge img{width:260px}
 .brandv .url{margin-top:40px;font-size:60px;font-weight:900;color:var(--teal)}
@@ -106,6 +112,23 @@ function build(g, n) {
   } else if (v.type === "big") {
     const parts = v.text.split("→").map(x => x.trim());
     el.innerHTML = `<div class="bigw"><div class="big ${tone}"${parts.length > 1 ? ' style="font-size:120px;white-space:nowrap"' : ""}>${parts.length > 1 ? `<span class="grey">${parts[0]}</span> → ${parts[1]}` : v.text}</div>${v.sub ? `<div class="bigs">${v.sub}</div>` : ""}</div>`;
+  } else if (v.type === "rank") {
+    const max = Math.max(...v.rows.map(r => Math.abs(r.value))) || 1;
+    el.innerHTML = `<div class="rank">${v.rows.map((r, i) => `<div class="rk"><div class="n">${r.n ?? i + 1}</div><div><div class="nm">${r.label}</div>${r.sub ? `<div class="sb">${r.sub}</div>` : ""}</div><div class="v ${r.tone ?? "teal"}">${r.text ?? fmt(r.value, r)}</div><div></div><div class="bar"><b style="background:${TONE[r.tone ?? "teal"]};--w:${(Math.abs(r.value) / max * 100).toFixed(1)}%"></b></div></div>`).join("")}</div>`;
+  } else if (v.type === "heatmap") {
+    // a squarified treemap: each box's area is the company's market value, its colour the day's move
+    const W = 890, H = 680, cells = [...v.cells].sort((a, b) => b.size - a.size), total = cells.reduce((t, c) => t + c.size, 0);
+    const out = []; let x = 0, y = 0, w = W, h = H, rest = cells.map(c => ({ ...c, a: c.size / total * W * H }));
+    const worst = (row, side) => { const s = row.reduce((t, r) => t + r.a, 0), mx = Math.max(...row.map(r => r.a)), mn = Math.min(...row.map(r => r.a)); return Math.max(side * side * mx / (s * s), (s * s) / (side * side * mn)); };
+    while (rest.length) {
+      const side = Math.min(w, h); let row = [rest[0]], i = 1;
+      while (i < rest.length && worst([...row, rest[i]], side) <= worst(row, side)) row.push(rest[i++]);
+      rest = rest.slice(i); const s = row.reduce((t, r) => t + r.a, 0);
+      if (w >= h) { const cw = s / h; let cy = y; for (const r of row) { const ch = r.a / cw; out.push({ ...r, x, y: cy, w: cw, h: ch }); cy += ch; } x += cw; w -= cw; }
+      else { const ch = s / w; let cx = x; for (const r of row) { const cw2 = r.a / ch; out.push({ ...r, x: cx, y, w: cw2, h: ch }); cx += cw2; } y += ch; h -= ch; }
+    }
+    const col = c => { const k = Math.max(-1, Math.min(1, c / (v.scale ?? 3))); return k >= 0 ? `rgb(${Math.round(30 - 10 * k)},${Math.round(60 + 120 * k)},${Math.round(70 + 40 * k)})` : `rgb(${Math.round(70 + 150 * -k)},${Math.round(40 + 10 * -k)},${Math.round(55 + 15 * -k)})`; };
+    el.innerHTML = `<div class="heat">${out.map((c, i) => { const big = Math.min(c.w, c.h); const fs = Math.max(12, Math.min(46, big / 4, (c.w - 10) / (Math.max(c.label.length, 4) * 0.62))); return `<div class="hc" style="left:${c.x.toFixed(1)}px;top:${c.y.toFixed(1)}px;width:${c.w.toFixed(1)}px;height:${c.h.toFixed(1)}px;background:${col(c.value)}" data-i="${i}">${big > 46 ? `<div class="s" style="font-size:${fs.toFixed(0)}px">${c.label}</div>` : ""}${big > 70 ? `<div class="p" style="font-size:${(fs * .72).toFixed(0)}px">${c.value >= 0 ? "+" : "−"}${Math.abs(c.value).toFixed(1)}%</div>` : ""}</div>`; }).join("")}</div>`;
   } else if (v.type === "pair") {
     el.innerHTML = `<div class="cardpair">${v.items.map(x => `<div class="cp"><div class="i ${x.tone ?? "teal"}">${x.icon}</div><div class="t">${x.title}</div><div class="s">${x.sub ?? ""}</div></div>`).join("")}</div>`;
   } else if (v.type === "pills") {
@@ -142,6 +165,10 @@ function animate(g, el, u) {
     const p = eio(span(u, .3, 1.6)), max = +el.dataset.max;
     el.querySelectorAll(".trk b").forEach((x, k) => x.style.width = (Math.abs(v.bars[k].value) / max * 100 * p) + "%");
     el.querySelectorAll(".k span:last-child").forEach((x, k) => x.textContent = fmt(v.bars[k].value * p, v.bars[k]));
+  } else if (v.type === "rank") {
+    el.querySelectorAll(".rk").forEach((x, k) => { const p = spring(u, .1 + k * .28, .4); x.style.opacity = p; x.style.transform = `translateX(${((1 - p) * 40).toFixed(1)}px)`; const b = x.querySelector(".bar b"); b.style.width = `calc(${b.style.getPropertyValue("--w")} * ${eio(span(u, .3 + k * .28, 1 + k * .28)).toFixed(3)})`; });
+  } else if (v.type === "heatmap") {
+    el.querySelectorAll(".hc").forEach((x, k) => { const p = spring(u, .05 + Math.min(k, 40) * .03, .4); x.style.opacity = p; x.style.transform = `scale(${(.85 + .15 * p).toFixed(3)})`; });
   } else if (v.type === "big") {
     const p = spring(u, .05, .4); el.querySelector(".big").style.transform = `scale(${(.7 + .3 * p).toFixed(3)})`;
   } else if (v.type === "pair" || v.type === "pills") {

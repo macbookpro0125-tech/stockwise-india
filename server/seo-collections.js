@@ -86,6 +86,11 @@ export const LISTS = [
   rule("profit-growth-stocks", "Fast profit growth stocks", m => m.profitGrowth3y >= 25 && m.marketCapCr >= 1000, "high profit growth stocks India", "NSE companies whose profit grew 25% a year or faster over the last three years, worth ₹1,000 crore or more", { label: "Profit growth, 3 years", get: m => `${num(m.profitGrowth3y, 1)}% a year` }, (a, b) => b.profitGrowth3y - a.profitGrowth3y),
   rule("sales-growth-stocks", "Fast sales growth stocks", m => m.salesGrowth3y >= 20 && m.marketCapCr >= 1000, "high sales growth stocks India", "NSE companies whose sales grew 20% a year or faster over the last three years, worth ₹1,000 crore or more", { label: "Sales growth, 3 years", get: m => `${num(m.salesGrowth3y, 1)}% a year` }, (a, b) => b.salesGrowth3y - a.salesGrowth3y),
   rule("cash-rich-stocks", "Cash-rich stocks", m => !m.lender && m.netDebtCr < 0 && -m.netDebtCr >= 0.15 * m.marketCapCr && m.marketCapCr >= 500, "cash rich companies India", "NSE companies (not banks or lenders) holding more cash and liquid investments than all their debt, the surplus 15% or more of their market value, worth ₹500 crore or more", { label: "Net cash", get: m => crore(-m.netDebtCr) }, (a, b) => (-b.netDebtCr / b.marketCapCr) - (-a.netDebtCr / a.marketCapCr)),
+  // (14 Nov 2026) the day's and the week's biggest moves: searched for every
+  // evening ("top gainers today NSE"), and the source of the daily movers video
+  rule("top-gainers-today", "Top gainers today", m => m.ret1d > 0 && m.marketCapCr >= 1000, "top gainers today NSE", "NSE companies worth ₹1,000 crore or more whose share rose the most at the last close", { label: "Change", get: m => `+${num(m.ret1d, 2)}%` }, (a, b) => b.ret1d - a.ret1d),
+  rule("top-losers-today", "Top losers today", m => m.ret1d < 0 && m.marketCapCr >= 1000, "top losers today NSE", "NSE companies worth ₹1,000 crore or more whose share fell the most at the last close", { label: "Change", get: m => `−${num(Math.abs(m.ret1d), 2)}%` }, (a, b) => a.ret1d - b.ret1d),
+  rule("top-gainers-this-week", "Top gainers this week", m => m.ret1w > 0 && m.marketCapCr >= 1000, "top gainers this week NSE", "NSE companies worth ₹1,000 crore or more whose share rose the most over the last five trading days", { label: "Week", get: m => `+${num(m.ret1w, 1)}%` }, (a, b) => b.ret1w - a.ret1w),
   rule("52-week-low-stocks", "Stocks at a 52-week low", m => m.low52w > 0 && m.cmp <= m.low52w * 1.02 && m.marketCapCr >= 500, "52 week low stocks NSE", "NSE companies that closed within 2% of their lowest price of the past year, worth ₹500 crore or more", { label: "52-week low", get: m => `₹${num(m.low52w, 2)}` }, byCap),
 ];
 
@@ -205,7 +210,8 @@ ${others.length ? `<h2>More lists</h2><ul>${others.map(x => `<li>${link(`/lists/
 
 // The same lists for the app (PublicLists.jsx: ListsIndexPage, ListPage),
 // through /api/public/lists and /api/public/lists/<slug>
-const row = m => ({ symbol: m.symbol, name: niceName(m.name), price: m.cmp ?? null, marketCapCr: m.marketCapCr ?? null, pe: m.pe > 0 ? m.pe : null, roe: m.roe ?? null, debtToEquity: m.lender ? null : m.debtToEquity ?? null, quality: quality(m), overall: overall(m) });
+// the day's and week's change and the sector too (14 Nov 2026): for the gainers videos and the heat map
+const row = m => ({ symbol: m.symbol, name: niceName(m.name), sector: m.sector ?? null, change1d: m.ret1d ?? null, change1w: m.ret1w ?? null, price: m.cmp ?? null, marketCapCr: m.marketCapCr ?? null, pe: m.pe > 0 ? m.pe : null, roe: m.roe ?? null, debtToEquity: m.lender ? null : m.debtToEquity ?? null, quality: quality(m), overall: overall(m) });
 export function publicListsData() {
   return {
     pricesDate: loadMarketSnapshot()?.pricesDate ?? null, builtAt: loadMarketSnapshot()?.builtAt ?? null,
