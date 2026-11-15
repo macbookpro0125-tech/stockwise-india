@@ -1,6 +1,6 @@
 # Status
 
-_Last updated: 13 Nov 2026, by Claude (Opus) on branch `screeners-home`._
+_Last updated: 15 Nov 2026, by Claude (Opus) on branch `screeners-home`._
 
 ## Read first: standing jobs another session or account must not miss (13 Nov)
 - **Nightly score check** (`server/score-audit.js`): every evening, after the day's prices, the server checks all ~2,263 companies' scores and lists the odd ones (day jumps with no new results, a fast grower marked nearly as dear as possible, P/E under 2, sales +500%, high score on little data, EPS against profit ÷ shares…). Kept 21 nights in `data/score-audit/`. Owner-only page: `https://jocularinsights.in/api/owner/score-audit` (anyone else gets 404). Locally: `node scripts/score-audit.mjs` (`--json`, `--save`). Live only after the next push.
@@ -11,6 +11,9 @@ _Last updated: 13 Nov 2026, by Claude (Opus) on branch `screeners-home`._
 - **Past-price test of the score**: `node scripts/score-backtest.mjs` (`--json FILE`). Its results are quoted on the methodology page (`src/methodology-content.js`, "Tested against later share prices"); re-run it whenever a score rule changes and update those figures.
 - **Score decisions (12–13 Nov, the owner's word)**: one headline score, the Overall (quality ex-valuation 70% + valuation 30%, trimmed for price swings), unchanged by the tests; ranked market-wide and by sector. The test showed it sorts strong from weak but doesn't beat the Nifty 50, so it is called a ranking, never a forecast. The pairing that held up (quality 70+ with price strength 70+) is the strategy "Strong Business, Rising Price" and the company-page tag. Valuation 1.11: growth allowance against peers, free cash flow left out while a company builds capacity (Acme Solar).
 - **AI checking**: costed (Haiku ~$10–15/month on changed companies only) and tried locally (this Intel Mac: 5+ min a company, poor answers). Not built; the owner hasn't named it, so it stays held.
+
+## Committed, not pushed (15 Nov): the phone company page rearranged
+- The owner approved the mock-ups ("Yes, build it"). Every phone tab: one plain heading per part, each part in one glass box (Screeners style; `PBlock`/`PRow` in `src/StockChapters.jsx`, styles at the end of `src/index.css`). Chapters: the answer, then **the checks as the computer's plain questions** (`chapterChecks`, `src/ChapterTab.jsx`) with "N of M strong", then What to watch, then the evidence. Summary: name once (short), In short as six answer rows, the computer's What to watch, Price (chart + why it moves), Key figures, What changed recently, then Your view / scores / sources as rows that open. "What it does" left the Summary (it's About the company in Business). Panels' own titles inside a box are marked `data-ttl` and hidden there. Computer page unchanged. npm test, build and all 165 e2e passed.
 
 ## Committed, not pushed (12–13 Nov, ~38 commits; suites passed 13 Nov)
 - Screen builder: arrows on the table's edges, the watchlist star always beside each name, no "Untitled screen".

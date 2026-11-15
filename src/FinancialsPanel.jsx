@@ -469,7 +469,7 @@ export default function FinancialsPanel({ history: filed, quarters: filedQuarter
 
   return (
     <div style={{ border: "1px solid var(--bdr2)", borderRadius: 14, background: "var(--s2)", padding: 16, marginBottom: 16 }}>
-      <div style={{ fontSize: 14, fontWeight: 500, color: "var(--t1)", marginBottom: 12, letterSpacing: "-0.01em" }}>Financials</div>
+      <div data-ttl style={{ fontSize: 14, fontWeight: 500, color: "var(--t1)", marginBottom: 12, letterSpacing: "-0.01em" }}>Financials</div>
       <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)} style={{

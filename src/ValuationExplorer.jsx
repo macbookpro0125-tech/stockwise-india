@@ -91,10 +91,10 @@ export default function ValuationExplorer({ metrics: m, price, levels, epsInput,
     </div>
   );
   return (
-    <section style={panel} aria-labelledby="valuation-explorer-title">
+    <section className="vx" style={panel} aria-labelledby="valuation-explorer-title">
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
         <div>
-          <h3 id="valuation-explorer-title" style={{ fontSize: 16, fontWeight: 400, margin: 0, color: "var(--t1)" }}>Valuation methods &amp; scenarios</h3>
+          <h3 id="valuation-explorer-title" data-ttl style={{ fontSize: 16, fontWeight: 400, margin: 0, color: "var(--t1)" }}>Valuation methods &amp; scenarios</h3>
           <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 4 }}>Model outputs from reported figures and editable assumptions. Estimates are not price targets.</div>
         </div>
         <button type="button" onClick={() => setExpanded(v => !v)} className="btn-ghost" style={{ height: 30, padding: "0 10px", fontSize: 11 }}>{expanded ? "Hide assumptions" : "Show assumptions"}</button>
@@ -105,7 +105,7 @@ export default function ValuationExplorer({ metrics: m, price, levels, epsInput,
           <strong style={{ color: "var(--t1)" }}>Re-rated compounder.</strong> Its P/E rose from about {rerated.from}× to {rerated.to}× over the years on file, and the market still pays {rerated.now}×. Its own 5-year median ({rerated.median}×) is historical context; price levels use {m.valuationMultipleBasis ?? "the available valuation multiple"}. The growth today's price implies still deserves scrutiny.
         </div>
       )}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 9, marginTop: 14 }}>
+      <div className="vx-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 9, marginTop: 14 }}>
         {rerated && impliedCard}
         <div style={{ padding: 12, background: "var(--s1)", border: "1px solid var(--bdr)", borderRadius: 9 }}>
           <div style={{ fontSize: 11, color: "var(--t3)" }}>Today's fair value</div>

@@ -6733,3 +6733,109 @@ tr:hover .row-star, .row-star:focus-visible { opacity: 1; }
 .sd-pair-bad b, b.sd-pair-bad { color: var(--red); font-weight: 600; }
 .sd-rank a { color: var(--accent); text-decoration: none; white-space: nowrap; }
 .sd-rank a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* ── A phone's company page, one heading per part and each part in one glass
+   box, as on Screeners (15 Nov 2026, the approved mock-ups; StockChapters.jsx
+   PBlock, PRow). The heading sits outside its box; a panel's own title inside
+   is hidden so nothing is said twice; cards inside a box lose their card. */
+.sd.ap .sd-id { background: none !important; box-shadow: none !important; border: 0 !important; padding: 2px 2px 0 !important; border-radius: 0 !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+.sd.ap .sd-id::before, .sd.ap .sd-id::after, .sd.ap .sd-side::before, .sd.ap .sd-side::after { display: none !important; }
+.sd.ap .sd-side { background: none !important; box-shadow: none !important; border: 0 !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+.sd.ap .sd-id-name h2 { font-size: 22px !important; font-weight: 600 !important; letter-spacing: -0.02em !important; line-height: 1.2 !important; }
+.sd.ap .sd-id-top img { border-radius: 12px; }
+.sd.ap .sd-id .sd-price { margin-top: 14px; }
+
+.sd.ap .sd-pblock, .sd.ap .sd-verdict, .sd.ap .sd-checks, .sd.ap .sd-watch { margin: 0 0 26px; padding: 0; background: none; border: 0; box-shadow: none; }
+.sd.ap .sd-chapter-end { margin-top: 24px; }
+.sd.ap .sd-ph-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 2px 9px; }
+.sd.ap .sd-main h3.sd-ph { margin: 0 !important; font-size: 17px !important; font-weight: 600 !important; letter-spacing: -0.01em !important; color: var(--t1); }
+.sd.ap .sd-ph-note { font-size: 14px; color: var(--t3); font-variant-numeric: tabular-nums; }
+.sd.ap .sd-ph-link { border: 0; background: none; padding: 0; font: inherit; font-size: 15px; font-weight: 500; color: var(--accent); cursor: pointer; }
+.sd.ap .sd-pfoot { margin: 9px 2px 0; font-size: 12px; color: var(--t3); line-height: 1.5; }
+.sd.ap .sd-pfoot b { color: var(--t2); font-weight: 500; }
+.sd.ap .sd-pfoot .sd-conf-high b { color: var(--green); }
+
+.sd.ap .sd-pbox, .sd.ap .sd-prows { position: relative; list-style: none; margin: 0; padding: 0; border-radius: 16px; overflow: hidden; border: 1px solid var(--pg-edge); background: var(--pg-fill); box-shadow: var(--pg-shine); -webkit-backdrop-filter: blur(24px) saturate(140%); backdrop-filter: blur(24px) saturate(140%); }
+.sd.ap .sd-pbox { padding: 14px; }
+.sd.ap .sd-pbox > .sd-prows { border: 0; border-radius: 0; background: none; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; margin: -14px; }
+.sd.ap .sd-pbox > * + * { margin-top: 14px; }
+
+/* rows */
+.sd.ap .sd-prow { position: relative; }
+.sd.ap .sd-prow + .sd-prow::before { content: ""; position: absolute; top: 0; left: 50px; right: 0; border-top: 1px solid var(--pg-line); }
+.sd.ap .sd-prow > div, .sd.ap .sd-prow > button, .sd.ap .sd-prow summary { display: flex; align-items: flex-start; gap: 12px; width: 100%; min-height: 58px; padding: 11px 12px 11px 14px; border: 0; background: none; font: inherit; color: inherit; text-align: left; box-sizing: border-box; }
+.sd.ap .sd-prow > button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.sd.ap .sd-prow > button:active, .sd.ap .sd-prow summary:active { background: color-mix(in srgb, var(--t1) 5%, transparent); }
+.sd.ap .sd-prow > button:focus-visible, .sd.ap .sd-prow summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 14px; }
+.sd.ap .sd-prow summary { list-style: none; cursor: pointer; }
+.sd.ap .sd-prow summary::-webkit-details-marker { display: none; }
+.sd.ap .sd-prow-ic { flex: 0 0 24px; display: flex; justify-content: center; padding-top: 1px; color: var(--t2); }
+.sd.ap .sd-prow-mark { flex: 0 0 24px; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; color: var(--tone); background: color-mix(in srgb, var(--tone) 15%, transparent); }
+.sd.ap .sd-prow-tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.sd.ap .sd-prow-nm { font-size: 16px; font-weight: 500; color: var(--t1); letter-spacing: -0.01em; line-height: 1.3; }
+.sd.ap .sd-prow-sb { font-size: 13px; color: var(--t3); line-height: 1.4; }
+.sd.ap .sd-prow-teal { color: var(--accent); }
+.sd.ap .sd-prow-end { flex: none; align-self: center; display: flex; align-items: center; gap: 4px; color: var(--t3); }
+.sd.ap .sd-prow-score { display: flex; flex-direction: column; align-items: flex-end; color: var(--tone); }
+.sd.ap .sd-prow-score b { font-size: 18px; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.sd.ap .sd-prow-score small { font-size: 11px; font-weight: 500; }
+.sd.ap .sd-prow-chev { transition: transform 200ms var(--ease-out, ease-out); }
+.sd.ap .sd-prow details[open] .sd-prow-chev { transform: rotate(180deg); }
+.sd.ap .sd-prow-body { padding: 0 14px 14px; }
+.sd.ap .sd-prow-body:empty { display: none; }
+.sd.ap .sd-prow-body .sd-card { background: none !important; box-shadow: none !important; border: 0 !important; padding: 0 !important; margin: 0 !important; }
+
+/* In short */
+.sd.ap .sd-verdict .sd-verdict-overall { display: flex; align-items: center; gap: 10px; }
+.sd.ap .sd-verdict .sd-chapter-score { flex-direction: row; align-items: baseline; gap: 6px; font-size: 13px; }
+.sd.ap .sd-verdict .sd-chapter-score b { font-size: 22px; }
+.sd.ap .sd-verdict .sd-notes-btn { margin: 0; }
+.sd.ap .sd-verdict .sd-gist { margin: 0 2px 8px; font-size: 18px; font-weight: 500; line-height: 1.38; letter-spacing: -0.015em; color: var(--t1); text-wrap: pretty; }
+.sd.ap .sd-verdict .sd-rank, .sd.ap .sd-verdict .sd-pair { margin: 0 2px 12px; font-size: 13px; color: var(--t3); line-height: 1.5; }
+.sd.ap .sd-verdict .sd-rank b { color: var(--t2); font-weight: 500; }
+.sd.ap .sd-checks .sd-flag { margin: 0 2px 10px; }
+
+/* inside a box: the panel's own card and title go */
+.sd.ap .sd-pbox > .sd-card, .sd.ap .sd-pbox > section, .sd.ap .sd-pbox > div:not(.sd-prows):not(.sd-snap):not(.sd-metrics), .sd.ap .sd-pbox > details.sd-card, .sd.ap .sd-pbox .ss-section {
+  background: none !important; box-shadow: none !important; border: 0 !important; border-radius: 0 !important; padding: 0 !important; margin-left: 0 !important; margin-right: 0 !important; margin-bottom: 0 !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+.sd.ap .sd-pbox > .sd-card::before, .sd.ap .sd-pbox > .sd-card::after { display: none !important; }
+.sd.ap .sd-pbox > .sd-card:first-child > .sd-card-title:first-child, .sd.ap .sd-pbox [data-ttl], .sd.ap .sd-pbox .sd-h2, .sd.ap .sd-pbox .im-h { display: none !important; }
+.sd.ap .sd-pbox > details.sd-fold { border-top: 1px solid var(--pg-line) !important; padding-top: 2px !important; }
+.sd.ap .sd-pbox > details.sd-fold > summary { padding: 10px 0 !important; }
+
+/* Price: the chart's own frame goes, why it moves sits under a thin line */
+.sd.ap .sd-pb-chart .sd-moves { margin-top: 14px !important; padding-top: 12px !important; border-top: 1px solid var(--pg-line) !important; }
+.sd.ap .sd-pb-chart .sd-moves .sd-card-title { font-size: 15px !important; margin: 0 0 6px; }
+/* Key figures: what kind of company, then its ratios, one box */
+.sd.ap .sd-pb-figs .sd-pbox { padding: 4px 0 0; }
+.sd.ap .sd-pb-figs .sd-pbox > * + * { margin-top: 0; }
+.sd.ap .sd-pb-figs .sd-snap { margin: 0; background: none !important; border-radius: 0; gap: 0; }
+.sd.ap .sd-pb-figs .sd-snap-card { background: none !important; box-shadow: none !important; border-radius: 0 !important; padding: 10px 14px !important; margin: 0 !important; }
+.sd.ap .sd-pb-figs .sd-metrics { background: none !important; box-shadow: none !important; border-radius: 0 !important; margin: 0 !important; border-top: 1px solid var(--pg-line); }
+.sd.ap .sd-pb-figs .sd-datanote { padding: 8px 14px 12px; margin: 0; font-size: 12px; color: var(--t3); }
+/* What changed recently as rows */
+.sd.ap #sec-events .sd-pbox { padding: 0; }
+.sd.ap #sec-events .sd-recent-list { margin: 0; padding: 0; }
+.sd.ap #sec-events .sd-recent-list li { padding: 12px 14px; border: 0; }
+.sd.ap #sec-events .sd-recent-list li + li { border-top: 1px solid var(--pg-line); }
+.sd.ap #sec-events .sd-recent-h { margin: 6px 14px 0; }
+.sd.ap #sec-events .sd-foot { display: none; }
+/* Notes and the method: rows only */
+.sd.ap .sd-pb-rows .sd-pbox { padding: 0; }
+.sd.ap .sd-pb-rows .sd-pbox > .sd-prows { margin: 0; }
+/* Business: one mix chart under the other */
+.sd.ap .sd-pbox .mix-card { background: none !important; box-shadow: none !important; border: 0 !important; padding: 0 !important; }
+.sd.ap .sd-pbox .mix-grid { display: flex; flex-direction: column; gap: 18px; }
+.sd.ap .sd-pbox .mix-card + .mix-card { padding-top: 18px !important; border-top: 1px solid var(--pg-line) !important; }
+.sd.ap .sd-pbox .peers-scroll { margin: 0 -14px; padding: 0 14px !important; }
+/* Value: the ways of valuing it as rows, not cards in a card */
+.sd.ap .sd-pbox .sd-atw-sec + .atw-sec, .sd.ap .sd-pbox .atw-sec + .atw-sec { padding-top: 14px !important; margin-top: 14px !important; border-top: 1px solid var(--pg-line) !important; }
+/* the shine sits behind what's in the box */
+.sd.ap .sd-pbox::after, .sd.ap .sd-prows::after { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 46%; border-radius: inherit; pointer-events: none; background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0)); }
+[data-theme="light"] .sd.ap .sd-pbox::after, [data-theme="light"] .sd.ap .sd-prows::after { background: linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0)); }
+.sd.ap .sd-pbox > .sd-prows::after { display: none; }
+.sd.ap .sd-pbox > *, .sd.ap .sd-prows > * { position: relative; z-index: 1; }
+.sd.ap .sd-pbox .vx { background: none !important; border: 0 !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; border-radius: 0 !important; }
+.sd.ap .sd-pbox .vx-grid { display: flex !important; flex-direction: column; gap: 0 !important; margin-top: 8px !important; }
+.sd.ap .sd-pbox .vx-grid > div { background: none !important; border: 0 !important; border-radius: 0 !important; padding: 12px 0 !important; }
+.sd.ap .sd-pbox .vx-grid > div + div { border-top: 1px solid var(--pg-line) !important; }

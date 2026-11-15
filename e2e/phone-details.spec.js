@@ -10,13 +10,18 @@ test("PD-1 a phone's home: favourites as one line, then the Market summary @phon
   await expect(page.getByRole("region", { name: "The market" })).toBeVisible();
 });
 
-test("PD-2 a company on a phone: the overall score, what it does, the quarters @phone", async ({ page, account, isMobile }) => {
+test("PD-2 a company on a phone: the overall score, the checks as questions, what it does, the quarters @phone", async ({ page, account, isMobile }) => {
   test.skip(!isMobile, "a phone's company page");
   await page.goto("/stock/TCS");
   const short = page.getByRole("region", { name: "In short" });
   await expect(short.getByLabel(/^Overall score \d+ of 100/)).toBeVisible({ timeout: 45_000 });
-  await expect(short).toContainText(/Data confidence: (High|Medium|Low)/);
-  const about = page.getByRole("region", { name: "What it does" });
+  await expect(short).toContainText(/Data confidence (High|Medium|Low)/);
+  // each chapter's line opens it; its checks come first, as plain questions (15 Nov 2026)
+  await short.getByRole("button", { name: /^Business:/ }).click();
+  const checks = page.getByRole("region", { name: "The checks" });
+  await expect(checks).toContainText("Does it earn well on the money it uses?");
+  // what it does now opens the Business chapter's evidence
+  const about = page.locator("#sec-about");
   await expect(about).toContainText(/TCS|Tata Consultancy/);
   await expect(about).toContainText(/Sales in the year to/);
 

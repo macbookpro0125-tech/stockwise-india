@@ -5,6 +5,7 @@ import CompanyLogo from "./CompanyLogo.jsx";
 import { StarIcon } from "./icons.jsx";
 import { fmtRs } from "../server/levels.js";
 import BigNum from "./BigNum.jsx";
+import { cardName } from "./stockName.js";
 import { docTop } from "./motion.js";
 import { useState } from "react";
 import { useWatchLists, setInList, createList } from "./watchlist.js";
@@ -123,7 +124,8 @@ export default function StockSide({ data, m, price, priceLabel, watched, onWatch
         <div className="sd-id-top">
           <CompanyLogo symbol={data.symbol} size={44} />
           <div className="sd-id-name">
-            <h2>{data.name}</h2>
+            {/* a phone says the short name once, as the page's title (15 Nov 2026) */}
+            <h2>{variant === "head" ? data.name : cardName(data.name)}</h2>
             <span>{data.symbol} · NSE{m?.sector ? ` · ${m.sector}` : ""}</span>
           </div>
         </div>
