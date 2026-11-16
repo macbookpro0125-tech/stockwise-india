@@ -339,3 +339,4 @@ Owner: "the news is not understandable". Looked at 10 apps (Inshorts' one-line c
 - 16 Nov 2026 (late night): computer chapter tabs finished in the mock-up's style: plain headings over one calm box each, paired small panels, rarely used panels as rows under More, the checks and What to watch last. Not pushed.
 - 16 Nov 2026 (late night): News's YouTube pictures load at once (no lazy loading) with YouTube's own stills as a fallback; for the owner's broken thumbnails. Not pushed.
 - 16 Nov 2026 (late night): computer Chart tab's technical analysis flattened; News's notes, investment case and sources under plain headings. Tests passed. Pushed with the day's other commits.
+- 16 Nov 2026 (night): ten evergreen Shorts scheduled on YouTube (17–21 Nov, 6 pm and 9 pm IST); two left after YouTube's daily upload limit. ROCE Reel posted on Instagram; eleven Reels queued one per evening 17–27 Nov. Evening task uploads from its scratchpad.

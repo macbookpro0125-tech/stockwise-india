@@ -13,6 +13,10 @@ _Last updated: 16 Nov 2026, by Claude on branch `screeners-home`._
 - **Score decisions (12–13 Nov, the owner's word)**: one headline score, the Overall (quality ex-valuation 70% + valuation 30%, trimmed for price swings), unchanged by the tests; ranked market-wide and by sector. The test showed it sorts strong from weak but doesn't beat the Nifty 50, so it is called a ranking, never a forecast. The pairing that held up (quality 70+ with price strength 70+) is the strategy "Strong Business, Rising Price" and the company-page tag. Valuation 1.11: growth allowance against peers, free cash flow left out while a company builds capacity (Acme Solar).
 - **AI checking**: costed (Haiku ~$10–15/month on changed companies only) and tried locally (this Intel Mac: 5+ min a company, poor answers). Not built; the owner hasn't named it, so it stays held.
 
+## Videos (16 Nov, night): ten evergreen Shorts scheduled, Instagram queue filled
+- YouTube: ten explain-* Shorts scheduled two a day, 17–21 Nov, 6 pm and 9 pm IST (ids in handoff/VIDEO-TOPICS.md). YouTube then said "Daily upload limit reached" (verification or wait 24 h): **explain-falling-price and explain-quality-vs-price still to upload, for 22 Nov** — any time from 17 Nov evening, or after the owner verifies the channel (an account step, theirs).
+- Instagram: ROCE posted (https://www.instagram.com/jocular_insights/reel/DfzyLn7Sj9x/); the other eleven queued one per evening 17–27 Nov in ~/Projects/files/shorts-v2/instagram-queue.json, posted by `instagram-evening-2` (this account has no morning task, so one a day; two a day needs the morning run back).
+
 ## Pushed (16 Nov, late night): computer Chart and News tidied
 - Chart: the technical analysis inside its box has no boxes within boxes (`.tech-panel` in TechnicalPanel.jsx, flattened by `.ct-box .tech-panel` CSS). News: My notes, Your investment case and Where these figures come from under plain headings in the chapters' style (StockDetail.jsx dk-yourview).
 - Everything below in this file marked "not pushed" from 16 Nov went live in the same push.
