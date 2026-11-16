@@ -75,6 +75,17 @@ for (const l of spec.lines) for (const x of [...(l.visual.bars ?? []), ...(l.vis
   if (existsSync(img)) { const type = existsSync(meta) ? JSON.parse(readFileSync(meta, "utf-8")).type ?? "image/png" : "image/png"; logos[x.logo] = `data:${type};base64,${readFileSync(img).toString("base64")}`; }
 }
 
+// real footage behind the scenes (16 Nov 2026, the owner: "we need real pictures"):
+// a line's `bg` names a clip in ~/Projects/files/stock-footage/bg/ (Pexels, free to
+// use; sources.tsv there lists each clip's page), played darkened and soft behind it
+const FOOT = join(homedir(), "Projects/files/stock-footage/bg");
+const clips = {};
+for (const l of spec.lines) if (l.bg && !clips[l.bg]) {
+  const f = join(FOOT, `${l.bg}.mp4`);
+  if (!existsSync(f)) throw new Error(`no footage ${l.bg}`);
+  clips[l.bg] = `data:video/mp4;base64,${readFileSync(f).toString("base64")}`;
+}
+
 // 3. timing: each line after the last with a breath; words timed by their syllables
 const syll = w => Math.max(1, (w.toLowerCase().replace(/[^a-z0-9%₹]/g, "").match(/[aeiouy]+|\d/g) || []).length + (/%/.test(w) ? 2 : 0));
 let t = spec.lines[0]?.visual?.type === "hook" ? 0.08 : 0.25;
@@ -95,7 +106,7 @@ const lines = spec.lines.map(l => {
   let s = at + tm.speechStart; const span = tm.speechEnd - tm.speechStart;
   words.forEach((w, k) => { w.at = s; s += (span * weights[k]) / total; });
   t = at + tm.dur + 0.28;
-  return { id: l.id, visual: l.visual, at, end: at + tm.dur, words, show: words.map(w => w.text).join(" "), file: join(DIR, "voice", `${l.id}.wav`) };
+  return { id: l.id, visual: l.visual, bg: l.bg ?? null, at, end: at + tm.dur, words, show: words.map(w => w.text).join(" "), file: join(DIR, "voice", `${l.id}.wav`) };
 });
 const LENGTH = Math.ceil((t + 1.8) * 10) / 10;
 const ts = x => { const ms = Math.round(x * 1000); return `${String(Math.floor(ms / 3600000)).padStart(2, "0")}:${String(Math.floor(ms / 60000) % 60).padStart(2, "0")}:${String(Math.floor(ms / 1000) % 60).padStart(2, "0")},${String(ms % 1000).padStart(3, "0")}`; };
@@ -105,10 +116,11 @@ writeFileSync(join(DIR, `${spec.key}.srt`), lines.map((l, i) => `${i + 1}\n${ts(
 const logo = b64(join(REPO, "scripts/brand/ji-original.png"));
 const live = Object.fromEntries(Object.entries(data).map(([s, d]) => [s, { name: d.name, spark: d.spark, change1y: d.change1y, closeDate: d.closeDate }]));
 const html = readFileSync(join(HERE, "scene.html"), "utf-8")
-  .replace("__DATA__", () => JSON.stringify({ lines: lines.map(({ file, ...l }) => l), LENGTH, source: spec.source, live, shots, logos, theme: spec.theme ?? "teal" }))
+  .replace("__DATA__", () => JSON.stringify({ lines: lines.map(({ file, ...l }) => l), LENGTH, source: spec.source, live, shots, logos, clips, theme: spec.theme ?? "teal" }))
   .replace(/__LOGO__/g, () => logo);
 const tab = await browser.newPage({ viewport: { width: 1080, height: 1920 } });
 await tab.setContent(html, { waitUntil: "load" });
+await tab.evaluate(() => window.ready);
 if (STILLS) {
   rmSync(join(DIR, "stills"), { recursive: true, force: true }); // no frames left from an older version
   mkdirSync(join(DIR, "stills"), { recursive: true });

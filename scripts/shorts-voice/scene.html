@@ -10,6 +10,8 @@ body.th-blue{--g1:rgba(80,140,255,.26);--g2:rgba(46,230,196,.10);--base:#040a1c}
 body.th-amber{--g1:rgba(226,160,60,.22);--g2:rgba(255,93,108,.12);--base:#0d0806}
 body.th-red{--g1:rgba(255,93,108,.22);--g2:rgba(226,160,60,.10);--base:#10060a}
 body.th-purple{--g1:rgba(160,110,255,.24);--g2:rgba(46,230,196,.10);--base:#0a0616}
+#foot{position:absolute;inset:0;overflow:hidden}#foot video{position:absolute;inset:-30px;width:1140px;height:1980px;object-fit:cover;opacity:0;filter:blur(3px) saturate(1.05)}
+#shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,7,15,.72) 0%,rgba(5,7,15,.55) 35%,rgba(5,7,15,.70) 58%,rgba(5,7,15,.88) 100%);opacity:0}
 #dots{position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.07) 1.6px,transparent 1.8px);background-size:44px 44px}
 #progress{position:absolute;left:0;top:0;height:7px;background:var(--teal);box-shadow:0 0 18px rgba(46,230,196,.8)}
 #brand{position:absolute;left:80px;top:336px;display:flex;align-items:center;gap:14px;font-size:30px;font-weight:600}
@@ -61,14 +63,18 @@ body.th-purple{--g1:rgba(160,110,255,.24);--g2:rgba(46,230,196,.10);--base:#0a06
 .brandv .badge{width:300px;height:300px;border-radius:50%;background:#fff;display:grid;place-items:center;box-shadow:0 0 0 6px rgba(46,230,196,.3),0 30px 90px rgba(0,0,0,.6)}.brandv .badge img{width:260px}
 .brandv .url{margin-top:40px;font-size:60px;font-weight:900;color:var(--teal)}
 </style></head><body>
-<div id="bg"></div><div id="dots"></div>
+<div id="bg"></div><div id="foot"></div><div id="shade"></div><div id="dots"></div>
 <div id="brand"><div class="b"><img src="__LOGO__" alt=""></div>Jocular <span>Insights</span></div>
 <div id="stage"></div>
 <div id="src"></div>
 <div id="text"><div id="line"></div></div>
 <div id="progress"></div>
 <script>
-const { lines, LENGTH, source, live, shots, logos, theme } = __DATA__;
+const { lines, LENGTH, source, live, shots, logos, clips, theme } = __DATA__;
+// footage: one <video> per clip; each line's clip starts from 0 when its run of lines begins
+const vids = {};
+window.ready = Promise.all(Object.entries(clips ?? {}).map(([k, src]) => new Promise(res => { const v = document.createElement("video"); v.muted = true; v.preload = "auto"; v.src = src; v.onloadeddata = () => res(); v.onerror = () => res(); vids[k] = v; document.getElementById("foot").appendChild(v); })));
+const runStart = lines.map((l, i) => { let k = i; while (k > 0 && lines[k - 1].bg === l.bg) k--; return lines[k].at; });
 document.body.classList.add("th-" + theme);
 const lg = s => (s && logos[s] ? `<img class="lg" src="${logos[s]}" alt="">` : "");
 const $ = id => document.getElementById(id);
@@ -196,7 +202,18 @@ function animate(g, el, u) {
 }
 
 let shown = null;
-window.render = t => {
+const seek = (v, x) => new Promise(res => { if (Math.abs(v.currentTime - x) < 0.001) return res(); const done = () => { v.removeEventListener("seeked", done); res(); }; v.addEventListener("seeked", done); v.currentTime = x; });
+async function foot(t, i) {
+  const cur = lines[i]?.bg;
+  let wait = [];
+  for (const [k, v] of Object.entries(vids)) {
+    if (k === cur) { const fadeIn = clamp((t - runStart[i] + .35) / .35); v.style.opacity = fadeIn; const local = Math.max(0, t - runStart[i]); const d = v.duration || 10; const x = local % d; v.style.transform = `scale(${(1.02 + Math.min(.06, local * .008)).toFixed(3)})`; wait.push(seek(v, x)); }
+    else v.style.opacity = 0;
+  }
+  document.getElementById("shade").style.opacity = cur ? 1 : 0;
+  await Promise.all(wait);
+}
+window.render = async t => {
   $("progress").style.width = clamp(t / LENGTH) * 1080 + "px";
   $("bg").style.transform = `translate(${(Math.sin(t * .35) * 50).toFixed(1)}px, ${(Math.cos(t * .27) * 60).toFixed(1)}px)`;
   let i = lines.findIndex((l, k) => t >= l.at && (k === lines.length - 1 || t < lines[k + 1].at));
@@ -214,6 +231,7 @@ window.render = t => {
   const type = L.visual.type;
   $("src").style.opacity = type === "save" || type === "brand" || type === "pair" || type === "pills" || type === "hook" ? 0 : 1;
   $("brand").style.opacity = type === "brand" ? 0 : 1;
+  await foot(t, i);
 };
 render(0);
 </script></body></html>
