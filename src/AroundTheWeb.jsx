@@ -23,8 +23,15 @@ const ago = iso => {
   return `${months} month${months > 1 ? "s" : ""} ago`;
 };
 
+// YouTube's own still for a video, by its id: used when the API's is missing or
+// fails. Loaded at once, not lazily: an iPhone's Safari can leave lazy pictures
+// in a row that scrolls sideways blank (16 Nov 2026, the owner: thumbnails broken)
+const stills = v => [v.thumb, `https://i.ytimg.com/vi/${v.id}/mqdefault.jpg`, `https://i.ytimg.com/vi/${v.id}/hqdefault.jpg`].filter((u, i, a) => u && a.indexOf(u) === i);
+
 function Video({ v }) {
   const [playing, setPlaying] = useState(false);
+  const [still, setStill] = useState(0);
+  const srcs = stills(v);
   return (
     <div className="atw-video">
       <div className="atw-frame">
@@ -32,7 +39,7 @@ function Video({ v }) {
           ? <iframe src={`https://www.youtube-nocookie.com/embed/${v.id}?autoplay=1&rel=0`} title={v.title} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen loading="lazy" />
           : (
             <button type="button" className="atw-thumb" onClick={() => setPlaying(true)} aria-label={`Play: ${v.title}`}>
-              {v.thumb && <img src={v.thumb} alt="" loading="lazy" decoding="async" />}
+              {still < srcs.length && <img src={srcs[still]} alt="" decoding="async" onError={() => setStill(n => n + 1)} />}
               <span className="atw-play" aria-hidden="true"><Play size={20} fill="currentColor" /></span>
             </button>
           )}
