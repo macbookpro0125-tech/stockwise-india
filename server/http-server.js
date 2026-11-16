@@ -1056,7 +1056,7 @@ export function createApp() {
             // filer has (the report above is only the top ~1,000's)
             case "profile": sendJson(res, 200, { ...(await companyProfile(symbol)), filedBusiness: cleanBusiness(getStock(symbol)?.business).slice(0, 8) }); return;
             case "filings": sendJson(res, 200, await companyFilings(symbol)); return;
-            case "news": sendJson(res, 200, await companyNews(getStock(symbol)?.name ?? symbol)); return;
+            case "news": sendJson(res, 200, await companyNews(getStock(symbol)?.name ?? symbol, 15, symbol)); return;
             case "peers": sendJson(res, 200, sectorPeers(symbol)); return;
             case "insiders": sendJson(res, 200, await insiderTrades(symbol)); return;
             // Around the web: YouTube's recent videos about it (off without YOUTUBE_API_KEY)

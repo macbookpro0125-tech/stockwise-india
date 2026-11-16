@@ -1,0 +1,14 @@
+import assert from "node:assert";
+import { techLines } from "./techText.js";
+const d = { price: 2530, sma50: 2248, sma200: 2451, return20d: 21.2, return60d: 3.4, rsi14: 85.2, pivots: { pp: 2449.6, s1: 2489.8, s2: 2449.6, s3: 2382, r1: 2597.6, r2: 2665.2, r3: 2705.4 }, summary: { total: 18, bullish: 15, bearish: 3 } };
+const l = techLines(d);
+const t = k => l.find(x => x.k === k)?.text ?? "";
+assert(/3% above its 200-day average \(₹2,451\), so the long-term trend is up/.test(t("Long-term trend")), t("Long-term trend"));
+assert(/50-day average is below the 200-day/.test(t("Medium-term trend")));
+assert(/^\+21\.2% in about a month, \+3\.4% in about three months\.$/.test(t("Recent moves")), t("Recent moves"));
+assert(/RSI 85, over 70/.test(t("Momentum")));
+assert(/nearest support below is ₹2,490; the nearest resistance above is ₹2,598/.test(t("Nearby levels")), t("Nearby levels"));
+assert(/Of 18 standard signals, 15 point up and 3 point down/.test(t("All signals")));
+assert(!l.some(x => /\b(buy|sell|target)\b/i.test(x.text)), "no buy, sell or target words");
+assert.deepEqual(techLines(null), []);
+console.log("ok: technical analysis in plain words");

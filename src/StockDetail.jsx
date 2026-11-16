@@ -15,6 +15,8 @@ import { askedAfterSignup, doneAfterSignup } from "./afterSignup.js";
 import CreateAlertModal from "./CreateAlertModal.jsx";
 import PriceChartPanel from "./PriceChartPanel.jsx";
 import FinancialsPanel from "./FinancialsPanel.jsx";
+import FinanceCompare from "./FinanceCompare.jsx";
+import { historyLines } from "./historySuggests.js";
 import TechnicalPanel from "./TechnicalPanel.jsx";
 import PeersPanel from "./PeersPanel.jsx";
 import IndustryMap from "./IndustryMap.jsx";
@@ -502,6 +504,18 @@ const tabToUrl = tab => {
     if (url.href !== window.location.href) window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
   } catch { /* no history API: the tab just isn't remembered */ }
 };
+
+// What its own history suggests, in plain lines (historySuggests.js)
+function HistorySuggests({ m }) {
+  const lines = historyLines(m);
+  if (!lines.length) return null;
+  return (
+    <div className="hist-sugg">
+      <dl>{lines.map(l => <div key={l.k}><dt>{l.k}</dt><dd>{l.text}</dd></div>)}</dl>
+      <p>Patterns in its own filings and NSE records. The past doesn't promise the future; nothing here is a forecast of the share price or advice.</p>
+    </div>
+  );
+}
 
 const TabStub = ({ tab, part }) => <div className="sd-tabpart" data-tab={tab}><div id={`sec-${part}`} /></div>;
 
@@ -1045,7 +1059,14 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       {m && <ChapterTab id="growth" sec="financials" m={m} fairValue={fairValue} price={price} rows={chapterChecks("growth", m.research)}
         lead={growthNote(m) ? `${growthNote(m).lead} ${growthNote(m).text}` : null}
         detail={[
-          { key: "results", after: "salesGrowth3y", question: "What are its results, year by year?", short: "Sales, profit and margins; the full statements", body: <FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} /> },
+          { key: "results", after: "salesGrowth3y", question: "What are its results, year by year?", short: "Sales, profit and margin", body: <FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} only="summary" /> },
+          ...(m.quarters?.length ? [{ key: "quarterly", question: "What did the latest quarters show?", short: "Quarter by quarter, and against a year earlier", body: <FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} only="quarterly" /> }] : []),
+          { key: "pnl", question: "Profit and loss", short: "Every line from sales to profit, year by year", body: <FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} only="profitLoss" /> },
+          { key: "balance", question: "Balance sheet", short: "What it owns and what it owes, year by year", body: <FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} only="balanceSheet" /> },
+          { key: "cash", question: "Cash flow", short: "Cash in and out, year by year", body: <FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} only="cashFlow" /> },
+          { key: "ratios", question: "Ratios", short: "Returns, margins and debt, year by year", body: <FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} only="ratios" /> },
+          { key: "compare", question: "How does it compare with other companies?", short: "Any statement, beside up to three companies", body: <FinanceCompare symbol={data.symbol} m={m} /> },
+          ...(historyLines(m).length ? [{ key: "history", question: "What does its history suggest?", short: "Results timing, dividends, its biggest quarter, its pace", body: <HistorySuggests m={m} /> }] : []),
         ]} />}
 
       {m && <ChapterTab id="safety" sec="health" m={m} fairValue={fairValue} price={price} rows={chapterChecks("safety", m.research)} flags={m.research?.flags ?? []}
@@ -1229,7 +1250,18 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         </div>
       )}
 
-      {m && <div id="sec-financials" className="ss-section" data-tab="growth">{built("growth") && <PBlock title="Results, year by year"><FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} /></PBlock>}</div>}
+      {/* the Finance tab: each statement its own section, then a comparison
+          with other companies (16 Nov 2026, the owner) */}
+      {m && <div id="sec-financials" className="ss-section" data-tab="growth">{built("growth") && <>
+        <PBlock title="Sales, profit and margin"><FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} only="summary" /></PBlock>
+        {m.quarters?.length > 0 && <PBlock title="Quarterly results"><FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} only="quarterly" /></PBlock>}
+        <PBlock title="Profit and loss"><FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} only="profitLoss" /></PBlock>
+        <PBlock title="Balance sheet"><FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} only="balanceSheet" /></PBlock>
+        <PBlock title="Cash flow"><FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} only="cashFlow" /></PBlock>
+        <PBlock title="Ratios"><FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} only="ratios" /></PBlock>
+        <PBlock title="Compare with other companies"><FinanceCompare symbol={data.symbol} m={m} /></PBlock>
+        {historyLines(m).length > 0 && <PBlock title="What its history suggests"><HistorySuggests m={m} /></PBlock>}
+      </>}</div>}
       {m && <div id="sec-health" className="ss-section" data-tab="safety">{built("safety") && <><PBlock title="What it owns and owes"><StockHealth m={m} scoreLink={false} /></PBlock>{m.piotroskiChecks && <PBlock title={`Piotroski score: ${m.piotroski} of 9`}><PiotroskiCard m={m} /></PBlock>}</>}</div>}
       <div id="sec-holding" className="ss-section" data-tab="owners">{built("owners") && <><PBlock title="Who owns it"><ShareholdingPanel symbol={data.symbol} /></PBlock><PBlock title="Insider and promoter trades"><InsidersPanel symbol={data.symbol} /></PBlock></>}</div>
       {m?.dividendRecord && <div id="sec-dividends" className="ss-section" data-tab="owners">{built("owners") && <PBlock title="What it pays shareholders"><StockDividends m={m} /></PBlock>}</div>}

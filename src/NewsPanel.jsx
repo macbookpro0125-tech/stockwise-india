@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { api } from "./api.js";
+import { kindOf, KIND_ORDER } from "./newsKinds.js";
 
 // The original's News & filings panel (stock-screener NewsPanel.jsx). Filings
 // are the company's own announcements to NSE; reports are its annual reports;
@@ -42,6 +43,9 @@ export default function NewsPanel({ symbol }) {
   const [newsStale, setNewsStale] = useState(false);
   const [summaries, setSummaries] = useState({});
   const [openSummary, setOpenSummary] = useState(null);
+  // one kind at a time, and routine notices folded away (16 Nov 2026)
+  const [kind, setKind] = useState("all");
+  const [showRoutine, setShowRoutine] = useState(false);
   const activeSymbol = useRef(symbol);
   activeSymbol.current = symbol;
 
@@ -65,13 +69,19 @@ export default function NewsPanel({ symbol }) {
 
   const announcements = filings?.announcements ?? [];
   const reports = filings?.annualReports ?? [];
-  const items = tab === "filings"
+  const all = (tab === "filings"
     ? announcements.map((a, index) => ({ key: `${a.date}-${a.title}`, index, title: a.title, sub: a.summary, meta: nseDate(a.date), url: a.url, review: a.review }))
     : tab === "news"
       ? (news ?? []).map(n => ({ key: n.url, title: n.title, sub: null, meta: [n.publisher, fmtDate(n.date)].filter(Boolean).join(" · "), url: n.url }))
-      : [];
+      : []).map(a => ({ ...a, kind: kindOf(a.title, a.sub) }));
+  // the same notice filed twice (a correction, a second copy) shows once
+  const seenTitles = new Set();
+  const unique = all.filter(a => { const t = `${a.title} ${a.sub ?? ""}`.toLowerCase().slice(0, 140); if (seenTitles.has(t)) return false; seenTitles.add(t); return true; });
+  const routineCount = unique.filter(a => a.kind.routine).length;
+  const kindsHere = KIND_ORDER.filter(k => unique.some(a => !a.kind.routine && a.kind.id === k.id));
+  const items = unique.filter(a => (showRoutine || !a.kind.routine) && (kind === "all" || a.kind.id === kind));
   const shown = expanded ? items : items.slice(0, INITIAL);
-  const switchTab = t => { setTab(t); setExpanded(false); };
+  const switchTab = t => { setTab(t); setExpanded(false); setKind("all"); };
   const readAttachment = async index => {
     const key = `${symbol}:${index}`;
     if (summaries[key]) { setOpenSummary(openSummary === key ? null : key); return; }
@@ -112,6 +122,15 @@ export default function NewsPanel({ symbol }) {
         </div>
       )}
 
+      {tab !== "reports" && (kindsHere.length > 1 || routineCount > 0) && (
+        <div className="news-kinds" role="group" aria-label="Show one kind">
+          {kindsHere.length > 1 && [{ id: "all", label: "All" }, ...kindsHere].map(k => (
+            <button key={k.id} type="button" aria-pressed={kind === k.id} onClick={() => { setKind(k.id); setExpanded(false); }}>{k.label}</button>
+          ))}
+          {routineCount > 0 && <button type="button" className="news-routine" aria-pressed={showRoutine} onClick={() => setShowRoutine(v => !v)}>{showRoutine ? "Hide" : "Show"} {routineCount} routine notice{routineCount === 1 ? "" : "s"}</button>}
+        </div>
+      )}
+
       {tab === "filings" && !filings && <div style={emptyStyle}>Loading filings…</div>}
       {tab === "news" && news == null && <div style={emptyStyle}>Loading news…</div>}
       {tab === "filings" && filings?.stale && <div style={{ ...emptyStyle, color: "var(--yellow)" }}>{filings.staleReason}</div>}
@@ -133,6 +152,7 @@ export default function NewsPanel({ symbol }) {
             const titleBlock = (
               <div style={{ display: "flex", gap: 10, alignItems: "baseline", flexWrap: "wrap" }}>
                 <span style={{ fontSize: 11, color: "var(--t3)", whiteSpace: "nowrap", ...MONO }}>{a.meta || "—"}</span>
+                {a.kind.id !== "other" && <span className={`news-kind news-kind-${a.kind.id}`}>{a.kind.label}</span>}
                 <span style={{ fontSize: 13, fontWeight: 400, color: "var(--t1)", lineHeight: 1.45, flex: "1 1 200px", minWidth: 0 }}>{a.title}</span>
               </div>
             );

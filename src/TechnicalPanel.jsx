@@ -228,6 +228,8 @@ function SignalRow({ label, signal, crossText }) {
   );
 }
 
+import { techLines } from "./techText.js";
+
 export default function TechnicalPanel({ ticker }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -265,6 +267,14 @@ export default function TechnicalPanel({ ticker }) {
       </div>
       {data.stale && <div style={{ fontSize: 11, color: "var(--yellow)", background: "var(--yellow-dim)", border: "1px solid var(--yellow-bdr)", borderRadius: 7, padding: "7px 10px", marginBottom: 10 }}>{data.staleReason} Verify the date before relying on these signals.</div>}
 
+      {/* In plain words first (16 Nov 2026): what the trend, momentum and
+          nearby levels say, before the signal rows */}
+      {techLines(data).length > 0 && (
+        <dl className="tech-plain">
+          {techLines(data).map(l => <div key={l.k} className={`sd-tone-${l.tone}`}><dt>{l.k}</dt><dd>{l.text}</dd></div>)}
+        </dl>
+      )}
+
       {/* Summary Gauge */}
       <SummaryGauge summary={data.summary} />
 
@@ -274,19 +284,19 @@ export default function TechnicalPanel({ ticker }) {
       {/* Signal Rows */}
       <div style={{ marginBottom: 14 }}>
         <SignalRow
-          label="Short Term — 5 & 20 Day SMA CrossOver"
+          label="Short-term trend: 5-day vs 20-day average"
           signal={data.shortTermSignal}
-          crossText={data.shortTermCross ? (data.shortTermCross === "bullish" ? "Golden Cross" : "Death Cross") : null}
+          crossText={data.shortTermCross ? (data.shortTermCross === "bullish" ? "just crossed up" : "just crossed down") : null}
         />
         <SignalRow
-          label="Long Term — 50 & 200 Day SMA CrossOver"
+          label="Long-term trend: 50-day vs 200-day average"
           signal={data.longTermSignal}
-          crossText={data.longTermCross ? (data.longTermCross === "bullish" ? "Golden Cross" : "Death Cross") : null}
+          crossText={data.longTermCross ? (data.longTermCross === "bullish" ? "Golden cross: 50-day just rose above 200-day" : "Death cross: 50-day just fell below 200-day") : null}
         />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderRadius: 8, background: "var(--surf)", marginBottom: 6 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ width: 8, height: 8, borderRadius: "50%", background: rsiColor, flexShrink: 0 }} />
-            <span style={{ fontSize: 12, color: "var(--t2)" }}>RSI (14)</span>
+            <span style={{ fontSize: 12, color: "var(--t2)" }}>Momentum, RSI (14): over 70 stretched up, under 30 stretched down</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ fontSize: 13, fontWeight: 500, color: rsiColor }}>{data.rsi14 ?? "—"}</span>

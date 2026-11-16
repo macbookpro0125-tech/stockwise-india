@@ -304,6 +304,18 @@ const JUNK = [
   // "Laser Power & Infra Ltd (LASERPOWER) Share Price"
   /\blive chart\b/i,
   /\bshare price\s*$/i,
+  // 16 Nov 2026: quote pages and forecasts that the news search still let in
+  // ("Stock price, news, quote and history", "Share Price Today (NSE)",
+  // "Stock Forecast & Analyst Predictions", "Outlook for the Week")
+  /\bquote and history\b|\bprice,\s*news,\s*quote\b/i,
+  /\bshare price today\b|\bstock price today\b/i,
+  /\b(stock|share|price)\s+forecast\b|\banalyst predictions?\b|\bprice predictions?\b|\btarget price\b|\boutlook for the week\b/i,
+  // trading tips ("Buy TCS Futures: SL 2475 Tgt 2535") and the auto-written
+  // daily price pages ("Share Price Falls 3.14% Today")
+  /\bstock of the day\b|\b(buy|sell)\b.{0,40}\b(SL|tgt|target|stop ?loss)\b/i,
+  // brokers' ratings and targets ("share price target: Nomura retains 'Buy'")
+  /\bprice target\b|\b(retains?|maintains?|reiterates?|upgrades? to|downgrades? to)\s+['‘"]?(buy|sell|hold|accumulate|reduce)\b/i,
+  /\bshare price (falls|rises|gains|drops|jumps|declines)\s+[\d.]+%/i,
 ];
 
 export const isJunkHeadline = title => JUNK.some(re => re.test(title));
@@ -311,9 +323,21 @@ export const isJunkHeadline = title => JUNK.some(re => re.test(title));
 // Google News, not Yahoo: Yahoo's news search isn't ticker-specific for Indian
 // symbols. Returns an empty list rather than throwing — news is the least
 // important thing on the page and must never take it down.
-export function companyNews(name, limit = 8) {
-  const query = `${String(name || "").trim()} share price`;
-  return cached(`news:${query}`, HOUR, async () => {
+// 16 Nov 2026 ("news should be updated"): the last 30 days only (Google's
+// when:30d), the name in quotes so other companies' news stays out, up to 15
+// items, refreshed every half hour
+// A headline must name the company (its first two words, "Tata Consultancy")
+// or its NSE symbol ("TCS"): the search also returns its group's other
+// companies ("Tata Motors takes over Iveco")
+const namesCompany = (title, name, symbol) => {
+  const words = String(name || "").replace(/\s+(Limited|Ltd\.?)$/i, "").split(/\s+/).filter(Boolean);
+  const key = words.slice(0, Math.min(2, words.length)).join(" ").toLowerCase();
+  const t = String(title).toLowerCase();
+  return (key && t.includes(key)) || (symbol && new RegExp(`\\b${String(symbol).replace(/[^A-Za-z0-9&]/g, "")}\\b`, "i").test(title));
+};
+export function companyNews(name, limit = 15, symbol = null) {
+  const query = `"${String(name || "").trim().replace(/\s+(Limited|Ltd\.?)$/i, "")}" share when:30d`;
+  return cached(`news:${query}:${symbol ?? ""}`, HOUR / 2, async () => {
       const url = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en-IN&gl=IN&ceid=IN:en`;
       const xml = await requestText(url, { headers: { "User-Agent": NEWS_UA }, service: "Google News", timeoutMs: 10_000, maxBytes: 4 * 1024 * 1024 });
       const seen = new Set();
@@ -326,7 +350,7 @@ export function companyNews(name, limit = 8) {
         if (!title || !link) continue;
         // Google appends " - Publisher" to headlines; the publisher is shown separately
         const clean = source && title.endsWith(` - ${source}`) ? title.slice(0, -(source.length + 3)).trim() : title;
-        if (!clean || isJunkHeadline(clean)) continue;
+        if (!clean || isJunkHeadline(clean) || !namesCompany(clean, name, symbol)) continue;
         if (seen.has(clean.toLowerCase())) continue;
         seen.add(clean.toLowerCase());
         const d = pub ? new Date(pub) : null;

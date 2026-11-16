@@ -446,8 +446,12 @@ function YearPicture({ history, tab }) {
   );
 }
 
-export default function FinancialsPanel({ history: filed, quarters: filedQuarters = [], template }) {
-  const [tab, setTab] = useState("summary");
+// only: one statement on its own, without the switch buttons (16 Nov 2026, the
+// owner: "I want the financials separate, profit & loss, quarterly, balance
+// sheet… each different") — the Finance tab shows each as its own section
+export default function FinancialsPanel({ history: filed, quarters: filedQuarters = [], template, only = null }) {
+  const [picked, setTab] = useState("summary");
+  const tab = only ?? picked;
   const history = useMemo(() => (filed ?? []).map(withDerived), [filed]);
   const quarters = useMemo(() => (filedQuarters ?? []).map(withDerived), [filedQuarters]);
   const ttm = useMemo(() => { const t = ttmOf(filedQuarters); return t ? withDerived(t) : null; }, [filedQuarters]);
@@ -469,8 +473,8 @@ export default function FinancialsPanel({ history: filed, quarters: filedQuarter
 
   return (
     <div style={{ border: "1px solid var(--bdr2)", borderRadius: 14, background: "var(--s2)", padding: 16, marginBottom: 16 }}>
-      <div data-ttl style={{ fontSize: 14, fontWeight: 500, color: "var(--t1)", marginBottom: 12, letterSpacing: "-0.01em" }}>Financials</div>
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
+      {!only && <div data-ttl style={{ fontSize: 14, fontWeight: 500, color: "var(--t1)", marginBottom: 12, letterSpacing: "-0.01em" }}>Financials</div>}
+      {!only && <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}>
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)} style={{
             height: 30, padding: "0 12px", borderRadius: 8, fontSize: 12, fontWeight: 400, cursor: "pointer",
@@ -480,7 +484,7 @@ export default function FinancialsPanel({ history: filed, quarters: filedQuarter
             transition: "all 120ms",
           }}>{t.label}</button>
         ))}
-      </div>
+      </div>}
       {tab === "summary"
         ? (points.length >= 2
           ? <FinancialsChart points={points} />

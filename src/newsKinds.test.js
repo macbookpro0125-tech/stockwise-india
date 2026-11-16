@@ -1,0 +1,16 @@
+import assert from "node:assert";
+import { kindOf } from "./newsKinds.js";
+const k = (t, s) => kindOf(t, s);
+assert.equal(k("Financial Results").id, "results");
+assert.equal(k("Outcome of Board Meeting", "Board approved financial results for quarter ended Sept 30").id, "results");
+assert.equal(k("Corporate Action-Dividend", "Record date for interim dividend").id, "dividend");
+assert.equal(k("Bagging/Receiving of orders/contracts", "Company bags order worth Rs 500 crore").id, "order");
+assert.equal(k("Acquisition", "Acquisition of 51% stake").id, "deal");
+assert.equal(k("Change in Directorate", "Resignation of independent director").id, "people");
+assert.equal(k("Credit Rating", "CRISIL reaffirmed AAA").id, "rating");
+assert(k("Copy of Newspaper Publication").routine, "a newspaper copy is routine");
+assert(k("Analysts/Institutional Investor Meet/Con. Call Updates", "Schedule of meet").routine, "a meeting schedule is routine");
+assert(k("Updates").routine, "a bare 'Updates' is routine");
+assert(!k("Financial Results").routine);
+assert.equal(k("Press Release", "TCS opens new centre").id, "other");
+console.log("ok: news and filings labelled by kind");
