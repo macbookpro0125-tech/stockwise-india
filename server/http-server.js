@@ -46,7 +46,7 @@ import { savePushToken, removePushToken, pushReady, pushToUser } from "./push.js
 import { startNewsPush } from "./news-push.js";
 import { startScreenAlerts } from "./screen-alerts.js";
 import { niceName } from "../src/stockName.js";
-import { loadAudit, auditSummary } from "./score-audit.js";
+import { loadAudit, auditSummary, scoreMoved } from "./score-audit.js";
 import { countBrowserVisit, countActive, countSignup, visitStats, isOwner } from "./visits.js";
 import { sendWelcome } from "./welcome.js";
 import { startDigestJobs, weeklyEmailOn, setWeeklyEmail, resultsEmailOn, setResultsEmail, unsubscribe } from "./digest.js";
@@ -1144,6 +1144,8 @@ export function createApp() {
           metrics.sectorShare = market.rows ? sectorShare(metrics, market.rows) : null;
           // its place by overall score in the market and its sector
           metrics.overallRank = market.rows?.find(r => r.symbol === metrics.symbol)?.overallRank ?? null;
+          // how its overall score moved over the nightly checks kept (score-audit.js)
+          metrics.scoreMoved = scoreMoved(metrics.symbol, metrics.research?.overall?.score ?? null);
         }
 
         sendJson(res, 200, {

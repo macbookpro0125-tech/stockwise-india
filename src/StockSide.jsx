@@ -111,6 +111,18 @@ export function Scorecard({ r }) {
   );
 }
 
+// Has the overall score moved over the nightly checks kept (server
+// score-audit.js scoreMoved, up to 21 trading days; 16 Nov 2026): a change of
+// 3 or more is called a move, less is steady. Rules changes are said, since a
+// score can move because the rule did.
+export function movedLine(mv) {
+  if (!mv || mv.from == null || mv.to == null) return null;
+  const d = mv.to - mv.from;
+  const when = day(mv.since);
+  const text = Math.abs(d) < 3 ? `Steady since ${when}` : `${d > 0 ? "Up" : "Down"} ${Math.abs(d)} since ${when} (was ${mv.from})`;
+  return mv.rulesChanged ? `${text}; scoring rules updated since` : text;
+}
+
 // variant "head": the same card laid out across the top of a computer's page
 // (StockDesk.jsx, 26 Oct 2026), with the company in a sentence under it and
 // no scorecard — the chapter tiles below carry the scores
@@ -172,6 +184,7 @@ export default function StockSide({ data, m, price, priceLabel, watched, onWatch
                     <span className="sd-head-panel-tx">
                       <strong>{WORD[tone]} overall</strong>
                       {rankLine(m.overallRank) && <small>{rankLine(m.overallRank)}</small>}
+                      {movedLine(m.scoreMoved) && <small className="sd-head-moved">{movedLine(m.scoreMoved)}</small>}
                       {conf != null && <small>Data confidence {conf >= 80 ? "high" : conf >= 60 ? "medium" : "low"}{m.research.coverage?.total ? ` · ${m.research.coverage.checked} of ${m.research.coverage.total} checks have figures` : ""}</small>}
                     </span>
                   </div>

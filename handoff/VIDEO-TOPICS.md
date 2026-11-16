@@ -9,20 +9,20 @@ Made ones say so; tick a line when it's uploaded (YouTube id · Instagram link).
 - [x] What is P/E? — `explain-pe` (YouTube GnocULzQWLQ, scheduled; Instagram queued)
 - [x] ROE vs ROCE: why a bank's ROE is the one to watch — `explain-roe` (YouTube 2Jlw7evAmtU, scheduled; Instagram queued)
 - [x] Debt to equity: when borrowing is fine and when it isn't — `explain-debt-to-equity` (YouTube UTZ0fQz3AGI, scheduled; Instagram queued)
-- [ ] Operating margin: why two companies with the same sales earn very different profit
+- [ ] Operating margin: why two companies with the same sales earn very different profit — `explain-operating-margin` (made 16 Nov night, not uploaded)
 - [x] Free cash flow: profit you can actually spend — `explain-free-cash-flow` (YouTube bz7cvyHREjI, scheduled; Instagram queued)
 - [x] Dividend yield: why a high yield can be a warning — `explain-dividend-yield` (YouTube SF9tqdRMdv0, scheduled; Instagram queued)
 - [x] Price to book: the one number banks are judged on — `explain-price-to-book` (YouTube i9A3MW2zsTc, scheduled; Instagram queued)
-- [ ] EV/EBITDA in plain words
-- [ ] Interest cover: can it pay its lenders?
+- [ ] EV/EBITDA in plain words (needs today's prices from the live site; a local copy's prices lag)
+- [ ] Interest cover: can it pay its lenders? — `explain-interest-cover` (made 16 Nov night, not uploaded)
 
 ## How to check a company
 - [x] Promoter pledge: what it means when owners pledge their shares — `explain-promoter-pledge` (YouTube mRHXuFNAbJI, scheduled; Instagram queued)
-- [ ] Is the profit real cash? (cash flow ÷ profit)
+- [ ] Is the profit real cash? (cash flow ÷ profit) — `explain-profit-real-cash` (made 16 Nov night, not uploaded)
 - [ ] Five checks before you trust a quarter's profit (one-offs, other income, tax)
 - [ ] Share count: when a company keeps issuing new shares
 - [ ] Red flags in an annual report, in under a minute
-- [ ] Piotroski score: nine yes/no checks on a balance sheet
+- [ ] Piotroski score: nine yes/no checks on a balance sheet — `explain-piotroski` (made 16 Nov night, not uploaded)
 
 ## How companies make money (not tied to a quarter)
 - [ ] How TCS makes money

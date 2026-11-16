@@ -7028,3 +7028,15 @@ tr:hover .row-star, .row-star:focus-visible { opacity: 1; }
 /* Your view and the sources on a computer's News tab */
 .dk-yourview { border-top: 0; padding-top: var(--sp-2); display: flex; flex-direction: column; gap: var(--sp-6); }
 .ct-box .sd-dates > .sd-card-title { display: none !important; }
+
+/* 16 Nov 2026, from the computer mock-ups: the score in the pinned strip,
+   the score's move under the card's score panel, and a score-coloured dot on
+   each chapter in the bar down the left */
+.dk-mini-score { display: inline-flex; align-items: baseline; gap: 2px; padding: 3px 10px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--tone, var(--t3)) 45%, transparent); background: color-mix(in srgb, var(--tone, var(--t3)) 12%, transparent); cursor: pointer; font-variant-numeric: tabular-nums; }
+.dk-mini-score b { font-size: 15px; font-weight: 700; color: var(--tone, var(--t1)); }
+.dk-mini-score small { font-size: 11px; color: var(--t3); }
+.dk-mini-tab { font-size: var(--fs-sm); color: var(--t3); padding-left: var(--sp-3); border-left: 1px solid var(--bdr2); }
+.sd-head-moved { color: var(--t2) !important; }
+.dk-cr-icon { position: relative; display: inline-flex; }
+.dk-cr-dot { position: absolute; top: -3px; right: -6px; width: 7px; height: 7px; border-radius: 50%; background: var(--tone, var(--t3)); box-shadow: 0 0 0 2px var(--bg); }
+.sr-tab.on .dk-cr-dot { box-shadow: 0 0 0 2px var(--accent); }

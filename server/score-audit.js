@@ -102,6 +102,26 @@ export function saveAudit(rows, pricesDate) {
   return audit;
 }
 
+// How a company's overall score has moved over the nights kept here (16 Nov
+// 2026, the company card's "has it moved"): against the oldest night on file.
+// The scores map of that night is read once and kept until a newer file
+// becomes the oldest. Null with fewer than two nights or no score then.
+let oldest = { file: null, scores: null, version: null };
+export function scoreMoved(symbol, overallNow) {
+  if (overallNow == null) return null;
+  const list = files();
+  if (list.length < 2) return null;
+  if (oldest.file !== list[0]) {
+    try {
+      const a = JSON.parse(readFileSync(join(AUDIT_DIR, list[0]), "utf-8"));
+      oldest = { file: list[0], scores: a.scores ?? {}, version: a.scoreVersion ?? null };
+    } catch { oldest = { file: list[0], scores: {}, version: null }; }
+  }
+  const then = oldest.scores?.[symbol]?.overall;
+  if (then == null) return null;
+  return { since: list[0].slice(0, -5), from: Math.round(then), to: Math.round(overallNow), nights: list.length, rulesChanged: oldest.version != null && oldest.version !== RESEARCH_VERSION };
+}
+
 // What the owner's page and the weekly review read: the flags without the
 // whole market's scores
 export const auditSummary = a => (a ? { ...a, scores: undefined, days: files().map(f => f.slice(0, -5)) } : null);

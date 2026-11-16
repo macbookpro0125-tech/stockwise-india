@@ -43,7 +43,7 @@ import StockSnapshot from "./StockSnapshot.jsx";
 import { CHAPTERS, VerdictLines, ChapterTop, ChapterEnd, PBlock, PhoneWatch, FoldRow } from "./StockChapters.jsx";
 import { DeskTiles, WhatToWatch, KeyFiguresRow, DeskScoreCards, DeskWatchColumns } from "./StockDesk.jsx";
 import ChapterTab, { chapterChecks } from "./ChapterTab.jsx";
-import { gistLine } from "./chapterText.js";
+import { gistLine, chapterScore } from "./chapterText.js";
 import { growthNote } from "./deskText.js";
 import { docTop } from "./motion.js";
 
@@ -549,7 +549,7 @@ function NextTab({ ready, current, onGo }) {
 // each with a symbol (27 Oct 2026: "I want this in that bar … with symbols")
 const CHAPTER_ICONS = { overview: FileText, business: Building2, growth: TrendingUp, safety: ShieldCheck, owners: Users, value: Scale, price: ChartCandlestick, news: Newspaper };
 
-function SectionNav({ ready, phone = false, phoneTab = "overview", onPhoneTab, rail = false }) {
+function SectionNav({ ready, phone = false, phoneTab = "overview", onPhoneTab, rail = false, research = null }) {
   const [present, setPresent] = useState(TABS);
   const [spied, setSpied] = useState("overview");
   const active = phone ? phoneTab : spied;
@@ -605,9 +605,12 @@ function SectionNav({ ready, phone = false, phoneTab = "overview", onPhoneTab, r
       <nav ref={rowRef} aria-label="Parts of this page" className="sr-group dk-chapters-rail">
         {present.map(([id, label, parts, question]) => {
           const Icon = CHAPTER_ICONS[id] ?? FileText;
+          // a small dot in the chapter's score colour (16 Nov 2026, the
+          // mock-up's "result dots on the rail"); its word is in the title
+          const cs = research ? chapterScore(id, research) : null;
           return (
-            <button key={id} type="button" data-sec={id} title={question} aria-current={active === id ? "true" : undefined} onClick={() => go(parts, id)} className={`sr-tab${active === id ? " on" : ""}`}>
-              <Icon size={19} strokeWidth={1.8} aria-hidden="true" />
+            <button key={id} type="button" data-sec={id} title={cs ? `${question} · ${cs.word}` : question} aria-current={active === id ? "true" : undefined} onClick={() => go(parts, id)} className={`sr-tab${active === id ? " on" : ""}`}>
+              <span className="dk-cr-icon"><Icon size={19} strokeWidth={1.8} aria-hidden="true" />{cs && <i className={`dk-cr-dot sd-tone-${cs.tone}`} aria-hidden="true" />}</span>
               <span className="dk-cr-label">{label}</span>
             </button>
           );
@@ -1021,6 +1024,14 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         <CompanyLogo symbol={data.symbol} size={28} />
         <span className="dk-mini-name"><b>{cardName(data.name)}</b><small>{data.symbol}{m?.sector ? ` · ${m.sector}` : ""}</small></span>
         {price > 0 && <span className="dk-mini-px"><b>{fmtRs(price)}</b>{m?.ret1d != null && <em className={m.ret1d >= 0 ? "up" : "down"}>{m.ret1d >= 0 ? "+" : "−"}{Math.abs(m.ret1d).toFixed(2)}%</em>}</span>}
+        {/* the overall score and the open tab, as the mock-up drew the
+            scrolling bar (16 Nov 2026); the score opens the Summary */}
+        {m?.research?.overall?.score != null && (() => {
+          const o = Math.round(m.research.overall.score);
+          const tone = o >= 70 ? "good" : o >= 50 ? "mid" : "bad";
+          return <button type="button" className={`dk-mini-score sd-tone-${tone}`} onClick={() => goChapter("overview")} title="Overall score: open the Summary"><b>{o}</b><small>/100</small></button>;
+        })()}
+        <span className="dk-mini-tab">{CHAPTERS.find(c => c.id === deskTab)?.label}</span>
       </div>
       <StockSide variant="head" summary={deskTab === "overview"} onGoChapter={goChapter} gist={m ? gistLine(m, { fairValue, price }) : null} data={data} m={m} price={price} priceLabel={priceLabel} watched={watched}
         onWatch={() => toggleWatch(data.symbol, price)} onAlert={() => setShowAlertModal(true)} />
@@ -1046,7 +1057,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       </section>
 
       {/* the chapters, in the bar down the left (SideRail.jsx steps aside) */}
-      <aside className="dk-rail"><SectionNav ready={!!m} rail phone phoneTab={deskTab} onPhoneTab={selectDeskTab} /></aside>
+      <aside className="dk-rail"><SectionNav ready={!!m} rail phone phoneTab={deskTab} onPhoneTab={selectDeskTab} research={m?.research ?? null} /></aside>
 
       {/* Each chapter as a tab of questions (ChapterTab.jsx, 27 Oct 2026):
           its checks as rows, then the detail under the questions they answer */}
