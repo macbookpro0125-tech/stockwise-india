@@ -13,6 +13,9 @@ _Last updated: 16 Nov 2026, by Claude on branch `screeners-home`._
 - **Score decisions (12–13 Nov, the owner's word)**: one headline score, the Overall (quality ex-valuation 70% + valuation 30%, trimmed for price swings), unchanged by the tests; ranked market-wide and by sector. The test showed it sorts strong from weak but doesn't beat the Nifty 50, so it is called a ranking, never a forecast. The pairing that held up (quality 70+ with price strength 70+) is the strategy "Strong Business, Rising Price" and the company-page tag. Valuation 1.11: growth allowance against peers, free cash flow left out while a company builds capacity (Acme Solar).
 - **AI checking**: costed (Haiku ~$10–15/month on changed companies only) and tried locally (this Intel Mac: 5+ min a company, poor answers). Not built; the owner hasn't named it, so it stays held.
 
+## Committed, not pushed (16 Nov): false EPS cautions removed
+- `server/metrics.js` epsCheckFor: a filed EPS that fits profit ÷ the shareholding count raises no caution (23 companies, e.g. LTIMindtree, CEAT, Honeywell Automation). No score changes. Details: handoff/score-reviews/2026-11-16.md.
+
 ## Waiting for the owner (16 Nov): the computer company page, mock-ups only
 - Pictures of every computer tab in the phone page's style are saved for their review; **nothing is built**. What they have decided, what is open and where the files are: `handoff/DESKTOP-COMPANY-PAGE.md`. They want more changes first; ask, don't build.
 

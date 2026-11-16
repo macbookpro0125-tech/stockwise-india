@@ -402,6 +402,14 @@ assert(near(farOff.eps, 13 / 24, 1e-9) && !farOff.epsCorrection && farOff.epsMis
 const sharesOff = metricsOf(company({ holding: { totalShares: 50 * CR }, tweak: (y, i) => (i === 0 ? { ...y, eps: 13 / 4 } : y) }), snapshot());
 assert(!sharesOff.epsCorrection && sharesOff.epsMismatch, "…nor is the slip corrected when the share count doesn't match the shareholding filing");
 assert(!yearsOnly.epsCorrection && !yearsOnly.epsMismatch && !yearsOnly.research.flags.some(f => /Eps/.test(f.id)), "a filed EPS in line with profit ÷ shares is left alone, without a caution");
+// 16 Nov 2026: a results filing's paid-up capital or face value can be stale or
+// in another unit (LTIMindtree: Rs 10 for a Rs 1 share; CEAT, Honeywell
+// Automation, KIOCL: 10× to 4,000× off). When the filed EPS fits profit ÷ the
+// shareholding filing's count, it's that line that's wrong, not the EPS: no caution
+const staleFace = metricsOf(company({ tweak: y => ({ ...y, faceValue: 100 }) }), snapshot());
+assert(!staleFace.epsMismatch && !staleFace.epsCorrection && near(staleFace.eps, 13, 1e-9) && !staleFace.research.flags.some(f => /Eps/.test(f.id)), "a stale face value with an EPS that fits the shareholding count raises no caution");
+const staleFaceBadEps = metricsOf(company({ tweak: (y, i) => ({ ...y, faceValue: 100, eps: i === 0 ? 13 / 24 : y.eps }) }), snapshot());
+assert(staleFaceBadEps.epsMismatch, "…but an EPS that fits neither count still does");
 
 // Tax: as filed, never inferred; no tax-credit adjustment to the levels
 const profitAbovePbt = metricsOf(company({ tweak: y => ({ ...y, pbt: y.profit * 0.9 }) }), snapshot());

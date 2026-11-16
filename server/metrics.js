@@ -165,6 +165,11 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     const calculatedEps = ownersProfit(y) / filingShares;
     const ratio = calculatedEps / y.eps; // above 1: the filed EPS is too low
     if (near1(calculatedEps, y.eps, 1.5)) return null;
+    // The filing's paid-up capital or face value can be the stale line, not the
+    // EPS (LTIMindtree: Rs 10 for a Rs 1 share; CEAT, Honeywell Automation:
+    // hundreds of times off, 16 Nov 2026). An EPS that fits profit ÷ the
+    // shareholding filing's own count is right: no caution
+    if (currentShares && near1(ownersProfit(y) / (currentShares / factorAfter(filedOf(y))), y.eps, 1.2)) return null;
     const sharesAgree = near1(currentShares, filingShares * factorAfter(filedOf(y)), 1.5);
     const knownSlip = period === "Annual"
       ? ratio >= 3 && ratio <= 5
