@@ -247,7 +247,7 @@ export default function TechnicalPanel({ ticker }) {
   if (loading) return null;
 
   if (error) return (
-    <div style={{ border: "1px solid var(--bdr2)", borderRadius: 10, padding: "16px 20px", marginBottom: 12, background: "var(--card)" }}>
+    <div className="tech-panel" style={{ border: "1px solid var(--bdr2)", borderRadius: 10, padding: "16px 20px", marginBottom: 12, background: "var(--card)" }}>
       <div style={{ fontSize: 13, fontWeight: 400, color: "var(--t1)", marginBottom: 6 }}>Technical Analysis</div>
       <div style={{ fontSize: 12, color: "var(--t3)" }}>{error}</div>
     </div>
@@ -258,7 +258,7 @@ export default function TechnicalPanel({ ticker }) {
   const rsiColor = data.rsi14 > 70 ? "var(--red)" : data.rsi14 < 30 ? "var(--green)" : "var(--t1)";
 
   return (
-    <div style={{ border: "1px solid var(--bdr2)", borderRadius: 10, padding: "16px 20px", marginBottom: 12, background: "var(--card)" }}>
+    <div className="tech-panel" style={{ border: "1px solid var(--bdr2)", borderRadius: 10, padding: "16px 20px", marginBottom: 12, background: "var(--card)" }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
         <div style={{ fontSize: 13, fontWeight: 400, color: "var(--t1)" }}>

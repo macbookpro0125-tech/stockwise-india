@@ -13,7 +13,11 @@ _Last updated: 16 Nov 2026, by Claude on branch `screeners-home`._
 - **Score decisions (12–13 Nov, the owner's word)**: one headline score, the Overall (quality ex-valuation 70% + valuation 30%, trimmed for price swings), unchanged by the tests; ranked market-wide and by sector. The test showed it sorts strong from weak but doesn't beat the Nifty 50, so it is called a ranking, never a forecast. The pairing that held up (quality 70+ with price strength 70+) is the strategy "Strong Business, Rising Price" and the company-page tag. Valuation 1.11: growth allowance against peers, free cash flow left out while a company builds capacity (Acme Solar).
 - **AI checking**: costed (Haiku ~$10–15/month on changed companies only) and tried locally (this Intel Mac: 5+ min a company, poor answers). Not built; the owner hasn't named it, so it stays held.
 
-## Committed, not pushed (16 Nov, late night): YouTube thumbnails in News
+## Pushed (16 Nov, late night): computer Chart and News tidied
+- Chart: the technical analysis inside its box has no boxes within boxes (`.tech-panel` in TechnicalPanel.jsx, flattened by `.ct-box .tech-panel` CSS). News: My notes, Your investment case and Where these figures come from under plain headings in the chapters' style (StockDetail.jsx dk-yourview).
+- Everything below in this file marked "not pushed" from 16 Nov went live in the same push.
+
+## YouTube thumbnails in News (16 Nov, late night)
 - Owner: the YouTube videos in News show no pictures (on their iPhone). In Chrome they load; the likely cause is Safari leaving `loading="lazy"` pictures blank in a row that scrolls sideways. AroundTheWeb.jsx now loads them at once and, if one fails, tries YouTube's own stills by video id (mqdefault, then hqdefault). Not checked on an iPhone: ask the owner after the push.
 
 ## Committed, not pushed (16 Nov, late night): computer chapter tabs in the mock-up's style

@@ -1111,14 +1111,25 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       {/* your notes and where the figures come from close the last tab, not the
           Summary (16 Nov 2026, the owner) */}
       <section className="ss-section dk-yourview" data-tab="news" aria-labelledby="dk-yourview">
-        <h2 id="dk-yourview" className="dk-yourview-h">Your view</h2>
-        <div className="dk-yourview-grid">
-          <MyNotes key={data.symbol} symbol={data.symbol} />
-          {m && <div id="sec-thesis" data-tour="thesis"><ThesisMonitor metrics={m} account={account} /></div>}
+        <h2 id="dk-yourview" className="sr-only">Your view</h2>
+        {/* in the chapters' calm style: plain headings over one box each (16 Nov 2026) */}
+        <div className="ct-pair">
+          <div className="ct-block">
+            <div className="ct-block-h"><h3>My notes</h3><span>Your verdict and a note, saved to your account</span></div>
+            <div className="ct-evidence ct-box"><MyNotes key={data.symbol} symbol={data.symbol} bare /></div>
+          </div>
+          {m && (
+            <div className="ct-block">
+              <div className="ct-block-h"><h3>Your investment case</h3><span>What to check at each new filing</span></div>
+              <div className="ct-evidence ct-box"><div id="sec-thesis" data-tour="thesis"><ThesisMonitor metrics={m} account={account} bare /></div></div>
+            </div>
+          )}
+        </div>
+        <div className="ct-block">
+          <div className="ct-block-h"><h3>Where these figures come from</h3><span>The filings and closing prices used, with their dates</span></div>
+          <div className="ct-evidence ct-box"><StockDataDates dates={data.dataDates} quote={data.quote} research={m?.research} /></div>
         </div>
       </section>
-
-      <div data-tab="news"><StockDataDates dates={data.dataDates} quote={data.quote} research={m?.research} /></div>
       {/* each tab ends pointing on to the next, as a phone's do */}
       {deskOrder.map((id, i) => deskOrder[i + 1] && (
         <div key={id} data-tab={id} className="dk-next-row">

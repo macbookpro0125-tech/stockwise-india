@@ -7015,3 +7015,16 @@ tr:hover .row-star, .row-star:focus-visible { opacity: 1; }
 .ct-fold > .ct-evidence { padding: 0 18px 16px; }
 @media (max-width: 1100px) { .ct-pair { grid-template-columns: minmax(0, 1fr); } }
 .ct-box .pio-card { background: none !important; border: 0 !important; box-shadow: none !important; padding: 0 !important; }
+
+/* Inside a computer chapter's box (16 Nov 2026): the technical analysis loses
+   its boxes within boxes; its parts become sections split by a line */
+.ct-box .tech-panel { border: 0 !important; padding: 0 !important; margin: 0 !important; background: none !important; }
+.ct-box .tech-panel [style*="background: var(--surf)"] { background: none !important; padding-left: 0 !important; padding-right: 0 !important; border-radius: 0 !important; margin-bottom: 0 !important; border-top: 1px solid var(--pg-line); }
+.ct-box .tech-panel [style*="background: var(--card)"] { background: none !important; padding-left: 0 !important; padding-right: 0 !important; }
+.ct-box .tech-plain { border: 0; border-radius: 0; }
+.ct-box .tech-plain > div { padding-left: 0; padding-right: 0; }
+.ct-box .tech-plain > div + div { border-top-color: var(--pg-line); }
+.ct-box .tech-panel > :first-child { margin-bottom: 6px; }
+/* Your view and the sources on a computer's News tab */
+.dk-yourview { border-top: 0; padding-top: var(--sp-2); display: flex; flex-direction: column; gap: var(--sp-6); }
+.ct-box .sd-dates > .sd-card-title { display: none !important; }
