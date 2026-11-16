@@ -3,7 +3,13 @@
 html,body{width:1080px;height:1920px;overflow:hidden;background:#05070f}
 body{font-family:-apple-system,"SF Pro Display","Helvetica Neue",Inter,sans-serif;-webkit-font-smoothing:antialiased;color:#f5f6fa;font-feature-settings:"tnum" 1}
 :root{--teal:#2ee6c4;--gold:#e2bf72;--red:#ff5d6c;--grey:#8a91ad;--ink2:#a7aec4}
-#bg{position:absolute;inset:0;background:radial-gradient(900px 800px at 85% 15%,rgba(46,230,196,.16),transparent 62%),radial-gradient(900px 900px at 10% 85%,rgba(70,110,255,.16),transparent 62%),#05070f}
+#bg{position:absolute;inset:-120px;background:radial-gradient(900px 800px at 85% 15%,var(--g1),transparent 62%),radial-gradient(900px 900px at 10% 85%,var(--g2),transparent 62%),var(--base)}
+/* a background colour per series (16 Nov 2026): the brand stays, the room changes */
+body{--g1:rgba(46,230,196,.16);--g2:rgba(70,110,255,.16);--base:#05070f}
+body.th-blue{--g1:rgba(80,140,255,.26);--g2:rgba(46,230,196,.10);--base:#040a1c}
+body.th-amber{--g1:rgba(226,160,60,.22);--g2:rgba(255,93,108,.12);--base:#0d0806}
+body.th-red{--g1:rgba(255,93,108,.22);--g2:rgba(226,160,60,.10);--base:#10060a}
+body.th-purple{--g1:rgba(160,110,255,.24);--g2:rgba(46,230,196,.10);--base:#0a0616}
 #dots{position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.07) 1.6px,transparent 1.8px);background-size:44px 44px}
 #progress{position:absolute;left:0;top:0;height:7px;background:var(--teal);box-shadow:0 0 18px rgba(46,230,196,.8)}
 #brand{position:absolute;left:80px;top:336px;display:flex;align-items:center;gap:14px;font-size:30px;font-weight:600}
@@ -35,6 +41,10 @@ body{font-family:-apple-system,"SF Pro Display","Helvetica Neue",Inter,sans-seri
 .bars{width:100%}.bar{margin-bottom:44px}.bar .k{display:flex;justify-content:space-between;font-size:54px;font-weight:800}
 .trk{margin-top:16px;height:58px;border-radius:29px;background:rgba(255,255,255,.08);overflow:hidden}.trk b{display:block;height:100%;width:0;border-radius:29px}
 .note{font-size:46px;font-weight:800;margin-top:10px}
+.bar .k span:first-child{display:inline-flex;align-items:center;gap:20px}.lg{width:72px;height:72px;border-radius:18px;background:#fff;object-fit:contain;padding:6px;box-shadow:0 6px 20px rgba(0,0,0,.4)}
+/* the hook: the opening question, big, with the companies' logos */
+.hook{text-align:center;width:100%}.hook .hl{display:flex;justify-content:center;gap:40px;margin-bottom:46px}.hook .hl img{width:190px;height:190px;border-radius:44px;background:#fff;padding:14px;object-fit:contain;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.hook .hq{font-size:112px;font-weight:900;letter-spacing:-.05em;line-height:1.02}.hook .hs{margin-top:28px;font-size:48px;color:var(--ink2);font-weight:700}
 .bigw{text-align:center}.big{font-size:170px;font-weight:900;letter-spacing:-.06em;line-height:1}.bigs{margin-top:34px;font-size:44px;color:var(--ink2);font-weight:600}
 .cardpair{display:grid;grid-template-columns:1fr 1fr;gap:26px;width:100%}
 .cp{padding:56px 34px;border-radius:32px;background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 2px rgba(255,255,255,.08);text-align:center}
@@ -58,7 +68,9 @@ body{font-family:-apple-system,"SF Pro Display","Helvetica Neue",Inter,sans-seri
 <div id="text"><div id="line"></div></div>
 <div id="progress"></div>
 <script>
-const { lines, LENGTH, source, live, shots } = __DATA__;
+const { lines, LENGTH, source, live, shots, logos, theme } = __DATA__;
+document.body.classList.add("th-" + theme);
+const lg = s => (s && logos[s] ? `<img class="lg" src="${logos[s]}" alt="">` : "");
 const $ = id => document.getElementById(id);
 const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
 const span = (t, a, b) => clamp((t - a) / (b - a));
@@ -107,11 +119,13 @@ function build(g, n) {
     el.innerHTML = `<div class="tiles">${v.tiles.map(x => `<div class="tile"><div class="l">${x.label}</div><div class="v ${x.tone ?? "teal"}">${fmt(0, x)}</div><div class="s">${x.sub ?? ""}</div></div>`).join("")}</div>`;
   } else if (v.type === "bars") {
     const max = v.max ?? Math.max(...v.bars.map(b => Math.abs(b.value))) * 1.15;
-    el.innerHTML = `<div class="bars">${v.bars.map(b => `<div class="bar"><div class="k"><span>${b.label}</span><span class="${b.tone ?? "teal"}">${fmt(0, b)}</span></div><div class="trk"><b style="background:${TONE[b.tone ?? "teal"]}"></b></div></div>`).join("")}${v.note ? `<div class="note ${v.noteTone ?? ""}">${v.note}</div>` : ""}</div>`;
+    el.innerHTML = `<div class="bars">${v.bars.map(b => `<div class="bar"><div class="k"><span>${lg(b.logo)}${b.label}</span><span class="${b.tone ?? "teal"}">${fmt(0, b)}</span></div><div class="trk"><b style="background:${TONE[b.tone ?? "teal"]}"></b></div></div>`).join("")}${v.note ? `<div class="note ${v.noteTone ?? ""}">${v.note}</div>` : ""}</div>`;
     el.dataset.max = max;
   } else if (v.type === "big") {
     const parts = v.text.split("→").map(x => x.trim());
     el.innerHTML = `<div class="bigw"><div class="big ${tone}"${parts.length > 1 ? ' style="font-size:120px;white-space:nowrap"' : ""}>${parts.length > 1 ? `<span class="grey">${parts[0]}</span> → ${parts[1]}` : v.text}</div>${v.sub ? `<div class="bigs">${v.sub}</div>` : ""}</div>`;
+  } else if (v.type === "hook") {
+    el.innerHTML = `<div class="hook">${(v.logos ?? []).length ? `<div class="hl">${v.logos.map(s => logos[s] ? `<img src="${logos[s]}" alt="">` : "").join("")}</div>` : ""}<div class="hq">${v.text.replace(/\*(.+?)\*/g, '<span class="teal">$1</span>').replace(/~(.+?)~/g, '<span class="red">$1</span>')}</div>${v.sub ? `<div class="hs">${v.sub}</div>` : ""}</div>`;
   } else if (v.type === "rank") {
     const max = Math.max(...v.rows.map(r => Math.abs(r.value))) || 1;
     el.innerHTML = `<div class="rank">${v.rows.map((r, i) => `<div class="rk"><div class="n">${r.n ?? i + 1}</div><div><div class="nm">${r.label}</div>${r.sub ? `<div class="sb">${r.sub}</div>` : ""}</div><div class="v ${r.tone ?? "teal"}">${r.text ?? fmt(r.value, r)}</div><div></div><div class="bar"><b style="background:${TONE[r.tone ?? "teal"]};--w:${(Math.abs(r.value) / max * 100).toFixed(1)}%"></b></div></div>`).join("")}</div>`;
@@ -169,6 +183,9 @@ function animate(g, el, u) {
     el.querySelectorAll(".rk").forEach((x, k) => { const p = spring(u, .1 + k * .28, .4); x.style.opacity = p; x.style.transform = `translateX(${((1 - p) * 40).toFixed(1)}px)`; const b = x.querySelector(".bar b"); b.style.width = `calc(${b.style.getPropertyValue("--w")} * ${eio(span(u, .3 + k * .28, 1 + k * .28)).toFixed(3)})`; });
   } else if (v.type === "heatmap") {
     el.querySelectorAll(".hc").forEach((x, k) => { const p = spring(u, .05 + Math.min(k, 40) * .03, .4); x.style.opacity = p; x.style.transform = `scale(${(.85 + .15 * p).toFixed(3)})`; });
+  } else if (v.type === "hook") {
+    el.querySelectorAll(".hl img").forEach((x, k) => { const p = spring(u, k * .12, .35); x.style.opacity = p; x.style.transform = `scale(${(.5 + .5 * p).toFixed(3)}) rotate(${((1 - p) * (k ? 8 : -8)).toFixed(1)}deg)`; });
+    const q = spring(u, .1, .38); el.querySelector(".hq").style.transform = `scale(${(.85 + .15 * q).toFixed(3)})`;
   } else if (v.type === "big") {
     const p = spring(u, .05, .4); el.querySelector(".big").style.transform = `scale(${(.7 + .3 * p).toFixed(3)})`;
   } else if (v.type === "pair" || v.type === "pills") {
@@ -181,12 +198,13 @@ function animate(g, el, u) {
 let shown = null;
 window.render = t => {
   $("progress").style.width = clamp(t / LENGTH) * 1080 + "px";
+  $("bg").style.transform = `translate(${(Math.sin(t * .35) * 50).toFixed(1)}px, ${(Math.cos(t * .27) * 60).toFixed(1)}px)`;
   let i = lines.findIndex((l, k) => t >= l.at && (k === lines.length - 1 || t < lines[k + 1].at));
   if (i < 0) i = 0;
   const L = lines[i], gi = L.g;
   groups.forEach((g, n) => {
     const el = els[n];
-    if (n === gi) { const p = spring(t, g.at - .25, .45); el.style.opacity = p; el.style.transform = `translateY(${((1 - p) * 40).toFixed(1)}px) scale(${(.96 + .04 * p).toFixed(3)})`; animate(g, el, t - g.at); }
+    if (n === gi) { const p = spring(t, g.at - .25, .45), push = Math.min(.05, Math.max(0, t - g.at) * .012); el.style.opacity = p; el.style.transform = `translateY(${((1 - p) * 40).toFixed(1)}px) scale(${(.96 + .04 * p + push).toFixed(3)})`; animate(g, el, t - g.at); }
     else if (n === gi - 1 && t < L.at + .15 && L.at === groups[gi].at) { el.style.opacity = 1 - eio(span(t, L.at - .25, L.at + .15)); animate(g, el, t - g.at); }
     else el.style.opacity = 0;
   });
@@ -194,7 +212,7 @@ window.render = t => {
   const spans = $("line").children;
   L.words.forEach((w, k) => { const p = spring(t, w.at - .06, .28); spans[k].style.opacity = p; spans[k].style.transform = `translateY(${((1 - p) * 26).toFixed(1)}px) scale(${(w.tone ? 1 + .12 * (1 - p) : 1).toFixed(3)})`; });
   const type = L.visual.type;
-  $("src").style.opacity = type === "save" || type === "brand" || type === "pair" || type === "pills" ? 0 : 1;
+  $("src").style.opacity = type === "save" || type === "brand" || type === "pair" || type === "pills" || type === "hook" ? 0 : 1;
   $("brand").style.opacity = type === "brand" ? 0 : 1;
 };
 render(0);

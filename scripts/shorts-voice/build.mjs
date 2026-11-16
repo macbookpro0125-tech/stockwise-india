@@ -66,10 +66,18 @@ for (const s of symbols.filter(s => spec.lines.some(l => l.visual.symbol === s &
   await p.close();
 }
 function b64(f) { return `data:image/png;base64,${readFileSync(f).toString("base64")}`; }
+// company logos for bars and the hook (16 Nov 2026, "people should be hooked"):
+// the site's own logo files, data/logos/<SYMBOL>.img, as the visuals name them
+const logos = {};
+for (const l of spec.lines) for (const x of [...(l.visual.bars ?? []), ...(l.visual.logos ?? []).map(sym => ({ logo: sym }))]) {
+  if (!x.logo || logos[x.logo]) continue;
+  const meta = join(REPO, "data/logos", `${x.logo}.json`), img = join(REPO, "data/logos", `${x.logo}.img`);
+  if (existsSync(img)) { const type = existsSync(meta) ? JSON.parse(readFileSync(meta, "utf-8")).type ?? "image/png" : "image/png"; logos[x.logo] = `data:${type};base64,${readFileSync(img).toString("base64")}`; }
+}
 
 // 3. timing: each line after the last with a breath; words timed by their syllables
 const syll = w => Math.max(1, (w.toLowerCase().replace(/[^a-z0-9%₹]/g, "").match(/[aeiouy]+|\d/g) || []).length + (/%/.test(w) ? 2 : 0));
-let t = 0.25;
+let t = spec.lines[0]?.visual?.type === "hook" ? 0.08 : 0.25;
 const lines = spec.lines.map(l => {
   const tm = timing[l.id], at = t;
   // *teal words* and ~red words~
@@ -97,7 +105,7 @@ writeFileSync(join(DIR, `${spec.key}.srt`), lines.map((l, i) => `${i + 1}\n${ts(
 const logo = b64(join(REPO, "scripts/brand/ji-original.png"));
 const live = Object.fromEntries(Object.entries(data).map(([s, d]) => [s, { name: d.name, spark: d.spark, change1y: d.change1y, closeDate: d.closeDate }]));
 const html = readFileSync(join(HERE, "scene.html"), "utf-8")
-  .replace("__DATA__", () => JSON.stringify({ lines: lines.map(({ file, ...l }) => l), LENGTH, source: spec.source, live, shots }))
+  .replace("__DATA__", () => JSON.stringify({ lines: lines.map(({ file, ...l }) => l), LENGTH, source: spec.source, live, shots, logos, theme: spec.theme ?? "teal" }))
   .replace(/__LOGO__/g, () => logo);
 const tab = await browser.newPage({ viewport: { width: 1080, height: 1920 } });
 await tab.setContent(html, { waitUntil: "load" });
@@ -119,8 +127,11 @@ sh("ffmpeg", ["-y", "-loglevel", "error", "-f", "lavfi", "-i", `aevalsrc=exprs='
   ...[146.83, 220, 261.63, 329.63].flatMap(f => ["-f", "lavfi", "-i", `sine=frequency=${f}:sample_rate=48000:duration=${L}`]),
   "-filter_complex", `[1][2][3][4]amix=inputs=4:normalize=1,tremolo=f=0.25:d=0.3,lowpass=f=1400,volume=0.5[pad];[0]lowpass=f=160,volume=0.9[kick];[pad][kick]amix=inputs=2:normalize=0,afade=t=in:d=1.2,afade=t=out:st=${(LENGTH - 2).toFixed(2)}:d=2`, "-ac", "2", join(A, "bed.wav")]);
 sh("ffmpeg", ["-y", "-loglevel", "error", "-f", "lavfi", "-i", "sine=frequency=1320:sample_rate=48000:duration=0.08", "-af", "afade=t=out:st=0.005:d=0.07,volume=0.22", "-ac", "2", join(A, "pop.wav")]);
-const pops = lines.flatMap(l => { const first = l.words.find(w => w.tone); return first ? [first.at] : []; });
-const ev = [...lines.map(l => ({ f: l.file, at: l.at, v: true })), ...pops.map(at => ({ f: join(A, "pop.wav"), at, v: false }))];
+// a soft whoosh as each new scene comes in (filtered noise, rising), so the eye and ear move together
+sh("ffmpeg", ["-y", "-loglevel", "error", "-f", "lavfi", "-i", "anoisesrc=color=pink:sample_rate=48000:duration=0.45:amplitude=0.5", "-af", "highpass=f=500,lowpass=f=5000,afade=t=in:d=0.3,afade=t=out:st=0.3:d=0.15,volume=0.32", "-ac", "2", join(A, "whoosh.wav")]);
+const pops = lines.flatMap(l => l.words.filter((w, k) => w.tone && !l.words[k - 1]?.tone).map(w => w.at));
+const scenes = lines.filter((l, i) => i > 0 && JSON.stringify(l.visual) !== JSON.stringify(lines[i - 1].visual)).map(l => Math.max(0, l.at - 0.3));
+const ev = [...lines.map(l => ({ f: l.file, at: l.at, v: true })), ...pops.map(at => ({ f: join(A, "pop.wav"), at, v: false })), ...scenes.map(at => ({ f: join(A, "whoosh.wav"), at, v: false }))];
 const vi = ev.map((e, i) => (e.v ? i : -1)).filter(i => i >= 0), fi = ev.map((e, i) => (e.v ? -1 : i)).filter(i => i >= 0);
 const fc = [
   ...ev.map((e, i) => `[${i}:a]aresample=48000,aformat=channel_layouts=stereo,adelay=${Math.round(e.at * 1000)}:all=1${e.v ? ",volume=1.5" : ""}[e${i}]`),

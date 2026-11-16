@@ -13,7 +13,10 @@ _Last updated: 16 Nov 2026, by Claude on branch `screeners-home`._
 - **Score decisions (12–13 Nov, the owner's word)**: one headline score, the Overall (quality ex-valuation 70% + valuation 30%, trimmed for price swings), unchanged by the tests; ranked market-wide and by sector. The test showed it sorts strong from weak but doesn't beat the Nifty 50, so it is called a ranking, never a forecast. The pairing that held up (quality 70+ with price strength 70+) is the strategy "Strong Business, Rising Price" and the company-page tag. Valuation 1.11: growth allowance against peers, free cash flow left out while a company builds capacity (Acme Solar).
 - **AI checking**: costed (Haiku ~$10–15/month on changed companies only) and tried locally (this Intel Mac: 5+ min a company, poor answers). Not built; the owner hasn't named it, so it stays held.
 
-## Committed, not pushed (16 Nov, late night): the last three computer mock-up pieces
+## Videos, new style (16 Nov, late night): hooks
+- The owner: "people should be hooked". scripts/shorts-voice now has a `hook` opening scene with company logos, logos on bars, a background colour per series (`theme`), constant slow movement, and a whoosh per scene (README.md). Samples: explain-roce-v2 and explain-operating-margin-v2 (30–40 s), for the owner to compare with the old ones. Voice still Kokoro (Michael); the owner is choosing between their own voice, ElevenLabs, or Michael. VoiceStudio (open-source cloning) checked 16 Nov: needs an Apple-chip Mac or a GPU, this Intel Mac is "limited".
+
+## Pushed (16 Nov, late night): the last three computer mock-up pieces
 - Score moved: `scoreMoved()` in server/score-audit.js compares a company's overall score with the oldest of the nightly files in data/score-audit (up to 21); the card's score panel says "Steady since …" or "Up/Down N since … (was X)", and "scoring rules updated since" when that night's scoreVersion differs (StockSide.jsx movedLine). Hidden with fewer than two nights (a local copy has one).
 - The pinned strip (dk-mini) now shows the overall score (opens the Summary) and the open tab's name.
 - The bar down the left: a dot in each chapter's score colour; its word is in the button's title.

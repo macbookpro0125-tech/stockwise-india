@@ -341,3 +341,4 @@ Owner: "the news is not understandable". Looked at 10 apps (Inshorts' one-line c
 - 16 Nov 2026 (late night): computer Chart tab's technical analysis flattened; News's notes, investment case and sources under plain headings. Tests passed. Pushed with the day's other commits.
 - 16 Nov 2026 (night): ten evergreen Shorts scheduled on YouTube (17–21 Nov, 6 pm and 9 pm IST); two left after YouTube's daily upload limit. ROCE Reel posted on Instagram; eleven Reels queued one per evening 17–27 Nov. Evening task uploads from its scratchpad.
 - 16 Nov 2026 (late night): score-moved line, score in the pinned strip and score dots on the left bar (computer company page); four more evergreen videos made and queued for Instagram; 100 results pages sent to Bing; Google quota still used up. Tests passed. Not pushed.
+- 16 Nov 2026 (late night): company-page pieces pushed and live (0995f2f). Video maker: hook opening, logos, series colours, movement, whoosh; two samples made.

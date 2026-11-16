@@ -34,7 +34,17 @@ price lines are taken live by the script.
 | `bars` | `bars: [{label, value, prefix, suffix, dec, tone}]`, `max`, `note` |
 | `pair` | `items: [{icon, title, sub, tone}]` (two) |
 | `pills` | `items: [{text, tone}]` |
+| `hook` | `text` (`*teal*`, `~red~`), `logos: [SYMBOL…]`, `sub`: the opening question, big, with company logos |
 | `save`, `brand` | the closing "Save this" and the logo |
+
+Hooks (16 Nov 2026, the owner: "people should be hooked"): open on a `hook` line (a
+surprising pair of real figures and a "why?"; the first word comes within a few frames),
+keep the whole video 30–40 s, answer the question near the end, close on "Save this".
+Bars take `logo: SYMBOL` (the site's own logo files in data/logos). A spec's `theme`
+(`teal` explain-a-number · `blue` how companies make money · `amber`/`red` warnings ·
+`purple` ideas and habits) sets the background glow; the brand stays the same.
+The visual pushes in slowly and the background drifts, a whoosh marks each new scene,
+a pop each highlighted phrase. Examples: `explain-roce-v2`, `explain-operating-margin-v2`.
 
 Consecutive lines with the same visual share it. Lines over ~52 characters shrink.
 Examples: `~/Projects/files/shorts-v2/{bel,sterlite,hdfc-icici}/spec.json`.
