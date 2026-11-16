@@ -4,7 +4,7 @@ import {
   createChart, createSeriesMarkers, CandlestickSeries, BarSeries, LineSeries, AreaSeries, HistogramSeries, BaselineSeries,
   ColorType, CrosshairMode, LineStyle, LineType, PriceScaleMode,
 } from "lightweight-charts";
-import { ChartCandlestick, ChartNoAxesColumn, ChartLine, ChartArea, SlidersHorizontal, Minus, X, Maximize2, Minimize2, Camera, Layers, BrickWall, CandlestickChart, Slash, Eye, Pencil, Table2, Settings2, Shapes, Search, Plus, Undo2 } from "lucide-react";
+import { MousePointerClick, ChartCandlestick, ChartNoAxesColumn, ChartLine, ChartArea, SlidersHorizontal, Minus, X, Maximize2, Minimize2, Camera, Layers, BrickWall, CandlestickChart, Slash, Eye, Pencil, Table2, Settings2, Shapes, Search, Plus, Undo2 } from "lucide-react";
 import { api } from "./api.js";
 import ChartTopBar from "./ChartTopBar.jsx";
 import { aggregateBars, sma, ema, bollinger, rsi, macd, indexFrom } from "./chartMath.js";
@@ -55,6 +55,7 @@ const TYPES = [
   { id: "linebreak", label: "Line break", Icon: BrickWall },
   { id: "kagi", label: "Kagi", Icon: ChartLine },
 ];
+const QUICK_TYPES = TYPES.filter(t => t.id === "candles" || t.id === "line");
 // Made from the closes alone, with time dropping out of the axis
 const BRICKS = new Set(["renko", "linebreak", "kagi"]);
 const DRAW_TOOLS = [
@@ -115,7 +116,12 @@ const PIVOT_KINDS = [["classic", "Classic"], ["fibonacci", "Fibonacci"], ["camar
 const PIVOT_BASES = { D: [["W", "week"], ["M", "month"], ["Q", "quarter"], ["Y", "year"]], W: [["M", "month"], ["Q", "quarter"], ["Y", "year"]], M: [["Q", "quarter"], ["Y", "year"]] };
 const pivotBasisFor = (interval, pref) => ((PIVOT_BASES[interval] ?? PIVOT_BASES.D).some(([id]) => id === pref) ? pref : interval === "M" ? "Y" : "M");
 const PIVOT_COLORS = { P: "#F59E0B", R: "#FB7185", S: "#38BDF8" };
-const DEFAULT_PREFS = { type: "candles", interval: "D", levels: true, pivotKind: "classic", pivotBasis: "M", ind: { ma50: true, ma200: true, volume: true, high52: true } };
+// candleCard: a tapped candle's figures in a card, off unless turned on in the
+// top bar (16 Nov 2026, the owner: "I don't want the pop-up when we press on
+// the candle… as an option to turn on or off; ideally not on")
+// levels: the fair value and the user's own levels on the chart, off until
+// turned on with Levels (16 Nov 2026, the owner: no fair value on the chart by default)
+const DEFAULT_PREFS = { type: "candles", interval: "D", levels: false, candleCard: false, pivotKind: "classic", pivotBasis: "M", ind: { ma50: true, ma200: true, volume: true, high52: true } };
 
 const readJson = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } };
 const writeJson = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* private mode */ } };
@@ -193,6 +199,9 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
   const [tool, setTool] = useState(null); // { id, from?: { t, p } }
   const toolRef = useRef(null);
   toolRef.current = tool;
+  // the click handler is set up once per chart: it reads the switch from here
+  const candleCardRef = useRef(false);
+  candleCardRef.current = !!prefs.candleCard;
   const [noteText, setNoteText] = useState("");
   const noteRef = useRef("");
   noteRef.current = noteText;
@@ -799,8 +808,10 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
       const rounded = Math.round(price * 100) / 100;
       saveLines([...(readJson(LINES_KEY, {})[symbol] ?? []), rounded]);
     });
-    // A plain tap on a candle: its figures in a card (1 Nov 2026)
+    // A plain tap on a candle: its figures in a card (1 Nov 2026), only when
+    // turned on in the top bar
     chart.subscribeClick(param => {
+      if (!candleCardRef.current) return;
       if (toolRef.current || drawingRef.current || trendRef.current || !param.point || param.logical == null) return;
       const i = Math.round(param.logical);
       if (i < 0 || i >= bars.length) return;
@@ -898,6 +909,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
     applyRange(id);
   };
   const setPref = patch => setPrefs(p => ({ ...p, ...patch }));
+  const toggleCandleCard = () => { if (prefs.candleCard) setPicked(null); setPref({ candleCard: !prefs.candleCard }); };
   const toggleInd = id => setPrefs(p => ({ ...p, ind: { ...p.ind, [id]: !p.ind[id] } }));
   const pickInterval = id => { keepView.current = null; setPref({ interval: id }); };
 
@@ -1162,12 +1174,14 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
       {!narrow ? (
       <div role="toolbar" aria-label="Chart settings" style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: 8 }}>
         <div role="group" aria-label="Chart type" style={group}>
-          {TYPES.slice(0, 6).map(({ id, label, Icon }) => (
+          {/* Candles and Line in the bar; every other type under More (16 Nov
+              2026, the owner chose a calmer toolbar from the mock-ups) */}
+          {QUICK_TYPES.map(({ id, label, Icon }) => (
             <button key={id} type="button" onClick={() => setPref({ type: id })} aria-pressed={prefs.type === id} title={label} aria-label={narrow ? label : undefined} style={btn(prefs.type === id)}>
               <Icon size={14} aria-hidden="true" />{!narrow && label}
             </button>
           ))}
-          <button type="button" onClick={() => togglePop("type")} aria-expanded={pop === "type"} style={btn(pop === "type" || !TYPES.slice(0, 6).some(t => t.id === prefs.type))}><Shapes size={14} aria-hidden="true" />{TYPES.slice(6).find(t => t.id === prefs.type)?.label ?? "More"}</button>
+          <button type="button" onClick={() => togglePop("type")} aria-expanded={pop === "type"} style={btn(pop === "type" || !QUICK_TYPES.some(t => t.id === prefs.type))}><Shapes size={14} aria-hidden="true" />{QUICK_TYPES.some(t => t.id === prefs.type) ? "More" : TYPES.find(t => t.id === prefs.type)?.label ?? "More"}</button>
         </div>
         <div role="group" aria-label="Bar interval" style={group}>
           {INTERVALS.map(iv => (
@@ -1188,6 +1202,9 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
 
         <button type="button" onClick={() => setPref({ levels: !prefs.levels })} aria-pressed={prefs.levels} disabled={!levels} title="Fair value, and your own price levels if you've turned them on" style={btn(prefs.levels && !!levels, !levels ? { opacity: 0.5, cursor: "not-allowed" } : {})}>
           <Layers size={14} aria-hidden="true" />Levels
+        </button>
+        <button type="button" onClick={toggleCandleCard} aria-pressed={!!prefs.candleCard} title="Click a candle to see that day's figures in a card" style={btn(!!prefs.candleCard)}>
+          <MousePointerClick size={14} aria-hidden="true" />Candle details
         </button>
         <button type="button" onClick={() => togglePop("draw")} aria-expanded={pop === "draw"} style={btn(pop === "draw" || drawing || !!trendFrom || !!tool)}><Pencil size={14} aria-hidden="true" />Draw</button>
         <button type="button" onClick={() => togglePop("views")} aria-expanded={pop === "views"} style={btn(pop === "views")}><Eye size={14} aria-hidden="true" />Views</button>
@@ -1217,6 +1234,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
             <button type="button" onClick={() => togglePop("views")} aria-expanded={pop === "views"} aria-label="Saved views" style={iconBtn(pop === "views")}><Eye size={20} aria-hidden="true" /></button>
             <button type="button" onClick={() => setTableOpen(true)} aria-label="Table of prices" style={iconBtn(false)}><Table2 size={20} aria-hidden="true" /></button>
             <button type="button" onClick={() => setPref({ levels: !prefs.levels })} aria-pressed={prefs.levels && !!levels} disabled={!levels} aria-label="Fair value and your price levels" style={iconBtn(prefs.levels && !!levels, !levels ? { opacity: 0.45, cursor: "not-allowed" } : {})}><Layers size={20} aria-hidden="true" /></button>
+            <button type="button" onClick={toggleCandleCard} aria-pressed={!!prefs.candleCard} aria-label="Candle details: tap a candle to see that day's figures" style={iconBtn(!!prefs.candleCard)}><MousePointerClick size={20} aria-hidden="true" /></button>
             <button type="button" onClick={() => togglePop("settings")} aria-expanded={pop === "settings"} aria-label="Chart settings" style={iconBtn(pop === "settings" || !!prefs.log || !!prefs.invert)}><Settings2 size={20} aria-hidden="true" /></button>
             <button type="button" onClick={snapshot} aria-label="Save the chart as an image" style={iconBtn(false)}><Camera size={20} aria-hidden="true" /></button>
           </div>

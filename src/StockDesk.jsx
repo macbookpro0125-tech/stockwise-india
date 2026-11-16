@@ -112,3 +112,89 @@ export function KeyFiguresRow({ m, price }) {
     </div>
   );
 }
+
+// ── The computer's Summary, as the owner chose from the mock-ups (16 Nov 2026):
+// the chart full width, then "The scores, explained" (one card per chapter:
+// its score, its answer in words and its checks, weakest first, at most
+// four), then three even columns: what's coming, what its figures warn of,
+// and why it moved. Words from chapterText.js and the research model.
+const ORDER = { bad: 0, mid: 1, good: 2 };
+const CARD_IDS = ["business", "growth", "safety", "owners", "value", "price"];
+export function DeskScoreCards({ m, fairValue, price, onGo, checksOf }) {
+  const cards = CARD_IDS.map(id => {
+    const s = chapterScore(id, m?.research);
+    if (!s) return null;
+    const checks = checksOf(id) ?? [];
+    return { id, s, judge: chapterJudgement(id, m, { fairValue, price }) ?? chapterLine(id, m, { fairValue, price }), checks };
+  }).filter(Boolean);
+  if (cards.length < 2) return null;
+  const strong = cards.filter(c => c.s.tone === "good").length;
+  return (
+    <section className="dk-scores" aria-labelledby="dk-scores-h">
+      <div className="dk-sec-h"><h2 id="dk-scores-h">The scores, explained</h2><span>{strong} of {cards.length} strong{m?.research?.coverage?.total ? ` · ${m.research.coverage.checked} checks from its filings` : ""}</span></div>
+      <div className="dk-scores-grid">
+        {cards.map(({ id, s, judge, checks }) => {
+          const shown = [...checks].sort((a, b) => ORDER[a.tone] - ORDER[b.tone]).slice(0, 4);
+          const good = checks.filter(c => c.tone === "good").length;
+          return (
+            <button key={id} type="button" className={`dk-score sd-tone-${s.tone}`} onClick={() => onGo(id)} aria-label={`${byId[id].scoreLabel ?? byId[id].label}: ${Math.round(s.score)} of 100, ${s.word}. ${judge ?? ""} Open the chapter`}>
+              <span className="dk-score-top"><span>{byId[id].scoreLabel ?? byId[id].label}</span><span className="dk-score-num"><b>{Math.round(s.score)}</b><small>{s.word}</small></span></span>
+              {judge && <span className="dk-score-judge">{judge}</span>}
+              {shown.length > 0 && (
+                <span className="dk-score-checks">
+                  {shown.map(c => <span key={c.key} className={`sd-tone-${c.tone}`}><i aria-hidden="true">{c.tone === "good" ? "✓" : c.tone === "bad" ? "✕" : "–"}</i>{c.question}</span>)}
+                </span>
+              )}
+              <span className="dk-score-foot">{checks.length ? `${good} of ${checks.length} strong${checks.length > shown.length ? ` · ${checks.length - shown.length} more` : ""} · ` : ""}see the evidence ›</span>
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+// Three even columns under the cards
+export function DeskWatchColumns({ m, symbol, holding, onAlert, signedIn, moving }) {
+  const alerts = alertsStore.use();
+  const today = TODAY();
+  const mine = (signedIn ? alerts ?? [] : []).filter(a => a.ticker === symbol && a.enabled);
+  const coming = [resultsWatch(m, today), dividendWatch(m, today)].filter(Boolean);
+  const careful = cautions(m);
+  const { recent, upcoming } = recentChanges(m, holding, today, { window: 90 });
+  const lately = recent.filter(e => !(e.kind === "dividend" && coming.some(c => c.kind === "dividend"))).slice(0, 3);
+  const ahead = upcoming.filter(u => !(coming.some(c => c.kind === "results") && /results|financial/i.test(u.text)) && !(coming.some(c => c.kind === "dividend") && /dividend/i.test(u.text))).slice(0, 2);
+  const Icon = { results: CalendarDays, dividend: CircleDollarSign };
+  return (
+    <div className="dk-cols">
+      <section className="dk-col" aria-labelledby="dk-col-coming">
+        <h2 id="dk-col-coming" className="dk-col-h">Coming up</h2>
+        <ul className="dk-watch-list dk-col-box">
+          {coming.map(w => { const I = Icon[w.kind]; return <li key={w.kind}><I size={16} aria-hidden="true" /><div><b>{w.title}</b>{w.text && <span>{w.text}</span>}</div></li>; })}
+          {ahead.map(e => <li key={`${e.kind}-${e.date}`}><CalendarDays size={16} aria-hidden="true" /><div><b>{shortDay(e.date)}</b><span>{e.text}</span></div></li>)}
+          <li>
+            <Bell size={16} aria-hidden="true" />
+            <div>
+              <b>{mine.length ? `${mine.length === 1 ? "An alert" : `${mine.length} alerts`} set: ${mine.map(a => `${a.condition} ${fmtRs(a.threshold)}`).join(", ")}` : "No price alerts set"}</b>
+              <button type="button" className="dk-link" onClick={onAlert}>{mine.length ? "Add another" : "Set one at a price you’d act on"} →</button>
+            </div>
+          </li>
+        </ul>
+      </section>
+      <section className="dk-col" aria-labelledby="dk-col-figures">
+        <h2 id="dk-col-figures" className="dk-col-h">From its figures</h2>
+        <div className="dk-col-box">
+          {careful.length > 0
+            ? <ul className="dk-watch-list dk-careful">{careful.map(c => <li key={c.title}><TriangleAlert size={16} aria-hidden="true" /><div><b>{c.title}</b><span>{c.text}</span></div></li>)}</ul>
+            : <p className="dk-col-empty">Nothing in its recent figures stands out as a caution.</p>}
+          {lately.length > 0 && <ol className="dk-watch-events">{lately.map(e => <li key={`${e.kind}-${e.date}`}><time dateTime={e.date}>{shortDay(e.date)}</time><span>{e.text}</span></li>)}</ol>}
+        </div>
+      </section>
+      {/* the panel inside names itself "Why is it moving?" for screen readers */}
+      <div className="dk-col">
+        <h2 className="dk-col-h" aria-hidden="true">Why is it moving?</h2>
+        <div className="dk-col-box dk-col-moving">{moving}</div>
+      </div>
+    </div>
+  );
+}

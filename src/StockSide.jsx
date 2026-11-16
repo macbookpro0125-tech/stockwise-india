@@ -6,6 +6,7 @@ import { StarIcon } from "./icons.jsx";
 import { fmtRs } from "../server/levels.js";
 import BigNum from "./BigNum.jsx";
 import { cardName } from "./stockName.js";
+import { chapterScore, byId } from "./chapterText.js";
 import { docTop } from "./motion.js";
 import { useState } from "react";
 import { useWatchLists, setInList, createList } from "./watchlist.js";
@@ -113,11 +114,13 @@ export function Scorecard({ r }) {
 // variant "head": the same card laid out across the top of a computer's page
 // (StockDesk.jsx, 26 Oct 2026), with the company in a sentence under it and
 // no scorecard — the chapter tiles below carry the scores
-export default function StockSide({ data, m, price, priceLabel, watched, onWatch, onAlert, variant, gist }) {
+// summary: the computer Summary's full card ("In short" and the score panel,
+// 16 Nov 2026); the other tabs keep the top row only. onGoChapter opens a tab.
+export default function StockSide({ data, m, price, priceLabel, watched, onWatch, onAlert, variant, gist, summary = true, onGoChapter }) {
   // the user's watchlist lists: a starred stock goes in or out of them here
   const lists = useWatchLists();
   const [naming, setNaming] = useState(false);
-  const returns = m ? [["1W", m.ret1w], ["1M", m.ret1m], ["1Y", m.ret1y]].filter(([, v]) => v != null) : [];
+  const returns = m ? [["1W", m.ret1w], ["1M", m.ret1m], ["1Y", m.ret1y], ...(variant === "head" ? [["3Y", m.ret3y], ["5Y", m.ret5y]] : [])].filter(([, v]) => v != null) : [];
   return (
     <aside className={variant === "head" ? "sd-side sd-head" : "sd-side"} aria-label={`${data.name} summary`}>
       <section className="sd-card sd-id">
@@ -126,7 +129,7 @@ export default function StockSide({ data, m, price, priceLabel, watched, onWatch
           <div className="sd-id-name">
             {/* a phone says the short name once, as the page's title (15 Nov 2026) */}
             <h2>{variant === "head" ? data.name : cardName(data.name)}</h2>
-            <span>{data.symbol} · NSE{m?.sector ? ` · ${m.sector}` : ""}</span>
+            <span>{data.symbol} · NSE{m?.sector ? ` · ${m.sector}` : ""}{variant === "head" && onGoChapter && <> · <button type="button" className="sd-about-link" onClick={() => onGoChapter("business")}>About</button></>}</span>
           </div>
         </div>
         {price > 0 && (
@@ -154,19 +157,38 @@ export default function StockSide({ data, m, price, priceLabel, watched, onWatch
           {watched && <ListPicker ticker={data.symbol} name={data.name} lists={lists} label="Lists" onToggle={setInList} onNew={() => setNaming(true)} />}
           <button type="button" className="sd-action sd-action-link" onClick={onAlert}><Bell className="sd-action-bell" size={17} aria-hidden="true" />Set an alert<ChevronRight className="sd-action-chev" size={17} aria-hidden="true" /></button>
         </div>
-        {variant === "head" && gist && (
-          <p className="sd-head-gist"><b>In short.</b> {gist}
-            {/* the overall score and how complete its figures are (12 Nov 2026) */}
-            {m?.research?.overall?.score != null && (
-              <span className="sd-head-score">
-                Overall <b className={`sd-tone-${band(m.research.overall.score)}`}>{Math.round(m.research.overall.score)}</b>/100 · {WORD[band(m.research.overall.score)]}
-                {rankLine(m.overallRank) && <> · Ranked {rankLine(m.overallRank)}</>}
-                {pairing(m) && <> · <b className={`sd-pair-word sd-pair-${pairing(m).tone}`} title={pairing(m).text}>{pairing(m).label}</b></>}
-                {m.research.confidence != null && <> · Data confidence {m.research.confidence >= 80 ? "high" : m.research.confidence >= 60 ? "medium" : "low"}{m.research.coverage?.total ? ` (${m.research.coverage.checked} of ${m.research.coverage.total} checks have figures)` : ""}</>}
-              </span>
-            )}
-          </p>
-        )}
+        {variant === "head" && gist && summary && (() => {
+          const o = m?.research?.overall?.score;
+          const tone = o != null ? band(o) : "none";
+          const marks = ["business", "growth", "safety", "owners", "value", "price"].map(id => ({ id, s: chapterScore(id, m?.research) })).filter(x => x.s);
+          const conf = m?.research?.confidence;
+          return (
+            <div className="sd-head-row">
+              <p className="sd-head-gist"><b>In short.</b> {gist}</p>
+              {o != null && (
+                <div className={`sd-head-panel sd-tone-${tone}`}>
+                  <div className="sd-head-panel-top">
+                    <span className="sd-head-panel-num"><b>{Math.round(o)}</b><small>of 100</small></span>
+                    <span className="sd-head-panel-tx">
+                      <strong>{WORD[tone]} overall</strong>
+                      {rankLine(m.overallRank) && <small>{rankLine(m.overallRank)}</small>}
+                      {conf != null && <small>Data confidence {conf >= 80 ? "high" : conf >= 60 ? "medium" : "low"}{m.research.coverage?.total ? ` · ${m.research.coverage.checked} of ${m.research.coverage.total} checks have figures` : ""}</small>}
+                    </span>
+                  </div>
+                  {marks.length > 0 && (
+                    <div className="sd-head-marks">
+                      {marks.map(({ id, s: cs }) => (
+                        <button key={id} type="button" className={`sd-tone-${cs.tone}`} onClick={() => onGoChapter?.(id)} aria-label={`${byId[id].scoreLabel ?? byId[id].label}: ${Math.round(cs.score)}, ${cs.word}`}>
+                          <i aria-hidden="true">{cs.tone === "good" ? "✓" : cs.tone === "bad" ? "✕" : "–"}</i>{byId[id].scoreLabel ?? byId[id].label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })()}
       </section>
       {variant !== "head" && <div className="sd-side-scores"><Scorecard r={m?.research} /></div>}
       {naming && (

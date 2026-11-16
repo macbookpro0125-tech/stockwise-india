@@ -28,7 +28,14 @@ _Last updated: 16 Nov 2026, by Claude on branch `screeners-home`._
 ## Committed and pushed (16 Nov): false EPS cautions removed
 - `server/metrics.js` epsCheckFor: a filed EPS that fits profit ÷ the shareholding count raises no caution (23 companies, e.g. LTIMindtree, CEAT, Honeywell Automation). No score changes. Details: handoff/score-reviews/2026-11-16.md.
 
-## Waiting for the owner (16 Nov): the computer company page, mock-ups only
+## Committed, not pushed (16 Nov, night): the computer company page built from the mock-ups
+- Summary: company card layout C (In short + a tinted score panel with rank, data confidence and six chapter marks; Summary only), full name, About link, 1W–5Y returns, outline watchlist button; the chart full width with its key figures; "The scores, explained" (six cards, weakest checks first, StockDesk.jsx DeskScoreCards); three even columns: Coming up, From its figures, Why is it moving (DeskWatchColumns). The old four tiles and the side What to watch are gone from the Summary.
+- Chart: Candles and Line in the bar, the rest under More; fair value and levels off by default (Levels turns them on); a tapped candle's card off unless "Candle details" is on (phone and computer).
+- Every chapter, phone and computer: the evidence first, the checks (and What to watch on a phone) at the end. A computer's answer card shows the chapter's two figures; small panels sit in pairs (ChapterTab.jsx pairUp, `half: true`).
+- Not built from the mock-up: "has the score moved" (needs the nightly score history served to the page), the pinned bar with the score, dots on the left rail.
+- npm test passed; full e2e 163 passed + the 2 updated tests pass. Not pushed.
+
+## Earlier (16 Nov): the computer company page, mock-ups only
 - Pictures of every computer tab in the phone page's style are saved for their review; **nothing is built**. What they have decided, what is open and where the files are: `handoff/DESKTOP-COMPANY-PAGE.md`. They want more changes first; ask, don't build.
 
 ## Live (pushed 16 Nov, 52ef9cd): the phone company page rearranged

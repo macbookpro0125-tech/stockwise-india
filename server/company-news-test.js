@@ -10,6 +10,7 @@ const junk = [
   "STOCK OF THE DAY Buy TCS Futures: SL 2475 Tgt 2535, 2545, 2575",
   "Tata Consultancy Services (TCS) Share Price Falls 3.14% Today: Price Action",
   "TCS share price target: Nomura retains 'Buy' after management meet",
+  "Tata Consultancy Services stock: Prabhudas Lilladher trims target to INR 2,390",
 ];
 for (const t of junk) assert(isJunkHeadline(t), `kept out: ${t}`);
 const real = [

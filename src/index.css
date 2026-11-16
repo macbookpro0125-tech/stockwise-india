@@ -6903,3 +6903,79 @@ tr:hover .row-star, .row-star:focus-visible { opacity: 1; }
 .hist-sugg dd { margin: 0; color: var(--t1); }
 .hist-sugg p { margin: 8px 0 0; font-size: 12px; color: var(--t3); line-height: 1.5; }
 @media (max-width: 599px) { .hist-sugg dl > div { grid-template-columns: 1fr; gap: 2px; } }
+
+/* A computer's chapter: the checks together at the end (16 Nov 2026) */
+.ct-checks-h { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 34px 0 6px; padding-top: 18px; border-top: 1px solid var(--bdr); font-size: 20px; font-weight: 600; letter-spacing: -0.01em; color: var(--t1); }
+.ct-checks-h span { font-size: 14px; font-weight: 400; color: var(--t3); }
+
+/* ── The computer's company page, as chosen from the mock-ups (16 Nov 2026):
+   card layout C, the chart full width, the scores explained, three even
+   columns. Screeners' calm glass: one heading style outside the boxes. */
+.dk-top.dk-top-wide { display: flex; flex-direction: column; align-items: stretch; gap: var(--sp-4); }
+.dk-chartbox { border: 1px solid var(--pg-edge); background: var(--pg-fill); box-shadow: var(--pg-shine); border-radius: 16px; padding: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-4); }
+.dk-chartbox > * { margin: 0 !important; background: none !important; border: 0 !important; box-shadow: none !important; padding: 0 !important; }
+.dk-chartbox .dk-keyfigs { border-top: 1px solid var(--pg-line) !important; padding-top: var(--sp-4) !important; border-radius: 0; }
+.dk-sec-h { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: var(--sp-4) 2px 10px; }
+.dk-sec-h h2, .dk-col-h { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -0.01em; color: var(--t1); }
+.dk-sec-h span { font-size: 14px; color: var(--t3); }
+.dk-scores-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-4); }
+.dk-score { display: flex; flex-direction: column; align-items: stretch; gap: 10px; text-align: left; width: 100%; font: inherit; color: inherit; cursor: pointer; padding: 16px 18px 12px; border-radius: 16px; border: 1px solid var(--pg-edge); background: var(--pg-fill); box-shadow: var(--pg-shine); }
+.dk-score:hover { border-color: color-mix(in srgb, var(--tone, var(--accent)) 45%, var(--pg-edge)); }
+.dk-score:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.dk-score-top { display: flex; justify-content: space-between; align-items: flex-start; font-size: 14px; color: var(--t3); }
+.dk-score > span { display: block; }
+.dk-score > .dk-score-top, .dk-score > .dk-score-checks { display: flex; }
+.dk-score-num { display: flex; flex-direction: column; align-items: flex-end; color: var(--tone); }
+.dk-score-num b { font-size: 22px; font-weight: 600; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.dk-score-num small { font-size: 11.5px; font-weight: 500; }
+.dk-score-judge { font-size: 16.5px; font-weight: 500; line-height: 1.32; letter-spacing: -0.01em; color: var(--t1); min-height: 44px; }
+.dk-score-checks { display: flex; flex-direction: column; gap: 6px; padding-top: 10px; border-top: 1px solid var(--pg-line); flex: 1; }
+.dk-score-checks > span { display: flex; gap: 8px; align-items: flex-start; font-size: 13.5px; line-height: 1.35; color: var(--t2); }
+.dk-score-checks i { flex: none; width: 17px; height: 17px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 10px; font-weight: 700; color: var(--tone); background: color-mix(in srgb, var(--tone) 16%, transparent); margin-top: 1px; }
+.dk-score-foot { padding-top: 9px; border-top: 1px solid var(--pg-line); font-size: 12.5px; color: var(--t3); }
+.dk-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-4); align-items: stretch; margin-top: var(--sp-4); }
+.dk-col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.dk-col-h { margin: 0 2px; }
+.dk-col-box { flex: 1; margin: 0; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--pg-edge); background: var(--pg-fill); box-shadow: var(--pg-shine); list-style: none; }
+.dk-col-box .dk-watch-list, .dk-col-box .dk-watch-events { margin: 0; }
+.dk-col-box .dk-watch-events { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--pg-line); }
+.dk-col-empty { margin: 0; font-size: 13.5px; color: var(--t3); }
+.dk-col-moving > * { margin: 0 !important; padding: 0 !important; border: 0 !important; background: none !important; box-shadow: none !important; }
+.dk-col-moving .sd-card-title { display: none; }
+@media (max-width: 1100px) { .dk-scores-grid, .dk-cols { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Company card, layout C: the score panel beside In short, Summary only */
+.sd-head-row { grid-area: gist; display: flex; align-items: center; justify-content: space-between; gap: 40px; margin-top: var(--sp-4); padding-top: var(--sp-4); border-top: 1px solid var(--bdr); }
+.sd-head-row .sd-head-gist { margin: 0; padding: 0; border: 0; flex: 1 1 0; min-width: 0; font-size: 17px; }
+.sd-head-panel { flex: none; display: flex; flex-direction: column; gap: 10px; padding: 12px 18px; border-radius: 14px; background: color-mix(in srgb, var(--tone, var(--accent)) 9%, transparent); border: 1px solid color-mix(in srgb, var(--tone, var(--accent)) 24%, transparent); }
+.sd-head-panel-top { display: flex; align-items: center; gap: 16px; }
+.sd-head-panel-num { display: flex; align-items: baseline; gap: 6px; color: var(--tone); white-space: nowrap; }
+.sd-head-panel-num b { font-size: 44px; font-weight: 600; letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+.sd-head-panel-num small { font-size: 13px; color: var(--t3); }
+.sd-head-panel-tx { display: flex; flex-direction: column; gap: 2px; }
+.sd-head-panel-tx strong { font-size: 15px; font-weight: 600; color: var(--tone); }
+.sd-head-panel-tx small { font-size: 12.5px; color: var(--t3); }
+.sd-head-marks { display: flex; flex-wrap: wrap; gap: 6px 14px; padding-top: 9px; border-top: 1px solid color-mix(in srgb, var(--tone, var(--accent)) 18%, transparent); }
+.sd-head-marks button { display: inline-flex; align-items: center; gap: 5px; border: 0; background: none; padding: 0; font: inherit; font-size: 12.5px; color: var(--t2); cursor: pointer; }
+.sd-head-marks button i { width: 16px; height: 16px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 9.5px; font-weight: 700; color: var(--tone); background: color-mix(in srgb, var(--tone) 16%, transparent); }
+.sd-head-marks button:hover { color: var(--t1); }
+.sd-about-link { border: 0; background: none; padding: 0; font: inherit; color: var(--accent); cursor: pointer; }
+.sd-head .sd-actions .sd-action:not(.sd-action-link):not(.on) { background: none !important; color: var(--t1) !important; border: 1px solid var(--bdr2) !important; box-shadow: none !important; }
+@media (max-width: 1100px) { .sd-head-row { flex-direction: column; align-items: stretch; gap: 14px; } }
+
+/* the full name on one line where it fits: a little less space between the
+   card's columns now that it carries five returns */
+.sd-head .sd-id { column-gap: var(--sp-5) !important; }
+.sd-head .sd-id-name h2 { text-wrap: balance; }
+
+/* A computer's chapter: its two figures in the answer card; small panels in pairs (16 Nov 2026) */
+.ct-figs { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 14px; }
+.ct-figs > div { display: flex; flex-direction: column; gap: 2px; min-width: 170px; padding: 10px 14px; border-radius: 12px; background: color-mix(in srgb, var(--t1) 5%, transparent); }
+.ct-figs small { font-size: 12.5px; color: var(--t3); }
+.ct-figs b { font-size: 20px; font-weight: 600; letter-spacing: -0.01em; color: var(--t1); font-variant-numeric: tabular-nums; }
+.ct-pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--sp-5); align-items: start; }
+.ct-pair .ct-q-head { display: block; }
+.ct-pair .ct-q-right { margin-top: 4px; }
+@media (max-width: 1100px) { .ct-pair { grid-template-columns: minmax(0, 1fr); } }
+.ct-pair { padding-top: var(--sp-5); border-top: 1px solid var(--bdr); margin-top: var(--sp-5); }
+.ct-pair > .ct-q { border-top: 0 !important; padding-top: 0 !important; margin-top: 0 !important; }

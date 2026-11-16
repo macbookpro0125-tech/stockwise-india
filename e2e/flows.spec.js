@@ -275,14 +275,15 @@ test("F03-H1 search opens a company; back returns to Discover", async ({ page, a
 
 test("F03-H2 the top answers each chapter in a tile and says what to watch; the six scores and strengths sit under Business", async ({ page, account }) => {
   await page.goto("/stock/TCS");
-  // a computer's page (26 Oct 2026): the gist, a tile per chapter, what to watch
+  // a computer's Summary (16 Nov 2026, the owner's chosen mock-up): the gist
+  // and score panel, the chart, a card per chapter, then three columns
   await expect(page.getByText(/^In short\.$/)).toBeVisible();
-  const watch = page.getByRole("region", { name: "What to watch" });
-  await expect(watch.getByText(/^Results (for|on|today|tomorrow)/).first()).toBeVisible();
-  // the story so far and what is announced ahead (5 Nov 2026)
-  await expect(watch.getByRole("heading", { name: /^(Lately|Coming up)$/ }).first()).toBeVisible();
-  await expect(watch.getByText(/price alerts? set|alerts? set/i)).toBeVisible();
-  const tile = page.getByRole("button", { name: /^Growth: .+\. Go to the chapter$/ });
+  const coming = page.getByRole("region", { name: "Coming up" });
+  await expect(coming.getByText(/^Results (for|on|today|tomorrow)/).first()).toBeVisible();
+  await expect(coming.getByText(/price alerts? set|alerts? set/i)).toBeVisible();
+  await expect(page.getByRole("region", { name: "From its figures" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "The scores, explained" })).toBeVisible();
+  const tile = page.getByRole("button", { name: /^Growth: \d+ of 100/ });
   await expect(tile).toBeVisible();
   await tile.click();
   await expect(page.locator("#sec-financials")).toBeInViewport();
@@ -465,6 +466,13 @@ test("F03-H5 the chart's tools: more types, a search for indicators, saved views
   await expect(page.getByRole("button", { name: "Clouds", exact: true })).toBeVisible();
   await page.getByRole("button", { name: /Saved views|^Views/ }).click();
   const at = async (x, y) => { const b = await chart.boundingBox(); await page.mouse.click(b.x + b.width * x, b.y + b.height * y); };
+  // a tap shows nothing until Candle details is turned on (16 Nov 2026)
+  await at(0.5, 0.3);
+  await page.waitForTimeout(300);
+  await expect(page.getByRole("status").filter({ hasText: "Volume" })).toHaveCount(0);
+  await page.getByRole("button", { name: /Candle details/ }).click();
+  await expect(page.getByRole("button", { name: /Candle details/ })).toHaveAttribute("aria-pressed", "true");
+  await page.waitForTimeout(300);
   await at(0.5, 0.3);
   await expect(page.getByRole("status").filter({ hasText: "Volume" })).toContainText("Open");
   await page.getByRole("button", { name: "Close the day's figures" }).click();

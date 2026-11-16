@@ -142,7 +142,7 @@ export async function stockMoves(symbol) {
   const idx = snap?.indexReturns ?? {};
   const market = idx["Nifty 50"] ? { name: "NIFTY 50", ...idx["Nifty 50"] } : null;
   const sector = row?.sectorIndex && idx[row.sectorIndex] ? { name: row.sectorIndex, ...idx[row.sectorIndex] } : null;
-  const [filings, news] = await Promise.allSettled([companyFilings(symbol), row ? companyNews(row.name) : Promise.resolve({ news: [] })]);
+  const [filings, news] = await Promise.allSettled([companyFilings(symbol), row ? companyNews(row.name, 15, symbol) : Promise.resolve({ news: [] })]);
   const unread = [filings.status === "rejected" || filings.value?.error ? "NSE's filings" : null, news.status === "rejected" ? "the news" : null].filter(Boolean);
   return {
     ...describeMove({

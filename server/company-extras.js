@@ -315,6 +315,8 @@ const JUNK = [
   /\bstock of the day\b|\b(buy|sell)\b.{0,40}\b(SL|tgt|target|stop ?loss)\b/i,
   // brokers' ratings and targets ("share price target: Nomura retains 'Buy'")
   /\bprice target\b|\b(retains?|maintains?|reiterates?|upgrades? to|downgrades? to)\s+['‘"]?(buy|sell|hold|accumulate|reduce)\b/i,
+  // "Prabhudas Lilladher trims target to INR 2,390"
+  /\b(raises?|cuts?|trims?|lifts?|lowers?|hikes?|sets?)\s+(its\s+)?(price\s+)?target\b|\btarget (to|of|at)\s+(rs\.?|inr|₹)/i,
   /\bshare price (falls|rises|gains|drops|jumps|declines)\s+[\d.]+%/i,
 ];
 

@@ -1,5 +1,6 @@
+import { Fragment } from "react";
 import { Check, Minus, X, Info } from "lucide-react";
-import { byId, chapterScore, chapterJudgement, chapterLine } from "./chapterText.js";
+import { byId, chapterScore, chapterJudgement, chapterLine, chapterFigures } from "./chapterText.js";
 import { NotesToggle } from "./StockChapters.jsx";
 
 // A company's chapter as a tab on a computer, organised as questions (27 Oct
@@ -79,6 +80,18 @@ export function chapterChecks(id, r) {
     .map(it => ({ key: it.id, question: QUESTIONS[it.id] ?? `${it.label}?`, measure: it.label, tone: tone(it.score), score: it.score, answer: say(it.reason) }));
 }
 
+// two small panels side by side (half: true on both, next to each other; 16
+// Nov 2026, from the owner's chosen mock-ups)
+function pairUp(blocks) {
+  const out = [];
+  for (let i = 0; i < blocks.length; i++) {
+    const a = blocks[i], b = blocks[i + 1];
+    if (a.info && a.half && b?.info && b.half) { out.push({ key: `${a.key}+${b.key}`, pair: [a, b] }); i++; }
+    else out.push(a);
+  }
+  return out;
+}
+
 function Mark({ t, size = 13 }) {
   const I = MARKS[t];
   return <span className={`ct-mark ct-${t}`} role={t === "info" ? undefined : "img"} aria-label={t === "info" ? undefined : WORDS[t]} aria-hidden={t === "info" ? "true" : undefined}><I size={size} strokeWidth={2.6} aria-hidden="true" /></span>;
@@ -99,13 +112,15 @@ export default function ChapterTab({ id, m, fairValue, price, sec, tab, tour, le
   // one list: the checks in the model's order, each with the panel that
   // answers it; a panel whose check is missing (a bank has other checks)
   // goes to the end
-  const keys = new Set(rows.map(r => r.key));
-  const under = k => detail.filter(d => d.after === k);
+  // 16 Nov 2026 (the owner: "is its profit real cash · strong… should be
+  // last of the page"): the evidence first, in its own order, and the checks
+  // together at the end, each with its mark and the model's own answer
   const blocks = [
     ...detail.filter(d => d.first).map(d => ({ ...d, info: true })),
-    ...rows.flatMap(r => [{ ...r, body: under(r.key).map(d => <div key={d.key} className="ct-evidence">{d.body}</div>) }]),
-    ...detail.filter(d => !d.first && !(d.after && keys.has(d.after))).map(d => ({ ...d, info: true })),
+    ...detail.filter(d => !d.first).map(d => ({ ...d, info: true })),
+    ...rows.map(r => ({ ...r, body: null })),
   ];
+  const firstCheck = rows[0]?.key;
   return (
     <section id={sec ? `sec-${sec}` : undefined} className="ss-section ct" data-tab={tab ?? id} data-tour={tour} aria-labelledby={`ct-${id}`}>
       <header className="ct-card ct-verdict">
@@ -115,6 +130,9 @@ export default function ChapterTab({ id, m, fairValue, price, sec, tab, tour, le
             {judge && <h2 className="ct-judge">{judge}</h2>}
             {summary && <p className="ct-summary">{summary}</p>}
             {lead && <p className="ct-summary">{lead}</p>}
+            {m && chapterFigures(id, m, { fairValue, price }).length > 0 && (
+              <div className="ct-figs">{chapterFigures(id, m, { fairValue, price }).map(f => <div key={f.label}><small>{f.label}</small><b>{f.value}</b>{f.against && <small>{f.against}</small>}</div>)}</div>
+            )}
           </div>
           <div className="ct-verdict-side">
             {s && (
@@ -132,8 +150,18 @@ export default function ChapterTab({ id, m, fairValue, price, sec, tab, tour, le
       </header>
 
       <div className="ct-list">
-        {blocks.map(b => (
-          <article key={b.key} className="ct-q">
+        {pairUp(blocks).map(b => b.pair ? (
+          <div key={b.key} className="ct-pair">{b.pair.map(x => (
+            <article key={x.key} className="ct-q ct-half">
+              <div className="ct-q-head"><div className="ct-q-left"><h3>{x.question}</h3></div><div className="ct-q-right">{(x.answer ?? x.short) && <p className="ct-row-a">{x.answer ?? x.short}</p>}</div></div>
+              <div className="ct-evidence">{x.body}</div>
+            </article>
+          ))}</div>
+        ) : (<Fragment key={b.key}>
+          {!b.info && b.key === firstCheck && (
+            <h3 className="ct-checks-h">The checks <span>{rows.filter(r => r.tone === "good").length} of {rows.length} strong</span></h3>
+          )}
+          <article className="ct-q">
             <div className="ct-q-head">
               <div className="ct-q-left">
                 <h3>{b.question}</h3>
@@ -146,7 +174,7 @@ export default function ChapterTab({ id, m, fairValue, price, sec, tab, tour, le
             </div>
             {b.info ? <div className="ct-evidence">{b.body}</div> : b.body}
           </article>
-        ))}
+        </Fragment>))}
       </div>
     </section>
   );
