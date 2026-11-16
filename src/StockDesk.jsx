@@ -26,8 +26,8 @@ export function DeskTiles({ m, fairValue, price, onGo }) {
   return (
     <div className="dk-tiles">
       {tiles.map(({ id, s, judge, f }) => (
-        <button key={id} type="button" className={`sd-card dk-tile sd-tone-${s.tone}`} onClick={() => onGo(id)} aria-label={`${byId[id].label}: ${judge}. Go to the chapter`}>
-          <span className="dk-tile-top"><span>{byId[id].label}</span><em>{Math.round(s.score)} {s.word}</em></span>
+        <button key={id} type="button" className={`sd-card dk-tile sd-tone-${s.tone}`} onClick={() => onGo(id)} aria-label={`${byId[id].scoreLabel ?? byId[id].label}: ${judge}. Go to the chapter`}>
+          <span className="dk-tile-top"><span>{byId[id].scoreLabel ?? byId[id].label}</span><em>{Math.round(s.score)} {s.word}</em></span>
           <span className="dk-tile-judge">{judge}</span>
           {f && <span className="dk-tile-fig"><b>{f.value}</b><small>{[f.label, f.against].filter(Boolean).join(" · ")}</small></span>}
           <ArrowDown className="dk-tile-go" size={15} aria-hidden="true" />

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { aboutParagraph } from "./aboutText.js";
+import { aboutParagraph, aboutMore } from "./aboutText.js";
 import { cardName } from "./stockName.js";
 import { SHOW_TAB, usePhone } from "./phoneTabs.js";
 import { NotebookPen, Check, X, TriangleAlert, LoaderCircle, ArrowLeft, ArrowUpRight, CalendarDays, CircleCheck, ArrowRight, FileText, Building2, TrendingUp, ShieldCheck, Users, Scale, ChartCandlestick, Newspaper, PenLine, Calculator, Database } from "lucide-react";
@@ -197,6 +197,11 @@ function CompanyProfile({ symbol, m }) {
       ) : (
         <>
           {description && <p style={{ fontSize: 14, color: "var(--t2)", lineHeight: 1.6, margin: "0 0 12px" }}>{description}</p>}
+          {d && aboutMore(cardName(m?.name ?? symbol), m, d).length > 0 && (
+            <dl className="about-more">
+              {aboutMore(cardName(m?.name ?? symbol), m, d).map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}
+            </dl>
+          )}
           {p?.businessLines?.some(b => b.length > 70) && (
             <ul style={{ margin: "0 0 12px", padding: "0 0 0 18px", fontSize: 13, color: "var(--t2)", lineHeight: 1.55 }}>
               {p.businessLines.filter(b => b.length > 70).map(b => <li key={b}>{b}</li>)}
@@ -443,7 +448,7 @@ function KeyNumbers({ data, m }) {
           </div>
         ))}
       </div>
-      <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 10 }}>The other key figures are in the Overview; debt and cash in Financial health; payout in Dividends; who owns it in Holdings.</div>
+      <div style={{ fontSize: 11, color: "var(--t3)", marginTop: 10 }}>The other key figures are in the Overview; debt and cash in Debt; who owns it and the payout in Shareholders.</div>
     </div>
   );
 }
@@ -483,6 +488,20 @@ function Fold({ id, title, children }) {
     </details>
   );
 }
+
+// The page's tab in its address: ?tab=<chapter id>, none for the Summary
+const TAB_IDS = new Set(CHAPTERS.map(c => c.id));
+const tabFromUrl = () => {
+  try { const t = new URLSearchParams(window.location.search).get("tab"); return t && TAB_IDS.has(t) ? t : "overview"; } catch { return "overview"; }
+};
+const tabToUrl = tab => {
+  try {
+    const url = new URL(window.location.href);
+    if (!/^\/stock\/[^/]+\/?$/.test(url.pathname)) return;
+    if (tab && tab !== "overview") url.searchParams.set("tab", tab); else url.searchParams.delete("tab");
+    if (url.href !== window.location.href) window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+  } catch { /* no history API: the tab just isn't remembered */ }
+};
 
 const TabStub = ({ tab, part }) => <div className="sd-tabpart" data-tab={tab}><div id={`sec-${part}`} /></div>;
 
@@ -599,8 +618,12 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
   // part on another tab (a scorecard row, "See Financial health") switches
   // to that tab first (phoneTabs.js).
   const isPhone = usePhone();
-  const [phoneTab, setPhoneTab] = useState("overview");
-  useEffect(() => { setPhoneTab("overview"); }, [symbol]);
+  // The open tab lives in the page's address (?tab=value), replacing the
+  // history entry rather than adding one (16 Nov 2026: "when I press Back I
+  // go to Summary every time"): Back to a company, a refresh or a shared link
+  // opens the tab it was on, and the page's own Back still steps by page
+  const [phoneTab, setPhoneTab] = useState(tabFromUrl);
+  useEffect(() => { setPhoneTab(tabFromUrl()); }, [symbol]);
   // A phone builds a tab the first time it's shown and keeps it: built all
   // at once, the hidden tabs froze an Android phone for a few tenths of a
   // second as each company opened (measured 26 Oct 2026). A computer shows
@@ -612,8 +635,10 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
   // A computer shows one chapter at a time too, each in full (27 Oct 2026:
   // "I want this to be tabs … we show everything"); the bar down the left
   // picks it
-  const [deskTab, setDeskTab] = useState("overview");
-  useEffect(() => { setDeskTab("overview"); }, [symbol]);
+  const [deskTab, setDeskTab] = useState(tabFromUrl);
+  useEffect(() => { setDeskTab(tabFromUrl()); }, [symbol]);
+  const shownTab = isPhone ? phoneTab : deskTab;
+  useEffect(() => { tabToUrl(shownTab); }, [shownTab]);
   const selectDeskTab = id => {
     setDeskTab(id);
     const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -1061,7 +1086,9 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
           { key: "web", question: "What are others saying?", short: "Videos, posts and news elsewhere", body: <div id="sec-web"><AroundTheWeb symbol={data.symbol} name={data.name} /></div> },
         ]} />
 
-      <section className="ss-section dk-yourview" data-tab="overview" aria-labelledby="dk-yourview">
+      {/* your notes and where the figures come from close the last tab, not the
+          Summary (16 Nov 2026, the owner) */}
+      <section className="ss-section dk-yourview" data-tab="news" aria-labelledby="dk-yourview">
         <h2 id="dk-yourview" className="dk-yourview-h">Your view</h2>
         <div className="dk-yourview-grid">
           <MyNotes key={data.symbol} symbol={data.symbol} />
@@ -1069,7 +1096,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         </div>
       </section>
 
-      <div data-tab="overview"><StockDataDates dates={data.dataDates} quote={data.quote} research={m?.research} /></div>
+      <div data-tab="news"><StockDataDates dates={data.dataDates} quote={data.quote} research={m?.research} /></div>
       {/* each tab ends pointing on to the next, as a phone's do */}
       {deskOrder.map((id, i) => deskOrder[i + 1] && (
         <div key={id} data-tab={id} className="dk-next-row">
@@ -1153,18 +1180,11 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
 
       {m && (
         <div className="sd-tabpart" data-tab="overview">
-          {/* what the user thinks, and how the page was made: rows that open (15 Nov 2026) */}
-          <PBlock title="Your notes and the method" className="sd-pb-rows">
+          {/* how the scores are worked out stays with the scores; your notes and
+              the sources close the last tab (16 Nov 2026, the owner) */}
+          <PBlock title="The method" className="sd-pb-rows">
             <ul className="sd-prows">
-              <FoldRow id="sec-thesis" icon={PenLine} name="Your view" sub="Accumulate, Watchlist or Skip, a note and your thesis">
-                <MyNotes key={data.symbol} symbol={data.symbol} bare />
-                <details className="sd-yv-thesis">
-                  <summary>Your investment thesis</summary>
-                  <ThesisMonitor metrics={m} account={account} review={false} bare />
-                </details>
-              </FoldRow>
               <FoldRow id="sec-scores" icon={Calculator} name="How the scores are worked out" sub="Every score and the reason behind it"><ResearchPanel research={m.research} /></FoldRow>
-              <FoldRow icon={Database} name="Where these figures come from" sub="NSE filings and closing prices, with their dates"><StockDataDates dates={data.dataDates} quote={data.quote} research={m?.research} /></FoldRow>
             </ul>
           </PBlock>
         </div>
@@ -1218,6 +1238,22 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       <div id="sec-peers" className="ss-section" data-tab="business">{built("business") && <PBlock title="Peers"><PeersPanel symbol={data.symbol} onAnalyze={onOpenStock} /></PBlock>}</div>
       <div id="sec-filings" className="ss-section" data-tour="filings" data-tab="news">{built("news") && <><PBlock title="Earnings calls"><StockEarningsCall symbol={data.symbol} m={m} /></PBlock><PBlock title="News & filings"><NewsPanel symbol={data.symbol} /></PBlock></>}</div>
       <div id="sec-web" className="ss-section" data-tab="news">{built("news") && <PBlock title="Elsewhere on the web"><AroundTheWeb symbol={data.symbol} name={data.name} /></PBlock>}</div>
+      {m && (
+        <div className="ss-section" data-tab="news">{built("news") && (
+          <PBlock title="Your notes and the sources" className="sd-pb-rows">
+            <ul className="sd-prows">
+              <FoldRow id="sec-thesis" icon={PenLine} name="Your view" sub="Accumulate, Watchlist or Skip, a note and your thesis">
+                <MyNotes key={data.symbol} symbol={data.symbol} bare />
+                <details className="sd-yv-thesis">
+                  <summary>Your investment thesis</summary>
+                  <ThesisMonitor metrics={m} account={account} review={false} bare />
+                </details>
+              </FoldRow>
+              <FoldRow icon={Database} name="Where these figures come from" sub="NSE filings and closing prices, with their dates"><StockDataDates dates={data.dataDates} quote={data.quote} research={m?.research} /></FoldRow>
+            </ul>
+          </PBlock>
+        )}</div>
+      )}
 
       <p style={{ fontSize: 11, color: "var(--t3)", textAlign: "center", lineHeight: 1.6 }}>
         <TriangleAlert size={12} style={{ verticalAlign: "-1px", marginRight: 4 }} />Always cross-check figures on NSE or BSE before investing.

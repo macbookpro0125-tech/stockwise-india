@@ -469,6 +469,7 @@ assert(fewPeers.m.levels === fewPeers.before.levels && /no peer group/.test(fewP
 assert(peCohort({ peerSector: "Financial Services", lender: true, bank: true }) === FIN_BANKS, "a bank against banks");
 assert(peCohort({ peerSector: "Financial Services", lender: true, bank: false }) === FIN_LENDERS, "a finance company against other lenders");
 assert(peCohort({ peerSector: "Financial Services", lender: false }) === FIN_NON_LENDERS, "an exchange or fund manager against non-lenders");
+assert(peCohort({ symbol: "SOLARINDS", peerSector: "Chemicals" }) === "Capital Goods" && peCohort({ symbol: "PIDILITIND", peerSector: "Chemicals" }) === "Chemicals", "Solar Industries (defence explosives) is valued against Capital Goods; other chemical makers keep Chemicals");
 assert(peCohort({ peerSector: "Information Technology", lender: false }) === "Information Technology", "other sectors unchanged");
 assert(peCohort({ peerSector: null }) === null, "no sector, no group");
 console.log("ok: Financial Services P/E peers split into banks, other lenders and the rest");

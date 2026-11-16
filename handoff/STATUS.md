@@ -13,7 +13,18 @@ _Last updated: 16 Nov 2026, by Claude on branch `screeners-home`._
 - **Score decisions (12–13 Nov, the owner's word)**: one headline score, the Overall (quality ex-valuation 70% + valuation 30%, trimmed for price swings), unchanged by the tests; ranked market-wide and by sector. The test showed it sorts strong from weak but doesn't beat the Nifty 50, so it is called a ranking, never a forecast. The pairing that held up (quality 70+ with price strength 70+) is the strategy "Strong Business, Rising Price" and the company-page tag. Valuation 1.11: growth allowance against peers, free cash flow left out while a company builds capacity (Acme Solar).
 - **AI checking**: costed (Haiku ~$10–15/month on changed companies only) and tried locally (this Intel Mac: 5+ min a company, poor answers). Not built; the owner hasn't named it, so it stays held.
 
-## Committed, not pushed (16 Nov): false EPS cautions removed
+## Committed, not pushed (16 Nov, evening): company page, the owner's list
+- The open tab is in the address (`?tab=value`, replaced, not added): Back to a company, a refresh or a shared link reopens its tab (StockDetail.jsx tabFromUrl/tabToUrl).
+- Tabs renamed so each says what's in it: Overview, Business, Finance, Debt, Shareholders, Valuation, Chart, News (chapterText.js). The scores keep Business, Growth, Safety, Owners, Value, Price (`scoreLabel`).
+- Solar Industries valued against Capital Goods (the defence makers) instead of Chemicals: `VALUATION_PEER_SECTOR` in research.js, RESEARCH_VERSION 1.14. Its valuation goes 1 → 2.8: its P/E of 83.5 is still far above its own usual and its peers'.
+- Shareholding back to its four colours (index.css .ct-evidence).
+- Your view and Where these figures come from moved from the Overview to the end of News, phone and computer.
+- About the company: short lines under the paragraph (what sells most, where it sells, its size and biggest rivals, five-year growth, history) from aboutText.js aboutMore.
+- Price levels off: an example on the company's own fair value, labelled not a recommendation (MyLevelsCard.jsx).
+- npm test passed; full e2e passed apart from three tests that expected the old names or places (updated; those pass). Not pushed.
+- Still open from the owner's list: candle details and "question and answer at the bottom of every page" (waiting for what they mean), technical analysis, news, financials as separate sections with compare, and "what history suggests".
+
+## Committed and pushed (16 Nov): false EPS cautions removed
 - `server/metrics.js` epsCheckFor: a filed EPS that fits profit ÷ the shareholding count raises no caution (23 companies, e.g. LTIMindtree, CEAT, Honeywell Automation). No score changes. Details: handoff/score-reviews/2026-11-16.md.
 
 ## Waiting for the owner (16 Nov): the computer company page, mock-ups only

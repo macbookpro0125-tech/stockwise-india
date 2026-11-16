@@ -8,13 +8,18 @@ import { fmtRs } from "../server/levels.js";
 // id, tab label, the question it answers, the research groups it judges,
 // the page parts it holds (sec-…)
 export const CHAPTERS = [
-  { id: "overview", label: "Summary", question: "What is it, and what's the gist?", parts: ["overview", "events"] },
+  { id: "overview", label: "Overview", question: "What is it, and what's the gist?", parts: ["overview", "events"] },
   { id: "business", label: "Business", question: "What does it do, and how well?", groups: ["business", "earnings"], parts: ["about", "business", "peers"] },
-  { id: "growth", label: "Growth", question: "Is it getting bigger?", groups: ["growth"], parts: ["financials"] },
-  { id: "safety", label: "Safety", question: "Could it get through bad years?", groups: ["balance"], parts: ["health"] },
-  { id: "owners", label: "Owners", question: "Who owns it, and what do shareholders get?", groups: ["governance"], parts: ["holding", "dividends"] },
-  { id: "value", label: "Value", question: "Is the price fair for what it earns?", groups: ["valuation"], parts: ["valuation", "sizing", "levels"] },
-  { id: "price", label: "Price", question: "How is the market treating it?", parts: ["performance", "technicals"] },
+  // Each tab is named for what's in it (16 Nov 2026, the owner: "same kind
+  // every tab so people can understand the tab by its name"): Finance holds
+  // the statements, Debt what it owns and owes, Shareholders who owns it and
+  // the dividends, Chart the price. The scores keep their own names
+  // (scoreLabel), since a score says what was judged
+  { id: "growth", label: "Finance", scoreLabel: "Growth", question: "What are its results, and is it growing?", groups: ["growth"], parts: ["financials"] },
+  { id: "safety", label: "Debt", scoreLabel: "Safety", question: "Could it get through bad years?", groups: ["balance"], parts: ["health"] },
+  { id: "owners", label: "Shareholders", scoreLabel: "Owners", question: "Who owns it, and what do shareholders get?", groups: ["governance"], parts: ["holding", "dividends"] },
+  { id: "value", label: "Valuation", scoreLabel: "Value", question: "Is the price fair for what it earns?", groups: ["valuation"], parts: ["valuation", "sizing", "levels"] },
+  { id: "price", label: "Chart", scoreLabel: "Price", question: "How is the market treating it?", parts: ["performance", "technicals"] },
   { id: "news", label: "News", question: "What has it said lately?", parts: ["filings", "web"] },
 ];
 export const byId = Object.fromEntries(CHAPTERS.map(c => [c.id, c]));

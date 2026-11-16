@@ -25,7 +25,7 @@ test("C-1 the watchlist compares the companies picked, their prices on one chart
 test("C-2 a company's peers open in Compare with it", async ({ page, account, isMobile }) => {
   test.skip(isMobile, "the computer's chapters");
   await page.goto("/stock/TCS");
-  await openChapter(page, "Value");
+  await openChapter(page, "Valuation");
   const btn = page.getByRole("button", { name: /^Compare with its top \d peers$/ });
   await btn.scrollIntoViewIfNeeded();
   await btn.click();

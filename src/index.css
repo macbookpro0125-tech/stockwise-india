@@ -4434,10 +4434,9 @@ html.no-blur .sr-group { box-shadow: none; }
 .ct-evidence {
   --fc-revenue: color-mix(in srgb, var(--t3) 70%, transparent);
   --fc-margin: var(--t2);
-  --sh-promoter: var(--accent);
-  --sh-fii: color-mix(in srgb, var(--accent) 50%, var(--t3));
-  --sh-dii: var(--t3);
-  --sh-retail: color-mix(in srgb, var(--t3) 45%, transparent);
+  /* shareholding keeps its own four colours (16 Nov 2026, the owner: "before
+     the colour was different, that was good"): promoter, FII, DII and retail
+     are easier to tell apart than shades of one colour */
 }
 .ct-evidence .sd-card,
 .ct-evidence [style*="var(--sh-xs)"] { background: var(--s2) !important; border: 1px solid var(--bdr) !important; border-radius: var(--r-lg) !important; box-shadow: none !important; }
@@ -6839,3 +6838,21 @@ tr:hover .row-star, .row-star:focus-visible { opacity: 1; }
 .sd.ap .sd-pbox .vx-grid { display: flex !important; flex-direction: column; gap: 0 !important; margin-top: 8px !important; }
 .sd.ap .sd-pbox .vx-grid > div { background: none !important; border: 0 !important; border-radius: 0 !important; padding: 12px 0 !important; }
 .sd.ap .sd-pbox .vx-grid > div + div { border-top: 1px solid var(--pg-line) !important; }
+
+/* More about the company: short labelled lines under the paragraph (16 Nov 2026) */
+.about-more { display: grid; gap: 8px; margin: 0 0 14px; }
+.about-more > div { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 12px; font-size: 13.5px; line-height: 1.5; }
+.about-more dt { color: var(--t3); }
+.about-more dd { margin: 0; color: var(--t2); }
+@media (max-width: 599px) { .about-more > div { grid-template-columns: 1fr; gap: 1px; } }
+
+/* An example of price levels while they're off (16 Nov 2026) */
+.levels-example { margin: 12px 0 0; padding: 12px 14px; border: 1px dashed var(--bdr2); border-radius: 10px; opacity: 0.9; }
+.levels-example-h { font-size: 12.5px; color: var(--t3); margin-bottom: 8px; line-height: 1.45; }
+.levels-example-h b { color: var(--accent); font-weight: 600; margin-right: 4px; }
+.levels-example ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.levels-example li { display: flex; justify-content: space-between; font-size: 13.5px; color: var(--t2); font-variant-numeric: tabular-nums; }
+.levels-example li b { font-weight: 500; color: var(--t2); }
+.levels-example-now { border-top: 1px solid var(--bdr); margin-top: 4px; padding-top: 6px; }
+.levels-example-now span, .levels-example-now b { color: var(--accent) !important; }
+.levels-example-foot { margin-top: 8px; font-size: 12px; color: var(--t3); line-height: 1.45; }

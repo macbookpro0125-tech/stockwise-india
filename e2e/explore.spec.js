@@ -242,7 +242,7 @@ test("X-H14 a sector opened on the map: its rises and falls, its P/E by year, re
 test("X-H15 a company page maps its industry, outlines the company, and opens the market map at it", async ({ page, account, isMobile }) => {
   test.skip(isMobile, "the computer's chapters");
   await page.goto("/stock/TCS");
-  await openChapter(page, "Price");
+  await openChapter(page, "Chart");
   const ask = page.getByText("Did it move alone, or with its industry?").first();
   if (!(await page.locator(".im").count())) await ask.click();
   const im = page.getByRole("region", { name: /^Its (industry|sector): / });

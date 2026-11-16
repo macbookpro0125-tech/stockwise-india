@@ -21,7 +21,7 @@
 // Weights and bands are a stated starting point, not a fitted model — the
 // proposal says so too. Change them here and RESEARCH_VERSION together.
 
-export const RESEARCH_VERSION = "1.13"; // 1.13: Financial Services P/E peers split into banks, other lenders and the rest; valuation under 15 labelled "Very expensive"; 1.12: a one-off quarter (profit above its sales) left out of the P/E the score values on; 1.11: peer P/E allows for growth above 10% a year; free cash flow yield left out while a company builds new capacity; 1.10: 1.10: P/E on the last four quarters; fair value's multiple capped at twice the sector's median P/E; a quarter's EPS filed as the year's corrected, other EPS disagreements shown; auditor notices keep their filing link and scope; 1.8: banks with net NPA under 2% priced on their last three years' ROE
+export const RESEARCH_VERSION = "1.14"; // 1.14: Solar Industries valued against Capital Goods (the defence makers), not Chemicals; 1.13: Financial Services P/E peers split into banks, other lenders and the rest; valuation under 15 labelled "Very expensive"; 1.12: a one-off quarter (profit above its sales) left out of the P/E the score values on; 1.11: peer P/E allows for growth above 10% a year; free cash flow yield left out while a company builds new capacity; 1.10: 1.10: P/E on the last four quarters; fair value's multiple capped at twice the sector's median P/E; a quarter's EPS filed as the year's corrected, other EPS disagreements shown; auditor notices keep their filing link and scope; 1.8: banks with net NPA under 2% priced on their last three years' ROE
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -542,7 +542,17 @@ const valuedEps = m => (m.ttmOneOff ? m.ttmOneOff.epsWithout : m.ttmEps > 0 ? m.
 export const FIN_BANKS = "Financial Services (banks)";
 export const FIN_LENDERS = "Financial Services (lenders other than banks)";
 export const FIN_NON_LENDERS = "Financial Services (not lenders)";
-export const peCohort = m => (m.peerSector !== "Financial Services" ? m.peerSector : m.bank ? FIN_BANKS : m.lender ? FIN_LENDERS : FIN_NON_LENDERS);
+// A few companies NSE files by what they make rather than what they are
+// (16 Nov 2026): Solar Industries makes explosives and missile parts for
+// defence, priced like the defence makers NSE files under Capital Goods (HAL,
+// BDL, Data Patterns), not like specialty chemicals; against Chemicals (median
+// P/E 28.9) its valuation was 1. Only the P/E peer group changes; the sector
+// shown is NSE's.
+export const VALUATION_PEER_SECTOR = { SOLARINDS: "Capital Goods" };
+export const peCohort = m => {
+  const sector = VALUATION_PEER_SECTOR[m.symbol] ?? m.peerSector;
+  return sector !== "Financial Services" ? sector : m.bank ? FIN_BANKS : m.lender ? FIN_LENDERS : FIN_NON_LENDERS;
+};
 const closePe = m => (m.close > 0 && valuedEps(m) > 0 ? m.close / valuedEps(m) : null);
 const closeMcapCr = m => (m.close > 0 && m.shares > 0 ? (m.close * m.shares) / 1e7 : null);
 // A bank is valued on its book (bank-valuation.js): the price-to-book its

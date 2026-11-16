@@ -89,8 +89,8 @@ export function VerdictLines({ m, fairValue, price, onGo }) {
       {rows.length > 0 && (
         <ul className="sd-prows">
           {rows.map(({ c, s, line }) => (
-            <PRow key={c.id} tone={s.tone} name={c.label} sub={line} onClick={() => onGo(c.id)}
-              label={`${c.label}: ${line ? `${line}. ` : ""}${Math.round(s.score)} of 100, ${s.word}`}
+            <PRow key={c.id} tone={s.tone} name={c.scoreLabel ?? c.label} sub={line} onClick={() => onGo(c.id)}
+              label={`${c.scoreLabel ?? c.label}: ${line ? `${line}. ` : ""}${Math.round(s.score)} of 100, ${s.word}`}
               end={<span className={`sd-prow-score sd-tone-${s.tone}`}><b>{Math.round(s.score)}</b><small>{s.word}</small></span>} />
           ))}
         </ul>

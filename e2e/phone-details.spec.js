@@ -25,7 +25,7 @@ test("PD-2 a company on a phone: the overall score, the checks as questions, wha
   await expect(about).toContainText(/TCS|Tata Consultancy/);
   await expect(about).toContainText(/Sales in the year to/);
 
-  await page.getByRole("tab", { name: "Growth" }).or(page.getByRole("button", { name: /^Growth$/ })).first().click();
+  await page.getByRole("tab", { name: "Finance" }).or(page.getByRole("button", { name: /^Finance$/ })).first().click();
   await page.getByRole("button", { name: "Quarterly", exact: true }).first().click();
   await expect(page.getByText(/^Latest quarter, to /)).toBeVisible();
   await expect(page.getByText("Sales, quarter by quarter")).toBeVisible();

@@ -249,17 +249,17 @@ test("M-H10 a company's chapters are pages of their own on a phone @phone", asyn
   await expect(page.locator("#sec-health")).toBeHidden();
   await expect(page.locator("#sec-levels")).toBeHidden();
   const tabs = page.getByRole("navigation", { name: "Parts of this page" });
-  expect(await tabs.getByRole("button").allTextContents()).toEqual(["Summary", "Business", "Growth", "Safety", "Owners", "Value", "Price", "News"]);
-  await tabs.getByRole("button", { name: "Value" }).click();
+  expect(await tabs.getByRole("button").allTextContents()).toEqual(["Overview", "Business", "Finance", "Debt", "Shareholders", "Valuation", "Chart", "News"]);
+  await tabs.getByRole("button", { name: "Valuation" }).click();
   await expect(page.locator("#sec-levels")).toBeVisible();
   await expect(page.locator("#sec-overview")).toBeHidden();
-  await expect(tabs.getByRole("button", { name: "Value" })).toHaveAttribute("aria-current", "true");
+  await expect(tabs.getByRole("button", { name: "Valuation" })).toHaveAttribute("aria-current", "true");
   const height = await page.evaluate(() => document.documentElement.scrollHeight);
   expect(height, "a chapter is a few screens, not the whole page").toBeLessThan(12000);
   // the Summary's Safety line opens the Safety chapter
-  await tabs.getByRole("button", { name: "Summary" }).click();
+  await tabs.getByRole("button", { name: "Overview" }).click();
   await page.getByRole("region", { name: "In short" }).getByRole("button", { name: /^Safety/ }).click();
-  await expect(tabs.getByRole("button", { name: "Safety" })).toHaveAttribute("aria-current", "true");
+  await expect(tabs.getByRole("button", { name: "Debt" })).toHaveAttribute("aria-current", "true");
   await expect(page.locator("#sec-health")).toBeVisible();
 });
 
@@ -320,7 +320,7 @@ test("M-H14 each company chapter ends with the next one, and no empty band below
   await next.click();
   await expect(tabs.getByRole("button", { name: "Business" })).toHaveAttribute("aria-current", "true");
   await expect(page.getByText("What does it do, and how well?", { exact: true })).toBeInViewport();
-  await expect(page.getByRole("button", { name: /^Next: Growth/ })).toBeAttached();
+  await expect(page.getByRole("button", { name: /^Next: Finance/ })).toBeAttached();
   // the last chapter
   await tabs.getByRole("button", { name: "News" }).click();
   await expect(page.getByRole("button", { name: /^Next:/ })).toHaveCount(0);
@@ -374,10 +374,10 @@ test("M-H15 the Summary answers each chapter in a line, and each line opens it @
   await expect(page.locator(".sd-glance")).toHaveCount(0);
   await verdict.getByRole("button", { name: /^Value/ }).click();
   const tabs = page.getByRole("navigation", { name: "Parts of this page" });
-  await expect(tabs.getByRole("button", { name: "Value" })).toHaveAttribute("aria-current", "true");
+  await expect(tabs.getByRole("button", { name: "Valuation" })).toHaveAttribute("aria-current", "true");
   await expect(page.getByText("Is the price fair for what it earns?", { exact: true })).toBeInViewport();
   await expect(page.getByRole("region", { name: "The checks" })).toBeAttached();
-  await expect(page.getByRole("button", { name: "Next: Price. How is the market treating it?" })).toBeAttached();
+  await expect(page.getByRole("button", { name: "Next: Chart. How is the market treating it?" })).toBeAttached();
 });
 
 // 21 Oct 2026: "glass movement when I click on another" — one glass lens

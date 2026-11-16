@@ -54,7 +54,7 @@ for (const [sym, as, says] of MODELS) {
     await page.goto(`/stock/${sym}`);
     await expect(page.getByRole("heading", { level: 2 }).first()).toBeVisible();
     // the model's name is in the Value tab on a computer
-    if (!isMobile) await openChapter(page, "Value");
+    if (!isMobile) await openChapter(page, "Valuation");
     await expect(page.getByText(as).filter({ visible: true }).first()).toBeVisible();
     await expect(page.getByText(says).first()).toBeAttached();
     await page.waitForLoadState("networkidle");

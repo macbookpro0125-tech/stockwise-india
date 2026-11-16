@@ -296,7 +296,7 @@ test("F03-H2 the top answers each chapter in a tile and says what to watch; the 
   await first.click();
   await expect(page.locator("details[open] summary", { hasText: group }).first()).toBeVisible();
 
-  await openChapter(page, "Price");
+  await openChapter(page, "Chart");
   const perf = page.getByRole("region", { name: "How the price has done" });
   const table = perf.getByRole("table");
   for (const row of ["TCS", "NIFTY IT", "NIFTY 50"]) await expect(table.getByRole("rowheader", { name: row })).toBeVisible();
@@ -308,10 +308,12 @@ test("F03-H2 the top answers each chapter in a tile and says what to watch; the 
 test("F03-H3 the company page says when its figures are from; Help explains them; a 3-year chart", async ({ page, account }) => {
   await page.goto("/stock/TCS");
   await expect(page.getByText(/^Results to \d+ \w+ \d{4}, filed \d+ \w+ · NSE close of \d+ \w+/)).toBeVisible();
-  const dates = page.getByRole("region", { name: "Where these figures come from" });
-  for (const term of ["Share price", "Latest quarter", "Latest audited year", "Scores and fair value"]) await expect(dates.getByText(term, { exact: true })).toBeVisible();
   await page.getByRole("group", { name: "Date range" }).getByRole("button", { name: "3Y" }).click();
   await expect(page.getByRole("button", { name: "3Y" })).toHaveAttribute("aria-pressed", "true");
+  // where the figures come from closes the last tab (16 Nov 2026)
+  await openChapter(page, "News");
+  const dates = page.getByRole("region", { name: "Where these figures come from" });
+  for (const term of ["Share price", "Latest quarter", "Latest audited year", "Scores and fair value"]) await expect(dates.getByText(term, { exact: true })).toBeVisible();
   await dates.getByRole("link", { name: "How the figures work" }).click();
   await expect(page).toHaveURL(/\/help$/);
   await expect(page.getByRole("heading", { level: 1, name: "How the figures work" })).toBeVisible();
@@ -338,7 +340,7 @@ test("F03-H4 chart indicators: pivot points and their kinds, an oscillator in it
 
 test("F03-H5 the dividends section: yield against other payers, payout, the yearly record", async ({ page, account }) => {
   await page.goto("/stock/TCS");
-  await openChapter(page, "Owners");
+  await openChapter(page, "Shareholders");
   const div = page.getByRole("region", { name: "Dividends" });
   // the yield is the tile below, so the lead doesn't repeat it
   await expect(div.getByText(/^It paid ₹[\d,.]+ a share over the last 12 months\.$/)).toBeVisible();
@@ -346,13 +348,13 @@ test("F03-H5 the dividends section: yield against other payers, payout, the year
   await expect(div.getByRole("img", { name: /Dividends a share by financial year: FY\d\d/ })).toBeVisible();
   await expect(div.getByText(/^Paid in \d of the last \d financial years/)).toBeVisible();
   // the section bar's Owners (26 Oct 2026) starts at who owns it, dividends next
-  await page.getByRole("navigation", { name: "Parts of this page" }).getByRole("button", { name: "Owners" }).click();
+  await page.getByRole("navigation", { name: "Parts of this page" }).getByRole("button", { name: "Shareholders" }).click();
   await expect(page.locator("#sec-holding")).toBeInViewport();
 });
 
 test("F03-H6 financial health: cover, debt and cash, the yearly chart, the Scorecard's verdict", async ({ page, account }) => {
   await page.goto("/stock/LT");
-  await openChapter(page, "Safety");
+  await openChapter(page, "Debt");
   const health = page.getByRole("region", { name: "Financial health" });
   await expect(health.getByText(/Its short-term assets cover its short-term liabilities [\d.]+ times/)).toBeVisible();
   await expect(health.getByRole("img", { name: /FY\d\d balance sheet: Short-term assets ₹[\d,]+ Cr/ })).toBeVisible();
@@ -387,7 +389,7 @@ test("R-H1 a computer's top bar takes you to Watchlist; a company's page lists i
   await page.getByRole("button", { name: "Add to watchlist" }).click();
   // a company's page: its chapters in the bar down the left, each going to its part
   const parts = page.getByRole("navigation", { name: "Parts of this page" });
-  await parts.getByRole("button", { name: "Owners" }).click();
+  await parts.getByRole("button", { name: "Shareholders" }).click();
   await expect(page.locator("#sec-holding")).toBeInViewport();
   const tray = page.locator(".tb").getByRole("navigation", { name: "Pages" });
   const star = tray.getByRole("button", { name: /^Watchlist/ });
@@ -414,6 +416,8 @@ test("R-H2 Screen builder picked from the Watchlist opens the builder and its ad
 
 test("F03-H9 what to review in the next filing: questions without figures, each linking to its section", async ({ page, account }) => {
   await page.goto("/stock/TCS");
+  // your view, with what to review, closes the last tab (16 Nov 2026)
+  await openChapter(page, "News");
   const list = page.getByText("What to review in the next filing").locator("xpath=following-sibling::ul[1]");
   await expect(list.locator("li").first()).toBeVisible();
   await expect(list).not.toContainText(/\d+(\.\d+)?%|₹|\d×/);

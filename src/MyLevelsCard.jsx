@@ -142,6 +142,25 @@ export default function MyLevelsCard({ symbol, fv, levels, price, priceLabel, fv
               ? <>Price levels are off. The app doesn't set levels for you: choose your own margin of safety under today's fair value ({fmtRs(fv.fv25)}), the gap between levels, your stop and your upper level, and your levels show on the chart, watchlist, portfolio, alerts and the position worksheet. Or type this stock's levels by hand.</>
               : <>There's no fair value for this company, so your settings can't make levels for it. You can type its levels by hand.</>}
           </p>
+          {/* an example, on this company's own fair value and the starting
+              settings, so people see what they'd get before turning them on
+              (16 Nov 2026, the owner: "show an example every time so they will
+              activate it"). Labelled an example, never shown as the app's call */}
+          {fv && (() => {
+            const ex = levelsFromFairValue(fv, DEFAULT_LEVEL_SETTINGS);
+            if (!ex) return null;
+            const rows = [["Upper level", ex.target], ["Level 1", ex.p1], ["Level 2", ex.p2], ["Level 3", ex.p3], ["Stop", ex.stopLoss]].filter(([, v]) => v > 0);
+            return (
+              <div className="levels-example" aria-label="An example of price levels">
+                <div className="levels-example-h"><b>Example</b> for this company, with a {DEFAULT_LEVEL_SETTINGS.mos}% margin, {DEFAULT_LEVEL_SETTINGS.step}% gaps and a {DEFAULT_LEVEL_SETTINGS.stop}% stop</div>
+                <ul>
+                  {rows.map(([k, v]) => <li key={k}><span>{k}</span><b>{fmtRs(v)}</b></li>)}
+                  {price > 0 && <li className="levels-example-now"><span>{priceLabel || "Price now"}</span><b>{fmtRs(price)}</b></li>}
+                </ul>
+                <div className="levels-example-foot">Turn them on to see yours on the chart, watchlist and alerts. You choose every number; this is not a recommendation.</div>
+              </div>
+            );
+          })()}
           {buttons}
         </>
       )}
