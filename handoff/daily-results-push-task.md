@@ -3,6 +3,8 @@ name: daily-results-push
 description: Each day in results season: Google indexing and IndexNow for new results pages; two Shorts (6 pm results; 9 pm rotating format) plus their Hindi twins on Jocular Insights Hindi; Reels to Instagram
 ---
 
+**16 Nov 2026, the owner's word: no more dated videos.** "From now onwards we will make videos which anytime can watch, not with time line." Until a new evergreen video format is agreed with the owner, **skip every step below that makes, uploads or queues a Short or a Reel** (results Shorts, their Hindi twins, the Instagram queue). Do the indexing steps (Google, Bing/IndexNow) as written, and say in the final line that no video was made and why.
+
 Daily results push for Jocular Insights (NSE stock research site jocularinsights.in; code in ~/Projects/stockwise-india, branch screeners-home). Read the last 20 lines of handoff/LOG.md first. Why: Search Console shows company results pages are the pages that reach Google's first page, so each day's new results pages are pushed while people search for them.
 
 0. **Run once a day, whichever Claude account runs it** (the owner switches Claude accounts: Sundays to another account, back to this one on Thursdays; both accounts may hold this task, and both run on this same Mac). First check for the file ~/Projects/files/shorts-v2/runs/daily-<today as YYYY-MM-DD>. If it exists, another run already did (or is doing) today's work: stop at once and say "already done today". If not, create it now (`mkdir -p ~/Projects/files/shorts-v2/runs && date > ~/Projects/files/shorts-v2/runs/daily-YYYY-MM-DD`) before anything else.
