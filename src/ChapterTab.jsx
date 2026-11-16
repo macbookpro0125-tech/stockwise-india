@@ -1,6 +1,5 @@
-import { Fragment } from "react";
-import { Check, Minus, X, Info } from "lucide-react";
-import { byId, chapterScore, chapterJudgement, chapterLine, chapterFigures } from "./chapterText.js";
+import { Check, Minus, X, Info, Eye } from "lucide-react";
+import { byId, chapterScore, chapterJudgement, chapterLine, chapterFigures, watchFor } from "./chapterText.js";
 import { NotesToggle } from "./StockChapters.jsx";
 
 // A company's chapter as a tab on a computer, organised as questions (27 Oct
@@ -92,6 +91,33 @@ function pairUp(blocks) {
   return out;
 }
 
+// Each panel under a plain heading in one box, as on the Overview and a phone
+// (16 Nov 2026, the owner's chosen mock-up). The heading names what's in the
+// box; the panel's own title inside is hidden (index.css .ct-box).
+const TITLES = {
+  about: "About the company", sector: "Against its sector", scores: "How the scores are worked out",
+  results: "Sales, profit and margin", quarterly: "Quarterly results", pnl: "Profit and loss", balance: "Balance sheet",
+  cash: "Cash flow", ratios: "Ratios", compare: "Compare with other companies", history: "What its history suggests",
+  owns: "What it owns and owes", piotroski: "Piotroski score",
+  who: "Who owns it", insiders: "Insider and promoter trades", dividends: "What it pays shareholders",
+  ways: "Fair value, four ways", levels: "Your price levels", peers: "Against similar companies",
+  yours: "Check or change the inputs", sizing: "How much, and when", figures: "More figures",
+  done: "How the price has done", neighbours: "Its industry", technicals: "The trend in the price",
+  changed: "What changed recently", call: "Earnings calls", nse: "News & filings", web: "Elsewhere on the web",
+};
+function EvidenceBlock({ b }) {
+  const title = TITLES[b.key] ?? b.question;
+  // a side note that only repeats the heading ("Piotroski score 6 of 9") is left off
+  const note = b.answer ?? b.short;
+  const showNote = note && !String(note).toLowerCase().startsWith(String(title).toLowerCase());
+  return (
+    <div className="ct-block">
+      <div className="ct-block-h"><h3>{title}</h3>{showNote && <span>{note}</span>}</div>
+      <div className="ct-evidence ct-box">{b.body}</div>
+    </div>
+  );
+}
+
 function Mark({ t, size = 13 }) {
   const I = MARKS[t];
   return <span className={`ct-mark ct-${t}`} role={t === "info" ? undefined : "img"} aria-label={t === "info" ? undefined : WORDS[t]} aria-hidden={t === "info" ? "true" : undefined}><I size={size} strokeWidth={2.6} aria-hidden="true" /></span>;
@@ -120,7 +146,7 @@ export default function ChapterTab({ id, m, fairValue, price, sec, tab, tour, le
     ...detail.filter(d => !d.first).map(d => ({ ...d, info: true })),
     ...rows.map(r => ({ ...r, body: null })),
   ];
-  const firstCheck = rows[0]?.key;
+  const watch = m ? watchFor(id, m) : [];
   return (
     <section id={sec ? `sec-${sec}` : undefined} className="ss-section ct" data-tab={tab ?? id} data-tour={tour} aria-labelledby={`ct-${id}`}>
       <header className="ct-card ct-verdict">
@@ -150,31 +176,47 @@ export default function ChapterTab({ id, m, fairValue, price, sec, tab, tour, le
       </header>
 
       <div className="ct-list">
-        {pairUp(blocks).map(b => b.pair ? (
-          <div key={b.key} className="ct-pair">{b.pair.map(x => (
-            <article key={x.key} className="ct-q ct-half">
-              <div className="ct-q-head"><div className="ct-q-left"><h3>{x.question}</h3></div><div className="ct-q-right">{(x.answer ?? x.short) && <p className="ct-row-a">{x.answer ?? x.short}</p>}</div></div>
-              <div className="ct-evidence">{x.body}</div>
-            </article>
-          ))}</div>
-        ) : (<Fragment key={b.key}>
-          {!b.info && b.key === firstCheck && (
-            <h3 className="ct-checks-h">The checks <span>{rows.filter(r => r.tone === "good").length} of {rows.length} strong</span></h3>
-          )}
-          <article className="ct-q">
-            <div className="ct-q-head">
-              <div className="ct-q-left">
-                <h3>{b.question}</h3>
-                {!b.info && <span className={`ct-chip ct-${b.tone}`}><Mark t={b.tone} size={12} /> {WORDS[b.tone]}</span>}
-              </div>
-              <div className="ct-q-right">
-                {(b.info ? b.answer ?? b.short : b.answer) && <p className="ct-row-a">{b.info ? b.answer ?? b.short : b.answer}</p>}
-                {!b.info && <span className="ct-measure">Checked: {b.measure}</span>}
-              </div>
+        {pairUp(blocks.filter(b => b.info && !b.fold)).map(b => b.pair ? (
+          <div key={b.key} className="ct-pair">{b.pair.map(x => <EvidenceBlock key={x.key} b={x} />)}</div>
+        ) : <EvidenceBlock key={b.key} b={b} />)}
+
+        {/* rarely needed: a row that opens (16 Nov 2026, the chosen mock-up) */}
+        {blocks.some(b => b.fold) && (
+          <div className="ct-block">
+            <div className="ct-block-h"><h3>More</h3></div>
+            <div className="ct-folds">
+              {blocks.filter(b => b.fold).map(b => (
+                <details key={b.key} className="ct-fold">
+                  <summary><span><b>{TITLES[b.key] ?? b.question}</b>{b.short && <small>{b.short}</small>}</span></summary>
+                  <div className="ct-evidence">{b.body}</div>
+                </details>
+              ))}
             </div>
-            {b.info ? <div className="ct-evidence">{b.body}</div> : b.body}
-          </article>
-        </Fragment>))}
+          </div>
+        )}
+
+        {/* the checks last, then what to watch (16 Nov 2026, the owner) */}
+        {rows.length > 0 && (
+          <div className="ct-block">
+            <div className="ct-block-h"><h3>The checks</h3><span>{rows.filter(r => r.tone === "good").length} of {rows.length} strong</span></div>
+            <ul className="ct-checks">
+              {rows.map(r => (
+                <li key={r.key} className={`sd-tone-${r.tone}`}>
+                  <Mark t={r.tone} size={12} />
+                  <div><b>{r.question}</b><span>{r.answer}</span><small>Checked: {r.measure}</small></div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {watch.length > 0 && (
+          <div className="ct-block">
+            <div className="ct-block-h"><h3>What to watch</h3></div>
+            <ul className="ct-checks ct-watch">
+              {watch.map(([label, text]) => <li key={label}><Eye size={16} aria-hidden="true" /><div><b>{label}</b><span>{text}</span></div></li>)}
+            </ul>
+          </div>
+        )}
       </div>
     </section>
   );

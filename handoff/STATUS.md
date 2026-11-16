@@ -13,6 +13,9 @@ _Last updated: 16 Nov 2026, by Claude on branch `screeners-home`._
 - **Score decisions (12–13 Nov, the owner's word)**: one headline score, the Overall (quality ex-valuation 70% + valuation 30%, trimmed for price swings), unchanged by the tests; ranked market-wide and by sector. The test showed it sorts strong from weak but doesn't beat the Nifty 50, so it is called a ranking, never a forecast. The pairing that held up (quality 70+ with price strength 70+) is the strategy "Strong Business, Rising Price" and the company-page tag. Valuation 1.11: growth allowance against peers, free cash flow left out while a company builds capacity (Acme Solar).
 - **AI checking**: costed (Haiku ~$10–15/month on changed companies only) and tried locally (this Intel Mac: 5+ min a company, poor answers). Not built; the owner hasn't named it, so it stays held.
 
+## Committed, not pushed (16 Nov, late night): computer chapter tabs in the mock-up's style
+- Every computer tab after Overview (src/ChapterTab.jsx): each panel under a plain heading in one calm glass box (no boxes inside boxes), small panels side by side, rarely needed ones (how the scores are worked out, check or change the inputs) as rows under "More" that open, then **The checks** and **What to watch** as rows at the very end. CSS: `.ct-block`, `.ct-box`, `.ct-folds`, `.ct-checks` in index.css.
+
 ## Committed, not pushed (16 Nov, evening): company page, the owner's list
 - The open tab is in the address (`?tab=value`, replaced, not added): Back to a company, a refresh or a shared link reopens its tab (StockDetail.jsx tabFromUrl/tabToUrl).
 - Tabs renamed so each says what's in it: Overview, Business, Finance, Debt, Shareholders, Valuation, Chart, News (chapterText.js). The scores keep Business, Growth, Safety, Owners, Value, Price (`scoreLabel`).

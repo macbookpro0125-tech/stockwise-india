@@ -408,7 +408,7 @@ function PiotroskiCard({ m }) {
   if (!m.piotroskiChecks) return null;
   const color = m.piotroski >= 7 ? "var(--green)" : m.piotroski >= 4 ? "var(--yellow)" : "var(--red)";
   return (
-    <div style={card}>
+    <div style={card} className="pio-card">
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
         <h3 data-ttl style={{ fontSize: 16, fontWeight: 400, margin: 0, color: "var(--t1)" }}>Piotroski Score</h3>
         <span style={{ fontSize: 13, fontWeight: 500, color, ...MONO }}>{m.piotroski}/9</span>
@@ -1054,7 +1054,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         detail={[
           { key: "about", first: true, question: "What does it do?", short: "What it sells, to whom, and where", body: <><CompanyProfile symbol={data.symbol} m={m} /><StockBusiness m={m} symbol={data.symbol} name={data.name} /></> },
           { key: "sector", after: "returns", question: "How does it compare with its sector?", short: "Its figures against the sector's middle", body: <StockSectorCompare m={m} /> },
-          { key: "scores", question: "How was it scored?", short: "Every score and the reason behind it", body: <><StockGlance r={m.research} /><div id="sec-scores" data-tour="research"><ResearchPanel research={m.research} /></div></> },
+          { key: "scores", fold: true, question: "How was it scored?", short: "Every score and the reason behind it", body: <><StockGlance r={m.research} /><div id="sec-scores" data-tour="research"><ResearchPanel research={m.research} /></div></> },
         ]} />}
 
       {m && <ChapterTab id="growth" sec="financials" m={m} fairValue={fairValue} price={price} rows={chapterChecks("growth", m.research)}
@@ -1089,7 +1089,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
           { key: "peers", after: "peers", question: "How does it compare with similar companies?", short: "Its peers' prices, P/E and quality", body: <div id="sec-peers"><PeersPanel symbol={data.symbol} onAnalyze={onOpenStock} /></div> },
           { key: "levels", half: true, question: "Where does the price sit for you?", short: "Against your own price levels", body: <div id="sec-levels">{positionCard}{(valued || levels) && <MyLevelsCard symbol={symbol} fv={valued ? fv : null} levels={levels} price={price} priceLabel={priceLabel} fv2Label={fyLabel(m.fyEnd, 2)} />}</div> },
           { key: "figures", half: true, question: "What are all its figures?", short: "Every number from its filings", body: <KeyNumbers data={data} m={m} /> },
-          { key: "yours", question: "What if you change the numbers?", short: "Test your own EPS, P/E, growth and price", body: <>{filingsNote}{valued && overrideCard}{priceCard}{epsByYear}</> },
+          { key: "yours", fold: true, question: "What if you change the numbers?", short: "Test your own EPS, P/E, growth and price", body: <>{filingsNote}{valued && overrideCard}{priceCard}{epsByYear}</> },
           ...(levels ? [{ key: "sizing", question: "How much would you buy, and when?", short: "Size a position against your levels", body: <div id="sec-sizing" className="ss-section"><PhasePositionPlanner levels={levels} /></div> }] : []),
         ]} />}
 
