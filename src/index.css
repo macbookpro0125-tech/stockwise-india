@@ -7083,3 +7083,21 @@ tr:hover .row-star, .row-star:focus-visible { opacity: 1; }
 .bs-all > summary::-webkit-details-marker { display: none; }
 .bs-all > summary::after { content: " ›"; }
 .bs-all[open] > summary::after { content: " ⌄"; }
+/* Home's stock lists as tiles (17 Nov 2026, replacing the pills) */
+.td-listgrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; padding: 4px 18px 18px; }
+@media (max-width: 1100px) { .td-listgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .td-listgrid { padding: 2px 14px 14px; gap: 8px; } }
+.td-listtile { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--pg-edge, var(--bdr2)); background: color-mix(in srgb, var(--t1) 3%, transparent); color: var(--t1); font: inherit; text-align: left; cursor: pointer; transition: border-color 150ms, background 150ms; }
+.td-listtile:hover { border-color: color-mix(in srgb, var(--accent) 55%, transparent); background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.td-listicon { flex: none; width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.td-listtext { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.td-listtext b { font-weight: 500; font-size: 14.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.td-listtext small { font-size: 12px; color: var(--t3); }
+.td-listgo { flex: none; color: var(--t3); }
+@media (max-width: 640px) { .td-listgo { display: none; } .td-listicon { width: 30px; height: 30px; } .td-listtile { padding: 10px 12px; gap: 10px; } }
+@media (max-width: 640px) {
+  .td-listicon { display: none; }
+  .td-listtile { padding: 11px 12px; }
+  .td-listtext b { font-size: 14px; white-space: normal; line-height: 1.25; }
+  .td-listtext small { font-size: 11.5px; white-space: nowrap; }
+}

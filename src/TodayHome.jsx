@@ -8,7 +8,7 @@ import HowItWorks from "./HowItWorks.jsx";
 import { ScreenIcon } from "./PhoneScreens.jsx";
 import { navigate } from "./site.jsx";
 import { tabsFor } from "./Header.jsx";
-import { CalendarDays, Layers3, BookOpen, FileBarChart } from "lucide-react";
+import { CalendarDays, Layers3, BookOpen, FileBarChart, BarChart3, Award, ShieldCheck, Coins, Building2, Sprout, Shield, TrendingUp } from "lucide-react";
 
 // A computer's home once signed in (1 Nov 2026, the owner: "I want something
 // good" of the hero and its bright cards): what's happened to the market and to
@@ -365,11 +365,14 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onOp
 // The Market summary (4 Nov 2026: shared with a phone's home, PhoneScreens.jsx):
 // the Nifty 50's year, the major indices, the watchlist's biggest moves, what
 // sits under its fair value, and the results coming up
+// The stock lists on Home (17 Nov 2026; redrawn the same day — "not looking
+// good": a pile of pills): eight tiles, each with its icon, name and how many
+// companies it holds today (from /api/public/lists)
 const HOME_LISTS = [
-  ["nifty-50-stocks", "Nifty 50"], ["highest-rated-stocks", "Highest scores"], ["debt-free-stocks", "Debt-free"],
-  ["high-dividend-yield-stocks", "High dividend"], ["large-cap-stocks", "Large caps"], ["mid-cap-stocks", "Mid caps"],
-  ["small-cap-stocks", "Small caps"], ["defence-stocks", "Defence"], ["psu-stocks", "PSU"], ["52-week-high-stocks", "52-week highs"],
-  ["low-pe-stocks", "Low P/E"], ["stocks-under-100", "Under ₹100"],
+  ["nifty-50-stocks", "Nifty 50", BarChart3], ["highest-rated-stocks", "Highest scores", Award],
+  ["debt-free-stocks", "Debt-free", ShieldCheck], ["high-dividend-yield-stocks", "High dividend", Coins],
+  ["large-cap-stocks", "Large caps", Building2], ["small-cap-stocks", "Small caps", Sprout],
+  ["defence-stocks", "Defence", Shield], ["52-week-high-stocks", "52-week highs", TrendingUp],
 ];
 export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIndex }) {
   // 5 Nov 2026 ("when I click on those cards it's not working"): every card
@@ -381,7 +384,9 @@ export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIn
   const [market, setMarket] = useState(null);
   // the day's biggest moves (17 Nov 2026, the owner: "the top mover list in the home")
   const [movers, setMovers] = useState(null);
+  const [listCounts, setListCounts] = useState({});
   useEffect(() => {
+    api.publicLists().then(d => setListCounts(Object.fromEntries((d?.groups ?? []).flatMap(g => g.lists ?? []).map(l => [l.slug, l.count])))).catch(() => {});
     api.marketStrip().then(setStrip).catch(() => {});
     api.movers("1d").then(setMovers).catch(() => {});
     api.publicResultsCalendar().then(setCalendar).catch(() => {});
@@ -460,8 +465,14 @@ export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIn
       {/* the stock lists, in reach from Home (17 Nov 2026: "very hard to find, very deep in Markets") */}
       <section className="td-box td-lists" aria-label="Stock lists">
         <div className="td-head"><h3>Stock lists</h3><button type="button" onClick={() => navigate("/lists")}>All lists</button></div>
-        <div className="td-chips">
-          {HOME_LISTS.map(([slug, label]) => <button key={slug} type="button" className="td-chip" onClick={() => navigate(`/lists/${slug}`)}>{label}</button>)}
+        <div className="td-listgrid">
+          {HOME_LISTS.map(([slug, label, Icon]) => (
+            <button key={slug} type="button" className="td-listtile" onClick={() => navigate(`/lists/${slug}`)}>
+              <span className="td-listicon" aria-hidden="true"><Icon size={18} strokeWidth={1.8} /></span>
+              <span className="td-listtext"><b>{label}</b>{listCounts[slug] != null && <small>{listCounts[slug].toLocaleString("en-IN")} companies</small>}</span>
+              <ChevronRight size={16} className="td-listgo" aria-hidden="true" />
+            </button>
+          ))}
         </div>
       </section>
 
