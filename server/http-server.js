@@ -51,7 +51,7 @@ import { countBrowserVisit, countActive, countSignup, visitStats, isOwner } from
 import { sendWelcome } from "./welcome.js";
 import { startDigestJobs, weeklyEmailOn, setWeeklyEmail, resultsEmailOn, setResultsEmail, unsubscribe } from "./digest.js";
 import { INDEXNOW_KEY, startIndexNow } from "./indexnow.js";
-import { OLD_SCREEN_SLUGS, publicScreen, publicScreens, publicResultsCalendar, screenPageHtml, screensIndexHtml, resultsCalendarHtml, homePageHtml, sectorsIndexHtml, sectorPageHtml } from "./seo-lists.js";
+import { OLD_SCREEN_SLUGS, publicScreen, publicScreens, sharedScreen, publicResultsCalendar, screenPageHtml, screensIndexHtml, resultsCalendarHtml, homePageHtml, sectorsIndexHtml, sectorPageHtml } from "./seo-lists.js";
 import { listsIndexHtml, listPageHtml, publicListsData, publicListData } from "./seo-collections.js";
 import { publicSectors, publicSector } from "./seo-story.js";
 import { publicSubPage, isSubPagePath } from "./seo-pages.js";
@@ -64,7 +64,7 @@ import { marketNews, topNews, newsItem, newsItemFiling, newsForSymbols, watchlis
 import { portfolioVsMarket } from "./portfolio-vs-market.js";
 import { historyBars } from "./price-history.js";
 import { readIndexHistory } from "./index-history.js";
-import { exploreBoard, exploreIndex, heatmap, HEAT_SETS, topMovers, resultsWeek, resultsFor, moversOn, indexBars, sectorBrief } from "./explore.js";
+import { exploreBoard, exploreIndex, heatmap, HEAT_SETS, topMovers, resultsWeek, resultsFor, moversOn, indexBars, sectorBrief, sectorRotation, marketHealth } from "./explore.js";
 import { summarizeMove, aiClient } from "./ai-moves.js";
 import { summarizeCall } from "./call-summary.js";
 import { summarizeFiling } from "./filing-summary.js";
@@ -867,6 +867,13 @@ export function createApp() {
         return;
       }
       if (url.pathname === "/api/public/results-calendar" && req.method === "GET") { sendJson(res, 200, publicResultsCalendar()); return; }
+      if (url.pathname === "/api/public/shared-screen" && req.method === "GET") {
+        await marketReady();
+        const found = sharedScreen(url.searchParams.get("f"));
+        if (!found) { sendJson(res, 404, { error: "That link doesn't hold a screen." }); return; }
+        sendJson(res, 200, found);
+        return;
+      }
       const publicScreenRoute = url.pathname.match(/^\/api\/public\/screens\/([a-z0-9-]+)$/);
       if (publicScreenRoute && req.method === "GET") {
         const found = publicScreen(publicScreenRoute[1]);
@@ -887,6 +894,17 @@ export function createApp() {
       if (url.pathname === "/api/explore" && req.method === "GET") {
         if (requireAuth(req, res) == null) return;
         sendJson(res, 200, await exploreBoard());
+        return;
+      }
+      // sector rotation and market health (explore.js), for Markets
+      if (url.pathname === "/api/explore/rotation" && req.method === "GET") {
+        if (requireAuth(req, res) == null) return;
+        sendJson(res, 200, await sectorRotation());
+        return;
+      }
+      if (url.pathname === "/api/explore/health" && req.method === "GET") {
+        if (requireAuth(req, res) == null) return;
+        sendJson(res, 200, await marketHealth());
         return;
       }
       // an index's daily bars for the full chart
@@ -1731,6 +1749,16 @@ export function createApp() {
         const data = `<script id="public-page-data" type="application/json">${JSON.stringify({ path: url.pathname, title: page.title, body: page.body }).replace(/</g, "\\u003c")}</script>`;
         const html = pageHtml(template, { title: page.title, desc: page.desc, canonical: page.canonical, ld: page.ld ?? { "@context": "https://schema.org", "@type": "WebPage", name: page.title, description: page.desc, url: page.canonical }, body: page.body + data })
           .replace("</head>", `${page.noindex ? '<meta name="robots" content="noindex" />\n' : ""}</head>`);
+        res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache" });
+        res.end(req.method === "HEAD" ? undefined : html);
+        return;
+      }
+      // A shared screen (seo-lists.js sharedScreen, PublicLists.jsx
+      // SharedScreenPage): the app, kept out of search
+      if (url.pathname === "/shared" && (req.method === "GET" || req.method === "HEAD") && existsSync(join(DIST_DIR, "index.html"))) {
+        const html = readFileSync(join(DIST_DIR, "index.html"), "utf-8")
+          .replace(/<title>[^<]*<\/title>/, "<title>A shared stock screen · Jocular Insights</title>")
+          .replace("</head>", '<meta name="robots" content="noindex" />\n</head>');
         res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache" });
         res.end(req.method === "HEAD" ? undefined : html);
         return;

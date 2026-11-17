@@ -11,6 +11,7 @@ import { allMetrics } from "./screen.js";
 import { historyBars } from "./price-history.js";
 import { PRICE_DIR } from "./paths.js";
 import { SECTOR_INDEX } from "./sector-indices.js";
+import { deskMarket } from "./price-setups.js";
 
 const SPARK_DAYS = 22; // about a month of sessions
 
@@ -421,4 +422,84 @@ export async function indexBars(name, range = "1y") {
   let bars = all;
   if (months && all.length) { const t = new Date(`${all[all.length - 1].date}T00:00:00Z`); t.setUTCMonth(t.getUTCMonth() - months); const from = t.toISOString().slice(0, 10); bars = all.filter(x => x.date > from); }
   return { symbol: i.name, range, source: "NSE", keptFrom: all[0]?.date ?? null, bars, benchmark: null, candles: !!i.opens };
+}
+
+// Sector rotation (17 Nov 2026, from the owner's competitor notes): each NSE
+// sector index against the NIFTY 50 — over three months (where it stands) and
+// over one month (which way it's heading) — so a sector reads as one of four:
+// leading (ahead on both), fading (ahead over three months, behind over the
+// last one), lagging (behind on both), picking up (behind over three months,
+// ahead over the last one). Each sector's position four weeks running is
+// kept, so the chart can draw the path it took. Arithmetic on NSE's closes;
+// what it was, not where it goes next.
+const ROT_LONG = 63, ROT_SHORT = 21, ROT_WEEKS = 4;
+export function rotationQuadrant(long, short) {
+  if (long == null || short == null) return null;
+  return long >= 0 ? (short >= 0 ? "leading" : "fading") : (short >= 0 ? "improving" : "lagging");
+}
+export function rotationOf(board) {
+  const nifty = board?.indices?.find(i => i.group === "market" && /^nifty 50$/i.test(i.name));
+  if (!nifty) return null;
+  const at = (closes, back, n) => {
+    const end = closes.length - 1 - back, last = closes[end], then = closes[end - n];
+    return last > 0 && then > 0 ? (last / then - 1) * 100 : null;
+  };
+  const r2 = v => (v == null ? null : Math.round(v * 100) / 100);
+  const sectors = board.indices.filter(i => i.group === "sector").map(i => {
+    const trail = [];
+    for (let w = ROT_WEEKS; w >= 0; w--) {
+      const back = w * 5;
+      const a = at(i.closes, back, ROT_LONG), na = at(nifty.closes, back, ROT_LONG);
+      const b = at(i.closes, back, ROT_SHORT), nb = at(nifty.closes, back, ROT_SHORT);
+      trail.push(a == null || na == null || b == null || nb == null ? null : { long: r2(a - na), short: r2(b - nb), date: board.days[board.days.length - 1 - back] ?? null });
+    }
+    const now = trail[trail.length - 1];
+    if (!now) return null;
+    const before = trail.find(Boolean);
+    return {
+      name: i.name, long: now.long, short: now.short,
+      quadrant: rotationQuadrant(now.long, now.short),
+      was: before && before !== now ? rotationQuadrant(before.long, before.short) : null,
+      trail: trail.filter(Boolean),
+    };
+  }).filter(Boolean);
+  return { asOf: board.days[board.days.length - 1] ?? null, sectors };
+}
+export async function sectorRotation() {
+  const { board: b, snap } = await board();
+  if (!b) return { asOf: snap?.pricesDate ?? null, sectors: [], pending: true };
+  return rotationOf(b) ?? { asOf: null, sectors: [] };
+}
+
+// Market health, 0–100 (17 Nov 2026): one number for how broad the market's
+// strength is, across the same companies as the market's trend beside it
+// (price-setups.js deskMarket: those trading ₹1 crore a day or more), as the
+// average of four shares — over their 200-day average, over their 50-day
+// (both deskMarket's own, so the two never disagree), rose over the last
+// month, and near the year's high rather than its low. Each part is shown
+// with it, so the number is never a black box. It describes the market now;
+// it isn't a signal to buy or sell.
+const HEALTH_WORDS = [[70, "Strong"], [55, "Healthy"], [45, "Mixed"], [30, "Weak"], [-1, "Very weak"]];
+export function healthOf(rows, desk) {
+  const list = rows.filter(r => desk?.bySymbol?.[r.symbol]?.liquid);
+  const num = v => typeof v === "number" && Number.isFinite(v);
+  const known = list.filter(r => num(r.ret1m));
+  const highs = list.filter(r => num(r.downFrom52wHigh) && r.downFrom52wHigh <= 5).length;
+  const lows = list.filter(r => num(r.upFrom52wLow) && r.upFrom52wLow <= 5).length;
+  const r1 = v => Math.round(v * 10) / 10;
+  const parts = [
+    num(desk?.above200) && { id: "above200", label: "Over their 200-day average", pct: r1(desk.above200) },
+    num(desk?.above50) && { id: "above50", label: "Over their 50-day average", pct: r1(desk.above50) },
+    known.length > 0 && { id: "roseMonth", label: "Rose over the last month", pct: r1((known.filter(r => r.ret1m > 0).length / known.length) * 100) },
+    highs + lows > 0 && { id: "highsLows", label: "Near the year's high, of those near a high or a low", pct: r1((highs / (highs + lows)) * 100), highs, lows },
+  ].filter(Boolean);
+  if (parts.length < 3) return null;
+  const score = Math.round(parts.reduce((s, p) => s + p.pct, 0) / parts.length);
+  return { score, word: HEALTH_WORDS.find(([min]) => score >= min)[1], companies: desk.liquid, parts };
+}
+export async function marketHealth() {
+  const snap = loadMarketSnapshot();
+  const rows = allMetrics().rows ?? [];
+  const desk = await deskMarket(rows.map(r => r.symbol));
+  return { asOf: snap?.pricesDate ?? null, ...(healthOf(rows, desk) ?? { score: null }) };
 }

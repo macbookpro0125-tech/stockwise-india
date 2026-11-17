@@ -225,7 +225,7 @@ test("F02-H9 the strategy list, and a strategy's rules on the board", async ({ p
   await expect(list).toHaveCount(0);
 });
 
-test("F02-H2 share link reopens the same screen", async ({ page, context, account }) => {
+test("F02-H2 share link opens a page of the screen, and reopens it in the builder", async ({ page, context, account }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.goto("/");
   await openStocks(page);
@@ -233,9 +233,13 @@ test("F02-H2 share link reopens the same screen", async ({ page, context, accoun
   await page.getByRole("combobox").filter({ has: page.getByRole("option", { name: "All sectors" }) }).selectOption("Healthcare");
   await page.getByRole("button", { name: "Share", exact: true }).click();
   const link = await page.evaluate(() => navigator.clipboard.readText());
-  expect(link).toContain("screen=");
+  // a public page of the screen's companies (17 Nov 2026), then back into the builder
+  expect(link).toContain("/shared?f=");
   const other = await context.newPage();
   await other.goto(link);
+  await expect(other.getByRole("heading", { name: "A stock screen shared with you" })).toBeVisible();
+  await expect(other.locator(".pl-rules")).toContainText("Healthcare");
+  await other.getByRole("link", { name: "Open it in the Screen builder" }).click();
   await expect(other.getByRole("combobox").filter({ has: other.getByRole("option", { name: "All sectors" }) })).toHaveValue("Healthcare");
 });
 

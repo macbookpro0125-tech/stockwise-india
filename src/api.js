@@ -101,6 +101,7 @@ export const api = {
   publicSector: slug => request(`/api/public/sectors/${encodeURIComponent(slug)}`),
   publicLists: () => request("/api/public/lists"),
   publicList: slug => request(`/api/public/lists/${encodeURIComponent(slug)}`),
+  sharedScreen: code => request(`/api/public/shared-screen?f=${encodeURIComponent(code)}`),
   publicScreen: (slug) => request(`/api/public/screens/${encodeURIComponent(slug)}`),
   publicResultsCalendar: () => request("/api/public/results-calendar"),
   // As a GET the browser keeps the reply and re-checks it on the next visit
@@ -124,6 +125,8 @@ export const api = {
   newsTop: (n = 3) => request(`/api/news/top?n=${n}`),
   // The Explore page (ExploreView.jsx): the indices, and one in full
   explore: () => request("/api/explore"),
+  rotation: () => request("/api/explore/rotation"),
+  marketHealth: () => request("/api/explore/health"),
   exploreIndex: name => request(`/api/explore/index?name=${encodeURIComponent(name)}`),
   movers: period => request(`/api/explore/movers?period=${period}`),
   resultsWeek: () => request("/api/explore/results"),

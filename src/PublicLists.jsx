@@ -176,6 +176,58 @@ export function ScreenPage({ slug, signedIn }) {
   );
 }
 
+// A screen someone built in the Screen builder and shared (17 Nov 2026):
+// its filters ride in the link (?f=), and the server runs them on today's
+// market for anyone (seo-lists.js sharedScreen). Signed in, it opens in the
+// Screen builder to change or save.
+export function SharedScreenPage({ signedIn }) {
+  const code = new URLSearchParams(window.location.search).get("f") ?? "";
+  const [s, error] = useLoad(() => api.sharedScreen(code), code, "shared");
+  useEffect(() => { document.title = "A shared stock screen · Jocular Insights"; }, []);
+  const [join, box] = useJoin();
+  return (
+    <PublicPage title="A stock screen shared with you" signedIn={signedIn} updated={fresh(s?.pricesDate, s?.builtAt)} onSignIn={() => join(null, "signin")} onJoin={() => join("Create a free account to save this screen and change its filters.")}>
+      <p className="pl-crumb"><A to="/screens">Stock screens</A> › Shared screen{s && <ShareButton path={`/shared?f=${code}`} text={`A stock screen: ${s.matched} NSE companies pass it today`} />}</p>
+      {error && <p className="nw-empty">{error === "That link doesn't hold a screen." ? "This link doesn't hold a screen. It may have been cut short when it was copied." : error}</p>}
+      {!s && !error && <Wait />}
+      {s && (
+        <>
+          <p className="pl-lede">Someone built this screen in Jocular Insights and shared it. Run on the latest NSE close, <b>{s.matched}</b> of {s.total.toLocaleString("en-IN")} companies pass.</p>
+          <h2 className="pl-h">The filters</h2>
+          <ul className="pl-rules">{s.rules.map(r => <li key={r}>{r}</li>)}</ul>
+          {signedIn
+            ? <p><a className="pl-share" href={`/?screen=${code}`}>Open it in the Screen builder</a></p>
+            : <JoinCard title="Make this screen yours" onJoin={join} why="Create a free account to save this screen and change its filters."
+                points={["Save it, and see which companies join or leave it", "Change the filters, or build your own", "Every company's checks: growth, safety, owners, value"]} />}
+          <h2 className="pl-h">Companies that match{s.matched > s.companies.length ? ` (the first ${s.companies.length})` : ""}</h2>
+          {s.companies.length ? (
+            <ol className="pl-cos">
+              {s.companies.map(c => (
+                <li key={c.symbol}>
+                  <A to={stockPath(c.symbol)} className="pl-co">
+                    <CompanyLogo symbol={c.symbol} size={32} fallback={c.name} />
+                    <span className="pl-co-main">
+                      <span className="pl-co-name">{c.name}</span>
+                      <span className="pl-co-figs">{[c.price != null && `₹${num(c.price, 2)}`, crore(c.marketCapCr), c.pe > 0 && `P/E ${num(c.pe)}`, c.roe != null && `ROE ${num(c.roe)}%`, c.overall != null && c.quality != null && `Quality ${c.quality}`].filter(Boolean).join(" · ")}</span>
+                    </span>
+                    {c.overall != null
+                      ? <span className="pl-co-q" title="Overall score: quality and valuation, from the company's filings">{c.overall}<small>/100</small></span>
+                      : c.quality != null && <span className="pl-co-q" title="Quality score, from the company's filings">{c.quality}<small>/100</small></span>}
+                  </A>
+                </li>
+              ))}
+            </ol>
+          ) : <p className="pl-lede">No company passes every filter at the latest close.</p>}
+        </>
+      )}
+      <p className="pl-note">{NOT_ADVICE}</p>
+      <More />
+      {!signedIn && <JoinBar label="This screen" why="Create a free account to save this screen and change its filters." onJoin={join} />}
+      {box}
+    </PublicPage>
+  );
+}
+
 export function ResultsCalendarPage({ signedIn }) {
   const [c, error] = useLoad(() => api.publicResultsCalendar(), "cal", "calendar");
   const [open, setOpen] = useState({});

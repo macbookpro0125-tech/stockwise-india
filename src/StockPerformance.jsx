@@ -62,6 +62,21 @@ function Swings({ m }) {
   );
 }
 
+// Price strength, 1–99 (server/price-strength.js): its 3, 6, 9 and 12-month
+// returns, the latest three months counted double, ranked against every NSE
+// company. Shown beside the screens' and the map's use of the same number.
+function Strength({ v }) {
+  if (v == null) return null;
+  const word = v >= 80 ? "among the strongest" : v >= 60 ? "stronger than most" : v > 40 ? "in the middle" : v > 20 ? "weaker than most" : "among the weakest";
+  return (
+    <div className="sd-ps">
+      <div className="sd-ps-top"><b>{v}</b><span>of 99 · {word}</span></div>
+      <span className="sd-ps-bar" aria-hidden="true"><i style={{ width: `${v}%` }} /></span>
+      <p className="sd-foot">Its price did better than about {v}% of NSE companies over the last year, the latest three months counted double. A ranking of the past, not a forecast, and separate from the quality score.</p>
+    </div>
+  );
+}
+
 export default function StockPerformance({ m }) {
   if (!m) return null;
   const sector = m.benchmarks?.sector, market = m.benchmarks?.market;
@@ -98,6 +113,7 @@ export default function StockPerformance({ m }) {
           {gaps ? " A dash means no close on file that far back: a newer listing, or an index NSE started later." : ""}
         </p>
       </> : <p className="sd-muted">Not enough NSE closes on file yet to show how the price has done.</p>}
+      {m.priceStrength != null && <><h4 className="sd-glance-h sd-perf-h">Price strength</h4><Strength v={m.priceStrength} /></>}
       <h4 className="sd-glance-h sd-perf-h">How much the price swings</h4>
       <Swings m={m} />
     </section>

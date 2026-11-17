@@ -40,9 +40,11 @@ const toB64url = str => btoa(String.fromCharCode(...new TextEncoder().encode(str
 const fromB64url = b => new TextDecoder().decode(Uint8Array.from(atob(b.replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0)));
 const compact = f => (f.values ? { id: f.id, values: f.values } : { id: f.id, ...(f.min != null && { min: f.min }), ...(f.max != null && { max: f.max }) });
 
-function screenLink(filters) {
-  return `${window.location.origin}/?screen=${toB64url(JSON.stringify(filters.map(compact)))}`;
+// the public page of a screen's companies, for sharing (server seo-lists.js sharedScreen)
+function sharedLink(filters) {
+  return `${window.location.origin}/shared?f=${toB64url(JSON.stringify(filters.map(compact)))}`;
 }
+
 
 function filtersFromLink() {
   try {
@@ -548,8 +550,16 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
       .then(() => strategiesStore.checkMatches()).catch(() => {});
   };
 
-  const handleShare = () => {
-    navigator.clipboard.writeText(screenLink(filters.filter(isActiveFilter)))
+  // Share (17 Nov 2026): a public page of the screen's companies
+  // (/shared, PublicLists.jsx SharedScreenPage) that opens for anyone, signed
+  // in or not; a phone's own share sheet where there is one, else the link copied
+  const handleShare = async () => {
+    const url = sharedLink(filters.filter(isActiveFilter));
+    if (navigator.share && matchMedia("(pointer: coarse)").matches) {
+      try { await navigator.share({ text: "A stock screen I built on Jocular Insights", url }); } catch { /* closed */ }
+      return;
+    }
+    navigator.clipboard.writeText(url)
       .then(() => setCopyFeedback("Link copied!"))
       .catch(() => setCopyFeedback("Copy failed"))
       .finally(() => setTimeout(() => setCopyFeedback(""), 2000));
@@ -557,7 +567,7 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
   const handleImport = async () => {
     try {
       // A share link pasted in
-      const link = importText.trim().match(/[?&]screen=([A-Za-z0-9_-]+)/);
+      const link = importText.trim().match(/[?&](?:screen|f)=([A-Za-z0-9_-]+)/);
       if (link) {
         const list = JSON.parse(fromB64url(link[1]));
         if (!Array.isArray(list)) throw new Error("Invalid");
@@ -754,7 +764,7 @@ export default function DiscoverView({ onOpenStock, theme, onOpenNews, page = "d
                       <MapIcon size={14} aria-hidden="true" /> Show as map
                     </button>
                   )}
-                  <button type="button" onClick={handleShare} disabled={!activeCount} title="Copy a link that opens this screen" className="btn-ghost tb-btn">
+                  <button type="button" onClick={handleShare} disabled={!activeCount} title="Share a page of this screen's companies that anyone can open" className="btn-ghost tb-btn">
                     <Share size={14} aria-hidden="true" /> {copyFeedback || "Share"}
                   </button>
                   {activeSaved && (

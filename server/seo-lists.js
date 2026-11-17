@@ -86,6 +86,33 @@ export function publicScreen(slug) {
   };
 }
 
+// A screen someone built and shared (17 Nov 2026): the Screen builder's
+// filters in the link (base64url JSON, as DiscoverView.jsx screenLink writes
+// them), run on today's market for anyone, signed in or not. screen.js
+// cleans the filters, so an odd link matches nothing rather than erroring.
+// The page is kept out of search (noindex): it's a link between people.
+export function sharedScreen(code) {
+  let filters;
+  try {
+    const json = Buffer.from(String(code ?? "").replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf-8");
+    filters = JSON.parse(json);
+  } catch { return null; }
+  if (!Array.isArray(filters) || !filters.length || filters.length > 30) return null;
+  const res = screen({ filters });
+  const rules = String(res.queryUsed ?? "").split(" · ").filter(Boolean);
+  if (!rules.length) return null;
+  return {
+    rules, matched: res.matched, total: res.total,
+    pricesDate: loadMarketSnapshot()?.pricesDate ?? null, builtAt: loadMarketSnapshot()?.builtAt ?? null,
+    companies: (res.results ?? []).slice(0, SHOWN).map(r => ({
+      symbol: r.symbol, name: plain(r.name), sector: r.sector ?? null,
+      price: r.cmp ?? null, marketCapCr: r.marketCapCr ?? null, pe: r.pe ?? null, roe: r.roe ?? null,
+      quality: r.research?.quality == null ? null : Math.round(r.research.quality),
+      overall: r.research?.overall == null ? null : Math.round(r.research.overall),
+    })),
+  };
+}
+
 export function publicScreens() {
   return {
     pricesDate: loadMarketSnapshot()?.pricesDate ?? null, builtAt: loadMarketSnapshot()?.builtAt ?? null,

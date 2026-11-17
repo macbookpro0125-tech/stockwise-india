@@ -114,7 +114,7 @@ export async function deskMarket(symbols, { snapshot = loadMarketSnapshot(), bar
       let s = null;
       try { s = setupsOf(barsOf(sym)); } catch { s = null; }
       if (!s) continue;
-      bySymbol[sym] = { stage: s.stage, setups: s.setups };
+      bySymbol[sym] = { stage: s.stage, setups: s.setups, ...(s.valueCr >= LIQUID_CR && { liquid: true }) };
       for (const id of s.setups) setups[id]++;
       if (s.valueCr >= LIQUID_CR) { liquid++; stages[s.stage]++; if (s.above50) a50++; if (s.above200) a200++; }
     }

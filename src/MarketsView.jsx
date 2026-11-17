@@ -9,6 +9,8 @@ import { lazy, Suspense } from "react";
 const PriceChartPanel = lazy(() => import("./PriceChartPanel.jsx"));
 import { navigate } from "./site.jsx";
 import BigNum from "./BigNum.jsx";
+import SectorRotation from "./SectorRotation.jsx";
+import MarketHealth from "./MarketHealth.jsx";
 import { useWatchlist } from "./watchlist.js";
 import { Star } from "lucide-react";
 
@@ -804,11 +806,10 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
         {/* the market's mood: how many are in each stage of their trend */}
         <section className="mk-card" aria-labelledby="mk-mood">
           <div className="mk-card-h"><h2 id="mk-mood">The market's trend</h2><button type="button" className="mk-link" onClick={() => onOpenTab?.("desk")}>Desk</button></div>
+          <MarketHealth />
           <MoodBar market={mood} />
           {mood?.liquid > 0 && (
             <dl className="mk-breadth">
-              <div><dt>Over their 50-day average</dt><dd className="mk-num">{Math.round(mood.above50)}%</dd></div>
-              <div><dt>Over their 200-day average</dt><dd className="mk-num">{Math.round(mood.above200)}%</dd></div>
               {(mood.setupInfo ?? []).slice(0, 4).map(s => <div key={s.id}><dt title={s.about}>{s.label}</dt><dd className="mk-num">{mood.setups?.[s.id] ?? 0}</dd></div>)}
             </dl>
           )}
@@ -832,6 +833,12 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
         </section>
         </div>
       </div>
+
+      {/* sector rotation (SectorRotation.jsx): which sectors are gaining on the market, and which are slipping */}
+      <section className="mk-card" aria-labelledby="mk-rot">
+        <div className="mk-card-h"><h2 id="mk-rot">Sector rotation</h2></div>
+        <SectorRotation onOpen={name => { const slug = sectorPageFor(name); if (slug) navigate(`/sector/${slug}`); else { setPick(name); window.scrollTo(0, 0); } }} />
+      </section>
 
       {/* the biggest moves */}
       <section className="mk-card" aria-labelledby="mk-mov">
