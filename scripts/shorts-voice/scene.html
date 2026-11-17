@@ -45,6 +45,7 @@ body.th-purple{--g1:rgba(160,110,255,.24);--g2:rgba(46,230,196,.10);--base:#0a06
 .bars{width:100%}.bar{margin-bottom:44px}.bar .k{display:flex;justify-content:space-between;font-size:54px;font-weight:800}
 .trk{margin-top:16px;height:58px;border-radius:29px;background:rgba(255,255,255,.08);overflow:hidden}.trk b{display:block;height:100%;width:0;border-radius:29px}
 .note{font-size:46px;font-weight:800;margin-top:10px}
+.bars.four .bar{margin-bottom:24px}.bars.four .bar .k{font-size:48px}.bars.four .trk{margin-top:10px;height:44px}.bars.four .lg{width:60px;height:60px}
 .bar .k span:first-child{display:inline-flex;align-items:center;gap:20px}.lg{width:72px;height:72px;border-radius:18px;background:#fff;object-fit:contain;padding:6px;box-shadow:0 6px 20px rgba(0,0,0,.4)}
 /* the hook: the opening question, big, with the companies' logos */
 .hook{text-align:center;width:100%}.hook .hl{display:flex;justify-content:center;gap:40px;margin-bottom:46px}.hook .hl img{width:250px;height:250px;border-radius:56px;background:#fff;padding:14px;object-fit:contain;box-shadow:0 20px 60px rgba(0,0,0,.6)}
@@ -129,7 +130,7 @@ function build(g, n) {
     el.innerHTML = `<div class="tiles">${v.tiles.map(x => `<div class="tile"><div class="l">${x.label}</div><div class="v ${x.tone ?? "teal"}">${fmt(0, x)}</div><div class="s">${x.sub ?? ""}</div></div>`).join("")}</div>`;
   } else if (v.type === "bars") {
     const max = v.max ?? Math.max(...v.bars.map(b => Math.abs(b.value))) * 1.15;
-    el.innerHTML = `<div class="bars">${v.bars.map(b => `<div class="bar"><div class="k"><span>${lg(b.logo)}${b.label}</span><span class="${b.tone ?? "teal"}">${fmt(0, b)}</span></div><div class="trk"><b style="background:${TONE[b.tone ?? "teal"]}"></b></div></div>`).join("")}${v.note ? `<div class="note ${v.noteTone ?? ""}">${v.note}</div>` : ""}</div>`;
+    el.innerHTML = `<div class="bars${v.bars.length >= 4 ? " four" : ""}">${v.bars.map(b => `<div class="bar"><div class="k"><span>${lg(b.logo)}${b.label}</span><span class="${b.tone ?? "teal"}">${fmt(0, b)}</span></div><div class="trk"><b style="background:${TONE[b.tone ?? "teal"]}"></b></div></div>`).join("")}${v.note ? `<div class="note ${v.noteTone ?? ""}">${v.note}</div>` : ""}</div>`;
     el.dataset.max = max;
   } else if (v.type === "big") {
     const parts = v.text.split("→").map(x => x.trim());
