@@ -65,6 +65,19 @@ body.th-purple{--g1:rgba(160,110,255,.24);--g2:rgba(46,230,196,.10);--base:#0a06
 .brandv{flex-direction:column;text-align:center}
 .brandv .badge{width:300px;height:300px;border-radius:50%;background:#fff;display:grid;place-items:center;box-shadow:0 0 0 6px rgba(46,230,196,.3),0 30px 90px rgba(0,0,0,.6)}.brandv .badge img{width:260px}
 .brandv .url{margin-top:40px;font-size:60px;font-weight:900;color:var(--teal)}
+/* checks (17 Nov 2026): a numbered promise, a stage card, a company's own history */
+.steps,.stagec,.hist{width:100%;padding:44px 46px;border-radius:36px;background:rgba(10,13,26,.78);box-shadow:inset 0 0 0 2px rgba(255,255,255,.10),0 30px 90px rgba(0,0,0,.55)}
+.ct{display:flex;justify-content:space-between;align-items:center;font-size:44px;font-weight:900;letter-spacing:-.02em;margin-bottom:26px}.ct .lg{width:76px;height:76px}
+.ct small{display:block;font-size:28px;font-weight:600;color:var(--ink2);letter-spacing:0;margin-top:6px}
+.st{display:flex;align-items:center;gap:26px;font-size:58px;font-weight:800;margin:22px 0;opacity:0}
+.st i{flex:none;width:76px;height:76px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:40px;font-weight:900;background:rgba(255,255,255,.08);color:var(--ink2)}
+.st.on i{background:var(--teal);color:#04131a}
+.sr{display:grid;grid-template-columns:84px 1fr auto;align-items:center;gap:4px 22px;padding:22px 0;border-top:2px solid rgba(255,255,255,.07);opacity:0}
+.sr:first-of-type{border-top:0}
+.sr i{width:72px;height:72px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:40px;font-weight:900}
+.sr i.yes{background:rgba(46,230,196,.16);color:var(--teal)}.sr i.no{background:rgba(255,93,108,.16);color:var(--red)}.sr i.na{background:rgba(255,255,255,.08);color:var(--grey)}
+.sr .t{font-size:50px;font-weight:900;letter-spacing:-.02em}.sr .s{font-size:28px;color:var(--ink2);font-weight:600;margin-top:4px}.sr .v{font-size:56px;font-weight:900;text-align:right;font-variant-numeric:tabular-nums}
+.hist svg{display:block;width:100%;overflow:visible}
 </style></head><body>
 <div id="bg"></div><div id="foot"></div><div id="shade"></div><div id="hookdark"></div><div id="dots"></div>
 <div id="brand"><div class="b"><img src="__LOGO__" alt=""></div>Jocular <span>Insights</span></div>
@@ -158,6 +171,20 @@ function build(g, n) {
     el.innerHTML = `<div class="cardpair">${v.items.map(x => `<div class="cp"><div class="i ${x.tone ?? "teal"}">${x.icon}</div><div class="t">${x.title}</div><div class="s">${x.sub ?? ""}</div></div>`).join("")}</div>`;
   } else if (v.type === "pills") {
     el.innerHTML = `<div class="pills${v.items.length > 3 ? " many" : ""}">${v.items.map(x => `<span class="pill ${x.tone ?? ""}">${x.text}</span>`).join("<br>")}</div>`;
+  } else if (v.type === "steps") {
+    el.innerHTML = `<div class="steps">${v.title ? `<div class="ct">${v.title}</div>` : ""}${v.items.map((x, i) => `<div class="st${v.on === i + 1 ? " on" : ""}"><i>${i + 1}</i>${x}</div>`).join("")}</div>`;
+  } else if (v.type === "stage") {
+    el.innerHTML = `<div class="stagec"><div class="ct"><span>${v.title ?? "Stage"}${v.sub ? `<small>${v.sub}</small>` : ""}</span>${lg(v.logo)}</div>${v.rows.map(r => `<div class="sr"><i class="${r.ok === true ? "yes" : r.ok === false ? "no" : "na"}">${r.ok === true ? "✓" : r.ok === false ? "✕" : "–"}</i><div><div class="t">${r.title}</div>${r.sub ? `<div class="s">${r.sub}</div>` : ""}</div><div class="v ${r.tone ?? (r.ok === false ? "red" : "teal")}">${r.value ?? ""}</div></div>`).join("")}</div>`;
+  } else if (v.type === "history") {
+    // a company's own measure over the years, today's dot last, its usual level dashed
+    const pts = v.points, vals = pts.map(p => p.value), mx = Math.max(...vals, v.usual ?? 0) * 1.12, mn = Math.min(...vals, v.usual ?? Infinity) * 0.82;
+    const W = 780, H = 360, X = i => 40 + i * (W - 80) / (pts.length - 1), Y = x => 30 + (1 - (x - mn) / (mx - mn || 1)) * (H - 60);
+    const d = pts.map((p, i) => (i ? "L" : "M") + X(i).toFixed(1) + " " + Y(p.value).toFixed(1)).join(" ");
+    let svg = `<svg viewBox="0 0 ${W} ${H + 70}">`;
+    if (v.usual != null) svg += `<line x1="20" x2="${W - 20}" y1="${Y(v.usual)}" y2="${Y(v.usual)}" stroke="rgba(226,191,114,.75)" stroke-width="4" stroke-dasharray="14 12"/><text x="20" y="${Y(v.usual) + 40}" text-anchor="start" font-size="30" font-weight="800" fill="#e2bf72">${v.usualLabel ?? "its usual"} ${fmt(v.usual, v)}</text>`;
+    svg += `<path class="cl" d="${d}" fill="none" stroke="#a7aec4" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/>`;
+    pts.forEach((p, i) => { const last = i === pts.length - 1; svg += `<g class="hp" data-i="${i}" opacity="0"><circle cx="${X(i)}" cy="${Y(p.value)}" r="${last ? 20 : 11}" fill="${last ? TONE[v.tone ?? "teal"] : "#a7aec4"}"/>${last ? `<circle class="pulse" cx="${X(i)}" cy="${Y(p.value)}" r="20" fill="none" stroke="${TONE[v.tone ?? "teal"]}" stroke-width="4"/>` : ""}<text x="${X(i)}" y="${Y(p.value) - (last ? 40 : 26)}" text-anchor="middle" font-size="${last ? 46 : 32}" font-weight="900" fill="${last ? TONE[v.tone ?? "teal"] : "#d6dae8"}">${fmt(p.value, v)}</text><text x="${X(i)}" y="${H + 50}" text-anchor="middle" font-size="28" font-weight="${last ? 900 : 600}" fill="${last ? "#f5f6fa" : "#8a91ad"}">${p.label}</text></g>`; });
+    el.innerHTML = `<div class="hist"><div class="ct"><span>${v.title}${v.sub ? `<small>${v.sub}</small>` : ""}</span>${lg(v.logo)}</div>${svg}</svg></div>`;
   } else if (v.type === "save") {
     el.innerHTML = `<svg viewBox="0 0 240 300" style="width:400px;height:500px"><path class="bm" d="M30 20 h180 a10 10 0 0 1 10 10 v250 l-100 -70 l-100 70 v-250 a10 10 0 0 1 10 -10 z" fill="#2ee6c4" style="transform-origin:120px 150px"/></svg>`;
   } else if (v.type === "brand") {
@@ -203,6 +230,15 @@ function animate(g, el, u) {
     const p = spring(u, .05, .4); el.querySelector(".big").style.transform = `scale(${(.7 + .3 * p).toFixed(3)})`;
   } else if (v.type === "pair" || v.type === "pills") {
     el.querySelectorAll(".cp, .pill").forEach((x, k) => { const p = spring(u, .1 + k * .35, .4); x.style.opacity = p; x.style.transform = `translateY(${((1 - p) * 30).toFixed(1)}px)`; });
+  } else if (v.type === "steps") {
+    el.querySelectorAll(".st").forEach((x, k) => { const p = spring(u, .15 + k * .45, .4); x.style.opacity = p; x.style.transform = `translateX(${((1 - p) * 40).toFixed(1)}px)`; });
+  } else if (v.type === "stage") {
+    el.querySelectorAll(".sr").forEach((x, k) => { const p = spring(u, .2 + k * (v.gap ?? 1.1), .4); x.style.opacity = p; x.style.transform = `translateY(${((1 - p) * 30).toFixed(1)}px)`; const i = x.querySelector("i"); i.style.transform = `scale(${(.4 + .6 * spring(u, .35 + k * (v.gap ?? 1.1), .3)).toFixed(3)})`; });
+  } else if (v.type === "history") {
+    const n = v.points.length;
+    el.querySelectorAll(".cl").forEach(p => p.style.strokeDashoffset = p.dataset.l * (1 - eio(span(u, .2, 1.6))));
+    el.querySelectorAll(".hp").forEach(g => { const i = +g.dataset.i; g.setAttribute("opacity", spring(u, .2 + 1.4 * i / Math.max(1, n - 1), .35).toFixed(3)); });
+    const pu = el.querySelector(".pulse"); if (pu) { const ph = ((u - 1.8) % 1.4 + 1.4) % 1.4 / 1.4; pu.setAttribute("r", (20 + 26 * ph).toFixed(1)); pu.setAttribute("opacity", u > 1.8 ? (1 - ph).toFixed(2) : 0); }
   } else if (v.type === "save") {
     el.querySelector(".bm").style.transform = `scale(${(.6 + .4 * spring(u, .1, .35)).toFixed(3)})`;
   }
