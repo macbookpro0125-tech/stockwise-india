@@ -39,6 +39,7 @@ import StockBusiness from "./StockBusiness.jsx";
 import StockRecent from "./StockRecent.jsx";
 import InsidersPanel from "./InsidersPanel.jsx";
 import StockEarningsCall from "./StockEarningsCall.jsx";
+import StockOutlook from "./StockOutlook.jsx";
 import StockSnapshot from "./StockSnapshot.jsx";
 import { CHAPTERS, VerdictLines, ChapterTop, ChapterEnd, PBlock, PhoneWatch, FoldRow } from "./StockChapters.jsx";
 import { DeskTiles, WhatToWatch, KeyFiguresRow, DeskScoreCards, DeskWatchColumns } from "./StockDesk.jsx";
@@ -506,8 +507,10 @@ const tabToUrl = tab => {
 };
 
 // What its own history suggests, in plain lines (historySuggests.js)
+// "Next results" and "If its pace continued" sit in the Outlook (StockOutlook.jsx)
+const pastLines = m => historyLines(m).filter(l => l.k !== "Next results" && l.k !== "If its pace continued");
 function HistorySuggests({ m }) {
-  const lines = historyLines(m);
+  const lines = pastLines(m);
   if (!lines.length) return null;
   return (
     <div className="hist-sugg">
@@ -1078,7 +1081,8 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
           { key: "cash", question: "Cash flow", short: "Cash in and out, year by year", body: <FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} only="cashFlow" /> },
           { key: "ratios", question: "Ratios", short: "Returns, margins and debt, year by year", body: <FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} only="ratios" /> },
           { key: "compare", question: "How does it compare with other companies?", short: "Any statement, beside up to three companies", body: <FinanceCompare symbol={data.symbol} m={m} /> },
-          ...(historyLines(m).length ? [{ key: "history", question: "What does its history suggest?", short: "Results timing, dividends, its biggest quarter, its pace", body: <HistorySuggests m={m} /> }] : []),
+          ...(pastLines(m).length ? [{ key: "history", question: "What does its history suggest?", short: "Its dividends and its busiest quarter", body: <HistorySuggests m={m} /> }] : []),
+          { key: "outlook", question: "What's the outlook?", short: "What management expects, where its pace points, what would change it", body: <StockOutlook symbol={data.symbol} m={m} /> },
         ]} />}
 
       {m && <ChapterTab id="safety" sec="health" m={m} fairValue={fairValue} price={price} rows={chapterChecks("safety", m.research)} flags={m.research?.flags ?? []}
@@ -1283,7 +1287,8 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         <PBlock title="Cash flow"><FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} only="cashFlow" /></PBlock>
         <PBlock title="Ratios"><FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} only="ratios" /></PBlock>
         <PBlock title="Compare with other companies"><FinanceCompare symbol={data.symbol} m={m} /></PBlock>
-        {historyLines(m).length > 0 && <PBlock title="What its history suggests"><HistorySuggests m={m} /></PBlock>}
+        {pastLines(m).length > 0 && <PBlock title="What its history suggests"><HistorySuggests m={m} /></PBlock>}
+        <PBlock title="The outlook"><StockOutlook symbol={data.symbol} m={m} /></PBlock>
       </>}</div>}
       {m && <div id="sec-health" className="ss-section" data-tab="safety">{built("safety") && <><PBlock title="What it owns and owes"><StockHealth m={m} scoreLink={false} /></PBlock>{m.piotroskiChecks && <PBlock title={`Piotroski score: ${m.piotroski} of 9`}><PiotroskiCard m={m} /></PBlock>}</>}</div>}
       <div id="sec-holding" className="ss-section" data-tab="owners">{built("owners") && <><PBlock title="Who owns it"><ShareholdingPanel symbol={data.symbol} /></PBlock><PBlock title="Insider and promoter trades"><InsidersPanel symbol={data.symbol} /></PBlock></>}</div>

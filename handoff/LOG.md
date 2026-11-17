@@ -352,3 +352,4 @@ Owner: "the news is not understandable". Looked at 10 apps (Inshorts' one-line c
 - 17 Nov 2026: owner's ten points: Revenue wording, Compare bars, peers open, price levels box, inputs wording, sector pages from Markets, 3Y/5Y index chart, Home movers and lists, app menu on list pages, simpler balance sheet. Tests passed except two date-dependent ones. Not pushed.
 - 17 Nov 2026: pushed 8e3bc98 (SEO A and B, the ten points); live checked: sitemap-details 803 URLs, TCS page has its new sections, Home has top movers.
 - 17 Nov 2026: Home's lists as tiles; "Stock lists" renamed "Explore by category" (heading) / "Categories" (menus) where people see it; /lists address and Google titles unchanged. 161 passed (MK-3, S-H3 date-dependent locally). Pushed.
+- 17 Nov 2026: Outlook section on the Finance tab (management's expectations from its call, its pace, what to watch); history block no longer repeats those lines. Unit and company-page tests pass. Not pushed.
