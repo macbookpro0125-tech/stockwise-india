@@ -126,6 +126,17 @@ const sm = metricsOf(spiked, snapshot());
 const otherEps = [0, 1, 3].reduce((a, i) => a + sm.quarters[i].eps, 0) * 4 / 3;
 assert(sm.ttmOneOff?.quarter === "2025-12-31" && near(sm.ttmOneOff.epsWithout, otherEps, 1e-9) && near(sm.peTtm, sm.cmp / sm.ttmEps, 1e-9), "a quarter with profit above its sales is a one-off; the P/E shown stays as filed");
 assert(/one-off/.test(itemOf(sm.research, "valuation", "peers")?.reason ?? "") || itemOf(sm.research, "valuation", "peers")?.score == null, "the peer check values the other three quarters and says why");
+// A loss-maker's one profitable quarter, above its sales (17 Nov 2026, Tata
+// Teleservices Maharashtra): the losses' size mustn't make the gain look usual
+const lossy = withQuarters();
+lossy.quarters = lossy.quarters.map((q, i) => (i === 2 ? { ...q, revenue: 290 * CR, profit: 580 * CR, pbt: 580 * CR, eps: 2.97 } : { ...q, revenue: 290 * CR, profit: -310 * CR, pbt: -310 * CR, eps: -1.6 }));
+const lm = metricsOf(lossy, snapshot());
+assert(lm.ttmOneOff?.quarter === "2025-12-31" && lm.ttmOneOff.epsWithout < 0, "a loss-maker's quarter with profit above its sales, after big losses, is a one-off; without it there's no profit to value");
+// A holding company whose profit always tops its sales (its share of other
+// companies' profits) has no one-off
+const holding = withQuarters();
+holding.quarters = holding.quarters.map((q, i) => ({ ...q, revenue: 100 * CR, profit: (i === 0 ? 260 : 200) * CR, pbt: (i === 0 ? 260 : 200) * CR, eps: i === 0 ? 26 : 20 }));
+assert(metricsOf(holding, snapshot()).ttmOneOff == null, "a holding company's profit above its sales every quarter isn't a one-off");
 const gappy = metricsOf(withQuarters(["2026-06-30", "2026-03-31", "2025-09-30", "2025-06-30", "2025-03-31"]), snapshot());
 assert(gappy.ttmEps == null && gappy.peTtm == null, "a missing quarter (Dec 2025) means no trailing-twelve-month figure rather than three quarters passed off as four");
 assert(metricsOf(company(), snapshot()).quarters.length === 0 && metricsOf(company(), snapshot()).qSalesGrowthYoY == null, "a company with no quarterly data has no quarterly figures, not zeros");

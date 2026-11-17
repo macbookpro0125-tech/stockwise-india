@@ -524,13 +524,21 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     // out), so a holding company whose profit always tops its sales (its
     // share of other companies' profits — Bajaj Holdings) isn't caught
     const usualOf = q => median(quarters.slice(0, 8).filter(o => o !== q).map(o => Math.abs(o.profitCr ?? 0)));
+    // …and a profit above the quarter's own sales, when the company's other
+    // quarters are mostly losses or small (17 Nov 2026): there a loss's size
+    // made the gain look usual (Tata Teleservices Maharashtra's ₹581 Cr on
+    // ₹296 Cr of sales after years of ₹300 Cr losses, Ansal Properties' ₹30 Cr
+    // on ₹17 Cr). Losses count as no profit here; Bajaj Holdings' usual
+    // quarter is still its own large profit, so it isn't caught.
+    const usualProfitOf = q => median(quarters.slice(0, 8).filter(o => o !== q).map(o => Math.max(o.profitCr ?? 0, 0)));
     // also a profit after a loss before tax: a gain below that line
     // (discontinued operations, a tax credit — Reliance Infrastructure's ₹1,640 Cr after a ₹1,762 Cr loss)
     const oneOff = q => {
       if (!(q.profitCr > 0) || q.revenueCr == null) return false;
       if (q.pbtCr != null && q.pbtCr < 0) return q.profitCr > 0.05 * q.revenueCr;
       const usual = usualOf(q);
-      return usual > 0 && q.profitCr > 4 * usual && q.profitCr > 0.5 * Math.max(q.revenueCr, 0);
+      if (usual > 0 && q.profitCr > 4 * usual && q.profitCr > 0.5 * Math.max(q.revenueCr, 0)) return true;
+      return q.profitCr > Math.max(q.revenueCr, 0) && q.profitCr > 4 * usualProfitOf(q);
     };
     const hits = last4.filter(oneOff);
     if (!hits.length) return null;
