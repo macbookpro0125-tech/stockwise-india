@@ -350,3 +350,4 @@ Owner: "the news is not understandable". Looked at 10 apps (Inshorts' one-line c
 - 17 Nov 2026: SEO fix A: sub-pages (financials, results) indexed only for the 400 largest companies; the rest noindex and out of the sitemap. npm test passed. Not pushed.
 - 17 Nov 2026: SEO fix B: company pages get their business lines, own record and strengths/watch from their checks. Tests passed. Not pushed.
 - 17 Nov 2026: owner's ten points: Revenue wording, Compare bars, peers open, price levels box, inputs wording, sector pages from Markets, 3Y/5Y index chart, Home movers and lists, app menu on list pages, simpler balance sheet. Tests passed except two date-dependent ones. Not pushed.
+- 17 Nov 2026: pushed 8e3bc98 (SEO A and B, the ten points); live checked: sitemap-details 803 URLs, TCS page has its new sections, Home has top movers.
