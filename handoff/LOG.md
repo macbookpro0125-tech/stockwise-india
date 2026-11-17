@@ -344,3 +344,4 @@ Owner: "the news is not understandable". Looked at 10 apps (Inshorts' one-line c
 - 16 Nov 2026 (late night): company-page pieces pushed and live (0995f2f). Video maker: hook opening, logos, series colours, movement, whoosh; two samples made.
 - 16 Nov 2026 (late night): real Pexels footage behind the Shorts (17 clips, line `bg`); VoiceStudio ruled out (Intel Mac); OpenVoice v2 installed and tried on the ROCE voice-over, four versions sent.
 - 17 Nov 2026: Shorts sample fixes (owner: yes): bigger hook, darker first scene, one closing card with the live company page and Save this; ROCE hook now "TCS ₹59. Wipro ₹18."
+- 17 Nov 2026: all 16 evergreen videos remade (-v2, new style); ten old scheduled YouTube uploads deleted (owner: yes); re-upload blocked by the daily limit until evening; Instagram queue moved to -v2.
