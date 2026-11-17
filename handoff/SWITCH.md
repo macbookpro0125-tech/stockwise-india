@@ -23,6 +23,10 @@ Each job starts by checking a marker file in ~/Projects/files/shorts-v2/runs/ (d
 
 Both accounts keep their task folders in the same ~/.claude/scheduled-tasks/, so the second account can't reuse a name. Its copies are `instagram-evening-2` and `weekly-score-review-2` (set up 15 Nov 2026), and `daily-results-push-2` once it's created. Each one's prompt just says to follow the backup file here, so a change to the backup file reaches it straight away.
 
+## Both accounts' jobs read the backup files (17 Nov 2026)
+
+In both accounts each job's prompt is one line that says to follow its backup file here, so changing the backup file changes the job everywhere. Don't paste full instructions into a job again: on 17 Nov the first account's old full copy made dated and Hindi videos after the 16 Nov rule.
+
 ## When Claude changes a job
 
 Claude copies the job's new text to its backup file here in the same step, so both accounts always rebuild the latest version.
