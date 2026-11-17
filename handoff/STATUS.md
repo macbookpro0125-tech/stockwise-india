@@ -14,7 +14,7 @@ _Last updated: 16 Nov 2026, by Claude on branch `screeners-home`._
 - **AI checking**: costed (Haiku ~$10–15/month on changed companies only) and tried locally (this Intel Mac: 5+ min a company, poor answers). Not built; the owner hasn't named it, so it stays held.
 
 ## Videos remade (17 Nov): all 16 in the new style; YouTube re-upload pending
-- See the 17 Nov paragraph at the top of handoff/VIDEO-TOPICS.md for the re-upload schedule. Ten old scheduled uploads deleted with the owner's yes. Upload limit until ~7:40 pm GMT+3 on 17 Nov (or the owner verifies the channel). Videos with footage are capped at ~1.6 Mbit/s in build.mjs so they stay under the 10 MB upload limit.
+- See the 17 Nov paragraph at the top of handoff/VIDEO-TOPICS.md for the re-upload schedule. Ten old scheduled uploads deleted with the owner's yes. Upload limit until ~7:40 pm GMT+3 on 17 Nov. Phone verification was already done; the owner submitted the video selfie for Advanced features on 17 Nov ~10:14 IST (Google review up to 24 h). Once approved, the daily upload limit goes up: upload all 14 -v2 videos then. Videos with footage are capped at ~1.6 Mbit/s in build.mjs so they stay under the 10 MB upload limit.
 
 ## Voices (16 Nov, late night): OpenVoice v2 tried
 - VoiceStudio can't run its voice engine on this Intel Mac (its own guide; UI only), so not installed.
