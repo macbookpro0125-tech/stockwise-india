@@ -13,7 +13,7 @@ _Last updated: 16 Nov 2026, by Claude on branch `screeners-home`._
 - **Score decisions (12–13 Nov, the owner's word)**: one headline score, the Overall (quality ex-valuation 70% + valuation 30%, trimmed for price swings), unchanged by the tests; ranked market-wide and by sector. The test showed it sorts strong from weak but doesn't beat the Nifty 50, so it is called a ranking, never a forecast. The pairing that held up (quality 70+ with price strength 70+) is the strategy "Strong Business, Rising Price" and the company-page tag. Valuation 1.11: growth allowance against peers, free cash flow left out while a company builds capacity (Acme Solar).
 - **AI checking**: costed (Haiku ~$10–15/month on changed companies only) and tried locally (this Intel Mac: 5+ min a company, poor answers). Not built; the owner hasn't named it, so it stays held.
 
-## Not pushed (17 Nov): four ideas from the owner's competitor notes (Market Strength PDF)
+## Pushed (17 Nov, cf64def): four ideas from the owner's competitor notes (Market Strength PDF)
 - Price strength 1–99 already existed (server/price-strength.js, in screens, filters, desk, map); now also on the company page's "How the price has done" (StockPerformance.jsx).
 - Sector rotation on Markets (SectorRotation.jsx, explore.js rotationOf, /api/explore/rotation): each sector index vs NIFTY 50 over 3 months and 1 month, four groups (leading, picking up, fading, lagging), a line from four weeks ago.
 - Market health 0–100 in Markets' trend card (MarketHealth.jsx, explore.js healthOf, /api/explore/health): average of over-200-day, over-50-day (deskMarket's own, so they match the line below), rose over the month, near the year's high vs low; same ₹1 crore-a-day companies as the trend line.

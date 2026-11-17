@@ -355,3 +355,4 @@ Owner: "the news is not understandable". Looked at 10 apps (Inshorts' one-line c
 - 17 Nov 2026: Outlook section on the Finance tab (management's expectations from its call, its pace, what to watch); history block no longer repeats those lines. Unit and company-page tests pass. Not pushed.
 - 17 Nov 2026: pushed bc20b09 (Outlook); live build carries it. The management reading not checked live yet (no signed-in browser); the owner to try it on TCS.
 - 17 Nov 2026: from the owner's competitor notes: price strength on the company page, sector rotation and market health on Markets, Share gives a public /shared page of the screen (noindex). 160 passed + F02-H2 updated and passing; MK-3, S-H3 date-dependent locally. Not pushed.
+- 17 Nov 2026: pushed cf64def; live checked: /shared page and API (16 Nov close, noindex), rotation/health routes answer, live code carries all four. Signed-in Markets view not seen live (no account in the browser).
