@@ -35,7 +35,8 @@ price lines are taken live by the script.
 | `pair` | `items: [{icon, title, sub, tone}]` (two) |
 | `pills` | `items: [{text, tone}]` |
 | `hook` | `text` (`*teal*`, `~red~`), `logos: [SYMBOL…]`, `sub`: the opening question, big, with company logos |
-| `save`, `brand` | the closing "Save this" and the logo |
+| `save`, `brand` | the closing "Save this" and the logo (older videos) |
+| `page` + `save: true` | the closing card (17 Nov 2026): the company's live page in a frame, the Save badge and jocularinsights.in, one short scene; use it instead of `save` + `brand` |
 
 Hooks (16 Nov 2026, the owner: "people should be hooked"): open on a `hook` line (a
 surprising pair of real figures and a "why?"; the first word comes within a few frames),

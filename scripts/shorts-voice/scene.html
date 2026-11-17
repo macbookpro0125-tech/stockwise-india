@@ -12,6 +12,8 @@ body.th-red{--g1:rgba(255,93,108,.22);--g2:rgba(226,160,60,.10);--base:#10060a}
 body.th-purple{--g1:rgba(160,110,255,.24);--g2:rgba(46,230,196,.10);--base:#0a0616}
 #foot{position:absolute;inset:0;overflow:hidden}#foot video{position:absolute;inset:-30px;width:1140px;height:1980px;object-fit:cover;opacity:0;filter:blur(3px) saturate(1.05)}
 #shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,7,15,.72) 0%,rgba(5,7,15,.55) 35%,rgba(5,7,15,.70) 58%,rgba(5,7,15,.88) 100%);opacity:0}
+#hookdark{position:absolute;inset:0;background:rgba(3,4,10,.45);opacity:0}
+.endw{position:relative;margin-top:-60px}.endbadge{position:absolute;right:-24px;top:-40px;width:150px;height:186px}.endurl{position:absolute;left:0;right:0;bottom:-76px;text-align:center;font-size:52px;font-weight:900;color:var(--teal)}
 #dots{position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.07) 1.6px,transparent 1.8px);background-size:44px 44px}
 #progress{position:absolute;left:0;top:0;height:7px;background:var(--teal);box-shadow:0 0 18px rgba(46,230,196,.8)}
 #brand{position:absolute;left:80px;top:336px;display:flex;align-items:center;gap:14px;font-size:30px;font-weight:600}
@@ -45,8 +47,8 @@ body.th-purple{--g1:rgba(160,110,255,.24);--g2:rgba(46,230,196,.10);--base:#0a06
 .note{font-size:46px;font-weight:800;margin-top:10px}
 .bar .k span:first-child{display:inline-flex;align-items:center;gap:20px}.lg{width:72px;height:72px;border-radius:18px;background:#fff;object-fit:contain;padding:6px;box-shadow:0 6px 20px rgba(0,0,0,.4)}
 /* the hook: the opening question, big, with the companies' logos */
-.hook{text-align:center;width:100%}.hook .hl{display:flex;justify-content:center;gap:40px;margin-bottom:46px}.hook .hl img{width:190px;height:190px;border-radius:44px;background:#fff;padding:14px;object-fit:contain;box-shadow:0 20px 60px rgba(0,0,0,.6)}
-.hook .hq{font-size:112px;font-weight:900;letter-spacing:-.05em;line-height:1.02}.hook .hs{margin-top:28px;font-size:48px;color:var(--ink2);font-weight:700}
+.hook{text-align:center;width:100%}.hook .hl{display:flex;justify-content:center;gap:40px;margin-bottom:46px}.hook .hl img{width:250px;height:250px;border-radius:56px;background:#fff;padding:14px;object-fit:contain;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.hook .hq{font-size:138px;font-weight:900;letter-spacing:-.05em;line-height:1.02}.hook .hs{margin-top:28px;font-size:48px;color:var(--ink2);font-weight:700}
 .bigw{text-align:center}.big{font-size:170px;font-weight:900;letter-spacing:-.06em;line-height:1}.bigs{margin-top:34px;font-size:44px;color:var(--ink2);font-weight:600}
 .cardpair{display:grid;grid-template-columns:1fr 1fr;gap:26px;width:100%}
 .cp{padding:56px 34px;border-radius:32px;background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 2px rgba(255,255,255,.08);text-align:center}
@@ -63,7 +65,7 @@ body.th-purple{--g1:rgba(160,110,255,.24);--g2:rgba(46,230,196,.10);--base:#0a06
 .brandv .badge{width:300px;height:300px;border-radius:50%;background:#fff;display:grid;place-items:center;box-shadow:0 0 0 6px rgba(46,230,196,.3),0 30px 90px rgba(0,0,0,.6)}.brandv .badge img{width:260px}
 .brandv .url{margin-top:40px;font-size:60px;font-weight:900;color:var(--teal)}
 </style></head><body>
-<div id="bg"></div><div id="foot"></div><div id="shade"></div><div id="dots"></div>
+<div id="bg"></div><div id="foot"></div><div id="shade"></div><div id="hookdark"></div><div id="dots"></div>
 <div id="brand"><div class="b"><img src="__LOGO__" alt=""></div>Jocular <span>Insights</span></div>
 <div id="stage"></div>
 <div id="src"></div>
@@ -116,6 +118,8 @@ function build(g, n) {
   } else if (v.type === "page" || v.type === "card") {
     const s = shots[v.symbol];
     el.innerHTML = `<div class="phone"><img src="${s.top}" alt=""></div>`;
+    // the closing card (17 Nov 2026): our real page with "Save this", in one short scene
+    if (v.save) el.innerHTML = `<div class="endw"><div class="phone" style="height:600px">${el.innerHTML.slice(19, -6)}</div><svg class="endbadge" viewBox="0 0 240 300"><path class="bm" d="M30 20 h180 a10 10 0 0 1 10 10 v250 l-100 -70 l-100 70 v-250 a10 10 0 0 1 10 -10 z" fill="#2ee6c4" style="transform-origin:120px 150px"/></svg><div class="endurl">jocularinsights.in</div></div>`;
     if (v.type === "card") {
       const c = s.cards[v.card], k = 890 / c.w, b = c[v.circle ?? (v.card === "quality" ? "ring" : v.card === "ret" ? "ret" : "profit")];
       const pad = 7;
@@ -173,6 +177,8 @@ function animate(g, el, u) {
     el.querySelectorAll(".ca").forEach(p => p.setAttribute("opacity", eio(span(u, 1.2, 1.7))));
     el.querySelectorAll(".cend").forEach(p => p.setAttribute("opacity", eio(span(u, 1.3, 1.7))));
     el.querySelectorAll(".cq").forEach(p => p.setAttribute("opacity", spring(u, .5, .4)));
+  } else if (v.type === "page" && v.save) {
+    const bm = el.querySelector(".bm"); if (bm) bm.style.transform = `scale(${(.4 + .6 * spring(u, .35, .35)).toFixed(3)})`;
   } else if (v.type === "card") {
     const p = spring(u, -.1, .45);
     const ph = el.querySelector(".phone"); ph.style.filter = `blur(${(p * 7).toFixed(1)}px) brightness(${(1 - .6 * p).toFixed(2)})`;
@@ -229,8 +235,9 @@ window.render = async t => {
   const spans = $("line").children;
   L.words.forEach((w, k) => { const p = spring(t, w.at - .06, .28); spans[k].style.opacity = p; spans[k].style.transform = `translateY(${((1 - p) * 26).toFixed(1)}px) scale(${(w.tone ? 1 + .12 * (1 - p) : 1).toFixed(3)})`; });
   const type = L.visual.type;
-  $("src").style.opacity = type === "save" || type === "brand" || type === "pair" || type === "pills" || type === "hook" ? 0 : 1;
+  $("src").style.opacity = type === "save" || type === "brand" || type === "pair" || type === "pills" || type === "hook" || (type === "page" && L.visual.save) ? 0 : 1;
   $("brand").style.opacity = type === "brand" ? 0 : 1;
+  $("hookdark").style.opacity = type === "hook" ? 1 : 0;
   await foot(t, i);
 };
 render(0);
