@@ -813,10 +813,10 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         <>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
             <div>
-              <div style={{ fontSize: 13, fontWeight: 400, color: "var(--t1)", marginBottom: 2, letterSpacing: "-0.01em" }}>Verify & Override</div>
+              <div style={{ fontSize: 13, fontWeight: 400, color: "var(--t1)", marginBottom: 2, letterSpacing: "-0.01em" }}>Your own inputs</div>
               <div style={{ fontSize: 11, color: "var(--t3)" }}>
-                Auto-filled from NSE filings — edit any value to move the fair value (and your price levels, if on); the research score always uses the filings
-                {usingCustomInputs ? <span style={{ marginLeft: 6, color: "var(--accent)", fontWeight: 400 }}>· custom</span> : <span style={{ marginLeft: 6 }}>· filings baseline</span>}
+                Filled in from the company's NSE filings. Change any number to see how the fair value moves (and your price levels, if they're on). The scores always use the filings.
+                {usingCustomInputs ? <span style={{ marginLeft: 6, color: "var(--accent)", fontWeight: 400 }}>· your numbers</span> : <span style={{ marginLeft: 6 }}>· as filed</span>}
               </div>
             </div>
             {baseline && usingCustomInputs && (

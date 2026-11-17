@@ -7040,3 +7040,46 @@ tr:hover .row-star, .row-star:focus-visible { opacity: 1; }
 .dk-cr-icon { position: relative; display: inline-flex; }
 .dk-cr-dot { position: absolute; top: -3px; right: -6px; width: 7px; height: 7px; border-radius: 50%; background: var(--tone, var(--t3)); box-shadow: 0 0 0 2px var(--bg); }
 .sr-tab.on .dk-cr-dot { box-shadow: 0 0 0 2px var(--accent); }
+
+/* Compare: the figures as bars, the company itself first and in the accent (17 Nov 2026) */
+.fc-chart { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px 28px; margin-top: 18px; }
+.fc-chart-g { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.fc-chart-h { font-size: 13px; font-weight: 600; color: var(--t2); margin-bottom: 2px; }
+.fc-bar { display: grid; grid-template-columns: minmax(70px, 110px) minmax(0, 1fr) auto; align-items: center; gap: 8px; font-size: 12.5px; }
+.fc-bar-n { color: var(--t3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fc-bar.me .fc-bar-n { color: var(--t1); font-weight: 600; }
+.fc-bar-t { height: 10px; border-radius: 5px; background: var(--pg-line, rgba(127,127,127,.15)); overflow: hidden; }
+.fc-bar-t b { display: block; height: 100%; border-radius: 5px; background: color-mix(in srgb, var(--t3) 70%, transparent); }
+.fc-bar.me .fc-bar-t b { background: var(--accent); }
+.fc-bar-t b.neg { background: var(--red); }
+.fc-bar-v { font-variant-numeric: tabular-nums; color: var(--t2); min-width: 64px; text-align: right; }
+.cmp-open { padding: 0; border: 0; background: none; font: inherit; font-size: 14px; font-weight: 500; color: var(--t1); text-align: left; cursor: pointer; text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--t3) 50%, transparent); text-underline-offset: 3px; }
+.cmp-open:hover { color: var(--accent); }
+.cmp-open-sm { padding: 0; border: 0; background: none; font: inherit; color: var(--accent); cursor: pointer; text-decoration: underline; }
+/* Paired panels keep their own height: a short one beside a tall one left a big empty box (17 Nov 2026) */
+.ct-pair { align-items: start !important; }
+.ct-pair .ct-block .ct-box { flex: none; }
+/* Home: top movers and the stock lists (17 Nov 2026) */
+.td-movers { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 760px) { .td-movers { grid-template-columns: minmax(0, 1fr); } }
+.td-lists { margin-top: 16px; margin-bottom: 16px; }
+.td-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.td-chip { padding: 8px 14px; border-radius: 999px; border: 1px solid var(--pg-edge, var(--bdr2)); background: var(--pg-fill, var(--surf)); color: var(--t1); font: inherit; font-size: 14px; cursor: pointer; }
+.td-chip:hover { border-color: var(--accent); color: var(--accent); }
+/* The balance sheet in five plain lines (17 Nov 2026) */
+.bs-lines { list-style: none; margin: 14px 0 6px; padding: 0; display: grid; gap: 0; }
+.bs-lines li { display: grid; grid-template-columns: minmax(150px, 220px) auto minmax(0, 1fr); gap: 6px 18px; align-items: baseline; padding: 11px 0; border-top: 1px solid var(--pg-line, var(--bdr)); }
+.bs-lines li:first-child { border-top: 0; }
+.bs-l { display: flex; flex-direction: column; gap: 3px; }
+.bs-l b { font-weight: 500; color: var(--t1); font-size: 14px; }
+.bs-big { font-style: normal; font-size: 11px; color: var(--yellow, #F5C451); }
+.bs-v { display: inline-flex; align-items: baseline; gap: 8px; font-variant-numeric: tabular-nums; }
+.bs-v b { font-weight: 600; color: var(--t1); font-size: 15px; }
+.bs-v i { font-style: normal; color: var(--t3); }
+.bs-t { color: var(--t2); font-size: 13.5px; line-height: 1.5; }
+@media (max-width: 640px) { .bs-lines li { grid-template-columns: minmax(0, 1fr) auto; } .bs-t { grid-column: 1 / -1; } }
+.bs-all { margin-top: 10px; }
+.bs-all > summary { cursor: pointer; padding: 10px 0; color: var(--accent); font-size: 14px; list-style: none; }
+.bs-all > summary::-webkit-details-marker { display: none; }
+.bs-all > summary::after { content: " ›"; }
+.bs-all[open] > summary::after { content: " ⌄"; }

@@ -70,7 +70,7 @@ const TECH_METRICS = [
   { key: "spark", label: "60D Chart", isSparkline: true },
 ];
 
-export default function CompareView({ stocks, pricesDate, onClose }) {
+export default function CompareView({ stocks, pricesDate, onClose, onOpen }) {
   const [techData, setTechData] = useState({});
   const [techLoading, setTechLoading] = useState({});
   const [showBrief, setShowBrief] = useState(false);
@@ -118,8 +118,12 @@ export default function CompareView({ stocks, pricesDate, onClose }) {
               <div style={{ padding: "12px 16px", fontSize: 12, color: "var(--t3)", fontWeight: 400 }}>Metric</div>
               {stocks.map(s => (
                 <div key={s.symbol} style={{ padding: "12px 14px", borderLeft: "1px solid var(--bdr)", background: "var(--surf)" }}>
-                  <div style={{ fontSize: 14, fontWeight: 500, color: "var(--t1)" }}>{s.name}</div>
-                  <div style={{ fontSize: 11, color: "var(--accent)", marginTop: 2 }}>{s.symbol}</div>
+                  {/* a name opens that company's page (17 Nov 2026: from a company's
+                      peers, clicking another company showed nothing) */}
+                  {onOpen
+                    ? <button type="button" className="cmp-open" onClick={() => { onClose?.(); onOpen(s.symbol); }} title={`Open ${s.name}`}>{s.name}</button>
+                    : <div style={{ fontSize: 14, fontWeight: 500, color: "var(--t1)" }}>{s.name}</div>}
+                  <div style={{ fontSize: 11, color: "var(--accent)", marginTop: 2 }}>{s.symbol}{onOpen && <> · <button type="button" className="cmp-open-sm" onClick={() => { onClose?.(); onOpen(s.symbol); }}>Open</button></>}</div>
                 </div>
               ))}
             </div>

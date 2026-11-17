@@ -33,7 +33,8 @@ const badge = name => {
 // each dark enough for its white letters to read (4.5:1 or more, 7 Nov 2026)
 const BADGE_COLOURS = ["#c2273a", "#1a6c9b", "#1d6f9c", "#5b1a3a", "#0b7461", "#7b4fd6", "#a3530f", "#3657c9", "#8a2c7a", "#2f7d3a"];
 const badgeColour = name => BADGE_COLOURS[[...String(name)].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % BADGE_COLOURS.length];
-const RANGES = [["1M", 21], ["3M", 63], ["6M", 126], ["1Y", Infinity]];
+const RANGES = [["1M", 21], ["3M", 63], ["6M", 126], ["1Y", Infinity], ["3Y", 3], ["5Y", 5]];
+const LONG = new Set(["3Y", "5Y"]); // years, from the weekly series
 
 // The index's line, green or red by the range's move, no
 // price tag on the axis; a dot on each day its largest companies filed
@@ -589,6 +590,18 @@ function MoversDay({ date, period, onDate, onPeriod, onBack, onOpenStock }) {
   );
 }
 
+// A sector index (Nifty FMCG, Nifty Bank, …) to its sector page, /sector/<slug>
+// (17 Nov 2026, the owner: "when I press FMCG it should open the full page")
+const SECTOR_PAGES = [
+  [/fmcg|consumption/i, "fast-moving-consumer-goods"], [/\bit\b|tech/i, "information-technology"],
+  [/pharma|health/i, "healthcare"], [/auto/i, "automobile-and-auto-components"], [/metal/i, "metals-and-mining"],
+  [/realty/i, "realty"], [/oil|gas|energy/i, "oil-gas-and-consumable-fuels"], [/media/i, "media-entertainment-and-publication"],
+  [/bank|financ/i, "financial-services"], [/durable/i, "consumer-durables"], [/chemical/i, "chemicals"],
+  [/infra|construct/i, "construction"], [/cement/i, "construction-materials"], [/power/i, "power"],
+  [/defen|capital goods|manufactur/i, "capital-goods"], [/telecom/i, "telecommunication"], [/service/i, "services"],
+];
+export const sectorPageFor = name => SECTOR_PAGES.find(([re]) => re.test(String(name).replace(/^Nifty\s*/i, "")))?.[1] ?? null;
+
 export default function MarketsView({ onOpenStock, onOpenTab }) {
   const [board, setBoard] = useState(null);
   const [pick, setPick] = useState("Nifty 50");
@@ -659,6 +672,15 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
   // the picked index's days for the range shown
   const shownDays = useMemo(() => {
     if (!detail?.days?.length) return null;
+    if (LONG.has(range)) {
+      // 3Y and 5Y from the weekly closes (server explore.js long)
+      const L = detail.long;
+      if (!L?.days?.length) return null;
+      const yrs = RANGES.find(r => r[0] === range)[1];
+      const cut = new Date(`${L.days.at(-1)}T00:00:00Z`); cut.setUTCFullYear(cut.getUTCFullYear() - yrs);
+      const from = Math.max(0, L.days.findIndex(d => d >= cut.toISOString().slice(0, 10)));
+      return { days: L.days.slice(from), closes: L.closes.slice(from) };
+    }
     const n = RANGES.find(r => r[0] === range)?.[1] ?? Infinity;
     const from = Math.max(0, detail.days.length - 1 - (n === Infinity ? detail.days.length : n));
     return { days: detail.days.slice(from), closes: detail.closes.slice(from) };
@@ -730,12 +752,12 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
               <div className="mk-index-price">
                 <b className="mk-num">{detail?.close != null ? <BigNum text={num(detail.close)} /> : num(detail?.close)}</b>
                 <span className={`mk-chg ${tone(detail?.changePct)}`}>{pct(detail?.changePct)} today</span>
-                {rangeMove != null && <span className={`mk-chg ${tone(rangeMove)}`}>{pct(rangeMove)} over {range === "1Y" ? "the year" : range}</span>}
+                {rangeMove != null && <span className={`mk-chg ${tone(rangeMove)}`}>{pct(rangeMove)} over {range === "1Y" ? "the year" : range === "3Y" ? "three years" : range === "5Y" ? "five years" : range}</span>}
               </div>
             </div>
             {chartMode !== "full" && (
               <div className="mk-seg" role="group" aria-label="Range">
-                {RANGES.map(([id]) => <button key={id} type="button" aria-pressed={range === id} onClick={() => setRange(id)}>{id}</button>)}
+                {RANGES.filter(([id]) => !LONG.has(id) || detail?.long?.days?.length).map(([id]) => <button key={id} type="button" aria-pressed={range === id} onClick={() => setRange(id)}>{id}</button>)}
               </div>
             )}
           </div>
@@ -768,7 +790,7 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
           <ul className="mk-sectors">
             {sectors.map(s => (
               <li key={s.name}>
-                <button type="button" onClick={() => setPick(s.name)} aria-label={`${s.name}, ${pct(s.changePct)}; chart it above`}>
+                <button type="button" onClick={() => { const slug = sectorPageFor(s.name); if (slug) navigate(`/sector/${slug}`); else setPick(s.name); }} aria-label={`${s.name}, ${pct(s.changePct)}; ${sectorPageFor(s.name) ? "open its sector page" : "chart it above"}`}>
                   <span className="mk-sec-name">{s.name.replace(/^Nifty\s*/i, "")}</span>
                   <span className="mk-sec-bar"><i className={tone(s.changePct)} style={{ width: `${(Math.abs(s.changePct) / widest) * 50}%`, [s.changePct >= 0 ? "left" : "right"]: "50%" }} /></span>
                   <span className={`mk-chg ${tone(s.changePct)}`}>{pct(s.changePct)}</span>

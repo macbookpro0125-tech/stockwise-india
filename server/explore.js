@@ -71,6 +71,8 @@ export async function exploreIndex(name) {
     name, group: i.group, close: i.close, change: i.change, changePct: i.changePct,
     pe: i.pe, pb: i.pb, divYield: i.divYield,
     days: pairs.map(([d]) => d), closes,
+    // five years, a close a week, for the 3Y and 5Y chart (market-data.js indexLong)
+    long: (() => { const L = snap?.indexLong; const c = L?.closes?.[name]; if (!c?.length) return null; const p2 = L.days.map((d, k) => [d, c[k]]).filter(([, v]) => v != null); return { days: p2.map(([d]) => d), closes: p2.map(([, v]) => v) }; })(),
     returns,
     sector,
     companies: members.length,

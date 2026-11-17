@@ -365,6 +365,12 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onOp
 // The Market summary (4 Nov 2026: shared with a phone's home, PhoneScreens.jsx):
 // the Nifty 50's year, the major indices, the watchlist's biggest moves, what
 // sits under its fair value, and the results coming up
+const HOME_LISTS = [
+  ["nifty-50-stocks", "Nifty 50"], ["highest-rated-stocks", "Highest scores"], ["debt-free-stocks", "Debt-free"],
+  ["high-dividend-yield-stocks", "High dividend"], ["large-cap-stocks", "Large caps"], ["mid-cap-stocks", "Mid caps"],
+  ["small-cap-stocks", "Small caps"], ["defence-stocks", "Defence"], ["psu-stocks", "PSU"], ["52-week-high-stocks", "52-week highs"],
+  ["low-pe-stocks", "Low P/E"], ["stocks-under-100", "Under ₹100"],
+];
 export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIndex }) {
   // 5 Nov 2026 ("when I click on those cards it's not working"): every card
   // opens something — an index its page in Explore, a results day the calendar
@@ -373,8 +379,11 @@ export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIn
   const [watch, setWatch] = useState(null);
   const [calendar, setCalendar] = useState(null);
   const [market, setMarket] = useState(null);
+  // the day's biggest moves (17 Nov 2026, the owner: "the top mover list in the home")
+  const [movers, setMovers] = useState(null);
   useEffect(() => {
     api.marketStrip().then(setStrip).catch(() => {});
+    api.movers("1d").then(setMovers).catch(() => {});
     api.publicResultsCalendar().then(setCalendar).catch(() => {});
     // the Nifty 50's year (8 Nov 2026: "I want Nifty 50 here, not 500, it makes it confusing")
     api.exploreIndex("Nifty 50").then(d => setMarket(d?.days?.length ? d.days.map((day, k) => [day, d.closes[k]]).filter(([, c]) => c != null) : null)).catch(() => {});
@@ -430,6 +439,31 @@ export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIn
           </section>
         )}
       </div>
+
+      {(movers?.gainers?.length > 0 || movers?.losers?.length > 0) && (
+        <div className="td-grid td-movers">
+          {[["Top gainers today", movers.gainers], ["Top losers today", movers.losers]].map(([title, list]) => list?.length > 0 && (
+            <section key={title} className="td-box" aria-label={title}>
+              <div className="td-head"><h3>{title}</h3><button type="button" onClick={() => onOpenTab?.("markets")}>Markets</button></div>
+              {list.slice(0, 5).map(r => (
+                <button key={r.symbol} type="button" className="td-row" onClick={() => onOpenStock?.(r.symbol)}>
+                  <span className="td-name">{short(r.name)}<small>{r.sector ?? r.symbol}</small></span>
+                  <span>₹{num(r.close)}</span>
+                  <span style={{ color: tone(r.change) }}>{pct(r.change)}</span>
+                </button>
+              ))}
+            </section>
+          ))}
+        </div>
+      )}
+
+      {/* the stock lists, in reach from Home (17 Nov 2026: "very hard to find, very deep in Markets") */}
+      <section className="td-box td-lists" aria-label="Stock lists">
+        <div className="td-head"><h3>Stock lists</h3><button type="button" onClick={() => navigate("/lists")}>All lists</button></div>
+        <div className="td-chips">
+          {HOME_LISTS.map(([slug, label]) => <button key={slug} type="button" className="td-chip" onClick={() => navigate(`/lists/${slug}`)}>{label}</button>)}
+        </div>
+      </section>
 
       <div className="td-grid">
         <section className="td-box" aria-label="Your watchlist">

@@ -75,7 +75,7 @@ export default function PeersPanel({ symbol, onAnalyze }) {
           <button type="button" className="ex-heat-back" onClick={() => setComparing(true)}>Compare with its top {Math.min(4, rows.filter(r => r.symbol !== symbol).length)} peers</button>
         )}
       </div>
-      {comparing && <CompareFor symbols={[symbol, ...rows.filter(r => r.symbol !== symbol).slice(0, 4).map(r => r.symbol)]} onClose={() => setComparing(false)} />}
+      {comparing && <CompareFor symbols={[symbol, ...rows.filter(r => r.symbol !== symbol).slice(0, 4).map(r => r.symbol)]} onClose={() => setComparing(false)} onOpen={onAnalyze} />}
       <p style={{ fontSize: 11, color: "var(--t3)", margin: "4px 0 12px", lineHeight: 1.5 }}>
         {data?.peerBasis === "business"
           ? <>Companies in the {data.peerLabel} sector, largest first{data.total > top30 ? ` (top ${top30} of ${data.total})` : ""}. NSE doesn't classify this company, so its sector here comes from how its results filing describes its business{data.business?.length ? <>: “{data.business.join("; ")}”</> : ""} — a match that's right for about 9 companies in 10. Peer medians exclude this company.</>

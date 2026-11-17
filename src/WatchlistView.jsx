@@ -415,7 +415,7 @@ export default function WatchlistView({ onOpenStock, onOpenNews }) {
         </div>
       )}
       {picking && <ComparePicker items={sorted} nameOf={t => cardName(rows.get(t)?.name ?? t)} onClose={() => setPicking(false)} onCompare={list => { setPicking(false); setComparing(list); }} />}
-      {comparing && <CompareFor symbols={comparing} onClose={() => setComparing(null)} />}
+      {comparing && <CompareFor symbols={comparing} onClose={() => setComparing(null)} onOpen={onOpenStock} />}
 
       {items.length > 0 && (
         <ul className="wl-list">

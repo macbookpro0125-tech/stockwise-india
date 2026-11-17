@@ -509,6 +509,32 @@ export async function fnoSymbols() {
 
 // Each of them with its year of daily closes from NSE's daily index file (the
 // year walk has already read every day's) and NSE's valuation on the last day
+// Five years of each board index, one close a week (17 Nov 2026, the owner:
+// "why don't I get the 3 yrs and 5 yrs chart"): the last trading day of each
+// week from NSE's archive, the same daily files the board reads (cached in
+// PRICE_DIR, so after the first build only new weeks are fetched).
+export async function indexLong(toIso, years = 5) {
+  const names = [...BOARD.market, ...BOARD.sectors];
+  const days = [], closes = Object.fromEntries(names.map(n => [n, []]));
+  const end = new Date(`${toIso}T00:00:00Z`);
+  const start = new Date(end); start.setUTCFullYear(start.getUTCFullYear() - years);
+  // each week's Friday, walking back to Thursday… Monday when it's a holiday
+  const friday = new Date(start); friday.setUTCDate(friday.getUTCDate() + ((5 - friday.getUTCDay() + 7) % 7));
+  for (let f = friday; f <= end; f.setUTCDate(f.getUTCDate() + 7)) {
+    let file = null, day = null;
+    for (let back = 0; back < 5 && !file; back++) {
+      const d = new Date(f); d.setUTCDate(d.getUTCDate() - back);
+      if (isoDay(d) > toIso) continue;
+      file = await indexFile(isoDay(d));
+      if (file?.get("Nifty 50")) day = isoDay(d); else file = null;
+    }
+    if (!file) continue;
+    days.push(day);
+    for (const n of names) closes[n].push(file.get(n)?.close ?? null);
+  }
+  return { days, closes };
+}
+
 export async function indexBoard(fromIso, toIso) {
   const names = [...BOARD.market, ...BOARD.sectors];
   const days = [], closes = Object.fromEntries(names.map(n => [n, []]));
@@ -976,6 +1002,7 @@ export async function buildMarketSnapshot(fyEndDates, { yearsOfActions = 6 } = {
     tech: year.tech,
     indices: await indexCloses(latest.date),
     indexBoard: await indexBoard(year.from, latest.date).catch(() => null),
+    indexLong: await indexLong(latest.date).catch(() => null),
     indexMembers: await indexMembers().catch(() => null),
     screenIndices: await screenIndexMembers().catch(() => null),
     themes: await screenIndexMembers(THEME_LISTS, "themes").catch(() => null),

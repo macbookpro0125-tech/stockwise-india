@@ -11,13 +11,13 @@ const h = {
 };
 assert.equal(materialsOf(h), 400, "materials, goods bought and the stock change add up");
 const pl = profitSteps(h);
-assert.deepEqual(pl.map(s => s.label), ["Sales", "Materials & goods", "Employees", "Other expenses", "Operating profit", "Other income", "Depreciation", "Interest", "One-off & other items", "Profit before tax", "Tax", "Net profit"]);
+assert.deepEqual(pl.map(s => s.label), ["Revenue", "Materials & goods", "Employees", "Other expenses", "Operating profit", "Other income", "Depreciation", "Interest", "One-off & other items", "Profit before tax", "Tax", "Net profit"]);
 // every run of steps lands on the next total
 let at = 0;
 for (const s of pl) { if (s.kind === "total") { if (at) assert.ok(close(at, s.value), `${s.label} adds up`); at = s.value; } else at += s.value; }
 assert.equal(pl.find(s => s.label === "One-off & other items").value, -10, "the one-off is what's left before tax");
 // without the expense lines: one operating-cost step
-assert.deepEqual(profitSteps({ ...h, materialsCr: null, purchasesCr: null, inventoryChangeCr: null, employeesCr: null, otherExpensesCr: null }).slice(0, 3).map(s => s.label), ["Sales", "Operating costs", "Operating profit"]);
+assert.deepEqual(profitSteps({ ...h, materialsCr: null, purchasesCr: null, inventoryChangeCr: null, employeesCr: null, otherExpensesCr: null }).slice(0, 3).map(s => s.label), ["Revenue", "Operating costs", "Operating profit"]);
 assert.equal(profitSteps({ revenueCr: 0, profitCr: 1 }), null, "nothing without sales");
 
 const cf = cashSteps({ ocfCr: 300, investingCfCr: -180, financingCfCr: -90, netCashChangeCr: 35 });

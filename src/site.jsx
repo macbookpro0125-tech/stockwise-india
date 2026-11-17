@@ -125,6 +125,10 @@ export function BrandMark({ size = 32, theme, className = "" }) {
 // the app when signed in). A phone: the logo and the buttons, then the
 // search, then the pages as a row to swipe.
 const PUB_NAV = [["/screens", "Screens"], ["/sectors", "Sectors"], ["/results", "Results"], ["/lists", "Stock lists"], ["/learn", "Learn"]];
+// Signed in, the same pages carry the app's own menu (17 Nov 2026, the owner:
+// the stock lists should "look like our main app"): each opens that app tab
+// (App.jsx reads ?tab=), with Stock lists and Sectors beside them
+const APP_NAV = [["/?tab=discover", "Home"], ["/?tab=workspace", "Screen builder"], ["/?tab=markets", "Markets"], ["/?tab=explore", "News"], ["/?tab=watchlist", "Watchlist"], ["/?tab=portfolio", "Portfolio"], ["/lists", "Stock lists"], ["/sectors", "Sectors"]];
 export function PublicHeader({ signedIn, onSignIn, onJoin }) {
   const here = typeof window !== "undefined" ? window.location.pathname : "";
   const go = to => e => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); navigate(to); window.scrollTo(0, 0); };
@@ -133,12 +137,12 @@ export function PublicHeader({ signedIn, onSignIn, onJoin }) {
       <div className="pub-head-in">
         <a href="/" onClick={go("/")} className="pub-logo" aria-label="Jocular Insights, home"><Logo /></a>
         <nav className="pub-nav" aria-label="Main pages">
-          {PUB_NAV.map(([to, label]) => <a key={to} href={to} onClick={go(to)} aria-current={here === to || here.startsWith(`${to}/`) ? "page" : undefined}>{label}</a>)}
+          {(signedIn ? APP_NAV : PUB_NAV).map(([to, label]) => <a key={to} href={to} onClick={go(to)} aria-current={here === to || here.startsWith(`${to}/`) ? "page" : undefined}>{label}</a>)}
         </nav>
         <Suspense fallback={<span className="pub-search" />}><HeroSearchLazy className="pub-search" compact /></Suspense>
         <div className="pub-acts">
           {signedIn
-            ? <button type="button" className="btn-ghost pub-btn" onClick={() => navigate("/")}>Back to the app</button>
+            ? null
             : <>
               <button type="button" className="btn-ghost pub-btn" onClick={() => (onSignIn ? onSignIn() : navigate("/?auth=login"))}>Sign in</button>
               <button type="button" className="btn-primary pub-btn" onClick={() => (onJoin ? onJoin() : navigate("/?auth=signup"))}><span className="pub-long">Create free account</span><span className="pub-short">Join free</span></button>

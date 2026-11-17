@@ -28,7 +28,7 @@ test("PD-2 a company on a phone: the overall score, the checks as questions, wha
   await page.getByRole("tab", { name: "Finance" }).or(page.getByRole("button", { name: /^Finance$/ })).first().click();
   await page.getByRole("button", { name: "Quarterly", exact: true }).first().click();
   await expect(page.getByText(/^Latest quarter, to /)).toBeVisible();
-  await expect(page.getByText("Sales, quarter by quarter")).toBeVisible();
+  await expect(page.getByText("Revenue, quarter by quarter")).toBeVisible();
   // a tapped bar shows its figure; no "a year over N years" for quarters
   const bar = page.locator(".qp .trend-col").nth(3);
   await bar.click();

@@ -112,6 +112,11 @@ const TITLE = document.title;
 
 export default function App() {
   const path = usePath();
+  // …and when a page in the app (the stock lists' menu) navigates to /?tab=…
+  useEffect(() => {
+    const asked = new URLSearchParams(window.location.search).get("tab");
+    if (asked && /^[a-z]+$/.test(asked)) { window.history.replaceState(window.history.state, "", "/"); setTab(asked); }
+  }, [path]);
   // undefined = checking, null = signed out, else { userId, email }
   const [account, setAccount] = useState(undefined);
   // logos are for signed-in readers (CompanyLogo.jsx); undefined while it's not known yet
@@ -119,7 +124,13 @@ export default function App() {
   // A one-off message for the front page (e.g. after deleting an account)
   const [notice, setNotice] = useState(null);
   // /builder opens a computer's Screen builder (DiscoverView.jsx)
-  const [tab, setTab] = useState(() => (window.location.pathname === BUILDER_PATH && !window.matchMedia?.("(max-width: 640px)").matches ? "workspace" : "discover"));
+  // ?tab=markets opens that tab (17 Nov 2026: the app's menu on the stock
+  // list and sector pages links here); the address then goes back to /
+  const [tab, setTab] = useState(() => {
+    const asked = new URLSearchParams(window.location.search).get("tab");
+    if (asked && /^[a-z]+$/.test(asked)) { window.history.replaceState(window.history.state, "", "/"); return asked; }
+    return window.location.pathname === BUILDER_PATH && !window.matchMedia?.("(max-width: 640px)").matches ? "workspace" : "discover";
+  });
   // someone not signed in, on a company's public page, asked to sign in
   const [theme, toggleTheme] = useTheme();
   // { symbol, at } rather than a bare symbol: searching the same symbol again

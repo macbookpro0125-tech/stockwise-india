@@ -288,6 +288,8 @@ test("F03-H2 the top answers each chapter in a tile and says what to watch; the 
   await tile.click();
   await expect(page.locator("#sec-financials")).toBeInViewport();
   await openChapter(page, "Business");
+  // the scores sit in Business's "More" folds (16 Nov 2026)
+  await page.locator("details.ct-fold summary", { hasText: "How the scores are worked out" }).first().click();
   const glance = page.getByRole("region", { name: "At a glance" });
   await expect(glance.getByRole("img", { name: /Scores out of 100: Business \d+, Earnings \d+/ })).toBeVisible();
   await expect(glance.getByRole("heading", { name: "What stands out" })).toBeVisible();

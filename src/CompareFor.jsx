@@ -6,7 +6,7 @@ const CompareView = lazyPage(() => import("./CompareView.jsx"));
 // Compare from anywhere (31 Oct 2026): a company page's peers, the watchlist.
 // Fetches the table's rows for the companies named (two to five), then opens
 // the same side-by-side view the Workspace's ticks open.
-export default function CompareFor({ symbols, onClose }) {
+export default function CompareFor({ symbols, onClose, onOpen }) {
   const [d, setD] = useState(null);
   const [error, setError] = useState("");
   useEffect(() => {
@@ -19,7 +19,7 @@ export default function CompareFor({ symbols, onClose }) {
   const stocks = d.results.filter(r => !r.missing);
   return (
     <Suspense fallback={<div role="status" className="compare-loading">Loading comparison…</div>}>
-      <CompareView stocks={stocks} pricesDate={d.snapshot?.pricesDate} onClose={onClose} />
+      <CompareView stocks={stocks} pricesDate={d.snapshot?.pricesDate} onClose={onClose} onOpen={onOpen} />
     </Suspense>
   );
 }

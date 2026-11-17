@@ -349,3 +349,4 @@ Owner: "the news is not understandable". Looked at 10 apps (Inshorts' one-line c
 - 17 Nov 2026: 9 new videos (6 how-it-makes-money, 3 company checks) in the new style; Google indexing TMPV, FACT accepted then errors; series tint on the footage overlay; 4 more Pexels clips.
 - 17 Nov 2026: SEO fix A: sub-pages (financials, results) indexed only for the 400 largest companies; the rest noindex and out of the sitemap. npm test passed. Not pushed.
 - 17 Nov 2026: SEO fix B: company pages get their business lines, own record and strengths/watch from their checks. Tests passed. Not pushed.
+- 17 Nov 2026: owner's ten points: Revenue wording, Compare bars, peers open, price levels box, inputs wording, sector pages from Markets, 3Y/5Y index chart, Home movers and lists, app menu on list pages, simpler balance sheet. Tests passed except two date-dependent ones. Not pushed.

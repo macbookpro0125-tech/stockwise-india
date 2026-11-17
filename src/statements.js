@@ -20,7 +20,7 @@ export const materialsOf = h => sum(h.materialsCr, h.purchasesCr, h.inventoryCha
 export function profitSteps(h) {
   const sales = h.revenueCr, net = h.profitCr;
   if (!(sales > 0) || net == null) return null;
-  const steps = [{ label: "Sales", value: sales, kind: "total" }];
+  const steps = [{ label: "Revenue", value: sales, kind: "total" }];
   const opCosts = h.expensesCr != null ? h.expensesCr - (h.depreciationCr ?? 0) - (h.financeCostsCr ?? 0) : null;
   if (h.operatingProfitCr != null && opCosts != null) {
     const parts = [["Materials & goods", materialsOf(h)], ["Employees", h.employeesCr], ["Other expenses", h.otherExpensesCr]].filter(([, v]) => v != null && !small(v, sales));

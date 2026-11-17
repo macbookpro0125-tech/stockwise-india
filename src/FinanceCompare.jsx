@@ -17,18 +17,18 @@ const growth = (now, then) => (now != null && then > 0 ? ((now / then) - 1) * 10
 
 export const COMPARE_STATEMENTS = [
   { id: "profitLoss", label: "Profit & loss", rows: [
-    ["Sales", m => m?.history?.[0]?.revenueCr, crore],
+    ["Revenue", m => m?.history?.[0]?.revenueCr, crore],
     ["Operating profit", m => m?.history?.[0]?.operatingProfitCr, crore],
     ["Operating margin", m => m?.history?.[0]?.opm, pct],
     ["Net profit", m => m?.history?.[0]?.profitCr, crore],
     ["EPS", m => m?.history?.[0]?.eps, rs],
-    ["Sales growth, 5 yrs a year", m => m?.salesGrowth5y, pct],
+    ["Revenue growth, 5 yrs a year", m => m?.salesGrowth5y, pct],
     ["Profit growth, 5 yrs a year", m => m?.profitGrowth5y, pct],
   ] },
   { id: "quarterly", label: "Quarterly", rows: [
-    ["Sales, latest quarter", m => m?.quarters?.[0]?.revenueCr, crore],
+    ["Revenue, latest quarter", m => m?.quarters?.[0]?.revenueCr, crore],
     ["Net profit, latest quarter", m => m?.quarters?.[0]?.profitCr, crore],
-    ["Sales vs a year earlier", m => growth(m?.quarters?.[0]?.revenueCr, m?.quarters?.[4]?.revenueCr), pct],
+    ["Revenue vs a year earlier", m => growth(m?.quarters?.[0]?.revenueCr, m?.quarters?.[4]?.revenueCr), pct],
     ["Profit vs a year earlier", m => growth(m?.quarters?.[0]?.profitCr, m?.quarters?.[4]?.profitCr), pct],
   ] },
   { id: "balanceSheet", label: "Balance sheet", rows: [
@@ -120,6 +120,32 @@ export default function FinanceCompare({ symbol, m }) {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+      {/* the same figures as bars, one group per line (17 Nov 2026, the
+          owner: "in Compare give the graph also with the details") */}
+      {others.length > 0 && (
+        <div className="fc-chart" aria-label={`${st.label} compared, as bars`}>
+          {st.rows.map(([label, get, fmt]) => {
+            const vals = cols.map(c => (c.m && !c.error ? get(c.m) : null));
+            const max = Math.max(...vals.map(v => (Number.isFinite(v) ? Math.abs(v) : 0)));
+            if (!max) return null;
+            return (
+              <div key={label} className="fc-chart-g">
+                <div className="fc-chart-h">{label}</div>
+                {cols.map((c, i) => {
+                  const v = vals[i];
+                  return (
+                    <div key={c.symbol} className={`fc-bar${i === 0 ? " me" : ""}`}>
+                      <span className="fc-bar-n">{short(c.name)}</span>
+                      <span className="fc-bar-t"><b className={v < 0 ? "neg" : ""} style={{ width: `${Number.isFinite(v) ? (Math.abs(v) / max) * 100 : 0}%` }} /></span>
+                      <span className="fc-bar-v">{Number.isFinite(v) ? fmt(v) : "—"}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
         </div>
       )}
       <p className="fc-note">{statement === "quarterly" ? "The latest quarter each company has filed with NSE; quarters can end on different dates." : "The latest full year each company has filed with NSE; years can end on different dates."} Banks and lenders report differently, so some lines don't compare.</p>

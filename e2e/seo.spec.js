@@ -89,7 +89,8 @@ test("S-H10 the header's sign-up on a public page opens the box there, saying wh
   const box = page.getByRole("dialog");
   await expect(box.getByText("Create a free account to run every screen and save your own.")).toBeVisible();
   await signUpInBox(box, "header");
-  await expect(page.locator(".pub-acts").getByRole("button", { name: "Back to the app" })).toBeVisible({ timeout: 15000 });
+  // signed in, the page carries the app's own menu (17 Nov 2026), not "Back to the app"
+  await expect(page.locator(".pub-nav").getByRole("link", { name: "Markets" })).toBeVisible({ timeout: 15000 });
   await expect(page).toHaveURL(/\/screens$/);
   await expect(page.getByRole("heading", { level: 1, name: "Indian stock screens" })).toBeVisible();
 });

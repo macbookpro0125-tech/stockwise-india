@@ -706,7 +706,7 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
       {alertFor && <CreateAlertModal stock={alertFor} onClose={() => setAlertFor(null)} />}
       {showCompare && selected.size >= 2 && (
         <Suspense fallback={<div role="status" className="compare-loading">Loading comparison…</div>}>
-          <CompareView stocks={[...selected.values()]} pricesDate={snapshot?.pricesDate} onClose={() => setShowCompare(false)} />
+          <CompareView stocks={[...selected.values()]} pricesDate={snapshot?.pricesDate} onClose={() => setShowCompare(false)} onOpen={onAnalyze} />
         </Suspense>
       )}
 

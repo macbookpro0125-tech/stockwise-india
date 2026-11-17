@@ -28,7 +28,7 @@ const STATEMENTS = {
   // In detail (24 Oct 2026): the expense lines under sales, each where the
   // filing has it; "  " indents a line that's part of the one above
   profitLoss: [
-    ["Sales", "revenueCr", "cr"],
+    ["Revenue", "revenueCr", "cr"],
     ["  Raw materials & goods bought", "materialsBoughtCr", "cr"], ["  Change in stock", "inventoryChangeCr", "cr"],
     ["  Employee costs", "employeesCr", "cr"], ["  Other expenses", "otherExpensesCr", "cr"],
     ["Operating costs", "opCostsCr", "cr"], ["Material cost %", "materialCostPct", "pct"], ["Operating Profit", "operatingProfitCr", "cr"],
@@ -63,13 +63,13 @@ const STATEMENTS = {
   // Same lines as Profit & Loss, quarter by quarter, plus each quarter
   // against the same one a year earlier
   quarterly: [
-    ["Sales", "revenueCr", "cr"], ["Expenses", "expensesCr", "cr"],
+    ["Revenue", "revenueCr", "cr"], ["Expenses", "expensesCr", "cr"],
     ["  Raw materials & goods bought", "materialsBoughtCr", "cr"], ["  Change in stock", "inventoryChangeCr", "cr"],
     ["  Employee costs", "employeesCr", "cr"], ["  Other expenses", "otherExpensesCr", "cr"],
     ["Operating Profit", "operatingProfitCr", "cr"], ["OPM %", "opm", "pct"], ["Other Income", "otherIncomeCr", "cr"],
     ["Interest", "financeCostsCr", "cr"], ["Profit before depreciation & tax", "pbdtCr", "cr"], ["Depreciation", "depreciationCr", "cr"],
     ["Exceptional items", "exceptionalCr", "cr"], ["Profit before tax", "pbtCr", "cr"], ["Tax", "taxCr", "cr"], ["Net Profit", "profitCr", "cr"],
-    ["Net margin %", "netMargin", "pct"], ["EPS in Rs", "eps", "rs"], ["Sales vs a year ago", "salesYoY", "pct"], ["Profit vs a year ago", "profitYoY", "pct"],
+    ["Net margin %", "netMargin", "pct"], ["EPS in Rs", "eps", "rs"], ["Revenue vs a year ago", "salesYoY", "pct"], ["Profit vs a year ago", "profitYoY", "pct"],
   ],
   ratios: [
     ["ROE %", "roe", "pct"], ["ROCE %", "roce", "pct"], ["OPM %", "opm", "pct"], ["Debt / equity", "debtToEquity", "x"],
@@ -175,12 +175,12 @@ function QuarterPicture({ quarters }) {
     <div className="qp">
       <div className="qp-head">Latest quarter, to {periodLabel(q.fyEnd)}</div>
       <div className="qp-tiles">
-        {tile("Sales", rs(q.revenueCr), vs(q.salesYoY), q.salesYoY >= 0 ? "up" : "down")}
+        {tile("Revenue", rs(q.revenueCr), vs(q.salesYoY), q.salesYoY >= 0 ? "up" : "down")}
         {tile("Net profit", rs(q.profitCr), vs(q.profitYoY), q.profitYoY >= 0 ? "up" : "down")}
         {q.opm != null && tile("Operating margin", `${q.opm.toFixed(1)}%`, null)}
       </div>
       {last8.length >= 2 && <>
-        <div className="qp-chart-h">Sales, quarter by quarter</div>
+        <div className="qp-chart-h">Revenue, quarter by quarter</div>
         <TrendBars cols={last8.map(x => ({ ...x, label: shortLabel(x.fyEnd) }))} rowKey="revenueCr" kind="cr" yearly={false} before={prior} />
         <div className="qp-chart-h">Net profit, quarter by quarter</div>
         <TrendBars cols={last8.map(x => ({ ...x, label: shortLabel(x.fyEnd) }))} rowKey="profitCr" kind="cr" yearly={false} before={prior} />
@@ -419,6 +419,51 @@ const withDerived = h => ({
   dividendsOutCr: neg(h.dividendsPaidCr), interestOutCr: neg(h.interestPaidCr),
 });
 
+// The balance sheet in five plain lines (17 Nov 2026, the owner: "can we
+// improve the balance sheet so it's simple"): each with its direction over
+// up to five years and a sentence; a move of 30% or more in the last year is
+// flagged, so a new loan or a big purchase stands out
+export function balanceLines(history) {
+  const H = history.filter(h => h.fyEnd && (h.totalAssetsCr ?? h.assetsCr) > 0);
+  if (H.length < 2) return [];
+  const now = H[0], prev = H[1], then = H[Math.min(H.length - 1, 4)];
+  const fy = h => `FY${h.fyEnd.slice(2, 4)}`;
+  const sumOf = (...v) => (v.some(x => x != null) ? v.reduce((a, b) => a + (b ?? 0), 0) : null);
+  const debt = h => sumOf(h.ltDebtCr, h.borrowingsCurrentCr) ?? h.debtCr;
+  const days = (v, h) => (v != null && h.revenueCr > 0 ? Math.round((v / h.revenueCr) * 365) : null);
+  const dir = (a, b) => (a == null || b == null || b === 0 ? "→" : a > b * 1.1 ? "↑" : a < b * 0.9 ? "↓" : "→");
+  const jump = (a, b) => a != null && b != null && Math.abs(b) > 0 && Math.abs(a / b - 1) >= 0.3 && Math.abs(a - b) >= 50;
+  const out = [];
+  const money = (label, f, say) => {
+    const a = f(now), b = f(then);
+    if (a == null) return;
+    out.push({ label, value: a < 1 ? "None" : fmtCrShort(a), dir: dir(a, b), big: jump(a, f(prev)), text: say(a, b) });
+  };
+  money("Net worth", h => h.equityCr, (a, b) => (b != null ? `Owners' money in the business went from ${fmtCrShort(b)} in ${fy(then)} to ${fmtCrShort(a)} in ${fy(now)}.` : `Owners' money in the business: ${fmtCrShort(a)}.`));
+  money("Borrowings", debt, (a, b) => (a < 1 ? "It has no borrowings." : b != null ? `Borrowings went from ${fmtCrShort(b)} in ${fy(then)} to ${fmtCrShort(a)}.` : `It owes lenders ${fmtCrShort(a)}.`));
+  money("Cash & liquid investments", h => h.liquidCr, (a) => { const d = debt(now); return d != null && d > 0 ? (a >= d ? `More cash than borrowings, by ${fmtCrShort(a - d)}.` : `Borrowings are ${fmtCrShort(d - a)} more than its cash.`) : `Cash and liquid investments of ${fmtCrShort(a)}.`; });
+  const dRec = days(now.receivablesCr, now), dRecThen = days(then.receivablesCr, then);
+  if (dRec != null) out.push({ label: "Customers take to pay", value: `${dRec} days`, dir: dir(dRec, dRecThen), big: jump(now.receivablesCr, prev.receivablesCr), text: dRecThen != null && dRecThen !== dRec ? `Customers take ${dRec} days to pay, ${dRec > dRecThen ? "up" : "down"} from ${dRecThen} in ${fy(then)}.` : `Customers take about ${dRec} days to pay.` });
+  const dInv = days(now.inventoriesCr, now), dInvThen = days(then.inventoriesCr, then);
+  if (dInv != null && now.inventoriesCr > 0) out.push({ label: "Stock on hand", value: `${dInv} days`, dir: dir(dInv, dInvThen), big: jump(now.inventoriesCr, prev.inventoriesCr), text: dInvThen != null && dInvThen !== dInv ? `It holds ${dInv} days of sales as stock, ${dInv > dInvThen ? "up" : "down"} from ${dInvThen} in ${fy(then)}.` : `It holds about ${dInv} days of sales as stock.` });
+  return out;
+}
+function BalanceLines({ history }) {
+  const lines = balanceLines(history);
+  if (!lines.length) return null;
+  return (
+    <ul className="bs-lines">
+      {lines.map(l => (
+        <li key={l.label}>
+          <span className="bs-l"><b>{l.label}</b>{l.big && <em className="bs-big">Big change last year</em>}</span>
+          <span className="bs-v"><b>{l.value}</b><i aria-label={l.dir === "↑" ? "rising" : l.dir === "↓" ? "falling" : "steady"}>{l.dir}</i></span>
+          <span className="bs-t">{l.text}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 // A statement's picture for one year, with the years to pick from (newest
 // first); nothing when no year has enough lines for one
 function YearPicture({ history, tab }) {
@@ -430,7 +475,7 @@ function YearPicture({ history, tab }) {
   return (
     <div className="stm-picture">
       <YearChips years={pictured} at={Math.min(at, pictured.length - 1)} onPick={setAt} />
-      {tab === "profitLoss" && <Bridge steps={profitSteps(h)} caption={`How ${fy}'s sales of ${fmtCrShort(h.revenueCr)} became a net profit of ${fmtCrShort(h.profitCr)}: green adds, red takes away.`} />}
+      {tab === "profitLoss" && <Bridge steps={profitSteps(h)} caption={`How ${fy}'s revenue of ${fmtCrShort(h.revenueCr)} became a net profit of ${fmtCrShort(h.profitCr)}: green adds, red takes away.`} />}
       {tab === "balanceSheet" && <BalanceMap parts={balanceParts(h)} />}
       {tab === "cashFlow" && (
         <>
@@ -493,13 +538,20 @@ export default function FinancialsPanel({ history: filed, quarters: filedQuarter
           ? <><QuarterPicture quarters={quarters} /><StatementTable history={quarters} yearly={false} rows={STATEMENTS.quarterly} note="Each quarter is its own three months; the last two columns compare with the same quarter a year earlier." /></>
           : <>
             {["profitLoss", "balanceSheet", "cashFlow"].includes(tab) && <YearPicture key={tab} history={history} tab={tab} />}
+            {tab === "balanceSheet" && <BalanceLines history={history} />}
             {tab === "cashFlow" && <FundFlow history={history} />}
-            <StatementTable
-            history={history}
-            extraCols={tab === "profitLoss" && ttm ? [ttm] : []}
-            rows={template === "BANKING" && tab === "ratios" ? STATEMENTS.ratios.filter(([label]) => label !== "Debt / equity") : STATEMENTS[tab]}
-            note={template === "BANKING" && tab === "ratios" ? "Debt/equity is not shown for banks because deposits are operating funding, not comparable corporate borrowing." : null}
-          />
+            {(() => {
+              const table = <StatementTable
+                history={history}
+                extraCols={tab === "profitLoss" && ttm ? [ttm] : []}
+                rows={template === "BANKING" && tab === "ratios" ? STATEMENTS.ratios.filter(([label]) => label !== "Debt / equity") : STATEMENTS[tab]}
+                note={template === "BANKING" && tab === "ratios" ? "Debt/equity is not shown for banks because deposits are operating funding, not comparable corporate borrowing." : null}
+              />;
+              // the balance sheet's full table behind a fold, once the five lines say it plainly
+              return tab === "balanceSheet" && balanceLines(history).length
+                ? <details className="bs-all"><summary>Every line, year by year</summary>{table}</details>
+                : table;
+            })()}
           </>}
     </div>
   );

@@ -13,6 +13,15 @@ _Last updated: 16 Nov 2026, by Claude on branch `screeners-home`._
 - **Score decisions (12–13 Nov, the owner's word)**: one headline score, the Overall (quality ex-valuation 70% + valuation 30%, trimmed for price swings), unchanged by the tests; ranked market-wide and by sector. The test showed it sorts strong from weak but doesn't beat the Nifty 50, so it is called a ranking, never a forecast. The pairing that held up (quality 70+ with price strength 70+) is the strategy "Strong Business, Rising Price" and the company-page tag. Valuation 1.11: growth allowance against peers, free cash flow left out while a company builds capacity (Acme Solar).
 - **AI checking**: costed (Haiku ~$10–15/month on changed companies only) and tried locally (this Intel Mac: 5+ min a company, poor answers). Not built; the owner hasn't named it, so it stays held.
 
+## Committed, not pushed (17 Nov): the owner's ten points
+- "Sales" → "Revenue" in the statements (tables, waterfall, quarterly chart, Compare). Compare shows each line as bars too.
+- Peers → Compare: a company's name (or "Open") opens its page (CompareView onOpen; also from Watchlist and the screener).
+- Valuation: paired panels keep their own height (the empty box beside "Your price levels"); "Verify & Override" → "Your own inputs", plain wording.
+- Markets: "Sectors today" opens the sector's page (MarketsView sectorPageFor); 3Y and 5Y chart from a weekly five-year series (market-data.js indexLong, in the snapshot from tonight's build; files cached in data/prices).
+- Home: Top gainers / losers today and a Stock lists row. Stock list and sector pages, signed in, carry the app's menu (site.jsx APP_NAV → /?tab=…, App.jsx reads ?tab=).
+- Balance sheet: five plain lines (net worth, borrowings, cash, days customers take, days of stock) with direction and a "big change" flag; the full table under "Every line, year by year".
+- e2e: 160 passed; MK-3 and S-H3 fail on a local copy whose data stops at 23 Oct (no upcoming results days) — date-dependent, not these changes.
+
 ## Committed, not pushed (17 Nov): SEO fix B — each company page its own
 - server/seo-story.js adds three parts (server HTML in seo.js storyHtml and the app's PublicStock.jsx): "What X does" (its filed business lines, cleanBusiness), "X's record, year by year" (only what stands out: sales falls or every year up, loss years, borrowings moved or near nil, cash vs profit, buybacks or new shares, dividends), "Strengths and things to watch" (its top and bottom research checks' own reasons). Measured on 15 pages: ~560 → ~756 words; wording shared by every page 38% → 28%. Full e2e passed (4 flaky passed on retry).
 
