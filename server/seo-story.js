@@ -7,7 +7,8 @@
 // page (seo.js) and the app shows the same words to anyone signed out
 // (PublicStock.jsx, SectorPage in PublicLists.jsx), so what Google indexes
 // and what people read agree.
-import { allMetrics, screen } from "./screen.js";
+import { allMetrics, screen, getStock } from "./screen.js";
+import { cleanBusiness } from "./business-sectors.js";
 import { PRESETS } from "./presets.js";
 import { peerKey } from "./sector-compare.js";
 import { loadMarketSnapshot } from "./market-data.js";
@@ -53,6 +54,70 @@ function context() {
 }
 
 // The share of scored companies a score beats
+// ── What makes each company's page its own (17 Nov 2026) ─────────────────────
+// Google kept few of our company pages: much of each page read the same for
+// every company. These three parts say only what is true of this company:
+// its filed business lines, the facts that stand out in its own record, and
+// its strongest and weakest checks in the words of its research.
+const crn = v => `₹${Math.round(v).toLocaleString("en-IN")} crore`;
+const fyOf = iso => `FY${String(iso).slice(2, 4)}`;
+export function recordSentences(m) {
+  const H = (m.history ?? []).filter(h => h.fyEnd).slice(0, 6); // newest first
+  if (H.length < 3) return [];
+  const span = `${fyOf(H[H.length - 1].fyEnd)} to ${fyOf(H[0].fyEnd)}`;
+  const out = [];
+  // sales: every year up, or the years it fell
+  const sales = H.filter(h => h.revenueCr > 0);
+  if (sales.length >= 3) {
+    const falls = [];
+    for (let i = 0; i < sales.length - 1; i++) { const g = (sales[i].revenueCr / sales[i + 1].revenueCr - 1) * 100; if (g < 0) falls.push([sales[i].fyEnd, g]); }
+    if (!falls.length) out.push(`Its sales grew every year from ${fyOf(sales[sales.length - 1].fyEnd)} to ${fyOf(sales[0].fyEnd)}.`);
+    else if (falls.length === 1) out.push(`Its sales fell once in that time: ${f1(Math.abs(falls[0][1]))}% in ${fyOf(falls[0][0])}.`);
+    else out.push(`Its sales fell in ${falls.length} of the last ${sales.length - 1} years (${falls.map(([y, g]) => `${fyOf(y)} ${f1(g)}%`).join(", ")}).`);
+  }
+  // losses
+  const losses = H.filter(h => h.profitCr < 0);
+  if (losses.length) out.push(losses.length === H.length ? `It made a loss in every year from ${span}.` : `It made a loss in ${[...losses].reverse().map(h => fyOf(h.fyEnd)).join(", ")}.`);
+  if (!m.lender) {
+    // borrowings, when they moved a lot or stayed near nil
+    const d0 = H[0].debtCr, d1 = H[H.length - 1].debtCr;
+    if (d0 != null && d1 != null) {
+      if (H.every(h => (h.debtCr ?? 0) < 50)) out.push(`It has had almost no borrowings in any year from ${span}.`);
+      else if (d1 > 0 && Math.abs(d0 / d1 - 1) >= 0.3 && Math.abs(d0 - d1) >= 100) out.push(`Its borrowings went from ${crn(d1)} in ${fyOf(H[H.length - 1].fyEnd)} to ${crn(d0)} in ${fyOf(H[0].fyEnd)}.`);
+    }
+    // cash against profit, over the years on file
+    const both = H.filter(h => h.ocfCr != null && h.profitCr != null);
+    const pr = both.reduce((a, h) => a + h.profitCr, 0), oc = both.reduce((a, h) => a + h.ocfCr, 0);
+    if (both.length >= 3 && pr > 0) {
+      const r = Math.round((oc / pr) * 100);
+      out.push(`Over ${both.length} years its cash from operations came to ${r}% of its profit${r >= 90 ? ", so the profit turned into cash" : r >= 60 ? ", most of it turning into cash" : ", well short of it: worth a look at stock and money owed to it"}.`);
+    }
+  }
+  // share count: buybacks or new shares
+  const s0 = H[0].sharesCr, s1 = H[H.length - 1].sharesCr;
+  if (s0 > 0 && s1 > 0) {
+    const ch = (s0 / s1 - 1) * 100;
+    if (ch <= -2) out.push(`Its share count fell ${f1(Math.abs(ch))}% from ${span}, as it bought back shares.`);
+    else if (ch >= 2) out.push(`Its share count rose ${f1(ch)}% from ${span} as it issued new shares, so each share owns a smaller part.`);
+  }
+  // dividends paid, as cash out in the cash flow
+  const dv = H.filter(h => h.dividendsPaidCr != null);
+  if (dv.length >= 3) {
+    const paid = dv.filter(h => Math.abs(h.dividendsPaidCr) > 0).length;
+    out.push(paid === dv.length ? `It paid dividends in each of the last ${dv.length} years.` : paid === 0 ? `It paid no dividends in the last ${dv.length} years.` : `It paid dividends in ${paid} of the last ${dv.length} years.`);
+  }
+  return out;
+}
+export function strengthsAndWatch(m) {
+  const items = (m.research?.groups ?? []).filter(g => g.applicable !== false).flatMap(g => g.items ?? []).filter(i => i.score != null && i.reason);
+  const strong = items.filter(i => i.score >= 80).sort((a, b) => b.weight - a.weight || b.score - a.score).slice(0, 3).map(i => i.reason);
+  const watch = items.filter(i => i.score <= 40).sort((a, b) => a.score - b.score || b.weight - a.weight).slice(0, 3).map(i => i.reason);
+  return { strong, watch };
+}
+export function businessLines(symbol) {
+  return cleanBusiness(getStock(symbol)?.business).slice(0, 6);
+}
+
 const beats = (q, all) => (q == null || !all.length ? null : Math.round((all.filter(x => x < q).length / all.length) * 100));
 
 export function stockStory(symbol) {
@@ -126,6 +191,7 @@ export function stockStory(symbol) {
   return {
     sector: sectorName ? { name: sectorName, slug: sectorSlug(sectorName) } : null,
     summary: sentences, trend, peers, peersIn, screens, lists, qa, sparse,
+    business: businessLines(m.symbol), record: recordSentences(m), recordTitle: `${poss(n)} record, year by year`, checks: strengthsAndWatch(m),
     sectorMedians: { pe: sectorPe, roe: sectorRoe, companies: group.length },
   };
 }

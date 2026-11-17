@@ -34,6 +34,22 @@ function Story({ s }) {
         {t.summary.length > 0 && <p>{t.summary.join(" ")}</p>}
         {t.trend && <p>{t.trend}</p>}
       </>}
+      {/* what is true of this company only (17 Nov 2026; server/seo-story.js) */}
+      {t.business?.length > 0 && <>
+        <h2>What {n} does</h2>
+        <p>Its business lines, as it reports them to NSE:</p>
+        <ul>{t.business.map(b => <li key={b}>{b}</li>)}</ul>
+      </>}
+      {t.record?.length > 0 && <>
+        <h2>{t.recordTitle}</h2>
+        <p>{t.record.join(" ")}</p>
+      </>}
+      {(t.checks?.strong?.length > 0 || t.checks?.watch?.length > 0) && <>
+        <h2>Strengths and things to watch</h2>
+        {t.checks.strong.length > 0 && <><h3>Strengths</h3><ul>{t.checks.strong.map(x => <li key={x}>{x}</li>)}</ul></>}
+        {t.checks.watch.length > 0 && <><h3>Things to watch</h3><ul>{t.checks.watch.map(x => <li key={x}>{x}</li>)}</ul></>}
+        <p>From the checks behind its quality score. A summary of its filings, not advice.</p>
+      </>}
       {t.peers.length > 0 && <>
         <h2>{n} against similar companies</h2>
         <div className="ps-table-wrap">

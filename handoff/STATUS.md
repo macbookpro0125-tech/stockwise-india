@@ -13,6 +13,9 @@ _Last updated: 16 Nov 2026, by Claude on branch `screeners-home`._
 - **Score decisions (12–13 Nov, the owner's word)**: one headline score, the Overall (quality ex-valuation 70% + valuation 30%, trimmed for price swings), unchanged by the tests; ranked market-wide and by sector. The test showed it sorts strong from weak but doesn't beat the Nifty 50, so it is called a ranking, never a forecast. The pairing that held up (quality 70+ with price strength 70+) is the strategy "Strong Business, Rising Price" and the company-page tag. Valuation 1.11: growth allowance against peers, free cash flow left out while a company builds capacity (Acme Solar).
 - **AI checking**: costed (Haiku ~$10–15/month on changed companies only) and tried locally (this Intel Mac: 5+ min a company, poor answers). Not built; the owner hasn't named it, so it stays held.
 
+## Committed, not pushed (17 Nov): SEO fix B — each company page its own
+- server/seo-story.js adds three parts (server HTML in seo.js storyHtml and the app's PublicStock.jsx): "What X does" (its filed business lines, cleanBusiness), "X's record, year by year" (only what stands out: sales falls or every year up, loss years, borrowings moved or near nil, cash vs profit, buybacks or new shares, dividends), "Strengths and things to watch" (its top and bottom research checks' own reasons). Measured on 15 pages: ~560 → ~756 words; wording shared by every page 38% → 28%. Full e2e passed (4 flaky passed on retry).
+
 ## Committed, not pushed (17 Nov): SEO fix A — fewer, stronger pages
 - Google kept ~1,175 of ~6,800 near-identical pages. server/seo-pages.js `isBigCompany()`: financials and results pages are indexed (and in sitemap-details) only for the 400 largest companies by market value; the rest carry noindex and leave the sitemap but stay on the site. sitemap-details 4,543 → ~804 URLs. Company pages, sectors, lists, guides unchanged. Fix B (make each company page distinct) next.
 
