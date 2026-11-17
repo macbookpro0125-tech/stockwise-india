@@ -346,3 +346,4 @@ Owner: "the news is not understandable". Looked at 10 apps (Inshorts' one-line c
 - 17 Nov 2026: Shorts sample fixes (owner: yes): bigger hook, darker first scene, one closing card with the live company page and Save this; ROCE hook now "TCS ₹59. Wipro ₹18."
 - 17 Nov 2026: all 16 evergreen videos remade (-v2, new style); ten old scheduled YouTube uploads deleted (owner: yes); re-upload blocked by the daily limit until evening; Instagram queue moved to -v2.
 - 17 Nov 2026: owner submitted YouTube video verification for Advanced features (review up to 24 h); 14 re-uploads wait for it or the daily limit.
+- 17 Nov 2026: 9 new videos (6 how-it-makes-money, 3 company checks) in the new style; Google indexing TMPV, FACT accepted then errors; series tint on the footage overlay; 4 more Pexels clips.

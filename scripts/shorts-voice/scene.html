@@ -5,13 +5,13 @@ body{font-family:-apple-system,"SF Pro Display","Helvetica Neue",Inter,sans-seri
 :root{--teal:#2ee6c4;--gold:#e2bf72;--red:#ff5d6c;--grey:#8a91ad;--ink2:#a7aec4}
 #bg{position:absolute;inset:-120px;background:radial-gradient(900px 800px at 85% 15%,var(--g1),transparent 62%),radial-gradient(900px 900px at 10% 85%,var(--g2),transparent 62%),var(--base)}
 /* a background colour per series (16 Nov 2026): the brand stays, the room changes */
-body{--g1:rgba(46,230,196,.16);--g2:rgba(70,110,255,.16);--base:#05070f}
-body.th-blue{--g1:rgba(80,140,255,.26);--g2:rgba(46,230,196,.10);--base:#040a1c}
-body.th-amber{--g1:rgba(226,160,60,.22);--g2:rgba(255,93,108,.12);--base:#0d0806}
-body.th-red{--g1:rgba(255,93,108,.22);--g2:rgba(226,160,60,.10);--base:#10060a}
-body.th-purple{--g1:rgba(160,110,255,.24);--g2:rgba(46,230,196,.10);--base:#0a0616}
+body{--g1:rgba(46,230,196,.16);--g2:rgba(70,110,255,.16);--base:#05070f;--sh:5,7,15}
+body.th-blue{--g1:rgba(80,140,255,.26);--g2:rgba(46,230,196,.10);--base:#040a1c;--sh:6,16,48}
+body.th-amber{--g1:rgba(226,160,60,.22);--g2:rgba(255,93,108,.12);--base:#0d0806;--sh:34,18,6}
+body.th-red{--g1:rgba(255,93,108,.22);--g2:rgba(226,160,60,.10);--base:#10060a;--sh:36,8,14}
+body.th-purple{--g1:rgba(160,110,255,.24);--g2:rgba(46,230,196,.10);--base:#0a0616;--sh:22,10,44}
 #foot{position:absolute;inset:0;overflow:hidden}#foot video{position:absolute;inset:-30px;width:1140px;height:1980px;object-fit:cover;opacity:0;filter:blur(3px) saturate(1.05)}
-#shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,7,15,.72) 0%,rgba(5,7,15,.55) 35%,rgba(5,7,15,.70) 58%,rgba(5,7,15,.88) 100%);opacity:0}
+#shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(var(--sh),.72) 0%,rgba(var(--sh),.55) 35%,rgba(var(--sh),.70) 58%,rgba(var(--sh),.88) 100%);opacity:0}
 #hookdark{position:absolute;inset:0;background:rgba(3,4,10,.45);opacity:0}
 .endw{position:relative;margin-top:-60px}.endbadge{position:absolute;right:-24px;top:-40px;width:150px;height:186px}.endurl{position:absolute;left:0;right:0;bottom:-76px;text-align:center;font-size:52px;font-weight:900;color:var(--teal)}
 #dots{position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.07) 1.6px,transparent 1.8px);background-size:44px 44px}

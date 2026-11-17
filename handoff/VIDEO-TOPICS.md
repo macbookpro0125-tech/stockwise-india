@@ -39,3 +39,8 @@ Made ones say so; tick a line when it's uploaded (YouTube id · Instagram link).
 - [ ] Large, mid and small cap: what the labels mean — `explain-market-cap` (new-style -v2 made 17 Nov; old YouTube upload deleted, re-upload pending)
 - [ ] Why a falling price doesn't make a share cheap — `explain-falling-price` (made 16 Nov, not uploaded)
 - [ ] Quality and price are two different questions (how Jocular scores) — `explain-quality-vs-price` (made 16 Nov, not uploaded)
+
+## Made 17 Nov in the new style (not uploaded yet)
+- How companies make money (blue): `explain-money-tcs-v2`, `explain-money-hdfcbank-v2`, `explain-money-itc-v2`, `explain-money-asianpaints-v2`, `explain-money-hal-v2`, `explain-money-capital-light-v2` (TCS vs UltraTech)
+- Check a company (amber): `explain-check-share-count-v2` (Vodafone Idea vs Infosys), `explain-check-one-off-profit-v2` (TMPV), `explain-check-other-income-v2` (Eternal, Paytm)
+- Instagram queue: 2–10 Dec. YouTube: after the 14 re-uploads (from 26 Nov at two a day). Business lines are the companies' own filed lines (/api/stock/X/profile filedBusiness); no segment percentages are claimed.
