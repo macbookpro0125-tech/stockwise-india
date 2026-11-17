@@ -39,6 +39,22 @@ const fy = iso => `FY${iso.slice(2, 4)}`;
 const NOTE = "Figures from the company's filings with NSE, in ₹ crore unless marked. An educational tool, not investment advice.";
 
 const rowOf = symbol => (allMetrics().rows ?? []).find(r => r.symbol === symbol && r.name) ?? null;
+
+// Which companies' financials and results pages search engines should index
+// (17 Nov 2026): Google kept ~1,175 of ~6,800 near-identical pages and judged
+// the rest "crawled, not indexed". The 400 largest by market value keep theirs
+// (people search "TCS balance sheet"); the rest stay on the site for visitors
+// but carry noindex and leave the sitemap, so Google's attention goes to the
+// company pages, sectors, lists and guides. Recomputed with each market build.
+export const INDEXED_SUBPAGES = 400;
+let bigSet = { rows: null, set: new Set() };
+export function isBigCompany(symbol) {
+  const rows = allMetrics().rows ?? [];
+  if (bigSet.rows !== rows) {
+    bigSet = { rows, set: new Set(rows.filter(r => r.name && r.marketCapCr > 0).sort((a, b) => b.marketCapCr - a.marketCapCr).slice(0, INDEXED_SUBPAGES).map(r => r.symbol)) };
+  }
+  return bigSet.set.has(symbol);
+}
 const opCosts = h => (h.expensesCr != null ? h.expensesCr - (h.depreciationCr ?? 0) - (h.financeCostsCr ?? 0) : null);
 const sum = (...v) => { const k = v.filter(x => x != null); return k.length ? k.reduce((a, b) => a + b, 0) : null; };
 
@@ -107,6 +123,7 @@ function financialsPage(m) {
     title: pageTitle(`${n} balance sheet, profit & loss, cash flow | ${m.symbol}`),
     desc: `${n} (NSE: ${m.symbol}) financial statements: profit and loss, balance sheet and cash flow for ${heads[0]}–${heads[heads.length - 1]}, from its NSE filings.`,
     canonical: `${SITE}/stock/${encodeURIComponent(m.symbol)}/financials`,
+    noindex: !isBigCompany(m.symbol),
     body: `<main class="seo-stock seo-methodology">${crumb(m, "Financials")}<h1>${esc(n)} financial statements</h1><p>${esc(lede)}</p>
 <h2>Profit and loss</h2>${pl}<h2>Balance sheet</h2>${bs || "<p>Not in this company's filings.</p>"}<h2>Cash flow</h2>${cf || "<p>Not in this company's filings.</p>"}
 <p>${esc(NOTE)}</p>${more(m)}</main>`,
@@ -226,6 +243,7 @@ function resultsPage(m, slug) {
     title: resultsTitle(n, label, m.symbol, q, sy, py),
     desc: `${short ? `${short} ` : ""}${lede}`.slice(0, 300),
     canonical: `${SITE}/stock/${sym}/results/${slug}`,
+    noindex: !isBigCompany(m.symbol),
     ld: { "@context": "https://schema.org", "@graph": [
       { "@type": "WebPage", name: resultsTitle(n, label, m.symbol, q, sy, py), description: lede, url: `${SITE}/stock/${sym}/results/${slug}`, dateModified: q.filed ? String(q.filed).slice(0, 10) : undefined },
       { "@type": "FAQPage", mainEntity: qa.map(x => ({ "@type": "Question", name: x.q, acceptedAnswer: { "@type": "Answer", text: x.a } })) },
@@ -484,8 +502,8 @@ export function subPagePaths() {
   const rows = (allMetrics().rows ?? []).filter(r => r.name && r.history?.length);
   return [
     ["/explore", loadMarketSnapshot()?.pricesDate ?? null], ["/news", null], ["/results", latestResults().newest],
-    ...rows.map(r => [`/stock/${encodeURIComponent(r.symbol)}/financials`, r.history?.[0]?.filed ?? null]),
-    ...rows.filter(r => r.quarters?.[0]?.fyEnd).map(r => [`/stock/${encodeURIComponent(r.symbol)}/results/${quarterSlug(r.quarters[0].fyEnd)}`, r.quarters[0].filed ?? null]),
+    ...rows.filter(r => isBigCompany(r.symbol)).map(r => [`/stock/${encodeURIComponent(r.symbol)}/financials`, r.history?.[0]?.filed ?? null]),
+    ...rows.filter(r => r.quarters?.[0]?.fyEnd && isBigCompany(r.symbol)).map(r => [`/stock/${encodeURIComponent(r.symbol)}/results/${quarterSlug(r.quarters[0].fyEnd)}`, r.quarters[0].filed ?? null]),
     ...rows.filter(r => savedCallSummaries(r.symbol).length).map(r => [`/stock/${encodeURIComponent(r.symbol)}/earnings-call`, savedCallSummaries(r.symbol)[0]?.date ?? null]),
   ];
 }

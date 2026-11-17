@@ -13,6 +13,9 @@ _Last updated: 16 Nov 2026, by Claude on branch `screeners-home`._
 - **Score decisions (12–13 Nov, the owner's word)**: one headline score, the Overall (quality ex-valuation 70% + valuation 30%, trimmed for price swings), unchanged by the tests; ranked market-wide and by sector. The test showed it sorts strong from weak but doesn't beat the Nifty 50, so it is called a ranking, never a forecast. The pairing that held up (quality 70+ with price strength 70+) is the strategy "Strong Business, Rising Price" and the company-page tag. Valuation 1.11: growth allowance against peers, free cash flow left out while a company builds capacity (Acme Solar).
 - **AI checking**: costed (Haiku ~$10–15/month on changed companies only) and tried locally (this Intel Mac: 5+ min a company, poor answers). Not built; the owner hasn't named it, so it stays held.
 
+## Committed, not pushed (17 Nov): SEO fix A — fewer, stronger pages
+- Google kept ~1,175 of ~6,800 near-identical pages. server/seo-pages.js `isBigCompany()`: financials and results pages are indexed (and in sitemap-details) only for the 400 largest companies by market value; the rest carry noindex and leave the sitemap but stay on the site. sitemap-details 4,543 → ~804 URLs. Company pages, sectors, lists, guides unchanged. Fix B (make each company page distinct) next.
+
 ## Videos remade (17 Nov): all 16 in the new style; YouTube re-upload pending
 - See the 17 Nov paragraph at the top of handoff/VIDEO-TOPICS.md for the re-upload schedule. Ten old scheduled uploads deleted with the owner's yes. Upload limit until ~7:40 pm GMT+3 on 17 Nov. Phone verification was already done; the owner submitted the video selfie for Advanced features on 17 Nov ~10:14 IST (Google review up to 24 h). Once approved, the daily upload limit goes up: upload all 14 -v2 videos then. Videos with footage are capped at ~1.6 Mbit/s in build.mjs so they stay under the 10 MB upload limit.
 
