@@ -94,7 +94,7 @@ export function SiteFooter() {
         <SiteLink to="/stock-screener-india" style={FOOT_LINK}>Stock screener</SiteLink>
         <SiteLink to="/screens" style={FOOT_LINK}>Screens</SiteLink>
         <SiteLink to="/sectors" style={FOOT_LINK}>Sectors</SiteLink>
-        <SiteLink to="/lists" style={FOOT_LINK}>Stock lists</SiteLink>
+        <SiteLink to="/lists" style={FOOT_LINK}>Categories</SiteLink>
         <SiteLink to="/results-calendar" style={FOOT_LINK}>Results calendar</SiteLink>
         <SiteLink to="/results" style={FOOT_LINK}>Latest results</SiteLink>
         <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer" style={FOOT_LINK}>Android app</a>
@@ -124,11 +124,11 @@ export function BrandMark({ size = 32, theme, className = "" }) {
 // pages, a company search, and Sign in / Create free account (or back to
 // the app when signed in). A phone: the logo and the buttons, then the
 // search, then the pages as a row to swipe.
-const PUB_NAV = [["/screens", "Screens"], ["/sectors", "Sectors"], ["/results", "Results"], ["/lists", "Stock lists"], ["/learn", "Learn"]];
+const PUB_NAV = [["/screens", "Screens"], ["/sectors", "Sectors"], ["/results", "Results"], ["/lists", "Categories"], ["/learn", "Learn"]];
 // Signed in, the same pages carry the app's own menu (17 Nov 2026, the owner:
 // the stock lists should "look like our main app"): each opens that app tab
 // (App.jsx reads ?tab=), with Stock lists and Sectors beside them
-const APP_NAV = [["/?tab=discover", "Home"], ["/?tab=workspace", "Screen builder"], ["/?tab=markets", "Markets"], ["/?tab=explore", "News"], ["/?tab=watchlist", "Watchlist"], ["/?tab=portfolio", "Portfolio"], ["/lists", "Stock lists"], ["/sectors", "Sectors"]];
+const APP_NAV = [["/?tab=discover", "Home"], ["/?tab=workspace", "Screen builder"], ["/?tab=markets", "Markets"], ["/?tab=explore", "News"], ["/?tab=watchlist", "Watchlist"], ["/?tab=portfolio", "Portfolio"], ["/lists", "Categories"], ["/sectors", "Sectors"]];
 export function PublicHeader({ signedIn, onSignIn, onJoin }) {
   const here = typeof window !== "undefined" ? window.location.pathname : "";
   const go = to => e => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); navigate(to); window.scrollTo(0, 0); };

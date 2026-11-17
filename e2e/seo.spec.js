@@ -226,7 +226,7 @@ test("S-H8 screens, sectors, lists and the calendar draw their companies with /a
     ["/screens/high-quality-compounders", /^High Quality Compounders/, 'a[href^="/stock/"]'],
     ["/sectors", /^NSE stocks by sector$/, 'a[href^="/sector/"]'],
     ["/sector/information-technology", /^Information Technology stocks on NSE$/, 'a[href^="/stock/"]'],
-    ["/lists", /^NSE stock lists$/, 'a[href^="/lists/"]'],
+    ["/lists", /^Explore by category$/, 'a[href^="/lists/"]'],
     ["/lists/nifty-50-stocks", /Nifty 50/, 'a[href^="/stock/"]'],
     ["/results-calendar", /^Quarterly results calendar$/, null],
   ]) {

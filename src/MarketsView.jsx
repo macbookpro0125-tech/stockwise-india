@@ -696,7 +696,7 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
     { id: "results", label: "Results", line: resultsCount ? `${resultsCount} companies reported in the last month; the figures, day by day` : "Who reports when, and the figures once they're out", open: () => openDay(resultsDay ?? "next") },
     { id: "sectors", label: "Sectors", line: topSector ? `${topSector.name.replace(/^Nifty\s*/i, "")} led today, ${pct(topSector.changePct)}; every sector's companies` : "Every sector and its companies", open: () => navigate("/sectors") },
     { id: "map", label: "Market map", line: "Every company in one picture, coloured by its move", open: () => onOpenTab?.("map") },
-    { id: "lists", label: "Stock lists", line: "Ready lists: index members, debt-free, high dividend and more", open: () => navigate("/lists") },
+    { id: "lists", label: "Categories", line: "Ready lists: index members, debt-free, high dividend and more", open: () => navigate("/lists") },
   ];
 
   if (movesPage) return <MoversDay date={movesPage.date ?? null} period={movesPage.period ?? "1d"} onDate={d => setMoves({ ...movesPage, date: d })} onPeriod={p => setMoves({ ...movesPage, period: p })} onBack={closeMoves} onOpenStock={onOpenStock} />;

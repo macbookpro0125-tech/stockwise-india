@@ -275,7 +275,7 @@ export default function StarFilm({ onJoin, onLogin, stats }) {
           <Logo />
           {/* the site's main pages (8 Nov 2026, a review: "no top navigation"); a computer's only */}
           <nav className="sf-nav" aria-label="Main pages">
-            {[["/screens", "Screens"], ["/sectors", "Sectors"], ["/results", "Results"], ["/lists", "Stock lists"], ["/learn", "Learn"]].map(([to, l]) => (
+            {[["/screens", "Screens"], ["/sectors", "Sectors"], ["/results", "Results"], ["/lists", "Categories"], ["/learn", "Learn"]].map(([to, l]) => (
               <a key={to} href={to} onClick={e => { if (e.metaKey || e.ctrlKey) return; e.preventDefault(); navigate(to); window.scrollTo(0, 0); }}>{l}</a>
             ))}
           </nav>

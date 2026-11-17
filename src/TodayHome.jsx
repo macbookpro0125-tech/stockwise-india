@@ -222,7 +222,7 @@ const SITE_PAGES = [
   { id: "calendar", path: "/results-calendar", label: "Results calendar", about: "Who reports, and when", Icon: CalendarDays },
   { id: "results", path: "/results", label: "Latest results", about: "Who just reported, and how", Icon: FileBarChart },
   { id: "sectors", path: "/sectors", label: "Sectors", about: "Companies by sector", Icon: Layers3 },
-  { id: "lists", path: "/lists", label: "Stock lists", about: "Nifty 50, defence, under ₹100…", Icon: Layers3 },
+  { id: "lists", path: "/lists", label: "Categories", about: "Nifty 50, defence, under ₹100…", Icon: Layers3 },
   { id: "guides", path: "/learn", label: "Guides", about: "How to read the numbers", Icon: BookOpen },
 ];
 
@@ -463,8 +463,8 @@ export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIn
       )}
 
       {/* the stock lists, in reach from Home (17 Nov 2026: "very hard to find, very deep in Markets") */}
-      <section className="td-box td-lists" aria-label="Stock lists">
-        <div className="td-head"><h3>Stock lists</h3><button type="button" onClick={() => navigate("/lists")}>All lists</button></div>
+      <section className="td-box td-lists" aria-label="Explore by category">
+        <div className="td-head"><h3>Explore by category</h3><button type="button" onClick={() => navigate("/lists")}>All categories</button></div>
         <div className="td-listgrid">
           {HOME_LISTS.map(([slug, label, Icon]) => (
             <button key={slug} type="button" className="td-listtile" onClick={() => navigate(`/lists/${slug}`)}>

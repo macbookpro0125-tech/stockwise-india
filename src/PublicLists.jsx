@@ -259,7 +259,7 @@ export function SectorPage({ slug, signedIn }) {
             {s.best.length ? ` By quality score from their own filings, the highest are ${s.best.map(b => `${b.name} (${Math.round(b.quality)})`).join(", ")}.` : ""}
           </p>
           {s.lists?.length > 0 && <>
-            <h2 className="pl-h">Stock lists its companies are in</h2>
+            <h2 className="pl-h">Categories its companies are in</h2>
             <ul className="pl-rules">{s.lists.map(x => <li key={x.slug}><A to={`/lists/${x.slug}`}>{x.name}</A> — {x.count} {x.count === 1 ? "company" : "companies"}</li>)}</ul>
           </>}
           {s.screens.length > 0 && <>
@@ -304,7 +304,7 @@ export function ListsIndexPage({ signedIn }) {
   useEffect(() => { document.title = LISTS_TITLE; }, []);
   const [join, box] = useJoin();
   return (
-    <PublicPage title="NSE stock lists" signedIn={signedIn} updated={fresh(d?.pricesDate, d?.builtAt)} onSignIn={() => join(null, "signin")} onJoin={() => join("Create a free account to see every company's full analysis.")}>
+    <PublicPage title="Explore by category" signedIn={signedIn} updated={fresh(d?.pricesDate, d?.builtAt)} onSignIn={() => join(null, "signin")} onJoin={() => join("Create a free account to see every company's full analysis.")}>
       <p className="pl-lede">Each NSE index's companies, NSE's themes such as defence and railway PSUs, stocks by price, and a few plain filters, at the last close.</p>
       {error && <p className="nw-empty">{error}</p>}
       {!d && !error && <Wait />}
@@ -325,7 +325,7 @@ export function ListsIndexPage({ signedIn }) {
         </section>
       ))}
       <More />
-      {!signedIn && <JoinBar label="NSE stock lists" why="Create a free account to see every company's full analysis." onJoin={join} />}
+      {!signedIn && <JoinBar label="Explore by category" why="Create a free account to see every company's full analysis." onJoin={join} />}
       {box}
     </PublicPage>
   );

@@ -71,7 +71,7 @@ function Story({ s }) {
       {t.screens.length ? <ul>{t.screens.map(x => <li key={x.slug}><a href={`/screens/${x.slug}`}>{x.name}</a></li>)}</ul>
         : <p>It passes none of the ready-made screens today. <a href="/screens">See every screen</a>.</p>}
       {t.lists?.length > 0 && <>
-        <h2>Stock lists {n} is in</h2>
+        <h2>Categories {n} is in</h2>
         <ul>{t.lists.map(x => <li key={x.slug}><a href={`/lists/${x.slug}`}>{x.name}</a></li>)}</ul>
       </>}
       <h2>Questions about {n}</h2>
