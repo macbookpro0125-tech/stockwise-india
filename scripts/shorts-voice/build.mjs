@@ -155,6 +155,6 @@ const fc = [
 ];
 sh("ffmpeg", ["-y", "-loglevel", "error", ...ev.flatMap(e => ["-i", e.f]), "-i", join(A, "bed.wav"), "-filter_complex", fc.join(";"), "-map", "[mix]", "-ar", "48000", join(A, "mix.wav")]);
 const out = join(DIR, `${spec.key}.mp4`);
-sh("ffmpeg", ["-y", "-loglevel", "error", "-framerate", String(FPS), "-i", join(frames, "%05d.jpg"), "-i", join(A, "mix.wav"), "-c:v", "libx264", "-profile:v", "high", "-pix_fmt", "yuv420p", "-crf", "17", "-preset", "slow", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", "-shortest", out]);
+sh("ffmpeg", ["-y", "-loglevel", "error", "-framerate", String(FPS), "-i", join(frames, "%05d.jpg"), "-i", join(A, "mix.wav"), "-c:v", "libx264", "-profile:v", "high", "-pix_fmt", "yuv420p", "-b:v", "1.6M", "-maxrate", "1.9M", "-bufsize", "3.8M", "-preset", "slow", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", "-shortest", out]);
 rmSync(frames, { recursive: true, force: true });
 console.log(`${out} · ${LENGTH} s`);
