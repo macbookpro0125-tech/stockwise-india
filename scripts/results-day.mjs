@@ -44,8 +44,29 @@ const done = key => new Set(state[key].map(x => x.item));
 const all = days.flatMap(d => d.companies.map(c => ({ ...c, filed: d.date })));
 const googleDone = done("google"), bingDone = done("bing"), shortDone = done("shorts");
 // Google: the largest not yet requested, newest day first (page order)
-const google = all.filter(c => !googleDone.has(c.url)).slice(0, GOOGLE_PER_DAY).map(c => c.url);
-const bing = all.filter(c => !bingDone.has(c.url)).slice(0, BING_PER_DAY).map(c => c.url);
+// Since 17 Nov 2026 (server/seo-pages.js isBigCompany) only the 400 largest
+// companies' results pages may be indexed; the rest carry noindex. Requesting
+// those wastes Google's ~10 a day (18 Nov: 9 of 10 were), so each page is
+// checked, and a small company's own page (/stock/SYM, always indexable)
+// goes instead of its results page.
+const indexable = async url => {
+  try { const h = await (await fetch(url, { headers: { "User-Agent": "JocularResultsDay/1.0" } })).text(); return !/<meta name="robots" content="[^"]*noindex/i.test(h); } catch { return false; }
+};
+const pick = async (done, limit) => {
+  const out = [];
+  for (const c of all) {
+    if (out.length >= limit) break;
+    const url = (await indexable(c.url)) ? c.url : `${SITE}/stock/${encodeURIComponent(c.symbol)}`;
+    if (!done.has(url) && !out.includes(url)) out.push(url);
+  }
+  return out;
+};
+// Google gets few a day, so the indexable results pages (the 400 largest
+// companies, newest day first) go first; company pages only fill what's left
+const google = [];
+for (const c of all) { if (google.length >= GOOGLE_PER_DAY) break; if (!googleDone.has(c.url) && await indexable(c.url)) google.push(c.url); }
+if (google.length < GOOGLE_PER_DAY) for (const u of await pick(googleDone, GOOGLE_PER_DAY * 3)) { if (google.length >= GOOGLE_PER_DAY) break; if (!google.includes(u)) google.push(u); }
+const bing = await pick(bingDone, BING_PER_DAY);
 // Shorts (two a day since 13 Nov): from each filing day's ten largest, newest day
 // first, the ones with a profit both years and a clear move (a story in two
 // figures), not already made; the largest companies first. A few spares are listed
