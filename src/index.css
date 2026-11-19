@@ -7175,3 +7175,45 @@ tr:hover .row-star, .row-star:focus-visible { opacity: 1; }
 @media (hover: hover) and (pointer: fine) { .rot-group button:hover { border-color: var(--bdr2, var(--t3)); } }
 .rot-none { margin: 0; font-size: 12.5px; color: var(--t3); }
 @media (max-width: 599px) { .rot-group ul { grid-template-columns: repeat(2, minmax(0, 1fr)); } .rot-label { font-size: 15px; } .rot-qname, .rot-axis-l { font-size: 13px; } }
+
+/* Compare (CompareView.jsx, 19 Nov 2026): a full-screen sheet whose top bar
+   (Close, the subject tabs, the companies) never scrolls away, and whose
+   foot clears the phone's home bar */
+.cmp { position: fixed; inset: 0; z-index: 960; display: flex; flex-direction: column; height: 100dvh; background: var(--bg); color: var(--t1); animation: fadeIn 200ms cubic-bezier(0.23, 1, 0.32, 1) backwards; }
+.cmp-bar { flex: none; padding: calc(var(--safe-area-inset-top, env(safe-area-inset-top, 0px)) + 10px) max(var(--page-x, 16px), env(safe-area-inset-right, 0px)) 0 max(var(--page-x, 16px), env(safe-area-inset-left, 0px)); background: var(--bg); border-bottom: 1px solid var(--bdr2); }
+.cmp-bar-row { display: flex; align-items: center; gap: 8px; }
+.cmp-title { flex: 1; min-width: 0; margin: 0; font-size: 18px; font-weight: 500; letter-spacing: -0.01em; }
+.cmp-brief { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px; border: 1px solid var(--bdr2); border-radius: 999px; background: var(--s2); color: var(--t1); font: inherit; font-size: 13px; cursor: pointer; }
+.cmp-close { display: grid; place-items: center; width: 44px; height: 44px; margin-right: -6px; border: 0; border-radius: 999px; background: var(--s2); color: var(--t1); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.cmp-close:active, .cmp-brief:active, .cmp-tab:active, .cmp-chip:active { transform: scale(0.96); }
+.cmp-tabs { display: flex; gap: 6px; margin: 10px calc(-1 * var(--page-x, 16px)) 0; padding: 0 var(--page-x, 16px) 10px; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
+.cmp-tabs::-webkit-scrollbar { display: none; }
+.cmp-tab { flex: none; height: 34px; padding: 0 14px; border: 1px solid var(--bdr2); border-radius: 999px; background: transparent; color: var(--t2); font: inherit; font-size: 13px; white-space: nowrap; cursor: pointer; transition: background 160ms, color 160ms, transform 120ms; }
+.cmp-tab[aria-selected="true"] { background: var(--t1); border-color: var(--t1); color: var(--bg); }
+.cmp-pick { display: flex; gap: 6px; margin: 0 calc(-1 * var(--page-x, 16px)); padding: 0 var(--page-x, 16px) 10px; overflow-x: auto; scrollbar-width: none; }
+.cmp-pick::-webkit-scrollbar { display: none; }
+.cmp-chip { flex: none; }
+.cmp-chip { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 1px solid var(--bdr2); border-radius: 999px; background: transparent; color: var(--t3); font: inherit; font-size: 12px; cursor: pointer; }
+.cmp-chip i, .cmp-head i { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.cmp-chip[aria-pressed="false"] i { opacity: 0.35; }
+.cmp-chip[aria-pressed="true"] { color: var(--t1); background: var(--s2); }
+.cmp-heads { display: grid; gap: 0 8px; padding: 8px 0 10px; }
+.cmp-heads-lbl { font-size: 11px; color: var(--t3); align-self: center; }
+.cmp-head { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.cmp-head .cmp-open { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.cmp-body { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 4px max(var(--page-x, 16px), env(safe-area-inset-right, 0px)) calc(32px + var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px))) max(var(--page-x, 16px), env(safe-area-inset-left, 0px)); }
+.cmp-chart { margin: 8px 0 4px; }
+.cmp-row { padding: 10px 0; border-bottom: 1px solid var(--bdr); }
+.cmp-lbl { font-size: 12px; color: var(--t3); margin-bottom: 4px; }
+.cmp-vals { display: grid; gap: 0 8px; align-items: center; }
+.cmp-vals .cmp-lbl { margin: 0; color: var(--t2); }
+.cmp-val { min-width: 0; font-size: 14px; color: var(--t1); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.cmp-dash { color: var(--t3); font-size: 12px; }
+.cmp-meter { display: block; height: 3px; margin-top: 5px; border-radius: 2px; background: var(--bdr); overflow: hidden; }
+.cmp-meter b { display: block; height: 100%; border-radius: 2px; }
+.cmp-meter b.neg { background: var(--red); }
+.cmp-note { margin: 14px 0 0; font-size: 11px; line-height: 1.5; color: var(--t3); }
+@media (max-width: 640px) {
+  .cmp-val { font-size: 13px; }
+}
+@media (prefers-reduced-motion: reduce) { .cmp { animation: none; } }

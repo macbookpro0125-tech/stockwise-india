@@ -373,3 +373,10 @@ Owner: "the news is not understandable". Looked at 10 apps (Inshorts' one-line c
 - Arithmetic moved to src/positionPlan.js with tests (src/position-plan-test.js, in npm test).
 - Fixed: a missing level no longer shifts the others (level 3 was shown as "Level 2" with level 2's split); the "Cash budget" column (which ignored the loss-limit cut) is replaced by a per-level "Loss at stop"; a stop at/above a level is now flagged in red instead of counting as ₹0 loss; the never-reachable rounding warning is gone; a level whose cash can't buy one share is flagged; loss shown as % of capital.
 - Phone: table fits 375px (price moved into the level cell). Split inputs labelled with each level's price.
+
+## 19 Nov 2026 — Compare rebuilt for phones
+- Owner: on the phone compare "doesn't look good, bottom is not visible and it can't be closed"; wanted quarterly results, P&L etc.
+- src/CompareView.jsx: rendered in a portal (z 960) as a full-height sheet; a top bar that never scrolls away (Close 44px, Brief, subject tabs, company heads); body scrolls on its own with safe-area bottom padding; Esc closes; page behind locked while open.
+- Tabs: Scores · Quarterly results · Profit & loss · Balance sheet · Cash flow (COMPARE_STATEMENTS from FinanceCompare.jsx, figures via api.stock fetched when a filings tab is first opened) · Valuation · Price (CompareChart + technicals). Thin colour bar under each filed figure, sized against the largest.
+- Phone: label above, figures beneath in equal columns; 3 companies at a time picked from chips (of up to 5). Wide screens: label column + all companies, columns share the width.
+- CSS: .cmp* block at the end of src/index.css.
