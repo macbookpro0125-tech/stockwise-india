@@ -424,3 +424,11 @@ Owner: "the news is not understandable". Looked at 10 apps (Inshorts' one-line c
 - Fix: screen.js rebuildFresh() lets the old market go before building the new one (requests wait on marketReady() for the few seconds, ~12:45 AM IST), and allMetrics() mid-build finishes the same slice build instead of starting a second (drain). data-pull onInstalled uses it. Test: server/market-rebuild-test.js (97 → 98 MB through a swap), in npm test.
 - Disk: 243.5 MB of 1 GB (Render Disk page, flat over 48 h). The live service is in the Render account "salman's workspace"; "Jocular's workspace" is an empty Hobby account.
 - If crashes continue after the push: next options are trimming other in-memory caches, or the Standard plan (2 GB) — a cost decision for the owner.
+
+## 20 Nov 2026 — ten years of prices, splits and dividends (not pushed)
+- Owner: use the spare disk for more years. Disk 243.5 MB of 1 GB; history is read per company on demand, so more years cost disk, not memory.
+- NSE's current daily file (sec_bhavdata_full) starts late 2019 (2018 → 404). Before that, the older zipped cm…bhav.csv.zip (2012 and 2016 checked): OHLC, volume and ISIN, no delivery. server/legacy-bhavcopy.js (zip reader on node:zlib, parser, URL); history-backfill.js uses it before 2019-12-01, filing a renamed company's older days under today's symbol by ISIN (NSE equity list). Real trial (scratch dir): 15–16 Nov 2016, 1,610 companies; TCS ₹2,121.30 as published = ₹1,060.65 after the 2018 1:1 bonus; 14 Nov 2016 holiday skipped.
+- Corporate actions 6 → 11 years (market-data.js yearsOfActions; snapshot.actionsYears) so splits/bonuses cover the ten years; the dividend record's window follows actionsYears (six until the first eleven-year build). NSE's corporate actions answer for 2015–2016 (TCS 31 May 2018 "Bonus 1:1" → 2×).
+- Evening job: HISTORY_YEARS 10, HISTORY_BACKFILL_DAYS 260 a run (~5 evenings to fill). Chart: 10Y range (loads everything kept, like All). scripts/backfill-history.mjs defaults to 10 years.
+- Expected: history ~140 → ~280 MB; disk ~245 → ~385 MB; data pack grows ~40–50% (cap 200 MB). Watch the first packs' size and the pull memory.
+- Next (agreed order): 10 years of results (check what NSE holds for FY16–FY18), index history 10 years.

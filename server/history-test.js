@@ -57,3 +57,40 @@ await backfillHistory({ years: 3, maxDays: 1, pauseMs: 0, log: () => {}, now: NO
 assert.equal(asked, 1);
 console.log("ok: older days added a batch at a time, kept as published; holidays noted, a refused day tried again next run");
 
+
+// Before late 2019: NSE's older zipped file, a renamed company filed under its
+// symbol today by its ISIN (legacy-bhavcopy.js, 20 Nov 2026)
+{
+  const { parseLegacyBhavcopy, unzipFirst, legacyUrl } = await import("./legacy-bhavcopy.js");
+  const { deflateRawSync } = await import("node:zlib");
+  const csvOld = "SYMBOL,SERIES,OPEN,HIGH,LOW,CLOSE,LAST,PREVCLOSE,TOTTRDQTY,TOTTRDVAL,TIMESTAMP,TOTALTRADES,ISIN,\n"
+    + "OLDNAME,EQ,100,110,95,105,105,99,5000,500000,14-MAY-2019,10,INE000X01011,\n"
+    + "OLDNAME,BE,90,91,89,90,90,90,10,900,14-MAY-2019,1,INE000X01011,\n"
+    + "OTHER,N1,50,50,50,50,50,50,1,50,14-MAY-2019,1,INE000Y01011,";
+  const p = parseLegacyBhavcopy(csvOld, new Map([["INE000X01011", "NEWNAME"]]));
+  assert.equal(p.date, "2019-05-14");
+  assert.deepEqual(p.days.get("NEWNAME"), { rank: 0, open: 100, high: 110, low: 95, close: 105, volume: 5000 }, "EQ before BE, under today's symbol");
+  assert.equal(p.days.has("OTHER"), false, "series other than equity left out");
+  assert.equal(legacyUrl(new Date("2016-11-15T00:00:00Z")), "https://nsearchives.nseindia.com/content/historical/EQUITIES/2016/NOV/cm15NOV2016bhav.csv.zip");
+  // a zip as NSE serves it: one deflated file, its sizes in the central directory
+  const name = Buffer.from("cm14MAY2019bhav.csv"), raw = Buffer.from(csvOld), data = deflateRawSync(raw);
+  const local = Buffer.alloc(30); local.writeUInt32LE(0x04034b50, 0); local.writeUInt16LE(8, 8); local.writeUInt16LE(name.length, 26);
+  const cd = Buffer.alloc(46); cd.writeUInt32LE(0x02014b50, 0); cd.writeUInt16LE(8, 10); cd.writeUInt32LE(data.length, 20); cd.writeUInt32LE(raw.length, 24); cd.writeUInt16LE(name.length, 28); cd.writeUInt32LE(0, 42);
+  const cdAt = 30 + name.length + data.length;
+  const eocd = Buffer.alloc(22); eocd.writeUInt32LE(0x06054b50, 0); eocd.writeUInt16LE(1, 8); eocd.writeUInt16LE(1, 10); eocd.writeUInt32LE(46 + name.length, 12); eocd.writeUInt32LE(cdAt, 16);
+  assert.equal(unzipFirst(Buffer.concat([local, name, data, cd, name, eocd])), csvOld, "unzipped as written");
+
+  // the backfill asks for the older file before late 2019, the current one after
+  const asked = { old: [], current: 0 };
+  const r = await backfillHistory({
+    years: 2, maxDays: 3, pauseMs: 0, log: () => {}, now: new Date("2020-05-16T12:00:00Z"),
+    isinToSymbol: new Map([["INE000X01011", "NEWNAME"]]),
+    fetchCsv: async () => { asked.current++; return null; },
+    fetchOld: async d => { asked.old.push(d.toISOString().slice(0, 10)); return d.toISOString().slice(0, 10) === "2019-05-14" ? csvOld : null; },
+  });
+  assert.equal(asked.current, 0, "no current-format file asked for before late 2019");
+  assert.deepEqual(asked.old, ["2019-05-16", "2019-05-15", "2019-05-14"]);
+  assert.equal(r.read, 1);
+  assert.deepEqual(readHistory("NEWNAME").map(b => [b[0], b[4]]), [["2019-05-14", 105]]);
+  console.log("ok: before late 2019 the older zipped file, a renamed company under today's symbol");
+}

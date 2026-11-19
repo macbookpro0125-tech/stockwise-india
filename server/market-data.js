@@ -374,7 +374,7 @@ async function periodReturns(latest, splits) {
     }
   }
   // Price growth a year over five years (needs the corporate actions to go
-  // back that far — the snapshot keeps six years of them)
+  // back that far — the snapshot keeps eleven years of them)
   const base5 = new Date(`${latest.date}T00:00:00Z`);
   base5.setUTCFullYear(base5.getUTCFullYear() - 5);
   const past5 = await pricesOnOrBefore(base5).catch(() => null);
@@ -904,7 +904,10 @@ async function industriesBySymbol() {
 // Everything the screener needs that isn't per-company: latest closes,
 // trailing-12-month dividends, splits/bonuses since the oldest fiscal year it
 // uses, sectors, and closes at each fiscal year-end (for historical P/E).
-export async function buildMarketSnapshot(fyEndDates, { yearsOfActions = 6 } = {}) {
+// Eleven years of corporate actions (20 Nov 2026, was six): the price history
+// goes back ten years, and its splits and bonuses must too; the dividend record
+// gets ten years with them
+export async function buildMarketSnapshot(fyEndDates, { yearsOfActions = 11 } = {}) {
   const now = new Date();
   const latest = await pricesOnOrBefore(now);
 
@@ -930,7 +933,7 @@ export async function buildMarketSnapshot(fyEndDates, { yearsOfActions = 6 } = {
   // per old share, and must be scaled down or the yield reads 2x too high.
   const yearAgo = isoDay(new Date(now.getTime() - 365 * 86400000));
   const dividends = {};
-  const dividendHistory = {}; // six years, for the company page's record (dividends.js)
+  const dividendHistory = {}; // yearsOfActions years, for the company page's record (dividends.js)
   const splits = {};
   for (const a of unique) {
     const ex = parseQeDate(a.exDate);
@@ -976,6 +979,8 @@ export async function buildMarketSnapshot(fyEndDates, { yearsOfActions = 6 } = {
     prices: latest.prices,
     dividends,
     dividendHistory,
+    // how many years of corporate actions are behind dividendHistory and splits
+    actionsYears: yearsOfActions,
     splits,
     sectors,
     industrySectors,

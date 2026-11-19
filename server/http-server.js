@@ -221,7 +221,8 @@ function parseCookies(header) {
 // the company's own filings
 function dividendSummary(m, snap, market) {
   const today = snap?.pricesDate ?? new Date().toISOString().slice(0, 10);
-  const record = dividendRecord({ history: snap?.dividendHistory ? snap.dividendHistory[m.symbol] ?? [] : null, splits: snap?.splits?.[m.symbol] ?? [], today });
+  // its window: the years of corporate actions the snapshot holds (six before 20 Nov 2026, eleven after)
+  const record = dividendRecord({ history: snap?.dividendHistory ? snap.dividendHistory[m.symbol] ?? [] : null, splits: snap?.splits?.[m.symbol] ?? [], today, windowDays: (snap?.actionsYears ?? 6) * 365 });
   const cashPaid = m.dividendsTtm > 0 && m.shares > 0 ? m.dividendsTtm * m.shares : null;
   const next = (m.events ?? []).find(e => e.kind === "action" && e.date >= today && /dividend/i.test(e.title ?? ""));
   return {

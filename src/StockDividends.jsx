@@ -122,7 +122,7 @@ export default function StockDividends({ m }) {
         </>
       )}
       <p className="sd-foot">
-        From NSE's corporate actions over six years and the company's filings. On today's share count, after splits and bonuses; financial years run April to March{years.some(y => y.partial) ? ", and * is this year so far" : ""}. Free cash flow is operating cash flow less capital spending. Not advice.
+        From NSE's corporate actions over up to ten years and the company's filings. On today's share count, after splits and bonuses; financial years run April to March{years.some(y => y.partial) ? ", and * is this year so far" : ""}. Free cash flow is operating cash flow less capital spending. Not advice.
       </p>
     </section>
   );

@@ -74,7 +74,7 @@ const svgEsc = t => String(t).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&l
 const INTERVALS = [{ id: "D", label: "D", title: "Daily" }, { id: "W", label: "W", title: "Weekly" }, { id: "M", label: "M", title: "Monthly" }];
 const RANGES = [
   { id: "1M", months: 1 }, { id: "3M", months: 3 }, { id: "6M", months: 6 }, { id: "YTD" },
-  { id: "1Y", months: 12 }, { id: "3Y", months: 36 }, { id: "5Y", months: 60 }, { id: "All" },
+  { id: "1Y", months: 12 }, { id: "3Y", months: 36 }, { id: "5Y", months: 60 }, { id: "10Y", months: 120 }, { id: "All" },
 ];
 // Overlay colours are for telling lines apart; the legend names each one
 // Grouped as the menu shows them. On the price: moving averages, trend and
@@ -950,7 +950,8 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
   };
   const pickRange = id => {
     setRange(id);
-    if (id === "All" && span !== "max") { keepView.current = null; setSpan("max"); return; }
+    // past five years: everything kept (ten years, from 20 Nov 2026)
+    if ((id === "All" || id === "10Y") && span !== "max") { keepView.current = null; setSpan("max"); return; }
     applyRange(id);
   };
   const setPref = patch => setPrefs(p => ({ ...p, ...patch }));

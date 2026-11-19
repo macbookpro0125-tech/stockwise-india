@@ -11,6 +11,22 @@ import { HISTORY_DIR } from "./paths.js";
 import { parseBhavcopy } from "./market-data.js";
 import { historyWriter } from "./price-history.js";
 import { fetchText } from "./upstream.js";
+import { legacyUrl, unzipFirst, parseLegacyBhavcopy } from "./legacy-bhavcopy.js";
+import { fetchEquityList } from "./equity-list.js";
+
+// Before this, NSE's current daily file doesn't exist (it starts in late
+// 2019): the older zipped file instead (legacy-bhavcopy.js, 20 Nov 2026)
+const CURRENT_FILE_FROM = "2019-12-01";
+
+// The older file, zipped; null on a holiday (404)
+async function fetchLegacy(d) {
+  const res = await fetch(legacyUrl(d), { headers: { "User-Agent": UA }, signal: AbortSignal.timeout(20_000) });
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`NSE archive returned HTTP ${res.status}`);
+  const buf = Buffer.from(await res.arrayBuffer());
+  if (buf.length > 25 * 1024 * 1024) throw new Error("NSE archive file too large");
+  return unzipFirst(buf);
+}
 
 const UA = "Mozilla/5.0 (compatible; JocularInsights/1.0; educational)";
 const iso = d => d.toISOString().slice(0, 10);
@@ -29,7 +45,7 @@ export function daysToRead(years, done, now = new Date()) {
   return out;
 }
 
-export async function backfillHistory({ years = 5, maxDays = Infinity, pauseMs = 800, saveEvery = 40, log = console.log, fetchCsv = null, now = new Date() } = {}) {
+export async function backfillHistory({ years = 5, maxDays = Infinity, pauseMs = 800, saveEvery = 40, log = console.log, fetchCsv = null, fetchOld = null, isinToSymbol = null, now = new Date() } = {}) {
   if (years < 2) return { read: 0, holidays: 0, left: 0 };
   mkdirSync(HISTORY_DIR, { recursive: true });
   const DONE = join(HISTORY_DIR, ".backfilled.json");
@@ -38,13 +54,20 @@ export async function backfillHistory({ years = 5, maxDays = Infinity, pauseMs =
   const days = all.slice(0, maxDays);
   if (!days.length) return { read: 0, holidays: 0, left: 0 };
   log(`price history: reading ${days.length} of ${all.length} weekdays still to go`);
+  // a renamed company's older days filed under its symbol today, by ISIN
+  let isins = isinToSymbol;
+  if (!isins && days.some(d => iso(d) < CURRENT_FILE_FROM)) {
+    try { isins = new Map((await fetchEquityList()).filter(s => s.isin).map(s => [s.isin, s.symbol])); } catch { isins = new Map(); }
+  }
+  const getOld = fetchOld ?? fetchLegacy;
   const get = fetchCsv ?? (d => fetchText(`https://nsearchives.nseindia.com/products/content/sec_bhavdata_full_${ddmmyyyy(d)}.csv`, { headers: { "User-Agent": UA }, service: "NSE market archive", maxBytes: 25 * 1024 * 1024, timeoutMs: 20_000, notFoundAsNull: true }));
   let writer = historyWriter(), read = 0, holidays = 0, failed = 0, stopped = null;
   const flush = () => { writer.save(); writer = historyWriter(); writeFileSync(DONE, JSON.stringify([...done].sort())); };
   for (const [i, d] of days.entries()) {
-    let csv;
+    let csv, legacy = false;
     try {
-      csv = await get(d);
+      if (iso(d) < CURRENT_FILE_FROM) { csv = await getOld(d); legacy = true; }
+      else csv = await get(d);
     } catch (e) {
       // NSE refusing: stop, keep what's done, carry on next time
       if (++failed >= 5) { stopped = e.message; break; }
@@ -55,7 +78,7 @@ export async function backfillHistory({ years = 5, maxDays = Infinity, pauseMs =
     if (!csv) holidays++;
     else {
       // a holiday can be answered with the day before's file: kept under its own date
-      const day = parseBhavcopy(csv);
+      const day = legacy ? parseLegacyBhavcopy(csv, isins) : parseBhavcopy(csv);
       if (day.date) writer.add(day.date, day.days);
       read++;
     }

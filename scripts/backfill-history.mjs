@@ -8,7 +8,7 @@
 import { backfillHistory } from "../server/history-backfill.js";
 
 const arg = (name, fallback) => { const i = process.argv.indexOf(`--${name}`); return i > -1 ? process.argv[i + 1] : fallback; };
-const years = Math.min(20, Math.max(2, Number(arg("years", 5)) || 5));
+const years = Math.min(20, Math.max(2, Number(arg("years", 10)) || 10));
 const pauseMs = Number(arg("pause", 800));
 const r = await backfillHistory({ years, pauseMs });
 if (r.stopped) process.exitCode = 1;
