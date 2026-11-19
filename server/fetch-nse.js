@@ -285,8 +285,42 @@ export function templateOf(xbrlUrl) {
   const file = String(xbrlUrl).split("/").pop().toUpperCase();
   if (file.includes("BANKING")) return "BANKING";
   if (file.includes("NBFC")) return "NBFC";
-  if (file.includes("INSURANCE")) return "INSURANCE";
+  // integrated filings name the insurers' two templates INTEGRATED_FILING_LI_
+  // (life) and _GI_ (general)
+  if (file.includes("INSURANCE") || /(^|_)(LI|GI)_/.test(file)) return "INSURANCE";
   return "INDAS";
+}
+
+// Insurers file on IRDAI's own templates (19 Nov 2026): profit is
+// "ProfitLossAfterTaxAndExtraordinaryItems" (life) or "ProfitLossAfterTax"
+// (general), never ProfitLossForPeriod, so no full year was ever found and
+// LIC, HDFC Life, SBI Life, ICICI Lombard and seven more had no page. Their
+// lines are renamed to the ones read for every other company, each only
+// when the filing doesn't already carry that name. Sales is the net premium
+// (life: net premium income; general: net premium written), the insurer's
+// own top line; book is share capital plus reserves (equityOf), as LIC's
+// FY26 ₹1.78 lakh Cr. A filing that is not an insurer's is returned as is.
+const INSURANCE_RENAMES = [
+  ["ProfitLossForPeriod", ["ProfitLossAfterTaxAndExtraordinaryItems", "ProfitLossAfterTax"]],
+  ["RevenueFromOperations", ["NetPremiumIncome", "NetPremiumWritten"]],
+  ["ProfitBeforeTax", ["ProfitLossBeforeTax", "ProfitOrLossBeforeTax"]],
+  ["BasicEarningsPerShareAfterExtraordinaryItems", ["BasicAndDilutedEPSAfterExtraordinaryItemsNetOfTaxExpenseForThePeriodNotToBeAnnualized"]],
+  ["BasicEarningsPerShareBeforeExtraordinaryItems", ["BasicAndDilutedEPSBeforeExtraordinaryItemsNetOfTaxExpenseForThePeriodNotToBeAnnualized"]],
+  ["Capital", ["ShareCapital"]],
+  ["PaidUpValueOfEquityShareCapital", ["PaidUpEquityShareCapital", "PaidUpEquityCapital"]],
+];
+export function asStandardTags(xml, xbrlUrl) {
+  if (templateOf(xbrlUrl) !== "INSURANCE") return xml;
+  const has = tag => new RegExp(`<[a-z-]+:${tag}\\b`).test(xml);
+  for (const [target, sources] of INSURANCE_RENAMES) {
+    if (has(target)) continue;
+    const source = sources.find(has);
+    if (source) xml = xml.replace(new RegExp(`(</?[a-z-]+:)${source}\\b`, "g"), `$1${target}`);
+  }
+  // Their "Expenses" are the policyholders' account's (claims, commission,
+  // reserves), not a cost of sales against the premium: read as one, LIC's
+  // operating margin came out −71%. Not read, so no margin is worked out.
+  return xml.replace(/(<\/?[a-z-]+:)Expenses\b/g, "$1InsurerAccountExpenses");
 }
 
 // One interface over both filing formats. Integrated filings date their XBRL
@@ -346,6 +380,8 @@ function equityOf(r) {
 // null = unknown, never a guessed 0: Bajaj Finance's FY23 filing tags only
 // total liabilities, and reading that as "no debt" made an NBFC debt-free.
 function debtOf(r, template) {
+  // an insurer's balance sheet is policyholders' money, not borrowing: unknown
+  if (template === "INSURANCE") return null;
   if (template === "BANKING") return sumKnown(r.atEnd(["Borrowings"]), r.atEnd(["Deposits"]));
   if (template === "NBFC") {
     return sumKnown(r.atEnd(["DebtSecurities"]), r.atEnd(["Borrowings"]), r.atEnd(["Deposits"]), r.atEnd(["SubordinatedLiabilities"]));
@@ -771,7 +807,7 @@ async function fetchFinancials(symbol) {
   // One download per file: a year-end filing is also that quarter's filing
   const xmlCache = new Map();
   const getXml = url => {
-    if (!xmlCache.has(url)) xmlCache.set(url, fetchXbrl(url));
+    if (!xmlCache.has(url)) xmlCache.set(url, fetchXbrl(url).then(xml => asStandardTags(xml, url)));
     return xmlCache.get(url);
   };
   const seen = new Set();

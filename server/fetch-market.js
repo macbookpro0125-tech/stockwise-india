@@ -31,12 +31,17 @@ export function readStored(symbol) {
 
 // Done = a file written by the current schema, success or genuine failure. A
 // file from an older schema is re-fetched rather than skipped as done.
+const INSURERS_READABLE = Date.parse("2026-11-19T09:00:00Z");
 export function needsSummary(symbol) {
   const stored = readStored(symbol);
   if (stored?.schema !== SCHEMA) return true;
   // A bank read before its health figures existed (or whose read failed) —
   // about forty companies, not a whole-market re-read
   if (stored.template === "BANKING" && !stored.error && stored.bank?.v !== BANK_VERSION) return true;
+  // Insurers' filings weren't readable before 19 Nov 2026 (fetch-nse.js
+  // asStandardTags): every company that ended on "no full-year filing"
+  // before then is read once more — about 70, eleven of them insurers
+  if (stored.error?.startsWith("No full-year filing") && Date.parse(stored.fetchedAt ?? "") < INSURERS_READABLE) return true;
   return !!(stored.error && stored.retryable && Date.now() >= Date.parse(stored.retryAfter || ""));
 }
 

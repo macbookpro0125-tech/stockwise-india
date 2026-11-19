@@ -733,6 +733,10 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     // the company's own words, shown beside a sector read from them
     businessLines: businessSector ? cleanBusiness(stock.business).slice(0, 3) : null,
     lender, utility, cyclical,
+    // an insurer (fetch-nse.js asStandardTags): judged on return on equity and
+    // net margin, with the factory tests (cash conversion, debt, working
+    // capital) not applied
+    insurer: stock.template === "INSURANCE",
     bank: stock.template === "BANKING" ? bankHealth(stock.bank) : null,
     // The government's stake as promoter, from the shareholding filing; owned
     // at a majority, or one of NSE's PSU index members (held through another

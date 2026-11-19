@@ -21,7 +21,7 @@
 // Weights and bands are a stated starting point, not a fitted model — the
 // proposal says so too. Change them here and RESEARCH_VERSION together.
 
-export const RESEARCH_VERSION = "1.15"; // 1.15: a profit above its quarter's sales counts as a one-off when the other quarters are mostly losses or small (Tata Teleservices Maharashtra); 1.14: Solar Industries valued against Capital Goods (the defence makers), not Chemicals; 1.13: Financial Services P/E peers split into banks, other lenders and the rest; valuation under 15 labelled "Very expensive"; 1.12: a one-off quarter (profit above its sales) left out of the P/E the score values on; 1.11: peer P/E allows for growth above 10% a year; free cash flow yield left out while a company builds new capacity; 1.10: 1.10: P/E on the last four quarters; fair value's multiple capped at twice the sector's median P/E; a quarter's EPS filed as the year's corrected, other EPS disagreements shown; auditor notices keep their filing link and scope; 1.8: banks with net NPA under 2% priced on their last three years' ROE
+export const RESEARCH_VERSION = "1.16"; // 1.16: insurers scored on return on equity and net margin, the factory tests not applied; 1.15: a profit above its quarter's sales counts as a one-off when the other quarters are mostly losses or small (Tata Teleservices Maharashtra); 1.14: Solar Industries valued against Capital Goods (the defence makers), not Chemicals; 1.13: Financial Services P/E peers split into banks, other lenders and the rest; valuation under 15 labelled "Very expensive"; 1.12: a one-off quarter (profit above its sales) left out of the P/E the score values on; 1.11: peer P/E allows for growth above 10% a year; free cash flow yield left out while a company builds new capacity; 1.10: 1.10: P/E on the last four quarters; fair value's multiple capped at twice the sector's median P/E; a quarter's EPS filed as the year's corrected, other EPS disagreements shown; auditor notices keep their filing link and scope; 1.8: banks with net NPA under 2% priced on their last three years' ROE
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -143,9 +143,9 @@ const BUSINESS = {
   items: [
     {
       id: "returns", weight: 0.30,
-      label: m => (m.lender || m.utility ? "Return on equity, 5-year median" : "Return on capital (ROCE), 5-year median"),
+      label: m => (m.lender || m.utility || m.insurer ? "Return on equity, 5-year median" : "Return on capital (ROCE), 5-year median"),
       compute(m) {
-        const useRoe = m.lender || m.utility;
+        const useRoe = m.lender || m.utility || m.insurer;
         const name = useRoe ? "ROE" : "ROCE";
         const vals = lastYears(m, 5).map(h => (useRoe ? h.roe : h.roce)).filter(finite);
         // Two years will do: a recent listing's returns are the first thing to know
@@ -157,12 +157,12 @@ const BUSINESS = {
     },
     {
       id: "marginStability", weight: 0.20,
-      label: m => (m.lender ? "Net margin stability, 5 years" : "Operating margin stability, 5 years"),
+      label: m => (m.lender || m.insurer ? "Net margin stability, 5 years" : "Operating margin stability, 5 years"),
       compute(m) {
-        const marginOf = h => (m.lender ? (finite(h.profitCr) && h.revenueCr > 0 ? (h.profitCr / h.revenueCr) * 100 : null) : h.opm);
+        const marginOf = h => (m.lender || m.insurer ? (finite(h.profitCr) && h.revenueCr > 0 ? (h.profitCr / h.revenueCr) * 100 : null) : h.opm);
         const vals = lastYears(m, 5).map(marginOf).filter(finite);
         if (vals.length < 3) {
-          const qMargin = q => (m.lender ? (finite(q.profitCr) && q.revenueCr > 0 ? (q.profitCr / q.revenueCr) * 100 : null) : q.opm);
+          const qMargin = q => (m.lender || m.insurer ? (finite(q.profitCr) && q.revenueCr > 0 ? (q.profitCr / q.revenueCr) * 100 : null) : q.opm);
           const pairs = sameQuarterPairs(m).map(([q, ago]) => [qMargin(q), qMargin(ago)]).filter(([a, b]) => finite(a) && finite(b));
           if (pairs.length < 3) return missing(`Margins for only ${vals.length} year${vals.length === 1 ? "" : "s"} — 3 are needed.`);
           const level = avg(pairs.map(([a]) => a));
@@ -199,6 +199,7 @@ const BUSINESS = {
       id: "reinvestment", weight: 0.20,
       label: "Return on new capital (incremental ROCE)",
       compute(m) {
+        if (m.insurer) return notApplicable(INSURER_ONLY);
         if (m.lender) return notApplicable("Not meaningful for lenders — their capital is the loan book.");
         // Lease liabilities are itemised only from FY26, so they're left out
         // at both ends — otherwise a renter's FY26 leases would read as new capital
@@ -241,6 +242,7 @@ const EARNINGS = {
     {
       id: "cashConversion", weight: 0.25, label: "Operating cash flow ÷ profit",
       compute(m) {
+        if (m.insurer) return notApplicable(INSURER_ONLY);
         if (m.lender) return notApplicable("A lender's operating cash flow is loans and deposits moving, not earnings quality.");
         const rows = lastYears(m, 5).filter(h => finite(h.ocfCr) && finite(h.profitCr));
         if (rows.length < 2) return missing(`Cash-flow statements for only ${rows.length} year${rows.length === 1 ? "" : "s"} — 2 are needed.`);
@@ -254,6 +256,7 @@ const EARNINGS = {
     {
       id: "accruals", weight: 0.25, label: "Profit not backed by cash (accruals) ÷ assets",
       compute(m) {
+        if (m.insurer) return notApplicable(INSURER_ONLY);
         if (m.lender) return notApplicable("Not meaningful for lenders.");
         const rows = lastYears(m, 5);
         const vals = rows.flatMap((h, i) => {
@@ -273,6 +276,7 @@ const EARNINGS = {
     {
       id: "fcfConversion", weight: 0.20, label: "Free cash flow ÷ profit",
       compute(m) {
+        if (m.insurer) return notApplicable(INSURER_ONLY);
         if (m.lender) return notApplicable("Not meaningful for lenders.");
         const rows = lastYears(m, 5).filter(h => finite(h.ocfCr) && finite(h.capexCr) && finite(h.profitCr));
         if (rows.length < 2) return missing(`Cash flow and capital spending for only ${rows.length} year${rows.length === 1 ? "" : "s"} — 2 are needed.`);
@@ -307,6 +311,7 @@ const EARNINGS = {
   ],
 };
 
+const INSURER_ONLY = "A factory's test — an insurer's balance sheet is its policyholders' money, so it is judged on return on equity and profit instead.";
 const LENDER_BALANCE = "Capital adequacy and bad-loan ratios — a lender's real balance-sheet tests — aren't in these filings.";
 const BALANCE = {
   id: "balance", label: "Balance sheet", weight: 15,
@@ -314,6 +319,7 @@ const BALANCE = {
     {
       id: "netDebt", weight: 0.25, label: "Net debt ÷ operating profit (EBITDA)",
       compute(m) {
+        if (m.insurer) return notApplicable(INSURER_ONLY);
         if (m.lender) return m.bank ? notApplicable(INDUSTRIAL_ONLY, true) : notApplicable(LENDER_BALANCE);
         const h = m.history[0];
         if (!finite(h.liquidCr) || !finite(h.debtCr)) return missing("Cash or debt isn't in the latest balance sheet.");
@@ -329,6 +335,7 @@ const BALANCE = {
     {
       id: "interestCover", weight: 0.20, label: "Interest cover (EBIT ÷ interest)",
       compute(m) {
+        if (m.insurer) return notApplicable(INSURER_ONLY);
         if (m.lender) return m.bank ? notApplicable(INDUSTRIAL_ONLY, true) : notApplicable(LENDER_BALANCE);
         const h = m.history[0];
         if (h.financeCostsCr === 0) return checked(100, null, "No interest", "No interest cost in the year.");
@@ -340,6 +347,7 @@ const BALANCE = {
     {
       id: "currentRatio", weight: 0.15, label: "Liquidity (current ratio)",
       compute(m) {
+        if (m.insurer) return notApplicable(INSURER_ONLY);
         if (m.lender) return m.bank ? notApplicable(INDUSTRIAL_ONLY, true) : notApplicable(LENDER_BALANCE);
         if (!finite(m.currentRatio)) return missing("Current assets or liabilities aren't in the latest filing.");
         const score = band(m.currentRatio, [[0.8, 0], [1, 40], [1.25, 60], [1.5, 80], [2, 100]]);
@@ -349,6 +357,7 @@ const BALANCE = {
     {
       id: "workingCapital", weight: 0.20, label: "Working capital ÷ sales",
       compute(m) {
+        if (m.insurer) return notApplicable(INSURER_ONLY);
         if (m.lender) return m.bank ? notApplicable(INDUSTRIAL_ONLY, true) : notApplicable(LENDER_BALANCE);
         const h = m.history[0];
         if (!finite(h.currentAssetsCr) || !finite(h.currentLiabilitiesCr) || !finite(h.liquidCr) || !(h.revenueCr > 0)) return missing("Current assets, liabilities or cash aren't in the latest filing.");
@@ -365,6 +374,7 @@ const BALANCE = {
     {
       id: "debtToEquity", weight: 0.20, label: "Debt ÷ equity (with leases)",
       compute(m) {
+        if (m.insurer) return notApplicable(INSURER_ONLY);
         if (m.lender) return m.bank ? notApplicable(INDUSTRIAL_ONLY, true) : notApplicable(LENDER_BALANCE);
         const h = m.history[0];
         if (finite(h.equityCr) && h.equityCr <= 0) return checked(0, null, "Negative equity", "Equity is negative — losses have used up the shareholders' capital.");
@@ -617,6 +627,7 @@ const VALUATION = {
     {
       id: "fcfYield", weight: 0.15, label: "Free cash flow yield",
       compute(m) {
+        if (m.insurer) return notApplicable(INSURER_ONLY);
         if (m.lender) return m.bank ? notApplicable("Not meaningful for a bank — valued on its book instead.", true) : notApplicable("Not meaningful for lenders.");
         const rows = lastYears(m, 3).filter(h => finite(h.ocfCr) && finite(h.capexCr));
         const mcap = closeMcapCr(m);

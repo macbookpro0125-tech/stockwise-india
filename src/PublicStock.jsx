@@ -203,7 +203,7 @@ export default function PublicStock({ symbol, onAuthed, initial = null }) {
               {s.quarter && (s.quarter.salesCr != null || s.quarter.profitCr != null) && (
                 <div className="ps-score ps-quarter"><span>{s.quarter.label} results · vs a year earlier</span>
                   <div className="ps-q2">
-                    {s.quarter.salesCr != null && <div><em>Sales</em><b>₹{Math.round(s.quarter.salesCr).toLocaleString("en-IN")} cr</b>{move(s.quarter.salesYoY)}</div>}
+                    {s.quarter.salesCr != null && <div><em>{s.salesLabel ?? "Sales"}</em><b>₹{Math.round(s.quarter.salesCr).toLocaleString("en-IN")} cr</b>{move(s.quarter.salesYoY)}</div>}
                     {s.quarter.profitCr != null && <div><em>{s.quarter.profitCr < 0 ? "Loss" : "Profit"}</em><b>₹{Math.round(Math.abs(s.quarter.profitCr)).toLocaleString("en-IN")} cr</b>{s.quarter.profitCr > 0 ? move(s.quarter.profitYoY) : null}</div>}
                   </div>
                 </div>

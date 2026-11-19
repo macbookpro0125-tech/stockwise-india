@@ -164,6 +164,8 @@ export function publicStock(symbol) {
   return {
     spark,
     symbol: r.symbol, name: r.name, sector: r.sector ?? null, industry: r.industry ?? null,
+    // an insurer's top line is its net premium (fetch-nse.js asStandardTags)
+    salesLabel: r.template === "INSURANCE" ? "Net premium" : "Sales",
     close: r.close ?? r.cmp ?? null, closeDate: r.closeDate ?? r.cmpDate ?? null, change1d: r.ret1d ?? null, change1y: r.ret1y ?? null,
     low52w: r.low52w ?? null, high52w: r.high52w ?? null, marketCapCr: r.marketCapCr ?? null,
     pe: r.pe ?? null, pb: r.priceToBook ?? null, roe: r.roe ?? null, roce: r.roce ?? null, debtToEquity: r.debtToEquity ?? null, divYield: r.divYield ?? null,
