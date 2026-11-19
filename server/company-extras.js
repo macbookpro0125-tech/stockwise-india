@@ -51,7 +51,8 @@ const decodeXml = t => t
   .replace(/&#(\d+);/g, (_, c) => String.fromCharCode(Number(c)))
   .replace(/\s+/g, " ")
   .trim();
-const NSE_ARCHIVE = /^https:\/\/nsearchives\.nseindia\.com\//;
+// NSE moved filing attachments to nsearchives.nseindia.in (seen 19 Nov 2026); both are NSE
+const NSE_ARCHIVE = /^https:\/\/nsearchives\.nseindia\.(com|in)\//;
 
 export function brsrProfile(xml) {
   const all = tag => [...xml.matchAll(new RegExp(`<[a-z-]+:${tag}\\b[^>]*>([^<]+)<`, "g"))].map(m => decodeXml(m[1])).filter(Boolean);

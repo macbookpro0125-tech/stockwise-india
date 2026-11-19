@@ -60,7 +60,7 @@ import { startBackups } from "./backup.js";
 import { fetchTechnicals } from "./technicals.js";
 import { shareholdingHistory, companyFilings, companyNews, sectorPeers, companyProfile, insiderTrades } from "./company-extras.js";
 import { stockMoves } from "./moves.js";
-import { marketNews, topNews, newsItem, newsItemFiling, newsForSymbols, watchlistLatest, KINDS as NEWS_KINDS, companiesInNews } from "./market-news.js";
+import { marketNews, topNews, newsItem, newsItemFiling, newsForSymbols, watchlistLatest, KINDS as NEWS_KINDS, companiesInNews, bigOrders } from "./market-news.js";
 import { portfolioVsMarket } from "./portfolio-vs-market.js";
 import { historyBars } from "./price-history.js";
 import { readIndexHistory } from "./index-history.js";
@@ -920,6 +920,12 @@ export function createApp() {
         if (requireAuth(req, res) == null) return;
         const d = url.searchParams.get("date");
         sendJson(res, 200, moversOn(/^\d{4}-\d{2}-\d{2}$/.test(d ?? "") ? d : null, url.searchParams.get("period") ?? "1d"));
+        return;
+      }
+      // the orders companies told NSE they won, with each order's size (market-news.js bigOrders)
+      if (url.pathname === "/api/explore/orders" && req.method === "GET") {
+        if (requireAuth(req, res) == null) return;
+        sendJson(res, 200, await bigOrders());
         return;
       }
       if (url.pathname === "/api/explore/movers" && req.method === "GET") {

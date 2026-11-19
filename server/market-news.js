@@ -14,6 +14,8 @@ import { loadMarketSnapshot } from "./market-data.js";
 import { cached, decodeRss, isJunkHeadline, companyNews } from "./company-extras.js";
 import { ROUTINE, ONLY_THE_RULE, inOwnWords } from "./moves.js";
 import { exploreBoard } from "./explore.js";
+import { readAttachment } from "./filing-summary.js";
+import { orderAmount, lowestBidder } from "./order-amount.js";
 
 const MINUTE = 60_000;
 const DAY = 86_400_000;
@@ -105,7 +107,8 @@ export function announcementsFrom(rows) {
       id: `nse-${r.seq_id}`, type: "filing", kind, time,
       symbol: r.symbol, company: r.sm_name ?? r.symbol,
       title: r.desc, summary,
-      url: /^https:\/\/nsearchives\.nseindia\.com\//.test(r.attchmntFile ?? "") ? r.attchmntFile : null,
+      // NSE moved attachments to nsearchives.nseindia.in (seen 19 Nov 2026)
+      url: /^https:\/\/nsearchives\.nseindia\.(com|in)\//.test(r.attchmntFile ?? "") ? r.attchmntFile : null,
       fileSize: r.fileSize ?? r.attFileSize ?? null,
     });
   }
@@ -615,4 +618,79 @@ async function headlineContext(item, items, bySymbol) {
     others: item.others ?? [],
     related: relatedHeadlines(item, headlines).map(listed),
   };
+}
+
+// ---- Big orders ------------------------------------------------------------
+
+// The orders companies told NSE they won over the last few days, each with
+// its size from the company's own notice (order-amount.js) beside its market
+// value (19 Nov 2026, the owner: "the major contract winners on this day's
+// market"). Each notice is read once; while some are still being read the
+// list says how many. An amount not in the notice is shown as not stated.
+const ORDER_SUBJECT = /bagging|receiving of orders|awarding of order|order win|large order|letter of award/i;
+const orderRead = new Map(); // filing id → { amount, l1 } once read, { failed } if it couldn't be
+let ordersReading = null;
+const ORDER_GAP_MS = 300;
+
+async function readOrderNotices(list) {
+  for (const f of list) {
+    if (orderRead.has(f.id)) continue;
+    // the summary NSE shows sometimes has the amount; else the notice itself
+    let amount = orderAmount(f.summary ?? "");
+    let text = f.summary ?? "";
+    if (!amount && f.url) {
+      try {
+        const a = await readAttachment(f.url);
+        text = a.pages.map(p => p.text).join(" ");
+        amount = orderAmount(text);
+      } catch {
+        orderRead.set(f.id, { failed: true });
+        continue;
+      }
+    }
+    orderRead.set(f.id, { amount, l1: lowestBidder(`${f.summary ?? ""} ${text}`) });
+    await new Promise(r => setTimeout(r, ORDER_GAP_MS));
+  }
+}
+
+export function ordersFrom(filings, read = orderRead) {
+  const items = filings.filter(f => ORDER_SUBJECT.test(f.title)).map(f => {
+    const r = read.get(f.id);
+    const mcap = f.quote?.marketCapCr ?? null;
+    const cr = r?.amount?.cr ?? null;
+    return {
+      id: f.id, symbol: f.symbol, company: f.quote?.name ?? f.company, time: f.time, url: f.url,
+      status: !r ? "reading" : r.failed ? "unread" : r.amount ? "stated" : "none",
+      amountCr: cr,
+      foreign: r?.amount?.currency ? { currency: r.amount.currency, mn: r.amount.mn } : null,
+      lowestBidder: !!r?.l1,
+      marketCapCr: mcap,
+      // the order's size against the company's market value, both in rupees
+      pctOfValue: cr != null && mcap > 0 ? Math.round((cr / mcap) * 1000) / 10 : null,
+      price: f.quote?.price ?? null,
+      change1d: f.quote?.change1d ?? null,
+    };
+  });
+  // a company that filed the same order twice: its first filing
+  const seen = new Set();
+  const unique = items.sort((a, b) => a.time.localeCompare(b.time)).filter(i => {
+    const key = `${i.symbol}|${i.amountCr ?? i.foreign?.mn ?? i.id}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  const rank = i => (i.amountCr != null ? 2e9 + i.amountCr : i.foreign ? 1e9 + i.foreign.mn : 0);
+  return unique.sort((a, b) => rank(b) - rank(a) || b.time.localeCompare(a.time));
+}
+
+export async function bigOrders() {
+  const { filings, asOf, unread } = await feed();
+  const orders = filings.filter(f => ORDER_SUBJECT.test(f.title));
+  const todo = orders.filter(f => !orderRead.has(f.id));
+  if (todo.length && !ordersReading) ordersReading = readOrderNotices(todo).finally(() => { ordersReading = null; });
+  // forget notices that have left the window
+  const live = new Set(orders.map(f => f.id));
+  for (const id of orderRead.keys()) if (!live.has(id)) orderRead.delete(id);
+  const items = ordersFrom(filings);
+  return { items, reading: items.filter(i => i.status === "reading").length, asOf, unread: unread.includes("NSE's announcements") };
 }
