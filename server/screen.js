@@ -141,14 +141,32 @@ function buildNow(version) {
 }
 
 const SLICE_MS = 25;
+// The build under way in slices: anything that needs the market before it's
+// done (allMetrics with nothing in hand) finishes this same build rather than
+// starting a second one beside it — two at once is what a 512 MB server
+// can't hold
+let slicing = null; // { version, steps, result }
+function drain(job) {
+  let step;
+  while (!(step = job.steps.next()).done);
+  job.result = install(step.value);
+  return job.result;
+}
 async function buildInSlices(version) {
-  const steps = buildSteps(version);
-  for (;;) {
-    const until = performance.now() + SLICE_MS;
-    let step;
-    while (!(step = steps.next()).done && performance.now() < until);
-    if (step.done) return install(step.value);
-    await new Promise(resolve => setImmediate(resolve));
+  const job = { version, steps: buildSteps(version), result: null };
+  slicing = job;
+  try {
+    for (;;) {
+      // finished meanwhile by allMetrics
+      if (job.result) return job.result;
+      const until = performance.now() + SLICE_MS;
+      let step;
+      while (!(step = job.steps.next()).done && performance.now() < until);
+      if (step.done) return (job.result = install(step.value));
+      await new Promise(resolve => setImmediate(resolve));
+    }
+  } finally {
+    if (slicing === job) slicing = null;
   }
 }
 
@@ -168,7 +186,21 @@ export function allMetrics() {
     rebuild(version).catch(e => console.error(`[market] rebuild failed: ${e.message}`));
     return cache;
   }
+  if (slicing?.version === version && !slicing.result) return drain(slicing);
   return buildNow(version);
+}
+
+// After a new day's data is installed (data-pull.js): the old market is let
+// go before the new one is built, so the server never holds both. Holding
+// both ran the 512 MB server out of memory each evening as the data arrived
+// (18–19 Nov 2026, "JavaScript heap out of memory", a restart each time).
+// Requests wait on marketReady() for the few seconds of the build, as at
+// start-up; it lands near 12:45 AM in India.
+export function rebuildFresh() {
+  const version = marketVersion();
+  if (cache?.version === version) return Promise.resolve(cache);
+  cache = null;
+  return rebuild(version);
 }
 
 // Whether the market in hand is the latest snapshot's (not one being rebuilt

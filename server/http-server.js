@@ -17,7 +17,7 @@ import { signup, startSignup, resendSignupCode, finishSignup, login, logout, ver
 import { firebaseConfig, verifyFirebaseIdToken } from "./firebase-auth.js";
 import { emailConfigured, appUrl, sendEmail, resetEmail, signupCodeEmail } from "./email.js";
 import { listAlerts, createAlert, updateAlert, deleteAlert } from "./user-alerts.js";
-import { screen, matchingSymbols, screenerMeta, getStock, saveStock, rowsFor, isValidSymbol, countFetched, allMetrics, screenRowCount, marketReady, capHistoricalMultiples } from "./screen.js";
+import { screen, matchingSymbols, screenerMeta, getStock, saveStock, rowsFor, isValidSymbol, countFetched, allMetrics, screenRowCount, marketReady, rebuildFresh, capHistoricalMultiples } from "./screen.js";
 import { startDataPull, pullStatus } from "./data-pull.js";
 import { screenMomentum, momentumAllowed, momentumAudience } from "./momentum.js";
 import { criteriaToFilters, METRICS, CATEGORY_METRICS } from "./metric-catalog.js";
@@ -1889,7 +1889,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   }
   // on Render only (data-pull.js pullBaseUrl); the market is rebuilt in
   // slices at once, so the next visitor doesn't wait for it
-  if (mode === "off" || mode === "pull") startDataPull({ onInstalled: () => marketReady().catch(e => console.error(`[market] rebuild failed: ${e.message}`)) });
+  if (mode === "off" || mode === "pull") startDataPull({ onInstalled: () => rebuildFresh().catch(e => console.error(`[market] rebuild failed: ${e.message}`)) });
   if (mode !== "off") {
     startTelegramPolling();
     startAlertChecks();
