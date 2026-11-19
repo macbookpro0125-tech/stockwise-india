@@ -7,7 +7,7 @@ The owner moves to another Claude account every **Sunday** and comes back to thi
 | Job | When (Gulf time) | Backup copy |
 |---|---|---|
 | daily-results-push | every day 09:00 | handoff/daily-results-push-task.md |
-| instagram-evening | every day 18:35 | handoff/instagram-evening-task.md |
+| instagram-evening | OFF since 19 Nov (Instagram disabled by Meta); keep `-2` off too | handoff/instagram-evening-task.md |
 | weekly-score-review | Sundays 10:00 | handoff/weekly-score-review-task.md |
 
 Each job starts by checking a marker file in ~/Projects/files/shorts-v2/runs/ (daily-, evening-, score-review-<date>). If today's file is there, the job stops. So when both accounts hold the jobs, the day's work still happens only once, and no video is posted twice.

@@ -3,6 +3,8 @@ name: instagram-evening
 description: Each evening ~9 pm IST: post the day's second Short to Instagram as a Reel, from the queue the morning run fills
 ---
 
+**19 Nov 2026: STOP. Meta disabled the Instagram account @jocular_insights (final, no review). This task is switched off. If it runs anyway (e.g. the second account's copy `instagram-evening-2`), do nothing and end with one line: "Instagram disabled 19 Nov; nothing posted." Never post to Instagram or Facebook by automation; the owner posts to Facebook by hand.**
+
 Evening Instagram Reel for Jocular Insights (the owner asked on 13 Nov 2026 for two videos a day; Instagram's website can't schedule, so this run posts the second one). Repo ~/Projects/stockwise-india; read handoff/YOUTUBE.md ("Instagram") if anything is unclear.
 
 0. **Run once a day, whichever Claude account runs it** (the owner switches Claude accounts: Sundays to another, back on Thursdays; both may hold this task, on this same Mac). If the file ~/Projects/files/shorts-v2/runs/evening-<today as YYYY-MM-DD> exists, stop at once and say "already done today". If not, create it now (`mkdir -p ~/Projects/files/shorts-v2/runs && date > ~/Projects/files/shorts-v2/runs/evening-YYYY-MM-DD`) before anything else.

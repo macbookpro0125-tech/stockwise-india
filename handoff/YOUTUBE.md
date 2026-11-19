@@ -62,7 +62,9 @@ _Last updated: 13 Nov 2026._
 - Publish only the agreed Short; never change account settings.
 - Views come from: a clear hook in the first second, company names people search, posting on the day of results, one a day.
 
-## Instagram (from 13 Nov 2026)
+## Instagram (from 13 Nov 2026) — DISABLED BY META 19 Nov 2026
+- **Account disabled on 19 Nov 2026 ("doesn't follow our Community Standards", no review possible).** Likely: automated posting through Claude in Chrome on a brand-new account. Do not create a new account (against Meta's terms after a ban). Never post to Instagram or Facebook by automation again; the owner posts to Facebook by hand, once or twice a week at first. Each video folder's post.txt still has a caption the owner can paste.
+
 - Account **@jocular_insights**, signed in on Chrome **Profile 7 "Jocular"** (the owner signs in; Claude never types the password).
 - Profile (13 Nov): silver JI picture; bio "NSE company results and quality scores, explained in 40 seconds. Figures as filed with NSE. Free research: jocularinsights.in · Not investment advice". The website link can only be added in the Instagram phone app (the web form has it disabled) — owner to add https://jocularinsights.in there.
 - **Two a day** (owner, 13 Nov): `daily-results-push` (09:00 GMT+3) makes two voiced Shorts, schedules them on YouTube for 6 pm and 9 pm IST, posts the 6 pm one to Instagram in the morning and queues the other in `~/Projects/files/shorts-v2/instagram-queue.json`; `instagram-evening` (18:35 GMT+3 ≈ 9 pm IST, prompt copy `handoff/instagram-evening-task.md`) posts it. BEL (14 Nov) and Sterlite (15 Nov) are queued as those days' morning Reels.
