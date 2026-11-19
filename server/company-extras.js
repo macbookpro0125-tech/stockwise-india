@@ -419,6 +419,15 @@ export function sectorPeers(symbol, limit = 30, rows = allMetrics().rows) {
       symbol: r.symbol, name: r.name, cmp: r.cmp, pe: r.pe, marketCapCr: r.marketCapCr, divYield: r.divYield,
       profitCr: r.profitCr, revenueCr: r.revenueCr, salesGrowth3y: r.salesGrowth3y, roce: r.roce, roe: r.roe,
       evToEbitda: r.evToEbitda, fcfYieldPct: r.fcfYieldPct,
+      // for the phone's subject-by-subject view (PeersPhone.jsx, 19 Nov 2026)
+      lender: !!r.lender, insurer: !!r.insurer,
+      latestQuarter: r.latestQuarter ?? null,
+      qRevenueCr: r.quarters?.[0]?.revenueCr ?? null, qProfitCr: r.quarters?.[0]?.profitCr ?? null,
+      qSalesGrowthYoY: r.qSalesGrowthYoY ?? null, qProfitGrowthYoY: r.qProfitGrowthYoY ?? null,
+      opm: r.opm ?? null, netMargin: r.netMargin ?? null, profitGrowth3y: r.profitGrowth3y ?? null,
+      equityCr: r.equityCr ?? null, totalDebtCr: r.totalDebtCr ?? null, debtToEquity: r.debtToEquity ?? null,
+      priceToBook: r.priceToBook ?? null, ret1y: r.ret1y ?? null,
+      totalAssetsCr: r.totalAssetsCr ?? null, roa: r.roa ?? null,
       research: researchBrief(r.research),
     })),
   };

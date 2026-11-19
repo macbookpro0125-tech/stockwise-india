@@ -7235,3 +7235,27 @@ tr:hover .row-star, .row-star:focus-visible { opacity: 1; }
 .bo-l1 { grid-column: 2 / -1; font-size: 11.5px; color: var(--yellow); }
 .bo-pdf { flex: none; display: grid; place-items: center; width: 36px; height: 44px; color: var(--t3); }
 .bo-pdf:hover { color: var(--accent); }
+
+/* Peers on a phone (PeersPhone.jsx, 19 Nov 2026): one subject at a time,
+   no sideways swipe */
+.pp-chips { display: flex; gap: 6px; margin: 4px -16px 10px; padding: 0 16px; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
+.pp-chips::-webkit-scrollbar { display: none; }
+.pp-chip { flex: none; height: 34px; padding: 0 13px; border: 1px solid var(--bdr2); border-radius: 999px; background: transparent; color: var(--t2); font: inherit; font-size: 13px; white-space: nowrap; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background 160ms, color 160ms, transform 120ms; }
+.pp-chip:active { transform: scale(0.96); }
+.pp-chip[aria-selected="true"] { background: var(--t1); border-color: var(--t1); color: var(--bg); }
+.pp-head, .pp-row { display: grid; grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(0, 1fr)); column-gap: 8px; align-items: start; }
+.pp-head { padding: 0 8px 6px; border-bottom: 1px solid var(--bdr2); font-size: 11px; line-height: 1.3; color: var(--t3); }
+.pp-head span:not(:first-child), .pp-val { text-align: right; }
+.pp-list { list-style: none; margin: 0; padding: 0; }
+.pp-row { padding: 10px 8px; border-bottom: 1px solid var(--bdr); }
+.pp-row.pp-this { background: color-mix(in srgb, var(--accent) 8%, transparent); border-radius: 10px; border-bottom-color: transparent; }
+.pp-name { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.pp-name b, .pp-name button { font-size: 13.5px; font-weight: 500; line-height: 1.3; color: var(--t1); overflow-wrap: normal; word-break: normal; hyphens: auto; }
+.pp-name button { padding: 0; border: 0; background: none; font-family: inherit; text-align: left; cursor: pointer; }
+.pp-this .pp-name b { color: var(--accent); }
+.pp-name small { font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--accent); }
+.pp-val { min-width: 0; font-size: 13px; color: var(--t1); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pp-bar { display: block; height: 3px; margin: 5px 0 0 auto; border-radius: 2px; background: var(--bdr); overflow: hidden; }
+.pp-bar b { display: block; height: 100%; margin-left: auto; border-radius: 2px; background: var(--accent); }
+.pp-bar b.neg { background: var(--red); }
+.pp-note { margin: 10px 0 0; font-size: 11px; line-height: 1.5; color: var(--t3); }

@@ -4,6 +4,7 @@ import { api } from "./api.js";
 import { QualityBadge } from "./ResearchBadges.jsx";
 import { usePhone } from "./phoneTabs.js";
 import { cardName } from "./stockName.js";
+import PeersPhone from "./PeersPhone.jsx";
 
 // The original's Peers panel (stock-screener PeersPanel.jsx), from this app's
 // own data: companies in the same NSE sector, largest first. The original used
@@ -99,7 +100,7 @@ export default function PeersPanel({ symbol, onAnalyze }) {
 
       {rows.length > 0 && (
         <>
-          {phone && <p className="peers-swipe">Swipe the table sideways for more →</p>}
+          {phone ? <PeersPhone rows={shown} symbol={symbol} onAnalyze={onAnalyze} /> : <>
           <div className="peers-scroll">
             <table className="peers-table">
               <thead>
@@ -127,12 +128,13 @@ export default function PeersPanel({ symbol, onAnalyze }) {
               </tbody>
             </table>
           </div>
+          </>}
           {rows.length > 10 && (
             <button onClick={() => setShowAll(s => !s)} className="btn-ghost" style={{ height: 30, padding: "0 14px", fontSize: 11, borderRadius: 8, marginTop: 10 }}>
               {showAll ? `Show top ${TOP}` : `Show all ${rows.length}`}
             </button>
           )}
-          <p style={{ fontSize: 11, color: "var(--t3)", marginTop: 8 }}>Profit and sales for the latest full year. Amounts in ₹ Crore.</p>
+          {!phone && <p style={{ fontSize: 11, color: "var(--t3)", marginTop: 8 }}>Profit and sales for the latest full year. Amounts in ₹ Crore.</p>}
         </>
       )}
     </div>
