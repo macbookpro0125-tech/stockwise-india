@@ -75,6 +75,16 @@ for (const l of spec.lines) for (const x of [...(l.visual.bars ?? []), ...(l.vis
   if (existsSync(img)) { const type = existsSync(meta) ? JSON.parse(readFileSync(meta, "utf-8")).type ?? "image/png" : "image/png"; logos[x.logo] = `data:${type};base64,${readFileSync(img).toString("base64")}`; }
 }
 
+// real photos on a card (19 Nov 2026, the owner: "real pictures so people relate"):
+// a visual's `photos` names files in ~/Projects/files/stock-photos/, each free to use
+// (Wikimedia Commons or our own; sources.tsv there lists the page and licence)
+const PHOTOS = join(homedir(), "Projects/files/stock-photos"), photos = {};
+for (const l of spec.lines) for (const ph of l.visual.photos ?? []) {
+  const f = join(PHOTOS, ph.file);
+  if (!existsSync(f)) throw new Error(`no photo ${ph.file}`);
+  photos[ph.file] ??= `data:image/jpeg;base64,${readFileSync(f).toString("base64")}`;
+}
+
 // real footage behind the scenes (16 Nov 2026, the owner: "we need real pictures"):
 // a line's `bg` names a clip in ~/Projects/files/stock-footage/bg/ (Pexels, free to
 // use; sources.tsv there lists each clip's page), played darkened and soft behind it
@@ -116,7 +126,7 @@ writeFileSync(join(DIR, `${spec.key}.srt`), lines.map((l, i) => `${i + 1}\n${ts(
 const logo = b64(join(REPO, "scripts/brand/ji-original.png"));
 const live = Object.fromEntries(Object.entries(data).map(([s, d]) => [s, { name: d.name, spark: d.spark, change1y: d.change1y, closeDate: d.closeDate }]));
 const html = readFileSync(join(HERE, "scene.html"), "utf-8")
-  .replace("__DATA__", () => JSON.stringify({ lines: lines.map(({ file, ...l }) => l), LENGTH, source: spec.source, live, shots, logos, clips, theme: spec.theme ?? "teal" }))
+  .replace("__DATA__", () => JSON.stringify({ lines: lines.map(({ file, ...l }) => l), LENGTH, source: spec.source, live, shots, logos, photos, clips, theme: spec.theme ?? "teal" }))
   .replace(/__LOGO__/g, () => logo);
 const tab = await browser.newPage({ viewport: { width: 1080, height: 1920 } });
 await tab.setContent(html, { waitUntil: "load" });

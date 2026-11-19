@@ -78,6 +78,14 @@ Every English Short also gets a Hindi version for the **Jocular Insights Hindi**
 
 The first Hindi spec is ~/Projects/files/shorts-v2/hi-eichermot-q2-fy27/spec.json; use it as the model.
 
+## Say what is shown (19 Nov 2026)
+
+The owner's rule after the Nestlé check: the voice and the screen must never disagree.
+- One card row per spoken sentence. Use `"sync"` on `steps` and `stage`: a word (`["growing","making","price"]`) or a line number inside the card (`[0,1,2]`), so each item appears when it is said, not on a timer.
+- Say the number the screen shows: if the row says +35.9%, say "thirty-five point nine", not "thirty-six".
+- `show` (the caption) is a short form of `say` with the same words, not a different sentence.
+- Do not put a chart up while the voice is on something else; give the first number its own `big` card.
+
 ## Hooks (19 Nov 2026)
 
 The first line decides whether anyone keeps watching. Before building, run `node scripts/shorts-voice/hook-check.mjs <spec.json>`. It needs **STRONG (72+)**: write three or more hooks and keep the best.
