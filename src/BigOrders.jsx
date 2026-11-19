@@ -24,7 +24,8 @@ function when(time) {
   return new Date(time).toLocaleDateString("en-IN", { ...IST, weekday: "short", day: "numeric", month: "short" });
 }
 
-export default function BigOrders({ onOpenStock }) {
+// home: the short form on Home — the five biggest, and a link to the rest on Markets
+export default function BigOrders({ onOpenStock, home = false, onSeeAll }) {
   const [data, setData] = useState(null);
   const [all, setAll] = useState(false);
   useEffect(() => {
@@ -41,15 +42,19 @@ export default function BigOrders({ onOpenStock }) {
 
   if (data && !data.failed && data.items.length === 0 && !data.reading) return null;
   const items = data?.items ?? [];
-  const list = all ? items : items.slice(0, SHOWN);
+  const list = home ? items.slice(0, 5) : all ? items : items.slice(0, SHOWN);
 
   return (
-    <section className="mk-card" aria-labelledby="mk-orders">
-      <div className="mk-card-h">
-        <h2 id="mk-orders">Big orders</h2>
-        {items.length > SHOWN && <button type="button" className="mk-link" onClick={() => setAll(a => !a)}>{all ? "Fewer" : `All ${items.length}`}</button>}
-      </div>
-      <p className="mk-note bo-intro">Orders companies told NSE they won in the last few days, biggest first: the size from the company's own notice, beside its market value.</p>
+    <section className={home ? "td-box bo-home" : "mk-card"} aria-labelledby={home ? "home-orders" : "mk-orders"}>
+      {home ? (
+        <div className="td-head"><h3 id="home-orders">Big orders</h3>{items.length > 0 && <button type="button" onClick={onSeeAll}>All {items.length}</button>}</div>
+      ) : (
+        <div className="mk-card-h">
+          <h2 id="mk-orders">Big orders</h2>
+          {items.length > SHOWN && <button type="button" className="mk-link" onClick={() => setAll(a => !a)}>{all ? "Fewer" : `All ${items.length}`}</button>}
+        </div>
+      )}
+      <p className="mk-note bo-intro">{home ? "Orders and contracts companies told NSE they won in the last few days, biggest first." : "Orders companies told NSE they won in the last few days, biggest first: the size from the company's own notice, beside its market value."}</p>
       {data?.failed && <p className="mk-note">NSE's notices couldn't be read just now.</p>}
       <ul className="bo-list">
         {!data && [0, 1, 2, 3].map(i => <li key={i}><span className="mk-skel mk-row-skel" /></li>)}
@@ -67,13 +72,16 @@ export default function BigOrders({ onOpenStock }) {
               <small className="bo-meta">{o.symbol} · {when(o.time)}</small>
               {o.pctOfValue != null && <small className={`bo-pct${o.pctOfValue >= 10 ? " bo-big" : ""}`}>The order is {o.pctOfValue >= 1 ? Math.round(o.pctOfValue) : o.pctOfValue.toFixed(1)}% of the company's market value</small>}
               {o.lowestBidder && <small className="bo-l1">Named the lowest bidder; not yet awarded</small>}
+              {o.wholeContract === true && <small className="bo-l1">The whole contract after it was enlarged</small>}
+              {typeof o.wholeContract === "number" && <small className="bo-what">Added to a contract now worth {crore(o.wholeContract)}</small>}
+              {!home && (o.what || o.from) && <small className="bo-what">{o.from ? `From ${o.from}` : ""}{o.from && o.what ? ": " : ""}{o.what ?? ""}</small>}
             </button>
             {o.url && <a className="bo-pdf" href={o.url} target="_blank" rel="noopener noreferrer" aria-label={`${cardName(o.company)}'s notice to NSE`}><FileText size={16} aria-hidden="true" /></a>}
           </li>
         ))}
       </ul>
       {data?.reading > 0 && <p className="mk-note">Reading {data.reading} more notice{data.reading === 1 ? "" : "s"} from NSE…</p>}
-      <p className="mk-note">Amounts as each company stated them, some with taxes and some without; a dollar order is shown in dollars. Market value at the last NSE close. A record of filings, not advice.</p>
+      {!home && <p className="mk-note">Amounts as each company stated them, some with taxes and some without; a dollar order is shown in dollars. Market value at the last NSE close. A record of filings, not advice.</p>}
     </section>
   );
 }

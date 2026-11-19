@@ -59,4 +59,29 @@ import { ordersFrom } from "./market-news.js";
   assert.deepEqual(list.slice(3).map(i => i.status), ["none", "unread", "reading"]);
   console.log("ok: the list is biggest first, honest about what wasn't stated");
 }
+{
+  const { orderDetails } = await import("./order-amount.js");
+  const t = "Particulars Details 1. Name of the entity awarding the Order/Contract Ministry of Railways 2. Significant terms and conditions of the Order/ Contract awarded in brief Additional order 3. Whether awarded by domestic Domestic Entity 4. Nature of Order/Contract Manufacture and Supply of BOXNHL and BCNAHSM1Wagons. 5. Whether domestic or international Domestic";
+  assert.deepEqual(orderDetails(t), { from: "Ministry of Railways", what: "Manufacture and Supply of BOXNHL and BCNAHSM1Wagons" });
+  const d = "1. Name of the entity awarding the order(s) /contract(s); Gurugram Metro Rail Limited (GMRL). 2. Significant terms 4. Nature of order(s) / contract(s); “Construction of Depot cum Workshop for Elevated Corridor of Gurgaon Metro.”. 5. Whether domestic or international";
+  assert.deepEqual(orderDetails(d), { from: "Gurugram Metro Rail Limited (GMRL)", what: "Construction of Depot cum Workshop for Elevated Corridor of Gurgaon Metro" });
+  assert.deepEqual(orderDetails("Bagging of orders"), { from: null, what: null });
+  const n = orderDetails("Name of the entity awarding the order(s) : Overseas entity situated in Ghana (the Customer’s name is withheld) (ii) Nature of order(s) Automated Credit Management Solution. (vi) Whether");
+  assert.deepEqual(n, { from: "Overseas entity situated in Ghana (the Customer’s name is withheld)", what: "Automated Credit Management Solution" });
+  assert.equal(orderDetails("1. Name of the entity awarding the order Awarded by -MSEDCL 2. Significant").from, "MSEDCL");
+  assert.equal(orderAmount("7. Broad consideration or size of the order(s)/ contract(s) Cumulative Maximum Award Value of Rs. 28,00,00,000 (excl. all taxes) 8. Whether").wholeContract, undefined, "a contract's ceiling isn't an enlarged contract");
+  assert.equal(orderDetails("4. Nature of order(s) / contract(s) , Significant terms & Conditions of order 5. Whether").what, null);
+  assert.equal(orderDetails("d) Nature of order (s) / contract (s) Normal Course of Business e) Whether").what, null);
+  console.log("ok: who gave the order and what it is for, as the notice says");
+}
+{
+  const t = "an additional quantity of 4,955 BOXNHL wagons valued at INR 1716.90 crores plus GST, has been ordered on the Company on the same price. 7. Broad commercial consideration or size of the Order/Contract The total amended value of the Contract after the above increase in quantity is ₹ 10,404.10 Crores (inclusive of GST). 8. Whether the Promoter";
+  const a = orderAmount(t);
+  assert.equal(a.cr, 1716.9, "the added order, not the whole enlarged contract");
+  assert.equal(a.wholeContract.cr, 10404.1);
+  const only = orderAmount("7. Broad consideration or size of the order: The total amended value of the Contract after the above increase is Rs 500 crore 8. Whether");
+  assert.equal(only.cr, 500);
+  assert.equal(only.wholeContract, true, "said to be the whole contract when the added part isn't stated");
+  console.log("ok: an enlarged contract gives the new order's amount, or says it's the whole contract");
+}
 process.exit(0);

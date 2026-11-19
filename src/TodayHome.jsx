@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import BigOrders from "./BigOrders.jsx";
 import BigNum from "./BigNum.jsx";
 import { createChart, AreaSeries, ColorType } from "lightweight-charts";
 import { ChevronRight, Plus } from "lucide-react";
@@ -489,6 +490,8 @@ export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIn
       </div>
 
       {movers && <HomeMovers movers={movers} onOpenStock={onOpenStock} onOpenTab={onOpenTab} />}
+      {/* the orders companies won (BigOrders.jsx; 19 Nov 2026, the owner: "if any company gets a contract it should be shown") */}
+      <BigOrders home onOpenStock={onOpenStock} onSeeAll={() => onOpenTab?.("markets")} />
 
       {/* the stock lists, in reach from Home (17 Nov 2026: "very hard to find, very deep in Markets") */}
       <section className="td-box td-lists" aria-label="Explore by category">

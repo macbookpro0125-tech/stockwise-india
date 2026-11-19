@@ -15,7 +15,7 @@ import { cached, decodeRss, isJunkHeadline, companyNews } from "./company-extras
 import { ROUTINE, ONLY_THE_RULE, inOwnWords } from "./moves.js";
 import { exploreBoard } from "./explore.js";
 import { readAttachment } from "./filing-summary.js";
-import { orderAmount, lowestBidder } from "./order-amount.js";
+import { orderAmount, lowestBidder, orderDetails } from "./order-amount.js";
 
 const MINUTE = 60_000;
 const DAY = 86_400_000;
@@ -627,28 +627,33 @@ async function headlineContext(item, items, bySymbol) {
 // value (19 Nov 2026, the owner: "the major contract winners on this day's
 // market"). Each notice is read once; while some are still being read the
 // list says how many. An amount not in the notice is shown as not stated.
-const ORDER_SUBJECT = /bagging|receiving of orders|awarding of order|order win|large order|letter of award/i;
+export const ORDER_SUBJECT = /bagging|receiving of orders|awarding of order|order win|large order|letter of award/i;
 const orderRead = new Map(); // filing id → { amount, l1 } once read, { failed } if it couldn't be
 let ordersReading = null;
 const ORDER_GAP_MS = 300;
 
+// One order notice: the summary NSE shows sometimes has the amount; else the
+// notice itself. { amount, l1 }, or { failed } when the notice can't be read.
+export async function readOrderNotice({ summary, url }) {
+  let amount = orderAmount(summary ?? "");
+  let text = summary ?? "";
+  // the notice is read for who and what too, when there's one
+  if (url) {
+    try {
+      const a = await readAttachment(url);
+      text = a.pages.map(p => p.text).join(" ");
+      amount = orderAmount(text) ?? amount;
+    } catch {
+      if (!amount) return { failed: true };
+    }
+  }
+  return { amount, l1: lowestBidder(`${summary ?? ""} ${text}`), ...orderDetails(text) };
+}
+
 async function readOrderNotices(list) {
   for (const f of list) {
     if (orderRead.has(f.id)) continue;
-    // the summary NSE shows sometimes has the amount; else the notice itself
-    let amount = orderAmount(f.summary ?? "");
-    let text = f.summary ?? "";
-    if (!amount && f.url) {
-      try {
-        const a = await readAttachment(f.url);
-        text = a.pages.map(p => p.text).join(" ");
-        amount = orderAmount(text);
-      } catch {
-        orderRead.set(f.id, { failed: true });
-        continue;
-      }
-    }
-    orderRead.set(f.id, { amount, l1: lowestBidder(`${f.summary ?? ""} ${text}`) });
+    orderRead.set(f.id, await readOrderNotice(f));
     await new Promise(r => setTimeout(r, ORDER_GAP_MS));
   }
 }
@@ -664,6 +669,8 @@ export function ordersFrom(filings, read = orderRead) {
       amountCr: cr,
       foreign: r?.amount?.currency ? { currency: r.amount.currency, mn: r.amount.mn } : null,
       lowestBidder: !!r?.l1,
+      from: r?.from ?? null, what: r?.what ?? null,
+      wholeContract: r?.amount?.wholeContract === true ? true : r?.amount?.wholeContract?.cr ?? null,
       marketCapCr: mcap,
       // the order's size against the company's market value, both in rupees
       pctOfValue: cr != null && mcap > 0 ? Math.round((cr / mcap) * 1000) / 10 : null,

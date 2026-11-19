@@ -23,6 +23,7 @@ import IndustryMap from "./IndustryMap.jsx";
 import NewsPanel from "./NewsPanel.jsx";
 import AroundTheWeb from "./AroundTheWeb.jsx";
 import QuarterDownloads from "./QuarterDownloads.jsx";
+import CompanyOrders from "./CompanyOrders.jsx";
 import ValuationExplorer from "./ValuationExplorer.jsx";
 import { ValuedAs, SlowedGrowthNote, BankValuation, CyclicalValuation, NoFairValue, pbAt, CYCLE_TONE } from "./ValuationModel.jsx";
 import PhasePositionPlanner from "./PhasePositionPlanner.jsx";
@@ -1128,6 +1129,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       {m && <ChapterTab id="value" sec="valuation" m={m} fairValue={fairValue} price={price} rows={chapterChecks("value", m.research)}
         detail={[
           { key: "ways", after: "ownHistory", question: "What are the ways to value it?", short: "Fair value, cash flow, DCF, the growth the price assumes", body: <>{valued && <ValuedAs valuation={m.valuation} />}{valued && <SlowedGrowthNote slowed={m.growthSlowed} />}{valueChips}{epsJumpNote}{!valued && overrideCard}{explorer}</> },
+          { key: "orders", question: "Has it won new orders?", short: "Orders it told NSE about in the last year", body: <div id="sec-orders"><CompanyOrders symbol={data.symbol} /></div> },
           { key: "peers", after: "peers", question: "How does it compare with similar companies?", short: "Its peers' prices, P/E and quality", body: <div id="sec-peers"><PeersPanel symbol={data.symbol} onAnalyze={onOpenStock} /></div> },
           { key: "levels", half: true, question: "Where does the price sit for you?", short: "Against your own price levels", body: <div id="sec-levels">{positionCard}{(valued || levels) && <MyLevelsCard symbol={symbol} fv={valued ? fv : null} levels={levels} price={price} priceLabel={priceLabel} fv2Label={fyLabel(m.fyEnd, 2)} />}</div> },
           { key: "figures", half: true, question: "What are all its figures?", short: "Every number from its filings", body: <KeyNumbers data={data} m={m} /> },
@@ -1322,6 +1324,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       {m?.dividendRecord && <div id="sec-dividends" className="ss-section" data-tab="owners">{built("owners") && <PBlock title="What it pays shareholders"><StockDividends m={m} /></PBlock>}</div>}
       <div id="sec-technicals" className="ss-section" data-tab="price">{built("price") && <PBlock title="The trend in the price"><TechnicalPanel ticker={data.symbol} /></PBlock>}</div>
 
+      <div id="sec-orders" className="ss-section" data-tab="business">{built("business") && <PBlock title="Orders won"><CompanyOrders symbol={data.symbol} /></PBlock>}</div>
       <div id="sec-peers" className="ss-section" data-tab="business">{built("business") && <PBlock title="Peers"><PeersPanel symbol={data.symbol} onAnalyze={onOpenStock} /></PBlock>}</div>
       <div id="sec-filings" className="ss-section" data-tour="filings" data-tab="news">{built("news") && <><PBlock title="Earnings calls"><StockEarningsCall symbol={data.symbol} m={m} /></PBlock><PBlock title="News & filings"><NewsPanel symbol={data.symbol} /></PBlock></>}</div>
       <div id="sec-web" className="ss-section" data-tab="news">{built("news") && <PBlock title="Elsewhere on the web"><AroundTheWeb symbol={data.symbol} name={data.name} /></PBlock>}</div>
