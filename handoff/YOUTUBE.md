@@ -24,6 +24,7 @@ _Last updated: 13 Nov 2026._
 | Sterlite Technologies: up 500%+ in a year. One great quarter, or a track record? (voiced) | `u8tVRoLcy_M` | scheduled 15 Nov, same time | its own soft beat |
 | HDFC Bank vs ICICI Bank: same quality, one grew profit almost 4x faster (voiced; an extra beside the older silent one) | `bRxf7SVmszU` | scheduled 14 Nov, 10:00 GMT+3 = 12:30 pm IST | its own soft beat |
 | TCS: Great Company, Falling Stock? (v2 style, Michael voice, new site cards) | `7MsCPGB1pJU` | live 13 Nov (public) | its own soft beat under the voice; no library track |
+| ₹15 of Every ₹100: How Much Nestlé India Keeps (Maggi, KitKat) | 3 Checks (evergreen check; real product photos from Flickr, CC BY-SA 2.0, credited) | `rp2LijgJbNw` | live 19 Nov (public; checks: no issues) | its own soft beat |
 
 13 Nov: the old silent BEL (`E8XZebgjgbc`) and Sterlite (`CdmEs6rpAYs`) Shorts were deleted at the owner's request and replaced by voiced versions made with `scripts/shorts-voice/` (specs in `~/Projects/files/shorts-v2/`). The voiced HDFC vs ICICI was posted as an extra on 14 Nov (owner's word), the old silent one left up.
 
