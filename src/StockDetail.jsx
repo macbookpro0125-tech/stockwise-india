@@ -506,6 +506,22 @@ const tabToUrl = tab => {
   } catch { /* no history API: the tab just isn't remembered */ }
 };
 
+// The tab to come back to: set when the page sends you elsewhere in the app
+// (the market map) and read once when the same company opens again (19 Nov
+// 2026, the owner: back from the map landed on the Summary, not the chart)
+const RETURN_KEY = "sd-return";
+const rememberReturn = (symbol, tab) => {
+  try { sessionStorage.setItem(RETURN_KEY, JSON.stringify({ symbol, tab, at: Date.now() })); } catch { /* private mode: not remembered */ }
+};
+const returnTabFor = symbol => {
+  try {
+    const r = JSON.parse(sessionStorage.getItem(RETURN_KEY) || "null");
+    if (!r) return null;
+    sessionStorage.removeItem(RETURN_KEY);
+    return r.symbol === symbol && Date.now() - r.at < 30 * 60_000 && TAB_IDS.has(r.tab) ? r.tab : null;
+  } catch { return null; }
+};
+
 // What its own history suggests, in plain lines (historySuggests.js)
 // "Next results" and "If its pace continued" sit in the Outlook (StockOutlook.jsx)
 const pastLines = m => historyLines(m).filter(l => l.k !== "Next results" && l.k !== "If its pace continued");
@@ -642,8 +658,17 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
   // history entry rather than adding one (16 Nov 2026: "when I press Back I
   // go to Summary every time"): Back to a company, a refresh or a shared link
   // opens the tab it was on, and the page's own Back still steps by page
-  const [phoneTab, setPhoneTab] = useState(tabFromUrl);
-  useEffect(() => { setPhoneTab(tabFromUrl()); }, [symbol]);
+  const [startTab] = useState(() => returnTabFor(symbol) ?? tabFromUrl());
+  const [phoneTab, setPhoneTab] = useState(startTab);
+  // another company in the same page: its tab from the address (not on the
+  // first showing, which would undo the tab to come back to)
+  const shownSymbol = useRef(symbol);
+  useEffect(() => {
+    if (shownSymbol.current === symbol) return;
+    shownSymbol.current = symbol;
+    const t = tabFromUrl();
+    setPhoneTab(t); setDeskTab(t);
+  }, [symbol]);
   // A phone builds a tab the first time it's shown and keeps it: built all
   // at once, the hidden tabs froze an Android phone for a few tenths of a
   // second as each company opened (measured 26 Oct 2026). A computer shows
@@ -655,10 +680,11 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
   // A computer shows one chapter at a time too, each in full (27 Oct 2026:
   // "I want this to be tabs … we show everything"); the bar down the left
   // picks it
-  const [deskTab, setDeskTab] = useState(tabFromUrl);
-  useEffect(() => { setDeskTab(tabFromUrl()); }, [symbol]);
+  const [deskTab, setDeskTab] = useState(startTab);
   const shownTab = isPhone ? phoneTab : deskTab;
   useEffect(() => { tabToUrl(shownTab); }, [shownTab]);
+  // to the market map, and back to this tab after
+  const openMap = req => { rememberReturn(symbol, shownTab); onOpenMap?.(req); };
   const selectDeskTab = id => {
     setDeskTab(id);
     const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -1111,7 +1137,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       <ChapterTab id="price" sec="performance" m={m} fairValue={fairValue} price={price} rows={chapterChecks("price", m?.research)}
         detail={[
           ...(m ? [{ key: "done", half: true, after: "relativeStrength", question: "How has the price done?", short: "Against the Nifty 50 and its sector index", body: <StockPerformance m={m} /> }] : []),
-          ...(m && (m.industry || m.sector) ? [{ key: "neighbours", half: true, question: "Did it move alone, or with its industry?", short: "Its industry as a map", body: <IndustryMap symbol={data.symbol} industry={m.industry} sector={m.sector} onOpenStock={onOpenStock} onOpenMap={onOpenMap} /> }] : []),
+          ...(m && (m.industry || m.sector) ? [{ key: "neighbours", half: true, question: "Did it move alone, or with its industry?", short: "Its industry as a map", body: <IndustryMap symbol={data.symbol} industry={m.industry} sector={m.sector} onOpenStock={onOpenStock} onOpenMap={onOpenMap && openMap} /> }] : []),
           { key: "technicals", after: "trend", question: "What do the technicals say?", short: "Averages, momentum and levels", body: <div id="sec-technicals"><TechnicalPanel ticker={data.symbol} /></div> },
         ]} />
 
@@ -1217,7 +1243,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         </PBlock>
         <PBlock title="Key figures" className="sd-pb-figs"><StockSnapshot m={m} price={price} dates={data.dataDates} /></PBlock>
       </section>
-      {m && (m.industry || m.sector) && <div className="ss-section" data-tab="price">{built("price") && <PBlock title={`Its industry: ${m.industry ?? m.sector}`} className="sd-pb-industry"><IndustryMap symbol={data.symbol} industry={m.industry} sector={m.sector} onOpenStock={onOpenStock} onOpenMap={onOpenMap} /></PBlock>}</div>}
+      {m && (m.industry || m.sector) && <div className="ss-section" data-tab="price">{built("price") && <PBlock title={`Its industry: ${m.industry ?? m.sector}`} className="sd-pb-industry"><IndustryMap symbol={data.symbol} industry={m.industry} sector={m.sector} onOpenStock={onOpenStock} onOpenMap={onOpenMap && openMap} /></PBlock>}</div>}
       <div id="sec-performance" className="ss-section" data-tab="price">{built("price") && <PBlock title="How the price has done"><StockPerformance m={m} /></PBlock>}</div>
 
       {m && built("business") && <div className="ss-section" data-tab="business"><PBlock title="Where the money comes from"><StockBusiness m={m} symbol={data.symbol} name={data.name} /></PBlock></div>}

@@ -60,7 +60,23 @@ export default function FinanceCompare({ symbol, m }) {
   const [others, setOthers] = useState([]); // [{ symbol, name, m, error }]
   const [typed, setTyped] = useState("");
   // suggestions: the biggest companies in its sector by sales (sector-share.js)
-  const suggested = (m?.sectorShare?.top ?? []).filter(r => r.symbol !== symbol && !others.some(o => o.symbol === r.symbol)).slice(0, 4);
+  // A company among its sector's biggest sellers is offered the others; a
+  // smaller one its peers nearest its own size (19 Nov 2026: small companies
+  // were offered giants, or nothing). null while loading, [] for none.
+  const leader = (m?.sectorShare?.rank ?? Infinity) <= 5;
+  const [near, setNear] = useState(null);
+  useEffect(() => {
+    setNear(null);
+    if (leader) return;
+    let off = false;
+    api.panel(symbol, "peers").then(d => {
+      if (off) return;
+      setNear((d?.nearest ?? []).filter(r => r.symbol !== symbol));
+    }).catch(() => { if (!off) setNear([]); });
+    return () => { off = true; };
+  }, [symbol, leader]);
+  const pool = leader ? m.sectorShare.top : near?.length ? near : m?.sectorShare?.top ?? [];
+  const suggested = pool.filter(r => r.symbol !== symbol && !others.some(o => o.symbol === r.symbol)).slice(0, 4);
   useEffect(() => { setOthers([]); }, [symbol]);
 
   const add = async sym => {
@@ -88,6 +104,9 @@ export default function FinanceCompare({ symbol, m }) {
         {others.length < 3 && suggested.map(r => (
           <button key={r.symbol} type="button" className="fc-sugg" onClick={() => add(r.symbol)}>+ {short(r.name)}</button>
         ))}
+        {others.length < 3 && !leader && near && suggested.length === 0 && (
+          <p className="fc-nosugg">NSE doesn't put {short(m?.name ?? symbol)} in a sector, so there are no ready suggestions. Type any NSE symbol to add it.</p>
+        )}
         {others.length < 3 && (
           <form onSubmit={e => { e.preventDefault(); add(typed); setTyped(""); }} className="fc-form">
             <input value={typed} onChange={e => setTyped(e.target.value)} placeholder="Any NSE symbol, e.g. INFY" aria-label="Add a company by its NSE symbol" />

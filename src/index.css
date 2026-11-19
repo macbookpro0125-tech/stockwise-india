@@ -7266,3 +7266,5 @@ tr:hover .row-star, .row-star:focus-visible { opacity: 1; }
 .chart-tools-row > button[aria-pressed="true"] small, .chart-tools-row > button[aria-expanded="true"] small { color: var(--accent); }
 .chart-page-ranges button.chart-range-short { opacity: 0.4; }
 .chart-short-note { flex-basis: 100%; margin: 6px 0 0; font-size: 11.5px; line-height: 1.45; color: var(--t3); }
+
+.fc-nosugg { flex-basis: 100%; margin: 0 0 6px; font-size: 12px; line-height: 1.5; color: var(--t3); }

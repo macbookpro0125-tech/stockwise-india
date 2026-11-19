@@ -415,6 +415,11 @@ export function sectorPeers(symbol, limit = 30, rows = allMetrics().rows) {
     },
     total: ordered.length,
     topCount,
+    // the six nearest its own size in the whole group, for Compare's
+    // suggestions (a small company's top 30 are all far bigger)
+    nearest: me.marketCapCr > 0
+      ? cohort.filter(r => r.marketCapCr > 0).sort((a, b) => Math.abs(Math.log(a.marketCapCr / me.marketCapCr)) - Math.abs(Math.log(b.marketCapCr / me.marketCapCr))).slice(0, 6).map(r => ({ symbol: r.symbol, name: r.name, marketCapCr: r.marketCapCr }))
+      : [],
     rows: top.map(r => ({
       symbol: r.symbol, name: r.name, cmp: r.cmp, pe: r.pe, marketCapCr: r.marketCapCr, divYield: r.divYield,
       profitCr: r.profitCr, revenueCr: r.revenueCr, salesGrowth3y: r.salesGrowth3y, roce: r.roce, roe: r.roe,

@@ -399,3 +399,9 @@ Owner: "the news is not understandable". Looked at 10 apps (Inshorts' one-line c
 - Level tags (phone) moved to the chart's left edge: on the right they covered the newest candles and hid the day's +19.6% jump.
 - No floating −/+ zoom on the phone page (pinch zooms); volume pane ~14% of the chart; the last price a labelled dotted line; the resting legend shows the price's date (or "today"); a word under each phone toolbar icon (Type, Bars, Indicators, Draw, Views, Table, Levels, Details, Settings, Save).
 - LATER (owner, 19 Nov): older prices from BSE for companies that moved from BSE to NSE — new data source, not started.
+
+## 19 Nov 2026 — owner's list, bugs 1–3
+- Back from the market map now reopens the stock on the tab it was on (StockDetail.jsx: the tab is kept in sessionStorage "sd-return" when the map is opened; read once on the same company's next open; the [symbol] effects no longer reset the tab on first show).
+- Compare suggestions (FinanceCompare.jsx): a sector's top-5 company is offered the other leaders; any smaller one the six companies in its peer group nearest its own market value (server sectorPeers "nearest"). A company NSE doesn't classify is told so ("type any NSE symbol").
+- YouTube thumbnails on the desktop News tab: render fine locally with test videos (Chromium); live CSP doesn't block i.ytimg.com. Need the owner's screenshot/browser to reproduce — not changed.
+- Agreed order for the rest: 4 ticker on home, 5 top movers tabs, 6 "R" results markers on the chart, 7 results filing download; then 8 why sales/profit jumped (company's own words only); then 9 RS rating, 10 trend template/Darvas/breakout/VCP screens, 11 journal; 12 backtesting and 13 Chrome extension later.
