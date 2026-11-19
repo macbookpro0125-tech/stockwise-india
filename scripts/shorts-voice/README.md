@@ -77,3 +77,27 @@ Every English Short also gets a Hindi version for the **Jocular Insights Hindi**
 7. Write `post.txt` (YOUTUBE TITLE / YOUTUBE DESCRIPTION) in everyday Hindi with the same figures. Include a links block and "सिर्फ़ जानकारी के लिए, निवेश सलाह नहीं।"
 
 The first Hindi spec is ~/Projects/files/shorts-v2/hi-eichermot-q2-fy27/spec.json; use it as the model.
+
+## Hooks (19 Nov 2026)
+
+The first line decides whether anyone keeps watching. Before building, run `node scripts/shorts-voice/hook-check.mjs <spec.json>`. It needs **STRONG (72+)**: write three or more hooks and keep the best.
+
+What makes a hook strong:
+- a real figure from the filing in the first sentence ("of every ₹100 you spend, it keeps ₹15")
+- "you" or "your" in the first six words
+- something the viewer would miss ("never", "before", "most people")
+- an open question
+- 9–24 words
+
+Rules (adapted from the MIT-licensed yt-script skill by Jakeschincariol, read and rewritten, not installed):
+1. Confirm the title in the first sentence.
+2. One idea per hook.
+3. A specific number beats a big word.
+4. Show the proof within 20 seconds.
+5. Never open with who we are or ask for a subscribe.
+
+**Ours on top:**
+- No advice words: buy, sell, target, multibagger. The checker fails them outright.
+- No "warning" or "deadline" hooks ("don't buy until…", "this changes next month"). They break the SEBI and evergreen rules.
+
+Example: "Your Maggi. Your KitKat. Who earns from them?" scored 47 (weak: no number, nothing at stake). "Of every hundred rupees you spend on Nestlé India, it keeps about fifteen as profit. Why do most people never check this?" scored 74.
