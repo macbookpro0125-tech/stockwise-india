@@ -432,3 +432,8 @@ Owner: "the news is not understandable". Looked at 10 apps (Inshorts' one-line c
 - Evening job: HISTORY_YEARS 10, HISTORY_BACKFILL_DAYS 260 a run (~5 evenings to fill). Chart: 10Y range (loads everything kept, like All). scripts/backfill-history.mjs defaults to 10 years.
 - Expected: history ~140 → ~280 MB; disk ~245 → ~385 MB; data pack grows ~40–50% (cap 200 MB). Watch the first packs' size and the pull memory.
 - Next (agreed order): 10 years of results (check what NSE holds for FY16–FY18), index history 10 years.
+
+## 20 Nov 2026 — 10 years of results: findings so far (nothing built yet)
+- Now: YEARS = 8 in fetch-nse.js; NSE's machine-readable (XBRL) annual results start FY2018/FY2019 (TCS, HDFCBANK FY19; TITAGARH, DBL FY18), quarterly XBRL from 2018. So most pages already show all the XBRL years NSE has.
+- Older years exist on NSE's old endpoint without XBRL (TCS back to FY2005), each with resultDetailedDataLink, an HTML results table, e.g. https://nsearchives.nseindia.in/archives/financial_results/financial_res_TCS_1020765.html (FY2017, Consolidated, "format":"Old", Ind-AS New). Next step: fetch a few of these pages, check they hold sales/profit/EPS in a readable table, and only then decide whether to parse them (must match the XBRL years where they overlap; never guess).
+- Still to do after that: 10 years of index history (index-history.js).
