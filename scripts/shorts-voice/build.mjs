@@ -69,7 +69,7 @@ function b64(f) { return `data:image/png;base64,${readFileSync(f).toString("base
 // company logos for bars and the hook (16 Nov 2026, "people should be hooked"):
 // the site's own logo files, data/logos/<SYMBOL>.img, as the visuals name them
 const logos = {};
-for (const l of spec.lines) for (const x of [...(l.visual.bars ?? []), ...(l.visual.logos ?? []).map(sym => ({ logo: sym })), ...(l.visual.logo ? [{ logo: l.visual.logo }] : [])]) {
+for (const l of spec.lines) for (const x of [...(l.visual.bars ?? []), ...(l.visual.rows ?? []), ...(l.visual.logos ?? []).map(sym => ({ logo: sym })), ...(l.visual.logo ? [{ logo: l.visual.logo }] : [])]) {
   if (!x.logo || logos[x.logo]) continue;
   const meta = join(REPO, "data/logos", `${x.logo}.json`), img = join(REPO, "data/logos", `${x.logo}.img`);
   if (existsSync(img)) { const type = existsSync(meta) ? JSON.parse(readFileSync(meta, "utf-8")).type ?? "image/png" : "image/png"; logos[x.logo] = `data:${type};base64,${readFileSync(img).toString("base64")}`; }

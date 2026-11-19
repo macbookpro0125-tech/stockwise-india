@@ -61,6 +61,7 @@ body.th-purple{--g1:rgba(160,110,255,.24);--g2:rgba(46,230,196,.10);--base:#0a06
 .pill.red{background:rgba(255,93,108,.12)}.pills.many .pill{font-size:52px;padding:18px 40px;margin:8px}.pill.gold{background:rgba(226,191,114,.12)}
 .rank{width:100%}.rk{display:grid;grid-template-columns:56px 1fr auto;align-items:center;gap:6px 16px;margin:6px 0;opacity:0}
 .rk .n{font-size:38px;font-weight:800;color:var(--ink2);text-align:right}.rk .nm{font-size:40px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:560px}
+.rk .nmw{display:flex;align-items:center;gap:18px;min-width:0}.rk .nmw .lg{width:64px;height:64px;flex:none}
 .rk .sb{font-size:24px;color:var(--ink2);font-weight:600}.rk .v{font-size:48px;font-weight:900;font-variant-numeric:tabular-nums}
 .rk .bar{grid-column:2/4;height:12px;border-radius:6px;background:rgba(255,255,255,.07);overflow:hidden}.rk .bar b{display:block;height:100%;width:0;border-radius:6px}
 .heat{position:relative;width:890px;height:680px}.hc{position:absolute;border:3px solid #05070f;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;opacity:0;color:#fff;text-align:center;line-height:1.05}
@@ -161,7 +162,7 @@ function build(g, n) {
     el.innerHTML = `<div class="hook">${(v.logos ?? []).length ? `<div class="hl">${v.logos.map(s => logos[s] ? `<img src="${logos[s]}" alt="">` : "").join("")}</div>` : ""}<div class="hq">${v.text.replace(/\*(.+?)\*/g, '<span class="teal">$1</span>').replace(/~(.+?)~/g, '<span class="red">$1</span>')}</div>${v.sub ? `<div class="hs">${v.sub}</div>` : ""}</div>`;
   } else if (v.type === "rank") {
     const max = Math.max(...v.rows.map(r => Math.abs(r.value))) || 1;
-    el.innerHTML = `<div class="rank">${v.rows.map((r, i) => `<div class="rk"><div class="n">${r.n ?? i + 1}</div><div><div class="nm">${r.label}</div>${r.sub ? `<div class="sb">${r.sub}</div>` : ""}</div><div class="v ${r.tone ?? "teal"}">${r.text ?? fmt(r.value, r)}</div><div></div><div class="bar"><b style="background:${TONE[r.tone ?? "teal"]};--w:${(Math.abs(r.value) / max * 100).toFixed(1)}%"></b></div></div>`).join("")}</div>`;
+    el.innerHTML = `<div class="rank">${v.rows.map((r, i) => `<div class="rk"><div class="n">${r.n ?? i + 1}</div><div class="nmw">${r.logo && logos[r.logo] ? `<img class="lg" src="${logos[r.logo]}" alt="">` : ""}<div><div class="nm">${r.label}</div>${r.sub ? `<div class="sb">${r.sub}</div>` : ""}</div></div><div class="v ${r.tone ?? "teal"}">${r.text ?? fmt(r.value, r)}</div><div></div><div class="bar"><b style="background:${TONE[r.tone ?? "teal"]};--w:${(Math.abs(r.value) / max * 100).toFixed(1)}%"></b></div></div>`).join("")}</div>`;
   } else if (v.type === "heatmap") {
     // a squarified treemap: each box's area is the company's market value, its colour the day's move
     const W = 890, H = 680, cells = [...v.cells].sort((a, b) => b.size - a.size), total = cells.reduce((t, c) => t + c.size, 0);
@@ -232,7 +233,7 @@ function animate(g, el, u) {
     el.querySelectorAll(".trk b").forEach((x, k) => x.style.width = (Math.abs(v.bars[k].value) / max * 100 * p) + "%");
     el.querySelectorAll(".k span:last-child").forEach((x, k) => x.textContent = fmt(v.bars[k].value * p, v.bars[k]));
   } else if (v.type === "rank") {
-    el.querySelectorAll(".rk").forEach((x, k) => { const p = spring(u, .1 + k * .28, .4); x.style.opacity = p; x.style.transform = `translateX(${((1 - p) * 40).toFixed(1)}px)`; const b = x.querySelector(".bar b"); b.style.width = `calc(${b.style.getPropertyValue("--w")} * ${eio(span(u, .3 + k * .28, 1 + k * .28)).toFixed(3)})`; });
+    el.querySelectorAll(".rk").forEach((x, k) => { const d = v.syncAt?.[k] ?? .1 + k * .28; const p = spring(u, d, .4); x.style.opacity = p; x.style.transform = `translateX(${((1 - p) * 40).toFixed(1)}px)`; const b = x.querySelector(".bar b"); b.style.width = `calc(${b.style.getPropertyValue("--w")} * ${eio(span(u, d + .2, d + .9)).toFixed(3)})`; });
   } else if (v.type === "heatmap") {
     el.querySelectorAll(".hc").forEach((x, k) => { const p = spring(u, .05 + Math.min(k, 40) * .03, .4); x.style.opacity = p; x.style.transform = `scale(${(.85 + .15 * p).toFixed(3)})`; });
   } else if (v.type === "hook") {
