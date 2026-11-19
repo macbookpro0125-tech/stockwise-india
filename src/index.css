@@ -7268,3 +7268,25 @@ tr:hover .row-star, .row-star:focus-visible { opacity: 1; }
 .chart-short-note { flex-basis: 100%; margin: 6px 0 0; font-size: 11.5px; line-height: 1.45; color: var(--t3); }
 
 .fc-nosugg { flex-basis: 100%; margin: 0 0 6px; font-size: 12px; line-height: 1.5; color: var(--t3); }
+
+/* Home: the moving ticker and the movers' tabs (TodayHome.jsx, 19 Nov 2026) */
+.hk { margin: 0 calc(-1 * var(--page-x, 16px)) 14px; overflow: hidden; border-top: 1px solid var(--bdr); border-bottom: 1px solid var(--bdr); background: var(--s1); -webkit-mask-image: linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent); mask-image: linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent); }
+.hk-track { display: flex; width: max-content; animation: strip-scroll var(--hk-dur, 60s) linear infinite; }
+.hk:hover .hk-track, .hk:active .hk-track, .hk:focus-within .hk-track { animation-play-state: paused; }
+.hk-run { display: flex; }
+.hk-item { display: inline-flex; align-items: baseline; gap: 6px; height: 40px; padding: 0 14px; border: 0; border-right: 1px solid var(--bdr); background: none; color: var(--t1); font: inherit; font-size: 13px; white-space: nowrap; cursor: pointer; -webkit-tap-highlight-color: transparent; align-items: center; }
+.hk-name { color: var(--t2); }
+.hk-item b { font-weight: 500; font-variant-numeric: tabular-nums; }
+.hk-item i { font-style: normal; font-size: 12px; font-variant-numeric: tabular-nums; }
+@media (min-width: 641px) { .hk { display: none; } }
+@media (prefers-reduced-motion: reduce) { .hk-track { animation: none; } .hk { overflow-x: auto; -webkit-mask-image: none; mask-image: none; } }
+html.is-scrolling .hk-track { animation-play-state: paused; }
+.td-mv { margin-bottom: 16px; }
+.td-mv-tabs { display: flex; gap: 6px; margin: 2px 0 8px; padding: 0 16px 2px; scroll-padding: 0 16px; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
+.td-mv-tabs::-webkit-scrollbar { display: none; }
+.td-mv-tabs button { flex: none; height: 32px; padding: 0 12px; border: 1px solid var(--bdr2); border-radius: 999px; background: transparent; color: var(--t2); font: inherit; font-size: 12.5px; white-space: nowrap; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background 160ms, color 160ms, transform 120ms; }
+.td-mv-tabs button:active { transform: scale(0.96); }
+.td-mv-tabs button[aria-selected="true"] { background: var(--t1); border-color: var(--t1); color: var(--bg); }
+.td-mv-note { font-size: 12px; color: var(--t2); text-align: right; white-space: nowrap; }
+.td-mv .td-row { grid-template-columns: minmax(0, 1fr) auto minmax(64px, auto); }
+.td-mv-foot { margin: 0; padding: 10px 16px 14px; border-top: 1px solid var(--bdr); font-size: 11.5px; line-height: 1.45; color: var(--t3); }

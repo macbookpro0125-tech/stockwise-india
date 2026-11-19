@@ -221,7 +221,30 @@ export function topMovers(period = "1d", n = 10) {
     asOf: loadMarketSnapshot()?.pricesDate ?? null, period, floorCr: MOVER_FLOOR_CR,
     gainers: sorted.filter(r => r[key] > 0).slice(0, n).map(row),
     losers: sorted.filter(r => r[key] < 0).reverse().slice(0, n).map(row),
+    ...(period === "1d" ? dayLists(rows, row, n) : {}),
   };
+}
+
+// The day's other lists for Home's movers (19 Nov 2026, the owner: "most
+// active, 52 week high, low and so on"): most traded by value, closes at or
+// within 2% of a 52-week high or low, and trading at twice the month's usual
+// volume or more. The same companies (₹1,000 crore and up) as the movers.
+export function dayLists(rows, row, n = 10) {
+  const valueCr = r => (r.volume1d > 0 && r.cmp > 0 ? (r.volume1d * r.cmp) / 1e7 : null);
+  const volX = r => (r.volume1d > 0 && r.avgVolume1m > 0 ? r.volume1d / r.avgVolume1m : null);
+  const with_ = (r, extra) => ({ ...row(r), ...extra });
+  const active = rows.filter(r => valueCr(r) != null).sort((a, b) => valueCr(b) - valueCr(a)).slice(0, n)
+    .map(r => with_(r, { valueCr: Math.round(valueCr(r) * 10) / 10 }));
+  const highs = rows.filter(r => r.high52w > 0 && r.cmp >= r.high52w * 0.98)
+    .sort((a, b) => b.cmp / b.high52w - a.cmp / a.high52w || (b.marketCapCr ?? 0) - (a.marketCapCr ?? 0)).slice(0, n)
+    .map(r => with_(r, { high52w: r.high52w, offPct: Math.round((1 - r.cmp / r.high52w) * 1000) / 10 }));
+  const lows = rows.filter(r => r.low52w > 0 && r.cmp <= r.low52w * 1.02)
+    .sort((a, b) => a.cmp / a.low52w - b.cmp / b.low52w || (b.marketCapCr ?? 0) - (a.marketCapCr ?? 0)).slice(0, n)
+    .map(r => with_(r, { low52w: r.low52w, offPct: Math.round((r.cmp / r.low52w - 1) * 1000) / 10 }));
+  // a surge on ₹1 crore traded or more, so a few shares don't count
+  const surge = rows.filter(r => volX(r) >= 2 && valueCr(r) >= 1).sort((a, b) => volX(b) - volX(a)).slice(0, n)
+    .map(r => with_(r, { volX: Math.round(volX(r) * 10) / 10 }));
+  return { active, highs, lows, surge };
 }
 
 // The week's results: the companies whose results board meeting NSE's

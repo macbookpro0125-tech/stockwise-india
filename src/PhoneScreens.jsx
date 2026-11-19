@@ -12,6 +12,7 @@ import CompanyLogo from "./CompanyLogo.jsx";
 import { cardName } from "./stockName.js";
 import { AdCard, useAdFeed } from "./ads.jsx";
 import { tick } from "./haptics.js";
+import HomeTicker from "./HomeTicker.jsx";
 // the computer home's Market summary, here too (4 Nov 2026), loaded after the
 // screeners so the phone's first screen isn't held up by its chart
 const MarketSummary = lazyPage(() => import("./TodayHome.jsx").then(m => ({ default: m.MarketSummary })));
@@ -252,6 +253,7 @@ export default function PhoneScreens({ onSelect, onNewScreen, continueCard = nul
 
   return (
     <div className="ps">
+      <HomeTicker onOpenIndex={onOpenIndex} onOpenStock={onOpenStock} />
       <h2 className="phone-title">Screeners</h2>
       <p className="ps-meta">{list.length ? `${list.length} screeners` : " "}{pricesDate ? ` · NSE close, ${dateOf(pricesDate)}` : ""}</p>
       {continueCard}

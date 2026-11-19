@@ -374,6 +374,49 @@ const HOME_LISTS = [
   ["large-cap-stocks", "Large caps", Building2], ["small-cap-stocks", "Small caps", Sprout],
   ["defence-stocks", "Defence", Shield], ["52-week-high-stocks", "52-week highs", TrendingUp],
 ];
+// The day's movers in one card with tabs (19 Nov 2026, the owner: "top mover
+// should have losers and other options there: most active, 52 week high, low
+// and so on"). Companies worth ₹1,000 crore or more (server/explore.js).
+const MOVER_TABS = [
+  ["gainers", "Gainers", r => <span style={{ color: tone(r.change) }}>{pct(r.change)}</span>],
+  ["losers", "Losers", r => <span style={{ color: tone(r.change) }}>{pct(r.change)}</span>],
+  ["active", "Most active", r => <span className="td-mv-note">₹{Math.round(r.valueCr).toLocaleString("en-IN")} cr traded</span>],
+  ["highs", "52-week high", r => <span className="td-mv-note">{r.offPct > 0 ? `${r.offPct.toFixed(1)}% below` : "At its high"}</span>],
+  ["lows", "52-week low", r => <span className="td-mv-note">{r.offPct > 0 ? `${r.offPct.toFixed(1)}% above` : "At its low"}</span>],
+  ["surge", "Volume surge", r => <span className="td-mv-note">{r.volX.toFixed(1)}× usual</span>],
+];
+const MOVER_NOTE = {
+  active: "The most shares traded by value on the day.",
+  highs: "Closed at, or within 2% of, the highest price of the last 52 weeks.",
+  lows: "Closed at, or within 2% of, the lowest price of the last 52 weeks.",
+  surge: "Traded at least twice its usual daily volume (the last month's average), on ₹1 crore or more.",
+};
+function HomeMovers({ movers, onOpenStock, onOpenTab }) {
+  const tabs = MOVER_TABS.filter(([id]) => movers[id]?.length);
+  const [tab, setTab] = useState("gainers");
+  const current = tabs.find(([id]) => id === tab) ?? tabs[0];
+  if (!current) return null;
+  const [id, , right] = current;
+  return (
+    <section className="td-box td-mv" aria-label="Top movers today">
+      <div className="td-head"><h3>Top movers today</h3><button type="button" onClick={() => onOpenTab?.("markets")}>Markets</button></div>
+      <div className="td-mv-tabs" role="tablist" aria-label="Which movers">
+        {tabs.map(([t, label]) => <button key={t} type="button" role="tab" aria-selected={t === id} onClick={e => { setTab(t); e.currentTarget.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" }); }}>{label}</button>)}
+      </div>
+      <div role="tabpanel" aria-label={current[1]}>
+        {movers[id].slice(0, 6).map(r => (
+          <button key={r.symbol} type="button" className="td-row" onClick={() => onOpenStock?.(r.symbol)}>
+            <span className="td-name">{short(r.name)}<small>{r.sector ?? r.symbol}</small></span>
+            <span>₹{num(r.close)}</span>
+            {right(r)}
+          </button>
+        ))}
+      </div>
+      {MOVER_NOTE[id] && <p className="td-mv-foot">{MOVER_NOTE[id]}</p>}
+    </section>
+  );
+}
+
 export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIndex }) {
   // 5 Nov 2026 ("when I click on those cards it's not working"): every card
   // opens something — an index its page in Explore, a results day the calendar
@@ -445,22 +488,7 @@ export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIn
         )}
       </div>
 
-      {(movers?.gainers?.length > 0 || movers?.losers?.length > 0) && (
-        <div className="td-grid td-movers">
-          {[["Top gainers today", movers.gainers], ["Top losers today", movers.losers]].map(([title, list]) => list?.length > 0 && (
-            <section key={title} className="td-box" aria-label={title}>
-              <div className="td-head"><h3>{title}</h3><button type="button" onClick={() => onOpenTab?.("markets")}>Markets</button></div>
-              {list.slice(0, 5).map(r => (
-                <button key={r.symbol} type="button" className="td-row" onClick={() => onOpenStock?.(r.symbol)}>
-                  <span className="td-name">{short(r.name)}<small>{r.sector ?? r.symbol}</small></span>
-                  <span>₹{num(r.close)}</span>
-                  <span style={{ color: tone(r.change) }}>{pct(r.change)}</span>
-                </button>
-              ))}
-            </section>
-          ))}
-        </div>
-      )}
+      {movers && <HomeMovers movers={movers} onOpenStock={onOpenStock} onOpenTab={onOpenTab} />}
 
       {/* the stock lists, in reach from Home (17 Nov 2026: "very hard to find, very deep in Markets") */}
       <section className="td-box td-lists" aria-label="Explore by category">
