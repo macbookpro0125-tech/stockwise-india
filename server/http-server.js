@@ -60,6 +60,7 @@ import { startBackups } from "./backup.js";
 import { fetchTechnicals } from "./technicals.js";
 import { shareholdingHistory, companyFilings, companyNews, sectorPeers, companyProfile, insiderTrades } from "./company-extras.js";
 import { stockMoves } from "./moves.js";
+import { resultFilings } from "./result-filings.js";
 import { marketNews, topNews, newsItem, newsItemFiling, newsForSymbols, watchlistLatest, KINDS as NEWS_KINDS, companiesInNews, bigOrders } from "./market-news.js";
 import { portfolioVsMarket } from "./portfolio-vs-market.js";
 import { historyBars } from "./price-history.js";
@@ -1057,7 +1058,7 @@ export function createApp() {
         return;
       }
 
-      const panelRoute = url.pathname.match(/^\/api\/stock\/([^/]+)\/(prices|technicals|shareholding|profile|filings|news|peers|insiders|videos|moves|moves-summary)$/);
+      const panelRoute = url.pathname.match(/^\/api\/stock\/([^/]+)\/(prices|technicals|shareholding|profile|filings|news|peers|insiders|videos|moves|moves-summary|result-filings)$/);
       if (panelRoute && req.method === "GET") {
         const userId = requireAuth(req, res);
         if (userId == null) return;
@@ -1071,7 +1072,13 @@ export function createApp() {
             case "prices": {
               const range = url.searchParams.get("range") ?? "1y";
               if (!PRICE_RANGES.includes(range)) { sendJson(res, 400, { error: "Unknown range" }); return; }
-              sendJson(res, 200, await fetchDailyBars(symbol, range));
+              // each quarter's results day, for the chart's R marks (19 Nov 2026)
+              const row = allMetrics().rows.find(r => r.symbol === symbol);
+              const results = (row?.quarters ?? []).filter(q => q.filed).map(q => ({
+                filed: String(q.filed).slice(0, 10), end: q.fyEnd ?? null,
+                salesCr: q.revenueCr ?? null, profitCr: q.profitCr ?? null, salesYoY: q.salesYoY ?? null, profitYoY: q.profitYoY ?? null,
+              }));
+              sendJson(res, 200, { ...(await fetchDailyBars(symbol, range)), results });
               return;
             }
             case "technicals": sendJson(res, 200, await fetchTechnicals(symbol)); return;
@@ -1080,6 +1087,8 @@ export function createApp() {
             // filer has (the report above is only the top ~1,000's)
             case "profile": sendJson(res, 200, { ...(await companyProfile(symbol)), filedBusiness: cleanBusiness(getStock(symbol)?.business).slice(0, 8) }); return;
             case "filings": sendJson(res, 200, await companyFilings(symbol)); return;
+            // each quarter's results filing on NSE: its readable version and PDF (QuarterDownloads.jsx)
+            case "result-filings": sendJson(res, 200, { filings: await resultFilings(symbol) }); return;
             case "news": sendJson(res, 200, await companyNews(getStock(symbol)?.name ?? symbol, 15, symbol)); return;
             case "peers": sendJson(res, 200, sectorPeers(symbol)); return;
             case "insiders": sendJson(res, 200, await insiderTrades(symbol)); return;

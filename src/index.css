@@ -7290,3 +7290,24 @@ html.is-scrolling .hk-track { animation-play-state: paused; }
 .td-mv-note { font-size: 12px; color: var(--t2); text-align: right; white-space: nowrap; }
 .td-mv .td-row { grid-template-columns: minmax(0, 1fr) auto minmax(64px, auto); }
 .td-mv-foot { margin: 0; padding: 10px 16px 14px; border-top: 1px solid var(--bdr); font-size: 11.5px; line-height: 1.45; color: var(--t3); }
+
+/* The chart's R (results) marks and card (PriceChartPanel.jsx, 19 Nov 2026) */
+.chart-r-icon { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #8B5CF6; color: #fff; font-size: 13px; font-weight: 600; line-height: 1; }
+.chart-r-icon.sm { width: 16px; height: 16px; font-size: 10px; }
+.chart-res-card { width: min(260px, 78%); }
+.chart-res-card dd span { margin-left: 4px; }
+.chart-res-filed { font-size: 11.5px; color: var(--t3); margin: 1px 0 6px; }
+.chart-res-h { margin: 8px 0 2px; font-size: 11px; color: var(--t3); line-height: 1.4; }
+
+/* Quarterly results: the spreadsheet and NSE's filings (QuarterDownloads.jsx, 19 Nov 2026) */
+.qd { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--bdr); }
+.qd-csv { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px; border: 1px solid var(--bdr2); border-radius: 999px; background: var(--s2); color: var(--t1); font: inherit; font-size: 13px; cursor: pointer; }
+.qd-csv:active { transform: scale(0.97); }
+.qd-h { margin: 14px 0 4px; font-size: 12px; font-weight: 600; color: var(--t2); }
+.qd-list { list-style: none; margin: 0; padding: 0; }
+.qd-list li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--bdr); }
+.qd-q { display: flex; flex-direction: column; gap: 1px; font-size: 13px; color: var(--t1); }
+.qd-q small { font-size: 11.5px; color: var(--t3); }
+.qd-links { display: inline-flex; gap: 14px; flex: none; }
+.qd-links a { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; color: var(--accent); font-size: 13px; text-decoration: none; }
+.qd-note { margin: 8px 0 0; font-size: 11.5px; line-height: 1.45; color: var(--t3); }

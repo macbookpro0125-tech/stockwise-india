@@ -202,6 +202,10 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
   // the click handler is set up once per chart: it reads the switch from here
   const candleCardRef = useRef(false);
   candleCardRef.current = !!prefs.candleCard;
+  // R: each quarter's results day marked on the chart; a tap on one shows
+  // the quarter and how the price moved after (19 Nov 2026)
+  const [resPick, setResPick] = useState(null);
+  const resultsAt = useRef(new Map());
   const [noteText, setNoteText] = useState("");
   const noteRef = useRef("");
   noteRef.current = noteText;
@@ -237,7 +241,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
   drawingRef.current = drawing;
 
   useEffect(() => { writeJson(PREFS_KEY, savedPrefs); }, [savedPrefs]);
-  useEffect(() => { setPicked(null); }, [symbol, prefs.interval, prefs.type]);
+  useEffect(() => { setPicked(null); setResPick(null); }, [symbol, prefs.interval, prefs.type]);
   useEffect(() => {
     if (!pop && !tableOpen) return undefined;
     const away = e => { if (pop && !menuRef.current?.contains(e.target)) setPop(null); };
@@ -628,6 +632,19 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
     }
     setPivotNow(pivotsLatest);
 
+    // R: the results days, each on the first bar on or after its filing
+    resultsAt.current = new Map();
+    if (prefs.results && data?.results?.length && !isBrick) {
+      const marks = [];
+      for (const r of data.results) {
+        const idx = bars.findIndex(b => (b.realDate ?? b.date) >= r.filed);
+        if (idx < 0 || resultsAt.current.has(idx)) continue;
+        resultsAt.current.set(idx, r);
+        marks.push({ time: bars[idx].date, position: "belowBar", shape: "circle", color: "#8B5CF6", text: "R", size: 1 });
+      }
+      if (marks.length) createSeriesMarkers(main, marks.sort((a, b) => String(a.time).localeCompare(String(b.time))));
+    }
+
     if (volPane) {
       const vol = chart.addSeries(HistogramSeries, { priceFormat: volFormat, priceLineVisible: false, lastValueVisible: false }, 1);
       // a short strip: it took a quarter of a phone's chart (19 Nov 2026)
@@ -826,6 +843,18 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
     // A plain tap on a candle: its figures in a card (1 Nov 2026), only when
     // turned on in the top bar
     chart.subscribeClick(param => {
+      // a tap near an R: that quarter's results and the price after
+      if (resultsAt.current.size && param.point && !toolRef.current && !drawingRef.current && !trendRef.current) {
+        // within a fingertip (14px) of an R, however close the days are drawn
+        const ts = chart.timeScale();
+        let best = null, bestGap = 15;
+        for (const idx of resultsAt.current.keys()) {
+          const x = ts.logicalToCoordinate(idx);
+          const gap = x == null ? Infinity : Math.abs(x - param.point.x);
+          if (gap < bestGap) { best = idx; bestGap = gap; }
+        }
+        if (best != null) { setPicked(null); setResPick({ idx: best, r: resultsAt.current.get(best) }); return; }
+      }
       if (!candleCardRef.current) return;
       if (toolRef.current || drawingRef.current || trendRef.current || !param.point || param.logical == null) return;
       const i = Math.round(param.logical);
@@ -911,7 +940,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
       chartRef.current = null; mainRef.current = null; paintRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bars, prefs.type, prefs.ind, prefs.pivotKind, prefs.pivotPast, pivotBasis, levelLines, lines, trends, themeTick, narrow, symbol, height, page, prefs.log, prefs.invert]);
+  }, [bars, data?.results, prefs.results, prefs.type, prefs.ind, prefs.pivotKind, prefs.pivotPast, pivotBasis, levelLines, lines, trends, themeTick, narrow, symbol, height, page, prefs.log, prefs.invert]);
 
   const zoom = by => {
     const ts = chartRef.current?.timeScale(), r = ts?.getVisibleLogicalRange();
@@ -1236,6 +1265,9 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
         <button type="button" onClick={() => setPref({ levels: !prefs.levels })} aria-pressed={prefs.levels} disabled={!levels} title="Fair value, and your own price levels if you've turned them on" style={btn(prefs.levels && !!levels, !levels ? { opacity: 0.5, cursor: "not-allowed" } : {})}>
           <Layers size={14} aria-hidden="true" />Levels
         </button>
+        <button type="button" onClick={() => { setResPick(null); setPref({ results: !prefs.results }); }} aria-pressed={!!prefs.results} title="Mark each quarter's results day; click an R for the quarter and the price after" style={btn(!!prefs.results)}>
+          <span aria-hidden="true" className="chart-r-icon sm">R</span>Results
+        </button>
         <button type="button" onClick={toggleCandleCard} aria-pressed={!!prefs.candleCard} title="Click a candle to see that day's figures in a card" style={btn(!!prefs.candleCard)}>
           <MousePointerClick size={14} aria-hidden="true" />Candle details
         </button>
@@ -1267,6 +1299,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
             <button type="button" onClick={() => togglePop("views")} aria-expanded={pop === "views"} aria-label="Saved views" style={iconBtn(pop === "views", TOOL)}><Eye size={20} aria-hidden="true" /><small aria-hidden="true">Views</small></button>
             <button type="button" onClick={() => setTableOpen(true)} aria-label="Table of prices" style={iconBtn(false, TOOL)}><Table2 size={20} aria-hidden="true" /><small aria-hidden="true">Table</small></button>
             <button type="button" onClick={() => setPref({ levels: !prefs.levels })} aria-pressed={prefs.levels && !!levels} disabled={!levels} aria-label="Fair value and your price levels" style={iconBtn(prefs.levels && !!levels, { ...TOOL, ...(!levels ? { opacity: 0.45, cursor: "not-allowed" } : {}) })}><Layers size={20} aria-hidden="true" /><small aria-hidden="true">Levels</small></button>
+            <button type="button" onClick={() => { setResPick(null); setPref({ results: !prefs.results }); }} aria-pressed={!!prefs.results} aria-label="Results: mark each quarter's results day on the chart" style={iconBtn(!!prefs.results, TOOL)}><span aria-hidden="true" className="chart-r-icon">R</span><small aria-hidden="true">Results</small></button>
             <button type="button" onClick={toggleCandleCard} aria-pressed={!!prefs.candleCard} aria-label="Candle details: tap a candle to see that day's figures" style={iconBtn(!!prefs.candleCard, TOOL)}><MousePointerClick size={20} aria-hidden="true" /><small aria-hidden="true">Details</small></button>
             <button type="button" onClick={() => togglePop("settings")} aria-expanded={pop === "settings"} aria-label="Chart settings" style={iconBtn(pop === "settings" || !!prefs.log || !!prefs.invert, TOOL)}><Settings2 size={20} aria-hidden="true" /><small aria-hidden="true">Settings</small></button>
             <button type="button" onClick={snapshot} aria-label="Save the chart as an image" style={iconBtn(false, TOOL)}><Camera size={20} aria-hidden="true" /><small aria-hidden="true">Save</small></button>
@@ -1434,6 +1467,35 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
             )}
             <svg ref={svgRef} aria-hidden="true" className="chart-draw-layer" />
             {page && narrow && volTop != null && <span className="chart-vol-label" aria-hidden="true" style={{ top: volTop + 6 }}>Volume</span>}
+            {resPick && (() => {
+              const { idx, r } = resPick;
+              const base = bars[idx - 1]?.close;
+              const daily = prefs.interval === "D";
+              const after = k => (daily && base > 0 && bars[idx + k] ? ((bars[idx + k].close - base) / base) * 100 : null);
+              const moves = [["Results day", after(0)], ["1 week", after(4)], ["1 month", after(20)]];
+              const qLabel = r.end ? new Date(`${r.end}T00:00:00Z`).toLocaleDateString("en-IN", { month: "short", year: "numeric", timeZone: "UTC" }) : "";
+              const yo = v => (v == null ? "" : ` ${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(1)}%`);
+              return (
+                <div className="chart-candle-card chart-res-card" role="status">
+                  <button type="button" onClick={() => setResPick(null)} aria-label="Close the results"><X size={14} aria-hidden="true" /></button>
+                  <div className="chart-candle-date">Results: quarter to {qLabel}</div>
+                  <div className="chart-res-filed">Filed {new Date(`${r.filed}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })}</div>
+                  <dl>
+                    {r.salesCr != null && <div><dt>Sales</dt><dd>₹{Math.round(r.salesCr).toLocaleString("en-IN")} cr<span style={{ color: r.salesYoY >= 0 ? "var(--green)" : "var(--red)" }}>{yo(r.salesYoY)}</span></dd></div>}
+                    {r.profitCr != null && <div><dt>Profit</dt><dd>₹{Math.round(r.profitCr).toLocaleString("en-IN")} cr<span style={{ color: r.profitYoY >= 0 ? "var(--green)" : "var(--red)" }}>{yo(r.profitYoY)}</span></dd></div>}
+                  </dl>
+                  {daily ? (
+                    <>
+                      <div className="chart-res-h">The price after, from the close before</div>
+                      <dl>
+                        {moves.map(([k, v]) => <div key={k}><dt>{k}</dt><dd style={{ color: v == null ? "var(--t3)" : v >= 0 ? "var(--green)" : "var(--red)" }}>{v == null ? "not yet" : `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(1)}%`}</dd></div>)}
+                      </dl>
+                    </>
+                  ) : <div className="chart-res-h">Daily bars (1D) show the price after.</div>}
+                  <div className="chart-res-h">Growth is against the same quarter a year earlier.</div>
+                </div>
+              );
+            })()}
             {picked && (() => {
               const b = picked.bar, ch = picked.prev ? b.close - picked.prev.close : null, pct = picked.prev?.close ? (ch / picked.prev.close) * 100 : null;
               return (
