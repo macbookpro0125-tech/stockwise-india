@@ -500,7 +500,8 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
     const priceFormat = { type: "custom", minMove: 0.01, formatter: p => (p < 0 ? "" : narrow && Math.abs(p) >= 100 ? Math.round(p).toLocaleString("en-IN") : narrow ? fmtNum(p).replace(/\.00$/, "") : fmtNum(p)) };
     // volume in short form on a phone ("200M", "45K"), for the same reason
     const volFormat = narrow ? { type: "custom", minMove: 1, formatter: v => (v < 0 ? "" : v >= 1e9 ? `${+(v / 1e9).toFixed(1)}B` : v >= 1e6 ? `${+(v / 1e6).toFixed(0)}M` : v >= 1e3 ? `${+(v / 1e3).toFixed(0)}K` : `${Math.round(v)}`) } : { type: "volume" };
-    const base = { priceLineColor: c.t3, autoscaleInfoProvider, priceFormat };
+    // the last price: a dotted line with its value on the price axis
+    const base = { priceLineColor: c.t3, priceLineVisible: true, priceLineStyle: LineStyle.Dotted, lastValueVisible: true, autoscaleInfoProvider, priceFormat };
 
     let main;
     if (prefs.type === "hollow") {
@@ -603,12 +604,24 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
     let pivotsLatest = null;
     if (prefs.ind.pivots) {
       const pv = pivotPoints(bars, pivotBasis, prefs.pivotKind);
+      // this period's lines only, unless earlier ones are asked for: a line
+      // for every past month made the chart hard to read (19 Nov 2026)
+      const from = prefs.pivotPast ? 0 : Math.max(0, pv.starts.lastIndexOf(true));
+      const lastP = bars.length - 1;
+      // this period's levels as lines right across, each priced on the axis
+      if (!prefs.pivotPast && pv.P[lastP] != null) {
+        for (const L of PIVOT_LEVELS) {
+          if (pv[L][lastP] == null) continue;
+          main.createPriceLine({ price: pv[L][lastP], color: alpha(PIVOT_COLORS[L[0]], 0.8), lineWidth: 1, lineStyle: L === "P" ? LineStyle.Solid : LineStyle.Dashed, axisLabelVisible: true, title: "" });
+        }
+      }
       for (const L of PIVOT_LEVELS) {
+        if (!prefs.pivotPast) break;
         const s = chart.addSeries(LineSeries, {
           color: PIVOT_COLORS[L[0]], lineWidth: L === "P" ? 1.5 : 1, lineStyle: L === "P" ? LineStyle.Solid : LineStyle.Dashed,
           priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false, autoscaleInfoProvider: () => null,
         });
-        s.setData(bars.map((b, i) => (pv[L][i] == null ? { time: b.date } : { time: b.date, value: pv[L][i], ...(pv.starts[i + 1] ? { color: "transparent" } : {}) })));
+        s.setData(bars.map((b, i) => (pv[L][i] == null || i < from ? { time: b.date } : { time: b.date, value: pv[L][i], ...(pv.starts[i + 1] ? { color: "transparent" } : {}) })));
       }
       const lastI = bars.length - 1;
       if (pv.P[lastI] != null) pivotsLatest = Object.fromEntries(PIVOT_LEVELS.map(L => [L, pv[L][lastI]]));
@@ -617,6 +630,8 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
 
     if (volPane) {
       const vol = chart.addSeries(HistogramSeries, { priceFormat: volFormat, priceLineVisible: false, lastValueVisible: false }, 1);
+      // a short strip: it took a quarter of a phone's chart (19 Nov 2026)
+      try { chart.panes()[1]?.setHeight(Math.max(56, Math.round(host.clientHeight * 0.14))); } catch { /* older chart library */ }
       vol.setData(bars.map(b => ({ time: b.date, value: b.volume ?? 0, color: alpha(b.close >= b.open ? c.up : c.down, 0.7) })));
     } else if (withVolume) {
       const vol = chart.addSeries(HistogramSeries, { priceFormat: volFormat, priceScaleId: "", priceLineVisible: false, lastValueVisible: false });
@@ -869,13 +884,14 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
         ];
         if (!items.length || chartRef.current !== chart) { setLevelTags([]); return; }
         const paneH = chart.panes()[0]?.getHeight?.() ?? host.clientHeight;
-        const right = chart.priceScale("right").width() + 4;
         const placed = [];
         for (const t of items.sort((a, b) => b.price - a.price)) {
           const y = main.priceToCoordinate(t.price);
           if (y == null || y < 8 || y > paneH - 8) continue;
           const near = placed.filter(p => Math.abs(p.y - y) < 15).length;
-          placed.push({ ...t, y, right: right + near * 84 });
+          // on the left edge: on the right they sat over the newest candles
+          // and hid a day's jump (19 Nov 2026, Tinna Rubber's +19.6%)
+          placed.push({ ...t, y, left: 6 + near * 84 });
         }
         setLevelTags(placed);
       });
@@ -895,7 +911,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
       chartRef.current = null; mainRef.current = null; paintRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bars, prefs.type, prefs.ind, prefs.pivotKind, pivotBasis, levelLines, lines, trends, themeTick, narrow, symbol, height, page, prefs.log, prefs.invert]);
+  }, [bars, prefs.type, prefs.ind, prefs.pivotKind, prefs.pivotPast, pivotBasis, levelLines, lines, trends, themeTick, narrow, symbol, height, page, prefs.log, prefs.invert]);
 
   const zoom = by => {
     const ts = chartRef.current?.timeScale(), r = ts?.getVisibleLogicalRange();
@@ -952,6 +968,19 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
     // first bar inside it gave a 1Y of −18.4% beside the table's −16.9%
     return bars.slice(Math.max(0, indexFrom(bars, range === "YTD" ? `${lastDate.slice(0, 4)}-01-01` : monthsBack(lastDate, r.months)) - 1));
   }, [priceBars, range]);
+  // A company newer to NSE than the range picked (Tinna Rubber, on NSE from
+  // 17 Apr 2025, read "3Y" over 18 months, 19 Nov 2026): the range says
+  // since when, and ranges it can't fill are greyed
+  const historyFrom = data?.keptFrom ?? data?.bars?.[0]?.date ?? null;
+  const lastDay = data?.bars?.at(-1)?.date ?? null;
+  const shortOf = id => {
+    const r = RANGES.find(x => x.id === id);
+    if (!r?.months || !historyFrom || !lastDay) return false;
+    return Date.parse(`${historyFrom}T00:00:00Z`) - Date.parse(`${monthsBack(lastDay, r.months)}T00:00:00Z`) > 20 * 86_400_000;
+  };
+  const sinceText = historyFrom ? new Date(`${historyFrom}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : null;
+  const rangeWord = range === "All" ? "all" : shortOf(range) && sinceText ? `since ${sinceText}` : range;
+  const shortRanges = RANGES.filter(r => shortOf(r.id)).map(r => r.id);
   const rangeChange = rangeBars && rangeBars.length > 1 ? ((rangeBars.at(-1).close - rangeBars[0].close) / rangeBars[0].close) * 100 : null;
   // A line or an area takes the colour of its move over the range shown, green
   // up and red down (5 Nov 2026: "whenever the stock goes down it should show
@@ -977,6 +1006,9 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
   const group = { display: "inline-flex", gap: 4, flexWrap: narrow ? "nowrap" : "wrap" };
   // A phone's icon row: square-ish buttons, a segmented D/W/M
   // plain icons, no box round each (3 Nov 2026: the boxed row "looks cheap"); the one in use is tinted
+  // a phone's tool: its icon with a word under it (19 Nov 2026: the icons
+  // alone didn't say what they did)
+  const TOOL = { flexDirection: "column", gap: 1, width: 58, height: 50 };
   const iconBtn = (active, extra = {}) => btn(active, { width: 40, height: 36, padding: 0, gap: 2, justifyContent: "center", border: 0, borderRadius: 9, width: 44, height: 40, background: active ? "color-mix(in srgb, var(--accent) 14%, transparent)" : "transparent", color: active ? "var(--accent)" : "var(--t1)", ...extra });
   const seg = active => ({
     minWidth: 30, height: 30, padding: "0 6px", border: 0, borderRadius: 7, fontFamily: "inherit", fontSize: 12, fontWeight: 400, cursor: "pointer",
@@ -1032,6 +1064,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
                   <button key={id} type="button" onClick={() => setPref({ pivotBasis: id })} aria-pressed={pivotBasis === id} aria-label={`From the last ${label}`} style={btn(pivotBasis === id, { height: compact ? 34 : 28, fontSize: 12, justifyContent: "center", ...(compact ? { padding: 0 } : {}) })}>{label}</button>
                 ))}
               </div>
+              <button type="button" onClick={() => setPref({ pivotPast: !prefs.pivotPast })} aria-pressed={!!prefs.pivotPast} style={btn(!!prefs.pivotPast, { height: compact ? 34 : 28, fontSize: 12, justifyContent: "center" })}>{prefs.pivotPast ? "Showing earlier periods too" : "Show earlier periods too"}</button>
             </div>
           )}
         </div>
@@ -1160,7 +1193,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
             // The sign carries the direction too, so it's never colour alone
             <div style={{ fontSize: 13, fontWeight: 500, color: rangeChange >= 0 ? "var(--green)" : "var(--red)", ...MONO }}>
               {rangeChange >= 0 ? "+" : "−"}{Math.abs(rangeChange).toFixed(1)}%
-              <span style={{ fontSize: 11, fontWeight: 500, color: "var(--t3)", marginLeft: 6 }}>{narrow ? (range === "All" ? "all" : range) : `over ${range === "All" ? "all history" : range}`}</span>
+              <span style={{ fontSize: 11, fontWeight: 500, color: "var(--t3)", marginLeft: 6 }}>{narrow ? rangeWord : range === "All" ? "over all history" : shortOf(range) ? rangeWord : `over ${range}`}</span>
             </div>
           )}
         </div>
@@ -1224,19 +1257,19 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
         <div role="toolbar" aria-label="Chart settings" style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
           {/* One row that slides sideways, so every tool has a proper finger's width */}
           <div className="chart-tools-row">
-            <button type="button" onClick={() => togglePop("type")} aria-expanded={pop === "type"} aria-label={`Chart type: ${TYPES.find(t => t.id === prefs.type)?.label}`} style={iconBtn(pop === "type")}><ChartCandlestick size={20} aria-hidden="true" /></button>
-            <button type="button" onClick={() => togglePop("interval")} aria-expanded={pop === "interval"} aria-label={`Bars: ${INTERVALS.find(i => i.id === prefs.interval)?.title}`} style={iconBtn(pop === "interval", { fontSize: 16, fontWeight: 500, width: 44 })}>1{prefs.interval}</button>
-            <button type="button" onClick={() => { setPop(null); setMenuOpen(o => !o); }} aria-expanded={menuOpen} aria-controls={`chart-options-${symbol}${page ? "-page" : ""}`} aria-label={`Indicators${activeInd > 0 ? `, ${activeInd} on` : ""}`} style={iconBtn(menuOpen || activeInd > 0)}>
-              <span aria-hidden="true" style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontStyle: "italic", fontSize: 20, fontWeight: 400 }}>ƒx</span>
-              {activeInd > 0 && <span aria-hidden="true" style={{ fontSize: 11, fontWeight: 500, ...MONO }}>{activeInd}</span>}
+            <button type="button" onClick={() => togglePop("type")} aria-expanded={pop === "type"} aria-label={`Chart type: ${TYPES.find(t => t.id === prefs.type)?.label}`} style={iconBtn(pop === "type", TOOL)}><ChartCandlestick size={20} aria-hidden="true" /><small aria-hidden="true">Type</small></button>
+            <button type="button" onClick={() => togglePop("interval")} aria-expanded={pop === "interval"} aria-label={`Bars: ${INTERVALS.find(i => i.id === prefs.interval)?.title}`} style={iconBtn(pop === "interval", { ...TOOL, fontSize: 16, fontWeight: 500 })}><span style={{ lineHeight: "20px" }}>1{prefs.interval}</span><small aria-hidden="true">Bars</small></button>
+            <button type="button" onClick={() => { setPop(null); setMenuOpen(o => !o); }} aria-expanded={menuOpen} aria-controls={`chart-options-${symbol}${page ? "-page" : ""}`} aria-label={`Indicators${activeInd > 0 ? `, ${activeInd} on` : ""}`} style={iconBtn(menuOpen || activeInd > 0, TOOL)}>
+              <span aria-hidden="true" style={{ lineHeight: "20px" }}><span style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontStyle: "italic", fontSize: 20, fontWeight: 400 }}>ƒx</span>{activeInd > 0 && <span style={{ fontSize: 11, fontWeight: 500, ...MONO }}>{activeInd}</span>}</span>
+              <small aria-hidden="true">Indicators</small>
             </button>
-            <button type="button" onClick={() => togglePop("draw")} aria-expanded={pop === "draw"} aria-label="Draw on the chart" style={iconBtn(pop === "draw" || drawing || !!trendFrom || !!tool)}><Pencil size={20} aria-hidden="true" /></button>
-            <button type="button" onClick={() => togglePop("views")} aria-expanded={pop === "views"} aria-label="Saved views" style={iconBtn(pop === "views")}><Eye size={20} aria-hidden="true" /></button>
-            <button type="button" onClick={() => setTableOpen(true)} aria-label="Table of prices" style={iconBtn(false)}><Table2 size={20} aria-hidden="true" /></button>
-            <button type="button" onClick={() => setPref({ levels: !prefs.levels })} aria-pressed={prefs.levels && !!levels} disabled={!levels} aria-label="Fair value and your price levels" style={iconBtn(prefs.levels && !!levels, !levels ? { opacity: 0.45, cursor: "not-allowed" } : {})}><Layers size={20} aria-hidden="true" /></button>
-            <button type="button" onClick={toggleCandleCard} aria-pressed={!!prefs.candleCard} aria-label="Candle details: tap a candle to see that day's figures" style={iconBtn(!!prefs.candleCard)}><MousePointerClick size={20} aria-hidden="true" /></button>
-            <button type="button" onClick={() => togglePop("settings")} aria-expanded={pop === "settings"} aria-label="Chart settings" style={iconBtn(pop === "settings" || !!prefs.log || !!prefs.invert)}><Settings2 size={20} aria-hidden="true" /></button>
-            <button type="button" onClick={snapshot} aria-label="Save the chart as an image" style={iconBtn(false)}><Camera size={20} aria-hidden="true" /></button>
+            <button type="button" onClick={() => togglePop("draw")} aria-expanded={pop === "draw"} aria-label="Draw on the chart" style={iconBtn(pop === "draw" || drawing || !!trendFrom || !!tool, TOOL)}><Pencil size={20} aria-hidden="true" /><small aria-hidden="true">Draw</small></button>
+            <button type="button" onClick={() => togglePop("views")} aria-expanded={pop === "views"} aria-label="Saved views" style={iconBtn(pop === "views", TOOL)}><Eye size={20} aria-hidden="true" /><small aria-hidden="true">Views</small></button>
+            <button type="button" onClick={() => setTableOpen(true)} aria-label="Table of prices" style={iconBtn(false, TOOL)}><Table2 size={20} aria-hidden="true" /><small aria-hidden="true">Table</small></button>
+            <button type="button" onClick={() => setPref({ levels: !prefs.levels })} aria-pressed={prefs.levels && !!levels} disabled={!levels} aria-label="Fair value and your price levels" style={iconBtn(prefs.levels && !!levels, { ...TOOL, ...(!levels ? { opacity: 0.45, cursor: "not-allowed" } : {}) })}><Layers size={20} aria-hidden="true" /><small aria-hidden="true">Levels</small></button>
+            <button type="button" onClick={toggleCandleCard} aria-pressed={!!prefs.candleCard} aria-label="Candle details: tap a candle to see that day's figures" style={iconBtn(!!prefs.candleCard, TOOL)}><MousePointerClick size={20} aria-hidden="true" /><small aria-hidden="true">Details</small></button>
+            <button type="button" onClick={() => togglePop("settings")} aria-expanded={pop === "settings"} aria-label="Chart settings" style={iconBtn(pop === "settings" || !!prefs.log || !!prefs.invert, TOOL)}><Settings2 size={20} aria-hidden="true" /><small aria-hidden="true">Settings</small></button>
+            <button type="button" onClick={snapshot} aria-label="Save the chart as an image" style={iconBtn(false, TOOL)}><Camera size={20} aria-hidden="true" /><small aria-hidden="true">Save</small></button>
           </div>
           {!page && !index && (
             <a href={chartPageUrl(symbol, name, levels)} onClick={openExpanded} aria-label="Expand the chart to full screen" style={iconBtn(false, { flex: "none", textDecoration: "none" })}><Maximize2 size={16} aria-hidden="true" /></a>
@@ -1345,8 +1378,8 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
                   ) : (
                     <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                       <b style={{ color: "var(--t1)", fontWeight: 500 }}>{symbol}</b> {fmtNum(b.close)} {pct}
-                      {b.partial && <span style={{ color: "var(--yellow)" }}> · today</span>}
-                      {rangeChange != null && <span style={{ color: "var(--t3)" }}> · {range === "All" ? "all" : range} <span style={{ color: rangeChange >= 0 ? "var(--green)" : "var(--red)" }}>{rangeChange >= 0 ? "+" : "−"}{Math.abs(rangeChange).toFixed(1)}%</span></span>}
+                      {b.partial ? <span style={{ color: "var(--yellow)" }}> · today</span> : <span style={{ color: "var(--t3)" }}> · {new Date(`${b.realDate ?? b.date}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" })}</span>}
+                      {rangeChange != null && <span style={{ color: "var(--t3)" }}> · {rangeWord} <span style={{ color: rangeChange >= 0 ? "var(--green)" : "var(--red)" }}>{rangeChange >= 0 ? "+" : "−"}{Math.abs(rangeChange).toFixed(1)}%</span></span>}
                     </div>
                   );
                 })()}
@@ -1395,17 +1428,11 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
             {levelTags.length > 0 && (
               <div aria-hidden="true" style={{ position: "relative", height: 0, zIndex: 2 }}>
                 {levelTags.map(t => (
-                  <span key={t.key} className="chart-level-tag" style={{ top: t.y, right: t.right, color: t.color, borderColor: t.color }}>{t.text}</span>
+                  <span key={t.key} className="chart-level-tag" style={{ top: t.y, left: t.left, color: t.color, borderColor: t.color }}>{t.text}</span>
                 ))}
               </div>
             )}
             <svg ref={svgRef} aria-hidden="true" className="chart-draw-layer" />
-            {page && narrow && (
-              <div className="chart-zoom" style={volTop != null ? { top: volTop - 50 } : { bottom: 42 }}>
-                <button type="button" onClick={() => zoom(1.4)} aria-label="Zoom out">−</button>
-                <button type="button" onClick={() => zoom(0.7)} aria-label="Zoom in">+</button>
-              </div>
-            )}
             {page && narrow && volTop != null && <span className="chart-vol-label" aria-hidden="true" style={{ top: volTop + 6 }}>Volume</span>}
             {picked && (() => {
               const b = picked.bar, ch = picked.prev ? b.close - picked.prev.close : null, pct = picked.prev?.close ? (ch / picked.prev.close) * 100 : null;
@@ -1440,19 +1467,21 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
 
       {page && narrow ? (
         <div className="chart-page-foot">
-          {rangeChange != null && <span className="chart-page-chg">Chg. <b style={{ color: rangeChange >= 0 ? "var(--green)" : "var(--red)" }}>{rangeChange >= 0 ? "+" : "−"}{Math.abs(rangeChange).toFixed(2)}%</b></span>}
+          {rangeChange != null && <span className="chart-page-chg">{shortOf(range) && historyFrom ? `Since ${new Date(`${historyFrom}T00:00:00Z`).toLocaleDateString("en-IN", { month: "short", year: "2-digit", timeZone: "UTC" })}` : "Chg."} <b style={{ color: rangeChange >= 0 ? "var(--green)" : "var(--red)" }}>{rangeChange >= 0 ? "+" : "−"}{Math.abs(rangeChange).toFixed(2)}%</b></span>}
           <div role="group" aria-label="Date range" className="chart-page-ranges">
-            {RANGES.map(r => <button key={r.id} type="button" onClick={() => pickRange(r.id)} aria-pressed={range === r.id}>{r.id}</button>)}
+            {RANGES.map(r => <button key={r.id} type="button" onClick={() => pickRange(r.id)} aria-pressed={range === r.id} className={shortOf(r.id) ? "chart-range-short" : undefined} title={shortOf(r.id) ? `Prices start on ${sinceText}` : undefined}>{r.id}</button>)}
           </div>
+          {shortRanges.length > 0 && sinceText && (shortOf(range) || range === "All") && <p className="chart-short-note">NSE prices start on {sinceText}, so {shortRanges.join(" and ")} can't be shown in full. All shows everything.</p>}
           <a href="https://www.tradingview.com/" target="_blank" rel="noopener" className="chart-page-credit">Chart by TradingView</a>
         </div>
       ) : (
       <div style={{ display: "flex", gap: 6, marginTop: 10, flexWrap: "wrap", alignItems: "center" }}>
         <div role="group" aria-label="Date range" style={narrow ? { display: "grid", gridTemplateColumns: `repeat(${RANGES.length}, minmax(0, 1fr))`, gap: 4, width: "100%" } : group}>
           {RANGES.map(r => (
-            <button key={r.id} type="button" onClick={() => pickRange(r.id)} aria-pressed={range === r.id} style={btn(range === r.id, narrow ? { minWidth: 0, padding: 0, justifyContent: "center", fontSize: 12 } : { minWidth: 38, justifyContent: "center" })}>{r.id}</button>
+            <button key={r.id} type="button" onClick={() => pickRange(r.id)} aria-pressed={range === r.id} title={shortOf(r.id) ? `Prices start on ${sinceText}` : undefined} style={btn(range === r.id, { ...(narrow ? { minWidth: 0, padding: 0, justifyContent: "center", fontSize: 12 } : { minWidth: 38, justifyContent: "center" }), ...(shortOf(r.id) ? { opacity: 0.45 } : {}) })}>{r.id}</button>
           ))}
         </div>
+        {shortRanges.length > 0 && sinceText && (shortOf(range) || range === "All") && <p className="chart-short-note">NSE prices start on {sinceText}, so {shortRanges.join(" and ")} can't be shown in full. All shows everything.</p>}
         <span style={{ marginLeft: narrow ? 0 : "auto", fontSize: 11, color: "var(--t3)" }}>
           {data?.stale ? `${data.staleReason} · ` : ""}{INTERVALS.find(i => i.id === prefs.interval)?.title} bars · NSE closes{data?.keptFrom ? ` from ${new Date(`${data.keptFrom}T00:00:00Z`).toLocaleDateString("en-IN", { month: "short", year: "numeric", timeZone: "UTC" })}` : ""} · {narrow ? "drag sideways to pan, pinch to zoom, tap a candle for its figures" : "drag to pan, scroll to zoom, click a candle for its figures"}
           {" · "}<a href="https://www.tradingview.com/" target="_blank" rel="noopener" style={{ color: "inherit" }}>Chart by TradingView</a>
