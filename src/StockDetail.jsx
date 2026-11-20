@@ -28,6 +28,7 @@ import ValuationExplorer from "./ValuationExplorer.jsx";
 import { ValuedAs, SlowedGrowthNote, BankValuation, CyclicalValuation, NoFairValue, pbAt, CYCLE_TONE } from "./ValuationModel.jsx";
 import PhasePositionPlanner from "./PhasePositionPlanner.jsx";
 const BacktestPanel = lazy(() => import("./BacktestPanel.jsx"));
+import CompanyBonds from "./CompanyBonds.jsx";
 import ThesisMonitor from "./ThesisMonitor.jsx";
 import StockSide from "./StockSide.jsx";
 import CompanyLogo from "./CompanyLogo.jsx";
@@ -1118,6 +1119,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         detail={[
           { key: "owns", half: true, after: "netDebt", question: "What does it own, and what does it owe?", short: "Its balance sheet, debt and cash", body: <StockHealth m={m} /> },
           { key: "piotroski", half: true, question: "Is it getting healthier?", short: m.piotroski != null ? `Piotroski score ${m.piotroski} of 9` : "Nine checks against last year", body: <PiotroskiCard m={m} /> },
+          { key: "bonds", fold: true, question: "Does it borrow through bonds?", short: "Its bonds and NCDs on NSE, against the government's rate", body: <CompanyBonds symbol={data.symbol} /> },
         ]} />}
 
       <ChapterTab id="owners" sec="holding" m={m} fairValue={fairValue} price={price} rows={chapterChecks("owners", m?.research)} flags={m?.research?.flags ?? []}
@@ -1322,7 +1324,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         {pastLines(m).length > 0 && <PBlock title="What its history suggests"><HistorySuggests m={m} /></PBlock>}
         <PBlock title="The outlook"><StockOutlook symbol={data.symbol} m={m} /></PBlock>
       </>}</div>}
-      {m && <div id="sec-health" className="ss-section" data-tab="safety">{built("safety") && <><PBlock title="What it owns and owes"><StockHealth m={m} scoreLink={false} /></PBlock>{m.piotroskiChecks && <PBlock title={`Piotroski score: ${m.piotroski} of 9`}><PiotroskiCard m={m} /></PBlock>}</>}</div>}
+      {m && <div id="sec-health" className="ss-section" data-tab="safety">{built("safety") && <><PBlock title="What it owns and owes"><StockHealth m={m} scoreLink={false} /></PBlock>{m.piotroskiChecks && <PBlock title={`Piotroski score: ${m.piotroski} of 9`}><PiotroskiCard m={m} /></PBlock>}<PhoneBonds symbol={data.symbol} /></>}</div>}
       <div id="sec-holding" className="ss-section" data-tab="owners">{built("owners") && <><PBlock title="Who owns it"><ShareholdingPanel symbol={data.symbol} /></PBlock><PBlock title="Insider and promoter trades"><InsidersPanel symbol={data.symbol} /></PBlock></>}</div>
       {m?.dividendRecord && <div id="sec-dividends" className="ss-section" data-tab="owners">{built("owners") && <PBlock title="What it pays shareholders"><StockDividends m={m} /></PBlock>}</div>}
       <div id="sec-technicals" className="ss-section" data-tab="price">{built("price") && <PBlock title="The trend in the price"><TechnicalPanel ticker={data.symbol} /></PBlock>}</div>
@@ -1373,4 +1375,12 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       )}
     </div>
   );
+}
+
+// A phone's "Its bonds and NCDs" block on the Debt tab, there only when NSE
+// lists some (CompanyBonds.jsx)
+function PhoneBonds({ symbol }) {
+  const [has, setHas] = useState(null);
+  // the Debt tab is built when it's opened, so this reads at once (eager)
+  return <div hidden={!has}><PBlock title="Its bonds and NCDs"><CompanyBonds symbol={symbol} quiet eager onHas={setHas} /></PBlock></div>;
 }

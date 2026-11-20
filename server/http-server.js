@@ -67,6 +67,7 @@ import { shareholdingHistory, companyFilings, companyNews, sectorPeers, companyP
 import { stockMoves } from "./moves.js";
 import { resultFilings } from "./result-filings.js";
 import { companyOrders } from "./company-orders.js";
+import { companyBonds } from "./company-bonds.js";
 import { marketNews, topNews, newsItem, newsItemFiling, newsForSymbols, watchlistLatest, KINDS as NEWS_KINDS, companiesInNews, bigOrders } from "./market-news.js";
 import { portfolioVsMarket } from "./portfolio-vs-market.js";
 import { historyBars } from "./price-history.js";
@@ -1091,7 +1092,7 @@ export function createApp() {
         return;
       }
 
-      const panelRoute = url.pathname.match(/^\/api\/stock\/([^/]+)\/(prices|technicals|shareholding|profile|filings|news|peers|insiders|videos|moves|moves-summary|result-filings|orders)$/);
+      const panelRoute = url.pathname.match(/^\/api\/stock\/([^/]+)\/(prices|technicals|shareholding|profile|filings|news|peers|insiders|videos|moves|moves-summary|result-filings|orders|bonds)$/);
       if (panelRoute && req.method === "GET") {
         const userId = requireAuth(req, res);
         if (userId == null) return;
@@ -1124,6 +1125,8 @@ export function createApp() {
             case "result-filings": sendJson(res, 200, { filings: await resultFilings(symbol) }); return;
             // the orders it told NSE it won over the last year (company-orders.js)
             case "orders": sendJson(res, 200, await companyOrders(symbol)); return;
+            // its bonds and NCDs traded on NSE (company-bonds.js)
+            case "bonds": sendJson(res, 200, await companyBonds(symbol)); return;
             case "news": sendJson(res, 200, await companyNews(getStock(symbol)?.name ?? symbol, 15, symbol)); return;
             case "peers": sendJson(res, 200, sectorPeers(symbol)); return;
             case "insiders": sendJson(res, 200, await insiderTrades(symbol)); return;

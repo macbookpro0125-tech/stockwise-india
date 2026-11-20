@@ -157,6 +157,12 @@ function worldBank() {
 
 // ---- together -----------------------------------------------------------------
 
+// RBI's yield curve alone, for a bond's comparison (company-bonds.js)
+export async function govCurve() {
+  const r = await rbiRates();
+  return r?.curve ? { ...r.curve, asOn: r.asOn ?? null } : null;
+}
+
 export async function economy() {
   const [rates, flowDays, wb] = await Promise.all([rbiRates().catch(() => null), flows().catch(() => []), worldBank().catch(() => null)]);
   return { rates, flows: flowDays.slice(-30), worldBank: wb };
