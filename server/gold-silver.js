@@ -9,17 +9,15 @@
 //     series' price and RBI issue price (one bond = one gram of gold)
 //   - longer returns from our own daily history of the ETFs (price-history.js)
 // Nothing is estimated that isn't labelled so; the page shows NSE's time.
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
-import { join } from "node:path";
 import { NSE_BASE, fetchJson } from "./fetch-nse.js";
 import { fetchText } from "./upstream.js";
 import { cached } from "./company-extras.js";
 import { historyBars } from "./price-history.js";
 import { loadMarketSnapshot } from "./market-data.js";
-import { MARKET_DIR } from "./paths.js";
+import { readCache, writeCache } from "./cache-dir.js";
 
 const LIST_URL = "https://nsearchives.nseindia.com/content/equities/eq_etfseclist.csv";
-const LAST = join(MARKET_DIR, "gold-silver-last.json");
+const LAST = "gold-silver-last.json";
 const DAY = 86_400_000;
 const num = v => { const n = Number(String(v ?? "").replace(/,/g, "")); return v != null && v !== "" && v !== "-" && Number.isFinite(n) ? n : null; };
 
@@ -152,10 +150,11 @@ export async function goldSilver() {
   return cached("gold-silver", 10 * 60_000, async () => {
     try {
       const d = await fresh();
-      try { mkdirSync(MARKET_DIR, { recursive: true }); writeFileSync(LAST, JSON.stringify(d)); } catch { /* read-only disk: fine */ }
+      writeCache(LAST, d);
       return d;
     } catch (e) {
-      if (existsSync(LAST)) return { ...JSON.parse(readFileSync(LAST, "utf-8")), stale: true };
+      const last = readCache(LAST);
+      if (last) return { ...last, stale: true };
       throw e;
     }
   });

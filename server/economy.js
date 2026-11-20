@@ -10,17 +10,14 @@
 //     commercially too, with credit): growth, inflation, jobs, trade, reserves
 // MoSPI's monthly figures (CPI, IIP, quarterly GDP) aren't here: its API
 // couldn't be reached when this was built.
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
-import { join } from "node:path";
 import { NSE_BASE, fetchJson } from "./fetch-nse.js";
 import { fetchText } from "./upstream.js";
 import { cached } from "./company-extras.js";
-import { MARKET_DIR } from "./paths.js";
+import { readCache, writeCache } from "./cache-dir.js";
 
 const UA = "Mozilla/5.0 (compatible; JocularInsights/1.0)";
-const keep = name => join(MARKET_DIR, name);
-const readJson = (file, fallback) => { try { return existsSync(file) ? JSON.parse(readFileSync(file, "utf-8")) : fallback; } catch { return fallback; } };
-const writeJson = (file, data) => { try { mkdirSync(MARKET_DIR, { recursive: true }); writeFileSync(file, JSON.stringify(data)); } catch { /* a read-only disk: the copy in memory serves */ } };
+const keep = name => name;
+const readJson = readCache, writeJson = writeCache;
 const pct = s => { const n = Number(String(s).replace(/[%\s]/g, "")); return Number.isFinite(n) ? n : null; };
 
 // ---- RBI's current rates -------------------------------------------------------

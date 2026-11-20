@@ -8,6 +8,11 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 export const DATA_DIR = process.env.DATA_DIR ?? join(ROOT, "data");
 export const MARKET_DIR = join(DATA_DIR, "market");
+// The last good copy of what the server reads live from elsewhere (RBI's
+// rates, the World Bank's years, NSE's ETF prices and FII/DII days), kept
+// apart from market/: that folder is the companies, and a new file in it
+// tells the server the market changed (screen.js marketVersion)
+export const CACHE_DIR = join(DATA_DIR, "cache");
 export const PRICE_DIR = join(DATA_DIR, "prices");
 // Each company's daily prices from NSE's bhavcopies, kept as published (price-history.js)
 export const HISTORY_DIR = join(DATA_DIR, "history");
