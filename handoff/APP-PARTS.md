@@ -11,8 +11,8 @@ Status: todo · checking · fixing · done (date).
 | 2 | Front page and joining | Front page (animation stays), sign up, sign in, password reset, the welcome tour | done 21 Nov (2 fixes) |
 | 3 | Home | Phone cards, favourites, market summary, big orders card, gold card, watchlist card, "needs a look" | done 21 Nov (2 fixes) |
 | 4 | Screeners | Ready-made screens, a screen's page, Screen builder, saved strategies, strategy performance | done 21 Nov (2 fixes; 1 question) |
-| 5 | Company page | Overview, Business, Finance, Debt, Shareholders, Valuation, Chart, News; results and financials pages | todo |
-| 6 | Markets | Today, Moves, Sectors, Results days, Scans, Economy, Big orders by day, index pages, Market map | todo |
+| 5 | Company page | Overview, Business, Finance, Debt, Shareholders, Valuation, Chart, News; results and financials pages | done 21 Nov (one-off P/E marked) |
+| 6 | Markets | Today, Moves, Sectors, Results days, Scans, Economy, Big orders by day, index pages, Market map | done 21 Nov (1 fix) |
 | 7 | Gold, silver and bonds | Gold price by carat, gold chart, ETFs, Sovereign Gold Bonds, company bonds | todo |
 | 8 | News | Explore, announcements, a news item, company news | todo |
 | 9 | Your things | Watchlist and lists, Portfolio, Trade journal, Backtest, Desk | todo |
