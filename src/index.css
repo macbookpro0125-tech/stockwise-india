@@ -7549,3 +7549,14 @@ html.is-scrolling .hk-track { animation-play-state: paused; }
 .bt-trades th:nth-child(n+3), .bt-trades td:nth-child(n+3) { text-align: right; }
 .bt-note { margin: 10px 0 0; font-size: 11px; line-height: 1.5; color: var(--t3); }
 .bt-controls label:first-child { grid-column: 1 / -1; }
+
+/* How a pattern has done before (ChartScans.jsx PastRecord) */
+.cs-past { margin: 0 0 12px; padding: 12px; border-radius: 10px; background: var(--s3); }
+.cs-past-h { font-size: 13px; font-weight: 500; color: var(--t1); margin-bottom: 8px; }
+.cs-past-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.cs-past-row > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cs-past-row small { font-size: 11px; color: var(--t3); }
+.cs-past-row b { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.cs-past-row b.up { color: var(--green); } .cs-past-row b.down { color: var(--red); }
+.cs-past-row span { font-size: 11px; line-height: 1.4; color: var(--t2); }
+.cs-past-note { margin: 8px 0 0; font-size: 11px; line-height: 1.5; color: var(--t3); }

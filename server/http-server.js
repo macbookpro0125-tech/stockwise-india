@@ -26,6 +26,7 @@ import { listHoldings, addHolding, addHoldings, updateHolding, removeHolding } f
 import { listTrades, addTrade, updateTrade, removeTrade } from "./journal.js";
 import { goldSilver, goldSilverChart } from "./gold-silver.js";
 import { economy } from "./economy.js";
+import { loadPatternRecord } from "./pattern-record.js";
 import { goldSilverHtml } from "./seo-gold.js";
 import { resolveImportRows, MAX_IMPORT_ROWS } from "./portfolio-import.js";
 import { getThesis, saveThesis } from "./user-thesis.js";
@@ -942,6 +943,12 @@ export function createApp() {
       if (url.pathname === "/api/explore/economy" && req.method === "GET") {
         if (requireAuth(req, res) == null) return;
         sendJson(res, 200, await economy());
+        return;
+      }
+      // how each pattern has done in the past (pattern-record.js, made by the evening job)
+      if (url.pathname === "/api/explore/pattern-record" && req.method === "GET") {
+        if (requireAuth(req, res) == null) return;
+        sendJson(res, 200, loadPatternRecord() ?? { patterns: null });
         return;
       }
       // chart scans: the companies showing a price pattern today (explore.js chartScan)

@@ -7,6 +7,7 @@ node_modules
 # not source
 data/market/
 data/cache/
+data/pattern-record.json
 data/app.db
 data/test.db
 # Daily copies of app.db (server/backup.js) — accounts, never committed

@@ -31,7 +31,7 @@ const PACK_STATE_PATH = join(DATA_DIR, "data-pack-state.json");
 // cohorts here so the free host's study survives each data update. The
 // snapshot goes last: it's what tells the screen the data changed.
 // score-audit: the nightly score check, made by the evening build (13 Nov 2026).
-const PACK_ENTRIES = ["market", "shareholding", "logos", "history", "score-audit", "performance-snapshots.json", "research-score-cohorts.json", "market-snapshot.json"];
+const PACK_ENTRIES = ["market", "shareholding", "logos", "history", "score-audit", "performance-snapshots.json", "research-score-cohorts.json", "market-snapshot.json", "pattern-record.json"];
 
 // A file moved into place, copied if a move can't cross over
 function moveFile(from, to) {

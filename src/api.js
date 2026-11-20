@@ -133,6 +133,7 @@ export const api = {
   movers: period => request(`/api/explore/movers?period=${period}`),
   bigOrders: () => request("/api/explore/orders"),
   economy: () => request("/api/explore/economy"),
+  patternRecord: () => request("/api/explore/pattern-record"),
   chartScan: id => request(`/api/explore/scans?id=${encodeURIComponent(id ?? "")}`),
   resultsWeek: () => request("/api/explore/results"),
   resultsWatchlist: () => request("/api/explore/results/watchlist"),

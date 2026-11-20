@@ -15,10 +15,39 @@ const pct = v => (v == null ? "—" : `${v >= 0 ? "+" : "−"}${Math.abs(v).toFi
 const keep = (k, v) => { try { localStorage.setItem(k, v); } catch { /* private window */ } };
 const read = k => { try { return localStorage.getItem(k); } catch { return null; } };
 
+// What happened after the pattern before: bought at the next day's open,
+// one and three months on, against the Nifty 50 over the same days
+const yr = iso => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { month: "short", year: "numeric", timeZone: "UTC" });
+function PastRecord({ rec, from, to }) {
+  if (!rec?.count) return null;
+  const h = rec.h?.["3M"], m = rec.h?.["1M"];
+  if (!h || !m) return null;
+  const sg = v => `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(1)}%`;
+  return (
+    <div className="cs-past">
+      <div className="cs-past-h">How it has done: {rec.count.toLocaleString("en-IN")} times, {yr(from)} – {yr(to)}</div>
+      <div className="cs-past-row">
+        {[["1 month later", m], ["3 months later", h]].map(([label, x]) => (
+          <div key={label}>
+            <small>{label}</small>
+            <b className={x.median >= 0 ? "up" : "down"}>{sg(x.median)}</b>
+            <span>typical move · rose {Math.round(x.rose)}% of the time</span>
+            <span>beat the Nifty 50 {Math.round(x.beatNifty)}% of the time ({sg(x.vsNifty)} on average)</span>
+          </div>
+        ))}
+      </div>
+      <p className="cs-past-note">Each week, the companies that showed it on that week's last close, bought at the next day's open. The typical move is the middle one; averages are pulled up by a few big winners. The past, not a promise.</p>
+    </div>
+  );
+}
+
 export default function ChartScans({ onOpenStock }) {
   const [id, setId] = useState(() => read("mk-scan") || "trendTemplate");
   const [data, setData] = useState(null);
   const [all, setAll] = useState(false);
+  // how each pattern has done before (pattern-record.js), loaded once
+  const [record, setRecord] = useState(null);
+  useEffect(() => { api.patternRecord().then(setRecord).catch(() => {}); }, []);
   const chips = useRef(null);
   // the picked pattern's chip in view, as the row scrolls sideways on a phone
   useEffect(() => { const row = chips.current, on = row?.querySelector("button.on"); if (row && on) row.scrollTo({ left: on.offsetLeft - row.offsetLeft - 16, behavior: "smooth" }); }, [id, data?.scans]);
@@ -49,6 +78,7 @@ export default function ChartScans({ onOpenStock }) {
         </div>
       )}
       {pick && <p className="cs-about"><b>{pick.label}:</b> {pick.about}.</p>}
+      {pick && <PastRecord rec={record?.patterns?.[pick.id]} from={record?.from} to={record?.to} />}
       {!data && <p className="mk-note">Reading every company's chart…</p>}
       {shown && shown.length === 0 && <p className="mk-note">No company shows this pattern today.</p>}
       {shown?.length > 0 && (

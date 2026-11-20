@@ -16,6 +16,8 @@ import { appendFileSync } from "node:fs";
 import { startDataJobs, jobStatus } from "../server/data-jobs.js";
 import { backfillHistory } from "../server/history-backfill.js";
 import { backfillOlderResults } from "../server/older-results.js";
+import { patternRecord, savePatternRecord } from "../server/pattern-record.js";
+import { historyBars } from "../server/price-history.js";
 import { buildMarketSnapshot, loadMarketSnapshot, clearSnapshotCache } from "../server/market-data.js";
 import { fiscalYearEnds } from "../server/build-snapshot.js";
 import { marketReady, marketCurrent } from "../server/screen.js";
@@ -113,6 +115,15 @@ const timer = setInterval(async () => {
       if (market.snapshot?.pricesDate === pricesDate) {
         const audit = saveAudit(market.rows, pricesDate);
         console.log(`Score check ${pricesDate}: ${audit.flagged} of ${audit.companies} companies flagged`);
+        // How each chart pattern has done over the last three years
+        // (pattern-record.js, 20 Nov 2026): too heavy for the live server,
+        // so made here and packed. A failure leaves the last one in place.
+        try {
+          const snap = loadMarketSnapshot();
+          const record = patternRecord(market.rows.map(r => r.symbol), s => historyBars(s, snap), { years: 3 });
+          if (record?.weeks > 20) { savePatternRecord(record); console.log(`Pattern record: ${record.weeks} weeks, ${record.from} to ${record.to}`); }
+          else annotate("warning", "Pattern record skipped", "too little price history");
+        } catch (e) { annotate("warning", "Pattern record failed", e.message); }
       } else annotate("warning", "Score check skipped", "the market wasn't rebuilt for the new prices within 10 minutes");
     } catch (e) { annotate("warning", "Score check failed", e.stack || e.message); }
   }
