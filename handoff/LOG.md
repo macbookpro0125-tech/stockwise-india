@@ -549,3 +549,4 @@ Owner: "the news is not understandable". Looked at 10 apps (Inshorts' one-line c
 
 ## 20 Nov 2026 — Phone Home without the big "Screeners" title
 - Owner: "do we need that word Screeners there?" No: the tab says Discover, and the title and "27 screeners · NSE close" line took a seventh of the screen. PhoneScreens: the heading kept for screen readers only (sr-only); the close's date is already under Market summary; "All N screeners" beside Edit on the Favourites row when there are favourites (none: the hint's "Browse all N" already says it).
+- Owner: "Markets and Markets, why?" — the phone's page title (App.jsx phone-title, the tab's name) and MarketsView's own heading both showed. The app's title is skipped on Markets, whose own has the line under it.

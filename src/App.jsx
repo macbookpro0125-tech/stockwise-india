@@ -503,7 +503,8 @@ export default function App() {
       <Header tab={open ? null : tab} onTab={goTab} account={account} onLogout={logout} onDeleted={accountDeleted} onSearch={openSymbol} theme={theme} onToggleTheme={toggleTheme} onTour={askForTour} onOpenIndex={() => goTab("markets")} />
       <div style={{ height: 16 }} />
       {/* A phone: the page's name in large type, as a native app's (index.css .phone-title) */}
-      {!open && tab !== "discover" && tab !== "workspace" && <h2 className="phone-title phone-only" style={{ padding: "0 var(--page-x)" }}>{TABS.find(t => t.id === tab)?.label === "Performance" ? "Strategy performance" : TABS.find(t => t.id === tab)?.label}</h2>}
+      {/* not on Markets, which has its own title and line under it (20 Nov 2026, the owner: "Markets and Markets, why?") */}
+      {!open && tab !== "discover" && tab !== "workspace" && tab !== "markets" && <h2 className="phone-title phone-only" style={{ padding: "0 var(--page-x)" }}>{TABS.find(t => t.id === tab)?.label === "Performance" ? "Strategy performance" : TABS.find(t => t.id === tab)?.label}</h2>}
       <Suspense fallback={<div role="status" style={{ minHeight: 220, display: "grid", placeItems: "center", color: "var(--t3)", fontSize: 13 }}>Loading this screen…</div>}>
         {open && <StockDetail key={open.at} symbol={open.symbol} account={account} onBack={closeStock} onOpenMap={req => { setMapRequest({ ...req, at: Date.now() }); goTab("map"); }} backTo={TABS.find(t => t.id === tab)?.label} onOpenStock={openSymbol} />}
         {/* Kept mounted (hidden) while a stock is open, so its filters and
