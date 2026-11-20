@@ -7686,3 +7686,10 @@ html.is-scrolling .hk-track { animation-play-state: paused; }
 .hc .bo-name { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
 .hc-dots button { width: 6px; height: 6px; padding: 0; border: 0; border-radius: 3px; background: var(--pg-line, var(--bdr2)); cursor: pointer; transition: width 200ms, background 200ms; }
 .hc-dots button.on { width: 16px; background: var(--accent); }
+
+/* the swipe cards' motion (TodayHome.jsx HomeTabs paint): each card its own
+   height, the rail following the one in view; one card a swipe */
+.hc-rail { align-items: flex-start; transition: none; overflow-y: hidden; }
+.hc { scroll-snap-stop: always; transform-origin: center top; will-change: transform, opacity; }
+.hc-dots button { transition: background 200ms; }
+@media (prefers-reduced-motion: reduce) { .hc { will-change: auto; } }

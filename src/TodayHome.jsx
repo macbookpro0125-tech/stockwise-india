@@ -429,14 +429,61 @@ const HOME_TABS = [["movers", "Top movers"], ["indices", "Indices"], ["orders", 
 function HomeTabs({ strip, movers, listCounts, openIndex, onOpenStock, onOpenTab }) {
   const [at, setAt] = useState(() => { try { const i = HOME_TABS.findIndex(([id]) => id === localStorage.getItem("home-tab")); return i < 0 ? 0 : i; } catch { return 0; } });
   const [orders, setOrders] = useState(null);
-  const rail = useRef(null);
-  const step = () => (rail.current?.firstElementChild?.getBoundingClientRect().width ?? 0) + 12;
-  // back to the card last looked at, without a slide
-  useEffect(() => { if (rail.current && at) rail.current.scrollLeft = at * step(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const rail = useRef(null), dots = useRef(null);
+  // a card's width and the gap (offsetWidth: the scaling below doesn't change it)
+  const step = () => (rail.current?.firstElementChild?.offsetWidth ?? 0) + 12;
+  const still = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  // Drawn with the finger, every frame (20 Nov 2026, "improve the card
+  // motion"): the cards either side smaller and dimmer, coming up to full as
+  // they reach the middle; the rail as tall as the card in view, between two
+  // as it moves (no empty space under a short card); the dot stretching
+  // toward the next. Straight onto the page, not through React, so it keeps up.
+  const paint = () => {
+    const r = rail.current, st = step();
+    if (!r || !st) return;
+    const cards = [...r.children], pos = Math.max(0, Math.min(cards.length - 1, r.scrollLeft / st));
+    const i0 = Math.floor(pos), f = pos - i0, i1 = Math.min(i0 + 1, cards.length - 1);
+    const h0 = cards[i0].offsetHeight, h1 = cards[i1].offsetHeight;
+    r.style.height = `${Math.round(h0 + (h1 - h0) * f) + 6}px`;
+    const calm = still();
+    cards.forEach((c, i) => {
+      const d = Math.min(1, Math.abs(i - pos));
+      c.style.transform = calm ? "" : `scale(${(1 - 0.05 * d).toFixed(4)})`;
+      c.style.opacity = calm ? "" : (1 - 0.35 * d).toFixed(3);
+    });
+    [...(dots.current?.children ?? [])].forEach((dot, i) => { dot.style.width = `${6 + 10 * Math.max(0, 1 - Math.abs(i - pos))}px`; });
+  };
+  const frame = useRef(0);
   const onScroll = () => {
+    cancelAnimationFrame(frame.current);
+    frame.current = requestAnimationFrame(paint);
     const i = Math.max(0, Math.min(HOME_TABS.length - 1, Math.round((rail.current?.scrollLeft ?? 0) / (step() || 1))));
     if (i !== at) { setAt(i); tick(); try { localStorage.setItem("home-tab", HOME_TABS[i][0]); } catch { /* private window */ } }
   };
+  // back to the card last looked at, without a slide; drawn again when a
+  // card's contents change height (the moves arriving, another list picked)
+  useEffect(() => {
+    const r = rail.current;
+    if (!r) return undefined;
+    if (at) r.scrollLeft = at * step();
+    paint();
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => paint()) : null;
+    [...r.children].forEach(c => ro?.observe(c));
+    return () => { ro?.disconnect(); cancelAnimationFrame(frame.current); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // the first time, the cards lean left and back once, to show they swipe
+  useEffect(() => {
+    let seen = true;
+    try { seen = localStorage.getItem("home-cards-hinted") === "1"; } catch { /* private window: no hint */ }
+    if (seen || at || still()) return undefined;
+    const t = setTimeout(() => {
+      const r = rail.current;
+      if (!r || r.scrollLeft > 4) return;
+      [...r.children].forEach(c => c.animate?.([{ translate: "0 0" }, { translate: "-44px 0" }, { translate: "0 0" }], { duration: 900, easing: "cubic-bezier(0.3, 0, 0.2, 1)" }));
+      try { localStorage.setItem("home-cards-hinted", "1"); } catch { /* private window */ }
+    }, 1200);
+    return () => clearTimeout(t);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const go = i => rail.current?.scrollTo({ left: i * step(), behavior: "smooth" });
   const card = (id, title, more, body, right = null) => (
     <section key={id} className="hc" aria-label={title}>
@@ -472,7 +519,7 @@ function HomeTabs({ strip, movers, listCounts, openIndex, onOpenStock, onOpenTab
             ))}
           </div>)}
       </div>
-      <div className="ps-dots hc-dots" role="tablist" aria-label="Cards">
+      <div className="ps-dots hc-dots" role="tablist" aria-label="Cards" ref={dots}>
         {HOME_TABS.map(([id, label], i) => <button key={id} type="button" role="tab" aria-selected={i === at} aria-label={label} className={i === at ? "on" : ""} onClick={() => go(i)} />)}
       </div>
     </div>
