@@ -404,6 +404,12 @@ async function main() {
   ], watched);
   assert(many.title === "2 updates from your watchlist" && many.body.startsWith("Infosys: Infosys wins a deal") && many.data.tab === "watchlist", "several: one message naming the watched company, opening the Watchlist");
   assert(newsPush([], watched) === null, "nothing new, no message");
+  // a watched company's order, said with its size (news-push.js orderLine)
+  const order = { id: "nse-3", status: "stated", amountCr: 1465, foreign: null, lowestBidder: false, from: "NHAI", what: "8-lane expressway", pctOfValue: 53.2 };
+  const won = newsPush([{ id: "nse-3", type: "filing", symbol: "INFY", company: "INFOSYS LIMITED", title: "Bagging/Receiving of orders/contracts", time: "2026-10-23T12:00:00.000Z" }], watched, new Map([["nse-3", order]]));
+  assert(won.title === "Infosys: announced an order of ₹1,465 crore" && won.body === "53% of its market value, from NHAI. 8-lane expressway", `an order: its size, its weight and who gave it (${won.title} / ${won.body})`);
+  const unsized = newsPush([{ id: "nse-4", type: "filing", symbol: "INFY", company: "INFOSYS LIMITED", title: "Bagging/Receiving of orders/contracts", time: "2026-10-23T12:00:00.000Z" }], watched, new Map([["nse-4", { ...order, id: "nse-4", status: "none", amountCr: null }]]));
+  assert(unsized.body === "Bagging/Receiving of orders/contracts", "no size in the notice: the filing's own title, nothing guessed");
   // the FCM request itself, against a stubbed Google
   const { generateKeyPairSync: pushKeys } = await import("node:crypto");
   const { privateKey: pushKey } = pushKeys("rsa", { modulusLength: 2048 });

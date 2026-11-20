@@ -162,8 +162,21 @@ async function fresh() {
   // estimate for now from the gold ETF's move since RBI's three days. RBI
   // slow or out of reach: the page goes without it (the reading carries on)
   const notices = await Promise.race([rbiGoldPrices().catch(() => null), new Promise(r => setTimeout(() => r(null), 5000))]);
-  const gram = gramPrices(notices, withToday(barsFor("GOLDBEES", snap), nseDay(etf.timestamp), num(etf.data.find(x => x.symbol === "GOLDBEES")?.ltP)), etf.timestamp);
-  return { asOf: etf.timestamp ?? null, sgbAsOf: sgbData?.timestamp ?? null, navDate: etf.navDate ?? null, groupInfo: GROUPS, groups, sgb, compare, gram, source: "NSE" };
+  const goldBars = withToday(barsFor("GOLDBEES", snap), nseDay(etf.timestamp), num(etf.data.find(x => x.symbol === "GOLDBEES")?.ltP));
+  const gram = gramPrices(notices, goldBars, etf.timestamp);
+  return { asOf: etf.timestamp ?? null, sgbAsOf: sgbData?.timestamp ?? null, navDate: etf.navDate ?? null, groupInfo: GROUPS, groups, sgb, compare, gram, spark: goldSpark(goldBars), source: "NSE" };
+}
+
+// Gold over the last year for Home's small line (HomeGold.jsx; 20 Nov 2026):
+// the gold ETF's close each week and the latest, oldest first, with the
+// move over the year — a shape and a percentage, not a price
+export function goldSpark(bars, now = bars?.at(-1)?.[0]) {
+  if (!bars?.length || !now) return null;
+  const from = new Date(Date.parse(`${now}T00:00:00Z`) - 365 * DAY).toISOString().slice(0, 10);
+  const year = bars.filter(b => b[0] >= from);
+  if (year.length < 20 || year[0][0] > new Date(Date.parse(`${from}T00:00:00Z`) + 10 * DAY).toISOString().slice(0, 10)) return null;
+  const points = year.filter((b, i) => i % 5 === 0 || i === year.length - 1).map(b => b[4]);
+  return { from: year[0][0], to: year.at(-1)[0], points, change: (year.at(-1)[4] / year[0][4] - 1) * 100 };
 }
 
 // The page's data, ten minutes at a time; NSE out of reach → the last one

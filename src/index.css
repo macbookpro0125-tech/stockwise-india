@@ -7748,3 +7748,10 @@ html.is-scrolling .hk-track { animation-play-state: paused; }
 .mk-tab-line { position: absolute; left: 0; bottom: -1px; height: 2px; width: 0; border-radius: 2px; background: var(--t1); pointer-events: none; transition: transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1), width 320ms cubic-bezier(0.2, 0.8, 0.2, 1); }
 @media (prefers-reduced-motion: reduce) { .mk-tab-line { transition: none; } }
 @media (prefers-reduced-transparency: reduce) { .mk-phone .mk-tabs { background: var(--bg); -webkit-backdrop-filter: none; backdrop-filter: none; } }
+
+/* Home's gold card: the year as a small line (HomeGold.jsx Spark) */
+.hg-spark { display: flex; align-items: center; gap: 12px; width: 100%; margin: 10px 0 2px; padding: 8px 10px; border-radius: 12px; border: 1px solid var(--bdr); background: var(--s1); color: var(--t1); font: inherit; cursor: pointer; text-align: left; }
+.hg-spark svg { flex: 1; height: 34px; min-width: 0; }
+.hg-spark span { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; flex: none; }
+.hg-spark small { font-size: 11px; color: var(--t3); }
+.hg-spark i { font-style: normal; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
