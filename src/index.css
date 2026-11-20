@@ -7578,3 +7578,18 @@ html.is-scrolling .hk-track { animation-play-state: paused; }
 @media (max-width: 420px) { .gg-table { font-size: 13px; } .gg-table th, .gg-table td { padding: 8px 3px; } }
 .gg-table td { color: var(--t1); }
 .gg-recent { color: var(--t2); }
+
+/* India's economy: the four at the top, then GDP and the curve side by side */
+.ec-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 16px; }
+@media (max-width: 760px) { .ec-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.ec-kpis > div { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border-radius: 12px; background: var(--s3); min-width: 0; }
+.ec-kpis small { font-size: 12px; color: var(--t3); }
+.ec-kpis b { font-size: 24px; font-weight: 600; color: var(--t1); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.ec-kpis b.up { color: var(--green); } .ec-kpis b.down { color: var(--red); }
+.ec-kpis span { font-size: 11px; color: var(--t3); }
+.ec-two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+@media (max-width: 900px) { .ec-two { grid-template-columns: minmax(0, 1fr); gap: 0; } }
+.ec-two .ec-col { margin-top: 0; padding-top: 0; border-top: 0; }
+@media (max-width: 900px) { .ec-two .ec-col + .ec-col { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--bdr); } }
+.ec-two .ec-curve, .ec-two .ec-yc svg { max-width: none; }
+.ec-two .ec-chips { margin-top: 10px; }

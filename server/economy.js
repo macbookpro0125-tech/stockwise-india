@@ -62,20 +62,26 @@ export function curveOf(r) {
   return { points, slope: last.yield - first.yield, inverted };
 }
 
-async function rbiRates() {
-  return cached("rbi-rates", 6 * 3600_000, async () => {
-    const file = keep("rbi-rates.json");
-    try {
-      const r = parseRbiRates(await fetchText("https://www.rbi.org.in/", { headers: { "User-Agent": UA }, service: "RBI", maxBytes: 3e6, timeoutMs: 20_000 }));
-      if (!r) throw new Error("RBI's current rates weren't on its page");
-      const out = { ...r, curve: curveOf(r), fetchedAt: new Date().toISOString() };
-      writeJson(file, out);
-      return out;
-    } catch (e) {
-      const last = readJson(file, null);
-      if (last) return { ...last, stale: true };
-      throw e;
-    }
+// A read kept `ttl`, its copy saved; a read that fails is tried again a
+// minute on (cached()), never kept for the whole `ttl` as a stale one — on 20
+// Nov 2026 a single failed first read of RBI's page, just after a restart,
+// said "couldn't be read" for six hours while the next four reads worked.
+// With nothing read yet since the start, the saved copy, marked stale.
+async function freshOr(key, ttl, file, load) {
+  try {
+    return await cached(key, ttl, async () => { const d = await load(); writeJson(file, d); return d; });
+  } catch (e) {
+    const last = readJson(file, null);
+    if (last) return { ...last, stale: true };
+    throw e;
+  }
+}
+
+function rbiRates() {
+  return freshOr("rbi-rates", 6 * 3600_000, keep("rbi-rates.json"), async () => {
+    const r = parseRbiRates(await fetchText("https://www.rbi.org.in/", { headers: { "User-Agent": UA }, service: "RBI", maxBytes: 3e6, timeoutMs: 20_000 }));
+    if (!r) throw new Error("RBI's current rates weren't on its page");
+    return { ...r, curve: curveOf(r), fetchedAt: new Date().toISOString() };
   });
 }
 
@@ -133,10 +139,8 @@ export function parseWorldBank(json, scale = 1) {
   return rows.filter(r => r.value != null && /^\d{4}$/.test(r.date)).map(r => ({ year: Number(r.date), value: r.value / scale })).sort((a, b) => a.year - b.year);
 }
 
-async function worldBank() {
-  return cached("world-bank-india", 24 * 3600_000, async () => {
-    const file = keep("world-bank-india.json");
-    try {
+function worldBank() {
+  return freshOr("world-bank-india", 24 * 3600_000, keep("world-bank-india.json"), async () => {
       const out = [];
       let updated = null;
       for (const ind of INDICATORS) {
@@ -145,15 +149,9 @@ async function worldBank() {
         if (years?.length) out.push({ ...ind, years });
         updated = json?.[0]?.lastupdated ?? updated;
       }
-      if (out.length < 4) throw new Error("The World Bank's figures couldn't be read");
-      const data = { indicators: out, updated, fetchedAt: new Date().toISOString() };
-      writeJson(file, data);
-      return data;
-    } catch (e) {
-      const last = readJson(file, null);
-      if (last) return { ...last, stale: true };
-      throw e;
-    }
+      // all ten, or try again: a passing failure mustn't drop a figure for a day
+      if (out.length < INDICATORS.length) throw new Error("The World Bank's figures couldn't all be read");
+      return { indicators: out, updated, fetchedAt: new Date().toISOString() };
   });
 }
 

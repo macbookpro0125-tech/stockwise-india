@@ -93,26 +93,33 @@ export default function EconomyCard() {
   if (d.failed || (!d.rates && !d.flows?.length && !d.worldBank)) return null;
   const r = d.rates, c = r?.curve, flows = d.flows ?? [], last = flows.at(-1), wb = d.worldBank;
   const tenYear = c?.points.find(p => Math.round(p.years) === 10);
+  const growth = wb?.indicators?.find(i => i.key === "growth"), inflation = wb?.indicators?.find(i => i.key === "inflation");
   const kept = Math.min(30, flows.length);
   const sum = flows.slice(-kept).reduce((a, f) => ({ fii: a.fii + (f.fii ?? 0), dii: a.dii + (f.dii ?? 0) }), { fii: 0, dii: 0 });
   return (
     <section className="mk-card ec" aria-labelledby="mk-eco">
       <div className="mk-card-h"><h2 id="mk-eco">India's economy</h2></div>
 
-      {r && (
-        <div className="ec-block">
-          <h3>Interest rates</h3>
-          <div className="ec-rates">
-            <div className="ec-big"><small>RBI's repo rate</small><b>{pc(r.repo)}</b><span>What banks pay to borrow from RBI; it sets the cost of loans.</span></div>
-            <div className="ec-chips">
-              {tenYear && <span>10-year government bond <b>{pc(tenYear.yield)}</b></span>}
-              {r.crr != null && <span>CRR <b>{pc(r.crr)}</b></span>}
-              {r.slr != null && <span>SLR <b>{pc(r.slr)}</b></span>}
-              {r.callLow != null && <span>Call money <b>{r.callLow.toFixed(2)}–{pc(r.callHigh)}</b></span>}
-            </div>
+      {/* the four that say most at a glance (20 Nov 2026, the owner: "show the GDP growth also") */}
+      <div className="ec-kpis">
+        {growth && <div><small>GDP growth · {growth.years.at(-1).year}</small><b className={growth.years.at(-1).value >= 0 ? "up" : "down"}>{fmt(growth, growth.years.at(-1).value)}</b><span>{fmt(growth, growth.years.at(-2)?.value)} in {growth.years.at(-2)?.year}</span></div>}
+        {inflation && <div><small>Inflation · {inflation.years.at(-1).year}</small><b>{fmt(inflation, inflation.years.at(-1).value)}</b><span>prices, over the year</span></div>}
+        {r && <div><small>RBI's repo rate</small><b>{pc(r.repo)}</b><span>sets the cost of loans</span></div>}
+        {tenYear && <div><small>10-year government bond</small><b>{pc(tenYear.yield)}</b><span>{r?.asOn ? `as on ${r.asOn.replace(/, \d{4}$/, "")}` : "yield"}</span></div>}
+      </div>
+
+      <div className="ec-two">
+        {growth && (
+          <div className="ec-block ec-col">
+            <h3>GDP growth, year by year</h3>
+            <YearChart ind={growth} />
+            <p className="ec-src">Source: World Bank (CC BY 4.0), calendar years. 2020 is the Covid year.</p>
           </div>
+        )}
+      {r && (
+        <div className="ec-block ec-col">
           {c && <>
-            <h3 className="ec-sub">What the government pays to borrow, 3 months to 30 years</h3>
+            <h3>What the government pays to borrow, 3 months to 30 years</h3>
             <Curve curve={c} />
             <p className={`ec-verdict${c.inverted ? " warn" : ""}`}>
               {c.inverted
@@ -120,9 +127,16 @@ export default function EconomyCard() {
                 : `Normal: longer loans pay more — ${pc(c.points.at(-1).yield)} for ${long(c.points.at(-1))} against ${pc(c.points[0].yield)} for ${long(c.points[0])}.`}
             </p>
           </>}
-          <p className="ec-src">Source: RBI{r.asOn ? `; bond yields as on ${r.asOn}` : ""}; Treasury Bills at the last auction's cut-off.{r.stale ? " RBI's page couldn't be read since; the last figures read." : ""}</p>
+          <div className="ec-chips">
+            {r.crr != null && <span>CRR <b>{pc(r.crr)}</b></span>}
+            {r.slr != null && <span>SLR <b>{pc(r.slr)}</b></span>}
+            {r.callLow != null && <span>Call money <b>{r.callLow.toFixed(2)}–{pc(r.callHigh)}</b></span>}
+            {r.sdf != null && <span>Deposit facility <b>{pc(r.sdf)}</b></span>}
+          </div>
+          <p className="ec-src">Source: RBI{r.asOn ? `; bond yields as on ${r.asOn}` : ""}; Treasury Bills at the last auction's cut-off.{r.stale ? " RBI's page couldn't be read just now; its last figures." : ""}</p>
         </div>
       )}
+      </div>
 
       {last && (
         <div className="ec-block">
@@ -138,9 +152,9 @@ export default function EconomyCard() {
 
       {wb?.indicators?.length > 0 && (
         <div className="ec-block">
-          <h3>The economy, year by year</h3>
+          <h3>More of the economy, year by year</h3>
           <ul className="ec-tiles">
-            {wb.indicators.flatMap(ind => {
+            {wb.indicators.filter(ind => ind.key !== "growth").flatMap(ind => {
               const now = ind.years.at(-1), before = ind.years.at(-2), isOpen = open === ind.key;
               return [
                 <li key={ind.key}>
