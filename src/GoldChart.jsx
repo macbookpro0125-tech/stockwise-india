@@ -27,6 +27,20 @@ export default function GoldChart() {
   const [tip, setTip] = useState(null);
   const host = useRef(null);
   useEffect(() => { api.publicGoldSilverChart().then(setData).catch(() => setData({ series: [] })); }, []);
+  // RBI's gram price (server/rbi-gold.js), to turn the gold ETF's price into
+  // gold's: 20 Nov 2026, the owner: "this gold chart is of what price? I don't
+  // understand" — ₹101 a GOLDBEES unit meant nothing to anyone
+  const [gram, setGram] = useState(null);
+  useEffect(() => { api.publicGoldSilver().then(d => setGram(d?.gram ?? null)).catch(() => {}); }, []);
+  // ₹ for 10 g of 24 carat per rupee of GOLDBEES: RBI's price against the
+  // ETF's average close on the three days RBI averaged
+  const tenGram = useMemo(() => {
+    const gb = data?.series?.find(x => x.symbol === "GOLDBEES");
+    if (!gb || !gram?.price || !gram.days?.length) return null;
+    const closes = gram.days.map(d => gb.closes[gb.days.indexOf(d)]).filter(c => c > 0);
+    return closes.length === gram.days.length ? (gram.price * 10) / (closes.reduce((a, c) => a + c, 0) / closes.length) : null;
+  }, [data, gram]);
+  const asGold = mode === "gold" && tenGram != null;
 
   const months = RANGES.find(r => r[0] === range)[1];
   const to = data?.to ?? data?.series?.[0]?.days.at(-1);
@@ -39,7 +53,11 @@ export default function GoldChart() {
     const l = data?.live?.[s.symbol];
     return l && l.date > s.days.at(-1) ? { ...s, days: [...s.days, l.date], closes: [...s.closes, l.price], liveAt: l.at } : s;
   };
-  const lines = useMemo(() => (to ? inView.map(s => { const x = withLive(s); return { ...x, ...cut(x, months, x.days.at(-1)) }; }).filter(s => s.days.length > 1) : []), [inView, months, to, data]); // eslint-disable-line react-hooks/exhaustive-deps
+  const lines = useMemo(() => (to ? inView.map(s => {
+    const x = withLive(s), part = cut(x, months, x.days.at(-1));
+    // the gold ETF as gold itself: ₹ for 10 grams of 24 carat
+    return asGold && s.symbol === "GOLDBEES" ? { ...x, ...part, closes: part.closes.map(c => c * tenGram) } : { ...x, ...part };
+  }).filter(s => s.days.length > 1) : []), [inView, months, to, data, asGold, tenGram]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (data && !ok(RANGES.find(r => r[0] === range))) { const best = [...RANGES].reverse().find(ok); if (best) setRange(best[0]); } }, [data, mode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -52,7 +70,7 @@ export default function GoldChart() {
       grid: { vertLines: { visible: false }, horzLines: { color: v("--bdr") } },
       rightPriceScale: { borderVisible: false }, timeScale: { borderVisible: false },
       crosshair: { horzLine: { visible: false, labelVisible: false }, vertLine: { labelVisible: false, style: 3, color: v("--bdr2") } },
-      localization: { locale: "en-IN", priceFormatter: p => (mode === "compare" ? `₹${Math.round(p)}` : `₹${p.toFixed(p < 1000 ? 2 : 0)}`) },
+      localization: { locale: "en-IN", priceFormatter: p => (mode === "compare" ? `₹${Math.round(p)}` : p >= 1000 ? `₹${Math.round(p).toLocaleString("en-IN")}` : `₹${p.toFixed(2)}`) },
       handleScroll: false, handleScale: false,
     });
     const made = lines.map(s => {
@@ -74,7 +92,7 @@ export default function GoldChart() {
     });
     chart.timeScale().fitContent();
     return () => chart.remove();
-  }, [lines, mode]);
+  }, [lines, mode, asGold]);
 
   if (!data) return <div className="gc-chart gc-wait" aria-label="Loading the chart" />;
   if (!data.series.length) return null;
@@ -90,7 +108,9 @@ export default function GoldChart() {
           return (
             <span key={s.label}>
               <i style={{ background: COLOURS[s.label] ?? "var(--accent)" }} />
-              {mode === "compare" ? s.label : <b>₹{s.closes.at(-1).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</b>}
+              {mode === "compare" ? s.label : asGold
+                ? <><b>₹{Math.round(s.closes.at(-1)).toLocaleString("en-IN")}</b> <span className="gc-unit">10 g, 24 carat</span></>
+                : <b>₹{s.closes.at(-1).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</b>}
               {" "}<em className={move >= 0 ? "up" : "down"}>{signed(move)}</em>
             </span>
           );
@@ -102,7 +122,7 @@ export default function GoldChart() {
         {tip && (
           <div className="mk-chart-tip" style={{ left: Math.min(Math.max(tip.x - 90, 0), Math.max(0, w - 190)) }}>
             <span className="mk-chart-tip-d">{day(tip.date)}</span>
-            {tip.rows.map(r => <span key={r.label} className="mk-chart-tip-b">{mode === "compare" ? `${r.label}: ₹${Math.round(r.value)}` : `₹${r.value.toFixed(2)}`}</span>)}
+            {tip.rows.map(r => <span key={r.label} className="mk-chart-tip-b">{mode === "compare" ? `${r.label}: ₹${Math.round(r.value)}` : asGold ? `₹${Math.round(r.value).toLocaleString("en-IN")} for 10 g` : `₹${r.value.toFixed(2)}`}</span>)}
           </div>
         )}
       </div>
@@ -112,7 +132,9 @@ export default function GoldChart() {
       <p className="gs-note">
         {mode === "compare"
           ? "₹100 put in at the start of the range, through GOLDBEES, SILVERBEES and NIFTYBEES (after the funds' costs)."
-          : `The price of one unit of ${mode === "gold" ? "GOLDBEES" : "SILVERBEES"}, the largest ${mode} ETF, which follows the price of ${mode} in India.`}
+          : asGold
+            ? `The price of 10 grams of 24-carat gold, estimated: the gold ETF GOLDBEES's daily price, matched to RBI's ₹${gram.price.toLocaleString("en-IN")} a gram for ${day(gram.redeemOn)}. Over years it may read up to about 1% a year high, the fund's costs. A jeweller adds making charges and 3% GST.`
+            : `The price of one unit of ${mode === "gold" ? "GOLDBEES, the largest gold ETF" : "SILVERBEES, the largest silver ETF"} (a fund on NSE that holds ${mode}), not of a gram of ${mode}: it moves as ${mode}'s price does.`}
         {" "}NSE's daily closes. A greyed range: the history here doesn't reach that far yet.
       </p>
     </section>
