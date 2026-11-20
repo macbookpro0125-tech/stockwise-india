@@ -11,7 +11,8 @@ import { allMetrics } from "./screen.js";
 import { historyBars } from "./price-history.js";
 import { PRICE_DIR } from "./paths.js";
 import { SECTOR_INDEX } from "./sector-indices.js";
-import { deskMarket } from "./price-setups.js";
+import { deskMarket, SETUPS } from "./price-setups.js";
+import { priceStrengthOf } from "./price-strength.js";
 
 const SPARK_DAYS = 22; // about a month of sessions
 
@@ -525,4 +526,20 @@ export async function marketHealth() {
   const rows = allMetrics().rows ?? [];
   const desk = await deskMarket(rows.map(r => r.symbol));
   return { asOf: snap?.pricesDate ?? null, ...(healthOf(rows, desk) ?? { score: null }) };
+}
+
+// Chart scans (20 Nov 2026): every company showing one of the price patterns
+// today (price-setups.js), among those trading ₹1 crore a day, strongest
+// price first. The counts of all of them, for the chips.
+export async function chartScan(id) {
+  const snap = loadMarketSnapshot();
+  const rows = allMetrics().rows ?? [];
+  const desk = await deskMarket(rows.map(r => r.symbol));
+  const counts = Object.fromEntries(SETUPS.map(p => [p.id, 0]));
+  for (const x of Object.values(desk.bySymbol)) if (x.liquid) for (const p of x.setups) counts[p] = (counts[p] ?? 0) + 1;
+  const pick = SETUPS.find(p => p.id === id) ?? null;
+  const list = pick ? rows.filter(r => desk.bySymbol[r.symbol]?.liquid && desk.bySymbol[r.symbol].setups.includes(pick.id))
+    .map(r => ({ symbol: r.symbol, name: r.name, sector: r.sector ?? null, close: r.cmp ?? null, change: r.ret1d ?? null, marketCapCr: r.marketCapCr ?? null, strength: priceStrengthOf(snap, r.symbol), stage: desk.bySymbol[r.symbol].stage }))
+    .sort((a, b) => (b.strength ?? -1) - (a.strength ?? -1) || (b.marketCapCr ?? 0) - (a.marketCapCr ?? 0)) : [];
+  return { date: desk.date, scans: SETUPS, counts, id: pick?.id ?? null, rows: list };
 }

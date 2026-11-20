@@ -66,7 +66,7 @@ import { marketNews, topNews, newsItem, newsItemFiling, newsForSymbols, watchlis
 import { portfolioVsMarket } from "./portfolio-vs-market.js";
 import { historyBars } from "./price-history.js";
 import { readIndexHistory } from "./index-history.js";
-import { exploreBoard, exploreIndex, heatmap, HEAT_SETS, topMovers, resultsWeek, resultsFor, moversOn, indexBars, sectorBrief, sectorRotation, marketHealth } from "./explore.js";
+import { exploreBoard, exploreIndex, heatmap, HEAT_SETS, topMovers, resultsWeek, resultsFor, moversOn, indexBars, sectorBrief, sectorRotation, marketHealth, chartScan } from "./explore.js";
 import { summarizeMove, aiClient } from "./ai-moves.js";
 import { summarizeCall } from "./call-summary.js";
 import { summarizeFiling } from "./filing-summary.js";
@@ -929,6 +929,12 @@ export function createApp() {
       if (url.pathname === "/api/explore/orders" && req.method === "GET") {
         if (requireAuth(req, res) == null) return;
         sendJson(res, 200, await bigOrders());
+        return;
+      }
+      // chart scans: the companies showing a price pattern today (explore.js chartScan)
+      if (url.pathname === "/api/explore/scans" && req.method === "GET") {
+        if (requireAuth(req, res) == null) return;
+        sendJson(res, 200, await chartScan(url.searchParams.get("id") ?? ""));
         return;
       }
       if (url.pathname === "/api/explore/movers" && req.method === "GET") {

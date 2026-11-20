@@ -5,6 +5,7 @@
 // so the page can say exactly what each one means.
 import { historyBars } from "./price-history.js";
 import { loadMarketSnapshot } from "./market-data.js";
+import { priceStrengthOf } from "./price-strength.js";
 
 const mean = a => (a.length ? a.reduce((s, x) => s + x, 0) / a.length : null);
 const smaAt = (closes, k, end = closes.length) => (end >= k ? mean(closes.slice(end - k, end)) : null);
@@ -25,6 +26,23 @@ export const STAGES = [
   { id: "basing", label: "Basing", about: "50-day average at or under the 200-day, the fall having stopped" },
 ];
 
+// Each swing high (the highest of the 6 sessions either side) and how far the
+// price fell from it before the next one: { depth, low }, oldest first
+export function pullbacks(part, highOf, lowOf, w = 6) {
+  const piv = [];
+  for (let i = w; i < part.length - 1; i++) {
+    let top = true;
+    for (let j = Math.max(0, i - w); j < Math.min(part.length, i + w + 1); j++) if (j !== i && highOf(part[j]) > highOf(part[i])) { top = false; break; }
+    if (top) piv.push(i);
+  }
+  return piv.flatMap((p, k) => {
+    const seg = part.slice(p + 1, piv[k + 1] ?? part.length);
+    if (!seg.length) return [];
+    const low = Math.min(...seg.map(lowOf)), hi = highOf(part[p]);
+    return [{ depth: (hi - low) / hi, low }];
+  });
+}
+
 // The patterns; each id is what setupsOf() returns
 export const SETUPS = [
   { id: "breakout", label: "Breakout", about: "Closed above every high of the 40 sessions before, on volume 1.4× its 50-day average or more" },
@@ -33,10 +51,16 @@ export const SETUPS = [
   { id: "tight", label: "Tight weeks", about: "The last three weekly closes within 1.5% of each other, over a 50-day average above the 200-day" },
   { id: "tightening", label: "Tightening range", about: "The last 10 sessions' range under 8% and under half the 20 sessions' before, in an uptrend" },
   { id: "volumeDryUp", label: "Quiet volume", about: "Advancing, and the last 5 sessions' volume under 60% of the 50-day average" },
+  // 20 Nov 2026 (the owner, from a rival's list: "trend templates, VCP setups, Darvas boxes and breakout scans")
+  { id: "trendTemplate", label: "Trend template", about: "All eight: price over its 50-, 150- and 200-day averages; 50 over 150 over 200; the 200-day rising for a month; 30%+ over the 52-week low; within 25% of the 52-week high; price strength 70+" },
+  { id: "vcp", label: "Contracting pullbacks (VCP)", about: "In an uptrend within 15% of the 52-week high, its last two or three pullbacks (from a swing high to the low after it, over the last 80 sessions) each shallower than the one before, the last 10% or less, and the last 10 sessions' volume under the 50-day average" },
+  { id: "darvasBox", label: "Darvas box", about: "Since a high near the 52-week high at least 6 sessions ago, held between that high and the low after it (a box 3–20% tall), in an uptrend" },
+  { id: "darvasBreakout", label: "Darvas box breakout", about: "Closed above the top of a Darvas box today (a high near the 52-week high, held for at least 6 sessions), on volume 1.3× its 50-day average or more" },
 ];
 
 // bars: oldest first, { date, high, low, close, volume } on today's share basis
-export function setupsOf(bars) {
+// strength: the price strength 1–99 (price-strength.js) when known, for the trend template
+export function setupsOf(bars, { strength = null } = {}) {
   const n = bars?.length ?? 0;
   if (n < MIN_BARS) return null;
   const closes = bars.map(b => b.close);
@@ -81,6 +105,34 @@ export function setupsOf(bars) {
   if (r10 != null && r20 != null && r10 < 0.08 && r10 < r20 / 2 && last > s50 && s50 > s200) setups.push("tightening");
   if (stage === "advancing" && avgVol50 > 0 && mean(vols.slice(-5)) < 0.6 * avgVol50) setups.push("volumeDryUp");
 
+  // the trend template's eight rules
+  const s150 = smaAt(closes, 150);
+  const low52 = Math.min(...bars.slice(-250).map(lowOf));
+  if (s150 != null && last > s150 && last > s200 && s150 > s200 && rising200 && s50 > s150 && last > s50
+    && low52 > 0 && last >= low52 * 1.3 && last >= high52 * 0.75 && strength != null && strength >= 70) setups.push("trendTemplate");
+
+  // contracting pullbacks: each pullback from a swing high shallower than the one before
+  if (last > s50 && s50 > s200 && rising200 && last >= high52 * 0.85 && avgVol50 > 0 && mean(vols.slice(-10)) < avgVol50) {
+    const t = pullbacks(bars.slice(-80), highOf, lowOf).filter(x => x.depth >= 0.02).slice(-3);
+    if (t.length >= 2 && t.every((x, i) => i === 0 || x.depth <= t[i - 1].depth * 0.85) && t.at(-1).depth <= 0.1 && t[0].depth <= 0.35 && last >= t.at(-1).low) setups.push("vcp");
+  }
+
+  // a Darvas box: the highest high of the 40 sessions before today, near the
+  // year's high and at least 6 sessions back; the box's floor is the low since
+  const box = bars.slice(-41, -1);
+  let ti = 0;
+  box.forEach((b, i) => { if (highOf(b) >= highOf(box[ti])) ti = i; });
+  const top = highOf(box[ti]);
+  const after = box.slice(ti + 1);
+  if (after.length >= 6 && top >= high52 * 0.95 && s50 > s200) {
+    const floor = Math.min(...after.map(lowOf));
+    const tall = floor > 0 ? (top - floor) / floor : null;
+    if (tall != null && tall >= 0.03 && tall <= 0.2) {
+      if (last > top && avgVol50 > 0 && vols[n - 1] >= 1.3 * avgVol50) setups.push("darvasBreakout");
+      else if (last <= top && last >= floor) setups.push("darvasBox");
+    }
+  }
+
   return {
     stage, setups,
     above50: last > s50, above200: last > s200,
@@ -98,7 +150,7 @@ export const LIQUID_CR = 1;
 //   bySymbol: { SYM: { stage, setups } } } — worked out once per day of prices
 let cached = null, pending = null; // the day's answer, and the one being worked out
 
-export async function deskMarket(symbols, { snapshot = loadMarketSnapshot(), barsOf = sym => historyBars(sym, snapshot) } = {}) {
+export async function deskMarket(symbols, { snapshot = loadMarketSnapshot(), barsOf = sym => historyBars(sym, snapshot), strengthOf = sym => priceStrengthOf(snapshot, sym) } = {}) {
   const date = snapshot?.pricesDate ?? null;
   if (cached && cached.date === date && cached.count === symbols.length) return cached.value;
   // asked again while it's being worked out: the same answer, never the day before's
@@ -112,7 +164,7 @@ export async function deskMarket(symbols, { snapshot = loadMarketSnapshot(), bar
       // a breath every 100 companies, so the server keeps answering meanwhile
       if (++i % 100 === 0) await new Promise(r => setImmediate(r));
       let s = null;
-      try { s = setupsOf(barsOf(sym)); } catch { s = null; }
+      try { s = setupsOf(barsOf(sym), { strength: strengthOf(sym) }); } catch { s = null; }
       if (!s) continue;
       bySymbol[sym] = { stage: s.stage, setups: s.setups, ...(s.valueCr >= LIQUID_CR && { liquid: true }) };
       for (const id of s.setups) setups[id]++;

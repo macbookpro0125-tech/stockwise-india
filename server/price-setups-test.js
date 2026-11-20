@@ -54,3 +54,27 @@ assert.equal(m.stages.declining, 1);
 assert.equal(m.above200, 50);
 assert.deepEqual(Object.keys(m.bySymbol).sort(), ["A", "B", "C"], "every company with history gets its stage");
 console.log("ok: the mood counts the companies that trade; every one gets its stage");
+
+// the trend template: a steady climb passes with strength 70+, not without it
+assert.ok(setupsOf(series(300, i => 100 + i), { strength: 85 }).setups.includes("trendTemplate"));
+assert.ok(!setupsOf(series(300, i => 100 + i), { strength: 50 }).setups.includes("trendTemplate"));
+assert.ok(!setupsOf(series(300, i => 100 + i)).setups.includes("trendTemplate"), "strength unknown: not claimed");
+console.log("ok: the trend template needs all eight, strength included");
+
+// contracting pullbacks: a climb to 220, then pullbacks of about 15%, 8% and 4%, volume drying up
+const legs = [[220, 187, 12], [216, 199, 12], [214, 205, 10], [213, 212, 4]];
+const path = [];
+for (let i = 0; i < 250; i++) path.push(100 + i * 0.48);
+for (const [hi, lo, k] of legs) { const from = path.at(-1); for (let j = 1; j <= k; j++) path.push(from + ((hi - from) * j) / k); for (let j = 1; j <= k; j++) path.push(hi + ((lo - hi) * j) / k); }
+const vcpBars = series(path.length, i => path[i], i => (i < path.length - 10 ? 3e5 : 1e5));
+assert.ok(setupsOf(vcpBars).setups.includes("vcp"), JSON.stringify(setupsOf(vcpBars).setups));
+assert.ok(!setupsOf(series(300, i => 100 + i)).setups.includes("vcp"), "a straight climb has no pullbacks to contract");
+console.log("ok: contracting pullbacks on lighter volume");
+
+// a Darvas box: a climb to 300, then 15 sessions between 280 and 300; then a close above 300 on volume
+const boxed = series(300, i => (i < 285 ? 100 + (i * 200) / 284 : 290 + 8 * Math.sin(i)));
+assert.ok(setupsOf(boxed).setups.includes("darvasBox"));
+const broke = series(300, i => (i < 285 ? 100 + (i * 200) / 284 : i < 299 ? 290 + 8 * Math.sin(i) : 310), i => (i === 299 ? 4e5 : 1e5));
+const bk = setupsOf(broke).setups;
+assert.ok(bk.includes("darvasBreakout") && !bk.includes("darvasBox"));
+console.log("ok: a Darvas box, and its breakout");

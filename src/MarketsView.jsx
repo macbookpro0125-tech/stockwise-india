@@ -11,6 +11,7 @@ import { navigate } from "./site.jsx";
 import BigNum from "./BigNum.jsx";
 import SectorRotation from "./SectorRotation.jsx";
 import BigOrders from "./BigOrders.jsx";
+import ChartScans from "./ChartScans.jsx";
 import MarketHealth from "./MarketHealth.jsx";
 import { useWatchlist } from "./watchlist.js";
 import { Star } from "lucide-react";
@@ -874,6 +875,9 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
         </div>
         {movers?.floorCr && <p className="mk-note">Companies worth ₹{movers.floorCr.toLocaleString("en-IN")} crore or more. <button type="button" className="mk-link" onClick={() => openMoves({ date: null, period })}>Every company, and earlier days ›</button></p>}
       </section>
+
+      {/* chart scans: trend template, VCP, Darvas, breakouts (ChartScans.jsx) */}
+      <ChartScans onOpenStock={onOpenStock} />
 
       {/* the orders companies won (BigOrders.jsx) */}
       <BigOrders onOpenStock={onOpenStock} />

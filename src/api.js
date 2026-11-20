@@ -130,6 +130,7 @@ export const api = {
   exploreIndex: name => request(`/api/explore/index?name=${encodeURIComponent(name)}`),
   movers: period => request(`/api/explore/movers?period=${period}`),
   bigOrders: () => request("/api/explore/orders"),
+  chartScan: id => request(`/api/explore/scans?id=${encodeURIComponent(id ?? "")}`),
   resultsWeek: () => request("/api/explore/results"),
   resultsWatchlist: () => request("/api/explore/results/watchlist"),
   indexPrices: (name, range) => request(`/api/index/prices?${new URLSearchParams({ name, range })}`),
