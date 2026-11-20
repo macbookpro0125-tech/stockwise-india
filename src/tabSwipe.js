@@ -4,7 +4,10 @@
 // scrolls sideways itself (a chart, a wide table, a row of chips), on a form
 // field or in a dialog, nor one from the screen's edge (the phone's own Back).
 
-export const SWIPE = { minDx: 70, ratio: 2, maxMs: 700, edge: 24 };
+// 20 Nov 2026 (the owner: "only working to the left"): a thumb's swipe to the
+// right curves up more than one to the left, so a swipe needs to be only a
+// little more sideways than up or down (1.3×, was 2×), and a little shorter
+export const SWIPE = { minDx: 60, ratio: 1.3, maxMs: 800, edge: 20 };
 
 // the decision, apart from the page, for the tests: -1 back a tab, +1 on, 0 none
 export function swipeStep({ dx, dy, ms, startX, width }) {

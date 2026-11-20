@@ -729,7 +729,15 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       // the tabs this company has, as the bar shows them (usePresentTabs), read now
       const ids = TABS.filter(([, , parts]) => parts.some(p => document.getElementById(`sec-${p}`))).map(([id]) => id);
       const at = ids.indexOf(tabNow.current), next = ids[at + step];
-      if (at < 0 || !next) return;
+      if (at < 0) return;
+      // no tab that way (Overview's left, the last tab's right): a small
+      // bounce, so the swipe was felt rather than ignored
+      if (!next) {
+        if (mainRef.current?.animate && !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+          mainRef.current.animate([{ transform: "none" }, { transform: `translateX(${-step * 18}px)` }, { transform: "none" }], { duration: 260, easing: "cubic-bezier(0.2, 0, 0, 1)" });
+        }
+        return;
+      }
       goRef.current(next, step);
     });
   }, [isPhone, mainEl]);
