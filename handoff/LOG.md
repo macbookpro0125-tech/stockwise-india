@@ -539,3 +539,4 @@ Owner: "the news is not understandable". Looked at 10 apps (Inshorts' one-line c
 
 ## 20 Nov 2026 — Home: one card of tabs
 - Owner: "major indices, top movers, big orders, explore the categories — like tabs, to save space". TodayHome HomeTabs: Top movers (first; its Gainers/Losers/… chips inside) · Indices · Big orders (count on the tab; BigOrders bare + onCount, kept mounted hidden) · Categories; the last tab picked is remembered (localStorage home-tab). On a laptop it sits beside the Nifty 50 chart (where Major indices was); on a phone under it. Gold today stays its own card below. The separate Top movers, Big orders and Explore by category cards are gone from Home.
+- Owner: "I don't want it on the desktop" — the card of tabs is the phone's only (usePhone); a computer has Major indices beside the Nifty 50, then Explore by category, Top movers and Big orders as their own cards, as before.

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import BigOrders from "./BigOrders.jsx";
 import HomeGold from "./HomeGold.jsx";
+import { usePhone } from "./phoneTabs.js";
 import BigNum from "./BigNum.jsx";
 import { createChart, AreaSeries, ColorType } from "lightweight-charts";
 import { ChevronRight, Plus } from "lucide-react";
@@ -475,6 +476,8 @@ function HomeTabs({ strip, movers, listCounts, openIndex, onOpenStock, onOpenTab
 }
 
 export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIndex }) {
+  // the card of tabs on a phone; a computer keeps its cards side by side
+  const phone = usePhone();
   // 5 Nov 2026 ("when I click on those cards it's not working"): every card
   // opens something — an index its page in Explore, a results day the calendar
   const openIndex = name => (onOpenIndex ? onOpenIndex(name) : onOpenTab?.("explore"));
@@ -533,11 +536,48 @@ export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIn
           </section>
         )}
         {/* indices, movers, big orders and categories as one card of tabs (20 Nov 2026, the owner: "like tabs, to save space") */}
-        <HomeTabs strip={strip} movers={movers} listCounts={listCounts} openIndex={openIndex} onOpenStock={onOpenStock} onOpenTab={onOpenTab} />
+        {phone
+          ? <HomeTabs strip={strip} movers={movers} listCounts={listCounts} openIndex={openIndex} onOpenStock={onOpenStock} onOpenTab={onOpenTab} />
+          : <>
+        {strip?.indices?.length > 0 && (
+          <section className="td-box" aria-label="The market">
+            <div className="td-head"><h3>Major indices</h3><button type="button" onClick={() => onOpenTab?.("explore")}>Explore</button></div>
+            {strip.indices.slice(0, 6).map(m => (
+              <button key={m.name} type="button" className="td-index" onClick={() => openIndex(m.name)}>
+                <span className="td-name">{m.name}</span>
+                <span className="td-index-nums"><b>{num(m.close)}</b><i style={{ color: tone(m.changePct) }}>{pct(m.changePct)}</i></span>
+              </button>
+            ))}
+          </section>
+        )}
+          </>}
       </div>
 
       {/* gold, under the market (20 Nov 2026, the owner: "gold price to the Home screen") */}
       <HomeGold onOpen={() => onOpenTab?.("gold")} />
+
+      {/* a computer: the categories, the moves and the big orders as their own cards (20 Nov 2026, the owner: the tabs on a phone only) */}
+      {!phone && <>
+      {/* the categories, up before the moves (20 Nov 2026, the owner: "move the explore up") */}
+      {/* the stock lists, in reach from Home (17 Nov 2026: "very hard to find, very deep in Markets") */}
+      <section className="td-box td-lists" aria-label="Explore by category">
+        <div className="td-head"><h3>Explore by category</h3><button type="button" onClick={() => navigate("/lists")}>All categories</button></div>
+        <div className="td-listgrid">
+          {HOME_LISTS.map(([slug, label, Icon]) => (
+            <button key={slug} type="button" className="td-listtile" onClick={() => navigate(`/lists/${slug}`)}>
+              <span className="td-listicon" aria-hidden="true"><Icon size={18} strokeWidth={1.8} /></span>
+              <span className="td-listtext"><b>{label}</b>{listCounts[slug] != null && <small>{listCounts[slug].toLocaleString("en-IN")} companies</small>}</span>
+              <ChevronRight size={16} className="td-listgo" aria-hidden="true" />
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {movers && <HomeMovers movers={movers} onOpenStock={onOpenStock} onOpenTab={onOpenTab} />}
+      {/* the orders companies won (BigOrders.jsx; 19 Nov 2026, the owner: "if any company gets a contract it should be shown") */}
+      <BigOrders home onOpenStock={onOpenStock} onSeeAll={() => onOpenTab?.("markets")} />
+
+      </>}
 
       <div className="td-grid">
         <section className="td-box" aria-label="Your watchlist">
