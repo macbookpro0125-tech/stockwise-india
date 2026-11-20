@@ -15,6 +15,7 @@
 import { appendFileSync } from "node:fs";
 import { startDataJobs, jobStatus } from "../server/data-jobs.js";
 import { backfillHistory } from "../server/history-backfill.js";
+import { backfillOlderResults } from "../server/older-results.js";
 import { buildMarketSnapshot, loadMarketSnapshot, clearSnapshotCache } from "../server/market-data.js";
 import { fiscalYearEnds } from "../server/build-snapshot.js";
 import { marketReady, marketCurrent } from "../server/screen.js";
@@ -90,6 +91,13 @@ const timer = setInterval(async () => {
   if (rebuilt && Number(process.env.HISTORY_BACKFILL_DAYS) > 0) {
     try { await backfillHistory({ years: Number(process.env.HISTORY_YEARS) || 5, maxDays: Number(process.env.HISTORY_BACKFILL_DAYS), log: m => console.log(m) }); }
     catch (e) { annotate("warning", "Price history backfill failed", e.message); }
+  }
+  // and the yearly results from before NSE's XBRL, a batch of companies a
+  // run (server/older-results.js, 20 Nov 2026); a failure only means fewer
+  // years until the next run
+  if (rebuilt && Number(process.env.OLDER_RESULTS_BATCH) > 0) {
+    try { await backfillOlderResults({ batch: Number(process.env.OLDER_RESULTS_BATCH), log: m => console.log(m) }); }
+    catch (e) { annotate("warning", "Older results failed", e.message); }
   }
   // The nightly score check (score-audit.js) on the market just built. The live
   // site doesn't run data jobs — it pulls this run's pack — so the check is made

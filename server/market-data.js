@@ -1007,7 +1007,8 @@ export async function buildMarketSnapshot(fyEndDates, { yearsOfActions = 11 } = 
     tech: year.tech,
     indices: await indexCloses(latest.date),
     indexBoard: await indexBoard(year.from, latest.date).catch(() => null),
-    indexLong: await indexLong(latest.date).catch(() => null),
+    // ten years a close a week (20 Nov 2026, was five): the 10Y index chart
+    indexLong: await indexLong(latest.date, 10).catch(() => null),
     indexMembers: await indexMembers().catch(() => null),
     screenIndices: await screenIndexMembers().catch(() => null),
     themes: await screenIndexMembers(THEME_LISTS, "themes").catch(() => null),

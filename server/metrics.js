@@ -825,6 +825,10 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     peHistory: peHistory.map(r => (r.pe != null && leftOut(r) ? { ...r, excluded: "profit under a third of this year's — P/E left out" } : r)),
     medianPe, peYears: validPe.length,
     history,
+    // years from before NSE's XBRL, sales and profit only (older-results.js);
+    // shown on the results chart, never in the scores
+    olderYears: (stock.olderYears ?? []).map(y => ({ fyEnd: y.fyEnd, revenueCr: cr(y.revenue), profitCr: cr(y.profit), basis: y.basis })),
+    ...tenYearGrowth(history, stock.olderYears),
     growthForValuation, growthBasis,
     valuationPe, valuationPeBasis: medianPe != null ? "median" : "current FY P/E",
     valuationEps, epsJump, epsRebased, reportedEps: rawReportedEps,
@@ -1053,4 +1057,19 @@ function prosAndCons(m, latest) {
   if (!m.lender && lt(m.ocfPat3yPct, 60)) cons.push(`Weak cash conversion: operating cash flow is only ${pct(m.ocfPat3yPct)} of profit over 3 years.`);
   if (lt(latest.profit, 0)) cons.push("Company made a loss in the latest year.");
   return { pros, cons };
+}
+
+// Sales and profit growth a year over about ten years: the latest year against
+// the oldest kept (older-results.js), when that one is 9 to 11 years back
+function tenYearGrowth(history, older) {
+  const last = history?.[0], first = older?.at?.(-1);
+  if (!last || !first) return { salesGrowth10y: null, profitGrowth10y: null, growth10yFrom: null };
+  const years = (Date.parse(`${last.fyEnd}T00:00:00Z`) - Date.parse(`${first.fyEnd}T00:00:00Z`)) / (365.25 * 86_400_000);
+  if (years < 8.5 || years > 11.5) return { salesGrowth10y: null, profitGrowth10y: null, growth10yFrom: null };
+  const cagr = (now, then) => (now > 0 && then > 0 ? (Math.pow(now / then, 1 / years) - 1) * 100 : null);
+  return {
+    salesGrowth10y: cagr(last.revenueCr, first.revenue / 1e7),
+    profitGrowth10y: cagr(last.profitCr, first.profit / 1e7),
+    growth10yFrom: first.fyEnd,
+  };
 }

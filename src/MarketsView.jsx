@@ -36,8 +36,8 @@ const badge = name => {
 // each dark enough for its white letters to read (4.5:1 or more, 7 Nov 2026)
 const BADGE_COLOURS = ["#c2273a", "#1a6c9b", "#1d6f9c", "#5b1a3a", "#0b7461", "#7b4fd6", "#a3530f", "#3657c9", "#8a2c7a", "#2f7d3a"];
 const badgeColour = name => BADGE_COLOURS[[...String(name)].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % BADGE_COLOURS.length];
-const RANGES = [["1M", 21], ["3M", 63], ["6M", 126], ["1Y", Infinity], ["3Y", 3], ["5Y", 5]];
-const LONG = new Set(["3Y", "5Y"]); // years, from the weekly series
+const RANGES = [["1M", 21], ["3M", 63], ["6M", 126], ["1Y", Infinity], ["3Y", 3], ["5Y", 5], ["10Y", 10]];
+const LONG = new Set(["3Y", "5Y", "10Y"]); // years, from the weekly series (ten kept from 20 Nov 2026)
 
 // The index's line, green or red by the range's move, no
 // price tag on the axis; a dot on each day its largest companies filed
@@ -755,12 +755,12 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
               <div className="mk-index-price">
                 <b className="mk-num">{detail?.close != null ? <BigNum text={num(detail.close)} /> : num(detail?.close)}</b>
                 <span className={`mk-chg ${tone(detail?.changePct)}`}>{pct(detail?.changePct)} today</span>
-                {rangeMove != null && <span className={`mk-chg ${tone(rangeMove)}`}>{pct(rangeMove)} over {range === "1Y" ? "the year" : range === "3Y" ? "three years" : range === "5Y" ? "five years" : range}</span>}
+                {rangeMove != null && <span className={`mk-chg ${tone(rangeMove)}`}>{pct(rangeMove)} over {range === "1Y" ? "the year" : range === "3Y" ? "three years" : range === "5Y" ? "five years" : range === "10Y" ? "ten years" : range}</span>}
               </div>
             </div>
             {chartMode !== "full" && (
               <div className="mk-seg" role="group" aria-label="Range">
-                {RANGES.filter(([id]) => !LONG.has(id) || detail?.long?.days?.length).map(([id]) => <button key={id} type="button" aria-pressed={range === id} onClick={() => setRange(id)}>{id}</button>)}
+                {RANGES.filter(([id]) => !LONG.has(id) || (detail?.long?.days?.length && (id !== "10Y" || (Date.parse(`${detail.long.days.at(-1)}T00:00:00Z`) - Date.parse(`${detail.long.days[0]}T00:00:00Z`)) > 9.5 * 365.25 * 86_400_000))).map(([id]) => <button key={id} type="button" aria-pressed={range === id} onClick={() => setRange(id)}>{id}</button>)}
               </div>
             )}
           </div>

@@ -325,7 +325,7 @@ function FinancialsChart({ points }) {
                     const bx = x0 + dx, by = Math.min(layout.y(0), layout.y(v)), bh = Math.max(1, Math.abs(layout.y(0) - layout.y(v)));
                     return (
                       <g key={j}>
-                        <rect x={bx} y={by} width={layout.barW} height={bh} rx={3} fill={fill} />
+                        <rect x={bx} y={by} width={layout.barW} height={bh} rx={3} fill={fill} opacity={p.older ? 0.45 : 1} />
                         {/* Rotated value on the bar, dropped where it would collide */}
                         {layout.barW >= 11 && (
                           <text x={bx + layout.barW / 2} y={by - 5} fontSize={9} fill="var(--t2)" transform={`rotate(-90, ${bx + layout.barW / 2}, ${by - 5})`} style={MONO}>{fmtCr(v)}</text>
@@ -333,7 +333,8 @@ function FinancialsChart({ points }) {
                       </g>
                     );
                   })}
-                  <text x={i * layout.band + layout.band / 2} y={layout.innerH + 16} fontSize={9} fill="var(--t3)" textAnchor="middle">{p.short}</text>
+                  {/* every other year when there are many, the latest always */}
+                  {(points.length <= 9 || (points.length - 1 - i) % 2 === 0) && <text x={i * layout.band + layout.band / 2} y={layout.innerH + 16} fontSize={9} fill="var(--t3)" textAnchor="middle">{p.short}</text>}
                 </g>
               );
             })}
@@ -344,7 +345,7 @@ function FinancialsChart({ points }) {
 
       {hover != null && layout && (
         <div style={{ position: "absolute", top: 4, left: Math.min(width - 170, Math.max(0, MARGIN.left + hover * layout.band + layout.band / 2 - 80)), width: 160, background: "var(--s3)", border: "1px solid var(--bdr2)", borderRadius: 8, padding: "8px 10px", fontSize: 11, boxShadow: "0 4px 18px rgba(0,0,0,0.35)", pointerEvents: "none" }}>
-          <div style={{ fontWeight: 500, marginBottom: 4 }}>{points[hover].period}</div>
+          <div style={{ fontWeight: 500, marginBottom: 4 }}>{points[hover].period}{points[hover].older ? " · older table" : points[hover].gap ? " · not held by NSE" : ""}</div>
           {[["Revenue", points[hover].revenue, "var(--fc-revenue, var(--green))"], ["Profit", points[hover].profit, "var(--accent)"]].map(([l, v, c]) => (
             <div key={l} style={{ display: "flex", justifyContent: "space-between", gap: 10, ...MONO }}>
               <span style={{ color: "var(--t3)" }}><span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 2, background: c, marginRight: 5 }} />{l}</span>
@@ -494,7 +495,7 @@ function YearPicture({ history, tab }) {
 // only: one statement on its own, without the switch buttons (16 Nov 2026, the
 // owner: "I want the financials separate, profit & loss, quarterly, balance
 // sheet… each different") — the Finance tab shows each as its own section
-export default function FinancialsPanel({ history: filed, quarters: filedQuarters = [], template, only = null }) {
+export default function FinancialsPanel({ history: filed, quarters: filedQuarters = [], template, only = null, olderYears = [], growth10 = null }) {
   const [picked, setTab] = useState("summary");
   const tab = only ?? picked;
   const history = useMemo(() => (filed ?? []).map(withDerived), [filed]);
@@ -502,10 +503,25 @@ export default function FinancialsPanel({ history: filed, quarters: filedQuarter
   const ttm = useMemo(() => { const t = ttmOf(filedQuarters); return t ? withDerived(t) : null; }, [filedQuarters]);
   if (!history?.length) return null;
 
-  const points = [...history].reverse()
+  const recent = [...history].reverse()
     .map(h => ({ period: periodLabel(h.fyEnd), short: shortLabel(h.fyEnd), revenue: h.revenueCr, profit: h.profitCr, margin: h.opm }))
     // Years with nothing reported are dropped, not charted as zeros
     .filter(p => p.revenue != null || p.profit != null);
+  // Years from before NSE's XBRL (older-results.js), lighter, with a gap for a
+  // year NSE has in neither form (most have no FY2018)
+  const older = [...(olderYears ?? [])].reverse().filter(o => o.revenueCr != null || o.profitCr != null);
+  const points = [];
+  for (const o of older) points.push({ period: periodLabel(o.fyEnd), short: shortLabel(o.fyEnd), revenue: o.revenueCr, profit: o.profitCr, margin: null, older: true, basis: o.basis });
+  if (older.length && history.length) {
+    const firstRecent = [...history].reverse()[0]?.fyEnd;
+    let y = Number(older.at(-1).fyEnd.slice(0, 4)) + 1;
+    const stop = Number(String(firstRecent).slice(0, 4));
+    for (; y < stop && y - Number(older.at(-1).fyEnd.slice(0, 4)) < 4; y++) {
+      const iso = `${y}${older.at(-1).fyEnd.slice(4)}`;
+      points.push({ period: periodLabel(iso), short: shortLabel(iso), revenue: null, profit: null, margin: null, gap: true });
+    }
+  }
+  points.push(...recent);
 
   const TABS = [
     { id: "summary", label: "Summary" },
@@ -532,7 +548,15 @@ export default function FinancialsPanel({ history: filed, quarters: filedQuarter
       </div>}
       {tab === "summary"
         ? (points.length >= 2
-          ? <FinancialsChart points={points} />
+          ? <>
+            <FinancialsChart points={points} />
+            {older.length > 0 && (
+              <p style={{ fontSize: 11, lineHeight: 1.5, color: "var(--t3)", margin: "8px 0 0" }}>
+                {growth10?.sales != null && <><b style={{ color: "var(--t2)", fontWeight: 500 }}>Over about ten years: sales {growth10.sales >= 0 ? "grew" : "fell"} {Math.abs(growth10.sales).toFixed(1)}% a year{growth10.profit != null ? `, profit ${growth10.profit >= 0 ? "grew" : "fell"} ${Math.abs(growth10.profit).toFixed(1)}% a year` : ""}.</b> </>}
+                Lighter bars: years from NSE's older results tables (sales and profit only{older.some(o => o.basis === "Indian GAAP") ? "; before FY2017 under the older Indian accounting rules, so not exactly comparable" : ""}). A year left blank is one NSE doesn't hold.
+              </p>
+            )}
+          </>
           : <div style={{ fontSize: 12, color: "var(--t3)", padding: "24px 0" }}>Not enough reported years to chart. The tables show everything available.</div>)
         : tab === "quarterly"
           ? <><QuarterPicture quarters={quarters} /><StatementTable history={quarters} yearly={false} rows={STATEMENTS.quarterly} note="Each quarter is its own three months; the last two columns compare with the same quarter a year earlier." /></>

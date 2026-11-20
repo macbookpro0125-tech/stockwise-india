@@ -148,6 +148,9 @@ jobs:
           # more trading days a run (server/history-backfill.js), gently,
           # until it's there
           HISTORY_YEARS: "10"
+          # Yearly results from before NSE's XBRL (server/older-results.js),
+          # 250 companies a run, biggest first
+          OLDER_RESULTS_BATCH: "250"
           HISTORY_BACKFILL_DAYS: ${{ github.event.inputs.history_days || '260' }}
           # The statements in detail and sales by segment (fetch-nse.js
           # DETAIL_VERSION): 300 companies re-read a run, biggest first

@@ -1102,7 +1102,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       {m && <ChapterTab id="growth" sec="financials" m={m} fairValue={fairValue} price={price} rows={chapterChecks("growth", m.research)}
         lead={growthNote(m) ? `${growthNote(m).lead} ${growthNote(m).text}` : null}
         detail={[
-          { key: "results", after: "salesGrowth3y", question: "What are its results, year by year?", short: "Sales, profit and margin", body: <FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} only="summary" /> },
+          { key: "results", after: "salesGrowth3y", question: "What are its results, year by year?", short: "Sales, profit and margin", body: <FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} only="summary" olderYears={m.olderYears} growth10={{ sales: m.salesGrowth10y, profit: m.profitGrowth10y }} /> },
           ...(m.quarters?.length ? [{ key: "quarterly", question: "What did the latest quarters show?", short: "Quarter by quarter, and against a year earlier", body: <><FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} only="quarterly" /><QuarterDownloads symbol={data.symbol} quarters={m.quarters} /></> }] : []),
           { key: "pnl", question: "Profit and loss", short: "Every line from sales to profit, year by year", body: <FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} only="profitLoss" /> },
           { key: "balance", question: "Balance sheet", short: "What it owns and what it owes, year by year", body: <FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} only="balanceSheet" /> },
@@ -1309,7 +1309,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       {/* the Finance tab: each statement its own section, then a comparison
           with other companies (16 Nov 2026, the owner) */}
       {m && <div id="sec-financials" className="ss-section" data-tab="growth">{built("growth") && <>
-        <PBlock title="Sales, profit and margin"><FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} only="summary" /></PBlock>
+        <PBlock title="Sales, profit and margin"><FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} only="summary" olderYears={m.olderYears} growth10={{ sales: m.salesGrowth10y, profit: m.profitGrowth10y }} /></PBlock>
         {m.quarters?.length > 0 && <PBlock title="Quarterly results"><FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} only="quarterly" /><QuarterDownloads symbol={data.symbol} quarters={m.quarters} /></PBlock>}
         <PBlock title="Profit and loss"><FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} only="profitLoss" /></PBlock>
         <PBlock title="Balance sheet"><FinancialsPanel history={m.history} quarters={m.quarters} template={m.template} only="balanceSheet" /></PBlock>
