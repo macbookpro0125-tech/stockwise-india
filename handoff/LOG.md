@@ -501,3 +501,6 @@ Owner: "the news is not understandable". Looked at 10 apps (Inshorts' one-line c
 ## 20 Nov 2026 — Live out of memory after the 858eaf5 push (owner: site stuck on the loading animation)
 - Render logs: "JavaScript heap out of memory" ~17 min after the deploy, then a restart. Cause: the new last-good copies written into data/market/ — each new file changes the folder's mtime, and allMetrics/marketReady then rebuild a second market while still holding the first (screen.js), as in the 18–19 Nov evening crashes.
 - Fix: copies in data/cache/ (0afc5d9), and cache-dir.js now never moves or deletes the old ones in data/market/ (that would set off one more rebuild); they're only read as a fallback, and tonight's pull replaces the folder via rebuildFresh.
+
+## 20 Nov 2026 — fix pushed (4d6134d)
+- Pushed 858eaf5..4d6134d: saved copies in data/cache (no more market rebuilds from them), backtesting (rule test + pattern record). New build live ~80 s after the push; health, /gold-silver and sectors answer. Watch Render events tonight for any further heap-out-of-memory.
