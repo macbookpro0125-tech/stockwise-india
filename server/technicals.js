@@ -11,6 +11,7 @@ const CACHE_MS = 6 * 60 * 60 * 1000; // the prices change once an evening
 // the companies read most recently only (20 Nov 2026: one entry for every
 // company ever asked about, never let go, helped fill the 512 MB server)
 const CACHE_MAX = 300;
+export function dropTechnicals() { CACHE.clear(); }
 function cacheGet(key) {
   const hit = CACHE.get(key);
   if (hit && Date.now() - hit.at < CACHE_MS) { CACHE.delete(key); CACHE.set(key, hit); return hit.data; }

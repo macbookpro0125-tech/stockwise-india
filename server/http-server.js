@@ -20,6 +20,9 @@ import { listAlerts, createAlert, updateAlert, deleteAlert } from "./user-alerts
 import { screen, matchingSymbols, screenerMeta, getStock, saveStock, rowsFor, isValidSymbol, countFetched, allMetrics, screenRowCount, marketReady, rebuildFresh, capHistoricalMultiples } from "./screen.js";
 import { startDataPull, pullStatus } from "./data-pull.js";
 import { startRefreshTrigger, triggerStatus } from "./refresh-trigger.js";
+import { dropExploreCaches } from "./explore.js";
+import { dropCompanyCaches } from "./company-extras.js";
+import { dropTechnicals } from "./technicals.js";
 import { getHeapStatistics } from "node:v8";
 const v8HeapLimit = () => getHeapStatistics().heap_size_limit;
 import { screenMomentum, momentumAllowed, momentumAudience } from "./momentum.js";
@@ -1970,7 +1973,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   }
   // on Render only (data-pull.js pullBaseUrl); the market is rebuilt in
   // slices at once, so the next visitor doesn't wait for it
-  if (mode === "off" || mode === "pull") startDataPull({ onInstalled: () => rebuildFresh().catch(e => console.error(`[market] rebuild failed: ${e.message}`)) });
+  // new evening data: first let go of caches built from the old, so the 512 MB
+  // server doesn't hold two markets at once (20 Nov 2026, two restarts)
+  if (mode === "off" || mode === "pull") startDataPull({ onInstalled: () => { dropExploreCaches(); dropCompanyCaches(); dropTechnicals(); return rebuildFresh().catch(e => console.error(`[market] rebuild failed: ${e.message}`)); } });
   // GitHub's timer starts the evening job ~8 hours late: ask for it ourselves (refresh-trigger.js)
   if (mode === "off" || mode === "pull") startRefreshTrigger({ pricesDate: () => { try { return loadMarketSnapshot()?.pricesDate ?? null; } catch { return null; } } });
   if (mode !== "off") {

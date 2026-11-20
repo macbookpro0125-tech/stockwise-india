@@ -434,6 +434,9 @@ function indexStory(name, level, chartDays, snap, sector) {
 // open, high and low are kept (the evening build keeps them from 7 Nov), else
 // a close-only bar. A copy that keeps NSE's daily files reads them afresh.
 let barsBoard = null;
+// New evening data: let go of what was worked out from the old (20 Nov 2026,
+// so the old and the new market aren't both held while the new one builds)
+export function dropExploreCaches() { moverCache = null; barsBoard = null; }
 export async function indexBars(name, range = "1y") {
   let { board: b, snap } = await board();
   const find = bd => bd?.indices.find(x => x.name.toLowerCase() === String(name).toLowerCase());

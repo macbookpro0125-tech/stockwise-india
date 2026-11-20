@@ -34,6 +34,8 @@ function remember(key, entry) {
   }
 }
 export const memoSize = () => memo.size;
+// New evening data: the per-company answers go (they're read again as asked)
+export function dropCompanyCaches() { for (const k of [...memo.keys()]) if (PER_COMPANY.test(k)) memo.delete(k); }
 
 export async function cached(key, ttlMs, fn) {
   const hit = memo.get(key);
