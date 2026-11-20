@@ -86,7 +86,7 @@ import { summarizeFiling } from "./filing-summary.js";
 import { logoFor } from "./logos.js";
 import { PRESETS } from "./presets.js";
 import { DIST_DIR } from "./paths.js";
-import { robotsTxt, sitemapXml, sitemapPart, changedPageEntries, SITE, publicStock, stockPageHtml, methodologyPageHtml, stockScreenerPageHtml, aboutPageHtml, helpPageHtml, pageHtml, privacyPageHtml, disclaimerPageHtml, notFoundPageHtml } from "./seo.js";
+import { robotsTxt, sitemapXml, sitemapPart, changedPageEntries, SITE, publicStock, stockPageHtml, methodologyPageHtml, stockScreenerPageHtml, aboutPageHtml, helpPageHtml, pageHtml, privacyPageHtml, termsPageHtml, disclaimerPageHtml, notFoundPageHtml } from "./seo.js";
 import { HttpError, badRequest, payloadTooLarge } from "./http-errors.js";
 import { companyVideos } from "./videos.js";
 import { searchName } from "../src/webLinks.js";
@@ -1882,9 +1882,9 @@ export function createApp() {
       }
       // /privacy and /disclaimer too (9 Nov 2026, the SEO audit: both were the
       // empty app, under the front page's title)
-      if ((url.pathname === "/privacy" || url.pathname === "/disclaimer") && (req.method === "GET" || req.method === "HEAD") && existsSync(join(DIST_DIR, "index.html"))) {
+      if ((url.pathname === "/privacy" || url.pathname === "/disclaimer" || url.pathname === "/terms") && (req.method === "GET" || req.method === "HEAD") && existsSync(join(DIST_DIR, "index.html"))) {
         const template = readFileSync(join(DIST_DIR, "index.html"), "utf-8");
-        const html = url.pathname === "/privacy" ? privacyPageHtml(template) : disclaimerPageHtml(template);
+        const html = url.pathname === "/privacy" ? privacyPageHtml(template) : url.pathname === "/terms" ? termsPageHtml(template) : disclaimerPageHtml(template);
         res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache" });
         res.end(req.method === "HEAD" ? undefined : html);
         return;

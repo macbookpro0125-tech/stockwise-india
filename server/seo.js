@@ -52,7 +52,7 @@ export const shortDesc = (text, max = 158) => {
 };
 
 const SITE_NAV = `<header class="seo-nav"><a href="/">Jocular Insights</a> <nav aria-label="Main pages"><a href="/screens">Stock screens</a> · <a href="/sectors">Sectors</a> · <a href="/results">Latest results</a> · <a href="/results-calendar">Results calendar</a> · <a href="/lists">Stock lists</a> · <a href="/learn">Learn</a></nav> <a href="/?auth=signup">Create a free account</a></header>`;
-const PUBLIC_PATHS = ["/", "/gold-silver", "/about", "/help", "/methodology", SCREENER_PAGE_PATH, "/privacy", "/disclaimer"];
+const PUBLIC_PATHS = ["/", "/gold-silver", "/about", "/help", "/methodology", SCREENER_PAGE_PATH, "/privacy", "/disclaimer", "/terms"];
 
 export const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const plain = name => String(name ?? "").replace(/\s+(limited|ltd\.?)\s*$/i, "").trim();
@@ -470,7 +470,7 @@ const legalPage = (template, { path, name, desc, updated, opening, more }) => {
 <h1>${esc(name)}</h1>${updated ? `<p>Last updated ${esc(updated)}</p>` : ""}
 ${opening.map(p => `<p>${p}</p>`).join("\n")}
 <p>${more}</p>
-<p><a href="/privacy">Privacy policy</a> · <a href="/disclaimer">Disclaimer</a> · <a href="/about">About</a> · <a href="/help">How the figures work</a> · <a href="/methodology">Methodology</a></p></main>`;
+<p><a href="/privacy">Privacy policy</a> · <a href="/terms">Terms of use</a> · <a href="/disclaimer">Disclaimer</a> · <a href="/about">About</a> · <a href="/help">How the figures work</a> · <a href="/methodology">Methodology</a></p></main>`;
   return pageHtml(template, { title: pageTitle(name), desc, canonical, ld, body });
 };
 export function privacyPageHtml(template) {
@@ -487,6 +487,15 @@ export function disclaimerPageHtml(template) {
     desc: "Jocular Insights is an educational research tool, not investment advice. We are not registered with SEBI as an investment adviser or research analyst.",
     opening: ["<strong>Jocular Insights is an educational research tool.</strong> Nothing on this site is investment advice, a research report, or a recommendation to buy, sell or hold any security.", "We are <strong>not registered with SEBI</strong> (the Securities and Exchange Board of India) as an investment adviser or a research analyst."],
     more: "The full disclaimer explains how the numbers are made, where the data comes from and its limits, and what to check before relying on any figure.",
+  });
+}
+
+export function termsPageHtml(template) {
+  return legalPage(template, {
+    path: "/terms", name: "Terms of use", updated: "21 November 2026",
+    desc: "The terms for using Jocular Insights: an independent research tool, not investment advice; your account, fair use, your saved data, the data's limits and ending your account.",
+    opening: ["These terms are the agreement between you and Jocular Insights for using jocularinsights.in and the Jocular Insights apps. By using them, or by creating an account, you agree to these terms, the disclaimer and the privacy policy.", "Nothing here is investment advice, and we are <strong>not registered with SEBI</strong> as an investment adviser or research analyst."],
+    more: "The full terms cover your account, fair use of the data, what you save, the data's limits, ads, liability, ending your account and changes to the terms.",
   });
 }
 

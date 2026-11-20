@@ -89,6 +89,7 @@ export function SiteFooter() {
         <SiteLink to="/about" style={FOOT_LINK}>About</SiteLink>
         <SiteLink to="/disclaimer" style={FOOT_LINK}>Disclaimer</SiteLink>
         <SiteLink to="/privacy" style={FOOT_LINK}>Privacy</SiteLink>
+        <SiteLink to="/terms" style={FOOT_LINK}>Terms</SiteLink>
       </nav>
       <nav className="site-foot-links site-foot-public" aria-label="On the website">
         <SiteLink to="/stock-screener-india" style={FOOT_LINK}>Stock screener</SiteLink>

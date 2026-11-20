@@ -43,7 +43,7 @@ const DeskView = lazyPage(() => import("./DeskView.jsx"));
 const MarketsView = lazyPage(() => import("./MarketsView.jsx"));
 const named = (load, name) => lazyPage(() => load().then(m => ({ default: m[name] })));
 const legal = name => named(() => import("./LegalPages.jsx"), name);
-const PrivacyPage = legal("PrivacyPage"), DisclaimerPage = legal("DisclaimerPage"), HelpPage = legal("HelpPage"), AboutPage = legal("AboutPage"), MeasuresPage = legal("MeasuresPage"), NotFoundPage = legal("NotFoundPage");
+const PrivacyPage = legal("PrivacyPage"), DisclaimerPage = legal("DisclaimerPage"), HelpPage = legal("HelpPage"), AboutPage = legal("AboutPage"), MeasuresPage = legal("MeasuresPage"), NotFoundPage = legal("NotFoundPage"), TermsPage = legal("TermsPage");
 const lists = name => named(() => import("./PublicLists.jsx"), name);
 const ScreensIndexPage = lists("ScreensIndexPage"), ScreenPage = lists("ScreenPage"), SharedScreenPage = lists("SharedScreenPage"), ResultsCalendarPage = lists("ResultsCalendarPage"), SectorsIndexPage = lists("SectorsIndexPage"), GoldSilverPage = lists("GoldSilverPage"), SectorPage = lists("SectorPage"), ListsIndexPage = lists("ListsIndexPage"), ListPage = lists("ListPage");
 const MethodologyPage = lazyPage(() => import("./MethodologyPage.jsx"));
@@ -276,7 +276,7 @@ export default function App() {
           return;
         }
 
-        if (["/privacy", "/disclaimer", "/help", "/measures", "/about", "/methodology", "/reset-password", "/stock-screener-india", "/screens", "/results-calendar", "/sectors", "/lists", "/explore", "/news", "/results", "/learn"].includes(currentPath) || /^\/(screens|sector|lists|learn)\//.test(currentPath) || /^\/stock\/[^/]+\/./.test(currentPath)) {
+        if (["/privacy", "/terms", "/disclaimer", "/help", "/measures", "/about", "/methodology", "/reset-password", "/stock-screener-india", "/screens", "/results-calendar", "/sectors", "/lists", "/explore", "/news", "/results", "/learn"].includes(currentPath) || /^\/(screens|sector|lists|learn)\//.test(currentPath) || /^\/stock\/[^/]+\/./.test(currentPath)) {
           if (canGoBack) window.history.back();
           else navigate("/", { replace: true });
           return;
@@ -400,6 +400,7 @@ export default function App() {
   if (window.__NOT_FOUND__ && window.__NOT_FOUND__ === path) return pub(<NotFoundPage signedIn={!!account} />);
   // /privacy, /disclaimer and /help are for everyone, signed in or not
   if (path === "/privacy") return pub(<PrivacyPage signedIn={!!account} />);
+  if (path === "/terms") return pub(<TermsPage signedIn={!!account} />);
   if (path === "/disclaimer") return pub(<DisclaimerPage signedIn={!!account} />);
   if (path === "/help") return pub(<HelpPage signedIn={!!account} />);
   if (path === "/measures") return pub(<MeasuresPage signedIn={!!account} />);

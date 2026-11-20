@@ -159,6 +159,7 @@ export default function SettingsView({ account, theme, onToggleTheme, onTab, onL
         {canRate() && <Row icon={Star} tint="#F5B800" label="Rate the app" detail="On Google Play. It helps others find it" onClick={openStorePage} />}
         <Row icon={ShieldCheck} tint="#10B981" label="Privacy policy" href="/privacy" />
         <Row icon={FileText} tint="#64748B" label="Disclaimer" detail="An educational tool, not investment advice" href="/disclaimer" />
+        <Row icon={FileText} tint="#64748B" label="Terms of use" href="/terms" />
       </Group>
 
       <Group>

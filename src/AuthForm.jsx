@@ -291,7 +291,7 @@ export default function AuthForm({ onAuthed, mode, onModeChange, onProgress }) {
       {error && <div style={{ ...errorBox, marginTop: 12 }}>{error}</div>}
       {iphoneHomeScreen() && <p className="auth-legal">Use Google? Open jocularinsights.in in Safari to sign in with it. Here, sign in with your email; if you have no password yet, "Forgot password" sets one.</p>}
       <p className="auth-legal">
-        By continuing you agree to the <SiteLink to="/disclaimer" newTab>disclaimer</SiteLink> and <SiteLink to="/privacy" newTab>privacy policy</SiteLink>.
+        By continuing you agree to the <SiteLink to="/terms" newTab>terms</SiteLink>, <SiteLink to="/disclaimer" newTab>disclaimer</SiteLink> and <SiteLink to="/privacy" newTab>privacy policy</SiteLink>.
       </p>
       {switchMode}
     </div>
@@ -343,7 +343,7 @@ export default function AuthForm({ onAuthed, mode, onModeChange, onProgress }) {
       </form>
       {signup && (
         <p className="auth-legal">
-          By creating an account you agree to the <SiteLink to="/disclaimer" newTab>disclaimer</SiteLink> and <SiteLink to="/privacy" newTab>privacy policy</SiteLink>.
+          By creating an account you agree to the <SiteLink to="/terms" newTab>terms</SiteLink>, <SiteLink to="/disclaimer" newTab>disclaimer</SiteLink> and <SiteLink to="/privacy" newTab>privacy policy</SiteLink>.
         </p>
       )}
       {switchMode}

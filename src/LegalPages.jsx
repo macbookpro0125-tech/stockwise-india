@@ -250,6 +250,97 @@ export function DisclaimerPage({ signedIn }) {
   );
 }
 
+// /terms (21 Nov 2026, the audit: accounts, alerts and a portfolio with no
+// terms covering them; sign-up asked people to agree to the disclaimer and
+// privacy policy only). Plain words, as the other two pages
+export const TERMS_UPDATED = "21 November 2026";
+export function TermsPage({ signedIn }) {
+  const mail = <a href="mailto:jocularinsights@gmail.com" style={{ color: "var(--accent)" }}>jocularinsights@gmail.com</a>;
+  return (
+    <PublicPage title="Terms of use" signedIn={signedIn} updated={TERMS_UPDATED}>
+      <P>
+        These terms are the agreement between you and Jocular Insights for using the website jocularinsights.in and the
+        Jocular Insights apps. By using them, or by creating an account, you agree to these terms, the{" "}
+        <SiteLink to="/disclaimer">disclaimer</SiteLink> and the <SiteLink to="/privacy">privacy policy</SiteLink>.
+      </P>
+
+      <H>What Jocular Insights is</H>
+      <P>
+        An independent research tool for companies listed on India's National Stock Exchange, run from India. It is free
+        while in early access. We may add, change or stop features, and if we ever charge for some, we'll say so clearly
+        before you pay anything.
+      </P>
+
+      <H>Not investment advice</H>
+      <P>
+        Nothing here is investment advice or a recommendation to buy, sell or hold anything, and we are{" "}
+        <B>not registered with SEBI</B> as an investment adviser or research analyst. Scores, fair values, alerts and every
+        other figure are worked out by fixed formulas from public data. Your investment decisions are yours alone; the{" "}
+        <SiteLink to="/disclaimer">disclaimer</SiteLink> explains the limits in full.
+      </P>
+
+      <H>Your account</H>
+      <UL>
+        <LI>You must be 18 or older to create an account.</LI>
+        <LI>One account per person. Keep your sign-in to yourself; you are responsible for what's done with it.</LI>
+        <LI>Use an email address you can read: sign-in codes, password resets and the alerts you ask for go to it.</LI>
+      </UL>
+
+      <H>Fair use</H>
+      <P>Please don't:</P>
+      <UL>
+        <LI>copy the site's data in bulk, by scripts, scrapers or other automated means, or resell or republish it;</LI>
+        <LI>try to get into other people's accounts or parts of the service that aren't open to you, or disrupt it;</LI>
+        <LI>use the service for anything unlawful, including misleading others about a company or its shares.</LI>
+      </UL>
+      <P>Reading the pages, sharing a link to them, and quoting a figure with a link back are all fine.</P>
+
+      <H>What you save stays yours</H>
+      <P>
+        Your watchlists, notes, portfolio, trade journal and saved screens belong to you. You let us store and process them
+        only to run the service for you, as the <SiteLink to="/privacy">privacy policy</SiteLink> sets out. A screen you
+        share by link can be seen by anyone who has the link.
+      </P>
+
+      <H>The data</H>
+      <P>
+        Figures come from companies' filings with NSE, NSE's and other public sources such as the Reserve Bank of India.
+        They can be wrong, late or missing, and the service may be unavailable at times. Everything is provided as it is,
+        without any promise that it is complete, correct or always on. Check any figure that matters against the original
+        filing.
+      </P>
+
+      <H>Ads</H>
+      <P>The website and apps may show ads from Google, marked as ads. The privacy policy explains how they work.</P>
+
+      <H>Limits on our liability</H>
+      <P>
+        As far as the law allows, Jocular Insights is not liable for any loss from using the service or relying on its
+        data, including trading or investment losses, or for a time the service or an alert doesn't work.
+      </P>
+
+      <H>Ending your account</H>
+      <P>
+        You can delete your account at any time from Settings → Delete account; everything saved in it is deleted with it.
+        We may suspend or close an account that breaks these terms, telling you why where we can.
+      </P>
+
+      <H>Changes to these terms</H>
+      <P>
+        We may update these terms; the date at the top shows the latest version. If a change matters to how you use the
+        service, we'll tell you in the app or by email before it applies. Using the service after that means you accept the
+        new terms.
+      </P>
+
+      <H>Law and contact</H>
+      <P>
+        These terms are governed by the laws of India, and the courts of India have jurisdiction. Questions, or anything
+        you want us to look at: {mail}.
+      </P>
+    </PublicPage>
+  );
+}
+
 // /about: who runs the site, where its data comes from, how to reach us (the
 // same words the server writes for search engines: seo.js aboutPageHtml)
 export function AboutPage({ signedIn }) {
