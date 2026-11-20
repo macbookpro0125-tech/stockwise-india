@@ -14,7 +14,7 @@
 // Facts from filings and NSE's prices only: no fair value, nothing about
 // buying or selling. Publisher headlines aren't turned into pages (their words
 // aren't ours to republish); announcements are the companies' own filings.
-import { pageTitle } from "../src/pageTitle.js";
+import { financialsTitle, pageTitle } from "../src/pageTitle.js";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { allMetrics } from "./screen.js";
@@ -128,7 +128,7 @@ function financialsPage(m) {
     m.salesGrowth5y != null && `Sales grew ${num(m.salesGrowth5y)}% a year over five years${m.profitGrowth5y != null ? `, profit ${num(m.profitGrowth5y)}% a year` : ""}.`,
   ].filter(Boolean).join(" ");
   return {
-    title: pageTitle(`${n} balance sheet, profit & loss, cash flow | ${m.symbol}`),
+    title: financialsTitle(n, m.symbol),
     desc: `${n} (NSE: ${m.symbol}) financial statements: profit and loss, balance sheet and cash flow for ${heads[0]}–${heads[heads.length - 1]}, from its NSE filings.`,
     canonical: `${SITE}/stock/${encodeURIComponent(m.symbol)}/financials`,
     noindex: !keepIndexed(m.symbol),

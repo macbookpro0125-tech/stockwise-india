@@ -24,4 +24,18 @@ export const screenTitle = ({ name, matched, guide }) => pageTitle(guide?.search
 export const sectorTitle = ({ name, count }) => pageTitle(`${name} stocks on NSE: ${count} companies by P/E, ROE`);
 // a rule's list counts its companies; an index or a theme is the companies NSE lists
 export const listTitle = ({ name, kind, count, group }) => group === "score" ? pageTitle(`${name}: NSE companies ranked by overall score`) : pageTitle(`${name} list: ${kind === "rule" ? `${count} NSE companies` : "companies"} by P/E, ROE`);
-export const stockTitle = (name, symbol) => pageTitle(`${name} share price, fair value, P/E & results | ${symbol}`);
+// the longest of a few wordings that Google shows whole (20 Nov 2026, the
+// audit: 2,281 company titles ran ~70 characters, cut off after about 60)
+export const SHOWN = 60;
+export const firstThatFits = (...options) => options.find(t => t.length <= SHOWN) ?? options.at(-1);
+export const stockTitle = (name, symbol) => pageTitle(firstThatFits(
+  `${name} share price, fair value, P/E & results | ${symbol}`,
+  `${name} share price, fair value & results | ${symbol}`,
+  `${name} share price & fair value | ${symbol}`,
+  `${symbol} share price & fair value | ${name}`,
+));
+export const financialsTitle = (name, symbol) => pageTitle(firstThatFits(
+  `${name} balance sheet, profit & loss, cash flow | ${symbol}`,
+  `${name} balance sheet & profit and loss | ${symbol}`,
+  `${symbol} balance sheet, profit & loss, cash flow | ${name}`,
+));

@@ -598,3 +598,4 @@ Owner: "the news is not understandable". Looked at 10 apps (Inshorts' one-line c
 - /measures: own title, description and canonical from the server (it carried the front page's), the tab title in the app, and a list of its 14 sections at the top (it's ~30 screens on a phone).
 - Screen builder at tablet width (764 px): the results bar (923 px) made the page scroll sideways; under 1100 px it wraps.
 - Phone Home favourite cards: "· its best and worst on the day:" before the two companies ("Top Gainers" showing a company at −12.1% read as a mistake).
+- Titles: company pages pick the longest of four wordings that fits in 60 characters (src/pageTitle.js stockTitle, firstThatFits): "Tata Consultancy Services share price & fair value | TCS" (56, was 70); a very long name falls back to the symbol first ("HUDCO share price & fair value | Housing & …"), so what Google cuts is the end of the name. Financials pages the same (financialsTitle).
