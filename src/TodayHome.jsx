@@ -442,9 +442,13 @@ function HomeTabs({ strip, movers, listCounts, openIndex, onOpenStock, onOpenTab
     const r = rail.current, st = step();
     if (!r || !st) return;
     const cards = [...r.children], pos = Math.max(0, Math.min(cards.length - 1, r.scrollLeft / st));
-    const i0 = Math.floor(pos), f = pos - i0, i1 = Math.min(i0 + 1, cards.length - 1);
-    const h0 = cards[i0].offsetHeight, h1 = cards[i1].offsetHeight;
-    r.style.height = `${Math.round(h0 + (h1 - h0) * f) + 6}px`;
+    const i0 = Math.floor(pos), i1 = Math.min(i0 + 1, cards.length - 1);
+    // the height doesn't change under the finger (20 Nov 2026, the owner:
+    // the cards "jump or skip" — a phone re-snaps a rail whose size changes
+    // mid-swipe): while moving it only grows to fit the two cards in view,
+    // and settles to the one in view once the swipe ends (settle below)
+    const need = Math.max(cards[i0].offsetHeight, cards[i1].offsetHeight) + 6;
+    if (!r.style.height || need > parseFloat(r.style.height)) r.style.height = `${need}px`;
     const calm = still();
     cards.forEach((c, i) => {
       const d = Math.min(1, Math.abs(i - pos));
@@ -453,10 +457,19 @@ function HomeTabs({ strip, movers, listCounts, openIndex, onOpenStock, onOpenTab
     });
     [...(dots.current?.children ?? [])].forEach((dot, i) => { dot.style.width = `${6 + 10 * Math.max(0, 1 - Math.abs(i - pos))}px`; });
   };
-  const frame = useRef(0);
+  const frame = useRef(0), settleTimer = useRef(0);
+  // the swipe over: the rail to the height of the card in view, smoothly
+  const settle = () => {
+    const r = rail.current, st = step();
+    if (!r || !st) return;
+    const card = r.children[Math.round(r.scrollLeft / st)];
+    if (card) r.style.height = `${card.offsetHeight + 6}px`;
+  };
   const onScroll = () => {
     cancelAnimationFrame(frame.current);
     frame.current = requestAnimationFrame(paint);
+    clearTimeout(settleTimer.current);
+    settleTimer.current = setTimeout(settle, 160);
     const i = Math.max(0, Math.min(HOME_TABS.length - 1, Math.round((rail.current?.scrollLeft ?? 0) / (step() || 1))));
     if (i !== at) { setAt(i); tick(); try { localStorage.setItem("home-tab", HOME_TABS[i][0]); } catch { /* private window */ } }
   };
@@ -466,10 +479,10 @@ function HomeTabs({ strip, movers, listCounts, openIndex, onOpenStock, onOpenTab
     const r = rail.current;
     if (!r) return undefined;
     if (at) r.scrollLeft = at * step();
-    paint();
-    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => paint()) : null;
+    paint(); settle();
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => { paint(); settle(); }) : null;
     [...r.children].forEach(c => ro?.observe(c));
-    return () => { ro?.disconnect(); cancelAnimationFrame(frame.current); };
+    return () => { ro?.disconnect(); cancelAnimationFrame(frame.current); clearTimeout(settleTimer.current); };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   // the first time, the cards lean left and back once, to show they swipe
   useEffect(() => {

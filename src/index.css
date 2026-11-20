@@ -7693,3 +7693,8 @@ html.is-scrolling .hk-track { animation-play-state: paused; }
 .hc { scroll-snap-stop: always; transform-origin: center top; will-change: transform, opacity; }
 .hc-dots button { transition: background 200ms; }
 @media (prefers-reduced-motion: reduce) { .hc { will-change: auto; } }
+
+/* the rail's height settles after a swipe, smoothly; the page doesn't shift its scroll while it does */
+.hc-rail { transition: height 240ms cubic-bezier(0.2, 0, 0, 1); }
+.hc-wrap { overflow-anchor: none; }
+@media (prefers-reduced-motion: reduce) { .hc-rail { transition: none; } }
