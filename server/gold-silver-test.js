@@ -1,6 +1,6 @@
 // node --no-warnings server/gold-silver-test.js — gold, silver and ETFs (gold-silver.js)
 import assert from "node:assert/strict";
-import { amcOf, groupOf, parseEtfList, sgbMaturity, returnOver, etfRow, sgbRow } from "./gold-silver.js";
+import { amcOf, groupOf, parseEtfList, sgbMaturity, returnOver, etfRow, sgbRow, liveOf, withToday, nseDay } from "./gold-silver.js";
 
 assert.equal(amcOf("NIPINDETFGOLDBEES"), "Nippon India");
 assert.equal(amcOf("MIRAEAMC-MAGOLDETF"), "Mirae Asset");
@@ -37,3 +37,16 @@ const bars = []; for (let i = 0; i <= 3 * 365; i += 1) bars.push([new Date(Date.
 assert.ok(Math.abs(returnOver(bars, 3 * 365) - 10) < 0.1, "10% a year over three years");
 assert.equal(returnOver(bars, 5 * 365), null, "history too short: no figure");
 console.log("ok: returns, yearly over three years, none past the history");
+
+// today's price for the chart: the ETFs it draws, dated from NSE's time
+const live = liveOf({ asOf: "20-Nov-2026 13:54:24", groups: { gold: [{ symbol: "GOLDBEES", price: 101.96 }], shares: [{ symbol: "NIFTYBEES", price: 293.1 }, { symbol: "X", price: 1 }] } });
+assert.deepEqual(live, { GOLDBEES: { date: "2026-11-20", price: 101.96, at: "13:54" }, NIFTYBEES: { date: "2026-11-20", price: 293.1, at: "13:54" } });
+assert.deepEqual(liveOf({ asOf: null }), {});
+console.log("ok: today's price for the chart");
+
+// returns to today's price: the bars get today's on the end, only when newer
+const kept = [["2026-11-18", 0, 0, 0, 107.85], ["2026-11-19", 0, 0, 0, 106.3]];
+assert.equal(withToday(kept, "2026-11-20", 102.38).at(-1)[4], 102.38);
+assert.equal(withToday(kept, "2026-11-19", 102.38).length, 2, "not the same day twice");
+assert.equal(nseDay("20-Nov-2026 13:54:24"), "2026-11-20");
+console.log("ok: returns run to today's price");

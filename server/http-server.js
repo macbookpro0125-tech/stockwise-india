@@ -24,7 +24,7 @@ import { criteriaToFilters, METRICS, CATEGORY_METRICS } from "./metric-catalog.j
 import { listWatchlist, addToWatchlist, setWatchlistNote, removeFromWatchlist, listWatchLists, createWatchList, renameWatchList, deleteWatchList, addToWatchList, removeFromWatchList } from "./user-watchlist.js";
 import { listHoldings, addHolding, addHoldings, updateHolding, removeHolding } from "./user-portfolio.js";
 import { listTrades, addTrade, updateTrade, removeTrade } from "./journal.js";
-import { goldSilver, goldSilverChart } from "./gold-silver.js";
+import { goldSilver, goldSilverChart, liveOf } from "./gold-silver.js";
 import { economy } from "./economy.js";
 import { loadPatternRecord } from "./pattern-record.js";
 import { goldSilverHtml } from "./seo-gold.js";
@@ -851,7 +851,12 @@ export function createApp() {
       if (url.pathname === "/api/public/sectors" && req.method === "GET") { sendJson(res, 200, publicSectors()); return; }
       // gold, silver, every ETF and the gold bonds, from NSE (gold-silver.js)
       if (url.pathname === "/api/public/gold-silver" && req.method === "GET") { sendJson(res, 200, await goldSilver()); return; }
-      if (url.pathname === "/api/public/gold-silver/chart" && req.method === "GET") { sendJson(res, 200, await goldSilverChart()); return; }
+      if (url.pathname === "/api/public/gold-silver/chart" && req.method === "GET") {
+        // the closes, and today's price on top (NSE's ETF prices, ten minutes at a time)
+        const live = await goldSilver().then(liveOf).catch(() => ({}));
+        sendJson(res, 200, { ...(await goldSilverChart()), live });
+        return;
+      }
       // the front page's search (HeroSearch.jsx): NSE's own list, symbols and names only
       if (url.pathname === "/api/public/search" && req.method === "GET") { sendJson(res, 200, await searchEquities(url.searchParams.get("q"))); return; }
       if (url.pathname === "/api/public/page" && req.method === "GET") {

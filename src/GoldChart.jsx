@@ -34,7 +34,12 @@ export default function GoldChart() {
   const reaches = (s, m) => { const f = new Date(`${to}T00:00:00Z`); f.setUTCMonth(f.getUTCMonth() - m); return s.days[0] <= new Date(f.getTime() + 10 * 864e5).toISOString().slice(0, 10); };
   const inView = useMemo(() => (data?.series ?? []).filter(s => (mode === "compare" ? true : s.label.toLowerCase() === mode)), [data, mode]);
   const ok = r => inView.length > 0 && inView.every(s => reaches(s, r[1]));
-  const lines = useMemo(() => (to ? inView.map(s => ({ ...s, ...cut(s, months, to) })).filter(s => s.days.length > 1) : []), [inView, months, to]);
+  // today's price after the last close, while the market is open (or since it closed, before the evening's data)
+  const withLive = s => {
+    const l = data?.live?.[s.symbol];
+    return l && l.date > s.days.at(-1) ? { ...s, days: [...s.days, l.date], closes: [...s.closes, l.price], liveAt: l.at } : s;
+  };
+  const lines = useMemo(() => (to ? inView.map(s => { const x = withLive(s); return { ...x, ...cut(x, months, x.days.at(-1)) }; }).filter(s => s.days.length > 1) : []), [inView, months, to, data]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (data && !ok(RANGES.find(r => r[0] === range))) { const best = [...RANGES].reverse().find(ok); if (best) setRange(best[0]); } }, [data, mode]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -90,7 +95,7 @@ export default function GoldChart() {
             </span>
           );
         })}
-        <small>{lines[0] ? `${day(lines[0].days[0])} – ${day(lines[0].days.at(-1))}` : ""}</small>
+        <small>{lines[0] ? `${day(lines[0].days[0])} – ${day(lines[0].days.at(-1))}${lines[0].liveAt ? `, today's price at ${(([h, mi]) => `${Number(h) % 12 || 12}:${mi} ${Number(h) < 12 ? "am" : "pm"}`)(lines[0].liveAt.split(":"))}` : ", the last close"}` : ""}</small>
       </div>
       <div className="gc-wrap">
         <div ref={host} className="gc-chart" role="img" aria-label={mode === "compare" ? "Gold, silver and the Nifty 50, ₹100 put in at the start" : `${mode} through its ETF`} />

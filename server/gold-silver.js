@@ -83,6 +83,20 @@ export function returnOver(bars, days) {
 
 const barsFor = (symbol, snap) => { try { return historyBars(symbol, snap)?.map(b => (Array.isArray(b) ? b : [b.date, b.open, b.high, b.low, b.close, b.volume])) ?? null; } catch { return null; } };
 
+// The bars with today's price on the end, when NSE's prices are newer than
+// the last close kept (so returns run to now, as the price shown does)
+export function withToday(bars, date, price) {
+  if (!bars?.length || !(price > 0) || !date || date <= bars.at(-1)[0]) return bars;
+  return [...bars, [date, price, price, price, price, 0]];
+}
+// NSE's time "20-Nov-2026 13:54:24" → "2026-11-20"
+const MONTHS = { JAN: "01", FEB: "02", MAR: "03", APR: "04", MAY: "05", JUN: "06", JUL: "07", AUG: "08", SEP: "09", OCT: "10", NOV: "11", DEC: "12" };
+export const nseDay = t => { const m = /^(\d{1,2})-(\w{3})-(\d{4})/.exec(t ?? ""); return m && MONTHS[m[2].toUpperCase()] ? `${m[3]}-${MONTHS[m[2].toUpperCase()]}-${m[1].padStart(2, "0")}` : null; };
+
+// Returns are worked out here from NSE's daily closes, never taken from NSE's
+// ETF list: its 1-year change for GOLDBEES on 20 Nov 2026 (+4.0%) needed a
+// price a year earlier under the ETF's own 52-week low (20 Nov 2026, checked
+// against Google Finance and our closes: +0.8%)
 export function etfRow(r, info, { bars = null, navDate = null } = {}) {
   const price = num(r.ltP), prev = num(r.prevClose), nav = num(r.nav);
   return {
@@ -90,7 +104,7 @@ export function etfRow(r, info, { bars = null, navDate = null } = {}) {
     price, changePct: num(r.per), prevClose: prev, nav, navDate,
     // the close against the NAV of the same day: both are yesterday's
     premiumPct: prev > 0 && nav > 0 ? (prev / nav - 1) * 100 : null,
-    ret1m: num(r.perChange30d), ret1y: num(r.perChange365d),
+    ret1m: returnOver(bars, 30), ret1y: returnOver(bars, 365),
     ret3y: returnOver(bars, 3 * 365), ret5y: returnOver(bars, 5 * 365),
     valueCr: num(r.trdVal) != null ? num(r.trdVal) / 1e7 : null,
     high52: num(r.wkhi), low52: num(r.wklo),
@@ -131,14 +145,15 @@ async function fresh() {
   for (const r of etf.data) {
     const info = list.get(r.symbol) ?? null;
     const group = info?.group ?? groupOf("", "");
-    const bars = ["gold", "silver"].includes(group) ? barsFor(r.symbol, snap) : null;
+    const bars = withToday(barsFor(r.symbol, snap), nseDay(etf.timestamp), num(r.ltP));
     groups[group].push(etfRow(r, info, { bars, navDate: etf.navDate ?? null }));
   }
   for (const g of Object.values(groups)) g.sort((a, b) => (b.valueCr ?? 0) - (a.valueCr ?? 0));
   const sgb = (Array.isArray(sgbData?.data) ? sgbData.data : []).map(r => sgbRow(r)).filter(r => r.price != null)
     .sort((a, b) => (a.yearsLeft ?? 99) - (b.yearsLeft ?? 99));
   const compare = COMPARE.map(([label, symbol]) => {
-    const bars = barsFor(symbol, snap);
+    const row = etf.data.find(x => x.symbol === symbol);
+    const bars = withToday(barsFor(symbol, snap), nseDay(etf.timestamp), num(row?.ltP));
     return { label, symbol, returns: Object.fromEntries(PERIODS.map(([k, d]) => [k, returnOver(bars, d)])), from: bars?.[0]?.[0] ?? null };
   });
   return { asOf: etf.timestamp ?? null, sgbAsOf: sgbData?.timestamp ?? null, navDate: etf.navDate ?? null, groupInfo: GROUPS, groups, sgb, compare, source: "NSE" };
@@ -172,4 +187,17 @@ export function goldSilverChart() {
     }).filter(s => s.days.length > 1);
     return { series, to: snap?.pricesDate ?? series[0]?.days.at(-1) ?? null, source: "NSE daily closes" };
   });
+}
+
+// Today's price for the chart's ETFs (20 Nov 2026: the chart ended at the
+// last close, ₹106.30, while gold was trading at ₹102 that afternoon), from
+// NSE's ETF prices the page already reads: { SYMBOL: { date, price, at } }
+const MON3 = { JAN: "01", FEB: "02", MAR: "03", APR: "04", MAY: "05", JUN: "06", JUL: "07", AUG: "08", SEP: "09", OCT: "10", NOV: "11", DEC: "12" };
+export function liveOf(d) {
+  const m = /^(\d{1,2})-(\w{3})-(\d{4}) (\d{1,2}:\d{2})/.exec(d?.asOf ?? "");
+  if (!m || !MON3[m[2].toUpperCase()]) return {};
+  const date = `${m[3]}-${MON3[m[2].toUpperCase()]}-${m[1].padStart(2, "0")}`;
+  const all = Object.values(d.groups ?? {}).flat();
+  return Object.fromEntries(COMPARE.map(([, symbol]) => [symbol, all.find(e => e.symbol === symbol)])
+    .filter(([, e]) => e?.price > 0).map(([symbol, e]) => [symbol, { date, price: e.price, at: m[4] }]));
 }

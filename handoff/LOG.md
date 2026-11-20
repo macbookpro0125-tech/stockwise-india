@@ -507,3 +507,8 @@ Owner: "the news is not understandable". Looked at 10 apps (Inshorts' one-line c
 
 ## 20 Nov 2026 — Gold page inside the app
 - Owner: the gold page "looks different from the app". Signed in, /gold-silver now opens inside the app as a Markets page (MarketsView goldPage, at the /gold-silver address, ← Markets back; App.jsx starts on Markets there). Signed out, and for Google, it stays the public page (GoldSilverPage inApp flag).
+
+## 20 Nov 2026 — Gold price checked against NSE and Google Finance
+- Owner: "check the gold price and match it with our app". GOLDBEES at 1:54 pm: ours ₹101.96 (NSE /api/etf), Google ₹102.39 a few seconds apart; last close ₹106.30 the same in all three; 52-week high/low ₹148.14/₹100.11 the same. Silver ₹146.27 exactly.
+- Fixed: the chart ended at the last close (₹106.30 +4.0%) while gold traded at ₹102 — it now adds today's price (liveOf, from the ETF prices, 10-minute cache) and says "today's price at 2:01 pm".
+- Fixed: the ETF list showed NSE's own 1-month/1-year change, which doesn't hold up (GOLDBEES 1 year +4.0% would need a start under its 52-week low; our closes: ₹101.55 → ₹102.38, +0.8%). Every ETF's 1M/1Y/3Y/5Y and the gold-silver-Nifty table now come from our daily NSE closes with today's price on the end (withToday). An ETF with under a year of history shows no 1-year figure.
