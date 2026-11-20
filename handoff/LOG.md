@@ -446,3 +446,9 @@ Owner: "the news is not understandable". Looked at 10 apps (Inshorts' one-line c
 - Index: indexLong 5 → 10 years weekly (market-data.js); Markets 10Y button, shown only once ten years are held.
 
 - 20 Nov 2026 daily results push: Google 10 requests accepted (IDEA, MAZDOCK, OIL, ALKEM, NMDC, RVNL, BDL, IRCTC, PAGEIND, STARHEALTH q2-fy27); IndexNow 100 URLs sent. No Short or Reel made (evergreen-only rule from 16 Nov; Instagram disabled 19 Nov).
+
+## 20 Nov 2026 — Why profit jumped
+- Owner: "some companies' profits jump like −10 to 55 cr … I just want somewhere to know why".
+- `src/profitJump.js` (+ test): when a quarter's profit turns from a loss (or back), rises 50%+ or falls 40%+ (by ₹1 cr or more) on the same quarter a year earlier — or a year on the year just before — the change is split into the company's own filed lines: the business (sales and margin), other income, one-off (exceptional) items, interest, depreciation, tax. What the lines don't cover is shown as "other lines before tax" / "lines after tax" and pointed to the results filing, never put down to anything. Banks: the lending business, other income, tax.
+- `src/ProfitWhy.jsx`: the card under the latest-quarter tiles (Quarterly results) and under the yearly chart. For a jump from the business, the orders the company announced to NSE in the year before the results, as context only.
+- Local data: about 988 of 2,280 companies have such a quarter. Some older local quarters lack the tax and exceptional lines; those land in the before/after-tax buckets.

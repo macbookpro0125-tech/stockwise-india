@@ -1,6 +1,7 @@
 import { Fragment, useState, useEffect, useRef, useMemo } from "react";
 import { profitSteps, cashSteps, cashLines, balanceParts, materialsOf, ttmOf } from "./statements.js";
 import { ChartColumn } from "lucide-react";
+import ProfitWhy from "./ProfitWhy.jsx";
 import { Bridge, BalanceMap, FundFlow, YearChips, fmtCrShort } from "./StatementCharts.jsx";
 
 // The original's Financials panel (stock-screener FinancialsPanel.jsx and
@@ -156,7 +157,7 @@ function TrendBars({ cols, rowKey, kind, yearly = true, before = [] }) {
 // The quarters at a glance, above their table (4 Nov 2026: "quarterly is not
 // good on a phone"): the latest quarter's sales, profit and margin against a
 // year earlier, then the last eight quarters' sales and profit as bars
-function QuarterPicture({ quarters }) {
+function QuarterPicture({ quarters, symbol }) {
   const q = quarters?.[0];
   if (!q) return null;
   const last8 = quarters.slice(0, 8).reverse();
@@ -179,6 +180,7 @@ function QuarterPicture({ quarters }) {
         {tile("Net profit", rs(q.profitCr), vs(q.profitYoY), q.profitYoY >= 0 ? "up" : "down")}
         {q.opm != null && tile("Operating margin", `${q.opm.toFixed(1)}%`, null)}
       </div>
+      <ProfitWhy periods={quarters} symbol={symbol} />
       {last8.length >= 2 && <>
         <div className="qp-chart-h">Revenue, quarter by quarter</div>
         <TrendBars cols={last8.map(x => ({ ...x, label: shortLabel(x.fyEnd) }))} rowKey="revenueCr" kind="cr" yearly={false} before={prior} />
@@ -495,7 +497,7 @@ function YearPicture({ history, tab }) {
 // only: one statement on its own, without the switch buttons (16 Nov 2026, the
 // owner: "I want the financials separate, profit & loss, quarterly, balance
 // sheet… each different") — the Finance tab shows each as its own section
-export default function FinancialsPanel({ history: filed, quarters: filedQuarters = [], template, only = null, olderYears = [], growth10 = null }) {
+export default function FinancialsPanel({ history: filed, quarters: filedQuarters = [], template, only = null, olderYears = [], growth10 = null, symbol = null }) {
   const [picked, setTab] = useState("summary");
   const tab = only ?? picked;
   const history = useMemo(() => (filed ?? []).map(withDerived), [filed]);
@@ -550,6 +552,7 @@ export default function FinancialsPanel({ history: filed, quarters: filedQuarter
         ? (points.length >= 2
           ? <>
             <FinancialsChart points={points} />
+            <ProfitWhy periods={history} yearly />
             {older.length > 0 && (
               <p style={{ fontSize: 11, lineHeight: 1.5, color: "var(--t3)", margin: "8px 0 0" }}>
                 {growth10?.sales != null && <><b style={{ color: "var(--t2)", fontWeight: 500 }}>Over about ten years: sales {growth10.sales >= 0 ? "grew" : "fell"} {Math.abs(growth10.sales).toFixed(1)}% a year{growth10.profit != null ? `, profit ${growth10.profit >= 0 ? "grew" : "fell"} ${Math.abs(growth10.profit).toFixed(1)}% a year` : ""}.</b> </>}
@@ -559,7 +562,7 @@ export default function FinancialsPanel({ history: filed, quarters: filedQuarter
           </>
           : <div style={{ fontSize: 12, color: "var(--t3)", padding: "24px 0" }}>Not enough reported years to chart. The tables show everything available.</div>)
         : tab === "quarterly"
-          ? <><QuarterPicture quarters={quarters} /><StatementTable history={quarters} yearly={false} rows={STATEMENTS.quarterly} note="Each quarter is its own three months; the last two columns compare with the same quarter a year earlier." /></>
+          ? <><QuarterPicture quarters={quarters} symbol={symbol} /><StatementTable history={quarters} yearly={false} rows={STATEMENTS.quarterly} note="Each quarter is its own three months; the last two columns compare with the same quarter a year earlier." /></>
           : <>
             {["profitLoss", "balanceSheet", "cashFlow"].includes(tab) && <YearPicture key={tab} history={history} tab={tab} />}
             {tab === "balanceSheet" && <BalanceLines history={history} />}

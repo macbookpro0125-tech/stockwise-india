@@ -7332,3 +7332,24 @@ html.is-scrolling .hk-track { animation-play-state: paused; }
 .bo-home .mk-note { padding: 0 16px; }
 .co-sum b { font-weight: 500; color: var(--t1); }
 .bo-what { grid-column: 2 / -1; font-size: 12px; line-height: 1.4; color: var(--t2); }
+
+/* Why profit jumped (ProfitWhy.jsx, 20 Nov 2026) */
+.pw { margin: 4px 0 16px; padding: 14px; border-radius: 12px; border: 1px solid var(--bdr2); background: var(--s3); }
+.pw-h { font-size: 14px; font-weight: 600; color: var(--t1); margin-bottom: 6px; }
+.pw-sum { font-size: 13px; line-height: 1.55; color: var(--t2); margin: 0 0 12px; }
+.pw-sum b { color: var(--t1); font-weight: 600; font-variant-numeric: tabular-nums; }
+.pw-sum .pw-lead { display: block; margin-top: 6px; font-weight: 500; }
+.pw-when { color: var(--t3); }
+.pw-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.pw-row { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; }
+.pw-label { color: var(--t1); min-width: 0; }
+.pw-amt { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+.pw-amt.up { color: var(--green); }
+.pw-amt.down { color: var(--red); }
+.pw-bar { height: 6px; border-radius: 3px; background: var(--s2); margin-top: 4px; overflow: hidden; }
+.pw-bar i { display: block; height: 100%; border-radius: 3px; }
+.pw-bar i.up { background: var(--green); }
+.pw-bar i.down { background: var(--red); }
+.pw-note { display: block; font-size: 11px; line-height: 1.45; color: var(--t3); margin-top: 3px; }
+.pw-orders { font-size: 12px; line-height: 1.5; color: var(--t2); margin: 12px 0 0; }
+.pw-foot { font-size: 11px; line-height: 1.45; color: var(--t3); margin: 10px 0 0; }
