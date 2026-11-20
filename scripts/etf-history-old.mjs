@@ -31,7 +31,8 @@ for (let t = Date.parse(`${TO}T00:00:00Z`); t >= Date.parse(`${FROM}T00:00:00Z`)
     else if (!res.ok) throw new Error(`HTTP ${res.status}`);
     else {
       const { date, days } = parseLegacyBhavcopy(unzipFirst(Buffer.from(await res.arrayBuffer())));
-      for (const s of SYMBOLS) { const b = days.get(s); if (b) raw.bars[s][date] = [b.open, b.high, b.low, b.close]; }
+      // a file whose own date can't be read is the day asked for
+      for (const s of SYMBOLS) { const b = days.get(s); if (b) raw.bars[s][date ?? iso] = [b.open, b.high, b.low, b.close]; }
       raw.done[iso] = true;
     }
   } catch (e) { console.log(iso, "failed:", e.message); await sleep(3000); continue; }

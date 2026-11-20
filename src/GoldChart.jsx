@@ -80,7 +80,7 @@ export default function GoldChart() {
       layout: { background: { type: ColorType.Solid, color: "rgba(0, 0, 0, 0)" }, textColor: v("--t3"), fontFamily: getComputedStyle(document.body).fontFamily, attributionLogo: false },
       grid: { vertLines: { visible: false }, horzLines: { color: v("--bdr") } },
       rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.12, bottom: 0.08 } },
-      timeScale: { borderVisible: false, rightOffset: 3, minBarSpacing: 0.3 },
+      timeScale: { borderVisible: false, rightOffset: 3, minBarSpacing: 0.05 },
       crosshair: { mode: CrosshairMode.Normal, horzLine: { style: 3, color: v("--bdr2"), labelBackgroundColor: "#475569" }, vertLine: { style: 3, color: v("--bdr2"), labelBackgroundColor: "#475569" } },
       localization: { locale: "en-IN", priceFormatter: money },
       // drag sideways and pinch to move and zoom, as any chart; a finger
@@ -133,12 +133,13 @@ export default function GoldChart() {
   const s0 = lines[0];
   const [a, b] = !compare && span && s0 && span[1] < s0.days.length ? span : [0, (s0?.days.length ?? 1) - 1];
   const fmt = p => (p >= 1000 ? `₹${Math.round(p).toLocaleString("en-IN")}` : `₹${p.toFixed(2)}`);
-  // the high and low in view, alone
+  // the highest and lowest close in view, alone (closes, not the day's
+  // extremes: an ETF's odd single trade, ₹35.80 on a ₹41 day, isn't gold's price)
   let hi = null, lo = null;
   if (s0 && !compare) for (let i = a; i <= b; i++) {
-    const h = s0.highs?.[i] ?? s0.closes[i], l = s0.lows?.[i] ?? s0.closes[i];
-    if (h > 0 && (!hi || h > hi.v)) hi = { v: h, d: s0.days[i] };
-    if (l > 0 && (!lo || l < lo.v)) lo = { v: l, d: s0.days[i] };
+    const c = s0.closes[i];
+    if (c > 0 && (!hi || c > hi.v)) hi = { v: c, d: s0.days[i] };
+    if (c > 0 && (!lo || c < lo.v)) lo = { v: c, d: s0.days[i] };
   }
   return (
     <section className="gs-card gc">
@@ -160,7 +161,7 @@ export default function GoldChart() {
           );
         })}
         <small>{s0 ? `${day(s0.days[a])} – ${day(s0.days[b])}${b === s0.days.length - 1 ? (s0.liveAt ? `, today's price at ${(([h, mi]) => `${Number(h) % 12 || 12}:${mi} ${Number(h) < 12 ? "am" : "pm"}`)(s0.liveAt.split(":"))}` : ", the last close") : ""}` : ""}</small>
-        {hi && lo && <small className="gc-hilo">High {fmt(hi.v)} on {day(hi.d)} · Low {fmt(lo.v)} on {day(lo.d)}</small>}
+        {hi && lo && <small className="gc-hilo">Highest close {fmt(hi.v)} on {day(hi.d)} · lowest {fmt(lo.v)} on {day(lo.d)}</small>}
       </div>
       <div className="gc-wrap">
         <div ref={host} className="gc-chart" role="img" aria-label={compare ? "Gold, silver and the Nifty 50, ₹100 put in at the start" : `${mode}'s price`} />
