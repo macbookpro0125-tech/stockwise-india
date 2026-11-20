@@ -51,7 +51,7 @@ export const shortDesc = (text, max = 158) => {
 };
 
 const SITE_NAV = `<header class="seo-nav"><a href="/">Jocular Insights</a> <nav aria-label="Main pages"><a href="/screens">Stock screens</a> · <a href="/sectors">Sectors</a> · <a href="/results">Latest results</a> · <a href="/results-calendar">Results calendar</a> · <a href="/lists">Stock lists</a> · <a href="/learn">Learn</a></nav> <a href="/?auth=signup">Create a free account</a></header>`;
-const PUBLIC_PATHS = ["/", "/about", "/help", "/methodology", SCREENER_PAGE_PATH, "/privacy", "/disclaimer"];
+const PUBLIC_PATHS = ["/", "/gold-silver", "/about", "/help", "/methodology", SCREENER_PAGE_PATH, "/privacy", "/disclaimer"];
 
 export const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const plain = name => String(name ?? "").replace(/\s+(limited|ltd\.?)\s*$/i, "").trim();

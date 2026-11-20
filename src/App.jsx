@@ -45,7 +45,7 @@ const named = (load, name) => lazyPage(() => load().then(m => ({ default: m[name
 const legal = name => named(() => import("./LegalPages.jsx"), name);
 const PrivacyPage = legal("PrivacyPage"), DisclaimerPage = legal("DisclaimerPage"), HelpPage = legal("HelpPage"), AboutPage = legal("AboutPage"), MeasuresPage = legal("MeasuresPage"), NotFoundPage = legal("NotFoundPage");
 const lists = name => named(() => import("./PublicLists.jsx"), name);
-const ScreensIndexPage = lists("ScreensIndexPage"), ScreenPage = lists("ScreenPage"), SharedScreenPage = lists("SharedScreenPage"), ResultsCalendarPage = lists("ResultsCalendarPage"), SectorsIndexPage = lists("SectorsIndexPage"), SectorPage = lists("SectorPage"), ListsIndexPage = lists("ListsIndexPage"), ListPage = lists("ListPage");
+const ScreensIndexPage = lists("ScreensIndexPage"), ScreenPage = lists("ScreenPage"), SharedScreenPage = lists("SharedScreenPage"), ResultsCalendarPage = lists("ResultsCalendarPage"), SectorsIndexPage = lists("SectorsIndexPage"), GoldSilverPage = lists("GoldSilverPage"), SectorPage = lists("SectorPage"), ListsIndexPage = lists("ListsIndexPage"), ListPage = lists("ListPage");
 const MethodologyPage = lazyPage(() => import("./MethodologyPage.jsx"));
 const StockScreenerPage = lazyPage(() => import("./StockScreenerPage.jsx"));
 const ResetPassword = lazyPage(() => import("./ResetPassword.jsx"));
@@ -408,6 +408,7 @@ export default function App() {
   if (path === "/results-calendar") return pub(<ResultsCalendarPage signedIn={!!account} />);
   if (/^\/screens\/[a-z0-9-]+\/?$/.test(path)) return pub(<ScreenPage slug={path.split("/")[2]} signedIn={!!account} />);
   if (path === "/sectors") return pub(<SectorsIndexPage signedIn={!!account} />);
+  if (path === "/gold-silver" || path === "/gold-silver/") return pub(<GoldSilverPage signedIn={!!account} />);
   if (path === "/lists") return pub(<ListsIndexPage signedIn={!!account} />);
   if (/^\/lists\/[a-z0-9-]+\/?$/.test(path)) return pub(<ListPage slug={path.split("/")[2]} signedIn={!!account} />);
   if (isPublicHtmlPath(path)) return <PublicHtmlPage path={path} signedIn={!!account} />;

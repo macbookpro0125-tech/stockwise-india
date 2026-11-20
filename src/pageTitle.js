@@ -16,6 +16,7 @@ export const HOME_TITLE = `${BRAND}: Indian stock screener & quality scores (NSE
 export const SCREENS_TITLE = pageTitle("NSE stock screens: quality, value, dividends and growth");
 export const CALENDAR_TITLE = pageTitle("NSE results calendar: who reports this week");
 export const SECTORS_TITLE = pageTitle("NSE stocks by sector: every listed company");
+export const GOLD_TITLE = pageTitle("Gold & silver ETF prices, Sovereign Gold Bonds (SGB)");
 export const LISTS_TITLE = pageTitle("NSE stock lists: Nifty 50, PSU, defence, under ₹100");
 
 // a screen: what people search for it by, when it has one, and today's count

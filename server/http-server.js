@@ -24,6 +24,8 @@ import { criteriaToFilters, METRICS, CATEGORY_METRICS } from "./metric-catalog.j
 import { listWatchlist, addToWatchlist, setWatchlistNote, removeFromWatchlist, listWatchLists, createWatchList, renameWatchList, deleteWatchList, addToWatchList, removeFromWatchList } from "./user-watchlist.js";
 import { listHoldings, addHolding, addHoldings, updateHolding, removeHolding } from "./user-portfolio.js";
 import { listTrades, addTrade, updateTrade, removeTrade } from "./journal.js";
+import { goldSilver } from "./gold-silver.js";
+import { goldSilverHtml } from "./seo-gold.js";
 import { resolveImportRows, MAX_IMPORT_ROWS } from "./portfolio-import.js";
 import { getThesis, saveThesis } from "./user-thesis.js";
 import { listNotes, saveNote, deleteNote, listStrategies, saveStrategies, checkStrategyMatches, acknowledgeStrategyMatches } from "./user-notes.js";
@@ -845,6 +847,8 @@ export function createApp() {
       // The strategies' and the results calendar's pages, no sign-in needed (seo-lists.js, PublicLists.jsx)
       if (url.pathname === "/api/public/screens" && req.method === "GET") { sendJson(res, 200, publicScreens()); return; }
       if (url.pathname === "/api/public/sectors" && req.method === "GET") { sendJson(res, 200, publicSectors()); return; }
+      // gold, silver, every ETF and the gold bonds, from NSE (gold-silver.js)
+      if (url.pathname === "/api/public/gold-silver" && req.method === "GET") { sendJson(res, 200, await goldSilver()); return; }
       // the front page's search (HeroSearch.jsx): NSE's own list, symbols and names only
       if (url.pathname === "/api/public/search" && req.method === "GET") { sendJson(res, 200, await searchEquities(url.searchParams.get("q"))); return; }
       if (url.pathname === "/api/public/page" && req.method === "GET") {
@@ -1771,7 +1775,7 @@ export function createApp() {
         const to = p === "/index.html" ? "/"
           : lower && (decodePathSegment(lower[1]) !== decodePathSegment(lower[1]).toUpperCase() || p.endsWith("/")) ? `/stock/${encodeURIComponent(decodePathSegment(lower[1]).toUpperCase())}`
           : /^\/screens\/[a-z0-9-]+\/?$/.test(p) && OLD_SCREEN_SLUGS[p.split("/")[2]] ? `/screens/${OLD_SCREEN_SLUGS[p.split("/")[2]]}`
-          : /^\/(screens\/[a-z0-9-]+|sector\/[a-z0-9-]+|screens|sectors|results-calendar|methodology|about|help|learn|learn\/[a-z0-9-]+|privacy|disclaimer|stock-screener-india)\/$/.test(p) ? p.slice(0, -1)
+          : /^\/(screens\/[a-z0-9-]+|sector\/[a-z0-9-]+|screens|sectors|results-calendar|methodology|about|help|learn|learn\/[a-z0-9-]+|privacy|disclaimer|stock-screener-india|gold-silver)\/$/.test(p) ? p.slice(0, -1)
           : null;
         if (to && to !== p) {
           res.writeHead(301, { Location: `${to}${url.search}`, "Cache-Control": "public, max-age=86400" });
@@ -1855,6 +1859,12 @@ export function createApp() {
         // page that says so (9 Nov 2026, as for any other unknown address)
         res.writeHead(html ? 200 : 404, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache" });
         res.end(req.method === "HEAD" ? undefined : html ?? notFoundPageHtml(template, url.pathname));
+        return;
+      }
+      if ((url.pathname === "/gold-silver" || url.pathname === "/gold-silver/") && (req.method === "GET" || req.method === "HEAD") && existsSync(join(DIST_DIR, "index.html"))) {
+        const html = await goldSilverHtml(readFileSync(join(DIST_DIR, "index.html"), "utf-8"));
+        res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache" });
+        res.end(req.method === "HEAD" ? undefined : html);
         return;
       }
       if (url.pathname === "/stock-screener-india" && (req.method === "GET" || req.method === "HEAD") && existsSync(join(DIST_DIR, "index.html"))) {

@@ -7421,3 +7421,32 @@ html.is-scrolling .hk-track { animation-play-state: paused; }
 .tj-err { margin: 0; font-size: 12px; color: var(--red); }
 .tj-btns { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
 .tj-btns button { height: 38px; padding: 0 18px; border-radius: 8px; font-size: 13px; }
+
+/* Gold, silver and ETFs (PublicLists.jsx GoldSilverPage, 20 Nov 2026) */
+.gs-card { margin: 4px 0 16px; padding: 16px; border: 1px solid var(--bdr2); border-radius: 14px; background: var(--s1); }
+.gs-card h2 { margin: 0 0 10px; font-size: 15px; font-weight: 600; color: var(--t1); }
+.gs-cmp-wrap { overflow-x: auto; }
+.gs-cmp { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+.gs-cmp th, .gs-cmp td { padding: 8px 6px; text-align: right; border-bottom: 1px solid var(--bdr); white-space: nowrap; }
+.gs-cmp thead th { font-size: 12px; font-weight: 400; color: var(--t3); }
+.gs-cmp tbody th { text-align: left; font-weight: 500; color: var(--t1); }
+.gs-cmp .up, .gs-list .up { color: var(--green); }
+.gs-cmp .down, .gs-list .down { color: var(--red); }
+.gs-note { font-size: 12px; line-height: 1.55; color: var(--t3); margin: 10px 0 0; }
+.gs-note b { color: var(--t2); font-weight: 500; }
+.gs-about { margin: 0 0 10px; }
+.gs-tabs { margin-top: 4px; }
+.gs-search { width: 100%; box-sizing: border-box; height: 42px; padding: 0 12px; margin-bottom: 10px; border-radius: 10px; border: 1px solid var(--bdr2); background: var(--s2); color: var(--t1); font: inherit; font-size: 16px; }
+.gs-list { list-style: none; margin: 0; padding: 0; }
+.gs-list li { padding: 12px 2px; border-top: 1px solid var(--bdr); }
+.gs-top { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+.gs-who { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.gs-who b { font-size: 14px; font-weight: 600; color: var(--t1); }
+.gs-who small { font-size: 12px; color: var(--t3); overflow-wrap: anywhere; }
+.gs-px { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex: none; font-variant-numeric: tabular-nums; }
+.gs-px b { font-size: 14px; font-weight: 600; color: var(--t1); }
+.gs-px small { font-size: 12px; }
+.gs-meta { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; font-size: 12px; color: var(--t2); font-variant-numeric: tabular-nums; }
+.gs-meta i { font-style: normal; }
+.gs-flag { color: var(--accent) !important; }
+@media (max-width: 480px) { .gs-cmp { font-size: 13px; } .gs-cmp th, .gs-cmp td { padding: 7px 3px; } .gs-card { padding: 14px 12px; } }

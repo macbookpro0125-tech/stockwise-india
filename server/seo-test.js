@@ -21,7 +21,7 @@ const companies = allMetrics().rows.filter(r => r.name).length;
 // is a line here rather than a total to recount
 const { PRESETS } = await import("./presets.js");
 const { screenPageHtml, screensIndexHtml, resultsCalendarHtml, publicScreen, screenSlug } = await import("./seo-lists.js");
-const pages = ["/", "/about", "/help", "/methodology", "/stock-screener-india", "/privacy", "/disclaimer",
+const pages = ["/", "/gold-silver", "/about", "/help", "/methodology", "/stock-screener-india", "/privacy", "/disclaimer",
   // the strategies' pages and the results calendar (seo-lists.js)
   "/screens", "/results-calendar", ...PRESETS.map(p => `/screens/${screenSlug(p.id)}`),
   // the guides (guides.js, 30 Oct 2026)

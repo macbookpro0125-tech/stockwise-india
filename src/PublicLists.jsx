@@ -10,7 +10,7 @@ import CompanyLogo from "./CompanyLogo.jsx";
 import { AdCard } from "./ads.jsx";
 import { useJoin, JoinCard, JoinBar } from "./PublicJoin.jsx";
 import { withTerms } from "./jargon.jsx";
-import { SCREENS_TITLE, CALENDAR_TITLE, SECTORS_TITLE, LISTS_TITLE, screenTitle, sectorTitle, listTitle } from "./pageTitle.js";
+import { SCREENS_TITLE, CALENDAR_TITLE, SECTORS_TITLE, LISTS_TITLE, GOLD_TITLE, screenTitle, sectorTitle, listTitle } from "./pageTitle.js";
 
 // One ad card partway down each public page (26 Oct 2026): the pages people
 // arrive at from a search, signed out. Marked "Ad", never a banner (ads.jsx);
@@ -77,7 +77,7 @@ function useLoad(load, key, kind) {
 const Wait = () => <div className="nw-skel" role="status" aria-label="Loading">{[0, 1, 2].map(i => <span key={i} />)}</div>;
 const More = () => (
   <p className="pl-more">
-    <A to="/screens">All stock screens</A> · <A to="/lists">Stock lists</A> · <A to="/lists/penny-stocks">Penny stocks</A> · <A to="/lists/stocks-under-100">Stocks under ₹100</A> · <A to="/lists/fno-stocks">F&amp;O stocks</A> · <A to="/lists/nifty-50-stocks">Nifty 50 stocks</A> · <A to="/sectors">Sectors</A> · <A to="/results-calendar">Results calendar</A> · <A to="/results">Latest results</A> · <A to="/methodology">How the quality score works</A> · <A to="/disclaimer">Disclaimer</A>
+    <A to="/screens">All stock screens</A> · <A to="/lists">Stock lists</A> · <A to="/lists/penny-stocks">Penny stocks</A> · <A to="/lists/stocks-under-100">Stocks under ₹100</A> · <A to="/lists/fno-stocks">F&amp;O stocks</A> · <A to="/lists/nifty-50-stocks">Nifty 50 stocks</A> · <A to="/sectors">Sectors</A> · <A to="/gold-silver">Gold &amp; silver</A> · <A to="/results-calendar">Results calendar</A> · <A to="/results">Latest results</A> · <A to="/methodology">How the quality score works</A> · <A to="/disclaimer">Disclaimer</A>
   </p>
 );
 
@@ -433,6 +433,107 @@ export function ListPage({ slug, signedIn }) {
       )}
       <More />
       {!signedIn && <JoinBar label={s?.name ?? "This list"} why="Create a free account to see every check behind these scores." onJoin={join} />}
+      {box}
+    </PublicPage>
+  );
+}
+
+// Gold, silver and every ETF on NSE, and the Sovereign Gold Bonds (20 Nov
+// 2026, server/gold-silver.js): one tab for each kind; prices from NSE.
+const signed = (v, d = 1) => (v == null || !isFinite(v) ? "—" : `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(d)}%`);
+const tone = v => (v == null ? "" : v >= 0 ? "up" : "down");
+const rupees = (v, d = 2) => (v == null ? "—" : `₹${Number(v).toLocaleString("en-IN", { minimumFractionDigits: d, maximumFractionDigits: d })}`);
+const traded = cr => (cr == null ? null : cr >= 1 ? `₹${Math.round(cr).toLocaleString("en-IN")} cr traded` : `₹${Math.round(cr * 100).toLocaleString("en-IN")} lakh traded`);
+
+function EtfRows({ list, metal }) {
+  return (
+    <ul className="gs-list">
+      {list.map(e => (
+        <li key={e.symbol}>
+          <div className="gs-top">
+            <span className="gs-who"><b>{e.symbol}</b><small>{[e.amc, metal ? null : e.tracks].filter(Boolean).join(" · ") || e.tracks}</small></span>
+            <span className="gs-px"><b>{rupees(e.price)}</b><small className={tone(e.changePct)}>{signed(e.changePct, 2)}</small></span>
+          </div>
+          <div className="gs-meta">
+            {e.premiumPct != null && <span title={`Its close on ${e.navDate} against its NAV that day`}>{Math.abs(e.premiumPct) < 0.05 ? "At its NAV" : `${Math.abs(e.premiumPct).toFixed(2)}% ${e.premiumPct > 0 ? "over" : "under"} NAV`}</span>}
+            {e.ret1y != null && <span>1 year <i className={tone(e.ret1y)}>{signed(e.ret1y)}</i></span>}
+            {e.ret3y != null && <span>3 years <i className={tone(e.ret3y)}>{signed(e.ret3y)} a year</i></span>}
+            {traded(e.valueCr) && <span>{traded(e.valueCr)}</span>}
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function SgbRows({ list }) {
+  const low = Math.min(...list.filter(s => s.valueCr >= 0.1).map(s => s.price));
+  return (
+    <ul className="gs-list">
+      {list.map(s => (
+        <li key={s.symbol}>
+          <div className="gs-top">
+            <span className="gs-who"><b>{s.symbol}</b><small>Matures {s.matures}{s.yearsLeft != null ? ` · ${s.yearsLeft < 1 ? (m => `${m} month${m === 1 ? "" : "s"}`)(Math.max(1, Math.round(s.yearsLeft * 12))) : `${s.yearsLeft.toFixed(1)} years`} left` : ""}</small></span>
+            <span className="gs-px"><b>{rupees(s.price)}</b><small className={tone(s.changePct)}>{signed(s.changePct, 2)}</small></span>
+          </div>
+          <div className="gs-meta">
+            <span>Issued at {rupees(s.issuePrice, 0)}{s.sinceIssuePct != null && <> · <i className={tone(s.sinceIssuePct)}>{signed(s.sinceIssuePct, 0)}</i></>}</span>
+            {s.interestYear != null && <span>Interest {rupees(s.interestYear, 0)} a year</span>}
+            {traded(s.valueCr) && <span>{traded(s.valueCr)}</span>}
+            {s.price === low && <span className="gs-flag">Lowest price per gram among the series trading ₹10 lakh+</span>}
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export function GoldSilverPage({ signedIn }) {
+  const [d, error] = useLoad(() => api.publicGoldSilver(), "gold", "gold");
+  const [tab, setTab] = useState("gold");
+  const [q, setQ] = useState("");
+  const [all, setAll] = useState(false);
+  useEffect(() => { document.title = GOLD_TITLE; }, []);
+  useEffect(() => { setAll(false); setQ(""); }, [tab]);
+  const [join, box] = useJoin();
+  const count = id => (id === "sgb" ? d?.sgb?.length : d?.groups?.[id]?.length) ?? 0;
+  const list = tab === "sgb" ? null : (d?.groups?.[tab] ?? []).filter(e => !q || `${e.symbol} ${e.amc ?? ""} ${e.tracks ?? ""}`.toLowerCase().includes(q.toLowerCase()));
+  const shown = list && !all ? list.slice(0, 30) : list;
+  // "20-Nov-2026 12:55:45" → "20 Nov 2026, 12:55 pm IST"
+  const nseTime = t => { const m = /^(\d{1,2})-(\w{3})-(\d{4}) (\d{1,2}):(\d{2})/.exec(t ?? ""); if (!m) return t; const h = Number(m[4]); return `${Number(m[1])} ${m[2]} ${m[3]}, ${h % 12 || 12}:${m[5]} ${h < 12 ? "am" : "pm"} IST`; };
+  const updated = d?.asOf ? `NSE prices, ${nseTime(d.asOf)}${d.stale ? " (NSE couldn't be reached since)" : ""}` : null;
+  return (
+    <PublicPage title="Gold, silver and ETF prices" signedIn={signedIn} updated={updated} onSignIn={() => join(null, "signin")} onJoin={() => join("Create a free account to research every NSE company.")}>
+      <p className="pl-lede">Every gold and silver ETF on NSE with its price, NAV and returns, every Sovereign Gold Bond series, and every other ETF: international, government bond, liquid and share-index funds.</p>
+      {error && <p className="nw-empty">{error}</p>}
+      {!d && !error && <Wait />}
+      {d && <>
+        <section className="gs-card">
+          <h2>Gold, silver and the Nifty 50</h2>
+          <div className="gs-cmp-wrap">
+            <table className="gs-cmp">
+              <thead><tr><th />{["1M", "1Y", "3Y", "5Y", "10Y"].map(p => <th key={p}>{p}</th>)}</tr></thead>
+              <tbody>{d.compare.map(c => <tr key={c.label}><th>{c.label}</th>{["1M", "1Y", "3Y", "5Y", "10Y"].map(p => <td key={p} className={tone(c.returns[p])}>{signed(c.returns[p], Math.abs(c.returns[p] ?? 0) >= 10 ? 0 : 1)}</td>)}</tr>)}</tbody>
+            </table>
+          </div>
+          <p className="gs-note">Through the ETFs that track them ({d.compare.map(c => c.symbol).join(", ")}), so after the funds' costs, to the last NSE close. 3 years and more: a year, on average. A dash: the ETF's history here doesn't reach that far yet.</p>
+        </section>
+        <div className="cs-chips gs-tabs" role="tablist" aria-label="Kind">
+          {d.groupInfo.map(g => <button key={g.id} type="button" role="tab" aria-selected={tab === g.id} className={tab === g.id ? "on" : ""} onClick={() => setTab(g.id)}>{g.label}<span>{count(g.id)}</span></button>)}
+        </div>
+        {tab === "sgb" ? <>
+          <p className="gs-note gs-about">One bond is one gram of gold. Each pays <b>2.5% a year on its issue price</b>, every six months, and is repaid at the price of gold when it matures, eight years after issue; RBI also buys them back on interest dates after five years. For individuals, the gain is tax-free when a bond is held to maturity; the interest is taxed. Bonds trading little can be hard to buy or sell at the price shown.</p>
+          <SgbRows list={d.sgb} />
+        </> : <>
+          {tab === "shares" && <input className="gs-search" type="search" value={q} onChange={e => setQ(e.target.value)} placeholder="Search: Nifty 50, Bank, Midcap, a fund house…" aria-label="Search the ETFs" />}
+          {(tab === "gold" || tab === "silver") && <p className="gs-note gs-about">"Over NAV" or "under NAV": how far the ETF closed from the value of the {tab} it holds, both on {d.navDate}. A big gap means paying more, or getting less, than the {tab} is worth.</p>}
+          <EtfRows list={shown} metal={tab === "gold" || tab === "silver"} />
+          {list.length > shown.length && <button type="button" className="mk-link cs-more" onClick={() => setAll(true)}>Show all {list.length}</button>}
+        </>}
+        <p className="gs-note">Source: NSE — its list of ETFs, ETF prices and NAV ({d.navDate}), and Sovereign Gold Bond prices with RBI's issue price. Longer returns from NSE's daily closes. Prices, not advice: nothing here suggests buying or selling.</p>
+      </>}
+      <More />
+      {!signedIn && <JoinBar label="gold and silver" why="Create a free account to research every NSE company." onJoin={join} />}
       {box}
     </PublicPage>
   );

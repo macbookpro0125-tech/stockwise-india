@@ -698,6 +698,7 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
   const goTo = [
     { id: "moves", label: "Biggest moves", line: topGain ? `${cardName(topGain.name)} led, ${pct(topGain.change)}; every company, day by day` : "Every company's rise or fall, day by day", open: () => openMoves({ date: null, period }) },
     { id: "results", label: "Results", line: resultsCount ? `${resultsCount} companies reported in the last month; the figures, day by day` : "Who reports when, and the figures once they're out", open: () => openDay(resultsDay ?? "next") },
+    { id: "gold", label: "Gold, silver & ETFs", line: "Gold and silver ETFs, Sovereign Gold Bonds and every other ETF, at NSE's prices", open: () => navigate("/gold-silver") },
     { id: "sectors", label: "Sectors", line: topSector ? `${topSector.name.replace(/^Nifty\s*/i, "")} led today, ${pct(topSector.changePct)}; every sector's companies` : "Every sector and its companies", open: () => navigate("/sectors") },
     { id: "map", label: "Market map", line: "Every company in one picture, coloured by its move", open: () => onOpenTab?.("map") },
     { id: "lists", label: "Categories", line: "Ready lists: index members, debt-free, high dividend and more", open: () => navigate("/lists") },
