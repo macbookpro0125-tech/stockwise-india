@@ -25,7 +25,7 @@ function when(time) {
 }
 
 // home: the short form on Home — the five biggest, and a link to the rest on Markets
-export default function BigOrders({ onOpenStock, home = false, onSeeAll }) {
+export default function BigOrders({ onOpenStock, home = false, onSeeAll, bare = false, onCount }) {
   const [data, setData] = useState(null);
   const [all, setAll] = useState(false);
   useEffect(() => {
@@ -33,6 +33,7 @@ export default function BigOrders({ onOpenStock, home = false, onSeeAll }) {
     const load = () => api.bigOrders().then(d => {
       if (off) return;
       setData(d);
+      onCount?.(d.items?.length ?? 0);
       // notices still being read: look again shortly, a few times
       if (d.reading > 0 && tries++ < 6) timer = setTimeout(load, 15_000);
     }).catch(() => { if (!off) setData(d => d ?? { items: [], failed: true }); });
@@ -40,13 +41,13 @@ export default function BigOrders({ onOpenStock, home = false, onSeeAll }) {
     return () => { off = true; clearTimeout(timer); };
   }, []);
 
-  if (data && !data.failed && data.items.length === 0 && !data.reading) return null;
+  if (data && !data.failed && data.items.length === 0 && !data.reading) return bare ? <p className="mk-note">No big orders announced in the last few days.</p> : null;
   const items = data?.items ?? [];
   const list = home ? items.slice(0, 5) : all ? items : items.slice(0, SHOWN);
 
   return (
-    <section className={home ? "td-box bo-home" : "mk-card"} aria-labelledby={home ? "home-orders" : "mk-orders"}>
-      {home ? (
+    <section className={bare ? "bo-home bo-bare" : home ? "td-box bo-home" : "mk-card"} aria-labelledby={bare ? undefined : home ? "home-orders" : "mk-orders"} aria-label={bare ? "Big orders" : undefined}>
+      {bare ? null : home ? (
         <div className="td-head"><h3 id="home-orders">Big orders</h3>{items.length > 0 && <button type="button" onClick={onSeeAll}>All {items.length}</button>}</div>
       ) : (
         <div className="mk-card-h">
@@ -54,7 +55,8 @@ export default function BigOrders({ onOpenStock, home = false, onSeeAll }) {
           {items.length > SHOWN && <button type="button" className="mk-link" onClick={() => setAll(a => !a)}>{all ? "Fewer" : `All ${items.length}`}</button>}
         </div>
       )}
-      <p className="mk-note bo-intro">{home ? "Orders and contracts companies told NSE they won in the last few days, biggest first." : "Orders companies told NSE they won in the last few days, biggest first: the size from the company's own notice, beside its market value."}</p>
+      {bare && items.length > 0 && <div className="hm-more-top"><span>Orders companies told NSE they won, biggest first</span><button type="button" onClick={onSeeAll}>All {items.length}</button></div>}
+      {!bare && <p className="mk-note bo-intro">{home ? "Orders and contracts companies told NSE they won in the last few days, biggest first." : "Orders companies told NSE they won in the last few days, biggest first: the size from the company's own notice, beside its market value."}</p>}
       {data?.failed && <p className="mk-note">NSE's notices couldn't be read just now.</p>}
       <ul className="bo-list">
         {!data && [0, 1, 2, 3].map(i => <li key={i}><span className="mk-skel mk-row-skel" /></li>)}

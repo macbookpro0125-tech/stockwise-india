@@ -393,15 +393,15 @@ const MOVER_NOTE = {
   lows: "Closed at, or within 2% of, the lowest price of the last 52 weeks.",
   surge: "Traded at least twice its usual daily volume (the last month's average), on ₹1 crore or more.",
 };
-function HomeMovers({ movers, onOpenStock, onOpenTab }) {
+function HomeMovers({ movers, onOpenStock, onOpenTab, bare = false }) {
   const tabs = MOVER_TABS.filter(([id]) => movers[id]?.length);
   const [tab, setTab] = useState("gainers");
   const current = tabs.find(([id]) => id === tab) ?? tabs[0];
   if (!current) return null;
   const [id, , right] = current;
   return (
-    <section className="td-box td-mv" aria-label="Top movers today">
-      <div className="td-head"><h3>Top movers today</h3><button type="button" onClick={() => onOpenTab?.("markets")}>Markets</button></div>
+    <section className={bare ? "td-mv td-mv-bare" : "td-box td-mv"} aria-label="Top movers today">
+      {!bare && <div className="td-head"><h3>Top movers today</h3><button type="button" onClick={() => onOpenTab?.("markets")}>Markets</button></div>}
       <div className="td-mv-tabs" role="tablist" aria-label="Which movers">
         {tabs.map(([t, label]) => <button key={t} type="button" role="tab" aria-selected={t === id} onClick={e => { setTab(t); e.currentTarget.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" }); }}>{label}</button>)}
       </div>
@@ -415,6 +415,61 @@ function HomeMovers({ movers, onOpenStock, onOpenTab }) {
         ))}
       </div>
       {MOVER_NOTE[id] && <p className="td-mv-foot">{MOVER_NOTE[id]}</p>}
+    </section>
+  );
+}
+
+// Home's tabs (20 Nov 2026, the owner: "major indices, top movers, big
+// orders, explore the categories — like tabs, so we save the space"): one
+// card, Top movers first (it changes most); the tab last picked opens next time
+const HOME_TABS = [["movers", "Top movers"], ["indices", "Indices"], ["orders", "Big orders"], ["lists", "Categories"]];
+function HomeTabs({ strip, movers, listCounts, openIndex, onOpenStock, onOpenTab }) {
+  const [tab, setTabState] = useState(() => { try { const t = localStorage.getItem("home-tab"); return HOME_TABS.some(([id]) => id === t) ? t : "movers"; } catch { return "movers"; } });
+  const setTab = t => { setTabState(t); try { localStorage.setItem("home-tab", t); } catch { /* private window */ } };
+  const [orders, setOrders] = useState(null);
+  const count = { indices: strip?.indices?.length ?? null, orders, lists: HOME_LISTS.length };
+  return (
+    <section className="td-box hm" aria-label="The market today">
+      <div className="hm-tabs" role="tablist" aria-label="Show">
+        {HOME_TABS.map(([id, label]) => (
+          <button key={id} type="button" role="tab" id={`hm-${id}`} aria-selected={tab === id} aria-controls={`hm-p-${id}`}
+            onClick={e => { setTab(id); e.currentTarget.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" }); }}>
+            {label}{count[id] ? <span>{count[id]}</span> : null}
+          </button>
+        ))}
+      </div>
+      <div className="hm-panel" role="tabpanel" id={`hm-p-${tab}`} aria-labelledby={`hm-${tab}`}>
+        {tab === "movers" && (movers ? <HomeMovers bare movers={movers} onOpenStock={onOpenStock} onOpenTab={onOpenTab} /> : <p className="td-empty">Reading the day's moves…</p>)}
+        {tab === "indices" && (
+          <>
+            {(strip?.indices ?? []).slice(0, 7).map(m => (
+              <button key={m.name} type="button" className="td-index" onClick={() => openIndex(m.name)}>
+                <span className="td-name">{m.name}</span>
+                <span className="td-index-nums"><b>{num(m.close)}</b><i style={{ color: tone(m.changePct) }}>{pct(m.changePct)}</i></span>
+              </button>
+            ))}
+            {!strip?.indices?.length && <p className="td-empty">Reading the indices…</p>}
+          </>
+        )}
+        {/* kept in the page (hidden) so its count shows on the tab */}
+        <div hidden={tab !== "orders"}><BigOrders bare home onOpenStock={onOpenStock} onSeeAll={() => onOpenTab?.("markets")} onCount={setOrders} /></div>
+        {tab === "lists" && (
+          <div className="td-listgrid">
+            {HOME_LISTS.map(([slug, label, Icon]) => (
+              <button key={slug} type="button" className="td-listtile" onClick={() => navigate(`/lists/${slug}`)}>
+                <span className="td-listicon" aria-hidden="true"><Icon size={18} strokeWidth={1.8} /></span>
+                <span className="td-listtext"><b>{label}</b>{listCounts[slug] != null && <small>{listCounts[slug].toLocaleString("en-IN")} companies</small>}</span>
+                <ChevronRight size={16} className="td-listgo" aria-hidden="true" />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="hm-foot">
+        {tab === "movers" && <button type="button" onClick={() => onOpenTab?.("markets")}>Every rise and fall in Markets<ChevronRight size={14} aria-hidden="true" /></button>}
+        {tab === "indices" && <button type="button" onClick={() => onOpenTab?.("explore")}>Every index<ChevronRight size={14} aria-hidden="true" /></button>}
+        {tab === "lists" && <button type="button" onClick={() => navigate("/lists")}>All categories<ChevronRight size={14} aria-hidden="true" /></button>}
+      </div>
     </section>
   );
 }
@@ -477,40 +532,12 @@ export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIn
             <MarketChart closes={market} />
           </section>
         )}
-        {strip?.indices?.length > 0 && (
-          <section className="td-box" aria-label="The market">
-            <div className="td-head"><h3>Major indices</h3><button type="button" onClick={() => onOpenTab?.("explore")}>Explore</button></div>
-            {strip.indices.slice(0, 6).map(m => (
-              <button key={m.name} type="button" className="td-index" onClick={() => openIndex(m.name)}>
-                <span className="td-name">{m.name}</span>
-                <span className="td-index-nums"><b>{num(m.close)}</b><i style={{ color: tone(m.changePct) }}>{pct(m.changePct)}</i></span>
-              </button>
-            ))}
-          </section>
-        )}
+        {/* indices, movers, big orders and categories as one card of tabs (20 Nov 2026, the owner: "like tabs, to save space") */}
+        <HomeTabs strip={strip} movers={movers} listCounts={listCounts} openIndex={openIndex} onOpenStock={onOpenStock} onOpenTab={onOpenTab} />
       </div>
 
       {/* gold, under the market (20 Nov 2026, the owner: "gold price to the Home screen") */}
       <HomeGold onOpen={() => onOpenTab?.("gold")} />
-
-      {/* the categories, up before the moves (20 Nov 2026, the owner: "move the explore up") */}
-      {/* the stock lists, in reach from Home (17 Nov 2026: "very hard to find, very deep in Markets") */}
-      <section className="td-box td-lists" aria-label="Explore by category">
-        <div className="td-head"><h3>Explore by category</h3><button type="button" onClick={() => navigate("/lists")}>All categories</button></div>
-        <div className="td-listgrid">
-          {HOME_LISTS.map(([slug, label, Icon]) => (
-            <button key={slug} type="button" className="td-listtile" onClick={() => navigate(`/lists/${slug}`)}>
-              <span className="td-listicon" aria-hidden="true"><Icon size={18} strokeWidth={1.8} /></span>
-              <span className="td-listtext"><b>{label}</b>{listCounts[slug] != null && <small>{listCounts[slug].toLocaleString("en-IN")} companies</small>}</span>
-              <ChevronRight size={16} className="td-listgo" aria-hidden="true" />
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {movers && <HomeMovers movers={movers} onOpenStock={onOpenStock} onOpenTab={onOpenTab} />}
-      {/* the orders companies won (BigOrders.jsx; 19 Nov 2026, the owner: "if any company gets a contract it should be shown") */}
-      <BigOrders home onOpenStock={onOpenStock} onSeeAll={() => onOpenTab?.("markets")} />
 
       <div className="td-grid">
         <section className="td-box" aria-label="Your watchlist">

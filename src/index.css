@@ -7647,3 +7647,26 @@ html.is-scrolling .hk-track { animation-play-state: paused; }
 .wl-grip:active { cursor: grabbing; color: var(--accent); }
 .wl-row.dragging { box-shadow: 0 10px 28px rgba(0,0,0,0.35); border-radius: 14px; background: var(--s2); }
 .wl-row.dragging .wl-item { background: var(--s2); }
+
+/* Home's card of tabs: Top movers, Indices, Big orders, Categories (TodayHome.jsx HomeTabs) */
+.hm { display: flex; flex-direction: column; min-width: 0; }
+.hm-tabs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 0 10px; padding-bottom: 2px; }
+.hm-tabs::-webkit-scrollbar { display: none; }
+.hm-tabs button { flex: none; display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--bdr2); background: var(--s3); color: var(--t2); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; }
+.hm-tabs button span { font-size: 11px; color: var(--t3); font-variant-numeric: tabular-nums; }
+.hm-tabs button[aria-selected="true"] { background: var(--t1); color: var(--bg, #000); border-color: var(--t1); }
+.hm-tabs button[aria-selected="true"] span { color: inherit; opacity: 0.7; }
+.hm-panel { min-height: 300px; }
+.hm .td-mv-bare .td-mv-tabs { margin-top: 0; }
+.hm .bo-bare { margin: 0; }
+.hm-more-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 6px; font-size: 12px; color: var(--t3); }
+.hm-more-top button, .hm-foot button { display: inline-flex; align-items: center; gap: 2px; padding: 0; border: 0; background: none; color: var(--accent); font: inherit; font-size: 13px; cursor: pointer; white-space: nowrap; }
+.hm-foot { display: flex; justify-content: flex-end; margin-top: 8px; }
+.hm-foot:empty { display: none; }
+.hm .td-listgrid { margin-top: 2px; }
+/* on the phone's Home the card has no padding of its own (its rows bring theirs) */
+.ps-summary .hm-tabs { padding: 14px 16px 2px; margin-bottom: 8px; }
+.ps-summary .hm-foot { padding: 0 16px 12px; }
+.ps-summary .hm .bo-bare, .ps-summary .hm .td-listgrid, .ps-summary .hm .hm-more-top { padding-left: 16px; padding-right: 16px; }
+.ps-summary .hm .td-empty { padding: 0 16px; }
+.hm .bo-name { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
