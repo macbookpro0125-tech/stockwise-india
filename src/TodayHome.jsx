@@ -505,6 +505,9 @@ function HomeTabs({ strip, movers, listCounts, openIndex, onOpenStock, onOpenTab
       {more && <button type="button" className="hc-more" onClick={more[1]}>{more[0]}<ChevronRight size={14} aria-hidden="true" /></button>}
     </section>
   );
+  // Big orders day by day on Markets (21 Nov 2026: the card's "All" opened
+  // Markets' start, not the orders)
+  const openOrdersDay = () => { try { sessionStorage.setItem("open-orders", "1"); } catch { /* private window */ } onOpenTab?.("markets"); };
   return (
     <div className="hc-wrap">
       <div className="ps-favs hc-rail" ref={rail} onScroll={onScroll} role="group" aria-label="The market today: swipe for more">
@@ -519,8 +522,8 @@ function HomeTabs({ strip, movers, listCounts, openIndex, onOpenStock, onOpenTab
           ))}
           {!strip?.indices?.length && <p className="td-empty">Reading the indices…</p>}
         </>)}
-        {card("orders", "Big orders", null, <BigOrders bare home onOpenStock={onOpenStock} onSeeAll={() => { try { sessionStorage.setItem("open-orders", "1"); } catch { /* private window */ } onOpenTab?.("markets"); }} onCount={setOrders} />,
-          orders ? <button type="button" className="hc-link" onClick={() => onOpenTab?.("markets")}>All {orders}</button> : null)}
+        {card("orders", "Big orders", null, <BigOrders bare home onOpenStock={onOpenStock} onSeeAll={openOrdersDay} onCount={setOrders} />,
+          orders ? <button type="button" className="hc-link" onClick={openOrdersDay}>All {orders}</button> : null)}
         {card("lists", "Explore by category", ["All categories", () => navigate("/lists")],
           <div className="td-listgrid">
             {HOME_LISTS.map(([slug, label, Icon]) => (

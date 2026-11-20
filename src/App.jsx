@@ -109,6 +109,13 @@ const markToursSeen = (owner, names) => {
 
 // index.html's title, shown again when no stock page is open
 const TITLE = document.title;
+// The pages inside a page that live in the address's history (each pushes its
+// key), with the page that owns it: [history key, tab]
+const SUB_PAGES = [
+  ["newsItem", "explore"], ["exploreIndex", "explore"], ["exploreFull", "explore"],
+  ["resultsDay", "markets"], ["movesPage", "markets"], ["ordersDay", "markets"], ["allIndices", "markets"],
+  ["screensAll", "discover"],
+];
 
 export default function App() {
   const path = usePath();
@@ -183,10 +190,22 @@ export default function App() {
   };
   const goTab = (t, { glide = false } = {}) => {
     // the page you're on, picked again: back to its start (a news item, an
-    // index or a section open on Explore closes, 6 Nov 2026)
+    // index or a section open on Explore closes, 6 Nov 2026; on 21 Nov 2026
+    // also All screeners, a results day, the moves, big orders by day and
+    // every index, which stayed open when their tab was tapped)
     if (t === tabRef.current && !open) {
       const s = window.history.state ?? {};
-      if (s.newsItem || s.exploreIndex || s.exploreFull) { window.history.back(); return; }
+      if (SUB_PAGES.some(([k]) => s[k] != null && s[k] !== false)) { window.history.back(); return; }
+    }
+    // To another page: the sub-pages other pages had open are let go of, so a
+    // page opens at its start (21 Nov 2026: Calendar on Home, then Discover,
+    // then Markets from the menu opened that old results day)
+    if (t !== tabRef.current) {
+      const s = window.history.state;
+      if (s && SUB_PAGES.some(([k, owner]) => owner !== t && k in s)) {
+        const kept = Object.fromEntries(Object.entries(s).filter(([k]) => !SUB_PAGES.some(([key, owner]) => key === k && owner !== t)));
+        window.history.replaceState(kept, "");
+      }
     }
     const moving = t !== tabRef.current;
     if (moving) tabHistory.current.push(tabRef.current);
