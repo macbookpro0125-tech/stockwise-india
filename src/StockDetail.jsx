@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, lazy, Suspense } from "react";
 import { aboutParagraph, aboutMore } from "./aboutText.js";
 import { cardName } from "./stockName.js";
 import { SHOW_TAB, usePhone } from "./phoneTabs.js";
@@ -27,6 +27,7 @@ import CompanyOrders from "./CompanyOrders.jsx";
 import ValuationExplorer from "./ValuationExplorer.jsx";
 import { ValuedAs, SlowedGrowthNote, BankValuation, CyclicalValuation, NoFairValue, pbAt, CYCLE_TONE } from "./ValuationModel.jsx";
 import PhasePositionPlanner from "./PhasePositionPlanner.jsx";
+const BacktestPanel = lazy(() => import("./BacktestPanel.jsx"));
 import ThesisMonitor from "./ThesisMonitor.jsx";
 import StockSide from "./StockSide.jsx";
 import CompanyLogo from "./CompanyLogo.jsx";
@@ -1142,6 +1143,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
           ...(m ? [{ key: "done", half: true, after: "relativeStrength", question: "How has the price done?", short: "Against the Nifty 50 and its sector index", body: <StockPerformance m={m} /> }] : []),
           ...(m && (m.industry || m.sector) ? [{ key: "neighbours", half: true, question: "Did it move alone, or with its industry?", short: "Its industry as a map", body: <IndustryMap symbol={data.symbol} industry={m.industry} sector={m.sector} onOpenStock={onOpenStock} onOpenMap={onOpenMap && openMap} /> }] : []),
           { key: "technicals", after: "trend", question: "What do the technicals say?", short: "Averages, momentum and levels", body: <div id="sec-technicals"><TechnicalPanel ticker={data.symbol} /></div> },
+          { key: "backtest", fold: true, question: "How would a trading rule have done?", short: "Test a rule on its past prices, against holding", body: <Suspense fallback={null}><BacktestPanel symbol={data.symbol} /></Suspense> },
         ]} />
 
       <ChapterTab id="news" sec="filings" tour="filings" m={m} fairValue={fairValue} price={price} rows={[]}
@@ -1248,6 +1250,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       </section>
       {m && (m.industry || m.sector) && <div className="ss-section" data-tab="price">{built("price") && <PBlock title={`Its industry: ${m.industry ?? m.sector}`} className="sd-pb-industry"><IndustryMap symbol={data.symbol} industry={m.industry} sector={m.sector} onOpenStock={onOpenStock} onOpenMap={onOpenMap && openMap} /></PBlock>}</div>}
       <div id="sec-performance" className="ss-section" data-tab="price">{built("price") && <PBlock title="How the price has done"><StockPerformance m={m} /></PBlock>}</div>
+      <div id="sec-backtest" className="ss-section" data-tab="price">{built("price") && <PBlock title="Test a trading rule"><Suspense fallback={null}><BacktestPanel symbol={data.symbol} /></Suspense></PBlock>}</div>
 
       {m && built("business") && <div className="ss-section" data-tab="business"><PBlock title="Where the money comes from"><StockBusiness m={m} symbol={data.symbol} name={data.name} /></PBlock></div>}
       {m && built("business") && <div className="ss-section" data-tab="business"><PBlock title="Against its sector"><StockSectorCompare m={m} /></PBlock></div>}

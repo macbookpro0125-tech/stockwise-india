@@ -483,3 +483,8 @@ Owner: "the news is not understandable". Looked at 10 apps (Inshorts' one-line c
 
 ## 20 Nov 2026 — push live (858eaf5)
 - Pushed main 988ace5..858eaf5: ten years of results and index history, why profit jumped, chart scans, trading journal, gold/silver/ETFs page + chart, India's economy card. /gold-silver live in ~2 min with NSE prices from the live server. Economy card needs a signed-in check (RBI and World Bank from Render not yet seen). Tonight: older results batch (250), Render events for OOM.
+
+## 20 Nov 2026 — Backtesting, part 1: test a rule on one company
+- `src/backtest.js` (+ backtest.test.js): long-only rules on a company's daily prices — price above its 20/50/100/200-day average, golden cross (50 over 200), breakout to a 20/50/250-day high (out under the 40%-length low), RSI under 25/30/35 (out over 70); optional stop-loss 5–15% hit during the day. Read on the close, traded at the next day's open; 0.1% a side for costs; tax and dividends left out. Counted from the first day the rule can be read, against holding from the same day: total and a year, trades, win rate, average win/loss, worst fall, time invested, open trade.
+- `src/BacktestPanel.jsx` (lazy): Price/Chart tab — phone "Test a trading rule" block, desktop chapter question "How would a trading rule have done?" (folded). Periods 1Y/3Y/5Y/All, greyed past the history. ₹100 rule vs ₹100 held chart; every trade in a table.
+- Checked on TCS 2022–2026: 50-day average −28% vs holding −35%; breakout + 8% stop −8%, worst fall −18% vs −56%.

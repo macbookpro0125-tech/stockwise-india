@@ -7518,3 +7518,34 @@ html.is-scrolling .hk-track { animation-play-state: paused; }
 .ec-val.now { fill: var(--t1); font-weight: 600; }
 .ec-yc figcaption { margin-top: 6px; font-size: 12px; line-height: 1.5; color: var(--t2); }
 .ec-yc figcaption b { color: var(--t1); font-weight: 500; }
+
+/* Test a trading rule (BacktestPanel.jsx, 20 Nov 2026) */
+.bt-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.bt-controls label { display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: var(--t3); min-width: 0; }
+.bt-controls select { height: 40px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--bdr2); background: var(--s3); color: var(--t1); font: inherit; font-size: 14px; }
+.bt-periods { display: flex; gap: 6px; margin-top: 10px; }
+.bt-periods button { height: 32px; min-width: 48px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--bdr2); background: var(--s2); color: var(--t2); font: inherit; font-size: 13px; cursor: pointer; }
+.bt-periods button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.bt-periods button:disabled { opacity: 0.35; cursor: default; }
+.bt-rule { margin: 10px 0 12px; font-size: 13px; line-height: 1.5; color: var(--t2); }
+.bt-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+@media (max-width: 640px) { .bt-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.bt-tiles > div { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 10px; background: var(--s3); min-width: 0; }
+.bt-tiles small { font-size: 11px; color: var(--t3); }
+.bt-tiles b { font-size: 18px; font-weight: 600; color: var(--t1); font-variant-numeric: tabular-nums; }
+.bt-tiles span { font-size: 11px; color: var(--t3); font-variant-numeric: tabular-nums; }
+.bt .up { color: var(--green); } .bt .down { color: var(--red); }
+.bt-verdict { margin: 10px 0 6px; font-size: 13px; line-height: 1.5; color: var(--t1); }
+.bt-chart { height: 220px; }
+.bt-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 6px 0 0; font-size: 12px; color: var(--t3); }
+.bt-legend i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; margin-right: 4px; }
+.bt-legend i.rule { background: var(--accent); } .bt-legend i.hold { background: var(--t3); height: 2px; }
+.bt-trades { margin-top: 12px; }
+.bt-trades summary { cursor: pointer; font-size: 13px; color: var(--accent); padding: 6px 0; }
+.bt-trades table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.bt-trades th { text-align: left; font-weight: 400; font-size: 11px; color: var(--t3); padding: 6px 4px; border-bottom: 1px solid var(--bdr); }
+.bt-trades td { padding: 7px 4px; border-bottom: 1px solid var(--bdr); color: var(--t1); vertical-align: top; }
+.bt-trades td small { display: block; font-size: 11px; color: var(--t3); }
+.bt-trades th:nth-child(n+3), .bt-trades td:nth-child(n+3) { text-align: right; }
+.bt-note { margin: 10px 0 0; font-size: 11px; line-height: 1.5; color: var(--t3); }
+.bt-controls label:first-child { grid-column: 1 / -1; }
