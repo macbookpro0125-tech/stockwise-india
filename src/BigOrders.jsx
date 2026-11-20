@@ -43,7 +43,8 @@ export default function BigOrders({ onOpenStock, home = false, onSeeAll, bare = 
 
   if (data && !data.failed && data.items.length === 0 && !data.reading) return bare ? <p className="mk-note">No big orders announced in the last few days.</p> : null;
   const items = data?.items ?? [];
-  const list = home ? items.slice(0, 5) : all ? items : items.slice(0, SHOWN);
+  // three in a phone's Home card (TodayHome.jsx), five on a computer's Home
+  const list = bare ? items.slice(0, 3) : home ? items.slice(0, 5) : all ? items : items.slice(0, SHOWN);
 
   return (
     <section className={bare ? "bo-home bo-bare" : home ? "td-box bo-home" : "mk-card"} aria-labelledby={bare ? undefined : home ? "home-orders" : "mk-orders"} aria-label={bare ? "Big orders" : undefined}>

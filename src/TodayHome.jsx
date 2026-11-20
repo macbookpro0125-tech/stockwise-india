@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import BigOrders from "./BigOrders.jsx";
 import HomeGold from "./HomeGold.jsx";
 import { usePhone } from "./phoneTabs.js";
+import { tick } from "./haptics.js";
 import BigNum from "./BigNum.jsx";
 import { createChart, AreaSeries, ColorType } from "lightweight-charts";
 import { ChevronRight, Plus } from "lucide-react";
@@ -420,41 +421,47 @@ function HomeMovers({ movers, onOpenStock, onOpenTab, bare = false }) {
   );
 }
 
-// Home's tabs (20 Nov 2026, the owner: "major indices, top movers, big
-// orders, explore the categories — like tabs, so we save the space"): one
-// card, Top movers first (it changes most); the tab last picked opens next time
+// The phone's Home: the moves, the indices, the big orders and the
+// categories as cards that swipe sideways, as the Favourites do (20 Nov 2026,
+// the owner: "this kind of swipe cards"; a computer keeps its cards side by
+// side). Top movers first; the card last looked at opens next time.
 const HOME_TABS = [["movers", "Top movers"], ["indices", "Indices"], ["orders", "Big orders"], ["lists", "Categories"]];
 function HomeTabs({ strip, movers, listCounts, openIndex, onOpenStock, onOpenTab }) {
-  const [tab, setTabState] = useState(() => { try { const t = localStorage.getItem("home-tab"); return HOME_TABS.some(([id]) => id === t) ? t : "movers"; } catch { return "movers"; } });
-  const setTab = t => { setTabState(t); try { localStorage.setItem("home-tab", t); } catch { /* private window */ } };
+  const [at, setAt] = useState(() => { try { const i = HOME_TABS.findIndex(([id]) => id === localStorage.getItem("home-tab")); return i < 0 ? 0 : i; } catch { return 0; } });
   const [orders, setOrders] = useState(null);
-  const count = { indices: strip?.indices?.length ?? null, orders, lists: HOME_LISTS.length };
+  const rail = useRef(null);
+  const step = () => (rail.current?.firstElementChild?.getBoundingClientRect().width ?? 0) + 12;
+  // back to the card last looked at, without a slide
+  useEffect(() => { if (rail.current && at) rail.current.scrollLeft = at * step(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const onScroll = () => {
+    const i = Math.max(0, Math.min(HOME_TABS.length - 1, Math.round((rail.current?.scrollLeft ?? 0) / (step() || 1))));
+    if (i !== at) { setAt(i); tick(); try { localStorage.setItem("home-tab", HOME_TABS[i][0]); } catch { /* private window */ } }
+  };
+  const go = i => rail.current?.scrollTo({ left: i * step(), behavior: "smooth" });
+  const card = (id, title, more, body, right = null) => (
+    <section key={id} className="hc" aria-label={title}>
+      <div className="hc-head"><h3>{title}</h3>{right}</div>
+      <div className="hc-body">{body}</div>
+      {more && <button type="button" className="hc-more" onClick={more[1]}>{more[0]}<ChevronRight size={14} aria-hidden="true" /></button>}
+    </section>
+  );
   return (
-    <section className="td-box hm" aria-label="The market today">
-      <div className="hm-tabs" role="tablist" aria-label="Show">
-        {HOME_TABS.map(([id, label]) => (
-          <button key={id} type="button" role="tab" id={`hm-${id}`} aria-selected={tab === id} aria-controls={`hm-p-${id}`}
-            onClick={e => { setTab(id); e.currentTarget.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" }); }}>
-            {label}{count[id] ? <span>{count[id]}</span> : null}
-          </button>
-        ))}
-      </div>
-      <div className="hm-panel" role="tabpanel" id={`hm-p-${tab}`} aria-labelledby={`hm-${tab}`}>
-        {tab === "movers" && (movers ? <HomeMovers bare movers={movers} onOpenStock={onOpenStock} onOpenTab={onOpenTab} /> : <p className="td-empty">Reading the day's moves…</p>)}
-        {tab === "indices" && (
-          <>
-            {(strip?.indices ?? []).slice(0, 7).map(m => (
-              <button key={m.name} type="button" className="td-index" onClick={() => openIndex(m.name)}>
-                <span className="td-name">{m.name}</span>
-                <span className="td-index-nums"><b>{num(m.close)}</b><i style={{ color: tone(m.changePct) }}>{pct(m.changePct)}</i></span>
-              </button>
-            ))}
-            {!strip?.indices?.length && <p className="td-empty">Reading the indices…</p>}
-          </>
-        )}
-        {/* kept in the page (hidden) so its count shows on the tab */}
-        <div hidden={tab !== "orders"}><BigOrders bare home onOpenStock={onOpenStock} onSeeAll={() => onOpenTab?.("markets")} onCount={setOrders} /></div>
-        {tab === "lists" && (
+    <div className="hc-wrap">
+      <div className="ps-favs hc-rail" ref={rail} onScroll={onScroll} role="group" aria-label="The market today: swipe for more">
+        {card("movers", "Top movers today", ["Every rise and fall in Markets", () => onOpenTab?.("markets")],
+          movers ? <HomeMovers bare movers={movers} onOpenStock={onOpenStock} onOpenTab={onOpenTab} /> : <p className="td-empty">Reading the day's moves…</p>)}
+        {card("indices", "Indices", ["Every index", () => onOpenTab?.("explore")], <>
+          {(strip?.indices ?? []).slice(0, 7).map(m => (
+            <button key={m.name} type="button" className="td-index" onClick={() => openIndex(m.name)}>
+              <span className="td-name">{m.name}</span>
+              <span className="td-index-nums"><b>{num(m.close)}</b><i style={{ color: tone(m.changePct) }}>{pct(m.changePct)}</i></span>
+            </button>
+          ))}
+          {!strip?.indices?.length && <p className="td-empty">Reading the indices…</p>}
+        </>)}
+        {card("orders", "Big orders", null, <BigOrders bare home onOpenStock={onOpenStock} onSeeAll={() => onOpenTab?.("markets")} onCount={setOrders} />,
+          orders ? <button type="button" className="hc-link" onClick={() => onOpenTab?.("markets")}>All {orders}</button> : null)}
+        {card("lists", "Explore by category", ["All categories", () => navigate("/lists")],
           <div className="td-listgrid">
             {HOME_LISTS.map(([slug, label, Icon]) => (
               <button key={slug} type="button" className="td-listtile" onClick={() => navigate(`/lists/${slug}`)}>
@@ -463,15 +470,12 @@ function HomeTabs({ strip, movers, listCounts, openIndex, onOpenStock, onOpenTab
                 <ChevronRight size={16} className="td-listgo" aria-hidden="true" />
               </button>
             ))}
-          </div>
-        )}
+          </div>)}
       </div>
-      <div className="hm-foot">
-        {tab === "movers" && <button type="button" onClick={() => onOpenTab?.("markets")}>Every rise and fall in Markets<ChevronRight size={14} aria-hidden="true" /></button>}
-        {tab === "indices" && <button type="button" onClick={() => onOpenTab?.("explore")}>Every index<ChevronRight size={14} aria-hidden="true" /></button>}
-        {tab === "lists" && <button type="button" onClick={() => navigate("/lists")}>All categories<ChevronRight size={14} aria-hidden="true" /></button>}
+      <div className="ps-dots hc-dots" role="tablist" aria-label="Cards">
+        {HOME_TABS.map(([id, label], i) => <button key={id} type="button" role="tab" aria-selected={i === at} aria-label={label} className={i === at ? "on" : ""} onClick={() => go(i)} />)}
       </div>
-    </section>
+    </div>
   );
 }
 

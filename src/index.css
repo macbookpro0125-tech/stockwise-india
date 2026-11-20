@@ -7670,3 +7670,19 @@ html.is-scrolling .hk-track { animation-play-state: paused; }
 .ps-summary .hm .bo-bare, .ps-summary .hm .td-listgrid, .ps-summary .hm .hm-more-top { padding-left: 16px; padding-right: 16px; }
 .ps-summary .hm .td-empty { padding: 0 16px; }
 .hm .bo-name { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+
+/* The phone's Home cards that swipe (TodayHome.jsx HomeTabs) */
+.hc-wrap { margin-bottom: 12px; }
+.hc-rail { align-items: stretch; }
+.hc { flex: 0 0 calc(100% - 26px); max-width: calc(100% - 26px); min-width: 0; scroll-snap-align: center; display: flex; flex-direction: column; padding: 16px 0 12px; border-radius: 20px; border: 1px solid var(--pg-edge, var(--bdr2)); background: var(--pg-fill, var(--s1)); box-shadow: var(--pg-shine, none); }
+.hc-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 16px 10px; }
+.hc-head h3 { margin: 0; font-size: 17px; font-weight: 600; color: var(--t1); }
+.hc-link, .hc-more { display: inline-flex; align-items: center; gap: 2px; padding: 0; border: 0; background: none; color: var(--accent); font: inherit; font-size: 13px; cursor: pointer; }
+.hc-more { margin: 10px 16px 0; align-self: flex-end; }
+.hc-body { flex: 1; min-height: 0; }
+.hc .td-mv-bare .td-mv-tabs { padding: 0 16px; }
+.hc .td-listgrid, .hc .bo-bare, .hc .td-empty { padding: 0 16px; }
+.hc .hm-more-top { display: none; }
+.hc .bo-name { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+.hc-dots button { width: 6px; height: 6px; padding: 0; border: 0; border-radius: 3px; background: var(--pg-line, var(--bdr2)); cursor: pointer; transition: width 200ms, background 200ms; }
+.hc-dots button.on { width: 16px; background: var(--accent); }
