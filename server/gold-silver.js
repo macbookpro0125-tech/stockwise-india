@@ -15,6 +15,7 @@ import { cached } from "./company-extras.js";
 import { historyBars } from "./price-history.js";
 import { loadMarketSnapshot } from "./market-data.js";
 import { readCache, writeCache } from "./cache-dir.js";
+import { rbiGoldPrices, caratTable, CARATS, GRAMS } from "./rbi-gold.js";
 
 const LIST_URL = "https://nsearchives.nseindia.com/content/equities/eq_etfseclist.csv";
 const LAST = "gold-silver-last.json";
@@ -156,7 +157,12 @@ async function fresh() {
     const bars = withToday(barsFor(symbol, snap), nseDay(etf.timestamp), num(row?.ltP));
     return { label, symbol, returns: Object.fromEntries(PERIODS.map(([k, d]) => [k, returnOver(bars, d)])), from: bars?.[0]?.[0] ?? null };
   });
-  return { asOf: etf.timestamp ?? null, sgbAsOf: sgbData?.timestamp ?? null, navDate: etf.navDate ?? null, groupInfo: GROUPS, groups, sgb, compare, source: "NSE" };
+  // a gram of gold by carat (rbi-gold.js): RBI's latest price, and an
+  // estimate for now from the gold ETF's move since RBI's three days. RBI
+  // slow or out of reach: the page goes without it (the reading carries on)
+  const notices = await Promise.race([rbiGoldPrices().catch(() => null), new Promise(r => setTimeout(() => r(null), 5000))]);
+  const gram = gramPrices(notices, withToday(barsFor("GOLDBEES", snap), nseDay(etf.timestamp), num(etf.data.find(x => x.symbol === "GOLDBEES")?.ltP)), etf.timestamp);
+  return { asOf: etf.timestamp ?? null, sgbAsOf: sgbData?.timestamp ?? null, navDate: etf.navDate ?? null, groupInfo: GROUPS, groups, sgb, compare, gram, source: "NSE" };
 }
 
 // The page's data, ten minutes at a time; NSE out of reach → the last one
@@ -200,4 +206,28 @@ export function liveOf(d) {
   const all = Object.values(d.groups ?? {}).flat();
   return Object.fromEntries(COMPARE.map(([, symbol]) => [symbol, all.find(e => e.symbol === symbol)])
     .filter(([, e]) => e?.price > 0).map(([symbol, e]) => [symbol, { date, price: e.price, at: m[4] }]));
+}
+
+// RBI's latest 999 price a gram → each carat for 1, 8, 10 and 100 grams; and
+// the same moved by GOLDBEES since the three business days RBI averaged
+// (its price now against its average close on those days). An estimate,
+// labelled so; none when the ETF's history doesn't cover those days.
+export function gramPrices(notices, goldbees, at) {
+  const latest = notices?.[0];
+  if (!latest?.price) return null;
+  // the three business days just before RBI's date, or no estimate (the
+  // history must reach them: within a week and a half before it)
+  const floor = new Date(Date.parse(`${latest.redeemOn}T00:00:00Z`) - 10 * 864e5).toISOString().slice(0, 10);
+  const before = (goldbees ?? []).filter(b => b[0] < latest.redeemOn).slice(-3).filter(b => b[0] >= floor);
+  const avg = before.length === 3 ? before.reduce((s, b) => s + b[4], 0) / 3 : null;
+  const now = goldbees?.at(-1);
+  const ratio = avg && now && now[0] >= latest.redeemOn ? now[4] / avg : null;
+  return {
+    price: latest.price, redeemOn: latest.redeemOn, issued: latest.issued, series: latest.series, prid: latest.prid,
+    days: before.length === 3 ? before.map(b => b[0]) : null,
+    carats: CARATS.map(([k, mark, purity]) => ({ carat: k, mark, purity })), grams: GRAMS,
+    table: caratTable(latest.price),
+    estimate: ratio ? { price: latest.price * ratio, change: (ratio - 1) * 100, at, table: caratTable(latest.price * ratio) } : null,
+    recent: (notices ?? []).slice(0, 8).map(n => ({ price: n.price, redeemOn: n.redeemOn })),
+  };
 }

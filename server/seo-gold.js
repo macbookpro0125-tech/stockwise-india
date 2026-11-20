@@ -19,6 +19,11 @@ export async function goldSilverHtml(template) {
   const sgb = (d?.sgb ?? []).map(s => `<tr><td>${esc(s.symbol)}</td><td>${esc(s.matures ?? "—")}</td><td>${rs(s.issuePrice)}</td><td>${rs(s.price)}</td><td>${pc(s.sinceIssuePct)}</td></tr>`).join("");
   const body = `<main class="seo-stock seo-methodology"><p>${link("/", "Jocular Insights")} › Gold &amp; silver</p><h1>Gold, silver and ETF prices on NSE</h1>
 <p>${esc(desc)}${d?.asOf ? ` Prices from NSE at ${esc(d.asOf)} IST.` : ""}</p>
+${d?.gram ? (() => {
+  const g = d.gram, label = n => (n === 8 ? "8 g (1 sovereign)" : `${n} g`);
+  const rows = g.grams.map(n => `<tr><td>${label(n)}</td>${g.carats.map(c => `<td>₹${esc(Math.round(g.table[c.carat][n]).toLocaleString("en-IN"))}</td>`).join("")}</tr>`).join("");
+  return `<h2>Gold price by carat</h2><p>RBI's price for a gram of 24-carat (999) gold: ₹${esc(g.price.toLocaleString("en-IN"))}, for its Sovereign Gold Bond redemption on ${esc(new Date(`${g.redeemOn}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }))} (the average of IBJA's 999 closing price on the three business days before). 22 and 18 carat by their gold content. A jeweller's price adds making charges and 3% GST.</p><table><thead><tr><th>Weight</th>${g.carats.map(c => `<th>${esc(c.carat)} (${esc(c.mark)})</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table>`;
+})() : ""}
 ${d ? table("Gold ETFs", d.groups.gold) + table("Silver ETFs", d.groups.silver) : ""}
 ${sgb ? `<h2>Sovereign Gold Bonds</h2><p>One bond is one gram of gold. Each pays 2.5% a year on its issue price and is repaid at the price of gold when it matures, eight years after issue.</p><table><thead><tr><th>Series</th><th>Matures</th><th>Issue price</th><th>Price</th><th>Since issue</th></tr></thead><tbody>${sgb}</tbody></table>` : ""}
 <p>Source: NSE (its list of ETFs, ETF prices and NAV, Sovereign Gold Bond prices). Prices, not advice: nothing here suggests buying or selling.</p>

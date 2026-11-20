@@ -7560,3 +7560,21 @@ html.is-scrolling .hk-track { animation-play-state: paused; }
 .cs-past-row b.up { color: var(--green); } .cs-past-row b.down { color: var(--red); }
 .cs-past-row span { font-size: 11px; line-height: 1.4; color: var(--t2); }
 .cs-past-note { margin: 8px 0 0; font-size: 11px; line-height: 1.5; color: var(--t3); }
+
+/* Gold price by carat (PublicLists.jsx GoldGramCard) */
+.gg h2 { margin-bottom: 12px; }
+.gg-modes { margin-bottom: 12px; }
+.gg-big { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin-bottom: 12px; }
+.gg-big b { font-size: 30px; font-weight: 600; color: var(--t1); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.gg-big span { font-size: 13px; color: var(--t2); }
+.gg-big small { flex-basis: 100%; font-size: 12px; }
+.gg-big small.up { color: var(--green); } .gg-big small.down { color: var(--red); }
+.gg-wrap { overflow-x: auto; }
+.gg-table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+.gg-table th, .gg-table td { padding: 9px 6px; border-bottom: 1px solid var(--bdr); text-align: right; white-space: nowrap; }
+.gg-table thead th { font-size: 12px; font-weight: 400; color: var(--t3); }
+.gg-table tbody th { text-align: left; font-weight: 600; color: var(--t1); }
+.gg-table th small { display: block; font-size: 11px; font-weight: 400; color: var(--t3); }
+@media (max-width: 420px) { .gg-table { font-size: 13px; } .gg-table th, .gg-table td { padding: 8px 3px; } }
+.gg-table td { color: var(--t1); }
+.gg-recent { color: var(--t2); }

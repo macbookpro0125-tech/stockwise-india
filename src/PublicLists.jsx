@@ -491,6 +491,60 @@ function SgbRows({ list }) {
 
 // inApp (20 Nov 2026, the owner: it "looks different from the app"): signed
 // in, it opens inside the app as a Markets page, with a way back to Markets
+// A gram of gold by carat (server/rbi-gold.js, gold-silver.js gramPrices):
+// RBI's latest price for 999 gold, each carat by its purity, for 1, 8, 10 and
+// 100 grams — and, when the gold ETF has traded since RBI's three days, the
+// same moved by it, labelled an estimate
+const longDay = iso => (iso ? new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }) : "");
+const shortDay = iso => new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" });
+const rupee = v => `₹${Math.round(v).toLocaleString("en-IN")}`;
+function GoldGramCard({ g }) {
+  const [which, setWhich] = useState(g.estimate ? "now" : "rbi");
+  if (!g) return null;
+  const table = which === "now" && g.estimate ? g.estimate.table : g.table;
+  const per = which === "now" && g.estimate ? g.estimate.price : g.price;
+  const gramLabel = n => (n === 8 ? <>8 g<small>1 sovereign</small></> : `${n} g`);
+  return (
+    <section className="gs-card gg">
+      <h2>Gold price, by carat</h2>
+      {g.estimate && (
+        <div className="gc-modes gg-modes" role="tablist" aria-label="Which price">
+          <button type="button" role="tab" aria-selected={which === "now"} className={which === "now" ? "on" : ""} onClick={() => setWhich("now")}>Estimate now</button>
+          <button type="button" role="tab" aria-selected={which === "rbi"} className={which === "rbi" ? "on" : ""} onClick={() => setWhich("rbi")}>RBI's price, {shortDay(g.redeemOn)}</button>
+        </div>
+      )}
+      <div className="gg-big">
+        <b>{rupee(per)}</b><span>a gram of 24-carat (999) gold</span>
+        {which === "now" && g.estimate && <small className={g.estimate.change >= 0 ? "up" : "down"}>{g.estimate.change >= 0 ? "+" : "−"}{Math.abs(g.estimate.change).toFixed(1)}% since RBI's price of {rupee(g.price)}</small>}
+      </div>
+      <div className="gg-wrap">
+        {/* grams down the side, the carats across: fits a phone without sliding */}
+        <table className="gg-table">
+          <thead><tr><th>Weight</th>{g.carats.map(c => <th key={c.carat}>{c.carat}<small>{c.mark} · {Math.round(c.purity * 1000) / 10}%</small></th>)}</tr></thead>
+          <tbody>
+            {g.grams.map(n => (
+              <tr key={n}>
+                <th>{gramLabel(n)}</th>
+                {g.carats.map(c => <td key={c.carat}>{rupee(table[c.carat][n])}</td>)}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="gs-note">
+        {which === "now" && g.estimate
+          ? <>An estimate: RBI's price of {rupee(g.price)} (for {longDay(g.redeemOn)}) moved by how much the gold ETF GOLDBEES has moved since. </>
+          : null}
+        RBI's price is what it pays to redeem a Sovereign Gold Bond{g.series ? ` (${g.series})` : ""} on {longDay(g.redeemOn)}: the average of the closing price of 999 gold{g.days ? ` on ${g.days.map(shortDay).join(", ")}` : " on the three business days before"}, as published by IBJA. 22 and 18 carat are worked out by their gold content (916 and 750 of 999). A jeweller's price adds making charges and 3% GST, and varies by city and shop.
+      </p>
+      {g.recent?.length > 1 && <p className="gs-note gg-recent">RBI's recent prices: {g.recent.map(r => `${shortDay(r.redeemOn)} ${rupee(r.price)}`).join(" · ")}</p>}
+      <p className="gs-note">Source: Reserve Bank of India, its Sovereign Gold Bond redemption notices.</p>
+    </section>
+  );
+}
+
+// inApp (20 Nov 2026, the owner: it "looks different from the app"): signed
+// in, it opens inside the app as a Markets page, with a way back to Markets
 export function GoldSilverPage({ signedIn, inApp = false, onBack = null }) {
   const [d, error] = useLoad(() => api.publicGoldSilver(), "gold", "gold");
   const [tab, setTab] = useState("gold");
@@ -509,6 +563,7 @@ export function GoldSilverPage({ signedIn, inApp = false, onBack = null }) {
   const body = <>
       {error && <p className="nw-empty">{error}</p>}
       {!d && !error && <Wait />}
+      {d?.gram && <GoldGramCard g={d.gram} />}
       <Suspense fallback={<div className="gc-chart gc-wait" />}><GoldChart /></Suspense>
       {d && <>
         <section className="gs-card">

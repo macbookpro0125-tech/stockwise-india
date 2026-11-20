@@ -1,6 +1,6 @@
 // node --no-warnings server/gold-silver-test.js — gold, silver and ETFs (gold-silver.js)
 import assert from "node:assert/strict";
-import { amcOf, groupOf, parseEtfList, sgbMaturity, returnOver, etfRow, sgbRow, liveOf, withToday, nseDay } from "./gold-silver.js";
+import { amcOf, groupOf, parseEtfList, sgbMaturity, returnOver, etfRow, sgbRow, liveOf, withToday, nseDay, gramPrices } from "./gold-silver.js";
 
 assert.equal(amcOf("NIPINDETFGOLDBEES"), "Nippon India");
 assert.equal(amcOf("MIRAEAMC-MAGOLDETF"), "Mirae Asset");
@@ -50,3 +50,15 @@ assert.equal(withToday(kept, "2026-11-20", 102.38).at(-1)[4], 102.38);
 assert.equal(withToday(kept, "2026-11-19", 102.38).length, 2, "not the same day twice");
 assert.equal(nseDay("20-Nov-2026 13:54:24"), "2026-11-20");
 console.log("ok: returns run to today's price");
+
+// a gram of gold by carat: RBI's price, and moved by GOLDBEES since RBI's three days
+const gb = [["2026-11-14", 0, 0, 0, 108], ["2026-11-17", 0, 0, 0, 110], ["2026-11-18", 0, 0, 0, 107.85], ["2026-11-19", 0, 0, 0, 106.3], ["2026-11-20", 0, 0, 0, 102.38]];
+const g = gramPrices([{ price: 13345, redeemOn: "2026-11-19" }], gb, "20-Nov-2026 14:01:00");
+assert.deepEqual(g.days, ["2026-11-14", "2026-11-17", "2026-11-18"]);
+assert.equal(Math.round(g.estimate.price), 12579, "13,345 × 102.38 ÷ the three days' average 108.62");
+assert.equal(Math.round(g.table["22K"][10]), 122363, "22 carat, 10 grams: 13,345 ÷ 0.999 × 0.916 × 10");
+assert.equal(Math.round(g.table["24K"][8]), 106760);
+// history that stops weeks before RBI's days: no estimate, never the wrong days
+assert.equal(gramPrices([{ price: 13345, redeemOn: "2026-11-19" }], [["2026-10-21", 0, 0, 0, 118], ["2026-10-22", 0, 0, 0, 117], ["2026-10-23", 0, 0, 0, 116]], "x").estimate, null);
+assert.equal(gramPrices([], gb, "x"), null);
+console.log("ok: a gram of gold by carat, and today's estimate");
