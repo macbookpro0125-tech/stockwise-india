@@ -458,3 +458,8 @@ Owner: "the news is not understandable". Looked at 10 apps (Inshorts' one-line c
 - `explore.js chartScan` + `/api/explore/scans?id=`: the companies showing a pattern today (₹1 cr+ a day traded), strongest price first, with counts for every pattern.
 - `src/ChartScans.jsx` on Markets under Biggest moves: pattern chips with counts, the rule written out, the list (strength badge, price, day change), "Show all". Whole names, no cutting. The Desk's pattern chips pick up the new four by themselves.
 - Local prices of 23 Oct: trend template 90, VCP 2, Darvas box 68, Darvas breakout 0 (a breakout day is rare).
+
+## 20 Nov 2026 — Trading journal
+- `server/journal.js` (+ journal-test.js): table `journal_trades` per account — symbol, long/short, qty, entry date/price, optional stop, exit date/price, pattern, why, what was learned. Checks: stop on the right side of the entry, exit date and price together, exit not before entry. Up to 2,000 trades. Prices and qty adjusted for splits/bonuses after entry, as holdings are (basis_date). Routes `/api/journal` GET/POST, `/api/journal/:id` PUT/DELETE.
+- `src/journalMath.js` (+ test): each trade's ₹ result, %, R (move ÷ risk to the stop), days held; together: net, win rate, average gain and loss, gains ÷ losses, average R, by pattern.
+- `src/TradeJournal.jsx`: Portfolio gets a "Holdings | Trading journal" switch (remembered). Add a trade, Close (exit + what I learned), Edit, Remove (asks first). Open trades priced from today's close. The form is a portal over the tab bar.

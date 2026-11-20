@@ -5,6 +5,7 @@ import { BellIcon } from "./icons.jsx";
 import { api } from "./api.js";
 import { portfolioStore } from "./stores.js";
 import AddHoldingModal from "./AddHoldingModal.jsx";
+import TradeJournal from "./TradeJournal.jsx";
 import PortfolioVsMarket from "./PortfolioVsMarket.jsx";
 import ImportHoldingsModal from "./ImportHoldingsModal.jsx";
 import CreateAlertModal from "./CreateAlertModal.jsx";
@@ -156,7 +157,23 @@ function HoldingSheet({ h, day, onClose, onOpen, onEdit, onAlert, onRemove }) {
 
 const SORTS = [["value", "Value"], ["today", "Today"], ["gain", "Gain"], ["name", "Name"], ["quality", "Quality"], ["yield", "Dividend yield"]];
 
+// Holdings, or the trading journal (TradeJournal.jsx, 20 Nov 2026)
 export default function PortfolioView({ onOpenStock }) {
+  const [view, setView] = useState(() => { try { return localStorage.getItem("pf-view") === "journal" ? "journal" : "holdings"; } catch { return "holdings"; } });
+  const pick = v => { setView(v); try { localStorage.setItem("pf-view", v); } catch { /* private window */ } };
+  return (
+    <>
+      <div className="pf-switch" role="tablist" aria-label="Portfolio or journal" style={{ margin: "8px var(--page-x) 0" }}>
+        {[["holdings", "Holdings"], ["journal", "Trading journal"]].map(([id, l]) => <button key={id} type="button" role="tab" aria-selected={view === id} className={view === id ? "on" : ""} onClick={() => pick(id)}>{l}</button>)}
+      </div>
+      {view === "journal"
+        ? <div style={{ padding: "8px var(--page-x) 16px" }}><TradeJournal onOpenStock={onOpenStock} /></div>
+        : <Holdings onOpenStock={onOpenStock} />}
+    </>
+  );
+}
+
+function Holdings({ onOpenStock }) {
   const today = todayIst();
   const data = portfolioStore.use();
   const [showModal, setShowModal] = useState(false);

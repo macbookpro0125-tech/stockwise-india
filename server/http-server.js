@@ -23,6 +23,7 @@ import { screenMomentum, momentumAllowed, momentumAudience } from "./momentum.js
 import { criteriaToFilters, METRICS, CATEGORY_METRICS } from "./metric-catalog.js";
 import { listWatchlist, addToWatchlist, setWatchlistNote, removeFromWatchlist, listWatchLists, createWatchList, renameWatchList, deleteWatchList, addToWatchList, removeFromWatchList } from "./user-watchlist.js";
 import { listHoldings, addHolding, addHoldings, updateHolding, removeHolding } from "./user-portfolio.js";
+import { listTrades, addTrade, updateTrade, removeTrade } from "./journal.js";
 import { resolveImportRows, MAX_IMPORT_ROWS } from "./portfolio-import.js";
 import { getThesis, saveThesis } from "./user-thesis.js";
 import { listNotes, saveNote, deleteNote, listStrategies, saveStrategies, checkStrategyMatches, acknowledgeStrategyMatches } from "./user-notes.js";
@@ -1545,6 +1546,25 @@ export function createApp() {
         if (userId == null) return;
         removeHolding(userId, Number(holdingItem[1]));
         sendJson(res, 200, { ok: true });
+        return;
+      }
+
+      // the trading journal (journal.js)
+      if (url.pathname === "/api/journal" && (req.method === "GET" || req.method === "POST")) {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        if (req.method === "GET") { sendJson(res, 200, { trades: listTrades(userId) }); return; }
+        const body = await readJsonBody(req);
+        const info = body.name ? null : await equityInfo(String(body.ticker || "").trim().toUpperCase()).catch(() => null);
+        sendJson(res, 200, addTrade(userId, { ...body, name: body.name || info?.name }));
+        return;
+      }
+      const journalItem = url.pathname.match(/^\/api\/journal\/(\d+)$/);
+      if (journalItem && (req.method === "PUT" || req.method === "DELETE")) {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        if (req.method === "PUT") sendJson(res, 200, updateTrade(userId, Number(journalItem[1]), await readJsonBody(req)));
+        else { removeTrade(userId, Number(journalItem[1])); sendJson(res, 200, { ok: true }); }
         return;
       }
 
