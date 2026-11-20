@@ -585,7 +585,11 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
   const filtered = !scoreFiltered ? textFiltered : textFiltered.filter(s =>
     (quality(s) ?? -1) >= minQuality && (s.research?.overall ?? -1) >= minResearch && (colValue(s, "piotroski") ?? -1) >= minPiotroski);
 
+  // a P/E made by a one-off profit (screen.js peOneOff) sorts last (21 Nov 2026:
+  // GTL Infrastructure's 0.9, from a debt written off, led every cheapest-P/E sort)
+  const ONE_OFF_PE = new Set(["pe", "peTtm", "peFy"]);
   const valueFor = (s, key) => {
+    if (s.peOneOff && ONE_OFF_PE.has(key)) return null;
     if (key === "quality") return quality(s);
     if (key === "overall") return s.research?.overall ?? null;
     if (key === "ncavPct") return s.ncavCr > 0 && s.marketCapCr != null ? s.marketCapCr / s.ncavCr : Infinity;
@@ -973,6 +977,8 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
                 const [figure, unit] = splitUnit(formatValue({ ...def, decimals: Math.abs(v ?? 0) >= 10 ? 0 : Math.min(def.decimals ?? 1, 1) }, v));
                 // Coloured as the table's cells are (strong ROCE, Piotroski 7+ green)
                 // a short name for a phone's column ("P/E TTM/FY" → "P/E")
+                // a P/E from a one-off profit says so (21 Nov 2026)
+                if (stock.peOneOff && ONE_OFF_PE.has(def.id) && v != null) return [def.short.replace(/\s+TTM\/FY$/, ""), <span key={def.id} title="From a one-off profit, such as a debt written off" style={{ color: "var(--t3)" }}>{figure}<span className="pe-oneoff">one-off</span></span>, unit];
                 return [def.short.replace(/\s+TTM\/FY$/, ""), <span key={def.id} style={{ color: valueColor(def, v) }}>{figure}</span>, unit];
               }),
             ];
@@ -1153,8 +1159,9 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
                       if (def.id === "cmp") return <td key={def.id} style={{ ...cell, fontWeight: 500, color: "var(--t1)", ...MONO, whiteSpace: "nowrap" }}>{stock.cmp ? `₹${fmt(stock.cmp)}` : "—"}</td>;
                       const v = colValue(stock, def.id);
                       return (
-                        <td key={def.id} style={{ ...cell, ...MONO, color: valueColor(def, v), whiteSpace: "nowrap" }}>
-                          {formatValue(def, v, { cell: true })}
+                        <td key={def.id} style={{ ...cell, ...MONO, color: valueColor(def, v), whiteSpace: "nowrap" }}
+                          title={stock.peOneOff && ONE_OFF_PE.has(def.id) ? "From a one-off profit (such as a debt written off): not the company's usual earnings. Left out of P/E filters and sorting." : undefined}>
+                          {formatValue(def, v, { cell: true })}{stock.peOneOff && ONE_OFF_PE.has(def.id) && v != null && <span className="pe-oneoff" aria-label="from a one-off profit">one-off</span>}
                         </td>
                       );
                     })}

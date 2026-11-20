@@ -29,10 +29,10 @@ export const METRICS = [
   { id: "confidence", label: "Data quality", short: "Data quality", category: "Scores", unit: "/100", decimals: 0, get: m => m.research?.confidence ?? null, about: "A data-quality measure based on checks covered, filing recency and price freshness; it does not predict the stock's outcome." },
 
   // ── Valuation ──
-  { id: "pe", label: "P/E (TTM, else latest FY)", short: "P/E TTM/FY", category: "Valuation", unit: "x", decimals: 1, about: "Today's price ÷ EPS over the latest four consecutive quarters. If four consecutive quarters aren't available, it uses the latest audited year's EPS; P/E FY shows that figure separately." },
+  { id: "pe", label: "P/E (TTM, else latest FY)", short: "P/E TTM/FY", category: "Valuation", unit: "x", decimals: 1, about: "Today's price ÷ EPS over the latest four consecutive quarters. If four consecutive quarters aren't available, it uses the latest audited year's EPS; P/E FY shows that figure separately. A P/E made by a one-off profit (a debt written off, an asset sold) is left out of filters and sorting, and marked in the table.", get: m => (peIsOneOff(m) ? null : m.pe ?? null) },
   { id: "peg", label: "PEG ratio", short: "PEG", category: "Valuation", unit: "x", decimals: 2, about: "P/E ÷ the yearly growth in earnings per share over 3 years. Around 1 means the P/E is in line with the growth; well under 1, cheap for its growth. Only where both are positive." },
-  { id: "peTtm", label: "P/E on the last four quarters", short: "P/E TTM", category: "Valuation", unit: "x", decimals: 1, about: "Price ÷ EPS over the last four quarters (trailing twelve months), when all four consecutive quarters are available." },
-  { id: "peFy", label: "P/E on latest audited year", short: "P/E FY", category: "Valuation", unit: "x", decimals: 1, about: "Today's price ÷ the latest audited financial year's EPS. Use this when comparing to the app's annual P/E history." },
+  { id: "peTtm", label: "P/E on the last four quarters", short: "P/E TTM", category: "Valuation", unit: "x", decimals: 1, about: "Price ÷ EPS over the last four quarters (trailing twelve months), when all four consecutive quarters are available. A P/E made by a one-off profit (a debt written off, an asset sold) is left out of filters and sorting, and marked in the table.", get: m => (m.ttmOneOff || (m.peTtm > 0 && m.peTtm < ODD_PE) ? null : m.peTtm ?? null) },
+  { id: "peFy", label: "P/E on latest audited year", short: "P/E FY", category: "Valuation", unit: "x", decimals: 1, about: "Today's price ÷ the latest audited financial year's EPS. Use this when comparing to the app's annual P/E history. A P/E made by a one-off profit (a debt written off, an asset sold) is left out of filters and sorting, and marked in the table.", get: m => (m.epsJump || (m.peFy > 0 && m.peFy < ODD_PE) ? null : m.peFy ?? null) },
   { id: "medianPe", label: "5-year median annual P/E", short: "Median FY P/E", category: "Valuation", unit: "x", decimals: 1, about: "Median of the company's year-end price ÷ audited annual EPS over up to five years. Fair value uses this, capped at twice the sector's median P/E when enough peers have one." },
   { id: "peVsMedian", label: "Annual P/E vs its 5-year median", short: "FY P/E vs med", category: "Valuation", unit: "%", decimals: 0, signed: true, about: "How far today's P/E on the latest audited year is above (+) or below (−) its median annual P/E history." },
   { id: "priceToBook", label: "Price to book", short: "P/B", category: "Valuation", unit: "x", decimals: 2 },
@@ -300,6 +300,13 @@ for (const m of [...METRICS, ...CATEGORY_METRICS]) {
 
 const BY_ID = new Map([...METRICS, ...CATEGORY_METRICS].map(x => [x.id, x]));
 export const metricById = id => BY_ID.get(id);
+// A P/E made by a one-off profit (21 Nov 2026, the owner chose: mark it and
+// leave it out of P/E filters and sorting): a one-off quarter among the last
+// four or a one-off year (metrics.js ttmOneOff, epsJump), or a P/E under 1.5 —
+// a price under a year and a half of profit is in practice always a gain that
+// won't come again or a filing quirk (Sadbhav Infrastructure 0.26)
+export const ODD_PE = 1.5;
+export const peIsOneOff = m => !!(m.ttmOneOff || (m.peTtm == null && m.epsJump) || (m.pe > 0 && m.pe < ODD_PE));
 export const valueOf = (x, m) => (x.get ? x.get(m) : m[x.id] ?? null);
 
 // Large / mid / small by rank, the AMFI way (it ranks every listed company;

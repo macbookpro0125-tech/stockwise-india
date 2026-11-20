@@ -14,6 +14,7 @@ import { buildSectorStats } from "./sector-compare.js";
 import {
   CATEGORIES, METRICS, CATEGORY_METRICS, metricById, valueOf, capSizes, metricRanges,
   criteriaToFilters, cleanFilters, matchesFilters, describeFilters, coverageNotes,
+  peIsOneOff,
 } from "./metric-catalog.js";
 const STALE_AFTER_DAYS = 550; // ~18 months — a healthy company files annually
 
@@ -496,6 +497,9 @@ function tableRow(m, columns = [], sizes = null) {
     epsCorrection: m.epsCorrection, epsMismatch: m.epsMismatch,
     auditorResignations: m.auditorResignations,
     epsJump: m.epsJump, research: researchBrief(m.research), overallRank: m.overallRank ?? null,
+    // the P/E comes from a one-off profit (metrics.js ttmOneOff, epsJump): shown,
+    // marked, and left out of P/E filters and sorting (metric-catalog.js)
+    peOneOff: peIsOneOff(m),
     // Which model priced it, or why nothing did (metrics.js valuation)
     valuation: m.valuation ? { model: m.valuation.model, as: m.valuation.as, reason: m.valuation.reason ?? null, positionLabel: m.valuation.positionLabel ?? null, partialCycle: !!m.valuation.partialCycle } : null,
     governmentOwned: !!m.governmentOwned,
