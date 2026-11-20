@@ -3,7 +3,7 @@
 // calendar, and the sectors (25 Oct 2026) — for anyone, signed in or not. Companies open their own page.
 import { lazy, Suspense, useEffect, useState } from "react";
 const GoldChart = lazy(() => import("./GoldChart.jsx"));
-import { ChevronRight, Share2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Share2 } from "lucide-react";
 import { api } from "./api.js";
 import { PublicPage } from "./LegalPages.jsx";
 import { navigate, stockPath } from "./site.jsx";
@@ -489,7 +489,9 @@ function SgbRows({ list }) {
   );
 }
 
-export function GoldSilverPage({ signedIn }) {
+// inApp (20 Nov 2026, the owner: it "looks different from the app"): signed
+// in, it opens inside the app as a Markets page, with a way back to Markets
+export function GoldSilverPage({ signedIn, inApp = false, onBack = null }) {
   const [d, error] = useLoad(() => api.publicGoldSilver(), "gold", "gold");
   const [tab, setTab] = useState("gold");
   const [q, setQ] = useState("");
@@ -503,9 +505,8 @@ export function GoldSilverPage({ signedIn }) {
   // "20-Nov-2026 12:55:45" → "20 Nov 2026, 12:55 pm IST"
   const nseTime = t => { const m = /^(\d{1,2})-(\w{3})-(\d{4}) (\d{1,2}):(\d{2})/.exec(t ?? ""); if (!m) return t; const h = Number(m[4]); return `${Number(m[1])} ${m[2]} ${m[3]}, ${h % 12 || 12}:${m[5]} ${h < 12 ? "am" : "pm"} IST`; };
   const updated = d?.asOf ? `NSE prices, ${nseTime(d.asOf)}${d.stale ? " (NSE couldn't be reached since)" : ""}` : null;
-  return (
-    <PublicPage title="Gold, silver and ETF prices" signedIn={signedIn} updated={updated} onSignIn={() => join(null, "signin")} onJoin={() => join("Create a free account to research every NSE company.")}>
-      <p className="pl-lede">Every gold and silver ETF on NSE with its price, NAV and returns, every Sovereign Gold Bond series, and every other ETF: international, government bond, liquid and share-index funds.</p>
+  const lede = "Every gold and silver ETF on NSE with its price, NAV and returns, every Sovereign Gold Bond series, and every other ETF: international, government bond, liquid and share-index funds.";
+  const body = <>
       {error && <p className="nw-empty">{error}</p>}
       {!d && !error && <Wait />}
       <Suspense fallback={<div className="gc-chart gc-wait" />}><GoldChart /></Suspense>
@@ -534,6 +535,18 @@ export function GoldSilverPage({ signedIn }) {
         </>}
         <p className="gs-note">Source: NSE — its list of ETFs, ETF prices and NAV ({d.navDate}), and Sovereign Gold Bond prices with RBI's issue price. Longer returns from NSE's daily closes. Prices, not advice: nothing here suggests buying or selling.</p>
       </>}
+  </>;
+  if (inApp) return (
+    <div className="mk gs-inapp">
+      <button type="button" className="mk-back" onClick={onBack}><ChevronLeft size={18} aria-hidden="true" /> Markets</button>
+      <header className="mk-head"><h1>Gold, silver &amp; ETFs</h1><p>{lede}{updated ? ` ${updated}.` : ""}</p></header>
+      {body}
+    </div>
+  );
+  return (
+    <PublicPage title="Gold, silver and ETF prices" signedIn={signedIn} updated={updated} onSignIn={() => join(null, "signin")} onJoin={() => join("Create a free account to research every NSE company.")}>
+      <p className="pl-lede">{lede}</p>
+      {body}
       <More />
       {!signedIn && <JoinBar label="gold and silver" why="Create a free account to research every NSE company." onJoin={join} />}
       {box}

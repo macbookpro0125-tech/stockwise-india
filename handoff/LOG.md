@@ -504,3 +504,6 @@ Owner: "the news is not understandable". Looked at 10 apps (Inshorts' one-line c
 
 ## 20 Nov 2026 — fix pushed (4d6134d)
 - Pushed 858eaf5..4d6134d: saved copies in data/cache (no more market rebuilds from them), backtesting (rule test + pattern record). New build live ~80 s after the push; health, /gold-silver and sectors answer. Watch Render events tonight for any further heap-out-of-memory.
+
+## 20 Nov 2026 — Gold page inside the app
+- Owner: the gold page "looks different from the app". Signed in, /gold-silver now opens inside the app as a Markets page (MarketsView goldPage, at the /gold-silver address, ← Markets back; App.jsx starts on Markets there). Signed out, and for Google, it stays the public page (GoldSilverPage inApp flag).

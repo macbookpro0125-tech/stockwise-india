@@ -13,6 +13,7 @@ import SectorRotation from "./SectorRotation.jsx";
 import BigOrders from "./BigOrders.jsx";
 import ChartScans from "./ChartScans.jsx";
 import EconomyCard from "./EconomyCard.jsx";
+const GoldSilverPage = lazy(() => import("./PublicLists.jsx").then(m => ({ default: m.GoldSilverPage })));
 import MarketHealth from "./MarketHealth.jsx";
 import { useWatchlist } from "./watchlist.js";
 import { Star } from "lucide-react";
@@ -648,6 +649,16 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
   const setMoves = m => { window.history.replaceState({ ...(window.history.state ?? {}), movesPage: m }, ""); setMovesPage(m); };
   const closeMoves = () => { if (window.history.state?.movesPage) window.history.back(); else setMovesPage(null); };
   const closeAll = () => { if (window.history.state?.allIndices) window.history.back(); else setAll(false); };
+  // gold, silver and every ETF, as a Markets page at its own address (the
+  // public /gold-silver, opened signed in, lands here: App.jsx)
+  const [goldPage, setGoldPage] = useState(() => !!window.history.state?.goldPage || window.location.pathname === "/gold-silver");
+  useEffect(() => {
+    const back = () => setGoldPage(!!window.history.state?.goldPage || window.location.pathname === "/gold-silver");
+    window.addEventListener("popstate", back);
+    return () => window.removeEventListener("popstate", back);
+  }, []);
+  const openGold = () => { window.history.pushState({ ...(window.history.state ?? {}), goldPage: true }, "", "/gold-silver"); setGoldPage(true); window.scrollTo(0, 0); };
+  const closeGold = () => { if (window.history.state?.goldPage) window.history.back(); else { window.history.replaceState({ ...(window.history.state ?? {}), goldPage: false }, "", "/"); setGoldPage(false); } };
 
   useEffect(() => {
     api.explore().then(setBoard).catch(() => setBoard({ market: [], sectors: [] }));
@@ -699,12 +710,13 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
   const goTo = [
     { id: "moves", label: "Biggest moves", line: topGain ? `${cardName(topGain.name)} led, ${pct(topGain.change)}; every company, day by day` : "Every company's rise or fall, day by day", open: () => openMoves({ date: null, period }) },
     { id: "results", label: "Results", line: resultsCount ? `${resultsCount} companies reported in the last month; the figures, day by day` : "Who reports when, and the figures once they're out", open: () => openDay(resultsDay ?? "next") },
-    { id: "gold", label: "Gold, silver & ETFs", line: "Gold and silver ETFs, Sovereign Gold Bonds and every other ETF, at NSE's prices", open: () => navigate("/gold-silver") },
+    { id: "gold", label: "Gold, silver & ETFs", line: "Gold and silver ETFs, Sovereign Gold Bonds and every other ETF, at NSE's prices", open: openGold },
     { id: "sectors", label: "Sectors", line: topSector ? `${topSector.name.replace(/^Nifty\s*/i, "")} led today, ${pct(topSector.changePct)}; every sector's companies` : "Every sector and its companies", open: () => navigate("/sectors") },
     { id: "map", label: "Market map", line: "Every company in one picture, coloured by its move", open: () => onOpenTab?.("map") },
     { id: "lists", label: "Categories", line: "Ready lists: index members, debt-free, high dividend and more", open: () => navigate("/lists") },
   ];
 
+  if (goldPage) return <Suspense fallback={<div className="mk" />}><GoldSilverPage signedIn inApp onBack={closeGold} /></Suspense>;
   if (movesPage) return <MoversDay date={movesPage.date ?? null} period={movesPage.period ?? "1d"} onDate={d => setMoves({ ...movesPage, date: d })} onPeriod={p => setMoves({ ...movesPage, period: p })} onBack={closeMoves} onOpenStock={onOpenStock} />;
   if (resDay) return <ResultsDay results={results} date={resDay} onDate={pickDay} onBack={closeDay} onOpenStock={onOpenStock} />;
   if (all) return <AllIndices board={board} onBack={closeAll} onPick={name => { setPick(name); closeAll(); window.scrollTo(0, 0); }} />;

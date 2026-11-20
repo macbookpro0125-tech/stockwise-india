@@ -129,6 +129,8 @@ export default function App() {
   const [tab, setTab] = useState(() => {
     const asked = new URLSearchParams(window.location.search).get("tab");
     if (asked && /^[a-z]+$/.test(asked)) { window.history.replaceState(window.history.state, "", "/"); return asked; }
+    // the gold page, signed in, is a Markets page (MarketsView.jsx)
+    if (window.location.pathname === "/gold-silver") return "markets";
     return window.location.pathname === BUILDER_PATH && !window.matchMedia?.("(max-width: 640px)").matches ? "workspace" : "discover";
   });
   // someone not signed in, on a company's public page, asked to sign in
@@ -408,7 +410,8 @@ export default function App() {
   if (path === "/results-calendar") return pub(<ResultsCalendarPage signedIn={!!account} />);
   if (/^\/screens\/[a-z0-9-]+\/?$/.test(path)) return pub(<ScreenPage slug={path.split("/")[2]} signedIn={!!account} />);
   if (path === "/sectors") return pub(<SectorsIndexPage signedIn={!!account} />);
-  if (path === "/gold-silver" || path === "/gold-silver/") return pub(<GoldSilverPage signedIn={!!account} />);
+  // signed out, the public page; signed in, Markets opens it inside the app
+  if ((path === "/gold-silver" || path === "/gold-silver/") && !account) return pub(<GoldSilverPage signedIn={false} />);
   if (path === "/lists") return pub(<ListsIndexPage signedIn={!!account} />);
   if (/^\/lists\/[a-z0-9-]+\/?$/.test(path)) return pub(<ListPage slug={path.split("/")[2]} signedIn={!!account} />);
   if (isPublicHtmlPath(path)) return <PublicHtmlPage path={path} signedIn={!!account} />;
