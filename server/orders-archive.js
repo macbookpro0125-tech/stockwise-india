@@ -5,7 +5,7 @@
 // is read once from NSE — its announcements for that day, each order notice's
 // own PDF (readOrderNotice) — then kept. Sizes as each company stated them.
 import { NSE_BASE, fetchJson } from "./fetch-nse.js";
-import { ORDER_SUBJECT, readOrderNotice } from "./market-news.js";
+import { ORDER_SUBJECT, readOrderNotice, plainLetters } from "./market-news.js";
 import { nseDate } from "./company-orders.js";
 import { readCache, writeCache } from "./cache-dir.js";
 import { allMetrics } from "./screen.js";
@@ -26,7 +26,7 @@ const save = () => { clearTimeout(saveTimer); saveTimer = setTimeout(() => write
 const keepOf = (o, day) => ({
   id: o.id, day, symbol: o.symbol, company: o.company, time: o.time, url: o.url ?? null,
   status: o.status, amountCr: o.amountCr ?? null, foreign: o.foreign ?? null, lowestBidder: !!o.lowestBidder,
-  from: o.from ?? null, what: o.what ?? null, wholeContract: o.wholeContract ?? null,
+  from: plainLetters(o.from) ?? null, what: plainLetters(o.what) ?? null, wholeContract: o.wholeContract ?? null,
 });
 
 // The live feed's orders, once read (not while "reading")
@@ -123,7 +123,7 @@ export function ordersOn(day) {
   const items = dayOrders(a, day)
     .map(o => {
       const r = rows.get(o.symbol), mcap = r?.marketCapCr ?? null;
-      return { ...o, company: r?.name ?? o.company, marketCapCr: mcap, pctOfValue: o.amountCr != null && mcap > 0 ? Math.round((o.amountCr / mcap) * 1000) / 10 : null };
+      return { ...o, from: plainLetters(o.from), what: plainLetters(o.what), company: r?.name ?? o.company, marketCapCr: mcap, pctOfValue: o.amountCr != null && mcap > 0 ? Math.round((o.amountCr / mcap) * 1000) / 10 : null };
     });
   const rank = i => (i.amountCr != null ? 2e9 + i.amountCr : i.foreign ? 1e9 + i.foreign.mn : 0);
   items.sort((x, y) => rank(y) - rank(x) || y.time.localeCompare(x.time));

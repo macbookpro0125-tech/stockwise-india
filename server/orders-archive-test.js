@@ -2,6 +2,7 @@
 // which days are on offer, and an order kept once
 import assert from "node:assert/strict";
 import { orderNoticesOf, recentDays, dayOrders } from "./orders-archive.js";
+import { plainLetters } from "./market-news.js";
 
 const rows = [
   { seq_id: 101, symbol: "ABC", sm_name: "ABC Ltd", desc: "Bagging/Receiving of orders/contracts", sort_date: "2026-11-18 14:05:00", attchmntText: "ABC has received an order of Rs 120 crore", attchmntFile: "https://nsearchives.nseindia.com/corporate/ABC.pdf" },
@@ -27,4 +28,7 @@ const a = { orders: {
 } };
 assert.deepEqual(dayOrders(a, "2026-11-18").map(o => o.id), ["nse-1", "nse-3"], "the same order filed twice in a day is kept once");
 assert.equal(dayOrders(a, "2026-11-19").length, 1, "the same size on another day is its own order");
+assert.equal(plainLetters("WAG9 LocomoƟves, domesƟc and internaƟonal; ﬁnal ﬂoor"), "WAG9 Locomotives, domestic and international; final floor", "joined letters made plain");
+assert.equal(plainLetters("±800 kV"), "±800 kV", "real symbols kept");
+assert.equal(plainLetters(null), null);
 console.log("ok: order notices, the days on offer, and each order once");

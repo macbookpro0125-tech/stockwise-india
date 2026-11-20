@@ -634,14 +634,20 @@ const ORDER_GAP_MS = 300;
 
 // One order notice: the summary NSE shows sometimes has the amount; else the
 // notice itself. { amount, l1 }, or { failed } when the notice can't be read.
+// Letters some company PDFs print joined ("ti" as one glyph, read out as "Ɵ";
+// fi, fl, ff …) back to plain letters (20 Nov 2026: "domesƟc", "LocomoƟves")
+const JOINED = { "\u019F": "ti", "\uFB00": "ff", "\uFB01": "fi", "\uFB02": "fl", "\uFB03": "ffi", "\uFB04": "ffl", "\uFB05": "st", "\uFB06": "st" };
+export const plainLetters = t => (t == null ? t : String(t).replace(/[\u019F\uFB00-\uFB06]/g, c => JOINED[c]));
+
 export async function readOrderNotice({ summary, url }) {
+  summary = plainLetters(summary);
   let amount = orderAmount(summary ?? "");
   let text = summary ?? "";
   // the notice is read for who and what too, when there's one
   if (url) {
     try {
       const a = await readAttachment(url);
-      text = a.pages.map(p => p.text).join(" ");
+      text = plainLetters(a.pages.map(p => p.text).join(" "));
       amount = orderAmount(text) ?? amount;
     } catch {
       if (!amount) return { failed: true };

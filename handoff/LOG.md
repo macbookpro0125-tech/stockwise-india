@@ -565,3 +565,4 @@ Owner: "the news is not understandable". Looked at 10 apps (Inshorts' one-line c
 - /api/explore/orders?date=YYYY-MM-DD or ?date=latest (today once it has an order, else the trading day before). No date: the live feed as before.
 - MarketsView OrdersDay page: a strip of the last 30 weekdays with each read day's count, the day's orders biggest first (OrderRow from BigOrders.jsx), the total in rupees. Opened from "Day by day" / "Earlier days" on the Markets card and from Home's "All N" (sessionStorage "open-orders").
 - Test: server/orders-archive-test.js (in npm test).
+- Clean-up: letters some company PDFs print joined ("ti" read as "Ɵ", fi, fl, ff) are made plain when a notice is read (market-news.js plainLetters), and on the day page for anything kept before. Tested in orders-archive-test.js.
