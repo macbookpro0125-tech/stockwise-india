@@ -1,7 +1,7 @@
 // Market-wide inputs that come in one download for everyone instead of one
 // request per company: closing prices (NSE's daily bhavcopy), corporate
 // actions (dividends, bonuses, splits) and sectors (NSE index constituents).
-import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 import { UA, NSE_BASE, fetchJson, parseQeDate, nseSession } from "./fetch-nse.js";
 import { rebaseTracker, suspendedAfter } from "./share-changes.js";
@@ -37,11 +37,21 @@ async function fetchText(url) {
 
 // A finished trading day's bhavcopy never changes, so it's cached on disk.
 // Returns null for non-trading days (NSE serves 404 for those).
+// NSE's archive now answers a day it has no file for (a weekend, a holiday)
+// with a "Service Temporarily Unavailable" web page and a 200, not a 404
+// (21 Nov 2026: the five-year price growth read Saturday 20 Nov 2021 as a day
+// with no prices, so no company had one). Only a real price file counts.
+export const looksLikeBhavcopy = text => typeof text === "string" && /^\uFEFF?\s*SYMBOL\s*,/i.test(text) && text.includes("CLOSE_PRICE");
 async function bhavcopyCsv(date) {
   const path = join(PRICE_DIR, `bhav-${isoDay(date)}.csv`);
-  if (existsSync(path)) return readFileSync(path, "utf-8");
+  if (existsSync(path)) {
+    const kept = readFileSync(path, "utf-8");
+    if (looksLikeBhavcopy(kept)) return kept;
+    try { unlinkSync(path); } catch { /* read again below */ }
+  }
   const csv = await fetchText(`https://nsearchives.nseindia.com/products/content/sec_bhavdata_full_${ddmmyyyy(date)}.csv`);
-  if (csv && isoDay(date) < isoDay(new Date())) writeFileSync(path, csv);
+  if (!looksLikeBhavcopy(csv)) return null;
+  if (isoDay(date) < isoDay(new Date())) writeFileSync(path, csv);
   return csv;
 }
 
@@ -101,7 +111,8 @@ export async function pricesOnOrBefore(date, maxDaysBack = 10) {
     const csv = await bhavcopyCsv(d);
     if (csv) {
       const parsed = parseBhavcopy(csv);
-      return { date: parsed.date ?? isoDay(d), prices: parsed.prices };
+      // a day with no prices isn't a trading day: the one before
+      if (Object.keys(parsed.prices ?? {}).length) return { date: parsed.date ?? isoDay(d), prices: parsed.prices };
     }
     d.setUTCDate(d.getUTCDate() - 1);
   }
@@ -399,9 +410,13 @@ const indexDays = new Map();
 async function indexFile(isoDate) {
   if (indexDays.has(isoDate)) return indexDays.get(isoDate);
   const path = join(PRICE_DIR, `indices-${isoDate}.csv`);
+  // only a real index file (NSE answers a day without one with a web page)
+  const isIndexCsv = t => typeof t === "string" && /^\uFEFF?\s*"?Index Name/i.test(t);
   let csv = existsSync(path) ? readFileSync(path, "utf-8") : null;
+  if (csv && !isIndexCsv(csv)) { try { unlinkSync(path); } catch { /* read again */ } csv = null; }
   if (!csv) {
     csv = await fetchText(`https://nsearchives.nseindia.com/content/indices/ind_close_all_${ddmmyyyy(new Date(`${isoDate}T00:00:00Z`))}.csv`).catch(() => null);
+    if (!isIndexCsv(csv)) csv = null;
     if (csv && isoDate < isoDay(new Date())) writeFileSync(path, csv);
     await new Promise(r => setTimeout(r, 300)); // gentle on NSE's archive
   }

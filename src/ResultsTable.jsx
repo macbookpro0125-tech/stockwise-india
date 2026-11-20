@@ -758,6 +758,10 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
                 <input type="text" placeholder="Find a company…" value={search} onChange={e => setSearch(e.target.value)} aria-label="Filter by name or ticker" />
               </label>
             )}
+            {/* the list narrowed here (watchlist, a name, the score boxes):
+                how many of the screen's are showing (21 Nov 2026: "Watchlist
+                only" showed 12 rows under "2,281 of 2,281 companies") */}
+            {narrowed && (matches?.length ?? 0) > 0 && <span className="rt-shown" role="status">Showing {filtered.length.toLocaleString("en-IN")} of {matches.length.toLocaleString("en-IN")}</span>}
             {exportError && <span role="alert" style={{ fontSize: 12, color: "var(--red)" }}>{exportError}{/reload/i.test(exportError) && <> <button type="button" className="btn-ghost" style={{ height: 26, fontSize: 12, marginLeft: 6 }} onClick={() => window.location.reload()}>Reload</button></>}</span>}
             {selected.size >= 2 && (
               <button onClick={() => setShowCompare(true)} className="btn-primary tb-btn">
