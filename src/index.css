@@ -7704,3 +7704,4 @@ html.is-scrolling .hk-track { animation-play-state: paused; }
 /* the Gold tab on a phone: the page's own margins only, the carat table fitting */
 @media (max-width: 640px) { .gs-inapp { padding-top: 0; } .gs-inapp .mk-head p { margin-top: 0; } .gs-inapp .gs-card { padding: 14px 12px; } }
 .gc-unit { font-size: 12px; color: var(--t3); font-weight: 400; }
+.gg-big small.gg-gst { flex-basis: 100%; color: var(--t2); }

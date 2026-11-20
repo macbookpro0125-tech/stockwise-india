@@ -29,7 +29,7 @@ export default function HomeGold({ onOpen }) {
           ))}
         </button>
       )}
-      {g && <p className="hg-note">{g.estimate ? `Estimate now, from RBI's ${rupee(g.price)} a gram for ${shortDay(g.redeemOn)} and the gold ETF's move since` : `RBI's price for ${shortDay(g.redeemOn)}: ${rupee(g.price)} a gram of 24 carat`}. Before making charges and GST.</p>}
+      {g && <p className="hg-note">{g.estimate ? `Estimate now, from RBI's ${rupee(g.price)} a gram for ${shortDay(g.redeemOn)} and the gold ETF's move since` : `RBI's price for ${shortDay(g.redeemOn)}: ${rupee(g.price)} a gram of 24 carat`}. Before GST: with 3% GST, ₹{Math.round(table["24K"][10] * 1.03).toLocaleString("en-IN")} for 10 g of 24 carat; making charges extra.</p>}
       <div className="hg-etfs">
         {gold && <span>Gold ETF <b>₹{gold.price.toFixed(2)}</b> <i style={{ color: tone(gold.changePct) }}>{signed(gold.changePct)}</i></span>}
         {silver && <span>Silver ETF <b>₹{silver.price.toFixed(2)}</b> <i style={{ color: tone(silver.changePct) }}>{signed(silver.changePct)}</i></span>}

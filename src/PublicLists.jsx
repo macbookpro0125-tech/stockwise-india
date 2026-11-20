@@ -514,7 +514,9 @@ function GoldGramCard({ g }) {
         </div>
       )}
       <div className="gg-big">
-        <b>{rupee(per)}</b><span>a gram of 24-carat (999) gold</span>
+        <b>{rupee(per)}</b><span>a gram of 24-carat (999) gold, before GST</span>
+        {/* as apps and jewellers often quote it (20 Nov 2026: our ₹1,24,039 for 10 g against Paytm's ~₹1,28,000) */}
+        <small className="gg-gst">{rupee(per * 1.03)} a gram with 3% GST · {rupee(per * 10 * 1.03)} for 10 g</small>
         {which === "now" && g.estimate && <small className={g.estimate.change >= 0 ? "up" : "down"}>{g.estimate.change >= 0 ? "+" : "−"}{Math.abs(g.estimate.change).toFixed(1)}% since RBI's price of {rupee(g.price)}</small>}
       </div>
       <div className="gg-wrap">
