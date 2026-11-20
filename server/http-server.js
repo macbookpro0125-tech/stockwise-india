@@ -19,6 +19,7 @@ import { emailConfigured, appUrl, sendEmail, resetEmail, signupCodeEmail } from 
 import { listAlerts, createAlert, updateAlert, deleteAlert } from "./user-alerts.js";
 import { screen, matchingSymbols, screenerMeta, getStock, saveStock, rowsFor, isValidSymbol, countFetched, allMetrics, screenRowCount, marketReady, rebuildFresh, capHistoricalMultiples } from "./screen.js";
 import { startDataPull, pullStatus } from "./data-pull.js";
+import { startRefreshTrigger, triggerStatus } from "./refresh-trigger.js";
 import { screenMomentum, momentumAllowed, momentumAudience } from "./momentum.js";
 import { criteriaToFilters, METRICS, CATEGORY_METRICS } from "./metric-catalog.js";
 import { listWatchlist, addToWatchlist, setWatchlistNote, removeFromWatchlist, setWatchOrder, listWatchLists, createWatchList, renameWatchList, deleteWatchList, addToWatchList, removeFromWatchList } from "./user-watchlist.js";
@@ -1745,6 +1746,7 @@ export function createApp() {
           companiesOnFile: countFetched(),
           // The free copy's evening data from GitHub Actions (data-pull.js)
           ...(pullStatus.enabled && { dataPull: pullStatus }),
+          ...(triggerStatus.enabled && { refreshTrigger: triggerStatus }),
           // Who sees the Momentum tab (set in Render: MOMENTUM, MOMENTUM_USERS)
           momentum: momentumAudience(),
           // Outside sources answering this host: NSE, Google News …
@@ -1964,6 +1966,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   // on Render only (data-pull.js pullBaseUrl); the market is rebuilt in
   // slices at once, so the next visitor doesn't wait for it
   if (mode === "off" || mode === "pull") startDataPull({ onInstalled: () => rebuildFresh().catch(e => console.error(`[market] rebuild failed: ${e.message}`)) });
+  // GitHub's timer starts the evening job ~8 hours late: ask for it ourselves (refresh-trigger.js)
+  if (mode === "off" || mode === "pull") startRefreshTrigger({ pricesDate: () => { try { return loadMarketSnapshot()?.pricesDate ?? null; } catch { return null; } } });
   if (mode !== "off") {
     startTelegramPolling();
     startAlertChecks();

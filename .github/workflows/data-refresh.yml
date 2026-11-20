@@ -20,6 +20,10 @@ on:
         description: "Rebuild even though today's data is in (to run a batch of company re-reads now)"
         type: boolean
         default: false
+      evening:
+        description: "An evening run asked for by the live server (refresh-trigger.js): rebuild only if today's close isn't in"
+        type: boolean
+        default: false
       history_days:
         description: "Trading days of price history to fetch further back this run (default 120; 1100 fills five years at once)"
         type: string
@@ -115,6 +119,7 @@ jobs:
           HAS_BOARD: ${{ steps.start_data.outputs.has_board }}
           INDICES_CURRENT: ${{ steps.start_data.outputs.indices_current }}
           FORCE_INPUT: ${{ github.event.inputs.force }}
+          EVENING_INPUT: ${{ github.event.inputs.evening }}
         run: |
           today_ist=$(node -e 'console.log(new Date(Date.now() + 330 * 60 * 1000).toISOString().slice(0, 10))')
           force=false
@@ -124,7 +129,7 @@ jobs:
           if [ "$FORCE_INPUT" = "true" ]; then
             force=true
             echo "Started by hand with force; rebuilding."
-          elif { [ "$SCHEDULE" = "0 11 * * 1-5" ] || [ "$SCHEDULE" = "30 14 * * 1-5" ]; } && [ "$PRICES_DATE" != "$today_ist" ]; then
+          elif { [ "$SCHEDULE" = "0 11 * * 1-5" ] || [ "$SCHEDULE" = "30 14 * * 1-5" ] || [ "$EVENING_INPUT" = "true" ]; } && [ "$PRICES_DATE" != "$today_ist" ]; then
             force=true
             echo "Today's NSE close is not in the published snapshot; refreshing."
           elif [ "$HAS_BOARD" != "true" ]; then
