@@ -254,13 +254,18 @@ export default function PhoneScreens({ onSelect, onNewScreen, continueCard = nul
   return (
     <div className="ps">
       <HomeTicker onOpenIndex={onOpenIndex} onOpenStock={onOpenStock} />
-      <h2 className="phone-title">Screeners</h2>
-      <p className="ps-meta">{list.length ? `${list.length} screeners` : " "}{pricesDate ? ` · NSE close, ${dateOf(pricesDate)}` : ""}</p>
+      {/* no big "Screeners" title (20 Nov 2026, the owner: "do we need that word
+          there?" — the tab says Discover, and it took a seventh of the screen):
+          the close's date is under Market summary; the heading kept for screen readers */}
+      <h2 className="sr-only">Screeners</h2>
       {continueCard}
 
       <div className="ps-h-row">
         <h3 className="ps-h">Favourites</h3>
-        {favs.length > 0 && <button type="button" className="ps-link" onClick={() => showAll("favourites")}>Edit</button>}
+        <span className="ps-h-acts">
+          {favs.length > 0 && list.length > 0 && <button type="button" className="ps-link" onClick={() => showAll("all")}>All {list.length} screeners</button>}
+          {favs.length > 0 && <button type="button" className="ps-link" onClick={() => showAll("favourites")}>Edit</button>}
+        </span>
       </div>
       {favs.length ? (
         <>

@@ -7698,3 +7698,6 @@ html.is-scrolling .hk-track { animation-play-state: paused; }
 .hc-rail { transition: height 240ms cubic-bezier(0.2, 0, 0, 1); }
 .hc-wrap { overflow-anchor: none; }
 @media (prefers-reduced-motion: reduce) { .hc-rail { transition: none; } }
+/* the phone's Home without its big title: the date small under the ticker */
+.ps-meta-top { margin: 10px 0 2px; }
+.ps-h-acts { display: inline-flex; gap: 16px; align-items: baseline; }
