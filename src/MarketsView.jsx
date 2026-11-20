@@ -633,6 +633,20 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
     });
   };
   const mtabNow = useRef(mtab); mtabNow.current = mtab;
+  const lineRef = useRef(null);
+  // the line under the chosen tab: its place and width, moved (CSS eases it)
+  useEffect(() => {
+    const place = () => {
+      const bar = tabBar.current, line = lineRef.current, on = bar?.querySelector("[aria-selected=true]");
+      if (!bar || !line || !on) return;
+      line.style.width = `${on.offsetWidth}px`;
+      line.style.transform = `translateX(${on.offsetLeft}px)`;
+    };
+    place();
+    const t = setTimeout(place, 120); // after the font settles
+    window.addEventListener("resize", place);
+    return () => { clearTimeout(t); window.removeEventListener("resize", place); };
+  }, [mtab, phone]);
   const setMtabRef = useRef(setMtab); setMtabRef.current = setMtab;
   const [rootNode, setRootNode] = useState(null);
   const setRoot = el => { rootEl.current = el; setRootNode(el); };
@@ -764,6 +778,9 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
       {phone && (
         <div className="mk-tabs" role="tablist" aria-label="Markets" ref={tabBar}>
           {MTABS.map(([id, label]) => <button key={id} type="button" role="tab" aria-selected={mtab === id} onClick={() => setMtab(id)}>{label}</button>)}
+          {/* the line under the tab in view, sliding from one to the next (20 Nov 2026,
+              the owner: the boxed tabs "look cheap"; now as the company page's) */}
+          <span className="mk-tab-line" ref={lineRef} aria-hidden="true" />
         </div>
       )}
 
