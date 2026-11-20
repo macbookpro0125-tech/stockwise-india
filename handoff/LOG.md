@@ -471,3 +471,11 @@ Owner: "the news is not understandable". Looked at 10 apps (Inshorts' one-line c
 - Public page `/gold-silver` (PublicLists.jsx GoldSilverPage) and its server-written copy for search engines (seo-gold.js), in the sitemap; linked from Markets' "Go deeper" and the public pages' footer links. Source line and "not advice" on the page.
 - Not built (needs permission): official gold/silver rate per gram (IBJA), MCX/NCDEX commodity prices (crude, copper…).
 - Gold chart (owner: "can I show the gold chart?"): `src/GoldChart.jsx` at the top of /gold-silver — Gold (GOLDBEES price), Silver (SILVERBEES), or Gold vs silver vs Nifty as ₹100 put in; 1M–10Y, a range greyed until the history reaches it. Data `/api/public/gold-silver/chart` (gold-silver.js goldSilverChart, our daily NSE closes, cached an hour). The sharp days in Jan–Mar 2026 are real NSE closes, checked.
+
+## 20 Nov 2026 — India's economy on Markets
+- Owner: "show how the economy of India is working in the market page".
+- `server/economy.js` (+ economy-test.js), `/api/explore/economy`, `src/EconomyCard.jsx` on Markets above Sector rotation:
+  - RBI's home page "Current Rates" box: repo, SDF, MSF, bank rate, CRR, SLR, call money, G-sec yields (2029–2056) and T-bill cut-offs → a yield curve (3 months–30 years) with an inversion check. Credited to RBI with its "as on" date. RBI's publications allow reproduction with acknowledgement; no reuse clause found on the website itself. Cached 6 h; last copy in data/market/rbi-rates.json.
+  - NSE /api/fiidiiTradeReact: FII/FPI and DII net buying, kept a day at a time in data/market/fii-dii.json (250 days) so the 30-day sum builds up.
+  - World Bank WDI for India (CC BY 4.0), 11 years: GDP growth, inflation, unemployment, investment, current account, FDI, forex reserves, exports, GDP size, income per person. Cached 24 h; last copy in data/market/world-bank-india.json.
+- Not reachable from here: MoSPI's API/eSankhyiki (CPI, IIP, quarterly GDP) and RBI's DBIE — both timed out. FBIL's USD/INR on RBI's page left out (FBIL's licence unconfirmed).

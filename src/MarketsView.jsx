@@ -12,6 +12,7 @@ import BigNum from "./BigNum.jsx";
 import SectorRotation from "./SectorRotation.jsx";
 import BigOrders from "./BigOrders.jsx";
 import ChartScans from "./ChartScans.jsx";
+import EconomyCard from "./EconomyCard.jsx";
 import MarketHealth from "./MarketHealth.jsx";
 import { useWatchlist } from "./watchlist.js";
 import { Star } from "lucide-react";
@@ -836,6 +837,9 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
         </section>
         </div>
       </div>
+
+      {/* India's economy: RBI's rates and the yield curve, FII/DII flows, the World Bank's years (EconomyCard.jsx) */}
+      <EconomyCard />
 
       {/* sector rotation (SectorRotation.jsx): which sectors are gaining on the market, and which are slipping */}
       <section className="mk-card" aria-labelledby="mk-rot">
