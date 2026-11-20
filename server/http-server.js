@@ -20,6 +20,8 @@ import { listAlerts, createAlert, updateAlert, deleteAlert } from "./user-alerts
 import { screen, matchingSymbols, screenerMeta, getStock, saveStock, rowsFor, isValidSymbol, countFetched, allMetrics, screenRowCount, marketReady, rebuildFresh, capHistoricalMultiples } from "./screen.js";
 import { startDataPull, pullStatus } from "./data-pull.js";
 import { startRefreshTrigger, triggerStatus } from "./refresh-trigger.js";
+import { getHeapStatistics } from "node:v8";
+const v8HeapLimit = () => getHeapStatistics().heap_size_limit;
 import { screenMomentum, momentumAllowed, momentumAudience } from "./momentum.js";
 import { criteriaToFilters, METRICS, CATEGORY_METRICS } from "./metric-catalog.js";
 import { listWatchlist, addToWatchlist, setWatchlistNote, removeFromWatchlist, setWatchOrder, listWatchLists, createWatchList, renameWatchList, deleteWatchList, addToWatchList, removeFromWatchList } from "./user-watchlist.js";
@@ -1746,6 +1748,9 @@ export function createApp() {
           companiesOnFile: countFetched(),
           // The free copy's evening data from GitHub Actions (data-pull.js)
           ...(pullStatus.enabled && { dataPull: pullStatus }),
+          // the server's memory, against the heap's limit (20 Nov 2026: two
+          // out-of-memory restarts on the 512 MB plan), in MB
+          memory: (() => { const m = process.memoryUsage(); const mb = v => Math.round(v / 1048576); return { rss: mb(m.rss), heapUsed: mb(m.heapUsed), heapLimit: mb(v8HeapLimit()), external: mb(m.external + (m.arrayBuffers ?? 0)) }; })(),
           ...(triggerStatus.enabled && { refreshTrigger: triggerStatus }),
           // Who sees the Momentum tab (set in Render: MOMENTUM, MOMENTUM_USERS)
           momentum: momentumAudience(),

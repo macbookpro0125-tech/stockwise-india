@@ -8,9 +8,13 @@ import { loadMarketSnapshot } from "./market-data.js";
 const CACHE = new Map();
 const CACHE_MS = 6 * 60 * 60 * 1000; // the prices change once an evening
 
+// the companies read most recently only (20 Nov 2026: one entry for every
+// company ever asked about, never let go, helped fill the 512 MB server)
+const CACHE_MAX = 300;
 function cacheGet(key) {
   const hit = CACHE.get(key);
-  if (hit && Date.now() - hit.at < CACHE_MS) return hit.data;
+  if (hit && Date.now() - hit.at < CACHE_MS) { CACHE.delete(key); CACHE.set(key, hit); return hit.data; }
+  if (hit) CACHE.delete(key);
   return null;
 }
 
@@ -265,5 +269,6 @@ export async function fetchTechnicals(ticker, snapshot = loadMarketSnapshot()) {
   };
 
   CACHE.set(`${cacheKey}|${snapshot?.pricesDate ?? ""}`, { at: Date.now(), data });
+  while (CACHE.size > CACHE_MAX) CACHE.delete(CACHE.keys().next().value);
   return data;
 }

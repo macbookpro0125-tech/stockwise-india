@@ -16,19 +16,39 @@ import { summarizeInsiders } from "./insiders.js";
 
 const HOUR = 3600 * 1000;
 const memo = new Map();
+// Answers about one company (its profile, filings, news …) are kept for the
+// companies read most recently only (20 Nov 2026: kept for every company ever
+// asked about, a crawl of every company page filled the 512 MB server and it
+// restarted). Site-wide answers (gold, bonds, the news feeds) are always kept.
+const PER_COMPANY = /^(filings|insiders|news|orders|profile|result-filings|shp|videos):/;
+export const MEMO_COMPANY_MAX = 300;
+function remember(key, entry) {
+  memo.delete(key);
+  memo.set(key, entry);
+  if (!PER_COMPANY.test(key)) return;
+  let n = 0;
+  for (const k of memo.keys()) if (PER_COMPANY.test(k)) n++;
+  for (const k of memo.keys()) {
+    if (n <= MEMO_COMPANY_MAX) break;
+    if (PER_COMPANY.test(k)) { memo.delete(k); n--; }
+  }
+}
+export const memoSize = () => memo.size;
 
 export async function cached(key, ttlMs, fn) {
   const hit = memo.get(key);
+  // read again: the most recent, so the last to be let go
+  if (hit && PER_COMPANY.test(key)) { memo.delete(key); memo.set(key, hit); }
   if (hit?.retryAt > Date.now()) return staleValue(hit.data);
   if (hit && Date.now() - hit.at < ttlMs) return hit.data;
   try {
     const data = await fn();
-    memo.set(key, { at: Date.now(), data });
+    remember(key, { at: Date.now(), data });
     return data;
   } catch (error) {
     if (!hit) throw error;
     console.warn(`[cache] ${key} refresh failed; returning the last successful result (${error.name})`);
-    memo.set(key, { ...hit, retryAt: Date.now() + 60_000 });
+    remember(key, { ...hit, retryAt: Date.now() + 60_000 });
     return staleValue(hit.data);
   }
 }

@@ -319,22 +319,30 @@ function moverCloses() {
   const snap = loadMarketSnapshot();
   const key = snap?.builtAt ?? snap?.pricesDate ?? "none";
   if (moverCache?.key === key) return moverCache;
+  moverCache = null;
   const rows = allMetrics().rows.filter(r => r.marketCapCr >= MOVER_FLOOR_CR);
-  const dates = new Set(), closes = new Map(), info = new Map();
+  // a year and a bit of closes for each company: the strip's month, its Month
+  // view, and an index chart's breadth for a year. Kept as one number array a
+  // company on a shared list of days (20 Nov 2026: a Map of date → close for
+  // ~1,500 companies held ~50 MB and helped take the 512 MB server down)
+  const read = [], count = new Map(), info = new Map();
   for (const r of rows) {
-    // a month of days to show, and a month before the oldest for its Month view
-    // a year and a bit: the strip's month, its Month view, and an index chart's breadth for a year
     const bars = historyBars(r.symbol, snap).slice(-270);
     if (bars.length < 2) continue;
-    const m = new Map(bars.map(b => [b.date, b.close]));
-    closes.set(r.symbol, m);
+    read.push([r.symbol, bars.map(b => b.date), Float64Array.from(bars, b => b.close)]);
     info.set(r.symbol, { symbol: r.symbol, name: r.name, marketCapCr: r.marketCapCr ?? null, sector: r.sector ?? null });
-    for (const b of bars) dates.add(b.date);
+    for (const b of bars) count.set(b.date, (count.get(b.date) ?? 0) + 1);
   }
   // trading days most companies traded on (a stray date from one file isn't a day)
-  const count = new Map();
-  for (const m of closes.values()) for (const d of m.keys()) count.set(d, (count.get(d) ?? 0) + 1);
-  const days = [...dates].filter(d => count.get(d) >= closes.size * 0.5).sort();
+  const days = [...count.keys()].filter(d => count.get(d) >= read.length * 0.5).sort();
+  const at = new Map(days.map((d, i) => [d, i]));
+  const closes = new Map();
+  for (const [sym, ds, cs] of read) {
+    const arr = new Float64Array(days.length);
+    ds.forEach((d, i) => { const k = at.get(d); if (k != null) arr[k] = cs[i]; });
+    // close on a day (undefined when it didn't trade), as the Map it replaced
+    closes.set(sym, { get: d => { const k = at.get(d); const v = k == null ? 0 : arr[k]; return v > 0 ? v : undefined; } });
+  }
   moverCache = { key, days, closes, info };
   return moverCache;
 }
