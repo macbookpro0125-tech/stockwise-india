@@ -410,6 +410,21 @@ async function main() {
   assert(won.title === "Infosys: announced an order of ₹1,465 crore" && won.body === "53% of its market value, from NHAI. 8-lane expressway", `an order: its size, its weight and who gave it (${won.title} / ${won.body})`);
   const unsized = newsPush([{ id: "nse-4", type: "filing", symbol: "INFY", company: "INFOSYS LIMITED", title: "Bagging/Receiving of orders/contracts", time: "2026-10-23T12:00:00.000Z" }], watched, new Map([["nse-4", { ...order, id: "nse-4", status: "none", amountCr: null }]]));
   assert(unsized.body === "Bagging/Receiving of orders/contracts", "no size in the notice: the filing's own title, nothing guessed");
+  // a watched company's newly filed results, once (results-push.js)
+  const { pushWatchlistResults, resultsPush } = await import("./results-push.js");
+  (await import("./db.js")).db.prepare("INSERT OR IGNORE INTO watchlist (user_id, ticker, added_at) VALUES (?, ?, ?)").run(daveId, "TCS", "2026-10-01T00:00:00.000Z");
+  const tcs = { symbol: "TCS", name: "Tata Consultancy Services Limited", marketCapCr: 1e6, quarters: [{ fyEnd: "2026-09-30", filed: "2026-11-20", profitCr: 13934, profitYoY: 14.9, revenueCr: 73188, salesYoY: 6.1 }] };
+  const old = { symbol: "INFY", name: "Infosys Limited", quarters: [{ fyEnd: "2026-09-30", filed: "2026-10-10", profitCr: 1, profitYoY: 1 }] };
+  const sentRes = [];
+  const resNow = new Date("2026-11-20T12:00:00.000Z");
+  await pushWatchlistResults({ rows: [tcs, old], now: resNow, push: async (id, m) => { sentRes.push([id, m]); return true; } });
+  const toDave = sentRes.filter(([id]) => id === daveId);
+  assert(toDave.length === 1 && toDave[0][1].title === "Tata Consultancy Services: Q2 FY27 results" && toDave[0][1].body === "Profit ₹13,934 crore, up 14.9% from a year ago. Sales ₹73,188 crore, up 6.1%." && toDave[0][1].data.path === "/stock/TCS/results/q2-fy27", `results: profit and sales against a year ago, opening the quarter (${JSON.stringify(toDave[0]?.[1])})`);
+  sentRes.length = 0;
+  await pushWatchlistResults({ rows: [tcs, old], now: resNow, push: async (id, m) => { sentRes.push([id, m]); return true; } });
+  assert(!sentRes.some(([id]) => id === daveId), "a quarter goes once");
+  const loss = resultsPush([{ ...tcs, quarters: [{ fyEnd: "2026-06-30", filed: "2026-08-01", profitCr: -42.5, profitYoY: null, revenueCr: null }] }]);
+  assert(loss.title.endsWith("Q1 FY27 results") && loss.body === "Loss of ₹42.5 crore.", "a loss said as a loss");
   // the FCM request itself, against a stubbed Google
   const { generateKeyPairSync: pushKeys } = await import("node:crypto");
   const { privateKey: pushKey } = pushKeys("rsa", { modulusLength: 2048 });

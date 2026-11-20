@@ -219,7 +219,9 @@ export default function App() {
   const pushTap = useRef(null);
   pushTap.current = d => {
     // by its address, which also works while the account is still loading
-    if (d.stock) navigate(stockPath(String(d.stock)), { state: { fromApp: true, depth: 1 } });
+    // a page of a company's, such as a quarter's results (server/results-push.js)
+    if (typeof d.path === "string" && /^\/stock\/[^/]+\/results\/q[1-4]-fy\d{2}$/.test(d.path)) navigate(d.path, { state: { fromApp: true, depth: 1 } });
+    else if (d.stock) navigate(stockPath(String(d.stock)), { state: { fromApp: true, depth: 1 } });
     else if (d.news) { setNewsOpen(String(d.news)); goTab("explore"); }
     else if (d.tab === "watchlist") goTab("watchlist");
     else if (d.tab === "discover") goTab("discover");

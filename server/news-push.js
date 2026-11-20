@@ -8,6 +8,7 @@
 import { db } from "./db.js";
 import { watchlistNews, bigOrders, ORDER_SUBJECT } from "./market-news.js";
 import { record as recordOrders } from "./orders-archive.js";
+import { pushWatchlistResults } from "./results-push.js";
 import { pushReady, pushToUser } from "./push.js";
 import { niceName } from "../src/stockName.js";
 
@@ -84,6 +85,9 @@ export function startNewsPush({ everyMs = 15 * 60_000, log = console.error } = {
       const orders = new Map((big?.items ?? []).map(o => [o.id, o]));
       const { sent } = await pushWatchlistNews({ log, orders });
       if (sent) log(`[news-push] sent to ${sent} account${sent === 1 ? "" : "s"}`);
+      // the watchlist's newly filed results, once the evening data has them (results-push.js)
+      const res = await pushWatchlistResults({ log });
+      if (res.sent) log(`[results-push] sent to ${res.sent} account${res.sent === 1 ? "" : "s"}`);
     } catch (e) {
       log(`[news-push] ${e.message}`);
     }

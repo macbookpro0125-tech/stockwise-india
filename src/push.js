@@ -69,7 +69,7 @@ export async function refreshPush() {
   } catch { /* tried again next start */ }
 }
 
-// A tapped notification's data: { stock }, { news } or { tab }
+// A tapped notification's data: { path }, { stock }, { news } or { tab }
 export function onPushTap(handle) {
   if (!canPush()) return () => {};
   const h = Push.addListener("pushNotificationActionPerformed", e => handle(e.notification?.data ?? {}));
