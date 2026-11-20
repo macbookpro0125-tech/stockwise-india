@@ -132,6 +132,7 @@ export const api = {
   exploreIndex: name => request(`/api/explore/index?name=${encodeURIComponent(name)}`),
   movers: period => request(`/api/explore/movers?period=${period}`),
   bigOrders: () => request("/api/explore/orders"),
+  ordersOn: day => request(`/api/explore/orders?date=${encodeURIComponent(day)}`),
   economy: () => request("/api/explore/economy"),
   patternRecord: () => request("/api/explore/pattern-record"),
   chartScan: id => request(`/api/explore/scans?id=${encodeURIComponent(id ?? "")}`),

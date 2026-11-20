@@ -10,7 +10,7 @@ const PriceChartPanel = lazy(() => import("./PriceChartPanel.jsx"));
 import { navigate } from "./site.jsx";
 import BigNum from "./BigNum.jsx";
 import SectorRotation from "./SectorRotation.jsx";
-import BigOrders from "./BigOrders.jsx";
+import BigOrders, { OrderRow } from "./BigOrders.jsx";
 import ChartScans from "./ChartScans.jsx";
 import EconomyCard from "./EconomyCard.jsx";
 import { usePhone } from "./phoneTabs.js";
@@ -603,6 +603,79 @@ function MoversDay({ date, period, onDate, onPeriod, onBack, onOpenStock }) {
   );
 }
 
+
+// Big orders day by day, as Results are (20 Nov 2026, the owner: "big orders
+// like the results, so I can see the previous dates"): the last 30 weekdays
+// in a strip, each with how many orders were announced once it's been read,
+// and the picked day's orders biggest first (server/orders-archive.js). A day
+// not read yet is read from NSE's notices when it's picked, which takes a little.
+function OrdersDay({ day, onDate, onBack, onOpenStock }) {
+  const [data, setData] = useState(null);
+  const [strip, stripEdges, nudge] = useDateStrip([data?.day, data?.days?.length]);
+  useEffect(() => {
+    let off = false, timer = null, tries = 0;
+    setData(d => (d && d.day === day ? d : null));
+    const load = () => api.ordersOn(day ?? "latest").then(d => {
+      if (off) return;
+      setData(d);
+      if (d.reading > 0 && tries++ < 40) timer = setTimeout(load, 4000);
+    }).catch(() => { if (!off) setData({ day, items: [], days: [], failed: true }); });
+    load();
+    return () => { off = true; clearTimeout(timer); };
+  }, [day]);
+  const at = data?.day ?? day;
+  const items = data?.items ?? [];
+  const stated = items.filter(o => o.status === "stated" && o.amountCr != null);
+  const total = stated.reduce((a, o) => a + o.amountCr, 0);
+  return (
+    <div className="mk">
+      <button type="button" className="mk-back" onClick={onBack}><ChevronLeft size={18} /> Markets</button>
+      <header className="mk-head">
+        <h1>{at ? `Big orders on ${weekday(at)}` : "Big orders"}</h1>
+        <p>Orders and contracts companies told NSE they won that day, biggest first: the size from the company's own notice, beside its market value.</p>
+      </header>
+      <div className="mk-dates-wrap">
+        <StripArrows nudge={nudge} />
+        <div className="mk-dates" role="group" aria-label="Day" ref={strip} onScroll={stripEdges}>
+          <div className="mk-dates-group">
+            <span className="mk-dates-label">Days</span>
+            <div className="mk-dates-row">
+              {(data?.days ?? []).map((x, i, all) => {
+                const t = new Date(`${x.day}T00:00:00Z`), gap = between(all[i - 1]?.day, x.day);
+                return (
+                  <Fragment key={x.day}>
+                    {gap.week && <span className="mk-week-break" aria-hidden="true" />}
+                    <button type="button" className="mk-date" aria-pressed={x.day === at} onClick={() => onDate(x.day)}
+                      aria-label={`${weekday(x.day)}${x.count != null ? `: ${x.count} order${x.count === 1 ? "" : "s"}` : ""}`}>
+                      <span className="mk-date-wd">{t.toLocaleDateString("en-IN", { weekday: "short", timeZone: "UTC" })}</span>
+                      <span className="mk-date-d">{t.getUTCDate()}</span>
+                      <span className="mk-date-m">{t.toLocaleDateString("en-IN", { month: "short", timeZone: "UTC" })}</span>
+                      {x.count != null && <span className="mk-date-n">{x.count}</span>}
+                    </button>
+                  </Fragment>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+      <section className="mk-card" aria-label={at ? `Orders on ${weekday(at)}` : "Orders"}>
+        {data && items.length > 0 && (
+          <p className="mk-note bo-intro">{items.length} order{items.length === 1 ? "" : "s"}{stated.length > 0 ? `; ${stated.length} with a size in rupees, ₹${Math.round(total).toLocaleString("en-IN")} crore together` : ""}.</p>
+        )}
+        <ul className="bo-list">
+          {(!data || (data.reading > 0 && !items.length)) && [0, 1, 2, 3].map(i => <li key={i}><span className="mk-skel mk-row-skel" /></li>)}
+          {items.map(o => <OrderRow key={o.id} o={o} onOpenStock={onOpenStock} />)}
+        </ul>
+        {data?.reading > 0 && <p className="mk-note">Reading that day's notices from NSE…</p>}
+        {data?.failed && <p className="mk-note">NSE's notices couldn't be read just now. Try again in a minute.</p>}
+        {data && !data.failed && !data.reading && !items.length && <p className="mk-note">No orders announced that day.</p>}
+        <p className="mk-note">Amounts as each company stated them, some with taxes and some without; a dollar order is shown in dollars. Market value at the last NSE close. A record of filings, not advice.</p>
+      </section>
+    </div>
+  );
+}
+
 // A sector index (Nifty FMCG, Nifty Bank, …) to its sector page, /sector/<slug>
 // (17 Nov 2026, the owner: "when I press FMCG it should open the full page")
 const SECTOR_PAGES = [
@@ -700,6 +773,18 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
   const openMoves = m => { window.history.pushState({ ...(window.history.state ?? {}), movesPage: m }, ""); setMovesPage(m); window.scrollTo(0, 0); };
   const setMoves = m => { window.history.replaceState({ ...(window.history.state ?? {}), movesPage: m }, ""); setMovesPage(m); };
   const closeMoves = () => { if (window.history.state?.movesPage) window.history.back(); else setMovesPage(null); };
+  // Big orders day by day as a page, the same way: the day, or "" for the latest
+  const [ordDay, setOrdDay] = useState(() => window.history.state?.ordersDay ?? null);
+  useEffect(() => {
+    const back = () => setOrdDay(window.history.state?.ordersDay ?? null);
+    window.addEventListener("popstate", back);
+    return () => window.removeEventListener("popstate", back);
+  }, []);
+  const openOrders = d => { window.history.pushState({ ...(window.history.state ?? {}), ordersDay: d }, ""); setOrdDay(d); window.scrollTo(0, 0); };
+  const pickOrders = d => { window.history.replaceState({ ...(window.history.state ?? {}), ordersDay: d }, ""); setOrdDay(d); };
+  const closeOrders = () => { if (window.history.state?.ordersDay != null) window.history.back(); else setOrdDay(null); };
+  // Home's "All" on Big orders opens this page (TodayHome.jsx)
+  useEffect(() => { try { if (sessionStorage.getItem("open-orders")) { sessionStorage.removeItem("open-orders"); openOrders(""); } } catch { /* private window */ } }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const closeAll = () => { if (window.history.state?.allIndices) window.history.back(); else setAll(false); };
 
   useEffect(() => {
@@ -759,6 +844,7 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
   ];
 
   if (movesPage) return <MoversDay date={movesPage.date ?? null} period={movesPage.period ?? "1d"} onDate={d => setMoves({ ...movesPage, date: d })} onPeriod={p => setMoves({ ...movesPage, period: p })} onBack={closeMoves} onOpenStock={onOpenStock} />;
+  if (ordDay != null) return <OrdersDay day={ordDay || null} onDate={pickOrders} onBack={closeOrders} onOpenStock={onOpenStock} />;
   if (resDay) return <ResultsDay results={results} date={resDay} onDate={pickDay} onBack={closeDay} onOpenStock={onOpenStock} />;
   if (all) return <AllIndices board={board} onBack={closeAll} onPick={name => { setPick(name); closeAll(); window.scrollTo(0, 0); }} />;
 
@@ -986,7 +1072,7 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
       <div data-mtab="scans"><ChartScans onOpenStock={onOpenStock} /></div>
 
       {/* the orders companies won (BigOrders.jsx) */}
-      <div data-mtab="moves"><BigOrders onOpenStock={onOpenStock} /></div>
+      <div data-mtab="moves"><BigOrders onOpenStock={onOpenStock} onDays={() => openOrders("")} /></div>
 
       {/* India's economy, at the bottom (20 Nov 2026, the owner): RBI's rates and the yield curve, FII/DII flows, the World Bank's years (EconomyCard.jsx) */}
       <div data-mtab="economy">

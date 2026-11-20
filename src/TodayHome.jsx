@@ -519,7 +519,7 @@ function HomeTabs({ strip, movers, listCounts, openIndex, onOpenStock, onOpenTab
           ))}
           {!strip?.indices?.length && <p className="td-empty">Reading the indices…</p>}
         </>)}
-        {card("orders", "Big orders", null, <BigOrders bare home onOpenStock={onOpenStock} onSeeAll={() => onOpenTab?.("markets")} onCount={setOrders} />,
+        {card("orders", "Big orders", null, <BigOrders bare home onOpenStock={onOpenStock} onSeeAll={() => { try { sessionStorage.setItem("open-orders", "1"); } catch { /* private window */ } onOpenTab?.("markets"); }} onCount={setOrders} />,
           orders ? <button type="button" className="hc-link" onClick={() => onOpenTab?.("markets")}>All {orders}</button> : null)}
         {card("lists", "Explore by category", ["All categories", () => navigate("/lists")],
           <div className="td-listgrid">
@@ -639,7 +639,7 @@ export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIn
 
       {movers && <HomeMovers movers={movers} onOpenStock={onOpenStock} onOpenTab={onOpenTab} />}
       {/* the orders companies won (BigOrders.jsx; 19 Nov 2026, the owner: "if any company gets a contract it should be shown") */}
-      <BigOrders home onOpenStock={onOpenStock} onSeeAll={() => onOpenTab?.("markets")} />
+      <BigOrders home onOpenStock={onOpenStock} onSeeAll={() => { try { sessionStorage.setItem("open-orders", "1"); } catch { /* private window */ } onOpenTab?.("markets"); }} />
 
       </>}
 

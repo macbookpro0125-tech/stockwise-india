@@ -68,6 +68,7 @@ import { stockMoves } from "./moves.js";
 import { resultFilings } from "./result-filings.js";
 import { companyOrders } from "./company-orders.js";
 import { companyBonds } from "./company-bonds.js";
+import { ordersOn, record as recordOrders } from "./orders-archive.js";
 import { marketNews, topNews, newsItem, newsItemFiling, newsForSymbols, watchlistLatest, KINDS as NEWS_KINDS, companiesInNews, bigOrders } from "./market-news.js";
 import { portfolioVsMarket } from "./portfolio-vs-market.js";
 import { historyBars } from "./price-history.js";
@@ -942,7 +943,12 @@ export function createApp() {
       // the orders companies told NSE they won, with each order's size (market-news.js bigOrders)
       if (url.pathname === "/api/explore/orders" && req.method === "GET") {
         if (requireAuth(req, res) == null) return;
-        sendJson(res, 200, await bigOrders());
+        // a day of them (orders-archive.js), or the latest few days as before
+        const day = url.searchParams.get("date");
+        if (day === "latest" || /^\d{4}-\d{2}-\d{2}$/.test(day ?? "")) { sendJson(res, 200, ordersOn(day)); return; }
+        const latest = await bigOrders();
+        recordOrders(latest.items);
+        sendJson(res, 200, latest);
         return;
       }
       // India's economy: RBI's rates and yields, FII/DII flows, the World Bank's years (economy.js)

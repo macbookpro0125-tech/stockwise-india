@@ -25,7 +25,7 @@ function when(time) {
 }
 
 // home: the short form on Home — the five biggest, and a link to the rest on Markets
-export default function BigOrders({ onOpenStock, home = false, onSeeAll, bare = false, onCount }) {
+export default function BigOrders({ onOpenStock, home = false, onSeeAll, bare = false, onCount, onDays }) {
   const [data, setData] = useState(null);
   const [all, setAll] = useState(false);
   useEffect(() => {
@@ -53,7 +53,8 @@ export default function BigOrders({ onOpenStock, home = false, onSeeAll, bare = 
       ) : (
         <div className="mk-card-h">
           <h2 id="mk-orders">Big orders</h2>
-          {items.length > SHOWN && <button type="button" className="mk-link" onClick={() => setAll(a => !a)}>{all ? "Fewer" : `All ${items.length}`}</button>}
+          {onDays ? <button type="button" className="mk-link" onClick={onDays}>Day by day</button>
+            : items.length > SHOWN && <button type="button" className="mk-link" onClick={() => setAll(a => !a)}>{all ? "Fewer" : `All ${items.length}`}</button>}
         </div>
       )}
       {bare && items.length > 0 && <div className="hm-more-top"><span>Orders companies told NSE they won, biggest first</span><button type="button" onClick={onSeeAll}>All {items.length}</button></div>}
@@ -61,30 +62,37 @@ export default function BigOrders({ onOpenStock, home = false, onSeeAll, bare = 
       {data?.failed && <p className="mk-note">NSE's notices couldn't be read just now.</p>}
       <ul className="bo-list">
         {!data && [0, 1, 2, 3].map(i => <li key={i}><span className="mk-skel mk-row-skel" /></li>)}
-        {list.map(o => (
-          <li key={o.id} className="bo-row">
-            <button type="button" className="bo-main" onClick={() => onOpenStock?.(o.symbol)} aria-label={`${cardName(o.company)}: open its page`}>
-              <CompanyLogo symbol={o.symbol} size={30} fallback={o.company} />
-              <b className="bo-name">{cardName(o.company)}</b>
-              <span className="bo-amt">
-                {o.status === "stated" && (o.amountCr != null ? crore(o.amountCr) : foreign(o.foreign))}
-                {o.status === "none" && <em>Amount not stated</em>}
-                {o.status === "reading" && <em>Reading the notice…</em>}
-                {o.status === "unread" && <em>Notice couldn't be read</em>}
-              </span>
-              <small className="bo-meta">{o.symbol} · {when(o.time)}</small>
-              {o.pctOfValue != null && <small className={`bo-pct${o.pctOfValue >= 10 ? " bo-big" : ""}`}>The order is {o.pctOfValue >= 1 ? Math.round(o.pctOfValue) : o.pctOfValue.toFixed(1)}% of the company's market value</small>}
-              {o.lowestBidder && <small className="bo-l1">Named the lowest bidder; not yet awarded</small>}
-              {o.wholeContract === true && <small className="bo-l1">The whole contract after it was enlarged</small>}
-              {typeof o.wholeContract === "number" && <small className="bo-what">Added to a contract now worth {crore(o.wholeContract)}</small>}
-              {!home && (o.what || o.from) && <small className="bo-what">{o.from ? `From ${o.from}` : ""}{o.from && o.what ? ": " : ""}{o.what ?? ""}</small>}
-            </button>
-            {o.url && <a className="bo-pdf" href={o.url} target="_blank" rel="noopener noreferrer" aria-label={`${cardName(o.company)}'s notice to NSE`}><FileText size={16} aria-hidden="true" /></a>}
-          </li>
-        ))}
+        {list.map(o => <OrderRow key={o.id} o={o} home={home} onOpenStock={onOpenStock} />)}
       </ul>
       {data?.reading > 0 && <p className="mk-note">Reading {data.reading} more notice{data.reading === 1 ? "" : "s"} from NSE…</p>}
+      {onDays && items.length > SHOWN && !all && <button type="button" className="mk-res-more" onClick={() => setAll(true)}>Show all {items.length}</button>}
+      {onDays && <button type="button" className="mk-res-more" onClick={onDays}>Earlier days</button>}
       {!home && <p className="mk-note">Amounts as each company stated them, some with taxes and some without; a dollar order is shown in dollars. Market value at the last NSE close. A record of filings, not advice.</p>}
     </section>
+  );
+}
+
+// One order, as Big orders and its day-by-day page show it (MarketsView.jsx OrdersDay)
+export function OrderRow({ o, home = false, onOpenStock }) {
+  return (
+  <li className="bo-row">
+    <button type="button" className="bo-main" onClick={() => onOpenStock?.(o.symbol)} aria-label={`${cardName(o.company)}: open its page`}>
+      <CompanyLogo symbol={o.symbol} size={30} fallback={o.company} />
+      <b className="bo-name">{cardName(o.company)}</b>
+      <span className="bo-amt">
+        {o.status === "stated" && (o.amountCr != null ? crore(o.amountCr) : foreign(o.foreign))}
+        {o.status === "none" && <em>Amount not stated</em>}
+        {o.status === "reading" && <em>Reading the notice…</em>}
+        {o.status === "unread" && <em>Notice couldn't be read</em>}
+      </span>
+      <small className="bo-meta">{o.symbol} · {when(o.time)}</small>
+      {o.pctOfValue != null && <small className={`bo-pct${o.pctOfValue >= 10 ? " bo-big" : ""}`}>The order is {o.pctOfValue >= 1 ? Math.round(o.pctOfValue) : o.pctOfValue.toFixed(1)}% of the company's market value</small>}
+      {o.lowestBidder && <small className="bo-l1">Named the lowest bidder; not yet awarded</small>}
+      {o.wholeContract === true && <small className="bo-l1">The whole contract after it was enlarged</small>}
+      {typeof o.wholeContract === "number" && <small className="bo-what">Added to a contract now worth {crore(o.wholeContract)}</small>}
+      {!home && (o.what || o.from) && <small className="bo-what">{o.from ? `From ${o.from}` : ""}{o.from && o.what ? ": " : ""}{o.what ?? ""}</small>}
+    </button>
+    {o.url && <a className="bo-pdf" href={o.url} target="_blank" rel="noopener noreferrer" aria-label={`${cardName(o.company)}'s notice to NSE`}><FileText size={16} aria-hidden="true" /></a>}
+  </li>
   );
 }
