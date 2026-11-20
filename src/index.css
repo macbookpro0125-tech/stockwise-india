@@ -7701,3 +7701,5 @@ html.is-scrolling .hk-track { animation-play-state: paused; }
 /* the phone's Home without its big title: the date small under the ticker */
 .ps-meta-top { margin: 10px 0 2px; }
 .ps-h-acts { display: inline-flex; gap: 16px; align-items: baseline; }
+/* the Gold tab on a phone: the page's own margins only, the carat table fitting */
+@media (max-width: 640px) { .gs-inapp { padding-top: 0; } .gs-inapp .mk-head p { margin-top: 0; } .gs-inapp .gs-card { padding: 14px 12px; } }

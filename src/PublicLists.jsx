@@ -594,7 +594,7 @@ export function GoldSilverPage({ signedIn, inApp = false, onBack = null }) {
   if (inApp) return (
     <div className="mk gs-inapp">
       {onBack && <button type="button" className="mk-back" onClick={onBack}><ChevronLeft size={18} aria-hidden="true" /> Markets</button>}
-      <header className="mk-head"><h1 className="gs-h1">Gold, silver &amp; ETFs</h1><p>{lede}{updated ? ` ${updated}.` : ""}</p></header>
+      <header className="mk-head"><h1 className="gs-h1">Gold, silver &amp; ETFs</h1><p>Gold by carat, gold bonds and every ETF on NSE{updated ? `. ${updated}` : ""}.</p></header>
       {body}
     </div>
   );

@@ -523,7 +523,7 @@ export default function App() {
         {/* Kept mounted under a company page too: Back returns to the map as it was */}
         {tab === "desk" && <div hidden={!!open}><DeskView onOpenStock={openSymbol} /></div>}
         {tab === "markets" && <div hidden={!!open}><MarketsView onOpenStock={openSymbol} onOpenTab={goTab} /></div>}
-        {!open && tab === "gold" && <div style={{ padding: "0 var(--page-x)" }}><GoldSilverPage signedIn inApp /></div>}
+        {!open && tab === "gold" && <GoldSilverPage signedIn inApp />}
         {tab === "map" && <div hidden={!!open}><MarketMapView screen={mapScreen} request={mapRequest} onOpenStock={openSymbol} onOpenIndex={name => { setIndexOpen(name); goTab("explore"); }} /></div>}
         {!open && tab === "momentum" && account?.features?.momentum && <MomentumView onOpenStock={openSymbol} />}
         {!open && tab === "visitors" && account?.features?.owner && <VisitorsView />}
