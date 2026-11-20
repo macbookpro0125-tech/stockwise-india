@@ -7464,10 +7464,18 @@ html.is-scrolling .hk-track { animation-play-state: paused; }
 .gc-wrap { position: relative; }
 .gc-chart { height: 260px; }
 .gc-wait { margin: 4px 0 16px; border-radius: 14px; background: var(--s1); }
-.gc-ranges { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
-.gc-ranges button { height: 30px; min-width: 44px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--bdr2); background: var(--s2); color: var(--t2); font: inherit; font-size: 12px; cursor: pointer; }
+.gc-ranges { display: flex; gap: 5px; margin-top: 10px; flex-wrap: wrap; }
+.gc-ranges button { height: 32px; min-width: 38px; padding: 0 8px; border-radius: 8px; border: 1px solid var(--bdr2); background: var(--s2); color: var(--t2); font: inherit; font-size: 12px; cursor: pointer; }
 .gc-ranges button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
 .gc-ranges button:disabled { opacity: 0.35; cursor: default; }
+/* the chart's range and type (GoldChart.jsx), on one row where there's room */
+.gc-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; }
+.gc-bar .gc-ranges { margin-top: 0; }
+.gc-kind { display: flex; gap: 6px; }
+.gc-kind button { height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--bdr2); background: var(--s2); color: var(--t2); font: inherit; font-size: 12px; cursor: pointer; }
+.gc-kind button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.gc-legend .gc-hilo { margin-top: -2px; }
+.gc-chart { height: 300px; touch-action: pan-y; }
 
 /* India's economy on Markets (EconomyCard.jsx, 20 Nov 2026) */
 .ec-block { padding-top: 14px; margin-top: 14px; border-top: 1px solid var(--bdr); }

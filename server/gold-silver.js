@@ -9,6 +9,7 @@
 //     series' price and RBI issue price (one bond = one gram of gold)
 //   - longer returns from our own daily history of the ETFs (price-history.js)
 // Nothing is estimated that isn't labelled so; the page shows NSE's time.
+import { readFileSync } from "node:fs";
 import { NSE_BASE, fetchJson } from "./fetch-nse.js";
 import { fetchText } from "./upstream.js";
 import { cached } from "./company-extras.js";
@@ -184,12 +185,27 @@ export async function goldSilver() {
 // The page's chart (20 Nov 2026, the owner: "can I show the gold chart?"):
 // each day's close of the ETFs that track gold, silver and the Nifty 50, from
 // our own daily history of NSE's closes, oldest first
+// The gold and Nifty ETFs' days before the price history starts (Oct 2021),
+// read once from NSE's archived daily files on today's unit
+// (scripts/etf-history-old.mjs; 20 Nov 2026, the owner: "it does not show
+// 5 years back"). The silver ETF began trading in 2022: nothing older exists.
+let olderBars = null;
+function older(symbol) {
+  if (olderBars === null) {
+    try { olderBars = JSON.parse(readFileSync(new URL("./etf-history-old.json", import.meta.url), "utf8")).bars ?? {}; } catch { olderBars = {}; }
+  }
+  return olderBars[symbol] ?? [];
+}
+
 export function goldSilverChart() {
   return cached("gold-silver-chart", 3600_000, async () => {
     const snap = loadMarketSnapshot();
     const series = COMPARE.map(([label, symbol]) => {
-      const bars = barsFor(symbol, snap) ?? [];
-      return { label, symbol, days: bars.map(b => b[0]), closes: bars.map(b => b[4]) };
+      const kept = barsFor(symbol, snap) ?? [];
+      const first = kept[0]?.[0] ?? "9999";
+      const bars = [...older(symbol).filter(b => b[0] < first), ...kept];
+      // each day's open, high, low and close, for candles
+      return { label, symbol, days: bars.map(b => b[0]), opens: bars.map(b => b[1]), highs: bars.map(b => b[2]), lows: bars.map(b => b[3]), closes: bars.map(b => b[4]) };
     }).filter(s => s.days.length > 1);
     return { series, to: snap?.pricesDate ?? series[0]?.days.at(-1) ?? null, source: "NSE daily closes" };
   });
