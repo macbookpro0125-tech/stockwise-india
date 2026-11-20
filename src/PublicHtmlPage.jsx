@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "./api.js";
 import { SiteFooter, navigate, PublicHeader } from "./site.jsx";
 import { useJoin, JoinCard, JoinBar } from "./PublicJoin.jsx";
+import { possessive } from "./stockName.js";
 
 // The server-written public pages (server/seo-pages.js: a company's
 // financials, results and earnings calls, /explore, /news and the /learn
@@ -41,7 +42,7 @@ export default function PublicHtmlPage({ path, signedIn }) {
         setWatched({ name, mail });
       };
       if (signedIn) add().catch(() => {});
-      else join(`Create a free account and we'll email you the evening before ${name}'s next results.`, "signup", add);
+      else join(`Create a free account and we'll email you the evening before ${possessive(name)} next results.`, "signup", add);
       return;
     }
     // a link to another of the site's pages opens in the app

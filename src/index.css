@@ -7755,3 +7755,17 @@ html.is-scrolling .hk-track { animation-play-state: paused; }
 .hg-spark span { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; flex: none; }
 .hg-spark small { font-size: 11px; color: var(--t3); }
 .hg-spark i { font-style: normal; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* What each measure means: its sections as links first (LegalPages.jsx MeasuresPage) */
+.measure-toc { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 20px; }
+.measure-toc a { padding: 8px 14px; border-radius: 999px; border: 1px solid var(--bdr2); background: var(--s2); color: var(--t1); font-size: 14px; text-decoration: none; }
+.measure-toc a:hover { border-color: var(--accent); color: var(--accent); }
+.measure-cat { scroll-margin-top: 80px; }
+
+/* Screen builder's results bar under ~1100 px (20 Nov 2026, the audit: at a
+   tablet's 764 px the bar was 923 px wide and the page scrolled sideways):
+   the bar wraps under the lead, and its buttons wrap among themselves */
+@media (max-width: 1100px) {
+  .results-topbar:has(> .rt-lead) { flex-wrap: wrap; }
+  .results-topbar:has(> .rt-lead) .rt-actions { flex: 1 1 100%; min-width: 0; }
+}

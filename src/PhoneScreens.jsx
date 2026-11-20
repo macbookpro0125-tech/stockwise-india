@@ -145,6 +145,9 @@ function FavouriteCard({ p, count, change, day, closeDate, onOpen, onOpenStock }
           <span className="ps-fav-since">
             {day?.avg1d != null && <><em className={`ps-move ${tone(day.avg1d)}`}>{pct(day.avg1d)}</em> on average{closeDate ? ` at the ${closeDate} close` : " at the last close"}</>}
             {changes && <>{day?.avg1d != null ? " · " : ""}{changes}</>}
+            {/* 20 Nov 2026, the audit: "Top Gainers" showing a company at −12.1%
+                read as a mistake; the two below are the day's best and worst */}
+            {movers.length > 0 && <span className="ps-fav-bw"> · its best and worst on the day:</span>}
           </span>
           {movers.map(m => (
             <button key={m.way} type="button" className="ps-change ps-change-go" aria-label={`Open ${m.name || m.symbol}`}

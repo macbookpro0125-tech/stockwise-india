@@ -36,6 +36,7 @@ import { stockStory, SECTOR_PATHS } from "./seo-story.js";
 import { LIST_PAGE_PATHS } from "./seo-collections.js";
 import { subPagePaths, stockPageLinks } from "./seo-pages.js";
 import { GUIDE_PATHS, GUIDES_UPDATED } from "./guides.js";
+import { possessive } from "../src/stockName.js";
 
 // Every server-written page opens with the site's main pages and a way to
 // sign up (8 Nov 2026, a review that read the HTML: "no top navigation …
@@ -295,7 +296,7 @@ ${row("Next results", s.nextResults ? day(s.nextResults) : null)}
 </table>
 ${storyHtml(s)}
 ${analysisHtml(s)}
-<p>Figures from NSE filings and prices at the last close. <a href="/">Sign in for ${esc(n)}'s fair value, scorecard, charts and filings</a>.</p>
+<p>Figures from NSE filings and prices at the last close. <a href="/">Sign in for ${esc(possessive(n))} fair value, scorecard, charts and filings</a>.</p>
 <p><a href="/methodology">How the scores and fair values are calculated</a> · <a href="/disclaimer">Important limitations</a>. Not investment advice.</p>
 </main>`;
 }

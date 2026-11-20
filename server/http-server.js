@@ -1869,6 +1869,17 @@ export function createApp() {
         res.end(req.method === "HEAD" ? undefined : html);
         return;
       }
+      // /measures (20 Nov 2026, the audit: it carried the front page's title
+      // and description): its own, and its address as the canonical one
+      if (url.pathname === "/measures" && (req.method === "GET" || req.method === "HEAD") && existsSync(join(DIST_DIR, "index.html"))) {
+        const html = readFileSync(join(DIST_DIR, "index.html"), "utf-8")
+          .replace(/<title>[^<]*<\/title>/, "<title>Stock market ratios explained: every measure | Jocular Insights</title>")
+          .replace(/<meta name="description" content="[^"]*" \/>/, '<meta name="description" content="What each figure on Jocular Insights means: P/E, ROE, ROCE, debt to equity, growth, dividend yield, technicals and more, with the period each covers." />')
+          .replace("</head>", '<link rel="canonical" href="https://jocularinsights.in/measures" />\n</head>');
+        res.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-cache" });
+        res.end(req.method === "HEAD" ? undefined : html);
+        return;
+      }
       // /privacy and /disclaimer too (9 Nov 2026, the SEO audit: both were the
       // empty app, under the front page's title)
       if ((url.pathname === "/privacy" || url.pathname === "/disclaimer") && (req.method === "GET" || req.method === "HEAD") && existsSync(join(DIST_DIR, "index.html"))) {

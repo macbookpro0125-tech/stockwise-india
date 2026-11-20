@@ -359,8 +359,11 @@ export function HelpPage({ signedIn }) {
 // Every measure in full (31 Oct 2026): the column and filter menus say one
 // line each, and "Read more" lands here, on the measure's own heading
 // (/measures#roce). Grouped as the filter board's kinds.
+const slugOf = t => String(t).toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 export function MeasuresPage({ signedIn }) {
   const { meta, error } = useScreenerMeta();
+  // its own name in the tab (20 Nov 2026: it showed the front page's)
+  useEffect(() => { const was = document.title; document.title = "Stock market ratios explained: every measure | Jocular Insights"; return () => { document.title = was; }; }, []);
   useEffect(() => {
     const id = decodeURIComponent(window.location.hash.slice(1));
     if (!meta || !id) return;
@@ -372,11 +375,19 @@ export function MeasuresPage({ signedIn }) {
       <P>Every figure you can filter on or show as a column, what it measures and the period it covers. All are worked out from companies' filings with NSE and NSE's daily closing prices.</P>
       {error && <P>Couldn't load the list just now: {error}</P>}
       {!meta && !error && <P>Loading…</P>}
+      {/* the page's sections first (20 Nov 2026: about 30 screens long on a phone) */}
+      {meta && (
+        <nav className="measure-toc" aria-label="Sections">
+          {meta.categories.filter(cat => [...meta.metrics, ...(meta.categoryMetrics ?? [])].some(m => m.category === cat && m.id !== "symbols")).map(cat => (
+            <a key={cat} href={`#cat-${slugOf(cat)}`} onClick={e => { e.preventDefault(); document.getElementById(`cat-${slugOf(cat)}`)?.scrollIntoView({ block: "start", behavior: "smooth" }); }}>{cat}</a>
+          ))}
+        </nav>
+      )}
       {meta && meta.categories.map(cat => {
         const list = [...meta.metrics, ...(meta.categoryMetrics ?? [])].filter(m => m.category === cat && m.id !== "symbols");
         if (!list.length) return null;
         return (
-          <section key={cat}>
+          <section key={cat} id={`cat-${slugOf(cat)}`} className="measure-cat">
             <H>{cat}</H>
             {list.map(m => (
               <div key={m.id} id={`m-${m.id}`} className="measure">

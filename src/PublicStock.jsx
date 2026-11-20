@@ -9,7 +9,7 @@ import { AdCard } from "./ads.jsx";
 import { askAfterSignup } from "./afterSignup.js";
 import AuthDialog from "./AuthDialog.jsx";
 import { stockTitle } from "./pageTitle.js";
-import { niceName } from "./stockName.js";
+import { niceName, possessive } from "./stockName.js";
 import { ANALYSIS_EXAMPLES, companyAnalysisFor } from "./company-analysis.js";
 
 // A company's page for someone not signed in (23 Oct 2026, so search engines
@@ -122,7 +122,7 @@ export default function PublicStock({ symbol, onAuthed, initial = null }) {
   const ask = (why, mode = "signup") => setAuth({ mode, why });
   const askWatch = () => setAuth({ mode: "signup", why: `Create a free account to add ${short} to your watchlist.`, watch: true });
   const askAlert = () => setAuth({ mode: "signup", why: `Create a free account to set a price alert for ${short}.`, alert: true });
-  const askFull = () => ask(`Create a free account to see ${short}'s full analysis.`);
+  const askFull = () => ask(`Create a free account to see ${possessive(short)} full analysis.`);
   const authed = async () => {
     if (auth?.watch) await api.addWatch(symbol, s?.close).catch(() => {});
     if (auth?.alert) askAfterSignup("alert", symbol);
@@ -217,7 +217,7 @@ export default function PublicStock({ symbol, onAuthed, initial = null }) {
               <p>Every answer from its own filings, each check shown with its figures.</p>
               <ul>{CHAPTERS.filter(c => c.id !== "overview").map(c => {
                 const I = ICONS[c.id];
-                return <li key={c.id}><button type="button" onClick={() => ask(`Create a free account to see ${short}'s ${c.label.toLowerCase()} checks: ${c.question.charAt(0).toLowerCase()}${c.question.slice(1)}`)}><I size={18} aria-hidden="true" /><span><b>{c.label}</b><em>{c.question}</em></span><ChevronRight size={16} aria-hidden="true" /></button></li>;
+                return <li key={c.id}><button type="button" onClick={() => ask(`Create a free account to see ${possessive(short)} ${c.label.toLowerCase()} checks: ${c.question.charAt(0).toLowerCase()}${c.question.slice(1)}`)}><I size={18} aria-hidden="true" /><span><b>{c.label}</b><em>{c.question}</em></span><ChevronRight size={16} aria-hidden="true" /></button></li>;
               })}</ul>
               <button type="button" className="btn-primary ps-cta" onClick={askFull}>See the answers — free account</button>
             </section>

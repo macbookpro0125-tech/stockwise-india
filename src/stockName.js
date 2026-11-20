@@ -28,3 +28,12 @@ export function splitUnit(text) {
   const m = /^(.*\d)(%|x|\/\d+)$/.exec(s);
   return m ? [m[1], m[2]] : [s, null];
 }
+
+// A name's possessive (20 Nov 2026: "Tata Consultancy Services's full
+// analysis"): a name that ends like a plural, a small s after any letter but
+// s, i, u or y ("Services", "Motors", "Industries"), takes only the
+// apostrophe; anything else takes 's ("TCS's", "Infosys's", "Glass's")
+export function possessive(name) {
+  const n = String(name ?? "").trim();
+  return /[a-hj-rtvwxz]s$/.test(n) ? `${n}'` : `${n}'s`;
+}

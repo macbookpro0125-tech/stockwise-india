@@ -24,6 +24,7 @@ import { profitGrowth } from "./profit-growth.js";
 import { niceName } from "../src/stockName.js";
 import { GUIDES, GUIDES_UPDATED, GUIDE_PUBLISHED, guideBySlug } from "./guides.js";
 import { updatedLine } from "./updated-line.js";
+import { possessive } from "../src/stockName.js";
 
 const SITE = "https://jocularinsights.in";
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -47,14 +48,21 @@ const rowOf = symbol => (allMetrics().rows ?? []).find(r => r.symbol === symbol 
 // but carry noindex and leave the sitemap, so Google's attention goes to the
 // company pages, sectors, lists and guides. Recomputed with each market build.
 export const INDEXED_SUBPAGES = 400;
-let bigSet = { rows: null, set: new Set() };
-export function isBigCompany(symbol) {
+// A page is marked noindex only below 450th (20 Nov 2026: companies near
+// 400th moved across the line from one evening to the next, so a page the
+// sitemap had just listed said noindex)
+export const NOINDEX_BELOW = 450;
+let bigRank = { rows: null, rank: new Map() };
+const rankOf = symbol => {
   const rows = allMetrics().rows ?? [];
-  if (bigSet.rows !== rows) {
-    bigSet = { rows, set: new Set(rows.filter(r => r.name && r.marketCapCr > 0).sort((a, b) => b.marketCapCr - a.marketCapCr).slice(0, INDEXED_SUBPAGES).map(r => r.symbol)) };
+  if (bigRank.rows !== rows) {
+    bigRank = { rows, rank: new Map(rows.filter(r => r.name && r.marketCapCr > 0).sort((a, b) => b.marketCapCr - a.marketCapCr).map((r, i) => [r.symbol, i + 1])) };
   }
-  return bigSet.set.has(symbol);
-}
+  return bigRank.rank.get(symbol) ?? Infinity;
+};
+// in the sitemap: the 400 largest; kept indexable: the 450 largest
+export const isBigCompany = (symbol, limit = INDEXED_SUBPAGES) => rankOf(symbol) <= limit;
+export const keepIndexed = symbol => rankOf(symbol) <= NOINDEX_BELOW;
 const opCosts = h => (h.expensesCr != null ? h.expensesCr - (h.depreciationCr ?? 0) - (h.financeCostsCr ?? 0) : null);
 const sum = (...v) => { const k = v.filter(x => x != null); return k.length ? k.reduce((a, b) => a + b, 0) : null; };
 
@@ -115,7 +123,7 @@ function financialsPage(m) {
   ]);
   const last = m.history[0];
   const lede = [
-    `${n}'s results for the last ${years.length} financial years, from its filings with NSE${last?.scope ? ` (${last.scope.toLowerCase()})` : ""}.`,
+    `${possessive(n)} results for the last ${years.length} financial years, from its filings with NSE${last?.scope ? ` (${last.scope.toLowerCase()})` : ""}.`,
     last?.revenueCr != null && `In ${fy(last.fyEnd)} its sales were ₹${crs(last.revenueCr)} crore${last.profitCr != null ? ` and its net profit ₹${crs(last.profitCr)} crore` : ""}${last.opm != null ? `, an operating margin of ${num(last.opm)}%` : ""}.`,
     m.salesGrowth5y != null && `Sales grew ${num(m.salesGrowth5y)}% a year over five years${m.profitGrowth5y != null ? `, profit ${num(m.profitGrowth5y)}% a year` : ""}.`,
   ].filter(Boolean).join(" ");
@@ -123,7 +131,7 @@ function financialsPage(m) {
     title: pageTitle(`${n} balance sheet, profit & loss, cash flow | ${m.symbol}`),
     desc: `${n} (NSE: ${m.symbol}) financial statements: profit and loss, balance sheet and cash flow for ${heads[0]}–${heads[heads.length - 1]}, from its NSE filings.`,
     canonical: `${SITE}/stock/${encodeURIComponent(m.symbol)}/financials`,
-    noindex: !isBigCompany(m.symbol),
+    noindex: !keepIndexed(m.symbol),
     body: `<main class="seo-stock seo-methodology">${crumb(m, "Financials")}<h1>${esc(n)} financial statements</h1><p>${esc(lede)}</p>
 <h2>Profit and loss</h2>${pl}<h2>Balance sheet</h2>${bs || "<p>Not in this company's filings.</p>"}<h2>Cash flow</h2>${cf || "<p>Not in this company's filings.</p>"}
 <p>${esc(NOTE)}</p>${more(m)}</main>`,
@@ -243,7 +251,7 @@ function resultsPage(m, slug) {
     title: resultsTitle(n, label, m.symbol, q, sy, py),
     desc: `${short ? `${short} ` : ""}${lede}`.slice(0, 300),
     canonical: `${SITE}/stock/${sym}/results/${slug}`,
-    noindex: !isBigCompany(m.symbol),
+    noindex: !keepIndexed(m.symbol),
     ld: { "@context": "https://schema.org", "@graph": [
       { "@type": "WebPage", name: resultsTitle(n, label, m.symbol, q, sy, py), description: lede, url: `${SITE}/stock/${sym}/results/${slug}`, dateModified: q.filed ? String(q.filed).slice(0, 10) : undefined },
       { "@type": "FAQPage", mainEntity: qa.map(x => ({ "@type": "Question", name: x.q, acceptedAnswer: { "@type": "Answer", text: x.a } })) },
@@ -391,7 +399,7 @@ function earningsCallPage(m) {
   const calls = savedCallSummaries(m.symbol);
   const latest = calls[0];
   const lede = [
-    m.nextResults ? `${n}'s board meets to approve its next results on ${day(m.nextResults)}; companies usually hold the earnings call the same day or the day after.` : `${n} hasn't told NSE its next results date yet.`,
+    m.nextResults ? `${possessive(n)} board meets to approve its next results on ${day(m.nextResults)}; companies usually hold the earnings call the same day or the day after.` : `${n} hasn't told NSE its next results date yet.`,
     latest ? `The latest call transcript it filed (${day(latest.date)}) is summed up below, each point with its page in the transcript.` : `A summary of its latest earnings call appears here once someone has opened it in the app; the transcripts are on NSE.`,
   ].join(" ");
   const section = c => `<h2>Earnings call, ${esc(day(c.date) ?? "")}</h2><ul>${c.points.map(p => `<li>${esc(p.text)}${p.page ? ` <small>(page ${esc(p.page)})</small>` : ""}</li>`).join("")}</ul>${c.url ? `<p>${link(c.url, "The transcript on NSE")}</p>` : ""}`;

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { FileText } from "lucide-react";
 import { api } from "./api.js";
-import { cardName } from "./stockName.js";
+import { cardName, possessive } from "./stockName.js";
 import CompanyLogo from "./CompanyLogo.jsx";
 
 // Markets → "Big orders" (19 Nov 2026, the owner: show "the major contract
@@ -92,7 +92,7 @@ export function OrderRow({ o, home = false, onOpenStock }) {
       {typeof o.wholeContract === "number" && <small className="bo-what">Added to a contract now worth {crore(o.wholeContract)}</small>}
       {!home && (o.what || o.from) && <small className="bo-what">{o.from ? `From ${o.from}` : ""}{o.from && o.what ? ": " : ""}{o.what ?? ""}</small>}
     </button>
-    {o.url && <a className="bo-pdf" href={o.url} target="_blank" rel="noopener noreferrer" aria-label={`${cardName(o.company)}'s notice to NSE`}><FileText size={16} aria-hidden="true" /></a>}
+    {o.url && <a className="bo-pdf" href={o.url} target="_blank" rel="noopener noreferrer" aria-label={`${possessive(cardName(o.company))} notice to NSE`}><FileText size={16} aria-hidden="true" /></a>}
   </li>
   );
 }
