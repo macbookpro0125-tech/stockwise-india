@@ -13,6 +13,14 @@ import SectorRotation from "./SectorRotation.jsx";
 import BigOrders from "./BigOrders.jsx";
 import ChartScans from "./ChartScans.jsx";
 import EconomyCard from "./EconomyCard.jsx";
+import { usePhone } from "./phoneTabs.js";
+import { watchSwipes } from "./tabSwipe.js";
+import { tick } from "./haptics.js";
+
+// A phone's Markets as tabs that swipe, as a company's page does (20 Nov
+// 2026, the owner: "improve the phone market … easy to access and understand"):
+// each tab about a screen; a computer keeps the one long page
+const MTABS = [["today", "Today"], ["moves", "Moves"], ["sectors", "Sectors"], ["results", "Results"], ["scans", "Scans"], ["economy", "Economy"]];
 import MarketHealth from "./MarketHealth.jsx";
 import { useWatchlist } from "./watchlist.js";
 import { Star } from "lucide-react";
@@ -608,6 +616,37 @@ const SECTOR_PAGES = [
 export const sectorPageFor = name => SECTOR_PAGES.find(([re]) => re.test(String(name).replace(/^Nifty\s*/i, "")))?.[1] ?? null;
 
 export default function MarketsView({ onOpenStock, onOpenTab }) {
+  const phone = usePhone();
+  const [mtab, setMtabState] = useState(() => { try { const t = localStorage.getItem("mk-tab"); return MTABS.some(([id]) => id === t) ? t : "today"; } catch { return "today"; } });
+  const rootEl = useRef(null), tabBar = useRef(null);
+  const setMtab = (id, from = 0) => {
+    setMtabState(id);
+    try { localStorage.setItem("mk-tab", id); } catch { /* private window */ }
+    // the tab's start just under the bar, if the page is below it
+    requestAnimationFrame(() => {
+      const bar = tabBar.current;
+      if (bar) { const top = bar.getBoundingClientRect().top + window.scrollY - 70; if (window.scrollY > top) window.scrollTo(0, top); }
+      bar?.querySelector("[aria-selected=true]")?.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
+      if (from && rootEl.current?.animate && !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+        rootEl.current.querySelectorAll("[data-mtab]").forEach(el => { if (el.offsetParent) el.animate([{ transform: `translateX(${from * 28}px)`, opacity: 0.4 }, { transform: "none", opacity: 1 }], { duration: 220, easing: "cubic-bezier(0.2, 0, 0, 1)" }); });
+      }
+    });
+  };
+  const mtabNow = useRef(mtab); mtabNow.current = mtab;
+  const setMtabRef = useRef(setMtab); setMtabRef.current = setMtab;
+  const [rootNode, setRootNode] = useState(null);
+  const setRoot = el => { rootEl.current = el; setRootNode(el); };
+  useEffect(() => {
+    if (!phone || !rootNode) return undefined;
+    return watchSwipes(rootNode, step => {
+      const at = MTABS.findIndex(([id]) => id === mtabNow.current), next = MTABS[at + step];
+      if (!next) { rootNode.animate?.([{ transform: "none" }, { transform: `translateX(${-step * 18}px)` }, { transform: "none" }], { duration: 260 }); return; }
+      tick();
+      setMtabRef.current(next[0], step);
+    });
+  }, [phone, rootNode]);
+  const [flows, setFlows] = useState(null);
+  useEffect(() => { if (phone) api.economy().then(d => setFlows(d?.flows?.at(-1) ?? null)).catch(() => {}); }, [phone]);
   const [board, setBoard] = useState(null);
   const [pick, setPick] = useState("Nifty 50");
   const [detail, setDetail] = useState(null);
@@ -709,8 +748,11 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
   if (resDay) return <ResultsDay results={results} date={resDay} onDate={pickDay} onBack={closeDay} onOpenStock={onOpenStock} />;
   if (all) return <AllIndices board={board} onBack={closeAll} onPick={name => { setPick(name); closeAll(); window.scrollTo(0, 0); }} />;
 
+  const nifty = (board?.market ?? []).find(i => i.name === "Nifty 50");
+  const niftyBreadth = detail?.name === "Nifty 50" ? detail?.story?.breadth?.at(-1) : null;
+  const bestSector = sectors[0];
   return (
-    <div className="mk">
+    <div className={`mk${phone ? " mk-phone" : ""}`} data-mtab-active={phone ? mtab : undefined} ref={setRoot}>
       <header className="mk-head">
         <h1>Markets</h1>
         <p>{board?.asOf ? `NSE's indices, sectors and biggest moves at the close on ${day(board.asOf)}` : "NSE's indices, sectors and biggest moves"}</p>
@@ -719,8 +761,24 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
         </nav>
       </header>
 
+      {phone && (
+        <div className="mk-tabs" role="tablist" aria-label="Markets" ref={tabBar}>
+          {MTABS.map(([id, label]) => <button key={id} type="button" role="tab" aria-selected={mtab === id} onClick={() => setMtab(id)}>{label}</button>)}
+        </div>
+      )}
+
+      {/* the day in four numbers (a phone's Today tab) */}
+      {phone && (
+        <div className="mk-glance" data-mtab="today">
+          {nifty && <button type="button" onClick={() => setPick("Nifty 50")}><small>Nifty 50</small><b>{num(nifty.close)}</b><i className={tone(nifty.changePct)}>{pct(nifty.changePct)}</i></button>}
+          {niftyBreadth && <div><small>Nifty 50 companies</small><b><span className="up">{niftyBreadth.rose}</span> / <span className="down">{niftyBreadth.fell}</span></b><i>rose / fell</i></div>}
+          {bestSector && <button type="button" onClick={() => setMtab("sectors")}><small>Best sector</small><b>{bestSector.name.replace(/^Nifty\s*/i, "")}</b><i className={tone(bestSector.changePct)}>{pct(bestSector.changePct)}</i></button>}
+          {flows?.fii != null && <button type="button" onClick={() => setMtab("economy")}><small>Foreign investors</small><b className={flows.fii >= 0 ? "up" : "down"}>{flows.fii >= 0 ? "+" : "−"}₹{Math.abs(Math.round(flows.fii)).toLocaleString("en-IN")} cr</b><i>{flows.fii >= 0 ? "bought" : "sold"}, net</i></button>}
+        </div>
+      )}
+
       {/* the indices: pick one, and it's charted below */}
-      <section className="mk-section" aria-labelledby="mk-idx">
+      <section className="mk-section" aria-labelledby="mk-idx" data-mtab="today">
         <div className="mk-section-h">
           <h2 id="mk-idx">Indices</h2>
           {indices.length > 0 && <button type="button" className="mk-link" onClick={showAll}>See all {indices.length + (board?.sectors?.length ?? 0)}</button>}
@@ -791,7 +849,7 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
 
       <div className="mk-grid">
         {/* the sectors, best to worst on the day */}
-        <section className="mk-card" aria-labelledby="mk-sec">
+        <section className="mk-card" aria-labelledby="mk-sec" data-mtab="sectors">
           <div className="mk-card-h"><h2 id="mk-sec">Sectors today</h2><button type="button" className="mk-link" onClick={() => onOpenTab?.("map")}>Market map</button></div>
           <ul className="mk-sectors">
             {sectors.map(s => (
@@ -808,7 +866,7 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
 
         <div className="mk-col">
         {/* the market's mood: how many are in each stage of their trend */}
-        <section className="mk-card" aria-labelledby="mk-mood">
+        <section className="mk-card" aria-labelledby="mk-mood" data-mtab="today">
           <div className="mk-card-h"><h2 id="mk-mood">The market's trend</h2><button type="button" className="mk-link" onClick={() => onOpenTab?.("desk")}>Desk</button></div>
           <MarketHealth />
           <MoodBar market={mood} />
@@ -822,7 +880,7 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
         {/* the market's own pages, each with what's on it now (8 Nov 2026:
             the space under the trend was empty, and Markets should lead to
             the moves, sectors and results) */}
-        <section className="mk-card" aria-labelledby="mk-go">
+        <section className="mk-card" aria-labelledby="mk-go" data-mtab="none">
           <div className="mk-card-h"><h2 id="mk-go">Go deeper</h2></div>
           <ul className="mk-go">
             {goTo.map(g => (
@@ -839,13 +897,13 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
       </div>
 
       {/* sector rotation (SectorRotation.jsx): which sectors are gaining on the market, and which are slipping */}
-      <section className="mk-card" aria-labelledby="mk-rot">
+      <section className="mk-card" aria-labelledby="mk-rot" data-mtab="sectors">
         <div className="mk-card-h"><h2 id="mk-rot">Sector rotation</h2></div>
         <SectorRotation onOpen={name => { const slug = sectorPageFor(name); if (slug) navigate(`/sector/${slug}`); else { setPick(name); window.scrollTo(0, 0); } }} />
       </section>
 
       {/* the biggest moves */}
-      <section className="mk-card" aria-labelledby="mk-mov">
+      <section className="mk-card" aria-labelledby="mk-mov" data-mtab="moves">
         <div className="mk-card-h">
           <h2 id="mk-mov">Biggest moves</h2>
           <span className="mk-card-links">
@@ -880,7 +938,7 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
 
       {/* the week's results */}
       {(results?.days?.length > 0 || results?.past?.length > 0) && (
-        <section className="mk-card" aria-labelledby="mk-res">
+        <section className="mk-card" aria-labelledby="mk-res" data-mtab="results">
           <div className="mk-card-h"><h2 id="mk-res">{results.days.some(x => x.count > 0) ? "Results coming" : "Latest results"}</h2><span className="mk-card-links"><button type="button" className="mk-link" onClick={() => openDay("mine")}>My watchlist</button>{results.past?.length > 0 && <button type="button" className="mk-link" onClick={() => openDay(results.past[results.past.length - 1].date)}>Already out</button>}<button type="button" className="mk-link" onClick={() => openDay("next")}>Calendar</button></span></div>
           {/* a card a day, as big as the other cards (20 Nov 2026, the owner: "small compared to all") */}
           <div className="mk-results mk-results-big">
@@ -908,13 +966,20 @@ export default function MarketsView({ onOpenStock, onOpenTab }) {
       )}
 
       {/* chart scans: trend template, VCP, Darvas, breakouts (ChartScans.jsx) */}
-      <ChartScans onOpenStock={onOpenStock} />
+      <div data-mtab="scans"><ChartScans onOpenStock={onOpenStock} /></div>
 
       {/* the orders companies won (BigOrders.jsx) */}
-      <BigOrders onOpenStock={onOpenStock} />
+      <div data-mtab="moves"><BigOrders onOpenStock={onOpenStock} /></div>
 
       {/* India's economy, at the bottom (20 Nov 2026, the owner): RBI's rates and the yield curve, FII/DII flows, the World Bank's years (EconomyCard.jsx) */}
-      <EconomyCard />
+      <div data-mtab="economy">
+        <EconomyCard />
+        {phone && (
+          <button type="button" className="mk-card mk-goldlink" onClick={() => onOpenTab?.("gold")}>
+            <span><b>Gold &amp; silver</b><small>Gold's price by carat, gold bonds and every ETF</small></span><ChevronRight size={18} aria-hidden="true" />
+          </button>
+        )}
+      </div>
 
       <p className="mk-note">NSE closing prices and the indices' own figures. A reading of the past, not advice.</p>
     </div>
