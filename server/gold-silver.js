@@ -160,3 +160,17 @@ export async function goldSilver() {
     }
   });
 }
+
+// The page's chart (20 Nov 2026, the owner: "can I show the gold chart?"):
+// each day's close of the ETFs that track gold, silver and the Nifty 50, from
+// our own daily history of NSE's closes, oldest first
+export function goldSilverChart() {
+  return cached("gold-silver-chart", 3600_000, async () => {
+    const snap = loadMarketSnapshot();
+    const series = COMPARE.map(([label, symbol]) => {
+      const bars = barsFor(symbol, snap) ?? [];
+      return { label, symbol, days: bars.map(b => b[0]), closes: bars.map(b => b[4]) };
+    }).filter(s => s.days.length > 1);
+    return { series, to: snap?.pricesDate ?? series[0]?.days.at(-1) ?? null, source: "NSE daily closes" };
+  });
+}

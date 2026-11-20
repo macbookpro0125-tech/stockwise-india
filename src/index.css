@@ -7450,3 +7450,21 @@ html.is-scrolling .hk-track { animation-play-state: paused; }
 .gs-meta i { font-style: normal; }
 .gs-flag { color: var(--accent) !important; }
 @media (max-width: 480px) { .gs-cmp { font-size: 13px; } .gs-cmp th, .gs-cmp td { padding: 7px 3px; } .gs-card { padding: 14px 12px; } }
+
+/* The gold page's chart (GoldChart.jsx) */
+.gc-modes { display: flex; gap: 4px; padding: 3px; border-radius: 10px; background: var(--s2); border: 1px solid var(--bdr2); width: fit-content; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.gc-modes button { flex: none; height: 30px; padding: 0 12px; border: 0; border-radius: 8px; background: none; color: var(--t2); font: inherit; font-size: 13px; cursor: pointer; white-space: nowrap; }
+.gc-modes button.on { background: var(--s3); color: var(--t1); font-weight: 500; }
+.gc-legend { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; margin: 12px 0 4px; font-size: 13px; color: var(--t2); font-variant-numeric: tabular-nums; }
+.gc-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.gc-legend b { font-size: 18px; font-weight: 600; color: var(--t1); }
+.gc-legend em { font-style: normal; font-weight: 500; }
+.gc-legend .up { color: var(--green); } .gc-legend .down { color: var(--red); }
+.gc-legend small { flex-basis: 100%; font-size: 11px; color: var(--t3); }
+.gc-wrap { position: relative; }
+.gc-chart { height: 260px; }
+.gc-wait { margin: 4px 0 16px; border-radius: 14px; background: var(--s1); }
+.gc-ranges { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+.gc-ranges button { height: 30px; min-width: 44px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--bdr2); background: var(--s2); color: var(--t2); font: inherit; font-size: 12px; cursor: pointer; }
+.gc-ranges button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.gc-ranges button:disabled { opacity: 0.35; cursor: default; }

@@ -98,6 +98,7 @@ export const api = {
   publicScreens: () => request("/api/public/screens"),
   publicSectors: () => request("/api/public/sectors"),
   publicGoldSilver: () => request("/api/public/gold-silver"),
+  publicGoldSilverChart: () => request("/api/public/gold-silver/chart"),
   publicPage: path => request(`/api/public/page?path=${encodeURIComponent(path)}`),
   publicSector: slug => request(`/api/public/sectors/${encodeURIComponent(slug)}`),
   publicLists: () => request("/api/public/lists"),

@@ -1,7 +1,8 @@
 // The app's copy of the pages written for search engines (server/seo-lists.js,
 // 24 Oct 2026): every strategy, one strategy's companies, the results
 // calendar, and the sectors (25 Oct 2026) — for anyone, signed in or not. Companies open their own page.
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
+const GoldChart = lazy(() => import("./GoldChart.jsx"));
 import { ChevronRight, Share2 } from "lucide-react";
 import { api } from "./api.js";
 import { PublicPage } from "./LegalPages.jsx";
@@ -507,6 +508,7 @@ export function GoldSilverPage({ signedIn }) {
       <p className="pl-lede">Every gold and silver ETF on NSE with its price, NAV and returns, every Sovereign Gold Bond series, and every other ETF: international, government bond, liquid and share-index funds.</p>
       {error && <p className="nw-empty">{error}</p>}
       {!d && !error && <Wait />}
+      <Suspense fallback={<div className="gc-chart gc-wait" />}><GoldChart /></Suspense>
       {d && <>
         <section className="gs-card">
           <h2>Gold, silver and the Nifty 50</h2>
