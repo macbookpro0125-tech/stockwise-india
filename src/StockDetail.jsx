@@ -28,6 +28,7 @@ import ValuationExplorer from "./ValuationExplorer.jsx";
 import { ValuedAs, SlowedGrowthNote, BankValuation, CyclicalValuation, NoFairValue, pbAt, CYCLE_TONE } from "./ValuationModel.jsx";
 import PhasePositionPlanner from "./PhasePositionPlanner.jsx";
 const BacktestPanel = lazy(() => import("./BacktestPanel.jsx"));
+import { watchSwipes } from "./tabSwipe.js";
 import CompanyBonds from "./CompanyBonds.jsx";
 import ThesisMonitor from "./ThesisMonitor.jsx";
 import StockSide from "./StockSide.jsx";
@@ -664,6 +665,12 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
   // opens the tab it was on, and the page's own Back still steps by page
   const [startTab] = useState(() => returnTabFor(symbol) ?? tabFromUrl());
   const [phoneTab, setPhoneTab] = useState(startTab);
+  // a swipe on the page moves a tab (tabSwipe.js, 20 Nov 2026)
+  const mainRef = useRef(null);
+  // the page's body once it's there (it waits for the company's data)
+  const [mainEl, setMainEl] = useState(null);
+  const setMain = el => { mainRef.current = el; setMainEl(el); };
+
   // another company in the same page: its tab from the address (not on the
   // first showing, which would undo the tab to come back to)
   const shownSymbol = useRef(symbol);
@@ -699,8 +706,13 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
     window.addEventListener(SHOW_TAB, show);
     return () => window.removeEventListener(SHOW_TAB, show);
   }, []);
-  const showPhoneTab = id => {
+  const showPhoneTab = (id, from = 0) => {
     setPhoneTab(id);
+    // a swiped-to tab slides in from the side it came from (not rebuilt: the
+    // page's own animation, so its charts stay as they are)
+    if (from && mainRef.current?.animate && !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+      mainRef.current.animate([{ transform: `translateX(${from * 28}px)`, opacity: 0.4 }, { transform: "none", opacity: 1 }], { duration: 220, easing: "cubic-bezier(0.2, 0, 0, 1)" });
+    }
     // the tab's start just under the pinned bar, unless the page is above it
     requestAnimationFrame(() => {
       const main = document.querySelector(".sd-main"), bar = document.querySelector("[data-sticky-top]");
@@ -709,6 +721,18 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
       if (window.scrollY > top) window.scrollTo(0, top);
     });
   };
+  const tabNow = useRef(phoneTab); tabNow.current = phoneTab;
+  const goRef = useRef(null); goRef.current = showPhoneTab;
+  useEffect(() => {
+    if (!isPhone || !mainEl) return undefined;
+    return watchSwipes(mainEl, step => {
+      // the tabs this company has, as the bar shows them (usePresentTabs), read now
+      const ids = TABS.filter(([, , parts]) => parts.some(p => document.getElementById(`sec-${p}`))).map(([id]) => id);
+      const at = ids.indexOf(tabNow.current), next = ids[at + step];
+      if (at < 0 || !next) return;
+      goRef.current(next, step);
+    });
+  }, [isPhone, mainEl]);
   // open from the start when "Set a price alert" on the public page led to
   // this account (afterSignup.js); done once the form has shown
   const [showAlertModal, setShowAlertModal] = useState(() => askedAfterSignup("alert", symbol));
@@ -1217,7 +1241,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         </div>
       </div>
 
-      <div className="sd-main" data-phone-tab={phoneTab}>
+      <div className="sd-main" data-phone-tab={phoneTab} ref={setMain}>
 
       {/* A phone's chapters open with their answer and end with their checks */}
       {isPhone && m && CHAPTERS.filter(c => c.id !== "overview").map(c => (

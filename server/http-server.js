@@ -21,7 +21,7 @@ import { screen, matchingSymbols, screenerMeta, getStock, saveStock, rowsFor, is
 import { startDataPull, pullStatus } from "./data-pull.js";
 import { screenMomentum, momentumAllowed, momentumAudience } from "./momentum.js";
 import { criteriaToFilters, METRICS, CATEGORY_METRICS } from "./metric-catalog.js";
-import { listWatchlist, addToWatchlist, setWatchlistNote, removeFromWatchlist, listWatchLists, createWatchList, renameWatchList, deleteWatchList, addToWatchList, removeFromWatchList } from "./user-watchlist.js";
+import { listWatchlist, addToWatchlist, setWatchlistNote, removeFromWatchlist, setWatchOrder, listWatchLists, createWatchList, renameWatchList, deleteWatchList, addToWatchList, removeFromWatchList } from "./user-watchlist.js";
 import { listHoldings, addHolding, addHoldings, updateHolding, removeHolding } from "./user-portfolio.js";
 import { listTrades, addTrade, updateTrade, removeTrade } from "./journal.js";
 import { goldSilver, goldSilverChart, liveOf } from "./gold-silver.js";
@@ -1371,6 +1371,14 @@ export function createApp() {
         return;
       }
 
+      // the order dragged into (user-watchlist.js setWatchOrder): the whole watchlist, or a list
+      if (url.pathname === "/api/watchlist/order" && req.method === "PUT") {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        const { tickers, listId } = await readJsonBody(req);
+        sendJson(res, 200, setWatchOrder(userId, tickers, listId ?? null));
+        return;
+      }
       if (url.pathname === "/api/watchlist" && req.method === "POST") {
         const userId = requireAuth(req, res);
         if (userId == null) return;

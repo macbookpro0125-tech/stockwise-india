@@ -7641,3 +7641,9 @@ html.is-scrolling .hk-track { animation-play-state: paused; }
 .cb-rating { padding: 1px 8px; border-radius: 999px; background: color-mix(in srgb, var(--green) 12%, transparent); color: var(--green); }
 .cb-norating { color: var(--t3); }
 .cb-note { margin: 10px 0 0; font-size: 11px; line-height: 1.5; color: var(--t3); }
+
+/* "My order" on the Watchlist: the grip to drag a company by (WatchlistView.jsx) */
+.wl-grip { display: flex; align-items: center; justify-content: center; width: 32px; min-height: 44px; flex: none; padding: 0; border: 0; background: none; color: var(--t3); cursor: grab; touch-action: none; -webkit-user-select: none; user-select: none; }
+.wl-grip:active { cursor: grabbing; color: var(--accent); }
+.wl-row.dragging { box-shadow: 0 10px 28px rgba(0,0,0,0.35); border-radius: 14px; background: var(--s2); }
+.wl-row.dragging .wl-item { background: var(--s2); }

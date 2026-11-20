@@ -165,6 +165,7 @@ export const api = {
   addWatch: (ticker, price) => request("/api/watchlist", { method: "POST", body: JSON.stringify({ ticker, price }) }),
   setWatchNote: (ticker, note) => request(`/api/watchlist/${encodeURIComponent(ticker)}`, { method: "PUT", body: JSON.stringify({ note }) }),
   removeWatch: (ticker) => request(`/api/watchlist/${encodeURIComponent(ticker)}`, { method: "DELETE" }),
+  setWatchOrder: (tickers, listId = null) => request("/api/watchlist/order", { method: "PUT", body: JSON.stringify({ tickers, listId }) }),
   // The watchlist's named lists (its tabs)
   myLevels: () => request("/api/levels"),
   saveLevelSettings: settings => request("/api/levels/settings", { method: "PUT", body: JSON.stringify(settings) }),

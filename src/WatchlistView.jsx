@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import CompanyLogo from "./CompanyLogo.jsx";
-import { Star, X, NotebookPen, ChevronRight, CalendarDays, TrendingDown, TrendingUp, Tag, Ellipsis, Check, Plus } from "lucide-react";
+import { Star, X, NotebookPen, ChevronRight, CalendarDays, TrendingDown, TrendingUp, Tag, Ellipsis, Check, Plus, GripVertical, ArrowUpToLine } from "lucide-react";
+import { mineOrder, moved, dropIndex } from "./watchOrder.js";
 import { BellIcon } from "./icons.jsx";
 import { api } from "./api.js";
 import { useWatchlist, toggleWatch, watchSaved, useWatchLists, primeWatchLists, setInList, createList as createWatchList, renameList as renameWatchList, deleteList as deleteWatchList } from "./watchlist.js";
@@ -120,7 +121,7 @@ function NeedsALook({ items, onOpen }) {
 }
 
 // A company's row: tap to open it; hold it (or its ⋯) for the rest
-function WatchRow({ item, r, price, note, leaving, onOpen, onMore }) {
+function WatchRow({ item, r, price, note, leaving, onOpen, onMore, grip = null, style, dragging = false }) {
   const name = cardName(r?.name ?? item.ticker);
   const since = sinceAdded(item, price);
   const day = r?.ret1d;
@@ -134,7 +135,7 @@ function WatchRow({ item, r, price, note, leaving, onOpen, onMore }) {
   const move = e => { const h = hold.current; if (h && Math.hypot(e.clientX - h.x, e.clientY - h.y) > 10) { clearTimeout(h.t); hold.current = null; } };
   const end = () => { if (hold.current) clearTimeout(hold.current.t); hold.current = null; };
   return (
-    <li className={`wl-row${leaving ? " leaving" : ""}`}>
+    <li className={`wl-row${leaving ? " leaving" : ""}${dragging ? " dragging" : ""}`} style={style}>
       <div className="wl-item">
         <button type="button" className="wl-main" aria-label={`Open ${name}`}
           onPointerDown={start} onPointerMove={move} onPointerUp={end} onPointerCancel={end} onPointerLeave={end}
@@ -160,6 +161,7 @@ function WatchRow({ item, r, price, note, leaving, onOpen, onMore }) {
             {day != null && <em className={day >= 0 ? "up" : "down"}>{signedPct(day)}</em>}
           </span>
         </button>
+        {grip}
         <button type="button" className="wl-more" aria-label={`More for ${name}`} onClick={onMore}><Ellipsis size={18} /></button>
       </div>
     </li>
@@ -167,7 +169,7 @@ function WatchRow({ item, r, price, note, leaving, onOpen, onMore }) {
 }
 
 // What a held row offers: an alert, its lists, a note, removing it
-function RowSheet({ name, item, lists, current, onClose, onAlert, onToggleList, onNewList, onSaveNote, onRemove, onOpen }) {
+function RowSheet({ name, item, lists, current, onClose, onAlert, onToggleList, onNewList, onSaveNote, onRemove, onOpen, onTop }) {
   const [note, setNote] = useState(item.note ?? "");
   const [editing, setEditing] = useState(false);
   useEffect(() => {
@@ -186,6 +188,7 @@ function RowSheet({ name, item, lists, current, onClose, onAlert, onToggleList, 
         </div>
         <button type="button" className="wl-sheet-row" onClick={() => { onClose(); onOpen(); }}>Open {name}<ChevronRight size={16} aria-hidden="true" /></button>
         <button type="button" className="wl-sheet-row" onClick={() => { onClose(); onAlert(); }}><BellIcon /> Set a price alert</button>
+        {onTop && <button type="button" className="wl-sheet-row" onClick={() => { onClose(); onTop(); }}><ArrowUpToLine size={16} aria-hidden="true" /> Move to the top</button>}
         <div className="wl-sheet-group">
           <span className="wl-sheet-label">Lists</span>
           {lists.map(l => {
@@ -283,7 +286,12 @@ export default function WatchlistView({ onOpenStock, onOpenNews }) {
   const [data, setData] = useState(null);
   const [live, setLive] = useState({});
   const [error, setError] = useState("");
-  const [sortBy, setSortBy] = useState("today");
+  const [sortBy, setSortByState] = useState(() => { try { return localStorage.getItem("wl-sort") || "today"; } catch { return "today"; } });
+  const setSortBy = v => { setSortByState(v); try { localStorage.setItem("wl-sort", v); } catch { /* private window */ } };
+  // "My order": dragged by the grip, kept on the account (watchOrder.js)
+  const [localOrder, setLocalOrder] = useState(null); // { key, tickers } until the next load
+  const [drag, setDrag] = useState(null); // { ticker, from, to, dy, rows, startY }
+  const listRef = useRef(null);
   const [sortDir, setSortDir] = useState("desc");
   const [alertTarget, setAlertTarget] = useState(null);
   const [sheet, setSheet] = useState(null); // the ticker whose ⋯ is open
@@ -325,6 +333,7 @@ export default function WatchlistView({ onOpenStock, onOpenNews }) {
   useEffect(() => {
     watchSaved().then(() => api.watchlist()).then(d => {
       setData(d);
+      setLocalOrder(null);
       primeWatchLists(d.lists ?? []);
       if (d.items.length) api.currentPrices(d.items.map(i => i.ticker)).then(setLive).catch(() => {});
     }).catch(e => setError(e.message));
@@ -347,7 +356,21 @@ export default function WatchlistView({ onOpenStock, onOpenNews }) {
   const priceOf = t => live[t]?.price ?? rows.get(t)?.cmp ?? null;
   const rowOf = t => rows.get(t);
   const byNum = (f, a, b) => (f(a) ?? -Infinity) - (f(b) ?? -Infinity);
-  const sorted = [...items].sort((a, b) => {
+  const orderKey = current?.id ?? "all";
+  const mine = () => {
+    if (localOrder?.key === orderKey) { const at = new Map(localOrder.tickers.map((t, i) => [t, i])); return [...items].sort((a, b) => (at.get(a.ticker) ?? -1) - (at.get(b.ticker) ?? -1)); }
+    return mineOrder(items, current ? current.tickers : null);
+  };
+  const saveOrder = tickers => {
+    setLocalOrder({ key: orderKey, tickers });
+    api.setWatchOrder(tickers, current?.id ?? null).catch(() => {});
+  };
+  const toTop = ticker => {
+    const now = mine().map(i => i.ticker);
+    saveOrder([ticker, ...now.filter(t => t !== ticker)]);
+    setSortBy("mine"); setSortDir("asc");
+  };
+  const sorted = sortBy === "mine" ? mine() : [...items].sort((a, b) => {
     let c = 0;
     if (sortBy === "today") c = byNum(i => rows.get(i.ticker)?.ret1d, a, b);
     else if (sortBy === "since") c = byNum(i => sinceAdded(i, priceOf(i.ticker)), a, b);
@@ -356,6 +379,54 @@ export default function WatchlistView({ onOpenStock, onOpenNews }) {
     else if (sortBy === "quality") c = quality(a.ticker) - quality(b.ticker);
     return sortDir === "desc" ? -c : c;
   });
+
+  // Dragging by the grip: the row follows the finger, the others make room,
+  // and it's saved where it's let go. Arrow keys move it one place.
+  const rowsNow = () => [...(listRef.current?.children ?? [])].map(li => { const b = li.getBoundingClientRect(); return { top: b.top + window.scrollY, height: b.height }; });
+  const startDrag = (e, ticker, index) => {
+    if (e.button != null && e.button !== 0) return;
+    e.preventDefault();
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    navigator.vibrate?.(8);
+    setDrag({ ticker, from: index, to: index, dy: 0, rows: rowsNow(), startY: e.pageY });
+  };
+  const moveDrag = e => {
+    if (!drag) return;
+    // near the screen's top or bottom, the page scrolls along
+    if (e.clientY > window.innerHeight - 90) window.scrollBy(0, 12); else if (e.clientY < 110) window.scrollBy(0, -12);
+    const dy = e.pageY - drag.startY;
+    const to = dropIndex(drag.rows, drag.from, dy);
+    if (to !== drag.to) navigator.vibrate?.(4);
+    setDrag(d => (d ? { ...d, dy, to } : d));
+  };
+  const endDrag = () => {
+    if (!drag) return;
+    const tickers = sorted.map(i => i.ticker);
+    if (drag.to !== drag.from) saveOrder(moved(tickers, drag.from, drag.to));
+    setDrag(null);
+  };
+  const rowStyle = (ticker, i) => {
+    if (!drag) return undefined;
+    if (ticker === drag.ticker) return { transform: `translateY(${drag.dy}px)`, zIndex: 5, position: "relative" };
+    const h = drag.rows[drag.from]?.height ?? 0;
+    const shift = drag.from < drag.to && i > drag.from && i <= drag.to ? -h : drag.from > drag.to && i < drag.from && i >= drag.to ? h : 0;
+    return { transform: shift ? `translateY(${shift}px)` : undefined, transition: "transform 160ms ease" };
+  };
+  // a plain element, not a component made here (one would be remade on each
+  // move of the drag, and lose the finger)
+  const grip = (name, index, ticker) => (
+    <button type="button" className="wl-grip" aria-label={`Move ${name}: drag, or use the arrow keys`}
+      onPointerDown={e => startDrag(e, ticker, index)} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={() => setDrag(null)}
+      onKeyDown={e => {
+        if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+        e.preventDefault();
+        const to = index + (e.key === "ArrowUp" ? -1 : 1);
+        if (to < 0 || to >= sorted.length) return;
+        saveOrder(moved(sorted.map(i => i.ticker), index, to));
+      }}>
+      <GripVertical size={18} aria-hidden="true" />
+    </button>
+  );
 
   const SortPill = ({ id, label: text }) => {
     const active = sortBy === id;
@@ -406,6 +477,7 @@ export default function WatchlistView({ onOpenStock, onOpenNews }) {
       {current && items.length === 0 && <EmptyList list={current} starred={starredItems.map(i => ({ ticker: i.ticker, name: rows.get(i.ticker)?.name ?? i.ticker }))} onAdd={(id, t) => toggleInList(id, t, true)} />}
       {items.length > 0 && (
         <div className="wl-sorts" role="group" aria-label="Sort">
+          <button type="button" className={`wl-sort${sortBy === "mine" ? " on" : ""}`} aria-pressed={sortBy === "mine"} onClick={() => setSortBy("mine")}>My order</button>
           <SortPill id="today" label="Today" />
           <SortPill id="since" label="Since added" />
           <SortPill id="name" label="Name" />
@@ -418,19 +490,21 @@ export default function WatchlistView({ onOpenStock, onOpenNews }) {
       {comparing && <CompareFor symbols={comparing} onClose={() => setComparing(null)} onOpen={onOpenStock} />}
 
       {items.length > 0 && (
-        <ul className="wl-list">
-          {sorted.map(item => {
+        <ul className="wl-list" ref={listRef}>
+          {sorted.map((item, index) => {
             const r = rows.get(item.ticker);
             const price = priceOf(item.ticker);
             const note = rowNote(item, r, price, { today, level: levelStatus(price, r), nextEvent: nextEvent(r, today) });
             return (
               <WatchRow key={item.ticker} item={item} r={r} price={price} note={note} leaving={leaving.has(item.ticker)}
-                onOpen={onOpenStock} onMore={() => setSheet(item.ticker)} />
+                onOpen={onOpenStock} onMore={() => setSheet(item.ticker)}
+                grip={sortBy === "mine" && sorted.length > 1 ? grip(cardName(r?.name ?? item.ticker), index, item.ticker) : null}
+                dragging={drag?.ticker === item.ticker} style={rowStyle(item.ticker, index)} />
             );
           })}
         </ul>
       )}
-      {items.length > 0 && <p className="wl-hint">Tap a company to open it · hold it, or ⋯, for an alert, lists, a note, or to remove it</p>}
+      {items.length > 0 && <p className="wl-hint">{sortBy === "mine" ? "Drag a company by ⠿ to move it anywhere · tap to open it · ⋯ for an alert, lists, a note, or to remove it" : "Tap a company to open it · hold it, or ⋯, for an alert, lists, a note, or to remove it · “My order” lets you drag them into your own order"}</p>}
 
       {onOpenNews && <WatchNews data={news} onOpenNews={onOpenNews} />}
 
@@ -439,7 +513,7 @@ export default function WatchlistView({ onOpenStock, onOpenNews }) {
           onClose={() => setSheet(null)} onOpen={() => onOpenStock(open.ticker)}
           onAlert={() => setAlertTarget({ symbol: open.ticker, name: openRow?.name ?? open.ticker, cmp: priceOf(open.ticker), p1: openRow?.safeBuyPrice, p2: openRow?.p2, p3: openRow?.p3 })}
           onToggleList={toggleInList} onNewList={() => setDialog({ kind: "new", ticker: open.ticker })}
-          onSaveNote={text => saveNote(open.ticker, text)} onRemove={() => removeCard(open.ticker)} />
+          onSaveNote={text => saveNote(open.ticker, text)} onRemove={() => removeCard(open.ticker)} onTop={() => toTop(open.ticker)} />
       )}
       {alertTarget && <CreateAlertModal stock={alertTarget} onClose={() => setAlertTarget(null)} />}
       {dialog && (

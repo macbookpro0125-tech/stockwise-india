@@ -7,11 +7,18 @@ import { badRequest, HttpError } from "./http-errors.js";
 // here it follows the account, like alerts. Each entry remembers the price
 // when it was starred (the original's cards show the move since) and a note.
 
+// The order someone dragged their companies into (20 Nov 2026, the owner:
+// "move them to the top or anywhere by holding them"): a position on each
+// starred company and each list's item; new ones have none and come first
+for (const table of ["watchlist", "watchlist_list_items"]) {
+  if (!db.prepare(`PRAGMA table_info(${table})`).all().some(c => c.name === "position")) db.exec(`ALTER TABLE ${table} ADD COLUMN position REAL`);
+}
+
 // The price when starred, on today's share basis: a split or bonus since
 // would otherwise read as a fall
 export function listWatchlist(userId) {
   return db.prepare(
-    "SELECT ticker, added_at AS addedAt, added_price AS addedPrice, note FROM watchlist WHERE user_id = ? ORDER BY added_at DESC"
+    "SELECT ticker, added_at AS addedAt, added_price AS addedPrice, note, position FROM watchlist WHERE user_id = ? ORDER BY added_at DESC"
   ).all(userId).map(w => (w.addedPrice > 0 ? { ...w, addedPrice: w.addedPrice / splitFactorSince(w.ticker, w.addedAt) } : w));
 }
 
@@ -26,6 +33,23 @@ export function addToWatchlist(userId, ticker, price = null) {
 export function setWatchlistNote(userId, ticker, note) {
   db.prepare("UPDATE watchlist SET note = ? WHERE user_id = ? AND ticker = ?")
     .run(String(note || "").trim().slice(0, 500) || null, userId, String(ticker || "").trim().toUpperCase());
+}
+
+// The order shown under "My order": the tickers as dragged, for the whole
+// watchlist (listId null) or one list; any not named keep their place after
+export function setWatchOrder(userId, tickers, listId = null) {
+  if (!Array.isArray(tickers) || tickers.length > 2000) throw badRequest("An order is a list of symbols");
+  const clean = [...new Set(tickers.map(t => String(t ?? "").trim().toUpperCase()).filter(Boolean))];
+  const list = listId == null ? null : ownList(userId, listId);
+  const set = list
+    ? db.prepare("UPDATE watchlist_list_items SET position = ? WHERE list_id = ? AND ticker = ?")
+    : db.prepare("UPDATE watchlist SET position = ? WHERE user_id = ? AND ticker = ?");
+  db.exec("BEGIN");
+  try {
+    clean.forEach((t, i) => set.run(i + 1, list ? list.id : userId, t));
+    db.exec("COMMIT");
+  } catch (e) { db.exec("ROLLBACK"); throw e; }
+  return { ok: true, count: clean.length };
 }
 
 // Unstarred: out of every list too
@@ -45,7 +69,8 @@ const cleanName = name => String(name ?? "").replace(/\s+/g, " ").trim();
 
 export function listWatchLists(userId) {
   const lists = db.prepare("SELECT id, name, created_at AS createdAt FROM watchlist_lists WHERE user_id = ? ORDER BY id").all(userId);
-  const items = db.prepare("SELECT i.list_id AS listId, i.ticker FROM watchlist_list_items i JOIN watchlist_lists l ON l.id = i.list_id WHERE l.user_id = ? ORDER BY i.added_at DESC").all(userId);
+  // in the order dragged into, new ones first (no position yet)
+  const items = db.prepare("SELECT i.list_id AS listId, i.ticker FROM watchlist_list_items i JOIN watchlist_lists l ON l.id = i.list_id WHERE l.user_id = ? ORDER BY (i.position IS NULL) DESC, i.position, i.added_at DESC").all(userId);
   return lists.map(l => ({ ...l, tickers: items.filter(i => i.listId === l.id).map(i => i.ticker) }));
 }
 
