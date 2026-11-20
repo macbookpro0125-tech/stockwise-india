@@ -128,7 +128,7 @@ const PUB_NAV = [["/screens", "Screens"], ["/sectors", "Sectors"], ["/results", 
 // Signed in, the same pages carry the app's own menu (17 Nov 2026, the owner:
 // the stock lists should "look like our main app"): each opens that app tab
 // (App.jsx reads ?tab=), with Stock lists and Sectors beside them
-const APP_NAV = [["/?tab=discover", "Home"], ["/?tab=workspace", "Screen builder"], ["/?tab=markets", "Markets"], ["/?tab=explore", "News"], ["/?tab=watchlist", "Watchlist"], ["/?tab=portfolio", "Portfolio"], ["/lists", "Categories"], ["/sectors", "Sectors"]];
+const APP_NAV = [["/?tab=discover", "Home"], ["/?tab=workspace", "Screen builder"], ["/?tab=markets", "Markets"], ["/?tab=gold", "Gold"], ["/?tab=explore", "News"], ["/?tab=watchlist", "Watchlist"], ["/?tab=portfolio", "Portfolio"], ["/lists", "Categories"], ["/sectors", "Sectors"]];
 export function PublicHeader({ signedIn, onSignIn, onJoin }) {
   const here = typeof window !== "undefined" ? window.location.pathname : "";
   const go = to => e => { if (e.metaKey || e.ctrlKey || e.shiftKey) return; e.preventDefault(); navigate(to); window.scrollTo(0, 0); };

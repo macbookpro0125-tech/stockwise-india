@@ -593,8 +593,8 @@ export function GoldSilverPage({ signedIn, inApp = false, onBack = null }) {
   </>;
   if (inApp) return (
     <div className="mk gs-inapp">
-      <button type="button" className="mk-back" onClick={onBack}><ChevronLeft size={18} aria-hidden="true" /> Markets</button>
-      <header className="mk-head"><h1>Gold, silver &amp; ETFs</h1><p>{lede}{updated ? ` ${updated}.` : ""}</p></header>
+      {onBack && <button type="button" className="mk-back" onClick={onBack}><ChevronLeft size={18} aria-hidden="true" /> Markets</button>}
+      <header className="mk-head"><h1 className="gs-h1">Gold, silver &amp; ETFs</h1><p>{lede}{updated ? ` ${updated}.` : ""}</p></header>
       {body}
     </div>
   );

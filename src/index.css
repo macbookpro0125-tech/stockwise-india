@@ -7593,3 +7593,35 @@ html.is-scrolling .hk-track { animation-play-state: paused; }
 @media (max-width: 900px) { .ec-two .ec-col + .ec-col { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--bdr); } }
 .ec-two .ec-curve, .ec-two .ec-yc svg { max-width: none; }
 .ec-two .ec-chips { margin-top: 10px; }
+
+/* Results coming, as big as the other cards (MarketsView.jsx, 20 Nov 2026) */
+.mk-results-big { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+.mk-res-card { display: flex; flex-direction: column; padding: 14px; border-radius: 12px; background: var(--s3); min-width: 0; }
+.mk-res-dayhead { display: flex !important; align-items: baseline; gap: 8px; width: 100%; margin-bottom: 8px; padding: 0 !important; }
+.mk-res-dayhead b { font-size: 17px; font-weight: 600; color: var(--t1); }
+.mk-res-dayhead span { font-size: 12px; color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); padding: 2px 8px; border-radius: 999px; }
+.mk-res-dayhead svg { margin-left: auto; align-self: center; color: var(--t3); }
+.mk-results-big ul li + li { border-top: 1px solid var(--bdr); }
+.mk-res-co { display: flex !important; align-items: center; gap: 10px; width: 100%; padding: 8px 0 !important; font-size: 14px !important; }
+.mk-res-co span { min-width: 0; flex: 1; overflow-wrap: anywhere; }
+.mk-results-big .mk-res-more { margin-top: auto; padding-top: 10px !important; }
+
+/* Gold today on Home (HomeGold.jsx) */
+.hg { margin-bottom: 16px; }
+.hg-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; width: 100%; padding: 0; border: 0; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.hg-grid > span { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 10px; background: var(--s3); min-width: 0; }
+.hg-grid small { font-size: 11px; color: var(--t3); }
+.hg-grid b { font-size: 17px; font-weight: 600; color: var(--t1); font-variant-numeric: tabular-nums; }
+@media (max-width: 420px) { .hg-grid b { font-size: 15px; } .hg-grid > span { padding: 9px 8px; } }
+.hg-note { margin: 8px 0 0; font-size: 11px; line-height: 1.5; color: var(--t3); }
+.hg-etfs { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; margin-top: 10px; font-size: 13px; color: var(--t2); font-variant-numeric: tabular-nums; }
+.hg-etfs b { color: var(--t1); font-weight: 600; }
+.hg-etfs i { font-style: normal; font-weight: 500; }
+.hg-go { margin-left: auto; display: inline-flex; align-items: center; gap: 2px; padding: 0; border: 0; background: none; color: var(--accent); font: inherit; font-size: 13px; cursor: pointer; }
+/* the Gold tab: a phone shows the tab's name already */
+@media (max-width: 640px) { .gs-inapp .gs-h1 { display: none; } }
+/* Gold today keeps its own inner spacing on the phone's Home, like the cards around it */
+.td-box.hg { padding: 16px; box-sizing: border-box; overflow: hidden; }
+.ps-summary .td-box.hg { padding: 14px 16px; margin-bottom: 12px; }
+.hg .td-head { padding: 0 !important; margin: 0 0 10px; }
+@media (max-width: 420px) { .hg-grid { gap: 6px; } .hg-grid small { font-size: 10px; } }

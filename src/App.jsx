@@ -129,8 +129,8 @@ export default function App() {
   const [tab, setTab] = useState(() => {
     const asked = new URLSearchParams(window.location.search).get("tab");
     if (asked && /^[a-z]+$/.test(asked)) { window.history.replaceState(window.history.state, "", "/"); return asked; }
-    // the gold page, signed in, is a Markets page (MarketsView.jsx)
-    if (window.location.pathname === "/gold-silver") return "markets";
+    // the gold page, signed in, is the Gold tab
+    if (window.location.pathname === "/gold-silver") return "gold";
     return window.location.pathname === BUILDER_PATH && !window.matchMedia?.("(max-width: 640px)").matches ? "workspace" : "discover";
   });
   // someone not signed in, on a company's public page, asked to sign in
@@ -522,6 +522,7 @@ export default function App() {
         {/* Kept mounted under a company page too: Back returns to the map as it was */}
         {tab === "desk" && <div hidden={!!open}><DeskView onOpenStock={openSymbol} /></div>}
         {tab === "markets" && <div hidden={!!open}><MarketsView onOpenStock={openSymbol} onOpenTab={goTab} /></div>}
+        {!open && tab === "gold" && <div style={{ padding: "0 var(--page-x)" }}><GoldSilverPage signedIn inApp /></div>}
         {tab === "map" && <div hidden={!!open}><MarketMapView screen={mapScreen} request={mapRequest} onOpenStock={openSymbol} onOpenIndex={name => { setIndexOpen(name); goTab("explore"); }} /></div>}
         {!open && tab === "momentum" && account?.features?.momentum && <MomentumView onOpenStock={openSymbol} />}
         {!open && tab === "visitors" && account?.features?.owner && <VisitorsView />}

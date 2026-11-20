@@ -521,3 +521,8 @@ Owner: "the news is not understandable". Looked at 10 apps (Inshorts' one-line c
 ## 20 Nov 2026 — Economy card: stale note, GDP growth on top
 - Live health showed RBI read 4 times fine and failed once — the first read after the restart — which economy.js kept as "couldn't be read" for 6 hours. freshOr(): a failed read retries a minute later (cached()); the saved copy only when nothing has been read since the start. The World Bank's read now needs all ten figures, or tries again.
 - Layout (owner: "something is wrong", and "show the GDP growth"): GDP growth, inflation, repo rate and the 10-year yield across the top; GDP growth's chart and the yield curve side by side on a laptop (stacked under 900 px); CRR, SLR, call money and the deposit facility under the curve; the other World Bank figures below as before.
+
+## 20 Nov 2026 — Gold in the menus and on Home; Markets order
+- Gold is a tab (Header TABS "gold", Coins icon): laptop top bar (TopBar PAGES, label "Gold"), phone menu (SettingsView row), Home's "Everything in the app", the public pages' app nav. Signed in, /gold-silver opens the tab; Markets' "Gold, silver & ETFs" opens it too (the Markets sub-page is gone).
+- Home: HomeGold.jsx "Gold today" (24/22/18 carat for 10 g — the estimate now when there is one, else RBI's price — and the gold and silver ETFs today) under the market summary, then "Explore by category" moved up from under Big orders.
+- Markets: Results coming moved up after Biggest moves and made big (a card a day, logos, eight companies, count pill); with none coming it shows "Latest results" rather than an empty card. India's economy moved to the bottom.

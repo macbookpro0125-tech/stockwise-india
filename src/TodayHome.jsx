@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import BigOrders from "./BigOrders.jsx";
+import HomeGold from "./HomeGold.jsx";
 import BigNum from "./BigNum.jsx";
 import { createChart, AreaSeries, ColorType } from "lightweight-charts";
 import { ChevronRight, Plus } from "lucide-react";
@@ -216,7 +217,7 @@ function MarketChart({ closes }) {
 // one kept to some accounts turns up here by itself.
 const ABOUT = {
   discover: "All the ready-made screens", workspace: "Build your own filter", desk: "A list with its charts beside it",
-  markets: "Indices, sectors and the big moves", explore: "Indices and news", map: "The market, by size and move", momentum: "Short-term moves", watchlist: "Companies you follow",
+  markets: "Indices, sectors and the big moves", gold: "Gold by carat, gold bonds and ETFs", explore: "Indices and news", map: "The market, by size and move", momentum: "Short-term moves", watchlist: "Companies you follow",
   portfolio: "What you hold", performance: "How screens have done", alerts: "Your price and results alerts",
 };
 const SITE_PAGES = [
@@ -239,7 +240,7 @@ const IN_APP = { calendar: "next", results: "latest" };
 
 const PAGE_GROUPS = [
   { title: "Find companies", items: ["discover", "workspace", "desk", "guides"] },
-  { title: "The market", items: ["markets", "explore", "map", "momentum", "calendar", "results", "sectors"] },
+  { title: "The market", items: ["markets", "gold", "explore", "map", "momentum", "calendar", "results", "sectors"] },
   { title: "Your things", items: ["watchlist", "portfolio", "performance", "alerts"] },
 ];
 
@@ -489,10 +490,10 @@ export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIn
         )}
       </div>
 
-      {movers && <HomeMovers movers={movers} onOpenStock={onOpenStock} onOpenTab={onOpenTab} />}
-      {/* the orders companies won (BigOrders.jsx; 19 Nov 2026, the owner: "if any company gets a contract it should be shown") */}
-      <BigOrders home onOpenStock={onOpenStock} onSeeAll={() => onOpenTab?.("markets")} />
+      {/* gold, under the market (20 Nov 2026, the owner: "gold price to the Home screen") */}
+      <HomeGold onOpen={() => onOpenTab?.("gold")} />
 
+      {/* the categories, up before the moves (20 Nov 2026, the owner: "move the explore up") */}
       {/* the stock lists, in reach from Home (17 Nov 2026: "very hard to find, very deep in Markets") */}
       <section className="td-box td-lists" aria-label="Explore by category">
         <div className="td-head"><h3>Explore by category</h3><button type="button" onClick={() => navigate("/lists")}>All categories</button></div>
@@ -506,6 +507,10 @@ export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIn
           ))}
         </div>
       </section>
+
+      {movers && <HomeMovers movers={movers} onOpenStock={onOpenStock} onOpenTab={onOpenTab} />}
+      {/* the orders companies won (BigOrders.jsx; 19 Nov 2026, the owner: "if any company gets a contract it should be shown") */}
+      <BigOrders home onOpenStock={onOpenStock} onSeeAll={() => onOpenTab?.("markets")} />
 
       <div className="td-grid">
         <section className="td-box" aria-label="Your watchlist">
