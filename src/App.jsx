@@ -121,7 +121,10 @@ export default function App() {
   const path = usePath();
   // …and when a page in the app (the stock lists' menu) navigates to /?tab=…
   useEffect(() => {
-    const asked = new URLSearchParams(window.location.search).get("tab");
+    // only on the front address: a company's page keeps ?tab= for its own
+    // tab (21 Nov 2026: /stock/TCS?tab=news, a refresh on its News tab, went
+    // to "/" on Overview)
+    const asked = window.location.pathname === "/" ? new URLSearchParams(window.location.search).get("tab") : null;
     if (asked && /^[a-z]+$/.test(asked)) { window.history.replaceState(window.history.state, "", "/"); setTab(asked); }
   }, [path]);
   // undefined = checking, null = signed out, else { userId, email }
@@ -134,7 +137,7 @@ export default function App() {
   // ?tab=markets opens that tab (17 Nov 2026: the app's menu on the stock
   // list and sector pages links here); the address then goes back to /
   const [tab, setTab] = useState(() => {
-    const asked = new URLSearchParams(window.location.search).get("tab");
+    const asked = window.location.pathname === "/" ? new URLSearchParams(window.location.search).get("tab") : null;
     if (asked && /^[a-z]+$/.test(asked)) { window.history.replaceState(window.history.state, "", "/"); return asked; }
     // the gold page, signed in, is the Gold tab
     if (window.location.pathname === "/gold-silver") return "gold";
