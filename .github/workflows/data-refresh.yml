@@ -148,11 +148,14 @@ jobs:
         env:
           FORCE_DATA_PACK: ${{ steps.start_data.outputs.force_pack }}
           FORCE_DATA_REFRESH: ${{ steps.retry.outputs.force_data_refresh }}
-          # The price history back ten years (20 Nov 2026, was five; before
-          # late 2019 from NSE's older zipped files, legacy-bhavcopy.js), 260
-          # more trading days a run (server/history-backfill.js), gently,
-          # until it's there
-          HISTORY_YEARS: "10"
+          # The price history kept: six years for now (20 Nov 2026). Ten was
+          # set the night before, a year more each run, but the first extra
+          # year took the 512 MB server to its memory limit and it restarted
+          # (21:56 +03, 20 Nov). Back to ten once the server reads only the
+          # recent days it needs (explore.js movers, scans) instead of each
+          # company's whole history. Before late 2019 from NSE's older zipped
+          # files (legacy-bhavcopy.js), 260 trading days a run.
+          HISTORY_YEARS: "6"
           # Yearly results from before NSE's XBRL (server/older-results.js),
           # 250 companies a run, biggest first
           OLDER_RESULTS_BATCH: "250"
