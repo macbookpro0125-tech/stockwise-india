@@ -479,3 +479,4 @@ Owner: "the news is not understandable". Looked at 10 apps (Inshorts' one-line c
   - NSE /api/fiidiiTradeReact: FII/FPI and DII net buying, kept a day at a time in data/market/fii-dii.json (250 days) so the 30-day sum builds up.
   - World Bank WDI for India (CC BY 4.0), 11 years: GDP growth, inflation, unemployment, investment, current account, FDI, forex reserves, exports, GDP size, income per person. Cached 24 h; last copy in data/market/world-bank-india.json.
 - Not reachable from here: MoSPI's API/eSankhyiki (CPI, IIP, quarterly GDP) and RBI's DBIE — both timed out. FBIL's USD/INR on RBI's page left out (FBIL's licence unconfirmed).
+- Each figure opens a proper bar chart (owner: "is the GDP chart shown"): a bar a year with its value, below zero in red (2020 GDP −5.8%).

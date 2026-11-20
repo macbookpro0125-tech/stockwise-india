@@ -44,6 +44,37 @@ function Curve({ curve }) {
   );
 }
 
+// a figure's years as a proper chart, opened by tapping its tile: a bar a
+// year with its value over it, below zero in red under the line
+const compact = (ind, v) => (ind.unit === "US$" ? `${(v / 1000).toFixed(1)}k` : ind.unit === "US$ trn" ? v.toFixed(2) : ind.unit === "US$ bn" ? Math.round(v).toString() : v.toFixed(1));
+function YearChart({ ind }) {
+  const W = 340, H = 176, P = { l: 6, r: 6, t: 18, b: 34 }; // room under the lowest bar for its value and the years
+  const ys = ind.years, n = ys.length;
+  const top = Math.max(0, ...ys.map(y => y.value)), bottom = Math.min(0, ...ys.map(y => y.value));
+  const span = top - bottom || 1;
+  const sy = v => P.t + ((top - v) / span) * (H - P.t - P.b);
+  const slot = (W - P.l - P.r) / n, bw = Math.min(22, slot * 0.62);
+  const unit = ind.unit === "US$" ? "US$ thousand" : ind.unit;
+  return (
+    <figure className="ec-yc">
+      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${ind.label}, ${ys[0].year} to ${ys.at(-1).year}`}>
+        <line x1={P.l} x2={W - P.r} y1={sy(0)} y2={sy(0)} className="ec-zero" />
+        {ys.map((y, i) => {
+          const x = P.l + slot * i + (slot - bw) / 2, y0 = sy(0), y1 = sy(y.value), last = i === n - 1;
+          return (
+            <g key={y.year}>
+              <rect x={x} y={Math.min(y0, y1)} width={bw} height={Math.max(1, Math.abs(y1 - y0))} rx={2} className={y.value < 0 ? "neg" : last ? "now" : "bar"} />
+              <text x={x + bw / 2} y={y.value < 0 ? y1 + 10 : y1 - 4} textAnchor="middle" className={`ec-val${last ? " now" : ""}`}>{compact(ind, y.value)}</text>
+              <text x={x + bw / 2} y={H - 6} textAnchor="middle" className="ec-axis">{`'${String(y.year).slice(2)}`}</text>
+            </g>
+          );
+        })}
+      </svg>
+      <figcaption><b>{ind.label}</b> ({unit}): {ind.about}.</figcaption>
+    </figure>
+  );
+}
+
 // ten years as small bars, the latest darkest; a year below zero in red
 function Bars({ years }) {
   const max = Math.max(...years.map(y => Math.abs(y.value)), 0.0001);
@@ -121,11 +152,11 @@ export default function EconomyCard() {
                   </button>
                 </li>,
                 // its years, across the row under it (the grid fills the gap beside it)
-                isOpen && <li key={`${ind.key}-about`} className="ec-about"><b>{ind.label}:</b> {ind.about}. {ind.years.map(y => `${y.year} ${fmt(ind, y.value)}`).join(" · ")}</li>,
+                isOpen && <li key={`${ind.key}-about`} className="ec-about"><YearChart ind={ind} /></li>,
               ];
             })}
           </ul>
-          <p className="ec-src">Source: World Bank, World Development Indicators (CC BY 4.0), calendar years{wb.updated ? `, updated ${wb.updated}` : ""}. Tap a figure for its years.</p>
+          <p className="ec-src">Source: World Bank, World Development Indicators (CC BY 4.0), calendar years{wb.updated ? `, updated ${wb.updated}` : ""}. Tap a figure for its chart.</p>
         </div>
       )}
     </section>

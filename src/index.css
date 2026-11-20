@@ -7508,3 +7508,13 @@ html.is-scrolling .hk-track { animation-play-state: paused; }
 .ec-bars i.neg { background: color-mix(in srgb, var(--red) 60%, transparent); }
 .ec-about { grid-column: 1 / -1; padding: 10px 12px; border-radius: 10px; background: color-mix(in srgb, var(--accent) 8%, transparent); font-size: 12px; line-height: 1.55; color: var(--t2); }
 .ec-about b { color: var(--t1); font-weight: 500; }
+.ec-yc { margin: 0; }
+.ec-yc svg { width: 100%; max-width: 560px; height: auto; display: block; }
+.ec-yc rect.bar { fill: color-mix(in srgb, var(--accent) 55%, transparent); }
+.ec-yc rect.now { fill: var(--accent); }
+.ec-yc rect.neg { fill: var(--red); }
+.ec-zero { stroke: var(--bdr2); stroke-width: 1; }
+.ec-val { font-size: 8.5px; fill: var(--t2); font-family: inherit; font-variant-numeric: tabular-nums; }
+.ec-val.now { fill: var(--t1); font-weight: 600; }
+.ec-yc figcaption { margin-top: 6px; font-size: 12px; line-height: 1.5; color: var(--t2); }
+.ec-yc figcaption b { color: var(--t1); font-weight: 500; }
