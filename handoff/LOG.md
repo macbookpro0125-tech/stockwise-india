@@ -480,3 +480,6 @@ Owner: "the news is not understandable". Looked at 10 apps (Inshorts' one-line c
   - World Bank WDI for India (CC BY 4.0), 11 years: GDP growth, inflation, unemployment, investment, current account, FDI, forex reserves, exports, GDP size, income per person. Cached 24 h; last copy in data/market/world-bank-india.json.
 - Not reachable from here: MoSPI's API/eSankhyiki (CPI, IIP, quarterly GDP) and RBI's DBIE — both timed out. FBIL's USD/INR on RBI's page left out (FBIL's licence unconfirmed).
 - Each figure opens a proper bar chart (owner: "is the GDP chart shown"): a bar a year with its value, below zero in red (2020 GDP −5.8%).
+
+## 20 Nov 2026 — push live (858eaf5)
+- Pushed main 988ace5..858eaf5: ten years of results and index history, why profit jumped, chart scans, trading journal, gold/silver/ETFs page + chart, India's economy card. /gold-silver live in ~2 min with NSE prices from the live server. Economy card needs a signed-in check (RBI and World Bank from Render not yet seen). Tonight: older results batch (250), Render events for OOM.
