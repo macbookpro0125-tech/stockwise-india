@@ -444,3 +444,5 @@ Owner: "the news is not understandable". Looked at 10 apps (Inshorts' one-line c
 - Stored apart (stock.olderYears, olderVersion 1), never in scores. metrics: olderYears + salesGrowth10y/profitGrowth10y (when the oldest is 8.5–11.5 years back). Finance tab "Sales, profit and margin": lighter bars for older years, a gap for a missing year, a note (Indian GAAP before FY2017) and "Over about ten years: sales grew …% a year". TCS: 9.9% / 8.5%.
 - Evening job: OLDER_RESULTS_BATCH 250 companies a run, biggest first (~9 runs for all). Test: server/older-results-test.js.
 - Index: indexLong 5 → 10 years weekly (market-data.js); Markets 10Y button, shown only once ten years are held.
+
+- 20 Nov 2026 daily results push: Google 10 requests accepted (IDEA, MAZDOCK, OIL, ALKEM, NMDC, RVNL, BDL, IRCTC, PAGEIND, STARHEALTH q2-fy27); IndexNow 100 URLs sent. No Short or Reel made (evergreen-only rule from 16 Nov; Instagram disabled 19 Nov).
