@@ -7769,3 +7769,6 @@ html.is-scrolling .hk-track { animation-play-state: paused; }
   .results-topbar:has(> .rt-lead) { flex-wrap: wrap; }
   .results-topbar:has(> .rt-lead) .rt-actions { flex: 1 1 100%; min-width: 0; }
 }
+
+/* Search with no company matching (HeroSearch.jsx) */
+.hs-none { margin: 10px 0 0 !important; padding: 10px 14px; border-radius: 12px; background: rgba(255, 255, 255, 0.06); color: #C8C8D8; font: 400 14px/1.4 var(--font) !important; }

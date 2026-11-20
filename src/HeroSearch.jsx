@@ -12,19 +12,22 @@ export default function HeroSearch({ className = "", compact = false }) {
   const [q, setQ] = useState("");
   const [list, setList] = useState([]);
   const [active, setActive] = useState(-1);
+  // the search answered for this text with nothing (21 Nov 2026: an empty
+  // answer showed nothing at all, as if the box were broken)
+  const [none, setNone] = useState("");
   const box = useRef(null);
   useEffect(() => {
     const text = q.trim();
-    if (!text) { setList([]); return; }
+    if (!text) { setList([]); setNone(""); return; }
     let live = true;
     const t = setTimeout(() => {
-      fetch(`/api/public/search?q=${encodeURIComponent(text)}`).then(r => (r.ok ? r.json() : [])).then(r => { if (live) { setList(r); setActive(-1); } }).catch(() => {});
+      fetch(`/api/public/search?q=${encodeURIComponent(text)}`).then(r => (r.ok ? r.json() : [])).then(r => { if (live) { setList(r); setActive(-1); setNone(r.length ? "" : text); } }).catch(() => {});
     }, 120);
     return () => { live = false; clearTimeout(t); };
   }, [q]);
   // a tap outside closes the list
   useEffect(() => {
-    const away = e => { if (!box.current?.contains(e.target)) setList([]); };
+    const away = e => { if (!box.current?.contains(e.target)) { setList([]); setNone(""); } };
     document.addEventListener("pointerdown", away);
     return () => document.removeEventListener("pointerdown", away);
   }, []);
@@ -55,6 +58,7 @@ export default function HeroSearch({ className = "", compact = false }) {
           ))}
         </ul>
       )}
+      {none && none === q.trim() && <p className="hs-none" role="status">No NSE company matches “{none}”. Try a company's name or its NSE symbol.</p>}
       {!compact && <p className="hs-try">Try{TRY.map(([s, name], i) => <span key={s}>{i ? " · " : " "}<a href={`/stock/${s}`} onClick={e => { e.preventDefault(); open(s); }}>{name}</a></span>)}</p>}
     </div>
   );
