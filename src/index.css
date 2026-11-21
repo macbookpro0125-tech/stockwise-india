@@ -5536,6 +5536,8 @@ button.td-line { cursor: pointer; }
 .td-hello-line { margin: 6px 0 0; font-size: 14px; color: var(--t2); }
 .td-hello-line b { font-weight: 600; } .td-hello-line .up { color: var(--green); } .td-hello-line .down { color: var(--red); }
 .td-moves-tabs { display: inline-flex; gap: 4px; }
+.td-moves .hm-more-top, .td-moves .bo-bare > .mk-note { padding-left: 16px; padding-right: 16px; }
+.td-moves .bo-bare { padding: 0 2px; }
 .td-moves-tabs button { border: none; background: none; padding: 4px 10px 6px; font: inherit; font-size: 16px; font-weight: 500; color: var(--t3); cursor: pointer; border-bottom: 2px solid transparent; }
 .td-moves-tabs button[aria-selected="true"] { color: var(--t1); border-bottom-color: var(--accent); }
 .td-hello-link { display: inline-flex; align-items: center; gap: 4px; border: none; background: none; color: var(--accent); font-size: 14px; cursor: pointer; padding: 6px 2px; }
