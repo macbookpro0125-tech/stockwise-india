@@ -280,6 +280,10 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onOp
     <div className="td">
       <MarketSummary visible={visible} onOpenStock={onOpenStock} onOpenTab={onOpenTab} onOpenIndex={onOpenIndex} />
 
+      {continueCard}
+      {newsTile && <div className="td-news">{newsTile}</div>}
+
+      {/* below the news (21 Nov 2026, the owner: "move what's new today up, everything in the app down") */}
       <h3 className="td-menu-title">Everything in the app</h3>
       <nav className="td-box td-all-pages" aria-label="Everything in the app">
         {PAGE_GROUPS.map(g => (
@@ -299,9 +303,6 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onOp
           </div>
         ))}
       </nav>
-
-      {continueCard}
-      {newsTile && <div className="td-news">{newsTile}</div>}
 
       {/* last on the page, the full list opening under it (21 Nov 2026, the owner) */}
       <section className="td-box td-screens" aria-label="Screeners">
