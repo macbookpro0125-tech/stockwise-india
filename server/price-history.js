@@ -78,7 +78,29 @@ export function adjustBars(bars, splits = []) {
 // A company's daily bars, oldest first, on today's share basis (snapshot: the
 // market snapshot, for its splits)
 export function historyBars(symbol, snapshot) {
-  return adjustBars(readHistory(symbol), snapshot?.splits?.[symbol] ?? []);
+  return unitJumps(adjustBars(readHistory(symbol), snapshot?.splits?.[symbol] ?? []));
+}
+
+// A fund's unit change that NSE's corporate actions don't list (22 Nov 2026:
+// GOLDBEES 1:100 and NIFTYBEES 1:10 on 19 Dec 2019 — the history reaching back
+// to 2018 showed GOLDBEES at ₹3,359 the day before ₹33.55). A one-day move of
+// about 10×, 100× or 1000× is a change of unit, never a price: the days before
+// it are put on today's unit, as a split is.
+const UNIT_RATIOS = [10, 100, 1000];
+export function unitJumps(bars) {
+  let f = 1;
+  const out = new Array(bars.length);
+  for (let i = bars.length - 1; i >= 0; i--) {
+    const b = bars[i], next = bars[i + 1];
+    if (next && b.close > 0 && next.close > 0) {
+      const r = b.close / next.close;
+      const ratio = r >= 5 ? UNIT_RATIOS.find(x => Math.abs(r / x - 1) < 0.25) : null;
+      if (ratio) f *= ratio;
+    }
+    const r2 = n => (n == null ? n : Math.round((n / f) * 100) / 100);
+    out[i] = f === 1 ? b : { ...b, open: r2(b.open), high: r2(b.high), low: r2(b.low), close: r2(b.close), volume: b.volume != null ? Math.round(b.volume * f) : null };
+  }
+  return out;
 }
 
 export const historyKept = symbol => existsSync(fileOf(symbol));

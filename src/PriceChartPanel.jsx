@@ -161,7 +161,10 @@ export const LEVEL_KEYS = ["target", "fv25", "p1", "p2", "p3", "stopLoss"];
 // index: an NSE index's name, charted from its own daily bars (Markets, 7 Nov
 // 2026: "put our stock chart here with all its options"); symbol then only
 // keys its saved lines
-export default function PriceChartPanel({ symbol, name, levels, page = false, compact = false, index = null }) {
+// load: where the prices come from, when not the company's own (22 Nov 2026:
+// the gold page's GOLDBEES and SILVERBEES, from its public chart data, so a
+// visitor without an account gets the same full chart)
+export default function PriceChartPanel({ symbol, name, levels, page = false, compact = false, index = null, load = null, label = null }) {
   const [savedPrefs, setPrefs] = useState(() => {
     const p = readJson(PREFS_KEY, DEFAULT_PREFS);
     return { ...DEFAULT_PREFS, ...p, ind: { ...(p.ind ?? DEFAULT_PREFS.ind) } };
@@ -339,12 +342,12 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
   useEffect(() => {
     let cancelled = false;
     setLoading(true); setError(null);
-    (index ? api.indexPrices(index, span) : api.prices(symbol, span))
+    (load ? load(span) : index ? api.indexPrices(index, span) : api.prices(symbol, span))
       .then(j => { if (!cancelled) setData(j); })
       .catch(e => { if (!cancelled) setError(e.message); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [symbol, span, index]);
+  }, [symbol, span, index, load]);
 
   // Heikin Ashi averages the bars; Renko replaces them with bricks, one per
   // box the close moves — time drops out, so a brick's day is kept as
@@ -1411,7 +1414,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
                     </>
                   ) : (
                     <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      <b style={{ color: "var(--t1)", fontWeight: 500 }}>{symbol}</b> {fmtNum(b.close)} {pct}
+                      <b style={{ color: "var(--t1)", fontWeight: 500 }}>{label ?? symbol}</b> {fmtNum(b.close)} {pct}
                       {b.partial ? <span style={{ color: "var(--yellow)" }}> · today</span> : <span style={{ color: "var(--t3)" }}> · {new Date(`${b.realDate ?? b.date}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" })}</span>}
                       {rangeChange != null && <span style={{ color: "var(--t3)" }}> · {rangeWord} <span style={{ color: rangeChange >= 0 ? "var(--green)" : "var(--red)" }}>{rangeChange >= 0 ? "+" : "−"}{Math.abs(rangeChange).toFixed(1)}%</span></span>}
                     </div>
@@ -1557,7 +1560,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
         <div className="chart-table-wrap" role="dialog" aria-modal="true" aria-label={`${symbol} prices`} onClick={e => { if (e.target === e.currentTarget) setTableOpen(false); }}>
           <div className="chart-table-card">
             <div className="chart-table-head">
-              <h2>{symbol}</h2>
+              <h2>{label ?? symbol}</h2>
               <button type="button" onClick={copyTable} style={btn(copied)}>{copied ? "Copied" : "Copy"}</button>
               <button type="button" onClick={() => setTableOpen(false)} aria-label="Close the table" style={btn(false, { padding: "0 8px" })}><X size={15} aria-hidden="true" /></button>
             </div>
@@ -1579,7 +1582,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
       {expanded && createPortal(
         <div className="chart-overlay" role="dialog" aria-modal="true" aria-label={`${name || symbol} price chart`}>
           <ChartTopBar symbol={overlaySym} onSymbol={setOverlaySym} onClose={closeExpanded} />
-          <PriceChartPanel key={overlaySym} symbol={overlaySym} name={overlaySym === symbol ? name : ""} levels={overlaySym === symbol ? levels : null} page />
+          <PriceChartPanel key={overlaySym} symbol={overlaySym} name={overlaySym === symbol ? name : ""} levels={overlaySym === symbol ? levels : null} load={overlaySym === symbol ? load : null} label={overlaySym === symbol ? label : null} page />
         </div>,
         document.body,
       )}

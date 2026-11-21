@@ -1,6 +1,12 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazyPage } from "./lazyPage.js";
 import { createChart, AreaSeries, LineSeries, CandlestickSeries, ColorType, CrosshairMode } from "lightweight-charts";
 import { api } from "./api.js";
+
+// Gold and silver alone: the company pages' full chart (22 Nov 2026, the
+// owner: "we need our detailed chart for this") — candles, ranges, indicators,
+// drawing, full screen — on the ETF's prices from this page's public data
+const PriceChartPanel = lazyPage(() => import("./PriceChartPanel.jsx"));
 
 // The gold page's chart (20 Nov 2026, the owner: "can I show the gold
 // chart?"): gold or silver on its own, through the ETF that tracks it
@@ -69,6 +75,15 @@ export default function GoldChart() {
   }).filter(s => s.days.length > 1) : []), [inView, months, to, data, asGold, tenGram, compare]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (data && !ok(RANGES.find(r => r[0] === range))) { const best = [...RANGES].reverse().find(r => r[1] != null && ok(r)); if (best) setRange(best[0]); } }, [data, mode]); // eslint-disable-line react-hooks/exhaustive-deps
   const candles = kind === "candles" && !compare && !!lines[0]?.opens?.every(v => v > 0);
+  const etf = !compare ? (data?.series ?? []).find(s => s.label.toLowerCase() === mode) ?? null : null;
+  const loadEtf = useCallback(() => {
+    const s = withLive(etf);
+    // gold as ₹ for 10 g of 24 carat, as the page says it; silver as its ETF
+    const k = s.symbol === "GOLDBEES" && tenGram ? tenGram : 1;
+    const r2 = v => Math.round(v * k * 100) / 100;
+    const at = (arr, i) => r2(arr?.[i] > 0 ? arr[i] : s.closes[i]);
+    return Promise.resolve({ symbol: s.symbol, source: "NSE", keptFrom: s.days[0], bars: s.days.map((date, i) => ({ date, open: at(s.opens, i), high: at(s.highs, i), low: at(s.lows, i), close: r2(s.closes[i]), volume: null })) });
+  }, [etf, data, tenGram]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!host.current || !lines.length) return undefined;
@@ -81,7 +96,8 @@ export default function GoldChart() {
       grid: { vertLines: { visible: false }, horzLines: { color: v("--bdr") } },
       rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.12, bottom: 0.08 } },
       timeScale: { borderVisible: false, rightOffset: 3, minBarSpacing: 0.05 },
-      crosshair: { mode: CrosshairMode.Normal, horzLine: { style: 3, color: v("--bdr2"), labelBackgroundColor: "#475569" }, vertLine: { style: 3, color: v("--bdr2"), labelBackgroundColor: "#475569" } },
+      // the finger's height isn't a value: no label for it when compared (22 Nov 2026: a grey "₹64" no one could read)
+      crosshair: { mode: CrosshairMode.Normal, horzLine: { style: 3, color: v("--bdr2"), labelVisible: !compare, labelBackgroundColor: "#475569" }, vertLine: { style: 3, color: v("--bdr2"), labelBackgroundColor: "#475569" } },
       localization: { locale: "en-IN", priceFormatter: money },
       // drag sideways and pinch to move and zoom, as any chart; a finger
       // moving up and down still scrolls the page, and a mouse wheel too
@@ -93,7 +109,8 @@ export default function GoldChart() {
       const base = s.closes[0];
       const values = compare ? s.closes.map(c => (c / base) * 100) : s.closes;
       let series;
-      if (compare) series = chart.addSeries(LineSeries, { color: colour, lineWidth: 2, priceLineVisible: false, lastValueVisible: true });
+      // the legend says each line's value; tags on the scale hid its numbers
+      if (compare) series = chart.addSeries(LineSeries, { color: colour, lineWidth: 2, priceLineVisible: false, lastValueVisible: false });
       else if (candles) {
         const up = hex(v("--green"), "#16a34a"), down = hex(v("--red"), "#dc2626");
         series = chart.addSeries(CandlestickSeries, { upColor: up, downColor: down, borderUpColor: up, borderDownColor: down, wickUpColor: up, wickDownColor: down, priceLineVisible: false });
@@ -129,69 +146,50 @@ export default function GoldChart() {
 
   if (!data) return <div className="gc-chart gc-wait" aria-label="Loading the chart" />;
   if (!data.series.length) return null;
-  const w = host.current?.clientWidth ?? 0;
   const s0 = lines[0];
-  const [a, b] = !compare && span && s0 && span[1] < s0.days.length ? span : [0, (s0?.days.length ?? 1) - 1];
-  const fmt = p => (p >= 1000 ? `₹${Math.round(p).toLocaleString("en-IN")}` : `₹${p.toFixed(2)}`);
-  // the highest and lowest close in view, alone (closes, not the day's
-  // extremes: an ETF's odd single trade, ₹35.80 on a ₹41 day, isn't gold's price)
-  let hi = null, lo = null;
-  if (s0 && !compare) for (let i = a; i <= b; i++) {
-    const c = s0.closes[i];
-    if (c > 0 && (!hi || c > hi.v)) hi = { v: c, d: s0.days[i] };
-    if (c > 0 && (!lo || c < lo.v)) lo = { v: c, d: s0.days[i] };
-  }
+  const note = compare
+    ? "₹100 put in at the start of the range, through GOLDBEES, SILVERBEES and NIFTYBEES (after the funds' costs). The silver ETF began trading in 2022, so this goes back as far as that. Drag the chart sideways to go back, pinch to zoom."
+    : asGold
+      ? `The price of 10 grams of 24-carat gold, estimated: the gold ETF GOLDBEES's daily prices, matched to RBI's ₹${gram.price.toLocaleString("en-IN")} a gram for ${day(gram.redeemOn)}. Over years it may read up to about 1% a year high, the fund's costs. A jeweller adds making charges and 3% GST.`
+      : mode === "silver"
+        ? "The silver ETF SILVERBEES, the largest silver fund on NSE: one unit, not a gram, moving as silver's price does. It began trading in 2022."
+        : "The gold ETF GOLDBEES, the largest gold fund on NSE: one unit, not a gram, moving as gold's price does.";
+  // compared: each line's value where the finger is, else at the end
+  const at = s => { const r = tip?.rows.find(x => x.label === s.label); return r ? r.value : (s.closes.at(-1) / s.closes[0]) * 100; };
   return (
     <section className="gs-card gc">
       <div className="gc-modes" role="tablist" aria-label="Chart">
         {MODES.map(([id, l]) => <button key={id} type="button" role="tab" aria-selected={mode === id} className={mode === id ? "on" : ""} onClick={() => setMode(id)}>{l}</button>)}
       </div>
-      <div className="gc-legend">
-        {lines.map(s => {
-          const first = s.closes[a], last = s.closes[b];
-          const move = (last / first - 1) * 100;
-          return (
-            <span key={s.label}>
-              <i style={{ background: COLOURS[s.label] ?? "var(--accent)" }} />
-              {compare ? s.label : asGold
-                ? <><b>₹{Math.round(last).toLocaleString("en-IN")}</b> <span className="gc-unit">10 g, 24 carat</span></>
-                : <b>₹{last.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</b>}
-              {" "}<em className={move >= 0 ? "up" : "down"}>{signed(move)}</em>
-            </span>
-          );
-        })}
-        <small>{s0 ? `${day(s0.days[a])} – ${day(s0.days[b])}${b === s0.days.length - 1 ? (s0.liveAt ? `, today's price at ${(([h, mi]) => `${Number(h) % 12 || 12}:${mi} ${Number(h) < 12 ? "am" : "pm"}`)(s0.liveAt.split(":"))}` : ", the last close") : ""}` : ""}</small>
-        {hi && lo && <small className="gc-hilo">Highest close {fmt(hi.v)} on {day(hi.d)} · lowest {fmt(lo.v)} on {day(lo.d)}</small>}
-      </div>
-      <div className="gc-wrap">
-        <div ref={host} className="gc-chart" role="img" aria-label={compare ? "Gold, silver and the Nifty 50, ₹100 put in at the start" : `${mode}'s price`} />
-        {tip && (
-          <div className="mk-chart-tip" style={{ left: Math.min(Math.max(tip.x - 90, 0), Math.max(0, w - 190)) }}>
-            <span className="mk-chart-tip-d">{day(tip.date)}</span>
-            {tip.rows.map(r => <span key={r.label} className="mk-chart-tip-b">{compare ? `${r.label}: ₹${Math.round(r.value)}` : candles && r.o ? `Open ${fmt(r.o)} · High ${fmt(r.h)} · Low ${fmt(r.l)} · Close ${fmt(r.value)}` : asGold ? `₹${Math.round(r.value).toLocaleString("en-IN")} for 10 g` : fmt(r.value)}</span>)}
+      {!compare && etf ? (
+        <Suspense fallback={<div className="gc-chart gc-wait" aria-label="Loading the chart" />}>
+          <PriceChartPanel key={etf.symbol} symbol={etf.symbol} name={mode === "gold" ? (tenGram ? "Gold, 10 g of 24 carat" : "Gold (GOLDBEES)") : "Silver (SILVERBEES)"} load={loadEtf} label={mode === "gold" ? (tenGram ? "Gold, 10 g ₹" : "GOLDBEES") : "SILVERBEES"} />
+        </Suspense>
+      ) : (
+        <>
+          <div className="gc-legend">
+            {lines.map(s => {
+              const v = at(s);
+              return (
+                <span key={s.label}>
+                  <i style={{ background: COLOURS[s.label] ?? "var(--accent)" }} />
+                  {s.label} <b>₹{Math.round(v)}</b> <em className={v >= 100 ? "up" : "down"}>{signed(v - 100)}</em>
+                </span>
+              );
+            })}
+            <small>{s0 ? (tip ? `${day(s0.days[0])} – ${day(tip.date)}` : `${day(s0.days[0])} – ${day(s0.days.at(-1))}${s0.liveAt ? `, today's price at ${(([h, mi]) => `${Number(h) % 12 || 12}:${mi} ${Number(h) < 12 ? "am" : "pm"}`)(s0.liveAt.split(":"))}` : ", the last close"}`) : ""}</small>
           </div>
-        )}
-      </div>
-      <div className="gc-bar">
-        <div className="gc-ranges" role="group" aria-label="Range">
-          {RANGES.map(r => <button key={r[0]} type="button" aria-pressed={range === r[0]} disabled={!ok(r)} onClick={() => setRange(r[0])}>{r[0]}</button>)}
-        </div>
-        {!compare && (
-          <div className="gc-kind" role="group" aria-label="Chart type">
-            {[["line", "Line"], ["candles", "Candles"]].map(([id, l]) => <button key={id} type="button" aria-pressed={(id === "candles") === candles} onClick={() => pickKind(id)}>{l}</button>)}
+          <div className="gc-wrap">
+            <div ref={host} className="gc-chart" role="img" aria-label="Gold, silver and the Nifty 50, ₹100 put in at the start" />
           </div>
-        )}
-      </div>
-      <p className="gs-note">
-        {compare
-          ? "₹100 put in at the start of the range, through GOLDBEES, SILVERBEES and NIFTYBEES (after the funds' costs). The silver ETF began trading in 2022, so this goes back as far as that."
-          : asGold
-            ? `The price of 10 grams of 24-carat gold, estimated: the gold ETF GOLDBEES's daily price, matched to RBI's ₹${gram.price.toLocaleString("en-IN")} a gram for ${day(gram.redeemOn)}. Over years it may read up to about 1% a year high, the fund's costs. A jeweller adds making charges and 3% GST.`
-            : mode === "silver"
-              ? "The price of one unit of SILVERBEES, the largest silver ETF (a fund on NSE that holds silver), not of a gram: it moves as silver's price does. It began trading in 2022."
-              : "The price of one unit of GOLDBEES, the largest gold ETF (a fund on NSE that holds gold), not of a gram: it moves as gold's price does."}
-        {" "}Drag the chart sideways to go back, pinch to zoom. NSE's daily prices; before Oct 2021 from NSE's archived daily files, on today's unit.
-      </p>
+          <div className="gc-bar">
+            <div className="gc-ranges" role="group" aria-label="Range">
+              {RANGES.map(r => <button key={r[0]} type="button" aria-pressed={range === r[0]} disabled={!ok(r)} onClick={() => setRange(r[0])}>{r[0]}</button>)}
+            </div>
+          </div>
+        </>
+      )}
+      <p className="gs-note">{note} NSE's daily prices; before Oct 2021 from NSE's archived daily files, on today's unit.</p>
     </section>
   );
 }

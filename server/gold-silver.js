@@ -155,7 +155,7 @@ async function fresh() {
     .sort((a, b) => (a.yearsLeft ?? 99) - (b.yearsLeft ?? 99));
   const compare = COMPARE.map(([label, symbol]) => {
     const row = etf.data.find(x => x.symbol === symbol);
-    const bars = withToday(barsFor(symbol, snap), nseDay(etf.timestamp), num(row?.ltP));
+    const bars = withToday(joinedBars(symbol, snap), nseDay(etf.timestamp), num(row?.ltP));
     return { label, symbol, returns: Object.fromEntries(PERIODS.map(([k, d]) => [k, returnOver(bars, d)])), from: bars?.[0]?.[0] ?? null };
   });
   // a gram of gold by carat (rbi-gold.js): RBI's latest price, and an
@@ -210,13 +210,23 @@ function older(symbol) {
   return olderBars[symbol] ?? [];
 }
 
+// the archive's days first, on today's unit; our history only after them
+// (22 Nov 2026: the history now reaches back to Oct 2018, before the funds'
+// Dec 2019 split, and won: GOLDBEES showed ₹2,824 for ₹28 until Dec 2019)
+function joinedBars(symbol, snap) {
+  const old = older(symbol);
+  const oldLast = old.at(-1)?.[0] ?? "";
+  return [...old, ...(barsFor(symbol, snap) ?? []).filter(b => b[0] > oldLast)];
+}
+
 export function goldSilverChart() {
   return cached("gold-silver-chart", 3600_000, async () => {
     const snap = loadMarketSnapshot();
     const series = COMPARE.map(([label, symbol]) => {
-      const kept = barsFor(symbol, snap) ?? [];
-      const first = kept[0]?.[0] ?? "9999";
-      const bars = [...older(symbol).filter(b => b[0] < first), ...kept];
+      // the archive's days first, on today's unit; our history only after
+      // them (22 Nov 2026: the history now reaches back to Oct 2018, before
+      // the funds' Dec 2019 split, and won: GOLDBEES showed ₹2,824 for ₹28)
+      const bars = joinedBars(symbol, snap);
       // each day's open, high, low and close, for candles
       return { label, symbol, days: bars.map(b => b[0]), opens: bars.map(b => b[1]), highs: bars.map(b => b[2]), lows: bars.map(b => b[3]), closes: bars.map(b => b[4]) };
     }).filter(s => s.days.length > 1);
