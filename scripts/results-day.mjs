@@ -44,8 +44,9 @@ const done = key => new Set(state[key].map(x => x.item));
 const all = days.flatMap(d => d.companies.map(c => ({ ...c, filed: d.date })));
 const googleDone = done("google"), bingDone = done("bing"), shortDone = done("shorts");
 // Google: the largest not yet requested, newest day first (page order)
-// Since 17 Nov 2026 (server/seo-pages.js isBigCompany) only the 400 largest
-// companies' results pages may be indexed; the rest carry noindex. Requesting
+// From 17 to 21 Nov 2026 (server/seo-pages.js isBigCompany) only the 400 largest
+// companies' results pages could be indexed; since 21 Nov every company's
+// latest results page is indexable again, older quarters not. Requesting
 // those wastes Google's ~10 a day (18 Nov: 9 of 10 were), so each page is
 // checked, and a small company's own page (/stock/SYM, always indexable)
 // goes instead of its results page.

@@ -152,6 +152,12 @@ console.log("ok: every screen has its guide; joined and left are worked out agai
   assert.ok(fin && /<h1>[^<]+ financial statements<\/h1>/.test(fin.body) && /Profit and loss/.test(fin.body), "a financials page");
   const res = await publicSubPage(`/stock/${row.symbol}/results/${quarterSlug(row.quarters[0].fyEnd)}`);
   assert.ok(res && res.body.includes(fyQuarter(row.quarters[0].fyEnd)), "its latest quarter's results page");
+  // every company's latest results page is open to search and in the sitemap (21 Nov 2026)
+  const small = [...allMetrics().rows].filter(r => r.name && r.history?.length && r.quarters?.length >= 2 && r.marketCapCr > 0).sort((a, b) => a.marketCapCr - b.marketCapCr)[0];
+  const smallLatest = `/stock/${encodeURIComponent(small.symbol)}/results/${quarterSlug(small.quarters[0].fyEnd)}`;
+  assert.equal((await publicSubPage(smallLatest)).noindex, false, "the smallest company's latest results: indexable");
+  assert.ok(subPagePaths().some(([p]) => p === smallLatest), "and in the sitemap");
+  assert.equal((await publicSubPage(`/stock/${encodeURIComponent(small.symbol)}/results/${quarterSlug(small.quarters[1].fyEnd)}`))?.noindex ?? true, true, "its older quarter: noindex");
   assert.equal(await publicSubPage(`/stock/${row.symbol}/results/q1-fy01`), null, "a quarter it doesn't have: none");
   const call = await publicSubPage(`/stock/${row.symbol}/earnings-call`);
   assert.ok(call && (call.noindex === true || /Earnings call,/.test(call.body)), "no saved summary: left out of search");

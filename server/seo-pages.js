@@ -61,6 +61,8 @@ const rankOf = symbol => {
   return bigRank.rank.get(symbol) ?? Infinity;
 };
 // in the sitemap: the 400 largest; kept indexable: the 450 largest
+// (financials and older results; each company's latest results page is
+// indexable and in the sitemap whatever its size, since 21 Nov 2026)
 export const isBigCompany = (symbol, limit = INDEXED_SUBPAGES) => rankOf(symbol) <= limit;
 export const keepIndexed = symbol => rankOf(symbol) <= NOINDEX_BELOW;
 const opCosts = h => (h.expensesCr != null ? h.expensesCr - (h.depreciationCr ?? 0) - (h.financeCostsCr ?? 0) : null);
@@ -251,7 +253,10 @@ function resultsPage(m, slug) {
     title: resultsTitle(n, label, m.symbol, q, sy, py),
     desc: `${short ? `${short} ` : ""}${lede}`.slice(0, 300),
     canonical: `${SITE}/stock/${sym}/results/${slug}`,
-    noindex: !keepIndexed(m.symbol),
+    // every company's latest quarter stays open to search (21 Nov 2026, the
+    // owner's choice: these pages sit at Google positions 5–11 for small
+    // companies too); older quarters follow the size rule
+    noindex: i > 0 && !keepIndexed(m.symbol),
     ld: { "@context": "https://schema.org", "@graph": [
       { "@type": "WebPage", name: resultsTitle(n, label, m.symbol, q, sy, py), description: lede, url: `${SITE}/stock/${sym}/results/${slug}`, dateModified: q.filed ? String(q.filed).slice(0, 10) : undefined },
       { "@type": "FAQPage", mainEntity: qa.map(x => ({ "@type": "Question", name: x.q, acceptedAnswer: { "@type": "Answer", text: x.a } })) },
@@ -511,7 +516,7 @@ export function subPagePaths() {
   return [
     ["/explore", loadMarketSnapshot()?.pricesDate ?? null], ["/news", null], ["/results", latestResults().newest],
     ...rows.filter(r => isBigCompany(r.symbol)).map(r => [`/stock/${encodeURIComponent(r.symbol)}/financials`, r.history?.[0]?.filed ?? null]),
-    ...rows.filter(r => r.quarters?.[0]?.fyEnd && isBigCompany(r.symbol)).map(r => [`/stock/${encodeURIComponent(r.symbol)}/results/${quarterSlug(r.quarters[0].fyEnd)}`, r.quarters[0].filed ?? null]),
+    ...rows.filter(r => r.quarters?.[0]?.fyEnd).map(r => [`/stock/${encodeURIComponent(r.symbol)}/results/${quarterSlug(r.quarters[0].fyEnd)}`, r.quarters[0].filed ?? null]),
     ...rows.filter(r => savedCallSummaries(r.symbol).length).map(r => [`/stock/${encodeURIComponent(r.symbol)}/earnings-call`, savedCallSummaries(r.symbol)[0]?.date ?? null]),
   ];
 }
