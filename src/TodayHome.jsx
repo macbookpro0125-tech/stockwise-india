@@ -215,6 +215,9 @@ export function openResults(onOpenTab, date = "next") {
 }
 const IN_APP = { calendar: "next", results: "latest" };
 
+// The pages the top bar doesn't carry, as tiles on Home (21 Nov 2026, the
+// owner: the row of 14 repeated the top bar and left Alerts on a line alone)
+const MORE_PAGES = ["explore", "calendar", "results", "sectors", "guides", "performance", "alerts"];
 const PAGE_GROUPS = [
   { title: "Find companies", items: ["discover", "workspace", "desk", "guides"] },
   { title: "The market", items: ["markets", "gold", "explore", "map", "momentum", "calendar", "results", "sectors"] },
@@ -277,20 +280,22 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onOp
       <HomeCategories />
 
       {/* below the news (21 Nov 2026, the owner: "move what's new today up, everything in the app down") */}
-      {/* every page, one row of links (21 Nov 2026, the Home review: the big
-          three-column box repeated the top bar) */}
-      <nav className="td-links" aria-label="Everything in the app">
-        {PAGE_GROUPS.flatMap(g => g.items).map(id => {
-          const tab = tabs.find(t => t.id === id), site = SITE_PAGES.find(p => p.id === id);
-          if (!tab && !site) return null; // a page this account doesn't have
-          if (id === "discover") return null; // Home itself
-          const Icon = (tab ?? site).Icon;
-          return (
-            <button key={id} type="button" title={tab ? ABOUT[id] : site.about} onClick={() => (IN_APP[id] && onOpenTab ? openResults(onOpenTab, IN_APP[id]) : site ? navigate(site.path) : onOpenTab?.(id))}>
-              <Icon size={15} strokeWidth={1.9} aria-hidden="true" />{(tab ?? site).label}
-            </button>
-          );
-        })}
+      {/* the pages the top bar doesn't have, as tiles (21 Nov 2026) */}
+      <nav className="td-more" aria-label="More in the app">
+        <h3 className="td-more-title">More in the app</h3>
+        <div className="td-more-grid">
+          {MORE_PAGES.map(id => {
+            const tab = tabs.find(t => t.id === id), site = SITE_PAGES.find(p => p.id === id);
+            if (!tab && !site) return null; // a page this account doesn't have
+            const Icon = (tab ?? site).Icon;
+            return (
+              <button key={id} type="button" className="td-more-tile" onClick={() => (IN_APP[id] && onOpenTab ? openResults(onOpenTab, IN_APP[id]) : site ? navigate(site.path) : onOpenTab?.(id))}>
+                <span className="td-more-icon" aria-hidden="true"><Icon size={17} strokeWidth={1.9} /></span>
+                <span className="td-more-text"><b>{(tab ?? site).label}</b><small>{tab ? ABOUT[id] : site.about}</small></span>
+              </button>
+            );
+          })}
+        </div>
       </nav>
 
       {/* last on the page, the full list opening under it (21 Nov 2026, the owner) */}
