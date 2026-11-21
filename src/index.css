@@ -7791,3 +7791,13 @@ html.is-scrolling .hk-track { animation-play-state: paused; }
 
 /* A P/E made by a one-off profit, in the screener table (ResultsTable.jsx) */
 .pe-oneoff { margin-left: 6px; padding: 1px 6px; border-radius: 999px; background: color-mix(in srgb, var(--amber, #d97706) 18%, transparent); color: var(--amber, #d97706); font-size: 10px; font-weight: 600; letter-spacing: 0.02em; vertical-align: 1px; }
+
+/* The phone's Home (21 Nov 2026, the phone review):
+   the Nifty chart half as tall, so the movers come up a screen sooner */
+.ps .td-chart { height: 190px; }
+/* your companies' names whole, on two lines if need be, not "Waaree Energ…" */
+.ps .td-row { grid-template-columns: minmax(0, 1fr) auto auto; }
+.ps .td-row .td-name { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.3; }
+.ps .td-row .td-name small { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* the round menu button floats over the page's foot: room under it */
+@media (max-width: 767px) { .site-foot { padding-bottom: calc(26px + 92px + env(safe-area-inset-bottom, 0px)); } }
