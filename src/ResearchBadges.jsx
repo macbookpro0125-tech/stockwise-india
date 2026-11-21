@@ -26,9 +26,8 @@ export function researchTitle(r) {
   if (!r || r.quality == null) return "Not rated — too few years of filings to score";
   const n = v => (v == null ? "—" : Math.round(v));
   return [
-    `Quality ${n(r.quality)}/100${r.capped ? " (capped at 69 — see the stock page)" : r.provisional ? " (provisional)" : ""} · without valuation ${n(r.qualityOnly)}`,
-    `Overall research score ${r.overall == null ? r.stance : `${n(r.overall)} — ${r.stance}`}`,
-    `Valuation ${n(r.valuation)} — ${r.valuationLabel}`,
+    `Business ${n(r.qualityOnly)}/100${r.capped ? " (capped at 69 — see the stock page)" : r.provisional ? " (provisional)" : ""}`,
+        `Price: ${r.valuationLabel} (valuation ${n(r.valuation)}/100, higher = cheaper)`,
     `Technical setup ${n(r.technical)} — ${r.technicalLabel}`,
     `Risk ${n(r.risk)} — ${r.riskLabel} (higher = riskier)`,
     `${r.coverage?.checked} of ${r.coverage?.total} checks have data · data quality ${n(r.confidence)}/100`,
@@ -88,18 +87,19 @@ export function ScoreBar({ value, tone, title, width = 52 }) {
     </span>
   );
 }
+// the business score: quality without the price (21 Nov 2026)
 export function QualityBar({ research }) {
-  return <ScoreBar value={research?.quality ?? null} tone={qualityTone(research?.quality ?? null)} title={researchTitle(research)} />;
+  const v = research?.qualityOnly ?? research?.quality ?? null;
+  return <ScoreBar value={v} tone={qualityTone(v)} title={researchTitle(research)} />;
 }
 // The research score's bar, on one line like the quality's (31 Oct 2026: the
 // stance beneath made the rows uneven); its colour is the stance, its words in
 // the tooltip and for a screen reader
 export function ResearchBar({ research }) {
-  const v = research?.overall ?? null;
-  const stance = research?.stance ?? "Not rated";
-  return (
-    <span aria-label={`Overall score ${v == null ? "not rated" : `${Math.round(v)} of 100`}, ${stance}`}>
-      <ScoreBar value={v} tone={overallTone(v)} title={`${stance}. ${researchTitle(research)}`} />
-    </span>
-  );
+  // the price in place of the old overall score (21 Nov 2026): its label, coloured cheap → dear
+  const v = research?.valuation ?? null;
+  const tone = v == null ? "none" : v >= 60 ? "good" : v >= 30 ? "mid" : "bad";
+  return v == null
+    ? <span style={{ color: "var(--t3)" }} title="Not enough data to value it">—</span>
+    : <span className={`ts-price ts-price-${tone}`} title={`Valuation ${Math.round(v)}/100 at the last close: higher is cheaper`}>{research.valuationLabel}</span>;
 }

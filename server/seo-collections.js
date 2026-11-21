@@ -20,10 +20,12 @@ const quality = m => m.research?.quality ?? null;
 const median = list => { const v = list.filter(x => Number.isFinite(x)).sort((a, b) => a - b); return v.length ? (v.length % 2 ? v[v.length >> 1] : (v[v.length / 2 - 1] + v[v.length / 2]) / 2) : null; };
 const byCap = (a, b) => (b.marketCapCr ?? 0) - (a.marketCapCr ?? 0);
 const byQuality = (a, b) => (quality(b) ?? -1) - (quality(a) ?? -1) || byCap(a, b);
-// the overall score: the app's one headline score (12 Nov 2026)
-const overall = m => m.research?.overall?.score ?? null;
+// the business score (quality without the price) and the price, apart: the
+// blended overall score is no longer shown (21 Nov 2026, the owner)
+const overall = m => m.research?.qualityOnly ?? null;
+const priceOf = m => (m.research?.valuation?.score == null ? null : m.research.valuation.label);
 const byOverall = (a, b) => (overall(b) ?? -1) - (overall(a) ?? -1) || byQuality(a, b);
-const OVERALL_COL = { label: "Overall score", get: m => (overall(m) != null ? `${Math.round(overall(m))}/100` : "—") };
+const OVERALL_COL = { label: "Business · price", get: m => (overall(m) != null ? `${Math.round(overall(m))}/100${priceOf(m) ? ` · ${priceOf(m)}` : ""}` : "—") };
 // a company with figures worth showing: a price, a size
 const listed = m => m.name && m.cmp > 0 && m.marketCapCr > 0;
 const MIN = 5;
@@ -37,13 +39,13 @@ const rule = (slug, name, test, search, about, extra = null, order = byQuality) 
 // The highest overall scores (12 Nov 2026, "which stock has the best score
 // overall?"): the method's ranking, said as such, never "best to buy"
 const scored = (slug, name, test, search, about) => ({ ...rule(slug, name, (m, c) => overall(m) != null && test(m, c), search, about, OVERALL_COL, byOverall), group: "score" });
-const OVERALL_METHOD = "The overall score is our own method, out of 100: how good the business is from its filings (returns, cash behind profits, balance sheet, governance, growth: 70%) and how cheap the share is against its own usual P/E, its peers and its cash flow (30%), trimmed for big price swings and missing data, and held at 39 or under while a serious red flag (such as a qualified audit) stands. It ranks companies by those figures. When we re-scored the market on past dates (2024–26), higher-scoring companies did better than lower-scoring ones a year later on most dates, but did not beat the Nifty 50 on average: it is not a forecast.";
+const OVERALL_METHOD = "The business score is our own method, out of 100: how good the business is from its filings (returns on capital, cash behind profits, balance sheet, governance, growth). It leaves the share price out: beside each company is its price at the last close, from inexpensive to very expensive, against its own usual P/E, its peers and its cash flow. The two are kept apart, so a strong business at a high price reads as both. It ranks companies by their filings, not a forecast or advice.";
 
 export const LISTS = [
-  scored("highest-rated-stocks", "Highest overall scores", m => m.marketCapCr >= 500, "best stocks by score India", "NSE companies worth ₹500 crore or more, ranked by our overall score"),
-  scored("highest-rated-large-cap-stocks", "Highest-scoring large caps", (m, c) => c.rank(m) <= 100, "best large cap stocks by score", "the 100 largest NSE companies by market value, ranked by our overall score"),
-  scored("highest-rated-mid-cap-stocks", "Highest-scoring mid caps", (m, c) => c.rank(m) > 100 && c.rank(m) <= 250, "best mid cap stocks by score", "NSE companies ranked 101st to 250th by market value, ranked by our overall score"),
-  scored("highest-rated-small-cap-stocks", "Highest-scoring small caps", (m, c) => c.rank(m) > 250 && m.marketCapCr >= 500, "best small cap stocks by score", "NSE companies ranked 251st or lower by market value, worth ₹500 crore or more, ranked by our overall score"),
+  scored("highest-rated-stocks", "Highest business scores", m => m.marketCapCr >= 500, "best stocks by score India", "NSE companies worth ₹500 crore or more, ranked by our business score"),
+  scored("highest-rated-large-cap-stocks", "Highest-scoring large caps", (m, c) => c.rank(m) <= 100, "best large cap stocks by score", "the 100 largest NSE companies by market value, ranked by our business score"),
+  scored("highest-rated-mid-cap-stocks", "Highest-scoring mid caps", (m, c) => c.rank(m) > 100 && c.rank(m) <= 250, "best mid cap stocks by score", "NSE companies ranked 101st to 250th by market value, ranked by our business score"),
+  scored("highest-rated-small-cap-stocks", "Highest-scoring small caps", (m, c) => c.rank(m) > 250 && m.marketCapCr >= 500, "best small cap stocks by score", "NSE companies ranked 251st or lower by market value, worth ₹500 crore or more, ranked by our business score"),
   index("nifty-50-stocks", "Nifty 50 stocks", "Nifty 50", "Nifty 50 stocks list", "the 50 largest and most traded companies on NSE, the market's main index"),
   index("nifty-next-50-stocks", "Nifty Next 50 stocks", "Nifty Next 50", "Nifty Next 50 stocks list", "the 50 companies that come after the Nifty 50 by size"),
   index("nifty-bank-stocks", "Nifty Bank stocks", "Nifty Bank", "Nifty Bank stocks list", "the largest and most traded banks on NSE"),
@@ -180,10 +182,10 @@ export function listPageHtml(template, slug) {
     medPe ? `The middle P/E among them is ${num(medPe)}${medRoe != null ? ` and the middle return on equity ${num(medRoe)}%` : ""}.` : "",
     best.length && def.order !== byOverall ? `By quality score from their own filings, the highest are ${best.map(m => `${niceName(m.name)} (${Math.round(quality(m))})`).join(", ")}.` : "",
   ].filter(Boolean).join(" ");
-  const order = def.order === byOverall ? "highest overall score first" : def.kind === "rule" ? (def.order === byCap ? "largest first" : def.extra && def.order !== byQuality ? `by ${def.extra.label.toLowerCase()}, highest first` : "highest quality score first") : "largest first";
+  const order = def.order === byOverall ? "highest business score first" : def.kind === "rule" ? (def.order === byCap ? "largest first" : def.extra && def.order !== byQuality ? `by ${def.extra.label.toLowerCase()}, highest first` : "highest quality score first") : "largest first";
   const cell = (v, f) => (v == null ? "—" : f(v));
   const shown = list.slice(0, SHOWN);
-  const rows = shown.map((m, i) => `<tr><td>${i + 1}</td><td>${link(`/stock/${encodeURIComponent(m.symbol)}`, niceName(m.name))} <small>${esc(m.symbol)}</small></td><td>₹${esc(num(m.cmp, 2))}</td><td>${esc(crore(m.marketCapCr) ?? "—")}</td>${def.extra ? `<td>${esc(def.extra.get(m, sizeRanks()))}</td>` : ""}<td>${cell(m.pe > 0 ? m.pe : null, v => esc(num(v)))}</td><td>${cell(m.roe, v => `${esc(num(v))}%`)}</td><td>${cell(m.lender ? null : m.debtToEquity, v => esc(num(v, 2)))}</td><td>${cell(quality(m), v => `${Math.round(v)}/100`)}</td></tr>`).join("");
+  const rows = shown.map((m, i) => `<tr><td>${i + 1}</td><td>${link(`/stock/${encodeURIComponent(m.symbol)}`, niceName(m.name))} <small>${esc(m.symbol)}</small></td><td>₹${esc(num(m.cmp, 2))}</td><td>${esc(crore(m.marketCapCr) ?? "—")}</td>${def.extra ? `<td>${esc(def.extra.get(m, sizeRanks()))}</td>` : ""}<td>${cell(m.pe > 0 ? m.pe : null, v => esc(num(v)))}</td><td>${cell(m.roe, v => `${esc(num(v))}%`)}</td><td>${cell(m.lender ? null : m.debtToEquity, v => esc(num(v, 2)))}</td>${def.order === byOverall ? "" : `<td>${cell(quality(m), v => `${Math.round(v)}/100`)}</td>`}</tr>`).join("");
   const others = publicLists().filter(x => kindOf(x.def) === kindOf(def) && x.def.slug !== slug).slice(0, 8);
   const source = def.kind === "rule"
     ? `The list is a plain rule on reported figures at the last close: ${def.about}. It changes with every close.`
@@ -199,7 +201,7 @@ export function listPageHtml(template, slug) {
 <h1>${esc(def.name)}</h1>${updatedLine()}
 <p>${esc(intro)}</p>
 <h2>${list.length > SHOWN ? `The ${SHOWN} ${order === "largest first" ? "largest" : "highest-scoring"} of ${list.length}` : `All ${list.length}`}, ${esc(order)}</h2>
-<table><thead><tr><th>#</th><th>Company</th><th>Price</th><th>Market cap</th>${def.extra ? `<th>${esc(def.extra.label)}</th>` : ""}<th>P/E</th><th>ROE</th><th>Debt/equity</th><th>Quality</th></tr></thead><tbody>${rows}</tbody></table>
+<table><thead><tr><th>#</th><th>Company</th><th>Price</th><th>Market cap</th>${def.extra ? `<th>${esc(def.extra.label)}</th>` : ""}<th>P/E</th><th>ROE</th><th>Debt/equity</th>${def.order === byOverall ? "" : "<th>Quality</th>"}</tr></thead><tbody>${rows}</tbody></table>
 ${gone.length ? `<p>Also in this index, but not covered here yet: ${esc(gone.join(", "))}.</p>` : ""}
 ${def.order === byOverall ? `<p>${esc(OVERALL_METHOD)} ${link("/methodology", "How the scores work")}.</p>` : ""}
 <p>${esc(source)} Prices are NSE's closing prices of ${esc(when)}. ${esc(NOT_ADVICE)}</p>
@@ -211,7 +213,7 @@ ${others.length ? `<h2>More lists</h2><ul>${others.map(x => `<li>${link(`/lists/
 // The same lists for the app (PublicLists.jsx: ListsIndexPage, ListPage),
 // through /api/public/lists and /api/public/lists/<slug>
 // the day's and week's change and the sector too (14 Nov 2026): for the gainers videos and the heat map
-const row = m => ({ symbol: m.symbol, name: niceName(m.name), sector: m.sector ?? null, change1d: m.ret1d ?? null, change1w: m.ret1w ?? null, price: m.cmp ?? null, marketCapCr: m.marketCapCr ?? null, pe: m.pe > 0 ? m.pe : null, roe: m.roe ?? null, debtToEquity: m.lender ? null : m.debtToEquity ?? null, quality: quality(m), overall: overall(m) });
+const row = m => ({ symbol: m.symbol, name: niceName(m.name), sector: m.sector ?? null, change1d: m.ret1d ?? null, change1w: m.ret1w ?? null, price: m.cmp ?? null, marketCapCr: m.marketCapCr ?? null, pe: m.pe > 0 ? m.pe : null, roe: m.roe ?? null, debtToEquity: m.lender ? null : m.debtToEquity ?? null, quality: quality(m), overall: overall(m), priceWord: priceOf(m) });
 export function publicListsData() {
   return {
     pricesDate: loadMarketSnapshot()?.pricesDate ?? null, builtAt: loadMarketSnapshot()?.builtAt ?? null,

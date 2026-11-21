@@ -19,6 +19,7 @@ const signed = (v, unit) => (v == null ? null : `${v > 0 ? "+" : ""}${Math.round
 // Strategies that rank by something other than a gain (31 Oct 2026)
 const RANKED_BY = {
   researchScore: { label: "Highest overall", head: "Highest overall scores", figure: c => (c.value == null ? null : Math.round(c.value)) },
+  qualityOnly: { label: "Business score", head: "Strongest business first", figure: c => (c.value == null ? null : Math.round(c.value)) },
   volVsAvg50: { label: "Most traded", head: "Most traded against a usual day", figure: c => (c.value == null ? null : `${c.value.toFixed(1)}×`) },
   deliveryJump: { label: "Biggest jump", head: "Biggest jump in delivery %", figure: c => signed(c.value, " pts") },
   ret3mVsNifty: { label: "Furthest ahead", head: "Furthest ahead of the NIFTY 50 over three months", figure: c => signed(c.value, " pts") },

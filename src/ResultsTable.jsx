@@ -68,10 +68,12 @@ const MONO = { fontVariantNumeric: "tabular-nums" };
 // name is the link's tooltip and on the company page)
 const shortName = name => String(name ?? "").replace(/\s+(Limited|Ltd\.?)$/i, "");
 
-const quality = s => s.research?.quality ?? null;
+// Business: quality without the price, as the company page shows it (21 Nov 2026)
+const quality = s => s.research?.qualityOnly ?? s.research?.quality ?? null;
 
 const MIN_QUALITY = [40, 50, 60, 70, 80];
-const MIN_RESEARCH = [50, 60, 65, 70, 80];
+// the price, at least this cheap (the valuation score: higher = cheaper)
+const MIN_PRICE = [[30, "Moderately expensive or cheaper"], [45, "Fair or cheaper"], [60, "Reasonable or cheaper"], [75, "Inexpensive"]];
 const MIN_PIOTROSKI = [5, 6, 7, 8, 9];
 
 const nseUrl = symbol => `https://www.nseindia.com/get-quotes/equity?symbol=${encodeURIComponent(symbol)}`;
@@ -180,7 +182,7 @@ function MenuButton({ label, menu }) {
 
 // Quality, Research and CMP when they're columns like the rest: their
 // headings, units and the sort each stands for
-const FIXED_HEAD = { quality: { label: "Quality", unit: "of 100", col: "quality" }, researchScore: { label: "Overall", unit: "of 100", col: "overall" }, cmp: { label: "CMP", unit: "₹", col: "cmp" } };
+const FIXED_HEAD = { quality: { label: "Business", unit: "of 100", col: "quality" }, researchScore: { label: "Price", unit: "\u00a0", col: "overall" }, cmp: { label: "CMP", unit: "₹", col: "cmp" } };
 
 // Units as a heading's short tail: "Quality /100", "ROCE %"
 const UNIT_SHORT = { "of 100": "/100", "of 9": "/9" };
@@ -359,7 +361,7 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
       <BellIcon />
     </button>
   );
-  const [sortBy, setSortBy] = useState("overall"); // the headline score first (12 Nov 2026)
+  const [sortBy, setSortBy] = useState("quality"); // the headline score first (12 Nov 2026)
   const [sortDir, setSortDir] = useState("desc");
   // Then by (8 Nov 2026): up to three more scores in order, scores out of 100
   // within 5 points counted level so the next one decides; or the best across
@@ -390,7 +392,7 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
   // so the deepest Graham bargains surface above shallower net-nets.
   useEffect(() => {
     if (netNet) { setSortBy("ncavPct"); setSortDir("asc"); }
-    else if (sortBy === "ncavPct") { setSortBy("overall"); setSortDir("desc"); }
+    else if (sortBy === "ncavPct") { setSortBy("quality"); setSortDir("desc"); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [netNet, matches]);
 
@@ -533,7 +535,7 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
   // "Sort by" beside the count — the only way to sort on a phone, where
   // there are no column headers; on a computer it follows header clicks
   const sortOptions = [
-    ["overall", "Overall score"], ["quality", "Quality score"],
+    ["quality", "Business score"], ["overall", "Price, cheapest first"],
     ...(netNet ? [["ncavPct", "Discount to NCAV"]] : []),
     ...columns.map(def => [def.id, def.short ?? def.label]),
     ["cmp", "Price"], ["ret1d", "1-day change"], ["name", "Name"],
@@ -541,14 +543,14 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
   const pickSort = col => { setSortBy(col); setSortDir(col === "name" ? "asc" : "desc"); };
   // Sorted by a column that has since been taken off: back to Quality
   const sortKnown = sortOptions.some(([id]) => id === sortBy);
-  useEffect(() => { if (!sortKnown) { setSortBy("overall"); setSortDir("desc"); } }, [sortKnown]);
+  useEffect(() => { if (!sortKnown) { setSortBy("quality"); setSortDir("desc"); } }, [sortKnown]);
   // A strategy that ranks by a measure lists by it, highest first (Top
   // Gainers by its gain); opening any other strategy goes back to quality.
   // After the line above: a new period takes the old period's column away,
   // and that reset mustn't win (1 week → 1 day fell back to Quality)
   useEffect(() => {
     if (!sortTo?.n) return;
-    setSortBy(sortTo.sort === "researchScore" ? "overall" : sortTo.sort ?? "overall");
+    setSortBy(sortTo.sort === "researchScore" || sortTo.sort === "qualityOnly" ? "quality" : sortTo.sort ?? "quality");
     setSortDir("desc");
   }, [sortTo?.n]); // eslint-disable-line react-hooks/exhaustive-deps
   const thenKnown = thenBy.filter(k => k !== sortBy && sortOptions.some(([id]) => id === k));
@@ -583,7 +585,7 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
   const scoreFiltered = minQuality > 0 || minResearch > 0 || minPiotroski > 0;
   const narrowed = !!q || watchOnly || scoreFiltered;
   const filtered = !scoreFiltered ? textFiltered : textFiltered.filter(s =>
-    (quality(s) ?? -1) >= minQuality && (s.research?.overall ?? -1) >= minResearch && (colValue(s, "piotroski") ?? -1) >= minPiotroski);
+    (quality(s) ?? -1) >= minQuality && (s.research?.valuation ?? -1) >= minResearch && (colValue(s, "piotroski") ?? -1) >= minPiotroski);
 
   // a P/E made by a one-off profit (screen.js peOneOff) sorts last (21 Nov 2026:
   // GTL Infrastructure's 0.9, from a debt written off, led every cheapest-P/E sort)
@@ -591,7 +593,7 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
   const valueFor = (s, key) => {
     if (s.peOneOff && ONE_OFF_PE.has(key)) return null;
     if (key === "quality") return quality(s);
-    if (key === "overall") return s.research?.overall ?? null;
+    if (key === "overall") return s.research?.valuation ?? null; // the price: higher = cheaper
     if (key === "ncavPct") return s.ncavCr > 0 && s.marketCapCr != null ? s.marketCapCr / s.ncavCr : Infinity;
     if (key === "name") return s.name?.toLowerCase();
     return colValue(s, key);
@@ -871,8 +873,8 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
             />
           </div>
           {(scoreBoxes || isMobile) && [
-            ["Minimum quality score", minQuality, setMinQuality, "Any quality", MIN_QUALITY.map(n => [n, `Quality ${n}+`]), "Quality"],
-            ["Minimum overall score", minResearch, setMinResearch, "Any overall", MIN_RESEARCH.map(n => [n, `Overall ${n}+`]), "Overall"],
+            ["Minimum business score", minQuality, setMinQuality, "Any business score", MIN_QUALITY.map(n => [n, `Business ${n}+`]), "Business"],
+            ["Price at least", minResearch, setMinResearch, "Any price", MIN_PRICE, "Price"],
             ["Minimum Piotroski score", minPiotroski, setMinPiotroski, "Any Piotroski", MIN_PIOTROSKI.map(n => [n, n === 9 ? "Piotroski 9" : `Piotroski ${n}+`]), "Piotroski"],
           ].map(([label, value, set, any, options, short]) => (
             // On a phone the box is a small label ("Quality ▾", or the chosen
@@ -939,8 +941,8 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
           None of these {matches.length.toLocaleString("en-IN")} companies {[
             watchOnly && "are on your watchlist",
             q && `match "${search.trim()}"`,
-            minQuality > 0 && `have quality ${minQuality}+`,
-            minResearch > 0 && `have research ${minResearch}+`,
+            minQuality > 0 && `have a business score of ${minQuality}+`,
+            minResearch > 0 && `are priced ${(MIN_PRICE.find(([n]) => n === minResearch)?.[1] ?? "").toLowerCase()}`,
             minPiotroski > 0 && `have Piotroski ${minPiotroski}${minPiotroski < 9 ? "+" : ""}`,
           ].filter(Boolean).join(" and ")}.
           <button className="btn-ghost" onClick={() => { setSearch(""); setMinQuality(0); setMinResearch(0); setMinPiotroski(0); setWatchOnly(false); }} style={{ marginLeft: 10, height: 28, fontSize: 12 }}>Show all</button>
@@ -956,12 +958,12 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
         <div className="ph-rows">
           {visible.map((stock, i) => {
             const day = stock.ret1d;
-            const quality = stock.research?.quality, overall = stock.research?.overall;
-            const missingResearch = overall == null ? researchMissingText(stock.research) : null;
+            const quality = stock.research?.qualityOnly ?? stock.research?.quality, overall = stock.research?.valuation;
+            const missingResearch = null;
             // Coloured as the pills and stance words on a computer
             const cells = [
-              ["Overall", <span key="r" title={researchTitle(stock.research)} aria-label={missingResearch ?? `Overall score ${Math.round(overall)} — ${stock.research?.stance ?? "rated"}`} style={{ color: overallTone(overall).color }}>{overall == null ? "—" : Math.round(overall)}</span>, overall == null ? null : "/100"],
-              ["Quality", <span key="q" title={researchTitle(stock.research)} style={{ color: qualityTone(quality).color }}>{quality == null ? "—" : Math.round(quality)}</span>, quality == null ? null : "/100"],
+              ["Price", <span key="r" title="Cheap or dear at the last close" style={{ color: overall == null ? "var(--t3)" : overall >= 60 ? "var(--green)" : overall >= 30 ? "var(--yellow)" : "var(--red)" }}>{overall == null ? "—" : stock.research?.valuationLabel}</span>, null],
+              ["Business", <span key="q" title={researchTitle(stock.research)} style={{ color: qualityTone(quality).color }}>{quality == null ? "—" : Math.round(quality)}</span>, quality == null ? null : "/100"],
               // (an unrated one is a dash: the note under the card says why —
               // a word there was cut off on a small phone, "qual…")
               // What the list is sorted by, else what's being filtered on: one
@@ -1060,8 +1062,8 @@ export default function ResultsTable({ matches: matchesIn, loading, onAnalyze, t
                     <span className="th-unit" aria-hidden="true">{"\u00a0"}</span>
                   </th>
                   {!fixedInColumns && (<>
-                  <SortTh label="Quality" unit="of 100" title="Quality score out of 100 — business, earnings, balance sheet, governance, growth and valuation" col="quality" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} menu={menuFor("quality", "quality")} info={<MetricInfo def={meta?.byId.get("quality")} meta={meta} />} />
-                  <SortTh label="Overall" unit="of 100" title="Overall score: quality and valuation blended, trimmed for price swings and data gaps. Not a buy or sell signal." col="overall" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} menu={menuFor("overall", "researchScore")} info={<MetricInfo def={meta?.byId.get("researchScore")} meta={meta} />} />
+                  <SortTh label="Business" unit="of 100" title="Business score out of 100: the company's quality from its filings (business, earnings, balance sheet, governance, growth), without the price" col="quality" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} menu={menuFor("quality", "quality")} info={<MetricInfo def={meta?.byId.get("quality")} meta={meta} />} />
+                  <SortTh label="Price" unit={"\u00a0"} title="Cheap or dear at the last close, against its earnings, fair value and peers. Sorted cheapest first. Not a buy or sell signal." col="overall" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} menu={menuFor("overall", "researchScore")} info={<MetricInfo def={meta?.byId.get("researchScore")} meta={meta} />} />
                   <SortTh label="CMP" unit="₹" col="cmp"         sortBy={sortBy} sortDir={sortDir} onSort={handleSort} menu={menuFor("cmp", "cmp")} info={<MetricInfo def={meta?.byId.get("cmp")} meta={meta} />} />
                   </>)}
                   {columns.map((def, ci) => (

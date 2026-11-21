@@ -540,7 +540,7 @@ export function screen(request = {}) {
   const value = m => (by ? valueOf(by, m) : null);
   matches.sort(by
     ? (a, b) => (value(b) ?? -Infinity) - (value(a) ?? -Infinity)
-    : (a, b) => (b.research?.overall?.score ?? -1) - (a.research?.overall?.score ?? -1) || (b.research?.quality ?? -1) - (a.research?.quality ?? -1) || (b.roce ?? -Infinity) - (a.roce ?? -Infinity));
+    : (a, b) => (b.research?.qualityOnly ?? -1) - (a.research?.qualityOnly ?? -1) || (b.research?.quality ?? -1) - (a.research?.quality ?? -1) || (b.roce ?? -Infinity) - (a.roce ?? -Infinity));
   // countOnly: how many match, for the strategy cards on Discover's first page;
   // with top: N, also the N best (symbol, name, score, and the measure ranked by)
   if (request.countOnly) {

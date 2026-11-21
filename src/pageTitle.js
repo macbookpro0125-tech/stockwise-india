@@ -20,7 +20,7 @@ export const GOLD_TITLE = pageTitle("Gold & silver ETF prices, Sovereign Gold Bo
 export const LISTS_TITLE = pageTitle("NSE stock lists: Nifty 50, PSU, defence, under ₹100");
 
 // a rule's list counts its companies; an index or a theme is the companies NSE lists
-export const listTitle = ({ name, kind, count, group }) => group === "score" ? pageTitle(`${name}: NSE companies ranked by overall score`) : pageTitle(`${name} list: ${kind === "rule" ? `${count} NSE companies` : "companies"} by P/E, ROE`);
+export const listTitle = ({ name, kind, count, group }) => group === "score" ? pageTitle(`${name}: NSE companies ranked by business score`) : pageTitle(`${name} list: ${kind === "rule" ? `${count} NSE companies` : "companies"} by P/E, ROE`);
 // the longest of a few wordings that Google shows whole (20 Nov 2026, the
 // audit: 2,281 company titles ran ~70 characters, cut off after about 60)
 export const SHOWN = 60;

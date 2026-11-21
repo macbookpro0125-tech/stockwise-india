@@ -7835,3 +7835,21 @@ html.is-scrolling .hk-track { animation-play-state: paused; }
 .trk-big { font-weight: 600; }
 .trk-x { display: grid; place-items: center; width: 26px; height: 26px; border: 0; border-radius: 8px; background: none; color: var(--t3); cursor: pointer; } .trk-x:hover { color: var(--red); background: var(--s2); }
 .trk-foot { margin: 0; font-size: 11px; }
+
+/* Two scores in place of the overall (twoScores.jsx, 21 Nov 2026) */
+.two-scores { display: inline-flex; align-items: center; gap: 8px; border: 0; background: none; padding: 0; font: inherit; color: inherit; white-space: nowrap; }
+button.two-scores { cursor: pointer; }
+.ts-business { display: inline-flex; align-items: baseline; gap: 5px; padding: 3px 10px; border: 1px solid currentColor; border-radius: 999px; }
+.ts-business small { font-size: 11px; color: var(--t2); }
+.ts-business b { font-weight: 600; font-variant-numeric: tabular-nums; }
+.ts-business.sd-tone-good { color: var(--green); } .ts-business.sd-tone-mid { color: var(--yellow); } .ts-business.sd-tone-bad { color: var(--red); }
+.ts-price { font-size: 12px; padding: 3px 9px; border-radius: 999px; background: var(--s2); }
+.ts-price-good { color: var(--green); } .ts-price-mid { color: var(--yellow); } .ts-price-bad { color: var(--red); }
+.two-scores-large .ts-business { padding: 5px 14px; } .two-scores-large .ts-business b { font-size: 20px; } .two-scores-large .ts-business small { font-size: 12px; }
+.two-scores-large .ts-price { font-size: 14px; padding: 5px 12px; }
+/* the pinned company bar with the two scores: the name gives way, not the figures */
+.dk-mini-name b { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.dk-mini .two-scores, .dk-mini-px { flex: none; }
+@media (max-width: 1180px) { .dk-mini-name small, .dk-mini .ts-business small { display: none; } }
+.pl-co-bp { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 3px; flex: none; }
+.pl-co-price { font-size: 11px; color: var(--t3); white-space: nowrap; }

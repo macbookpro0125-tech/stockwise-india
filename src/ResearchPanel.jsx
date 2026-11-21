@@ -216,10 +216,14 @@ export default function ResearchPanel({ research: r }) {
           word={r.provisional ? "provisional" : null}
           sub={quality == null ? "Too few years of filings to score." : `Six groups, including valuation · business-only score: ${n(r.qualityOnly)}/100`}
           title="Out of 100 across six groups — business, earnings, balance sheet, governance, growth and valuation. The business-only score excludes valuation." details="why-this-score" />
-        <Headline label="Overall research score" value={o.score} tone={oTone}
-          word={o.score != null ? o.stance : null}
-          sub={o.score != null ? `${o.text}${o.status === "provisional" ? " — provisional: limited data coverage caps it at 59" : ""}` : o.text}
-          title="Quality without valuation (70%) and valuation (30%), trimmed for price swings and data gaps. Not a buy or sell signal." details="why-math" />
+        {/* the business and the price apart, never blended (21 Nov 2026) */}
+        <Headline label="Business score" value={r.qualityOnly} tone={qualityTone(r.qualityOnly)}
+          sub="The company's quality from its filings, without the price"
+          title="The quality groups without valuation: business, earnings, balance sheet, governance and growth." details="why-this-score" />
+        <Headline label="Price" value={r.valuation.score} tone={r.valuation.score == null ? "var(--t3)" : r.valuation.score >= 60 ? "var(--green)" : r.valuation.score >= 30 ? "var(--yellow)" : "var(--red)"}
+          word={r.valuation.score != null ? r.valuation.label : null}
+          sub={r.valuation.score != null ? `Cheap or dear at the ${r.valuation.asOf ? day(r.valuation.asOf) : "last"} close, against its earnings, fair value and peers` : "Not enough data to value it"}
+          title="The valuation group: P/E against similar companies, the price against fair value, cash yield and simple measures. Higher = cheaper." details="why-valuation" />
         <Headline label="Data quality" value={r.confidence} tone={confTone}
           sub={`${r.coverage.checked} of ${r.coverage.total} checks have data · also reflects recency, not outcome confidence`}
           title="A data-quality measure based on checks covered, filing recency and price freshness. It does not predict whether the stock or score is correct." details="why-how" />
@@ -240,7 +244,7 @@ export default function ResearchPanel({ research: r }) {
 
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
         <LensCard title="Technical setup" details="why-technical" score={r.technical.score} word={r.technical.label} tone={techTone}
-          note="Price trend and momentum. Shown alongside — never part of the quality or overall score." />
+          note="Price trend and momentum. Shown alongside — never part of the quality score." />
         <LensCard title="Risk" details="why-risk" score={r.risk.score} word={r.risk.label} tone={riskTone}
           note={`Higher means riskier. Biggest: ${r.risk.top.map(id => r.risk.parts.find(p => p.id === id)?.label.toLowerCase()).filter(Boolean).join(", ")}.`} />
       </div>
@@ -274,17 +278,14 @@ export default function ResearchPanel({ research: r }) {
             </div>
           ))}
         </Expand>
-        <Expand id="why-math" title="How this score was worked out" right={r.overall.math?.final != null ? `${d1(r.overall.math.final)}/100` : null}>
-          <ScoreMath math={r.overall.math} />
-        </Expand>
         <Expand id="why-how" title="How the scores work">
           <ul style={{ margin: "4px 0 0", padding: "0 0 0 16px", display: "flex", flexDirection: "column", gap: 7, fontSize: 12, color: "var(--t2)", lineHeight: 1.55 }}>
             <li><strong>Quality (0–100)</strong> weighs six groups: business quality 25, earnings quality 20, balance sheet 15, management &amp; governance 15, growth 10 and valuation 15. Each check scores 0–100 against stated bands — ROCE of 13% scores 50, 20% scores 75, 33% or more scores 100.</li>
             <li><strong>Nothing is guessed.</strong> A check the filings can't show — related-party deals, competitive position, forecasts, market size, a cash-flow model — is listed as not checked and left out of the score (the cash-flow scenario on the stock page uses your own assumptions, so it isn't scored either). Missing data never counts as zero or as a pass. A group needs over a third of its weight checked to be scored.</li>
-            <li><strong>Overall research score</strong> blends quality without valuation (70%) with valuation (30%) so one strong side can't fully hide a weak one, then trims up to 35% for price swings and data gaps. Debt and pledging count once, in quality, not again as risk.</li>
-            <li><strong>Red flags override.</strong> If the auditor qualified the latest accounts, the overall score stops at 39 and reads "Review required" until a clean audit. An auditor resignation notice in the last three years halves the audit check and shows as a caution, with the filing linked where NSE gives it — read it for the entity and the reason. A filed EPS that doesn't agree with profit ÷ shares is shown as a caution; only a quarter's EPS filed as the year's is corrected. Results overdue at NSE, or annual results over 15 months old, show as a caution too. NBFC lenders, and companies whose balance sheet or shareholding can't be checked, have quality capped at 69.</li>
+            <li><strong>Business and price apart.</strong> The business score is quality without valuation; the price is the valuation group on its own. They're shown side by side, never blended into one number: a strong business at a high price reads as both, not as a middling score.</li>
+            <li><strong>Red flags override.</strong> If the auditor qualified the latest accounts, the company reads "Review required" until a clean audit. An auditor resignation notice in the last three years halves the audit check and shows as a caution, with the filing linked where NSE gives it — read it for the entity and the reason. A filed EPS that doesn't agree with profit ÷ shares is shown as a caution; only a quarter's EPS filed as the year's is corrected. Results overdue at NSE, or annual results over 15 months old, show as a caution too. NBFC lenders, and companies whose balance sheet or shareholding can't be checked, have quality capped at 69.</li>
             <li><strong>Banks</strong> are judged on their own tests from their standalone filings — gross and net bad loans, provision cover, CET1 capital and credit cost for the balance sheet; return on assets and cost-to-income in business quality; in valuation, the price against their book-value fair value — justified P/B (from the last three years' return on equity once bad loans are cleaned up — net NPA under 2% — else the seven-year median, bad years included; a 12% cost of equity, 13% for government banks) × book less net bad loans, the same model as their price levels.</li>
-            <li><strong>Technical setup and risk</strong> are separate lenses. The price trend never moves the quality or overall score.</li>
+            <li><strong>Technical setup and risk</strong> are separate lenses. The price trend never moves the quality score.</li>
             <li>Valued at NSE's close so Discover and this page agree; your own EPS or P/E above changes the fair value, not the score. The weights and bands are a stated starting point. Tested on past dates (2024–26), higher scores came before somewhat better returns than lower ones, but not better than the Nifty 50: see the methodology.</li>
             <li>A research summary, not a recommendation to buy or sell. Check the filings and your own situation before investing.</li>
           </ul>

@@ -1,4 +1,5 @@
-import { rankLine, pairing } from "./overallRank.js";
+import { pairing } from "./overallRank.js";
+import { TwoScores } from "./twoScores.jsx";
 import { useState } from "react";
 import { Check, Minus, X, TriangleAlert, Eye, Info, ChevronRight, ChevronDown, CalendarDays, CircleDollarSign, Bell } from "lucide-react";
 import { chapterChecks } from "./ChapterTab.jsx";
@@ -71,16 +72,12 @@ export function VerdictLines({ m, fairValue, price, onGo }) {
       <div className="sd-ph-row">
         <h3 id="verdict-title" className="sd-ph">In short</h3>
         <span className="sd-verdict-overall">
-          {overall && <span className={`sd-chapter-score sd-tone-${overall.tone}`} aria-label={`Overall score ${overall.score} of 100, ${WORD[overall.tone]}`}><b>{overall.score}</b>{WORD[overall.tone]} overall</span>}
+          {/* the business score and the price, apart (21 Nov 2026: one blended number read 33 for a strong, dear company) */}
+          <TwoScores research={r} />
           <NotesToggle />
         </span>
       </div>
       {gist && <p className="sd-gist">{gist}</p>}
-      {rankLine(m?.overallRank) && (
-        <p className="sd-rank" title="Its place among NSE companies by overall score, from their filings: a ranking by our method, not a recommendation">
-          Ranked <b>{rankLine(m.overallRank)}</b> by overall score · <a href="/lists/highest-rated-stocks">See the highest</a>
-        </p>
-      )}
       {pairing(m) && (
         <p className={`sd-pair sd-pair-${pairing(m).tone}`} title={pairing(m).text}>
           <b>{pairing(m).label}</b> · {pairing(m).tone === "good" ? "this pairing beat the average company in our tests" : "this pairing did worst in our tests"} · <a href={pairing(m).href}>{pairing(m).tone === "good" ? "See them all" : "How we tested"}</a>

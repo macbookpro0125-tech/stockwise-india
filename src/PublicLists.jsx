@@ -82,6 +82,18 @@ const More = () => (
   </p>
 );
 
+// A company's business score and its price, apart (21 Nov 2026: the blended
+// overall score, gone); c: { business, priceWord }
+function BizPrice({ c }) {
+  const b = c.business ?? null;
+  return (
+    <span className="pl-co-bp" title="Business: the company's quality from its filings, without the price. Price: cheap or dear at the last close.">
+      {b != null && <span className="pl-co-q">{Math.round(b)}<small>/100</small></span>}
+      {c.priceWord && <span className="pl-co-price">{c.priceWord}</span>}
+    </span>
+  );
+}
+
 export function ScreensIndexPage({ signedIn }) {
   const [d, error] = useLoad(() => api.publicScreens(), "all", "screens");
   useEffect(() => { document.title = SCREENS_TITLE; }, []);
@@ -155,11 +167,9 @@ export function ScreenPage({ slug, signedIn }) {
                   <CompanyLogo symbol={c.symbol} size={32} fallback={c.name} />
                   <span className="pl-co-main">
                     <span className="pl-co-name">{c.name}</span>
-                    <span className="pl-co-figs">{[c.price != null && `₹${num(c.price, 2)}`, crore(c.marketCapCr), c.pe > 0 && `P/E ${num(c.pe)}`, c.roe != null && `ROE ${num(c.roe)}%`, c.overall != null && c.quality != null && `Quality ${c.quality}`].filter(Boolean).join(" · ")}</span>
+                    <span className="pl-co-figs">{[c.price != null && `₹${num(c.price, 2)}`, crore(c.marketCapCr), c.pe > 0 && `P/E ${num(c.pe)}`, c.roe != null && `ROE ${num(c.roe)}%`].filter(Boolean).join(" · ")}</span>
                   </span>
-                  {c.overall != null
-                    ? <span className="pl-co-q" title="Overall score: quality and valuation, from the company's filings">{c.overall}<small>/100</small></span>
-                    : c.quality != null && <span className="pl-co-q" title="Quality score, from the company's filings">{c.quality}<small>/100</small></span>}
+                  <BizPrice c={c} />
                 </A>
               </li>
             ))}
@@ -209,11 +219,9 @@ export function SharedScreenPage({ signedIn }) {
                     <CompanyLogo symbol={c.symbol} size={32} fallback={c.name} />
                     <span className="pl-co-main">
                       <span className="pl-co-name">{c.name}</span>
-                      <span className="pl-co-figs">{[c.price != null && `₹${num(c.price, 2)}`, crore(c.marketCapCr), c.pe > 0 && `P/E ${num(c.pe)}`, c.roe != null && `ROE ${num(c.roe)}%`, c.overall != null && c.quality != null && `Quality ${c.quality}`].filter(Boolean).join(" · ")}</span>
+                      <span className="pl-co-figs">{[c.price != null && `₹${num(c.price, 2)}`, crore(c.marketCapCr), c.pe > 0 && `P/E ${num(c.pe)}`, c.roe != null && `ROE ${num(c.roe)}%`].filter(Boolean).join(" · ")}</span>
                     </span>
-                    {c.overall != null
-                      ? <span className="pl-co-q" title="Overall score: quality and valuation, from the company's filings">{c.overall}<small>/100</small></span>
-                      : c.quality != null && <span className="pl-co-q" title="Quality score, from the company's filings">{c.quality}<small>/100</small></span>}
+                    <BizPrice c={c} />
                   </A>
                 </li>
               ))}
@@ -415,7 +423,7 @@ export function ListPage({ slug, signedIn }) {
                     <span className="pl-co-figs">{[c.price != null && `₹${num(c.price, 2)}`, crore(c.marketCapCr), !s.method && c.extra && s.extraLabel && `${s.extraLabel} ${c.extra}`, c.pe > 0 && `P/E ${num(c.pe)}`, c.roe != null && `ROE ${num(c.roe)}%`].filter(Boolean).join(" · ")}</span>
                   </span>
                   {s.method
-                    ? c.overall != null && <span className="pl-co-q" title="Overall score: quality and valuation, from the company's filings">{Math.round(c.overall)}<small>/100</small></span>
+                    ? <BizPrice c={{ business: c.overall, priceWord: c.priceWord }} />
                     : c.quality != null && <span className="pl-co-q" title="Quality score, from the company's filings">{Math.round(c.quality)}<small>/100</small></span>}
                 </A>
               </li>

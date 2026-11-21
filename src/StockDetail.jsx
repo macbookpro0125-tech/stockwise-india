@@ -33,6 +33,7 @@ import CompanyBonds from "./CompanyBonds.jsx";
 import ThesisMonitor from "./ThesisMonitor.jsx";
 import StockSide from "./StockSide.jsx";
 import CompanyLogo from "./CompanyLogo.jsx";
+import { TwoScores } from "./twoScores.jsx";
 import StockGlance from "./StockGlance.jsx";
 import WhyMoving from "./WhyMoving.jsx";
 import StockPerformance from "./StockPerformance.jsx";
@@ -1091,11 +1092,8 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
         {price > 0 && <span className="dk-mini-px"><b>{fmtRs(price)}</b>{m?.ret1d != null && <em className={m.ret1d >= 0 ? "up" : "down"}>{m.ret1d >= 0 ? "+" : "−"}{Math.abs(m.ret1d).toFixed(2)}%</em>}</span>}
         {/* the overall score and the open tab, as the mock-up drew the
             scrolling bar (16 Nov 2026); the score opens the Summary */}
-        {m?.research?.overall?.score != null && (() => {
-          const o = Math.round(m.research.overall.score);
-          const tone = o >= 70 ? "good" : o >= 50 ? "mid" : "bad";
-          return <button type="button" className={`dk-mini-score sd-tone-${tone}`} onClick={() => goChapter("overview")} title="Overall score: open the Summary"><b>{o}</b><small>/100</small></button>;
-        })()}
+        {/* the business score and the price, not one blended number (21 Nov 2026); opens the Summary */}
+        <TwoScores research={m?.research} onClick={() => goChapter("overview")} />
         <span className="dk-mini-tab">{CHAPTERS.find(c => c.id === deskTab)?.label}</span>
       </div>
       <StockSide variant="head" summary={deskTab === "overview"} onGoChapter={goChapter} gist={m ? gistLine(m, { fairValue, price }) : null} data={data} m={m} price={price} priceLabel={priceLabel} watched={watched}

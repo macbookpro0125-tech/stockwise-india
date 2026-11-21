@@ -1,4 +1,5 @@
-import { rankLine, pairing } from "./overallRank.js";
+import { pairing } from "./overallRank.js";
+import { TwoScores, twoScores } from "./twoScores.jsx";
 import { revealPart } from "./phoneTabs.js";
 import { Building2, BadgeCheck, Scale, ShieldCheck, TrendingUp, Tag, Activity, Flag, ChevronRight, Bell } from "lucide-react";
 import CompanyLogo from "./CompanyLogo.jsx";
@@ -101,7 +102,7 @@ export function Scorecard({ r }) {
       <div className="sd-card-titlerow">
         <h3 className="sd-card-title">Scorecard</h3>
         {/* the headline score, as the lists and a phone's In short show it (12 Nov 2026) */}
-        {r.overall?.score != null ? <span className="sd-muted">Overall {Math.round(r.overall.score)}/100</span> : r.quality != null && <span className="sd-muted">Quality {Math.round(r.quality)}/100</span>}
+        <TwoScores research={r} />
       </div>
       <ul className="sd-scores">
         {rows.map(row => <Row key={row.id} {...row} />)}
@@ -170,7 +171,9 @@ export default function StockSide({ data, m, price, priceLabel, watched, onWatch
           <button type="button" className="sd-action sd-action-link" onClick={onAlert}><Bell className="sd-action-bell" size={17} aria-hidden="true" />Set an alert<ChevronRight className="sd-action-chev" size={17} aria-hidden="true" /></button>
         </div>
         {variant === "head" && gist && summary && (() => {
-          const o = m?.research?.overall?.score;
+          // the business score, without the price (21 Nov 2026); the price apart
+          const o = m?.research?.qualityOnly ?? null;
+          const two = twoScores(m?.research);
           const tone = o != null ? band(o) : "none";
           const marks = ["business", "growth", "safety", "owners", "value", "price"].map(id => ({ id, s: chapterScore(id, m?.research) })).filter(x => x.s);
           const conf = m?.research?.confidence;
@@ -182,9 +185,8 @@ export default function StockSide({ data, m, price, priceLabel, watched, onWatch
                   <div className="sd-head-panel-top">
                     <span className="sd-head-panel-num"><b>{Math.round(o)}</b><small>of 100</small></span>
                     <span className="sd-head-panel-tx">
-                      <strong>{WORD[tone]} overall</strong>
-                      {rankLine(m.overallRank) && <small>{rankLine(m.overallRank)}</small>}
-                      {movedLine(m.scoreMoved) && <small className="sd-head-moved">{movedLine(m.scoreMoved)}</small>}
+                      <strong>{WORD[tone]} business</strong>
+                      {two?.price && <small>Price: <span className={`ts-price-${two.priceTone}`}>{two.price}</span> at the last close</small>}
                       {conf != null && <small>Data confidence {conf >= 80 ? "high" : conf >= 60 ? "medium" : "low"}{m.research.coverage?.total ? ` · ${m.research.coverage.checked} of ${m.research.coverage.total} checks have figures` : ""}</small>}
                     </span>
                   </div>

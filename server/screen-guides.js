@@ -6,10 +6,10 @@
 // pass a set of figures; it says nothing about whether to buy them.
 export const SCREEN_GUIDES = {
   highest_overall: {
-    search: "Top rated stocks India by score",
-    lookFor: "Every NSE company worth ₹500 crore or more that has an overall score, ranked from highest to lowest. The score weighs how good the business is from its filings (returns on capital, cash behind profits, balance sheet, governance and growth: 70%) against how cheap the share is against its own usual P/E, its peers and its cash flow (30%), trimmed for big price swings and missing data.",
-    suits: "People who want one place to start: the companies our method scores highest, to study further.",
-    limits: "When we re-scored the market on past dates (2024–26), the top fifth did better than the bottom fifth a year later on 6 of 7 dates, but not better than the Nifty 50, so a high score describes the business and isn't a forecast. Banks and lenders are scored without some of their key tests, and a cheap share can be cheap for a reason.",
+    search: "Good companies at a fair price, India",
+    lookFor: "NSE companies worth ₹500 crore or more whose business scores 70 or more from their filings (returns on capital, cash behind profits, balance sheet, governance and growth) and whose share is priced fair or cheaper at the last close, against its own usual P/E, its peers and its cash flow. The strongest business comes first.",
+    suits: "People looking for good businesses that aren't priced as if nothing could go wrong, to study further.",
+    limits: "The business score describes the filings, not the future, and the price compares with the company's own past and its peers. A fair price can still fall, a cheap share can be cheap for a reason, and banks and lenders are scored without some of their key tests.",
   },
   strong_business_rising_price: {
     search: "Quality momentum stocks India: strong business and rising share price",

@@ -4,14 +4,15 @@ export const PRESETS = [
   // ranking, not a pick
   {
     id: "highest_overall",
-    name: "Highest Overall Scores",
+    name: "Strong Business at a Fair Price",
     icon: "🏅",
-    description: "Every company worth ₹500 crore or more, ranked by the overall score: business quality and price, from the filings",
+    description: "Companies worth ₹500 crore or more with a business score of 70 or more from their filings, priced fair or cheaper at the last close; the strongest business first",
     filters: [
-      { id: "researchScore", min: 1, max: null },
+      { id: "qualityOnly", min: 70, max: null },
+      { id: "valuationScore", min: 45, max: null },
       { id: "marketCapCr", min: 500, max: null },
     ],
-    sort: "researchScore",
+    sort: "qualityOnly",
   },
   {
     id: "high_quality_compounders",
