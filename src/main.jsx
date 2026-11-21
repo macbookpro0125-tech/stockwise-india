@@ -20,13 +20,11 @@ import "@fontsource-variable/inter/opsz.css";
   }, { passive: true });
 }
 import "./index.css";
-import { installGlow } from "./glow.js";
 import { installFastNumbers } from "./fastNumbers.js";
 import { onReconnecting } from "./api.js";
 import "./installApp.js"; // early: the browser offers installing soon after load
 
 installFastNumbers();
-installGlow();
 
 // Android draws a frosted blur again for every frame of a scroll: measured in
 // the app on 26 Oct 2026, 61-66% of frames came too late with it, 4% without.

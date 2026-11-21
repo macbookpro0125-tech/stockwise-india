@@ -1963,18 +1963,12 @@ html[data-discover-step="strategies"] .discovery-tabs.tabs-on-discover { display
 }
 [data-theme="light"] { --glow-strength: 13%; }
 
-/* Cards and tiles: the light sits behind their content, above their own
-   background, and fades in where the pointer is */
-.glow { position: relative; isolation: isolate; }
-.glow::after {
-  content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none;
-  background: radial-gradient(520px 340px at var(--gx, 50%) var(--gy, 0%), var(--glow-color), transparent 70%);
-  opacity: 0; transition: opacity 250ms ease;
-}
-.glow:focus-visible::after { opacity: 1; }
+/* Cards and tiles: the light that followed the pointer is gone (21 Nov 2026,
+   the owner: "I don't want the cursor glow, it makes some lag"); the class
+   still marks them */
+.glow { position: relative; }
 
 @media (hover: hover) and (pointer: fine) {
-  .glow:hover::after { opacity: 1; }
   .btn-ghost, .tb-btn, .tb-select, .sc-kind, .ap-btn, .btn-primary, .sd-action, .screen-back, select, .input-base { transition: box-shadow 200ms ease, background 150ms ease, border-color 150ms ease, color 150ms ease, transform 100ms ease-out; }
   .btn-ghost:hover:not(:disabled), .tb-select:hover, .sc-kind:hover, .sd-action:not(:first-child):hover, select:hover, .input-base:hover { box-shadow: var(--glow-ring); border-color: color-mix(in srgb, var(--accent) 40%, var(--bdr2)); }
   .btn-primary:hover:not(:disabled), .ap-btn:hover, .sd.ap .sd-action:first-child:hover { box-shadow: var(--glow-ring-solid); }
