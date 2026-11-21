@@ -7433,6 +7433,7 @@ html.is-scrolling .hk-track { animation-play-state: paused; }
 .gs-cmp .up, .gs-list .up { color: var(--green); }
 .gs-cmp .down, .gs-list .down { color: var(--red); }
 .gs-note { font-size: 12px; line-height: 1.55; color: var(--t3); margin: 10px 0 0; }
+.gs-how { margin: 8px 0 0; } .gs-how > summary { cursor: pointer; font-size: 12px; color: var(--accent); list-style: none; padding: 6px 0; } .gs-how > summary::-webkit-details-marker { display: none; } .gs-how > summary::after { content: " ›"; } .gs-how[open] > summary::after { content: " ⌄"; }
 .gs-note b { color: var(--t2); font-weight: 500; }
 .gs-about { margin: 0 0 10px; }
 .gs-tabs { margin-top: 4px; }

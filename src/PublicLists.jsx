@@ -533,14 +533,23 @@ function GoldGramCard({ g }) {
           </tbody>
         </table>
       </div>
+      {/* one line under the table, the rest a tap away (21 Nov 2026, the
+          owner: "do we need all this here?") */}
       <p className="gs-note">
-        {which === "now" && g.estimate
-          ? <>An estimate: RBI's price of {rupee(g.price)} (for {longDay(g.redeemOn)}) moved by how much the gold ETF GOLDBEES has moved since. </>
-          : null}
-        RBI's price is what it pays to redeem a Sovereign Gold Bond{g.series ? ` (${g.series})` : ""} on {longDay(g.redeemOn)}: the average of the closing price of 999 gold{g.days ? ` on ${g.days.map(shortDay).join(", ")}` : " on the three business days before"}, as published by IBJA. 22 and 18 carat are worked out by their gold content (916 and 750 of 999). A jeweller's price adds making charges and 3% GST, and varies by city and shop.
+        {which === "now" && g.estimate ? "An estimate from RBI's gold price and today's gold ETF. " : `RBI's gold price for ${longDay(g.redeemOn)}. `}
+        Jewellers add making charges and 3% GST.
       </p>
-      {g.recent?.length > 1 && <p className="gs-note gg-recent">RBI's recent prices: {g.recent.map(r => `${shortDay(r.redeemOn)} ${rupee(r.price)}`).join(" · ")}</p>}
-      <p className="gs-note">Source: Reserve Bank of India, its Sovereign Gold Bond redemption notices.</p>
+      <details className="gs-how">
+        <summary>How it's worked out</summary>
+        <p className="gs-note">
+          {which === "now" && g.estimate
+            ? <>RBI's price of {rupee(g.price)} (for {longDay(g.redeemOn)}) moved by how much the gold ETF GOLDBEES has moved since. </>
+            : null}
+          RBI's price is what it pays to redeem a Sovereign Gold Bond{g.series ? ` (${g.series})` : ""} on {longDay(g.redeemOn)}: the average of the closing price of 999 gold{g.days ? ` on ${g.days.map(shortDay).join(", ")}` : " on the three business days before"}, as published by IBJA. 22 and 18 carat are worked out by their gold content (916 and 750 of 999). A jeweller's price varies by city and shop.
+        </p>
+        {g.recent?.length > 1 && <p className="gs-note gg-recent">RBI's recent prices: {g.recent.map(r => `${shortDay(r.redeemOn)} ${rupee(r.price)}`).join(" · ")}</p>}
+        <p className="gs-note">Source: Reserve Bank of India, its Sovereign Gold Bond redemption notices.</p>
+      </details>
     </section>
   );
 }
