@@ -5535,6 +5535,11 @@ button.td-line { cursor: pointer; }
 .td-links button svg { color: var(--accent); }
 .td-hello-line { margin: 6px 0 0; font-size: 14px; color: var(--t2); }
 .td-hello-line b { font-weight: 600; } .td-hello-line .up { color: var(--green); } .td-hello-line .down { color: var(--red); }
+/* one gap between Home's cards (21 Nov 2026, the owner's screenshot: the
+   watchlist and the movers card touched; the gaps ran 64, 16, 0, 64, 16 px) */
+.td-flat .td { display: flex; flex-direction: column; gap: 24px; }
+.td-flat .td > * { margin-top: 0 !important; margin-bottom: 0 !important; }
+.td-flat .td-sheet .td { padding-top: 8px; }
 .td-moves-tabs { display: inline-flex; gap: 4px; }
 .td-moves .hm-more-top, .td-moves .bo-bare > .mk-note { padding-left: 16px; padding-right: 16px; }
 .td-moves .bo-bare { padding: 0 2px; }
