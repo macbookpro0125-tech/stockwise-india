@@ -1,4 +1,5 @@
 import { Suspense, useState, useEffect, useLayoutEffect, useRef, useCallback, startTransition } from "react";
+import { listenForAppLinks } from "./appLinks.js";
 import { setLogosSignedIn } from "./CompanyLogo.jsx";
 import { flushSync } from "react-dom";
 import { lazyPage } from "./lazyPage.js";
@@ -332,6 +333,8 @@ export default function App() {
       listener?.remove();
     };
   }, []);
+  // a jocularinsights.in link that opened the app opens its page (appLinks.js)
+  useEffect(() => listenForAppLinks(), []);
 
   // email or phone (a phone sign-in has no email), name, and whether there is a password at all
   const loadAccount = () => api.me().then(d => setAccount({ userId: d.userId, email: d.email ?? null, phone: d.phone ?? null, name: d.name ?? null, hasPassword: d.hasPassword !== false, features: d.features ?? {} })).catch(() => setAccount(null));

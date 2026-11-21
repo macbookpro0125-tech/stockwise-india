@@ -19,5 +19,5 @@ Status: todo · checking · fixing · done (date).
 | 10 | Alerts | Price alerts, results and order alerts, phone notifications, Telegram, emails | done 22 Nov (2 fixes) |
 | 11 | Settings and legal | Settings, account, delete account, logos, dark mode, Privacy, Terms, Disclaimer, Help, About | done 22 Nov (privacy + delete wording, tab titles, delete test) |
 | 12 | Public pages and search | Lists, sectors, Learn guides, results calendar, sitemap, Google and Bing | done 22 Nov (search order, titles, /measures in sitemap) |
-| 13 | Android app | Play listing, install, notifications, links opening the app, ads | todo |
+| 13 | Android app | Play listing, install, notifications, links opening the app, ads | done 22 Nov (app links ready for 1.4; ads wait on AdMob) |
 | 14 | Speed and code health | Download size, server answers and errors, tests | todo |

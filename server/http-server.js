@@ -156,6 +156,10 @@ const CONTENT_TYPES = {
 // Streams the file, and answers Range requests with just the bytes asked
 // for: the "How it works" video needs them — Safari won't play a video
 // without, and skipping ahead relies on them in every browser.
+export const ASSET_LINKS = JSON.stringify([{
+  relation: ["delegate_permission/common.handle_all_urls"],
+  target: { namespace: "android_app", package_name: "com.jocularinsights.app", sha256_cert_fingerprints: ["30:CC:0E:5F:DF:2A:F7:41:6D:D3:77:8F:5E:BC:4C:CA:A8:4B:AD:23:9E:04:23:54:17:E1:47:4F:28:3B:16:F9"] },
+}]);
 // The website's AdSense publisher (not secret: it's in every page's head)
 const ADSENSE_PUB = /^pub-\d+$/.test(process.env.ADSENSE_PUBLISHER_ID ?? "") ? process.env.ADSENSE_PUBLISHER_ID : "pub-4001463380481442";
 
@@ -1796,6 +1800,14 @@ export function createApp() {
       if (url.pathname === "/ads.txt" && (req.method === "GET" || req.method === "HEAD")) {
         res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=3600" });
         res.end(req.method === "HEAD" ? undefined : `google.com, ${ADSENSE_PUB}, DIRECT, f08c47fec0942fa0\n`);
+        return;
+      }
+      // Android App Links (app 1.4, 22 Nov 2026): this site's links may open in
+      // our app. The fingerprint is Play's app signing key, as Play Console
+      // (Setup → App signing → Digital Asset Links JSON) gives it — public.
+      if (url.pathname === "/.well-known/assetlinks.json" && (req.method === "GET" || req.method === "HEAD")) {
+        res.writeHead(200, { "Content-Type": "application/json", "Cache-Control": "public, max-age=3600" });
+        res.end(req.method === "HEAD" ? undefined : ASSET_LINKS);
         return;
       }
       // What a search engine reads, and a company's page for anyone (seo.js)
