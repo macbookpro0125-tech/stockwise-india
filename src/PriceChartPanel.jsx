@@ -121,7 +121,7 @@ const PIVOT_COLORS = { P: "#F59E0B", R: "#FB7185", S: "#38BDF8" };
 // the candle… as an option to turn on or off; ideally not on")
 // levels: the fair value and the user's own levels on the chart, off until
 // turned on with Levels (16 Nov 2026, the owner: no fair value on the chart by default)
-const DEFAULT_PREFS = { type: "candles", interval: "D", levels: false, candleCard: false, pivotKind: "classic", pivotBasis: "M", ind: { ma50: true, ma200: true, volume: true, high52: true } };
+export const DEFAULT_PREFS = { type: "candles", interval: "D", levels: false, candleCard: false, pivotKind: "classic", pivotBasis: "M", ind: { ma50: true, ma200: true, volume: true, high52: true } };
 
 const readJson = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } };
 const writeJson = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* private mode */ } };
@@ -164,10 +164,12 @@ export const LEVEL_KEYS = ["target", "fv25", "p1", "p2", "p3", "stopLoss"];
 // load: where the prices come from, when not the company's own (22 Nov 2026:
 // the gold page's GOLDBEES and SILVERBEES, from its public chart data, so a
 // visitor without an account gets the same full chart)
-export default function PriceChartPanel({ symbol, name, levels, page = false, compact = false, index = null, load = null, label = null }) {
+// prefsKey, defaults: a chart with settings of its own (22 Nov 2026, the owner:
+// gold and silver "always in line", no pivots), apart from the company charts'
+export default function PriceChartPanel({ symbol, name, levels, page = false, compact = false, index = null, load = null, label = null, prefsKey = PREFS_KEY, defaults = DEFAULT_PREFS }) {
   const [savedPrefs, setPrefs] = useState(() => {
-    const p = readJson(PREFS_KEY, DEFAULT_PREFS);
-    return { ...DEFAULT_PREFS, ...p, ind: { ...(p.ind ?? DEFAULT_PREFS.ind) } };
+    const p = readJson(prefsKey, defaults);
+    return { ...defaults, ...p, ind: { ...(p.ind ?? defaults.ind) } };
   });
   // a phone's full-screen chart opens close up, so each candle can be read
   const [range, setRange] = useState(() => (page && typeof window !== "undefined" && window.innerWidth < 560 ? "3M" : "1Y"));
@@ -243,7 +245,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
   const keepView = useRef(null);   // the zoom to restore when only overlays change
   drawingRef.current = drawing;
 
-  useEffect(() => { writeJson(PREFS_KEY, savedPrefs); }, [savedPrefs]);
+  useEffect(() => { writeJson(prefsKey, savedPrefs); }, [savedPrefs, prefsKey]);
   useEffect(() => { setPicked(null); setResPick(null); }, [symbol, prefs.interval, prefs.type]);
   useEffect(() => {
     if (!pop && !tableOpen) return undefined;
@@ -315,8 +317,8 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = overflow;
       // Settings and lines changed in the expanded chart carry back here
-      const p = readJson(PREFS_KEY, DEFAULT_PREFS);
-      setPrefs({ ...DEFAULT_PREFS, ...p, ind: { ...(p.ind ?? DEFAULT_PREFS.ind) } });
+      const p = readJson(prefsKey, defaults);
+      setPrefs({ ...defaults, ...p, ind: { ...(p.ind ?? defaults.ind) } });
       setLines(readJson(LINES_KEY, {})[symbol] ?? []);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1196,7 +1198,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
           <div style={sheetLabel}>Price scale</div>
           <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--t1)" }}><input type="checkbox" checked={!!prefs.log} onChange={() => setPref({ log: !prefs.log })} />Log scale</label>
           <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--t1)" }}><input type="checkbox" checked={!!prefs.invert} onChange={() => setPref({ invert: !prefs.invert })} />Upside down</label>
-          <button type="button" onClick={() => { keepView.current = null; setPrefs({ ...DEFAULT_PREFS, ind: { ...DEFAULT_PREFS.ind } }); setPop(null); }} style={btn(false, { justifySelf: "start", height: 34 })}>Back to the usual chart</button>
+          <button type="button" onClick={() => { keepView.current = null; setPrefs({ ...defaults, ind: { ...defaults.ind } }); setPop(null); }} style={btn(false, { justifySelf: "start", height: 34 })}>Back to the usual chart</button>
         </div>
       )}
     </>
@@ -1582,7 +1584,7 @@ export default function PriceChartPanel({ symbol, name, levels, page = false, co
       {expanded && createPortal(
         <div className="chart-overlay" role="dialog" aria-modal="true" aria-label={`${name || symbol} price chart`}>
           <ChartTopBar symbol={overlaySym} onSymbol={setOverlaySym} onClose={closeExpanded} />
-          <PriceChartPanel key={overlaySym} symbol={overlaySym} name={overlaySym === symbol ? name : ""} levels={overlaySym === symbol ? levels : null} load={overlaySym === symbol ? load : null} label={overlaySym === symbol ? label : null} page />
+          <PriceChartPanel key={overlaySym} symbol={overlaySym} name={overlaySym === symbol ? name : ""} levels={overlaySym === symbol ? levels : null} load={overlaySym === symbol ? load : null} label={overlaySym === symbol ? label : null} prefsKey={overlaySym === symbol ? prefsKey : PREFS_KEY} defaults={overlaySym === symbol ? defaults : DEFAULT_PREFS} page />
         </div>,
         document.body,
       )}

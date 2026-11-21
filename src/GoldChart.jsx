@@ -7,6 +7,9 @@ import { api } from "./api.js";
 // owner: "we need our detailed chart for this") — candles, ranges, indicators,
 // drawing, full screen — on the ETF's prices from this page's public data
 const PriceChartPanel = lazyPage(() => import("./PriceChartPanel.jsx"));
+// its own settings: a line, no pivots or other lines, until you add them
+// (22 Nov 2026, the owner: "always show this chart in line, remove the pivots")
+const GOLD_PREFS = { type: "line", interval: "D", levels: false, candleCard: false, pivotKind: "classic", pivotBasis: "M", ind: {} };
 
 // The gold page's chart (20 Nov 2026, the owner: "can I show the gold
 // chart?"): gold or silver on its own, through the ETF that tracks it
@@ -163,7 +166,7 @@ export default function GoldChart() {
       </div>
       {!compare && etf ? (
         <Suspense fallback={<div className="gc-chart gc-wait" aria-label="Loading the chart" />}>
-          <PriceChartPanel key={etf.symbol} symbol={etf.symbol} name={mode === "gold" ? (tenGram ? "Gold, 10 g of 24 carat" : "Gold (GOLDBEES)") : "Silver (SILVERBEES)"} load={loadEtf} label={mode === "gold" ? (tenGram ? "Gold, 10 g ₹" : "GOLDBEES") : "SILVERBEES"} />
+          <PriceChartPanel key={etf.symbol} symbol={etf.symbol} name={mode === "gold" ? (tenGram ? "Gold, 10 g of 24 carat" : "Gold (GOLDBEES)") : "Silver (SILVERBEES)"} load={loadEtf} label={mode === "gold" ? (tenGram ? "Gold, 10 g ₹" : "GOLDBEES") : "SILVERBEES"} prefsKey="jocular-gold-chart" defaults={GOLD_PREFS} />
         </Suspense>
       ) : (
         <>

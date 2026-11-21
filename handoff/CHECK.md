@@ -5,6 +5,7 @@ The newest are at the top. Each one gives where to go and what you should see. T
 
 | # | Live since | Where to go | What you should see | ✓ |
 |---|---|---|---|---|
+| ★ | next push | Gold page → **Gold** and **Silver** tabs | A **line** chart with no pivot lines (R1, S1…) and no other lines; your company-page chart keeps its own settings | ☐ |
 | 1 | 21 Nov | Home → Favourites → any screener with **0** companies | A line "No company passes it at the 20 Nov close…" instead of a blank white card. (After the data reload, "Up on Every Timeframe" should have companies again: see #2.) | ☐ |
 | 2 | 21 Nov, after today's data reload | Screeners → **Up on Every Timeframe**; any company page → 5-year return | Companies listed again (it showed 0); 5-year price growth filled in, not "—" | ☐ |
 | 3 | 21 Nov | Gold page → **Gold** tab | The full chart, as on a company page (Type, Indicators, Draw, full screen); the price is for **10 g of 24 carat** (about ₹1,24,820); press **All**, then drag left: no giant spike in 2018–19 | ☐ |
