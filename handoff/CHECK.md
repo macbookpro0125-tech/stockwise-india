@@ -5,6 +5,7 @@ The newest are at the top. Each one gives where to go and what you should see. T
 
 | # | Live since | Where to go | What you should see | ✓ |
 |---|---|---|---|---|
+| ★ | next push | Gold page → under the chart, and under "Gold, silver and the Nifty 50" | One short line under the chart, with **How it's worked out ›** for the rest; a shorter note under the returns table | ☐ |
 | ★ | next push | Gold page → under the carat table | One short line, then **How it's worked out ›**; tap it for RBI's method, recent prices and the source | ☐ |
 | ★ | next push | Gold page → **Gold** and **Silver** tabs | A **line** chart with no pivot lines (R1, S1…) and no other lines; your company-page chart keeps its own settings | ☐ |
 | 1 | 21 Nov | Home → Favourites → any screener with **0** companies | A line "No company passes it at the 20 Nov close…" instead of a blank white card. (After the data reload, "Up on Every Timeframe" should have companies again: see #2.) | ☐ |

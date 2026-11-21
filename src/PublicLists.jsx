@@ -585,7 +585,7 @@ export function GoldSilverPage({ signedIn, inApp = false, onBack = null }) {
               <tbody>{d.compare.map(c => <tr key={c.label}><th>{c.label}</th>{["1M", "1Y", "3Y", "5Y", "10Y"].map(p => <td key={p} className={tone(c.returns[p])}>{signed(c.returns[p], Math.abs(c.returns[p] ?? 0) >= 10 ? 0 : 1)}</td>)}</tr>)}</tbody>
             </table>
           </div>
-          <p className="gs-note">Through the ETFs that track them ({d.compare.map(c => c.symbol).join(", ")}), so after the funds' costs, to the last NSE close. 3 years and more: a year, on average. A dash: the ETF's history here doesn't reach that far yet.</p>
+          <p className="gs-note">Through {d.compare.map(c => c.symbol).join(", ")}, after the funds' costs. 3 years and more: a year, on average. —: not that far back yet.</p>
         </section>
         <div className="cs-chips gs-tabs" role="tablist" aria-label="Kind">
           {d.groupInfo.map(g => <button key={g.id} type="button" role="tab" aria-selected={tab === g.id} className={tab === g.id ? "on" : ""} onClick={() => setTab(g.id)}>{g.label}<span>{count(g.id)}</span></button>)}

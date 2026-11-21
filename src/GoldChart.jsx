@@ -157,6 +157,11 @@ export default function GoldChart() {
       : mode === "silver"
         ? "The silver ETF SILVERBEES, the largest silver fund on NSE: one unit, not a gram, moving as silver's price does. It began trading in 2022."
         : "The gold ETF GOLDBEES, the largest gold fund on NSE: one unit, not a gram, moving as gold's price does.";
+  const short = compare
+    ? "₹100 put in at the start of the range, after the funds' costs."
+    : asGold
+      ? "Gold's price for 10 g of 24 carat, estimated from the gold ETF and RBI's price."
+      : mode === "silver" ? "One unit of SILVERBEES, the largest silver ETF: not a gram." : "One unit of GOLDBEES, the largest gold ETF: not a gram.";
   // compared: each line's value where the finger is, else at the end
   const at = s => { const r = tip?.rows.find(x => x.label === s.label); return r ? r.value : (s.closes.at(-1) / s.closes[0]) * 100; };
   return (
@@ -192,7 +197,12 @@ export default function GoldChart() {
           </div>
         </>
       )}
-      <p className="gs-note">{note} NSE's daily prices; before Oct 2021 from NSE's archived daily files, on today's unit.</p>
+      {/* one line, the rest a tap away (21 Nov 2026, the owner: "what about this?") */}
+      <p className="gs-note">{short}</p>
+      <details className="gs-how">
+        <summary>How it's worked out</summary>
+        <p className="gs-note">{note} NSE's daily prices; before Oct 2021 from NSE's archived daily files, on today's unit.</p>
+      </details>
     </section>
   );
 }
