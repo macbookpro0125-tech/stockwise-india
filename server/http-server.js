@@ -160,6 +160,21 @@ export const ASSET_LINKS = JSON.stringify([{
   relation: ["delegate_permission/common.handle_all_urls"],
   target: { namespace: "android_app", package_name: "com.jocularinsights.app", sha256_cert_fingerprints: ["30:CC:0E:5F:DF:2A:F7:41:6D:D3:77:8F:5E:BC:4C:CA:A8:4B:AD:23:9E:04:23:54:17:E1:47:4F:28:3B:16:F9"] },
 }]);
+// After the evening's data is installed, one full garbage collection (22 Nov
+// 2026: Render's graph went from ~45% to ~90% of the 512 MB at the install
+// and stayed there all night — the old day's market left as garbage, which
+// V8 collects only when it runs short). npm start passes --expose-gc; the
+// memory just after is kept for /api/health.
+let afterInstall = null;
+function collectAfterInstall() {
+  if (typeof global.gc !== "function") return;
+  const mb = v => Math.round(v / 1048576);
+  const before = process.memoryUsage();
+  global.gc();
+  const after = process.memoryUsage();
+  afterInstall = { at: new Date().toISOString(), rssBefore: mb(before.rss), heapBefore: mb(before.heapUsed), rss: mb(after.rss), heapUsed: mb(after.heapUsed) };
+  console.log(`[memory] after the install: heap ${afterInstall.heapBefore} → ${afterInstall.heapUsed} MB, rss ${afterInstall.rssBefore} → ${afterInstall.rss} MB`);
+}
 // The website's AdSense publisher (not secret: it's in every page's head)
 const ADSENSE_PUB = /^pub-\d+$/.test(process.env.ADSENSE_PUBLISHER_ID ?? "") ? process.env.ADSENSE_PUBLISHER_ID : "pub-4001463380481442";
 
@@ -208,6 +223,16 @@ function serveStatic(req, pathname, res) {
     res.writeHead(status, { ...headers, ...extra });
     createReadStream(file, range).on("error", () => res.destroy()).pipe(res);
   };
+  // A script or stylesheet compressed at build time (scripts/precompress.mjs),
+  // for a browser that takes brotli; a range request gets the plain file
+  const br = `${file}.br`;
+  if (!req.headers.range && file.includes(`${sep}assets${sep}`) && /\bbr\b/.test(req.headers["accept-encoding"] ?? "") && existsSync(br)) {
+    res.writeHead(200, { ...headers, "Content-Encoding": "br", Vary: "Accept-Encoding", "Content-Length": statSync(br).size });
+    if (req.method === "HEAD") res.end();
+    else createReadStream(br).on("error", () => res.destroy()).pipe(res);
+    return true;
+  }
+  if (file.includes(`${sep}assets${sep}`)) headers.Vary = "Accept-Encoding";
   // bytes=500-999, bytes=500- (to the end), bytes=-500 (the last 500). A
   // multi-part range gets the whole file, which the spec allows.
   const m = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range ?? "");
@@ -1767,7 +1792,7 @@ export function createApp() {
           ...(pullStatus.enabled && { dataPull: pullStatus }),
           // the server's memory, against the heap's limit (20 Nov 2026: two
           // out-of-memory restarts on the 512 MB plan), in MB
-          memory: (() => { const m = process.memoryUsage(); const mb = v => Math.round(v / 1048576); return { rss: mb(m.rss), heapUsed: mb(m.heapUsed), heapLimit: mb(v8HeapLimit()), external: mb(m.external + (m.arrayBuffers ?? 0)) }; })(),
+          memory: (() => { const m = process.memoryUsage(); const mb = v => Math.round(v / 1048576); return { rss: mb(m.rss), heapUsed: mb(m.heapUsed), heapLimit: mb(v8HeapLimit()), external: mb(m.external + (m.arrayBuffers ?? 0)), ...(afterInstall && { afterInstall }) }; })(),
           ...(triggerStatus.enabled && { refreshTrigger: triggerStatus }),
           // Who sees the Momentum tab (set in Render: MOMENTUM, MOMENTUM_USERS)
           momentum: momentumAudience(),
@@ -2008,7 +2033,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   // slices at once, so the next visitor doesn't wait for it
   // new evening data: first let go of caches built from the old, so the 512 MB
   // server doesn't hold two markets at once (20 Nov 2026, two restarts)
-  if (mode === "off" || mode === "pull") startDataPull({ onInstalled: () => { dropExploreCaches(); dropCompanyCaches(); dropTechnicals(); return rebuildFresh().then(() => checkAlertsNow()).catch(e => console.error(`[market] rebuild failed: ${e.message}`)); } });
+  if (mode === "off" || mode === "pull") startDataPull({ onInstalled: () => { dropExploreCaches(); dropCompanyCaches(); dropTechnicals(); return rebuildFresh().then(() => { collectAfterInstall(); return checkAlertsNow(); }).catch(e => console.error(`[market] rebuild failed: ${e.message}`)); } });
   // GitHub's timer starts the evening job ~8 hours late: ask for it ourselves (refresh-trigger.js)
   if (mode === "off" || mode === "pull") startRefreshTrigger({ pricesDate: () => { try { return loadMarketSnapshot()?.pricesDate ?? null; } catch { return null; } } });
   if (mode !== "off") {

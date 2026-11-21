@@ -1,10 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { lazyPage } from "./lazyPage.js";
+// the chart library loads with the chart, not with the app (22 Nov 2026: it
+// was ~185 KB of the first download for one small chart)
+const MarketChart = lazyPage(() => import("./MarketChart.jsx"));
 import BigOrders from "./BigOrders.jsx";
 import HomeGold from "./HomeGold.jsx";
 import { usePhone } from "./phoneTabs.js";
 import { tick } from "./haptics.js";
 import BigNum from "./BigNum.jsx";
-import { createChart, AreaSeries, ColorType } from "lightweight-charts";
 import { ChevronRight, Plus } from "lucide-react";
 import { api } from "./api.js";
 import { cardName } from "./stockName.js";
@@ -182,36 +185,6 @@ function StarField() {
       {TWINKLES.map((t, i) => <span key={i} className="td-twinkle" aria-hidden="true" style={t} />)}
     </>
   );
-}
-
-// The market's last year, large, as the first thing in the summary. Our own
-// index history: the Nifty 50's closes, from the Markets index data.
-function MarketChart({ closes }) {
-  const host = useRef(null);
-  useEffect(() => {
-    if (!host.current || !(closes?.length > 1)) return undefined;
-    const css = getComputedStyle(document.documentElement), v = n => css.getPropertyValue(n).trim();
-    const up = closes.at(-1)[1] >= closes[0][1], line = v(up ? "--green" : "--red");
-    const chart = createChart(host.current, {
-      autoSize: true,
-      layout: { background: { type: ColorType.Solid, color: "rgba(0, 0, 0, 0)" }, textColor: v("--t3"), fontFamily: getComputedStyle(document.body).fontFamily, attributionLogo: false },
-      grid: { vertLines: { visible: false }, horzLines: { visible: false } },
-      rightPriceScale: { borderVisible: false }, timeScale: { borderVisible: false }, localization: { locale: "en-IN", priceFormatter: p => Math.round(p).toLocaleString("en-IN") },
-      handleScroll: false, handleScale: false,
-    });
-    // plain rgba: chart drawing can't rely on color-mix() (the line vanished in Safari)
-    const m = /^#([0-9a-f]{6})$/i.exec(line), n = m ? parseInt(m[1], 16) : 0x808080;
-    const fill = `rgba(${n >> 16}, ${(n >> 8) & 255}, ${n & 255}, 0.22)`, none = `rgba(${n >> 16}, ${(n >> 8) & 255}, ${n & 255}, 0)`;
-    const series = chart.addSeries(AreaSeries, { lineColor: line, lineWidth: 2, topColor: fill, bottomColor: none, priceLineVisible: false });
-    series.setData(closes.map(([time, value]) => ({ time, value })));
-    chart.timeScale().fitContent();
-    // the whole year across the box, whatever its width becomes (it was left
-    // squeezed to one side when the window changed size)
-    const ro = new ResizeObserver(() => chart.timeScale().fitContent());
-    ro.observe(host.current);
-    return () => { ro.disconnect(); chart.remove(); };
-  }, [closes]);
-  return <div ref={host} className="td-chart" role="img" aria-label="The Nifty 50 over the last year" />;
 }
 
 // Every part of the app from one place (1 Nov 2026, the owner: "every option in
@@ -599,7 +572,7 @@ export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIn
             <div className="td-big-head">
               <div><h3>Nifty 50</h3><b><BigNum text={num(market.at(-1)[1])} /></b> <i style={{ color: tone(market.at(-1)[1] - market[0][1]) }}>{pct(((market.at(-1)[1] - market[0][1]) / market[0][1]) * 100)}</i> <small>over the year</small></div>
             </div>
-            <MarketChart closes={market} />
+            <Suspense fallback={<div className="td-chart" aria-hidden="true" />}><MarketChart closes={market} /></Suspense>
           </section>
         )}
         {/* indices, movers, big orders and categories as one card of tabs (20 Nov 2026, the owner: "like tabs, to save space") */}
