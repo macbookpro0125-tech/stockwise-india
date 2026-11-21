@@ -5,7 +5,7 @@ The newest are at the top. Each one gives where to go and what you should see. T
 
 | # | Live since | Where to go | What you should see | ✓ |
 |---|---|---|---|---|
-| ★ | next push | On the Mac: Home, scroll to the bottom; then the Screeners card → **See all 27** | Home ends at "What's new today" (no long list of 27 screeners); See all 27 / See every screener opens the list and goes to it; no light following the pointer on Home's boxes | ☐ |
+| ★ | next push | On the Mac: Home, scroll to the bottom; then the Screeners card → **See all 27** | The **Screeners** card is last on Home (after "What's new today"), with no long list of 27 under it; See all 27 / See every screener opens the list just below it; no light following the pointer on Home's boxes | ☐ |
 | ★ | next push | On the Mac: move the pointer over cards and tiles (Home, Screeners) | No soft light following the pointer; moving feels smooth | ☐ |
 | ★ | next push | On the Mac in Safari: open jocularinsights.in in a **new tab** (also Cmd-click a link to it) | The opening (line and dot) never freezes: a tab opened in the background skips it, and the opening always ends within about 7 seconds | ☐ |
 | 4 | 21 Nov | Gold page → under the chart, and under "Gold, silver and the Nifty 50" | One short line under the chart, with **How it's worked out ›** for the rest; a shorter note under the returns table | ☐ |

@@ -280,22 +280,6 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onOp
     <div className="td">
       <MarketSummary visible={visible} onOpenStock={onOpenStock} onOpenTab={onOpenTab} onOpenIndex={onOpenIndex} />
 
-      <section className="td-box td-screens" aria-label="Screeners">
-        <div className="td-head">
-          <h3>Screeners</h3>
-          <span className="td-head-acts">
-            <button type="button" onClick={seeAll}>See all{presets.length ? ` ${presets.length}` : ""}</button>
-            <button type="button" onClick={onCreate}><Plus size={13} aria-hidden="true" />Create new screen</button>
-          </span>
-        </div>
-        {presets.slice(0, QUICK_SCREENS).map(p => (
-          <button key={p.id} type="button" className="td-screen" onClick={() => onPickScreen?.(p)}>
-            <span className="td-screen-icon"><ScreenIcon p={p} size={18} /></span>
-            <span>{p.name}<small>{p.description}</small></span>
-          </button>
-        ))}
-      </section>
-
       <h3 className="td-menu-title">Everything in the app</h3>
       <nav className="td-box td-all-pages" aria-label="Everything in the app">
         {PAGE_GROUPS.map(g => (
@@ -318,6 +302,23 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onOp
 
       {continueCard}
       {newsTile && <div className="td-news">{newsTile}</div>}
+
+      {/* last on the page, the full list opening under it (21 Nov 2026, the owner) */}
+      <section className="td-box td-screens" aria-label="Screeners">
+        <div className="td-head">
+          <h3>Screeners</h3>
+          <span className="td-head-acts">
+            <button type="button" onClick={seeAll}>See all{presets.length ? ` ${presets.length}` : ""}</button>
+            <button type="button" onClick={onCreate}><Plus size={13} aria-hidden="true" />Create new screen</button>
+          </span>
+        </div>
+        {presets.slice(0, QUICK_SCREENS).map(p => (
+          <button key={p.id} type="button" className="td-screen" onClick={() => onPickScreen?.(p)}>
+            <span className="td-screen-icon"><ScreenIcon p={p} size={18} /></span>
+            <span>{p.name}<small>{p.description}</small></span>
+          </button>
+        ))}
+      </section>
 
       {allOpen && (
         <section id="all-screeners" className="td-all" aria-labelledby="sh-popular">
