@@ -5,7 +5,7 @@ import { badRequest } from "./http-errors.js";
 // the cards they chose, each where they put it and as big as they made it.
 // Kept whole, as the page sends it, once it's been checked here.
 
-export const CARD_KINDS = ["list", "chart", "business", "price", "peers", "mood", "patterns", "watchlist", "results", "notes"];
+export const CARD_KINDS = ["list", "chart", "business", "price", "peers", "mood", "patterns", "watchlist", "results", "notes", "tracker"];
 export const MAX_CARDS = 16;
 const NOTE_MAX = 2000;
 

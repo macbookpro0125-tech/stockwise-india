@@ -9,6 +9,7 @@ export const MAX_ROWS = 200;
 
 // smallest and starting size of each kind, in cells
 export const SIZES = {
+  tracker: { w: 7, h: 22, minW: 5, minH: 12 },
   list: { w: 3, h: 18, minW: 2, minH: 6 },
   chart: { w: 6, h: 18, minW: 4, minH: 12 },
   business: { w: 3, h: 18, minW: 2, minH: 6 },

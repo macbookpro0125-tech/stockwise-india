@@ -7814,3 +7814,24 @@ html.is-scrolling .hk-track { animation-play-state: paused; }
 .ps .td-row .td-name small { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* the round menu button floats over the page's foot: room under it */
 @media (max-width: 767px) { .site-foot { padding-bottom: calc(26px + 92px + env(safe-area-inset-bottom, 0px)); } }
+
+/* The results tracker (ResultsTracker.jsx, 21 Nov 2026) */
+.trk-track { display: inline-flex; align-items: center; gap: 4px; height: 26px; margin-right: 8px; padding: 0 10px; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--bdr2)); border-radius: 999px; background: none; color: var(--accent); font: inherit; font-size: 12px; cursor: pointer; white-space: nowrap; }
+.trk-track.on { border-color: var(--bdr2); color: var(--t3); cursor: default; }
+.trk { display: flex; flex-direction: column; gap: 10px; min-height: 0; height: 100%; }
+.trk-sum { margin: 0; font-size: 13px; color: var(--t2); } .trk-sum b { color: var(--t1); font-weight: 600; }
+.trk .up { color: var(--green); } .trk .down { color: var(--red); }
+.trk-chart { flex: none; height: 200px; }
+.trk-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.trk-seg { display: inline-flex; gap: 4px; } .trk-seg button { border: 1px solid var(--bdr2); background: none; color: var(--t3); border-radius: 999px; padding: 3px 10px; font: inherit; font-size: 12px; cursor: pointer; } .trk-seg button[aria-selected="true"] { color: var(--t1); border-color: var(--accent); }
+.trk-sort { margin-left: auto; font-size: 12px; color: var(--t3); } .trk-sort select { margin-left: 6px; font: inherit; font-size: 12px; background: var(--s1); color: var(--t1); border: 1px solid var(--bdr2); border-radius: 8px; padding: 2px 6px; }
+.trk-table { overflow: auto; min-height: 0; }
+.trk-row { display: grid; grid-template-columns: minmax(120px, 1.6fr) 0.8fr 0.9fr 1.2fr 0.9fr 0.6fr 28px; gap: 8px; align-items: center; padding: 8px 4px; border-top: 1px solid var(--bdr); font-size: 13px; font-variant-numeric: tabular-nums; cursor: pointer; }
+.trk-row > span { display: flex; flex-direction: column; min-width: 0; }
+.trk-row small { font-size: 11px; color: var(--t3); }
+.trk-row.on { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.trk-head { cursor: default; border-top: 0; font-size: 11px; color: var(--t3); text-transform: none; }
+.trk-co { flex-direction: row !important; flex-wrap: wrap; align-items: center; gap: 2px 6px; } .trk-co i { flex: none; width: 8px; height: 8px; border-radius: 50%; } .trk-co b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; } .trk-co small { flex-basis: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trk-big { font-weight: 600; }
+.trk-x { display: grid; place-items: center; width: 26px; height: 26px; border: 0; border-radius: 8px; background: none; color: var(--t3); cursor: pointer; } .trk-x:hover { color: var(--red); background: var(--s2); }
+.trk-foot { margin: 0; font-size: 11px; }

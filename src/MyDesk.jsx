@@ -4,6 +4,7 @@ import { COLS, SIZES, compact, placeNew, clampCard, fromOld } from "./deskGrid.j
 import { api } from "./api.js";
 import PriceChartPanel from "./PriceChartPanel.jsx";
 import PeersPanel from "./PeersPanel.jsx";
+import { TrackerCard } from "./ResultsTracker.jsx";
 import { cardName } from "./stockName.js";
 import { v, quality, pct, tone, price, Score, STAGE_WORDS, Business, PriceFacts } from "./ScreenDesk.jsx";
 
@@ -23,6 +24,7 @@ export const CARDS = [
   { kind: "patterns", label: "Patterns in the list", about: "Which companies in the list show each price pattern" },
   { kind: "watchlist", label: "Watchlist", about: "Your starred companies" },
   { kind: "results", label: "Results this week", about: "Who reports in the next days" },
+  { kind: "tracker", label: "Results tracker", about: "Companies you follow from their results day: the move since, against the Nifty 500, on one chart" },
   { kind: "notes", label: "Notes", about: "Your own words, kept with the layout" },
 ];
 const SUGGESTED = [
@@ -148,6 +150,7 @@ export default function MyDesk({ rows = [], market, onOpenStock, MoodBar }) {
       case "mood": return <MoodBar market={market} />;
       case "patterns": return <Patterns rows={rows} market={market} onPick={setPicked} />;
       case "results": return <Results data={results} onPick={setPicked} />;
+      case "tracker": return <TrackerCard onPick={setPicked} picked={sym} />;
       case "notes": return <textarea className="md-notes" aria-label="Notes" maxLength={2000} placeholder="Your notes: what you're watching, and why" value={c.text ?? ""}
         onChange={e => setCards(cards.map(x => (x.id === c.id ? { ...x, text: e.target.value } : x)))} />;
       default: return null;

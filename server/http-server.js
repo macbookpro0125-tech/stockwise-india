@@ -78,6 +78,7 @@ import { ordersOn, record as recordOrders } from "./orders-archive.js";
 import { marketNews, topNews, newsItem, newsItemFiling, newsForSymbols, watchlistLatest, KINDS as NEWS_KINDS, companiesInNews, bigOrders } from "./market-news.js";
 import { portfolioVsMarket } from "./portfolio-vs-market.js";
 import { historyBars } from "./price-history.js";
+import { addTrack, listTracks, removeTrack, setTrackNote } from "./results-tracks.js";
 import { readIndexHistory } from "./index-history.js";
 import { exploreBoard, exploreIndex, heatmap, HEAT_SETS, topMovers, resultsWeek, resultsFor, moversOn, indexBars, sectorBrief, sectorRotation, marketHealth, chartScan } from "./explore.js";
 import { summarizeMove, aiClient } from "./ai-moves.js";
@@ -1636,6 +1637,20 @@ export function createApp() {
       }
 
       // the trading journal (journal.js)
+      // the results tracker (results-tracks.js)
+      if (url.pathname === "/api/tracks" && (req.method === "GET" || req.method === "POST")) {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        sendJson(res, 200, req.method === "GET" ? listTracks(userId) : addTrack(userId, await readJsonBody(req)));
+        return;
+      }
+      const trackItem = url.pathname.match(/^\/api\/tracks\/(\d+)$/);
+      if (trackItem && (req.method === "PUT" || req.method === "DELETE")) {
+        const userId = requireAuth(req, res);
+        if (userId == null) return;
+        sendJson(res, 200, req.method === "PUT" ? setTrackNote(userId, Number(trackItem[1]), (await readJsonBody(req)).note) : removeTrack(userId, Number(trackItem[1])));
+        return;
+      }
       if (url.pathname === "/api/journal" && (req.method === "GET" || req.method === "POST")) {
         const userId = requireAuth(req, res);
         if (userId == null) return;

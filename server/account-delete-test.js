@@ -19,6 +19,7 @@ const { signup, deleteAccount } = await import("./auth.js");
 await import("./journal.js");
 await import("./digest.js");
 await import("./results-push.js");
+await import("./results-tracks.js");
 
 assert.equal(db.prepare("PRAGMA foreign_keys").get().foreign_keys, 1, "foreign keys are on");
 

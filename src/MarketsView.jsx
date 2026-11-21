@@ -23,6 +23,7 @@ import { tick } from "./haptics.js";
 const MTABS = [["today", "Today"], ["moves", "Moves"], ["sectors", "Sectors"], ["results", "Results"], ["scans", "Scans"], ["economy", "Economy"]];
 import MarketHealth from "./MarketHealth.jsx";
 import { useWatchlist } from "./watchlist.js";
+import { TrackButton } from "./ResultsTracker.jsx";
 import { Star } from "lucide-react";
 
 // Markets, a page of its own (5 Nov 2026, "a market page, detailed"): the
@@ -347,7 +348,7 @@ function ResRow({ c, done, starred, onOpenStock, when }) {
       <span className={`mk-resday-n${slug ? " tap" : ""}`} onClick={openRes}>{crore(qq?.salesCr)}{qq?.salesYoY != null && <small className={tone(qq.salesYoY)}>{pct1(qq.salesYoY)}</small>}</span>
       <span className={`mk-resday-n${slug ? " tap" : ""}`} onClick={openRes}>{qq?.profitCr != null && qq.profitCr < 0 ? `Loss ${crore(qq.profitCr)}` : crore(qq?.profitCr)}{qq?.profitYoY != null && qq?.profitCr > 0 && qq.profitCr / (1 + qq.profitYoY / 100) > 0 && <small className={tone(qq.profitYoY)}>{pct1(qq.profitYoY)}</small>}</span>
       <span className={`mk-resday-move ${tone(c.ret1d)}`}>{c.ret1d == null ? "—" : pct1(c.ret1d)}</span>
-      <span className="mk-resday-go">{slug && <button type="button" className="mk-link" onClick={() => navigate(`/stock/${encodeURIComponent(c.symbol)}/results/${slug}`)}>{done ? "See results" : "Last results"} <ChevronRight size={14} aria-hidden="true" /></button>}</span>
+      <span className="mk-resday-go">{done && <TrackButton symbol={c.symbol} name={c.name} />}{slug && <button type="button" className="mk-link" onClick={() => navigate(`/stock/${encodeURIComponent(c.symbol)}/results/${slug}`)}>{done ? "See results" : "Last results"} <ChevronRight size={14} aria-hidden="true" /></button>}</span>
     </li>
   );
 }

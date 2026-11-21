@@ -93,6 +93,10 @@ export const api = {
   stocksBrief: symbols => request(`/api/stocks/brief?symbols=${encodeURIComponent(symbols.join(","))}`),
   // The results email: the evening before a watched company's results
   resultsEmail: () => request("/api/account/results-email"),
+  tracks: () => request("/api/tracks"),
+  addTrack: (symbol, note = "") => request("/api/tracks", { method: "POST", body: JSON.stringify({ symbol, note }) }),
+  removeTrack: id => request(`/api/tracks/${id}`, { method: "DELETE" }),
+  trackNote: (id, note) => request(`/api/tracks/${id}`, { method: "PUT", body: JSON.stringify({ note }) }),
   setResultsEmail: (on) => request("/api/account/results-email", { method: "POST", body: JSON.stringify({ on }) }),
   // The strategies' and the results calendar's public pages (PublicLists.jsx)
   publicScreens: () => request("/api/public/screens"),
