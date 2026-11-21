@@ -110,6 +110,20 @@ export function bankHealth(b) {
 //   filed on a ₹4,156 Cr PBT; its owners' ₹3,031 Cr matches EPS ₹31.59 ×
 //   95.9 Cr shares). A real gain below the PBT line (a business sold) shows in
 //   the owners' profit and EPS too, so it's left alone
+// Sales net of excise duty (fetch-nse.js exciseOf, DETAIL_VERSION 4), as
+// Screener and the companies' own "net revenue" show them: Ind AS counts
+// the duty in revenue and again in expenses, so both come down by it and
+// the profit is unchanged. ITC's quarter to Sep 2026: ₹30,578 Cr filed,
+// ₹10,310 Cr of it excise. `grossRevenue` keeps the filed figure.
+export function netOfExcise(y) {
+  if (!(y.excise > 0) || !(y.revenue > y.excise)) return y;
+  y.grossRevenue = y.revenue;
+  y.revenue -= y.excise;
+  if (y.expenses != null) y.expenses -= y.excise;
+  if (y.otherExpenses != null && y.otherExpenses >= y.excise) y.otherExpenses -= y.excise;
+  return y;
+}
+
 export function dataChecks(y) {
   const fixes = [];
   if (y.capex != null && y.capex < 0) {
@@ -134,6 +148,7 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
   const years = fixUnitSlips(stock.years.filter(y => !y.error && y.fyEnd)).map(y => ({ ...y }));
   // Impossible figures, checked as the years load (21 Nov 2026, the
   // 10-company check) — see dataChecks below
+  years.forEach(netOfExcise);
   const dataFixes = years.flatMap(dataChecks);
   const latest = years[0];
   if (!latest) return null;
@@ -148,6 +163,7 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     return years.find(y => Math.abs(new Date(`${y.fyEnd}T00:00:00Z`) - target) <= 45 * DAY) ?? null;
   };
   const quarterList = fixUnitSlips((stock.quarters ?? []).filter(q => !q.error && q.qEnd).map(q => ({ ...q, fyEnd: q.qEnd })));
+  quarterList.forEach(netOfExcise);
 
   // Splits and bonuses change the share count. Anything filed before one is
   // per old share: divide per-share figures (and multiply share counts) by

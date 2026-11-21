@@ -116,7 +116,7 @@ const YEARS = 8;
 // companies are re-read for it a batch a night, biggest first
 // (data-jobs.js), not all at once as a SCHEMA change would — the whole market
 // takes about two hours, near the evening job's limit
-export const DETAIL_VERSION = 3; // 2: each quarter's expense lines, intangible assets under development; 3: the half-year cash flow from September and March filings
+export const DETAIL_VERSION = 4; // 4: excise duty, from the breakdown of other expenses; 2: each quarter's expense lines, intangible assets under development; 3: the half-year cash flow from September and March filings
 export const BANK_VERSION = 2; // 2: five quarters of asset quality, capital and return on assets
 // Three years of quarters: this quarter against the same one a year ago, two
 // years running, and trailing-twelve-month figures
@@ -330,6 +330,24 @@ export function asStandardTags(xml, xbrlUrl) {
 // "FourD", and FY22-era files reference contexts they never define. So legacy
 // files are read by id, with the end-date check kept where the context exists
 // and a sanity check that the "year" column's revenue really is a year's.
+// Excise duty (21 Nov 2026, checked against Screener: ITC's FY26 sales read
+// ₹89,913 Cr, Screener's ₹78,868 Cr). Ind AS puts excise inside revenue from
+// operations and again as an expense; it's the government's, not sales. The
+// filing has no line of its own for it: it's an entry in the breakdown of
+// other expenses, a description ("Excise Duty") and an amount sharing a
+// context. Summed over every entry described as excise, for the contexts
+// `pick` accepts (the quarter's, the year's); null when there's none.
+export function exciseOf(xml, ctx, pick) {
+  let total = null;
+  for (const m of xml.matchAll(/<[a-z-]+:DescriptionOfOtherExpenses\b[^>]*?contextRef="([^"]+)"[^>]*>([^<]*)</g)) {
+    if (!/excise/i.test(m[2]) || !pick(ctx[m[1]] ?? {}, m[1])) continue;
+    const id = m[1].replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const v = Number(xml.match(new RegExp(`<[a-z-]+:OtherExpenses\\b[^>]*?contextRef="${id}"[^>]*>([^<]*)<`))?.[1]);
+    if (Number.isFinite(v) && v > 0) total = (total ?? 0) + v;
+  }
+  return total;
+}
+
 function reader(xml, row) {
   const ctx = parseContexts(xml);
   const end = isoDay(row.periodEnd);
@@ -342,6 +360,7 @@ function reader(xml, row) {
     return {
       year: tags => (yearOk ? valueById(xml, tags, "FourD") : null),
       atEnd: tags => (instantOk ? valueById(xml, tags, "OneI") : null),
+      excise: () => (yearOk ? exciseOf(xml, ctx, (_, id) => /^Four/.test(id)) : null),
       any: tags => valueById(xml, tags, "FourD") ?? valueById(xml, tags, "OneD"),
     };
   }
@@ -351,6 +370,7 @@ function reader(xml, row) {
       .sort((a, b) => b.days - a.days)[0]?.value ?? null,
     atEnd: tags => firstFacts(xml, ctx, tags).find(f => f.instant === end)?.value ?? null,
     any: tags => firstFacts(xml, ctx, tags).find(f => f.end === end)?.value ?? null,
+    excise: () => exciseOf(xml, ctx, c => c.end === end && c.days >= 350),
   };
 }
 
@@ -518,6 +538,7 @@ function extractYear(xml, row, template = templateOf(row.xbrl)) {
     depreciation: r.year(TAGS.depreciation),
     otherIncome: r.year(TAGS.otherIncome),
     pbt: r.year(TAGS.pbt),
+    excise: r.excise(),
     tax: taxExpense(r.year),
     ocf: r.year(TAGS.ocf),
     // FY22-era legacy filings carry no balance sheet: equity is null there, and
@@ -568,6 +589,7 @@ function quarterReader(xml, row) {
     const ok = !ctx.OneD?.end || ctx.OneD.end === end;
     return {
       quarter: tags => (ok ? valueById(xml, tags, "OneD") : null),
+      excise: () => (ok ? exciseOf(xml, ctx, (_, id) => /^One/.test(id)) : null),
       any: tags => valueById(xml, tags, "OneD") ?? valueById(xml, tags, "FourD"),
       half: () => null,
       atEnd: () => null,
@@ -575,6 +597,7 @@ function quarterReader(xml, row) {
   }
   return {
     quarter: tags => firstFacts(xml, ctx, tags).find(f => f.end === end && f.days >= 80 && f.days <= 100)?.value ?? null,
+    excise: () => exciseOf(xml, ctx, c => c.end === end && c.days >= 80 && c.days <= 100),
     any: tags => firstFacts(xml, ctx, tags).find(f => f.end === end)?.value ?? null,    // the half-year to this quarter's end (a September or March filing's
     // six months: 170–190 days), never the quarter or the year beside it
     half: tags => firstFacts(xml, ctx, tags).find(f => f.end === end && f.days >= 170 && f.days <= 190)?.value ?? null,
@@ -595,6 +618,7 @@ export function extractQuarter(xml, row) {
     source: row.legacy ? "legacy" : "integrated",
     filed: row.filed ? isoDay(row.filed) : null,
     revenue: r.quarter(TAGS.revenue),
+    excise: r.excise(),
     expenses: r.quarter(TAGS.expenses),
     financeCosts: r.quarter(TAGS.financeCosts),
     depreciation: r.quarter(TAGS.depreciation),
@@ -860,7 +884,13 @@ async function fetchFinancials(symbol) {
       quarter = {
         periodEnded: filing.qe_Date,
         scope: filing.consolidated,
-        revenueQuarter: durationFact(firstFacts(xml, ctx, TAGS.revenue), "shortest")?.value ?? null,
+        revenueQuarter: (() => {
+          // net of excise, as the quarters are (metrics.js netOfExcise)
+          const f = durationFact(firstFacts(xml, ctx, TAGS.revenue), "shortest");
+          if (f?.value == null) return null;
+          const excise = exciseOf(xml, ctx, c => c.end === f.end && c.days === f.days);
+          return excise > 0 && excise < f.value ? f.value - excise : f.value;
+        })(),
         profitQuarter: durationFact(profit, "shortest")?.value ?? null,
         epsQuarter: durationFact(firstFacts(xml, ctx, TAGS.eps), "shortest")?.value ?? null,
       };
@@ -954,7 +984,7 @@ export async function fetchStockSummary(symbol) {
     detail: DETAIL_VERSION,
     template: latest.template,
     pnl: quarter,
-    annual: { yearEnded: latest.label, scope: latest.scope, revenue: latest.revenue, profit: latest.profit, eps: latest.eps },
+    annual: { yearEnded: latest.label, scope: latest.scope, revenue: latest.excise > 0 && latest.revenue > latest.excise ? latest.revenue - latest.excise : latest.revenue, profit: latest.profit, eps: latest.eps },
     balanceSheet: {
       yearEnded: latest.label,
       netWorth: latest.equity,

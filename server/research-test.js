@@ -4,7 +4,8 @@
 // zero or a pass, items that don't apply leave the denominator, coverage
 // gates hold, the overall formula is what's stated, and the price trend never
 // moves the quality or overall score.
-import { computeMetrics, dataChecks } from "./metrics.js";
+import { computeMetrics, dataChecks, netOfExcise } from "./metrics.js";
+import { exciseOf, parseContexts } from "./fetch-nse.js";
 import { band, GROUPS, computeResearch, peCohort, FIN_BANKS, FIN_LENDERS, FIN_NON_LENDERS } from "./research.js";
 import { justifiedPb, sustainableGrowth, bankValuation, costOfEquity } from "./bank-valuation.js";
 import { pricePosition, calculateLevels, fairValues, levelsFromFairValue, userLevels, fairValueOnly, cleanLevelSettings, DEFAULT_LEVEL_SETTINGS, LEVEL_KEYS } from "./levels.js";
@@ -497,5 +498,17 @@ const ap = { fyEnd: "2022-03-31", pbt: 4156 * CR, profit: 9167 * CR, profitOwner
 assert(dataChecks(ap)[0]?.field === "profit" && ap.profit === 3031 * CR, "profit over twice the PBT, the owners' share agreeing with EPS: the owners' figure is used");
 const sold = { fyEnd: "2026-03-31", pbt: 100 * CR, profit: 600 * CR, profitOwners: 600 * CR, eps: 60, paidUp: 10 * CR, faceValue: 1 };
 assert(dataChecks(sold).length === 0 && sold.profit === 600 * CR, "a real gain below the PBT line (in the owners' profit and EPS too) is left alone");
+
+// ── Sales net of excise duty (ITC's quarter to Sep 2026) ──
+const xbrl = `<xbrli:context id="OneD"><xbrli:period><xbrli:startDate>2026-07-01</xbrli:startDate><xbrli:endDate>2026-09-30</xbrli:endDate></xbrli:period></xbrli:context>
+<xbrli:context id="OneExpenses1D"><xbrli:entity><xbrli:segment>x</xbrli:segment></xbrli:entity><xbrli:period><xbrli:startDate>2026-07-01</xbrli:startDate><xbrli:endDate>2026-09-30</xbrli:endDate></xbrli:period></xbrli:context>
+<xbrli:context id="OneExpenses2D"><xbrli:entity><xbrli:segment>y</xbrli:segment></xbrli:entity><xbrli:period><xbrli:startDate>2026-07-01</xbrli:startDate><xbrli:endDate>2026-09-30</xbrli:endDate></xbrli:period></xbrli:context>
+<in-capmkt:DescriptionOfOtherExpenses contextRef="OneExpenses1D">Excise Duty</in-capmkt:DescriptionOfOtherExpenses><in-capmkt:OtherExpenses contextRef="OneExpenses1D" unitRef="INR">103097700000</in-capmkt:OtherExpenses>
+<in-capmkt:DescriptionOfOtherExpenses contextRef="OneExpenses2D">Other Expenses</in-capmkt:DescriptionOfOtherExpenses><in-capmkt:OtherExpenses contextRef="OneExpenses2D" unitRef="INR">35223700000</in-capmkt:OtherExpenses>`;
+const excise = exciseOf(xbrl, parseContexts(xbrl), c => c.end === "2026-09-30" && c.days >= 80 && c.days <= 100);
+assert(excise === 103097700000, "excise duty read from the breakdown of other expenses, only the entry described as excise");
+const itcQ = netOfExcise({ revenue: 305784000000, expenses: 254624000000, excise });
+assert(Math.round(itcQ.revenue / CR) === 20269 && Math.round(itcQ.expenses / CR) === 15153 && itcQ.grossRevenue === 305784000000, "sales and expenses both come down by the duty (ITC ₹30,578 → ₹20,269 Cr); the profit is unchanged");
+assert(netOfExcise({ revenue: 100, expenses: 80 }).revenue === 100, "no excise: nothing changes");
 
 console.log("\nAll research-score checks passed.");
