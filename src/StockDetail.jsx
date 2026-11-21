@@ -1008,6 +1008,11 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
               {m.unitFixes.map(f => `FY${f.fyEnd.slice(2, 4)}`).join(" and ")} {m.unitFixes.length > 1 ? "filings were" : "filing was"} in the wrong unit on NSE (figures {m.unitFixes[0].factor > 1 ? `${m.unitFixes[0].factor.toLocaleString("en-IN")}× too small` : `${(1 / m.unitFixes[0].factor).toLocaleString("en-IN")}× too large`}, share capital included) — corrected here so growth rates aren't distorted.
             </div>
           )}
+          {m.scopeBreaks?.length > 0 && (
+            <div style={{ marginTop: 4, color: "var(--t2)" }}>
+              {m.scopeBreaks.map(b => `FY${b.fyEnd.slice(2, 4)}`).join(", ")}: on file only as the {m.scopeBreaks[0].scope === "Standalone" ? "company alone (standalone)" : "whole group (consolidated)"}, unlike the other years, so growth isn't measured from {m.scopeBreaks.length > 1 ? "those years" : "that year"}.
+            </div>
+          )}
           {m.dataFixes?.map(f => (
             <div key={`${f.fyEnd}-${f.field}`} style={{ marginTop: 4, color: "var(--t2)" }}>
               FY{f.fyEnd.slice(2, 4)}: {f.field === "ocf" ? `the operating cash flow filed (₹${Math.round(f.filed / 1e7).toLocaleString("en-IN")} crore) adds the tax paid instead of taking it off, so it isn't used; that year's cash-flow tests are left out` : f.field === "capex" ? `spending on equipment was filed as −₹${Math.round(Math.abs(f.filed) / 1e7).toLocaleString("en-IN")} crore; a purchase can't be negative, so ₹${Math.round(f.used / 1e7).toLocaleString("en-IN")} crore is used` : `profit was filed as ₹${Math.round(f.filed / 1e7).toLocaleString("en-IN")} crore, over twice the profit before tax; the owners' share, ₹${Math.round(f.used / 1e7).toLocaleString("en-IN")} crore, agrees with the EPS and is used`}.

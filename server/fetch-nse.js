@@ -116,7 +116,7 @@ const YEARS = 8;
 // companies are re-read for it a batch a night, biggest first
 // (data-jobs.js), not all at once as a SCHEMA change would — the whole market
 // takes about two hours, near the evening job's limit
-export const DETAIL_VERSION = 4; // 4: excise duty, from the breakdown of other expenses, and the operating cash flow's parts; 2: each quarter's expense lines, intangible assets under development; 3: the half-year cash flow from September and March filings
+export const DETAIL_VERSION = 4; // 4: excise duty, from the breakdown of other expenses, the operating cash flow's parts, a quarter filed only as the year to date, and the latest year in the other kind of accounts; 2: each quarter's expense lines, intangible assets under development; 3: the half-year cash flow from September and March filings
 export const BANK_VERSION = 2; // 2: five quarters of asset quality, capital and return on assets
 // Three years of quarters: this quarter against the same one a year ago, two
 // years running, and trailing-twelve-month figures
@@ -953,20 +953,34 @@ async function fetchFinancials(symbol) {
     ...integrated.map(integratedRow),
     ...(await legacyAnnualRows(symbol)),
   ].filter(r => r.periodEnd && r.periodEnd < latestRow.periodEnd && r.label.startsWith(monthDay));
+  // each earlier year in the latest year's kind of accounts where it was
+  // filed that way, so the years compare (21 Nov 2026: UCO Bank's FY26 is
+  // standalone and its FY22–FY25 were read consolidated though both exist)
   candidates.sort((a, b) =>
     b.periodEnd - a.periodEnd ||
-    (a.scope === "Consolidated" ? -1 : 1) - (b.scope === "Consolidated" ? -1 : 1) ||
+    (a.scope === latestRow.scope ? -1 : 1) - (b.scope === latestRow.scope ? -1 : 1) ||
     (b.filed ?? 0) - (a.filed ?? 0)
   );
-  const byYear = new Set();
-  const earlier = candidates.filter(r => !byYear.has(isoDay(r.periodEnd)) && byYear.add(isoDay(r.periodEnd))).slice(0, YEARS - 1);
+  // each year's filings, the preferred first; when its file can't be read
+  // (NSE's 404 for UCO Bank's FY23 standalone) the next one is tried
+  const byYear = new Map();
+  for (const r of candidates) {
+    const k = isoDay(r.periodEnd);
+    if (!byYear.has(k)) byYear.set(k, []);
+    byYear.get(k).push(r);
+  }
+  const earlier = [...byYear.values()].slice(0, YEARS - 1);
 
-  const earlierYears = await mapLimit(earlier, DOWNLOAD_CONCURRENCY, async row => {
-    try {
-      return extractYear(await getXml(row.xbrl), row, latestYear.template);
-    } catch (e) {
-      return { fyEnd: isoDay(row.periodEnd), label: row.label, error: e.message };
+  const earlierYears = await mapLimit(earlier, DOWNLOAD_CONCURRENCY, async rows => {
+    let error = null;
+    for (const row of rows) {
+      try {
+        return extractYear(await getXml(row.xbrl), row, latestYear.template);
+      } catch (e) {
+        error ??= e.message;
+      }
     }
+    return { fyEnd: isoDay(rows[0].periodEnd), label: rows[0].label, error };
   });
 
   // The last twelve quarters, from integrated filings (Mar 2025 on) and the old
@@ -999,7 +1013,24 @@ async function fetchFinancials(symbol) {
     }
   }
 
-  return { quarter, years: [latestYear, ...earlierYears], quarters, bank, business: business ?? [] };
+  // When some earlier year is on file only in the other kind of accounts
+  // (Reliance's FY22: standalone; the rest consolidated), the latest year in
+  // that other kind too, to see how far apart the two are: close (small
+  // subsidiaries, IRCTC) and the years still compare; far apart and growth
+  // isn't measured across them (metrics.js comparable). One more download,
+  // only for such companies.
+  let otherScope = null;
+  if (earlierYears.some(y => !y.error && y.scope && y.scope !== latestRow.scope)) {
+    const other = integrated.find(f => String(f.qe_Date).toUpperCase() === latestRow.label && (f.consolidated === "Consolidated") !== (latestRow.scope === "Consolidated"));
+    if (other) {
+      try {
+        const y = extractYear(await getXml(other.xbrl), integratedRow(other), latestYear.template);
+        if (y.revenue != null) otherScope = { scope: other.consolidated === "Consolidated" ? "Consolidated" : "Standalone", revenue: y.revenue, profit: y.profit };
+      } catch { /* unknown: the years of the other kind stay apart */ }
+    }
+  }
+
+  return { quarter, years: [latestYear, ...earlierYears], quarters, bank, business: business ?? [], otherScope };
 }
 
 // A distressed company can have negative net worth (accumulated losses
@@ -1008,7 +1039,7 @@ async function fetchFinancials(symbol) {
 // the same for Debt-to-Equity. Both are undefined when equity isn't positive,
 // so null them rather than let a loss-making company read as a compounder.
 export async function fetchStockSummary(symbol) {
-  const [{ quarter, years, quarters, bank, business }, holding] = await Promise.all([
+  const [{ quarter, years, quarters, bank, business, otherScope }, holding] = await Promise.all([
     fetchFinancials(symbol),
     fetchShareholding(symbol),
   ]);
@@ -1041,6 +1072,7 @@ export async function fetchStockSummary(symbol) {
     holding,
     roe,
     debtToEquity,
+    ...(otherScope && { otherScope }),
   };
 }
 

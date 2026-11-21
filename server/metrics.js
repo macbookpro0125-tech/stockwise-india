@@ -335,8 +335,25 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
   // in associates' share, discontinued operations and exceptional items
   const taxOf = row => row.tax ?? null;
 
+  // Growth compares like with like (21 Nov 2026, against Tijori: Reliance's
+  // FY22 is on file only as Reliance itself — NSE has no consolidated filing
+  // for it — 40% below the group's figure, while every other year is the
+  // group's). A base year whose accounts are of the other kind gives no
+  // growth figure rather than a wrong one; 263 companies had such a year.
+  // A year of the other kind still counts when the two kinds are close in
+  // the latest year, sales and profit within 10% (fetch-nse.js otherScope):
+  // the subsidiaries are small (IRCTC). Reliance's standalone is about half
+  // the group, so its FY22 doesn't. Not known: kept apart.
+  const sameKind = y => !latest.scope || !y.scope || y.scope === latest.scope;
+  const o = stock.otherScope;
+  const near10 = (a, b) => a != null && b != null && Math.abs(b) > 0 && Math.abs(a / b - 1) <= 0.1;
+  const kindsAgree = !!o && near10(o.revenue, latest.grossRevenue ?? latest.revenue) && (o.profit == null || latest.profit == null || near10(o.profit, latest.profit) || Math.abs(o.profit - latest.profit) < 0.02 * Math.abs(latest.revenue));
+  const inLine = () => kindsAgree;
+  const comparable = y => !y || sameKind(y) || inLine(y);
+  const scopeBreaks = years.slice(0, 6).filter(y => !comparable(y)).map(y => ({ fyEnd: y.fyEnd, scope: y.scope }));
   const cagr = (field, n) => {
     const base = yearBack(latest, n);
+    if (!comparable(base)) return null;
     const now = latest[field], then = base?.[field];
     return now > 0 && then > 0 ? (Math.pow(now / then, 1 / n) - 1) * 100 : null;
   };
@@ -881,6 +898,7 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     // Years whose filing was in the wrong unit and has been rescaled
     unitFixes: years.filter(y => y.unitFix).map(y => ({ fyEnd: y.fyEnd, factor: y.unitFix })),
     dataFixes,
+    scopeBreaks,
     provenance: {
       financials: {
         source: latest.source === "legacy" ? "NSE legacy results filing" : "NSE integrated financial filing",
@@ -977,6 +995,7 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
   const epsOf = y => (y?.eps != null ? y.eps / factorAfter(filedOf(y)) : null);
   const growth = (get, n) => {
     const base = yearBack(latest, n);
+    if (!comparable(base)) return null;
     const now = get(latest), then = base ? get(base) : null;
     return now > 0 && then > 0 ? (Math.pow(now / then, 1 / n) - 1) * 100 : null;
   };

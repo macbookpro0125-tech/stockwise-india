@@ -525,4 +525,10 @@ assert(Math.round(coal[0].revenue / CR) === 44179 && Math.round(coal[0].profit /
 const sixMonthly = quarterFromYtd([{ qEnd: "2026-09-30", revenue: null, ytd: { days: 183, revenue: 100 } }, { qEnd: "2026-03-31", revenue: 90 }]);
 assert(sixMonthly[0].revenue == null, "a half-yearly filer with no June quarter isn't guessed at");
 
+// ── Growth only between years of the same kind of accounts ──
+const mixed = metricsOf(company({ tweak: (y, i) => (i === 3 ? { ...y, scope: "Standalone", revenue: y.revenue * 0.5 } : y) }), snapshot());
+assert(mixed.salesGrowth3y == null && mixed.scopeBreaks?.some(b => b.fyEnd === "2023-03-31"), "a base year on file only standalone (the rest consolidated) gives no 3-year growth, and is named");
+const closeKinds = metricsOf({ ...company({ tweak: (y, i) => (i === 3 ? { ...y, scope: "Standalone" } : y) }), otherScope: { scope: "Standalone", revenue: 990 * CR, profit: 129 * CR } }, snapshot());
+assert(closeKinds.salesGrowth3y != null && !closeKinds.scopeBreaks?.length, "when the two kinds are within 10% in the latest year, the years still compare");
+
 console.log("\nAll research-score checks passed.");
