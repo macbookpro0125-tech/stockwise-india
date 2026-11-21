@@ -140,6 +140,13 @@ function FavouriteCard({ p, count, change, day, closeDate, onOpen, onOpenStock }
           {count?.matched != null && <span>{n(count.matched)}</span>}
         </span>
       </button>
+      {/* none today: said, not a blank card (22 Nov 2026: "Up on Every
+          Timeframe 0" sat empty on the owner's phone after a falling month) */}
+      {count?.matched === 0 && !changes && (
+        <span className="ps-fav-changes ps-fav-day">
+          <span className="ps-fav-since">No company passes it{closeDate ? ` at the ${closeDate} close` : " today"}. Companies show here when they do; tap to see what it looks for.</span>
+        </span>
+      )}
       {(day?.avg1d != null || changes) && (
         <span className="ps-fav-changes ps-fav-day">
           <span className="ps-fav-since">
