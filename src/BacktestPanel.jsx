@@ -75,12 +75,12 @@ export default function BacktestPanel({ symbol }) {
       <div className="bt-controls">
         <label>Rule<select value={rule} onChange={e => setRule(e.target.value)}>{RULES.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}</select></label>
         {def.params.map(([, label, options]) => <label key={label}>{label}<select value={n} onChange={e => setN(Number(e.target.value))}>{options.map(o => <option key={o} value={o}>{rule === "rsi" ? o : `${o} days`}</option>)}</select></label>)}
-        <label>Stop-loss<select value={stop} onChange={e => setStop(Number(e.target.value))}>{STOPS.map(s => <option key={s} value={s}>{s ? `${s}% under the buy` : "None"}</option>)}</select></label>
+        <label>Stop-loss<select value={stop} onChange={e => setStop(Number(e.target.value))}>{STOPS.map(s => <option key={s} value={s}>{s ? `${s}% under the entry` : "None"}</option>)}</select></label>
       </div>
       <div className="bt-periods" role="group" aria-label="Period">
         {PERIODS.map(([id, y]) => <button key={id} type="button" aria-pressed={period === id} disabled={y < 99 && years < y - 0.05} onClick={() => setPeriod(id)}>{id}</button>)}
       </div>
-      <p className="bt-rule">{def.about(n)}{stop ? ` Sell during the day if it falls ${stop}% under the buy price.` : ""}</p>
+      <p className="bt-rule">{def.about(n)}{stop ? ` Out during the day if it falls ${stop}% under the entry price.` : ""}</p>
 
       <div className="bt-tiles">
         <div><small>Following the rule</small><b className={tone(result.total)}>{signed(result.total)}</b>{result.perYear != null && <span>{signed(result.perYear)} a year</span>}</div>
@@ -90,7 +90,7 @@ export default function BacktestPanel({ symbol }) {
       </div>
       <p className="bt-verdict">
         {day(result.from)} – {day(result.to)}: the rule {beat >= 0 ? "did better than" : "did worse than"} holding by {Math.abs(beat).toFixed(1)} points, invested {Math.round(result.inMarketPct)}% of the time.
-        {result.openTrade && ` Still holding, bought ${day(result.openTrade.entryDate)} at ${rs(result.openTrade.entryPrice)} (${signed(result.openTrade.pct)}).`}
+        {result.openTrade && ` Still in, since ${day(result.openTrade.entryDate)} at ${rs(result.openTrade.entryPrice)} (${signed(result.openTrade.pct)}).`}
       </p>
       <Curves result={result} />
       <p className="bt-legend"><i className="rule" /> ₹100 following the rule <i className="hold" /> ₹100 held</p>
@@ -99,7 +99,7 @@ export default function BacktestPanel({ symbol }) {
         <details className="bt-trades" open={all} onToggle={e => setAll(e.currentTarget.open)}>
           <summary>Every trade ({trades.length})</summary>
           <table>
-            <thead><tr><th>Bought</th><th>Sold</th><th>Days</th><th>Result</th></tr></thead>
+            <thead><tr><th>In</th><th>Out</th><th>Days</th><th>Result</th></tr></thead>
             <tbody>
               {trades.map(t => (
                 <tr key={t.entryDate + t.exitDate}>
@@ -113,7 +113,7 @@ export default function BacktestPanel({ symbol }) {
           </table>
         </details>
       )}
-      <p className="bt-note">The rule is read on each day's close and traded at the next day's open, on NSE's daily prices adjusted for splits and bonuses. 0.1% comes off each buy and sell for costs; tax and dividends are left out. The past, not a forecast — and not advice to buy or sell.</p>
+      <p className="bt-note">The rule is read on each day's close and traded at the next day's open, on NSE's daily prices adjusted for splits and bonuses. 0.1% comes off each entry and exit for costs; tax and dividends are left out. The past, not a forecast — and not advice to buy or sell.</p>
     </div>
   );
 }

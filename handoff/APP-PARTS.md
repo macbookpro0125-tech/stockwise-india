@@ -14,8 +14,8 @@ Status: todo · checking · fixing · done (date).
 | 5 | Company page | Overview, Business, Finance, Debt, Shareholders, Valuation, Chart, News; results and financials pages | done 21 Nov (one-off P/E marked) |
 | 6 | Markets | Today, Moves, Sectors, Results days, Scans, Economy, Big orders by day, index pages, Market map | done 21 Nov (1 fix) |
 | 7 | Gold, silver and bonds | Gold price by carat, gold chart, ETFs, Sovereign Gold Bonds, company bonds | done 21 Nov |
-| 8 | News | Explore, announcements, a news item, company news | todo |
-| 9 | Your things | Watchlist and lists, Portfolio, Trade journal, Backtest, Desk | todo |
+| 8 | News | Explore, announcements, a news item, company news | done 21 Nov |
+| 9 | Your things | Watchlist and lists, Portfolio, Trade journal, Backtest, Desk | done 21–22 Nov (wording fixes) |
 | 10 | Alerts | Price alerts, results and order alerts, phone notifications, Telegram, emails | todo |
 | 11 | Settings and legal | Settings, account, delete account, logos, dark mode, Privacy, Terms, Disclaimer, Help, About | todo |
 | 12 | Public pages and search | Lists, sectors, Learn guides, results calendar, sitemap, Google and Bing | todo |

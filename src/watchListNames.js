@@ -27,7 +27,9 @@ const SECTOR_NAME = {
 };
 export const sectorListName = sector => SECTOR_NAME[sector] ?? (sector ? String(sector) : null);
 
-export const COMMON_NAMES = ["Long term", "To research", "High conviction", "Dividend picks", "Results watch", "Buy on dips", "Swing trades", "Small caps"];
+// no buying or selling words among our suggestions (21 Nov 2026: "Buy on
+// dips" was one); a list's name is the user's own to choose
+export const COMMON_NAMES = ["Long term", "To research", "High conviction", "Dividend picks", "Results watch", "Watching for dips", "Swing trades", "Small caps"];
 
 // starred: [{ ticker, sector }]; existing: the names already used; sector: the
 // one stock's a list is being made for (from its page, or just starred), first

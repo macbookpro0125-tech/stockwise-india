@@ -8,13 +8,13 @@
 
 export const RULES = [
   { id: "ma", label: "Price above its moving average", params: [["n", "Average", [20, 50, 100, 200], 50]],
-    about: n => `Buy when the price closes above its ${n}-day average; sell when it closes below.` },
+    about: n => `In when the price closes above its ${n}-day average; out when it closes below.` },
   { id: "cross", label: "Golden cross (50 over 200)", params: [],
-    about: () => "Buy when the 50-day average crosses above the 200-day; sell when it crosses back below." },
+    about: () => "In when the 50-day average crosses above the 200-day; out when it crosses back below." },
   { id: "breakout", label: "Breakout to a new high", params: [["n", "High of the last", [20, 50, 250], 50]],
-    about: n => `Buy when the price closes above its highest close of the ${n === 250 ? "last year" : `last ${n} days`}; sell when it closes below its lowest close of the last ${Math.max(10, Math.round(n / 2.5))} days.` },
-  { id: "rsi", label: "RSI: buy weak, sell strong", params: [["n", "Buy under", [25, 30, 35], 30]],
-    about: n => `Buy when the 14-day RSI closes under ${n}; sell when it closes over 70.` },
+    about: n => `In when the price closes above its highest close of the ${n === 250 ? "last year" : `last ${n} days`}; out when it closes below its lowest close of the last ${Math.max(10, Math.round(n / 2.5))} days.` },
+  { id: "rsi", label: "RSI: in when weak, out when strong", params: [["n", "In under", [25, 30, 35], 30]],
+    about: n => `In when the 14-day RSI closes under ${n}; out when it closes over 70.` },
 ];
 export const STOPS = [0, 5, 8, 10, 15];
 

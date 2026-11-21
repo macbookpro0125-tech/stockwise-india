@@ -1169,7 +1169,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
           { key: "levels", half: true, question: "Where does the price sit for you?", short: "Against your own price levels", body: <div id="sec-levels">{positionCard}{(valued || levels) && <MyLevelsCard symbol={symbol} fv={valued ? fv : null} levels={levels} price={price} priceLabel={priceLabel} fv2Label={fyLabel(m.fyEnd, 2)} />}</div> },
           { key: "figures", half: true, question: "What are all its figures?", short: "Every number from its filings", body: <KeyNumbers data={data} m={m} /> },
           { key: "yours", fold: true, question: "What if you change the numbers?", short: "Test your own EPS, P/E, growth and price", body: <>{filingsNote}{valued && overrideCard}{priceCard}{epsByYear}</> },
-          ...(levels ? [{ key: "sizing", question: "How much would you buy, and when?", short: "Size a position against your levels", body: <div id="sec-sizing" className="ss-section"><PhasePositionPlanner levels={levels} /></div> }] : []),
+          ...(levels ? [{ key: "sizing", question: "How big a position, at your own levels?", short: "Size a position against your levels", body: <div id="sec-sizing" className="ss-section"><PhasePositionPlanner levels={levels} /></div> }] : []),
         ]} />}
 
       <ChapterTab id="price" sec="performance" m={m} fairValue={fairValue} price={price} rows={chapterChecks("price", m?.research)}

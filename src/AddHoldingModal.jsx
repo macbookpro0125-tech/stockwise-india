@@ -49,7 +49,7 @@ export default function AddHoldingModal({ onSave, onClose, initial = null, prefi
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", animation: "fadeUp 180ms ease backwards" }}>
       <form onClick={e => e.stopPropagation()} onSubmit={handleSubmit} style={{ width: "min(440px, 92vw)", padding: 28, borderRadius: 16, border: "1px solid var(--bdr2)", background: "var(--s1)", boxShadow: "0 20px 60px rgba(0,0,0,0.4)" }}>
-        <h3 style={{ margin: "0 0 20px", fontSize: 16, fontWeight: 500, color: "var(--t1)" }}>{initial ? "Edit Holding" : "Add Holding"}</h3>
+        <h3 style={{ margin: "0 0 20px", fontSize: 16, fontWeight: 500, color: "var(--t1)" }}>{initial ? "Edit holding" : "Add a holding"}</h3>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
           <div>
@@ -57,14 +57,14 @@ export default function AddHoldingModal({ onSave, onClose, initial = null, prefi
             <input id="h-ticker" value={ticker} onChange={e => setTicker(e.target.value)} placeholder="e.g. TCS" style={{ ...inputStyle, ...MONO }} autoFocus={!prefill} disabled={!!initial} />
           </div>
           <div>
-            <label htmlFor="h-name" style={labelStyle}>Company Name</label>
+            <label htmlFor="h-name" style={labelStyle}>Company name</label>
             <input id="h-name" maxLength={200} value={name} onChange={e => setName(e.target.value)} placeholder="Filled in if blank" style={inputStyle} />
           </div>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
           <div>
-            <label htmlFor="h-price" style={labelStyle}>Buy Price (₹) *</label>
+            <label htmlFor="h-price" style={labelStyle}>Price paid (₹) *</label>
             <input id="h-price" type="number" value={buyPrice} onChange={e => setBuyPrice(e.target.value)} placeholder="0.00" min="0.01" step="0.01" style={{ ...inputStyle, ...MONO }} />
           </div>
           <div>
@@ -74,7 +74,7 @@ export default function AddHoldingModal({ onSave, onClose, initial = null, prefi
         </div>
 
         <div style={{ marginBottom: 14 }}>
-          <label htmlFor="h-date" style={labelStyle}>Buy Date</label>
+          <label htmlFor="h-date" style={labelStyle}>Date bought</label>
           <input id="h-date" type="date" value={buyDate} onChange={e => setBuyDate(e.target.value)} style={inputStyle} />
         </div>
 
@@ -88,7 +88,7 @@ export default function AddHoldingModal({ onSave, onClose, initial = null, prefi
         <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
           <button type="button" onClick={onClose} className="btn-ghost" style={{ height: 36, padding: "0 18px", fontSize: 13, borderRadius: 8 }}>Cancel</button>
           <button type="submit" disabled={!valid || busy} className="btn-primary" style={{ height: 36, padding: "0 20px", fontSize: 13, borderRadius: 8, boxShadow: "none", opacity: valid ? 1 : 0.4 }}>
-            {busy ? "Saving…" : initial ? "Save Changes" : "Add to Portfolio"}
+            {busy ? "Saving…" : initial ? "Save changes" : "Add to portfolio"}
           </button>
         </div>
       </form>

@@ -57,7 +57,7 @@ const QUESTIONS = {
   relativeStrength: "Is it beating the market?",
   momentum: "Is buying strong, or stretched?",
   volatility: "How hard can it fall?",
-  liquidity: "Is it easy to buy and sell?",
+  liquidity: "Does it trade easily?",
 };
 
 // research.js's verdict word at the end of a reason; the mark says it
