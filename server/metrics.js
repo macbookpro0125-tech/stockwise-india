@@ -497,7 +497,10 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
       materialsCr: cr(q.materials), purchasesCr: cr(q.purchases), inventoryChangeCr: cr(q.inventoryChange),
       employeesCr: cr(q.employees), otherExpensesCr: cr(q.otherExpenses), exceptionalCr: cr(q.exceptional),
       // the half-year to this quarter, from a September or March filing (fetch-nse.js DETAIL_VERSION 3)
-      ocfHalfCr: cr(q.ocfHalf), profitHalfCr: cr(q.profitHalf),
+      ocfHalfCr: cr(q.ocfHalf), profitHalfCr: cr(q.profitHalf), capexHalfCr: cr(q.capexHalf),
+      // the balance sheet at the quarter's end, when the filing has one (September, March)
+      equityAtEndCr: cr(q.equityAtEnd), debtAtEndCr: cr(q.debtAtEnd), receivablesAtEndCr: cr(q.receivablesAtEnd),
+      cashAtEndCr: q.equityAtEnd == null ? null : cr((q.cashAtEnd ?? 0) + (q.bankBalancesAtEnd ?? 0) + (q.currentInvestmentsAtEnd ?? 0)),
       eps: q.eps != null ? q.eps / factorAfter(q.filed ?? isoPlusDays(q.qEnd, 45)) : null,
       salesYoY: yearAgo ? change(q.revenue, yearAgo.revenue) : null,
       profitYoY: yearAgo ? change(ownersProfit(q), ownersProfit(yearAgo)) : null,
@@ -822,6 +825,9 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     piotroski: piotroski?.score ?? null,
     piotroskiChecks: piotroski?.checks ?? null,
     halfCash: halfCashOf(quarters),
+    // the latest two quarters' sales, and other income over the last four (21 Nov 2026)
+    recentSales: recentSalesOf(quarters, salesGrowth3y),
+    otherIncomeTtm: otherIncomeTtmOf(quarters),
     otherIncomePctOfPbt: latest.otherIncome != null && latest.pbt > 0 ? (latest.otherIncome / latest.pbt) * 100 : null,
     otherIncomeCr: latest.otherIncome != null ? latest.otherIncome / 1e7 : null,
     ncavCr,
@@ -1059,6 +1065,8 @@ function prosAndCons(m, latest) {
   if (gt(m.otherIncomePctOfPbt, 30)) cons.push(`Earnings include other income of ₹${round(m.otherIncomeCr, 0)} Cr (${pct(m.otherIncomePctOfPbt)} of pre-tax profit).`);
   if (!m.lender && lt(m.ocfPat3yPct, 60)) cons.push(`Weak cash conversion: operating cash flow is only ${pct(m.ocfPat3yPct)} of profit over 3 years.`);
   if (!m.lender && m.halfCash?.negative) cons.push(m.halfCash.text);
+  if (m.recentSales?.falling) cons.push(m.recentSales.text);
+  if (!m.lender && m.otherIncomeTtm?.heavy && !gt(m.otherIncomePctOfPbt, 30)) cons.push(m.otherIncomeTtm.text);
   if (lt(latest.profit, 0)) cons.push("Company made a loss in the latest year.");
   return { pros, cons };
 }
@@ -1090,6 +1098,8 @@ export function halfCashOf(quarters) {
   const h = {
     end: latest.fyEnd, ocfCr: latest.ocfHalfCr, profitCr: latest.profitHalfCr ?? null,
     prevOcfCr: prev?.ocfHalfCr ?? null,
+    capexCr: latest.capexHalfCr ?? null, fcfCr: latest.capexHalfCr != null ? latest.ocfHalfCr - latest.capexHalfCr : null,
+    cashAtEndCr: latest.cashAtEndCr ?? null, debtAtEndCr: latest.debtAtEndCr ?? null,
     negative: latest.ocfHalfCr < 0 && latest.profitHalfCr > 0,
   };
   return h.negative ? { ...h, text: halfCashText(h) } : h;
@@ -1097,5 +1107,42 @@ export function halfCashOf(quarters) {
 const halfName = end => { const d = new Date(`${end}T00:00:00Z`); return `the half-year to ${d.toLocaleString("en-IN", { month: "short", year: "numeric", timeZone: "UTC" })}`; };
 const crText = v => `${v < 0 ? "−" : ""}₹${Math.abs(v).toLocaleString("en-IN", { maximumFractionDigits: Math.abs(v) < 100 ? 2 : 0 })} Cr`;
 export function halfCashText(h) {
-  return `Cash went out in ${halfName(h.end)}: operating cash flow ${crText(h.ocfCr)}, though it made a profit of ${crText(h.profitCr)}${h.prevOcfCr != null ? ` (the same half a year earlier: ${crText(h.prevOcfCr)})` : ""}. Often money tied up in unpaid bills or stock; worth watching whether it turns back.`;
+  const spent = h.capexCr > 0 ? ` It also spent ${crText(h.capexCr)} on equipment and software, so free cash flow was ${crText(h.fcfCr)}${h.cashAtEndCr != null ? `, leaving ${crText(h.cashAtEndCr)} of cash and liquid investments` : ""}.` : "";
+  return `Cash went out in ${halfName(h.end)}: operating cash flow ${crText(h.ocfCr)}, though it made a profit of ${crText(h.profitCr)}${h.prevOcfCr != null ? ` (the same half a year earlier: ${crText(h.prevOcfCr)})` : ""}.${spent} Often money tied up in unpaid bills or stock; worth watching whether it turns back.`;
+}
+
+// Sales falling in each of the latest two quarters against a year earlier
+// (21 Nov 2026: 30 companies grew over 10% a year for three years yet fell
+// more than 5% in each of the last two quarters, Natco Pharma −45% and −39%;
+// growth is scored on years, so the score still called it strong)
+export function recentSalesOf(quarters, growth3y = null) {
+  const [a, b] = quarters ?? [];
+  if (!a || !b || a.salesYoY == null || b.salesYoY == null) return null;
+  const falling = a.salesYoY < -5 && b.salesYoY < -5;
+  const q = end => new Date(`${end}T00:00:00Z`).toLocaleString("en-IN", { month: "short", year: "numeric", timeZone: "UTC" });
+  const p = v => `${Math.abs(v) >= 10 ? Math.round(Math.abs(v)) : Math.abs(v).toFixed(1)}%`;
+  return {
+    latest: a.salesYoY, before: b.salesYoY, falling,
+    ...(falling && { text: `Sales are falling now: down ${p(a.salesYoY)} in the quarter to ${q(a.fyEnd)} and ${p(b.salesYoY)} in the one before, each against a year earlier${growth3y != null && growth3y > 0 ? `, though up ${p(growth3y)} a year over 3 years` : ""}.` }),
+  };
+}
+
+// Other income over the last four quarters, against pre-tax profit (21 Nov
+// 2026: 70 companies relied on it for over 30% of their profit lately while
+// the annual check, on the last year, passed them; Kabra Extrusion 867%)
+export function otherIncomeTtmOf(quarters) {
+  const q4 = (quarters ?? []).slice(0, 4);
+  if (q4.length < 4 || q4.some(q => q.otherIncomeCr == null || q.pbtCr == null)) return null;
+  const oi = q4.reduce((a, q) => a + q.otherIncomeCr, 0), pbt = q4.reduce((a, q) => a + q.pbtCr, 0);
+  if (!(oi > 0)) return null;
+  const pct = pbt > 0 ? (oi / pbt) * 100 : null;
+  const lossWithout = pbt - oi < 0;
+  const heavy = (pct != null && pct > 30) || (pbt <= 0 ? false : lossWithout);
+  const c = v => `₹${Math.abs(v).toLocaleString("en-IN", { maximumFractionDigits: Math.abs(v) < 100 ? 1 : 0 })} Cr`;
+  return {
+    oiCr: oi, pbtCr: pbt, pct, heavy,
+    ...(heavy && { text: lossWithout
+      ? `Without its other income of ${c(oi)} over the last four quarters, it would have made a pre-tax loss: the business itself earned ${c(pbt - oi).replace("₹", "−₹")}.`
+      : `Other income was ${c(oi)} of its ${c(pbt)} pre-tax profit over the last four quarters (${Math.round(pct)}%): interest and other income, not the business, made much of the profit.` }),
+  };
 }

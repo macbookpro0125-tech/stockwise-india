@@ -923,6 +923,8 @@ export function computeResearch(m, ctx = { peers: PEERS }) {
   if (!m.lender && m.halfCash?.negative) {
     flags.push({ id: "halfYearCashOut", severity: "caution", text: m.halfCash.text });
   }
+  if (m.recentSales?.falling) flags.push({ id: "salesFallingNow", severity: "caution", text: m.recentSales.text });
+  if (!m.lender && m.otherIncomeTtm?.heavy && !(m.otherIncomePctOfPbt > 30)) flags.push({ id: "otherIncomeLately", severity: "caution", text: m.otherIncomeTtm.text });
   if (m.epsCorrection) {
     flags.push({
       id: "annualEpsCorrected", severity: "caution",

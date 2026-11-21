@@ -570,6 +570,7 @@ function quarterReader(xml, row) {
       quarter: tags => (ok ? valueById(xml, tags, "OneD") : null),
       any: tags => valueById(xml, tags, "OneD") ?? valueById(xml, tags, "FourD"),
       half: () => null,
+      atEnd: () => null,
     };
   }
   return {
@@ -577,6 +578,8 @@ function quarterReader(xml, row) {
     any: tags => firstFacts(xml, ctx, tags).find(f => f.end === end)?.value ?? null,    // the half-year to this quarter's end (a September or March filing's
     // six months: 170–190 days), never the quarter or the year beside it
     half: tags => firstFacts(xml, ctx, tags).find(f => f.end === end && f.days >= 170 && f.days <= 190)?.value ?? null,
+    // the balance sheet at the quarter's end, which September and March filings carry
+    atEnd: tags => firstFacts(xml, ctx, tags).find(f => f.instant === end)?.value ?? null,
   };
 }
 
@@ -609,6 +612,21 @@ export function extractQuarter(xml, row) {
     profitHalf: r.half(TAGS.profit),
     pbtHalf: r.half(TAGS.pbt),
     otherIncomeHalf: r.half(TAGS.otherIncome),
+    // what it spent on equipment and software in the half, and its balance
+    // sheet at the quarter's end (21 Nov 2026: DRC Systems spent ₹23.2 Cr in
+    // April–September 2026 and held ₹1.4 Cr of cash; we only had March's)
+    capexHalf: sumKnown(r.half(TAGS.capexPpe), r.half(TAGS.capexIntangibles)),
+    ...(() => {
+      const template = templateOf(row.xbrl ?? "");
+      const equity = r.atEnd(TAGS.equity ?? ["Equity"]);
+      if (equity == null) return {};
+      return {
+        equityAtEnd: equity,
+        debtAtEnd: debtOf(r, template),
+        cashAtEnd: r.atEnd(TAGS.cash), bankBalancesAtEnd: r.atEnd(TAGS.bankBalances), currentInvestmentsAtEnd: r.atEnd(TAGS.currentInvestments),
+        receivablesAtEnd: r.atEnd(["TradeReceivablesCurrent", "TradeReceivables"]),
+      };
+    })(),
     // The expense lines (DETAIL_VERSION 2), as the year's are read
     materials: r.quarter(TAGS.materials),
     purchases: r.quarter(TAGS.purchases),

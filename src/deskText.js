@@ -75,7 +75,17 @@ export function cautions(m) {
   if (m.halfCash?.negative && !m.lender) {
     const h = m.halfCash, rc = v => `${v < 0 ? "−" : ""}₹${Math.abs(v).toLocaleString("en-IN", { maximumFractionDigits: Math.abs(v) < 100 ? 2 : 0 })} Cr`;
     const to = new Date(`${h.end}T00:00:00Z`).toLocaleString("en-IN", { month: "short", year: "numeric", timeZone: "UTC" });
-    out.push({ rank: 0.5, title: "Cash went out this half-year", text: `Operating cash flow ${rc(h.ocfCr)} in the six months to ${to}, while it made ${rc(h.profitCr)} profit${h.prevOcfCr != null ? ` (a year earlier: ${rc(h.prevOcfCr)})` : ""}` });
+    out.push({ rank: 0.5, title: "Cash went out this half-year", text: `Operating cash flow ${rc(h.ocfCr)} in the six months to ${to}, while it made ${rc(h.profitCr)} profit${h.prevOcfCr != null ? ` (a year earlier: ${rc(h.prevOcfCr)})` : ""}${h.capexCr > 0 ? `; with ${rc(h.capexCr)} spent on equipment, free cash flow ${rc(h.fcfCr)}` : ""}` });
+  }
+  // sales falling in each of the last two quarters (metrics.js recentSales)
+  if (m.recentSales?.falling) {
+    const p = v => `${Math.abs(v) >= 10 ? Math.round(Math.abs(v)) : Math.abs(v).toFixed(1)}%`;
+    out.push({ rank: 0.6, title: "Sales are falling now", text: `Down ${p(m.recentSales.latest)} and ${p(m.recentSales.before)} in the last two quarters, against a year earlier` });
+  }
+  // other income carrying the profit lately (metrics.js otherIncomeTtm)
+  if (!m.lender && m.otherIncomeTtm?.heavy) {
+    const o = m.otherIncomeTtm, c = v => `₹${Math.abs(v).toLocaleString("en-IN", { maximumFractionDigits: Math.abs(v) < 100 ? 1 : 0 })} Cr`;
+    out.push({ rank: 0.7, title: "Other income is carrying the profit", text: o.pbtCr - o.oiCr < 0 ? `Without ${c(o.oiCr)} of other income, the last four quarters would show a pre-tax loss` : `${c(o.oiCr)} of the last four quarters' ${c(o.pbtCr)} pre-tax profit (${Math.round(o.pct)}%)` });
   }
   if (num(m.payoutPct) && m.payoutPct > 100) out.push({ rank: 1, title: "Pays out more than it earns", text: `Dividends were ${pct(m.payoutPct, 0)} of profit last year` });
   if (num(m.debtChange1y) && m.debtChange1y >= 30 && num(m.totalDebtCr) && m.totalDebtCr > 0 && num(m.debtToEquity) && m.debtToEquity >= 0.3) {

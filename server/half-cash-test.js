@@ -17,3 +17,21 @@ assert.equal(halfCashOf([q("2026-09-30", -5, -2)]).negative, false);
 assert.equal(halfCashOf([q("2026-12-31"), q("2026-03-31", -1, 4)]), null);
 assert.equal(halfCashOf([q("2026-12-31")]), null, "no half-year on file");
 console.log("ok: the latest half-year's cash flow, and when it's a caution");
+
+// Sales falling in each of the last two quarters (metrics.js recentSalesOf)
+import { recentSalesOf, otherIncomeTtmOf } from "./metrics.js";
+let rs = recentSalesOf([{ fyEnd: "2026-09-30", salesYoY: -45 }, { fyEnd: "2026-06-30", salesYoY: -39 }], 24);
+assert.equal(rs.falling, true, "Natco: −45% and −39%");
+assert.match(rs.text, /down 45%.*39%.*up 24% a year over 3 years/);
+assert.equal(recentSalesOf([{ fyEnd: "2026-09-30", salesYoY: -12 }, { fyEnd: "2026-06-30", salesYoY: 3 }]).falling, false, "one bad quarter isn't a trend");
+assert.equal(recentSalesOf([{ fyEnd: "2026-09-30", salesYoY: null }]), null);
+
+// Other income over the last four quarters (metrics.js otherIncomeTtmOf)
+const four = (oi, pbt) => Array.from({ length: 4 }, () => ({ otherIncomeCr: oi, pbtCr: pbt }));
+let oi = otherIncomeTtmOf(four(2, 1.5));
+assert.equal(oi.heavy, true); assert.match(oi.text, /would have made a pre-tax loss/, "other income above the whole profit");
+oi = otherIncomeTtmOf(four(2, 5));
+assert.equal(Math.round(oi.pct), 40); assert.match(oi.text, /40%/);
+assert.equal(otherIncomeTtmOf(four(0.5, 5)).heavy, false, "10% is normal");
+assert.equal(otherIncomeTtmOf(four(1, 5).slice(0, 3)), null, "needs four quarters");
+console.log("ok: sales falling now, and other income carrying the profit lately");

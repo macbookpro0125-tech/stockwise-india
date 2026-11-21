@@ -5,6 +5,7 @@ The newest are at the top. Each one gives where to go and what you should see. T
 
 | # | Live since | Where to go | What you should see | ✓ |
 |---|---|---|---|---|
+| ★ | next push, then a few evenings as the data is re-read | Company pages: **DRC Systems**, **Natco Pharma**, **Kabra Extrusion** → From its figures | DRC: "Cash went out this half-year … free cash flow −₹26 Cr"; Natco: "Sales are falling now: down 29% and 45%" and "Other income is carrying the profit (34%)"; Kabra: cash out and other income 8.7× its profit; TCS: no caution | ☐ |
 | ★ | next push | Any company page (e.g. Sansera Engineering), the screener, Lists → Highest business scores | No red "33/100": **Business 83** (green, strong) and **Price: Very expensive** side by side, in the header, In short and the pinned bar; the screener's columns are **Business** and **Price**, sorted by business; "Highest Overall Scores" is now **Strong Business at a Fair Price** (same address) | ☐ |
 | ★ | next push | On the Mac: Markets → Results → a day → **+ Track** beside a company that reported; then Desk → My desk → Add card → **Results tracker** | The button turns to ✓ Tracking; the Desk card shows a summary line, a chart of every tracked company from 100 on its results day (Nifty 500 dotted), and a table (results, profit · sales, since results, vs Nifty 500, day x of 60); clicking a row turns the Desk's chart to it; ✕ stops tracking | ☐ |
 | ★ | next push | On the Mac: Home, under Explore by category | **More in the app**: 7 tiles (Explore, Results calendar, Latest results, Sectors, Guides, Performance, Alerts), each with a short line; one row on a wide screen, 4 + 3 on a smaller one; no repeats of the top bar | ☐ |
@@ -17,14 +18,13 @@ The newest are at the top. Each one gives where to go and what you should see. T
 | ★ | 21 Nov | On the Mac: Home, scroll to the bottom; then the Screeners card → **See all 27** | Home's order: Your watchlist → **What's new today** → **Explore by category** → **Everything in the app** → **Screeners** last, with no long list of 27 under it; See all 27 / See every screener opens the list just below it; no light following the pointer on Home's boxes | ☐ |
 | ★ | 21 Nov | On the Mac: move the pointer over cards and tiles (Home, Screeners) | No soft light following the pointer; moving feels smooth | ☐ |
 | ★ | 21 Nov | On the Mac in Safari: open jocularinsights.in in a **new tab** (also Cmd-click a link to it) | The opening (line and dot) never freezes: a tab opened in the background skips it, and the opening always ends within about 7 seconds | ☐ |
-| 13 | 21 Nov | Gold page → under the chart, and under "Gold, silver and the Nifty 50" | One short line under the chart, with **How it's worked out ›** for the rest; a shorter note under the returns table | ☐ |
-| 14 | 21 Nov | Gold page → under the carat table | One short line, then **How it's worked out ›**; tap it for RBI's method, recent prices and the source | ☐ |
-| 15 | 21 Nov | Gold page → **Gold** and **Silver** tabs | A **line** chart with no pivot lines (R1, S1…) and no other lines; your company-page chart keeps its own settings | ☐ |
-| 16 | 21 Nov | Home → Favourites → any screener with **0** companies | A line "No company passes it at the 20 Nov close…" instead of a blank white card. (After the data reload, "Up on Every Timeframe" should have companies again: see #2.) | ☐ |
-| 17 | 21 Nov, 12:56 pm | Screeners → **Up on Every Timeframe**; any company page → 5-year return | **221 companies** (it showed 0); 5-year price growth filled in for 968 companies, not "—" | ☐ |
-| 18 | 21 Nov | Gold page → **Gold** tab | The full chart, as on a company page (Type, Indicators, Draw, full screen); the price is for **10 g of 24 carat** (about ₹1,24,820); press **All**, then drag left: no giant spike in 2018–19 | ☐ |
-| 19 | 21 Nov | Gold page → **Silver** tab | The same full chart for SILVERBEES | ☐ |
-| 20 | 21 Nov | Gold page → **Gold vs silver vs Nifty**, touch the chart | No box over the lines; the ₹ and % in the line above change with your finger; no grey "₹64" label | ☐ |
+| 14 | 21 Nov | Gold page → under the chart, and under "Gold, silver and the Nifty 50" | One short line under the chart, with **How it's worked out ›** for the rest; a shorter note under the returns table | ☐ |
+| 15 | 21 Nov | Gold page → under the carat table | One short line, then **How it's worked out ›**; tap it for RBI's method, recent prices and the source | ☐ |
+| 16 | 21 Nov | Gold page → **Gold** and **Silver** tabs | A **line** chart with no pivot lines (R1, S1…) and no other lines; your company-page chart keeps its own settings | ☐ |
+| 17 | 21 Nov | Home → Favourites → any screener with **0** companies | A line "No company passes it at the 20 Nov close…" instead of a blank white card. (After the data reload, "Up on Every Timeframe" should have companies again: see #2.) | ☐ |
+| 18 | 21 Nov, 12:56 pm | Screeners → **Up on Every Timeframe**; any company page → 5-year return | **221 companies** (it showed 0); 5-year price growth filled in for 968 companies, not "—" | ☐ |
+| 19 | 21 Nov | Gold page → **Gold** tab | The full chart, as on a company page (Type, Indicators, Draw, full screen); the price is for **10 g of 24 carat** (about ₹1,24,820); press **All**, then drag left: no giant spike in 2018–19 | ☐ |
+| 20 | 21 Nov | Gold page → **Silver** tab | The same full chart for SILVERBEES | ☐ |
 
 Not visible on a phone, so nothing to check:
 - the results pages reopened to Google
