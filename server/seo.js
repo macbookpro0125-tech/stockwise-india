@@ -476,7 +476,7 @@ ${opening.map(p => `<p>${p}</p>`).join("\n")}
 };
 export function privacyPageHtml(template) {
   return legalPage(template, {
-    path: "/privacy", name: "Privacy policy", updated: "22 November 2026",
+    path: "/privacy", name: "Privacy policy", updated: "21 November 2026",
     desc: "What Jocular Insights keeps about you, why, and how to delete it. No personal data sold; visits counted on our own server, without cookies.",
     opening: ["This page explains what Jocular Insights keeps about you, why, and how to delete it. In short: we use your account and saved data to provide the service, and we don't sell your personal data. The website uses no analytics services — we only count visits anonymously on our own server, without cookies. The website may show ads from Google AdSense and the mobile apps ads from Google AdMob, which process ad-related information as explained below. We don't send Google your account or saved investing data."],
     more: "The full policy covers what we keep on our server and why, how long we keep it, how ads work, and how to delete your account and everything in it.",

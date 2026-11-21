@@ -9,7 +9,7 @@ import { useJoin } from "./PublicJoin.jsx";
 // the code does — check them when changing what's stored, adding analytics
 // or ads, or moving hosts.
 
-const UPDATED = "22 November 2026";
+const UPDATED = "21 November 2026";
 // Shown once set: a privacy policy needs a way to reach you
 const CONTACT_EMAIL = "jocularinsights@gmail.com";
 
@@ -68,7 +68,7 @@ export function NotFoundPage({ signedIn }) {
 
 export function PrivacyPage({ signedIn }) {
   return (
-    <PublicPage title="Privacy policy" signedIn={signedIn} updated="22 November 2026">
+    <PublicPage title="Privacy policy" signedIn={signedIn} updated="21 November 2026">
       <P>
         This page explains what Jocular Insights keeps about you, why, and how to delete it. In short: we use your
         account and saved data to provide the service, and we don't sell your personal data. The website uses no analytics
