@@ -26,7 +26,7 @@ export function researchTitle(r) {
   if (!r || r.quality == null) return "Not rated — too few years of filings to score";
   const n = v => (v == null ? "—" : Math.round(v));
   return [
-    `Business ${n(r.qualityOnly)}/100${r.capped ? " (capped at 69 — see the stock page)" : r.provisional ? " (provisional)" : ""}`,
+    `Business ${n(r.qualityOnly)}/100${r.capped ? ` (capped at ${r.capped.at ?? 69} — see the stock page)` : r.provisional ? " (provisional)" : ""}`,
         `Price: ${r.valuationLabel} (valuation ${n(r.valuation)}/100, higher = cheaper)`,
     `Technical setup ${n(r.technical)} — ${r.technicalLabel}`,
     `Risk ${n(r.risk)} — ${r.riskLabel} (higher = riskier)`,

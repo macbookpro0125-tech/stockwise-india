@@ -4,7 +4,7 @@
 // zero or a pass, items that don't apply leave the denominator, coverage
 // gates hold, the overall formula is what's stated, and the price trend never
 // moves the quality or overall score.
-import { computeMetrics } from "./metrics.js";
+import { computeMetrics, dataChecks } from "./metrics.js";
 import { band, GROUPS, computeResearch, peCohort, FIN_BANKS, FIN_LENDERS, FIN_NON_LENDERS } from "./research.js";
 import { justifiedPb, sustainableGrowth, bankValuation, costOfEquity } from "./bank-valuation.js";
 import { pricePosition, calculateLevels, fairValues, levelsFromFairValue, userLevels, fairValueOnly, cleanLevelSettings, DEFAULT_LEVEL_SETTINGS, LEVEL_KEYS } from "./levels.js";
@@ -484,5 +484,18 @@ assert(peCohort({ symbol: "SOLARINDS", peerSector: "Chemicals" }) === "Capital G
 assert(peCohort({ peerSector: "Information Technology", lender: false }) === "Information Technology", "other sectors unchanged");
 assert(peCohort({ peerSector: null }) === null, "no sector, no group");
 console.log("ok: Financial Services P/E peers split into banks, other lenders and the rest");
+
+// ── Negative net worth caps the business score (21 Nov 2026, Vodafone Idea) ──
+const sunk = metricsOf(company({ tweak: (y, i) => (i === 0 ? { ...y, equity: -300 * CR } : y) }), snapshot());
+assert(sunk.research.qualityOnly <= 25 && sunk.research.capped?.at === 25 && /liabilities exceed its assets/.test(sunk.research.capped.reason), "negative net worth caps the business score at 25, saying why");
+assert(r.qualityOnly > 25, "the same company with positive equity isn't held down");
+
+// ── Impossible figures put right as they load ──
+const neg = { fyEnd: "2026-03-31", capex: -511 * CR };
+assert(dataChecks(neg)[0]?.field === "capex" && neg.capex === 511 * CR, "a negative purchase of equipment is the filing's sign the wrong way round");
+const ap = { fyEnd: "2022-03-31", pbt: 4156 * CR, profit: 9167 * CR, profitOwners: 3031 * CR, eps: 31.59, paidUp: 95.92 * CR, faceValue: 1 };
+assert(dataChecks(ap)[0]?.field === "profit" && ap.profit === 3031 * CR, "profit over twice the PBT, the owners' share agreeing with EPS: the owners' figure is used");
+const sold = { fyEnd: "2026-03-31", pbt: 100 * CR, profit: 600 * CR, profitOwners: 600 * CR, eps: 60, paidUp: 10 * CR, faceValue: 1 };
+assert(dataChecks(sold).length === 0 && sold.profit === 600 * CR, "a real gain below the PBT line (in the owners' profit and EPS too) is left alone");
 
 console.log("\nAll research-score checks passed.");

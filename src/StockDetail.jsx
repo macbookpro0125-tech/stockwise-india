@@ -1008,6 +1008,11 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
               {m.unitFixes.map(f => `FY${f.fyEnd.slice(2, 4)}`).join(" and ")} {m.unitFixes.length > 1 ? "filings were" : "filing was"} in the wrong unit on NSE (figures {m.unitFixes[0].factor > 1 ? `${m.unitFixes[0].factor.toLocaleString("en-IN")}× too small` : `${(1 / m.unitFixes[0].factor).toLocaleString("en-IN")}× too large`}, share capital included) — corrected here so growth rates aren't distorted.
             </div>
           )}
+          {m.dataFixes?.map(f => (
+            <div key={`${f.fyEnd}-${f.field}`} style={{ marginTop: 4, color: "var(--t2)" }}>
+              FY{f.fyEnd.slice(2, 4)}: {f.field === "capex" ? `spending on equipment was filed as −₹${Math.round(Math.abs(f.filed) / 1e7).toLocaleString("en-IN")} crore; a purchase can't be negative, so ₹${Math.round(f.used / 1e7).toLocaleString("en-IN")} crore is used` : `profit was filed as ₹${Math.round(f.filed / 1e7).toLocaleString("en-IN")} crore, over twice the profit before tax; the owners' share, ₹${Math.round(f.used / 1e7).toLocaleString("en-IN")} crore, agrees with the EPS and is used`}.
+            </div>
+          ))}
         </div>
       );
   const epsJumpNote = m && m?.epsJump && model === "earnings" && (

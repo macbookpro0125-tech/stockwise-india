@@ -5,6 +5,7 @@ The newest are at the top. Each one gives where to go and what you should see. T
 
 | # | Live since | Where to go | What you should see | ✓ |
 |---|---|---|---|---|
+| ★ | 21 Nov (after the push) | Company pages: **Vodafone Idea**, **Sansera Engineering**, **Asian Paints** | Vodafone Idea: **Business 25** (was 63) with "Its liabilities exceed its assets … capped at 25" in the score details; Sansera: under "Financials from NSE filings", "FY26: spending on equipment was filed as −₹511 crore … ₹511 crore is used"; Asian Paints: "FY22: profit was filed as ₹9,167 crore … ₹3,031 crore … is used" | ☐ |
 | ★ | 21 Nov (DRC's cash line after a few evenings) | Company pages: **DRC Systems**, **Natco Pharma**, **Kabra Extrusion** → From its figures | DRC: "Cash went out this half-year … free cash flow −₹26 Cr"; Natco: "Sales are falling now: down 29% and 45%" and "Other income is carrying the profit (34%)"; Kabra: cash out and other income 8.7× its profit; TCS: no caution | ☐ |
 | ★ | 21 Nov | Any company page (e.g. Sansera Engineering), the screener, Lists → Highest business scores | No red "33/100": **Business 83** (green, strong) and **Price: Very expensive** side by side, in the header, In short and the pinned bar; the screener's columns are **Business** and **Price**, sorted by business; "Highest Overall Scores" is now **Strong Business at a Fair Price** (same address) | ☐ |
 | ★ | 21 Nov | On the Mac: Markets → Results → a day → **+ Track** beside a company that reported; then Desk → My desk → Add card → **Results tracker** | The button turns to ✓ Tracking; the Desk card shows a summary line, a chart of every tracked company from 100 on its results day (Nifty 500 dotted), and a table (results, profit · sales, since results, vs Nifty 500, day x of 60); clicking a row turns the Desk's chart to it; ✕ stops tracking | ☐ |
@@ -24,7 +25,6 @@ The newest are at the top. Each one gives where to go and what you should see. T
 | 17 | 21 Nov | Home → Favourites → any screener with **0** companies | A line "No company passes it at the 20 Nov close…" instead of a blank white card. (After the data reload, "Up on Every Timeframe" should have companies again: see #2.) | ☐ |
 | 18 | 21 Nov, 12:56 pm | Screeners → **Up on Every Timeframe**; any company page → 5-year return | **221 companies** (it showed 0); 5-year price growth filled in for 968 companies, not "—" | ☐ |
 | 19 | 21 Nov | Gold page → **Gold** tab | The full chart, as on a company page (Type, Indicators, Draw, full screen); the price is for **10 g of 24 carat** (about ₹1,24,820); press **All**, then drag left: no giant spike in 2018–19 | ☐ |
-| 20 | 21 Nov | Gold page → **Silver** tab | The same full chart for SILVERBEES | ☐ |
 
 Not visible on a phone, so nothing to check:
 - the results pages reopened to Google

@@ -99,11 +99,42 @@ export function bankHealth(b) {
   };
 }
 
+// A year's impossible figures, put right in place where the filing itself
+// gives the right one, and listed (metrics dataFixes):
+// - capex, the purchase of equipment and software, below 0: a purchase is
+//   never negative, the filing's sign is the wrong way round (Sansera FY26,
+//   −₹511 Cr)
+// - profit after tax above twice the profit before it, with the owners'
+//   share of profit under the PBT and agreeing with the EPS: the profit line
+//   was mis-filed, the owners' figure stands in (Asian Paints FY22, ₹9,167 Cr
+//   filed on a ₹4,156 Cr PBT; its owners' ₹3,031 Cr matches EPS ₹31.59 ×
+//   95.9 Cr shares). A real gain below the PBT line (a business sold) shows in
+//   the owners' profit and EPS too, so it's left alone
+export function dataChecks(y) {
+  const fixes = [];
+  if (y.capex != null && y.capex < 0) {
+    fixes.push({ fyEnd: y.fyEnd, field: "capex", filed: y.capex, used: -y.capex, why: "a purchase filed as a negative figure" });
+    y.capex = -y.capex;
+  }
+  if (y.pbt > 0 && y.profit > 2 * y.pbt && y.profitOwners > 0 && y.profitOwners <= y.pbt) {
+    const shares = y.paidUp > 0 && y.faceValue > 0 ? y.paidUp / y.faceValue : null;
+    const fromEps = shares && y.eps > 0 ? y.eps * shares : null;
+    if (fromEps && Math.abs(fromEps / y.profitOwners - 1) < 0.1) {
+      fixes.push({ fyEnd: y.fyEnd, field: "profit", filed: y.profit, used: y.profitOwners, why: "profit after tax above twice the profit before tax; the owners' share agrees with the EPS" });
+      y.profit = y.profitOwners;
+    }
+  }
+  return fixes;
+}
+
 export function computeMetrics(stock, snap, overrides = {}, options = {}) {
   if (!stock || stock.error || !Array.isArray(stock.years)) return null;
   // A year filed in the wrong unit (lakhs as rupees…) is put back on the
   // company's own scale first — see unit-slips.js
   const years = fixUnitSlips(stock.years.filter(y => !y.error && y.fyEnd)).map(y => ({ ...y }));
+  // Impossible figures, checked as the years load (21 Nov 2026, the
+  // 10-company check) — see dataChecks below
+  const dataFixes = years.flatMap(dataChecks);
   const latest = years[0];
   if (!latest) return null;
   const sym = stock.symbol;
@@ -497,7 +528,7 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
       materialsCr: cr(q.materials), purchasesCr: cr(q.purchases), inventoryChangeCr: cr(q.inventoryChange),
       employeesCr: cr(q.employees), otherExpensesCr: cr(q.otherExpenses), exceptionalCr: cr(q.exceptional),
       // the half-year to this quarter, from a September or March filing (fetch-nse.js DETAIL_VERSION 3)
-      ocfHalfCr: cr(q.ocfHalf), profitHalfCr: cr(q.profitHalf), capexHalfCr: cr(q.capexHalf),
+      ocfHalfCr: cr(q.ocfHalf), profitHalfCr: cr(q.profitHalf), capexHalfCr: cr(q.capexHalf == null ? null : Math.abs(q.capexHalf)),
       // the balance sheet at the quarter's end, when the filing has one (September, March)
       equityAtEndCr: cr(q.equityAtEnd), debtAtEndCr: cr(q.debtAtEnd), receivablesAtEndCr: cr(q.receivablesAtEnd),
       cashAtEndCr: q.equityAtEnd == null ? null : cr((q.cashAtEnd ?? 0) + (q.bankBalancesAtEnd ?? 0) + (q.currentInvestmentsAtEnd ?? 0)),
@@ -789,6 +820,7 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     yearsOnFile: years.length,
     // Years whose filing was in the wrong unit and has been rescaled
     unitFixes: years.filter(y => y.unitFix).map(y => ({ fyEnd: y.fyEnd, factor: y.unitFix })),
+    dataFixes,
     provenance: {
       financials: {
         source: latest.source === "legacy" ? "NSE legacy results filing" : "NSE integrated financial filing",

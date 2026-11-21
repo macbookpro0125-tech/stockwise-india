@@ -21,7 +21,7 @@
 // Weights and bands are a stated starting point, not a fitted model — the
 // proposal says so too. Change them here and RESEARCH_VERSION together.
 
-export const RESEARCH_VERSION = "1.16"; // 1.16: insurers scored on return on equity and net margin, the factory tests not applied; 1.15: a profit above its quarter's sales counts as a one-off when the other quarters are mostly losses or small (Tata Teleservices Maharashtra); 1.14: Solar Industries valued against Capital Goods (the defence makers), not Chemicals; 1.13: Financial Services P/E peers split into banks, other lenders and the rest; valuation under 15 labelled "Very expensive"; 1.12: a one-off quarter (profit above its sales) left out of the P/E the score values on; 1.11: peer P/E allows for growth above 10% a year; free cash flow yield left out while a company builds new capacity; 1.10: 1.10: P/E on the last four quarters; fair value's multiple capped at twice the sector's median P/E; a quarter's EPS filed as the year's corrected, other EPS disagreements shown; auditor notices keep their filing link and scope; 1.8: banks with net NPA under 2% priced on their last three years' ROE
+export const RESEARCH_VERSION = "1.17"; // 1.17: business score capped at 25 while net worth is negative; 1.16: insurers scored on return on equity and net margin, the factory tests not applied; 1.15: a profit above its quarter's sales counts as a one-off when the other quarters are mostly losses or small (Tata Teleservices Maharashtra); 1.14: Solar Industries valued against Capital Goods (the defence makers), not Chemicals; 1.13: Financial Services P/E peers split into banks, other lenders and the rest; valuation under 15 labelled "Very expensive"; 1.12: a one-off quarter (profit above its sales) left out of the P/E the score values on; 1.11: peer P/E allows for growth above 10% a year; free cash flow yield left out while a company builds new capacity; 1.10: 1.10: P/E on the last four quarters; fair value's multiple capped at twice the sector's median P/E; a quarter's EPS filed as the year's corrected, other EPS disagreements shown; auditor notices keep their filing link and scope; 1.8: banks with net NPA under 2% priced on their last three years' ROE
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -756,6 +756,9 @@ export const setResearchPeers = peers => { PEERS = peers; };
 const MIN_GROUP_COVERAGE = 0.35;
 const MIN_SCORE_COVERAGE = 0.6;
 const CAPPED_AT = 69;
+// …and while its net worth is negative
+const NEGATIVE_EQUITY_CAP = 25;
+const latestYearEnd = m => m.history[0]?.fyEnd ?? "0000";
 // The overall score's ceiling while a critical red flag is unresolved
 const FLAG_CEILING = 39;
 
@@ -867,13 +870,26 @@ export function computeResearch(m, ctx = { peers: PEERS }) {
   // A bank with its bad-loan and capital tests read is checked like anyone
   // else; NBFCs' filings don't carry those ratios, so they stay capped
   const bankChecked = m.lender && !!m.bank && balance.score != null;
-  const capReason = m.lender && !bankChecked
+  const coverageCapReason = m.lender && !bankChecked
     ? (m.bank ? "The bank's bad-loan and capital figures couldn't be read from its filings, so quality is capped at 69."
       : m.template === "BANKING" ? "The bank's bad-loan and capital figures aren't on file yet, so quality is capped at 69."
         : "NBFC filings don't carry bad-loan and capital ratios, a lender's key tests, so quality is capped at 69.")
     : balance.score == null ? "The balance sheet couldn't be checked from the filings, so quality is capped at 69."
       : governance.score == null ? "Shareholding data is missing, so governance couldn't be checked and quality is capped at 69." : null;
-  const cap = v => (v == null || !capReason ? v : Math.min(v, CAPPED_AT));
+  // Negative net worth (21 Nov 2026, the 10-company check: Vodafone Idea
+  // scored 63 on steady margins and a one-off quarter's gain while its
+  // liabilities exceeded its assets by ₹35,758 crore): the business score
+  // stops at 25 whatever the other tests say. The latest balance sheet —
+  // the year's, or a later half-year's when filed. Not lenders (their
+  // equity is tested by capital adequacy).
+  const lastHalf = (m.quarters ?? []).find(q => finite(q.equityAtEndCr));
+  const equityNow = lastHalf && Date.parse(lastHalf.fyEnd) > Date.parse(latestYearEnd(m)) ? { cr: lastHalf.equityAtEndCr, at: lastHalf.fyEnd } : finite(m.history[0]?.equityCr) ? { cr: m.history[0].equityCr, at: m.history[0].fyEnd } : null;
+  const negativeEquity = !m.lender && equityNow && equityNow.cr <= 0 ? equityNow : null;
+  const capAt = negativeEquity ? NEGATIVE_EQUITY_CAP : CAPPED_AT;
+  const capReason = negativeEquity
+    ? `Its liabilities exceed its assets (net worth −₹${Math.round(Math.abs(negativeEquity.cr)).toLocaleString("en-IN")} crore at ${new Date(`${negativeEquity.at}T00:00:00Z`).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })}), so the business score is capped at ${NEGATIVE_EQUITY_CAP}.`
+    : coverageCapReason;
+  const cap = v => (v == null || !capReason ? v : Math.min(v, capAt));
   const qualityOnly = cap(rawQualityOnly), quality = cap(rawQuality);
 
   // Coverage: share of the applicable weight actually checked, groups weighted
@@ -985,8 +1001,8 @@ export function computeResearch(m, ctx = { peers: PEERS }) {
   const partsOf = ids => groups.filter(g => ids.includes(g.id) && g.applicable && g.score != null).map(g => ({ id: g.id, label: g.label, score: g.score, weight: g.weight }));
   const blend = qualityOnly != null && valuation.score != null ? Math.exp(0.7 * Math.log(Math.max(qualityOnly, 1)) + 0.3 * Math.log(Math.max(valuation.score, 1))) : null;
   const math = {
-    qualityOnly: { parts: partsOf(QUALITY_IDS), raw: rawQualityOnly == null ? null : r1(rawQualityOnly), capAt: capReason && rawQualityOnly != null && rawQualityOnly > CAPPED_AT ? CAPPED_AT : null, value: qualityOnly == null ? null : r1(qualityOnly) },
-    quality: { parts: partsOf([...QUALITY_IDS, "valuation"]), raw: rawQuality == null ? null : r1(rawQuality), capAt: capReason && rawQuality != null && rawQuality > CAPPED_AT ? CAPPED_AT : null, value: quality == null ? null : r1(quality) },
+    qualityOnly: { parts: partsOf(QUALITY_IDS), raw: rawQualityOnly == null ? null : r1(rawQualityOnly), capAt: capReason && rawQualityOnly != null && rawQualityOnly > capAt ? capAt : null, value: qualityOnly == null ? null : r1(qualityOnly) },
+    quality: { parts: partsOf([...QUALITY_IDS, "valuation"]), raw: rawQuality == null ? null : r1(rawQuality), capAt: capReason && rawQuality != null && rawQuality > capAt ? capAt : null, value: quality == null ? null : r1(quality) },
     ...(blend != null && {
       blend: r1(blend), valuation: valuation.score,
       overlay: risk.overlay, trimPct: r1(0.35 * risk.overlay), afterTrim: r1(blend * (1 - 0.35 * (risk.overlay / 100))),
@@ -1002,7 +1018,7 @@ export function computeResearch(m, ctx = { peers: PEERS }) {
     qualityOnly: qualityOnly == null ? null : r1(qualityOnly),
     provisional: quality != null && appGroups.some(g => g.score == null),
     // Set when the coverage cap applies, with what it would be uncapped
-    capped: quality != null && capReason ? { at: CAPPED_AT, reason: capReason, uncapped: r1(rawQuality) } : null,
+    capped: quality != null && capReason ? { at: capAt, reason: capReason, uncapped: r1(rawQuality) } : null,
     groups,
     coverage: { pct: r1(coverage * 100), checked: groups.reduce((a, g) => a + g.checked, 0), total: groups.reduce((a, g) => a + g.total, 0) },
     confidence,
