@@ -110,17 +110,27 @@ async function unlistedError(symbol) {
 }
 
 // The search box's suggestions (the original's StockSearchBar): NSE's own
-// list by symbol or company name — exact symbol first, then symbols starting
-// with the text, then names with a word starting with it, then anything
-// containing it.
+// list by symbol or company name — exact symbol first, then symbols or names
+// starting with the text, then names with a word starting with it, then anything
+// containing it; within each, the bigger company first (22 Nov 2026: "hdfc"
+// put HDFC AMC above HDFC Bank, a shorter symbol winning the tie).
+let capOf = { rows: null, map: new Map() };
+function marketCap(symbol) {
+  const rows = allMetrics().rows ?? [];
+  if (capOf.rows !== rows) capOf = { rows, map: new Map(rows.map(r => [r.symbol, r.marketCapCr ?? 0])) };
+  return capOf.map.get(symbol) ?? 0;
+}
+// what people call a company that neither its symbol nor its name starts with
+const NICKNAMES = { "L&T": "LT", "L & T": "LT" };
 async function searchEquities(q) {
   const text = String(q || "").trim().toUpperCase();
   if (!text) return [];
   const rank = s => {
     const name = s.name.toUpperCase();
-    if (s.symbol === text) return 0;
-    if (s.symbol.startsWith(text)) return 1;
-    if (name.startsWith(text)) return 2;
+    if (s.symbol === text || NICKNAMES[text] === s.symbol) return 0;
+    // a symbol or a name starting with it, alike: "tata" finds TCS and Tata
+    // Motors (TMPV) beside the TATA… symbols, the bigger first
+    if (s.symbol.startsWith(text) || name.startsWith(text)) return 1;
     if (name.split(/[\s.&-]+/).some(w => w.startsWith(text))) return 3;
     if (s.symbol.includes(text) || name.includes(text)) return 4;
     return null;
@@ -128,7 +138,7 @@ async function searchEquities(q) {
   return (await equityList())
     .map(s => ({ s, r: rank(s) }))
     .filter(x => x.r != null)
-    .sort((a, b) => a.r - b.r || a.s.symbol.length - b.s.symbol.length)
+    .sort((a, b) => a.r - b.r || marketCap(b.s.symbol) - marketCap(a.s.symbol) || a.s.symbol.length - b.s.symbol.length)
     .slice(0, 8)
     .map(({ s }) => ({ ticker: s.symbol, name: s.name }));
 }

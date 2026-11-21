@@ -126,7 +126,8 @@ export function sitemapXml() {
 // sitemap-pages.xml, sitemap-screens.xml, sitemap-stocks.xml; null for any other
 export function sitemapPart(name) {
   const lastmod = loadMarketSnapshot()?.pricesDate ?? null;
-  if (name === "pages") return urlset([...PUBLIC_PATHS.map(p => [p, p === "/" ? lastmod : null]), ...GUIDE_PATHS().map(p => [p, GUIDES_UPDATED])]);
+  // /measures, what each figure means (the app writes it; its own title and canonical, http-server.js)
+  if (name === "pages") return urlset([...PUBLIC_PATHS.map(p => [p, p === "/" ? lastmod : null]), ["/measures", null], ...GUIDE_PATHS().map(p => [p, GUIDES_UPDATED])]);
   if (name === "screens") return urlset(LIST_PATHS().map(p => [p, lastmod]));
   if (name === "sectors") return urlset(SECTOR_PATHS().map(p => [p, lastmod]));
   // the index, theme and price lists (seo-collections.js, 6 Nov 2026)
