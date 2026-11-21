@@ -13,6 +13,9 @@ export const PRESETS = [
       { id: "marketCapCr", min: 500, max: null },
     ],
     sort: "qualityOnly",
+    // its rule changed (21 Nov 2026: was the overall score's ranking): its
+    // track record counts picks from this day only (performance.js)
+    rulesFrom: "2026-11-21",
   },
   {
     id: "high_quality_compounders",

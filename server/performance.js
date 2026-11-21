@@ -194,7 +194,11 @@ export async function getPerformance() {
 
   const tickers = new Set();
   const byPreset = new Map();
+  // a strategy whose rule changed counts from then (presets.js rulesFrom): picks
+  // made under the old rule are kept on file, not mixed into the new record
+  const rulesFrom = new Map(PRESETS.filter(p => p.rulesFrom).map(p => [p.id, p.rulesFrom]));
   for (const snap of snaps) {
+    if (rulesFrom.has(snap.presetId) && snap.date < rulesFrom.get(snap.presetId)) continue;
     const picks = snap.picks.map(p => {
       tickers.add(p.ticker);
       const raw = market?.prices?.[p.ticker] ?? null;

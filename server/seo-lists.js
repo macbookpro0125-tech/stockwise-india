@@ -53,6 +53,9 @@ function run(preset) {
 // list against the strategy snapshot (performance.js, every three days) from
 // six or more days back. null until there is one.
 export function screenChanges(presetId, nowSymbols, names, snaps = loadSnapshots()) {
+  // only snapshots under the strategy's current rule (presets.js rulesFrom)
+  const from = PRESETS.find(p => p.id === presetId)?.rulesFrom ?? "";
+  snaps = snaps.filter(x => x.date >= from);
   const today = snaps.filter(x => x.presetId === presetId && Array.isArray(x.members)).map(x => x.date).sort().at(-1);
   if (!today) return null;
   const cutoff = new Date(Date.parse(`${today}T00:00:00Z`) - 6 * 86400000).toISOString().slice(0, 10);

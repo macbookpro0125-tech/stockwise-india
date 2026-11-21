@@ -26,17 +26,18 @@ export const METHODOLOGY_SECTIONS = [
     ]
   },
   {
-    title: "Missing checks and the overall research score",
+    title: "Missing checks, and the business score and price",
     paragraphs: [
       "A check that is missing or does not apply is not scored as zero or treated as a pass. The remaining eligible checks are reweighted within their group. A group can be scored when at least 35% of its applicable check weight has data, and a quality score is shown when scored groups cover at least 60% of the applicable group weight. This means two companies' scores can be based on different amounts of evidence; the scorecard shows what was checked and what was not.",
-      "The overall research score geometrically blends quality excluding valuation (70%) with valuation (30%), then can be reduced by up to 35% for price risk and data gaps. Technical price trends are shown separately and do not change the quality or overall research score. Quality can be capped at 69 when important balance-sheet or governance data cannot be checked; an unresolved critical audit flag can cap the overall score at 39. The relevant company page explains any cap."
+      "The app shows two figures side by side and never blends them: the business score (quality excluding valuation: business, earnings, balance sheet, governance and growth) and the price (the valuation group's label, from inexpensive to very expensive, against the company's own usual P/E, its peers, its cash yield and simple measures). Until 21 November 2026 it also showed one overall score blending the two, which made a strong business with a dear share read as a weak company. Technical price trends are shown separately and do not change either. Quality can be capped at 69 when important balance-sheet or governance data cannot be checked, and an unresolved critical audit flag is shown as \"Review required\". The relevant company page explains any cap."
     ]
   },
   {
     title: "Tested against later share prices",
     paragraphs: [
       "In November 2026 we re-scored the market as it stood on nine past dates from February 2024 to February 2026, using only results filed with NSE by each date and prices up to it, and looked at each company's share price 6 and 12 months later. Companies worth ₹500 crore or more, each counted equally, price change only (no dividends).",
-      "Overall score: after 12 months the top fifth did better than the bottom fifth on 6 of 7 dates (the typical company fell 0.8% against 8.1%), but on average it did not beat the Nifty 50. The score sorts stronger businesses from weaker ones; it does not pick shares that beat the market.",
+      "Business score: a higher business score came before a better share price 12 months later on all 7 dates, a weak link (a rank correlation of about 0.10, where 0 is none), slightly steadier than the old blended overall score (0.09, on 6 of 7 dates). The price on its own told less (0.04, on 4 of 7). It sorts stronger businesses from weaker ones; it does not pick shares that beat the market.",
+      "Strong Business at a Fair Price (a business score of 70 or more, priced fair or cheaper): after 12 months these companies averaged +4.7% against +2.6% for all companies, ahead of them on 6 of 7 dates, but behind the Nifty 50's +6.0% on 5 of 7 dates.",
       "A quality score of 70 or more together with a price strength of 70 or more: this group did better than the average company after 12 months on 7 of 7 dates, by about 4 percentage points a year, and was about level with the Nifty 50. Neither measure did on its own, and a weak business with a weak share price did worst. The app shows this pairing as the Strong Business, Rising Price strategy and on company pages.",
       "Limits: only companies still listed today are in the data, which flatters every group; quarterly results are on file from late 2023, so the earliest dates use fewer quarters; two and a half years is a short period, and several combinations were tried. Past results do not predict future returns. The strategy's picks are recorded every week from now on, so its record going forward can be checked."
     ]
