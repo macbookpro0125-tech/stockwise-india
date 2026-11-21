@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Pencil, X, RefreshCw, Bell, Send, CircleCheck } from "lucide-react";
 import { api } from "./api.js";
 import { alertsStore } from "./stores.js";
+import { canPush, pushOn } from "./push.js";
 
 // The original's Alerts panel (stock-screener src/components/AlertsPanel.jsx):
 // summary and Check Now, what has triggered, then every alert grouped, each
@@ -168,7 +169,9 @@ function TelegramCard({ onStatus }) {
     return (
       <div style={{ ...box, boxShadow: "none", background: "var(--s1)" }}>
         {icon}
-        <div style={{ fontSize: 13, color: "var(--t2)", lineHeight: 1.5 }}>Telegram alerts aren't set up on this server yet, so alerts only show on this page.</div>
+        {/* 21 Nov 2026: "alerts only show on this page" wasn't so — they also
+            reach a phone with the app's notifications on (alert-notifier.js) */}
+        <div style={{ fontSize: 13, color: "var(--t2)", lineHeight: 1.5 }}>{pushOn() ? "Alerts come to this phone as notifications, and show here too. Telegram alerts aren't set up yet." : canPush() ? "Turn on notifications in the app's settings to get alerts on this phone; they also show here. Telegram alerts aren't set up yet." : "Alerts show here, and on your phone as notifications if you use the Jocular app with notifications on. Telegram alerts aren't set up yet."}</div>
       </div>
     );
   }

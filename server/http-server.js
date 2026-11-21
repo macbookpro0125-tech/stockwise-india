@@ -52,7 +52,7 @@ import { dividendRecord } from "./dividends.js";
 import { sectorComparison } from "./sector-compare.js";
 import { startDataJobs, jobStatus } from "./data-jobs.js";
 import { botInfo, linkCode, telegramChat, unlinkTelegram, sendTelegram, startTelegramPolling } from "./telegram.js";
-import { startAlertChecks } from "./alert-notifier.js";
+import { startAlertChecks, checkAlertsNow } from "./alert-notifier.js";
 import { savePushToken, removePushToken, pushReady, pushToUser } from "./push.js";
 import { startNewsPush } from "./news-push.js";
 import { startScreenAlerts } from "./screen-alerts.js";
@@ -1986,7 +1986,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   // slices at once, so the next visitor doesn't wait for it
   // new evening data: first let go of caches built from the old, so the 512 MB
   // server doesn't hold two markets at once (20 Nov 2026, two restarts)
-  if (mode === "off" || mode === "pull") startDataPull({ onInstalled: () => { dropExploreCaches(); dropCompanyCaches(); dropTechnicals(); return rebuildFresh().catch(e => console.error(`[market] rebuild failed: ${e.message}`)); } });
+  if (mode === "off" || mode === "pull") startDataPull({ onInstalled: () => { dropExploreCaches(); dropCompanyCaches(); dropTechnicals(); return rebuildFresh().then(() => checkAlertsNow()).catch(e => console.error(`[market] rebuild failed: ${e.message}`)); } });
   // GitHub's timer starts the evening job ~8 hours late: ask for it ourselves (refresh-trigger.js)
   if (mode === "off" || mode === "pull") startRefreshTrigger({ pricesDate: () => { try { return loadMarketSnapshot()?.pricesDate ?? null; } catch { return null; } } });
   if (mode !== "off") {

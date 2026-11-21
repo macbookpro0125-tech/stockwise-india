@@ -82,6 +82,22 @@ function istNow() {
 // Through to 15:45, so the closing minutes are checked too
 export const marketHours = t => t.weekday && t.minutes >= 9 * 60 + 15 && t.minutes <= 15 * 60 + 45;
 
+// Once more as soon as the evening's closes are in (21 Nov 2026: the checks
+// run in market hours on the last close, so a close that crossed an alert at
+// 3:30 pm was only sent at 9:15 the next morning; the closes now arrive
+// around 5 pm — http-server.js calls this after the data is installed)
+export async function checkAlertsNow({ log = console.error } = {}) {
+  if (!telegramToken() && !pushReady()) return { checked: 0, sent: 0 };
+  // not in the night (data held up past 10 pm): the morning's check sends it
+  const h = new Date(Date.now() + 330 * 60_000).getUTCHours();
+  if (h < 8 || h >= 22) return { checked: 0, sent: 0 };
+  try {
+    const r = await notifyAlerts({ log });
+    if (r.sent) log(`[alerts] sent ${r.sent} of ${r.checked} checked, on the evening's closes`);
+    return r;
+  } catch (e) { log(`[alerts] ${e.message}`); return { checked: 0, sent: 0 }; }
+}
+
 export function startAlertChecks({ everyMs = 15 * 60_000, log = console.error } = {}) {
   const tick = async () => {
     if ((!telegramToken() && !pushReady()) || !marketHours(istNow())) return;

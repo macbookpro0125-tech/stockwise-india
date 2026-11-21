@@ -16,7 +16,7 @@ Status: todo · checking · fixing · done (date).
 | 7 | Gold, silver and bonds | Gold price by carat, gold chart, ETFs, Sovereign Gold Bonds, company bonds | done 21 Nov |
 | 8 | News | Explore, announcements, a news item, company news | done 21 Nov |
 | 9 | Your things | Watchlist and lists, Portfolio, Trade journal, Backtest, Desk | done 21–22 Nov (wording fixes) |
-| 10 | Alerts | Price alerts, results and order alerts, phone notifications, Telegram, emails | todo |
+| 10 | Alerts | Price alerts, results and order alerts, phone notifications, Telegram, emails | done 22 Nov (2 fixes) |
 | 11 | Settings and legal | Settings, account, delete account, logos, dark mode, Privacy, Terms, Disclaimer, Help, About | todo |
 | 12 | Public pages and search | Lists, sectors, Learn guides, results calendar, sitemap, Google and Bing | todo |
 | 13 | Android app | Play listing, install, notifications, links opening the app, ads | todo |
