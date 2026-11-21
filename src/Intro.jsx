@@ -30,6 +30,10 @@ function wanted() {
   if (new URLSearchParams(location.search).has("nointro")) return false;
   if (document.documentElement.classList.contains("in-app")) return true;
   if (location.pathname !== "/") return false;
+  // a tab opened in the background: no one is watching, and Safari pauses its
+  // animations there, so the film froze half-way (21 Nov 2026, the owner: "when
+  // I open it in a new tab I always get stuck at this point")
+  if (document.visibilityState === "hidden") return false;
   try {
     if (sessionStorage.getItem("introSeen")) return false;
     sessionStorage.setItem("introSeen", "1");
@@ -148,6 +152,19 @@ export default function Intro() {
     window.dispatchEvent(new Event("intro-leaving"));
     setTimeout(() => setOn(false), fly ? FLIGHT_MS + 80 : 560);
   };
+
+  // A safety net: the film is never on screen for long. If it's still there
+  // well past its length (a paused tab, a browser that stalled it), or the tab
+  // comes back into view after it should have ended, it ends now.
+  useEffect(() => {
+    if (!on || held) return undefined;
+    const started = Date.now();
+    const cap = setTimeout(finish, LENGTH_MS + 3500);
+    const onShow = () => { if (document.visibilityState === "visible" && Date.now() - started > LENGTH_MS + 600) finish(); };
+    document.addEventListener("visibilitychange", onShow);
+    window.addEventListener("pageshow", onShow);
+    return () => { clearTimeout(cap); document.removeEventListener("visibilitychange", onShow); window.removeEventListener("pageshow", onShow); };
+  }, [on, held]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Android (1 Nov 2026, filmed): a slow phone takes a second to draw the film,
   // and its clock ran on meanwhile, so the line was half gone when it showed.
