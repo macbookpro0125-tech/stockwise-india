@@ -9,7 +9,7 @@ import { useJoin } from "./PublicJoin.jsx";
 // the code does — check them when changing what's stored, adding analytics
 // or ads, or moving hosts.
 
-const UPDATED = "18 October 2026";
+const UPDATED = "22 November 2026";
 // Shown once set: a privacy policy needs a way to reach you
 const CONTACT_EMAIL = "jocularinsights@gmail.com";
 
@@ -19,6 +19,13 @@ const CONTACT_EMAIL = "jocularinsights@gmail.com";
 // visitor who signed up from the header lost the page they came for)
 export function PublicPage({ title, signedIn, updated = UPDATED, children, onSignIn = null, onJoin = null }) {
   const [join, box] = useJoin();
+  // The tab's title, as the server writes it for this page; the page left
+  // gets its own back (22 Nov 2026: Settings → Disclaimer kept the home title)
+  useEffect(() => {
+    const before = document.title;
+    document.title = /Jocular Insights/.test(title) ? title : `${title} | Jocular Insights`;
+    return () => { document.title = before; };
+  }, [title]);
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
       <PublicHeader signedIn={signedIn} onSignIn={onSignIn ?? (() => join(null, "signin"))} onJoin={onJoin ?? (() => join(null))} />
@@ -61,7 +68,7 @@ export function NotFoundPage({ signedIn }) {
 
 export function PrivacyPage({ signedIn }) {
   return (
-    <PublicPage title="Privacy policy" signedIn={signedIn} updated="10 November 2026">
+    <PublicPage title="Privacy policy" signedIn={signedIn} updated="22 November 2026">
       <P>
         This page explains what Jocular Insights keeps about you, why, and how to delete it. In short: we use your
         account and saved data to provide the service, and we don't sell your personal data. The website uses no analytics
@@ -74,9 +81,10 @@ export function PrivacyPage({ signedIn }) {
       <UL>
         <LI><B>Your account:</B> your email address and your password. The password is stored only as a salted, one-way hash (scrypt), so nobody — including us — can read it. If you sign in with Google, Apple or your phone instead, there's no password: we keep the email or phone number they confirm, your name if they share it, and the account ID their sign-in gives us.</LI>
         <LI><B>A sign-in cookie:</B> one cookie that keeps you signed in for up to 30 days. It's used for nothing else, scripts on the page can't read it, and it's removed when you sign out.</LI>
-        <LI><B>What you save:</B> your watchlist (with the price when you added each stock and your notes on it), your price alerts, your portfolio holdings (buy price, quantity, date and notes), the investment thesis and the notes you write on a company's page, and the strategies you save on Discover.</LI>
-        <LI><B>Phone notifications, only if you turn them on</B> (in the Android app): a token from Google's Firebase Cloud Messaging that lets us send notifications to that phone — your watchlist companies' news, a reminder the evening before one of them announces its results, and your price alerts. The notification goes through Google; its text is the company's news or your alert. Turning notifications off, or signing out, deletes the token.</LI>
+        <LI><B>What you save:</B> your watchlist (with the price when you added each stock and your notes on it), your price alerts, your portfolio holdings (buy price, quantity, date and notes), the investment thesis and the notes you write on a company's page, your own price levels for a company, your lists, your trade journal, the screens you favourite and the strategies you save.</LI>
+        <LI><B>Phone notifications, only if you turn them on</B> (in the Android app): a token from Google's Firebase Cloud Messaging that lets us send notifications to that phone — your watchlist companies' news and big orders, a reminder the evening before one of them announces its results, and your price alerts. The notification goes through Google; its text is the company's news or your alert. Turning notifications off, or signing out, deletes the token.</LI>
         <LI><B>The weekly email, only if you turn it on</B> (Settings or the Account menu): we use your account's email address to send, on Sunday mornings, your starred companies' week, their news and their coming results, through our email provider (Resend). Every email has a link that turns it off at once, without signing in; we also keep when it was last sent.</LI>
+        <LI><B>The results email, only if you turn it on</B> (Settings or the Account menu): the evening before one of your watchlist's companies announces its results, an email saying so, sent the same way. We keep which reminders were sent, so none is sent twice, for 30 days.</LI>
         <LI><B>Visit counts, anonymous:</B> how many people loaded our pages each day and week, how many signed-in accounts opened the app each day, how many new accounts were made, and the number of page loads — totals only, also split by the page you arrived on, the name of the site a link came from (such as Google or Reddit, never the full address), the kind of device (phone, computer or our app), the hour, and the country, looked up from your connection's address on our own server (using MaxMind's GeoLite2 data) — only the country is kept. To count each visitor once, your connection's address and browser are turned into a code with a secret that is deleted at the end of each day (and week), so the code can't identify you or follow you across days. No cookie is used, and no address is stored.</LI>
         <LI><B>Telegram, only if you connect it:</B> your Telegram chat ID and the name on your Telegram account, so your alerts reach you, and when each alert was last sent. Not your phone number — Telegram doesn't give it to us. Disconnecting (on the Alerts tab, or sending /stop to the bot) removes them.</LI>
       </UL>
@@ -132,9 +140,9 @@ export function PrivacyPage({ signedIn }) {
 
       <H>Emails</H>
       <P>
-        We email you only to check your address when you sign up (a 6-digit code that works for 15 minutes) and when you
-        ask to reset your password (a link that works once for an hour). These emails are delivered by our email service
-        provider on our behalf.
+        We email you to check your address when you sign up (a 6-digit code that works for 15 minutes) and when you
+        ask to reset your password (a link that works once for an hour), and otherwise only the weekly and results
+        emails you turn on (above). These emails are delivered by our email service provider on our behalf.
       </P>
 
       <H>Alerts on Telegram</H>
@@ -169,8 +177,8 @@ export function PrivacyPage({ signedIn }) {
 
       <H>How long we keep it, and deleting it</H>
       <P>
-        We keep your account and what you save until you delete them. You can remove any single stock, alert or holding at
-        any time. To delete everything, sign in and open <B>Account → Delete account</B> (top right). That removes your
+        We keep your account and what you save until you delete them. You can remove any single stock, alert, holding or
+        trade at any time. To delete everything, sign in and open <B>Settings → Delete account</B> (on a computer, the Account menu at the top right). That removes your
         account and everything saved with it from our database straight away, and it can't be undone.
       </P>
 
@@ -186,7 +194,7 @@ export function PrivacyPage({ signedIn }) {
 
       <H>Changes to this policy</H>
       <P>
-        If this changes — for example, if we add advertising — we'll update this page and the date at the top before the
+        If this changes — for example, if we add a new service that handles your data — we'll update this page and the date at the top before the
         change takes effect.
       </P>
     </PublicPage>
@@ -226,7 +234,8 @@ export function DisclaimerPage({ signedIn }) {
       </P>
 
       <H>Past results</H>
-      <P>The Performance tab shows how strategy picks have moved and tracks monthly research-score cohorts prospectively against the NIFTY 500. Score tracking uses split-adjusted price returns, excludes dividends, and reports names without a current quote as unpriced. It is an early study of eligible listed companies, not a historical backtest; past or prospective performance does not predict future returns.</P>
+      <P>Strategy performance shows how strategy picks have moved and tracks monthly research-score cohorts prospectively against the NIFTY 500. Score tracking uses split-adjusted price returns, excludes dividends, and reports names without a current quote as unpriced. It is an early study of eligible listed companies, not a historical backtest; past or prospective performance does not predict future returns.</P>
+      <P>A Backtest replays your own rule on a company's past daily prices, with 0.1% off each trade for costs and tax and dividends left out. It shows what the rule would have done in the past; it is not a forecast.</P>
 
       <H>Your decisions are yours</H>
       <P>
@@ -244,7 +253,7 @@ export function DisclaimerPage({ signedIn }) {
         we take it down promptly.
       </P>
       <P>
-        See also our <SiteLink to="/privacy">privacy policy</SiteLink>.
+        See also our <SiteLink to="/privacy">privacy policy</SiteLink> and <SiteLink to="/terms">terms of use</SiteLink>.
       </P>
     </PublicPage>
   );
@@ -400,7 +409,7 @@ export function HelpPage({ signedIn }) {
       <H>When they change</H>
       <P>
         Each weekday evening, after NSE publishes the day's prices, we read the closing prices and the results companies
-        have filed since the last check. If that run fails, it is tried again the next morning. So prices are the last
+        have filed since the last check. If that run fails, it is tried again later that evening and the next morning. So prices are the last
         trading day's close, and new results usually appear the evening they are filed.
       </P>
       <P>

@@ -155,15 +155,16 @@ export function DeleteAccountModal({ who, hasPassword, onClose, onDeleted }) {
   return (
     <div onClick={e => { if (e.target === e.currentTarget && !busy) onClose(); }}
       style={{ position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>
-      <form onSubmit={submit} style={{ background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 18, padding: 26, width: 420, maxWidth: "100%", boxShadow: "var(--sh-lg)" }}>
-        <h3 style={{ fontSize: 18, fontWeight: 500, color: "var(--t1)", margin: "0 0 10px", letterSpacing: "-0.02em" }}>Delete your account?</h3>
+      <form onSubmit={submit} role="dialog" aria-modal="true" aria-labelledby="delete-account-title" style={{ background: "var(--s2)", border: "1px solid var(--bdr2)", borderRadius: 18, padding: 26, width: 420, maxWidth: "100%", boxShadow: "var(--sh-lg)" }}>
+        <h3 id="delete-account-title" style={{ fontSize: 18, fontWeight: 500, color: "var(--t1)", margin: "0 0 10px", letterSpacing: "-0.02em" }}>Delete your account?</h3>
         <p style={{ fontSize: 14, lineHeight: 1.6, color: "var(--t2)", margin: "0 0 10px" }}>
           This permanently deletes <strong style={{ color: "var(--t1)" }}>{who || "your account"}</strong> and everything saved with it:
-          your watchlist and its notes, your price alerts and your portfolio. It can't be undone.
+          your watchlist, lists and notes, your price alerts, your portfolio, your trade journal and your saved
+          strategies. It can't be undone.
         </p>
         <p style={{ fontSize: 12, lineHeight: 1.6, color: "var(--t3)", margin: "0 0 16px" }}>
-          Filters, saved strategies, company-page notes and search history live in this browser, not on our server — clear
-          them in your browser's settings for this site. <SiteLink to="/privacy" newTab>Privacy policy</SiteLink>
+          Your last filters and recent searches are kept only in this browser — clear them in your browser's settings
+          for this site. <SiteLink to="/privacy" newTab>Privacy policy</SiteLink>
         </p>
         {hasPassword ? (
           <input className="input-base" type="password" placeholder="Your password, to confirm" autoComplete="current-password" autoFocus

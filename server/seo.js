@@ -424,7 +424,7 @@ export function helpPageHtml(template) {
 <h2>Where the figures come from</h2>
 <ul><li><b>Company results:</b> the quarterly and annual results each company files with NSE. Ratios such as P/E, ROE and debt to equity are calculated from them.</li><li><b>Prices and returns:</b> NSE's daily closing prices, and NSE's index closes for comparisons with the NIFTY 50 and sector indices. The price chart, its technicals and the latest close at the top of a company page use the same NSE daily prices.</li><li><b>Shareholding and announcements:</b> the shareholding patterns and announcements companies file with NSE.</li></ul>
 <h2>When they change</h2>
-<p>Each weekday evening, after NSE publishes the day's prices, we read the closing prices and the results companies have filed since the last check. If that run fails, it is tried again the next morning. So prices are the last trading day's close, and new results usually appear the evening they are filed.</p>
+<p>Each weekday evening, after NSE publishes the day's prices, we read the closing prices and the results companies have filed since the last check. If that run fails, it is tried again later that evening and the next morning. So prices are the last trading day's close, and new results usually appear the evening they are filed.</p>
 <p>Every company page ends with <b>Where these figures come from</b>: the close the returns use, the latest quarter and year filed and when, and when its filings were last read.</p>
 <h2>Why a figure or score can be missing</h2>
 <ul><li>The company hasn't filed enough years for a check that needs them, such as five-year growth.</li><li>The check doesn't apply. Banks and other lenders are judged on bad loans and capital instead of debt to equity.</li><li>The filings can't show it, such as related-party deals or forecasts. Those are left out, never guessed.</li><li>A company whose latest audited year is about 18 months behind the rest has stopped filing, and drops out of the screener.</li></ul>
@@ -475,7 +475,7 @@ ${opening.map(p => `<p>${p}</p>`).join("\n")}
 };
 export function privacyPageHtml(template) {
   return legalPage(template, {
-    path: "/privacy", name: "Privacy policy", updated: "10 November 2026",
+    path: "/privacy", name: "Privacy policy", updated: "22 November 2026",
     desc: "What Jocular Insights keeps about you, why, and how to delete it. No personal data sold; visits counted on our own server, without cookies.",
     opening: ["This page explains what Jocular Insights keeps about you, why, and how to delete it. In short: we use your account and saved data to provide the service, and we don't sell your personal data. The website uses no analytics services — we only count visits anonymously on our own server, without cookies. The website may show ads from Google AdSense and the mobile apps ads from Google AdMob, which process ad-related information as explained below. We don't send Google your account or saved investing data."],
     more: "The full policy covers what we keep on our server and why, how long we keep it, how ads work, and how to delete your account and everything in it.",
