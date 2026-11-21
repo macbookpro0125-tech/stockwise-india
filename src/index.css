@@ -5521,6 +5521,19 @@ button.td-line { cursor: pointer; }
 .td-shot-pill { position: absolute; z-index: 2; left: 50%; bottom: 84px; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 4px; height: 44px; padding: 0 18px; border: 0; border-radius: 999px; background: rgba(40, 40, 46, 0.85); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); color: var(--td-on-black); font: inherit; font-size: 14px; cursor: pointer; }
 .td-sheet { position: relative; z-index: 2; margin-top: -56px; padding: 14px var(--page-x) 0; border-radius: 28px 28px 0 0; background: var(--bg); box-shadow: 0 -1px 0 var(--ga-edge), 0 -24px 60px rgba(0, 0, 0, 0.55); }
 .td-sheet::before { content: ""; display: block; width: 44px; height: 5px; margin: 0 auto; border-radius: 3px; background: var(--bdr3); }
+/* Home without the banner (21 Nov 2026): a greeting line, then the market */
+.td-flat { margin-top: 0; }
+.td-flat .td-sheet { margin-top: 0; padding-top: 0; border-radius: 0; box-shadow: none; }
+.td-flat .td-sheet::before { display: none; }
+.td-hello { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; padding: 8px var(--page-x) 18px; }
+.td-hello h2 { margin: 0; font-size: clamp(24px, 2.4vw, 32px); font-weight: 600; letter-spacing: -0.03em; color: var(--t1); }
+.td-hello-acts { display: inline-flex; align-items: center; gap: 14px; }
+.td-hello .td-cta { margin: 0; height: 40px; padding: 0 20px; font-size: 14px; background: var(--accent); color: #fff; }
+.td-links { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; padding: 0; }
+.td-links button { display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 14px; border: 1px solid var(--bdr2); border-radius: 999px; background: var(--s1); color: var(--t1); font: inherit; font-size: 13px; cursor: pointer; }
+.td-links button:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--bdr2)); }
+.td-links button svg { color: var(--accent); }
+.td-hello-link { display: inline-flex; align-items: center; gap: 4px; border: none; background: none; color: var(--accent); font-size: 14px; cursor: pointer; padding: 6px 2px; }
 .td-summary { grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); margin-bottom: 16px; }
 .td-big { padding: 16px; }
 .td-big-head { display: flex; align-items: center; gap: 12px; font-variant-numeric: tabular-nums; }

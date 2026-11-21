@@ -219,32 +219,19 @@ const PAGE_GROUPS = [
   { title: "Your things", items: ["watchlist", "portfolio", "performance", "alerts"] },
 ];
 
+// good morning / afternoon / evening, by the hour in India
+function greeting() {
+  const h = Number(new Date().toLocaleString("en-IN", { hour: "numeric", hour12: false, timeZone: "Asia/Kolkata" }));
+  return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+}
+
 export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onOpenIndex, onPickScreen, onCreate, account = null, continueCard = null, newsTile = null, children }) {
   const [presets, setPresets] = useState([]);
   useEffect(() => { api.presets().then(p => setPresets(p ?? [])).catch(() => {}); }, []);
 
-  // The header and the left bar go black with the sky while it's on screen, on the
-  // light theme too (index.css html.td-night), and back as the sheet comes up over it
+  // (the header no longer goes black with a sky: the banner is gone, 21 Nov 2026)
   const sheetRef = useRef(null);
-  useEffect(() => {
-    let frame = 0;
-    const check = () => {
-      frame = 0;
-      const top = sheetRef.current?.getBoundingClientRect().top ?? 0;
-      const bar = document.querySelector(".app-header")?.getBoundingClientRect().bottom ?? 0;
-      document.documentElement.classList.toggle("td-night", visible && top > bar);
-    };
-    const soon = () => { if (!frame) frame = requestAnimationFrame(check); };
-    check();
-    window.addEventListener("scroll", soon, { passive: true });
-    window.addEventListener("resize", soon);
-    return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener("scroll", soon);
-      window.removeEventListener("resize", soon);
-      document.documentElement.classList.remove("td-night");
-    };
-  }, [visible]);
+  useEffect(() => { document.documentElement.classList.remove("td-night"); }, []);
 
   const tabs = tabsFor(account);
   // Every screener, at the foot of Home only when asked for (21 Nov 2026, the
@@ -257,23 +244,17 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onOp
   };
 
   return (
-    <div className="td-page">
-      {/* The opening, on black whichever the theme: one line, one button, and the
-          visitors' page's night sky, as a still picture. Then the product, fading into the page. */}
-      <div className="td-sky-watch" aria-hidden="true" />
-      <section className="td-hero" aria-labelledby="td-hero-title">
-        <StarField />
-        <StarLetter className="td-star-j" points={LETTER_J} />
-        <StarLetter className="td-star-i" points={LETTER_I} />
-        <h2 id="td-hero-title">India's markets, read from the source.</h2>
-        <p>Every NSE company, scored on what it files. Find the few worth your time.</p>
-        <button type="button" className="td-cta" onClick={onCreate}>Start screening</button>
-        <div className="td-shot">
-          <img src="/screens/home-shot.jpg" alt="Jocular Insights listing companies that match a screen, with their quality scores" width="1280" height="800" />
-        </div>
-        <div className="td-shot-fade" aria-hidden="true" />
-        <button type="button" className="td-shot-pill" onClick={seeAll}>See every screener<ChevronRight size={15} aria-hidden="true" /></button>
-      </section>
+    <div className="td-page td-flat">
+      {/* A greeting, not the visitors' pitch (21 Nov 2026, the Home review: the
+          starry banner filled a signed-in person's first screen; the market
+          now comes first). The banner and its picture are gone. */}
+      <header className="td-hello">
+        <h2 id="td-hero-title">{greeting()}{account?.name ? `, ${account.name.split(" ")[0]}` : ""}</h2>
+        <span className="td-hello-acts">
+          <button type="button" className="td-cta" onClick={onCreate}>Start screening</button>
+          <button type="button" className="td-hello-link" onClick={seeAll}>See every screener<ChevronRight size={15} aria-hidden="true" /></button>
+        </span>
+      </header>
 
       {/* Stays still as you scroll, and this comes up over it, like a tab pulled up */}
       <div ref={sheetRef} className="td-sheet">
@@ -285,24 +266,20 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onOp
       <HomeCategories />
 
       {/* below the news (21 Nov 2026, the owner: "move what's new today up, everything in the app down") */}
-      <h3 className="td-menu-title">Everything in the app</h3>
-      <nav className="td-box td-all-pages" aria-label="Everything in the app">
-        {PAGE_GROUPS.map(g => (
-          <div key={g.title} className="td-page-group">
-            <h3>{g.title}</h3>
-            {g.items.map(id => {
-              const tab = tabs.find(t => t.id === id), site = SITE_PAGES.find(p => p.id === id);
-              if (!tab && !site) return null; // a page this account doesn't have
-              const Icon = (tab ?? site).Icon;
-              return (
-                <button key={id} type="button" onClick={() => (IN_APP[id] && onOpenTab ? openResults(onOpenTab, IN_APP[id]) : site ? navigate(site.path) : id === "discover" ? seeAll() : onOpenTab?.(id))}>
-                  <Icon size={18} strokeWidth={1.8} aria-hidden="true" />
-                  <span>{(tab ?? site).label}<small>{tab ? ABOUT[id] : site.about}</small></span>
-                </button>
-              );
-            })}
-          </div>
-        ))}
+      {/* every page, one row of links (21 Nov 2026, the Home review: the big
+          three-column box repeated the top bar) */}
+      <nav className="td-links" aria-label="Everything in the app">
+        {PAGE_GROUPS.flatMap(g => g.items).map(id => {
+          const tab = tabs.find(t => t.id === id), site = SITE_PAGES.find(p => p.id === id);
+          if (!tab && !site) return null; // a page this account doesn't have
+          if (id === "discover") return null; // Home itself
+          const Icon = (tab ?? site).Icon;
+          return (
+            <button key={id} type="button" title={tab ? ABOUT[id] : site.about} onClick={() => (IN_APP[id] && onOpenTab ? openResults(onOpenTab, IN_APP[id]) : site ? navigate(site.path) : onOpenTab?.(id))}>
+              <Icon size={15} strokeWidth={1.9} aria-hidden="true" />{(tab ?? site).label}
+            </button>
+          );
+        })}
       </nav>
 
       {/* last on the page, the full list opening under it (21 Nov 2026, the owner) */}
@@ -615,14 +592,7 @@ export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIn
       {/* gold, under the market (20 Nov 2026, the owner: "gold price to the Home screen") */}
       <HomeGold onOpen={() => onOpenTab?.("gold")} />
 
-      {/* a computer: the categories, the moves and the big orders as their own cards (20 Nov 2026, the owner: the tabs on a phone only) */}
-      {!phone && <>
-      {movers && <HomeMovers movers={movers} onOpenStock={onOpenStock} onOpenTab={onOpenTab} />}
-      {/* the orders companies won (BigOrders.jsx; 19 Nov 2026, the owner: "if any company gets a contract it should be shown") */}
-      <BigOrders home onOpenStock={onOpenStock} onSeeAll={() => { try { sessionStorage.setItem("open-orders", "1"); } catch { /* private window */ } onOpenTab?.("markets"); }} />
-
-      </>}
-
+      {/* yours first, right under the market (21 Nov 2026, the owner's go-ahead on the Home review) */}
       <div className="td-grid">
         <section className="td-box" aria-label="Your watchlist">
           <div className="td-head"><h3>Your watchlist</h3>{rows.length > 0 && <button type="button" onClick={() => onOpenTab?.("watchlist")}>Open all</button>}</div>
@@ -665,6 +635,15 @@ export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIn
           )}
         </div>
       </div>
+
+      {/* a computer: the categories, the moves and the big orders as their own cards (20 Nov 2026, the owner: the tabs on a phone only) */}
+      {!phone && <>
+      {movers && <HomeMovers movers={movers} onOpenStock={onOpenStock} onOpenTab={onOpenTab} />}
+      {/* the orders companies won (BigOrders.jsx; 19 Nov 2026, the owner: "if any company gets a contract it should be shown") */}
+      <BigOrders home onOpenStock={onOpenStock} onSeeAll={() => { try { sessionStorage.setItem("open-orders", "1"); } catch { /* private window */ } onOpenTab?.("markets"); }} />
+
+      </>}
+
     </>
   );
 }
