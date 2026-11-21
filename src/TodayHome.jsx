@@ -1,5 +1,6 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { lazyPage } from "./lazyPage.js";
+import { AdCard } from "./ads.jsx";
 // the chart library loads with the chart, not with the app (22 Nov 2026: it
 // was ~185 KB of the first download for one small chart)
 const MarketChart = lazyPage(() => import("./MarketChart.jsx"));
@@ -677,6 +678,10 @@ export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIn
               ))}
             </section>
           )}
+          {/* the space beside a long watchlist (21 Nov 2026, the owner: "we will
+              add the ads there"): one card marked "Ad", shown only once Google
+              fills it; until then the column is Needs a look and Results coming */}
+          {!phone && <AdCard feed="home" slot="home-side" size="medium" className="td-side-ad" />}
         </div>
       </div>
 

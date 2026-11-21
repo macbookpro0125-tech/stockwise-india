@@ -117,7 +117,7 @@ export function PrivacyPage({ signedIn }) {
 
       <H>Ads on the website</H>
       <P>
-        The website may show ads from Google AdSense: a few cards marked "Ad" among the strategies and the stock lists —
+        The website may show ads from Google AdSense: a few cards marked "Ad" among the strategies and the stock lists, and one beside your watchlist on Home —
         never a banner over the page or an ad that covers it. To show and measure them and to prevent fraud, Google and
         its partners use cookies and similar technology, and may use your visits to this and other sites to choose ads
         (personalised ads). Where the law asks for it (for example in the EU or the UK), Google's consent message asks
