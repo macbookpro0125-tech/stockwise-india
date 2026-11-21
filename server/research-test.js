@@ -511,4 +511,9 @@ const itcQ = netOfExcise({ revenue: 305784000000, expenses: 254624000000, excise
 assert(Math.round(itcQ.revenue / CR) === 20269 && Math.round(itcQ.expenses / CR) === 15153 && itcQ.grossRevenue === 305784000000, "sales and expenses both come down by the duty (ITC ₹30,578 → ₹20,269 Cr); the profit is unchanged");
 assert(netOfExcise({ revenue: 100, expenses: 80 }).revenue === 100, "no excise: nothing changes");
 
+const sansera = { fyEnd: "2026-03-31", ocf: 655.7 * CR, ocfFromOperations: 533.6 * CR, ocfInterestReceived: 24.8 * CR, ocfTaxPaid: -97.4 * CR, pbt: 431.7 * CR, profit: 326.9 * CR };
+assert(dataChecks(sansera).some(f => f.field === "ocf") && sansera.ocf === null, "operating cash flow that adds the tax paid instead of taking it off isn't used (Sansera FY26)");
+const tcsCash = { fyEnd: "2026-03-31", ocf: 52094 * CR, ocfFromOperations: 70367 * CR, ocfTaxPaid: 14384 * CR, pbt: 65487 * CR, profit: 49454 * CR };
+assert(dataChecks(tcsCash).length === 0 && tcsCash.ocf === 52094 * CR, "a cash flow that adds up is left alone, whichever way the tax line is signed (TCS)");
+
 console.log("\nAll research-score checks passed.");

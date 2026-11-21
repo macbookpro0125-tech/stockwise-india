@@ -1010,7 +1010,7 @@ export default function StockDetail({ symbol, account, onBack, backTo = "Discove
           )}
           {m.dataFixes?.map(f => (
             <div key={`${f.fyEnd}-${f.field}`} style={{ marginTop: 4, color: "var(--t2)" }}>
-              FY{f.fyEnd.slice(2, 4)}: {f.field === "capex" ? `spending on equipment was filed as −₹${Math.round(Math.abs(f.filed) / 1e7).toLocaleString("en-IN")} crore; a purchase can't be negative, so ₹${Math.round(f.used / 1e7).toLocaleString("en-IN")} crore is used` : `profit was filed as ₹${Math.round(f.filed / 1e7).toLocaleString("en-IN")} crore, over twice the profit before tax; the owners' share, ₹${Math.round(f.used / 1e7).toLocaleString("en-IN")} crore, agrees with the EPS and is used`}.
+              FY{f.fyEnd.slice(2, 4)}: {f.field === "ocf" ? `the operating cash flow filed (₹${Math.round(f.filed / 1e7).toLocaleString("en-IN")} crore) adds the tax paid instead of taking it off, so it isn't used; that year's cash-flow tests are left out` : f.field === "capex" ? `spending on equipment was filed as −₹${Math.round(Math.abs(f.filed) / 1e7).toLocaleString("en-IN")} crore; a purchase can't be negative, so ₹${Math.round(f.used / 1e7).toLocaleString("en-IN")} crore is used` : `profit was filed as ₹${Math.round(f.filed / 1e7).toLocaleString("en-IN")} crore, over twice the profit before tax; the owners' share, ₹${Math.round(f.used / 1e7).toLocaleString("en-IN")} crore, agrees with the EPS and is used`}.
             </div>
           ))}
         </div>

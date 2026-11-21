@@ -138,6 +138,21 @@ export function dataChecks(y) {
       y.profit = y.profitOwners;
     }
   }
+  // Operating cash flow whose total adds the tax paid instead of taking it
+  // off (Sansera FY26: ₹533.6 Cr from operations + ₹24.8 Cr interest +
+  // ₹97.4 Cr tax = the ₹655.7 Cr filed; Screener and Tijori both show
+  // ₹387 Cr). Filers sign the tax line either way, so only this exact
+  // pattern is caught, and only for a company that made a profit and so
+  // paid tax rather than got a refund. Not shown rather than guessed.
+  const ops = y.ocfFromOperations, tax = y.ocfTaxPaid;
+  if (y.ocf != null && ops > 0 && tax != null && Math.abs(tax) > 0.03 * ops && y.pbt > 0 && y.profit != null && y.pbt - y.profit > 0.5 * Math.abs(tax)) {
+    const received = Math.abs(y.ocfInterestReceived ?? 0) + Math.abs(y.ocfDividendsReceived ?? 0);
+    const taxAdded = ops + received + Math.abs(tax);
+    if (Math.abs(y.ocf - taxAdded) <= 0.01 * taxAdded && y.ocf > ops + received) {
+      fixes.push({ fyEnd: y.fyEnd, field: "ocf", filed: y.ocf, used: null, why: "the filed total adds the tax paid instead of taking it off" });
+      y.ocf = null;
+    }
+  }
   return fixes;
 }
 

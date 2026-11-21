@@ -116,7 +116,7 @@ const YEARS = 8;
 // companies are re-read for it a batch a night, biggest first
 // (data-jobs.js), not all at once as a SCHEMA change would — the whole market
 // takes about two hours, near the evening job's limit
-export const DETAIL_VERSION = 4; // 4: excise duty, from the breakdown of other expenses; 2: each quarter's expense lines, intangible assets under development; 3: the half-year cash flow from September and March filings
+export const DETAIL_VERSION = 4; // 4: excise duty, from the breakdown of other expenses, and the operating cash flow's parts; 2: each quarter's expense lines, intangible assets under development; 3: the half-year cash flow from September and March filings
 export const BANK_VERSION = 2; // 2: five quarters of asset quality, capital and return on assets
 // Three years of quarters: this quarter against the same one a year ago, two
 // years running, and trailing-twelve-month figures
@@ -151,6 +151,11 @@ export const TAGS = {
   currentTax: ["CurrentTax", "CurrentTaxExpense"],
   deferredTax: ["DeferredTax", "DeferredTaxExpense"],
   ocf: ["CashFlowsFromUsedInOperatingActivities"],
+  // its parts, for the check that it adds up (metrics.js dataChecks, DETAIL_VERSION 4)
+  ocfFromOperations: ["CashFlowsFromUsedInOperations"],
+  ocfInterestReceived: ["InterestReceivedClassifiedAsOperatingActivities"],
+  ocfDividendsReceived: ["DividendsReceivedClassifiedAsOperatingActivities"],
+  ocfTaxPaid: ["IncomeTaxesPaidRefundClassifiedAsOperatingActivities"],
   totalAssets: ["EquityAndLiabilities", "CapitalAndLiabilities"],
   currentAssets: ["CurrentAssets"],
   paidUp: ["PaidUpValueOfEquityShareCapital"],
@@ -541,6 +546,10 @@ function extractYear(xml, row, template = templateOf(row.xbrl)) {
     excise: r.excise(),
     tax: taxExpense(r.year),
     ocf: r.year(TAGS.ocf),
+    ocfFromOperations: r.year(TAGS.ocfFromOperations),
+    ocfInterestReceived: r.year(TAGS.ocfInterestReceived),
+    ocfDividendsReceived: r.year(TAGS.ocfDividendsReceived),
+    ocfTaxPaid: r.year(TAGS.ocfTaxPaid),
     // FY22-era legacy filings carry no balance sheet: equity is null there, and
     // debt must be null too rather than a "0" that reads as debt-free.
     equity: equity ?? reservesBook,
