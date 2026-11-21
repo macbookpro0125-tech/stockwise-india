@@ -238,6 +238,7 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onOp
   // owner: "why do we need the screeners here?"): See every screener / See all
   // open it and go to it
   const [allOpen, setAllOpen] = useState(false);
+  const [summary, setSummary] = useState(null);
   const seeAll = () => {
     setAllOpen(true);
     requestAnimationFrame(() => document.getElementById("all-screeners")?.scrollIntoView({ behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }));
@@ -249,7 +250,15 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onOp
           starry banner filled a signed-in person's first screen; the market
           now comes first). The banner and its picture are gone. */}
       <header className="td-hello">
-        <h2 id="td-hero-title">{greeting()}{account?.name ? `, ${account.name.split(" ")[0]}` : ""}</h2>
+        <div>
+          <h2 id="td-hero-title">{greeting()}{account?.name ? `, ${account.name.split(" ")[0]}` : ""}</h2>
+          {summary && (
+            <p className="td-hello-line">
+              Nifty 50 <b className={summary.nifty >= 0 ? "up" : "down"}>{summary.nifty >= 0 ? "▲" : "▼"}{Math.abs(summary.nifty).toFixed(2)}%</b> at the {day(summary.asOf)} close
+              {summary.reporting > 0 && <> · {summary.reporting} of your companies report results this week</>}
+            </p>
+          )}
+        </div>
         <span className="td-hello-acts">
           <button type="button" className="td-cta" onClick={onCreate}>Start screening</button>
           <button type="button" className="td-hello-link" onClick={seeAll}>See every screener<ChevronRight size={15} aria-hidden="true" /></button>
@@ -259,7 +268,7 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onOp
       {/* Stays still as you scroll, and this comes up over it, like a tab pulled up */}
       <div ref={sheetRef} className="td-sheet">
     <div className="td">
-      <MarketSummary visible={visible} onOpenStock={onOpenStock} onOpenTab={onOpenTab} onOpenIndex={onOpenIndex} />
+      <MarketSummary visible={visible} onOpenStock={onOpenStock} onOpenTab={onOpenTab} onOpenIndex={onOpenIndex} onSummary={setSummary} />
 
       {continueCard}
       {newsTile && <div className="td-news">{newsTile}</div>}
@@ -362,6 +371,32 @@ function HomeMovers({ movers, onOpenStock, onOpenTab, bare = false }) {
         ))}
       </div>
       {MOVER_NOTE[id] && <p className="td-mv-foot">{MOVER_NOTE[id]}</p>}
+    </section>
+  );
+}
+
+// A computer's Top movers and Big orders, one card with two tabs; the one last
+// looked at opens next time
+function HomeMoves({ movers, onOpenStock, onOpenTab }) {
+  const [tab, setTab] = useState(() => { try { return localStorage.getItem("home-moves") === "orders" ? "orders" : "movers"; } catch { return "movers"; } });
+  const [orders, setOrders] = useState(null);
+  const pick = t => { setTab(t); try { localStorage.setItem("home-moves", t); } catch { /* private window */ } };
+  const show = !movers ? "orders" : tab;
+  const allOrders = () => { try { sessionStorage.setItem("open-orders", "1"); } catch { /* private window */ } onOpenTab?.("markets"); };
+  return (
+    <section className="td-box td-moves" aria-label="Today's moves and big orders">
+      <div className="td-head">
+        <div className="td-moves-tabs" role="tablist" aria-label="Show">
+          {movers && <button type="button" role="tab" aria-selected={show === "movers"} onClick={() => pick("movers")}>Top movers today</button>}
+          <button type="button" role="tab" aria-selected={show === "orders"} onClick={() => pick("orders")}>Big orders{orders ? ` · ${orders}` : ""}</button>
+        </div>
+        {show === "movers" && <button type="button" onClick={() => onOpenTab?.("markets")}>Markets</button>}
+      </div>
+      <div role="tabpanel">
+        {show === "movers"
+          ? <HomeMovers bare movers={movers} onOpenStock={onOpenStock} onOpenTab={onOpenTab} />
+          : <BigOrders bare home onOpenStock={onOpenStock} onSeeAll={allOrders} onCount={setOrders} />}
+      </div>
     </section>
   );
 }
@@ -511,7 +546,7 @@ function HomeCategories() {
   );
 }
 
-export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIndex }) {
+export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIndex, onSummary = null }) {
   // the card of tabs on a phone; a computer keeps its cards side by side
   const phone = usePhone();
   // 5 Nov 2026 ("when I click on those cards it's not working"): every card
@@ -548,6 +583,13 @@ export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIn
     const names = [...yours, ...all.filter(c => !mine.has(c.symbol))].slice(0, 3);
     return { date: d.date, yours, names, more: Math.max(0, (d.count ?? all.length) - names.length) };
   });
+  // one line for the greeting above (21 Nov 2026, the Home review): the Nifty's
+  // day and how many of your companies report in the next week
+  const nifty = strip?.indices?.find(m => /^nifty 50$/i.test(m.name));
+  const weekEnd = strip?.asOf ? new Date(Date.parse(`${strip.asOf}T00:00:00Z`) + 8 * 864e5).toISOString().slice(0, 10) : null;
+  const reporting = weekEnd ? new Set((calendar?.days ?? []).filter(d => d.date <= weekEnd).flatMap(d => (d.companies ?? []).filter(c => mine.has(c.symbol)).map(c => c.symbol))).size : 0;
+  const summary = nifty ? { nifty: nifty.changePct, asOf: strip.asOf, reporting } : null;
+  useEffect(() => { onSummary?.(summary); }, [summary?.nifty, summary?.asOf, summary?.reporting]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <>
       <div className="td-top">
@@ -592,9 +634,11 @@ export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIn
       {/* gold, under the market (20 Nov 2026, the owner: "gold price to the Home screen") */}
       <HomeGold onOpen={() => onOpenTab?.("gold")} />
 
+      {/* no companies starred yet: the day's moves come first, not an empty box */}
+      {!phone && watch && rows.length === 0 && <HomeMoves movers={movers} onOpenStock={onOpenStock} onOpenTab={onOpenTab} />}
       {/* yours first, right under the market (21 Nov 2026, the owner's go-ahead on the Home review) */}
       <div className="td-grid">
-        <section className="td-box" aria-label="Your watchlist">
+        {(phone || !watch || rows.length > 0) && <section className="td-box" aria-label="Your watchlist">
           <div className="td-head"><h3>Your watchlist</h3>{rows.length > 0 && <button type="button" onClick={() => onOpenTab?.("watchlist")}>Open all</button>}</div>
           {watch && rows.length === 0 && (
             <p className="td-empty">Nothing here yet. Search for a company above and star it, and its moves, fair value and results dates show here each day.</p>
@@ -606,7 +650,7 @@ export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIn
               <span style={{ color: tone(r.ret1d) }}>{pct(r.ret1d)}</span>
             </button>
           ))}
-        </section>
+        </section>}
 
         <div className="td-side">
           {under.length > 0 && (
@@ -636,14 +680,12 @@ export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIn
         </div>
       </div>
 
-      {/* a computer: the categories, the moves and the big orders as their own cards (20 Nov 2026, the owner: the tabs on a phone only) */}
-      {!phone && <>
-      {movers && <HomeMovers movers={movers} onOpenStock={onOpenStock} onOpenTab={onOpenTab} />}
-      {/* the orders companies won (BigOrders.jsx; 19 Nov 2026, the owner: "if any company gets a contract it should be shown") */}
-      <BigOrders home onOpenStock={onOpenStock} onSeeAll={() => { try { sessionStorage.setItem("open-orders", "1"); } catch { /* private window */ } onOpenTab?.("markets"); }} />
 
+      {!(!phone && watch && rows.length === 0) && <>
+      {/* a computer: the day's moves and the big orders as one card of two tabs
+          (21 Nov 2026, the Home review: a screen less to scroll) */}
+      {!phone && <HomeMoves movers={movers} onOpenStock={onOpenStock} onOpenTab={onOpenTab} />}
       </>}
-
     </>
   );
 }
