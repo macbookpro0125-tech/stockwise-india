@@ -110,6 +110,34 @@ export function bankHealth(b) {
 //   filed on a ₹4,156 Cr PBT; its owners' ₹3,031 Cr matches EPS ₹31.59 ×
 //   95.9 Cr shares). A real gain below the PBT line (a business sold) shows in
 //   the owners' profit and EPS too, so it's left alone
+// A quarter filed only as the year to date (fetch-nse.js extractQuarter
+// ytd; Coal India's September 2026 results carried April–September and no
+// quarter column, so the quarter read as blank while Screener showed
+// ₹44,179 Cr of sales): the year to date less the earlier quarters of the
+// same year, when every one of them is on file. Oldest first, so a nine
+// months' figure can use a half-year already worked out. `list` newest first.
+const YTD_FIELDS = ["revenue", "excise", "expenses", "financeCosts", "depreciation", "otherIncome", "pbt", "profit", "profitOwners", "eps"];
+export function quarterFromYtd(list) {
+  const DAY_MS = 86_400_000;
+  for (let i = list.length - 1; i >= 0; i--) {
+    const q = list[i];
+    if (q.revenue != null || !q.ytd?.revenue) continue;
+    const earlier = Math.round(q.ytd.days / 91.3) - 1;
+    const end = Date.parse(q.qEnd ?? q.fyEnd);
+    const prior = Array.from({ length: earlier }, (_, k) => list.find(o => Math.abs(end - (k + 1) * 91.3 * DAY_MS - Date.parse(o.qEnd ?? o.fyEnd)) <= 20 * DAY_MS));
+    if (!earlier || prior.some(o => !o || o.revenue == null)) continue;
+    for (const f of YTD_FIELDS) {
+      const ytd = q.ytd[f];
+      if (ytd == null) continue;
+      if (f === "excise") { const before = prior.map(o => o.excise ?? 0); q.excise = ytd - before.reduce((a, b) => a + b, 0); continue; }
+      if (prior.some(o => o[f] == null)) continue;
+      q[f] = ytd - prior.reduce((a, o) => a + o[f], 0);
+    }
+    q.fromYtd = true;
+  }
+  return list;
+}
+
 // Sales net of excise duty (fetch-nse.js exciseOf, DETAIL_VERSION 4), as
 // Screener and the companies' own "net revenue" show them: Ind AS counts
 // the duty in revenue and again in expenses, so both come down by it and
@@ -178,6 +206,7 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     return years.find(y => Math.abs(new Date(`${y.fyEnd}T00:00:00Z`) - target) <= 45 * DAY) ?? null;
   };
   const quarterList = fixUnitSlips((stock.quarters ?? []).filter(q => !q.error && q.qEnd).map(q => ({ ...q, fyEnd: q.qEnd })));
+  quarterFromYtd(quarterList);
   quarterList.forEach(netOfExcise);
 
   // Splits and bonuses change the share count. Anything filed before one is

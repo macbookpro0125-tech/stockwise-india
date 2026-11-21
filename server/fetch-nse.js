@@ -445,6 +445,14 @@ function leasesOf(xml, row) {
       if (m && Number.isFinite(Number(m[1]))) total += Number(m[1]);
     }
   }
+  // No lease line in the breakdown, but rent paid on leases in the cash flow
+  // (21 Nov 2026, against Screener: Titan ₹865 Cr and Asian Paints ₹340 Cr
+  // a year, both read as "no leases"): the leases are inside a generic
+  // "other financial liabilities" — unknown, not none
+  if (itemised && total === 0) {
+    const paid = firstFacts(xml, ctx, ["PaymentsOfLeaseLiabilitiesClassifiedAsFinancingActivities"]).find(f => f.end === end && f.days >= 350)?.value;
+    if (paid != null && Math.abs(paid) > 0) return null;
+  }
   return itemised ? total : null;
 }
 
@@ -601,6 +609,7 @@ function quarterReader(xml, row) {
       excise: () => (ok ? exciseOf(xml, ctx, (_, id) => /^One/.test(id)) : null),
       any: tags => valueById(xml, tags, "OneD") ?? valueById(xml, tags, "FourD"),
       half: () => null,
+      ytd: () => null,
       atEnd: () => null,
     };
   }
@@ -610,6 +619,13 @@ function quarterReader(xml, row) {
     any: tags => firstFacts(xml, ctx, tags).find(f => f.end === end)?.value ?? null,    // the half-year to this quarter's end (a September or March filing's
     // six months: 170–190 days), never the quarter or the year beside it
     half: tags => firstFacts(xml, ctx, tags).find(f => f.end === end && f.days >= 170 && f.days <= 190)?.value ?? null,
+    // the year to date (six or nine months from 1 April), for a filing that
+    // carries no quarter column of its own (Coal India's September 2026
+    // results: April–September only); { value, days }
+    ytd: tags => {
+      const f = firstFacts(xml, ctx, tags).find(x => x.end === end && x.days >= 170 && x.days <= 280 && /-04-01$/.test(x.start ?? ""));
+      return f ? { value: f.value, days: f.days } : null;
+    },
     // the balance sheet at the quarter's end, which September and March filings carry
     atEnd: tags => firstFacts(xml, ctx, tags).find(f => f.instant === end)?.value ?? null,
   };
@@ -637,6 +653,23 @@ export function extractQuarter(xml, row) {
     profit,
     profitOwners,
     eps: pickEps(r, profitOwners ?? profit, r.quarter),
+    // No quarter column (only the year to date): the year-to-date figures,
+    // so metrics.js quarterFromYtd can take the earlier quarters off
+    ...(() => {
+      if (r.quarter(TAGS.revenue) != null) return {};
+      const rev = r.ytd(TAGS.revenue);
+      if (!rev) return {};
+      const v = tags => r.ytd(tags)?.value ?? null;
+      return {
+        ytd: {
+          days: rev.days, revenue: rev.value,
+          excise: exciseOf(xml, parseContexts(xml), c => c.end === isoDay(row.periodEnd) && c.days === rev.days),
+          expenses: v(TAGS.expenses), financeCosts: v(TAGS.financeCosts), depreciation: v(TAGS.depreciation),
+          otherIncome: v(TAGS.otherIncome), pbt: v(TAGS.pbt), profit: v(TAGS.profit), profitOwners: v(TAGS.profitOwners),
+          eps: v(TAGS.eps),
+        },
+      };
+    })(),
     // The half-year's cash flow, filed with September's (and March's)
     // results (DETAIL_VERSION 3, 21 Nov 2026: DRC Systems' operating cash
     // flow was −₹3.03 Cr for April–September 2026 while the annual figure,

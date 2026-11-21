@@ -4,7 +4,7 @@
 // zero or a pass, items that don't apply leave the denominator, coverage
 // gates hold, the overall formula is what's stated, and the price trend never
 // moves the quality or overall score.
-import { computeMetrics, dataChecks, netOfExcise } from "./metrics.js";
+import { computeMetrics, dataChecks, netOfExcise, quarterFromYtd } from "./metrics.js";
 import { exciseOf, parseContexts } from "./fetch-nse.js";
 import { band, GROUPS, computeResearch, peCohort, FIN_BANKS, FIN_LENDERS, FIN_NON_LENDERS } from "./research.js";
 import { justifiedPb, sustainableGrowth, bankValuation, costOfEquity } from "./bank-valuation.js";
@@ -515,5 +515,14 @@ const sansera = { fyEnd: "2026-03-31", ocf: 655.7 * CR, ocfFromOperations: 533.6
 assert(dataChecks(sansera).some(f => f.field === "ocf") && sansera.ocf === null, "operating cash flow that adds the tax paid instead of taking it off isn't used (Sansera FY26)");
 const tcsCash = { fyEnd: "2026-03-31", ocf: 52094 * CR, ocfFromOperations: 70367 * CR, ocfTaxPaid: 14384 * CR, pbt: 65487 * CR, profit: 49454 * CR };
 assert(dataChecks(tcsCash).length === 0 && tcsCash.ocf === 52094 * CR, "a cash flow that adds up is left alone, whichever way the tax line is signed (TCS)");
+
+// ── A quarter filed only as the year to date (Coal India, Sep 2026) ──
+const coal = quarterFromYtd([
+  { qEnd: "2026-09-30", revenue: null, ytd: { days: 183, revenue: 90434 * CR, profit: 15397 * CR, eps: 24.94 } },
+  { qEnd: "2026-06-30", revenue: 46255 * CR, profit: 8850 * CR, eps: 14.36 },
+]);
+assert(Math.round(coal[0].revenue / CR) === 44179 && Math.round(coal[0].profit / CR) === 6547 && coal[0].fromYtd, "April–September less the June quarter gives the September quarter (Coal India ₹44,179 Cr, Screener's figure)");
+const sixMonthly = quarterFromYtd([{ qEnd: "2026-09-30", revenue: null, ytd: { days: 183, revenue: 100 } }, { qEnd: "2026-03-31", revenue: 90 }]);
+assert(sixMonthly[0].revenue == null, "a half-yearly filer with no June quarter isn't guessed at");
 
 console.log("\nAll research-score checks passed.");

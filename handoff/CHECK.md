@@ -5,6 +5,7 @@ The newest are at the top. Each one gives where to go and what you should see. T
 
 | # | Live since | Where to go | What you should see | ✓ |
 |---|---|---|---|---|
+| ★ | after the push, once Coal India is re-read | Company page: **Coal India** → quarterly results | The **Sep 2026** quarter is there: sales about ₹44,179 Cr, profit about ₹6,547 Cr (it was blank); the last-12-months figures include it | ☐ |
 | ★ | after the push, as each company is re-read (biggest first, a few nights) | Company pages: **ITC**, **United Spirits**, **Reliance** → figures | ITC sales for FY26 about **₹78,868 Cr** (not ₹89,913) and the last 12 months about ₹77,255 Cr, operating margin about 35%; United Spirits' quarters about ₹3,000 Cr (not ₹7,000); the same as Screener.in |  ☐ |
 | ★ | 21 Nov (after the push) | Company pages: **Vodafone Idea**, **Sansera Engineering**, **Asian Paints** | Vodafone Idea: **Business 25** (was 63) with "Its liabilities exceed its assets … capped at 25" in the score details; Sansera: under "Financials from NSE filings", "FY26: spending on equipment was filed as −₹511 crore … ₹511 crore is used"; Asian Paints: "FY22: profit was filed as ₹9,167 crore … ₹3,031 crore … is used"; Sansera (after its re-read): "FY26: the operating cash flow filed (₹656 crore) adds the tax paid instead of taking it off, so it isn't used" | ☐ |
 | ★ | 21 Nov (DRC's cash line after a few evenings) | Company pages: **DRC Systems**, **Natco Pharma**, **Kabra Extrusion** → From its figures | DRC: "Cash went out this half-year … free cash flow −₹26 Cr"; Natco: "Sales are falling now: down 29% and 45%" and "Other income is carrying the profit (34%)"; Kabra: cash out and other income 8.7× its profit; TCS: no caution | ☐ |
@@ -24,7 +25,6 @@ The newest are at the top. Each one gives where to go and what you should see. T
 | 15 | 21 Nov | Gold page → under the carat table | One short line, then **How it's worked out ›**; tap it for RBI's method, recent prices and the source | ☐ |
 | 16 | 21 Nov | Gold page → **Gold** and **Silver** tabs | A **line** chart with no pivot lines (R1, S1…) and no other lines; your company-page chart keeps its own settings | ☐ |
 | 17 | 21 Nov | Home → Favourites → any screener with **0** companies | A line "No company passes it at the 20 Nov close…" instead of a blank white card. (After the data reload, "Up on Every Timeframe" should have companies again: see #2.) | ☐ |
-| 18 | 21 Nov, 12:56 pm | Screeners → **Up on Every Timeframe**; any company page → 5-year return | **221 companies** (it showed 0); 5-year price growth filled in for 968 companies, not "—" | ☐ |
 
 Not visible on a phone, so nothing to check:
 - the results pages reopened to Google
