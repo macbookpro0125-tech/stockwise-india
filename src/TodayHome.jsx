@@ -247,24 +247,14 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onOp
   }, [visible]);
 
   const tabs = tabsFor(account);
-  // A soft light that follows the mouse across a card: only the position changes,
-  // once a frame at most, and the browser draws the rest (index.css .td-box::after)
-  const spot = useRef({ card: null, x: 0, y: 0, frame: 0 });
-  const moveSpot = e => {
-    if (e.pointerType !== "mouse") return;
-    const s = spot.current;
-    s.card = e.target.closest?.(".td-box") ?? null;
-    s.x = e.clientX; s.y = e.clientY;
-    s.frame ||= requestAnimationFrame(() => {
-      s.frame = 0;
-      if (!s.card) return;
-      const r = s.card.getBoundingClientRect();
-      s.card.style.setProperty("--spot-x", `${s.x - r.left}px`);
-      s.card.style.setProperty("--spot-y", `${s.y - r.top}px`);
-    });
+  // Every screener, at the foot of Home only when asked for (21 Nov 2026, the
+  // owner: "why do we need the screeners here?"): See every screener / See all
+  // open it and go to it
+  const [allOpen, setAllOpen] = useState(false);
+  const seeAll = () => {
+    setAllOpen(true);
+    requestAnimationFrame(() => document.getElementById("all-screeners")?.scrollIntoView({ behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }));
   };
-
-  const seeAll = () => document.getElementById("all-screeners")?.scrollIntoView({ behavior: window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
 
   return (
     <div className="td-page">
@@ -286,7 +276,7 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onOp
       </section>
 
       {/* Stays still as you scroll, and this comes up over it, like a tab pulled up */}
-      <div ref={sheetRef} className="td-sheet" onPointerMove={moveSpot}>
+      <div ref={sheetRef} className="td-sheet">
     <div className="td">
       <MarketSummary visible={visible} onOpenStock={onOpenStock} onOpenTab={onOpenTab} onOpenIndex={onOpenIndex} />
 
@@ -329,10 +319,12 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onOp
       {continueCard}
       {newsTile && <div className="td-news">{newsTile}</div>}
 
-      <section id="all-screeners" className="td-all" aria-labelledby="sh-popular">
-        <h2 id="sh-popular" className="td-all-title">All screeners</h2>
-        {children}
-      </section>
+      {allOpen && (
+        <section id="all-screeners" className="td-all" aria-labelledby="sh-popular">
+          <h2 id="sh-popular" className="td-all-title">All screeners</h2>
+          {children}
+        </section>
+      )}
     </div>
       </div>
     </div>
