@@ -282,6 +282,7 @@ export default function TodayHome({ visible = true, onOpenStock, onOpenTab, onOp
 
       {continueCard}
       {newsTile && <div className="td-news">{newsTile}</div>}
+      <HomeCategories />
 
       {/* below the news (21 Nov 2026, the owner: "move what's new today up, everything in the app down") */}
       <h3 className="td-menu-title">Everything in the app</h3>
@@ -509,6 +510,30 @@ function HomeTabs({ strip, movers, listCounts, openIndex, onOpenStock, onOpenTab
   );
 }
 
+// A computer's categories (17 Nov 2026: "very hard to find, very deep in
+// Markets"), under What's new today (21 Nov 2026, the owner: "move this
+// explore by category below the what's new")
+function HomeCategories() {
+  const [listCounts, setListCounts] = useState({});
+  useEffect(() => {
+    api.publicLists().then(d => setListCounts(Object.fromEntries((d?.groups ?? []).flatMap(g => g.lists ?? []).map(l => [l.slug, l.count])))).catch(() => {});
+  }, []);
+  return (
+    <section className="td-box td-lists" aria-label="Explore by category">
+      <div className="td-head"><h3>Explore by category</h3><button type="button" onClick={() => navigate("/lists")}>All categories</button></div>
+      <div className="td-listgrid">
+        {HOME_LISTS.map(([slug, label, Icon]) => (
+          <button key={slug} type="button" className="td-listtile" onClick={() => navigate(`/lists/${slug}`)}>
+            <span className="td-listicon" aria-hidden="true"><Icon size={18} strokeWidth={1.8} /></span>
+            <span className="td-listtext"><b>{label}</b>{listCounts[slug] != null && <small>{listCounts[slug].toLocaleString("en-IN")} companies</small>}</span>
+            <ChevronRight size={16} className="td-listgo" aria-hidden="true" />
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIndex }) {
   // the card of tabs on a phone; a computer keeps its cards side by side
   const phone = usePhone();
@@ -592,21 +617,6 @@ export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIn
 
       {/* a computer: the categories, the moves and the big orders as their own cards (20 Nov 2026, the owner: the tabs on a phone only) */}
       {!phone && <>
-      {/* the categories, up before the moves (20 Nov 2026, the owner: "move the explore up") */}
-      {/* the stock lists, in reach from Home (17 Nov 2026: "very hard to find, very deep in Markets") */}
-      <section className="td-box td-lists" aria-label="Explore by category">
-        <div className="td-head"><h3>Explore by category</h3><button type="button" onClick={() => navigate("/lists")}>All categories</button></div>
-        <div className="td-listgrid">
-          {HOME_LISTS.map(([slug, label, Icon]) => (
-            <button key={slug} type="button" className="td-listtile" onClick={() => navigate(`/lists/${slug}`)}>
-              <span className="td-listicon" aria-hidden="true"><Icon size={18} strokeWidth={1.8} /></span>
-              <span className="td-listtext"><b>{label}</b>{listCounts[slug] != null && <small>{listCounts[slug].toLocaleString("en-IN")} companies</small>}</span>
-              <ChevronRight size={16} className="td-listgo" aria-hidden="true" />
-            </button>
-          ))}
-        </div>
-      </section>
-
       {movers && <HomeMovers movers={movers} onOpenStock={onOpenStock} onOpenTab={onOpenTab} />}
       {/* the orders companies won (BigOrders.jsx; 19 Nov 2026, the owner: "if any company gets a contract it should be shown") */}
       <BigOrders home onOpenStock={onOpenStock} onSeeAll={() => { try { sessionStorage.setItem("open-orders", "1"); } catch { /* private window */ } onOpenTab?.("markets"); }} />
