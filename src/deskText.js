@@ -71,6 +71,12 @@ export function cautions(m) {
   const out = [];
   const years = [...(m.history ?? [])].filter(y => y.revenueCr > 0 && num(y.profitCr)).sort((a, b) => a.fyEnd.localeCompare(b.fyEnd));
   if (num(m.pledgedPct) && m.pledgedPct >= 5) out.push({ rank: 0, title: "Promoters have pledged shares", text: `${pct(m.pledgedPct)} of their holding is pledged` });
+  // cash out in the latest half-year while it made a profit (metrics.js halfCash, 21 Nov 2026)
+  if (m.halfCash?.negative && !m.lender) {
+    const h = m.halfCash, rc = v => `${v < 0 ? "−" : ""}₹${Math.abs(v).toLocaleString("en-IN", { maximumFractionDigits: Math.abs(v) < 100 ? 2 : 0 })} Cr`;
+    const to = new Date(`${h.end}T00:00:00Z`).toLocaleString("en-IN", { month: "short", year: "numeric", timeZone: "UTC" });
+    out.push({ rank: 0.5, title: "Cash went out this half-year", text: `Operating cash flow ${rc(h.ocfCr)} in the six months to ${to}, while it made ${rc(h.profitCr)} profit${h.prevOcfCr != null ? ` (a year earlier: ${rc(h.prevOcfCr)})` : ""}` });
+  }
   if (num(m.payoutPct) && m.payoutPct > 100) out.push({ rank: 1, title: "Pays out more than it earns", text: `Dividends were ${pct(m.payoutPct, 0)} of profit last year` });
   if (num(m.debtChange1y) && m.debtChange1y >= 30 && num(m.totalDebtCr) && m.totalDebtCr > 0 && num(m.debtToEquity) && m.debtToEquity >= 0.3) {
     out.push({ rank: 2, title: "Debt is rising", text: `Up ${pct(m.debtChange1y, 0)} in a year; debt is ${m.debtToEquity.toFixed(2)}× equity` });

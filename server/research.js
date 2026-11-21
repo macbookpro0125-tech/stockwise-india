@@ -917,6 +917,12 @@ export function computeResearch(m, ctx = { peers: PEERS }) {
       ...(event.url && { url: event.url }),
     });
   }
+  // Cash out in the latest half-year while it made a profit (metrics.js
+  // halfCashOf; 21 Nov 2026, DRC Systems): a caution, not a red flag — one
+  // half's working capital can swing; the annual cash check stays in the score
+  if (!m.lender && m.halfCash?.negative) {
+    flags.push({ id: "halfYearCashOut", severity: "caution", text: m.halfCash.text });
+  }
   if (m.epsCorrection) {
     flags.push({
       id: "annualEpsCorrected", severity: "caution",

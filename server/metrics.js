@@ -496,6 +496,8 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
       // the quarter's expense lines (fetch-nse.js DETAIL_VERSION 2)
       materialsCr: cr(q.materials), purchasesCr: cr(q.purchases), inventoryChangeCr: cr(q.inventoryChange),
       employeesCr: cr(q.employees), otherExpensesCr: cr(q.otherExpenses), exceptionalCr: cr(q.exceptional),
+      // the half-year to this quarter, from a September or March filing (fetch-nse.js DETAIL_VERSION 3)
+      ocfHalfCr: cr(q.ocfHalf), profitHalfCr: cr(q.profitHalf),
       eps: q.eps != null ? q.eps / factorAfter(q.filed ?? isoPlusDays(q.qEnd, 45)) : null,
       salesYoY: yearAgo ? change(q.revenue, yearAgo.revenue) : null,
       profitYoY: yearAgo ? change(ownersProfit(q), ownersProfit(yearAgo)) : null,
@@ -819,6 +821,7 @@ export function computeMetrics(stock, snap, overrides = {}, options = {}) {
     fcfYieldPct: !lender && fcf != null && marketCapCr > 0 ? ((fcf / 1e7) / marketCapCr) * 100 : null,
     piotroski: piotroski?.score ?? null,
     piotroskiChecks: piotroski?.checks ?? null,
+    halfCash: halfCashOf(quarters),
     otherIncomePctOfPbt: latest.otherIncome != null && latest.pbt > 0 ? (latest.otherIncome / latest.pbt) * 100 : null,
     otherIncomeCr: latest.otherIncome != null ? latest.otherIncome / 1e7 : null,
     ncavCr,
@@ -1055,6 +1058,7 @@ function prosAndCons(m, latest) {
   if (!m.lender && gt(m.debtToEquity, 1)) cons.push(`High debt: ${round(m.debtToEquity, 2)} times equity${m.leasesCr > 0 ? `, ₹${round(m.leasesCr, 0)} Cr of it lease liabilities` : ""}.`);
   if (gt(m.otherIncomePctOfPbt, 30)) cons.push(`Earnings include other income of ₹${round(m.otherIncomeCr, 0)} Cr (${pct(m.otherIncomePctOfPbt)} of pre-tax profit).`);
   if (!m.lender && lt(m.ocfPat3yPct, 60)) cons.push(`Weak cash conversion: operating cash flow is only ${pct(m.ocfPat3yPct)} of profit over 3 years.`);
+  if (!m.lender && m.halfCash?.negative) cons.push(m.halfCash.text);
   if (lt(latest.profit, 0)) cons.push("Company made a loss in the latest year.");
   return { pros, cons };
 }
@@ -1072,4 +1076,26 @@ function tenYearGrowth(history, older) {
     profitGrowth10y: cagr(last.profitCr, first.profit / 1e7),
     growth10yFrom: first.fyEnd,
   };
+}
+
+// The latest half-year's operating cash flow (21 Nov 2026: DRC Systems was
+// −₹3.03 Cr for April–September 2026, after a strong year): from the newest
+// quarter whose filing carries a half-year (September, March), with the same
+// half a year earlier. negative: cash went out while the half made a profit.
+export function halfCashOf(quarters) {
+  const withHalf = (quarters ?? []).filter(q => q.ocfHalfCr != null);
+  const latest = withHalf[0];
+  if (!latest || (quarters?.[0] && Date.parse(quarters[0].fyEnd) - Date.parse(latest.fyEnd) > 200 * 86400000)) return null;
+  const prev = withHalf.find(q => Math.abs(Date.parse(latest.fyEnd) - Date.parse(q.fyEnd) - 365 * 86400000) <= 20 * 86400000) ?? null;
+  const h = {
+    end: latest.fyEnd, ocfCr: latest.ocfHalfCr, profitCr: latest.profitHalfCr ?? null,
+    prevOcfCr: prev?.ocfHalfCr ?? null,
+    negative: latest.ocfHalfCr < 0 && latest.profitHalfCr > 0,
+  };
+  return h.negative ? { ...h, text: halfCashText(h) } : h;
+}
+const halfName = end => { const d = new Date(`${end}T00:00:00Z`); return `the half-year to ${d.toLocaleString("en-IN", { month: "short", year: "numeric", timeZone: "UTC" })}`; };
+const crText = v => `${v < 0 ? "−" : ""}₹${Math.abs(v).toLocaleString("en-IN", { maximumFractionDigits: Math.abs(v) < 100 ? 2 : 0 })} Cr`;
+export function halfCashText(h) {
+  return `Cash went out in ${halfName(h.end)}: operating cash flow ${crText(h.ocfCr)}, though it made a profit of ${crText(h.profitCr)}${h.prevOcfCr != null ? ` (the same half a year earlier: ${crText(h.prevOcfCr)})` : ""}. Often money tied up in unpaid bills or stock; worth watching whether it turns back.`;
 }

@@ -116,7 +116,7 @@ const YEARS = 8;
 // companies are re-read for it a batch a night, biggest first
 // (data-jobs.js), not all at once as a SCHEMA change would — the whole market
 // takes about two hours, near the evening job's limit
-export const DETAIL_VERSION = 2; // 2: each quarter's expense lines, intangible assets under development
+export const DETAIL_VERSION = 3; // 2: each quarter's expense lines, intangible assets under development; 3: the half-year cash flow from September and March filings
 export const BANK_VERSION = 2; // 2: five quarters of asset quality, capital and return on assets
 // Three years of quarters: this quarter against the same one a year ago, two
 // years running, and trailing-twelve-month figures
@@ -569,15 +569,18 @@ function quarterReader(xml, row) {
     return {
       quarter: tags => (ok ? valueById(xml, tags, "OneD") : null),
       any: tags => valueById(xml, tags, "OneD") ?? valueById(xml, tags, "FourD"),
+      half: () => null,
     };
   }
   return {
     quarter: tags => firstFacts(xml, ctx, tags).find(f => f.end === end && f.days >= 80 && f.days <= 100)?.value ?? null,
-    any: tags => firstFacts(xml, ctx, tags).find(f => f.end === end)?.value ?? null,
+    any: tags => firstFacts(xml, ctx, tags).find(f => f.end === end)?.value ?? null,    // the half-year to this quarter's end (a September or March filing's
+    // six months: 170–190 days), never the quarter or the year beside it
+    half: tags => firstFacts(xml, ctx, tags).find(f => f.end === end && f.days >= 170 && f.days <= 190)?.value ?? null,
   };
 }
 
-function extractQuarter(xml, row) {
+export function extractQuarter(xml, row) {
   const r = quarterReader(xml, row);
   const profit = r.quarter(TAGS.profit);
   const owners = r.quarter(TAGS.profitOwners);
@@ -598,6 +601,14 @@ function extractQuarter(xml, row) {
     profit,
     profitOwners,
     eps: pickEps(r, profitOwners ?? profit, r.quarter),
+    // The half-year's cash flow, filed with September's (and March's)
+    // results (DETAIL_VERSION 3, 21 Nov 2026: DRC Systems' operating cash
+    // flow was −₹3.03 Cr for April–September 2026 while the annual figure,
+    // the only one read, was a strong +₹47.6 Cr): null for other quarters
+    ocfHalf: r.half(TAGS.ocf),
+    profitHalf: r.half(TAGS.profit),
+    pbtHalf: r.half(TAGS.pbt),
+    otherIncomeHalf: r.half(TAGS.otherIncome),
     // The expense lines (DETAIL_VERSION 2), as the year's are read
     materials: r.quarter(TAGS.materials),
     purchases: r.quarter(TAGS.purchases),
