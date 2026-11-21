@@ -5540,6 +5540,8 @@ button.td-line { cursor: pointer; }
 .td-flat .td { display: flex; flex-direction: column; gap: 24px; }
 .td-flat .td > * { margin-top: 0 !important; margin-bottom: 0 !important; }
 .td-flat .td-sheet .td { padding-top: 8px; }
+.ps .td-since { margin-bottom: 14px; }
+.td-since h3 small { margin-left: 6px; font-size: 13px; font-weight: 400; color: var(--t3); }
 .td-moves-tabs { display: inline-flex; gap: 4px; }
 .td-moves .hm-more-top, .td-moves .bo-bare > .mk-note { padding-left: 16px; padding-right: 16px; }
 .td-moves .bo-bare { padding: 0 2px; }

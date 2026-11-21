@@ -1,6 +1,7 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { lazyPage } from "./lazyPage.js";
 import { AdCard } from "./ads.jsx";
+import { SINCE_KEY, pickBaseline, sinceLast } from "./sinceLast.js";
 // the chart library loads with the chart, not with the app (22 Nov 2026: it
 // was ~185 KB of the first download for one small chart)
 const MarketChart = lazyPage(() => import("./MarketChart.jsx"));
@@ -547,6 +548,47 @@ function HomeCategories() {
   );
 }
 
+// What changed for your companies since your last visit (sinceLast.js): the
+// biggest moves, results filed, corporate actions. Worked out once a visit,
+// when the watchlist and the day's close are both in.
+function SinceLast({ rows, asOf, onOpenStock }) {
+  const [since, setSince] = useState(null);
+  const done = useRef(false);
+  useEffect(() => {
+    if (done.current || !asOf || !rows.length) return;
+    done.current = true;
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(SINCE_KEY) || "null"); } catch { /* private window */ }
+    const { baseline, next } = pickBaseline(saved, asOf, rows);
+    try { localStorage.setItem(SINCE_KEY, JSON.stringify(next)); } catch { /* private window */ }
+    setSince(sinceLast(baseline, rows));
+  }, [asOf, rows]);
+  if (!since) return null;
+  const { moves, results, actions } = since;
+  const nothing = !moves.length && !results.length && !actions.length;
+  return (
+    <section className="td-box td-since" aria-label="Since you were last here">
+      <div className="td-head"><h3>Since you were last here <small>{day(since.since)}</small></h3></div>
+      {nothing && <p className="td-empty">None of your {since.count} companies moved 2% or more, filed results or announced a dividend since then.</p>}
+      {moves.map(m => (
+        <button key={`m${m.symbol}`} type="button" className="td-line" onClick={() => onOpenStock?.(m.symbol)}>
+          <span>{short(m.name)}</span><em style={{ color: tone(m.pct) }}>{pct(m.pct)} since {day(since.since)}</em>
+        </button>
+      ))}
+      {results.map(r => (
+        <button key={`r${r.symbol}`} type="button" className="td-line" onClick={() => onOpenStock?.(r.symbol)}>
+          <span>{short(r.name)}</span><em>filed its results, {day(r.filed)}</em>
+        </button>
+      ))}
+      {actions.map(a => (
+        <button key={`a${a.symbol}${a.date}`} type="button" className="td-line" onClick={() => onOpenStock?.(a.symbol)}>
+          <span>{short(a.name)}</span><em>{a.title.replace(/ - /, ": ")}</em>
+        </button>
+      ))}
+    </section>
+  );
+}
+
 export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIndex, onSummary = null }) {
   // the card of tabs on a phone; a computer keeps its cards side by side
   const phone = usePhone();
@@ -638,6 +680,7 @@ export function MarketSummary({ visible = true, onOpenStock, onOpenTab, onOpenIn
       {/* no companies starred yet: the day's moves come first, not an empty box */}
       {!phone && watch && rows.length === 0 && <HomeMoves movers={movers} onOpenStock={onOpenStock} onOpenTab={onOpenTab} />}
       {/* yours first, right under the market (21 Nov 2026, the owner's go-ahead on the Home review) */}
+      {rows.length > 0 && <SinceLast rows={rows} asOf={strip?.asOf} onOpenStock={onOpenStock} />}
       <div className="td-grid">
         {(phone || !watch || rows.length > 0) && <section className="td-box" aria-label="Your watchlist">
           <div className="td-head"><h3>Your watchlist</h3>{rows.length > 0 && <button type="button" onClick={() => onOpenTab?.("watchlist")}>Open all</button>}</div>
